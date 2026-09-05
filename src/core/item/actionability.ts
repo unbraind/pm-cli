@@ -12,10 +12,18 @@
 import { isTerminalStatus, normalizeStatusForRegistry } from "./status.js";
 import type { RuntimeStatusRegistry } from "../schema/runtime-schema.js";
 import type { ItemMetadata, ItemStatus } from "../../types/index.js";
+import { BUILTIN_ITEM_EXECUTION_ROLES, resolveTypeDefinition, type ItemTypeRegistry } from "./type-registry.js";
+
 import {
   isExternalDependencyReference,
   isExternalDependencySourceKind,
 } from "./dependency-reference.js";
+
+/** Resolve dispatch semantics once for SDK callers, honoring custom and extension type aliases before built-in defaults. */
+export function resolveItemExecutionRole(type: string, registry?: ItemTypeRegistry): "agent" | "human" | "gate" {
+  const definition = registry === undefined ? undefined : resolveTypeDefinition(type, registry);
+  return definition?.execution_role ?? BUILTIN_ITEM_EXECUTION_ROLES[type.trim().toLowerCase()] ?? "agent";
+}
 
 /** Dependency kind that marks "this item is blocked by the referenced item". */
 const BLOCKED_BY_DEPENDENCY_KIND = "blocked_by";
@@ -279,10 +287,47 @@ export interface ActionabilityReport {
   ready: ActionableEntry[];
   /** Active leaves with at least one open blocker — waiting to become ready. */
   blocked: ActionableEntry[];
+  /** Active containers with unresolved descendants, including their blocker evidence. */
+  containers: ActionableEntry[];
+  /** Unblocked leaf work that requires a human decision. */
+  decisions: ActionableEntry[];
+  /** Unblocked leaf outcome gates held out of automatic dispatch. */
+  gates: ActionableEntry[];
   /** Active candidates considered before the leaf/blocker split. */
   active_count: number;
   /** Active candidates skipped because they still have open descendants. */
   container_count: number;
+}
+
+/** Explicit dispatch opt-ins; dependency and lifecycle blocking always remain enforced. */
+export interface ActionabilitySelectionOptions {
+  /** Include human decision work in the executable selection. */
+  includeDecisions?: boolean;
+  /** Include outcome gates in the executable selection. */
+  includeGates?: boolean;
+  /** Include containers whose descendants are still unfinished. */
+  includeContainers?: boolean;
+}
+
+/** Select dispatch candidates from a classified report while retaining held-out worklists. Ownership and ranking remain caller responsibilities. */
+export function selectActionableEntries(
+  report: ActionabilityReport,
+  statusRegistry: RuntimeStatusRegistry,
+  options: ActionabilitySelectionOptions = {},
+  typeRegistry?: ItemTypeRegistry,
+): Pick<ActionabilityReport, "ready" | "decisions" | "gates"> {
+  const candidates = [...report.ready, ...report.decisions, ...report.gates];
+  if (options.includeContainers === true) {
+    candidates.push(...report.containers.filter((entry) => entry.open_blockers.length === 0 && !statusRegistry.blocked_statuses.has(normalizeStatusForRegistry(entry.item.status, statusRegistry))));
+  }
+  const selected: Pick<ActionabilityReport, "ready" | "decisions" | "gates"> = { ready: [], decisions: [], gates: [] };
+  for (const entry of candidates) {
+    const role = resolveItemExecutionRole(entry.item.type, typeRegistry);
+    if (role === "human" && options.includeDecisions !== true) selected.decisions.push(entry);
+    else if (role === "gate" && options.includeGates !== true) selected.gates.push(entry);
+    else selected.ready.push(entry);
+  }
+  return selected;
 }
 
 /** Resolves the registry's active status set, falling back to just the canonical open status when a custom schema declares none — the same safety net `pm context` applies so the report never misclassifies every item as inactive. */
@@ -367,6 +412,7 @@ export function computeActionabilityReport(
   candidates: ItemMetadata[],
   corpus: ItemMetadata[],
   statusRegistry: RuntimeStatusRegistry,
+  typeRegistry?: ItemTypeRegistry,
 ): ActionabilityReport {
   const { itemsById, childrenByParent, blockedByReverse, blockerIdsByItem } =
     indexCorpus(corpus);
@@ -383,8 +429,10 @@ export function computeActionabilityReport(
   );
   const ready: ActionableEntry[] = [];
   const blocked: ActionableEntry[] = [];
+  const containers: ActionableEntry[] = [];
+  const decisions: ActionableEntry[] = [];
+  const gates: ActionableEntry[] = [];
   let activeCount = 0;
-  let containerCount = 0;
   for (const item of candidates) {
     if (
       !activeStatuses.has(
@@ -393,10 +441,6 @@ export function computeActionabilityReport(
     )
       continue;
     activeCount += 1;
-    if (hasOpenDescendant(item.id, childrenByParent, statusRegistry)) {
-      containerCount += 1;
-      continue;
-    }
     const openBlockers = resolveItemBlockersWithIndex(
       item,
       itemsById,
@@ -411,11 +455,18 @@ export function computeActionabilityReport(
       open_blockers: openBlockers,
       unblocks,
     };
+    if (hasOpenDescendant(item.id, childrenByParent, statusRegistry)) {
+      containers.push(entry);
+      continue;
+    }
     const lifecycleBlocked = statusRegistry.blocked_statuses.has(
       normalizeStatusForRegistry(item.status, statusRegistry),
     );
     if (openBlockers.length === 0 && !lifecycleBlocked) {
-      ready.push(entry);
+      const role = resolveItemExecutionRole(item.type, typeRegistry);
+      if (role === "human") decisions.push(entry);
+      else if (role === "gate") gates.push(entry);
+      else ready.push(entry);
     } else {
       blocked.push(entry);
     }
@@ -423,7 +474,10 @@ export function computeActionabilityReport(
   return {
     ready,
     blocked,
+    containers,
+    decisions,
+    gates,
     active_count: activeCount,
-    container_count: containerCount,
+    container_count: containers.length,
   };
 }

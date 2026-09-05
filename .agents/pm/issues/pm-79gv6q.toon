@@ -2,11 +2,13 @@ id: pm-79gv6q
 title: "pm context summary counts are denominated in the returned slice, so the canonical orient cold-start reports 4 open items in a 291-item backlog"
 description: "Measured 2026-09-04 on the 2026.9.4 build against the live tracker (291 open, 65 blocked, 2631 total). pm context summary reports active_items, open, and blocked denominated in the returned slice, not the workspace: the default limit reports open 53 and blocked 14; --limit 3 reports open 4 and blocked 3; the canonical cold-start pm context --for orient reports open 4, blocked 3, and then prints total_items 2631, closed 2326, canceled 14 in the same summary block. One block therefore mixes two populations without saying so, and the intent AGENTS.md names as the measured cold-start tells a fresh agent that a 291-item backlog has four open items.\n\nThis is the read-output representativeness family applied to the summary itself: the part a bounded read returned claims a count for the part it withheld. Acceptance: summary counts are workspace-scoped (or the slice-scoped fields are renamed to say so, with the workspace count beside them); the orient and handoff intents carry both scopes explicitly; the omission receipt names summary as population-scoped; a negative control renders a slice count under a population key and fails; the truthful-context contract doc and the context intent fixtures record the field semantics."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[7]: agent-ux,"area:cli","area:context",context-management,output-contracts,receipts,token-budget
 created_at: "2026-09-04T18:24:56.659Z"
-updated_at: "2026-09-04T18:26:09.861Z"
+updated_at: "2026-09-05T04:18:34.699Z"
+closed_at: "2026-09-05T04:18:34.122Z"
+completed_at: "2026-09-05T04:18:34.122Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: Summary counts are workspace-scoped or the slice-scoped fields are renamed to say so with the workspace count beside them; The orient and handoff intents carry both scopes explicitly and the omission receipt names summary as population-scoped; A negative control that renders a slice count under a population key fails; The truthful-context contract doc and the context intent fixtures record the field semantics
@@ -16,8 +18,9 @@ confidence: high
 severity: high
 environment: "pm-cli 2026.9.4 build against the live tracker, 2631 items"
 repro_steps: "Run pm context --json, pm context --limit 3 --json, and pm context --for orient --json on a tracker with more open items than the limit and compare summary.open with pm stats by_status.open"
-expected_result: Summary counts describe the workspace or are named as slice counts beside the workspace figure
-actual_result: "summary.open is 53, 4, and 4 for the same 291-open workspace and the orient block prints workspace totals beside slice counts"
+resolution: Separated complete matching-population context counters from bounded returned_focus counters and declared summary scope in omission receipts.
+expected_result: Limits and orient/handoff projections preserve full matching status and subtree counts.
+actual_result: "Final local delivery evidence: pnpm quality:static passed; 8420 tests in 608 files passed with exact coverage statements 62214/62214, branches 47182/47182, functions 12920/12920, lines 59840/59840. Full typecheck, all six linked PM test runs, package-first dogfood (88 commands), temporary Node and Bun manual workflows, packed npm/npx/bunx consumers, compatibility migration, package artifact, docs/skills, SDK surface and contract checks passed. Refusal corpus closes 117/117 probes with negative controls; task-token corpus completes 8/8 tasks at 12667 estimated tokens. Tracker-context 41 assertions, graph-composition 10 assertions, and record-integrity pass. GitHub security inventories and pnpm audit are zero; fresh required Sentry/telemetry gate passes. PR review, merge, and publication remain separate subsequent claims."
 affected_version: 2026.9.4
 component: sdk/query/context
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
@@ -25,11 +28,35 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-j1r8gl,recurs_from,"2026-09-04T18:24:56.659Z","harness:claude-code","cli:create:dep",detected
   pm-o87av6,implements,"2026-09-04T18:24:56.659Z","harness:claude-code","cli:create:dep",detected
   pm-q7qojt,verifies,"2026-09-04T18:24:56.659Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-09-04T18:26:08.669Z","harness:claude-code","Duplicate check: searched context summary population, slice versus workspace counts, orient intent truthfulness. Nearest closed lineage is the list --all completeness item (linked verifies) and the activity default-bound item (linked recurs_from). Measured live on the 2631-item tracker before filing: summary.open 53, 4, 4 against 291 open."
-files[1]{path,scope,note}:
+  "2026-09-05T03:08:08.605Z","harness:codex",Context population summaries are computed before focus packing; returned_focus explicitly reports bounded selection counts. The omission receipt names the matching-items summary scope. Red then green fixture proves six open items remain six under limit one and orient/handoff.
+  "2026-09-05T03:29:29.521Z","harness:codex","Mixed-status subtree acceptance passed: five matching items include three active, one closed, one canceled and one blocked despite limit=1. Calibration now measures 3468 tokens versus 3411 for two-item session orientation; 9624 versus 9780 for 2243 items. Large-workspace delivered identities change from 110 to 105 and suppressed repeats from eight to seven because gate work is held out of execution detail. Global 20000-token budget, complete cursor traversal, structural negative controls, and exact source coverage thresholds remain enforced."
+  "2026-09-05T04:18:33.577Z","harness:codex","Separated complete matching-population context counters from bounded returned_focus counters and declared summary scope in omission receipts. Final local delivery evidence: pnpm quality:static passed; 8420 tests in 608 files passed with exact coverage statements 62214/62214, branches 47182/47182, functions 12920/12920, lines 59840/59840. Full typecheck, all six linked PM test runs, package-first dogfood (88 commands), temporary Node and Bun manual workflows, packed npm/npx/bunx consumers, compatibility migration, package artifact, docs/skills, SDK surface and contract checks passed. Refusal corpus closes 117/117 probes with negative controls; task-token corpus completes 8/8 tasks at 12667 estimated tokens. Tracker-context 41 assertions, graph-composition 10 assertions, and record-integrity pass. GitHub security inventories and pnpm audit are zero; fresh required Sentry/telemetry gate passes. PR review, merge, and publication remain separate subsequent claims."
+files[4]{path,scope,note}:
+  scripts/release/context-intent-calibration.json,project,Measured population and execution role calibration
+  src/sdk/output-projection.ts,project,Connected SDK and CLI execution contract delivery
   src/sdk/query/context.ts,project,summary block computed over the bounded slice
-docs[1]{path,scope,note}:
+  tests/unit/sdk/execution/context-population.spec.ts,project,Connected SDK and CLI execution contract delivery
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/execution/context-population.spec.ts,project,240,"harness:codex","2026-09-05T03:22:02.389Z",local_mutation,feat/agent-context-execution-contracts
+test_runs[1]:
+  - run_id: test-local-mtnuo7po-k4blnn
+    kind: test
+    status: passed
+    started_at: "2026-09-05T03:55:26.810Z"
+    finished_at: "2026-09-05T03:55:38.124Z"
+    recorded_at: "2026-09-05T03:55:38.124Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/execution/context-population.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Public execution and recovery semantics
+  docs/README.md,project,Public execution and recovery semantics
   docs/SDK_CONTEXT_TRUTH_CONTRACTS.md,project,truthful-context contract that must record summary field semantics
+  docs/SDK_EXECUTION_CONTRACTS.md,project,Public execution and recovery semantics
+close_reason: Connected SDK/CLI implementation and regression evidence complete; landing through the combined reviewed delivery.
 escape_class: review_caught_late
 body: ""

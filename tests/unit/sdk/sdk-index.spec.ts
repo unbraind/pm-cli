@@ -875,7 +875,7 @@ describe("public sdk entrypoint", () => {
     expect(flagsFor(undefined)).toEqual(expect.arrayContaining(["--json", "--pm-path"]));
     expect(flagsFor("list")).toEqual(expect.arrayContaining(["--status", "--all", "--ids"]));
     expect(flagsFor("list-all")).toEqual(expect.arrayContaining(["--all", "--ids"]));
-    expect(flagsFor("list-all")).not.toContain("--status");
+    expect(flagsFor("list-all")).toContain("--status");
     expect(flagsFor(" LIST-OPEN ")).toEqual(expect.arrayContaining(["--ids"]));
     expect(flagsFor(" LIST-OPEN ")).not.toContain("--status");
     expect(flagsFor(" LIST-OPEN ")).not.toContain("--all");

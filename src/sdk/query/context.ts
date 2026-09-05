@@ -19,10 +19,15 @@ import {
   readSettings,
   resolveAuthor,
   discoverExtensions,
+  resolveItemTypeRegistry,
 } from "../runtime-primitives.js";
+import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import type { ItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
   collectDependencyBlockedIds,
   resolveItemBlockers,
+  resolveItemExecutionRole,
+  computeActionabilityReport,
 } from "../actionability.js";
 import type {
   ContextDepth,
@@ -379,6 +384,15 @@ interface ContextAgendaSummary {
 }
 
 interface ContextSummary {
+  /** Population counters honor item filters and parent scope, never output limits. */
+  scope?: "matching_items";
+  /** Counts for the bounded focus selection, separate from the matching population. */
+  returned_focus?: {
+    active_items: number;
+    in_progress: number;
+    open: number;
+    blocked: number;
+  };
   active_items: number;
   in_progress: number;
   open: number;
@@ -2123,7 +2137,6 @@ async function loadContextCorpus(
   global: GlobalOptions,
   runtime: Omit<ContextRuntime, "tokenBudget">,
 ): Promise<ContextCorpus> {
-  const needsAllItems = contextNeedsAllItems(runtime.sectionsIncluded);
   // One full-corpus scan serves every consumer: runList always reads all item
   // files before filtering, so deriving the non-terminal subset in memory is
   // free and keeps terminal blocker targets available for the shared
@@ -2139,10 +2152,7 @@ async function loadContextCorpus(
   let listedItemMetadata = fullCorpus.filter(
     (item) => !isTerminalStatus(item.status, runtime.statusRegistry),
   );
-  let allItems: ItemMetadata[] =
-    needsAllItems || runtime.parentScope !== undefined
-      ? fullCorpus
-      : listedItemMetadata;
+  let allItems: ItemMetadata[] = fullCorpus;
   const subtreeIds = resolveContextSubtreeIds(runtime.parentScope, fullCorpus);
   if (subtreeIds) {
     listedItemMetadata = listedItemMetadata.filter((item) =>
@@ -2172,6 +2182,23 @@ function resolveContextSubtreeIds(
   return subtree.ids;
 }
 
+/** Classify strategic and human-directed context through the shared execution rules. */
+function collectHighLevelContextIds(
+  activeItems: ItemMetadata[],
+  fullCorpus: ItemMetadata[],
+  statusRegistry: RuntimeStatusRegistry,
+  typeRegistry: ItemTypeRegistry,
+): Set<string> {
+  const containers = new Set(
+    computeActionabilityReport(activeItems, fullCorpus, statusRegistry, typeRegistry)
+      .containers.map((entry) => entry.item.id),
+  );
+  return new Set(activeItems.filter((item) =>
+    HIGH_LEVEL_TYPES.has(item.type) || containers.has(item.id) ||
+    resolveItemExecutionRole(item.type, typeRegistry) !== "agent",
+  ).map((item) => item.id));
+}
+
 async function resolveContextFocusGroups(
   listedItemMetadata: ItemMetadata[],
   allItems: ItemMetadata[],
@@ -2188,6 +2215,7 @@ async function resolveContextFocusGroups(
   pmRoot: string,
   tokenBudget: number,
   claimFocus: Readonly<Record<string, number>> | undefined,
+  typeRegistry: ItemTypeRegistry,
 ): Promise<ContextFocusGroups> {
   const structural = [...listedItemMetadata].sort((left, right) =>
     compareCriticalItems(left, right, statusRegistry),
@@ -2290,12 +2318,13 @@ async function resolveContextFocusGroups(
       .map((blocker) => blocker.id);
     return focus;
   };
+  const highLevelIds = collectHighLevelContextIds(activeItems, fullCorpus, statusRegistry, typeRegistry);
   const highLevel = activeItems
-    .filter((item) => HIGH_LEVEL_TYPES.has(item.type))
+    .filter((item) => highLevelIds.has(item.id))
     .slice(0, useBoundedPage ? focusPage.length : limit)
     .map(projectFocusItem);
   const lowLevel = activeItems
-    .filter((item) => !HIGH_LEVEL_TYPES.has(item.type))
+    .filter((item) => !highLevelIds.has(item.id))
     .slice(0, useBoundedPage ? focusPage.length : limit)
     .map(projectFocusItem);
   const blockedFallbackUsed = rankedActiveItems.length === 0;
@@ -2501,15 +2530,21 @@ async function buildOptionalContextSections(params: {
 }
 
 function buildContextSummaryExtras(
-  needsAllItems: boolean,
   allItems: ItemMetadata[],
   statusRegistry: RuntimeStatusRegistry,
-): Pick<ContextSummary, "total_items" | "closed" | "canceled"> {
-  if (!needsAllItems) {
-    return {};
-  }
+  blockedIds: ReadonlySet<string>,
+): Pick<ContextSummary, "scope" | "active_items" | "open" | "in_progress" | "blocked" | "total_items" | "closed" | "canceled"> {
   const canceledStatus = normalizeStatusInput("canceled", statusRegistry);
+  const activeItems = allItems.filter((item) =>
+    statusRegistry.active_statuses.has(normalizeStatusForRegistry(item.status, statusRegistry)),
+  );
+  const inProgress = countContextStatus(activeItems, statusRegistry.in_progress_status, statusRegistry);
   return {
+    scope: "matching_items",
+    active_items: activeItems.length,
+    open: activeItems.length - inProgress,
+    in_progress: inProgress,
+    blocked: allItems.filter((item) => blockedIds.has(item.id.trim().toLowerCase())).length,
     total_items: allItems.length,
     closed: allItems.filter((item) =>
       isClosedStatus(item.status, statusRegistry),
@@ -2768,6 +2803,7 @@ export async function runContext(
     pmRoot,
     runtime.tokenBudget,
     claimFocus,
+    resolveItemTypeRegistry(runtime.settings, getActiveExtensionRegistrations()),
   );
   const agendaContext = await buildContextAgenda(
     global,
@@ -2809,9 +2845,9 @@ export async function runContext(
     global,
   });
   const summaryExtras = buildContextSummaryExtras(
-    contextNeedsAllItems(runtime.sectionsIncluded),
     corpus.allItems,
     runtime.statusRegistry,
+    blockedIds,
   );
 
   const result: ContextResult = {
@@ -2844,10 +2880,12 @@ export async function runContext(
         {}) as Record<string, unknown>,
     },
     summary: {
-      active_items: focusGroups.activeItems.length,
-      in_progress: inProgressCount,
-      open: openCount,
-      blocked: focusGroups.blockedItems.length,
+      returned_focus: {
+        active_items: focusGroups.activeItems.length,
+        in_progress: inProgressCount,
+        open: openCount,
+        blocked: focusGroups.blockedItems.length,
+      },
       blocked_fallback_used: focusGroups.blockedFallbackUsed,
       high_level: focusGroups.highLevel.length,
       low_level: focusGroups.lowLevel.length,

@@ -2,11 +2,13 @@ id: pm-bfa1ob
 title: Commander usage refusals omit token_accounting even when --token-accounting is parsed
 description: "The CLI attaches token_accounting to successful commands and runtime PmCliError failures, but Commander usage failures such as an unknown option render before the accounting attachment path. A caller explicitly requesting --json --token-accounting therefore receives no receipt. The agent-task transcript gate currently measures these refusals independently and labels that boundary; the CLI should eventually make the self-reported contract uniform without changing exit semantics."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",contracts,error-contract,token-accounting
 created_at: "2026-08-27T16:44:18.236Z"
-updated_at: "2026-08-28T20:44:40.653Z"
+updated_at: "2026-09-05T04:18:39.659Z"
+closed_at: "2026-09-05T04:18:39.090Z"
+completed_at: "2026-09-05T04:18:39.090Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Commander JSON usage errors attach the same bounded token_accounting receipt when requested; accounting-off bytes remain unchanged; CLI order and alias forms behave identically; focused process tests and the golden transcript switch from independent_transport to self_reported.
@@ -16,13 +18,46 @@ confidence: high
 severity: medium
 environment: CLI Commander parse-time usage failures across JSON and TOON transports
 repro_steps: Run pm --json --token-accounting search query --include-body and observe an unknown-option refusal without token_accounting.
-expected_result: Every structured refusal requested with token accounting includes the same bounded accounting receipt regardless of whether Commander or the SDK error transport produced it.
-actual_result: Commander usage failures exit with a structured envelope before token accounting is attached.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+resolution: Attached exact serialized token accounting to Commander and bootstrap JSON refusals after projection and extension enrichment; strengthened independent transcript provenance verification.
+expected_result: Requested accounting matches emitted refusal bytes while accounting-off payloads remain unchanged.
+actual_result: "Final local delivery evidence: pnpm quality:static passed; 8420 tests in 608 files passed with exact coverage statements 62214/62214, branches 47182/47182, functions 12920/12920, lines 59840/59840. Full typecheck, all six linked PM test runs, package-first dogfood (88 commands), temporary Node and Bun manual workflows, packed npm/npx/bunx consumers, compatibility migration, package artifact, docs/skills, SDK surface and contract checks passed. Refusal corpus closes 117/117 probes with negative controls; task-token corpus completes 8/8 tasks at 12667 estimated tokens. Tracker-context 41 assertions, graph-composition 10 assertions, and record-integrity pass. GitHub security inventories and pnpm audit are zero; fresh required Sentry/telemetry gate passes. PR review, merge, and publication remain separate subsequent claims."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-8pnj,discovered_from,"2026-08-27T16:44:18.236Z","harness:codex","cli:create:dep",detected
   pm-t5dt4z,recurs_from,"2026-08-27T16:44:18.236Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+  pm-8pnj,verifies,"2026-09-05T03:31:15.827Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
   "2026-08-27T16:44:18.236Z","harness:codex","Duplicate check: exact phrase and all-term searches across every status returned zero matching items. Discovery evidence: pm --json --token-accounting search ... --include-body exits 2 with a structured unknown_option envelope but no token_accounting field; the transcript gate records an explicit independent transport measurement until this separate contract gap is implemented."
   "2026-08-27T16:53:58.663Z","harness:codex","Relationship rationale: pm-bfa1ob was discovered_from pm-8pnj because the versioned transcript observed the missing receipt; it recurs_from pm-t5dt4z because that closed item established self-reported token accounting, and parent pm-srns owns uniform transport envelopes."
+  "2026-09-05T03:08:23.655Z","harness:codex",Opt-in refusal accounting measures the final serialized diagnostic; extension failure enrichment recalculates the receipt rather than retaining stale byte counts. Real stderr tests cover option ordering and bootstrap help refusals.
+  "2026-09-05T03:22:18.641Z","harness:codex",The executable unknown-option transcript now expects self_reported accounting because diagnostic JSON carries its own final-output receipt. Full-suite first run exposed mixed source/build output during concurrent generation; a stable build and targeted compatibility rerun precede the next coverage run. No coverage threshold or source exclusion changed.
+  "2026-09-05T03:27:05.265Z","harness:codex",Real CLI transcript replay passed with self-reported refusal accounting. The gate independently predicts only the added --token-accounting token in three recovery provenance fields; every other field remains exact. Negative tests reject altered recovery commands and malformed baseline transport evidence. This preserves truthful invocation metadata and byte accounting without ignoring payload drift.
+  "2026-09-05T04:18:38.551Z","harness:codex","Attached exact serialized token accounting to Commander and bootstrap JSON refusals after projection and extension enrichment; strengthened independent transcript provenance verification. Final local delivery evidence: pnpm quality:static passed; 8420 tests in 608 files passed with exact coverage statements 62214/62214, branches 47182/47182, functions 12920/12920, lines 59840/59840. Full typecheck, all six linked PM test runs, package-first dogfood (88 commands), temporary Node and Bun manual workflows, packed npm/npx/bunx consumers, compatibility migration, package artifact, docs/skills, SDK surface and contract checks passed. Refusal corpus closes 117/117 probes with negative controls; task-token corpus completes 8/8 tasks at 12667 estimated tokens. Tracker-context 41 assertions, graph-composition 10 assertions, and record-integrity pass. GitHub security inventories and pnpm audit are zero; fresh required Sentry/telemetry gate passes. PR review, merge, and publication remain separate subsequent claims."
+files[7]{path,scope,note}:
+  docs/agent-task-token-baseline.json,project,Execution contract implementation and regression evidence
+  docs/agent-task-transcripts.json,project,Executable regression contract and public SDK surface
+  scripts/release/agent-task-token-gate.mjs,project,Strict executable contract regression evidence
+  src/cli/commander-usage.ts,project,Connected SDK and CLI execution contract delivery
+  src/cli/help-json-payload.ts,project,Connected SDK and CLI execution contract delivery
+  tests/unit/cli/unknown-command-help-runtime.spec.ts,project,Connected SDK and CLI execution contract delivery
+  tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,Strict executable contract regression evidence
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/unknown-command-help-runtime.spec.ts,project,240,"harness:codex","2026-09-05T03:08:22.554Z",local_mutation,feat/agent-context-execution-contracts
+test_runs[1]:
+  - run_id: test-local-mtnuoijg-3qe0ou
+    kind: test
+    status: passed
+    started_at: "2026-09-05T03:55:45.956Z"
+    finished_at: "2026-09-05T03:55:52.156Z"
+    recorded_at: "2026-09-05T03:55:52.156Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/unknown-command-help-runtime.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Public execution and recovery semantics
+  docs/README.md,project,Public execution and recovery semantics
+  docs/SDK_EXECUTION_CONTRACTS.md,project,Public execution and recovery semantics
+close_reason: Connected SDK/CLI implementation and regression evidence complete; landing through the combined reviewed delivery.
 escape_class: production_defect
 body: ""

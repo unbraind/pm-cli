@@ -54,6 +54,7 @@ export {
 export * from "./query/get.js";
 export * from "./query/history.js";
 export * from "./query/next.js";
+export * from "./actionability.js";
 export * from "./query/search-pagination.js";
 export * from "./query/search-rendering.js";
 export * from "./query/item-filter-options.js";

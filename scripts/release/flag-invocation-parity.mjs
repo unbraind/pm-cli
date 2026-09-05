@@ -16,6 +16,7 @@ import { registerOperationCommands } from "../../dist/cli/register-operations.js
 import { registerSetupCommands } from "../../dist/cli/register-setup.js";
 import { createPmCliProgram } from "../../dist/sdk/cli-program.js";
 import {
+  GLOBAL_FLAG_CONTRACTS,
   hasSubcommandFlagContractsForCommand,
   resolveSubcommandFlagContractsForCommand,
 } from "../../dist/sdk/cli-contracts.js";
@@ -64,29 +65,39 @@ export function observeCommandOptions(program, command) {
 }
 
 /** Produce the full fail-closed parity receipt. */
-export function verifyCoreFlagInvocationParity({ injectMismatch = false } = {}) {
-  const program = buildCoreCommandProgram();
+export function verifyCoreFlagInvocationParity({
+  injectMismatch = false,
+  program = buildCoreCommandProgram(),
+} = {}) {
   const commandReports = [];
+  const missingCommands = [];
   for (const command of program.commands) {
     const commandPath = command.name();
-    if (!hasSubcommandFlagContractsForCommand(commandPath)) continue;
-    const declarations = enrichCliFlagInvocationContracts(
-      commandPath,
-      resolveSubcommandFlagContractsForCommand(commandPath),
-    );
-    const declaredFlags = new Set(declarations.map(({ flag }) => flag));
+    if (!hasSubcommandFlagContractsForCommand(commandPath)) {
+      missingCommands.push({
+        code: "missing_command_contract",
+        command: commandPath,
+        detail: `Core command ${commandPath} has no flag-contract resolver.`,
+      });
+    }
+    const declarations = [...new Map(enrichCliFlagInvocationContracts(
+      commandPath, [
+        ...GLOBAL_FLAG_CONTRACTS,
+        ...resolveSubcommandFlagContractsForCommand(commandPath),
+      ],
+    ).flatMap((row) => [row.flag, ...(row.aliases ?? [])]
+      .map((flag) => [flag, { ...row, flag }]))).values()];
     const declarationByFlag = new Map(
       declarations.map((declaration) => [declaration.flag, declaration]),
     );
     const observedSignatures = new Set();
     const observations = observeCommandOptions(program, command)
-      .filter(({ flag }) => declaredFlags.has(flag))
       .map((observation) => ({
         ...observation,
         // Commander exposes variadic argv syntax, not accumulation through an
         // option parser. The established grammar gate owns repeatability;
         // this independent executable check owns value arity.
-        repeatable: declarationByFlag.get(observation.flag).repeatable,
+        repeatable: declarationByFlag.get(observation.flag)?.repeatable ?? observation.repeatable,
       }))
       .filter((observation, index, all) => {
         if (
@@ -123,7 +134,7 @@ export function verifyCoreFlagInvocationParity({ injectMismatch = false } = {}) 
       ),
     );
   }
-  const findings = commandReports.flatMap(({ findings }) => findings);
+  const findings = [...missingCommands, ...commandReports.flatMap(({ findings }) => findings)];
   return {
     ok: findings.length === 0,
     command_count: commandReports.length,

@@ -4,6 +4,12 @@
 
 ### Fixed
 
+- pm release leaves the item in_progress with no owner: offer --status open (or hint) so released work does not linger as phantom WIP ([pm-ugld](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ugld.toon))
+- Commander usage refusals omit token_accounting even when --token-accounting is parsed ([pm-bfa1ob](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bfa1ob.toon))
+- GH-1169: the unknown-command hint routes to the 15-command root help that hides the target, and test is the only singular collection verb ([pm-u4t9gp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u4t9gp.toon))
+- flag-invocation-parity only iterates declared flags, so 21 runtime options across 8 core commands have no flag contract ([pm-2bqgs7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2bqgs7.toon))
+- pm context summary counts are denominated in the returned slice, so the canonical orient cold-start reports 4 open items in a 291-item backlog ([pm-79gv6q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-79gv6q.toon))
+- pm next recommends outcome-milestone gates as actionable work, and summary.containers counts a bucket the envelope never emits ([pm-08mt4k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-08mt4k.toon))
 - GH-1171: restore parses the on-disk item before consulting history, so a zero-byte or corrupted item file with an intact stream cannot be rebuilt ([pm-96fsma](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-96fsma.toon))
 - history-compact renumbers version identifiers, so pm get --at N and pm restore N address a different recorded state after compaction with exit 0 and no signal ([pm-m0yjtg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m0yjtg.toon))
 - A deleted item's id is immediately re-mintable, so one immutable history stream can hold two unrelated items and every integrity check still reports verified ([pm-e3gn0z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e3gn0z.toon))

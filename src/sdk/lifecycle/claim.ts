@@ -16,6 +16,8 @@ import {
   readSettings,
   resolveAuthor,
   resolveClaimPrincipal,
+  normalizeStatusForRegistry,
+  normalizeStatusInput,
 } from "../runtime-primitives.js";
 import { wrapOwnershipConflict } from "../annotations.js";
 import { describeItemOwnershipConflict } from "../ownership-source.js";
@@ -116,6 +118,10 @@ export interface ReleaseResult {
   previous_assignee: string | null;
   /** Value that configures or reports forced for this contract. */
   forced: boolean;
+  /** Stable handoff diagnostics shared by CLI and MCP consumers. */
+  warnings?: string[];
+  /** Concrete recovery commands when releasing ownership leaves work in progress. */
+  suggestions?: string[];
 }
 
 /** Documents the claim mutation options payload exchanged by command, SDK, and package integrations. */
@@ -407,10 +413,17 @@ export async function runRelease(
     itemId: result.item.id,
   });
 
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const stillInProgress = normalizeStatusForRegistry(result.item.status, statusRegistry) === normalizeStatusInput("in_progress", statusRegistry);
+
   return {
     item: toItemRecord(result.item),
     released_by: author,
     previous_assignee: previousAssignee,
     forced: force,
+    ...(stillInProgress ? {
+      warnings: ["released_unclaimed_in_progress"],
+      suggestions: [`${result.item.id} remains ${result.item.status} and unclaimed. If work is paused, run pm pause-task ${result.item.id} to move it to ${statusRegistry.open_status}.`],
+    } : {}),
   };
 }

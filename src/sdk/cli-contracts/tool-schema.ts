@@ -313,8 +313,6 @@ const FIXED_STATUS_LIST_CONTRACT_PARAMETER_KEYS =
   LIST_CONTRACT_PARAMETER_KEYS.filter(
     (parameter) => parameter !== "all" && parameter !== "status",
   );
-const ALL_STATUS_LIST_CONTRACT_PARAMETER_KEYS =
-  LIST_CONTRACT_PARAMETER_KEYS.filter((parameter) => parameter !== "status");
 const LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS = [
   [
     { property: "today", schema: { const: true } },
@@ -390,6 +388,8 @@ const NEXT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "readyOnly",
   "format",
   "includeDecisions",
+  "includeGates",
+  "includeContainers",
   "tokenBudget",
   "explainRanking",
 ]);
@@ -591,7 +591,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS,
     },
     "list-all": {
-      optional: ALL_STATUS_LIST_CONTRACT_PARAMETER_KEYS,
+      optional: LIST_CONTRACT_PARAMETER_KEYS,
       mutuallyExclusiveWhen: LIST_WINDOW_MUTUALLY_EXCLUSIVE_GROUPS,
     },
     "list-draft": {
@@ -1121,6 +1121,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     test: {
       required: ["id"],
       optional: [
+        "list",
         "add",
         "addJson",
         "remove",
@@ -1767,7 +1768,7 @@ function createLazyContractSchema(
 }
 
 /** Canonical version of the action-scoped strict MCP tool-parameters schema (`PM_TOOL_PARAMETERS_SCHEMA`). Exported as the single source of truth so the MCP server, the `pm contracts` command, SDK consumers, and contract tests bind to one version constant. Bump the patch/minor for additive, backward-compatible schema changes; bump the MAJOR for breaking changes — the major also drives the `$id` `tool-parameters-v{major}` slug, so the two never drift. */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.11.0" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.12.0" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the
@@ -1777,7 +1778,7 @@ export const PM_TOOL_PARAMETERS_SCHEMA_MAJOR =
   PM_TOOL_PARAMETERS_SCHEMA_VERSION.split(".")[0];
 
 /** Version of the provider-compatible flat tool-parameters schema (`PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`). Tracked separately from the strict schema because the flat projection evolves independently. */
-export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION = "1.5.0" as const;
+export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION = "1.6.0" as const;
 
 /** Public contract for pm tool parameters schema, shared by SDK and presentation-layer consumers. */
 export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> =

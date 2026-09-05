@@ -161,7 +161,7 @@
       "command": "next",
       "help_bytes": 1681,
       "estimated_tokens": 421,
-      "maximum_tokens": 421
+      "maximum_tokens": 469
     },
     {
       "command": "history",
@@ -371,7 +371,7 @@
       "command": "claim",
       "help_bytes": 1444,
       "estimated_tokens": 361,
-      "maximum_tokens": 361
+      "maximum_tokens": 407
     },
     {
       "command": "release",

@@ -92,6 +92,7 @@ type ItemTypeAuthoringDefinition = Pick<
   | "options"
   | "description"
   | "default_status"
+  | "execution_role"
 >;
 type MigrationAuthoringDefinition = Pick<
   SchemaMigrationDefinition,

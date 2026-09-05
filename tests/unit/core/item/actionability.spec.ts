@@ -7,6 +7,8 @@ import {
   computeActionabilityReport,
   indexBlockedByIds,
   resolveItemBlockers,
+  resolveItemExecutionRole,
+  selectActionableEntries,
 } from "../../../../src/core/item/actionability.js";
 import { resolveRuntimeStatusRegistry } from "../../../../src/core/schema/runtime-schema.js";
 import { createRelationshipKindRegistry } from "../../../../src/sdk/relationships.js";
@@ -15,6 +17,11 @@ import type {
   ItemMetadata,
   ItemType,
 } from "../../../../src/types/index.js";
+
+import { SETTINGS_DEFAULTS } from "../../../../src/core/shared/constants.js";
+import { resolveItemTypeRegistry } from "../../../../src/core/item/type-registry.js";
+import { parseItemExecutionRole } from "../../../../src/core/item/item-type-definition.js";
+import { partitionDecisionEntries } from "../../../../src/sdk/query/next.js";
 
 const registry = resolveRuntimeStatusRegistry(undefined);
 
@@ -464,5 +471,57 @@ describe("computeActionabilityReport", () => {
     expect(report.ready).toHaveLength(0);
     expect(report.container_count).toBe(2);
     expect(report.active_count).toBe(2);
+  });
+});
+
+
+describe("execution role selection", () => {
+  it("resolves type aliases and explicit built-in overrides without losing defaults", () => {
+    const types = resolveItemTypeRegistry({
+      ...SETTINGS_DEFAULTS,
+      item_types: { definitions: [
+        { name: "Approval", aliases: ["approval-alias"], execution_role: "human" },
+        { name: "Milestone", execution_role: "agent" },
+        { name: "Decision", aliases: ["choice"] },
+      ] },
+    });
+    expect(resolveItemExecutionRole("approval-alias", types)).toBe("human");
+    expect(resolveItemExecutionRole("Milestone", types)).toBe("agent");
+    expect(resolveItemExecutionRole("choice", types)).toBe("human");
+    expect(resolveItemExecutionRole("Unknown", types)).toBe("agent");
+    for (const role of ["agent", "human", "gate", undefined] as const) {
+      expect(parseItemExecutionRole(role)).toBe(role);
+    }
+    for (const role of ["", "Agent", "script", null, true, 1]) {
+      expect(() => parseItemExecutionRole(role)).toThrow("execution_role");
+    }
+  });
+
+  it("requires separate role and container opt-ins and never admits blocked containers", () => {
+    const corpus = [
+      item({ id: "pm-gate", type: "Milestone" }),
+      item({ id: "pm-human", type: "Decision" }),
+      item({ id: "pm-parent", type: "Epic" }),
+      item({ id: "pm-child", parent: "pm-parent" }),
+      item({ id: "pm-blocked-parent", status: "blocked" }),
+      item({ id: "pm-blocked-child", parent: "pm-blocked-parent" }),
+      item({ id: "pm-dependent-parent", blocked_by: "pm-missing" }),
+      item({ id: "pm-dependent-child", parent: "pm-dependent-parent" }),
+    ];
+    const report = computeActionabilityReport(corpus, corpus, registry);
+    const defaults = selectActionableEntries(report, registry);
+    const legacyCandidates = [...report.ready, ...report.decisions];
+    expect(partitionDecisionEntries(legacyCandidates, false)).toEqual({
+      agent: report.ready, decisions: report.decisions,
+    });
+    expect(partitionDecisionEntries(legacyCandidates, true)).toEqual({
+      agent: legacyCandidates, decisions: [],
+    });
+    expect(defaults.gates.map(({ item }) => item.id)).toEqual(["pm-gate"]);
+    expect(defaults.decisions.map(({ item }) => item.id)).toEqual(["pm-human"]);
+    const selected = selectActionableEntries(report, registry, { includeGates: true, includeDecisions: true, includeContainers: true });
+    expect(selected.gates).toEqual([]);
+    expect(selected.decisions).toEqual([]);
+    expect(selected.ready.map(({ item }) => item.id).sort()).toEqual(["pm-blocked-child", "pm-child", "pm-dependent-child", "pm-gate", "pm-human", "pm-parent"]);
   });
 });

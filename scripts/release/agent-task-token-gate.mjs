@@ -17,6 +17,7 @@ import {
   parseBootstrapCommandName,
   parsePmAgentTaskTranscriptCorpus,
   resolvePmCommandOutputEnvelope,
+  renderPmCommand,
 } from "../../dist/cli-bundle/sdk.js";
 import { fail, parseFlags, repoRoot } from "./utils.mjs";
 
@@ -208,7 +209,7 @@ function assertTransportPayloadParity(baselinePayload, measuredPayload, step) {
   validateExpectedOutput(baselinePayload, step);
   validateExpectedOutput(measuredPayload, step);
   const [firstDifference] = jsonPatch.compare(
-    baselinePayload,
+    expectedAccountedDiagnostic(baselinePayload, step),
     measuredPayload,
   );
   if (firstDifference !== undefined) {
@@ -216,6 +217,28 @@ function assertTransportPayloadParity(baselinePayload, measuredPayload, step) {
       `Agent-task transcript step ${step.id} changed its application payload when token accounting was enabled; first_difference=${firstDifference.op}:${firstDifference.path}`,
     );
   }
+}
+
+/** Preserve recovery evidence while independently predicting the added transport flag. */
+function expectedAccountedDiagnostic(baseline, step) {
+  if (step.expected_output_kind !== "refusal" || step.expected_accounting_mode !== "self_reported") {
+    return baseline;
+  }
+  const recovery = baseline.recovery;
+  if (!Array.isArray(recovery?.normalized_args)) return baseline;
+  if (recovery.normalized_args[0] !== "--json" || recovery.provided_fields?.[0] !== "--json") {
+    fail("Agent-task diagnostic baseline must retain the independently supplied JSON transport flag");
+  }
+  const normalizedArgs = ["--json", "--token-accounting", ...recovery.normalized_args.slice(1)];
+  return {
+    ...baseline,
+    recovery: {
+      ...recovery,
+      normalized_args: normalizedArgs,
+      provided_fields: ["--json", "--token-accounting", ...recovery.provided_fields.slice(1)],
+      attempted_command: renderPmCommand(normalizedArgs),
+    },
+  };
 }
 
 /** Validate and summarize one pair of independently captured CLI transports. */
@@ -318,9 +341,7 @@ function measureTask(baselineRoot, accountedRoot, task) {
       runCli(baselineRoot, ["--json", ...step.args]),
       runCli(
         accountedRoot,
-        step.expected_accounting_mode === "self_reported"
-          ? ["--json", "--token-accounting", ...step.args]
-          : ["--json", ...step.args],
+        ["--json", "--token-accounting", ...step.args],
       ),
       step,
     );

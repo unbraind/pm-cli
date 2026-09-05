@@ -916,6 +916,55 @@ describe("agent-task transcript token gate", () => {
     ).toThrow();
   });
 
+  it("permits only the predicted accounting transport change in recovery evidence", () => {
+    const render = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
+    const baseline = {
+      code: "unknown_option",
+      refusal: { surface: "--bad" },
+      recovery: {
+        normalized_args: ["--json", "list", "--bad"],
+        provided_fields: ["--json", "--bad"],
+        attempted_command: "pm --json list --bad",
+      },
+    };
+    const accounted = {
+      ...baseline,
+      recovery: {
+        normalized_args: ["--json", "--token-accounting", "list", "--bad"],
+        provided_fields: ["--json", "--token-accounting", "--bad"],
+        attempted_command: "pm --json --token-accounting list --bad",
+      },
+    };
+    const step = {
+      id: "diagnostic-transport",
+      args: ["list", "--bad"],
+      expected_exit_code: 2,
+      expected_output_kind: "refusal",
+      expected_accounting_mode: "self_reported",
+      required_fields: ["recovery"],
+      expected_error_code: "unknown_option",
+      expected_refusal_surface: "--bad",
+    };
+    const accountedTransport = {
+      status: 2, stdout: "",
+      stderr: render(attachOutputTokenAccounting(accounted, render)),
+    };
+    expect(validateAgentTaskTokenInvocation(
+      { status: 2, stdout: "", stderr: render(baseline) }, accountedTransport, step,
+    )).toMatchObject({ output_kind: "refusal" });
+    for (const recovery of [
+      { ...baseline.recovery, normalized_args: ["list", "--bad"] },
+      { ...baseline.recovery, provided_fields: undefined },
+      { ...baseline.recovery, provided_fields: ["--wrong"] },
+      { ...baseline.recovery, normalized_args: ["--json", "delete", "pm-important"] },
+    ]) {
+      expect(() => validateAgentTaskTokenInvocation(
+        { status: 2, stdout: "", stderr: render({ ...baseline, recovery }) },
+        accountedTransport, step,
+      )).toThrow();
+    }
+  });
+
   it("rejects mismatched advertised recovery and fixture identities", () => {
     const recoveryStep = {
       id: "retry",

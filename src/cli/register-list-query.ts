@@ -1337,6 +1337,8 @@ export function registerListQueryCommands(
         "--include-decisions",
         "Include human-gated Decision items in the claimable ready queue",
       )
+      .option("--include-gates", "Include outcome gates in the ready queue")
+      .option("--include-containers", "Include containers with unfinished descendants in the ready queue")
       .option(
         "--format <value>",
         "Next output format override: markdown|toon|json",

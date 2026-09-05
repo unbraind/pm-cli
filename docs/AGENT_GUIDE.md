@@ -205,6 +205,16 @@ for the release contract.
 - Link docs back to the active item with `pm docs`.
 - Do not link public docs to ignored local operations artifacts or private evidence logs.
 
+## Scheduling and Handoff
+
+Read [SDK execution contracts](SDK_EXECUTION_CONTRACTS.md) before building an
+agent work allocator. Use `next` and `claim --next` for executable work; inspect
+`decision_needed`, `gate_needed`, and `containers` when no recommendation is
+available. Only opt into those buckets when the current task calls for them.
+Use `pause-task` to stop work; `release` alone preserves in-progress status.
+Context summary totals describe the matching population, while `returned_focus`
+describes the bounded selection.
+
 ## Safe Defaults
 
 Use these defaults unless the task requires otherwise:

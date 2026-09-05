@@ -35,6 +35,15 @@ export interface PmCommandAliasContract {
  * are intentionally absent from default help and completion discovery.
  */
 export const PM_COMMAND_ALIAS_CONTRACTS: readonly PmCommandAliasContract[] = [
+  {
+    alias: "tests",
+    canonical: "test",
+    canonical_argv: ["test"],
+    lifecycle: "permanent",
+    hidden: false,
+    registration: "bootstrap",
+    owner: "pm-u4t9gp",
+  },
   ...(
     [
       ["fetch", "get"],

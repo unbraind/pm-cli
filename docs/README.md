@@ -152,3 +152,5 @@ Public docs must not link to ignored local operations artifacts, unpublished evi
 - Prefer commands that agents can copy exactly.
 - Use `pm` item IDs as durable references when docs explain tracked work.
 - Run link/search checks before closing documentation tasks.
+
+- [SDK execution and recovery contracts](SDK_EXECUTION_CONTRACTS.md): schema-driven scheduling, handoff, and command recovery.

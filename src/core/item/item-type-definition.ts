@@ -139,6 +139,12 @@ function optionalNonEmptyString(value: string | undefined): string | undefined {
   return normalized && normalized.length > 0 ? normalized : undefined;
 }
 
+/** Validate an execution role before a settings or extension definition enters scheduling. Unknown values fail instead of silently enabling dispatch. */
+export function parseItemExecutionRole(value: unknown): ItemTypeDefinition["execution_role"] {
+  if (value === undefined || value === "agent" || value === "human" || value === "gate") return value;
+  throw new Error("Item type execution_role must be agent, human, or gate.");
+}
+
 /**
  * Normalize a full {@link ItemTypeDefinition}, returning null when the name is blank.
  *
@@ -180,6 +186,7 @@ export function normalizeItemTypeDefinition(
     name,
     description: optionalNonEmptyString(definition.description),
     default_status: optionalNonEmptyString(definition.default_status),
+    ...(definition.execution_role === undefined ? {} : { execution_role: parseItemExecutionRole(definition.execution_role) }),
     folder: optionalNonEmptyString(definition.folder),
     aliases: aliases.length > 0 ? aliases : undefined,
     required_create_fields: normalizeOptionalStringList(

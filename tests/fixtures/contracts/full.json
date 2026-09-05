@@ -1256,6 +1256,25 @@
           "registration": "commander"
         }
       ]
+    },
+    {
+      "aliases": [
+        "tests"
+      ],
+      "canonical": "test",
+      "contracts": [
+        {
+          "alias": "tests",
+          "canonical": "test",
+          "canonical_argv": [
+            "test"
+          ],
+          "hidden": false,
+          "lifecycle": "permanent",
+          "owner": "pm-u4t9gp",
+          "registration": "bootstrap"
+        }
+      ]
     }
   ],
   "command_exit_contracts": {
@@ -1621,6 +1640,9 @@
           "short": "-b"
         },
         {
+          "flag": "--text"
+        },
+        {
           "flag": "--author"
         },
         {
@@ -1891,6 +1913,12 @@
         },
         {
           "flag": "--include-decisions"
+        },
+        {
+          "flag": "--include-gates"
+        },
+        {
+          "flag": "--include-containers"
         },
         {
           "aliases": [
@@ -2225,6 +2253,10 @@
     {
       "command": "config",
       "flags": [
+        {
+          "flag": "--value",
+          "value_name": "value"
+        },
         {
           "flag": "--criterion"
         },
@@ -3952,6 +3984,18 @@
           "flag": "--add"
         },
         {
+          "flag": "--stdin"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--edit"
+        },
+        {
+          "flag": "--delete"
+        },
+        {
           "flag": "--limit"
         },
         {
@@ -4249,6 +4293,15 @@
     {
       "command": "next",
       "flags": [
+        {
+          "flag": "--include-decisions"
+        },
+        {
+          "flag": "--include-gates"
+        },
+        {
+          "flag": "--include-containers"
+        },
         {
           "flag": "--for",
           "value_name": "intent"
@@ -7230,6 +7283,9 @@
       "command": "test",
       "flags": [
         {
+          "flag": "--list"
+        },
+        {
           "flag": "--id",
           "value_name": "item-id"
         },
@@ -7743,6 +7799,34 @@
     {
       "command": "update-many",
       "flags": [
+        {
+          "flag": "--status",
+          "short": "-s"
+        },
+        {
+          "flag": "--assignee"
+        },
+        {
+          "flag": "--parent"
+        },
+        {
+          "aliases": [
+            "--blocked_by"
+          ],
+          "flag": "--blocked-by"
+        },
+        {
+          "aliases": [
+            "--blocked_reason"
+          ],
+          "flag": "--blocked-reason"
+        },
+        {
+          "aliases": [
+            "--unblock_note"
+          ],
+          "flag": "--unblock-note"
+        },
         {
           "flag": "--filter-status",
           "list": true
@@ -25240,8 +25324,16 @@
             "description": "If Available.",
             "type": "boolean"
           },
+          "includeContainers": {
+            "description": "Opt next or claim-next into containers with unfinished descendants. Blocker and ownership restrictions still apply.",
+            "type": "boolean"
+          },
           "includeDecisions": {
             "description": "Include Decisions.",
+            "type": "boolean"
+          },
+          "includeGates": {
+            "description": "Opt next or claim-next into outcome gates. Blocker and ownership restrictions still apply.",
             "type": "boolean"
           },
           "json": {
@@ -30647,8 +30739,16 @@
             "description": "Format.",
             "type": "string"
           },
+          "includeContainers": {
+            "description": "Opt next or claim-next into containers with unfinished descendants. Blocker and ownership restrictions still apply.",
+            "type": "boolean"
+          },
           "includeDecisions": {
             "description": "Include Decisions.",
+            "type": "boolean"
+          },
+          "includeGates": {
+            "description": "Opt next or claim-next into outcome gates. Blocker and ownership restrictions still apply.",
             "type": "boolean"
           },
           "json": {
@@ -33528,6 +33628,13 @@
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "list": {
+            "description": "When true, list command-specific entries without mutating state (for example linked paths for files/docs or topics for guide).",
+            "examples": [
+              true
+            ],
             "type": "boolean"
           },
           "match": {
@@ -44418,8 +44525,16 @@
             "description": "Format.",
             "type": "string"
           },
+          "includeContainers": {
+            "description": "Opt next or claim-next into containers with unfinished descendants. Blocker and ownership restrictions still apply.",
+            "type": "boolean"
+          },
           "includeDecisions": {
             "description": "Include Decisions.",
+            "type": "boolean"
+          },
+          "includeGates": {
+            "description": "Opt next or claim-next into outcome gates. Blocker and ownership restrictions still apply.",
             "type": "boolean"
           },
           "json": {
@@ -51786,6 +51901,13 @@
             "description": "Emit machine-readable JSON output.",
             "type": "boolean"
           },
+          "list": {
+            "description": "When true, list command-specific entries without mutating state (for example linked paths for files/docs or topics for guide).",
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
           "match": {
             "description": "Run only linked tests whose command or path contains this case-insensitive substring.",
             "examples": [
@@ -54957,8 +55079,16 @@
             "description": "If Available.",
             "type": "boolean"
           },
+          "includeContainers": {
+            "description": "Opt next or claim-next into containers with unfinished descendants. Blocker and ownership restrictions still apply.",
+            "type": "boolean"
+          },
           "includeDecisions": {
             "description": "Include Decisions.",
+            "type": "boolean"
+          },
+          "includeGates": {
+            "description": "Opt next or claim-next into outcome gates. Blocker and ownership restrictions still apply.",
             "type": "boolean"
           },
           "json": {
@@ -55889,10 +56019,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.11.0"
+    "x-schema-version": "4.12.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.11.0",
+  "schema_version": "4.12.0",
   "selected": {
     "action": null,
     "availability_only": false,

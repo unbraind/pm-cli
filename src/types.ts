@@ -641,6 +641,8 @@ export interface ItemTypeDefinition {
   description?: string;
   /** Status assigned to newly created items of this type when `--status` is not provided. Falls back to the workflow's open status when unset or invalid. */
   default_status?: string;
+  /** Agent work can be dispatched automatically; human work needs a decision, and gates track outcomes. Omission inherits the built-in role or defaults custom types to agent work. */
+  execution_role?: "agent" | "human" | "gate";
   /** Value that configures or reports folder for this contract. */
   folder?: string;
   /** Value that configures or reports aliases for this contract. */

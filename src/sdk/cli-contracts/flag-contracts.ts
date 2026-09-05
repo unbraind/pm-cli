@@ -123,7 +123,9 @@ export const SUBCOMMAND_GLOBAL_FLAG_CONTRACTS: CliFlagContract[] =
 /** Public contract for global flag contracts, shared by SDK and presentation-layer consumers. */
 export const GLOBAL_FLAG_CONTRACTS: CliFlagContract[] = [
   ...SUBCOMMAND_GLOBAL_FLAG_CONTRACTS,
-  { flag: "--version" },
+  { flag: "--version", value_type: "boolean" },
+  { flag: "--all", value_type: "boolean", description: "Expand root help to every command." },
+  { flag: "--explain", value_type: "boolean", description: "Expand root help with command guidance." },
 ];
 
 /** Governance-missing (GH-236) + content-field presence/absence (GH-242) selection-filter flags shared verbatim by the `list` and `search` flag tables. Module-private on purpose — spread into both tables at the same position so the published contract order is unchanged. */
@@ -326,6 +328,10 @@ export const NOTES_FLAG_CONTRACTS: CliFlagContract[] = [
 export const LEARNINGS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--id", value_name: "item-id" },
   { flag: "--add", aliases: ["--learning", "--text"] },
+  { flag: "--stdin" },
+  { flag: "--file" },
+  { flag: "--edit" },
+  { flag: "--delete" },
   { flag: "--limit" },
   { flag: "--full-history" },
   { flag: "--if-absent", value_type: "boolean" },
@@ -629,6 +635,7 @@ export const INIT_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for config flag contracts, shared by SDK and presentation-layer consumers. */
 export const CONFIG_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--value", value_name: "value" },
   { flag: "--criterion" },
   { flag: "--clear-criteria" },
   { flag: "--format" },
@@ -888,6 +895,7 @@ export const CLOSE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
 export const APPEND_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--id", value_name: "item-id" },
   { flag: "--body", short: "-b" },
+  { flag: "--text" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },
@@ -910,6 +918,8 @@ export const CLAIM_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--release" },
   { flag: "--max-attempts" },
   { flag: "--include-decisions" },
+  { flag: "--include-gates" },
+  { flag: "--include-containers" },
   { flag: "--token-budget", aliases: ["--token_budget"] },
   { flag: "--explain-ranking", aliases: ["--explain_ranking"] },
 ];
@@ -999,6 +1009,7 @@ export const REMIND_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for test flag contracts, shared by SDK and presentation-layer consumers. */
 export const TEST_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--list" },
   { flag: "--id", value_name: "item-id" },
   { flag: "--add" },
   { flag: "--add-json" },
@@ -1421,6 +1432,12 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for update many flag contracts, shared by SDK and presentation-layer consumers. */
 export const UPDATE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--status", short: "-s" },
+  { flag: "--assignee" },
+  { flag: "--parent" },
+  { flag: "--blocked-by", aliases: ["--blocked_by"] },
+  { flag: "--blocked-reason", aliases: ["--blocked_reason"] },
+  { flag: "--unblock-note", aliases: ["--unblock_note"] },
   { flag: "--filter-status", list: true },
   { flag: "--filter-type", list: true },
   { flag: "--filter-tag", list: true },
@@ -1713,6 +1730,9 @@ export const WORKSPACE_POSITION_FLAG_CONTRACTS: CliFlagContract[] = [];
 
 /** Public contract for next flag contracts, shared by SDK and presentation-layer consumers. */
 export const NEXT_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--include-decisions" },
+  { flag: "--include-gates" },
+  { flag: "--include-containers" },
   { flag: "--for", value_name: "intent" },
   { flag: "--type" },
   { flag: "--tag" },
@@ -1866,9 +1886,6 @@ const FIXED_STATUS_LIST_COMMAND_ALIASES = [
 const FIXED_STATUS_LIST_FLAG_CONTRACTS = LIST_FILTER_FLAG_CONTRACTS.filter(
   (contract) => contract.flag !== "--status" && contract.flag !== "--all",
 );
-const ALL_STATUS_LIST_FLAG_CONTRACTS = LIST_FILTER_FLAG_CONTRACTS.filter(
-  (contract) => contract.flag !== "--status",
-);
 
 function indexCliFlagContracts(
   contracts: readonly CliFlagContract[],
@@ -1932,7 +1949,7 @@ export const PM_POSITIONAL_ACTION_FLAG_CONTRACTS =
 const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
   [
     ["list", LIST_FILTER_FLAG_CONTRACTS],
-    ["list-all", ALL_STATUS_LIST_FLAG_CONTRACTS],
+    ["list-all", LIST_FILTER_FLAG_CONTRACTS],
     ...FIXED_STATUS_LIST_COMMAND_ALIASES.map(
       (command): [string, CliFlagContract[]] => [
         command,
@@ -1952,6 +1969,7 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["install", INSTALL_FLAG_CONTRACTS],
     ["upgrade", UPGRADE_FLAG_CONTRACTS],
     ["create", CREATE_FLAG_CONTRACTS],
+    ["item", []],
     ["item mutate", ITEM_MUTATE_FLAG_CONTRACTS],
     ["item complete", ITEM_COMPLETE_FLAG_CONTRACTS],
     ["item reopen", ITEM_REOPEN_FLAG_CONTRACTS],

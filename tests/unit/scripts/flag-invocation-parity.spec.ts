@@ -121,6 +121,20 @@ describe("flag invocation parity gate", () => {
     );
   });
 
+  it("rejects undeclared executable options and commands instead of dropping them", () => {
+    const program = buildCoreCommandProgram();
+    program.commands.find((command) => command.name() === "init")
+      .option("--undeclared-probe <value>");
+    program.command("undeclared-command");
+    expect(verifyCoreFlagInvocationParity({ program })).toMatchObject({
+      ok: false,
+      findings: expect.arrayContaining([
+        expect.objectContaining({ code: "undeclared_observation", command: "init", flag: "--undeclared-probe" }),
+        expect.objectContaining({ code: "missing_command_contract", command: "undeclared-command" }),
+      ]),
+    });
+  });
+
   it("reports standalone success and negative-control exit status", () => {
     const originalExitCode = process.exitCode;
     const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);

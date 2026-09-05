@@ -474,9 +474,46 @@ export function scorePmRefusalCatalogClosure(
   };
 }
 
+/** Reject unknown-command recovery that advertises only the curated command subset. */
+export function scoreUnknownCommandDiscovery(envelope) {
+  const guidance = stringArray(envelope.next_steps).join("\n");
+  const complete = guidance.includes("pm --help --all") || guidance.includes("pm guide capabilities");
+  const ok = envelope.code === "unknown_command" && complete;
+  return {
+    ok,
+    findings: ok ? [] : [{
+      code: "incomplete_command_discovery",
+      probe_id: "unknown-command-complete-discovery",
+      detail: "Unknown-command recovery must name complete command discovery.",
+    }],
+  };
+}
+
+/** Verify complete command discovery independently of injected domain fixtures. */
+export function verifyUnknownCommandDiscovery(probes, spawn, environment, injectMismatch) {
+  if (probes !== undefined) return { ok: true, findings: [] };
+  const discovery = parseProblemEnvelope(
+    runCli(spawn, ["tesst", "--json"], environment),
+  );
+  if (injectMismatch) discovery.next_steps = ["pm --help"];
+  return scoreUnknownCommandDiscovery(discovery);
+}
+
+/** Resolve the production corpus while preserving explicitly injected fixture boundaries. */
+function resolveRefusalProbeSets({ probes, grammarProbes, preflightProbes }) {
+  return {
+    closedDomainProbes: probes ?? listCoreClosedDomainContracts(),
+    // Injected domain fixtures must not silently acquire production preflights.
+    trackerPreflightProbes: preflightProbes ??
+      (probes === undefined ? listTrackerPreflightRecoveryContracts() : []),
+    grammarRefusalProbes: grammarProbes ?? defaultGrammarRefusalProbes(probes),
+  };
+}
+
 /** Execute the real core CLI refusal corpus in an isolated tracker. */
 export function verifyExecutableRefusalClosure({
   injectMismatch = false,
+  injectDiscoveryMismatch = false,
   probes,
   grammarProbes,
   preflightProbes,
@@ -487,13 +524,8 @@ export function verifyExecutableRefusalClosure({
   removeDirectory = rmSync,
   errorCodeCatalog = PM_ERROR_CODE_CATALOG,
 } = {}) {
-  const closedDomainProbes = probes ?? listCoreClosedDomainContracts();
-  // Preserve injected closed-domain-only tests: preflights default only with the production corpus.
-  const trackerPreflightProbes =
-    preflightProbes ??
-    (probes === undefined ? listTrackerPreflightRecoveryContracts() : []);
-  const grammarRefusalProbes =
-    grammarProbes ?? defaultGrammarRefusalProbes(probes);
+  const { closedDomainProbes, trackerPreflightProbes, grammarRefusalProbes } =
+    resolveRefusalProbeSets({ probes, grammarProbes, preflightProbes });
   const root = makeTemporaryDirectory(
     path.join(tmpdir(), "pm-refusal-closure-"),
   );
@@ -550,12 +582,10 @@ export function verifyExecutableRefusalClosure({
       trackerPreflightProbes,
       trackerPreflightObservations,
     );
-    const effectiveDiagnosticBaseline =
-      diagnosticBaseline ??
-      (probes === undefined ? DIAGNOSTIC_OUTPUT_BASELINE : null);
     const diagnosticOutputScore = resolveDiagnosticOutputScore(
       observations,
-      effectiveDiagnosticBaseline,
+      diagnosticBaseline,
+      probes === undefined,
     );
     const probeIds = new Set(
       [
@@ -575,7 +605,11 @@ export function verifyExecutableRefusalClosure({
     );
     const { catalogClosure, catalogRatchet, catalogRatchetFindings } =
       scorePmRefusalCatalogClosure(errorCodeCatalog);
+    const discoveryScore = verifyUnknownCommandDiscovery(
+      probes, spawn, environment, injectDiscoveryMismatch,
+    );
     const findings = [
+      ...discoveryScore.findings,
       ...closedDomainScore.findings,
       ...grammarRefusalScore.findings,
       ...trackerPreflightScore.findings,
@@ -610,6 +644,7 @@ export function verifyExecutableRefusalClosure({
       baseline_version: baseline.version,
       baseline_minimum_probe_count: baseline.minimum_probe_count,
       diagnostic_output: diagnosticOutputScore,
+      command_discovery: discoveryScore,
       catalog_closure: {
         complete: catalogClosure.ok,
         catalog_error_code_count: catalogClosure.catalog_error_code_count,
@@ -626,7 +661,8 @@ export function verifyExecutableRefusalClosure({
   }
 }
 
-function resolveDiagnosticOutputScore(observations, baseline) {
+function resolveDiagnosticOutputScore(observations, requestedBaseline, productionCorpus) {
+  const baseline = requestedBaseline ?? (productionCorpus ? DIAGNOSTIC_OUTPUT_BASELINE : null);
   if (baseline) return scoreDiagnosticOutputCorpus(observations, baseline);
   return {
     ok: true,
@@ -645,6 +681,7 @@ export function main(argv = process.argv.slice(2), options = {}) {
   const report = verifyExecutableRefusalClosure({
     ...options,
     injectMismatch: argv.includes("--inject-mismatch"),
+    injectDiscoveryMismatch: argv.includes("--inject-discovery-mismatch"),
   });
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   if (!report.ok) process.exitCode = 1;

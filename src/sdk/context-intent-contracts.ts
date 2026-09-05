@@ -675,7 +675,7 @@ const CONTEXT_INTENT_ROW_KEYS: Readonly<
   ],
   get: ["children"],
   list: ["items"],
-  next: ["ready", "decision_needed", "blocked", "held_by_others"],
+  next: ["ready", "decision_needed", "gate_needed", "containers", "blocked", "held_by_others"],
   search: ["items"],
 };
 

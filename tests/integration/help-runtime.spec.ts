@@ -221,7 +221,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(envelope.title).toContain("Unknown command beads");
       expect(envelope.exit_code).toBe(2);
       expect(envelope.examples).toBeDefined();
-      expect(envelope.examples?.[0]).toBe("pm --help");
+      expect(envelope.examples?.[0]).toBe("pm --help --all");
       expect(
         envelope.examples?.some((example) => example.includes("beads")),
       ).toBe(false);

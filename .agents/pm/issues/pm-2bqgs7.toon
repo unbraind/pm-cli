@@ -2,11 +2,13 @@ id: pm-2bqgs7
 title: "flag-invocation-parity only iterates declared flags, so 21 runtime options across 8 core commands have no flag contract"
 description: "Measured 2026-09-04 on the 2026.9.4 build by walking every option Commander registers in buildCoreCommandProgram() against the flag contract the SDK resolves for the same command. Twenty-one runtime options across eight core commands have no contract row: config --value; list-all --status; next --include-decisions; update-many --status --assignee --parent --blocked-by --blocked-reason --unblock-note plus the three snake_case aliases; append --text; merge --message --force --include-reconciled; learnings --stdin --file --edit --delete; test --list. The item command has no contract resolver at all.\n\nThe parity gate cannot see any of this by construction: verifyCoreFlagInvocationParity filters observed options to declaredFlags.has(flag) before comparing arity, so it iterates its own declared list and indexes into the runtime, the inverse of the direction that would catch drift. Consequences already visible: pm contracts --command merge --flags-only omits --message and --force even though pm merge --help documents both for reconcile; pm contracts --command learnings omits the stdin, file, edit, and delete inputs the help lists; any contract-derived validator reads a skill fence instructing pm merge reconcile --message as an unknown flag.\n\nAcceptance: the parity gate fails on any observed core option absent from the declared contract, with a negative control that seeds one undeclared option; each of the 21 options is declared or removed, with lexicon and help-token budgets re-ratcheted through governance rather than silenced; item receives a contract resolver or leaves the core program; contracts snapshot, MCP declared keys, and completion regenerate from the corrected table."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: "area:cli","area:contracts",denominator,gate,review-feedback,surface-parity
 created_at: "2026-09-04T18:24:52.349Z"
-updated_at: "2026-09-04T18:26:07.993Z"
+updated_at: "2026-09-05T04:18:36.388Z"
+closed_at: "2026-09-05T04:18:35.809Z"
+completed_at: "2026-09-05T04:18:35.809Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The parity gate fails on any observed core option absent from the declared contract with a negative control that seeds one undeclared option; Each of the 21 options is declared or removed with lexicon and help-token budgets re-ratcheted through governance rather than silenced; item receives a contract resolver or leaves the core program; Contracts snapshot, MCP declared keys, and completion regenerate from the corrected table"
@@ -16,18 +18,54 @@ confidence: high
 severity: medium
 environment: pm-cli 2026.9.4 build at 751aa44c0
 repro_steps: "Import buildCoreCommandProgram from the parity script, list each command option long name, and diff against resolveSubcommandFlagContractsForCommand plus the global flag contracts"
-expected_result: Every option the core program registers is declared in the flag contract the SDK resolves for that command
-actual_result: "21 options across config, list-all, next, update-many, append, merge, learnings, and test are undeclared and the item command has no resolver"
+resolution: "Replaced declaration-filtered flag observations with a complete runtime census, repaired missing contracts and item-root resolution, and regenerated SDK/MCP/help/completion declarations and governed budgets."
+expected_result: Every registered core option is declared; seeded undeclared options fail the parity gate.
+actual_result: "Final local delivery evidence: pnpm quality:static passed; 8420 tests in 608 files passed with exact coverage statements 62214/62214, branches 47182/47182, functions 12920/12920, lines 59840/59840. Full typecheck, all six linked PM test runs, package-first dogfood (88 commands), temporary Node and Bun manual workflows, packed npm/npx/bunx consumers, compatibility migration, package artifact, docs/skills, SDK surface and contract checks passed. Refusal corpus closes 117/117 probes with negative controls; task-token corpus completes 8/8 tasks at 12667 estimated tokens. Tracker-context 41 assertions, graph-composition 10 assertions, and record-integrity pass. GitHub security inventories and pnpm audit are zero; fresh required Sentry/telemetry gate passes. PR review, merge, and publication remain separate subsequent claims."
 affected_version: 2026.9.4
 component: "scripts/release/flag-invocation-parity, sdk/cli-contracts/flag-contracts"
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-4957pz,discovered_from,"2026-09-04T18:24:52.349Z","harness:claude-code","cli:create:dep",detected
   pm-suhxny,recurs_from,"2026-09-04T18:24:52.349Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-09-04T18:24:52.349Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-09-04T18:26:06.829Z","harness:claude-code","Duplicate check: searched flag contract drift, parity gate declared-only iteration, undeclared runtime options. Closed contract items cover semantic invocation metadata and completion generation, none the observed-versus-declared direction. Population measured by script on the 2026.9.4 build before filing."
-files[2]{path,scope,note}:
+  "2026-09-05T02:39:37.611Z","harness:codex","Delivery context: strict all-status CLI snapshot read 2638/2638 items with complete receipt, zero omissions and no unreadable documents. Reusing six canonical execution-loop owners; no new duplicate items. GitHub currently has no open PRs and zero open Dependabot/code-scanning/secret-scanning alerts; GH-1169 already links pm-u4t9gp. Only items under active implementation are claimed."
+  "2026-09-05T02:42:15.341Z","harness:codex","TDD evidence: regression first failed because undeclared command/options were silently discarded. Updated gate observes 3342 executable option occurrences across all 69 core command roots; all match declarations. Fixed canonical and alias invocation metadata and missing flag rows, including item root resolver. Nine focused tests pass. Historical merge flags already existed in this checkout and were preserved."
+  "2026-09-05T03:08:01.228Z","harness:codex",The executable flag census now keeps undeclared observations and missing command resolvers. Seeded unknown options fail the gate. Canonical declarations now include missing runtime options and bootstrap aliases.
+  "2026-09-05T03:22:17.342Z","harness:codex",Contract census now includes pre-existing undeclared flags. Canonical command budgets expand only for newly inventoried flags; historical spelling inventory remains intact. next and claim help ceilings increase by 48 and 46 estimated tokens for two explicit execution-role opt-ins. Existing append body/text conflict validation is preserved by separate canonical source options.
+  "2026-09-05T03:33:29.023Z","harness:codex","Security and dependency checks: current GitHub Dependabot, code-scanning and secret-scanning open alert inventories are empty; pnpm audit reports zero vulnerabilities across 425 total dependencies. Tracked-file credential scan and docs/skills gate pass. Live 14-day Sentry gate has zero blocking issues; required telemetry query reports 1.1 percent finish error rate and no failures lacking an error code. Final post-change operational proof remains separate."
+  "2026-09-05T04:18:35.187Z","harness:codex","Replaced declaration-filtered flag observations with a complete runtime census, repaired missing contracts and item-root resolution, and regenerated SDK/MCP/help/completion declarations and governed budgets. Final local delivery evidence: pnpm quality:static passed; 8420 tests in 608 files passed with exact coverage statements 62214/62214, branches 47182/47182, functions 12920/12920, lines 59840/59840. Full typecheck, all six linked PM test runs, package-first dogfood (88 commands), temporary Node and Bun manual workflows, packed npm/npx/bunx consumers, compatibility migration, package artifact, docs/skills, SDK surface and contract checks passed. Refusal corpus closes 117/117 probes with negative controls; task-token corpus completes 8/8 tasks at 12667 estimated tokens. Tracker-context 41 assertions, graph-composition 10 assertions, and record-integrity pass. GitHub security inventories and pnpm audit are zero; fresh required Sentry/telemetry gate passes. PR review, merge, and publication remain separate subsequent claims."
+files[11]{path,scope,note}:
+  scripts/release/flag-help-baseline.json,project,Execution contract implementation and regression evidence
   scripts/release/flag-invocation-parity.mjs,project,filters observations to declared flags before comparing
+  src/sdk/cli-contracts/completeness.ts,project,Strict executable contract regression evidence
   src/sdk/cli-contracts/flag-contracts.ts,project,declared flag tables missing 21 runtime options
+  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project,Execution contract implementation and regression evidence
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Connected SDK and CLI execution contract delivery
+  src/sdk/cli-contracts/tool-schema.ts,project,Connected SDK and CLI execution contract delivery
+  tests/fixtures/contracts/full.json,project,Execution contract implementation and regression evidence
+  tests/unit/scripts/flag-invocation-parity.spec.ts,project,Connected SDK and CLI execution contract delivery
+  tests/unit/sdk/action-schema-parity.spec.ts,project,Execution contract implementation and regression evidence
+  tests/unit/sdk/sdk-index.spec.ts,project,Execution contract implementation and regression evidence
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/flag-invocation-parity.spec.ts,project,240,"harness:codex","2026-09-05T03:08:00.080Z",local_mutation,feat/agent-context-execution-contracts
+test_runs[1]:
+  - run_id: test-local-mtnunyat-4kvmds
+    kind: test
+    status: passed
+    started_at: "2026-09-05T03:55:17.021Z"
+    finished_at: "2026-09-05T03:55:25.925Z"
+    recorded_at: "2026-09-05T03:55:25.925Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/flag-invocation-parity.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Public execution and recovery semantics
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project,Generated finite command vocabulary budget
+  docs/README.md,project,Public execution and recovery semantics
+  docs/SDK_EXECUTION_CONTRACTS.md,project,Public execution and recovery semantics
+close_reason: Connected SDK/CLI implementation and regression evidence complete; landing through the combined reviewed delivery.
 escape_class: review_caught_late
 body: ""
