@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- Windows published-release verifier test can preempt its own readiness and cleanup contract ([pm-euqm7x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-euqm7x.toon))
 - pm next recommends outcome-milestone gates as actionable work, and summary.containers counts a bucket the envelope never emits ([pm-08mt4k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-08mt4k.toon))
+- Windows published-release verifier test can preempt its own readiness and cleanup contract ([pm-euqm7x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-euqm7x.toon))
 - Commander usage refusals omit token_accounting even when --token-accounting is parsed ([pm-bfa1ob](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bfa1ob.toon))
 - flag-invocation-parity only iterates declared flags, so 21 runtime options across 8 core commands have no flag contract ([pm-2bqgs7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2bqgs7.toon))
 - pm release leaves the item in_progress with no owner: offer --status open (or hint) so released work does not linger as phantom WIP ([pm-ugld](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ugld.toon))
