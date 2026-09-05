@@ -4,6 +4,7 @@
  * Resolves the host pm SDK runtime and exposes the typed subset consumed by
  * the governance-audit package without copying core command implementations.
  */
+export { SETTINGS_DEFAULTS, parseStatusFilterCsv } from "@unbrained/pm-cli/sdk";
 import * as runtime from "@unbrained/pm-cli/sdk/runtime";
 
 /** Host SDK values used by package-owned audit commands and runtime decorators. */

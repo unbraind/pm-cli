@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: code-quality,codefactor,tech-debt
 created_at: "2026-06-26T13:29:14.359Z"
-updated_at: "2026-08-22T07:28:14.451Z"
+updated_at: "2026-09-05T16:51:58.156Z"
 author: claude-code-agent
 estimated_minutes: 600
 acceptance_criteria: "CodeFactor overall repository grade reaches A+ (or the highest attainable) on branch main; CodeFactor reports 0 outstanding issues across Complexity, Maintainability, and Duplication; local lint/quality parity tooling exists so findings can be reproduced and kept at zero (no regressions on new PRs)."
@@ -22,7 +22,7 @@ dependencies[4]{id,kind,created_at}:
   pm-rtn5h6,related,"2026-07-24T23:54:53.339Z"
   pm-zclzll,related,"2026-07-24T23:54:53.339Z"
   pm-xp1xsw,implements,"2026-07-26T05:49:02.336Z"
-comments[184]{created_at,author,text}:
+comments[185]{created_at,author,text}:
   "2026-06-26T15:46:30.976Z",codex-gpt5,"Progress update: live CodeFactor for main still reports 255 issues until this branch lands (83 maintainability, 152 complexity, 20 duplication). This branch completes the maintainability groups tracked by pm-xsth, pm-m8yl, and pm-x878/Codecov; complexity pm-arzz and duplication pm-fmjy remain open for dedicated refactor follow-up."
   "2026-06-26T18:50:54.481Z",codex-codefactor-sdk-cli-20260626,"Investigation note: live 2026-06-26 CodeFactor public issues page reports A rating, 601 analyzed files, 172 issues after the merged maintainability branch; PM snapshot still tracks remaining complexity and duplication children. GitHub state: no open PRs, no open Dependabot or code-scanning alerts; issue #374 remains open and externally blocked on missing RELEASE_PAT in release environment; pnpm audit --audit-level moderate reports no known vulnerabilities. Dependency drift from pnpm outdated: @sentry/cli 3.5.1 -> 3.6.0, @sentry/node 10.61.0 -> 10.62.0, @types/node held at Node 22 types despite latest 26.x."
   "2026-06-26T19:05:47.605Z",codex-codefactor-sdk-cli-20260626,"Evidence update: CodeFactor remediation bundle now covers the remaining duplication primitives and generated/test analysis scope. Verification passed: pnpm build; targeted 254-test suite; pnpm contracts:check; pnpm quality:static; pnpm typecheck; pnpm security:scan; full coverage 100/100/100/100 across 5133 tests; manual isolated temp-project smoke with PM_PATH/PM_GLOBAL_PATH passed package install/doctor and shared unset behavior. Remaining release issue #374 is external to code changes: GitHub scheduled Auto Release requires RELEASE_PAT in the release environment."
@@ -207,6 +207,7 @@ comments[184]{created_at,author,text}:
   "2026-08-13T00:01:41.805Z","harness:codex","Implementation PR: https://github.com/unbraind/pm-cli/pull/992 — policy-cleared TypeScript-ESLint refresh and exact quality evidence."
   "2026-08-13T00:24:14.078Z","harness:codex","Correction: hosted review verified typescript-eslint 8.67.0 was published 2026-08-10T17:22:44.231Z, so the 72-hour cutoff is 2026-08-13T17:22:44.231Z. Earlier comments incorrectly treated it as eligible. This append-only correction supersedes those claims; the dependency is being reverted to 8.66.0 until the policy window actually clears."
   "2026-08-13T01:01:50.082Z","harness:codex","Correction completed: typescript-eslint and its lock graph are restored to 8.66.0 because 8.67.0 had not satisfied the 72-hour dependency-age policy. Full lint and exact coverage remain green after rollback; no premature dependency update ships in PR #992."
+  "2026-09-05T16:51:56.709Z","harness:codex","Linked-file maintenance for pm-zw9188: migrated active source references using verified rename ancestry in a5be2cda3 (98-99% similarity), retaining link notes and scope. This corrects context navigation only; feature status and remaining acceptance criteria are unchanged."
 notes[2]{created_at,author,text}:
   "2026-07-02T08:14:23.356Z",claude-code-agent,"2026-07-02 pm-chxp/PR#415 merged (17798d15): duplication leg complete — pnpm lint:duplicates now 0 clones repo-wide (was 24). Complexity suppressions already 0 (PR#413/#414). Remaining for A+: await CodeFactor re-analysis of main; verify grade at https://www.codefactor.io/repository/github/unbraind/pm-cli — if findings persist they are in generated runtime-loaders (excluded-by-design candidates via .codefactor.yml)."
   "2026-07-12T07:36:46.400Z",maintainer-agent,"Gate-calibration discovery (2026-07-12, GH-518/pm-2gvp): CodeFactor's \"Complex Method\" detector is NESTING-WEIGHTED, not plain cyclomatic. Evidence: it flagged renderNextMarkdown (cyclomatic 14, cognitive 22) while never flagging runNext in the same file (cyclomatic 16, cognitive 5 — flat early-return style). The old `complexity max 17` gate was calibrated to a \"CC>=18\" assumption and was structurally blind to this class. Fix: twin ceilings — complexity max 16 + sonarjs/cognitive-complexity max 16 (user policy: nothing over 16 on either metric); 76 pre-existing violations grandfathered (suppressions 104->180, budget re-pinned, burn-down = pm-j8vq). Any future CodeFactor Complex Method finding on code that passes both ceilings means the calibration needs ANOTHER metric — re-derive from the flagged function's scores, do not bump thresholds blindly."
@@ -243,10 +244,8 @@ files[160]{path,scope,note}:
   src/cli/commander-usage.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/activity.ts,project,split activity collection and compact formatting to remove remaining shipped complexity hotspot
   src/cli/commands/aggregate.ts,project,split aggregate accumulation and filter assembly helpers to reduce complexity
-  src/cli/commands/calendar.ts,project,remaining complexity hotspot refactor target
   src/cli/commands/close-many.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/close.ts,project,complexity sweep zero ESLint complexity findings
-  src/cli/commands/completion.ts,project,deduplicates zsh completion filter and mutation argument script generation
   src/cli/commands/config.ts,project,reuse shared canonical config key type
   src/cli/commands/context.ts,project,split context rendering and section aggregation helpers to reduce complexity
   src/cli/commands/contracts.ts,project,split contracts runtime/schema/action shaping and extension schema branch helpers
@@ -259,17 +258,12 @@ files[160]{path,scope,note}:
   src/cli/commands/history-repair.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/init-agent-guidance.ts,project,splits init agent guidance control flow below CodeFactor complexity threshold
   src/cli/commands/init.ts,project,complexity sweep zero ESLint complexity findings
-  src/cli/commands/legacy-none-tokens.ts,project,share legacy none/null collection normalization across create and update
   src/cli/commands/list.ts,project,reuse shared item filter option contract for list options
-  src/cli/commands/mutation-command-options.ts,project,shared create/update mutation option contract removes duplicated option declarations
   src/cli/commands/next.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/plan.ts,project,split plan dispatch and materialize helpers to reduce complexity
-  src/cli/commands/recurrence-parsers.ts,project,complexity sweep zero ESLint complexity findings
-  src/cli/commands/reindex.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/restore.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/schema.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/search.ts,project,reuse shared item filter option contract for search options
-  src/cli/commands/shared-unset-fields.ts,project,share runtime schema unset token lookup
   src/cli/commands/telemetry.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/test-all.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/test.ts,project,report linked-test duplicate add/remove no-ops without misleading history writes
@@ -304,10 +298,17 @@ files[160]{path,scope,note}:
   src/sdk/cli-contracts/flag-contracts.ts,project,Expose docs/files missing aliases in SDK CLI flag contracts
   src/sdk/cli-contracts/tool-option-contracts.ts,project,deduplicate SDK tool option contract groups while preserving generated contract snapshot
   src/sdk/cli-contracts/tool-schema.ts,project,deduplicates extension/package managed option schemas
+  src/sdk/completion.ts,project,deduplicates zsh completion filter and mutation argument script generation
   src/sdk/eval.ts,project,Review fix preserves empty fail-under as an omitted SDK eval threshold
   src/sdk/extension/doctor.ts,project,Relocated from src/cli/commands/extension/doctor.ts
+  src/sdk/governance/reindex.ts,project,complexity sweep zero ESLint complexity findings
   src/sdk/index.ts,project,Remove duplicate public barrel export paths reported by hosted DeepSource
+  src/sdk/lifecycle/legacy-none-tokens.ts,project,share legacy none/null collection normalization across create and update
+  src/sdk/lifecycle/mutation-command-options.ts,project,shared create/update mutation option contract removes duplicated option declarations
+  src/sdk/lifecycle/recurrence-parsers.ts,project,complexity sweep zero ESLint complexity findings
+  src/sdk/lifecycle/shared-unset-fields.ts,project,share runtime schema unset token lookup
   src/sdk/package-import-adapters.ts,project,adds shared SDK import coercion primitives for package authors
+  src/sdk/query/calendar.ts,project,remaining complexity hotspot refactor target
   src/sdk/query/item-filter-options.ts,project,Relocated from src/cli/commands/item-filter-options.ts
   src/sdk/query/list.ts,project,Reshape exported query-filter primitives to satisfy hosted analyzer without weakening contracts
   src/sdk/runtime.ts,project,exports SDK import adapter primitives from runtime barrel

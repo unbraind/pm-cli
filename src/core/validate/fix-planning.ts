@@ -232,7 +232,7 @@ export interface StaleLinkPruneRow {
   /** Value that configures or reports link kind for this contract. */
   link_kind: "files" | "docs";
   /** Value that configures or reports classification for this contract. */
-  classification: "moved" | "deleted";
+  classification: "moved" | "deleted" | "malformed";
 }
 
 /** Plan link prunes for `--prune-missing` (pm-0v2m / GH-184). Only links whose stale path classified as `deleted` are pruned; `moved` links keep their relink candidates in the files-check details instead of being dropped, so recoverable link information is never destroyed. Link removal only — real files are never touched. */

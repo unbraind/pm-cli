@@ -25,6 +25,7 @@ import {
   DEFAULT_VALIDATE_STALE_BLOCKER_REASON_PATTERNS,
   EXIT_CODE,
   PM_DIRNAME,
+  SETTINGS_DEFAULTS,
 } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -68,8 +69,6 @@ import {
 } from "../../core/validate/stale-file-classification.js";
 import { isRemoteLinkedArtifactReference } from "../../core/validate/linked-artifact-reference.js";
 import {
-  buildMissingLinkedPathRows,
-  summarizeMissingLinkedPathRows,
   type StaleLinkOwnerInput,
 } from "../../core/validate/missing-link-owners.js";
 import type {
@@ -92,6 +91,7 @@ import {
   inspectMergeReceiptEvidence,
   partitionMergeReceipts,
 } from "../merge/receipts.js";
+import { buildLinkedFileRepairReport } from "./linked-file-report.js";
 import { scanStorageIntegrity } from "./storage-integrity.js";
 import { scanTrackedRuntimeCache } from "./tracked-runtime-cache.js";
 import { scanHistoryAuthorAttribution } from "../author-attribution.js";
@@ -436,12 +436,13 @@ export interface ValidateCountsResult extends Omit<ValidateResult, "fixes"> {
   fixes?: ValidateCountsFixesSummary;
 }
 
+/** Recursively omit diagnostic arrays and false truncation markers while preserving zero counts and ordinary false values. */
 function projectValidateCountsRecord(
   record: Readonly<Record<string, unknown>>,
 ): Record<string, unknown> {
   const projected: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(record)) {
-    if (Array.isArray(value)) {
+    if (Array.isArray(value) || (value === false && key.endsWith("_truncated"))) {
       continue;
     }
     projected[key] =
@@ -456,7 +457,9 @@ function projectValidateCountsRecord(
  * Build the counts-only validate projection without mutating the full result.
  * The check envelope and warning codes remain available for gates, while every
  * per-item diagnostic/fix array is removed recursively and scalar counts,
- * totals, statuses, and truncation markers are preserved.
+ * totals, statuses, and true truncation markers are preserved. False truncation
+ * markers are omitted; this sparse convention does not suppress other false or
+ * zero values, and the projection receipt still declares omitted diagnostic rows.
  */
 export function projectValidateCounts(
   result: ValidateResult,
@@ -2651,6 +2654,7 @@ function buildLifecycleCheck(
 /* c8 ignore stop */
 
 /* c8 ignore start -- files-check candidate filtering/classification permutations are covered by file-audit integration suites */
+/** Join live filesystem evidence with holder lifecycle, retaining historical rows while warning only on active missing links. */
 async function buildFilesCheck(
   items: ItemWithBody[],
   workspaceRoot: string,
@@ -2658,6 +2662,7 @@ async function buildFilesCheck(
   fileScanMode: ValidateFileScanMode,
   includePmInternals: boolean,
   verboseFileLists: boolean,
+  statusRegistry: RuntimeStatusRegistry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema),
 ): Promise<{
   check: ValidateCheck;
   warnings: string[];
@@ -2716,11 +2721,6 @@ async function buildFilesCheck(
   if (partition.strictModeForcesPmInternals) {
     warnings.push("validate_files_tracked_all_strict_forces_pm_internals");
   }
-  if (uniqueMissingLinkedPaths.length > 0) {
-    warnings.push(
-      `validate_files_missing_linked_paths:${uniqueMissingLinkedPaths.length}`,
-    );
-  }
   if (orphanedFiles.length > 0) {
     warnings.push(`validate_files_orphaned_paths:${orphanedFiles.length}`);
   }
@@ -2751,31 +2751,17 @@ async function buildFilesCheck(
     summarizeStaleLinkedPathClassifications(classifiedStalePaths),
     verboseFileLists,
   );
-  // Owner attribution for missing linked paths (GH-210): per-path rows naming
-  // the owning item(s) so cleanup is evidence-based instead of requiring a
-  // reverse lookup. Full structured objects under --verbose-file-lists; compact
-  // `path:classification owner=… field=…` one-liners (capped) otherwise — same
-  // full/summary split as the other file-check lists (file_list_detail_mode).
-  const missingLinkedPathRows: StaleLinkOwnerInput[] = staleLinkPruneRows.map(
-    (row) => ({
-      item_id: row.item_id,
-      path: row.path,
-      link_kind: row.link_kind,
-      classification: row.classification,
-    }),
+  const missingLinkedPathRows: StaleLinkOwnerInput[] = staleLinkPruneRows;
+  const repairReport = buildLinkedFileRepairReport(
+    missingLinkedPathRows,
+    classifiedStalePaths,
+    (id) => itemsById.get(id),
+    statusRegistry,
+    verboseFileLists ? Infinity : FILE_LIST_SUMMARY_LIMIT,
   );
-  const ownerRows = buildMissingLinkedPathRows(missingLinkedPathRows, (id) => {
-    const owner = itemsById.get(id);
-    return owner
-      ? { type: owner.type, title: owner.title, status: owner.status }
-      : undefined;
-  });
-  // Default to token-efficient compact one-liners; expose the full structured
-  // rows (the GH-210 JSON shape) under --verbose-file-lists.
-  const ownerRowDetail = verboseFileLists
-    ? ownerRows
-    : summarizeFileList(summarizeMissingLinkedPathRows(ownerRows), false)
-        .values;
+  if (repairReport.active_missing_linked_paths_count > 0) {
+    warnings.push(`validate_files_missing_linked_paths:${repairReport.active_missing_linked_paths_count}`);
+  }
 
   return {
     check: {
@@ -2817,12 +2803,13 @@ async function buildFilesCheck(
         missing_linked_paths_truncated: summarizedMissing.truncated,
         missing_linked_paths_moved_count: movedStalePathCount,
         missing_linked_paths_deleted_count:
-          uniqueMissingLinkedPaths.length - movedStalePathCount,
+          classifiedStalePaths.filter((entry) => entry.classification === "deleted").length,
+        missing_linked_paths_malformed_count:
+          classifiedStalePaths.filter((entry) => entry.classification === "malformed").length,
         missing_linked_path_classifications: summarizedClassifications.values,
         missing_linked_path_classifications_truncated:
           summarizedClassifications.truncated,
-        missing_linked_path_rows_count: ownerRows.length,
-        missing_linked_path_rows: ownerRowDetail,
+        ...repairReport,
         orphaned_paths_count: orphanedFiles.length,
         orphaned_paths_total: summarizedOrphaned.total,
         orphaned_paths: summarizedOrphaned.values,
@@ -3380,6 +3367,7 @@ function recordValidateCheck(
   state.warnings.push(...built.warnings);
 }
 
+/** Run only selected checks against one resolved workspace context and collect their typed remediation evidence. */
 async function executeRequestedValidateChecks(params: {
   requestedChecks: Set<ValidateCheckName>;
   options: ValidateCommandOptions;
@@ -3462,6 +3450,7 @@ async function executeRequestedValidateChecks(params: {
       params.fileScanMode,
       Boolean(params.options.includePmInternals),
       Boolean(params.options.verboseFileLists),
+      params.statusRegistry,
     );
     state.staleLinkPruneRows = built.staleLinkPruneRows;
     recordValidateCheck(state, built, fixHintsEnabled);

@@ -86,7 +86,7 @@ describe("self-parent guard", () => {
       const loaded = context.runCli(["get", "pm-cli-update-child", "--json"], { expectJson: true });
       expect(loaded.code).toBe(0);
       const payload = JSON.parse(loaded.stdout) as { item?: { parent?: string } };
-      expect(payload.item?.parent).toBe("cli-update-parent");
+      expect(payload.item?.parent).toBe("pm-cli-update-parent");
     });
   });
 });

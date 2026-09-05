@@ -73,6 +73,10 @@ it("projects validation results to scalar counts without diagnostic row arrays",
         status: "warn",
         details: {
           count: 2,
+          complete_truncated: false,
+          partial_truncated: true,
+          enabled: false,
+          zero_count: 0,
           counts: { missing_author: 2 },
           missing_author_item_ids: ["pm-1", "pm-2"],
           nested: { total: 2, rows: [{ id: "pm-1" }] },
@@ -106,6 +110,9 @@ it("projects validation results to scalar counts without diagnostic row arrays",
 
   expect(projected.checks[0]?.details).toEqual({
     count: 2,
+    partial_truncated: true,
+    enabled: false,
+    zero_count: 0,
     counts: { missing_author: 2 },
     nested: { total: 2 },
   });
@@ -3980,21 +3987,22 @@ describe("runValidate", () => {
       expect(linked.code).toBe(0);
       await rm(stalePath, { force: true });
 
-      // Default: token-efficient compact one-liners naming the owner.
+      // Default and verbose modes share the same typed owner worklist.
       const compact = await runValidate(
         { checkFiles: true },
         { path: context.pmPath },
       );
       const compactDetails = checkByName(compact, "files").details as {
         missing_linked_path_rows_count: number;
-        missing_linked_path_rows: string[];
+        missing_linked_path_rows: Array<Record<string, unknown>>;
       };
       expect(compactDetails.missing_linked_path_rows_count).toBe(1);
-      expect(compactDetails.missing_linked_path_rows[0]).toBe(
-        `goes-away.txt:deleted owner=${id} status=open field=files title="owns-a-stale-link"`,
-      );
+      expect(compactDetails.missing_linked_path_rows[0]).toMatchObject({
+        path: "goes-away.txt", classification: "deleted",
+        items: [{ id, status: "open", field: "files", title: "owns-a-stale-link" }],
+      });
 
-      // Verbose: full structured rows (the GH-210 JSON shape).
+      // Verbose restores all rows without changing their schema.
       const verbose = await runValidate(
         { checkFiles: true, verboseFileLists: true },
         { path: context.pmPath },
@@ -4012,10 +4020,13 @@ describe("runValidate", () => {
           }>;
         }>;
       };
+      expect(verboseDetails.missing_linked_path_rows).toEqual(compactDetails.missing_linked_path_rows);
       expect(verboseDetails.missing_linked_path_rows).toEqual([
         {
           path: "goes-away.txt",
           classification: "deleted",
+          candidates: [], candidates_truncated: false,
+          link_count: 1, active_link_count: 1, items_truncated: false,
           items: [
             {
               id,

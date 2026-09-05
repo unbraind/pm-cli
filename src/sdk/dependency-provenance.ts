@@ -217,8 +217,23 @@ export function normalizeDependencySeedId(
   prefix: string,
   sourceKind: string | undefined,
 ): string {
-  const trimmed = id.trim();
-  return isExternalDependencySourceKind(sourceKind)
+  return normalizeItemReference(id, prefix, sourceKind);
+}
+
+/**
+ * Canonicalize a local relationship target using the workspace prefix. Explicit
+ * provider locators and externally sourced identities retain case and spelling;
+ * only surrounding whitespace is removed. Resolution and parent policy remain
+ * the caller's responsibility, so dangling local ids are never guessed remote.
+ */
+export function normalizeItemReference(
+  reference: string,
+  prefix: string,
+  sourceKind?: string,
+): string {
+  const trimmed = reference.trim();
+  return isExternalDependencySourceKind(sourceKind) ||
+    isExternalDependencyReference(trimmed)
     ? trimmed
     : normalizeItemId(trimmed, prefix);
 }

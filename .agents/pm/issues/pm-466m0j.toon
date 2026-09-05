@@ -1,0 +1,42 @@
+id: pm-466m0j
+title: "GH-1202: Classify abandoned merge receipts without losing durable provenance"
+description: Reproduce receipt lifecycle after an aborted rebase and distinguish an abandoned candidate from a merge requiring review. Current source and Merge Safety documentation intentionally track privacy-safe durable sidecars; raw free-form retained/discarded values are clone-local under .git. Durable receipts retain hashes and only allowlisted low-cardinality scalar previews. The report has not demonstrated a secret leak. A blanket gitignore or evidence deletion would break cross-clone provenance and is not an accepted remedy.
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-09-05T19:06:20.194Z"
+updated_at: "2026-09-05T19:12:54.278Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "An actual conflicting rebase followed by abort has deterministic receipt classification and a supported recovery path; Recovery preserves immutable evidence and cannot dismiss an applied merge merely because a later snapshot differs; Fresh-clone tests prove tracked sidecars never contain arbitrary descriptions, acceptance text, or custom status values; CLI guidance clearly distinguishes clone-local raw receipts from intentionally tracked durable sidecars"
+value: Reduce recovery ambiguity and preserve trustworthy project context for agents
+outcome: A reproducible SDK contract with actionable CLI recovery and regression evidence
+why_now: New user report GH-1202 during PR #1204 final integration
+parent: pm-dj98
+risk: high
+confidence: medium
+severity: high
+affected_version: 2026.9.5
+component: sdk/merge
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2xtv84,discovered_from,"2026-09-05T19:06:20.194Z","harness:codex","cli:create:dep",detected
+  pm-baksix,discovered_from,"2026-09-05T19:06:20.194Z","harness:codex","cli:create:dep",detected
+  pm-dj98,implements,"2026-09-05T19:06:20.194Z","harness:codex","cli:create:dep",detected
+  pm-mg13iz,verifies,"2026-09-05T19:06:20.194Z","harness:codex","cli:create:dep",detected
+comments[2]:
+  - created_at: "2026-09-05T19:06:20.194Z"
+    author: "harness:codex"
+    text: "Duplicate-check evidence: strict complete all-status corpus contained 2642 items, including terminal history; exact GitHub issue URL was absent. Request-specific search and current open/in_progress inventories were read. Full live predecessor pm-baksix and parent pm-dj98 metadata plus verified history were inspected. This report extends a distinct boundary beyond the closed predecessor and is not a duplicate. Intake remains open and unclaimed."
+    edited_at: "2026-09-05T19:12:54.278Z"
+  - created_at: "2026-09-05T19:10:53.397Z"
+    author: "harness:codex"
+    text: "Intake evidence: GitHub issue #1202 now links this canonical owner through a public comment. The external URL remains in the report body; its redundant graph endpoint was removed because a provider URL without project lifecycle metadata creates an untyped active leaf. Local implements, discovered_from, and applicable verifies edges preserve the actual work lineage. Status remains open and unclaimed."
+notes[1]{created_at,author,text}:
+  "2026-09-05T19:06:20.194Z","harness:codex",Reproduce receipt lifecycle after an aborted rebase and distinguish an abandoned candidate from a merge requiring review. Current source and Merge Safety documentation intentionally track privacy-safe durable sidecars; raw free-form retained/discarded values are clone-local under .git. Durable receipts retain hashes and only allowlisted low-cardinality scalar previews. The report has not demonstrated a secret leak. A blanket gitignore or evidence deletion would break cross-clone provenance and is not an accepted remedy.
+files[2]{path,scope,note}:
+  src/sdk/merge/receipts.ts,project,Existing implementation boundary to reproduce and improve
+  tests/unit/sdk/merge-receipts.spec.ts,project,Existing regression suite to extend; no new regression is claimed
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,Existing public contract to preserve and clarify
+body: "## Report and scope\n\nSource: https://github.com/unbraind/pm-cli/issues/1202\n\nReproduce receipt lifecycle after an aborted rebase and distinguish an abandoned candidate from a merge requiring review. Current source and Merge Safety documentation intentionally track privacy-safe durable sidecars; raw free-form retained/discarded values are clone-local under .git. Durable receipts retain hashes and only allowlisted low-cardinality scalar previews. The report has not demonstrated a secret leak. A blanket gitignore or evidence deletion would break cross-clone provenance and is not an accepted remedy.\n\n## Reported reproduction\n\n## Two defects, one reproduction\n\nRunning `git rebase`, hitting a conflict, and running `git rebase --abort` leaves behind merge-receipt state that outlives the operation it describes.\n\n## 1. The receipt survives the abort\n\nAfter `git rebase --abort`, the working tree is clean and the item is byte-identical to `HEAD`:\n\n```\n$ git diff --quiet HEAD -- .agents/pm/issues/pm-cli-website-nc0j.toon && echo identical\nidentical\n```\n\nNo merge landed. But a `state: \"pending\"` receipt persists, recording three conflicting fields (`acceptance_criteria`, `description`, `status`) with full `retained`/`discarded` values, and it is enough to fail the gate:\n\n```\n$ pm health --check-only\nok: False\nfailed_because: ['merge_decisions_unreviewed:1', 'merge_receipt_evidence_invalid:1']\n```\n\nSo an abandoned operation leaves a repository permanently red on a decision the operator explicitly abandoned. A receipt describes a merge that exists in no history and no working tree.\n\nExpected: receipts written by a merge driver during an operation that is subsequently aborted should not remain pending — either tied to the resulting commit, or discarded with the rest of the aborted state.\n\n## 2. The working-tree copy is not gitignored\n\nThe driver writes a second copy into the working tree, and it is untracked but **not ignored**:\n\n```\n$ git status --porcelain\n?? .agents/pm/merge-receipts/f9067de4-bc6c-477a-99de-c415951b2064.json\n\n$ git check-ignore -v .agents/pm/merge-receipts/f9067de4-...json\n(no match — not ignored)\n```\n\nThis is not a stale-template problem. A **fresh `pm init` on 2026.9.5** writes:\n\n```\n.agents/pm/runtime/\n.agents/pm/search/*\n.agents/pm/locks/\n.agents/pm/transactions/\n.agents/pm/checkpoints/\n!.agents/pm/search/eval-queries.json\n```\n\n`merge-receipts/` is absent. Checked across four independent repositories including a newly initialised one: zero have it ignored.\n\n### Why this matters\n\nThe documented convention for these trackers is to commit `.agents/pm/**` — every `.toon` together with its `history/*.jsonl`. An agent doing that with `git add -A` also commits the receipts. That:\n\n- publishes receipt bodies containing the **full retained and discarded text** of every conflicting field, into repositories that may be public, and\n- converts evidence the design treats as clone-local into tracked state, which changes what `merge_receipt_evidence_*` and the `tracked_runtime_cache_files` check mean. There is a guard for tracked runtime cache; there is none for tracked receipts.\n\nExpected: `pm init` ignores `.agents/pm/merge-receipts/` alongside `runtime/`, `locks/`, `transactions/` and `checkpoints/`, and existing repositories get the entry on the next write to that directory. If receipts are instead *meant* to be committed, then the health check that treats them as clone-local evidence and the `pm init` template disagree, and the intended contract should be stated.\n\n## Environment\n\n@unbrained/pm-cli 2026.9.4 (writer) and 2026.9.5 (reader and `pm init` probe), Linux, Node 22.\n\n## Delivery boundary\n\nIntake only in PR #1204. This item remains open and unclaimed; no implementation or reproduction success is asserted. Implement through the public SDK with thin CLI adapters and executable negative controls before closing."

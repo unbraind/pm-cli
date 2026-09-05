@@ -1,3 +1,7 @@
+import type * as FsPromises from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
+import type { Stats } from "node:fs";
+import type * as ReleaseUtils from "../../../../scripts/release/utils.mjs";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../../helpers/scriptModule";
@@ -91,9 +95,10 @@ type DocsModule = {
   main: () => Promise<void>;
 };
 
+/** Replace process exit with an assertion-visible error while retaining real release utility behavior. */
 function mockUtils(): void {
   vi.doMock("../../../../scripts/release/utils.mjs", async () => {
-    const actual = await vi.importActual<typeof import("../../../../scripts/release/utils.mjs")>(
+    const actual = await vi.importActual<typeof ReleaseUtils>(
       "../../../../scripts/release/utils.mjs",
     );
     return {
@@ -105,9 +110,10 @@ function mockUtils(): void {
   });
 }
 
+/** Inject command results into the gate harness while keeping failure diagnostics observable. */
 function mockUtilsWithRun(runCommand: ReturnType<typeof vi.fn>): void {
   vi.doMock("../../../../scripts/release/utils.mjs", async () => {
-    const actual = await vi.importActual<typeof import("../../../../scripts/release/utils.mjs")>(
+    const actual = await vi.importActual<typeof ReleaseUtils>(
       "../../../../scripts/release/utils.mjs",
     );
     return {
@@ -120,16 +126,24 @@ function mockUtilsWithRun(runCommand: ReturnType<typeof vi.fn>): void {
   });
 }
 
-function mockFsPromises(impl: Partial<typeof import("node:fs/promises")>): void {
+/** Isolate the exception registry consistently and delegate every other read to the supplied or real filesystem. */
+function mockFsPromises(impl: Partial<typeof FsPromises>): void {
   vi.doMock("node:fs/promises", async () => {
-    const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
-    return { ...actual, ...impl };
+    const actual = await vi.importActual<typeof FsPromises>("node:fs/promises");
+    return {
+      ...actual, ...impl,
+      readFile: vi.fn(async (...args: Parameters<typeof actual.readFile>) => {
+        if (String(args[0]).endsWith("docs-reachability-exceptions.json")) return "{}";
+        return (impl.readFile ?? actual.readFile)(...args);
+      }),
+    };
   });
 }
 
 // Mocks runCommand (passing contracts + empty guide index) and node:fs/promises
 // (valid skills, docs with the required guide markers) so `main` in full mode
 // takes the all-green path; the caller only picks the output mode to assert.
+/** Provide a complete minimal runtime and filesystem fixture for full-mode orchestration assertions. */
 function mockFullModePassingEnvironment(): void {
   const runCommand = vi.fn((command: string, args: string[]) => {
     if (args.includes("--flags-only")) {
@@ -172,7 +186,7 @@ function mockFullModePassingEnvironment(): void {
       }
       return "# Title\npm guide\npm package install guide-shell";
     }) as never,
-    stat: vi.fn(async () => ({ isFile: () => true }) as unknown as import("node:fs").Stats) as never,
+    stat: vi.fn(async () => ({ isFile: () => true }) as unknown as Stats) as never,
   });
 }
 
@@ -305,10 +319,10 @@ describe("docs-skills-gate", () => {
         stat: vi.fn(async (p: string) => {
           const s = String(p);
           if (s.endsWith("present.md")) {
-            return { isFile: () => true } as unknown as import("node:fs").Stats;
+            return { isFile: () => true } as unknown as Stats;
           }
           if (s.endsWith("adir")) {
-            return { isFile: () => false } as unknown as import("node:fs").Stats;
+            return { isFile: () => false } as unknown as Stats;
           }
           if (s.endsWith("missing.md")) {
             throw Object.assign(new Error("nope"), { code: "ENOENT" });
@@ -332,7 +346,7 @@ describe("docs-skills-gate", () => {
       mockFsPromises({
         stat: vi.fn(async (p: string) => {
           if (String(p).endsWith("ok.md")) {
-            return { isFile: () => true } as unknown as import("node:fs").Stats;
+            return { isFile: () => true } as unknown as Stats;
           }
           throw Object.assign(new Error("nope"), { code: "ENOENT" });
         }) as never,
@@ -369,7 +383,7 @@ describe("docs-skills-gate", () => {
           const s = String(p);
           if (s.endsWith("SKILL.md")) return "[skbroken](./gone.md)\n[nulltarget](<>)";
           if (s.endsWith("README.md")) return "[broken](./missing.md)\n[nulltarget](<>)";
-          if (s.endsWith("page.md")) return "[ok](./present.md)";
+          if (s.endsWith("page.md")) return "[ok](./present.md)\n[malformed](%zz.md)";
           return "";
         }) as never,
         stat: vi.fn(async (p: string) => {
@@ -377,7 +391,7 @@ describe("docs-skills-gate", () => {
           if (s.endsWith("missing.md") || s.endsWith("gone.md")) {
             throw Object.assign(new Error("nope"), { code: "ENOENT" });
           }
-          return { isFile: () => true } as unknown as import("node:fs").Stats;
+          return { isFile: () => true } as unknown as Stats;
         }) as never,
       });
       const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
@@ -389,6 +403,7 @@ describe("docs-skills-gate", () => {
       const failures: string[] = [];
       await mod.validateDocsLinks(failures);
       expect(failures.some((f) => f.includes("missing.md"))).toBe(true);
+      expect(failures).toContain('Malformed documentation URL "%zz.md" in docs/page.md');
 
       const skillFailures: string[] = [];
       await mod.validateSkillLinks("pm-user", skillFailures);
@@ -413,7 +428,7 @@ describe("docs-skills-gate", () => {
           if (s.endsWith(".agents/skills/pm-sdk/references")) {
             throw Object.assign(new Error("nope"), { code: "ENOENT" });
           }
-          return { isFile: () => true } as unknown as import("node:fs").Stats;
+          return { isFile: () => true } as unknown as Stats;
         }) as never,
       });
       const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
@@ -671,7 +686,7 @@ describe("docs-skills-gate", () => {
             : ([] as never),
         ) as never,
         readFile: vi.fn(async () => "```bash\npm comments <ID> --bogus\n```") as never,
-        stat: vi.fn(async () => ({ isFile: () => true }) as unknown as import("node:fs").Stats) as never,
+        stat: vi.fn(async () => ({ isFile: () => true }) as unknown as Stats) as never,
       });
       const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
       const vacuous: string[] = [];
@@ -902,7 +917,7 @@ describe("docs-skills-gate", () => {
       mockFsPromises({
         readdir: vi.fn(async () => [] as never) as never,
         readFile: vi.fn(async () => "no links here") as never,
-        stat: vi.fn(async () => ({ isFile: () => true }) as unknown as import("node:fs").Stats) as never,
+        stat: vi.fn(async () => ({ isFile: () => true }) as unknown as Stats) as never,
       });
       const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
       const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
@@ -960,7 +975,6 @@ describe("docs-skills-gate", () => {
 
   describe("fs-backed full + links-only flows (real temp fixtures)", () => {
     async function seedDocsSkillsFixture(root: string): Promise<void> {
-      const { mkdir, writeFile } = await import("node:fs/promises");
       const docsContent = [
         "# Docs",
         "",
@@ -1028,7 +1042,7 @@ describe("docs-skills-gate", () => {
 
     function mockUtilsWithRepo(repoRoot: string, runCommand: ReturnType<typeof vi.fn>): void {
       vi.doMock("../../../../scripts/release/utils.mjs", async () => {
-        const actual = await vi.importActual<typeof import("../../../../scripts/release/utils.mjs")>(
+        const actual = await vi.importActual<typeof ReleaseUtils>(
           "../../../../scripts/release/utils.mjs",
         );
         return {
@@ -1101,7 +1115,6 @@ describe("docs-skills-gate", () => {
 
     it("links-only flags a broken link against a seeded fixture repo (auto-run entrypoint)", async () => {
       const fixtureRoot = await harness.createTempRoot("pm-docs-skills-links-");
-      const { mkdir, writeFile } = await import("node:fs/promises");
       await mkdir(path.join(fixtureRoot, "docs"), { recursive: true });
       await writeFile(path.join(fixtureRoot, "README.md"), "# Root\n\n[Broken](missing.md)\n", "utf8");
       await writeFile(path.join(fixtureRoot, "AGENTS.md"), "# Agents\n\nNo links.\n", "utf8");

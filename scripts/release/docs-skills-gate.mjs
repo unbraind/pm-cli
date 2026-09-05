@@ -1,8 +1,22 @@
+/** Enforce documentation navigation and skill/runtime contracts in an isolated acceptance environment. */
 import { mkdtemp, readdir, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fail, flagBool, parseFlags, runCommand } from "./utils.mjs";
+import {
+  inspectDocumentationGraph,
+  inspectMarkdown,
+  resolveDocumentationTarget,
+} from "./docs-topology.mjs";
+
+import { PM_COMMAND_ALIAS_CONTRACTS } from "../../dist/cli-bundle/sdk.js";
+import { listPmCommandCapabilityGroups } from "../../dist/sdk/agent-capability-contracts.js";
+import { listGuideTopics } from "../../dist/sdk/guide-topics.js";
+import {
+  GLOBAL_FLAG_CONTRACTS,
+  SUBCOMMAND_GLOBAL_FLAG_CONTRACTS,
+} from "../../dist/sdk/cli-contracts/flag-contracts.js";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "..", "..");
@@ -27,13 +41,20 @@ const REQUIRED_DOC_FILES = [
  */
 const GUIDE_SHELL_INSTALL_MARKER = "pm package install guide-shell";
 
-const REQUIRED_PM_GUIDE_DOCS = ["README.md", "docs/README.md", "docs/COMMANDS.md", "docs/AGENT_GUIDE.md"];
+const REQUIRED_PM_GUIDE_DOCS = [
+  "README.md",
+  "docs/README.md",
+  "docs/COMMANDS.md",
+  "docs/AGENT_GUIDE.md",
+];
 const DOC_LINK_CHECK_ROOT_FILES = ["README.md", "AGENTS.md", "CONTRIBUTING.md"];
 
 const REQUIRED_SKILLS = ["pm-developer", "pm-user", "pm-extensions", "pm-sdk"];
 const SKILLS_ROOT = ".agents/skills";
 const REQUIRED_HARNESS_DOC = ".agents/skills/HARNESS_COMPATIBILITY.md";
 const DOC_LINE_LIMITS = new Map([["docs/EXTENSIONS.md", 450]]);
+
+/** Print the supported gate modes and the contract families they validate. */
 
 export function usage() {
   console.log(`Usage:
@@ -50,6 +71,8 @@ Validates docs and .agents/skills freshness gates:
 `);
 }
 
+/** Decode a runtime artifact and report its source label when JSON is invalid. */
+
 export function parseJson(text, context) {
   try {
     return JSON.parse(text);
@@ -60,9 +83,18 @@ export function parseJson(text, context) {
   }
 }
 
+/** Recognize ENOENT without treating permission or transport failures as absence. */
+
 export function isMissingError(error) {
-  return Boolean(error && typeof error === "object" && "code" in error && error.code === "ENOENT");
+  return Boolean(
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    error.code === "ENOENT",
+  );
 }
+
+/** Resolve a repository path and require a regular file; propagate non-absence errors. */
 
 export async function fileExists(relativePath) {
   const absolutePath = path.resolve(REPO_ROOT, relativePath);
@@ -77,6 +109,8 @@ export async function fileExists(relativePath) {
   }
 }
 
+/** Accept an existing file or directory while preserving unexpected filesystem failures. */
+
 export async function pathExists(relativePath) {
   const absolutePath = path.resolve(REPO_ROOT, relativePath);
   try {
@@ -90,6 +124,8 @@ export async function pathExists(relativePath) {
   }
 }
 
+/** Append every missing required document so one gate run reports the full set. */
+
 export async function requireFiles(filePaths, failures) {
   for (const filePath of filePaths) {
     if (!(await fileExists(filePath))) {
@@ -98,10 +134,14 @@ export async function requireFiles(filePaths, failures) {
   }
 }
 
+/** Read repository-relative documentation using a consistent UTF-8 encoding. */
+
 export async function readUtf8(relativePath) {
   const absolutePath = path.resolve(REPO_ROOT, relativePath);
   return readFile(absolutePath, "utf8");
 }
+
+/** Split only a complete leading YAML fence; leave malformed input intact for diagnostics. */
 
 export function extractFrontmatter(rawContent) {
   if (!rawContent.startsWith("---\n")) {
@@ -115,6 +155,8 @@ export function extractFrontmatter(rawContent) {
   const body = rawContent.slice(closingIndex + 5);
   return { frontmatter, body };
 }
+
+/** Read the flat skill metadata subset, ignoring comments and removing matching quotes. */
 
 export function parseSimpleYamlMap(frontmatter) {
   const values = new Map();
@@ -130,13 +172,18 @@ export function parseSimpleYamlMap(frontmatter) {
     }
     const key = trimmed.slice(0, separatorIndex).trim();
     let value = trimmed.slice(separatorIndex + 1).trim();
-    if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
       value = value.slice(1, -1);
     }
     values.set(key, value);
   }
   return values;
 }
+
+/** Check skill identity, explicit routing guidance, size, and optional-guide prerequisites. */
 
 export function validateSkillFrontmatter(skillName, rawContent, failures) {
   const { frontmatter, body } = extractFrontmatter(rawContent);
@@ -148,21 +195,33 @@ export function validateSkillFrontmatter(skillName, rawContent, failures) {
   const declaredName = map.get("name");
   const description = map.get("description");
   if (!declaredName) {
-    failures.push(`Skill ${skillName}: missing required frontmatter field "name"`);
+    failures.push(
+      `Skill ${skillName}: missing required frontmatter field "name"`,
+    );
   } else if (declaredName !== skillName) {
-    failures.push(`Skill ${skillName}: frontmatter name "${declaredName}" must match directory name`);
+    failures.push(
+      `Skill ${skillName}: frontmatter name "${declaredName}" must match directory name`,
+    );
   }
   if (!description) {
-    failures.push(`Skill ${skillName}: missing required frontmatter field "description"`);
+    failures.push(
+      `Skill ${skillName}: missing required frontmatter field "description"`,
+    );
   } else if (!description.toLowerCase().includes("use when")) {
-    failures.push(`Skill ${skillName}: description should include explicit "Use when" routing guidance`);
+    failures.push(
+      `Skill ${skillName}: description should include explicit "Use when" routing guidance`,
+    );
   }
   const lineCount = rawContent.split(/\r?\n/).length;
   if (lineCount > 500) {
-    failures.push(`Skill ${skillName}: SKILL.md should stay under 500 lines (found ${lineCount})`);
+    failures.push(
+      `Skill ${skillName}: SKILL.md should stay under 500 lines (found ${lineCount})`,
+    );
   }
   if (!body.includes("pm guide")) {
-    failures.push(`Skill ${skillName}: body must include optional pm guide routing to avoid stale deep links`);
+    failures.push(
+      `Skill ${skillName}: body must include optional pm guide routing to avoid stale deep links`,
+    );
   }
   if (!body.includes(GUIDE_SHELL_INSTALL_MARKER)) {
     failures.push(
@@ -170,6 +229,8 @@ export function validateSkillFrontmatter(skillName, rawContent, failures) {
     );
   }
 }
+
+/** Collect local skill-reference targets while excluding remote and fragment-only links. */
 
 export function extractRelativeMarkdownLinks(content) {
   const links = [];
@@ -192,9 +253,13 @@ export function extractRelativeMarkdownLinks(content) {
   return links;
 }
 
+/** Walk real directories and return portable Markdown paths without following symlinks. */
+
 export async function collectMarkdownFiles(relativeDirectory) {
   const absoluteDirectory = path.resolve(REPO_ROOT, relativeDirectory);
   const files = [];
+
+  /** Descend directory entries and retain only Markdown files with repository-relative paths. */
 
   async function walk(currentAbsolute, currentRelative) {
     const entries = await readdir(currentAbsolute, { withFileTypes: true });
@@ -213,6 +278,8 @@ export async function collectMarkdownFiles(relativeDirectory) {
   return files;
 }
 
+/** Report missing local targets across every Markdown page belonging to one skill. */
+
 export async function validateSkillLinks(skillName, failures) {
   const skillRoot = `${SKILLS_ROOT}/${skillName}`;
   const markdownFiles = await collectMarkdownFiles(skillRoot);
@@ -225,11 +292,15 @@ export async function validateSkillLinks(skillName, failures) {
         continue;
       }
       if (!(await pathExists(targetRelative))) {
-        failures.push(`Skill ${skillName}: broken relative link "${link}" in ${markdownFile}`);
+        failures.push(
+          `Skill ${skillName}: broken relative link "${link}" in ${markdownFile}`,
+        );
       }
     }
   }
 }
+
+/** Resolve skill links against their source after removing URL wrappers, queries, and fragments. */
 
 export function resolveMarkdownLink(markdownFile, linkTarget) {
   const cleaned = linkTarget.trim().replace(/^<|>$/g, "");
@@ -243,26 +314,51 @@ export function resolveMarkdownLink(markdownFile, linkTarget) {
   if (pathWithoutQueryOrAnchor.startsWith("/")) {
     return path.posix.normalize(pathWithoutQueryOrAnchor.slice(1));
   }
-  return path.posix.normalize(path.posix.join(path.posix.dirname(markdownFile), pathWithoutQueryOrAnchor));
+  return path.posix.normalize(
+    path.posix.join(path.posix.dirname(markdownFile), pathWithoutQueryOrAnchor),
+  );
 }
+
+/** Combine filesystem existence, rendered anchors, and index reachability without hiding failures. */
 
 export async function validateDocsLinks(failures) {
   const docsMarkdownFiles = await collectMarkdownFiles("docs");
-  const filesToCheck = [...new Set([...DOC_LINK_CHECK_ROOT_FILES, ...docsMarkdownFiles])];
+  const filesToCheck = [
+    ...new Set([...DOC_LINK_CHECK_ROOT_FILES, ...docsMarkdownFiles]),
+  ];
+  const documents = new Map();
   for (const markdownFile of filesToCheck) {
     const content = await readUtf8(markdownFile);
-    const links = extractRelativeMarkdownLinks(content);
+    documents.set(markdownFile, content);
+    const links = inspectMarkdown(content).links;
     for (const link of links) {
-      const targetRelative = resolveMarkdownLink(markdownFile, link);
+      const targetRelative = resolveDocumentationTarget(
+        markdownFile,
+        link,
+      )?.path;
       if (!targetRelative) {
         continue;
       }
       if (!(await pathExists(targetRelative))) {
-        failures.push(`Broken relative documentation link "${link}" in ${markdownFile}`);
+        failures.push(
+          `Broken relative documentation link "${link}" in ${markdownFile}`,
+        );
       }
     }
   }
+  const exceptions = parseJson(
+    await readUtf8("scripts/release/docs-reachability-exceptions.json"),
+    "documentation reachability exceptions",
+  );
+  failures.push(
+    ...inspectDocumentationGraph(
+      documents,
+      new Map(Object.entries(exceptions)),
+    ),
+  );
 }
+
+/** Match the longest declared command prefix before flags and placeholders; distinguish unknown examples from noncommands. */
 
 export function resolveExampleCommandPath(example, availableCommands) {
   const normalized = example.trim();
@@ -282,7 +378,7 @@ export function resolveExampleCommandPath(example, availableCommands) {
       token.includes("<") ||
       token.includes(">") ||
       token.startsWith("[") ||
-      token.startsWith("\"") ||
+      token.startsWith('"') ||
       token.startsWith("'")
     ) {
       break;
@@ -303,7 +399,13 @@ export function resolveExampleCommandPath(example, availableCommands) {
   return "";
 }
 
-export function validateGuideCommands(topicResult, availableCommands, failures) {
+/** Validate both direct examples and workflow examples against the installed runtime surface. */
+
+export function validateGuideCommands(
+  topicResult,
+  availableCommands,
+  failures,
+) {
   const commandSamples = [
     ...topicResult.topic.commands,
     ...topicResult.topic.workflows.flatMap((workflow) => workflow.commands),
@@ -311,23 +413,44 @@ export function validateGuideCommands(topicResult, availableCommands, failures) 
   for (const sample of commandSamples) {
     const resolved = resolveExampleCommandPath(sample, availableCommands);
     if (resolved === "") {
-      failures.push(`Guide topic "${topicResult.topic.id}" has unknown command example: ${sample}`);
+      failures.push(
+        `Guide topic "${topicResult.topic.id}" has unknown command example: ${sample}`,
+      );
     }
   }
 }
 
+/** Initialize the isolated tracker and install packages so guide examples see their declared commands. */
+
 function initializeGuideRuntime(runtimeEnv) {
-  runCommand(process.execPath, ["dist/cli.js", "init", "--defaults", "--author", "docs-skills-gate", "--json"], {
-    cwd: REPO_ROOT,
-    capture: true,
-    env: runtimeEnv,
-  });
-  runCommand(process.execPath, ["dist/cli.js", "install", "all", "--project", "--json"], {
-    cwd: REPO_ROOT,
-    capture: true,
-    env: runtimeEnv,
-  });
+  runCommand(
+    process.execPath,
+    [
+      "dist/cli.js",
+      "init",
+      "--defaults",
+      "--author",
+      "docs-skills-gate",
+      "--json",
+    ],
+    {
+      cwd: REPO_ROOT,
+      capture: true,
+      env: runtimeEnv,
+    },
+  );
+  runCommand(
+    process.execPath,
+    ["dist/cli.js", "install", "all", "--project", "--json"],
+    {
+      cwd: REPO_ROOT,
+      capture: true,
+      env: runtimeEnv,
+    },
+  );
 }
+
+/** Read the complete runtime-only availability contract from the isolated guide environment. */
 
 function loadAvailableGuideCommands(runtimeEnv) {
   const contractsResult = runCommand(
@@ -351,22 +474,36 @@ function loadAvailableGuideCommands(runtimeEnv) {
     contractsResult.stdout,
     "pm contracts --runtime-only --availability-only --json --output-budget unbounded",
   );
-  return new Set(Array.isArray(contractsPayload.commands) ? contractsPayload.commands : []);
+  return new Set(
+    Array.isArray(contractsPayload.commands) ? contractsPayload.commands : [],
+  );
 }
 
+/** Require an index-shaped guide response and retain a diagnostic when its envelope is invalid. */
+
 function loadGuideIndex(runtimeEnv, failures) {
-  const guideIndexResult = runCommand(process.execPath, ["dist/cli.js", "guide", "--json"], {
-    cwd: REPO_ROOT,
-    capture: true,
-    env: runtimeEnv,
-  });
+  const guideIndexResult = runCommand(
+    process.execPath,
+    ["dist/cli.js", "guide", "--json"],
+    {
+      cwd: REPO_ROOT,
+      capture: true,
+      env: runtimeEnv,
+    },
+  );
   const guideIndex = parseJson(guideIndexResult.stdout, "pm guide --json");
-  if (!guideIndex || guideIndex.mode !== "index" || !Array.isArray(guideIndex.topics)) {
+  if (
+    !guideIndex ||
+    guideIndex.mode !== "index" ||
+    !Array.isArray(guideIndex.topics)
+  ) {
     failures.push("pm guide --json did not return an index payload");
     return null;
   }
   return guideIndex;
 }
+
+/** Check one topic for runtime warnings, required document presence, and executable command examples. */
 
 function validateGuideTopic(topic, runtimeEnv, availableCommands, failures) {
   const topicId = typeof topic?.id === "string" ? topic.id : null;
@@ -383,7 +520,10 @@ function validateGuideTopic(topic, runtimeEnv, availableCommands, failures) {
       env: runtimeEnv,
     },
   );
-  const topicResult = parseJson(topicResultRaw.stdout, `pm guide ${topicId} --json`);
+  const topicResult = parseJson(
+    topicResultRaw.stdout,
+    `pm guide ${topicId} --json`,
+  );
   if (!topicResult || topicResult.mode !== "topic" || !topicResult.topic) {
     failures.push(`pm guide ${topicId} did not return a topic payload`);
     return;
@@ -399,11 +539,15 @@ function validateGuideTopic(topic, runtimeEnv, availableCommands, failures) {
   }
   for (const doc of topicResult.docs) {
     if (doc && doc.exists === false && doc.optional !== true) {
-      failures.push(`Guide topic "${topicId}" missing required document: ${doc.path}`);
+      failures.push(
+        `Guide topic "${topicId}" missing required document: ${doc.path}`,
+      );
     }
   }
   validateGuideCommands(topicResult, availableCommands, failures);
 }
+
+/** Exercise every guide topic in temporary project/global trackers and always remove the sandbox. */
 
 export async function runGuideChecks(failures) {
   const tempRoot = await mkdtemp(path.join(tmpdir(), "pm-docs-skills-gate-"));
@@ -425,15 +569,24 @@ export async function runGuideChecks(failures) {
       validateGuideTopic(topic, runtimeEnv, availableCommands, failures);
     }
   } finally {
-    await rm(tempRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+    await rm(tempRoot, {
+      recursive: true,
+      force: true,
+      maxRetries: 3,
+      retryDelay: 100,
+    });
   }
 }
+
+/** Require entrypoint docs to name optional guide routing and its package-install prerequisite. */
 
 export async function validateRequiredGuideMentions(failures) {
   for (const filePath of REQUIRED_PM_GUIDE_DOCS) {
     const content = await readUtf8(filePath);
     if (!content.includes("pm guide")) {
-      failures.push(`Required docs routing marker missing in ${filePath}: expected "pm guide" reference`);
+      failures.push(
+        `Required docs routing marker missing in ${filePath}: expected "pm guide" reference`,
+      );
     }
     if (!content.includes(GUIDE_SHELL_INSTALL_MARKER)) {
       failures.push(
@@ -443,16 +596,22 @@ export async function validateRequiredGuideMentions(failures) {
   }
 }
 
+/** Enforce document line ceilings, a single title, and unique section headings. */
+
 export async function validatePublicDocBudgets(failures) {
   for (const [filePath, maxLines] of DOC_LINE_LIMITS) {
     const content = await readUtf8(filePath);
     const lineCount = content.split(/\r?\n/).length;
     if (lineCount > maxLines) {
-      failures.push(`${filePath}: keep public docs under ${maxLines} lines (found ${lineCount})`);
+      failures.push(
+        `${filePath}: keep public docs under ${maxLines} lines (found ${lineCount})`,
+      );
     }
     const h1Headings = content.match(/^# /gm) ?? [];
     if (h1Headings.length !== 1) {
-      failures.push(`${filePath}: expected exactly one top-level heading (found ${h1Headings.length})`);
+      failures.push(
+        `${filePath}: expected exactly one top-level heading (found ${h1Headings.length})`,
+      );
     }
     const seenHeadings = new Set();
     for (const line of content.split(/\r?\n/)) {
@@ -461,7 +620,9 @@ export async function validatePublicDocBudgets(failures) {
       }
       const heading = line.trim().toLowerCase();
       if (seenHeadings.has(heading)) {
-        failures.push(`${filePath}: duplicate section heading "${line.trim()}"`);
+        failures.push(
+          `${filePath}: duplicate section heading "${line.trim()}"`,
+        );
       }
       seenHeadings.add(heading);
     }
@@ -476,7 +637,11 @@ export async function validatePublicDocBudgets(failures) {
  * link reaches is depth an agent can never find. `validateSkillLinks` covers
  * the first direction; this covers the second.
  */
-export async function validateSkillReferenceReachability(skillName, skillContent, failures) {
+export async function validateSkillReferenceReachability(
+  skillName,
+  skillContent,
+  failures,
+) {
   const referenceRoot = `${SKILLS_ROOT}/${skillName}/references`;
   if (!(await pathExists(referenceRoot))) {
     return;
@@ -484,7 +649,9 @@ export async function validateSkillReferenceReachability(skillName, skillContent
   const referenceFiles = await collectMarkdownFiles(referenceRoot);
   const linkedTargets = new Set(
     extractRelativeMarkdownLinks(skillContent)
-      .map((link) => resolveMarkdownLink(`${SKILLS_ROOT}/${skillName}/SKILL.md`, link))
+      .map((link) =>
+        resolveMarkdownLink(`${SKILLS_ROOT}/${skillName}/SKILL.md`, link),
+      )
       .filter((target) => target !== null),
   );
   for (const referenceFile of referenceFiles) {
@@ -496,9 +663,13 @@ export async function validateSkillReferenceReachability(skillName, skillContent
   }
 }
 
+/** Validate each required skill and its reference reachability alongside harness guidance. */
+
 export async function runSkillChecks(failures) {
   if (!(await fileExists(REQUIRED_HARNESS_DOC))) {
-    failures.push(`Missing required harness compatibility guide: ${REQUIRED_HARNESS_DOC}`);
+    failures.push(
+      `Missing required harness compatibility guide: ${REQUIRED_HARNESS_DOC}`,
+    );
   }
   for (const skillName of REQUIRED_SKILLS) {
     const skillPath = `${SKILLS_ROOT}/${skillName}/SKILL.md`;
@@ -544,14 +715,16 @@ export function mapDeprecatedCommandSpellings(contracts) {
   return new Map(
     (contracts ?? [])
       .filter((contract) => contract.lifecycle === "deprecated")
-      .map((contract) => [contract.alias, `pm ${contract.canonical_argv.join(" ")}`]),
+      .map((contract) => [
+        contract.alias,
+        `pm ${contract.canonical_argv.join(" ")}`,
+      ]),
   );
 }
 
 /** Read the alias table from the built SDK and reduce it to deprecated spellings. */
 export async function loadDeprecatedCommandSpellings() {
-  const sdk = await import("../../dist/cli-bundle/sdk.js");
-  return mapDeprecatedCommandSpellings(sdk.PM_COMMAND_ALIAS_CONTRACTS);
+  return mapDeprecatedCommandSpellings(PM_COMMAND_ALIAS_CONTRACTS);
 }
 
 /** Return fenced-block lines that invoke `pm <command>` in command position. */
@@ -567,7 +740,11 @@ export function extractFencedPmInvocations(content) {
     if (!insideFence) continue;
     const match = /^\s*(?:\$\s*)?pm\s+([a-z][a-z0-9-]*)/u.exec(line);
     if (match) {
-      invocations.push({ line: index + 1, command: match[1], text: line.trim() });
+      invocations.push({
+        line: index + 1,
+        command: match[1],
+        text: line.trim(),
+      });
     }
   }
   return invocations;
@@ -579,7 +756,10 @@ export function extractFencedPmInvocations(content) {
  * `options.deprecatedSpellings` overrides the table read from the built SDK so
  * the vacuous-pass guard below is exercisable without a built artifact.
  */
-export async function validateDeprecatedCommandSpellings(failures, options = {}) {
+export async function validateDeprecatedCommandSpellings(
+  failures,
+  options = {},
+) {
   const deprecated =
     options.deprecatedSpellings ?? (await loadDeprecatedCommandSpellings());
   if (deprecated.size === 0) {
@@ -614,7 +794,10 @@ export async function validateDeprecatedCommandSpellings(failures, options = {})
 export const GENERATED_GUIDE_TOPIC_IDS = Object.freeze(["capabilities"]);
 
 /** Instructional markdown roots whose fenced `pm` invocations agents copy verbatim. */
-const SKILL_FLAG_SCAN_DIRECTORIES = Object.freeze([".agents/skills", "plugins"]);
+const SKILL_FLAG_SCAN_DIRECTORIES = Object.freeze([
+  ".agents/skills",
+  "plugins",
+]);
 
 /** Collect the top-level command names a guide topic's examples and workflows invoke. */
 export function guideTopicCommandNames(topic) {
@@ -644,7 +827,9 @@ export function mapCapabilityFamilyRouting(families, topics) {
     const routedBy = (topics ?? [])
       .filter((topic) => !GENERATED_GUIDE_TOPIC_IDS.includes(topic.id))
       .filter((topic) =>
-        [...guideTopicCommandNames(topic)].some((command) => commands.has(command)),
+        [...guideTopicCommandNames(topic)].some((command) =>
+          commands.has(command),
+        ),
       )
       .map((topic) => topic.id);
     routing.set(family.family, routedBy);
@@ -654,13 +839,9 @@ export function mapCapabilityFamilyRouting(families, topics) {
 
 /** Read the capability families and guide topics from the built SDK artifacts. */
 export async function loadCapabilityFamilyRoutingInputs() {
-  const [capabilities, guide] = await Promise.all([
-    import("../../dist/sdk/agent-capability-contracts.js"),
-    import("../../dist/sdk/guide-topics.js"),
-  ]);
   return {
-    families: capabilities.listPmCommandCapabilityGroups(),
-    topics: guide.listGuideTopics(),
+    families: listPmCommandCapabilityGroups(),
+    topics: listGuideTopics(),
   };
 }
 
@@ -708,18 +889,27 @@ export function mapCommandFlagTable(flagPayload, globalFlags = []) {
 
 /** Read the flag table from the built CLI contract and the global flags from the built SDK. */
 export async function loadCommandFlagTable() {
-  const flagContracts = await import("../../dist/sdk/cli-contracts/flag-contracts.js");
   const globalFlags = [
-    ...flagContracts.GLOBAL_FLAG_CONTRACTS,
-    ...flagContracts.SUBCOMMAND_GLOBAL_FLAG_CONTRACTS,
+    ...GLOBAL_FLAG_CONTRACTS,
+    ...SUBCOMMAND_GLOBAL_FLAG_CONTRACTS,
   ].flatMap((entry) => [entry.flag, ...(entry.aliases ?? [])]);
   const result = runCommand(
     process.execPath,
-    ["dist/cli.js", "contracts", "--flags-only", "--json", "--output-budget", "unbounded"],
+    [
+      "dist/cli.js",
+      "contracts",
+      "--flags-only",
+      "--json",
+      "--output-budget",
+      "unbounded",
+    ],
     { cwd: REPO_ROOT, capture: true },
   );
   return mapCommandFlagTable(
-    parseJson(result.stdout, "pm contracts --flags-only --json --output-budget unbounded"),
+    parseJson(
+      result.stdout,
+      "pm contracts --flags-only --json --output-budget unbounded",
+    ),
     globalFlags,
   );
 }
@@ -731,19 +921,26 @@ export async function loadCommandFlagTable() {
  * installed, so it is accepted here rather than treated as a typo; the skill
  * text is expected to name the installing command beside it.
  */
-export async function collectPackageDeclaredFlags(relativeDirectory = "packages") {
+export async function collectPackageDeclaredFlags(
+  relativeDirectory = "packages",
+) {
   const flags = new Set();
   let entries;
   try {
-    entries = await readdir(path.resolve(REPO_ROOT, relativeDirectory), { recursive: true });
+    entries = await readdir(path.resolve(REPO_ROOT, relativeDirectory), {
+      recursive: true,
+    });
   } catch (error) {
     if (isMissingError(error)) return flags;
     throw error;
   }
   for (const entry of entries) {
     const relativePath = String(entry).replaceAll("\\", "/");
-    if (!/^(?!.*node_modules).*\/extensions\/.*\.ts$/u.test(`/${relativePath}`)) continue;
-    const content = await readUtf8(path.posix.join(relativeDirectory, relativePath));
+    if (!/^(?!.*node_modules).*\/extensions\/.*\.ts$/u.test(`/${relativePath}`))
+      continue;
+    const content = await readUtf8(
+      path.posix.join(relativeDirectory, relativePath),
+    );
     for (const match of content.matchAll(/long:\s*"(--[a-z][a-z0-9-]*)"/gu)) {
       flags.add(match[1]);
     }
@@ -755,19 +952,30 @@ export async function collectPackageDeclaredFlags(relativeDirectory = "packages"
 export function resolveFlagContractCommand(text, table) {
   const tokens = text.replace(/^\s*(?:\$\s*)?pm\s+/u, "").split(/\s+/u);
   const [first, second] = tokens;
-  if (typeof second === "string" && /^[a-z][a-z0-9-]*$/u.test(second) && table.has(`${first} ${second}`)) {
+  if (
+    typeof second === "string" &&
+    /^[a-z][a-z0-9-]*$/u.test(second) &&
+    table.has(`${first} ${second}`)
+  ) {
     return `${first} ${second}`;
   }
   return table.has(first) ? first : null;
 }
 
 /** Push one failure per fenced flag that neither the command contract nor a package declares. */
-export function validateFencedFlagSpellingsIn(markdownFile, content, table, packageFlags, failures) {
+export function validateFencedFlagSpellingsIn(
+  markdownFile,
+  content,
+  table,
+  packageFlags,
+  failures,
+) {
   for (const invocation of extractFencedPmInvocations(content)) {
     const command = resolveFlagContractCommand(invocation.text, table);
     if (!command) continue;
     const accepted = table.get(command);
-    for (const flag of invocation.text.match(/(?<![\w-])--[a-z][a-z0-9-]*/gu) ?? []) {
+    for (const flag of invocation.text.match(/(?<![\w-])--[a-z][a-z0-9-]*/gu) ??
+      []) {
       if (accepted.has(flag) || packageFlags.has(flag)) continue;
       failures.push(
         `${markdownFile}:${invocation.line}: instructs \`${flag}\`, which no contract declares for \`pm ${command}\` (${invocation.text})`,
@@ -791,7 +999,8 @@ export async function validateFencedFlagSpellings(failures, options = {}) {
     );
     return;
   }
-  const packageFlags = options.packageDeclaredFlags ?? (await collectPackageDeclaredFlags());
+  const packageFlags =
+    options.packageDeclaredFlags ?? (await collectPackageDeclaredFlags());
   const files = [];
   for (const directory of SKILL_FLAG_SCAN_DIRECTORIES) {
     files.push(...(await collectMarkdownFiles(directory)));
@@ -807,6 +1016,8 @@ export async function validateFencedFlagSpellings(failures, options = {}) {
   }
 }
 
+/** Run the requested gate mode, emit all failures together, and return a failing process status when needed. */
+
 export async function main() {
   const { flags } = parseFlags(process.argv.slice(2));
   if (flags.get("help") || flags.get("h")) {
@@ -820,6 +1031,7 @@ export async function main() {
   if (linksOnly) {
     await validateDocsLinks(failures);
   } else {
+    await validateDocsLinks(failures);
     await requireFiles(REQUIRED_DOC_FILES, failures);
     await validatePublicDocBudgets(failures);
     await validateRequiredGuideMentions(failures);
@@ -859,7 +1071,10 @@ export async function main() {
 }
 
 /* c8 ignore start -- CLI auto-run guard; logic covered via exported main() */
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
   main().catch((error) => {
     const message = error instanceof Error ? error.message : String(error);
     fail(`Docs/skills gate crashed: ${message}`, 1);

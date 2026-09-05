@@ -1,0 +1,41 @@
+id: pm-ub1ott
+title: "GH-1203: Offer actionable acceptance-evidence backfill after a warning close"
+description: "Improve the reported warning-close then already-terminal refusal sequence with an executable recovery command. Existing warn/require policy and atomic structured close evidence are shipped contracts; preserve them. A normal pm update can append missing expected_result and actual_result while keeping the item terminal. Do not imply that force, reopen, or rewriting the original close event is required."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-09-05T19:06:23.505Z"
+updated_at: "2026-09-05T19:12:55.602Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: A temporary CLI workflow closes with missing structured fields and receives a directly runnable update recovery command; Applying the recovery preserves terminal status and the immutable original close event while appending new evidence; Require-mode refusal and complete-field silent close behavior remain compatible; SDK and CLI structured recovery fields identify the actual permitted mutation
+value: Reduce recovery ambiguity and preserve trustworthy project context for agents
+outcome: A reproducible SDK contract with actionable CLI recovery and regression evidence
+why_now: New user report GH-1203 during PR #1204 final integration
+parent: pm-mpbb
+risk: medium
+confidence: medium
+severity: medium
+affected_version: 2026.9.5
+component: sdk/lifecycle
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-f05lsg,implements,"2026-09-05T19:06:23.505Z","harness:codex","cli:create:dep",detected
+  pm-mpbb,implements,"2026-09-05T19:06:23.505Z","harness:codex","cli:create:dep",detected
+  pm-wenq,discovered_from,"2026-09-05T19:06:23.505Z","harness:codex","cli:create:dep",detected
+comments[2]:
+  - created_at: "2026-09-05T19:06:23.505Z"
+    author: "harness:codex"
+    text: "Duplicate-check evidence: strict complete all-status corpus contained 2642 items, including terminal history; exact GitHub issue URL was absent. Request-specific search and current open/in_progress inventories were read. Full live predecessor pm-wenq and parent pm-mpbb metadata plus verified history were inspected. This report extends a distinct boundary beyond the closed predecessor and is not a duplicate. Intake remains open and unclaimed."
+    edited_at: "2026-09-05T19:12:55.145Z"
+  - created_at: "2026-09-05T19:10:54.339Z"
+    author: "harness:codex"
+    text: "Intake evidence: GitHub issue #1203 now links this canonical owner through a public comment. The external URL remains in the report body; its redundant graph endpoint was removed because a provider URL without project lifecycle metadata creates an untyped active leaf. Local implements, discovered_from, and applicable verifies edges preserve the actual work lineage. Status remains open and unclaimed."
+notes[1]{created_at,author,text,edited_at}:
+  "2026-09-05T19:06:23.505Z","harness:codex","Improve the reported warning-close then already-terminal refusal sequence with an executable recovery command. Existing warn/require policy and atomic structured close evidence are shipped contracts; preserve them. A normal pm update can append missing expected_result and actual_result while keeping the item terminal. Do not imply that force, reopen, or rewriting the original close event is required.","2026-09-05T19:12:55.602Z"
+files[2]{path,scope,note}:
+  src/sdk/lifecycle/close.ts,project,Existing implementation boundary to reproduce and improve
+  tests/unit/commands/close-command.spec.ts,project,Existing regression suite to extend; no new regression is claimed
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Existing public contract to preserve and clarify
+body: "## Report and scope\n\nSource: https://github.com/unbraind/pm-cli/issues/1203\n\nImprove the reported warning-close then already-terminal refusal sequence with an executable recovery command. Existing warn/require policy and atomic structured close evidence are shipped contracts; preserve them. A normal pm update can append missing expected_result and actual_result while keeping the item terminal. Do not imply that force, reopen, or rewriting the original close event is required.\n\n## Reported reproduction\n\n## Summary\n\n`pm close` accepts a close that it simultaneously reports as incomplete, and the obvious next command — re-running `close` with the flags the warning names — is rejected. The warning therefore steers an agent into a blocked retry.\n\n## Reproduction\n\n```\n$ pm close pm-linear-tfj7 --author pi-orchestrator --resolution \"...\"\nclose_reason: \"...\"\nwarnings:\n  - \"close_validation_missing_fields:pm-linear-tfj7:expected_result (--expected-result),actual_result (--actual-result)\"\n```\n\nThe item is now closed, and the warning names two flags of `pm close`. Supplying them:\n\n```\n$ pm close pm-linear-tfj7 --author pi-orchestrator \\\n    --resolution \"...\" --expected-result \"...\" --actual-result \"...\"\nError: Command failed\nWhat happened:\n  Item pm-linear-tfj7 is already terminal; use --force to close again.\n```\n\nThe only advertised way forward is `--force`, which reads as an override for re-closing a settled item — not as the way to finish a record the CLI just told you was unfinished.\n\n`pm update` does work and is the correct path, but nothing in either message points to it:\n\n```\n$ pm update pm-linear-tfj7 --author pi-orchestrator --expected-result \"...\" --actual-result \"...\"\nstatus: \"closed\"\nchanged_field_count: 2\n```\n\n## Why this matters for agents\n\nThe warning is well-formed and machine-readable, so an agent will act on it, and the action it implies is the one operation that is refused. The three plausible agent responses are all wrong: retry `close` (rejected), add `--force` (a destructive-sounding escape hatch used for a non-destructive completion), or ignore the warning (leaves the acceptance evidence the governance policy asked for permanently missing).\n\n## Expected\n\nEither:\n\n1. `close` completes the record when it is re-run on a terminal item with only the missing fields — no `--force`, since nothing is being overwritten; or\n2. the warning names the command that actually works, e.g. `pm update <id> --expected-result … --actual-result …`; or\n3. the close is refused up front when `governance.require_close_reason`-style validation is unmet, rather than succeeding and reporting the gap afterwards.\n\nOption 3 is the most consistent with how `require_close_reason` itself behaves — that one *does* fail closed:\n\n```\nError: Close reason text is required because governance.require_close_reason is enabled\n```\n\nTwo adjacent close-validation rules currently fail in opposite directions: one blocks the close, the other lets it through with a warning that cannot then be acted on.\n\n## Environment\n\n@unbrained/pm-cli 2026.9.5, Linux, Node 22.\n\n## Delivery boundary\n\nIntake only in PR #1204. This item remains open and unclaimed; no implementation or reproduction success is asserted. Implement through the public SDK with thin CLI adapters and executable negative controls before closing."
