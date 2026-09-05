@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-05T09:47:08.719Z"
-updated_at: "2026-09-05T11:14:18.574Z"
+updated_at: "2026-09-05T11:20:08.118Z"
 closed_at: "2026-09-05T11:14:18.105Z"
 completed_at: "2026-09-05T11:14:18.105Z"
 author: "harness:codex"
@@ -19,12 +19,13 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-o87av6,implements,"2026-09-05T09:47:08.719Z","harness:codex","cli:create:dep",detected
   pm-vv2lti,discovered_from,"2026-09-05T09:47:08.719Z","harness:codex","cli:create:dep",detected
   pm-ydshl9,verifies,"2026-09-05T09:47:08.719Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-05T09:47:08.719Z","harness:codex","Duplicate check: complete 2638-item all-status corpus plus all-status scale Story fixture and unregistered Story searches and current open/in-progress lists were inspected. Closed pm-vv2lti implemented shape generation; this distinct runtime readability regression is newly observed at 9019 of 10000 items and preserves that closed lineage."
   "2026-09-05T09:48:24.616Z","harness:codex","TDD negative control: the new point-read corpus test failed with 1418 readable items out of 1500. Registration now derives generated types from the live SDK schema and adds missing types before materialization."
   "2026-09-05T09:57:30.868Z","harness:codex","Verification: 11 focused tests pass, including the 1500-item runtime completeness regression, byte-identical direct/SDK item and workspace history, malformed-tail retention, real filesystem failure cleanup and omission-safe learning. Fixture schema setup now runs under the SDK deterministic clock and seed."
   "2026-09-05T10:39:15.658Z","harness:codex","Installed-artifact acceptance: npm pack of this checkout installed independently with npm and Bun in disposable directories. Both completed 21 CLI operations including parent and children reads, exact duplicate parity, claim/update/comments/notes/learnings/files, linked public-SDK acceptance in explicit tracker sandbox context, structured close/release and clean history validation. Public SDK verified three complete items, duplicate analysis, 10000 candidate rows sampled to 256, final delivery validation and physical ledger ceiling. Local npx and bunx execute version 2026.9.5 in both installations. No real tracker was used by these tests."
   "2026-09-05T11:14:16.683Z","harness:codex","Delivery verification: full sandbox coverage passes 8442 tests in 613 files, exact 100/100/100/100 with zero uncovered (59977 lines, 62381 statements, 12941 functions, 47268 branches). Full quality:static, package-artifact and documentation-link gates pass. Every linked test on all six active owners passes through pm test --run --progress. npm and Bun installed-artifact acceptance passes 21 CLI operations each with public SDK assertions, npx and bunx. GitHub has no open issues, existing PRs or open dependency/code/secret security alerts; dependency audit is clean. Review and exact-head hosted checks remain the next delivery step."
+  "2026-09-05T11:20:08.118Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1199 contains the combined 52-file SDK/CLI implementation, contracts, tests, documentation and generated changelog. Implementation commit 2cbfbda7c carries passing local full coverage and quality evidence. Use scripts/reviews/pr-review-loop.mjs watch --pr 1199 --repo unbraind/pm-cli --interval 60, inspect all paginated comments/reviews/threads including updatedAt changes, react and reply on the actual surface, and require exact-head hosted analyzer proof before merge. This comment records review routing, not approval or publication."
 learnings[1]{created_at,author,text}:
   "2026-09-05T10:59:06.090Z","harness:codex","Scale evidence must compare generated item count with the actual complete read receipt. A manifest count alone concealed unregistered Story rows, invalidating large-population claims and calibrated output baselines."
 files[5]{path,scope,note}:

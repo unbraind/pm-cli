@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: concurrency,context-management,scale
 created_at: "2026-07-30T17:02:11.546Z"
-updated_at: "2026-09-05T11:16:57.286Z"
+updated_at: "2026-09-05T11:20:07.629Z"
 closed_at: "2026-09-05T11:14:22.345Z"
 completed_at: "2026-09-05T11:14:22.345Z"
 author: "harness:claude-code"
@@ -22,7 +22,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-dj98,related,"2026-07-30T17:03:14.953Z","harness:claude-code","cli:update:dep",detected
   pm-o87av6,implements,"2026-07-30T17:03:14.953Z","harness:claude-code","cli:update:dep",detected
   pm-uwfs,discovered_from,"2026-07-30T17:03:14.953Z","harness:claude-code","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-09-05T09:16:32.864Z","harness:codex","TDD evidence: 40 serves over 10,000 candidates produced 18,331,640 ledger bytes before the change. The new bounded persistence regression passes below 262,144 bytes with at most 256 recorded candidate rows. Final-egress delivery remains required for affinity; unrecorded sample rows cannot earn fabricated exposure credit."
   "2026-09-05T09:57:31.310Z","harness:codex","Scale evidence: 40 serves at each of 10k/100k/1m candidates wrote a mean 18129/18141/18143 ledger bytes, compacted twice per tier, and ended below 238k bytes. Four concurrent writers measured peak lock waits of 99/283/1794ms. Full candidate validation remains O(n) in memory; physical persistence is bounded independently. Unknown candidate properties are stripped and unsampled final ids do not train affinity."
   "2026-09-05T10:01:55.553Z","harness:codex","Operational verification before PR: Sentry 14-day unresolved query completed with no omitted pages and zero issues; the required reliability gate passed with critical=0 high=0 telemetry finish error rate=1.04 percent and zero failures without error codes. These are live pre-merge checks, not claims about an unpublished artifact."
@@ -31,6 +31,7 @@ comments[8]{created_at,author,text}:
   "2026-09-05T10:56:04.666Z","harness:codex","Full coverage reached exact 100/100/100/100: 59977 lines, 62379 statements, 12940 functions, 47268 branches, zero uncovered. One of 8442 tests failed: real agent-task replay exceeded 180 seconds (856.7 seconds observed) because its subprocess environment used ineffective PM_TELEMETRY=0. Corrected the actual telemetry opt-out controls without changing timeout or transcript assertions. The concurrent benchmark now also exports empirical nearest-rank p50 and p95 lock waits alongside minimum and maximum."
   "2026-09-05T11:04:53.733Z","harness:codex","Final independent scale rerun: 40 serves across four concurrent SDK tasks per workspace. At 10000/100000/1000000 rows: 46.73/20.82/1.92 serves per second; mean written bytes 18137.75/18149.225/18134.675; minimum lock waits 3.11/18.29/198.10ms, nearest-rank p50 25.15/50.10/809.52ms, p95 84.97/193.86/1367.67ms, maximum 105.66/229.60/1622.77ms. Each tier compacted 2 of 40 serves; physical bytes 237785/237821/237857. These are concurrent tasks sharing the cross-process lock, not four OS processes. Full quality:static passes; final full coverage rerun pending."
   "2026-09-05T11:14:16.229Z","harness:codex","Delivery verification: full sandbox coverage passes 8442 tests in 613 files, exact 100/100/100/100 with zero uncovered (59977 lines, 62381 statements, 12941 functions, 47268 branches). Full quality:static, package-artifact and documentation-link gates pass. Every linked test on all six active owners passes through pm test --run --progress. npm and Bun installed-artifact acceptance passes 21 CLI operations each with public SDK assertions, npx and bunx. GitHub has no open issues, existing PRs or open dependency/code/secret security alerts; dependency audit is clean. Review and exact-head hosted checks remain the next delivery step."
+  "2026-09-05T11:20:07.629Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1199 contains the combined 52-file SDK/CLI implementation, contracts, tests, documentation and generated changelog. Implementation commit 2cbfbda7c carries passing local full coverage and quality evidence. Use scripts/reviews/pr-review-loop.mjs watch --pr 1199 --repo unbraind/pm-cli --interval 60, inspect all paginated comments/reviews/threads including updatedAt changes, react and reply on the actual surface, and require exact-head hosted analyzer proof before merge. This comment records review routing, not approval or publication."
 learnings[1]{created_at,author,text}:
   "2026-09-05T10:59:06.486Z","harness:codex",Telemetry test isolation must use the runtime-recognized opt-out variables. An unused PM_TELEMETRY or PM_TELEMETRY_ENABLED flag can silently leave real CLI subprocesses waiting on external sinks; preserve transcript assertions and fix isolation instead of increasing test timeouts.
 files[7]{path,scope,note}:
