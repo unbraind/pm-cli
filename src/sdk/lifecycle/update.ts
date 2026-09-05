@@ -91,6 +91,8 @@ import {
 } from "../dependency-flag-validation.js";
 import {
   normalizeDependencySeedId,
+  normalizeItemReference,
+  isExternalDependencyReference,
   normalizeDependencySourceKind,
 } from "../dependency-provenance.js";
 import { resolveCanonicalRelationshipKind } from "../relationships.js";
@@ -1138,10 +1140,6 @@ function matchesDependencySelector(
   return true;
 }
 
-function ensurePriority(raw: string | number): 0 | 1 | 2 | 3 | 4 {
-  return resolvePriority(raw);
-}
-
 function normalizeUpdatePolicyOptionKey(raw: string, typeName: string): string {
   const canonical = canonicalizeCommandOptionKey("update", raw);
   if (!canonical) {
@@ -1944,10 +1942,6 @@ function assertUpdateHierarchyIntegrity(params: {
   );
 }
 
-async function assertUpdateTrackerInitialized(pmRoot: string): Promise<void> {
-  await assertInitializedTracker(pmRoot);
-}
-
 function assertMatchingOrderRank(options: UpdateCommandOptions): void {
   if (
     options.order !== undefined &&
@@ -1978,9 +1972,13 @@ async function resolveParentReferenceForUpdate(params: {
   ) {
     return { resolvedParentValue: undefined, warnings: [] };
   }
-  const resolvedParentValue = normalizeParentReferenceValue(
-    params.options.parent,
+  const resolvedParentValue = normalizeItemReference(
+    normalizeParentReferenceValue(params.options.parent),
+    params.settings.id_prefix,
   );
+  if (isExternalDependencyReference(resolvedParentValue)) {
+    return { resolvedParentValue, warnings: [] };
+  }
   assertParentReferenceIsNotSelf(
     params.id,
     resolvedParentValue,
@@ -2096,15 +2094,12 @@ async function routeCloseStatusUpdate(
   const routeWarnings: string[] = [];
   let preChangedFields: string[] = [];
   if (otherFieldKeys.length > 0) {
-    const preUpdateOptions = transferMutationStdinTokenPolicy(
-      context.options,
-      {
-        ...context.options,
-        status: undefined,
-        closeReason: undefined,
-        message: undefined,
-      },
-    );
+    const preUpdateOptions = transferMutationStdinTokenPolicy(context.options, {
+      ...context.options,
+      status: undefined,
+      closeReason: undefined,
+      message: undefined,
+    });
     const preUpdate = await runUpdate(
       context.id,
       preUpdateOptions,
@@ -2316,7 +2311,7 @@ function applyPriorityTypeAndOptions(
     resolveTypeName(document.metadata.type, context.typeRegistry) ??
     document.metadata.type;
   if (context.options.priority !== undefined) {
-    document.metadata.priority = ensurePriority(context.options.priority);
+    document.metadata.priority = resolvePriority(context.options.priority);
     changedFields.push("priority");
   }
   if (context.options.type !== undefined) {
@@ -3156,7 +3151,7 @@ async function runUpdateWithContext(
 ): Promise<UpdateResult & { lifecycle_transition?: ReopenUpdateReceipt }> {
   options = await resolveUpdateTransportOptions(options);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  await assertUpdateTrackerInitialized(pmRoot);
+  await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);

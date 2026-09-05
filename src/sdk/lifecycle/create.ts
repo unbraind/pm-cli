@@ -148,6 +148,8 @@ import {
 } from "../dependency-flag-validation.js";
 import {
   normalizeDependencySeedId,
+  normalizeItemReference,
+  isExternalDependencyReference,
   normalizeDependencySourceKind,
 } from "../dependency-provenance.js";
 import { resolveCanonicalRelationshipKind } from "../relationships.js";
@@ -1406,10 +1408,6 @@ export function requireStringOption(
   return normalized;
 }
 
-function ensurePriority(rawPriority: string | number): 0 | 1 | 2 | 3 | 4 {
-  return resolvePriority(rawPriority);
-}
-
 function mergeCreateOptionsWithTemplate(
   templateOptions: Record<string, unknown>,
   explicitOptions: CreateCommandOptions,
@@ -1531,10 +1529,6 @@ async function loadCreateTemplateOptionsFromRuntime(
   );
 }
 
-function ensureInitHasRun(pmRoot: string): Promise<void> {
-  return assertInitializedTracker(pmRoot);
-}
-
 /**
  * Resolve an optional string item-metadata field for {@link runCreate}: yields
  * `undefined` when the field is being cleared via `--unset <key>` or was never
@@ -1644,7 +1638,13 @@ async function validateCreateParentReference(
   parent: string,
   policy: Parameters<typeof validateMissingParentReference>[1],
 ): Promise<{ parent: string; warnings: string[] }> {
-  const normalized = normalizeParentReferenceValue(parent);
+  const normalized = normalizeItemReference(
+    normalizeParentReferenceValue(parent),
+    settings.id_prefix,
+  );
+  if (isExternalDependencyReference(normalized)) {
+    return { parent: normalized, warnings: [] };
+  }
   assertParentReferenceIsNotSelf(itemId, normalized, settings.id_prefix);
   const parentLocated = await locateItem(
     pmRoot,
@@ -2733,7 +2733,7 @@ export async function runCreate(
     await resolveCreateTransportInputs(options),
   );
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  await ensureInitHasRun(pmRoot);
+  await assertInitializedTracker(pmRoot);
 
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
@@ -2877,7 +2877,7 @@ export async function runCreate(
       : resolveCreateDefaultStatus(typeDefinition, statusRegistry);
   const priority =
     resolvedOptions.priority !== undefined
-      ? ensurePriority(resolvedOptions.priority)
+      ? resolvePriority(resolvedOptions.priority)
       : 2;
   const unsetKeys = unsetTargets.metadataKeys;
   const tags = resolveCreateTags(unsetKeys, resolvedOptions);

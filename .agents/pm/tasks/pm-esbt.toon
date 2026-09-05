@@ -2,20 +2,59 @@ id: pm-esbt
 title: "docs-skills-gate: validate anchor fragments in relative links"
 description: "2026-07-04 docs review: scripts/release/docs-skills-gate.mjs splits links on [?#], so FILE.md#heading links only check file existence. All 12 current anchor links verified manually — nothing broken — but future dead anchors are ungated. Extend the gate to slugify headings in the target file and assert the fragment exists. Also break the wall-of-text paragraphs (EXTENSIONS.md line 89 ~4600 chars, line 114; COMMANDS.md lines 612, 627) into bullets while touching docs."
 type: Task
-status: open
+status: closed
 priority: 3
 tags[2]: ci,docs
 created_at: "2026-07-04T08:32:11.333Z"
-updated_at: "2026-07-26T05:55:09.618Z"
+updated_at: "2026-09-05T17:53:07.802Z"
+closed_at: "2026-09-05T17:53:07.315Z"
+completed_at: "2026-09-05T17:53:07.315Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: docs-skills-gate fails on relative links whose anchor fragment does not exist in the target document; gate green on current docs.
 parent: pm-u9d0
 risk: low
 confidence: high
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-wg07,related,"2026-07-14T17:05:12.707Z",null,null
-  pm-mu8m,related,"2026-07-24T23:53:24.283Z",null,null
-  pm-rtn5h6,related,"2026-07-24T23:53:24.283Z",null,null
-  pm-u9d0,implements,"2026-07-26T05:55:09.394Z",null,null
+resolution: "Validated rendered Markdown heading fragments using maintained parsing and GitHub slug rules, and restructured the four documented long paragraphs."
+expected_result: "Dead anchors fail the mandatory gate while valid formatted, duplicate, Unicode, entity, code and custom anchors resolve."
+actual_result: Negative-control tests and the full docs gate pass; the extension guide remains within its unchanged 450-line limit.
+dependencies[4]{id,kind,created_at}:
+  pm-wg07,related,"2026-07-14T17:05:12.707Z"
+  pm-mu8m,related,"2026-07-24T23:53:24.283Z"
+  pm-rtn5h6,related,"2026-07-24T23:53:24.283Z"
+  pm-u9d0,implements,"2026-07-26T05:55:09.394Z"
+comments[5]{created_at,author,text}:
+  "2026-09-05T16:12:56.489Z","harness:codex","Implementation choice: use maintained Markdown lexer and GitHub-compatible slugger in the development-only docs gate. Official heading rules checked at https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax. Tests will cover fenced examples, inline formatting, duplicate headings, Unicode, local fragments and transitive reachability."
+  "2026-09-05T16:54:18.331Z","harness:codex","Negative-control discovery: a heading containing HTML entities currently generates cats-amp-dogs instead of the rendered GitHub anchor cats--dogs. Added a regression before correcting entity decoding. Documentation parsing remains a development gate only, with no production import or runtime cost."
+  "2026-09-05T16:59:43.852Z","harness:codex","Quality tooling: adopted compatible ESLint 10.10.0 and development-only marked/github-slugger/entities for rendered Markdown navigation checks. Negative controls cover encoded URLs, disconnected cycles, stale or empty exemptions, duplicate headings, nested formatting, HTML entities, code spans, images, and custom anchors. No gate bypass or coverage exclusion added."
+  "2026-09-05T17:10:30.082Z","harness:codex","Acceptance scope check: recovered the July source revision to identify the four paragraphs despite line drift. Restructured package scaffold/loading, garbage collection, and automatic-fix scope prose into actionable bullets; kept EXTENSIONS.md within the unchanged 450-line gate. Updated command-reference file-report semantics and remote reference normalization. Full docs-and-skills gate passes."
+  "2026-09-05T17:53:06.729Z","harness:codex","Final local evidence: 8457 tests across 617 files pass at exact 100% lines/statements/functions/branches (60094/62503/12956/47351 covered). Full quality:static passes, including unchanged token ceilings, docstrings, graph composition, and record integrity. Typecheck, version policy, ShellCheck, credential scan, zero-vulnerability dependency audit, and enforced Trivy scan pass. Final npm/npx and Bun/bunx packed smoke covers all 13 packages; separate temporary installed SDK/CLI acceptance passes. Required Sentry/telemetry gate passes with zero blocking Sentry groups and no failures lacking error codes. PR review and hosted checks are the remaining delivery stage."
+learnings[1]{created_at,author,text}:
+  "2026-09-05T17:27:27.337Z","harness:codex","Derive heading anchors from rendered Markdown with maintained parsing, HTML entity decoding, and GitHub slug deduplication. Regex-only extraction misreads fenced examples and nested formatting. Require reasoned per-document exceptions and traverse from the advertised index so disconnected cycles never count as reachable."
+files[6]{path,scope,note}:
+  package.json,project,Maintained Markdown parsing dependencies
+  pnpm-lock.yaml,project,Pinned documentation parser dependency graph
+  scripts/release/docs-skills-gate.mjs,project,Anchor validation in full and links-only gates
+  scripts/release/docs-topology.mjs,project,Rendered Markdown heading and fragment analysis
+  tests/unit/scripts/release/docs-skills-gate.spec.ts,project,Mandatory gate wiring regression
+  tests/unit/scripts/release/docs-topology.spec.ts,project,Anchor and navigation negative controls
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/release/docs-skills-gate.mjs --links-only --json,project,240,"harness:codex","2026-09-05T16:31:53.986Z",local_mutation,feat/context-integrity-and-discoverable-governance
+test_runs[1]:
+  - run_id: test-local-mton4a9g-d7d3c7
+    kind: test
+    status: passed
+    started_at: "2026-09-05T17:11:56.163Z"
+    finished_at: "2026-09-05T17:11:57.172Z"
+    recorded_at: "2026-09-05T17:11:57.172Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/docs-skills-gate.mjs --links-only --json,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  docs/COMMANDS.md,project,Restructure cleanup and automatic fix scope paragraphs
+  docs/EXTENSIONS.md,project,Restructure the two canonical package-authoring paragraphs
+  docs/README.md,project,Mandatory fragment verification policy
+close_reason: "Implemented and locally verified with linked tests, exact coverage, mandatory quality gates, and packed acceptance."
 body: "## Context\n2026-07-04 docs review: scripts/release/docs-skills-gate.mjs splits link targets on [?#], so FILE.md#heading links only verify the file exists — dead anchors are ungated. All 12 current anchor links were verified by hand (none broken); this closes the gap for future ones.\n\n## Approach\nIn the gate, when a relative link carries a fragment: read the target file, slugify its headings (GitHub slugger rules — lowercase, strip punctuation, spaces→dashes, dedupe with -1 suffixes), and assert the fragment matches. While touching docs, break the wall-of-text paragraphs into bullets: EXTENSIONS.md line 89 (~4600 chars) and line 114; COMMANDS.md lines 612 and 627.\n\n## Definition of done\nGate fails on a seeded dead anchor and passes on the current tree; the four wall-of-text paragraphs are restructured; gate runtime stays negligible in CI static gates."

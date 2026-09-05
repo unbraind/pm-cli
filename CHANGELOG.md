@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- The linked-file staleness check has no holder-lifecycle partition, so 1,220 links on closed holders warn forever while its worklist truncation hides the actionable subset behind a path count reported as a row count ([pm-zw9188](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zw9188.toon))
+- 2026.8.1 regression: governance dedupe audit rejects the restored all-lifecycle status sentinel ([pm-449do9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-449do9.toon))
+- Normalize local parent shorthand consistently with dependency identifiers ([pm-olcoon](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-olcoon.toon))
 - Every pm next and pm context read writes one usage-ledger row per open item under a single global lock, and the compaction trigger is a byte threshold that a count-based retention can never satisfy ([pm-bab3gb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bab3gb.toon))
 - Reading one item by its primary key scans the whole workspace: pm get is O(corpus) and the projection flags bound the output but not the work ([pm-ydshl9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ydshl9.toon))
 - Telemetry worker permanently retries JSONB-incompatible Unicode events ([pm-xlb6aw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xlb6aw.toon))
@@ -12,6 +15,11 @@
 - Read sessions emit invalid continuation identities from workspace activity rows ([pm-s8ybl9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s8ybl9.toon))
 - Scale fixtures silently omit unregistered Story items from metadata reads ([pm-fx80w2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fx80w2.toon))
 - Releases from the default branch are supported with analyzer evidence ([pm-u1baah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u1baah.toon))
+
+### Other
+
+- The docs gate enforces link resolution but not doc reachability, so orphaned docs pass CI and the advertised docs map silently drifts ([pm-s4y3z4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-s4y3z4.toon))
+- docs-skills-gate: validate anchor fragments in relative links ([pm-esbt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-esbt.toon))
 
 ## 2026.9.5 - 2026-09-05
 

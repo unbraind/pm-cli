@@ -91,7 +91,14 @@ Package roots declare resources in `package.json` under `pm`:
 ```
 
 Installation activates `pm.extensions`. `pm.docs`, `pm.examples`, `pm.assets`, and `pm.prompts` are catalog metadata (metadata-only — they are discovered and surfaced in the catalog but not executed). Declare agent-facing prompt/slash-command markdown under `pm.prompts` and non-code assets (images, skills, fixtures) under `pm.assets`; their conventional roots are `prompts/` (also `.agents/pm/prompts/`) and `assets/` (also `.agents/pm/assets/`).
-`pm package init` and its compatibility spelling `pm extension init` emit the same publishable root-extension artifact (`"extensions": ["."]`): package metadata, a typed `index.ts`, a colocated `node:test` suite, a strict type-check-only `tsconfig.json`, and `typecheck`/`test` scripts. Both results report the canonical `package_name` and exact `invocation_command`; an already prefixed target such as `pm-my-workflow` stays `pm-my-workflow` instead of becoming `pm-pm-my-workflow`. The manifest `entry` points at `./index.ts` itself (ADR [pm-2c28](../.agents/pm/decisions/pm-2c28.toon) / [pm-m1uz](../.agents/pm/decisions/pm-m1uz.toon)). pm loads that `.ts` entry directly via Node's native type stripping (Node >=22.18), so there is no build step — run `npm install` (for the peer SDK and type-checking) before `pm package install`. The generated README shows how to author exported command/hook definitions with the SDK [define\* builders](../.agents/pm/decisions/pm-3mph.toon). `--capability` selects one of ten scaffold starters (`commands`, `hooks`, `search`, `importers`, `schema`, `profile`, `renderers`, `parser`, `preflight`, `services`), each keeping a runnable starter command and adding the selected registration pattern plus a colocated `node:test` suite built on the matching SDK `assertRegistered*`/`runRegistered*ForTest` helpers. These are authoring selectors, not a one-to-one manifest-capability vocabulary: the `profile` starter registers a profile but declares the supported `schema` manifest capability because `api.registerProfile` is schema-governed. The option is repeatable for shell and config composition: repeating the same capability is idempotent, while combining distinct starter shapes fails with a usage error that asks the author to select one explicit scaffold capability. The full per-capability matrix (what each starter registers, which starters also declare `schema` because flag metadata is schema-governed, and why `schema`/`profile` omit `activation.commands` so their global contributions activate conservatively for every command) lives in [SDK.md — Minimal Command Extension](./SDK.md#minimal-command-extension). Starter manifests use the same least-privilege policy metadata as pure first-party command packages: `trusted: true`, `sandbox_profile: "strict"`, and explicit `false` permissions for `fs_read`, `fs_write`, `network`, `env_read`, `env_write`, and `process_spawn`. Declarative starters import `manifest.json` in their generated test and call `assertExtensionManifestMatchesBlueprint`, so capability drift fails locally before publication. Larger packages may point at nested extension directories after declaring runtime dependencies, relaxing only the permissions they actually need, and validating with `pm package doctor`, which additionally emits the advisory `extension_schema_narrow_activation` warning when a package registers custom item types/fields yet declares narrow `activation.commands` (the schema footgun above), recommending the field be dropped so the type stays globally available.
+`pm package init` (and compatible `pm extension init`) creates a publishable root extension (`"extensions": ["."]`):
+
+- The artifact includes package metadata, typed `index.ts`, a colocated `node:test` suite, strict type-check-only `tsconfig.json`, and `typecheck`/`test` scripts. Results report canonical `package_name` and exact `invocation_command`; an existing `pm-` prefix is retained once.
+- The manifest points to `./index.ts`, loaded by native TypeScript stripping on Node >=22.18 ([pm-2c28](../.agents/pm/decisions/pm-2c28.toon), [pm-m1uz](../.agents/pm/decisions/pm-m1uz.toon)). Run `npm install` for the peer SDK and type checking before package installation; no build step is required. The README demonstrates the SDK [define* builders](../.agents/pm/decisions/pm-3mph.toon).
+- `--capability` selects `commands`, `hooks`, `search`, `importers`, `schema`, `profile`, `renderers`, `parser`, `preflight`, or `services`. Every starter keeps a runnable command and adds matching SDK `assertRegistered*`/`runRegistered*ForTest` tests. Repeating one selection is idempotent; distinct selections fail with an actionable usage error.
+- Scaffold selectors and manifest capabilities differ: `profile` registers a profile under `schema`. The [capability matrix](SDK.md#minimal-command-extension) explains each registration, schema-governed flags, and why `schema`/`profile` omit narrow `activation.commands` so their contributions stay globally available.
+- Starter manifests declare `trusted: true`, `sandbox_profile: "strict"`, and explicit false permissions for filesystem, network, environment, and subprocess access. Declarative tests import `manifest.json` and call `assertExtensionManifestMatchesBlueprint`, detecting capability drift before publication.
+- Larger packages may use nested extension directories and declare required runtime dependencies and permissions. Validate with `pm package doctor`; its advisory `extension_schema_narrow_activation` finding recommends removing narrow activation when custom item types or fields need global availability.
 Package tests can pair `readPmPackageManifest(packageRoot)` with
 `assertPackageManifest(manifest, { resources: ... })` from
 `@unbrained/pm-cli/sdk` to prove aliases and resource paths without duplicating
@@ -115,7 +122,11 @@ Runtime path overrides:
 - `PM_PATH`: project tracker root
 - `PM_GLOBAL_PATH`: global profile root
 
-Extensions are authored **and loaded** as TypeScript (ADR [pm-2c28](../.agents/pm/decisions/pm-2c28.toon) / [pm-m1uz](../.agents/pm/decisions/pm-m1uz.toon)): a minimal standalone extension has a `manifest.json` and a TypeScript `index.ts` entrypoint the loader imports directly by file URL via Node's native type stripping (Node >=22.18) — there is no compile step and no `./index.js`. Author against the SDK types with `import type { ExtensionApi }` — the type-only import is erased on load, so the `.ts` entry carries **no runtime import** of `@unbrained/pm-cli` (standalone entries are loaded outside any `node_modules`, so a runtime SDK import would fail). Type-check with `npx tsc --noEmit` after installing `typescript` and `@unbrained/pm-cli` for the type resolution.
+Extensions are authored and loaded as TypeScript ([pm-2c28](../.agents/pm/decisions/pm-2c28.toon), [pm-m1uz](../.agents/pm/decisions/pm-m1uz.toon)):
+
+- A minimal standalone extension has `manifest.json` and `index.ts`. Node >=22.18 loads that entry directly with native type stripping; no compilation or `index.js` is required.
+- Use `import type { ExtensionApi }` for erased SDK types. Standalone entries outside `node_modules` need the host SDK link described below before using runtime SDK imports.
+- Install `typescript` and `@unbrained/pm-cli`, then run `npx tsc --noEmit` to check authoring types.
 
 ```json
 {
@@ -294,12 +305,6 @@ Doctor JSON also includes `triage.collision_plan` with grouped surfaces, ranked 
 
 Use the public SDK barrel. Do not deep-import from `src/core` or `dist/core`.
 
-```ts
-import { defineExtension } from "@unbrained/pm-cli/sdk";
-```
-
-Common APIs:
-
 - `api.extension` is a read-only identity (`name`, `layer`, `version`, `capabilities`, `pm_min_version?`, `pm_max_version?`, `source_package?`) for self-identifying logs and version gating without re-reading the manifest.
 - `api.registerCommand(definition)` adds package-owned commands.
 - `api.registerFlags(command, flags)` adds runtime command flags. A flag may declare `value_type` (canonical; the legacy `type` alias is honored only when `value_type` is absent), `list: true` to accumulate repeated/comma-joined values like core `--tags`, and a `default` applied when the flag is omitted.
@@ -381,8 +386,6 @@ pm package reload --project
 pm package reload --project --watch
 ```
 
-Compatibility equivalents remain available through `pm extension ...` for existing automation.
-
 ## Upgrade Workflow
 
 `pm package upgrade` is the package-first update entrypoint:
@@ -443,7 +446,4 @@ Prefer `createExtensionTestHarness(module, { capabilities })` in package unit te
 
 ## Runnable Examples
 
-- `docs/examples/starter-extension/`
-- `docs/examples/policy-restricted-extension/`
-- `docs/examples/sdk-contract-consumer/`
-- `docs/examples/sdk-app-embedding/`
+See the [starter](examples/starter-extension/README.md), [policy-restricted](examples/policy-restricted-extension/README.md), [SDK contract consumer](examples/sdk-contract-consumer/README.md), and [SDK application](examples/sdk-app-embedding/README.md) examples.

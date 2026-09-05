@@ -67,7 +67,16 @@ pm normalize --dry-run --json
 ```
 
 `dedupe-audit --status all` explicitly selects every status and is equivalent
-to omitting the filter. For `comments-audit`, `--limit-items` caps item
+to omitting the filter. The receipt retains `filters.status: "all"` for an
+explicit all-status request. Configured status aliases and comma-separated OR
+filters use the host SDK parser; combining `all` with another status or using
+an unknown status fails. `--limit` caps returned clusters after the complete
+matching item population is scanned, and unreadable source items fail the read.
+Workflow terminality is captured per invocation so concurrent SDK calls cannot
+exchange workspace policy. These contracts are tracked by
+[pm-449do9](../../.agents/pm/issues/pm-449do9.toon).
+
+For `comments-audit`, `--limit-items` caps item
 scanning while `--limit-rows` caps emitted comment rows across the whole
 result. The older `--limit` spelling remains a deprecated alias for
 `--limit-rows`; do not combine the two row-limit spellings.

@@ -39,6 +39,33 @@ Package authors can import these operations from `@unbrained/pm-cli/sdk`
 without importing CLI modules or spawning the executable. Existing CLI import
 paths remain source-compatible while integrations migrate.
 
+## Relationship Identity
+
+Tracked by [pm-olcoon](../.agents/pm/issues/pm-olcoon.toon).
+
+`normalizeItemReference(reference, prefix, sourceKind?)` is the shared public
+SDK primitive for parent and dependency identities. Local shorthand, optional
+leading `#`, and case variants normalize to the workspace's canonical prefix.
+Explicit URL or provider locators (`github:`, `gitlab:`, `jira:`, `linear:`)
+retain their spelling and case; externally sourced dependency IDs do too.
+Only surrounding whitespace is trimmed from remote identities.
+
+Create, update, and plan materialization persist the canonical local parent,
+so lookup success cannot leave an unresolved shorthand in the stored graph.
+Explicit remote parents remain external references without a local
+missing-parent warning. Local missing parents still follow workspace policy,
+and self-parent and hierarchy-cycle checks remain enforced. A foreign-looking
+bare string is treated as local unless external provenance is supplied; the
+SDK does not guess a remote workspace from punctuation.
+
+```ts
+import { normalizeItemReference } from "@unbrained/pm-cli/sdk";
+
+normalizeItemReference("#ABC", "team-"); // team-abc
+normalizeItemReference("github:Org/Repo#42", "team-"); // unchanged
+normalizeItemReference("OTHER-Case", "team-", "external"); // unchanged
+```
+
 ## Reason Contract
 
 `resolveTerminalReason` is the pure precedence primitive. It chooses the first

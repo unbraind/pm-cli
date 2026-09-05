@@ -91,6 +91,17 @@ pm guide release --json
 - [Releasing](RELEASING.md) - maintainer release checklist and failure handling.
 - [starter extension](examples/starter-extension/README.md) - compact extension scaffold reference.
 
+Additional SDK, operations, and generated contracts:
+
+- [Item Read Projections](ITEM_READ_PROJECTIONS.md) - identity, projections, and read completeness.
+- [MCP Capability Surfaces](MCP_CAPABILITY_SURFACES.md) - negotiated MCP discovery contracts.
+- [PR Review Loop](PR_REVIEW_LOOP.md) - complete review inventories and feedback acknowledgment.
+- [SDK Lifecycle](SDK_LIFECYCLE.md) - lifecycle primitives and package integration.
+- [SDK Runtime Boundaries](SDK_RUNTIME_BOUNDARIES.md) - runtime ownership and import boundaries.
+- [Sentry Contract Epochs](SENTRY_CONTRACT_EPOCHS.md) - diagnostic compatibility and release epochs.
+- [Generated Agent Command Surface](generated/AGENT_COMMAND_SURFACE.md) - command routing inventory.
+- [Generated Flag Lexicon Budgets](generated/FLAG_LEXICON_BUDGETS.md) - flag vocabulary and budget inventory.
+
 ## Guide Topic Map
 
 | Optional `pm guide` topic | Primary docs                                                                                        |
@@ -152,4 +163,10 @@ Public docs must not link to ignored local operations artifacts, unpublished evi
 - Put a short "Agent Quick Context" near the top of deep docs.
 - Prefer commands that agents can copy exactly.
 - Use `pm` item IDs as durable references when docs explain tracked work.
-- Run link/search checks before closing documentation tasks.
+- Run `pnpm quality:docs-links` before closing documentation tasks. Every Markdown
+  page under `docs/` must be reachable transitively from this index, and links to
+  heading fragments must resolve. Fenced examples do not create navigation edges.
+- A deliberately standalone page requires an individual path and nonempty reason
+  in `scripts/release/docs-reachability-exceptions.json`; stale exceptions fail.
+  This policy is tracked by [pm-s4y3z4](../.agents/pm/chores/pm-s4y3z4.toon)
+  and [pm-esbt](../.agents/pm/tasks/pm-esbt.toon).

@@ -270,6 +270,42 @@ passing check evidence bodies are empty. Use `health --check-only --full` when
 diagnostic evidence is required. Explicit `--brief` or `--summary` retains the
 existing fast check-only mode that skips expensive optional scans.
 
+## Linked-File Repair Rows
+
+Tracked by [pm-zw9188](../.agents/pm/issues/pm-zw9188.toon).
+
+`validate --check-files` joins each missing path with its holders, lifecycle
+states, link fields, and candidate destinations before applying output limits.
+`missing_linked_path_rows` contains structured objects in both default and
+`--verbose-file-lists` output. The default caps paths and holders per path at
+40; verbose output restores both collections. `items_truncated` and
+`missing_linked_path_rows_truncated` identify the two independent omissions.
+
+`validate --counts` omits false `*_truncated` markers to keep its summary compact.
+True truncation markers, ordinary false values, and every zero count remain;
+its projection receipt declares that diagnostic rows were omitted.
+
+Counts describe the complete scanned population:
+
+- `missing_linked_links_count` counts distinct path, holder, and field triples.
+- `missing_linked_path_rows_count` counts distinct paths.
+- `active_missing_linked_links_count` and `active_missing_linked_paths_count`
+  identify actionable work under the configured workflow registry.
+- `legacy_closed_missing_linked_links_count` is the close-status subset of
+  `legacy_terminal_missing_linked_links_count`.
+
+Only active missing paths cause the missing-link warning. Historical terminal
+links remain visible for context reconstruction. Unknown statuses and absent
+holder metadata remain actionable. Rows and holders prioritize active work.
+Package authors can build the same pure report with
+`buildLinkedFileRepairReport` from `@unbrained/pm-cli/sdk/governance` and choose
+an explicit finite ceiling or `Infinity` for full output.
+
+Same-basename destinations are possibilities requiring review. Missing CSV or
+`path:note` literals receive `malformed` classification and no inferred move;
+explicit pruning never removes that category. Existing literal filenames are
+checked before classification, including names containing commas or colons.
+
 ## Completion Resolver Contract
 
 `resolveCompletionTimestamp` accepts legacy metadata where all timestamp fields

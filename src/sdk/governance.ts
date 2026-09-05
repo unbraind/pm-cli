@@ -32,6 +32,7 @@ export {
   type UpgradeResult,
 } from "./governance/upgrade.js";
 export * from "./governance/validate.js";
+export * from "./governance/linked-file-report.js";
 export * from "./author-attribution.js";
 export * from "./mutation-guard.js";
 export * from "./governance/provenance-health.js";

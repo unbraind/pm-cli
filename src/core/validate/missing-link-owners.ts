@@ -14,7 +14,7 @@
  */
 
 /** Classification assigned to a stale linked path during files validation. */
-export type StaleLinkClassification = "moved" | "deleted";
+export type StaleLinkClassification = "moved" | "deleted" | "malformed";
 
 /** Documents the stale link owner input payload exchanged by command, SDK, and package integrations. */
 export interface StaleLinkOwnerInput {
@@ -68,11 +68,12 @@ interface PathBucket {
   owners: Map<string, StaleLinkOwnerInput>;
 }
 
-/** `moved` wins over `deleted` when a single path's rows disagree on classification: `moved` means a relink candidate exists, which is the safer, more-actionable signal (relink instead of risk pruning a still-reachable link). In practice all rows for one path share a classification; this is a deterministic tie-break for the degenerate case. */
+/** `malformed` wins over other classifications to prevent unsafe automatic repair. Otherwise `moved` wins over `deleted` when a single path's rows disagree on classification: `moved` means a relink candidate exists, which is the safer, more-actionable signal (relink instead of risk pruning a still-reachable link). In practice all rows for one path share a classification; this is a deterministic tie-break for the degenerate case. */
 function preferClassification(
   current: StaleLinkClassification,
   next: StaleLinkClassification,
 ): StaleLinkClassification {
+  if (current === "malformed" || next === "malformed") return "malformed";
   return current === "moved" || next === "moved" ? "moved" : "deleted";
 }
 

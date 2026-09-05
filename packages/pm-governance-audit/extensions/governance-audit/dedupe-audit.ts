@@ -7,7 +7,8 @@ import {
   EXIT_CODE,
   PmCliError,
   isTerminalStatus,
-  normalizeStatusInput,
+  SETTINGS_DEFAULTS,
+  parseStatusFilterCsv,
   normalizeSimilarityText,
   nowIso,
   readSettings,
@@ -46,6 +47,8 @@ interface DedupeAuditPreparedCandidate {
   created_at: string;
   updated_at: string;
   normalized_title: string;
+  /** Lifecycle evidence captured from this call's workspace registry. */
+  terminal?: boolean;
 }
 
 /** Documents the dedupe audit candidate payload exchanged by command, SDK, and package integrations. */
@@ -188,35 +191,19 @@ const parseMode = (raw: string | undefined): DedupeAuditMode => {
   return normalized as DedupeAuditMode;
 };
 
-let dedupeAllowedStatuses = new Set<string>([
-  "draft",
-  "open",
-  "in_progress",
-  "blocked",
-  "closed",
-  "canceled",
-]);
-let dedupeTerminalStatuses = new Set<string>(["closed", "canceled"]);
-let dedupeStatusRegistry: RuntimeStatusRegistry | null = null;
+const defaultStatusRegistry = resolveRuntimeStatusRegistry(
+  SETTINGS_DEFAULTS.schema,
+);
 
+/** Parse package filters with the host SDK's workflow aliases and all sentinel. */
 const parseStatus = (
   raw: string | undefined,
+  registry: RuntimeStatusRegistry = defaultStatusRegistry,
 ): ItemStatus | "all" | undefined => {
-  /** Normalize an optional status token against the active audit registry. */
-  if (raw === undefined) {
-    return undefined;
-  }
-  const normalized = raw.trim().toLowerCase().replaceAll("-", "_");
-  if (normalized === "all") {
-    return "all";
-  }
-  if (!dedupeAllowedStatuses.has(normalized)) {
-    throw new PmCliError(
-      `Status filter must be one of all|${[...dedupeAllowedStatuses].join("|")}`,
-      EXIT_CODE.USAGE,
-    );
-  }
-  return normalized as ItemStatus;
+  if (raw === undefined) return undefined;
+  return (
+    parseStatusFilterCsv(raw, registry, { strict: true })?.join(",") ?? "all"
+  );
 };
 
 const parseThreshold = (raw: string | undefined): number | undefined => {
@@ -234,22 +221,15 @@ const parseThreshold = (raw: string | undefined): number | undefined => {
   return parsed;
 };
 
-const isTerminal = (status: ItemStatus): boolean => {
-  /** Resolve terminality through the active schema with a built-in fallback. */
-  if (dedupeStatusRegistry) {
-    return isTerminalStatus(status, dedupeStatusRegistry);
-  }
-  const normalized = normalizeStatusInput(status) ?? status;
-  return dedupeTerminalStatuses.has(normalized);
-};
-
 const compareCandidates = (
   left: DedupeAuditPreparedCandidate,
   right: DedupeAuditPreparedCandidate,
 ): number => {
   /** Rank canonical candidates by lifecycle, priority, recency, and identity. */
-  const leftTerminal = isTerminal(left.status);
-  const rightTerminal = isTerminal(right.status);
+  const leftTerminal =
+    left.terminal ?? isTerminalStatus(left.status, defaultStatusRegistry);
+  const rightTerminal =
+    right.terminal ?? isTerminalStatus(right.status, defaultStatusRegistry);
   if (leftTerminal !== rightTerminal) {
     return leftTerminal ? 1 : -1;
   }
@@ -519,6 +499,7 @@ const collectDedupeClusters = (
 
 const toPreparedDedupeCandidate = (
   item: ListedItem,
+  registry: RuntimeStatusRegistry,
 ): DedupeAuditPreparedCandidate => {
   /** Precompute normalized fields used by every dedupe comparison strategy. */
   return {
@@ -531,6 +512,7 @@ const toPreparedDedupeCandidate = (
     created_at: item.created_at,
     updated_at: item.updated_at,
     normalized_title: normalizeSimilarityText(item.title),
+    terminal: isTerminalStatus(item.status, registry),
   };
 };
 
@@ -572,24 +554,27 @@ export const runDedupeAudit = async (
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  dedupeStatusRegistry = statusRegistry;
-  dedupeAllowedStatuses = new Set(
-    statusRegistry.definitions.map((definition) => definition.id),
-  );
-  dedupeTerminalStatuses = new Set(statusRegistry.terminal_statuses);
   const mode = parseMode(options.mode);
-  const status = parseStatus(options.status);
+  const status = parseStatus(options.status, statusRegistry);
   const limit = parseIntegerLimit(options.limit);
   const threshold = parseThreshold(options.threshold);
   const fuzzyThreshold = threshold ?? 0.8;
 
   const listed = await runList(
     status === "all" ? undefined : status,
-    { ...buildListQueryFilters(options), full: true as const },
+    {
+      ...buildListQueryFilters(options),
+      full: true as const,
+      all: true,
+      noTruncate: true,
+      strictRead: true,
+    },
     global,
   );
 
-  const prepared = listed.items.map((item) => toPreparedDedupeCandidate(item));
+  const prepared = listed.items.map((item) =>
+    toPreparedDedupeCandidate(item, statusRegistry),
+  );
 
   const clusters = collectDedupeClusters(mode, prepared, fuzzyThreshold);
 

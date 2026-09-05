@@ -2,11 +2,13 @@ id: pm-olcoon
 title: Normalize local parent shorthand consistently with dependency identifiers
 description: "Manual packed-CLI testing showed that create --parent parent-a persists the literal dangling reference while --dep id=parent-a normalizes to pm-parent-a. Define an SDK-first identifier contract for parent scalars: either normalize unqualified local identifiers consistently or emit an explicit ambiguity/refusal with an executable canonical retry, without breaking intentional cross-workspace references."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[6]: "area:cli","area:sdk",hierarchy,identifiers,normalization,transport-parity
 created_at: "2026-08-21T14:49:23.426Z"
-updated_at: "2026-08-24T14:35:57.301Z"
+updated_at: "2026-09-05T17:53:06.295Z"
+closed_at: "2026-09-05T17:53:05.781Z"
+completed_at: "2026-09-05T17:53:05.781Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "A public SDK identifier parser distinguishes canonical local ids, unqualified local shorthand, and explicit cross-workspace references; parent scalars and dependency rows call the same parser across create, update, plan materialization, CLI, MCP, packages, npx and bunx; unambiguous local shorthand normalizes identically or every surface refuses with one typed ambiguity code and an executable canonical retry; intentional remote identifiers remain byte-stable; negative controls cover dangling shorthand, ambiguous prefixes, already-prefixed ids, remote ids, and mixed parent/dependency writes; packed-consumer tests prove no behavior divergence; validation and graph audit report zero new missing hierarchy targets."
@@ -17,11 +19,50 @@ why_now: "Packed-consumer acceptance reproduced divergent handling between creat
 parent: pm-mpbb
 risk: medium
 confidence: high
+resolution: Added shared public SDK normalization for local parent and dependency references while preserving explicit remote identity.
+expected_result: Create/update and delegated hosts persist the same canonical local references and preserve remote case.
+actual_result: "Direct SDK and CLI regressions pass; a separately installed packed consumer confirms shorthand parent creation, remote update, and canonical restoration."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-p9hw,verifies,"2026-08-21T14:49:23.426Z","harness:codex","cli:create:dep",detected
   pm-vk7zek,discovered_from,"2026-08-21T14:49:23.426Z","harness:codex","cli:create:dep",detected
   pm-rggtvd,discovered_from,"2026-08-21T15:00:51.997Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-21T14:49:23.426Z","harness:codex","Duplicate check: searched all-status PM corpus for parent shorthand normalization, create parent identifier prefix, and create --parent missing-reference terms. The closest canonical lineage is closed pm-p9hw (unresolved-parent fail-fast policy), but it does not cover identifier-prefix parity; pm-vk7zek supplied the manual hierarchy test that exposed this separate UX contract."
   "2026-08-22T07:18:09.985Z","harness:codex","Organization rationale 2026-08-22: this item is the sole active record that lacked acceptance, risk, confidence, and estimate metadata. It is now fully specified and parented under CLI command surface and agent ergonomics rather than directly under the portfolio root. Existing verifies and discovered_from lineage is preserved; no duplicate or generic edge was added."
+  "2026-09-05T17:53:05.198Z","harness:codex","Final local evidence: 8457 tests across 617 files pass at exact 100% lines/statements/functions/branches (60094/62503/12956/47351 covered). Full quality:static passes, including unchanged token ceilings, docstrings, graph composition, and record integrity. Typecheck, version policy, ShellCheck, credential scan, zero-vulnerability dependency audit, and enforced Trivy scan pass. Final npm/npx and Bun/bunx packed smoke covers all 13 packages; separate temporary installed SDK/CLI acceptance passes. Required Sentry/telemetry gate passes with zero blocking Sentry groups and no failures lacking error codes. PR review and hosted checks are the remaining delivery stage."
+notes[1]{created_at,author,text}:
+  "2026-09-05T17:27:28.665Z","harness:codex","The public normalizeItemReference primitive shares dependency normalization with lifecycle parent persistence. Remote locators preserve case; local uppercase and hash shorthand canonicalize before hierarchy validation. Existing plan/CLI/MCP/package adapters delegate to these SDK lifecycle writers, avoiding adapter-specific normalization."
+files[6]{path,scope,note}:
+  sdk/public-surface.json,project,Additive public reference and report SDK contracts
+  src/sdk/dependency-provenance.ts,project,Shared local and remote relationship normalization
+  src/sdk/lifecycle/create.ts,project,Canonical parent persistence
+  src/sdk/lifecycle/update.ts,project,Canonical parent updates
+  tests/integration/create-self-parent.integration.spec.ts,project,CLI canonical parent persistence after refused self-parent mutation
+  tests/unit/sdk/lifecycle/item-reference-normalization.spec.ts,project,Canonical relationship regression
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/item-reference-normalization.spec.ts tests/integration/create-self-parent.integration.spec.ts,project,240,"harness:codex","2026-09-05T16:50:53.910Z",local_mutation,feat/context-integrity-and-discoverable-governance
+test_runs[1]:
+  - run_id: test-local-mton3e1r-vksmzm
+    kind: test
+    status: passed
+    started_at: "2026-09-05T17:11:07.082Z"
+    finished_at: "2026-09-05T17:11:15.423Z"
+    recorded_at: "2026-09-05T17:11:15.423Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/item-reference-normalization.spec.ts tests/integration/create-self-parent.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,Document shared local normalization and preserved remote locators
+  docs/SDK_LIFECYCLE.md,project,Public reference normalization and persistence contract
+close_reason: "Implemented and locally verified with linked tests, exact coverage, mandatory quality gates, and packed acceptance."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-olcoon
+  gate_id: sdk-item-reference-normalization
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/item-reference-normalization.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/item-reference-normalization.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

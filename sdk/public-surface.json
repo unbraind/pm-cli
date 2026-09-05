@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1854,
+    "covered_symbols": 1857,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1855
+    "required_symbols": 1858
   },
   "breaking_acknowledgements": [
     {
@@ -3434,6 +3434,12 @@
           "kind": "function",
           "name": "buildItemSchedule",
           "signature": "(item: ItemMetadata) => ItemScheduleContext | undefined | calls: (item: ItemMetadata) => ItemScheduleContext | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "buildLinkedFileRepairReport",
+          "signature": "(links: readonly StaleLinkOwnerInput[], classifications: readonly ClassifiedStaleLinkedPath[], lookup: (id: string) => OwnerItemMetadata | undefined, registry: RuntimeStatusRegistry, limit?: number) => LinkedFileRepairReport | calls: (links: readonly StaleLinkOwnerInput[], classifications: readonly ClassifiedStaleLinkedPath[], lookup: (id: string) => OwnerItemMetadata | undefined, registry: RuntimeStatusRegistry, limit?: number) => LinkedFileRepairReport"
         },
         {
           "classification": "advanced_export",
@@ -9226,6 +9232,18 @@
           "signature": "export interface LinkedFileMetadataIndexResult { source_cursor: string; total: number; matches: IndexedLinkedFileMatch[]; }"
         },
         {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "LinkedFileRepairReport",
+          "signature": "export interface LinkedFileRepairReport { missing_linked_path_rows_count: number; missing_linked_path_rows: LinkedFileRepairRow[]; missing_linked_path_rows_truncated: boolean; missing_linked_links_count: number; active_missing_linked_links_count: number; legacy_closed_missing_linked_links_count: number; legacy_terminal_missing_linked_links_count: number; active_missing_linked_paths_count: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "LinkedFileRepairRow",
+          "signature": "export interface LinkedFileRepairRow extends MissingLinkedPathRow { candidates: string[]; candidates_truncated: boolean; link_count: number; items_truncated: boolean; active_link_count: number; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "LinkedPathValidation",
@@ -10196,6 +10214,12 @@
           "kind": "function",
           "name": "normalizeItemMetadata",
           "signature": "(itemMetadata: ItemMetadata, options?: Pick<ItemDocumentFormatOptions, \"extensionFieldNames\" | \"onWarning\" | \"schema\">) => ItemMetadata | calls: (itemMetadata: ItemMetadata, options?: Pick<ItemDocumentFormatOptions, \"schema\" | \"extensionFieldNames\" | \"onWarning\">) => ItemMetadata"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "normalizeItemReference",
+          "signature": "(reference: string, prefix: string, sourceKind?: string) => string | calls: (reference: string, prefix: string, sourceKind?: string) => string"
         },
         {
           "classification": "advanced_export",
@@ -25044,6 +25068,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "buildLinkedFileRepairReport",
+          "signature": "(links: readonly StaleLinkOwnerInput[], classifications: readonly ClassifiedStaleLinkedPath[], lookup: (id: string) => OwnerItemMetadata | undefined, registry: RuntimeStatusRegistry, limit?: number) => LinkedFileRepairReport | calls: (links: readonly StaleLinkOwnerInput[], classifications: readonly ClassifiedStaleLinkedPath[], lookup: (id: string) => OwnerItemMetadata | undefined, registry: RuntimeStatusRegistry, limit?: number) => LinkedFileRepairReport"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "buildStatusRoleWarnings",
           "signature": "(diagnostics: StatusRoleDiagnostics) => string[] | calls: (diagnostics: StatusRoleDiagnostics) => string[]"
         },
@@ -25442,6 +25472,18 @@
           "kind": "function",
           "name": "jaccardSimilarity",
           "signature": "(leftTokens: readonly string[], rightTokens: readonly string[]) => number | calls: (leftTokens: readonly string[], rightTokens: readonly string[]) => number"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "LinkedFileRepairReport",
+          "signature": "export interface LinkedFileRepairReport { missing_linked_path_rows_count: number; missing_linked_path_rows: LinkedFileRepairRow[]; missing_linked_path_rows_truncated: boolean; missing_linked_links_count: number; active_missing_linked_links_count: number; legacy_closed_missing_linked_links_count: number; legacy_terminal_missing_linked_links_count: number; active_missing_linked_paths_count: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "LinkedFileRepairRow",
+          "signature": "export interface LinkedFileRepairRow extends MissingLinkedPathRow { candidates: string[]; candidates_truncated: boolean; link_count: number; items_truncated: boolean; active_link_count: number; }"
         },
         {
           "classification": "supported",

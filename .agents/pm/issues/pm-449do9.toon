@@ -2,11 +2,13 @@ id: pm-449do9
 title: "2026.8.1 regression: governance dedupe audit rejects the restored all-lifecycle status sentinel"
 description: "Current main at pm 2026.8.1 again rejects pm dedupe-audit --status all, although closed pm-mp49 records that exact package-owned contract as implemented and verified. Omitting --status considers all 2,263 items. This recurrence preserves the completed historical record and owns only the new drift across behavior, docs, contracts, recovery guidance, and tests."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:contracts","area:extensions",dedupe,governance-audit,regression
 created_at: "2026-08-01T20:20:19.401Z"
-updated_at: "2026-08-01T20:25:39.376Z"
+updated_at: "2026-09-05T17:53:09.352Z"
+closed_at: "2026-09-05T17:53:08.865Z"
+completed_at: "2026-09-05T17:53:08.865Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Explicit --status all succeeds and considers the same all-lifecycle candidate set as an omitted status filter; Result metadata truthfully records the explicit all sentinel; Help, action contracts, docs, completions, SDK/package handler, focused tests, and packed installed-consumer behavior agree; Configured custom statuses remain accepted and invalid statuses still fail with the declared domain; A regression gate prevents the package-owned parser from drifting from the shared lifecycle-filter contract"
@@ -22,19 +24,71 @@ confidence: high
 severity: medium
 environment: pm 2026.8.1 built from current main with pm-governance-audit active
 repro_steps: Run pm dedupe-audit --mode title_exact --status all --limit 10000 --json; compare with the same command omitting --status.
-expected_result: Both invocations consider all lifecycle states and the explicit invocation reports filters.status=all.
-actual_result: "Explicit invocation exits code 2 because all is rejected; omission succeeds across 2,263 items."
+resolution: Governance dedupe uses the shared lifecycle parser and strict complete SDK collection with per-workspace registry isolation.
+expected_result: Explicit all and configured alias CSV filters agree with shared contracts; limits bound clusters after complete collection.
+actual_result: Concurrent real workspace regressions pass and the installed package considers all three temporary items with a one-cluster limit.
 affected_version: 2026.8.1
 component: pm-governance-audit/dedupe-audit lifecycle filter contract
 regression: true
 customer_impact: Agents following repository guidance cannot express the required all-status duplicate scan explicitly and receive contradictory recovery guidance.
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-i02t,related,"2026-08-01T20:20:19.401Z","harness:codex","cli:create:dep",detected
   pm-mp49,discovered_from,"2026-08-01T20:20:19.401Z","harness:codex","cli:create:dep",detected
   pm-n7rr,implements,"2026-08-01T20:20:19.401Z","harness:codex","cli:create:dep",detected
   pm-ugqx,implements,"2026-08-01T20:20:19.401Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
-  "2026-08-01T20:20:19.401Z","harness:codex","Duplicate-check evidence: all-status searches found closed pm-mp49 as the exact historical owner plus closed core sentinel work pm-i02t; no active recurrence exists. Live 2026-08-01 reproduction: explicit --status all fails while omission considers all 2,263 items. --allow-duplicate is used only to represent this versioned regression without rewriting or reopening the immutable completion record."
-  "2026-08-01T20:21:53.634Z","harness:codex","Planning note: fix ownership belongs in the shared lifecycle-filter parser and package action contract, not as another local special case. Verification must include source tests plus a freshly packed installed package because the historical item passed at that boundary and current source behavior regressed. The regression should also reply to the misleading recovery path by making allowed values include the all sentinel when the command supports it."
-  "2026-08-01T20:25:23.985Z","harness:codex","Organization evidence: this is the only active owner of the 2026.8.1 recurrence. Exact-title dedupe remains unchanged from the historical canceled probe cluster and parent-scope dedupe has zero clusters. pm-4flipp was consolidated into this item through pm dedupe-merge with duplicate_of metadata after delayed command output revealed the first create had succeeded."
+  pm-olcoon,blocked_by,"2026-09-05T16:59:43.082Z","harness:codex","cli:update:dep",detected
+  pm-olcoon,verifies,"2026-09-05T17:29:28.527Z","harness:codex","cli:update:dep",detected
+comments[6]:
+  - created_at: "2026-08-01T20:20:19.401Z"
+    author: "harness:codex"
+    text: "Duplicate-check evidence: all-status searches found closed pm-mp49 as the exact historical owner plus closed core sentinel work pm-i02t; no active recurrence exists. Live 2026-08-01 reproduction: explicit --status all fails while omission considers all 2,263 items. --allow-duplicate is used only to represent this versioned regression without rewriting or reopening the immutable completion record."
+  - created_at: "2026-08-01T20:21:53.634Z"
+    author: "harness:codex"
+    text: "Planning note: fix ownership belongs in the shared lifecycle-filter parser and package action contract, not as another local special case. Verification must include source tests plus a freshly packed installed package because the historical item passed at that boundary and current source behavior regressed. The regression should also reply to the misleading recovery path by making allowed values include the all sentinel when the command supports it."
+  - created_at: "2026-08-01T20:25:23.985Z"
+    author: "harness:codex"
+    text: "Organization evidence: this is the only active owner of the 2026.8.1 recurrence. Exact-title dedupe remains unchanged from the historical canceled probe cluster and parent-scope dedupe has zero clusters. pm-4flipp was consolidated into this item through pm dedupe-merge with duplicate_of metadata after delayed command output revealed the first create had succeeded."
+  - created_at: "2026-09-05T16:54:19.516Z"
+    author: "harness:codex"
+    text: "Live 2026-09-05 GitHub census: no open PRs/issues or dependency/code/secret alerts at orientation. Complete package dedupe now consumes strict all-lifecycle SDK lists and immutable per-call status context. pnpm audit reports zero vulnerabilities; npm registry still confirms canonical deferrals pm-ksr40d (Node floor), pm-do5b (parser peer range), and pm-fokyhh (CodSpeed peer range). No duplicate dependency items created."
+  - created_at: "2026-09-05T17:27:26.189Z"
+    author: "harness:codex"
+    text: "External closeout evidence before review: latest compatible ESLint 10.10.0 installed; pnpm audit zero findings across 435 dependencies; Trivy high/critical vulnerabilities/secrets/misconfigurations zero; ShellCheck passes; GitHub open PRs/issues/dependency/code/secret alerts zero before this delivery PR. All ten latest closed GitHub issues have PM-item link comments. Required Sentry/telemetry gate passes: zero blocking issues in 14 days, finish error rate 1.06%, zero missing-error-code failures."
+    edited_at: "2026-09-05T17:29:27.645Z"
+  - created_at: "2026-09-05T17:53:08.279Z"
+    author: "harness:codex"
+    text: "Final local evidence: 8457 tests across 617 files pass at exact 100% lines/statements/functions/branches (60094/62503/12956/47351 covered). Full quality:static passes, including unchanged token ceilings, docstrings, graph composition, and record integrity. Typecheck, version policy, ShellCheck, credential scan, zero-vulnerability dependency audit, and enforced Trivy scan pass. Final npm/npx and Bun/bunx packed smoke covers all 13 packages; separate temporary installed SDK/CLI acceptance passes. Required Sentry/telemetry gate passes with zero blocking Sentry groups and no failures lacking error codes. PR review and hosted checks are the remaining delivery stage."
+learnings[1]{created_at,author,text}:
+  "2026-09-05T17:24:21.666Z","harness:codex",Resolve custom workflow semantics per invocation and carry terminal classification with prepared candidates. Concurrent package calls must never consult mutable process-wide status registries; a real two-workspace regression proves opposite roles for the same status remain isolated.
+files[5]{path,scope,note}:
+  packages/pm-governance-audit/extensions/governance-audit/dedupe-audit.ts,project,SDK status filter parity and per-call workflow isolation
+  packages/pm-governance-audit/extensions/governance-audit/index.ts,project,Discoverable all-status and cluster limit contracts
+  packages/pm-governance-audit/extensions/governance-audit/sdk.ts,project,Public SDK filter imports
+  tests/unit/commands/dedupe-audit-command.spec.ts,project,Package duplicate discovery regression
+  tests/unit/commands/dedupe-status-contract.spec.ts,project,Custom status filter regression
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/dedupe-status-contract.spec.ts tests/unit/commands/dedupe-audit-command.spec.ts,project,240,"harness:codex","2026-09-05T16:31:49.042Z",local_mutation,feat/context-integrity-and-discoverable-governance
+test_runs[1]:
+  - run_id: test-local-mton3npx-1g52w3
+    kind: test
+    status: passed
+    started_at: "2026-09-05T17:11:15.870Z"
+    finished_at: "2026-09-05T17:11:27.957Z"
+    recorded_at: "2026-09-05T17:11:27.957Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/dedupe-status-contract.spec.ts tests/unit/commands/dedupe-audit-command.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  packages/pm-governance-audit/README.md,project,Complete population filtering and cluster limits
+close_reason: "Implemented and locally verified with linked tests, exact coverage, mandatory quality gates, and packed acceptance."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-449do9
+  gate_id: governance-dedupe-status-contract
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/dedupe-status-contract.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/commands/dedupe-status-contract.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

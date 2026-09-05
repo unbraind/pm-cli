@@ -60,14 +60,14 @@ const dedupeAuditFlags = [
     long: "--status",
     value_name: "value",
     value_type: "string",
-    description: "Filter by status.",
+    description: "Filter by configured status IDs or aliases (comma-separated); all includes every lifecycle state.",
   },
   ...auditNormalizeFilterFlags,
   {
     long: "--limit",
     value_name: "n",
     value_type: "string",
-    description: "Limit analyzed items.",
+    description: "Limit returned duplicate clusters; every matching item is analyzed.",
   },
   {
     long: "--threshold",

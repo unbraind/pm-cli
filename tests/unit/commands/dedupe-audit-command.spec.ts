@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { _testOnly as dedupeInternals, runDedupeAudit } from "../../../packages/pm-governance-audit/extensions/governance-audit/dedupe-audit.ts";
+import * as governanceSdk from "../../../packages/pm-governance-audit/extensions/governance-audit/sdk.ts";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
@@ -63,7 +64,7 @@ describe("dedupe-audit helpers", () => {
     expect(dedupeInternals.parseThreshold("0")).toBe(0);
     expect(dedupeInternals.parseThreshold("1")).toBe(1);
     expect(() => dedupeInternals.parseMode("nearest")).toThrow(/mode must be one of/);
-    expect(() => dedupeInternals.parseStatus("waiting")).toThrow(/Status filter must be one of/);
+    expect(() => dedupeInternals.parseStatus("waiting")).toThrow(/Invalid --status/);
     expect(() => dedupeInternals.parseThreshold("nan")).toThrow(/between 0 and 1/);
     expect(() => dedupeInternals.parseThreshold("-0.1")).toThrow(/between 0 and 1/);
   });
@@ -404,32 +405,17 @@ describe("runDedupeAudit", () => {
         },
       ];
 
-      vi.resetModules();
-      vi.doMock("../../../src/sdk/query/list.js", () => ({
-        runList: vi
-          .fn()
-          .mockResolvedValueOnce({
-            items: listedItems,
-            warnings: [],
-            now: "2026-01-02T00:00:00.000Z",
-          })
-          .mockResolvedValueOnce({
-            items: listedItems,
-            warnings: ["synthetic_list_warning"],
-            now: "2026-01-02T00:00:00.000Z",
-          }),
-      }));
-
-      const { runDedupeAudit: mockedRunDedupeAudit } = await import("../../../packages/pm-governance-audit/extensions/governance-audit/dedupe-audit.ts");
+      const listSpy = vi.spyOn(governanceSdk, "runList")
+        .mockResolvedValueOnce({ items: listedItems, warnings: [], now: "2026-01-02T00:00:00.000Z" } as Awaited<ReturnType<typeof governanceSdk.runList>>)
+        .mockResolvedValueOnce({ items: listedItems, warnings: ["synthetic_list_warning"], now: "2026-01-02T00:00:00.000Z" } as Awaited<ReturnType<typeof governanceSdk.runList>>);
       try {
-        const withoutWarnings = await mockedRunDedupeAudit({ mode: "title_exact" }, { path: context.pmPath });
+        const withoutWarnings = await runDedupeAudit({ mode: "title_exact" }, { path: context.pmPath });
         expect(withoutWarnings.warnings).toBeUndefined();
 
-        const withWarnings = await mockedRunDedupeAudit({ mode: "title_exact" }, { path: context.pmPath });
+        const withWarnings = await runDedupeAudit({ mode: "title_exact" }, { path: context.pmPath });
         expect(withWarnings.warnings).toEqual(["synthetic_list_warning"]);
       } finally {
-        vi.doUnmock("../../../src/sdk/query/list.js");
-        vi.resetModules();
+        listSpy.mockRestore();
       }
     });
   });

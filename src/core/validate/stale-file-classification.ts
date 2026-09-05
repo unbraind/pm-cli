@@ -6,14 +6,16 @@
  *   scanned candidate set — the candidates are reported so an agent can relink
  *   the item to the new location instead of dropping the link, or
  * - `deleted`: no candidate with that basename exists anywhere in the scan,
- *   so the link points at content that is gone and pruning it is safe.
+ *   making it eligible for an explicitly requested prune, or
+ * - `malformed`: an ambiguous missing CSV or path:note literal which must be
+ *   reviewed before any relocation or removal is inferred.
  *
  * Pure module (pm-0v2m / GH-184): no filesystem access — callers pass the
  * already-collected candidate file list from the files check scan.
  */
 
 /** Classification labels for linked paths that no longer exist on disk. */
-export type StaleLinkedPathClassification = "moved" | "deleted";
+export type StaleLinkedPathClassification = "moved" | "deleted" | "malformed";
 
 /** Documents the classified stale linked path payload exchanged by command, SDK, and package integrations. */
 export interface ClassifiedStaleLinkedPath {
@@ -21,7 +23,7 @@ export interface ClassifiedStaleLinkedPath {
   path: string;
   /** Value that configures or reports classification for this contract. */
   classification: StaleLinkedPathClassification;
-  /** Candidate new locations (same basename, different path), sorted and capped at `candidateLimit`. Empty for `deleted`. */
+  /** Candidate new locations (same basename, different path), sorted and capped at `candidateLimit`. Empty for `deleted` and `malformed`. */
   candidates: string[];
   /** True when more candidates existed than `candidateLimit` allowed. */
   candidates_truncated: boolean;
@@ -30,6 +32,7 @@ export interface ClassifiedStaleLinkedPath {
 /** Fallback stale path candidate limit used when callers do not provide an override. */
 export const DEFAULT_STALE_PATH_CANDIDATE_LIMIT = 3;
 
+/** Extract a basename from either portable separator convention. */
 function basenameOf(relativePath: string): string {
   const lastSlash = Math.max(
     relativePath.lastIndexOf("/"),
@@ -38,7 +41,7 @@ function basenameOf(relativePath: string): string {
   return lastSlash === -1 ? relativePath : relativePath.slice(lastSlash + 1);
 }
 
-/** Classify each stale (missing) linked path as `moved` or `deleted` by matching its basename against the candidate file list. Output preserves the input order of `stalePaths` (callers pass an already-sorted unique list). A candidate equal to the stale path itself never matches (the path is known missing; an identical candidate would be self-referential noise). */
+/** Classify each stale (missing) linked path as `moved`, `deleted`, or `malformed` by matching its basename against the candidate file list. Output preserves the input order of `stalePaths` (callers pass an already-sorted unique list). A candidate equal to the stale path itself never matches (the path is known missing; an identical candidate would be self-referential noise). */
 export function classifyStaleLinkedPaths(
   stalePaths: readonly string[],
   candidateFiles: readonly string[],
@@ -63,6 +66,20 @@ export function classifyStaleLinkedPaths(
   }
 
   return stalePaths.map((stalePath) => {
+    // Historical CSV and path:note input must not become a confident basename
+    // relocation. Existing files are checked before classification; this only
+    // rejects ambiguous missing references, never an existing literal filename.
+    if (
+      stalePath.includes(",") ||
+      stalePath.replace(/^[a-z]:[\\/]/i, "").includes(":")
+    ) {
+      return {
+        path: stalePath,
+        classification: "malformed" as const,
+        candidates: [],
+        candidates_truncated: false,
+      };
+    }
     const matches = (candidatesByBasename.get(basenameOf(stalePath)) ?? [])
       .filter((candidate) => candidate !== stalePath)
       .sort((left, right) => left.localeCompare(right));
@@ -90,6 +107,6 @@ export function summarizeStaleLinkedPathClassifications(
   return classified.map((entry) =>
     entry.classification === "moved"
       ? `${entry.path}:moved:${entry.candidates[0]}`
-      : `${entry.path}:deleted`,
+      : `${entry.path}:${entry.classification}`,
   );
 }
