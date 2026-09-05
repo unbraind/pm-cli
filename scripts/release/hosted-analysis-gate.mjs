@@ -447,21 +447,20 @@ function readReleaseVersions(parentSha, sha, targetVersion) {
   return previousVersion;
 }
 
-/** Require the release changelog to change its heading and nothing else. */
+/** Accept package-generated dated or undated headings with all other bytes unchanged. */
 function hasExactReleaseChangelog(parentSha, sha, targetVersion, releaseDate) {
   const parentChangelog = readCommitFile(parentSha, "CHANGELOG.md");
   const candidateChangelog = readCommitFile(sha, "CHANGELOG.md");
   if (parentChangelog === null || candidateChangelog === null) {
     return false;
   }
-  const unreleasedHeader = "## Unreleased";
+  const unreleasedHeader = /^## Unreleased$/mu;
   return (
-    parentChangelog.includes(unreleasedHeader) &&
-    candidateChangelog ===
-      parentChangelog.replace(
-        unreleasedHeader,
-        `## ${targetVersion} - ${releaseDate}`,
-      )
+    unreleasedHeader.test(parentChangelog) &&
+    [`## ${targetVersion}`, `## ${targetVersion} - ${releaseDate}`].some(
+      (heading) =>
+        candidateChangelog === parentChangelog.replace(unreleasedHeader, heading),
+    )
   );
 }
 
