@@ -1,7 +1,7 @@
 {
   "version": 4,
   "transcript_version": 2,
-  "transcript_digest": "sha256:6066e178ba9d58b6f45b1978b4211ed466c652510645befd199eb41d8f640608",
+  "transcript_digest": "sha256:b8a6aea318c41e6a40dbcaf8094da8397ca747515a7df249d35c1f21ad94a307",
   "estimator": "ceil(utf8_bytes / 4)",
   "measurement_scope": "output_before_token_accounting",
   "published_with_release": true,

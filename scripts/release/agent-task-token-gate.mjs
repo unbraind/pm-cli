@@ -221,12 +221,14 @@ function assertTransportPayloadParity(baselinePayload, measuredPayload, step) {
 
 /** Preserve recovery evidence while independently predicting the added transport flag. */
 function expectedAccountedDiagnostic(baseline, step) {
-  if (step.expected_output_kind !== "refusal" || step.expected_accounting_mode !== "self_reported") {
+  if (step.expected_output_kind !== "refusal" || step.expected_accounting_mode !== "self_reported" || step.expected_field_values?.["recovery.recovery_mode"] === "compact") {
     return baseline;
   }
   const recovery = baseline.recovery;
-  if (!Array.isArray(recovery?.normalized_args)) return baseline;
-  if (recovery.normalized_args[0] !== "--json" || recovery.provided_fields?.[0] !== "--json") {
+  if (!Array.isArray(recovery?.normalized_args) || !Array.isArray(recovery.provided_fields)) {
+    fail("Agent-task diagnostic baseline must retain normalized recovery arguments and provided fields");
+  }
+  if (recovery.normalized_args[0] !== "--json" || recovery.provided_fields[0] !== "--json") {
     fail("Agent-task diagnostic baseline must retain the independently supplied JSON transport flag");
   }
   if (recovery.attempted_command !== renderPmCommand(recovery.normalized_args)) {

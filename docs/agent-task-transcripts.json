@@ -186,6 +186,7 @@
           "expected_accounting_mode": "self_reported",
           "required_fields": ["code", "refusal", "recovery"],
           "expected_error_code": "unknown_context_intent",
+          "expected_field_values": { "recovery.recovery_mode": "compact" },
           "expected_refusal_surface": "--for"
         },
         {

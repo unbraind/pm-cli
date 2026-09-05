@@ -81,6 +81,7 @@ pm guide release --json
 - [Extension Lifecycle Contracts](EXTENSION_LIFECYCLE.md) - source identity, durable migrations, and scoped preflight ownership.
 - [Extension Author Contracts](EXTENSION_AUTHOR_CONTRACTS.md) - the stability guarantees and contract surface package authors build against.
 - [SDK](SDK.md) - public import surfaces and typed authoring examples.
+- [SDK execution and recovery contracts](SDK_EXECUTION_CONTRACTS.md): schema-driven scheduling, handoff, and command recovery.
 - [Multi-Branch Merge Safety](MERGE_SAFETY.md) - semantic tracker merge drivers, post-merge integrity gates, delete/modify policy, and recovery-receipt retention.
 - [Codex Plugin](CODEX_PLUGIN.md) - native MCP plugin install, tools, skills, and safety notes.
 - [Native ChatGPT and Codex Plugin Implementation Plan](CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md) - official-source
@@ -152,5 +153,3 @@ Public docs must not link to ignored local operations artifacts, unpublished evi
 - Prefer commands that agents can copy exactly.
 - Use `pm` item IDs as durable references when docs explain tracked work.
 - Run link/search checks before closing documentation tasks.
-
-- [SDK execution and recovery contracts](SDK_EXECUTION_CONTRACTS.md): schema-driven scheduling, handoff, and command recovery.

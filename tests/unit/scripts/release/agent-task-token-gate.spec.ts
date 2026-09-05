@@ -834,7 +834,7 @@ describe("agent-task transcript token gate", () => {
       expected_error_code: "unknown_option",
       expected_refusal_surface: "--bad",
     };
-    expect(
+    expect(() =>
       validateAgentTaskTokenInvocation(
         { status: 2, stdout: "", stderr: render(refusal) },
         {
@@ -844,7 +844,7 @@ describe("agent-task transcript token gate", () => {
         },
         { ...refusalStep, expected_accounting_mode: "self_reported" },
       ),
-    ).toMatchObject({ output_kind: "refusal" });
+    ).toThrow();
     expect(
       validateAgentTaskTokenInvocation(
         { status: 2, stdout: "", stderr: render(refusal) },
@@ -952,6 +952,21 @@ describe("agent-task transcript token gate", () => {
     expect(validateAgentTaskTokenInvocation(
       { status: 2, stdout: "", stderr: render(baseline) }, accountedTransport, step,
     )).toMatchObject({ output_kind: "refusal" });
+    for (const recovery of [
+      {},
+      { recovery_mode: "compact" },
+      { normalized_args: undefined, provided_fields: [] },
+      { normalized_args: "--json list --bad", provided_fields: [] },
+      { normalized_args: ["--json", "list", "--bad"] },
+      { normalized_args: ["--json", "list", "--bad"], provided_fields: "--json" },
+    ]) {
+      const malformed = { ...baseline, recovery };
+      expect(() => validateAgentTaskTokenInvocation(
+        { status: 2, stdout: "", stderr: render(malformed) },
+        { status: 2, stdout: "", stderr: render(attachOutputTokenAccounting(malformed, render)) },
+        step,
+      )).toThrow();
+    }
     for (const recovery of [
       { ...baseline.recovery, attempted_command: "pm --json delete pm-important" },
       { ...baseline.recovery, normalized_args: ["list", "--bad"] },

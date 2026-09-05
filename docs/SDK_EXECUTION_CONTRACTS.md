@@ -35,7 +35,11 @@ registry. It resolves both forward `blocked_by` and reverse `blocks` edges,
 terminal prerequisites, active descendants, and execution roles. Its result
 contains ready leaves, blocked leaves, human decisions, gates, and containers.
 `selectActionableEntries` applies explicit dispatch opt-ins to that report;
-ownership and ranking remain the responsibility of the caller.
+ownership and ranking remain the responsibility of the caller. The selector
+returns `ready`, `decisions`, and `gates`: eligible opted-in containers enter
+`ready`, subject to their execution role. Read `report.containers` for the full
+classified container worklist; the selector does not return a separate
+`containers` property.
 
 Integrations that construct an `ActionabilityReport` themselves must now provide
 the `containers`, `decisions`, and `gates` arrays. Prefer computing the report
@@ -86,6 +90,9 @@ Recovery metadata retains the actual invocation, including the accounting flag.
 The executable transcript gate predicts that transport change independently and
 rejects any other payload drift. It also verifies that the accounting-off
 attempted command agrees with its normalized arguments before projection.
+Detailed recovery evidence must contain argument and provided-field arrays.
+Compact recovery is accepted only when the transcript explicitly declares and
+verifies that mode; its advertised retry still executes as a separate step.
 Serialized JSON refusals use the SDK `writeStderr` transport primitive so an
 `error_format` text override cannot replace a measured machine payload.
 Human-readable error formatting remains customizable through `error_format`.
