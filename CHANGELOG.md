@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- Stabilize generated changelog dates before and after release tag creation ([pm-e63v1x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e63v1x.toon))
+- Release preparation omits the calendar date and fails post-tag main CI ([pm-071wg4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-071wg4.toon))
 
 ## 2026.9.6 - 2026-09-06
 
@@ -42,6 +42,7 @@
 
 ### Fixed
 
+- Tag-push Release must regenerate the exact-tag changelog before immutable publication ([pm-e63v1x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e63v1x.toon))
 - pm next recommends outcome-milestone gates as actionable work, and summary.containers counts a bucket the envelope never emits ([pm-08mt4k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-08mt4k.toon))
 - Windows published-release verifier test can preempt its own readiness and cleanup contract ([pm-euqm7x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-euqm7x.toon))
 - Commander usage refusals omit token_accounting even when --token-accounting is parsed ([pm-bfa1ob](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bfa1ob.toon))

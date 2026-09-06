@@ -1,23 +1,24 @@
 id: pm-e63v1x
-title: Stabilize generated changelog dates before and after release tag creation
-description: "Release preparation and post-tag changelog generation must agree on the calendar release heading. The shipped exact-tag workflow fix regenerates canonical output under a tracked-path allowlist. On 2026-09-06, ordinary main CI still failed after preparation committed an undated heading and creation of v2026.9.6 made canonical generation add the date. Pass the target calendar version date to the package-owned generator before tagging; preserve exact-tag regeneration and strict branch drift checks. The existing immutable release is never moved or republished."
+title: Tag-push Release must regenerate the exact-tag changelog before immutable publication
+description: "The v2026.9.4 tag-push Release checked the changelog generated before the tag existed, so pm-changelog correctly added the immutable tag date and the release failed before npm publication. Make every exact-tag release source, including ordinary tag pushes, regenerate CHANGELOG.md from the checked-out immutable tag, fail closed on any other dirty path, and preserve normal branch-source drift checks. Recover the existing tag without moving it or creating a second automatic release."
 type: Issue
 status: closed
 priority: 1
 tags[4]: changelog,exact-tag,release,workflow
 created_at: "2026-09-04T13:15:31.270Z"
-updated_at: "2026-09-06T19:22:32.653Z"
-closed_at: "2026-09-06T19:22:31.998Z"
-completed_at: "2026-09-06T19:22:31.998Z"
+updated_at: "2026-09-06T19:37:32.840Z"
+closed_at: "2026-09-06T19:37:32.326Z"
+completed_at: "2026-09-06T19:37:32.326Z"
 author: "harness:codex"
 parent: pm-e70zh5
+release: 2026.9.5
 severity: high
-environment: Auto Release preparation and main CI after immutable tag creation
-repro_steps: "Prepare a calendar release before its tag exists, then run changelog:pm:check after the tag is created; the undated heading differs from canonical tag-date output."
-resolution: "Release preparation requests the calendar-version date before tagging, preserving canonical post-tag output and strict main CI changelog verification; the existing exact-tag regeneration guard remains intact."
-expected_result: "A same-day calendar release has byte-identical generated changelog content before and after its tag is created, and future release commits pass the ordinary changelog check."
-actual_result: The old preparation path fails the date regression; the fixed path passes 183 release/provenance/workflow tests and an isolated real-generator pre-tag/post-tag equality check. All 8506 tests pass with full coverage and repository static quality passes using an isolated tracker copy. The published 2026.9.6 tag is unchanged.
-affected_version: 2026.9.6
+environment: GitHub Actions tag-push Release for immutable v2026.9.4
+repro_steps: "Checkout v2026.9.4; install/build; run pnpm changelog:pm:check (fails); run pnpm changelog:pm and observe the missing release date is added."
+resolution: "Release now regenerates canonical changelog metadata for every exact-tag source under a tracked-path allowlist, while reviewed-main sources retain strict drift checking; tests and documentation cover both paths."
+expected_result: "Ordinary tag pushes and recovery dispatches can publish one immutable release without moving the tag, accepting stale changelog content, or allowing unrelated mutations."
+actual_result: "Focused contracts, exact full coverage, static/security gates, and a clean temporary v2026.9.4 tag-push acceptance all pass; guarded regeneration produced the dated heading and no product mutation besides CHANGELOG.md."
+affected_version: 2026.9.4
 component: release-automation
 regression: true
 customer_impact: "The validated SDK/CLI release cannot reach npm, bunx/npx consumers, or GitHub Release until exact-tag recovery succeeds."
@@ -27,7 +28,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-8eebb6,discovered_from,"2026-09-04T13:16:12.614Z","harness:codex","cli:update:dep",detected
   pm-db8onn,implements,"2026-09-04T13:16:12.614Z","harness:codex","cli:update:dep",detected
   pm-lwnifd,recurs_from,"2026-09-04T13:16:12.614Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-09-04T13:15:31.270Z","harness:codex","Duplicate check: all-status searches for tag push/changelog/release date/immutable tag found pm-lwnifd, pm-5baq, pm-db8onn, pm-2f80fn, pm-e70zh5, and pm-7zs0. Those own exact-tag recovery, generated alignment, recovery run selection, diagnostics, aggregate reliability, and release-health respectively; none owns ordinary tag-push changelog stabilization. Clean-room evidence: pnpm changelog:pm at immutable v2026.9.4 changes only CHANGELOG.md heading from '## 2026.9.4' to '## 2026.9.4 - 2026-09-04' plus transient managed-extension updated_at."
   "2026-09-04T13:17:35.982Z","harness:codex","TDD red evidence: focused release automation contract failed exactly because an ordinary tag push with RECOVERY_SOURCE_MODE=tag invoked pnpm changelog:pm:check instead of guarded regeneration. The workflow-presence assertion passed, isolating the defect to source-mode branching."
   "2026-09-04T13:39:57.878Z","harness:codex","Implementation and verification evidence: source-mode branching now treats every exact-tag source identically, keeps reviewed-main drift checks intact, and guards regeneration so only CHANGELOG.md may change. Focused workflow contracts pass; full coverage passes 603 files and 8,356 tests at exact 100/100/100/100; quality:static, typecheck, docs links, and security scan pass. A clean temporary checkout of immutable v2026.9.4 installed and built successfully, executed the actual extracted tag-push step, generated the dated 2026.9.4 heading, and changed no product path besides CHANGELOG.md (the managed-extension timestamp is transient and explicitly ignored by the guard)."
@@ -36,14 +37,13 @@ comments[8]{created_at,author,text}:
   "2026-09-06T19:04:12.119Z","harness:codex","Correction to the preceding test-count transcription: the focused run passed 183 tests across three files (34 release-pipeline, 125 hosted-analysis, and 24 release-automation contracts), not 149."
   "2026-09-06T19:13:51.793Z","harness:codex","Full coverage passed 8,506 tests across 628 files and the focused plans passed. The inherited static linked test used schema-only PM isolation and therefore failed the defect-evidence inventory against an empty tracker (zero governed terminal defects); this was a test-context mismatch, not a source or threshold failure. Set that linked plan to tracker context so it reads an isolated copy of the canonical tracker, then rerun it with unchanged gates."
   "2026-09-06T19:22:31.310Z","harness:codex","Final local verification: all 8,506 tests across 628 files passed under full coverage; the three focused release suites passed 183 tests; static quality passed with the repository tracker cloned into isolated PM context (476929 ms). The original schema-only static link was replaced with its explicit tracker-context form; the failed empty-inventory run remains recorded. The real published-generator fixture proves byte-identical pre-tag and post-tag output. Publication itself is complete: Auto Release 34051942462 and Release 34052957106 succeeded, npm latest and GitHub Release are 2026.9.6, independent published MCP/CLI verification and both clean installed-agent sessions pass. This preparation correction applies to subsequent releases; the existing tag remains immutable."
+  "2026-09-06T19:37:31.708Z","harness:codex","Review correction: the prior tag-source guard shipped in 2026.9.5 and remains valid. Reusing this item for the distinct pre-tag argument defect changed its title and close time, incorrectly removing its historical changelog entry. Restore the original scope and resolution, explicitly bind release 2026.9.5, and track new preparation work under pm-071wg4 (discovered_from this item). All prior evidence and immutable history remain intact; no dates or history records are rewritten."
 learnings[1]{created_at,author,text}:
   "2026-09-04T13:39:58.430Z","harness:codex","A tag-push workflow cannot validate changelog content produced before the tag existed when the changelog generator derives release metadata from tags. Branch-vs-tag source mode is the stable contract: exact-tag sources regenerate under a mutation allowlist, while reviewed-main sources fail closed on drift."
-files[4]{path,scope,note}:
+files[2]{path,scope,note}:
   .github/workflows/release.yml,project,Make every exact-tag source regenerate the canonical changelog under a tracked-path mutation guard
-  scripts/release/run-release-pipeline.mjs,project,Set the calendar-version date before immutable tag creation
   tests/integration/release-automation-contract.spec.ts,project,Execute tag-push and reviewed-main changelog source modes with mutation negative control
-  tests/unit/scripts/release/run-release-pipeline.spec.ts,project,Require the committed pre-tag changelog to retain the generated calendar date
-tests[4]:
+tests[3]:
   - command: node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts
     scope: project
     timeout_seconds: 240
@@ -60,14 +60,6 @@ tests[4]:
       created_at: "2026-09-04T13:18:19.815Z"
       source_kind: local_mutation
       source_ref: fix/exact-tag-changelog-stabilization
-  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts tests/unit/scripts/release/hosted-analysis-gate.spec.ts tests/integration/release-automation-contract.spec.ts
-    scope: project
-    timeout_seconds: 240
-    provenance:
-      author: "harness:codex"
-      created_at: "2026-09-06T19:01:49.594Z"
-      source_kind: local_mutation
-      source_ref: fix/stable-pretag-changelog-dates
   - command: "pnpm quality:static"
     scope: project
     timeout_seconds: 900
@@ -106,7 +98,7 @@ test_runs[2]:
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generate reviewed release notes from terminal PM evidence
   docs/RELEASING.md,project,Document ordinary tag-push stabilization and exact-tag recovery behavior
-close_reason: Stabilized preparation dates through the canonical generator and verified both sides of tag creation.
+close_reason: "Exact-tag changelog generation is source-mode correct, guarded, contract-tested, and manually proven on immutable v2026.9.4."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

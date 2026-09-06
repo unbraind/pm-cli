@@ -1,0 +1,58 @@
+id: pm-071wg4
+title: Release preparation omits the calendar date and fails post-tag main CI
+description: Auto Release commits an undated calendar release heading before the immutable tag exists. After tagging canonical generation adds its date and main CI fails changelog drift checking. Pass the target calendar-version date to the package-owned generator before tagging. This distinct preparation boundary preserves the shipped exact-tag guard in pm-e63v1x.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-06T19:36:25.256Z"
+updated_at: "2026-09-06T19:37:45.880Z"
+closed_at: "2026-09-06T19:37:45.357Z"
+completed_at: "2026-09-06T19:37:45.357Z"
+author: "harness:codex"
+parent: pm-e70zh5
+severity: high
+environment: Auto Release preparation and post-tag main CI
+repro_steps: Prepare a calendar release before its tag exists; create the matching tag; canonical changelog generation adds the missing date.
+resolution: Release preparation passes --date-from-version to the package-owned generator so committed headings already match canonical post-tag output.
+expected_result: Pre-tag and post-tag changelogs are byte-identical for a same-day calendar release.
+actual_result: "183 focused tests pass, the actual published-generator fixture proves byte equality, full coverage passed 8506 tests, and static quality passed. Historical exact-tag release attribution is preserved separately."
+affected_version: 2026.9.6
+component: release-automation
+regression: true
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-e63v1x,discovered_from,"2026-09-06T19:36:25.256Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-06T19:36:25.256Z","harness:codex","Duplicate check: strict all-status corpus read covered 2650/2650 items with no omissions or unreadable entries, plus open/in-progress inventories and request-specific search. pm-e63v1x owns shipped exact-tag regeneration; pm-5baq owns previous version-range alignment; pm-lwnifd owns exact-tag recovery; pm-yf8t owns generator build bootstrap; pm-ot8r owns empty-section guards. None owns the pre-tag calendar-date argument. PR 1211 review requires preserving the old release entry and tracking this distinct boundary separately."
+  "2026-09-06T19:36:51.144Z","harness:codex","Evidence carried from the same PR implementation before review corrected ownership: old argument list failed the date regression; all 183 focused tests passed; full coverage passed 8506 tests across 628 files; static quality passed with isolated tracker context in 476929 ms. The published-generator synthetic Git fixture proved identical pre-tag and post-tag bytes with --date-from-version. These executions remain immutably recorded on pm-e63v1x; source code is unchanged by this ownership correction except a helper purpose comment."
+  "2026-09-06T19:37:44.804Z","harness:codex","Review correction verified: the focused linked plan passed again under the distinct preparation owner. The original shipped title, resolution, and explicit release 2026.9.5 attribution are restored on pm-e63v1x through append-only PM mutations."
+files[2]{path,scope,note}:
+  scripts/release/run-release-pipeline.mjs,project,Set the calendar-version date before immutable tag creation
+  tests/unit/scripts/release/run-release-pipeline.spec.ts,project,Require the committed pre-tag changelog to retain the generated calendar date
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts tests/unit/scripts/release/hosted-analysis-gate.spec.ts tests/integration/release-automation-contract.spec.ts,project,240,"harness:codex","2026-09-06T19:36:50.652Z",local_mutation,fix/stable-pretag-changelog-dates
+test_runs[1]:
+  - run_id: test-local-mtq7qt32-rt0edd
+    kind: test
+    status: passed
+    started_at: "2026-09-06T19:36:57.666Z"
+    finished_at: "2026-09-06T19:37:06.494Z"
+    recorded_at: "2026-09-06T19:37:06.494Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts tests/unit/scripts/release/hosted-analysis-gate.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Document pre-tag calendar-date stabilization and preserved historical release attribution
+  docs/RELEASING.md,project,Document pre-tag calendar-date stabilization and preserved historical release attribution
+close_reason: Canonical pre-tag calendar dates prevent post-tag changelog drift.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-071wg4
+  gate_id: pretag-changelog-date
+  negative_control: The old preparation argument list produces an undated committed heading and fails the focused regression; a synthetic Git fixture with published pm-changelog proves old pre-tag/post-tag drift and byte-identical output with --date-from-version.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts tests/unit/scripts/release/hosted-analysis-gate.spec.ts tests/integration/release-automation-contract.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""
