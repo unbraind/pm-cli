@@ -4,7 +4,7 @@
   "families": [
     {
       "id": "boundary-format-drift",
-      "version": 1,
+      "version": 2,
       "title": "Externally produced path, slug, payload, and invocation format drift",
       "owner_item_id": "pm-0pzgit",
       "escape_class": "production_defect",
@@ -99,7 +99,7 @@
     },
     {
       "id": "security-scanner-finding",
-      "version": 1,
+      "version": 2,
       "title": "Secret, dependency, and static-analysis findings",
       "owner_item_id": "pm-6ixn",
       "escape_class": "scanner_finding",

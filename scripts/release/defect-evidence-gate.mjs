@@ -96,6 +96,7 @@ function boundaryFixtures(entries, negativeControl) {
   return fixtures;
 }
 
+/** Load strict complete workspace input for policy gates; boundary-only checks need no tracker scan. */
 async function resolveContext(repositoryRoot, boundaryOnly, providedContext) {
   if (boundaryOnly) return { items: [], terminal_statuses: ["closed", "canceled"] };
   if (providedContext) return providedContext;
@@ -106,6 +107,7 @@ async function resolveContext(repositoryRoot, boundaryOnly, providedContext) {
   });
 }
 
+/** Validate registered historical seeds and the full recurrence population before bounding finding rows. */
 function policyReport(recurrencePolicy, context) {
   const index = buildDefectRecurrenceIndex(recurrencePolicy, context.items);
   const knownItemIds = new Set(context.items.map((item) => item.id));

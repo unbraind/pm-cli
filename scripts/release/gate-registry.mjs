@@ -10,7 +10,8 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseDocument } from "yaml";
+import { parseDefectRecurrencePolicy } from "../../dist/sdk/governance.js";
+import { readWorkflowDefinitions, discoverWorkflowCheckNames } from "./workflow-inventory.mjs";
 import { GRAPH_SUBCOMMAND_VALUES } from "../../dist/sdk/cli-contracts/enum-contracts.js";
 import { fail, parseFlags, repoRoot } from "./utils.mjs";
 
@@ -20,37 +21,21 @@ const DEFAULT_REGISTRY_PATH = path.join(
   "release",
   "gate-registry.json",
 );
-function gateIdsFromWorkflow(source, file) {
-  const document = parseDocument(source);
-  if (document.errors.length > 0) {
-    throw new Error(
-      `Invalid workflow YAML ${file}: ${document.errors.map((error) => error.message).join("; ")}`,
-    );
-  }
-  const workflow = document.toJS();
-  const jobs =
-    typeof workflow === "object" &&
-    workflow !== null &&
-    typeof workflow.jobs === "object" &&
-    workflow.jobs !== null
-      ? workflow.jobs
-      : {};
-  return Object.keys(jobs);
-}
-
 /** Discover every hosted workflow job by its stable machine identifier. */
 export async function discoverWorkflowGates(workflowsRoot) {
-  const files = (await readdir(workflowsRoot))
-    .filter((file) => file.endsWith(".yml") || file.endsWith(".yaml"))
-    .sort();
-  const discovered = [];
-  for (const file of files) {
-    const source = await readFile(path.join(workflowsRoot, file), "utf8");
-    for (const id of gateIdsFromWorkflow(source, file)) {
-      discovered.push(`${file}#${id}`);
+  const workflows = await readWorkflowDefinitions(workflowsRoot);
+  return workflows.flatMap(({ file, jobs }) => Object.keys(jobs).map((id) => `${file}#${id}`)).sort();
+}
+
+/** Reject policy check names absent from the repository's concrete workflow matrix. */
+async function validateRecurrenceHostedChecks(policy, root, violations) {
+  const parsed = parseDefectRecurrencePolicy(policy);
+  const names = new Set(await discoverWorkflowCheckNames(path.join(root, ".github", "workflows")));
+  for (const family of parsed.families) {
+    for (const check of family.checks.hosted) {
+      if (!names.has(check)) violations.push(`recurrence:${family.id}:hosted_check:${check}:not_discovered`);
     }
   }
-  return [...new Set(discovered)].sort();
 }
 
 function requiredStrings(value, label, violations) {
@@ -496,6 +481,9 @@ export async function validateGateRegistry(registry, options = {}) {
       violations.push(`pipeline:${pipeline}:not_enforced`);
     }
   }
+  if (options.recurrencePolicy !== undefined) {
+    await validateRecurrenceHostedChecks(options.recurrencePolicy, root, violations);
+  }
   for (const claim of registry.claims ?? []) {
     await validateClaim(claim, root, ids, violations);
   }
@@ -532,7 +520,8 @@ export async function main(argv = process.argv.slice(2)) {
   const discovered = await discoverWorkflowGates(
     path.join(repoRoot, ".github", "workflows"),
   );
-  const violations = await validateGateRegistry(registry, { discovered });
+  const recurrencePolicy = JSON.parse(await readFile(path.join(repoRoot, "config", "defect-recurrence-policy.json"), "utf8"));
+  const violations = await validateGateRegistry(registry, { discovered, recurrencePolicy });
   if (violations.length > 0) {
     throw new Error(
       `Gate registry validation failed:\n${violations.join("\n")}`,

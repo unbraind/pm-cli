@@ -1728,6 +1728,7 @@ function summarizeHealthCheckDetails(
 }
 /* c8 ignore stop */
 
+/** Bound diagnostic detail and warnings while retaining every blocking cause and the authoritative verdict. */
 function applyBriefHealthProjection(result: HealthResult): HealthResult {
   const warningsSummary = summarizeStringList(
     result.warnings,
@@ -1763,6 +1764,7 @@ function isSkippedHealthCheck(check: HealthCheck): boolean {
   return check.details.skipped === true;
 }
 
+/** Emit verdicts for checks that ran, retain blocking causes, and name omitted checks for recovery. */
 function applySummaryHealthProjection(result: HealthResult): HealthResult {
   const warningsSummary = summarizeStringList(
     result.warnings,
@@ -3111,6 +3113,7 @@ function extractHistoryDriftedCount(
   return typeof counts?.drifted === "number" ? counts.drifted : 0;
 }
 
+/** Associate warning producers with their owning checks so findings inherit the correct remediation and severity. */
 function buildHealthRemediationSources(params: {
   directoryState: HealthDirectoryState;
   normalizedSettingsReadWarnings: string[];

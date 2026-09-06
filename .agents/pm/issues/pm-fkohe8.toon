@@ -6,26 +6,27 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:sdk",health,output-contract
 created_at: "2026-09-06T05:48:07.109Z"
-updated_at: "2026-09-06T12:59:36.702Z"
-closed_at: "2026-09-06T12:59:36.145Z"
-completed_at: "2026-09-06T12:59:36.145Z"
+updated_at: "2026-09-06T13:49:09.303Z"
+closed_at: "2026-09-06T13:49:08.802Z"
+completed_at: "2026-09-06T13:49:08.802Z"
 author: "harness:codex"
 acceptance_criteria: "Reproduce advisory storage and strict invocation verdicts in an isolated tracker; Publish one authoritative invocation verdict with adjacent deciding reasons; Per-check booleans and severity have documented compatible semantics; SDK, CLI, summary and full projections agree for identical strictness; Preserve existing advisory versus blocking policy"
 parent: pm-larv4r
-resolution: "Per-check ok now reflects blocking findings under the invocation policy. Adjacent verdict metadata exposes strictness and exit_code consistently across projections, with orphan-history warnings owned by storage and advisory behavior preserved."
-expected_result: "Agents can branch on one authoritative health predicate and obtain identical strictness semantics from SDK, CLI, and MCP."
-actual_result: "Real isolated storage advisories remain passing; strict missing-driver failures match SDK and CLI exit receipts. All 8495 tests pass with exact 100/100/100/100 coverage; packed Node and Bun consumers pass. Review corrections: linked tests pass, normalization regressions fail on the previous source and pass after correction, action schemas match capability semantics, and all 56 token surfaces pass with existing ceilings unchanged. Final hosted checks are required before merge."
+resolution: "Made SDK blocking findings authoritative for health check and invocation predicates; exposed matching strictness and exit receipts in every projection, clarified action-specific strictExit contracts, and documented changed helper responsibilities."
+expected_result: "SDK, CLI and repository gates share complete evidence and authoritative contracts without weakening coverage or token ceilings."
+actual_result: "Final review-correction evidence: 628 files and 8502 tests pass with exact 100/100/100/100 coverage and zero uncovered counts; complete pnpm quality:static and typecheck pass. The final packed artifact passes fresh Node and Bun SDK/CLI acceptance, including strict health parity, inherited risk, normalized dependency/file references, invalid lineage request refusal, and zero-byte tracker source refusal. Hosted CI and review of the next head remain merge prerequisites."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-ao0bu9,discovered_from,"2026-09-06T05:48:07.109Z","harness:codex","cli:create:dep",detected
   pm-larv4r,implements,"2026-09-06T05:48:07.109Z","harness:codex","cli:create:dep",detected
   pm-larv4r,recurs_from,"2026-09-06T05:48:07.109Z","harness:codex","cli:create:dep",detected
   pm-7c27ep,verifies,"2026-09-06T10:29:53.289Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-06T05:48:07.109Z","harness:codex","Duplicate check 2026-09-06: strict complete all-status export of 2649 items found no GH-1207 owner. Request-specific search and open/in-progress reads were checked. Full live pm-larv4r metadata and verified history confirm its completed finding-severity scope. This new report arrived during PR 1208 review and is recorded open and unclaimed."
   "2026-09-06T10:05:58.957Z","harness:codex","TDD evidence: isolated Git tracker reproduced absent invocation authority and advisory per-check disagreement. Current strict-exit uses generic failure code 1 and requires missing merge drivers; the report quoted exit 2 from a different invocation. Preserve current blocking/advisory policy and expose it explicitly rather than silently promoting all advisory warnings. Delivery combines pm-7c27ep recurrence enforcement and pm-du93sr diagnostic budget proof."
   "2026-09-06T10:54:15.064Z","harness:codex","Manual packed-consumer acceptance passed in an isolated temporary npm installation: CLI recurs_from mutations, bounded lineage paging, SDK inherited risk checks, explicit unknown classification, and matching strict SDK/CLI health predicates and exit receipts. Separate npm/npx/bunx tarball smoke passed with 13 installed extension packages and SDK type consumption."
   "2026-09-06T11:26:05.093Z","harness:codex","Delivery verification: all 627 test files and 8495 tests pass with exact 100/100/100/100 coverage (62860 statements, 47727 branches, 13015 functions, 60407 lines). Real advisory storage fixtures and strict merge-driver failures agree across SDK and CLI projections. Packed SDK/CLI acceptance also passes under Bun, alongside npm/npx/bunx consumer smokes. Import-cost gates pass when rerun without concurrent coverage load; no ceilings or coverage thresholds were changed. Implementation is ready for reviewed delivery; hosted PR and release proof remain separate."
   "2026-09-06T12:56:27.311Z","harness:codex","Review correction: strictExit help now follows the actual health, validation, history, extension and package doctor semantics in action-scoped schemas. Focused contract and transport tests pass; final coverage will run on the combined review correction head."
+  "2026-09-06T13:49:07.109Z","harness:codex","Final review-correction evidence: 628 files and 8502 tests pass with exact 100/100/100/100 coverage and zero uncovered counts; complete pnpm quality:static and typecheck pass. The final packed artifact passes fresh Node and Bun SDK/CLI acceptance, including strict health parity, inherited risk, normalized dependency/file references, invalid lineage request refusal, and zero-byte tracker source refusal. Hosted CI and review of the next head remain merge prerequisites."
 learnings[1]{created_at,author,text}:
   "2026-09-06T10:54:12.419Z","harness:codex",A warning status describes diagnostic severity; the check and invocation booleans must derive from blocking findings under the same invocation policy. Keep strict policy metadata next to the deciding predicate so transports cannot invent incompatible verdicts.
 files[6]{path,scope,note}:
@@ -62,7 +63,7 @@ test_runs[2]:
       node scripts/run-tests.mjs test -- tests/unit/sdk/governance/health-verdict-authority.spec.ts tests/unit/sdk/health-finding-contract.spec.ts tests/unit/commands/health-command.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Public SDK CLI and operator contract
-close_reason: Completed the reviewed implementation and first-round contract corrections; hosted review and CI remain merge prerequisites.
+close_reason: Completed implementation and review corrections with full local validation; hosted review and CI are required before merge.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

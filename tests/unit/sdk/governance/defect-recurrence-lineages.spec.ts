@@ -10,6 +10,8 @@ import {
   parseDefectRecurrenceCoverageRequest,
 } from "../../../../src/sdk/governance/defect-recurrence-coverage.js";
 
+import { buildDefectRecurrenceGraph } from "../../../../src/sdk/governance/defect-recurrence-graph.js";
+
 const policy: DefectRecurrencePolicy = {
   version: 1,
   evidence_epoch: "2026-08-17T00:00:00.000Z",
@@ -43,6 +45,16 @@ const second = {
 };
 
 describe("recorded recurrence lineages", () => {
+  it("counts duplicate targets once while preserving reciprocal and self edges", () => {
+    const graph = buildDefectRecurrenceGraph(policy.families, new Map([
+      ["pm-first", { targets: ["pm-first", "pm-first", "pm-second", "pm-second"], files: [] }],
+      ["pm-second", { targets: ["pm-first"], files: [] }],
+    ]));
+    expect(graph.edge_count).toBe(3);
+    expect(graph.lineages).toHaveLength(1);
+    expect(graph.lineages[0]?.item_ids).toEqual(["pm-first", "pm-second"]);
+  });
+
   it("normalizes recurrence targets and linked file paths before inheriting checks", () => {
     const spaced = { ...second,
       dependencies: [{ id: ` ${first.id} `, kind: "recurs_from" }],

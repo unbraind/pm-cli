@@ -470,6 +470,7 @@ async function runDuplicatesAction(
   }
 }
 
+/** Render the SDK health projection and mirror blocking strict verdicts in the CLI exit status. */
 async function runHealthAction(
   options: Record<string, unknown>,
   command: Command,

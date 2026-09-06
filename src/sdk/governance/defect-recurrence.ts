@@ -562,6 +562,7 @@ function exactReasons(
   return reasons;
 }
 
+/** Explain item-trigger matches from explicit policy IDs or inherited index membership. */
 function itemReasons(
   family: DefectRecurrenceFamily,
   input: DefectChangeRiskInput,

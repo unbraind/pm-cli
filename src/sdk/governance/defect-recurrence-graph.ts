@@ -133,7 +133,7 @@ export function buildDefectRecurrenceGraph(
   const adjacency = new Map<string, Set<string>>();
   let edgeCount = 0;
   for (const [id, record] of records) {
-    for (const target of record.targets) {
+    for (const target of new Set(record.targets)) {
       const outgoing = adjacency.get(id) ?? new Set<string>();
       outgoing.add(target);
       adjacency.set(id, outgoing);
