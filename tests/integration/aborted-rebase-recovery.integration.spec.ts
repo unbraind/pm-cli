@@ -10,6 +10,10 @@ import {
   isOriginalGitStateRestored,
 } from "../../src/sdk/merge/receipt-operation.js";
 import { runHistoryRepair } from "../../src/sdk/history-repair.js";
+import {
+  runWithIsolatedExtensionRuntime,
+  setActiveExtensionHooks,
+} from "../../src/core/extensions/index.js";
 import { createTestItemId } from "../helpers/itemFactory.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
@@ -142,6 +146,42 @@ describe("aborted rebase receipt recovery", () => {
       );
       expect(preview.receipts).toHaveProperty("abandoned", 1);
       expect(await readFile(historyPath, "utf8")).toBe(before);
+      for (const change of ["head", "operation"] as const) {
+        await runWithIsolatedExtensionRuntime(async () => {
+          let changed = false;
+          const marker = path.join(context.tempRoot, ".git", "MERGE_HEAD");
+          setActiveExtensionHooks({
+            beforeCommand: [],
+            afterCommand: [],
+            onRead: [],
+            onIndex: [],
+            onWrite: [{
+              layer: "project",
+              name: "concurrent-git-operation",
+              run: async (event) => {
+                if (event.op !== "lock:create" || changed) return;
+                changed = true;
+                if (change === "head") git("commit", "--allow-empty", "-qm", "Concurrent Git change");
+                else await writeFile(marker, `${operation.original_head}\n`);
+              },
+            }],
+          });
+          try {
+            await expect(runMergeReconcile({}, { path: context.pmPath }))
+              .rejects.toMatchObject({ context: { code: "merge_reconcile_receipt_evidence_untrusted" } });
+            expect(changed).toBe(true);
+            expect(await readFile(historyPath, "utf8")).toBe(before);
+            expect(await readFile(itemPath, "utf8")).toBe(originalItem);
+            const pending = await inspectMergeReceiptEvidence(context.tempRoot);
+            expect(pending.receipts).toHaveLength(1);
+            expect(pending.receipts[0]!.state).toBe(receipt.state);
+          } finally {
+            setActiveExtensionHooks(null);
+            git("update-ref", "HEAD", operation.original_head);
+            await rm(marker, { force: true });
+          }
+        });
+      }
       let interruptedHistory: string | undefined;
       if (process.platform !== "win32" && process.getuid?.() !== 0) {
         const durableDirectory = path.join(context.pmPath, "merge-receipts");

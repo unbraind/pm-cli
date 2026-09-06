@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-22T12:30:15.775Z"
-updated_at: "2026-09-06T07:43:18.616Z"
-closed_at: "2026-09-06T07:41:28.433Z"
-completed_at: "2026-09-06T07:41:28.433Z"
+updated_at: "2026-09-06T08:26:24.145Z"
+closed_at: "2026-09-06T08:26:23.596Z"
+completed_at: "2026-09-06T08:26:23.596Z"
 author: "harness:codex"
 acceptance_criteria: The gate runs real packaged CLI and MCP transports rather than calling the context primitive directly; two isolated same-configuration runs compare byte-identical authoritative item and history outputs; a negative control proves differing seeds or absent process configuration is observable; invalid and partial environment contracts are covered; the gate is invoked by an existing mandatory CI path and has focused unit coverage
 goal: ci-detects-every-defect
@@ -18,9 +18,9 @@ why_now: GH-1089 proves SDK-only tests can stay green while the shipped binary r
 parent: pm-u9d0
 risk: medium
 confidence: high
-resolution: Preserve explicit tracker precedence for CLI and MCP SDK attribution; isolate ordinary process fixtures while retaining deliberate conflicting ambient input in transport regressions.
-expected_result: "Equivalent seeded CLI and MCP runs produce byte-identical authoritative history regardless of unrelated ambient claims, while changed seeds and invalid opt-in remain observable."
-actual_result: "188 linked process tests pass, including both transport ambient-claims cases, seed sensitivity and typed invalid-input recovery. Full suite passes 8477 tests across 623 files at exact 100/100/100/100; independent temporary CLI and npm/Bun/npx/bunx consumers pass."
+resolution: Scope SDK attribution to the selected tracker across CLI and MCP and pin a supported test session with an ambient attribution positive control.
+expected_result: Conflicting ambient claims remain available to the test but cannot contaminate the explicitly selected tracker; CI must prove the ambient source exists.
+actual_result: "188 linked process tests and an ordinary-CI environment run pass. Full suite: 8477 tests, 623 files, exact 100/100/100/100. Isolated unchanged import/transport timing, graph and record gates pass; contended timing failure retained."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-4jk8kx,implements,"2026-08-22T12:30:15.775Z","harness:codex","cli:create:dep",detected
   pm-gh1089,verifies,"2026-08-22T12:30:15.775Z","harness:codex","cli:create:dep",detected
@@ -28,7 +28,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-u9d0,implements,"2026-08-22T12:30:15.775Z","harness:codex","cli:create:dep",detected
   pm-a8lnoh,related,"2026-08-22T13:01:59.978Z","harness:codex","cli:update:dep",detected
   pm-8we38i,discovered_from,"2026-09-06T06:17:33.618Z","harness:codex","cli:update:dep",detected
-comments[17]{created_at,author,text}:
+comments[21]{created_at,author,text}:
   "2026-08-22T12:30:15.775Z","harness:codex","Duplicate check 2026-08-22: all-status certified corpus and exact/fuzzy searches for deterministic CLI,MCP,golden-byte,conformance,and process gates found broader open simulators and format programmes but no bounded transport-level reproducibility gate. This task is the executable proof for pm-gh1089 and does not claim the much wider fault simulator pm-a8lnoh or full format suite pm-4jk8kx."
   "2026-08-22T12:46:28.753Z","harness:codex","Gate evidence: the first fresh-process comparison exposed a bundle-context split; after moving the boundary into cli/main, the next gate exposed seed reuse collisions across distinct CLI invocations. The final contract uses stable step-derived CLI seeds and one advancing process-lifetime MCP sequence. Focused verification passes 54 tests with byte-identical tasks/history and typed invalid-input recovery."
   "2026-08-22T12:54:19.957Z","harness:codex","Repository-wide suite evidence: 7,775/7,776 tests passed; the only failure was the intentional 120-file directory-cap contract after adding new SDK/unit files. Moved the adapter and unit gate into focused reproducibility subdirectories; the directory-cap contract and focused process suite now pass 27/27."
@@ -46,6 +46,10 @@ comments[17]{created_at,author,text}:
   "2026-09-06T07:41:27.695Z","harness:codex","Final consolidated verification: all 188 linked process tests pass; the full suite passes 8477 tests in 623 files with exact 100/100/100/100 and zero uncovered counts. Independent temporary CLI checks report byte_identical=true despite changing ambient claims. Fresh npm and Bun installed close/evidence-update/history verification passes; npx and bunx packed smoke passes across 13 packages. TypeScript, focused ESLint and documentation links pass."
   "2026-09-06T07:42:15.654Z","harness:codex","Final static run passed ESLint, zero-duplicate/docstring assurance, contracts, context/token measurements and SDK import costs, then failed the transport timing gate: create best 424ms exceeded the unchanged 398ms ceiling while full coverage and packed-consumer acceptance were running concurrently. Those workloads have now completed. Rerun this timing gate in isolation plus the remaining graph/record checks; retain both receipts and do not alter the budget."
   "2026-09-06T07:43:18.616Z","harness:codex","The isolated CLI transport-floor rerun passes all six operations with the existing budgets. Remaining graph-composition and record-integrity checks pass, as does the post-closure defect-evidence gate (145 governed terminal defects, zero findings). This completes the static sequence after retaining the earlier contended timing failure; no budget or gate was weakened."
+  "2026-09-06T08:01:05.628Z","harness:codex","Verification gap found during hosted wait: readAgentSemanticAttributionSync returns immediately without an agent instance, while the process fixture inherits the host session. The ordinary coverage job does not set CODEX_THREAD_ID (only separate host-isolation smoke steps do). Add a positive control proving a real ambient claim is present in an ambient mutation history, then pin a supported session in the fixture so both CLI/MCP negative controls remain effective on ordinary CI. This is a test-assurance correction under the same canonical owner."
+  "2026-09-06T08:11:27.160Z","harness:codex","Strengthened process acceptance with an ambient-history positive control and a pinned supported session identity. Without any harness session, the new control fails before the change (host-control-red.log); after pinning identity it passes. This makes CLI/MCP isolation tests substantive on ordinary CI rather than relying on an inherited Codex session. Ambient author/topic environment overrides are cleared in the subprocess fixture."
+  "2026-09-06T08:23:48.359Z","harness:codex","Fourth-round verification: all 188 linked process tests pass, including the positive control on ordinary CI; npm and Bun temporary installed consumers pass evidence-update/history-prefix acceptance, and packed npx/bunx smoke passes for 13 packages. Static checks pass through contract/tracker assurance but the SDK import-time gate fails under concurrent full coverage/package load (round4-static.log, ten entrypoints). This failed measurement is retained; unchanged import and CLI timing gates will be rerun in isolation after all CPU-heavy verification ends."
+  "2026-09-06T08:25:58.308Z","harness:codex","Final isolated verification passes all 10 SDK import entrypoints and all 6 CLI transport operations with unchanged ceilings after CPU-heavy jobs ended. Graph composition and record integrity gates pass. The retained contended measurement remains documented. Full final coverage passes 8477 tests across 623 files with exact 100/100/100/100 and zero uncovered counts; no threshold, inclusion rule, waiver or budget was relaxed."
 learnings[3]{created_at,author,text}:
   "2026-08-22T13:31:02.944Z","harness:codex","A deterministic one-shot CLI process restarts its entropy sequence, so multi-step shell workflows need stable step-derived seeds. A serialized long-lived MCP transport should instead retain one validated process runner so its sequence advances across requests. Exercise both process lifetimes with authoritative byte comparisons; calling only the context primitive cannot prove the bundled transport boundary."
   "2026-09-06T06:20:53.342Z","harness:codex","A PM_PATH whose target has no settings can fall back to cwd discovery during attribution. Process tests must set cwd and both tracker environment roots per fixture, not only pass --pm-path to the command. Disable external probes and exercise a separate changing ambient tracker so process byte identity does not depend on the real workset."
@@ -59,7 +63,7 @@ files[6]{path,scope,note}:
   tests/unit/sdk/reproducibility/process.spec.ts,project,SDK resolver and sequence runner coverage
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/reproducible-process.integration.spec.ts tests/unit/sdk/reproducibility/process.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,240
-test_runs[5]:
+test_runs[6]:
   - run_id: test-local-mt4f0s0c-gnsxck
     kind: test
     status: passed
@@ -115,8 +119,19 @@ test_runs[5]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/reproducible-process.integration.spec.ts tests/unit/sdk/reproducibility/process.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/cli/cli-main-errors.spec.ts,schema,schema,source,legacy
+  - run_id: test-local-mtpjhmz3-ph0clb
+    kind: test
+    status: passed
+    started_at: "2026-09-06T08:17:11.566Z"
+    finished_at: "2026-09-06T08:18:07.887Z"
+    recorded_at: "2026-09-06T08:18:07.887Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/reproducible-process.integration.spec.ts tests/unit/sdk/reproducibility/process.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/cli/cli-main-errors.spec.ts,schema,schema,source,legacy
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated Unreleased gate entry
   docs/AGENT_GUIDE.md,project,Isolate subprocess cwd and tracker paths to prevent ambient attribution reads
-close_reason: Delivered and verified isolated deterministic CLI/MCP process execution in PR 1208.
+close_reason: CLI/MCP attribution isolation with substantive ordinary-CI controls verified for PR #1208.
 body: ""

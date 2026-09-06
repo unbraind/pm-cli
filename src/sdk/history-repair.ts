@@ -733,16 +733,19 @@ function collectHistoryRepairWarnings(
   return warnings;
 }
 
+/** Revalidate item/history bytes and restored-origin Git proof under the rewrite lock before persisting. */
 async function applyHistoryRepairRewrite(params: {
   pmRoot: string;
   subject: Awaited<ReturnType<typeof resolveHistorySubject>>;
   settings: Awaited<ReturnType<typeof readSettings>>;
   typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
   historyRawBeforeLock: string | null;
-  currentItemRawBeforeLock: string | null;
+  itemReplayContext: HistoryRepairItemReplayContext;
+  mergeAbandonmentProof: HistoryRepairCommandOptions["mergeAbandonmentProof"];
+  chainOk: boolean;
+  reanchor: { entriesRehashed: number; entriesPatchRepaired: number };
   author: string;
   force: boolean | undefined;
-  loadedItem: Awaited<ReturnType<typeof readLocatedItem>> | null;
   historyPath: string;
   rewrittenEntries: HistoryEntry[];
 }): Promise<string[]> {
@@ -752,17 +755,24 @@ async function applyHistoryRepairRewrite(params: {
     settings: params.settings,
     typeRegistry: params.typeRegistry,
     historyRawBeforeLock: params.historyRawBeforeLock,
-    currentItemRawBeforeLock: params.currentItemRawBeforeLock,
+    currentItemRawBeforeLock: params.itemReplayContext.currentItemRawBeforeLock,
     operation: "history-repair",
     author: params.author,
     force: params.force,
-    itemDocument: params.loadedItem?.document ?? null,
-    applyRewrite: async ({ historyRawUnderLock }) =>
-      writeHistoryRawWithRollback({
+    itemDocument: params.itemReplayContext.loadedItem?.document ?? null,
+    applyRewrite: async ({ historyRawUnderLock }) => {
+      await assertHistoryRepairAbandonmentProof(
+        params.mergeAbandonmentProof,
+        params.itemReplayContext,
+        params.chainOk,
+        params.reanchor,
+      );
+      await writeHistoryRawWithRollback({
         historyPath: params.historyPath,
         nextHistoryRaw: historyEntriesToRaw(params.rewrittenEntries),
         historyRawUnderLock,
-      }),
+      });
+    },
     applyPostRewrite: async () =>
       runActiveOnWriteHooks({
         path: params.historyPath,
@@ -968,10 +978,12 @@ async function repairHistorySubject(params: {
         settings,
         typeRegistry,
         historyRawBeforeLock,
-        currentItemRawBeforeLock: itemReplayContext.currentItemRawBeforeLock,
+        itemReplayContext,
+        mergeAbandonmentProof: options.mergeAbandonmentProof,
+        chainOk: chainBefore.ok,
+        reanchor,
         author,
         force: options.force,
-        loadedItem: itemReplayContext.loadedItem,
         historyPath: subject.historyPath,
         rewrittenEntries,
       })),

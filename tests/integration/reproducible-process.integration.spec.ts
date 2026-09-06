@@ -17,12 +17,18 @@ const PROCESS_TIMEOUT_MS = 30_000;
 
 const temporaryRoots: string[] = [];
 
-/** Pin entropy and clock while disabling external telemetry and model discovery. */
+/** Pin entropy, clock and a supported session while disabling external telemetry and model discovery. */
 function processEnvironment(
   seed = "process-conformance-seed",
 ): NodeJS.ProcessEnv {
   return {
     ...process.env,
+    CLAUDE_CODE: undefined,
+    CLAUDECODE: undefined,
+    CODEX_THREAD_ID: "reproducibility-process-fixture",
+    PM_AUTHOR: undefined,
+    PM_AGENT_TOPIC: undefined,
+    PM_AGENT_SESSION_TOPIC: undefined,
     PM_PATH: undefined,
     PM_CLOCK: CLOCK,
     PM_CLOCK_TICK_MS: "1",
@@ -270,6 +276,23 @@ describe("reproducible process transport contract", () => {
         ambientEnvironment,
       );
       expect(claimed.status, processDiagnostics(claimed)).toBe(0);
+      const annotated = runCli(
+        ambientRoot,
+        ["comments", ambientId, "Observe the active ambient claim"],
+        ambientEnvironment,
+      );
+      expect(annotated.status, processDiagnostics(annotated)).toBe(0);
+      const ambientHistory = await readFile(
+        path.join(ambientRoot, "history", `${ambientId}.jsonl`),
+        "utf8",
+      );
+      const ambientEvent: unknown = JSON.parse(ambientHistory.trim().split("\n").at(-1)!);
+      expect(ambientEvent).toMatchObject({
+        agent_instance: expect.any(String),
+        agent_provenance: {
+          topic: { evidence: expect.arrayContaining([`claim:${ambientId}`]) },
+        },
+      });
       initializeTracker(pmRoot);
       if (transport === "CLI") {
         createCliFixture(pmRoot, "CLI explicit tracker fixture", {
