@@ -1,6 +1,12 @@
 # Changelog
 
-## 2026.9.6
+## Unreleased
+
+### Fixed
+
+- Stabilize generated changelog dates before and after release tag creation ([pm-e63v1x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e63v1x.toon))
+
+## 2026.9.6 - 2026-09-06
 
 ### Fixed
 
@@ -50,7 +56,6 @@
 - Agent skills instruct flags and spellings the runtime refuses, and no guide topic routes the evidence or automation families ([pm-4957pz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4957pz.toon))
 - Sentry-injected release artifacts exceed the CI package budget because pre- and post-injection packlists share one ceiling ([pm-llbnua](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-llbnua.toon))
 - GH-1190: Windows nightly can publish the event index after an unlocked fallback append ([pm-a7207g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-a7207g.toon))
-- Tag-push Release must regenerate the exact-tag changelog before immutable publication ([pm-e63v1x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e63v1x.toon))
 
 ### Other
 

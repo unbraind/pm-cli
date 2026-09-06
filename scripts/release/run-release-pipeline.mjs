@@ -344,6 +344,7 @@ function prepareReleaseChangelog(params) {
       "replace",
       "--release-version",
       params.targetVersion,
+      "--date-from-version",
       "--all-release-tags",
       "--status",
       "closed",
