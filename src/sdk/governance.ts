@@ -13,6 +13,7 @@ export * from "./governance/assurance-presets.js";
 export * from "./governance/assurance-runtime.js";
 export * from "./governance/boundary-fixtures.js";
 export * from "./governance/defect-recurrence.js";
+export * from "./governance/defect-recurrence-coverage.js";
 export {
   runReindex,
   type ReindexOptions,

@@ -1,16 +1,17 @@
 # Defect Recurrence and Boundary Evidence
 
-Tracked by [pm-1qkivy](../.agents/pm/features/pm-1qkivy.toon), [pm-rtn5h6](../.agents/pm/tasks/pm-rtn5h6.toon), [pm-0pzgit](../.agents/pm/tasks/pm-0pzgit.toon), and [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon).
+Tracked by [pm-1qkivy](../.agents/pm/features/pm-1qkivy.toon), [pm-rtn5h6](../.agents/pm/tasks/pm-rtn5h6.toon), [pm-0pzgit](../.agents/pm/tasks/pm-0pzgit.toon), [pm-7c27ep](../.agents/pm/issues/pm-7c27ep.toon), and [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon).
 
 ## Agent Quick Context
 
 `pm` treats project management as context management. A resolved defect is therefore not only a closed item: it is durable context that should select the checks most likely to prevent the same failure from recurring.
 
-The public SDK now provides three composable contracts:
+The public SDK provides four composable contracts:
 
 - a captured-boundary registry that rejects self-generated fixtures, unsafe samples, missing samples, and expired waivers;
 - a defect-evidence ratchet that requires a typed escape class plus a gate improvement or reviewed, expiring waiver on new terminal defects;
-- a versioned recurrence index that maps proposed files, packages, PM items, tags, and error codes to shared local and hosted checks.
+- a versioned recurrence index that maps proposed files, packages, PM items, tags, and error codes to shared local and hosted checks;
+- a complete-population recurrence coverage report with bounded, resumable evidence rows.
 
 The CLI and MCP use the same SDK action path. Repository policy can be replaced by a package or workspace policy without changing the analyzer.
 
@@ -63,7 +64,8 @@ Use `pm assurance risk` for an operator or agent decision. Use the pure SDK func
 
 ### TypeScript compatibility
 
-The exported `ASSURANCE_ACTIONS` tuple and `AssuranceActionResult` union now include `risk` and `DefectChangeRiskReport`. This is additive at runtime, but TypeScript consumers with an exhaustive action or result switch must add the new branch. The SDK surface snapshot records that source-compatibility change explicitly.
+The exported `ASSURANCE_ACTIONS` tuple and `AssuranceActionResult` union include `risk`, `lineages`,
+`DefectChangeRiskReport`, and `DefectRecurrenceCoverageReport`. This is additive at runtime, but TypeScript consumers with an exhaustive action or result switch must add the new branch. The SDK surface snapshot records that source-compatibility change explicitly.
 
 ## Policy Model
 
@@ -79,7 +81,69 @@ The repository example is [config/defect-recurrence-policy.json](../config/defec
 
 Repository policy validation rejects duplicate ids, absent historical examples, missing family negative controls, invalid taxonomy values, and budgets outside zero through one. Deterministic sorting makes the serialized policy merge-friendly.
 
-Register a family whenever a defect is recorded as a recurrence of an earlier one, meaning the new item carries a `recurs_from` edge to its predecessor. A recurrence with no family produces no local and no hosted protection, so the next instance is rediscovered by hand. Coverage of recorded recurrence lineages is not yet computed by any gate; that gap is tracked on [pm-7c27ep](../.agents/pm/issues/pm-7c27ep.toon).
+Register a semantic family seed using its owner, trigger item ids, or historical
+item ids. The SDK follows every recorded local `recurs_from` edge in either
+direction to derive family membership for the complete connected lineage.
+Cycles and deep chains do not impose a traversal cutoff. Related, parent, and
+external edges never establish recurrence coverage; tags and matching file
+globs select change risk but cannot certify lineage registration.
+
+Derived members inherit the family's checks. Changes naming a member or one of
+its exact project-scoped linked files select those checks even when the policy
+never named that member. Incremental indexes retain sparse direct evidence so
+removing or changing an edge also removes obsolete inherited matches.
+
+### Complete-population coverage
+
+Tracked by [pm-7c27ep](../.agents/pm/issues/pm-7c27ep.toon).
+
+```ts
+import { analyzeDefectRecurrenceCoverage } from "@unbrained/pm-cli/sdk/governance";
+
+const coverage = analyzeDefectRecurrenceCoverage(policy, allStatusItems, {
+  limit: 25,
+  uncoveredOnly: true,
+});
+```
+
+Supply an authoritative complete item corpus. The workspace action loads it
+with strict read semantics. Unreadable item documents or directories refuse
+both workspace analyses and the repository gate with `list_source_incomplete`.
+Embedding hosts can request the same policy with
+`createAssuranceWorkspaceContext(pmRoot, { strict_read: true })`.
+Duplicate ids are rejected. Missing local targets
+remain in the population and produce `missing_recurrence_item`; an unregistered
+component produces `unregistered_recurrence_item`. The complete verdict is
+computed before filtering or pagination, so a covered first page cannot hide
+an uncovered member later in the graph.
+
+```bash
+lineage_request=$(jq -cn --slurpfile policy config/defect-recurrence-policy.json \
+  '{policy:$policy[0],limit:25,uncoveredOnly:true}')
+pm assurance lineages --definition "$lineage_request" --json
+```
+
+SDK, CLI, and MCP accept the same `definition`. Use `limit` from 1 through 100,
+`cursor`, and `uncoveredOnly` inside that object. Continuations bind the policy,
+complete recurrence evidence, item presence, and filter; changing page size is
+allowed. `total`, `has_more`, and `next_cursor` describe the selected rows;
+`population` always describes every recorded recurrence member. The CLI analysis
+returns a report; the repository gate makes its `ok` predicate blocking.
+
+The denominator includes covered, uncovered, and missing recurrence ids across
+all lifecycle states. Recorded recognized `escape_class` values produce class
+counts; unclassified members are never silently counted as non-escapes.
+`escape_rate` is null for an empty or incompletely classified population.
+`escape_rate_lower_bound` separately reports known production defects divided by
+the entire population. Family labels never backfill item classifications, and
+`budget_scope: "registered_families_only"` prevents policy budgets from being
+mistaken for proof about an unknown population.
+
+Registration means checks are selected, not that the defect is fixed or a
+hosted check has passed. The policy includes domain seeds for all current
+recorded components, while future disconnected recurrences fail the gate until
+a justified family is registered. Future edges within a registered lineage
+inherit protection automatically.
 
 ## Defect Evidence on PM Items
 
@@ -123,9 +187,19 @@ pnpm quality:defect-evidence
 node scripts/release/defect-evidence-gate.mjs --negative-control --json
 ```
 
-The first command must pass. The negative control must exit `1` after replacing a captured sample with a forbidden source and adding a terminal defect without evidence. Focused provider modes are available as `--boundary-only`, `--evidence-only`, and `--policy-only`.
+The first command must pass. The negative control must exit `1` after replacing a captured sample with a forbidden source and adding a terminal defect without evidence. The policy-only negative control
+adds a disconnected, unregistered recurrence pair and must also exit `1`. Focused provider modes are available as `--boundary-only`, `--evidence-only`, and `--policy-only`.
 
 `repository-defect-evidence-required` is part of the blocking `repository-static-quality` assurance composition. That makes local and CI behavior share the same provider result, assertion negative control, enforcement, and immutable verdict semantics.
+
+The mandatory `gate-registry` check also compares each recurrence family's `checks.hosted` values with concrete names derived from the repository workflows. It expands static matrix axes and applies exclusions before inclusions according to [GitHub's matrix rules](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstrategymatrixinclude). Renamed or removed checks produce named findings. Runtime expressions, unnamed matrix jobs, and static expansions beyond 256 combinations cannot certify a required check name. The public SDK policy parser remains provider-neutral; this workflow binding belongs to the repository gate.
+
+Assurance request schemas declare each family's required identity, triggers,
+checks, historical IDs, budgets, and negative-control input. Runtime policy
+validation additionally verifies unique family IDs and that each negative control
+actually selects its family; structural JSON Schema validation alone cannot prove
+those relationships. Risk reasons are sorted after direct and inherited matches
+are combined, using signal, value, then matched evidence as stable ordering keys.
 
 ## Recovery Producer Census
 

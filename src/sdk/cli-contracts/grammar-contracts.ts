@@ -411,6 +411,15 @@ export const PM_POSITIONAL_ACTION_CONTRACTS: readonly PmPositionalActionContract
       example: 'pm assurance risk --definition \'{"change":{"files":[]}}\'',
     },
     {
+      command: "assurance lineages",
+      parent: "assurance",
+      action: "lineages",
+      slots: [],
+      accepted_flags: ["--definition"],
+      description: "Measure all recorded recurrence lineages with bounded evidence rows.",
+      example: 'pm assurance lineages --definition \'{"policy":{"version":1,"evidence_epoch":"2026-01-01T00:00:00.000Z","families":[]}}\'',
+    },
+    {
       command: "workspace position",
       parent: "workspace",
       action: "position",

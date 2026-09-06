@@ -178,6 +178,7 @@ describe("defect recurrence SDK", () => {
       previous_index: {
         ...initial,
         item_families: undefined,
+        direct_item_families: undefined,
       } as never,
       changed_item_ids: ["pm-history"],
     });

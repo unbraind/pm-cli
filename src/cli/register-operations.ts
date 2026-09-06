@@ -470,6 +470,7 @@ async function runDuplicatesAction(
   }
 }
 
+/** Render the SDK health projection and mirror blocking strict verdicts in the CLI exit status. */
 async function runHealthAction(
   options: Record<string, unknown>,
   command: Command,
@@ -478,8 +479,9 @@ async function runHealthAction(
   const startedAt = Date.now();
   const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
   const result = await runHealth(globalOptions, {
+    strictExit,
     strictDirectories: Boolean(options.strictDirectories),
-    requireMergeDrivers: Boolean(options.requireMergeDrivers) || strictExit,
+    requireMergeDrivers: Boolean(options.requireMergeDrivers),
     checkOnly: Boolean(options.checkOnly),
     checkTelemetry: Boolean(options.checkTelemetry),
     noRefresh: Boolean(options.noRefresh),

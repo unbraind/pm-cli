@@ -33,7 +33,7 @@ interface CompletenessBaseline {
 
 describe("action-scoped MCP schema parity", () => {
   it("versions the additive single-stream salvage contract", () => {
-    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.13.0");
+    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.14.0");
     const schema = _testOnlyCliContracts.buildActionScopedToolSchema(
       "history-repair",
     ) as { allOf?: unknown[]; properties?: Record<string, unknown> };
@@ -52,6 +52,47 @@ describe("action-scoped MCP schema parity", () => {
             },
           ],
         },
+      });
+    }
+  });
+
+  it("declares bounded risk and complete-population lineage requests for assurance clients", () => {
+    const schema = _testOnlyCliContracts.buildActionScopedToolSchema("assurance") as {
+      properties: { subcommand: { enum: string[] }; definition: { oneOf: { required: string[]; properties: Record<string, unknown> }[] } };
+    };
+    expect(schema.properties.subcommand.enum).toEqual(expect.arrayContaining(["risk", "lineages"]));
+    for (const action of ["risk", "lineages"]) {
+      expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.assurance.conditionalRequired).toContainEqual({ property: "subcommand", value: action, required: ["definition"] });
+      expect(resolveSubcommandFlagContractsForCommand(`assurance ${action}`).map(({ flag }) => flag)).toContain("--definition");
+    }
+    const requests = schema.properties.definition.oneOf.filter(branch => branch.required.includes("policy"));
+    expect(requests).toHaveLength(2);
+    expect(requests.find(branch => branch.required.includes("change"))?.properties.change).toMatchObject({ type: "object" });
+    expect(requests.find(branch => !branch.required.includes("change"))?.properties).toMatchObject({ uncoveredOnly: { type: "boolean" }, limit: { minimum: 1, maximum: 100 } });
+  });
+
+  it("scopes strict-exit guidance to the capability's actual gate", () => {
+    for (const [action, expected] of [["health", "merge drivers"], ["validate", "validation"], ["history", "verification"], ["extension-doctor", "extension diagnostics"], ["package-doctor", "package diagnostics"]] as const) {
+      const schema = _testOnlyCliContracts.buildActionScopedToolSchema(action) as { properties: { strictExit: { description: string } } };
+      expect(schema.properties.strictExit.description).toContain(expected);
+      if (action !== "health") expect(schema.properties.strictExit.description).not.toContain("merge drivers");
+    }
+  });
+
+  it("publishes the recurrence family identity and evidence contract inside both assurance requests", () => {
+    const schema = _testOnlyCliContracts.buildActionScopedToolSchema("assurance") as {
+      properties: { definition: { oneOf: { required: string[]; properties: { policy?: { properties: { families: { items: { required?: string[]; properties?: Record<string, unknown> } } } } } }[] } };
+    };
+    for (const request of schema.properties.definition.oneOf.filter(branch => branch.required.includes("policy"))) {
+      const family = request.properties.policy!.properties.families.items;
+      expect(family.required).toEqual(expect.arrayContaining(["id", "version", "title", "owner_item_id", "escape_class", "triggers", "checks", "negative_control", "historical_item_ids", "budget"]));
+      expect(family.properties).toMatchObject({
+        id: { type: "string", pattern: "\\S" }, version: { type: "integer", minimum: 1 },
+        triggers: { type: "object", properties: { file_patterns: { items: { type: "string", maxLength: 256 } } } },
+        historical_item_ids: { type: "array", minItems: 1, items: { type: "string", pattern: "\\S" } },
+        checks: { required: ["local", "hosted"], properties: { local: { minItems: 1 }, hosted: { minItems: 1 } } },
+        negative_control: { type: "object", properties: { item_ids: { type: "array", items: { type: "string" } } } },
+        budget: { required: ["max_escape_rate", "max_false_positive_rate"], properties: { max_escape_rate: { type: "number", minimum: 0, maximum: 1 }, max_false_positive_rate: { type: "number", minimum: 0, maximum: 1 } } },
       });
     }
   });

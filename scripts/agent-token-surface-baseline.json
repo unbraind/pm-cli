@@ -17,6 +17,7 @@
     "required_commands": [
       "assurance apply",
       "assurance derive",
+      "assurance lineages",
       "assurance list",
       "assurance presets",
       "assurance promote",
@@ -108,7 +109,8 @@
       "workspace snapshot list": 888,
       "workspace snapshot delete": 888,
       "release": 537,
-      "workspace position": 136
+      "workspace position": 136,
+      "assurance lineages": 1229
     }
   }
 }

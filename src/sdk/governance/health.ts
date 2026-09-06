@@ -156,7 +156,7 @@ export interface HealthCheck {
     | "vectorization";
   /** Lifecycle state reported for status. */
   status: HealthStatus;
-  /** Boolean companion to status for direct agent and assurance predicates. */
+  /** True when this check has no gate-failing findings; advisory warnings retain warn status. */
   ok: boolean;
   /** Value that configures or reports details for this contract. */
   details: Record<string, unknown>;
@@ -182,6 +182,17 @@ export interface HealthFinding {
 export interface HealthResult {
   /** Whether the operation completed without a blocking failure. */
   ok: boolean;
+  /** Invocation policy and process outcome; `ok` is the authoritative health predicate. */
+  verdict?: {
+    /** Field consumers must branch on to decide project health. */
+    authority: "ok";
+    /** Present when a failed verdict sets a nonzero process exit; omitted means false. */
+    strict_exit?: true;
+    /** Present when missing merge drivers block this invocation; omitted means false. */
+    require_merge_drivers?: true;
+    /** Process exit code for this invocation, independent of diagnostic severity. */
+    exit_code: number;
+  };
   /** Value that configures or reports checks for this contract. */
   checks: HealthCheck[];
   /** Number of warning entries represented by this result. */
@@ -210,6 +221,10 @@ export interface HealthResult {
 
 /** Documents the run health options payload exchanged by command, SDK, and package integrations. */
 export interface RunHealthOptions {
+  /** Match CLI strict-exit policy: require merge drivers and exit nonzero on blocking findings. */
+  strictExit?: boolean;
+  /** Compatibility alias for strictExit across SDK and MCP invocations. */
+  failOnWarn?: boolean;
   /** Value that configures or reports strict directories for this contract. */
   strictDirectories?: boolean;
   /** Treat absent clone-local merge drivers as a required health failure instead of an advisory. */
@@ -228,7 +243,7 @@ export interface RunHealthOptions {
   verboseAuthorEvents?: boolean;
   /** Value that configures or reports skip vectors for this contract. */
   skipVectors?: boolean;
-  /** Value that configures or reports skip integrity for this contract. */
+  /** Skip optional integrity work; full output and required merge-driver enforcement still run it. */
   skipIntegrity?: boolean;
   /** Value that configures or reports skip drift for this contract. */
   skipDrift?: boolean;
@@ -1713,6 +1728,7 @@ function summarizeHealthCheckDetails(
 }
 /* c8 ignore stop */
 
+/** Bound diagnostic detail and warnings while retaining every blocking cause and the authoritative verdict. */
 function applyBriefHealthProjection(result: HealthResult): HealthResult {
   const warningsSummary = summarizeStringList(
     result.warnings,
@@ -1720,6 +1736,7 @@ function applyBriefHealthProjection(result: HealthResult): HealthResult {
   );
   return {
     ok: result.ok,
+    ...(result.verdict ? { verdict: result.verdict } : {}),
     checks: result.checks.map((check) => ({
       name: check.name,
       status: check.status,
@@ -1747,6 +1764,7 @@ function isSkippedHealthCheck(check: HealthCheck): boolean {
   return check.details.skipped === true;
 }
 
+/** Emit verdicts for checks that ran, retain blocking causes, and name omitted checks for recovery. */
 function applySummaryHealthProjection(result: HealthResult): HealthResult {
   const warningsSummary = summarizeStringList(
     result.warnings,
@@ -1757,6 +1775,7 @@ function applySummaryHealthProjection(result: HealthResult): HealthResult {
     .map((check) => check.name);
   return {
     ok: result.ok,
+    ...(result.verdict ? { verdict: result.verdict } : {}),
     checks: result.checks
       .filter((check) => !isSkippedHealthCheck(check))
       .map((check) => ({
@@ -3094,6 +3113,7 @@ function extractHistoryDriftedCount(
   return typeof counts?.drifted === "number" ? counts.drifted : 0;
 }
 
+/** Associate warning producers with their owning checks so findings inherit the correct remediation and severity. */
 function buildHealthRemediationSources(params: {
   directoryState: HealthDirectoryState;
   normalizedSettingsReadWarnings: string[];
@@ -3121,9 +3141,7 @@ function buildHealthRemediationSources(params: {
     extensions: params.extensionCheck.warnings,
     storage: [
       ...params.historyPolicyWarnings,
-      ...params.historySummary.over_threshold.map(
-        (id) => `history_stream_over_compact_threshold:${id}`,
-      ),
+      ...params.historySummary.warnings,
       ...params.authorAttributionWarnings,
       ...params.staleInProgressWarnings,
       ...params.provenanceWarnings,
@@ -3370,6 +3388,8 @@ export async function runHealth(
     getActiveExtensionRegistrations(),
   );
   const strictDirectories = options.strictDirectories === true;
+  const strictExit = options.strictExit === true || options.failOnWarn === true;
+  const requireMergeDrivers = options.requireMergeDrivers === true || strictExit;
   const refreshPolicy = resolveVectorRefreshPolicy(options);
   const directoryState = await scanHealthDirectories(
     pmRoot,
@@ -3438,7 +3458,7 @@ export async function runHealth(
   const provenanceInvalidValues = provenanceResolverHealth.invalid_values;
   const provenanceWarnings = provenanceResolverHealth.warnings;
   const locksCheck = await buildLocksCheck(pmRoot);
-  const integrityCheck = skipPolicy.skipIntegrity
+  const integrityCheck = skipPolicy.skipIntegrity && !requireMergeDrivers
     ? {
         ...buildSkippedHealthCheck("integrity"),
         gitWorkspaceRoot: null,
@@ -3448,7 +3468,7 @@ export async function runHealth(
         pmRoot,
         typeRegistry.type_to_folder,
         settings.schema,
-        options.requireMergeDrivers === true,
+        requireMergeDrivers,
         items,
       );
   const historyDriftCheck = skipPolicy.skipDrift
@@ -3553,16 +3573,30 @@ export async function runHealth(
   // surfaced in `warnings` and the telemetry check's own `warn` status.
   const blockingWarnings = normalizedWarnings.filter(
     (warning) =>
-      !isAdvisoryHealthWarning(warning, options.requireMergeDrivers === true),
+      !isAdvisoryHealthWarning(warning, requireMergeDrivers),
   );
   const findings = buildHealthFindings({
     warnings: normalizedWarnings,
     checks,
     remediationSources,
-    requireMergeDrivers: options.requireMergeDrivers === true,
+    requireMergeDrivers,
   });
+  const failingChecks = new Set(
+    findings.filter((finding) => finding.severity === "gate_failing").map((finding) => finding.check),
+  );
+  const warningChecks = new Set(findings.map((finding) => finding.check));
+  for (const check of checks) {
+    check.ok = !failingChecks.has(check.name);
+    if (warningChecks.has(check.name)) check.status = "warn";
+  }
   const result: HealthResult = {
     ok: blockingWarnings.length === 0,
+    verdict: {
+      authority: "ok",
+      ...(strictExit ? { strict_exit: true as const } : {}),
+      ...(requireMergeDrivers ? { require_merge_drivers: true as const } : {}),
+      exit_code: strictExit && blockingWarnings.length > 0 ? EXIT_CODE.GENERIC_FAILURE : 0,
+    },
     checks,
     warnings: normalizedWarnings,
     findings,

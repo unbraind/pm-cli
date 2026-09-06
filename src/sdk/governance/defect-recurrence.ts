@@ -9,6 +9,12 @@ import { createHash } from "node:crypto";
 import { stableStringify } from "../../core/shared/serialization.js";
 import type { AssuranceItemRecord } from "./assurance.js";
 import { defectRecurrenceItemSignals } from "./defect-recurrence-signals.js";
+import {
+  buildDefectRecurrenceGraph,
+  readDefectRecurrenceRecord,
+  type DefectRecurrenceRecord,
+} from "./defect-recurrence-graph.js";
+export type { DefectRecurrenceRecord } from "./defect-recurrence-graph.js";
 
 /** Stable defect escape taxonomy used by project policy and PM metadata. */
 export const DEFECT_ESCAPE_CLASSES = [
@@ -150,6 +156,12 @@ export interface DefectRecurrenceIndex {
   families: DefectRecurrenceFamily[];
   /** Sparse PM item-to-family index. */
   item_families: Record<string, string[]>;
+  /** Direct signal matches retained separately so removing an edge removes inherited matches. */
+  direct_item_families?: Record<string, string[]>;
+  /** Sparse recurrence and linked-file evidence retained for incremental graph updates. */
+  recurrence_records?: Record<string, DefectRecurrenceRecord>;
+  /** Exact project file matches inherited from explicitly registered recurrence lineages. */
+  file_families?: Record<string, string[]>;
   /** Build-cost receipt. */
   build: {
     /** Items inspected during this build. */
@@ -550,6 +562,7 @@ function exactReasons(
   return reasons;
 }
 
+/** Explain item-trigger matches from explicit policy IDs or inherited index membership. */
 function itemReasons(
   family: DefectRecurrenceFamily,
   input: DefectChangeRiskInput,
@@ -557,29 +570,25 @@ function itemReasons(
 ): DefectChangeRiskReason[] {
   const directItemIds = new Set(family.triggers.item_ids ?? []);
   return uniqueSorted(input.item_ids ?? []).flatMap((itemId) =>
-    directItemIds.has(itemId) || itemFamilies[itemId]?.includes(family.id)
+    directItemIds.has(itemId) ||
+    (Object.hasOwn(itemFamilies, itemId) &&
+      itemFamilies[itemId]!.includes(family.id))
       ? [{ signal: "item" as const, value: itemId, matched: family.id }]
       : [],
   );
 }
 
+/** Collect direct policy matches without sorting intermediate selection-only results. */
 function familyReasons(
   family: DefectRecurrenceFamily,
   input: DefectChangeRiskInput,
   itemFamilies: Readonly<Record<string, string[]>>,
 ): DefectChangeRiskReason[] {
-  const reasons = [
+  return [
     ...fileReasons(family, input),
     ...exactReasons(family, input),
     ...itemReasons(family, input, itemFamilies),
   ];
-  return reasons.sort((left, right) =>
-    left.signal !== right.signal
-      ? left.signal.localeCompare(right.signal)
-      : left.value !== right.value
-        ? left.value.localeCompare(right.value)
-        : left.matched.localeCompare(right.matched),
-  );
 }
 
 function readRiskCursorOffset(
@@ -617,6 +626,90 @@ function changeSignalCount(input: DefectChangeRiskInput): number {
   ].reduce((total, values) => total + (values?.length ?? 0), 0);
 }
 
+/** Apply registered lineage membership to item and exact linked-file risk triggers. */
+function inheritRecurrenceFamilies(
+  families: DefectRecurrenceFamily[],
+  recurrenceRecords: ReadonlyMap<string, DefectRecurrenceRecord>,
+  itemFamilies: Record<string, string[]>,
+): Map<string, Set<string>> {
+  const graph = buildDefectRecurrenceGraph(families, recurrenceRecords);
+  const fileFamilies = new Map<string, Set<string>>();
+  for (const lineage of graph.lineages) {
+    if (lineage.family_ids.length === 0) continue;
+    for (const id of lineage.item_ids) {
+      itemFamilies[id] = uniqueSorted([
+        ...(Object.hasOwn(itemFamilies, id) ? itemFamilies[id]! : []),
+        ...lineage.family_ids,
+      ]);
+      for (const file of recurrenceRecords.get(id)?.files ?? []) {
+        const matched = fileFamilies.get(file) ?? new Set<string>();
+        for (const familyId of lineage.family_ids) matched.add(familyId);
+        fileFamilies.set(file, matched);
+      }
+    }
+  }
+  return fileFamilies;
+}
+
+/** Refresh changed sparse records, deleting evidence no longer present on an item. */
+function refreshRecurrenceRecords(
+  recurrenceRecords: Map<string, DefectRecurrenceRecord>,
+  items: readonly AssuranceItemRecord[],
+): void {
+  for (const item of items) {
+    const record = readDefectRecurrenceRecord(item);
+    if (record === undefined) recurrenceRecords.delete(item.id);
+    else recurrenceRecords.set(item.id, record);
+  }
+}
+
+/** Compile exact identifier contributions once rather than expanding every family per item. */
+function compileDirectItemSeeds(families: readonly DefectRecurrenceFamily[]) {
+  const historical = new Map<string, Set<string>>();
+  const triggers = new Map<string, Set<string>>();
+  for (const family of families) {
+    for (const [index, ids] of [
+      [historical, family.historical_item_ids],
+      [triggers, family.triggers.item_ids ?? []],
+    ] as const) {
+      for (const id of ids) {
+        const matches = index.get(id) ?? new Set<string>();
+        matches.add(family.id);
+        index.set(id, matches);
+      }
+    }
+  }
+  return { historical, triggers };
+}
+
+/** Match identifier-only items without allocating per-family explanation records. */
+function directItemMatches(
+  item: AssuranceItemRecord,
+  families: DefectRecurrenceFamily[],
+  seeds: ReturnType<typeof compileDirectItemSeeds>,
+): string[] {
+  const signals = defectRecurrenceItemSignals(item);
+  const hasContext = [
+    signals.files,
+    signals.package_names,
+    signals.tags,
+    signals.error_codes,
+  ].some((values) => values && values.length > 0);
+  if (hasContext) {
+    return families
+      .filter(
+        (family) =>
+          family.historical_item_ids.includes(item.id) ||
+          familyReasons(family, signals, {}).length > 0,
+      )
+      .map((family) => family.id);
+  }
+  return uniqueSorted([
+    ...(seeds.historical.get(item.id) ?? []),
+    ...(seeds.triggers.get(item.id.trim()) ?? []),
+  ]);
+}
+
 /** Compile deterministic policy and PM metadata into a sparse incremental index. */
 export function buildDefectRecurrenceIndex(
   policy: DefectRecurrencePolicy,
@@ -631,26 +724,51 @@ export function buildDefectRecurrenceIndex(
   const changed = new Set(options.changed_item_ids ?? []);
   const canReuse =
     options.previous_index?.policy_fingerprint === policyFingerprint;
-  const itemFamilies: Record<string, string[]> = canReuse
-    ? Object.fromEntries(
-        Object.entries(options.previous_index?.item_families ?? {}).filter(
-          ([itemId]) => !changed.has(itemId),
-        ),
-      )
-    : {};
+  const itemFamilies = Object.assign(
+    Object.create(null) as Record<string, string[]>,
+    canReuse
+      ? Object.fromEntries(
+          Object.entries(
+            options.previous_index?.direct_item_families ??
+              options.previous_index?.item_families ??
+              {},
+          ).filter(([itemId]) => !changed.has(itemId)),
+        )
+      : {},
+  );
   const itemsReused = canReuse ? Object.keys(itemFamilies).length : 0;
+  const seeds = compileDirectItemSeeds(families);
   for (const item of items) {
-    const signals = defectRecurrenceItemSignals(item);
-    const matched = families
-      .filter(
-        (family) =>
-          family.historical_item_ids.includes(item.id) ||
-          familyReasons(family, signals, {}).length > 0,
-      )
-      .map((family) => family.id);
+    const matched = directItemMatches(item, families, seeds);
     if (matched.length > 0) itemFamilies[item.id] = matched;
     else delete itemFamilies[item.id];
   }
+  const directItemFamilies = Object.fromEntries(
+    Object.entries(itemFamilies).sort(([left], [right]) =>
+      left < right ? -1 : 1,
+    ),
+  );
+  const recurrenceRecords = new Map<string, DefectRecurrenceRecord>(
+    canReuse
+      ? Object.entries(options.previous_index?.recurrence_records ?? {}).filter(
+          ([id]) => !changed.has(id),
+        )
+      : [],
+  );
+  refreshRecurrenceRecords(recurrenceRecords, items);
+  const fileFamilies = inheritRecurrenceFamilies(
+    families,
+    recurrenceRecords,
+    itemFamilies,
+  );
+  const sortedRecords = Object.fromEntries(
+    [...recurrenceRecords].sort(([left], [right]) => (left < right ? -1 : 1)),
+  );
+  const sortedFileFamilies = Object.fromEntries(
+    [...fileFamilies]
+      .sort(([left], [right]) => (left < right ? -1 : 1))
+      .map(([file, matches]) => [file, [...matches].sort()]),
+  );
   const sortedItemFamilies = Object.fromEntries(
     Object.entries(itemFamilies)
       .sort(([left], [right]) => (left < right ? -1 : 1))
@@ -662,9 +780,15 @@ export function buildDefectRecurrenceIndex(
     index_fingerprint: fingerprint({
       policy_fingerprint: policyFingerprint,
       item_families: sortedItemFamilies,
+      direct_item_families: directItemFamilies,
+      recurrence_records: sortedRecords,
+      file_families: sortedFileFamilies,
     }),
     families,
     item_families: sortedItemFamilies,
+    direct_item_families: directItemFamilies,
+    recurrence_records: sortedRecords,
+    file_families: sortedFileFamilies,
     build: {
       items_scanned: items.length,
       items_reused: itemsReused,
@@ -688,6 +812,26 @@ export function analyzeDefectChangeRisk(
   const offset = readRiskCursorOffset(options.cursor, index.index_fingerprint);
   const matches = index.families.flatMap((family) => {
     const reasons = familyReasons(family, input, index.item_families);
+    for (const file of uniqueSorted(input.files ?? [])) {
+      if (
+        index.file_families &&
+        Object.hasOwn(index.file_families, file) &&
+        index.file_families[file]!.includes(family.id)
+      ) {
+        reasons.push({
+          signal: "file",
+          value: file,
+          matched: `recurs_from:${family.id}`,
+        });
+      }
+    }
+    reasons.sort((left, right) =>
+      left.signal !== right.signal
+        ? left.signal.localeCompare(right.signal)
+        : left.value !== right.value
+          ? left.value.localeCompare(right.value)
+          : left.matched.localeCompare(right.matched),
+    );
     return reasons.length === 0
       ? []
       : [

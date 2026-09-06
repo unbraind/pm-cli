@@ -2182,6 +2182,7 @@ describe("release readiness runtime coverage", () => {
       expect(healthResult.code).toBe(0);
       expectTopLevelKeyOrder(healthResult.json, [
         "ok",
+        "verdict",
         "checks",
         "warnings",
         "findings",

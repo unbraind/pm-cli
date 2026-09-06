@@ -21,6 +21,7 @@ import type {
 import { runGraph, type GraphCommandOptions } from "../graph/run.js";
 import { runHealth } from "./health.js";
 import { runValidate } from "./validate.js";
+import { runList } from "../query/list.js";
 import { AssuranceSourceResolutionError } from "./assurance-mutation-error.js";
 import {
   getActiveExtensionRegistrations,
@@ -48,6 +49,8 @@ export type AssuranceProviderResolver = (
 
 /** Workspace binding options. */
 export interface CreateAssuranceWorkspaceContextOptions {
+  /** Refuse incomplete item or directory reads through the public strict-list contract. */
+  strict_read?: boolean;
   /** Explicit tree identity; otherwise the current Git commit is used. */
   tree_id?: string;
   /** Load immutable item history for history-backed measurements. */
@@ -296,13 +299,22 @@ export async function createAssuranceWorkspaceContext(
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const metadata = await listAllItemMetadata(
-    pmRoot,
-    settings.item_format,
-    typeRegistry.type_to_folder,
-    undefined,
-    settings.schema,
-  );
+  const metadata =
+    options.strict_read === true
+      ? (
+          await runList(
+            undefined,
+            { status: "all", full: true, noTruncate: true, strictRead: true },
+            { path: pmRoot },
+          )
+        ).items
+      : await listAllItemMetadata(
+          pmRoot,
+          settings.item_format,
+          typeRegistry.type_to_folder,
+          undefined,
+          settings.schema,
+        );
   const items: AssuranceItemRecord[] = metadata.map((item) => ({
     ...item,
     id: item.id,

@@ -4,7 +4,7 @@
   "families": [
     {
       "id": "boundary-format-drift",
-      "version": 1,
+      "version": 2,
       "title": "Externally produced path, slug, payload, and invocation format drift",
       "owner_item_id": "pm-0pzgit",
       "escape_class": "production_defect",
@@ -29,8 +29,9 @@
           "node scripts/release/defect-evidence-gate.mjs --boundary-only"
         ],
         "hosted": [
-          "CI / boundary-fixture-gate",
-          "Nightly / cross-platform"
+          "CI / Gates (static)",
+          "Nightly Validation / Nightly (windows-latest, Node 24)",
+          "Nightly Validation / Nightly (macos-latest, Node 24)"
         ]
       },
       "negative_control": {
@@ -48,7 +49,7 @@
     },
     {
       "id": "cross-platform-nightly-regression",
-      "version": 1,
+      "version": 2,
       "title": "Platform-specific runtime and filesystem regressions",
       "owner_item_id": "pm-2zjs0g",
       "escape_class": "nightly_regression",
@@ -76,8 +77,8 @@
           "node scripts/run-tests.mjs test -- tests/unit/scripts"
         ],
         "hosted": [
-          "Nightly / windows-latest",
-          "Nightly / macos-latest"
+          "Nightly Validation / Nightly (windows-latest, Node 24)",
+          "Nightly Validation / Nightly (macos-latest, Node 24)"
         ]
       },
       "negative_control": {
@@ -86,9 +87,10 @@
         ]
       },
       "historical_item_ids": [
+        "pm-46hpx8",
+        "pm-wr8utz",
         "pm-xaib",
-        "pm-zno2iu",
-        "pm-wr8utz"
+        "pm-zno2iu"
       ],
       "budget": {
         "max_escape_rate": 0.02,
@@ -97,7 +99,7 @@
     },
     {
       "id": "security-scanner-finding",
-      "version": 1,
+      "version": 2,
       "title": "Secret, dependency, and static-analysis findings",
       "owner_item_id": "pm-6ixn",
       "escape_class": "scanner_finding",
@@ -125,9 +127,9 @@
           "pnpm audit --prod"
         ],
         "hosted": [
-          "Security / CodeQL",
-          "Security / TruffleHog",
-          "Security / Trivy"
+          "CodeQL / Analyze (javascript-typescript)",
+          "Security and Script Quality / TruffleHog",
+          "Security and Script Quality / Trivy"
         ]
       },
       "negative_control": {
@@ -146,7 +148,7 @@
     },
     {
       "id": "review-caught-contract-drift",
-      "version": 1,
+      "version": 2,
       "title": "CLI, SDK, MCP, and initialization contract drift caught in review",
       "owner_item_id": "pm-rtn5h6",
       "escape_class": "review_caught_late",
@@ -173,9 +175,8 @@
           "pnpm quality:static"
         ],
         "hosted": [
-          "CI / test-shard",
-          "Greptile",
-          "CodeRabbit"
+          "CI / Gates (coverage)",
+          "CI / Gates (static)"
         ]
       },
       "negative_control": {
@@ -184,8 +185,14 @@
         ]
       },
       "historical_item_ids": [
+        "pm-0bwe",
+        "pm-7f9zkh",
+        "pm-ablm",
         "pm-at1j",
-        "pm-0bwe"
+        "pm-hqa8g1",
+        "pm-o360q6",
+        "pm-q4isdq",
+        "pm-st7wgu"
       ],
       "budget": {
         "max_escape_rate": 0.01,
@@ -194,7 +201,7 @@
     },
     {
       "id": "output-budget-and-continuation",
-      "version": 1,
+      "version": 2,
       "title": "Token-budget, omission, and continuation contract regressions",
       "owner_item_id": "pm-1qkivy",
       "escape_class": "production_defect",
@@ -215,7 +222,7 @@
           "pnpm quality:token-surface"
         ],
         "hosted": [
-          "CI / token-budget-gate"
+          "CI / Gates (static)"
         ]
       },
       "negative_control": {
@@ -224,6 +231,11 @@
         ]
       },
       "historical_item_ids": [
+        "pm-57ir3b",
+        "pm-79gv6q",
+        "pm-8nev0o",
+        "pm-b0v8fs",
+        "pm-bfa1ob",
         "pm-ips23h"
       ],
       "budget": {
@@ -233,7 +245,7 @@
     },
     {
       "id": "history-and-projection-integrity",
-      "version": 1,
+      "version": 2,
       "title": "Immutable history and read-projection integrity regressions",
       "owner_item_id": "pm-h8tpeh",
       "escape_class": "production_defect",
@@ -258,8 +270,8 @@
           "pnpm contracts:check"
         ],
         "hosted": [
-          "CI / record-integrity",
-          "CI / contract-drift"
+          "CI / Gates (static)",
+          "CI / Gates (coverage)"
         ]
       },
       "negative_control": {
@@ -268,7 +280,13 @@
         ]
       },
       "historical_item_ids": [
-        "pm-c3uru0"
+        "pm-0wfdim",
+        "pm-7wzb6d",
+        "pm-96fsma",
+        "pm-baksix",
+        "pm-c3uru0",
+        "pm-dn8rwl",
+        "pm-hmpu4p"
       ],
       "budget": {
         "max_escape_rate": 0,
@@ -348,7 +366,7 @@
     },
     {
       "id": "ambient-host-state-in-measured-fixture",
-      "version": 1,
+      "version": 2,
       "title": "A gate fixture that claims isolation still reads ambient host state, so local and hosted verdicts diverge for the same tree",
       "owner_item_id": "pm-4o7tlx",
       "escape_class": "review_caught_late",
@@ -387,8 +405,347 @@
         ]
       },
       "historical_item_ids": [
-        "pm-t7wn04",
-        "pm-4o7tlx"
+        "pm-4o7tlx",
+        "pm-5ug5xq",
+        "pm-t7wn04"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.05
+      }
+    },
+    {
+      "id": "dependency-toolchain-compatibility",
+      "version": 1,
+      "title": "Dependency and pinned workflow compatibility",
+      "owner_item_id": "pm-6f66vu",
+      "escape_class": "review_caught_late",
+      "triggers": {
+        "item_ids": [
+          "pm-2a9n"
+        ]
+      },
+      "checks": {
+        "local": [
+          "pnpm typecheck",
+          "pnpm security:scan",
+          "node scripts/run-tests.mjs coverage"
+        ],
+        "hosted": [
+          "CI / Gates (static)",
+          "CI / Gates (coverage)"
+        ]
+      },
+      "negative_control": {
+        "item_ids": [
+          "pm-2a9n"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-2a9n",
+        "pm-6f66vu",
+        "pm-87hmdw",
+        "pm-940mcx",
+        "pm-fokyhh",
+        "pm-o3mczz",
+        "pm-obh6lo"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.05
+      }
+    },
+    {
+      "id": "host-filesystem-refusal",
+      "version": 1,
+      "title": "Actionable filesystem resource and permission refusals",
+      "owner_item_id": "pm-3lhth4",
+      "escape_class": "production_defect",
+      "triggers": {
+        "item_ids": [
+          "pm-3lhth4"
+        ]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/sdk/workspace-snapshot.spec.ts tests/integration/extension-host-faults.integration.spec.ts"
+        ],
+        "hosted": [
+          "CI / Gates (coverage)"
+        ]
+      },
+      "negative_control": {
+        "item_ids": [
+          "pm-3lhth4"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-3lhth4"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.05
+      }
+    },
+    {
+      "id": "linked-test-execution-boundaries",
+      "version": 1,
+      "title": "Linked-test isolation, output capture, and execution evidence",
+      "owner_item_id": "pm-q813",
+      "escape_class": "production_defect",
+      "triggers": {
+        "item_ids": [
+          "pm-5sm91o"
+        ]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts tests/unit/sdk/linked-command-identity.spec.ts"
+        ],
+        "hosted": [
+          "CI / Gates (coverage)"
+        ]
+      },
+      "negative_control": {
+        "item_ids": [
+          "pm-5sm91o"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-5sm91o",
+        "pm-m0b7h8",
+        "pm-q813"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.05
+      }
+    },
+    {
+      "id": "installed-consumer-portability",
+      "version": 1,
+      "title": "Packed npm and Bun runtime compatibility and executable verification",
+      "owner_item_id": "pm-ikj8ve",
+      "escape_class": "production_defect",
+      "triggers": {
+        "item_ids": [
+          "pm-8eebb6"
+        ]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts"
+        ],
+        "hosted": [
+          "CI / Gates (smokes)"
+        ]
+      },
+      "negative_control": {
+        "item_ids": [
+          "pm-8eebb6"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-8eebb6",
+        "pm-b8hwfr",
+        "pm-ikj8ve"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.05
+      }
+    },
+    {
+      "id": "release-provenance-and-artifacts",
+      "version": 1,
+      "title": "Immutable release provenance, daily idempotency, changelog, and artifact budgets",
+      "owner_item_id": "pm-dm2vfz",
+      "escape_class": "production_defect",
+      "triggers": {
+        "item_ids": [
+          "pm-998juj"
+        ]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/unit/scripts/release",
+          "pnpm quality:package-artifact"
+        ],
+        "hosted": [
+          "CI / Gates (static)",
+          "CI / Gates (smokes)"
+        ]
+      },
+      "negative_control": {
+        "item_ids": [
+          "pm-998juj"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-998juj",
+        "pm-dm2vfz",
+        "pm-e63v1x"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.05
+      }
+    },
+    {
+      "id": "review-evidence-freshness",
+      "version": 1,
+      "title": "Review findings retain exact revision and acknowledgement evidence",
+      "owner_item_id": "pm-8we38i",
+      "escape_class": "review_caught_late",
+      "triggers": {
+        "item_ids": [
+          "pm-8we38i"
+        ]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts"
+        ],
+        "hosted": [
+          "CI / Gates (coverage)"
+        ]
+      },
+      "negative_control": {
+        "item_ids": [
+          "pm-8we38i"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-8we38i"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.05
+      }
+    },
+    {
+      "id": "health-verdict-authority",
+      "version": 1,
+      "title": "Advisory diagnostics and authoritative health failure predicates",
+      "owner_item_id": "pm-fkohe8",
+      "escape_class": "production_defect",
+      "triggers": {
+        "item_ids": [
+          "pm-fkohe8"
+        ]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/unit/sdk/health-verdict-authority.spec.ts tests/unit/sdk/health-finding-contract.spec.ts tests/unit/commands/health-command.spec.ts"
+        ],
+        "hosted": [
+          "CI / Gates (coverage)",
+          "CI / Gates (static)"
+        ]
+      },
+      "negative_control": {
+        "item_ids": [
+          "pm-fkohe8"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-fkohe8"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.05
+      }
+    },
+    {
+      "id": "scale-latency-and-memory",
+      "version": 1,
+      "title": "Shape-qualified command latency and memory budgets",
+      "owner_item_id": "pm-hcrmye",
+      "escape_class": "nightly_regression",
+      "triggers": {
+        "item_ids": [
+          "pm-hcrmye"
+        ]
+      },
+      "checks": {
+        "local": [
+          "pnpm benchmark:scale:check"
+        ],
+        "hosted": [
+          "CI / Gates (static)"
+        ]
+      },
+      "negative_control": {
+        "item_ids": [
+          "pm-hcrmye"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-hcrmye"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.05
+      }
+    },
+    {
+      "id": "semantic-batch-settings",
+      "version": 1,
+      "title": "Semantic indexing batch sizing and retry settings",
+      "owner_item_id": "pm-i25f",
+      "escape_class": "production_defect",
+      "triggers": {
+        "item_ids": [
+          "pm-i25f"
+        ]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/unit/commands/reindex-command.spec.ts tests/unit/core/search/semantic-defaults.spec.ts"
+        ],
+        "hosted": [
+          "CI / Gates (coverage)"
+        ]
+      },
+      "negative_control": {
+        "item_ids": [
+          "pm-i25f"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-i25f"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.05
+      }
+    },
+    {
+      "id": "telemetry-ingestion-contract",
+      "version": 1,
+      "title": "Telemetry ingestion validation and retry isolation",
+      "owner_item_id": "pm-vhdc",
+      "escape_class": "production_defect",
+      "triggers": {
+        "item_ids": [
+          "pm-vhdc"
+        ]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/unit/core/telemetry tests/unit/commands/telemetry-command.spec.ts"
+        ],
+        "hosted": [
+          "CI / Gates (coverage)"
+        ]
+      },
+      "negative_control": {
+        "item_ids": [
+          "pm-vhdc"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-vhdc"
       ],
       "budget": {
         "max_escape_rate": 0,

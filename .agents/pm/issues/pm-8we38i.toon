@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-06T05:17:54.521Z"
-updated_at: "2026-09-06T06:28:28.452Z"
-closed_at: "2026-09-06T06:08:29.422Z"
-completed_at: "2026-09-06T06:08:29.422Z"
+updated_at: "2026-09-06T14:44:20.497Z"
+closed_at: "2026-09-06T14:14:52.971Z"
+completed_at: "2026-09-06T14:14:52.971Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: An edited bot body has a new revision identity; unchanged acknowledgement retries create no duplicate; changed feedback gets a fresh explanation; inline and top-level surfaces remain distinct; exact-head inventory and required check watches remain complete
@@ -18,14 +18,14 @@ why_now: The requested review loop requires checking edited feedback before merg
 parent: pm-0fxa
 risk: medium
 confidence: high
-resolution: Track bot body and review-state revisions with retry-safe per-revision acknowledgements; update compatible Greptile patch
-expected_result: Edited feedback receives new review identity; same-revision top-level and inline retries reuse the correct acknowledgement
-actual_result: Edited feedback receives new review identity; same-revision top-level and inline retries reuse the correct acknowledgement; linked tests and integrated gates passed. Review regressions and linked verification also pass.
+resolution: Preserved revision-scoped and thread-scoped acknowledgements while projecting unused REST payload fields and defining a 64 MiB complete-response transport bound with visible overflow failure.
+expected_result: Large review conversations remain completely inventoried and acknowledgeable without duplicate replies or silent truncation.
+actual_result: "Real 2 MiB child-process red/green regression, all 14 helper tests, linked verification, focused ESLint and docs links pass. Live projected GitHub lookup retained 84 comments in 89639 bytes and the previously failing acknowledgements completed."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-0fxa,implements,"2026-09-06T05:17:54.521Z","harness:codex","cli:create:dep",detected
   pm-466m0j,discovered_from,"2026-09-06T05:17:54.521Z","harness:codex","cli:create:dep",detected
   pm-cp5pbo,recurs_from,"2026-09-06T05:17:54.521Z","harness:codex","cli:create:dep",detected
-comments[9]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-09-06T05:17:54.521Z","harness:codex","Duplicate check: searched all statuses and the complete 2648-item lineage including closed review helper owners pm-0fxa and pm-cp5pbo. Both shipped check-driven inventory and retry-safe acknowledgements; no owner covers edited source revisions. Live predecessor metadata and verified history were read; open and active inventories refreshed before creation."
   "2026-09-06T05:27:19.971Z","harness:codex","TDD evidence: both revision tests failed before implementation. The helper now fingerprints source body and review state without treating reaction timestamps as new content. Revision-scoped top-level and inline acknowledgements reuse an existing reply for an unchanged revision; edited feedback gets a fresh marker and explanation. Inline lookup rejects markers from other threads. Full coverage and quality gates are running; hosted acceptance will use this helper on the delivery PR."
   "2026-09-06T05:42:34.291Z","harness:codex","Integrated verification 2026-09-06: full source coverage is exact 100/100/100/100: statements 62641/62641, branches 47517/47517, functions 12984/12984, lines 60208/60208. The 8475-test coverage run passed 8474 tests and identified one repository directory-load failure (121 files over the 120-file SDK test folder ceiling). Moving the new receipt-schema suite into tests/unit/sdk/merge restored the limit; the focused 30-test structural/schema/review run passed. All eight active item linked-test runs passed through pm test, preserving execution receipts. Temporary installed npm and Bun consumers passed warning-close, executable evidence update, and immutable-history verification. Packed npx and bunx smoke passed across 13 packages. TypeScript and ESLint passed. Credential scan and npm advisory census found zero secrets/vulnerabilities. Hosted checks, AI review, merge and published release verification are still pending and are separate from this local evidence."
@@ -35,6 +35,9 @@ comments[9]{created_at,author,text}:
   "2026-09-06T06:06:56.141Z","harness:codex","PR 1208 review fixes: quoted Git paths now normalize identically to receipt persistence after a failing real-Git regression; terminal retry arguments are asserted in full and executed independently; review examples pass source revisions and all touched helper contracts have explicit docstrings. Current-policy hash-only and legacy pairs both pass inspection and settlement while tampered copies fail. Structured escape_class and gate_evidence now accompany terminal defects. No gate or evidence threshold was weakened."
   "2026-09-06T06:08:27.413Z","harness:codex","Review evidence: all three CodeRabbit inline findings were implemented and acknowledged on their original threads. The revised linked tests pass, including quoted paths with spaces, independently executed terminal argv, and current-policy hash-only provenance. All ten first-round bot artifacts received a revision-specific reaction and explanation. The Sourcery guide recommendations to ignore durable sidecars or infer a field named collections were declined with contract evidence; reviewer quota notices are not treated as approval. The original reviewed head also passed exact DeepScan and CodeFactor hosted-analysis proof. Full updated-head gates are running."
   "2026-09-06T06:28:28.452Z","harness:codex","Consolidated review verification: 623/623 files and 8476/8476 tests pass at exact 100/100/100/100 (62643 statements, 47519 branches, 12984 functions, 60210 lines). The reproducibility fixture now isolates cwd and both tracker roots, disables external probes and rejects contamination from a changing unrelated workset. Full static quality and typecheck passed; post-closure defect evidence, docs/skills, ESLint and SDK surface checks pass. The second PR head will receive fresh hosted checks and explicit review triggers."
+  "2026-09-06T14:10:53.699Z","harness:codex","Live recurrence on PR 1210: revision-aware inline acknowledgement fails visibly with spawnSync gh ENOBUFS because the complete REST response includes repeated diff_hunk data and exceeds the default 1 MiB child-process buffer. All-status complete 2650-item search reuses this canonical complete-review owner; no duplicate item is created. Preserve the shipped revision and thread semantics while reducing unused REST fields and declaring a bounded transport capacity."
+  "2026-09-06T14:14:52.408Z","harness:codex","TDD red/green: a real 2 MiB child-process response failed with ENOBUFS before the fix and now returns the exact byte count and trailing sentinel. All 14 review-helper tests and the acknowledged linked plan pass, along with focused ESLint and documentation links. Live GitHub projection retains all 84 comments in 89639 bytes and revision-aware acknowledgements now succeed on the previously failing PR. The prior complete 8502-test 100/100/100/100 result predates this helper-only correction; final hosted coverage and static checks will validate the combined head."
+  "2026-09-06T14:44:20.497Z","harness:codex","Final combined verification: 628 files and 8506 tests pass at exact 100/100/100/100 coverage (62934 statements, 47784 branches, 13037 functions, 60460 lines). Complete static quality, typecheck, secret scan, linked tests and standalone recurrence fixture typecheck pass. Independent Draft 2020-12/runtime structural validation agrees on 54 request cases. Fresh packed Node and Bun acceptance includes strict compact and explicit-skip enforcement, mixed risk-reason order, normalization, and incomplete-source refusal. Final hosted review remains a merge prerequisite."
 learnings[1]{created_at,author,text}:
   "2026-09-06T05:28:56.725Z","harness:codex","GitHub node IDs identify artifacts, not content revisions. Fingerprint body and submitted review state, exclude reaction timestamps, and bind acknowledgement retry markers to the observed revision plus the actual inline thread."
 files[4]{path,scope,note}:
@@ -44,7 +47,7 @@ files[4]{path,scope,note}:
   tests/unit/scripts/reviews/pr-review-loop.spec.ts,project,Edited-feedback and retry regression controls
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts,project,240,"harness:codex","2026-09-06T05:18:59.773Z",local_mutation,feat/receipt-recovery-and-extension-contracts
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mtpdqjrv-g8t23e
     kind: test
     status: passed
@@ -67,11 +70,22 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtpw4urw-85aisc
+    kind: test
+    status: failed
+    started_at: "2026-09-06T14:12:06.366Z"
+    finished_at: "2026-09-06T14:12:06.476Z"
+    recorded_at: "2026-09-06T14:12:06.476Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts,schema,schema,source,foreign_source_ref
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,Package-generated release notes for the completed recovery and extension contract delivery
   docs/AGENT_GUIDE.md,project,Require revision-aware acknowledgement in future agent review loops
   docs/PR_REVIEW_LOOP.md,project,Revision-aware exact-head feedback loop
-close_reason: Completed verified PR 1208 review improvements and structured regression evidence.
+close_reason: Completed large-response correction to the shipped revision-aware review loop; final hosted checks remain required before merge.
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened
