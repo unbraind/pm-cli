@@ -243,7 +243,7 @@ export interface RunHealthOptions {
   verboseAuthorEvents?: boolean;
   /** Value that configures or reports skip vectors for this contract. */
   skipVectors?: boolean;
-  /** Value that configures or reports skip integrity for this contract. */
+  /** Skip optional integrity work; full output and required merge-driver enforcement still run it. */
   skipIntegrity?: boolean;
   /** Value that configures or reports skip drift for this contract. */
   skipDrift?: boolean;
@@ -3458,7 +3458,7 @@ export async function runHealth(
   const provenanceInvalidValues = provenanceResolverHealth.invalid_values;
   const provenanceWarnings = provenanceResolverHealth.warnings;
   const locksCheck = await buildLocksCheck(pmRoot);
-  const integrityCheck = skipPolicy.skipIntegrity
+  const integrityCheck = skipPolicy.skipIntegrity && !requireMergeDrivers
     ? {
         ...buildSkippedHealthCheck("integrity"),
         gitWorkspaceRoot: null,

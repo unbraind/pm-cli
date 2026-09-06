@@ -3,6 +3,42 @@
  *
  * Defines the strict JSON Schema accepted by assurance definition mutations.
  */
+import { DEFECT_ESCAPE_CLASSES } from "../../governance/defect-recurrence.js";
+
+const DEFECT_NONEMPTY_STRING_SCHEMA = { type: "string", pattern: "\\S" };
+const DEFECT_NONEMPTY_STRINGS_SCHEMA = { type: "array", minItems: 1, items: DEFECT_NONEMPTY_STRING_SCHEMA };
+const DEFECT_CHANGE_INPUT_SCHEMA = {
+  type: "object",
+  properties: Object.fromEntries(["files", "package_names", "item_ids", "tags", "error_codes"].map((key) => [key, { type: "array", items: { type: "string" } }])),
+};
+const DEFECT_FAMILY_SCHEMA = {
+  type: "object",
+  required: ["id", "version", "title", "owner_item_id", "escape_class", "triggers", "checks", "negative_control", "historical_item_ids", "budget"],
+  properties: {
+    id: DEFECT_NONEMPTY_STRING_SCHEMA,
+    version: { type: "integer", minimum: 1 },
+    title: DEFECT_NONEMPTY_STRING_SCHEMA,
+    owner_item_id: DEFECT_NONEMPTY_STRING_SCHEMA,
+    escape_class: { enum: DEFECT_ESCAPE_CLASSES },
+    triggers: {
+      type: "object",
+      properties: {
+        ...Object.fromEntries(["package_names", "item_ids", "tags", "error_codes"].map((key) => [key, { type: "array", items: { type: "string" } }])),
+        file_patterns: { type: "array", items: { type: "string", maxLength: 256 } },
+      },
+    },
+    checks: {
+      type: "object", required: ["local", "hosted"],
+      properties: { local: DEFECT_NONEMPTY_STRINGS_SCHEMA, hosted: DEFECT_NONEMPTY_STRINGS_SCHEMA },
+    },
+    negative_control: { ...DEFECT_CHANGE_INPUT_SCHEMA, minProperties: 1 },
+    historical_item_ids: DEFECT_NONEMPTY_STRINGS_SCHEMA,
+    budget: {
+      type: "object", required: ["max_escape_rate", "max_false_positive_rate"],
+      properties: Object.fromEntries(["max_escape_rate", "max_false_positive_rate"].map((key) => [key, { type: "number", minimum: 0, maximum: 1 }])),
+    },
+  },
+};
 
 const ASSURANCE_VALUE_SCHEMA = {
   oneOf: [{ type: "number" }, { type: "array", items: { type: "string" } }],
@@ -28,10 +64,9 @@ export const ASSURANCE_DEFINITION_SCHEMA = {
         policy: { type: "object", required: ["version", "evidence_epoch", "families"], properties: {
           version: { const: 1 },
           evidence_epoch: { type: "string", format: "date-time" },
-          families: { type: "array", items: { type: "object" } },
+          families: { type: "array", items: DEFECT_FAMILY_SCHEMA },
         }, additionalProperties: false },
-        ...(isRisk ? { change: { type: "object", additionalProperties: false, properties:
-          Object.fromEntries(["files", "package_names", "item_ids", "tags", "error_codes"].map((key) => [key, { type: "array", items: { type: "string" } }])) } } : { uncoveredOnly: { type: "boolean" } }),
+        ...(isRisk ? { change: { ...DEFECT_CHANGE_INPUT_SCHEMA, additionalProperties: false } } : { uncoveredOnly: { type: "boolean" } }),
         limit: { type: "integer", minimum: 1, maximum: 100 },
         cursor: { type: "string", minLength: 1 },
       },

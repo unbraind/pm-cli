@@ -45,6 +45,23 @@ const second = {
 };
 
 describe("recorded recurrence lineages", () => {
+  it("orders inherited and direct reasons together by signal, value and match", () => {
+    const mixedPolicy: DefectRecurrencePolicy = { ...policy, families: [{ ...policy.families[0]!, triggers: {
+      item_ids: [first.id], file_patterns: ["src/*"], package_names: ["pm-health"], tags: ["assurance"],
+    } }] };
+    const index = buildDefectRecurrenceIndex(mixedPolicy, [first, { ...second, files: [{ path: "src/z.ts" }, { path: "src/a.ts" }] }]);
+    const report = analyzeDefectChangeRisk(index, { files: ["src/z.ts", "src/a.ts"], item_ids: [second.id], package_names: ["pm-health"], tags: ["assurance"] });
+    expect(report.items[0]?.reasons).toEqual([
+      { signal: "file", value: "src/a.ts", matched: "recurs_from:health-verdict" },
+      { signal: "file", value: "src/a.ts", matched: "src/*" },
+      { signal: "file", value: "src/z.ts", matched: "recurs_from:health-verdict" },
+      { signal: "file", value: "src/z.ts", matched: "src/*" },
+      { signal: "item", value: second.id, matched: "health-verdict" },
+      { signal: "package", value: "pm-health", matched: "pm-health" },
+      { signal: "tag", value: "assurance", matched: "assurance" },
+    ]);
+  });
+
   it("counts duplicate targets once while preserving reciprocal and self edges", () => {
     const graph = buildDefectRecurrenceGraph(policy.families, new Map([
       ["pm-first", { targets: ["pm-first", "pm-first", "pm-second", "pm-second"], files: [] }],
@@ -155,6 +172,8 @@ describe("recorded recurrence lineages", () => {
   it("traverses deep cyclic evidence and ignores association or external references", () => {
     const items = Array.from({ length: 12000 }, (_, index) => ({
       id: index === 0 ? first.id : `pm-deep-${index}`,
+      status: "closed",
+      type: "Issue",
       dependencies: [
         {
           kind: "recurs_from",
@@ -174,10 +193,14 @@ describe("recorded recurrence lineages", () => {
         ...items,
         {
           id: "pm-associated",
+          status: "open",
+          type: "Issue",
           dependencies: [{ kind: "related", id: first.id }],
         },
         {
           id: "pm-external",
+          status: "open",
+          type: "Issue",
           dependencies: [
             { kind: "recurs_from", id: first.id, source_kind: "external" },
           ],
@@ -364,6 +387,8 @@ describe("recorded recurrence lineages", () => {
       { id: "github:example/repo#1" },
     ].map((edge, index) => ({
       id: `pm-external-${index}`,
+      status: "open",
+      type: "Issue",
       dependencies: [{ kind: "recurs_from", ...edge }],
     }));
     expect(

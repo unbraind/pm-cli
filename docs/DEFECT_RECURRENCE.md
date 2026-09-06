@@ -194,6 +194,13 @@ adds a disconnected, unregistered recurrence pair and must also exit `1`. Focuse
 
 The mandatory `gate-registry` check also compares each recurrence family's `checks.hosted` values with concrete names derived from the repository workflows. It expands static matrix axes and applies exclusions before inclusions according to [GitHub's matrix rules](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstrategymatrixinclude). Renamed or removed checks produce named findings. Runtime expressions, unnamed matrix jobs, and static expansions beyond 256 combinations cannot certify a required check name. The public SDK policy parser remains provider-neutral; this workflow binding belongs to the repository gate.
 
+Assurance request schemas declare each family's required identity, triggers,
+checks, historical IDs, budgets, and negative-control input. Runtime policy
+validation additionally verifies unique family IDs and that each negative control
+actually selects its family; structural JSON Schema validation alone cannot prove
+those relationships. Risk reasons are sorted after direct and inherited matches
+are combined, using signal, value, then matched evidence as stable ordering keys.
+
 ## Recovery Producer Census
 
 `censusPmRecoveryReferenceProducers` scans complete source files for static object-literal recovery fields. It ignores type literals, destructuring patterns, labels, comments, strings, templates, and regular expressions. Aliases such as `candidate_commands`, nested `fallback_candidates[].command`, `next_best_command`, `retry_command`, and `suggested_next_steps` normalize to the same six public recovery kinds used by executable reachability verification.

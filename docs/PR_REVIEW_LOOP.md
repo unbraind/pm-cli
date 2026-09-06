@@ -7,6 +7,11 @@ conversation surface before deciding that review is complete. The inventory incl
 top-level comments, submitted reviews, inline review threads, edited timestamps,
 reaction state, thread resolution, outdated markers, and the reviewed head SHA.
 
+GitHub command responses have a 64 MiB transport bound and fail visibly on overflow;
+an overflow never certifies a complete inventory. Acknowledgement lookups retain
+every page but project only comment IDs, bodies, and reply-parent IDs before
+capture, avoiding repeated diff hunks that are irrelevant to marker matching.
+
 ```bash
 node scripts/reviews/pr-review-loop.mjs inventory --pr 123 > /tmp/pr-123-review-inventory.json
 node scripts/reviews/pr-review-loop.mjs watch --pr 123 --interval 30 > /tmp/pr-123-review-inventory.json

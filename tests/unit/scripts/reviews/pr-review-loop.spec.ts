@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { pathToFileURL } from "node:url";
+import { execFileSync } from "node:child_process";
 
 import {
   addReaction,
@@ -20,6 +21,14 @@ function connection(nodes: unknown[], hasNextPage = false, endCursor: string | n
 }
 
 describe("PR review loop helper", () => {
+  it("captures complete large review responses from a real child process", () => {
+    const size = 2 * 1024 * 1024;
+    const result = runGh([], undefined, (_file: string, _args: string[], options: Parameters<typeof execFileSync>[2]) =>
+      execFileSync(process.execPath, ["--eval", `process.stdout.write('x'.repeat(${size}) + 'END')`], options));
+    expect(result.length).toBe(size + 3);
+    expect(result.endsWith("END")).toBe(true);
+  });
+
   it("identifies edited feedback by content and review state rather than reaction timestamps", () => {
     const read = (body: string, updatedAt: string, state = "COMMENTED") => fetchReviewInventory(
       { owner: "unbraind", name: "pm-cli", repo: "unbraind/pm-cli", pr: 531 },
@@ -45,7 +54,7 @@ describe("PR review loop helper", () => {
       id: 0, in_reply_to_id: 99, body: `Wrong thread\n\n<!-- pm-review-ack:acknowledge-inline:${"a".repeat(64)} -->`,
     }];
     const executeGh = (args: string[]) => {
-      if (args.includes("--slurp")) return JSON.stringify([stored]);
+      if (args.includes("--paginate")) return stored.map((comment) => JSON.stringify([comment])).join("\n");
       const body = args.find((arg) => arg.startsWith("body="))?.slice(5);
       if (body !== undefined) {
         const comment = { id: stored.length + 1, body, ...(args[1]?.endsWith("/replies") ? { in_reply_to_id: 42 } : {}) };
@@ -174,7 +183,7 @@ describe("PR review loop helper", () => {
     });
 
     const executeGh = vi.fn((args: string[]) => {
-      if (args.includes("--slurp")) return "[[]]";
+      if (args.includes("--paginate")) return "[]";
       return '{"ok":true}';
     });
     const log = vi.fn();
@@ -194,7 +203,7 @@ describe("PR review loop helper", () => {
 
     expect(executeGh.mock.calls[0]?.[0]).toContain("subjectId=node-1");
     expect(executeGh.mock.calls[1]?.[0]).toContain("repos/unbraind/pm-cli/issues/531/comments");
-    expect(executeGh.mock.calls[2]?.[0]).toContain("--slurp");
+    expect(executeGh.mock.calls[2]?.[0]).toContain("--paginate");
     expect(executeGh.mock.calls[3]?.[0]).toContain("repos/unbraind/pm-cli/issues/531/comments");
     expect(executeGh.mock.calls[4]?.[0]).toContain("subjectId=node-review");
     expect(executeGh.mock.calls[5]?.[0]).toContain("repos/unbraind/pm-cli/pulls/531/comments/42/replies");
@@ -210,7 +219,7 @@ describe("PR review loop helper", () => {
 
   it("reports recoverable partial acknowledgement writes and reuses an existing marker", () => {
     const commentFailureGh = vi.fn((args: string[]) => {
-      if (args.includes("--slurp")) return "[[]]";
+      if (args.includes("--paginate")) return "[]";
       if (args.includes("-f") && args.some((arg) => arg.startsWith("body="))) throw "comment failed";
       return '{"ok":true}';
     });
@@ -225,7 +234,7 @@ describe("PR review loop helper", () => {
 
     const existing = { id: 42, body: "implemented\n\n<!-- pm-review-ack:node-review -->" };
     const reactionFailureGh = vi.fn((args: string[]) => {
-      if (args.includes("--slurp")) return JSON.stringify([[existing]]);
+      if (args.includes("--paginate")) return JSON.stringify([existing]);
       throw new Error("reaction failed");
     });
     const reactionFailureLog = vi.fn();

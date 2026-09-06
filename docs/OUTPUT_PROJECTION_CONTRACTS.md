@@ -290,7 +290,9 @@ clone-local merge drivers and exits `1` when `ok` is false. Other advisory
 warnings retain their policy. Compare invocations with the same scan and policy
 options: enabling strict mode can legitimately change a missing-driver finding
 from advisory to blocking. The SDK accepts `strictExit` and `failOnWarn` with
-the same semantics, including MCP dispatch.
+the same semantics, including MCP dispatch. Required merge-driver enforcement
+always runs the integrity check, even when `skipIntegrity` or an explicit compact
+check-only projection would otherwise skip optional integrity work.
 
 The required token corpus measures `health --check-only` on its medium workspace
 under the `health-default` ceiling. Its positive and negative controls run in

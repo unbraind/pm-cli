@@ -4,11 +4,12 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
-/** Execute gh with argument-vector boundaries and return captured output; propagate transport failures. */
+/** Capture complete gh responses within 64 MiB; propagate overflow and other transport failures. */
 export function runGh(args, input, executeFile = execFileSync) {
   return executeFile("gh", args, {
     encoding: "utf8",
     input,
+    maxBuffer: 64 * 1024 * 1024,
     stdio: [input === undefined ? "inherit" : "pipe", "pipe", "inherit"],
   }).trim();
 }
@@ -197,7 +198,11 @@ function acknowledgementComment(target, nodeId, body, executeGh, revision, comme
     : `repos/${target.repo}/pulls/${target.pr}/comments`;
   const writePath = commentId === undefined ? listPath : inlineReplyPath(target.repo, target.pr, commentId);
   const marker = `<!-- pm-review-ack:${nodeId}${revision === undefined ? "" : `:${revision}`} -->`;
-  const pages = JSON.parse(executeGh(["api", listPath, "--paginate", "--slurp"]));
+  const pageLines = executeGh([
+    "api", listPath, "--paginate",
+    "--jq", "map({id, body, in_reply_to_id}) | @json",
+  ]);
+  const pages = JSON.parse(`[${pageLines.trim().split(/\r?\n/u).join(",")}]`);
   const existing = pages.flat().find((comment) => comment?.body?.includes(marker) &&
     (commentId === undefined || String(comment.in_reply_to_id) === commentId));
   if (existing) return JSON.stringify(existing);

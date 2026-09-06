@@ -79,6 +79,24 @@ describe("action-scoped MCP schema parity", () => {
     }
   });
 
+  it("publishes the recurrence family identity and evidence contract inside both assurance requests", () => {
+    const schema = _testOnlyCliContracts.buildActionScopedToolSchema("assurance") as {
+      properties: { definition: { oneOf: { required: string[]; properties: { policy?: { properties: { families: { items: { required?: string[]; properties?: Record<string, unknown> } } } } } }[] } };
+    };
+    for (const request of schema.properties.definition.oneOf.filter(branch => branch.required.includes("policy"))) {
+      const family = request.properties.policy!.properties.families.items;
+      expect(family.required).toEqual(expect.arrayContaining(["id", "version", "title", "owner_item_id", "escape_class", "triggers", "checks", "negative_control", "historical_item_ids", "budget"]));
+      expect(family.properties).toMatchObject({
+        id: { type: "string", pattern: "\\S" }, version: { type: "integer", minimum: 1 },
+        triggers: { type: "object", properties: { file_patterns: { items: { type: "string", maxLength: 256 } } } },
+        historical_item_ids: { type: "array", minItems: 1, items: { type: "string", pattern: "\\S" } },
+        checks: { required: ["local", "hosted"], properties: { local: { minItems: 1 }, hosted: { minItems: 1 } } },
+        negative_control: { type: "object", properties: { item_ids: { type: "array", items: { type: "string" } } } },
+        budget: { required: ["max_escape_rate", "max_false_positive_rate"], properties: { max_escape_rate: { type: "number", minimum: 0, maximum: 1 }, max_false_positive_rate: { type: "number", minimum: 0, maximum: 1 } } },
+      });
+    }
+  });
+
   it("exposes exact exhaustive duplicate analysis to every tool transport", () => {
     const schema = _testOnlyCliContracts.buildActionScopedToolSchema("duplicates") as SchemaWithProperties;
     expect(schema.properties?.exhaustive).toMatchObject({ type: "boolean" });

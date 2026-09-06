@@ -10,6 +10,23 @@ import { runHealth } from "../../../../src/sdk/governance/health.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 describe("health invocation verdict authority", () => {
+  it("runs required merge-driver checks despite explicit and compact integrity skips", async () => {
+    await withTempPmPath(async (context) => {
+      execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });
+      for (const options of [
+        { skipIntegrity: true, strictExit: true },
+        { skipIntegrity: true, failOnWarn: true },
+        { skipIntegrity: true, requireMergeDrivers: true },
+        { checkOnly: true, summary: true, strictExit: true },
+      ]) {
+        const result = await runHealth({ path: context.pmPath }, options);
+        expect(result.ok).toBe(false);
+        expect(result.verdict?.require_merge_drivers).toBe(true);
+        expect(result.failed_because).toContain("merge_driver_configuration_missing:5");
+      }
+    });
+  });
+
   it("keeps advisory checks passing and exposes the strict decision in every projection", async () => {
     await withTempPmPath(async (context) => {
       execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });

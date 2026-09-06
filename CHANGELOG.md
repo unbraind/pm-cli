@@ -6,12 +6,12 @@
 
 - GH-1207: Make advisory health checks and strict verdict authority explicit ([pm-fkohe8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fkohe8.toon))
 - The tracker's recurrence edges and the CI recurrence policy are two ledgers with no join, so 59 of the 75 items in a recorded recurrence lineage produce no gate anywhere ([pm-7c27ep](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7c27ep.toon))
+- Refresh review acknowledgements when bot feedback changes ([pm-8we38i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8we38i.toon))
 - pm health --check-only, the diagnostic AGENTS.md routes agents to, reduces nothing: it costs 33k tokens where --summary states the same verdict in 142 ([pm-du93sr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-du93sr.toon))
 - GH-1203: Offer actionable acceptance-evidence backfill after a warning close ([pm-ub1ott](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ub1ott.toon))
 - GH-1202: Classify abandoned merge receipts without losing durable provenance ([pm-466m0j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-466m0j.toon))
 - GH-1200: Preview exact receipt proof before merge reconciliation ([pm-ao0bu9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ao0bu9.toon))
 - GH-1206: Verify legacy receipt redactions across hash encodings ([pm-v66zir](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v66zir.toon))
-- Refresh review acknowledgements when bot feedback changes ([pm-8we38i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8we38i.toon))
 - GH-1205: Declare root-only versus inherited extension flag reservation scope ([pm-2h8t6y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2h8t6y.toon))
 - GH-1201: Recover invalid pending receipt evidence across release upgrades ([pm-2xtv84](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2xtv84.toon))
 - The linked-file staleness check has no holder-lifecycle partition, so 1,220 links on closed holders warn forever while its worklist truncation hides the actionable subset behind a path count reported as a row count ([pm-zw9188](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zw9188.toon))

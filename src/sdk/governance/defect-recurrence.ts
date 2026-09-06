@@ -578,23 +578,17 @@ function itemReasons(
   );
 }
 
+/** Collect direct policy matches without sorting intermediate selection-only results. */
 function familyReasons(
   family: DefectRecurrenceFamily,
   input: DefectChangeRiskInput,
   itemFamilies: Readonly<Record<string, string[]>>,
 ): DefectChangeRiskReason[] {
-  const reasons = [
+  return [
     ...fileReasons(family, input),
     ...exactReasons(family, input),
     ...itemReasons(family, input, itemFamilies),
   ];
-  return reasons.sort((left, right) =>
-    left.signal !== right.signal
-      ? left.signal.localeCompare(right.signal)
-      : left.value !== right.value
-        ? left.value.localeCompare(right.value)
-        : left.matched.localeCompare(right.matched),
-  );
 }
 
 function readRiskCursorOffset(
@@ -831,6 +825,13 @@ export function analyzeDefectChangeRisk(
         });
       }
     }
+    reasons.sort((left, right) =>
+      left.signal !== right.signal
+        ? left.signal.localeCompare(right.signal)
+        : left.value !== right.value
+          ? left.value.localeCompare(right.value)
+          : left.matched.localeCompare(right.matched),
+    );
     return reasons.length === 0
       ? []
       : [

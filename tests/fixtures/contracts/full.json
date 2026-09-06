@@ -53700,6 +53700,168 @@
                       },
                       "families": {
                         "items": {
+                          "properties": {
+                            "budget": {
+                              "properties": {
+                                "max_escape_rate": {
+                                  "maximum": 1,
+                                  "minimum": 0,
+                                  "type": "number"
+                                },
+                                "max_false_positive_rate": {
+                                  "maximum": 1,
+                                  "minimum": 0,
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "max_escape_rate",
+                                "max_false_positive_rate"
+                              ],
+                              "type": "object"
+                            },
+                            "checks": {
+                              "properties": {
+                                "hosted": {
+                                  "items": {
+                                    "pattern": "\\S",
+                                    "type": "string"
+                                  },
+                                  "minItems": 1,
+                                  "type": "array"
+                                },
+                                "local": {
+                                  "items": {
+                                    "pattern": "\\S",
+                                    "type": "string"
+                                  },
+                                  "minItems": 1,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "local",
+                                "hosted"
+                              ],
+                              "type": "object"
+                            },
+                            "escape_class": {
+                              "enum": [
+                                "production_defect",
+                                "nightly_regression",
+                                "scanner_finding",
+                                "review_caught_late"
+                              ]
+                            },
+                            "historical_item_ids": {
+                              "items": {
+                                "pattern": "\\S",
+                                "type": "string"
+                              },
+                              "minItems": 1,
+                              "type": "array"
+                            },
+                            "id": {
+                              "pattern": "\\S",
+                              "type": "string"
+                            },
+                            "negative_control": {
+                              "minProperties": 1,
+                              "properties": {
+                                "error_codes": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "files": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "item_ids": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "package_names": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "tags": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "owner_item_id": {
+                              "pattern": "\\S",
+                              "type": "string"
+                            },
+                            "title": {
+                              "pattern": "\\S",
+                              "type": "string"
+                            },
+                            "triggers": {
+                              "properties": {
+                                "error_codes": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "file_patterns": {
+                                  "items": {
+                                    "maxLength": 256,
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "item_ids": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "package_names": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "tags": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "version": {
+                              "minimum": 1,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "version",
+                            "title",
+                            "owner_item_id",
+                            "escape_class",
+                            "triggers",
+                            "checks",
+                            "negative_control",
+                            "historical_item_ids",
+                            "budget"
+                          ],
                           "type": "object"
                         },
                         "type": "array"
@@ -53743,6 +53905,168 @@
                       },
                       "families": {
                         "items": {
+                          "properties": {
+                            "budget": {
+                              "properties": {
+                                "max_escape_rate": {
+                                  "maximum": 1,
+                                  "minimum": 0,
+                                  "type": "number"
+                                },
+                                "max_false_positive_rate": {
+                                  "maximum": 1,
+                                  "minimum": 0,
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "max_escape_rate",
+                                "max_false_positive_rate"
+                              ],
+                              "type": "object"
+                            },
+                            "checks": {
+                              "properties": {
+                                "hosted": {
+                                  "items": {
+                                    "pattern": "\\S",
+                                    "type": "string"
+                                  },
+                                  "minItems": 1,
+                                  "type": "array"
+                                },
+                                "local": {
+                                  "items": {
+                                    "pattern": "\\S",
+                                    "type": "string"
+                                  },
+                                  "minItems": 1,
+                                  "type": "array"
+                                }
+                              },
+                              "required": [
+                                "local",
+                                "hosted"
+                              ],
+                              "type": "object"
+                            },
+                            "escape_class": {
+                              "enum": [
+                                "production_defect",
+                                "nightly_regression",
+                                "scanner_finding",
+                                "review_caught_late"
+                              ]
+                            },
+                            "historical_item_ids": {
+                              "items": {
+                                "pattern": "\\S",
+                                "type": "string"
+                              },
+                              "minItems": 1,
+                              "type": "array"
+                            },
+                            "id": {
+                              "pattern": "\\S",
+                              "type": "string"
+                            },
+                            "negative_control": {
+                              "minProperties": 1,
+                              "properties": {
+                                "error_codes": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "files": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "item_ids": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "package_names": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "tags": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "owner_item_id": {
+                              "pattern": "\\S",
+                              "type": "string"
+                            },
+                            "title": {
+                              "pattern": "\\S",
+                              "type": "string"
+                            },
+                            "triggers": {
+                              "properties": {
+                                "error_codes": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "file_patterns": {
+                                  "items": {
+                                    "maxLength": 256,
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "item_ids": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "package_names": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "tags": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "version": {
+                              "minimum": 1,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "version",
+                            "title",
+                            "owner_item_id",
+                            "escape_class",
+                            "triggers",
+                            "checks",
+                            "negative_control",
+                            "historical_item_ids",
+                            "budget"
+                          ],
                           "type": "object"
                         },
                         "type": "array"
