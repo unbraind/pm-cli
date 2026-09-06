@@ -29664,7 +29664,7 @@
             "type": "string"
           },
           "failOnWarn": {
-            "description": "Alias for strictExit in health/validate/extension-doctor action payloads.",
+            "description": "Alias for strictExit in health, validation, history, and managed doctor actions.",
             "type": "boolean"
           },
           "full": {
@@ -29853,7 +29853,7 @@
             "type": "boolean"
           },
           "strictExit": {
-            "description": "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
+            "description": "Return non-zero for a failing health verdict; also require merge drivers.",
             "type": "boolean"
           },
           "summary": {
@@ -34583,7 +34583,7 @@
             "type": "boolean"
           },
           "failOnWarn": {
-            "description": "Alias for strictExit in health/validate/extension-doctor action payloads.",
+            "description": "Alias for strictExit in health, validation, history, and managed doctor actions.",
             "type": "boolean"
           },
           "fixHints": {
@@ -34823,7 +34823,7 @@
             "type": "string"
           },
           "strictExit": {
-            "description": "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
+            "description": "Return non-zero when validation reports warnings.",
             "type": "boolean"
           },
           "timeoutMs": {
@@ -37564,7 +37564,7 @@
             "type": "string"
           },
           "failOnWarn": {
-            "description": "Alias for strictExit in health/validate/extension-doctor action payloads.",
+            "description": "Alias for strictExit in health, validation, history, and managed doctor actions.",
             "type": "boolean"
           },
           "fixManagedState": {
@@ -37628,7 +37628,7 @@
             "type": "string"
           },
           "strictExit": {
-            "description": "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
+            "description": "Return non-zero when extension diagnostics report warnings or a non-ok summary.",
             "type": "boolean"
           },
           "timeoutMs": {
@@ -38827,7 +38827,7 @@
             "type": "string"
           },
           "failOnWarn": {
-            "description": "Alias for strictExit in health/validate/extension-doctor action payloads.",
+            "description": "Alias for strictExit in health, validation, history, and managed doctor actions.",
             "type": "boolean"
           },
           "fixManagedState": {
@@ -38891,7 +38891,7 @@
             "type": "string"
           },
           "strictExit": {
-            "description": "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
+            "description": "Return non-zero when package diagnostics report warnings or a non-ok summary.",
             "type": "boolean"
           },
           "timeoutMs": {
@@ -39633,7 +39633,7 @@
             "type": "boolean"
           },
           "failOnWarn": {
-            "description": "Alias for strictExit in health/validate/extension-doctor action payloads.",
+            "description": "Alias for strictExit in health, validation, history, and managed doctor actions.",
             "type": "boolean"
           },
           "fixManagedState": {
@@ -39754,7 +39754,7 @@
             "type": "string"
           },
           "strictExit": {
-            "description": "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
+            "description": "For doctor operations, return non-zero on warnings or a non-ok diagnostic summary.",
             "type": "boolean"
           },
           "target": {
@@ -44899,7 +44899,7 @@
             "type": "boolean"
           },
           "failOnWarn": {
-            "description": "Alias for strictExit in health/validate/extension-doctor action payloads.",
+            "description": "Alias for strictExit in health, validation, history, and managed doctor actions.",
             "type": "boolean"
           },
           "field": {
@@ -45140,7 +45140,7 @@
             "type": "boolean"
           },
           "strictExit": {
-            "description": "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
+            "description": "Return non-zero for history verification failures when verify is enabled.",
             "type": "boolean"
           },
           "timeoutMs": {
@@ -52815,7 +52815,7 @@
             "type": "boolean"
           },
           "failOnWarn": {
-            "description": "Alias for strictExit in health/validate/extension-doctor action payloads.",
+            "description": "Alias for strictExit in health, validation, history, and managed doctor actions.",
             "type": "boolean"
           },
           "full": {
@@ -53004,7 +53004,7 @@
             "type": "boolean"
           },
           "strictExit": {
-            "description": "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
+            "description": "Return non-zero for a failing health verdict; also require merge drivers.",
             "type": "boolean"
           },
           "summary": {
@@ -53107,7 +53107,7 @@
             "type": "boolean"
           },
           "failOnWarn": {
-            "description": "Alias for strictExit in health/validate/extension-doctor action payloads.",
+            "description": "Alias for strictExit in health, validation, history, and managed doctor actions.",
             "type": "boolean"
           },
           "fixHints": {
@@ -53347,7 +53347,7 @@
             "type": "string"
           },
           "strictExit": {
-            "description": "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
+            "description": "Return non-zero when validation reports warnings.",
             "type": "boolean"
           },
           "timeoutMs": {
@@ -53553,6 +53553,76 @@
               "required": [
                 "id",
                 "enforcement"
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "subcommand": {
+                      "const": "risk"
+                    }
+                  },
+                  "required": [
+                    "subcommand"
+                  ]
+                },
+                {
+                  "properties": {
+                    "definition": {
+                      "not": {
+                        "required": [
+                          "policy",
+                          "change"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "definition"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "subcommand": {
+                      "const": "lineages"
+                    }
+                  },
+                  "required": [
+                    "subcommand"
+                  ]
+                },
+                {
+                  "properties": {
+                    "definition": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "change"
+                          ]
+                        },
+                        {
+                          "not": {
+                            "required": [
+                              "policy"
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "definition"
+                  ]
+                }
               ]
             }
           }

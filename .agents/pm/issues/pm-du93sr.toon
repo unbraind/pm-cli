@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",context,diagnostics,token-budget
 created_at: "2026-07-26T11:26:47.669Z"
-updated_at: "2026-09-06T11:26:34.178Z"
-closed_at: "2026-09-06T11:26:33.599Z"
-completed_at: "2026-09-06T11:26:33.599Z"
+updated_at: "2026-09-06T12:59:38.386Z"
+closed_at: "2026-09-06T12:59:37.800Z"
+completed_at: "2026-09-06T12:59:37.800Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "pm health --check-only produces a verdict-only projection materially smaller than the full report, or the flag is retired as a documented synonym and the guidance updated in the same change; A passing check emits its verdict and not its evidence; per-check detail is opt-in or reserved for non-passing checks; AGENTS.md and any other agent-facing guidance route to the cheapest form that answers the question, verified by a docs test rather than by review; pm health appears in the token-budget corpus with a declared ceiling measured on a real-scale workspace; The measured token cost of pm health before and after is recorded as evidence on this item"
@@ -21,7 +21,7 @@ risk: low
 confidence: high
 resolution: "Added guidance-driven integration proof, documented authoritative compact health semantics and full evidence restoration, and authored concise assurance intents while retaining all existing token ceilings."
 expected_result: The recommended check-only command answers health cheaply with full evidence available explicitly and mandatory budget/guidance checks.
-actual_result: "Live 2650-item tracker produced 3635 bytes compact versus 90770 bytes full with identical verdicts. All 32 token surfaces, complete-task ceilings, linked guidance tests, and full 100/100/100/100 coverage pass."
+actual_result: "Live 2650-item tracker produced 3635 bytes compact versus 90770 bytes full with identical verdicts. All 32 token surfaces, complete-task ceilings, linked guidance tests, and full 100/100/100/100 coverage pass. Review corrections: linked tests pass, normalization regressions fail on the previous source and pass after correction, action schemas match capability semantics, and all 56 token surfaces pass with existing ceilings unchanged. Final hosted checks are required before merge."
 dependencies[9]:
   - id: pm-5t33or
     kind: blocked_by
@@ -56,7 +56,7 @@ dependencies[9]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-07-30T10:27:25.583Z","harness:codex","Implementation evidence: health --check-only now defaults to summary verdict output with empty passing evidence bodies; --full retains complete diagnostics and explicit brief/summary preserve fast optional-scan behavior."
   "2026-07-30T11:24:16.147Z","harness:codex","Delivery boundary: --check-only now returns the summary verdict by default while still running every check, and --full restores evidence. The canonical issue remains open until health is added to the representative token-budget corpus with measured before/after evidence and agent-guidance coverage."
   "2026-07-30T11:30:57.231Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/829 reviews cohesive SDK context budgets, universal row contracts, bounded graph/health diagnostics, quality ratchets, and exact-head commit e53544cd1."
@@ -65,9 +65,11 @@ comments[8]{created_at,author,text}:
   "2026-09-06T10:58:48.289Z","harness:codex","The authored assurance derive, risk, and lineages intents improve discovery while reducing the existing complete-task transcript composite from its 12667-token ceiling to 12658 tokens. The contracts-plus-next orientation is 4820 tokens against the unchanged 4829 ceiling. All 8 tasks and 21 steps complete; no token thresholds were raised."
   "2026-09-06T11:21:55.114Z","harness:codex","Final live diagnostic measurement on the 2650-item tracker: JSON check-only 3635 bytes versus full evidence 90770 bytes (24.97x smaller). Both returned ok true, the same ten per-check booleans/statuses, and verdict authority ok with exit_code 0; integrity remains advisory warn. The original report measured 132585 bytes for the formerly inert check-only flag. Current token-budget gate passes all 32 surfaces, its unbounded negative control and infeasible-intent receipt, without raising ceilings. Source/static correctness gates passed through tracker assurance; import-time timing gates will be repeated after full coverage releases CPU."
   "2026-09-06T11:26:05.543Z","harness:codex","Delivery verification: full suite passes all 8495 tests in 627 files at exact 100/100/100/100 coverage. The guidance integration test checks the actual AGENTS.md recommended command, verifies a passing check omits evidence, and restores full detail explicitly. The health-default token ceiling and complete-task token gates pass unchanged. Packed consumers and Bun SDK/CLI execution pass; final hosted review and release evidence follow independently."
+  "2026-09-06T12:56:27.957Z","harness:codex","Hosted smoke failure identified one missing baseline for the newly registered assurance lineages command: measured help 1117 bytes, new ceiling 1229 bytes at the existing 1.1 factor. All prior command and aggregate ceilings remain unchanged."
 notes[1]{created_at,author,text}:
   "2026-07-30T09:21:19.724Z","harness:claude-code","Re-measured 2026-07-30 at HEAD, after PR 818 shipped bounded projections and snapshot lease safety. The bounded-projection wave did not reach this command. pm health plain = 127,582 B; pm health --check-only = 127,583 B (one byte MORE than plain); pm health --summary = 727 B. The cheap form is 175x smaller than the form AGENTS.md routes agents to under When Unsure, and --check-only remains exactly as inert as when this item was filed. A new bounded-projection primitive existing in the SDK while this consumer cannot reach it is the seam pattern, not a fix."
-files[6]{path,scope,note}:
+files[7]{path,scope,note}:
+  scripts/agent-token-surface-baseline.json,project,Register the measured new assurance lineages help surface without increasing any existing ceiling
   scripts/release/token-budget-gate.mjs,project,Implementation and verification of pm-du93sr
   scripts/release/token-budgets.json,project,Implementation and verification of pm-du93sr
   src/sdk/cli-contracts/runtime-contracts.ts,project,Authored concise assurance intents keep complete discovery within existing token ceilings
@@ -86,7 +88,7 @@ tests[2]:
       created_at: "2026-09-06T10:29:29.708Z"
       source_kind: local_mutation
       source_ref: feat/health-verdicts-and-recurrence-lineages
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mtppcw4k-5yyzux
     kind: test
     status: passed
@@ -99,9 +101,21 @@ test_runs[1]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/unit/commands/health-command.spec.ts,schema,schema,source,legacy
       node scripts/run-tests.mjs test -- tests/integration/health-diagnostic-guidance.integration.spec.ts tests/unit/sdk/health-check-only-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtptimxu-0snmp4
+    kind: test
+    status: passed
+    started_at: "2026-09-06T12:58:21.803Z"
+    finished_at: "2026-09-06T12:58:50.658Z"
+    recorded_at: "2026-09-06T12:58:50.658Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/unit/commands/health-command.spec.ts,schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/integration/health-diagnostic-guidance.integration.spec.ts tests/unit/sdk/health-check-only-contract.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Health check-only verdict and full restore behavior
-close_reason: Completed remaining measured token-budget and agent-guidance acceptance proof for the shipped compact diagnostic.
+close_reason: Completed the reviewed implementation and first-round contract corrections; hosted review and CI remain merge prerequisites.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

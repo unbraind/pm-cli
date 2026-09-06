@@ -43,6 +43,20 @@ const second = {
 };
 
 describe("recorded recurrence lineages", () => {
+  it("normalizes recurrence targets and linked file paths before inheriting checks", () => {
+    const spaced = { ...second,
+      dependencies: [{ id: ` ${first.id} `, kind: "recurs_from" }],
+      files: [{ path: " src/health-next.ts ", scope: "project" }],
+    };
+    const index = buildDefectRecurrenceIndex(policy, [first, spaced]);
+    expect(analyzeDefectChangeRisk(index, { files: ["src/health-next.ts"] })).toMatchObject({
+      risk_detected: true, required_local_checks: ["node test-health.mjs"],
+    });
+    expect(analyzeDefectRecurrenceCoverage(policy, [first, spaced])).toMatchObject({
+      ok: true, population: { item_count: 2, missing_item_count: 0 },
+    });
+  });
+
   it("inherits a registered family's checks through recorded edges and linked files", () => {
     const index = buildDefectRecurrenceIndex(policy, [first, second]);
     for (const change of [
@@ -247,6 +261,7 @@ describe("recorded recurrence lineages", () => {
   });
 
   it("validates transport requests and rejects unsafe limits", () => {
+    expect(() => parseDefectRecurrenceCoverageRequest({ policy, change: {} })).toThrow("does not accept change");
     expect(parseDefectRecurrenceCoverageRequest({ policy })).toEqual({
       policy,
     });

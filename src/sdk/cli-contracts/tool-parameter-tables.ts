@@ -1860,11 +1860,11 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   strictExit: {
     description:
-      "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
+      "Apply the selected capability's strict exit policy; health also requires merge drivers.",
   },
   failOnWarn: {
     description:
-      "Alias for strictExit in health/validate/extension-doctor action payloads.",
+      "Alias for strictExit in health, validation, history, and managed doctor actions.",
   },
   fixHints: {
     description:
@@ -2206,6 +2206,13 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     Record<string, { description: string; examples?: unknown[] }>
   >
 > = {
+  "health": { strictExit: { description: "Return non-zero for a failing health verdict; also require merge drivers." } },
+  "validate": { strictExit: { description: "Return non-zero when validation reports warnings." } },
+  "extension-doctor": { strictExit: { description: "Return non-zero when extension diagnostics report warnings or a non-ok summary." } },
+  "package-doctor": { strictExit: { description: "Return non-zero when package diagnostics report warnings or a non-ok summary." } },
+  "history": { strictExit: { description: "Return non-zero for history verification failures when verify is enabled." } },
+  extension: { strictExit: { description: "For doctor operations, return non-zero on warnings or a non-ok diagnostic summary." } },
+  package: { strictExit: { description: "For doctor operations, return non-zero on warnings or a non-ok diagnostic summary." } },
   assurance: {
     subcommand: {
       description:

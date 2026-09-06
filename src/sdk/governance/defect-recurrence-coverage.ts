@@ -45,6 +45,9 @@ export function parseDefectRecurrenceCoverageRequest(
     throw new TypeError("recurrence coverage request must be an object");
   }
   const input = value as Record<string, unknown>;
+  if (Object.hasOwn(input, "change")) {
+    throw new TypeError("recurrence coverage request does not accept change");
+  }
   if (
     input.uncoveredOnly !== undefined &&
     typeof input.uncoveredOnly !== "boolean"

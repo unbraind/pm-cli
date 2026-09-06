@@ -71,6 +71,14 @@ describe("action-scoped MCP schema parity", () => {
     expect(requests.find(branch => !branch.required.includes("change"))?.properties).toMatchObject({ uncoveredOnly: { type: "boolean" }, limit: { minimum: 1, maximum: 100 } });
   });
 
+  it("scopes strict-exit guidance to the capability's actual gate", () => {
+    for (const [action, expected] of [["health", "merge drivers"], ["validate", "validation"], ["history", "verification"], ["extension-doctor", "extension diagnostics"], ["package-doctor", "package diagnostics"]] as const) {
+      const schema = _testOnlyCliContracts.buildActionScopedToolSchema(action) as { properties: { strictExit: { description: string } } };
+      expect(schema.properties.strictExit.description).toContain(expected);
+      if (action !== "health") expect(schema.properties.strictExit.description).not.toContain("merge drivers");
+    }
+  });
+
   it("exposes exact exhaustive duplicate analysis to every tool transport", () => {
     const schema = _testOnlyCliContracts.buildActionScopedToolSchema("duplicates") as SchemaWithProperties;
     expect(schema.properties?.exhaustive).toMatchObject({ type: "boolean" });

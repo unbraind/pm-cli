@@ -132,7 +132,7 @@ describe("recurrence lineage transport contracts", () => {
       ).resolves.toMatchObject({
         population: { item_count: 0, edge_count: 0 },
       });
-      for (const invalid of ["{", JSON.stringify({ policy, limit: 101 })]) {
+      for (const invalid of ["{", JSON.stringify({ policy, limit: 101 }), JSON.stringify({ policy, change: {} })]) {
         const refusal = await context.runCliInProcess(
           ["assurance", "lineages", "--definition", invalid, "--json"],
           { expectJson: true },

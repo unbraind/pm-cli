@@ -58,7 +58,7 @@ function recurrenceTargets(item: AssuranceItemRecord): string[] {
       )
     )
       continue;
-    targets.add(edge.id);
+    targets.add(edge.id.trim());
   }
   return [...targets].sort();
 }
@@ -72,7 +72,7 @@ function recurrenceFiles(item: AssuranceItemRecord): string[] {
     const entry = file as Record<string, unknown>;
     if (entry.scope !== undefined && entry.scope !== "project") continue;
     if (typeof entry.path === "string" && entry.path.trim())
-      files.add(entry.path);
+      files.add(entry.path.trim());
   }
   return [...files].sort();
 }

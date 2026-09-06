@@ -1324,6 +1324,16 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
           required: ["id", "enforcement"],
         },
       ],
+      mutuallyExclusiveWhen: [
+        [
+          { property: "subcommand", schema: { const: "risk" } },
+          { property: "definition", schema: { not: { required: ["policy", "change"] } } },
+        ],
+        [
+          { property: "subcommand", schema: { const: "lineages" } },
+          { property: "definition", schema: { anyOf: [ { required: ["change"] }, { not: { required: ["policy"] } } ] } },
+        ],
+      ],
     },
     gc: { optional: ["dryRun", "gcScope"] },
     contracts: {

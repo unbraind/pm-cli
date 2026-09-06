@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:ci",denominator,governance,graph,recurrence
 created_at: "2026-08-30T11:09:10.152Z"
-updated_at: "2026-09-06T11:42:40.199Z"
-closed_at: "2026-09-06T11:42:39.650Z"
-completed_at: "2026-09-06T11:42:39.650Z"
+updated_at: "2026-09-06T12:59:35.143Z"
+closed_at: "2026-09-06T12:59:34.616Z"
+completed_at: "2026-09-06T12:59:34.616Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "The recurrence policy's family coverage is computed against the tracker's recurs_from lineages rather than against itself, so the covered and uncovered populations are both reported; An item that acquires a recurs_from edge and belongs to no registered family is surfaced as a named finding by a gate that already runs, rather than depending on someone remembering the policy exists; Registering a family is possible from the recorded lineage without hand-transcribing item ids, so the join is derived from the record rather than restated in a second file; Escape-rate budgets are reported against the full recurrence population the record can see, and a budget computed over registered families alone is labelled as such; A negative control proves the finding fires when a recurrence lineage is deliberately left unregistered, and does not fire for an item with no recurrence edge; The coverage computation stays inside the graph analytics token and latency budgets and remains bounded at million-item scale"
@@ -17,7 +17,7 @@ risk: high
 confidence: 95
 resolution: "Join recorded local recurrence components to seeded policies and inherited item/file checks, preserve reversible incremental evidence, and reject incomplete workspace sources through the public strict-list contract. Expose bounded coverage consistently through SDK, CLI, MCP, and the mandatory defect gate."
 expected_result: A complete recorded recurrence population selects family checks or fails with named findings; unreadable source items cannot disappear into a successful denominator.
-actual_result: Strict-source policy gate covers all 135 members / 46 components / 92 edges. The linked recurrence test command passes including corrupted-source SDK and CLI refusals. Prior full suite passed 8495 tests at 100/100/100/100; final full validation follows on the review head. Million-item and token ceilings remain unchanged.
+actual_result: "Strict-source policy gate covers all 135 members / 46 components / 92 edges. The linked recurrence test command passes including corrupted-source SDK and CLI refusals. Prior full suite passed 8495 tests at 100/100/100/100; final full validation follows on the review head. Million-item and token ceilings remain unchanged. Review corrections: linked tests pass, normalization regressions fail on the previous source and pass after correction, action schemas match capability semantics, and all 56 token surfaces pass with existing ceilings unchanged. Final hosted checks are required before merge."
 dependencies[14]{id,kind,created_at,author,source_kind,author_source}:
   pm-1qkivy,discovered_from,"2026-08-30T11:09:10.152Z","harness:claude-code","cli:create:dep",detected
   pm-96h7,implements,"2026-08-30T11:09:10.152Z","harness:claude-code","cli:create:dep",detected
@@ -33,7 +33,7 @@ dependencies[14]{id,kind,created_at,author,source_kind,author_source}:
   pm-t7wn04,discovered_from,"2026-08-30T11:11:08.561Z","harness:claude-code","cli:update:dep",detected
   pm-te6elw,discovered_from,"2026-08-30T11:11:08.561Z","harness:claude-code","cli:update:dep",detected
   pm-xpumg4,discovered_from,"2026-08-30T11:11:08.561Z","harness:claude-code","cli:update:dep",detected
-comments[11]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-08-30T11:09:42.251Z","harness:claude-code","Two families were registered by hand in the same pass that measured this gap, which is the behaviour this item asks to make unnecessary rather than a fix for it.\n\nAdded to config/defect-recurrence-policy.json:\n- declared-set-versus-hand-maintained-list, owner pm-suhxny, escape class production_defect, historical lineage pm-b84irw, pm-te6elw, pm-1jrdri, pm-6j7r1a, pm-xpumg4, pm-7wx1f9, pm-suhxny, pm-edywqn. Eight measured instances, the largest recurrence family in the record, previously unregistered.\n- ambient-host-state-in-measured-fixture, owner pm-4o7tlx, escape class review_caught_late, historical lineage pm-t7wn04 and pm-4o7tlx.\n\nSelection proven against the built SDK with analyzeDefectChangeRisk over the parsed policy. A change touching src/mcp/legacy-adapter.ts selects declared-set-versus-hand-maintained-list, review-caught-contract-drift and security-scanner-finding. A change touching scripts/release/token-budget-gate.mjs selects ambient-host-state-in-measured-fixture and cross-platform-nightly-regression. A change touching sdk/public-surface.json selects declared-set-versus-hand-maintained-list. The negative control, a change touching only README.md, selects nothing, so the triggers discriminate rather than matching everything.\n\nPolicy validation and the scale benchmark both accept the additions: defect-evidence-gate reports PASS with 8 families and 0 findings, and defect-recurrence-index --check passes at 1,000,000 items with full 18.7s and incremental 25ms.\n\nCoverage after the additions is 16 of the 75 items in a recurrence lineage. Registering the remaining 59 by hand is not the fix and is not proposed here; deriving family coverage from the recorded lineages is."
   "2026-09-06T10:22:50.114Z","harness:codex","Complete all-status corpus census: 135 unique recorded recurrence members in 46 components and 92 directed local edges. Only 28 members inherit explicit existing family seeds; 107 are unregistered. There are no missing local targets. 74 members lack an explicit recognized escape classification, so the population escape rate must remain unknown, with an explicitly named lower bound. Register semantic component seeds and derive membership from actual recurs_from edges; do not infer coverage from matching tags or file globs."
   "2026-09-06T10:40:15.095Z","harness:codex","Verification: the mandatory recurrence-policy gate passes with 18 seeded families covering all 135 recorded recurrence members across 46 components and 92 edges. The million-item index benchmark passes unchanged latency/memory ceilings: 1192 ms full, 70 ms incremental, 75013600 bytes measured heap growth; incremental/full rebuild fingerprints agree. A separate 12000-member cyclic graph test proves traversal without a depth ceiling. Unknown item classifications remain explicit and do not become zero escape-rate claims."
@@ -45,6 +45,7 @@ comments[11]{created_at,author,text}:
   "2026-09-06T11:26:06.045Z","harness:codex","Delivery verification: 627 test files / 8495 tests pass at exact 100/100/100/100 coverage, including final canonical-global provenance and provider-locator regressions. Unit, SDK action, MCP runtime, CLI, negative-policy, packed npm/npx/bunx, direct Bun SDK/CLI, and million-item checks pass. No coverage exclusions, budget increases, new suppressions, or fabricated family classifications were introduced. GitHub dependency/code-scanning alerts are empty and pnpm audit reports zero vulnerabilities. Existing incompatible major dependency upgrades and unresolved release Sentry groups retain their canonical owners; this closure certifies recurrence implementation and evidence, not publication."
   "2026-09-06T11:39:30.462Z","harness:codex","Pre-review TDD correction: a real zero-byte item document caused the new lineage SDK action to return a successful partial population. The existing assurance context used tolerant metadata enumeration. Recurrence actions and the mandatory defect gate now request the existing public strict-list contract through an additive strict_read workspace option, preserving list_source_incomplete rather than certifying an omitted corpus. The integration regression checks both lineage and cached-risk SDK/CLI consumers."
   "2026-09-06T11:42:39.067Z","harness:codex","Strict-source correction verified: the linked recurrence unit/integration/gate command passes after the zero-byte-file red test, and the real policy gate still covers 135/135 members when loaded through strict all-status reads. Both SDK and CLI lineage/risk consumers now refuse incomplete input. Public SDK snapshot and focused ESLint pass. The previous full 8495-test and static receipts precede this small correction; final full coverage and static checks will run on the reviewed head."
+  "2026-09-06T12:56:26.642Z","harness:codex","Review correction: the published PM SDK mutateItem primitive appended test_run_measurement_correction at history entry 44. Current full reads and pm get --at 44 both exclude measurements from test-local-mtpp8lij-zdwitw; the actual million-item benchmark test-local-mtppafra-4zjm1p remains unchanged. History verification passes all 44 entries and current hash equals latest after_hash. No historical event was edited. Recurrence targets and project file paths are trimmed at extraction, and mismatched lineage change input is rejected."
 learnings[1]{created_at,author,text}:
   "2026-09-06T10:54:13.366Z","harness:codex","Keep direct family matches separate from inherited recurrence membership. Otherwise removing an edge incrementally can retain a stale inherited gate. Derive the coverage denominator from all recorded local recurrence components, including missing references and unknown classifications."
 files[21]{path,scope,note}:
@@ -88,7 +89,7 @@ tests[2]:
       source_ref: feat/health-verdicts-and-recurrence-lineages
     assert_json_field_equals:
       ok: "true"
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mtpp8lij-zdwitw
     kind: test
     status: passed
@@ -98,8 +99,6 @@ test_runs[3]:
     passed: 1
     failed: 0
     skipped: 0
-    measurements[1]{name,value,unit,recorded_at}:
-      recurrence_index_items,1000000,items,"2026-09-06T10:59:03.787Z"
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/governance/defect-recurrence-lineages.spec.ts tests/unit/sdk/governance/defect-recurrence.spec.ts tests/unit/scripts/release/defect-evidence-gate.spec.ts tests/integration/recurrence-lineage-contract.integration.spec.ts,schema,schema,source,local_source_ref
   - run_id: test-local-mtppafra-4zjm1p
@@ -126,9 +125,21 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/governance/defect-recurrence-lineages.spec.ts tests/unit/sdk/governance/defect-recurrence.spec.ts tests/unit/scripts/release/defect-evidence-gate.spec.ts tests/integration/recurrence-lineage-contract.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtpthka6-54igkc
+    kind: test
+    status: passed
+    started_at: "2026-09-06T12:57:43.629Z"
+    finished_at: "2026-09-06T12:58:00.558Z"
+    recorded_at: "2026-09-06T12:58:00.558Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/defect-recurrence-lineages.spec.ts tests/unit/sdk/governance/defect-recurrence.spec.ts tests/unit/scripts/release/defect-evidence-gate.spec.ts tests/integration/recurrence-lineage-contract.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/bench/defect-recurrence-index.mjs --check --json,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/DEFECT_RECURRENCE.md,project,records the family-registration rule and names this item as the unclosed coverage gap
-close_reason: Completed recurrence lineage integration and the pre-review strict-source completeness correction; final hosted validation is required before merge.
+close_reason: Completed the reviewed implementation and first-round contract corrections; hosted review and CI remain merge prerequisites.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
