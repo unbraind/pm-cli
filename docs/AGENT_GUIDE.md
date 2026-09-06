@@ -105,9 +105,13 @@ pm learnings <item-id> --add "Durable lesson for future work."
 pm test <item-id> --run --progress
 node scripts/run-tests.mjs coverage
 pm comments <item-id> "Evidence: linked test and coverage passed."
-pm close <item-id> "Acceptance criteria met; verification passed." --validate-close warn
+pm close <item-id> "Acceptance criteria met; verification passed." --resolution "Delivered behavior" --expected "Required outcome" --actual "Verified outcome" --validate-close warn
 pm release <item-id>
 ```
+
+If a warning close omitted evidence, use its `recovery.suggested_retry_args`
+to append an evidence update while preserving the original close event. See
+[Close Evidence Recovery](CLOSE_EVIDENCE_RECOVERY.md).
 
 ## Token-Minimal Retrieval
 
@@ -219,7 +223,10 @@ positively and explain false or stale findings on their actual review surface.
 After each push, request the reviewers again and wait for terminal results;
 provider quota or skipped reviews are limitations, not approvals. Before merge,
 run `inventory` once more to catch new or edited feedback, and require all
-findings to have an explicit disposition.
+findings to have an explicit disposition. Compare each artifact's `revision`
+and pass it as `--revision` when acknowledging feedback, so edited bodies get
+fresh decisions and retrying a handled revision adds no duplicate reply.
+See [Review Loop](PR_REVIEW_LOOP.md) for the revision and reply contracts.
 
 ## Documentation Rules for Agents
 

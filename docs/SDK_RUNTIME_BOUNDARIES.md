@@ -72,6 +72,17 @@ exceeds temporary-filesystem capacity fails with a stable recovery contract,
 while linked tests whose effective context is schema avoid materializing
 tracker data at all.
 
+Package installation applies the same boundary to `extension_install_copy`,
+`extension_install_backup`, `extension_install_rollback`, and
+`extension_module_graph_snapshot`. These fixed operation labels identify the
+failed stage without exposing source, destination, backup, or temporary paths.
+Capacity and permission faults are not transient copy races and are not retried;
+existing bounded retries for concurrent filesystem changes remain available.
+The shared implementation lives under `core/fs`, while the public SDK exports
+remain stable for package authors. This coverage does not imply that every
+filesystem operation in the repository has adopted the boundary; the complete
+migration and recurrence-gate obligation remains tracked in `pm-3lhth4`.
+
 Existing SDK surfaces can supply category-specific `codes` to preserve their
 published error vocabulary while still sharing classification, path redaction,
 and recovery guidance. Workspace snapshots use this compatibility path for

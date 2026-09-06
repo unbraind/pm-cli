@@ -3270,7 +3270,7 @@ async function correlateMergeReceiptHistoryDriftItems(params: {
     const receipts = cloneLocalReceiptsByItem.get(id);
     if (!receipts || receipts.length === 0) continue;
     try {
-      const repair = await runHistoryRepair(
+      await runHistoryRepair(
         id,
         {
           dryRun: true,
@@ -3281,7 +3281,8 @@ async function correlateMergeReceiptHistoryDriftItems(params: {
         },
         params.global,
       );
-      if (repair.merge_receipt_proof?.trusted) attributed.push(id);
+      // An unforced proof-bearing preview rejects untrusted evidence before returning.
+      attributed.push(id);
     } catch {
       // Fail closed: generic history-repair guidance remains authoritative.
     }

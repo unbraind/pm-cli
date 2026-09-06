@@ -2,11 +2,13 @@ id: pm-2xtv84
 title: "GH-1201: Recover invalid pending receipt evidence across release upgrades"
 description: "Investigate the reported 2026.9.4 writer to 2026.9.5 reader failure and health/reconcile recovery loop. Source inspection confirms collections is a diagnostic category, not a required top-level key: it validates fields_from_theirs, union_fields, decisions and optional merged_field_hashes. Pending and reconciled receipts share this validation before state filtering. The underlying malformed field requires a privacy-safe reproduction; absence of a collections key alone is not evidence of schema incompatibility."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-09-05T19:06:18.055Z"
-updated_at: "2026-09-05T19:12:53.429Z"
+updated_at: "2026-09-06T05:44:33.221Z"
+closed_at: "2026-09-06T05:44:32.464Z"
+completed_at: "2026-09-06T05:44:32.464Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Reproduce the rejected receipt using a redacted fixture or supported prior writer without publishing free-form values; Report the precise invalid collection or decision shape while retaining privacy-safe diagnostics; Provide an executable evidence-preserving recovery path that cannot silently certify invalid or unrelated evidence; Prove supported older valid receipts remain readable and malformed receipts still fail closed
@@ -17,12 +19,15 @@ parent: pm-dj98
 risk: high
 confidence: medium
 severity: high
+resolution: Normalize identified legacy omitted scalar slots and encode all current writer decisions; report precise private-safe schema coordinates
+expected_result: Supported prior-writer and current undefined-value round trips pass; malformed or missing selected evidence remains rejected
+actual_result: Supported prior-writer and current undefined-value round trips pass; malformed or missing selected evidence remains rejected; linked tests and integrated gates passed.
 affected_version: 2026.9.5
 component: sdk/merge
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-dj98,implements,"2026-09-05T19:06:18.055Z","harness:codex","cli:create:dep",detected
   pm-wn3ee5,discovered_from,"2026-09-05T19:06:18.055Z","harness:codex","cli:create:dep",detected
-comments[2]:
+comments[7]:
   - created_at: "2026-09-05T19:06:18.055Z"
     author: "harness:codex"
     text: "Duplicate-check evidence: strict complete all-status corpus contained 2642 items, including terminal history; exact GitHub issue URL was absent. Request-specific search and current open/in_progress inventories were read. Full live predecessor pm-wn3ee5 and parent pm-dj98 metadata plus verified history were inspected. This report extends a distinct boundary beyond the closed predecessor and is not a duplicate. Intake remains open and unclaimed."
@@ -30,11 +35,54 @@ comments[2]:
   - created_at: "2026-09-05T19:10:52.439Z"
     author: "harness:codex"
     text: "Intake evidence: GitHub issue #1201 now links this canonical owner through a public comment. The external URL remains in the report body; its redundant graph endpoint was removed because a provider URL without project lifecycle metadata creates an untyped active leaf. Local implements, discovered_from, and applicable verifies edges preserve the actual work lineage. Status remains open and unclaimed."
-notes[1]{created_at,author,text,edited_at}:
-  "2026-09-05T19:06:18.055Z","harness:codex","Investigate the reported 2026.9.4 writer to 2026.9.5 reader failure and health/reconcile recovery loop. Source inspection confirms collections is a diagnostic category, not a required top-level key: it validates fields_from_theirs, union_fields, decisions and optional merged_field_hashes. Pending and reconciled receipts share this validation before state filtering. The underlying malformed field requires a privacy-safe reproduction; absence of a collections key alone is not evidence of schema incompatibility.","2026-09-05T19:12:53.429Z"
-files[2]{path,scope,note}:
+  - created_at: "2026-09-05T20:44:32.008Z"
+    author: "harness:codex"
+    text: "TDD evidence: a failing regression was recorded before the implementation path was changed. The connected recovery suite now passes nine tests across five files, covering exact preview refusal, legacy redaction consistency and tamper refusal, legacy omitted scalars, immutable acceptance backfill, root/inherited reservation parity, and actual Git rebase abort. Repository-wide gates and hosted review are still pending."
+  - created_at: "2026-09-06T05:12:53.441Z"
+    author: "harness:codex"
+    text: "Reproduction refinement: the historical 2026.9.4 writer uses requested_preference and clone_local, not only the preferred-era shape. A real temporary Git repository reproduces schema_invalid collections at decisions[0] when writeMergeReceipt receives an undefined base scalar: JSON serialization omits the property. The current driver encodes missing scalars, but the writer boundary itself still permits this loss. Extend the regression and writer normalization to preserve all scalar slots, and accept identified older clone-local receipts with omitted non-selected slots. This is a reproducible compatibility defect; the private GH-1201 receipt remains unavailable, so its exact malformed coordinate is not asserted."
+  - created_at: "2026-09-06T05:27:21.507Z"
+    author: "harness:codex"
+    text: "Writer and legacy reader regression now passes: all five undefined scalar slots survive JSON storage; a prior requested_preference/clone_local receipt with an omitted base remains byte-identical during reads and settles without deleting evidence. Selected retained/discarded values remain required on historical reads. Malformed collection and operation fixtures retain fail-closed diagnostics with bounded coordinates."
+  - created_at: "2026-09-06T05:42:31.206Z"
+    author: "harness:codex"
+    text: "Integrated verification 2026-09-06: full source coverage is exact 100/100/100/100: statements 62641/62641, branches 47517/47517, functions 12984/12984, lines 60208/60208. The 8475-test coverage run passed 8474 tests and identified one repository directory-load failure (121 files over the 120-file SDK test folder ceiling). Moving the new receipt-schema suite into tests/unit/sdk/merge restored the limit; the focused 30-test structural/schema/review run passed. All eight active item linked-test runs passed through pm test, preserving execution receipts. Temporary installed npm and Bun consumers passed warning-close, executable evidence update, and immutable-history verification. Packed npx and bunx smoke passed across 13 packages. TypeScript and ESLint passed. Credential scan and npm advisory census found zero secrets/vulnerabilities. Hosted checks, AI review, merge and published release verification are still pending and are separate from this local evidence."
+  - created_at: "2026-09-06T05:44:31.418Z"
+    author: "harness:codex"
+    text: "Final local gates passed: repository static assurance with 100% governed docstring coverage, zero duplicate code, SDK and CLI contracts, context/token ceilings, graph composition, record integrity, package artifact, package-first dogfood, docs/skills and version policy. Exact source coverage and focused directory correction are recorded in the preceding evidence comment. No coverage threshold, source exclusion or quality budget was weakened. Hosted review, merge and release remain separate pending verification."
+notes[2]:
+  - created_at: "2026-09-05T19:06:18.055Z"
+    author: "harness:codex"
+    text: "Investigate the reported 2026.9.4 writer to 2026.9.5 reader failure and health/reconcile recovery loop. Source inspection confirms collections is a diagnostic category, not a required top-level key: it validates fields_from_theirs, union_fields, decisions and optional merged_field_hashes. Pending and reconciled receipts share this validation before state filtering. The underlying malformed field requires a privacy-safe reproduction; absence of a collections key alone is not evidence of schema incompatibility."
+    edited_at: "2026-09-05T19:12:53.429Z"
+  - created_at: "2026-09-06T04:53:21.526Z"
+    author: "harness:codex"
+    text: Legacy compatibility normalizes missing base/ours/theirs only for identified preferred-era JSON receipts. The collections diagnostic category is not a required property. Readers expose bounded validation_path coordinates and never repair malformed evidence by guessing.
+learnings[1]{created_at,author,text}:
+  "2026-09-06T05:28:54.883Z","harness:codex",Missing-value encoding belongs at the receipt persistence boundary as well as the merge algorithm. Structured cloning preserves undefined properties in memory but JSON silently removes them; prior clone-local writer normalization must identify its encoding and must never invent missing retained or discarded evidence.
+files[5]{path,scope,note}:
+  src/sdk/merge/receipt-schema.ts,project,SDK recovery implementation and executable regression evidence
   src/sdk/merge/receipts.ts,project,Existing implementation boundary to reproduce and improve
+  tests/integration/legacy-receipt-reader.integration.spec.ts,project,SDK recovery implementation and executable regression evidence
   tests/unit/sdk/merge-receipts.spec.ts,project,Existing regression suite to extend; no new regression is claimed
+  tests/unit/sdk/merge/receipt-schema.spec.ts,project,Receipt-schema negative controls grouped under their SDK subsystem
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/legacy-receipt-reader.integration.spec.ts,project,240,"harness:codex","2026-09-05T20:44:31.405Z",local_mutation,feat/receipt-recovery-and-extension-contracts
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge/receipt-schema.spec.ts,project,240,"harness:codex","2026-09-06T05:34:58.892Z",local_mutation,feat/receipt-recovery-and-extension-contracts
+test_runs[1]:
+  - run_id: test-local-mtpdpiwc-1uox7r
+    kind: test
+    status: passed
+    started_at: "2026-09-06T05:35:58.611Z"
+    finished_at: "2026-09-06T05:36:18.156Z"
+    recorded_at: "2026-09-06T05:36:18.156Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/legacy-receipt-reader.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/receipt-schema.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/MERGE_SAFETY.md,project,Existing public contract to preserve and clarify
+close_reason: Implemented and locally verified; delivery proceeds through the combined PR review.
 body: "## Report and scope\n\nSource: https://github.com/unbraind/pm-cli/issues/1201\n\nInvestigate the reported 2026.9.4 writer to 2026.9.5 reader failure and health/reconcile recovery loop. Source inspection confirms collections is a diagnostic category, not a required top-level key: it validates fields_from_theirs, union_fields, decisions and optional merged_field_hashes. Pending and reconciled receipts share this validation before state filtering. The underlying malformed field requires a privacy-safe reproduction; absence of a collections key alone is not evidence of schema incompatibility.\n\n## Reported reproduction\n\n## Summary\n\n`pm health` fails on a merge receipt that `pm` itself wrote minutes earlier under the previous patch release. The documented remediation cannot run, because the same receipt makes `pm merge reconcile` refuse to start. The only way out is to delete the evidence file by hand — the artifact the receipt system exists to preserve.\n\n## Timeline (single repository, one afternoon)\n\n1. `pm` **2026.9.4** is the installed CLI. A `git rebase` invokes the field-aware merge driver, which writes receipt `f9067de4…` with `state: \"pending\"`.\n2. The CLI is upgraded to **2026.9.5**.\n3. `pm health --check-only` now fails:\n\n```\nok: False\nfailed_because: ['merge_decisions_unreviewed:1', 'merge_receipt_evidence_invalid:1']\n```\n\n4. `pm merge report --include-reconciled --json` names it:\n\n```json\n{\"evidence_source\":\"clone_local\",\"reason\":\"schema_invalid\",\n \"validation_error\":\"collections\",\"receipt_id\":\"f9067de4-bc6c-477a-99de-c415951b2064\"}\n```\n\n5. The remediation `pm health` points at refuses to run **at all**:\n\n```\n$ pm merge reconcile --dry-run\nError: Merge reconciliation refused 1 invalid receipt evidence file(s).\n  suggested_retry: pm health --check-only --full\nEXIT=4\n```\n\n`suggested_retry` sends the operator back to the command that produced the failure, so the two commands point at each other and neither can settle the receipt.\n\n## The schema difference is not something the writer could have satisfied\n\nThe receipt store held **19** receipts. **None of the 19** has a `collections` key. Only one is rejected:\n\n| state | count | verdict |\n|---|---|---|\n| `reconciled` | 18 | accepted |\n| `pending` | 1 | `schema_invalid: collections` |\n\nSo the field is required only on the validation path taken for a pending receipt, and the writer that produced it never emits the key. Same store, same shape, opposite verdicts — the discriminator is `state`, not the data.\n\nIn 2026.9.5's `dist/cli-bundle/sdk-merge.js` the validator requires a non-null object:\n\n```js\ncollections != \"object\" || s.collections === null ? null : s\n```\n\n## Impact\n\nA repository reaches a state where:\n\n- `pm health` is red and stays red,\n- the only remediation the CLI names cannot execute,\n- and no `pm` command can settle or repair the receipt.\n\nBecause `pm health --strict-exit` is a CI step across our fleet, this is a hard stop rather than a warning. Deleting `.git/pm-merge-receipts/<id>.json` is the only recovery, which discards the retained/discarded field values the receipt was written to preserve — in this case three fields including a full `description` and an `acceptance_criteria` pair.\n\n## Expected\n\nAny of these would break the deadlock:\n\n1. A receipt missing `collections` is treated as a valid v1 receipt (the writer never wrote the key, so absence cannot mean corruption), or migrated on read.\n2. `pm merge reconcile` still runs, quarantining invalid evidence and settling the rest, rather than refusing wholesale on a single bad candidate.\n3. A supported repair command exists, so recovery is not \"delete the evidence file\".\n\nWhatever the mechanism, a receipt written by release N should not be unreadable to release N+1 with no migration.\n\n## Environment\n\n- Written by @unbrained/pm-cli **2026.9.4**, rejected by **2026.9.5**\n- Linux, Node 22; receipt store `.git/pm-merge-receipts/`, 19 receipts\n\n## Delivery boundary\n\nIntake only in PR #1204. This item remains open and unclaimed; no implementation or reproduction success is asserted. Implement through the public SDK with thin CLI adapters and executable negative controls before closing."

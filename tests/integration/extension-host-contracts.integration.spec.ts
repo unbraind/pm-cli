@@ -33,6 +33,33 @@ async function installHostContractExtension(
 }
 
 describe("extension host contracts", () => {
+  it("preserves package-local explain and rejects reserved-flag activation atomically", async () => {
+    await withTempPmPath(async (context) => {
+      await installHostContractExtension(context.pmPath, [
+        "export default { activate(api) {",
+        "api.registerCommand({ name: 'host query', flags: [{ long: '--explain', value_type: 'boolean' }], run: ({ options }) => ({ localExplanation: options.explain === true }) });",
+        "api.registerCommand({ name: 'host silent', run: () => ({ sibling: true }) });",
+        "} };",
+      ].join("\n"));
+      const local = context.runCli(["host", "query", "--explain", "--json"], { expectJson: true });
+      expect(local, local.stderr).toMatchObject({ code: 0, json: { localExplanation: true } });
+      expect(context.runCli(["host", "silent", "--json"], { expectJson: true })).toMatchObject({ code: 0, json: { sibling: true } });
+      const root = context.runCli(["--explain"]);
+      expect(root.code).toBe(0);
+      expect(root.stdout).not.toContain("localExplanation");
+      await installHostContractExtension(context.pmPath, [
+        "export default { activate(api) {",
+        "api.registerCommand({ name: 'host probe', flags: [{ long: '--json', value_type: 'boolean' }], run: () => ({ invalid: true }) });",
+        "api.registerCommand({ name: 'host silent', run: () => ({ sibling: true }) });",
+        "} };",
+      ].join("\n"));
+      const rejected = context.runCli(["host", "probe", "--json"], { cwd: context.tempRoot });
+      expect(rejected.code).not.toBe(0);
+      expect(rejected.stderr).toContain("host-owned global flag");
+      expect(context.runCli(["host", "silent", "--json"], { cwd: context.tempRoot }).code).not.toBe(0);
+    });
+  });
+
   it("applies renderer overrides to dynamic extension command results", async () => {
     await withTempPmPath(async (context) => {
       await installHostContractExtension(

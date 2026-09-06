@@ -20,87 +20,24 @@ import {
   writeFileAtomic,
 } from "../../core/fs/fs-utils.js";
 import { sha256Hex, stableStringify } from "../../core/shared/serialization.js";
-import { isRfc3339DateTime, nowIso } from "../../core/shared/time.js";
+import { nowIso } from "../../core/shared/time.js";
 import {
+  encodeItemScalarDecisionValue,
   hashItemScalarDecisionValue,
   isItemScalarMissingValue,
   type ItemMergeConflictDecision,
   type ItemScalarConflictResolution,
   type MergePreferredSide,
 } from "./three-way.js";
+import type { MergeReceiptOperation } from "./receipt-operation.js";
 import { readBoundedRegularFile } from "./receipt-file-boundary.js";
 
+import { DURABLE_VALUE_POLICY, durableValueEvidence, isSafeReceiptId, isMergeDecisionReceipt, isPrehashedValue, normalizeLegacyReceipt, receiptCollectionValidationPath, receiptValidationError } from "./receipt-schema.js";
+export { isSafeReceiptId } from "./receipt-schema.js";
+
 const execFileAsync = promisify(execFile);
-const RECEIPT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/u;
-const RECEIPT_ITEM_ID_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/u;
-const RECEIPT_FIELD_MAX = 2_048;
 const RECEIPT_FILE_MAX_BYTES = 16 * 1024 * 1024;
-const RECEIPT_VALUE_MAX_DEPTH = 64;
-const RECEIPT_VALUE_MAX_NODES = 100_000;
 const RECEIPT_INVALID_EVIDENCE_DETAIL_LIMIT = 100;
-const RECEIPT_KEYS = new Set([
-  "version",
-  "id",
-  "item_path",
-  "item_id",
-  "requested_preference",
-  "requested_preference_applied",
-  "preferred",
-  "conflict_resolution",
-  "fields_from_theirs",
-  "union_fields",
-  "merged_field_hashes",
-  "decisions",
-  "state",
-  "created_at",
-  "reconciled_at",
-  "value_availability",
-  "value_policy",
-  "evidence_source",
-]);
-
-/** Return whether a receipt id is safe to expose in cleartext diagnostics. */
-export function isSafeReceiptId(value: string): boolean {
-  return RECEIPT_ID_PATTERN.test(value);
-}
-const RECEIPT_DECISION_KEYS = new Set([
-  "field",
-  "base",
-  "ours",
-  "theirs",
-  "retained",
-  "discarded",
-  "retained_side",
-  "resolution_basis",
-]);
-
-const DURABLE_VALUE_POLICY = "bounded_non_sensitive_scalars_v1" as const;
-const REVIEWABLE_BUILTIN_STATUSES = new Set([
-  "open",
-  "in_progress",
-  "blocked",
-  "closed",
-  "canceled",
-]);
-const REVIEWABLE_ORDINAL_FIELDS = new Set(["risk", "confidence", "severity"]);
-const REVIEWABLE_ORDINAL_VALUES = new Set([
-  "low",
-  "medium",
-  "high",
-  "critical",
-]);
-const REVIEWABLE_DURABLE_VALUES_BY_FIELD = new Map<string, ReadonlySet<string>>(
-  [
-    ["priority", new Set([0, 1, 2, 3, 4].map(stableStringify))],
-    ["status", new Set([...REVIEWABLE_BUILTIN_STATUSES].map(stableStringify))],
-    ...[...REVIEWABLE_ORDINAL_FIELDS].map(
-      (field): [string, ReadonlySet<string>] => [
-        field,
-        new Set([...REVIEWABLE_ORDINAL_VALUES].map(stableStringify)),
-      ],
-    ),
-  ],
-);
 
 /** One clone-local merge receipt with recoverable branch values. */
 export interface MergeDecisionReceipt {
@@ -128,7 +65,11 @@ export interface MergeDecisionReceipt {
   merged_field_hashes?: Record<string, string>;
   /** Full recoverable scalar decisions, retained only in the clone. */
   decisions: ItemMergeConflictDecision[];
-  /** Whether a merge reconciliation history event consumed this receipt. */
+  /** Immutable original Git coordinates captured while the driver runs during a rebase. */
+  operation?: MergeReceiptOperation;
+  /** Explicit audited disposition when the original Git state was restored instead of merging. */
+  settlement?: "original_git_state_restored";
+  /** Whether a reconciliation history event settled this receipt. */
   state: "pending" | "reconciled";
   /** Receipt creation timestamp. */
   created_at: string;
@@ -242,7 +183,10 @@ export interface MergeReceiptInvalidEvidence {
     | "collections"
     | "enums"
     | "timestamps"
-    | "durable_decisions";
+    | "durable_decisions"
+    | "operation";
+  /** Exact schema coordinate, excluding rejected values and user-controlled field names. */
+  validation_path?: string;
   /** Receipt identity when the bounded filename itself is a valid receipt id. */
   receipt_id?: string;
   /** SHA-256 locator for an unsafe or malformed candidate filename. */
@@ -294,311 +238,20 @@ function receiptFileName(id: string): string {
   return `${id}.json`;
 }
 
-/** Narrow untrusted JSON to a non-array object before schema inspection. */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/** Refuse receipt extensions outside the versioned schema key set. */
-function hasOnlyKeys(
-  value: Record<string, unknown>,
-  allowed: ReadonlySet<string>,
-): boolean {
-  return Object.keys(value).every((key) => allowed.has(key));
-}
-
-/** Validate bounded dense string collections used in receipt coordinates. */
-function isStringArray(value: unknown): value is string[] {
-  return (
-    Array.isArray(value) &&
-    value.length <= RECEIPT_FIELD_MAX &&
-    value.every(
-      (entry) =>
-        typeof entry === "string" && entry.length > 0 && entry.length <= 256,
-    )
-  );
-}
-
-/** Bound JSON depth and node count before retaining untrusted decision values. */
-function hasBoundedJsonStructure(value: unknown): boolean {
-  const pending: Array<{ value: unknown; depth: number }> = [
-    { value, depth: 0 },
-  ];
-  let nodes = 0;
-  while (pending.length > 0) {
-    const current = pending.pop()!;
-    nodes += 1;
-    if (
-      nodes > RECEIPT_VALUE_MAX_NODES ||
-      current.depth > RECEIPT_VALUE_MAX_DEPTH
-    ) {
-      return false;
-    }
-    if (Array.isArray(current.value)) {
-      for (const entry of current.value) {
-        pending.push({ value: entry, depth: current.depth + 1 });
-      }
-    } else if (isRecord(current.value)) {
-      for (const entry of Object.values(current.value)) {
-        pending.push({ value: entry, depth: current.depth + 1 });
-      }
-    }
-  }
-  return true;
-}
-
-/** Validate one clone-local scalar decision and its optional resolution evidence. */
-function isMergeDecision(value: unknown): value is ItemMergeConflictDecision {
-  if (!isRecord(value)) return false;
-  const retainedSides = [undefined, "ours", "theirs"];
-  const resolutionBases = [
-    undefined,
-    "requested_preference",
-    "document_updated_at",
-    "stable_value_tiebreak",
-  ];
-  return [
-    hasOnlyKeys(value, RECEIPT_DECISION_KEYS),
-    typeof value.field === "string",
-    typeof value.field === "string" && value.field.length > 0,
-    typeof value.field === "string" && value.field.length <= 256,
-    Object.hasOwn(value, "base"),
-    Object.hasOwn(value, "ours"),
-    Object.hasOwn(value, "theirs"),
-    Object.hasOwn(value, "retained"),
-    Object.hasOwn(value, "discarded"),
-    hasBoundedJsonStructure(value.base),
-    hasBoundedJsonStructure(value.ours),
-    hasBoundedJsonStructure(value.theirs),
-    hasBoundedJsonStructure(value.retained),
-    hasBoundedJsonStructure(value.discarded),
-    retainedSides.includes(value.retained_side as string | undefined),
-    resolutionBases.includes(value.resolution_basis as string | undefined),
-  ].every(Boolean);
-}
-
-/** Validate the complete field-to-SHA-256 proof map used during repair. */
-function isMergedFieldHashes(value: unknown): value is Record<string, string> {
-  if (!isRecord(value)) return false;
-  const entries = Object.entries(value);
-  return (
-    entries.length <= RECEIPT_FIELD_MAX &&
-    entries.every(
-      ([field, hash]) =>
-        field.length > 0 &&
-        field.length <= 256 &&
-        typeof hash === "string" &&
-        /^[a-f0-9]{64}$/u.test(hash),
-    )
-  );
-}
-
-/** Require a normalized tracker item path whose basename matches the receipt item. */
-function isSafeReceiptItemPath(value: unknown, itemId: string): boolean {
-  if (
-    typeof value !== "string" ||
-    value.length === 0 ||
-    value.length > 4_096 ||
-    value.includes("\0") ||
-    value.includes("\\") ||
-    path.posix.isAbsolute(value)
-  ) {
-    return false;
-  }
-  const normalized = path.posix.normalize(value);
-  return (
-    normalized !== ".." &&
-    !normalized.startsWith("../") &&
-    path.posix.basename(normalized, path.posix.extname(normalized)) === itemId
-  );
-}
-
-/** Validate receipt arrays and optional merged-field proof coverage. */
-function hasValidReceiptCollections(value: Record<string, unknown>): boolean {
-  return !isStringArray(value.fields_from_theirs) ||
-    !isStringArray(value.union_fields) ||
-    !Array.isArray(value.decisions) ||
-    value.decisions.length > RECEIPT_FIELD_MAX ||
-    !value.decisions.every(isMergeDecision)
-    ? false
-    : value.merged_field_hashes === undefined ||
-        isMergedFieldHashes(value.merged_field_hashes);
-}
-
-/** Validate every closed-domain lifecycle and merge-policy field. */
-function hasValidReceiptEnums(value: Record<string, unknown>): boolean {
-  const preferences = [undefined, "ours", "theirs"];
-  const resolutions = [
-    undefined,
-    "preferred_side",
-    "stable_value_order",
-    "latest_document_update",
-  ];
-  const availabilities = [
-    undefined,
-    "clone_local",
-    "hash_only",
-    "bounded_inline",
-    "mixed",
-  ];
-  const sources = [undefined, "clone_local", "durable"];
-  return (
-    preferences.includes(value.requested_preference as string | undefined) &&
-    preferences.includes(value.preferred as string | undefined) &&
-    (value.requested_preference_applied === undefined ||
-      typeof value.requested_preference_applied === "boolean") &&
-    resolutions.includes(value.conflict_resolution as string | undefined) &&
-    (value.state === "pending" || value.state === "reconciled") &&
-    availabilities.includes(value.value_availability as string | undefined) &&
-    (value.value_policy === undefined ||
-      value.value_policy === DURABLE_VALUE_POLICY) &&
-    sources.includes(value.evidence_source as string | undefined)
-  );
-}
-
-/** Validate creation and optional settlement timestamps as RFC 3339 values. */
-function hasValidReceiptTimestamps(value: Record<string, unknown>): boolean {
-  return (
-    typeof value.created_at === "string" &&
-    isRfc3339DateTime(value.created_at) &&
-    (value.reconciled_at === undefined ||
-      (typeof value.reconciled_at === "string" &&
-        isRfc3339DateTime(value.reconciled_at)))
-  );
-}
-
-/** Validate one hash-only or policy-bounded durable decision value. */
-function hasDurableDecisionValue(field: string, value: unknown): boolean {
-  if (!isRecord(value) || isPrehashedValue(value) === undefined) return false;
-  const keys = Object.keys(value);
-  if (!keys.every((key) => key === "pm_value_hash" || key === "pm_value")) {
-    return false;
-  }
-  if (!Object.hasOwn(value, "pm_value")) return keys.length === 1;
-  const preview = value.pm_value;
-  const allowed =
-    preview === null ||
-    REVIEWABLE_DURABLE_VALUES_BY_FIELD.get(field)?.has(
-      stableStringify(preview),
-    ) === true;
-  return (
-    allowed && hashItemScalarDecisionValue(preview) === value.pm_value_hash
-  );
-}
-
-/** Validate durable decision redaction and the declared availability summary. */
-function hasValidDurableDecisions(receipt: MergeDecisionReceipt): boolean {
-  if (
-    !receipt.decisions.every(
-      (decision) =>
-        decision.base === null &&
-        decision.ours === null &&
-        decision.theirs === null &&
-        hasDurableDecisionValue(decision.field, decision.retained) &&
-        hasDurableDecisionValue(decision.field, decision.discarded),
-    )
-  ) {
-    return false;
-  }
-  const inlineValueCount = receipt.decisions.reduce(
-    (count, decision) =>
-      count +
-      (isRecord(decision.retained) &&
-      Object.hasOwn(decision.retained, "pm_value")
-        ? 1
-        : 0) +
-      (isRecord(decision.discarded) &&
-      Object.hasOwn(decision.discarded, "pm_value")
-        ? 1
-        : 0),
-    0,
-  );
-  const expectedAvailability =
-    inlineValueCount === 0
-      ? "hash_only"
-      : inlineValueCount === receipt.decisions.length * 2
-        ? "bounded_inline"
-        : "mixed";
-  return (
-    receipt.value_availability === expectedAvailability &&
-    (inlineValueCount === 0 || receipt.value_policy === DURABLE_VALUE_POLICY)
-  );
-}
-
-/** Return the narrowest validation class for untrusted receipt evidence. */
-function receiptValidationError(
-  value: unknown,
-  evidenceSource: "clone_local" | "durable",
-): MergeReceiptInvalidEvidence["validation_error"] | null {
-  if (!isRecord(value)) return "required_fields";
-  for (const key of [
-    "version",
-    "id",
-    "item_path",
-    "item_id",
-    "fields_from_theirs",
-    "union_fields",
-    "decisions",
-    "state",
-    "created_at",
-  ]) {
-    if (!Object.hasOwn(value, key)) return "required_fields";
-  }
-  if (value.version !== 1 || !hasOnlyKeys(value, RECEIPT_KEYS)) {
-    return "required_fields";
-  }
-  if (typeof value.id !== "string" || !isSafeReceiptId(value.id)) {
-    return "receipt_id";
-  }
-  if (
-    typeof value.item_id !== "string" ||
-    !RECEIPT_ITEM_ID_PATTERN.test(value.item_id)
-  ) {
-    return "item_id";
-  }
-  if (!isSafeReceiptItemPath(value.item_path, value.item_id)) {
-    return "item_path";
-  }
-  if (!hasValidReceiptCollections(value)) return "collections";
-  if (!hasValidReceiptEnums(value)) return "enums";
-  if (!hasValidReceiptTimestamps(value)) return "timestamps";
-  if (
-    evidenceSource === "durable" &&
-    !hasValidDurableDecisions(value as unknown as MergeDecisionReceipt)
-  ) {
-    return "durable_decisions";
-  }
-  return null;
-}
-
-/** Validate a complete receipt against its clone-local or durable evidence policy. */
-function isMergeDecisionReceipt(
-  value: unknown,
-  evidenceSource: "clone_local" | "durable",
-): value is MergeDecisionReceipt {
-  return receiptValidationError(value, evidenceSource) === null;
-}
-
-/** Read one receipt through the no-follow bounded regular-file guard. */
-async function readBoundedRegularReceiptFile(
-  receiptPath: string,
-): Promise<string | null> {
-  return readBoundedRegularFile(receiptPath, RECEIPT_FILE_MAX_BYTES);
-}
-
 /** Revalidate one receipt and stage its atomic reconciled-state replacement. */
 async function prepareReceiptSettlement(params: {
   receiptPath: string;
   receiptId: string;
   evidenceSource: "clone_local" | "durable";
   reconciledAt: string;
+  settlement?: "original_git_state_restored";
   readReceipt?: (receiptPath: string) => Promise<string | null>;
-}): Promise<{ path: string; content: string; fingerprint: string } | null> {
+}): Promise<{ path: string; content: string; fingerprints: string[]; modern: boolean } | null> {
   let raw: string | null;
   try {
-    raw = await (params.readReceipt ?? readBoundedRegularReceiptFile)(
-      params.receiptPath,
-    );
+    raw = params.readReceipt
+      ? await params.readReceipt(params.receiptPath)
+      : await readBoundedRegularFile(params.receiptPath, RECEIPT_FILE_MAX_BYTES);
   } catch (error) {
     if (isFileAbsentError(error)) return null;
     throw error;
@@ -610,7 +263,7 @@ async function prepareReceiptSettlement(params: {
   }
   let parsed: unknown;
   try {
-    parsed = JSON.parse(raw) as unknown;
+    parsed = normalizeLegacyReceipt(JSON.parse(raw) as unknown);
   } catch {
     throw new Error(
       `Receipt ${params.receiptId} settlement source is not valid JSON.`,
@@ -619,6 +272,7 @@ async function prepareReceiptSettlement(params: {
   if (
     !isMergeDecisionReceipt(parsed, params.evidenceSource) ||
     parsed.id !== params.receiptId ||
+    (params.settlement !== undefined && parsed.operation === undefined) ||
     path.basename(params.receiptPath) !== receiptFileName(parsed.id)
   ) {
     throw new Error(
@@ -628,12 +282,14 @@ async function prepareReceiptSettlement(params: {
   const { evidence_source: _evidenceSource, ...persistedReceipt } = parsed;
   return {
     path: params.receiptPath,
-    fingerprint: receiptProvenanceFingerprint(parsed),
+    fingerprints: receiptProvenanceFingerprints(parsed),
+    modern: parsed.value_policy !== undefined,
     content: `${JSON.stringify(
       {
         ...persistedReceipt,
         state: "reconciled",
         reconciled_at: params.reconciledAt,
+        ...(params.settlement ? { settlement: params.settlement } : {}),
       },
       null,
       2,
@@ -642,7 +298,7 @@ async function prepareReceiptSettlement(params: {
 }
 
 /** Fingerprint immutable receipt provenance while excluding lifecycle state. */
-function receiptProvenanceFingerprint(receipt: MergeDecisionReceipt): string {
+function receiptProvenanceFingerprint(receipt: MergeDecisionReceipt, legacy = false): string {
   return sha256Hex(
     stableStringify({
       id: receipt.id,
@@ -655,9 +311,26 @@ function receiptProvenanceFingerprint(receipt: MergeDecisionReceipt): string {
       fields_from_theirs: receipt.fields_from_theirs,
       union_fields: receipt.union_fields,
       merged_field_hashes: receipt.merged_field_hashes ?? null,
-      decisions: summarizeMergeReceipt(receipt).decisions,
+      operation: receipt.operation ?? null,
+      decisions: legacy
+        ? receipt.decisions.map((decision) => ({
+            field: decision.field,
+            retained_hash: sha256Hex(stableStringify(encodeItemScalarDecisionValue(decision.retained))),
+            discarded_hash: sha256Hex(stableStringify(encodeItemScalarDecisionValue(decision.discarded))),
+          }))
+        : summarizeMergeReceipt(receipt).decisions,
     }),
   );
+}
+
+/** Compare historical plain-scalar and current presence-domain hashes without changing stored evidence. */
+function receiptProvenanceFingerprints(receipt: MergeDecisionReceipt): string[] {
+  const fingerprints = [receiptProvenanceFingerprint(receipt)];
+  if (receipt.value_policy === undefined &&
+      (receipt.value_availability === undefined || receipt.value_availability === "clone_local")) {
+    fingerprints.push(receiptProvenanceFingerprint(receipt, true));
+  }
+  return fingerprints;
 }
 
 /** Merge clone-local and durable lifecycle state without losing pending work. */
@@ -665,10 +338,10 @@ function mergeReceiptCopyLifecycle(
   local: MergeDecisionReceipt,
   durable: MergeDecisionReceipt,
 ): MergeDecisionReceipt {
-  if (local.state === "reconciled" && durable.state === "reconciled") {
+  if (local.state === "reconciled" && durable.state === "reconciled" && local.settlement === durable.settlement) {
     return local;
   }
-  const { reconciled_at: _reconciledAt, ...pendingLocal } = local;
+  const { reconciled_at: _reconciledAt, settlement: _settlement, ...pendingLocal } = local;
   return { ...pendingLocal, state: "pending" };
 }
 
@@ -709,40 +382,6 @@ export function summarizeMergeReceipt(
   };
 }
 
-/** Extract a structurally valid precomputed SHA-256 decision hash. */
-function isPrehashedValue(value: unknown): string | undefined {
-  if (
-    typeof value !== "object" ||
-    value === null ||
-    Array.isArray(value) ||
-    !("pm_value_hash" in value)
-  ) {
-    return undefined;
-  }
-  const hash = value.pm_value_hash;
-  return typeof hash === "string" && /^[a-f0-9]{64}$/u.test(hash)
-    ? hash
-    : undefined;
-}
-
-/** Convert a raw scalar into hashed evidence with an allowlisted preview. */
-function durableValueEvidence(
-  field: string,
-  value: unknown,
-): { pm_value_hash: string; pm_value?: unknown } {
-  const missing = isItemScalarMissingValue(value);
-  const pmValueHash = hashItemScalarDecisionValue(missing ? undefined : value);
-  const reviewable =
-    !missing &&
-    (value === null ||
-      REVIEWABLE_DURABLE_VALUES_BY_FIELD.get(field)?.has(
-        stableStringify(value),
-      ) === true);
-  return reviewable
-    ? { pm_value_hash: pmValueHash, pm_value: value }
-    : { pm_value_hash: pmValueHash };
-}
-
 /** Persist one item-driver outcome in the clone-local Git directory. */
 export async function writeMergeReceipt(params: {
   cwd: string;
@@ -753,6 +392,7 @@ export async function writeMergeReceipt(params: {
   unionFields: string[];
   mergedFieldHashes?: Record<string, string>;
   decisions: ItemMergeConflictDecision[];
+  operation?: MergeReceiptOperation;
 }): Promise<MergeDecisionReceipt | null> {
   const directory = await resolveReceiptDirectory(params.cwd);
   if (directory === null) {
@@ -776,7 +416,15 @@ export async function writeMergeReceipt(params: {
     ...(params.mergedFieldHashes
       ? { merged_field_hashes: { ...params.mergedFieldHashes } }
       : {}),
-    decisions: structuredClone(params.decisions),
+    decisions: structuredClone(params.decisions).map((decision) => ({
+      ...decision,
+      base: encodeItemScalarDecisionValue(decision.base),
+      ours: encodeItemScalarDecisionValue(decision.ours),
+      theirs: encodeItemScalarDecisionValue(decision.theirs),
+      retained: encodeItemScalarDecisionValue(decision.retained),
+      discarded: encodeItemScalarDecisionValue(decision.discarded),
+    })),
+    ...(params.operation ? { operation: params.operation } : {}),
     state: "pending",
     created_at: nowIso(),
     value_availability: "clone_local",
@@ -861,7 +509,7 @@ async function readReceiptsFromDirectory(
   const invalidEvidence: MergeReceiptInvalidEvidence[] = [];
   const recordInvalidEvidence = (
     name: string,
-    candidate: Pick<MergeReceiptInvalidEvidence, "reason" | "validation_error">,
+    candidate: Pick<MergeReceiptInvalidEvidence, "reason" | "validation_error" | "validation_path">,
   ): void => {
     invalidEvidenceCount += 1;
     if (invalidEvidence.length >= RECEIPT_INVALID_EVIDENCE_DETAIL_LIMIT) return;
@@ -869,6 +517,7 @@ async function readReceiptsFromDirectory(
     invalidEvidence.push({
       evidence_source: evidenceSource,
       reason: candidate.reason,
+      ...(candidate.validation_path ? { validation_path: candidate.validation_path } : {}),
       ...(candidate.validation_error === undefined
         ? {}
         : { validation_error: candidate.validation_error }),
@@ -931,18 +580,19 @@ async function inspectReceiptCandidate(
       receipt?: never;
       reason: MergeReceiptInvalidEvidence["reason"];
       validation_error?: MergeReceiptInvalidEvidence["validation_error"];
+      validation_path?: string;
     }
 > {
   let raw: string | null;
   try {
-    raw = await readBoundedRegularReceiptFile(path.join(directory, name));
+    raw = await readBoundedRegularFile(path.join(directory, name), RECEIPT_FILE_MAX_BYTES);
   } catch {
     return { reason: "candidate_unreadable" };
   }
   if (raw === null) return { reason: "candidate_not_bounded_regular_file" };
   let parsed: unknown;
   try {
-    parsed = JSON.parse(raw) as unknown;
+    parsed = normalizeLegacyReceipt(JSON.parse(raw) as unknown);
   } catch {
     return { reason: "candidate_invalid_json" };
   }
@@ -956,6 +606,7 @@ async function inspectReceiptCandidate(
         ? "identity_invalid"
         : "schema_invalid",
       validation_error: validationError,
+      ...(validationError === "collections" ? { validation_path: receiptCollectionValidationPath(parsed) } : {}),
     };
   }
   const receipt = parsed as MergeDecisionReceipt;
@@ -1017,8 +668,8 @@ export async function inspectMergeReceiptEvidence(
     const durableCopy = receipts.get(receipt.id);
     if (
       durableCopy !== undefined &&
-      receiptProvenanceFingerprint(durableCopy) !==
-        receiptProvenanceFingerprint(receipt)
+      !(durableCopy.value_policy === undefined ? receiptProvenanceFingerprints(receipt)
+        : [receiptProvenanceFingerprint(receipt)]).includes(receiptProvenanceFingerprint(durableCopy))
     ) {
       receipts.delete(receipt.id);
       divergentCopyCount += 1;
@@ -1105,7 +756,7 @@ export function partitionMergeReceipts(receipts: MergeDecisionReceipt[]): {
 export async function markMergeReceiptReconciled(
   cwd: string,
   receipt: MergeDecisionReceipt,
-  options: { requireExisting?: boolean } = {},
+  options: { requireExisting?: boolean; settlement?: "original_git_state_restored" } = {},
 ): Promise<void> {
   const directory = await resolveReceiptDirectory(cwd);
   if (directory === null) {
@@ -1139,6 +790,7 @@ export async function markMergeReceiptReconciled(
       receiptId: receipt.id,
       evidenceSource: "clone_local",
       reconciledAt,
+      settlement: options.settlement,
     }),
     ...(durablePath === null
       ? []
@@ -1148,11 +800,12 @@ export async function markMergeReceiptReconciled(
             receiptId: receipt.id,
             evidenceSource: "durable" as const,
             reconciledAt,
+            settlement: options.settlement,
           }),
         ]),
   ]);
   const writes = prepared.filter(
-    (entry): entry is { path: string; content: string; fingerprint: string } =>
+    (entry): entry is { path: string; content: string; fingerprints: string[]; modern: boolean } =>
       entry !== null,
   );
   if (writes.length === 0) {
@@ -1161,11 +814,11 @@ export async function markMergeReceiptReconciled(
     }
     return;
   }
-  const expectedFingerprint = receiptProvenanceFingerprint(receipt);
-  if (
-    new Set([expectedFingerprint, ...writes.map((write) => write.fingerprint)])
-      .size !== 1
-  ) {
+  const expectedFingerprints = writes.some((write) => write.modern)
+    ? [receiptProvenanceFingerprint(receipt)] : receiptProvenanceFingerprints(receipt);
+  if (!expectedFingerprints.some((fingerprint) =>
+    writes.every((write) => write.fingerprints.includes(fingerprint)),
+  )) {
     throw new Error(
       `Receipt ${receipt.id} settlement copies disagree on immutable merge provenance.`,
     );

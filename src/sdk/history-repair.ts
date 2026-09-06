@@ -56,6 +56,7 @@ import type {
   ItemMetadata,
 } from "../types/index.js";
 import { resolveHistorySubject } from "./history-redact.js";
+import { isOriginalGitStateRestored } from "./merge/receipt-operation.js";
 import {
   inspectMergeReceiptEvidence,
   summarizeMergeReceipt,
@@ -106,6 +107,13 @@ export interface HistoryRepairCommandOptions {
       receipts: MergeDecisionReceipt[];
     }
   >;
+  /** Restored-origin evidence checked against the same item snapshot protected by the rewrite transaction. */
+  mergeAbandonmentProof?: {
+    /** Git workspace containing the tracked item. */
+    gitWorkspaceRoot: string;
+    /** Authoritative receipt whose original rebase state must match. */
+    receipt: MergeDecisionReceipt;
+  };
 }
 
 /** Documents the history repair result payload exchanged by command, SDK, and package integrations. */
@@ -489,6 +497,28 @@ interface HistoryRepairItemReplayContext {
   loadedItem: Awaited<ReturnType<typeof readLocatedItem>> | null;
 }
 
+/** Refuse a restored-origin audit when its exact item snapshot or clean history has changed. */
+async function assertHistoryRepairAbandonmentProof(
+  proof: HistoryRepairCommandOptions["mergeAbandonmentProof"],
+  context: HistoryRepairItemReplayContext,
+  chainOk: boolean,
+  reanchor: { entriesRehashed: number; entriesPatchRepaired: number },
+): Promise<void> {
+  if (proof === undefined) return;
+  const { receipt, gitWorkspaceRoot } = proof;
+  const canonicalPath = context.currentItemPath === null ? null
+    : path.relative(gitWorkspaceRoot, context.currentItemPath).split(path.sep).join("/");
+  if (!chainOk || reanchor.entriesRehashed !== 0 || reanchor.entriesPatchRepaired !== 0 || context.matchedChainBefore !== true ||
+      context.currentItemRawBeforeLock === null || canonicalPath !== receipt.item_path ||
+      receipt.operation === undefined ||
+      !await isOriginalGitStateRestored(gitWorkspaceRoot, receipt.item_path, receipt.operation, context.currentItemRawBeforeLock)) {
+    throw new PmCliError("Restored-origin receipt evidence no longer proves the exact clean item snapshot.", EXIT_CODE.CONFLICT, {
+      code: "merge_reconcile_receipt_evidence_untrusted",
+      recovery: { suggested_retry: "pm merge reconcile --dry-run" },
+    });
+  }
+}
+
 async function resolveHistoryRepairMergeEvidence(params: {
   options: HistoryRepairCommandOptions;
   pmRoot: string;
@@ -535,7 +565,6 @@ async function resolveHistoryRepairMergeEvidence(params: {
   if (
     mergeReceiptProof &&
     !mergeReceiptProof.trusted &&
-    params.options.dryRun !== true &&
     params.options.force !== true
   ) {
     throw new PmCliError(
@@ -828,6 +857,7 @@ async function repairHistorySubject(params: {
     historyEntries,
     itemHashVersion,
   );
+  await assertHistoryRepairAbandonmentProof(options.mergeAbandonmentProof, itemReplayContext, chainBefore.ok, reanchor);
 
   const finalReplay = reanchor.finalDocument;
   const finalReplayHashes = replayHashVerificationCandidates(

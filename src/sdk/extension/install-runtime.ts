@@ -3,6 +3,7 @@
  *
  * Provides cross-platform extension copy safety and owner-bound install locks.
  */
+import { withHostEnvironmentBoundary } from "../../core/fs/host-environment-errors.js";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -150,7 +151,7 @@ export const copyExtensionDirectoryWithoutSelfNesting = async (
   destinationDirectory: string,
   copyDirectory: typeof fs.cp,
   temporaryDirectory = os.tmpdir(),
-): Promise<void> => {
+): Promise<void> => withHostEnvironmentBoundary("extension_install_copy", async () => {
   const resolvedSource = path.resolve(sourceDirectory);
   const canonicalSource = await fs
     .realpath(resolvedSource)
@@ -235,7 +236,7 @@ export const copyExtensionDirectoryWithoutSelfNesting = async (
   } finally {
     await fs.rm(stagingRoot, { recursive: true, force: true });
   }
-};
+});
 
 /** Copy one extension directory with bounded transient-race retries. */
 export const copyExtensionDirectoryForInstall = async (

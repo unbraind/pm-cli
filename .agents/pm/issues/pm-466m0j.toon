@@ -2,11 +2,13 @@ id: pm-466m0j
 title: "GH-1202: Classify abandoned merge receipts without losing durable provenance"
 description: Reproduce receipt lifecycle after an aborted rebase and distinguish an abandoned candidate from a merge requiring review. Current source and Merge Safety documentation intentionally track privacy-safe durable sidecars; raw free-form retained/discarded values are clone-local under .git. Durable receipts retain hashes and only allowlisted low-cardinality scalar previews. The report has not demonstrated a secret leak. A blanket gitignore or evidence deletion would break cross-clone provenance and is not an accepted remedy.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-09-05T19:06:20.194Z"
-updated_at: "2026-09-05T19:12:54.278Z"
+updated_at: "2026-09-06T05:44:35.577Z"
+closed_at: "2026-09-06T05:44:34.743Z"
+completed_at: "2026-09-06T05:44:34.743Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "An actual conflicting rebase followed by abort has deterministic receipt classification and a supported recovery path; Recovery preserves immutable evidence and cannot dismiss an applied merge merely because a later snapshot differs; Fresh-clone tests prove tracked sidecars never contain arbitrary descriptions, acceptance text, or custom status values; CLI guidance clearly distinguishes clone-local raw receipts from intentionally tracked durable sidecars"
@@ -17,6 +19,9 @@ parent: pm-dj98
 risk: high
 confidence: medium
 severity: high
+resolution: Capture immutable rebase origin coordinates and append audited restored-origin settlements
+expected_result: "Real aborted rebases recover without losing provenance; dirty index, item, HEAD, history or active-operation states refuse settlement"
+actual_result: "Real aborted rebases recover without losing provenance; dirty index, item, HEAD, history or active-operation states refuse settlement; linked tests and integrated gates passed."
 affected_version: 2026.9.5
 component: sdk/merge
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
@@ -24,7 +29,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-baksix,discovered_from,"2026-09-05T19:06:20.194Z","harness:codex","cli:create:dep",detected
   pm-dj98,implements,"2026-09-05T19:06:20.194Z","harness:codex","cli:create:dep",detected
   pm-mg13iz,verifies,"2026-09-05T19:06:20.194Z","harness:codex","cli:create:dep",detected
-comments[2]:
+comments[5]:
   - created_at: "2026-09-05T19:06:20.194Z"
     author: "harness:codex"
     text: "Duplicate-check evidence: strict complete all-status corpus contained 2642 items, including terminal history; exact GitHub issue URL was absent. Request-specific search and current open/in_progress inventories were read. Full live predecessor pm-baksix and parent pm-dj98 metadata plus verified history were inspected. This report extends a distinct boundary beyond the closed predecessor and is not a duplicate. Intake remains open and unclaimed."
@@ -32,11 +37,48 @@ comments[2]:
   - created_at: "2026-09-05T19:10:53.397Z"
     author: "harness:codex"
     text: "Intake evidence: GitHub issue #1202 now links this canonical owner through a public comment. The external URL remains in the report body; its redundant graph endpoint was removed because a provider URL without project lifecycle metadata creates an untyped active leaf. Local implements, discovered_from, and applicable verifies edges preserve the actual work lineage. Status remains open and unclaimed."
-notes[1]{created_at,author,text}:
+  - created_at: "2026-09-05T20:44:29.778Z"
+    author: "harness:codex"
+    text: "TDD evidence: a failing regression was recorded before the implementation path was changed. The connected recovery suite now passes nine tests across five files, covering exact preview refusal, legacy redaction consistency and tamper refusal, legacy omitted scalars, immutable acceptance backfill, root/inherited reservation parity, and actual Git rebase abort. Repository-wide gates and hosted review are still pending."
+  - created_at: "2026-09-06T05:42:31.874Z"
+    author: "harness:codex"
+    text: "Integrated verification 2026-09-06: full source coverage is exact 100/100/100/100: statements 62641/62641, branches 47517/47517, functions 12984/12984, lines 60208/60208. The 8475-test coverage run passed 8474 tests and identified one repository directory-load failure (121 files over the 120-file SDK test folder ceiling). Moving the new receipt-schema suite into tests/unit/sdk/merge restored the limit; the focused 30-test structural/schema/review run passed. All eight active item linked-test runs passed through pm test, preserving execution receipts. Temporary installed npm and Bun consumers passed warning-close, executable evidence update, and immutable-history verification. Packed npx and bunx smoke passed across 13 packages. TypeScript and ESLint passed. Credential scan and npm advisory census found zero secrets/vulnerabilities. Hosted checks, AI review, merge and published release verification are still pending and are separate from this local evidence."
+  - created_at: "2026-09-06T05:44:33.912Z"
+    author: "harness:codex"
+    text: "Final local gates passed: repository static assurance with 100% governed docstring coverage, zero duplicate code, SDK and CLI contracts, context/token ceilings, graph composition, record integrity, package artifact, package-first dogfood, docs/skills and version policy. Exact source coverage and focused directory correction are recorded in the preceding evidence comment. No coverage threshold, source exclusion or quality budget was weakened. Hosted review, merge and release remain separate pending verification."
+notes[2]{created_at,author,text}:
   "2026-09-05T19:06:20.194Z","harness:codex",Reproduce receipt lifecycle after an aborted rebase and distinguish an abandoned candidate from a merge requiring review. Current source and Merge Safety documentation intentionally track privacy-safe durable sidecars; raw free-form retained/discarded values are clone-local under .git. Durable receipts retain hashes and only allowlisted low-cardinality scalar previews. The report has not demonstrated a secret leak. A blanket gitignore or evidence deletion would break cross-clone provenance and is not an accepted remedy.
-files[2]{path,scope,note}:
+  "2026-09-06T04:53:19.264Z","harness:codex","Restored-origin settlement preserves durable sidecars and appends an explicit abandoned_receipts audit event. Git original head/blob, clean history, index and working bytes are checked; exact loaded item bytes are revalidated under the existing rewrite snapshot contract. No implicit force or deletion."
+learnings[1]{created_at,author,text}:
+  "2026-09-06T05:28:55.800Z","harness:codex","Restored files alone do not prove an aborted Git operation. Capture original commit and blob coordinates during the rebase, then require inactive Git operation markers, matching HEAD, index and working blob, and a clean immutable history snapshot before appending an explicit abandonment audit."
+files[10]{path,scope,note}:
+  src/sdk/history-repair.ts,project,Recovery contract implementation and regression evidence
+  src/sdk/merge/abandoned-receipts.ts,project,SDK recovery implementation and executable regression evidence
+  src/sdk/merge/driver.ts,project,SDK recovery implementation and executable regression evidence
+  src/sdk/merge/index.ts,project,Recovery contract implementation and regression evidence
+  src/sdk/merge/receipt-operation.ts,project,SDK recovery implementation and executable regression evidence
   src/sdk/merge/receipts.ts,project,Existing implementation boundary to reproduce and improve
+  src/sdk/merge/reconcile.ts,project,SDK recovery implementation and executable regression evidence
+  tests/integration/aborted-rebase-recovery.integration.spec.ts,project,SDK recovery implementation and executable regression evidence
+  tests/integration/receipt-operation-boundaries.integration.spec.ts,project,Real SHA-256 Git and both rebase backend refusal and restoration proofs
   tests/unit/sdk/merge-receipts.spec.ts,project,Existing regression suite to extend; no new regression is claimed
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts,project,240,"harness:codex","2026-09-05T20:44:29.203Z",local_mutation,feat/receipt-recovery-and-extension-contracts
+  node scripts/run-tests.mjs test -- tests/integration/receipt-operation-boundaries.integration.spec.ts,project,240,"harness:codex","2026-09-06T05:34:01.127Z",local_mutation,feat/receipt-recovery-and-extension-contracts
+test_runs[1]:
+  - run_id: test-local-mtpdq027-fm6ops
+    kind: test
+    status: passed
+    started_at: "2026-09-06T05:36:18.763Z"
+    finished_at: "2026-09-06T05:36:40.399Z"
+    recorded_at: "2026-09-06T05:36:40.399Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/receipt-operation-boundaries.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/MERGE_SAFETY.md,project,Existing public contract to preserve and clarify
+close_reason: Implemented and locally verified; delivery proceeds through the combined PR review.
 body: "## Report and scope\n\nSource: https://github.com/unbraind/pm-cli/issues/1202\n\nReproduce receipt lifecycle after an aborted rebase and distinguish an abandoned candidate from a merge requiring review. Current source and Merge Safety documentation intentionally track privacy-safe durable sidecars; raw free-form retained/discarded values are clone-local under .git. Durable receipts retain hashes and only allowlisted low-cardinality scalar previews. The report has not demonstrated a secret leak. A blanket gitignore or evidence deletion would break cross-clone provenance and is not an accepted remedy.\n\n## Reported reproduction\n\n## Two defects, one reproduction\n\nRunning `git rebase`, hitting a conflict, and running `git rebase --abort` leaves behind merge-receipt state that outlives the operation it describes.\n\n## 1. The receipt survives the abort\n\nAfter `git rebase --abort`, the working tree is clean and the item is byte-identical to `HEAD`:\n\n```\n$ git diff --quiet HEAD -- .agents/pm/issues/pm-cli-website-nc0j.toon && echo identical\nidentical\n```\n\nNo merge landed. But a `state: \"pending\"` receipt persists, recording three conflicting fields (`acceptance_criteria`, `description`, `status`) with full `retained`/`discarded` values, and it is enough to fail the gate:\n\n```\n$ pm health --check-only\nok: False\nfailed_because: ['merge_decisions_unreviewed:1', 'merge_receipt_evidence_invalid:1']\n```\n\nSo an abandoned operation leaves a repository permanently red on a decision the operator explicitly abandoned. A receipt describes a merge that exists in no history and no working tree.\n\nExpected: receipts written by a merge driver during an operation that is subsequently aborted should not remain pending — either tied to the resulting commit, or discarded with the rest of the aborted state.\n\n## 2. The working-tree copy is not gitignored\n\nThe driver writes a second copy into the working tree, and it is untracked but **not ignored**:\n\n```\n$ git status --porcelain\n?? .agents/pm/merge-receipts/f9067de4-bc6c-477a-99de-c415951b2064.json\n\n$ git check-ignore -v .agents/pm/merge-receipts/f9067de4-...json\n(no match — not ignored)\n```\n\nThis is not a stale-template problem. A **fresh `pm init` on 2026.9.5** writes:\n\n```\n.agents/pm/runtime/\n.agents/pm/search/*\n.agents/pm/locks/\n.agents/pm/transactions/\n.agents/pm/checkpoints/\n!.agents/pm/search/eval-queries.json\n```\n\n`merge-receipts/` is absent. Checked across four independent repositories including a newly initialised one: zero have it ignored.\n\n### Why this matters\n\nThe documented convention for these trackers is to commit `.agents/pm/**` — every `.toon` together with its `history/*.jsonl`. An agent doing that with `git add -A` also commits the receipts. That:\n\n- publishes receipt bodies containing the **full retained and discarded text** of every conflicting field, into repositories that may be public, and\n- converts evidence the design treats as clone-local into tracked state, which changes what `merge_receipt_evidence_*` and the `tracked_runtime_cache_files` check mean. There is a guard for tracked runtime cache; there is none for tracked receipts.\n\nExpected: `pm init` ignores `.agents/pm/merge-receipts/` alongside `runtime/`, `locks/`, `transactions/` and `checkpoints/`, and existing repositories get the entry on the next write to that directory. If receipts are instead *meant* to be committed, then the health check that treats them as clone-local evidence and the `pm init` template disagree, and the intended contract should be stated.\n\n## Environment\n\n@unbrained/pm-cli 2026.9.4 (writer) and 2026.9.5 (reader and `pm init` probe), Linux, Node 22.\n\n## Delivery boundary\n\nIntake only in PR #1204. This item remains open and unclaimed; no implementation or reproduction success is asserted. Implement through the public SDK with thin CLI adapters and executable negative controls before closing."

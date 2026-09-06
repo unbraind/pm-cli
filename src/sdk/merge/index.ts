@@ -72,3 +72,4 @@ export {
   type MergeReconcileOptions,
   type MergeReconcileResult,
 } from "./reconcile.js";
+export type { MergeReceiptOperation } from "./receipt-operation.js";

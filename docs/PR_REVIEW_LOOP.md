@@ -1,6 +1,6 @@
 # Pull Request Review Loop
 
-Trackers: [pm-hq28](../.agents/pm/tasks/pm-hq28.toon), [pm-cp5pbo](../.agents/pm/tasks/pm-cp5pbo.toon)
+Trackers: [pm-hq28](../.agents/pm/tasks/pm-hq28.toon), [pm-cp5pbo](../.agents/pm/tasks/pm-cp5pbo.toon), [pm-8we38i](../.agents/pm/issues/pm-8we38i.toon)
 
 Use `scripts/reviews/pr-review-loop.mjs` to inventory every GitHub pull-request
 conversation surface before deciding that review is complete. The inventory includes
@@ -27,6 +27,16 @@ The command adds a hidden artifact marker and reuses an existing marked comment 
 retry, so a lost response cannot create duplicate acknowledgements. It reports a
 partial result and exits unsuccessfully when either the comment or reaction write
 fails, allowing the missing write to be retried safely.
+
+Each comment and review also carries a `revision`: a SHA-256 identity of its
+body and review state. Compare these identities after each completed check watch
+and immediately before merge. A changed body or review verdict needs fresh
+triage even when its node ID already has an acknowledgement. Reaction timestamp
+changes alone do not create a new revision. Pass the observed revision to both
+`acknowledge` and `acknowledge-inline` with `--revision <revision>`; their hidden
+markers then distinguish revised feedback and suppress duplicate retry replies
+for that same revision. Inline markers are matched only within the selected
+reply thread. Legacy calls without the flag retain their existing behavior.
 
 After every push or reviewer retrigger, run `watch`. It delegates waiting to
 `gh pr checks --watch`, because reviewer agents report completion through GitHub

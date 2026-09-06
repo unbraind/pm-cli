@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
 export function runGh(args, input, executeFile = execFileSync) {
@@ -20,9 +21,9 @@ export function usage(message, dependencies = {}) {
   node scripts/reviews/pr-review-loop.mjs watch [--pr <number>] [--repo <owner/name>] [--interval <seconds>]
   node scripts/reviews/pr-review-loop.mjs react --node-id <id> --reaction <THUMBS_UP|THUMBS_DOWN|...>
   node scripts/reviews/pr-review-loop.mjs comment --body <text> [--pr <number>] [--repo <owner/name>]
-  node scripts/reviews/pr-review-loop.mjs acknowledge --node-id <id> --reaction <THUMBS_UP|THUMBS_DOWN|...> --body <text> [--pr <number>] [--repo <owner/name>]
+  node scripts/reviews/pr-review-loop.mjs acknowledge --node-id <id> --reaction <THUMBS_UP|THUMBS_DOWN|...> --body <text> [--revision <sha256>] [--pr <number>] [--repo <owner/name>]
   node scripts/reviews/pr-review-loop.mjs reply-inline --comment-id <id> --body <text> [--pr <number>] [--repo <owner/name>]
-  node scripts/reviews/pr-review-loop.mjs acknowledge-inline --comment-id <id> --node-id <id> --reaction <THUMBS_UP|THUMBS_DOWN|...> --body <text> [--pr <number>] [--repo <owner/name>]`);
+  node scripts/reviews/pr-review-loop.mjs acknowledge-inline --comment-id <id> --node-id <id> --reaction <THUMBS_UP|THUMBS_DOWN|...> --body <text> [--revision <sha256>] [--pr <number>] [--repo <owner/name>]`);
   exit(2);
 }
 
@@ -37,6 +38,9 @@ export function parseArgs(argv) {
     } else {
       options[flag.slice(2)] = value;
     }
+  }
+  if (options.revision !== undefined && !/^[a-f0-9]{64}$/u.test(options.revision)) {
+    usage("--revision must be the SHA-256 source revision from the review inventory.");
   }
   return { command, options };
 }
@@ -103,6 +107,13 @@ function graphql(executeGh, query, variables) {
   return JSON.parse(executeGh(args));
 }
 
+/** Identify source edits independently of timestamp changes caused by reactions. */
+function withReviewRevision(node) {
+  return typeof node.body === "string"
+    ? { ...node, revision: createHash("sha256").update(JSON.stringify([node.body, node.state ?? null])).digest("hex") }
+    : node;
+}
+
 export function fetchReviewInventory(target, executeGh = runGh) {
   const comments = [];
   const reviews = [];
@@ -156,9 +167,11 @@ export function fetchReviewInventory(target, executeGh = runGh) {
 
   return {
     ...pullRequestHeader,
-    comments: { nodes: comments },
-    reviews: { nodes: reviews },
-    reviewThreads: { nodes: reviewThreads },
+    comments: { nodes: comments.map(withReviewRevision) },
+    reviews: { nodes: reviews.map(withReviewRevision) },
+    reviewThreads: { nodes: reviewThreads.map((thread) => ({
+      ...thread, comments: { ...thread.comments, nodes: thread.comments.nodes.map(withReviewRevision) },
+    })) },
   };
 }
 
@@ -170,17 +183,17 @@ export function pullRequestCommentPath(repo, pr) {
   return `repos/${repo}/issues/${pr}/comments`;
 }
 
-function acknowledgementMarker(nodeId) {
-  return `<!-- pm-review-ack:${nodeId} -->`;
-}
-
-function acknowledgementComment(target, nodeId, body, executeGh) {
-  const path = pullRequestCommentPath(target.repo, target.pr);
-  const marker = acknowledgementMarker(nodeId);
-  const pages = JSON.parse(executeGh(["api", path, "--paginate", "--slurp"]));
-  const existing = pages.flat().find((comment) => comment?.body?.includes(marker));
+/** Reuse only the acknowledgement for this source revision and reply surface. */
+function acknowledgementComment(target, nodeId, body, executeGh, revision, commentId) {
+  const listPath = commentId === undefined ? pullRequestCommentPath(target.repo, target.pr)
+    : `repos/${target.repo}/pulls/${target.pr}/comments`;
+  const writePath = commentId === undefined ? listPath : inlineReplyPath(target.repo, target.pr, commentId);
+  const marker = `<!-- pm-review-ack:${nodeId}${revision === undefined ? "" : `:${revision}`} -->`;
+  const pages = JSON.parse(executeGh(["api", listPath, "--paginate", "--slurp"]));
+  const existing = pages.flat().find((comment) => comment?.body?.includes(marker) &&
+    (commentId === undefined || String(comment.in_reply_to_id) === commentId));
   if (existing) return JSON.stringify(existing);
-  return executeGh(["api", path, "-f", `body=${body}\n\n${marker}`]);
+  return executeGh(["api", writePath, "-f", `body=${body}\n\n${marker}`]);
 }
 
 function attemptGitHubWrite(write) {
@@ -258,7 +271,7 @@ function handleTopLevelConversationWrite(command, options, executeGh, write) {
   if (!nodeId || !options.reaction) usage("A reaction requires --node-id and --reaction.");
   if (!validReactions.has(options.reaction)) usage(`Invalid reaction: ${options.reaction}`);
   const comment = attemptGitHubWrite(() => acknowledgementComment(
-    target, nodeId, options.body, executeGh,
+    target, nodeId, options.body, executeGh, options.revision,
   ));
   const reaction = attemptGitHubWrite(() => addReaction(nodeId, options.reaction, executeGh));
   if (comment.ok && reaction.ok) {
@@ -268,6 +281,20 @@ function handleTopLevelConversationWrite(command, options, executeGh, write) {
   const result = { status: "partial", reaction, comment };
   write(JSON.stringify(result));
   throw new Error(`GitHub acknowledgement partially completed: ${JSON.stringify(result)}`);
+}
+
+/** Apply a reaction and its explanation on the selected real review thread. */
+function acknowledgeInline(options, executeGh) {
+  const target = resolveTarget(options, executeGh);
+  if (!options["comment-id"] || !options.body) {
+    usage("acknowledge-inline requires --comment-id and --body.");
+  }
+  const reaction = addReaction(options["node-id"], options.reaction, executeGh);
+  const reply = options.revision === undefined ? executeGh([
+    "api", inlineReplyPath(target.repo, target.pr, options["comment-id"]),
+    "-f", `body=${options.body}`,
+  ]) : acknowledgementComment(target, options["node-id"], options.body, executeGh, options.revision, options["comment-id"]);
+  return { reaction: JSON.parse(reaction), reply: JSON.parse(reply) };
 }
 
 export function main(argv = process.argv.slice(2), dependencies = {}) {
@@ -295,16 +322,7 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
       "-f", `body=${options.body}`,
     ]));
   } else if (command === "acknowledge-inline") {
-    const target = resolveTarget(options, executeGh);
-    if (!options["comment-id"] || !options.body) {
-      usage("acknowledge-inline requires --comment-id and --body.");
-    }
-    const reaction = addReaction(options["node-id"], options.reaction, executeGh);
-    const reply = executeGh([
-      "api", inlineReplyPath(target.repo, target.pr, options["comment-id"]),
-      "-f", `body=${options.body}`,
-    ]);
-    write(JSON.stringify({ reaction: JSON.parse(reaction), reply: JSON.parse(reply) }));
+    write(JSON.stringify(acknowledgeInline(options, executeGh)));
   } else {
     usage(`Unknown command: ${command}`);
   }

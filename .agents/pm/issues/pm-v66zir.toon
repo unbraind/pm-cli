@@ -1,0 +1,51 @@
+id: pm-v66zir
+title: "GH-1206: Verify legacy receipt redactions across hash encodings"
+description: "Compare clone-local values with durable legacy SHA-256 scalar redactions as well as current presence-domain hashes. Preserve metadata mismatch detection and evidence identity during inspection and settlement. Source: https://github.com/unbraind/pm-cli/issues/1206"
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-05T20:32:22.294Z"
+updated_at: "2026-09-06T05:44:30.861Z"
+closed_at: "2026-09-06T05:44:30.082Z"
+completed_at: "2026-09-06T05:44:30.082Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Legacy hash-only paired receipts pass inspection and audited settlement; Altered values or immutable metadata still fail closed; Current privacy-safe receipt writers retain presence-domain hashing and bounded previews
+parent: pm-dj98
+resolution: Verify supported legacy scalar redactions alongside current presence-domain hashes
+expected_result: Authentic legacy paired receipts settle while altered evidence fails closed
+actual_result: Authentic legacy paired receipts settle while altered evidence fails closed; linked tests and integrated gates passed.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2xtv84,discovered_from,"2026-09-05T20:32:22.294Z","harness:codex","cli:create:dep",detected
+  pm-dj98,implements,"2026-09-05T20:32:22.294Z","harness:codex","cli:create:dep",detected
+  pm-mg13iz,recurs_from,"2026-09-05T20:32:22.294Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-05T20:32:22.294Z","harness:codex","Duplicate check: strict complete all-status CLI corpus of 2647 items including full bodies and annotations has no GH-1206 URL or copy_provenance_mismatch owner. Live parent and predecessor metadata and verified history inspected. Existing five reports reuse their canonical owners."
+  "2026-09-05T20:44:25.885Z","harness:codex","TDD evidence: a failing regression was recorded before the implementation path was changed. The connected recovery suite now passes nine tests across five files, covering exact preview refusal, legacy redaction consistency and tamper refusal, legacy omitted scalars, immutable acceptance backfill, root/inherited reservation parity, and actual Git rebase abort. Repository-wide gates and hosted review are still pending."
+  "2026-09-06T05:42:30.479Z","harness:codex","Integrated verification 2026-09-06: full source coverage is exact 100/100/100/100: statements 62641/62641, branches 47517/47517, functions 12984/12984, lines 60208/60208. The 8475-test coverage run passed 8474 tests and identified one repository directory-load failure (121 files over the 120-file SDK test folder ceiling). Moving the new receipt-schema suite into tests/unit/sdk/merge restored the limit; the focused 30-test structural/schema/review run passed. All eight active item linked-test runs passed through pm test, preserving execution receipts. Temporary installed npm and Bun consumers passed warning-close, executable evidence update, and immutable-history verification. Packed npx and bunx smoke passed across 13 packages. TypeScript and ESLint passed. Credential scan and npm advisory census found zero secrets/vulnerabilities. Hosted checks, AI review, merge and published release verification are still pending and are separate from this local evidence."
+  "2026-09-06T05:44:29.435Z","harness:codex","Final local gates passed: repository static assurance with 100% governed docstring coverage, zero duplicate code, SDK and CLI contracts, context/token ceilings, graph composition, record integrity, package artifact, package-first dogfood, docs/skills and version policy. Exact source coverage and focused directory correction are recorded in the preceding evidence comment. No coverage threshold, source exclusion or quality budget was weakened. Hosted review, merge and release remain separate pending verification."
+notes[1]{created_at,author,text}:
+  "2026-09-06T04:53:23.934Z","harness:codex",Legacy scalar hash compatibility applies consistently during paired inspection and settlement. Durable copies declaring the modern value policy retain presence-domain proof. Tampered retained values or immutable coordinates must still fail.
+files[3]{path,scope,note}:
+  src/sdk/merge/receipt-schema.ts,project,SDK recovery implementation and executable regression evidence
+  src/sdk/merge/receipts.ts,project,SDK recovery implementation and executable regression evidence
+  tests/integration/merge-recovery-parity.integration.spec.ts,project,SDK recovery implementation and executable regression evidence
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/merge-recovery-parity.integration.spec.ts,project,240,"harness:codex","2026-09-05T20:44:25.235Z",local_mutation,feat/receipt-recovery-and-extension-contracts
+test_runs[1]:
+  - run_id: test-local-mtpdp3bv-z4xxaa
+    kind: test
+    status: passed
+    started_at: "2026-09-06T05:35:44.312Z"
+    finished_at: "2026-09-06T05:35:57.978Z"
+    recorded_at: "2026-09-06T05:35:57.978Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/merge-recovery-parity.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,Public recovery and authoring contract
+close_reason: Implemented and locally verified; delivery proceeds through the combined PR review.
+body: ""

@@ -3,6 +3,7 @@
  *
  * Implements the pm close command surface and its agent-facing runtime behavior.
  */
+import type { PmCliErrorRecoveryPayload } from "../../core/shared/errors.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
   toItemRecord,
@@ -65,6 +66,8 @@ export interface CloseResult {
   item: Record<string, unknown>;
   /** Changed metadata fields. */
   changed_fields: string[];
+  /** Evidence-only update guidance when acceptance fields are missing. */
+  recovery?: PmCliErrorRecoveryPayload;
   /** Validation and lifecycle receipts. */
   warnings: string[];
 }
@@ -144,6 +147,16 @@ function findMissingCloseValidationFields(
     }
   }
   return missing;
+}
+
+/** Build an argv-safe update that appends acceptance evidence without repeating a terminal transition. */
+function closeEvidenceRecovery(metadata: ItemMetadata, pmRoot: string, options: CloseCommandOptions = {}): PmCliErrorRecoveryPayload | undefined {
+  const missing = findMissingCloseValidationFields(metadata);
+  if (missing.length === 0) return undefined;
+  const values = { resolution: options.resolution, expected_result: options.expectedResult, actual_result: options.actualResult };
+  const missingFlags = missing.map((field) => `--${field.key.replaceAll("_", "-")}`);
+  const args = ["--pm-path", pmRoot, "update", metadata.id, ...missing.flatMap((field, index) => [missingFlags[index]!, values[field.key]?.trim() || "<value>"])];
+  return { missing: missingFlags, suggested_retry: renderPmCommand(args), suggested_retry_args: args };
 }
 
 async function duplicateChainReferencesClosingItem(
@@ -537,8 +550,9 @@ function mutateCloseMetadata(
     !context.force
   ) {
     throw new PmCliError(
-      `Item ${metadata.id} is already terminal; use --force to close again.`,
+      `Item ${metadata.id} is already terminal; use pm update to append acceptance evidence, or --force only for an intentional repeat closure.`,
       EXIT_CODE.CONFLICT,
+      { recovery: closeEvidenceRecovery(metadata, context.pmRoot, context.options) },
     );
   }
   const inlineChangedFields = applyInlineCloseFields(metadata, context.options);
@@ -724,9 +738,11 @@ export async function closeItem(
     },
   });
 
+  const recovery = validateCloseMode === "warn" ? closeEvidenceRecovery(result.item, pmRoot) : undefined;
   return {
     item: toItemRecord(result.item),
     changed_fields: result.changedFields,
+    ...(recovery ? { recovery } : {}),
     warnings: [
       ...result.warnings,
       ...(await autoUnblockResolvedDependents(

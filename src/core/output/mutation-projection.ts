@@ -168,18 +168,25 @@ function projectCompactMutationEnvelope(result: unknown): unknown | null {
       : {}),
     changed_field_count: changedFields.length,
   };
+  appendCompactMutationEvidence(result, result.item, compact);
+  return compact;
+}
+
+/** Keep lifecycle context, warnings, and executable recovery alongside the compact identity. */
+function appendCompactMutationEvidence(result: Record<string, unknown>, item: Record<string, unknown>, compact: Record<string, unknown>): void {
   const closeReason =
     typeof result.close_reason === "string"
       ? result.close_reason
-      : typeof result.item.close_reason === "string"
-        ? result.item.close_reason
+      : typeof item.close_reason === "string"
+        ? item.close_reason
         : undefined;
   if (closeReason !== undefined) compact.close_reason = closeReason;
   const recurrence = projectCompactRecurrence(result.recurrence);
   if (recurrence !== null) compact.recurrence = recurrence;
+
   if (Array.isArray(result.warnings) && result.warnings.length > 0)
     compact.warnings = result.warnings;
-  return compact;
+  if (isPlainObject(result.recovery)) compact.recovery = result.recovery;
 }
 
 function compactUpdateManyRows(envelope: Record<string, unknown>): {

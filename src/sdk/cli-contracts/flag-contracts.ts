@@ -35,6 +35,8 @@ export interface CliFlagContract {
   value_type?: "string" | "number" | "boolean";
   /** Marks a presentation-only flag that may change paging or rendering without invalidating continuation. Omission means the flag is query-semantic. */
   cursor_semantics?: "presentation";
+  /** Host reservation boundary: inherited flags are forbidden on extensions; root-only flags may have command-local meanings. */
+  reservation_scope?: "inherited" | "root_only";
 }
 
 /** Maps an MCP tool option `param` to the CLI `flag` it forwards to, plus the value semantics (`allowEmpty`, `repeatable`, `booleanish`) the bridge needs to translate a structured tool call into argv. */
@@ -116,6 +118,7 @@ export function compactFlagAliasContracts(
 export const SUBCOMMAND_GLOBAL_FLAG_CONTRACTS: CliFlagContract[] =
   RESERVED_EXTENSION_HOST_FLAGS.map((definition) => ({
     flag: definition.flag,
+    reservation_scope: "inherited",
     ...(definition.aliases ? { aliases: [...definition.aliases] } : {}),
     ...(definition.value_name ? { value_name: definition.value_name } : {}),
   }));
@@ -123,9 +126,9 @@ export const SUBCOMMAND_GLOBAL_FLAG_CONTRACTS: CliFlagContract[] =
 /** Public contract for global flag contracts, shared by SDK and presentation-layer consumers. */
 export const GLOBAL_FLAG_CONTRACTS: CliFlagContract[] = [
   ...SUBCOMMAND_GLOBAL_FLAG_CONTRACTS,
-  { flag: "--version", value_type: "boolean" },
-  { flag: "--all", value_type: "boolean", description: "Expand root help to every command." },
-  { flag: "--explain", value_type: "boolean", description: "Expand root help with command guidance." },
+  { flag: "--version", value_type: "boolean", reservation_scope: "root_only" },
+  { flag: "--all", value_type: "boolean", reservation_scope: "root_only", description: "Expand root help to every command." },
+  { flag: "--explain", value_type: "boolean", reservation_scope: "root_only", description: "Expand root help with command guidance." },
 ];
 
 /** Governance-missing (GH-236) + content-field presence/absence (GH-242) selection-filter flags shared verbatim by the `list` and `search` flag tables. Module-private on purpose — spread into both tables at the same position so the published contract order is unchanged. */

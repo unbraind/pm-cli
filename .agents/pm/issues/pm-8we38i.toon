@@ -1,0 +1,59 @@
+id: pm-8we38i
+title: Refresh review acknowledgements when bot feedback changes
+description: "Make complete review inventories identify content revisions and make acknowledgement retries idempotent for the reviewed revision, so edited comments cannot retain a stale handled result. Preserve check-driven waits and real inline reply surfaces."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-06T05:17:54.521Z"
+updated_at: "2026-09-06T05:44:44.216Z"
+closed_at: "2026-09-06T05:44:41.711Z"
+completed_at: "2026-09-06T05:44:41.711Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: An edited bot body has a new revision identity; unchanged acknowledgement retries create no duplicate; changed feedback gets a fresh explanation; inline and top-level surfaces remain distinct; exact-head inventory and required check watches remain complete
+value: Prevent stale review decisions and reduce repeated feedback cost
+outcome: Every current bot revision has an explicit attributable disposition
+why_now: The requested review loop requires checking edited feedback before merge; current acknowledgement markers identify only the artifact
+parent: pm-0fxa
+risk: medium
+confidence: high
+resolution: Track bot body and review-state revisions with retry-safe per-revision acknowledgements; update compatible Greptile patch
+expected_result: Edited feedback receives new review identity; same-revision top-level and inline retries reuse the correct acknowledgement
+actual_result: Edited feedback receives new review identity; same-revision top-level and inline retries reuse the correct acknowledgement; linked tests and integrated gates passed.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0fxa,implements,"2026-09-06T05:17:54.521Z","harness:codex","cli:create:dep",detected
+  pm-466m0j,discovered_from,"2026-09-06T05:17:54.521Z","harness:codex","cli:create:dep",detected
+  pm-cp5pbo,recurs_from,"2026-09-06T05:17:54.521Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-06T05:17:54.521Z","harness:codex","Duplicate check: searched all statuses and the complete 2648-item lineage including closed review helper owners pm-0fxa and pm-cp5pbo. Both shipped check-driven inventory and retry-safe acknowledgements; no owner covers edited source revisions. Live predecessor metadata and verified history were read; open and active inventories refreshed before creation."
+  "2026-09-06T05:27:19.971Z","harness:codex","TDD evidence: both revision tests failed before implementation. The helper now fingerprints source body and review state without treating reaction timestamps as new content. Revision-scoped top-level and inline acknowledgements reuse an existing reply for an unchanged revision; edited feedback gets a fresh marker and explanation. Inline lookup rejects markers from other threads. Full coverage and quality gates are running; hosted acceptance will use this helper on the delivery PR."
+  "2026-09-06T05:42:34.291Z","harness:codex","Integrated verification 2026-09-06: full source coverage is exact 100/100/100/100: statements 62641/62641, branches 47517/47517, functions 12984/12984, lines 60208/60208. The 8475-test coverage run passed 8474 tests and identified one repository directory-load failure (121 files over the 120-file SDK test folder ceiling). Moving the new receipt-schema suite into tests/unit/sdk/merge restored the limit; the focused 30-test structural/schema/review run passed. All eight active item linked-test runs passed through pm test, preserving execution receipts. Temporary installed npm and Bun consumers passed warning-close, executable evidence update, and immutable-history verification. Packed npx and bunx smoke passed across 13 packages. TypeScript and ESLint passed. Credential scan and npm advisory census found zero secrets/vulnerabilities. Hosted checks, AI review, merge and published release verification are still pending and are separate from this local evidence."
+  "2026-09-06T05:44:40.945Z","harness:codex","Final local gates passed: repository static assurance with 100% governed docstring coverage, zero duplicate code, SDK and CLI contracts, context/token ceilings, graph composition, record integrity, package artifact, package-first dogfood, docs/skills and version policy. Exact source coverage and focused directory correction are recorded in the preceding evidence comment. No coverage threshold, source exclusion or quality budget was weakened. Hosted review, merge and release remain separate pending verification."
+learnings[1]{created_at,author,text}:
+  "2026-09-06T05:28:56.725Z","harness:codex","GitHub node IDs identify artifacts, not content revisions. Fingerprint body and submitted review state, exclude reaction timestamps, and bind acknowledgement retry markers to the observed revision plus the actual inline thread."
+files[4]{path,scope,note}:
+  package.json,project,Review-tool patch compatibility and supported Node engine contract
+  pnpm-lock.yaml,project,Resolved review-tool patch integrity when admitted by dependency policy
+  scripts/reviews/pr-review-loop.mjs,project,Complete inventories and revision-scoped acknowledgement retries
+  tests/unit/scripts/reviews/pr-review-loop.spec.ts,project,Edited-feedback and retry regression controls
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts,project,240,"harness:codex","2026-09-06T05:18:59.773Z",local_mutation,feat/receipt-recovery-and-extension-contracts
+test_runs[1]:
+  - run_id: test-local-mtpdqjrv-g8t23e
+    kind: test
+    status: passed
+    started_at: "2026-09-06T05:36:59.303Z"
+    finished_at: "2026-09-06T05:37:05.947Z"
+    recorded_at: "2026-09-06T05:37:05.947Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated release notes for the completed recovery and extension contract delivery
+  docs/AGENT_GUIDE.md,project,Require revision-aware acknowledgement in future agent review loops
+  docs/PR_REVIEW_LOOP.md,project,Revision-aware exact-head feedback loop
+close_reason: Implemented and locally verified; delivery proceeds through the combined PR review.
+body: ""
