@@ -61,6 +61,13 @@ import {
   type DefectChangeRiskReport,
 } from "./defect-recurrence.js";
 import { defectRecurrenceItemSignals } from "./defect-recurrence-signals.js";
+import { readDefectRecurrenceRecord } from "./defect-recurrence-graph.js";
+import {
+  analyzeDefectRecurrenceCoverage,
+  parseDefectRecurrenceCoverageRequest,
+  type DefectRecurrenceCoverageRequest,
+  type DefectRecurrenceCoverageReport,
+} from "./defect-recurrence-coverage.js";
 import { createUnknownSubcommandError } from "../agent/subcommand-recovery.js";
 
 /**
@@ -96,6 +103,7 @@ export const ASSURANCE_ACTIONS = [
   "derive",
   "promote",
   "risk",
+  "lineages",
 ] as const;
 
 /** Assurance declaration kinds shared by every transport. */
@@ -163,6 +171,7 @@ export type AssuranceActionResult =
   | AssuranceBundleMutationReceipt
   | AssurancePreset
   | DefectChangeRiskReport
+  | DefectRecurrenceCoverageReport
   | {
       items: AssuranceDerivedProposal[];
       count: number;
@@ -513,12 +522,12 @@ function throwRiskUsageError(error: unknown): never {
 }
 
 /** Parse JSON or object risk definitions without wrapping workspace failures. */
-function parseRiskActionRequest(
+function parseRecurrenceActionRequest(
   input: AssuranceActionInput,
-): DefectChangeRiskRequest {
+): DefectChangeRiskRequest | DefectRecurrenceCoverageRequest {
   if (input.limit !== undefined) {
     throw new PmCliError(
-      "assurance risk does not accept --limit; set limit inside the risk definition",
+      `assurance ${input.action} does not accept --limit; set limit inside the definition`,
       EXIT_CODE.USAGE,
     );
   }
@@ -528,14 +537,16 @@ function parseRiskActionRequest(
       definition = JSON.parse(definition);
     } catch (error: unknown) {
       throw new PmCliError(
-        "assurance risk definition must be valid JSON",
+        `assurance ${input.action} definition must be valid JSON`,
         EXIT_CODE.USAGE,
         { reason: error instanceof Error ? error.message : "invalid_json" },
       );
     }
   }
   try {
-    return parseDefectChangeRiskRequest(definition);
+    return input.action === "lineages"
+      ? parseDefectRecurrenceCoverageRequest(definition)
+      : parseDefectChangeRiskRequest(definition);
   } catch (error: unknown) {
     return throwRiskUsageError(error);
   }
@@ -570,7 +581,12 @@ function buildCachedRiskIndex(
     items.map((item) => [
       item.id,
       createHash("sha256")
-        .update(stableStringify(defectRecurrenceItemSignals(item)))
+        .update(
+          stableStringify([
+            defectRecurrenceItemSignals(item),
+            readDefectRecurrenceRecord(item),
+          ]),
+        )
         .digest("hex"),
     ]),
   );
@@ -596,16 +612,23 @@ function buildCachedRiskIndex(
 }
 
 /** Evaluate one serialized change-risk request against authoritative PM metadata. */
-async function runRiskAction(
+async function runRecurrenceAction(
   input: AssuranceActionInput,
   pmRoot: string,
-): Promise<DefectChangeRiskReport> {
-  const request = parseRiskActionRequest(input);
+): Promise<DefectChangeRiskReport | DefectRecurrenceCoverageReport> {
+  const request = parseRecurrenceActionRequest(input);
   const context = await createAssuranceWorkspaceContext(pmRoot, {
     include_history: false,
     resolve_tree: false,
   });
   try {
+    if (!("change" in request)) {
+      return analyzeDefectRecurrenceCoverage(
+        request.policy,
+        context.items,
+        request,
+      );
+    }
     return analyzeDefectChangeRisk(
       buildCachedRiskIndex(pmRoot, request, context.items),
       request.change,
@@ -638,8 +661,8 @@ export async function runAssuranceAction(
   if (action === "run") {
     return runGateAction(input, pmRoot, runtime);
   }
-  if (action === "risk") {
-    return runRiskAction(input, pmRoot);
+  if (["risk", "lineages"].includes(action)) {
+    return runRecurrenceAction(input, pmRoot);
   }
   const kind = parseKind(input.kind);
   if (action === "list") return listAssuranceDeclarations(pmRoot, kind);

@@ -33,7 +33,7 @@ interface CompletenessBaseline {
 
 describe("action-scoped MCP schema parity", () => {
   it("versions the additive single-stream salvage contract", () => {
-    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.13.0");
+    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.14.0");
     const schema = _testOnlyCliContracts.buildActionScopedToolSchema(
       "history-repair",
     ) as { allOf?: unknown[]; properties?: Record<string, unknown> };
@@ -54,6 +54,21 @@ describe("action-scoped MCP schema parity", () => {
         },
       });
     }
+  });
+
+  it("declares bounded risk and complete-population lineage requests for assurance clients", () => {
+    const schema = _testOnlyCliContracts.buildActionScopedToolSchema("assurance") as {
+      properties: { subcommand: { enum: string[] }; definition: { oneOf: { required: string[]; properties: Record<string, unknown> }[] } };
+    };
+    expect(schema.properties.subcommand.enum).toEqual(expect.arrayContaining(["risk", "lineages"]));
+    for (const action of ["risk", "lineages"]) {
+      expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.assurance.conditionalRequired).toContainEqual({ property: "subcommand", value: action, required: ["definition"] });
+      expect(resolveSubcommandFlagContractsForCommand(`assurance ${action}`).map(({ flag }) => flag)).toContain("--definition");
+    }
+    const requests = schema.properties.definition.oneOf.filter(branch => branch.required.includes("policy"));
+    expect(requests).toHaveLength(2);
+    expect(requests.find(branch => branch.required.includes("change"))?.properties.change).toMatchObject({ type: "object" });
+    expect(requests.find(branch => !branch.required.includes("change"))?.properties).toMatchObject({ uncoveredOnly: { type: "boolean" }, limit: { minimum: 1, maximum: 100 } });
   });
 
   it("exposes exact exhaustive duplicate analysis to every tool transport", () => {

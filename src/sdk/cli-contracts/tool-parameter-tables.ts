@@ -686,6 +686,7 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
         "derive",
         "promote",
         "risk",
+        "lineages",
       ],
     },
     preset: {
@@ -1859,7 +1860,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   strictExit: {
     description:
-      "Return non-zero exit when health/validate/extension-doctor warnings are present.",
+      "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
   },
   failOnWarn: {
     description:
@@ -2208,8 +2209,8 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
   assurance: {
     subcommand: {
       description:
-        "Assurance operation: list, show, put, remove, run, verdicts, presets, apply, derive, promote, or risk.",
-      examples: ["list", "run", "derive", "promote", "risk"],
+        "Assurance operation: list, show, put, remove, run, verdicts, presets, apply, derive, promote, risk, or lineages.",
+      examples: ["list", "run", "risk", "lineages"],
     },
     kind: {
       description:

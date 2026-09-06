@@ -42,7 +42,7 @@ describe("defect evidence repository gate", () => {
       ok: true,
       boundary: { ok: true, boundary_count: 9, captured_count: 5 },
       defect_evidence: { ok: true },
-      recurrence_policy: { ok: true, family_count: 8 },
+      recurrence_policy: { ok: true, family_count: policy.families.length },
     });
   });
 
@@ -91,6 +91,19 @@ describe("defect evidence repository gate", () => {
         ],
       },
     });
+  });
+
+  it("rejects an unregistered recurrence pair even when registered families pass", async () => {
+    const stdout: string[] = [];
+    await expect(main(["--policy-only", "--negative-control", "--json"], {
+      repositoryRoot, context: completeContext, writeStdout: (value: string) => stdout.push(value),
+    })).resolves.toBe(1);
+    const report = JSON.parse(stdout.join(""));
+    expect(report.recurrence_policy.coverage).toMatchObject({
+      ok: false, population: { uncovered_item_count: 2, item_count: 2 },
+    });
+    expect(report.recurrence_policy.findings).toHaveLength(2);
+    expect(report.recurrence_policy.findings[0].kind).toBe("unregistered_recurrence_item");
   });
 
   it("rejects fixture paths that escape the repository root", async () => {

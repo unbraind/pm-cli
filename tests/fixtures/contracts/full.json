@@ -1287,6 +1287,7 @@
           "assurance",
           "assurance apply",
           "assurance derive",
+          "assurance lineages",
           "assurance list",
           "assurance presets",
           "assurance promote",
@@ -1739,6 +1740,16 @@
         {
           "flag": "--owner",
           "value_name": "item-id"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "assurance lineages",
+      "flags": [
+        {
+          "flag": "--definition",
+          "value_name": "json"
         }
       ],
       "provider": "core"
@@ -8595,6 +8606,33 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "read",
+        "command": "assurance lineages",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "assurance lineages",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
         "command": "assurance list",
         "default_max_estimated_tokens": 4000,
         "default_max_estimated_tokens_by_format": {
@@ -12330,8 +12368,18 @@
         "json": 6000,
         "toon": 4000
       },
-      "intent": "Run assurance derive.",
-      "intent_source": "generated"
+      "intent": "Derive checks from evidence.",
+      "intent_source": "command"
+    },
+    {
+      "command": "assurance lineages",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Measure recurrence coverage.",
+      "intent_source": "command"
     },
     {
       "command": "assurance list",
@@ -12390,8 +12438,8 @@
         "json": 6000,
         "toon": 4000
       },
-      "intent": "Run assurance risk.",
-      "intent_source": "generated"
+      "intent": "Select checks for changes.",
+      "intent_source": "command"
     },
     {
       "command": "assurance run",
@@ -15266,6 +15314,7 @@
     "assurance",
     "assurance apply",
     "assurance derive",
+    "assurance lineages",
     "assurance list",
     "assurance presets",
     "assurance promote",
@@ -23072,6 +23121,13 @@
         "target": "ops assurance"
       },
       {
+        "command": "assurance lineages",
+        "disposition": "consolidation",
+        "noun": "ops",
+        "owner": "pm-2tan",
+        "target": "ops assurance"
+      },
+      {
         "command": "plan",
         "disposition": "target_noun",
         "noun": "plan",
@@ -23254,7 +23310,7 @@
       "contracts",
       "help"
     ],
-    "positional_action_count": 33,
+    "positional_action_count": 34,
     "positional_action_parents": [
       "assurance",
       "plan",
@@ -24750,6 +24806,10 @@
       },
       {
         "command": "assurance risk",
+        "slots": []
+      },
+      {
+        "command": "assurance lineages",
         "slots": []
       },
       {
@@ -29793,7 +29853,7 @@
             "type": "boolean"
           },
           "strictExit": {
-            "description": "Return non-zero exit when health/validate/extension-doctor warnings are present.",
+            "description": "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
             "type": "boolean"
           },
           "summary": {
@@ -34763,7 +34823,7 @@
             "type": "string"
           },
           "strictExit": {
-            "description": "Return non-zero exit when health/validate/extension-doctor warnings are present.",
+            "description": "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
             "type": "boolean"
           },
           "timeoutMs": {
@@ -34832,6 +34892,10 @@
       },
       {
         "command": "assurance derive",
+        "modes": []
+      },
+      {
+        "command": "assurance lineages",
         "modes": []
       },
       {
@@ -37564,7 +37628,7 @@
             "type": "string"
           },
           "strictExit": {
-            "description": "Return non-zero exit when health/validate/extension-doctor warnings are present.",
+            "description": "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
             "type": "boolean"
           },
           "timeoutMs": {
@@ -38827,7 +38891,7 @@
             "type": "string"
           },
           "strictExit": {
-            "description": "Return non-zero exit when health/validate/extension-doctor warnings are present.",
+            "description": "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
             "type": "boolean"
           },
           "timeoutMs": {
@@ -39690,7 +39754,7 @@
             "type": "string"
           },
           "strictExit": {
-            "description": "Return non-zero exit when health/validate/extension-doctor warnings are present.",
+            "description": "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
             "type": "boolean"
           },
           "target": {
@@ -45076,7 +45140,7 @@
             "type": "boolean"
           },
           "strictExit": {
-            "description": "Return non-zero exit when health/validate/extension-doctor warnings are present.",
+            "description": "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
             "type": "boolean"
           },
           "timeoutMs": {
@@ -52940,7 +53004,7 @@
             "type": "boolean"
           },
           "strictExit": {
-            "description": "Return non-zero exit when health/validate/extension-doctor warnings are present.",
+            "description": "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
             "type": "boolean"
           },
           "summary": {
@@ -53283,7 +53347,7 @@
             "type": "string"
           },
           "strictExit": {
-            "description": "Return non-zero exit when health/validate/extension-doctor warnings are present.",
+            "description": "Return non-zero exit for a failing health verdict (also requiring merge drivers), or validate/extension-doctor warnings.",
             "type": "boolean"
           },
           "timeoutMs": {
@@ -53444,6 +53508,40 @@
             "if": {
               "properties": {
                 "subcommand": {
+                  "const": "risk"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "definition"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "lineages"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "definition"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
                   "const": "promote"
                 }
               },
@@ -53475,6 +53573,130 @@
           "definition": {
             "description": "Structured measurement, assertion, or gate declaration used by assurance put.",
             "oneOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "change": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "error_codes": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "files": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "item_ids": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "package_names": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "tags": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "cursor": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "limit": {
+                    "maximum": 100,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "policy": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "evidence_epoch": {
+                        "format": "date-time",
+                        "type": "string"
+                      },
+                      "families": {
+                        "items": {
+                          "type": "object"
+                        },
+                        "type": "array"
+                      },
+                      "version": {
+                        "const": 1
+                      }
+                    },
+                    "required": [
+                      "version",
+                      "evidence_epoch",
+                      "families"
+                    ],
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "policy",
+                  "change"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "cursor": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "limit": {
+                    "maximum": 100,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "policy": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "evidence_epoch": {
+                        "format": "date-time",
+                        "type": "string"
+                      },
+                      "families": {
+                        "items": {
+                          "type": "object"
+                        },
+                        "type": "array"
+                      },
+                      "version": {
+                        "const": 1
+                      }
+                    },
+                    "required": [
+                      "version",
+                      "evidence_epoch",
+                      "families"
+                    ],
+                    "type": "object"
+                  },
+                  "uncoveredOnly": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "policy"
+                ],
+                "type": "object"
+              },
               {
                 "additionalProperties": false,
                 "properties": {
@@ -54306,7 +54528,7 @@
             "type": "boolean"
           },
           "subcommand": {
-            "description": "Assurance operation: list, show, put, remove, run, verdicts, presets, apply, derive, promote, or risk.",
+            "description": "Assurance operation: list, show, put, remove, run, verdicts, presets, apply, derive, promote, risk, or lineages.",
             "enum": [
               "list",
               "show",
@@ -54318,14 +54540,14 @@
               "apply",
               "derive",
               "promote",
-              "risk"
+              "risk",
+              "lineages"
             ],
             "examples": [
               "list",
               "run",
-              "derive",
-              "promote",
-              "risk"
+              "risk",
+              "lineages"
             ],
             "type": "string"
           },
@@ -56027,10 +56249,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.13.0"
+    "x-schema-version": "4.14.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.13.0",
+  "schema_version": "4.14.0",
   "selected": {
     "action": null,
     "availability_only": false,

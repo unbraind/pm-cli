@@ -47,8 +47,7 @@ describe("self-indexing health findings", () => {
   it("indexes advisory repair and gate-failing safe refusal semantics", () => {
     const provenance =
       "provenance_value_domain_invalid:claude-code:role:single_digit:1";
-    const skew =
-      "extension_host_pm_cli_version_skew:2026.8.15:2026.8.14:demo";
+    const skew = "extension_host_pm_cli_version_skew:2026.8.15:2026.8.14:demo";
     expect(
       _testOnlyHealthCommand.buildHealthFindings({
         warnings: [provenance, skew],
@@ -71,6 +70,26 @@ describe("self-indexing health findings", () => {
         warning: skew,
         code: "extension_host_pm_cli_version_skew",
         check: "extensions",
+        severity: "gate_failing",
+        disposition: "no_safe_automatic_remediation",
+      },
+    ]);
+  });
+
+  it("keeps an unregistered warning gate-failing with an explicit fallback owner", () => {
+    const warning = "unknown_future_health_failure:pm-example";
+    expect(
+      _testOnlyHealthCommand.buildHealthFindings({
+        warnings: [warning],
+        checks: checks(),
+        remediationSources: sources({}),
+        requireMergeDrivers: false,
+      }),
+    ).toEqual([
+      {
+        warning,
+        code: "unknown_future_health_failure",
+        check: "integrity",
         severity: "gate_failing",
         disposition: "no_safe_automatic_remediation",
       },

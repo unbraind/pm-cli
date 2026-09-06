@@ -265,10 +265,38 @@ These are corpus-generated figures, not live tracker payloads. The generated
 corpus contains 2,243 items; the `status:all` query intentionally excludes 245
 canceled fixtures under the command's current status-selection contract.
 
+## Health Verdicts
+
+Tracked by [pm-fkohe8](../.agents/pm/issues/pm-fkohe8.toon) and
+[pm-du93sr](../.agents/pm/issues/pm-du93sr.toon).
+
 `health --check-only` defaults to a summary verdict: all checks still run, but
 passing check evidence bodies are empty. Use `health --check-only --full` when
 diagnostic evidence is required. Explicit `--brief` or `--summary` retains the
 existing fast check-only mode that skips expensive optional scans.
+
+Use top-level `ok` to decide health. Each `checks[].ok` uses the same rule:
+true means no gate-failing findings belong to that check. A check can therefore
+have `status: "warn"` and `ok: true` when all its findings are advisory.
+`failed_because` names every deciding warning, including findings beyond the
+bounded warning sample. `findings[].severity` distinguishes advisory from
+`gate_failing` evidence without parsing prose.
+
+The `verdict` receipt names `authority: "ok"` and the invocation's `exit_code`.
+`strict_exit: true` and `require_merge_drivers: true` appear only when enabled;
+omission means false. The default invocation reports blocking findings without
+changing the process exit code. `--strict-exit` (alias `--fail-on-warn`) requires
+clone-local merge drivers and exits `1` when `ok` is false. Other advisory
+warnings retain their policy. Compare invocations with the same scan and policy
+options: enabling strict mode can legitimately change a missing-driver finding
+from advisory to blocking. The SDK accepts `strictExit` and `failOnWarn` with
+the same semantics, including MCP dispatch.
+
+The required token corpus measures `health --check-only` on its medium workspace
+under the `health-default` ceiling. Its positive and negative controls run in
+the same repository quality composition as the other answer budgets. Full
+evidence remains an explicit restore path; the verdict receipt does not raise
+the existing default token ceiling.
 
 ## Linked-File Repair Rows
 

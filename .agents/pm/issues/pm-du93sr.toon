@@ -2,11 +2,13 @@ id: pm-du93sr
 title: "pm health --check-only, the diagnostic AGENTS.md routes agents to, reduces nothing: it costs 33k tokens where --summary states the same verdict in 142"
 description: "AGENTS.md 'When Unsure' tells agents to prefer pm health --check-only for diagnostics. That flag does not reduce the payload. Measured on this tracker:\n\n  pm health                 132,584 B   (~33,146 tokens)\n  pm health --check-only    132,585 B   (~33,146 tokens)   one byte larger\n  pm health --summary           570 B   (~142 tokens)      233x smaller\n\nAll three report the same verdict. --check-only reads as the cheap, non-mutating diagnostic and is the form the repository's own agent instructions recommend, so the guidance routes agents to the expensive path and away from the cheap one that already exists.\n\nWhere the 33k tokens go, by check, on a run where every check returned ok:\n\n     182 B  settings            ok\n     387 B  directories         ok\n      66 B  settings_values     ok\n   1,034 B  telemetry           ok\n  85,627 B  extensions          ok\n   2,282 B  storage             ok\n     138 B  locks               ok\n     706 B  integrity           ok\n     321 B  history_drift       ok\n   1,189 B  vectorization       ok\n\nThe extensions check is 65% of the total, and inside it one sub-object, activation, is 62,107 B — 47% of the entire health payload — emitted while the same check reports failed: [] and warnings: []. The remaining weight is effective (9,336 B), discovered (5,689 B), and loaded (5,857 B): three overlapping enumerations of the same 14-15 packages. A diagnostic that found nothing spends 15,500 tokens describing the machinery that found nothing.\n\nThis is a routing and flag-semantics defect rather than a verbosity complaint. The cheap surface is already built and already correct; --summary is the right default shape for a pass, and per-check detail is what an agent wants only for the check that failed. Three concrete moves, independently landable: make --check-only actually project to verdicts (or retire it as a synonym and say so), make the passing form of every check emit its verdict rather than its evidence, and route AGENTS.md to the flag that is cheap.\n\nRelated but distinct: pm-cha95z owns declaring ceilings and degradation order for diagnostics as a contract; pm-z71aoy owns making the token-budget corpus representative — health is absent from that corpus entirely, and at 33k tokens it is the largest single command payload in the agent surface after graph impact. This item owns the flag being inert and the guidance pointing at it."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",context,diagnostics,token-budget
 created_at: "2026-07-26T11:26:47.669Z"
-updated_at: "2026-07-30T17:15:06.358Z"
+updated_at: "2026-09-06T11:26:34.178Z"
+closed_at: "2026-09-06T11:26:33.599Z"
+completed_at: "2026-09-06T11:26:33.599Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "pm health --check-only produces a verdict-only projection materially smaller than the full report, or the flag is retired as a documented synonym and the guidance updated in the same change; A passing check emits its verdict and not its evidence; per-check detail is opt-in or reserved for non-passing checks; AGENTS.md and any other agent-facing guidance route to the cheapest form that answers the question, verified by a docs test rather than by review; pm health appears in the token-budget corpus with a declared ceiling measured on a real-scale workspace; The measured token cost of pm health before and after is recorded as evidence on this item"
@@ -17,31 +19,95 @@ impact: An agent can check workspace health for the price of a rounding error in
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[7]{id,kind,created_at}:
-  pm-5t33or,blocked_by,"2026-07-26T11:26:47.669Z"
-  pm-cha95z,related,"2026-07-26T11:26:47.669Z"
-  pm-z71aoy,related,"2026-07-26T11:26:47.669Z"
-  pm-g3n00m,implements,"2026-07-26T11:32:26.158Z"
-  pm-ka6d,related,"2026-07-26T11:32:26.158Z"
-  pm-mfy1ux,related,"2026-07-26T11:32:26.158Z"
-  pm-o87av6,implements,"2026-07-26T11:32:26.158Z"
-comments[4]{created_at,author,text}:
+resolution: "Added guidance-driven integration proof, documented authoritative compact health semantics and full evidence restoration, and authored concise assurance intents while retaining all existing token ceilings."
+expected_result: The recommended check-only command answers health cheaply with full evidence available explicitly and mandatory budget/guidance checks.
+actual_result: "Live 2650-item tracker produced 3635 bytes compact versus 90770 bytes full with identical verdicts. All 32 token surfaces, complete-task ceilings, linked guidance tests, and full 100/100/100/100 coverage pass."
+dependencies[9]:
+  - id: pm-5t33or
+    kind: blocked_by
+    created_at: "2026-07-26T11:26:47.669Z"
+  - id: pm-cha95z
+    kind: related
+    created_at: "2026-07-26T11:26:47.669Z"
+  - id: pm-z71aoy
+    kind: related
+    created_at: "2026-07-26T11:26:47.669Z"
+  - id: pm-g3n00m
+    kind: implements
+    created_at: "2026-07-26T11:32:26.158Z"
+  - id: pm-ka6d
+    kind: related
+    created_at: "2026-07-26T11:32:26.158Z"
+  - id: pm-mfy1ux
+    kind: related
+    created_at: "2026-07-26T11:32:26.158Z"
+  - id: pm-o87av6
+    kind: implements
+    created_at: "2026-07-26T11:32:26.158Z"
+  - id: pm-fkohe8
+    kind: verifies
+    created_at: "2026-09-06T10:29:52.148Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-larv4r
+    kind: verifies
+    created_at: "2026-09-06T10:29:52.148Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[8]{created_at,author,text}:
   "2026-07-30T10:27:25.583Z","harness:codex","Implementation evidence: health --check-only now defaults to summary verdict output with empty passing evidence bodies; --full retains complete diagnostics and explicit brief/summary preserve fast optional-scan behavior."
   "2026-07-30T11:24:16.147Z","harness:codex","Delivery boundary: --check-only now returns the summary verdict by default while still running every check, and --full restores evidence. The canonical issue remains open until health is added to the representative token-budget corpus with measured before/after evidence and agent-guidance coverage."
   "2026-07-30T11:30:57.231Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/829 reviews cohesive SDK context budgets, universal row contracts, bounded graph/health diagnostics, quality ratchets, and exact-head commit e53544cd1."
   "2026-07-30T17:15:06.358Z","harness:claude-code","Verified shipped 2026-07-30 (evening) at HEAD. health --check-only is now verdict-first and the reduction is 115-fold: 1,503 bytes against 172,990 bytes for the plain form, with the complete evidence still reachable through the escape hatch at 172,991 bytes. The summary form is now byte-identical to check-only at 1,503, so the two spellings agree rather than differing by one byte as they did when this was filed. The extensions activation sub-object that was 47 percent of the whole payload is no longer emitted on the verdict path.\n\nRecording as evidence rather than closing. Two things this item raised are worth confirming before it closes. The repository guidance that routes agents to check-only is now correct advice, so the documentation half is satisfied by the code rather than needing a doc change. And the surviving question is discoverability: check-only, summary, brief and full are four spellings on one command with three of them now producing the same output, which is the bounding-vocabulary problem tracked on the simplification initiative rather than a diagnostics defect. Linked the shipped contract spec to this item with its runnable command so the proof is reachable from the tracker."
+  "2026-09-06T10:40:16.410Z","harness:codex","Verification: the existing token-budget gate passes all 32 surfaces, including the health default ceiling, unbounded negative control, and infeasible-intent receipt. The new compact health verdict retains the existing budget without raising thresholds. Full typecheck passes; final coverage and static pipelines are still running."
+  "2026-09-06T10:58:48.289Z","harness:codex","The authored assurance derive, risk, and lineages intents improve discovery while reducing the existing complete-task transcript composite from its 12667-token ceiling to 12658 tokens. The contracts-plus-next orientation is 4820 tokens against the unchanged 4829 ceiling. All 8 tasks and 21 steps complete; no token thresholds were raised."
+  "2026-09-06T11:21:55.114Z","harness:codex","Final live diagnostic measurement on the 2650-item tracker: JSON check-only 3635 bytes versus full evidence 90770 bytes (24.97x smaller). Both returned ok true, the same ten per-check booleans/statuses, and verdict authority ok with exit_code 0; integrity remains advisory warn. The original report measured 132585 bytes for the formerly inert check-only flag. Current token-budget gate passes all 32 surfaces, its unbounded negative control and infeasible-intent receipt, without raising ceilings. Source/static correctness gates passed through tracker assurance; import-time timing gates will be repeated after full coverage releases CPU."
+  "2026-09-06T11:26:05.543Z","harness:codex","Delivery verification: full suite passes all 8495 tests in 627 files at exact 100/100/100/100 coverage. The guidance integration test checks the actual AGENTS.md recommended command, verifies a passing check omits evidence, and restores full detail explicitly. The health-default token ceiling and complete-task token gates pass unchanged. Packed consumers and Bun SDK/CLI execution pass; final hosted review and release evidence follow independently."
 notes[1]{created_at,author,text}:
   "2026-07-30T09:21:19.724Z","harness:claude-code","Re-measured 2026-07-30 at HEAD, after PR 818 shipped bounded projections and snapshot lease safety. The bounded-projection wave did not reach this command. pm health plain = 127,582 B; pm health --check-only = 127,583 B (one byte MORE than plain); pm health --summary = 727 B. The cheap form is 175x smaller than the form AGENTS.md routes agents to under When Unsure, and --check-only remains exactly as inert as when this item was filed. A new bounded-projection primitive existing in the SDK while this consumer cannot reach it is the seam pattern, not a fix."
-files[2]{path,scope,note}:
+files[6]{path,scope,note}:
+  scripts/release/token-budget-gate.mjs,project,Implementation and verification of pm-du93sr
+  scripts/release/token-budgets.json,project,Implementation and verification of pm-du93sr
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Authored concise assurance intents keep complete discovery within existing token ceilings
   src/sdk/governance/health.ts,project,Check-only verdict projection with explicit full evidence restore
+  tests/integration/health-diagnostic-guidance.integration.spec.ts,project,Implementation and verification of pm-du93sr
   tests/unit/sdk/health-check-only-contract.spec.ts,project,Verdict-first check-only contract spec shipped with PR 829
 tests[2]:
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/unit/commands/health-command.spec.ts
     scope: project
     timeout_seconds: 240
-  - command: node scripts/run-tests.mjs test tests/unit/sdk/health-check-only-contract.spec.ts
-    path: tests/unit/sdk/health-check-only-contract.spec.ts
+  - command: node scripts/run-tests.mjs test -- tests/integration/health-diagnostic-guidance.integration.spec.ts tests/unit/sdk/health-check-only-contract.spec.ts
     scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-06T10:29:29.708Z"
+      source_kind: local_mutation
+      source_ref: feat/health-verdicts-and-recurrence-lineages
+test_runs[1]:
+  - run_id: test-local-mtppcw4k-5yyzux
+    kind: test
+    status: passed
+    started_at: "2026-09-06T11:01:55.067Z"
+    finished_at: "2026-09-06T11:02:24.164Z"
+    recorded_at: "2026-09-06T11:02:24.164Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/unit/commands/health-command.spec.ts,schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/integration/health-diagnostic-guidance.integration.spec.ts tests/unit/sdk/health-check-only-contract.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Health check-only verdict and full restore behavior
+close_reason: Completed remaining measured token-budget and agent-guidance acceptance proof for the shipped compact diagnostic.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-du93sr
+  gate_id: agent-task-token
+  negative_control: The docs-guided check-only diagnostic must retain full verdict parity while omitting evidence; token and full-evidence negative controls remain binding.
+  local_checks[3]: node scripts/release/token-budget-gate.mjs,node scripts/release/agent-task-token-gate.mjs,node scripts/run-tests.mjs test -- tests/integration/health-diagnostic-guidance.integration.spec.ts
+  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),CI / Gates (smokes)
 body: ""

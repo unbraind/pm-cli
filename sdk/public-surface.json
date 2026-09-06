@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1858,
+    "covered_symbols": 1865,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1859
+    "required_symbols": 1866
   },
   "breaking_acknowledgements": [
     {
@@ -1735,6 +1735,28 @@
       ],
       "package_version": "2026.9.5",
       "reason": "Recovery release adds optional evidence, reservation and operation contracts, plus an abandoned receipt result counter; existing invocation semantics and exports remain compatible."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ASSURANCE_ACTIONS",
+        "signature ./sdk:AssuranceActionResult",
+        "signature ./sdk:DefectRecurrenceIndex",
+        "signature ./sdk:HealthResult",
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk:RunHealthOptions",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/core:AssuranceActionResult",
+        "signature ./sdk/governance:ASSURANCE_ACTIONS",
+        "signature ./sdk/governance:AssuranceActionResult",
+        "signature ./sdk/governance:DefectRecurrenceIndex",
+        "signature ./sdk/governance:HealthResult",
+        "signature ./sdk/governance:RunHealthOptions",
+        "signature ./sdk/runtime:AssuranceActionResult",
+        "signature ./sdk/runtime:HealthResult",
+        "signature ./sdk/runtime:RunHealthOptions"
+      ],
+      "package_version": "2026.9.5",
+      "reason": "Add optional SDK health invocation policy and verdict metadata, recurrence lineage coverage and sparse index metadata, and the assurance lineages action; existing callers remain supported."
     }
   ],
   "entrypoints": {
@@ -2196,6 +2218,12 @@
           "kind": "interface",
           "name": "AnalyzeDefectChangeRiskOptions",
           "signature": "export interface AnalyzeDefectChangeRiskOptions { cursor?: string; limit?: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "analyzeDefectRecurrenceCoverage",
+          "signature": "(policy: DefectRecurrencePolicy, items: readonly AssuranceItemRecord[], options?: DefectRecurrenceCoverageOptions) => DefectRecurrenceCoverageReport | calls: (policy: DefectRecurrencePolicy, items: readonly AssuranceItemRecord[], options?: DefectRecurrenceCoverageOptions) => DefectRecurrenceCoverageReport"
         },
         {
           "classification": "supported",
@@ -2747,7 +2775,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "ASSURANCE_ACTIONS",
-          "signature": "readonly [\"list\", \"show\", \"put\", \"remove\", \"run\", \"verdicts\", \"presets\", \"apply\", \"derive\", \"promote\", \"risk\"]"
+          "signature": "readonly [\"list\", \"show\", \"put\", \"remove\", \"run\", \"verdicts\", \"presets\", \"apply\", \"derive\", \"promote\", \"risk\", \"lineages\"]"
         },
         {
           "classification": "supported",
@@ -2801,7 +2829,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "AssuranceActionResult",
-          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | DefectChangeRiskReport | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
+          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | DefectChangeRiskReport | DefectRecurrenceCoverageReport | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
         },
         {
           "classification": "supported",
@@ -5428,6 +5456,30 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "DefectRecurrenceCoverageOptions",
+          "signature": "export interface DefectRecurrenceCoverageOptions { limit?: number; cursor?: string; uncoveredOnly?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceCoverageReport",
+          "signature": "export interface DefectRecurrenceCoverageReport { ok: boolean; fingerprint: string; items: DefectRecurrenceCoverageRow[]; total: number; has_more: boolean; next_cursor?: string; population: { scope: \"all_recorded_recurrence_items\"; item_count: number; lineage_count: number; edge_count: number; covered_item_count: number; uncovered_item_count: number; missing_item_count: number; classified_item_count: number; unclassified_item_count: number; class_counts: Record<DefectEscapeClass, number>; escape_rate: number | null; escape_rate_lower_bound: number | null; }; budget_scope: \"registered_families_only\"; cost: { items_scanned: number; edges_scanned: number; row_limit: number; }; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceCoverageRequest",
+          "signature": "export interface DefectRecurrenceCoverageRequest extends DefectRecurrenceCoverageOptions { policy: DefectRecurrencePolicy; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceCoverageRow",
+          "signature": "export interface DefectRecurrenceCoverageRow { item_id: string; lineage_id: string; lineage_item_count: number; family_ids: string[]; present: boolean; finding?: \"unregistered_recurrence_item\" | \"missing_recurrence_item\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "DefectRecurrenceFamily",
           "signature": "export interface DefectRecurrenceFamily { id: string; version: number; title: string; owner_item_id: string; escape_class: DefectEscapeClass; triggers: DefectRecurrenceTriggers; checks: DefectRecurrenceChecks; negative_control: DefectChangeRiskInput; historical_item_ids: string[]; budget: DefectRecurrenceBudget; }"
         },
@@ -5435,13 +5487,19 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DefectRecurrenceIndex",
-          "signature": "export interface DefectRecurrenceIndex { version: 1; policy_fingerprint: string; index_fingerprint: string; families: DefectRecurrenceFamily[]; item_families: Record<string, string[]>; build: { items_scanned: number; items_reused: number; items_indexed: number; }; }"
+          "signature": "export interface DefectRecurrenceIndex { version: 1; policy_fingerprint: string; index_fingerprint: string; families: DefectRecurrenceFamily[]; item_families: Record<string, string[]>; direct_item_families?: Record<string, string[]>; recurrence_records?: Record<string, DefectRecurrenceRecord>; file_families?: Record<string, string[]>; build: { items_scanned: number; items_reused: number; items_indexed: number; }; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "DefectRecurrencePolicy",
           "signature": "export interface DefectRecurrencePolicy { version: 1; evidence_epoch: string; families: DefectRecurrenceFamily[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceRecord",
+          "signature": "export interface DefectRecurrenceRecord { targets: string[]; files: string[]; escape_class?: string; }"
         },
         {
           "classification": "supported",
@@ -8075,7 +8133,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HealthResult",
-          "signature": "export interface HealthResult { ok: boolean; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
+          "signature": "export interface HealthResult { ok: boolean; verdict?: { authority: \"ok\"; strict_exit?: true; require_merge_drivers?: true; exit_code: number; }; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -10756,6 +10814,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "parseDefectRecurrenceCoverageRequest",
+          "signature": "(value: unknown) => DefectRecurrenceCoverageRequest | calls: (value: unknown) => DefectRecurrenceCoverageRequest"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "parseDefectRecurrencePolicy",
           "signature": "(value: unknown) => DefectRecurrencePolicy | calls: (value: unknown) => DefectRecurrencePolicy"
         },
@@ -11855,7 +11919,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.13.0\""
+          "signature": "\"4.14.0\""
         },
         {
           "classification": "contract_data",
@@ -16325,7 +16389,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RunHealthOptions",
-          "signature": "export interface RunHealthOptions { strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; verboseAuthorEvents?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
+          "signature": "export interface RunHealthOptions { strictExit?: boolean; failOnWarn?: boolean; strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; verboseAuthorEvents?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
         },
         {
           "classification": "supported",
@@ -22109,7 +22173,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.13.0\""
+          "signature": "\"4.14.0\""
         },
         {
           "classification": "contract_data",
@@ -23501,7 +23565,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "AssuranceActionResult",
-          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | DefectChangeRiskReport | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
+          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | DefectChangeRiskReport | DefectRecurrenceCoverageReport | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
         },
         {
           "classification": "supported",
@@ -24646,6 +24710,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "analyzeDefectRecurrenceCoverage",
+          "signature": "(policy: DefectRecurrencePolicy, items: readonly AssuranceItemRecord[], options?: DefectRecurrenceCoverageOptions) => DefectRecurrenceCoverageReport | calls: (policy: DefectRecurrencePolicy, items: readonly AssuranceItemRecord[], options?: DefectRecurrenceCoverageOptions) => DefectRecurrenceCoverageReport"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "analyzeDuplicateItems",
           "signature": "(input: readonly DuplicateItemInput[], options?: Pick<FindDuplicateClustersOptions, \"exhaustive\" | \"limit\" | \"threshold\">) => DuplicateItemsAnalysis | calls: (input: readonly DuplicateItemInput[], options?: Pick<FindDuplicateClustersOptions, \"threshold\" | \"limit\" | \"exhaustive\">) => DuplicateItemsAnalysis"
         },
@@ -24659,7 +24729,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "ASSURANCE_ACTIONS",
-          "signature": "readonly [\"list\", \"show\", \"put\", \"remove\", \"run\", \"verdicts\", \"presets\", \"apply\", \"derive\", \"promote\", \"risk\"]"
+          "signature": "readonly [\"list\", \"show\", \"put\", \"remove\", \"run\", \"verdicts\", \"presets\", \"apply\", \"derive\", \"promote\", \"risk\", \"lineages\"]"
         },
         {
           "classification": "supported",
@@ -24707,7 +24777,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "AssuranceActionResult",
-          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | DefectChangeRiskReport | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
+          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | DefectChangeRiskReport | DefectRecurrenceCoverageReport | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
         },
         {
           "classification": "supported",
@@ -25228,6 +25298,30 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "DefectRecurrenceCoverageOptions",
+          "signature": "export interface DefectRecurrenceCoverageOptions { limit?: number; cursor?: string; uncoveredOnly?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceCoverageReport",
+          "signature": "export interface DefectRecurrenceCoverageReport { ok: boolean; fingerprint: string; items: DefectRecurrenceCoverageRow[]; total: number; has_more: boolean; next_cursor?: string; population: { scope: \"all_recorded_recurrence_items\"; item_count: number; lineage_count: number; edge_count: number; covered_item_count: number; uncovered_item_count: number; missing_item_count: number; classified_item_count: number; unclassified_item_count: number; class_counts: Record<DefectEscapeClass, number>; escape_rate: number | null; escape_rate_lower_bound: number | null; }; budget_scope: \"registered_families_only\"; cost: { items_scanned: number; edges_scanned: number; row_limit: number; }; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceCoverageRequest",
+          "signature": "export interface DefectRecurrenceCoverageRequest extends DefectRecurrenceCoverageOptions { policy: DefectRecurrencePolicy; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceCoverageRow",
+          "signature": "export interface DefectRecurrenceCoverageRow { item_id: string; lineage_id: string; lineage_item_count: number; family_ids: string[]; present: boolean; finding?: \"unregistered_recurrence_item\" | \"missing_recurrence_item\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "DefectRecurrenceFamily",
           "signature": "export interface DefectRecurrenceFamily { id: string; version: number; title: string; owner_item_id: string; escape_class: DefectEscapeClass; triggers: DefectRecurrenceTriggers; checks: DefectRecurrenceChecks; negative_control: DefectChangeRiskInput; historical_item_ids: string[]; budget: DefectRecurrenceBudget; }"
         },
@@ -25235,13 +25329,19 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DefectRecurrenceIndex",
-          "signature": "export interface DefectRecurrenceIndex { version: 1; policy_fingerprint: string; index_fingerprint: string; families: DefectRecurrenceFamily[]; item_families: Record<string, string[]>; build: { items_scanned: number; items_reused: number; items_indexed: number; }; }"
+          "signature": "export interface DefectRecurrenceIndex { version: 1; policy_fingerprint: string; index_fingerprint: string; families: DefectRecurrenceFamily[]; item_families: Record<string, string[]>; direct_item_families?: Record<string, string[]>; recurrence_records?: Record<string, DefectRecurrenceRecord>; file_families?: Record<string, string[]>; build: { items_scanned: number; items_reused: number; items_indexed: number; }; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "DefectRecurrencePolicy",
           "signature": "export interface DefectRecurrencePolicy { version: 1; evidence_epoch: string; families: DefectRecurrenceFamily[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DefectRecurrenceRecord",
+          "signature": "export interface DefectRecurrenceRecord { targets: string[]; files: string[]; escape_class?: string; }"
         },
         {
           "classification": "supported",
@@ -25439,7 +25539,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HealthResult",
-          "signature": "export interface HealthResult { ok: boolean; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
+          "signature": "export interface HealthResult { ok: boolean; verdict?: { authority: \"ok\"; strict_exit?: true; require_merge_drivers?: true; exit_code: number; }; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -25590,6 +25690,12 @@
           "kind": "function",
           "name": "parseDefectChangeRiskRequest",
           "signature": "(value: unknown) => DefectChangeRiskRequest | calls: (value: unknown) => DefectChangeRiskRequest"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseDefectRecurrenceCoverageRequest",
+          "signature": "(value: unknown) => DefectRecurrenceCoverageRequest | calls: (value: unknown) => DefectRecurrenceCoverageRequest"
         },
         {
           "classification": "supported",
@@ -25751,7 +25857,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RunHealthOptions",
-          "signature": "export interface RunHealthOptions { strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; verboseAuthorEvents?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
+          "signature": "export interface RunHealthOptions { strictExit?: boolean; failOnWarn?: boolean; strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; verboseAuthorEvents?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
         },
         {
           "classification": "supported",
@@ -29747,7 +29853,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "AssuranceActionResult",
-          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | DefectChangeRiskReport | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
+          "signature": "export type AssuranceActionResult = AssuranceDeclaration | AssuranceMutationReceipt | AssuranceGateVerdict | AssuranceBundleMutationReceipt | AssurancePreset | DefectChangeRiskReport | DefectRecurrenceCoverageReport | { items: AssuranceDerivedProposal[]; count: number; applied?: AssuranceBundleMutationReceipt; } | { items: Array<{ id: AssurancePresetId; title: string; description: string; }>; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { id: string; } | { items: AssuranceDeclaration[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; } | { items: AssuranceGateVerdict[]; count: number; row_contract: { row_keys: [ \"items\" ]; jq_selector: \".items[]\"; }; };"
         },
         {
           "classification": "supported",
@@ -30461,7 +30567,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HealthResult",
-          "signature": "export interface HealthResult { ok: boolean; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
+          "signature": "export interface HealthResult { ok: boolean; verdict?: { authority: \"ok\"; strict_exit?: true; require_merge_drivers?: true; exit_code: number; }; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -31697,7 +31803,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RunHealthOptions",
-          "signature": "export interface RunHealthOptions { strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; verboseAuthorEvents?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
+          "signature": "export interface RunHealthOptions { strictExit?: boolean; failOnWarn?: boolean; strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; verboseAuthorEvents?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
         },
         {
           "classification": "supported",

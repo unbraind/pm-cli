@@ -173,7 +173,7 @@ describe("hierarchy governance surface parity", () => {
       expect(
         health.checks.find((check) => check.name === "integrity"),
       ).toMatchObject({
-        status: "ok",
+        status: "warn",
         ok: true,
       });
       const graph = (await runGraph(

@@ -2,18 +2,61 @@ id: pm-fkohe8
 title: "GH-1207: Make advisory health checks and strict verdict authority explicit"
 description: "GitHub #1207 reports top-level ok true while the storage check has ok false with warn status, and strict CLI exit 2. The closed self-indexing finding work supplies severity and failed_because but does not make the per-check boolean or strict process verdict authoritative. Define compatible SDK and CLI semantics so agents can reliably branch without inferring precedence."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:sdk",health,output-contract
 created_at: "2026-09-06T05:48:07.109Z"
-updated_at: "2026-09-06T05:48:07.109Z"
+updated_at: "2026-09-06T11:26:33.054Z"
+closed_at: "2026-09-06T11:26:32.548Z"
+completed_at: "2026-09-06T11:26:32.548Z"
 author: "harness:codex"
 acceptance_criteria: "Reproduce advisory storage and strict invocation verdicts in an isolated tracker; Publish one authoritative invocation verdict with adjacent deciding reasons; Per-check booleans and severity have documented compatible semantics; SDK, CLI, summary and full projections agree for identical strictness; Preserve existing advisory versus blocking policy"
 parent: pm-larv4r
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Per-check ok now reflects blocking findings under the invocation policy. Adjacent verdict metadata exposes strictness and exit_code consistently across projections, with orphan-history warnings owned by storage and advisory behavior preserved."
+expected_result: "Agents can branch on one authoritative health predicate and obtain identical strictness semantics from SDK, CLI, and MCP."
+actual_result: Real isolated storage advisories remain passing; strict missing-driver failures match SDK and CLI exit receipts. All 8495 tests pass with exact 100/100/100/100 coverage; packed Node and Bun consumers pass.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-ao0bu9,discovered_from,"2026-09-06T05:48:07.109Z","harness:codex","cli:create:dep",detected
   pm-larv4r,implements,"2026-09-06T05:48:07.109Z","harness:codex","cli:create:dep",detected
   pm-larv4r,recurs_from,"2026-09-06T05:48:07.109Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-7c27ep,verifies,"2026-09-06T10:29:53.289Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
   "2026-09-06T05:48:07.109Z","harness:codex","Duplicate check 2026-09-06: strict complete all-status export of 2649 items found no GH-1207 owner. Request-specific search and open/in-progress reads were checked. Full live pm-larv4r metadata and verified history confirm its completed finding-severity scope. This new report arrived during PR 1208 review and is recorded open and unclaimed."
+  "2026-09-06T10:05:58.957Z","harness:codex","TDD evidence: isolated Git tracker reproduced absent invocation authority and advisory per-check disagreement. Current strict-exit uses generic failure code 1 and requires missing merge drivers; the report quoted exit 2 from a different invocation. Preserve current blocking/advisory policy and expose it explicitly rather than silently promoting all advisory warnings. Delivery combines pm-7c27ep recurrence enforcement and pm-du93sr diagnostic budget proof."
+  "2026-09-06T10:54:15.064Z","harness:codex","Manual packed-consumer acceptance passed in an isolated temporary npm installation: CLI recurs_from mutations, bounded lineage paging, SDK inherited risk checks, explicit unknown classification, and matching strict SDK/CLI health predicates and exit receipts. Separate npm/npx/bunx tarball smoke passed with 13 installed extension packages and SDK type consumption."
+  "2026-09-06T11:26:05.093Z","harness:codex","Delivery verification: all 627 test files and 8495 tests pass with exact 100/100/100/100 coverage (62860 statements, 47727 branches, 13015 functions, 60407 lines). Real advisory storage fixtures and strict merge-driver failures agree across SDK and CLI projections. Packed SDK/CLI acceptance also passes under Bun, alongside npm/npx/bunx consumer smokes. Import-cost gates pass when rerun without concurrent coverage load; no ceilings or coverage thresholds were changed. Implementation is ready for reviewed delivery; hosted PR and release proof remain separate."
+learnings[1]{created_at,author,text}:
+  "2026-09-06T10:54:12.419Z","harness:codex",A warning status describes diagnostic severity; the check and invocation booleans must derive from blocking findings under the same invocation policy. Keep strict policy metadata next to the deciding predicate so transports cannot invent incompatible verdicts.
+files[6]{path,scope,note}:
+  src/cli/register-operations.ts,project,Thin CLI health policy adapter
+  src/sdk/governance/health.ts,project,Authoritative health predicates and invocation policy
+  tests/integration/hierarchy-governance-surfaces.integration.spec.ts,project,Advisory hierarchy findings preserve passing health predicate
+  tests/integration/release-readiness-runtime.spec.ts,project,Serialized verdict key order contract
+  tests/unit/sdk/governance/health-verdict-authority.spec.ts,project,Real Git fixture and CLI strict verdict regression
+  tests/unit/sdk/health-finding-contract.spec.ts,project,Unknown warning fallback remains blocking with explicit owner
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/health-verdict-authority.spec.ts tests/unit/sdk/health-finding-contract.spec.ts tests/unit/commands/health-command.spec.ts,project,240,"harness:codex","2026-09-06T10:37:25.092Z",local_mutation,feat/health-verdicts-and-recurrence-lineages
+test_runs[1]:
+  - run_id: test-local-mtppavjg-sv1jy2
+    kind: test
+    status: passed
+    started_at: "2026-09-06T11:00:27.569Z"
+    finished_at: "2026-09-06T11:00:50.091Z"
+    recorded_at: "2026-09-06T11:00:50.091Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/health-verdict-authority.spec.ts tests/unit/sdk/health-finding-contract.spec.ts tests/unit/commands/health-command.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Public SDK CLI and operator contract
+close_reason: "Implemented and verified authoritative health verdicts across SDK and CLI; reviewed delivery includes linked tests, contracts, and docs."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-fkohe8
+  gate_id: health-verdict-authority
+  negative_control: Real advisory storage warnings remain passing under all projections while strict missing-driver failures retain deciding reasons and the matching exit receipt.
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/governance/health-verdict-authority.spec.ts
+  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),CI / Gates (smokes)
 body: "External report: https://github.com/unbraind/pm-cli/issues/1207\n\nExisting findings and failed_because contracts from pm-larv4r are shipped and must be reused. This item owns the remaining boolean/strictness authority boundary, not the already completed self-indexing work."

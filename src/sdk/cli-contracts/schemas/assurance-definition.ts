@@ -20,6 +20,22 @@ Reflect.set(ITEMS_FIELD_CONDITIONAL_SCHEMA, "then", {
 /** JSON Schema for measurement, assertion, and gate assurance definitions. */
 export const ASSURANCE_DEFINITION_SCHEMA = {
   oneOf: [
+    ...[true, false].map((isRisk) => ({
+      type: "object",
+      additionalProperties: false,
+      required: isRisk ? ["policy", "change"] : ["policy"],
+      properties: {
+        policy: { type: "object", required: ["version", "evidence_epoch", "families"], properties: {
+          version: { const: 1 },
+          evidence_epoch: { type: "string", format: "date-time" },
+          families: { type: "array", items: { type: "object" } },
+        }, additionalProperties: false },
+        ...(isRisk ? { change: { type: "object", additionalProperties: false, properties:
+          Object.fromEntries(["files", "package_names", "item_ids", "tags", "error_codes"].map((key) => [key, { type: "array", items: { type: "string" } }])) } } : { uncoveredOnly: { type: "boolean" } }),
+        limit: { type: "integer", minimum: 1, maximum: 100 },
+        cursor: { type: "string", minLength: 1 },
+      },
+    })),
     {
       type: "object",
       additionalProperties: false,

@@ -10,6 +10,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  analyzeDefectRecurrenceCoverage,
   buildDefectRecurrenceIndex,
   createAssuranceWorkspaceContext,
   evaluateBoundaryFixtures,
@@ -120,6 +121,10 @@ function policyReport(recurrencePolicy, context) {
     }
     return familyFindings;
   });
+  const coverage = analyzeDefectRecurrenceCoverage(recurrencePolicy, context.items, { uncoveredOnly: true });
+  for (const row of coverage.items) {
+    findings.push({ item_id: row.item_id, kind: row.finding, detail: `Recurrence lineage ${row.lineage_id}: ${row.finding}.` });
+  }
   const familyCounts = Object.fromEntries(
     [
       "production_defect",
@@ -132,7 +137,8 @@ function policyReport(recurrencePolicy, context) {
     ]),
   );
   return {
-    ok: findings.length === 0,
+    ok: findings.length === 0 && coverage.ok,
+    coverage,
     family_count: recurrencePolicy.families.length,
     family_counts: familyCounts,
     indexed_item_count: index.build.items_indexed,
@@ -230,7 +236,11 @@ function recurrenceReportForScope(scope, recurrencePolicy, context) {
       findings: [],
     };
   }
-  return { ...policyReport(recurrencePolicy, context), evaluated: true };
+  const items = scope.negativeControl ? [...context.items,
+    { id: "pm-recurrence-negative", dependencies: [{ id: "pm-recurrence-predecessor", kind: "recurs_from" }] },
+    { id: "pm-recurrence-predecessor" },
+  ] : context.items;
+  return { ...policyReport(recurrencePolicy, { ...context, items }), evaluated: true };
 }
 
 /** Attach only selected report findings to the gate-level check receipt. */
