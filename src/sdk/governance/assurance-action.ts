@@ -618,6 +618,7 @@ async function runRecurrenceAction(
 ): Promise<DefectChangeRiskReport | DefectRecurrenceCoverageReport> {
   const request = parseRecurrenceActionRequest(input);
   const context = await createAssuranceWorkspaceContext(pmRoot, {
+    strict_read: true,
     include_history: false,
     resolve_tree: false,
   });

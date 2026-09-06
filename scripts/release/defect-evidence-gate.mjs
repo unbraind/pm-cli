@@ -100,6 +100,7 @@ async function resolveContext(repositoryRoot, boundaryOnly, providedContext) {
   if (boundaryOnly) return { items: [], terminal_statuses: ["closed", "canceled"] };
   if (providedContext) return providedContext;
   return createAssuranceWorkspaceContext(resolvePmRoot(repositoryRoot), {
+    strict_read: true,
     include_history: false,
     resolve_tree: false,
   });

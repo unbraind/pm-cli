@@ -1757,6 +1757,14 @@
       ],
       "package_version": "2026.9.5",
       "reason": "Add optional SDK health invocation policy and verdict metadata, recurrence lineage coverage and sparse index metadata, and the assurance lineages action; existing callers remain supported."
+    },
+    {
+      "changes": [
+        "signature ./sdk:CreateAssuranceWorkspaceContextOptions",
+        "signature ./sdk/governance:CreateAssuranceWorkspaceContextOptions"
+      ],
+      "package_version": "2026.9.5",
+      "reason": "Add optional strict_read to assurance workspace contexts so recurrence consumers reject incomplete source corpora"
     }
   ],
   "entrypoints": {
@@ -5019,7 +5027,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CreateAssuranceWorkspaceContextOptions",
-          "signature": "export interface CreateAssuranceWorkspaceContextOptions { tree_id?: string; include_history?: boolean; resolve_tree?: boolean; providers?: Readonly<Record<string, AssuranceProviderResolver>>; provider_capabilities?: AssuranceEvaluationContext[\"provider_capabilities\"]; trigger?: string; }"
+          "signature": "export interface CreateAssuranceWorkspaceContextOptions { strict_read?: boolean; tree_id?: string; include_history?: boolean; resolve_tree?: boolean; providers?: Readonly<Record<string, AssuranceProviderResolver>>; provider_capabilities?: AssuranceEvaluationContext[\"provider_capabilities\"]; trigger?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -25203,7 +25211,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CreateAssuranceWorkspaceContextOptions",
-          "signature": "export interface CreateAssuranceWorkspaceContextOptions { tree_id?: string; include_history?: boolean; resolve_tree?: boolean; providers?: Readonly<Record<string, AssuranceProviderResolver>>; provider_capabilities?: AssuranceEvaluationContext[\"provider_capabilities\"]; trigger?: string; }"
+          "signature": "export interface CreateAssuranceWorkspaceContextOptions { strict_read?: boolean; tree_id?: string; include_history?: boolean; resolve_tree?: boolean; providers?: Readonly<Record<string, AssuranceProviderResolver>>; provider_capabilities?: AssuranceEvaluationContext[\"provider_capabilities\"]; trigger?: string; }"
         },
         {
           "classification": "supported",

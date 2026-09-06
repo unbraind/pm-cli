@@ -1,3 +1,5 @@
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runAssuranceAction } from "../../src/sdk/governance/assurance-action.js";
 import { PmClient, runAction } from "../../src/sdk/runtime.js";
@@ -140,6 +142,29 @@ describe("recurrence lineage transport contracts", () => {
       await expect(
         client.assurance({ action: "lineages", definition, limit: 1 }),
       ).rejects.toThrow("inside the definition");
+      await writeFile(
+        path.join(context.pmPath, "issues", `${recurring}.toon`),
+        "",
+        "utf8",
+      );
+      for (const action of ["lineages", "risk"]) {
+        const request = action === "risk" ? risk : definition;
+        await expect(
+          client.assurance({ action, definition: request }),
+        ).rejects.toThrow("source is incomplete");
+        const incomplete = await context.runCliInProcess(
+          [
+            "assurance",
+            action,
+            "--definition",
+            JSON.stringify(request),
+            "--json",
+          ],
+          { expectJson: true },
+        );
+        expect(incomplete.code).toBe(1);
+        expect(incomplete.stderr).toContain("source is incomplete");
+      }
     });
   });
 });

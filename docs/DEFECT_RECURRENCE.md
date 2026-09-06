@@ -107,7 +107,11 @@ const coverage = analyzeDefectRecurrenceCoverage(policy, allStatusItems, {
 ```
 
 Supply an authoritative complete item corpus. The workspace action loads it
-with strict read semantics. Duplicate ids are rejected. Missing local targets
+with strict read semantics. Unreadable item documents or directories refuse
+both workspace analyses and the repository gate with `list_source_incomplete`.
+Embedding hosts can request the same policy with
+`createAssuranceWorkspaceContext(pmRoot, { strict_read: true })`.
+Duplicate ids are rejected. Missing local targets
 remain in the population and produce `missing_recurrence_item`; an unregistered
 component produces `unregistered_recurrence_item`. The complete verdict is
 computed before filtering or pagination, so a covered first page cannot hide
