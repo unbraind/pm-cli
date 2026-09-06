@@ -481,7 +481,10 @@ describe("run-release-pipeline", () => {
         if (command === "git" && args[0] === "tag") return { status: 0, stdout: "", stderr: "" };
         if (args.includes("changelog") && args.includes("generate")) {
           const outPath = args[args.indexOf("--output") + 1];
-          fs.writeFileSync(outPath, "## [2026.6.15]\n\n- thing\n", "utf8");
+          const heading = args.includes("--date-from-version")
+            ? "## 2026.6.15 - 2026-06-15"
+            : "## 2026.6.15";
+          fs.writeFileSync(outPath, `${heading}\n\n- thing\n`, "utf8");
           return { status: 0, stdout: "", stderr: "" };
         }
         return { status: 0, stdout: "", stderr: "" };
@@ -513,6 +516,8 @@ describe("run-release-pipeline", () => {
       expect(gitCalls.some((c) => c[0] === "git" && c[1] === "commit")).toBe(true);
       expect(gitCalls.some((c) => c[0] === "git" && c[1] === "push")).toBe(true);
       expect(fs.existsSync(path.join(root, "CHANGELOG.md"))).toBe(true);
+      expect(fs.readFileSync(path.join(root, "CHANGELOG.md"), "utf8"))
+        .toBe("## 2026.6.15 - 2026-06-15\n\n- thing\n");
     });
 
     it("rebases and retargets the tag when release push sees origin/main advance", async () => {

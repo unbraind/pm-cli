@@ -327,6 +327,7 @@ function maybeSkipForSameDayRelease(tagsToday, todayKey, outputJson) {
   return true;
 }
 
+/** Generate the canonical dated changelog before the release tag exists. */
 function prepareReleaseChangelog(params) {
   const generatedChangelogDir = mkdtempSync(path.join(tmpdir(), "pm-cli-release-"));
   const generatedChangelogPath = path.join(generatedChangelogDir, `changelog-${params.targetVersion.replaceAll(".", "-")}.md`);
@@ -344,6 +345,7 @@ function prepareReleaseChangelog(params) {
       "replace",
       "--release-version",
       params.targetVersion,
+      "--date-from-version",
       "--all-release-tags",
       "--status",
       "closed",
