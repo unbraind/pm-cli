@@ -113,6 +113,11 @@ If a warning close omitted evidence, use its `recovery.suggested_retry_args`
 to append an evidence update while preserving the original close event. See
 [Close Evidence Recovery](CLOSE_EVIDENCE_RECOVERY.md).
 
+For real subprocess tests, set `cwd`, `PM_PATH`, and `PM_GLOBAL_PATH` to the
+fixture's temporary workspace and trackers. A `--pm-path` argument alone does
+not isolate implicit attribution reads. Disable external probes with
+`PM_AGENT_PROBES=0` when testing deterministic process output.
+
 ## Token-Minimal Retrieval
 
 | Need                                 | Command                                                                                                                                                    |
@@ -184,6 +189,12 @@ Use the canonical [guide topic map](README.md#guide-topic-map) when local in-CLI
 - Release when pausing, handing off, or after close.
 
 ## Reviewed Delivery Closeout
+
+Before closing repository defects, set `escape_class` and structured
+`gate_evidence` through `pm update` as described in
+[Defect Evidence](DEFECT_RECURRENCE.md#defect-evidence-on-pm-items).
+Run `pnpm quality:defect-evidence` after the terminal transitions: a static
+gate run before closure cannot validate evidence required only for closed items.
 
 Treat PM evidence, item closure, and the generated changelog as part of the
 reviewed change. Add all evidence known before merge to the active branch,

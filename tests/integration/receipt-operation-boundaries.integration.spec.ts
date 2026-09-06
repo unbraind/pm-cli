@@ -18,7 +18,7 @@ describe("receipt operation boundaries", () => {
       git("init", "-q", "--object-format=sha256");
       git("config", "user.name", "Receipt Test");
       git("config", "user.email", "receipt@example.invalid");
-      const itemPath = "item.toon";
+      const itemPath = "item with spaces.toon";
       const raw = "id: pm-receipt\ntitle: Original item\n";
       await writeFile(path.join(context.tempRoot, itemPath), raw);
       git("add", itemPath);
@@ -48,6 +48,11 @@ describe("receipt operation boundaries", () => {
           original_blob: git("rev-parse", `HEAD:${itemPath}`).trim(),
         });
         expect(isMergeReceiptOperation(operation)).toBe(true);
+        for (const quotedPath of [`'${itemPath}'`, `"${itemPath}"`]) {
+          expect(
+            await captureMergeReceiptOperation(context.tempRoot, quotedPath),
+          ).toEqual(operation);
+        }
         expect(
           await writeMergeReceipt({
             cwd: context.tempRoot,

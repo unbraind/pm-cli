@@ -541,6 +541,7 @@ function clearCloseAssignee(metadata: ItemMetadata): string[] {
   return ["assignee"];
 }
 
+/** Enforce terminal and closure policies before applying acceptance fields and the atomic lifecycle transition. */
 function mutateCloseMetadata(
   metadata: ItemMetadata,
   context: CloseMutationContext,

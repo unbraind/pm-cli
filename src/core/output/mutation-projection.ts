@@ -149,6 +149,7 @@ function projectIdOnlyResult(result: unknown): unknown | null {
     : { id };
 }
 
+/** Project a recognized item mutation to identity and change counts while preserving warnings and executable recovery. */
 function projectCompactMutationEnvelope(result: unknown): unknown | null {
   if (!isPlainObject(result) || !isPlainObject(result.item)) return null;
   if (typeof result.item.id !== "string") return null;

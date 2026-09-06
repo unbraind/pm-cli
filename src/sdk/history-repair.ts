@@ -519,6 +519,7 @@ async function assertHistoryRepairAbandonmentProof(
   }
 }
 
+/** Resolve and verify receipt candidates against loaded item evidence, refusing untrusted preview and apply requests alike. */
 async function resolveHistoryRepairMergeEvidence(params: {
   options: HistoryRepairCommandOptions;
   pmRoot: string;

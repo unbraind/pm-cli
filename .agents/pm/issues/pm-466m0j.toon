@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-05T19:06:20.194Z"
-updated_at: "2026-09-06T05:44:35.577Z"
-closed_at: "2026-09-06T05:44:34.743Z"
-completed_at: "2026-09-06T05:44:34.743Z"
+updated_at: "2026-09-06T06:28:27.048Z"
+closed_at: "2026-09-06T06:08:19.707Z"
+completed_at: "2026-09-06T06:08:19.707Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "An actual conflicting rebase followed by abort has deterministic receipt classification and a supported recovery path; Recovery preserves immutable evidence and cannot dismiss an applied merge merely because a later snapshot differs; Fresh-clone tests prove tracked sidecars never contain arbitrary descriptions, acceptance text, or custom status values; CLI guidance clearly distinguishes clone-local raw receipts from intentionally tracked durable sidecars"
@@ -21,7 +21,7 @@ confidence: medium
 severity: high
 resolution: Capture immutable rebase origin coordinates and append audited restored-origin settlements
 expected_result: "Real aborted rebases recover without losing provenance; dirty index, item, HEAD, history or active-operation states refuse settlement"
-actual_result: "Real aborted rebases recover without losing provenance; dirty index, item, HEAD, history or active-operation states refuse settlement; linked tests and integrated gates passed."
+actual_result: "Real aborted rebases recover without losing provenance; dirty index, item, HEAD, history or active-operation states refuse settlement; linked tests and integrated gates passed. Review regressions and linked verification also pass."
 affected_version: 2026.9.5
 component: sdk/merge
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
@@ -29,7 +29,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-baksix,discovered_from,"2026-09-05T19:06:20.194Z","harness:codex","cli:create:dep",detected
   pm-dj98,implements,"2026-09-05T19:06:20.194Z","harness:codex","cli:create:dep",detected
   pm-mg13iz,verifies,"2026-09-05T19:06:20.194Z","harness:codex","cli:create:dep",detected
-comments[5]:
+comments[10]:
   - created_at: "2026-09-05T19:06:20.194Z"
     author: "harness:codex"
     text: "Duplicate-check evidence: strict complete all-status corpus contained 2642 items, including terminal history; exact GitHub issue URL was absent. Request-specific search and current open/in_progress inventories were read. Full live predecessor pm-baksix and parent pm-dj98 metadata plus verified history were inspected. This report extends a distinct boundary beyond the closed predecessor and is not a duplicate. Intake remains open and unclaimed."
@@ -46,11 +46,27 @@ comments[5]:
   - created_at: "2026-09-06T05:44:33.912Z"
     author: "harness:codex"
     text: "Final local gates passed: repository static assurance with 100% governed docstring coverage, zero duplicate code, SDK and CLI contracts, context/token ceilings, graph composition, record integrity, package artifact, package-first dogfood, docs/skills and version policy. Exact source coverage and focused directory correction are recorded in the preceding evidence comment. No coverage threshold, source exclusion or quality budget was weakened. Hosted review, merge and release remain separate pending verification."
+  - created_at: "2026-09-06T05:49:19.784Z"
+    author: "harness:codex"
+    text: "Delivery PR: https://github.com/unbraind/pm-cli/pull/1208 reviews implementation commit 8b9612d6dfdfa917520d96717f3906419ec45e09 with linked source, tests, docs and generated changelog. Hosted CI and review are running. Local Greptile 3.5.2 reports free review quota exhausted; this is provider unavailability, not a clean review. Exact final head and review dispositions are maintained on the PR because each evidence mutation creates a newer commit."
+  - created_at: "2026-09-06T05:57:01.815Z"
+    author: "harness:codex"
+    text: "Final complete rerun supersedes the earlier structural-failure receipt: 623/623 files and 8475/8475 tests pass, with exact 62641 statements, 47517 branches, 12984 functions and 60208 lines covered (100/100/100/100). Published 2026.9.5 tracker compatibility passes with no migration warnings; final health has ten green checks and no failed_because entries, graph composition passes, and history drift verification is clean. Existing legacy hierarchy advisories and 295 incomplete historical closure records remain explicitly disclosed rather than rewritten without evidence."
+  - created_at: "2026-09-06T06:05:51.581Z"
+    author: "harness:codex"
+    text: "PR 1208 review fixes: quoted Git paths now normalize identically to receipt persistence after a failing real-Git regression; terminal retry arguments are asserted in full and executed independently; review examples pass source revisions and all touched helper contracts have explicit docstrings. Current-policy hash-only and legacy pairs both pass inspection and settlement while tampered copies fail. Structured escape_class and gate_evidence now accompany terminal defects. No gate or evidence threshold was weakened."
+  - created_at: "2026-09-06T06:08:18.039Z"
+    author: "harness:codex"
+    text: "Review evidence: all three CodeRabbit inline findings were implemented and acknowledged on their original threads. The revised linked tests pass, including quoted paths with spaces, independently executed terminal argv, and current-policy hash-only provenance. All ten first-round bot artifacts received a revision-specific reaction and explanation. The Sourcery guide recommendations to ignore durable sidecars or infer a field named collections were declined with contract evidence; reviewer quota notices are not treated as approval. The original reviewed head also passed exact DeepScan and CodeFactor hosted-analysis proof. Full updated-head gates are running."
+  - created_at: "2026-09-06T06:28:27.048Z"
+    author: "harness:codex"
+    text: "Consolidated review verification: 623/623 files and 8476/8476 tests pass at exact 100/100/100/100 (62643 statements, 47519 branches, 12984 functions, 60210 lines). The reproducibility fixture now isolates cwd and both tracker roots, disables external probes and rejects contamination from a changing unrelated workset. Full static quality and typecheck passed; post-closure defect evidence, docs/skills, ESLint and SDK surface checks pass. The second PR head will receive fresh hosted checks and explicit review triggers."
 notes[2]{created_at,author,text}:
   "2026-09-05T19:06:20.194Z","harness:codex",Reproduce receipt lifecycle after an aborted rebase and distinguish an abandoned candidate from a merge requiring review. Current source and Merge Safety documentation intentionally track privacy-safe durable sidecars; raw free-form retained/discarded values are clone-local under .git. Durable receipts retain hashes and only allowlisted low-cardinality scalar previews. The report has not demonstrated a secret leak. A blanket gitignore or evidence deletion would break cross-clone provenance and is not an accepted remedy.
   "2026-09-06T04:53:19.264Z","harness:codex","Restored-origin settlement preserves durable sidecars and appends an explicit abandoned_receipts audit event. Git original head/blob, clean history, index and working bytes are checked; exact loaded item bytes are revalidated under the existing rewrite snapshot contract. No implicit force or deletion."
-learnings[1]{created_at,author,text}:
+learnings[2]{created_at,author,text}:
   "2026-09-06T05:28:55.800Z","harness:codex","Restored files alone do not prove an aborted Git operation. Capture original commit and blob coordinates during the rebase, then require inactive Git operation markers, matching HEAD, index and working blob, and a clean immutable history snapshot before appending an explicit abandonment audit."
+  "2026-09-06T06:08:41.391Z","harness:codex",Clone-local raw receipts belong in Git administrative storage. Tracked .agents/pm/merge-receipts sidecars contain privacy-safe durable provenance and must not be ignored; aborted operations need proven audited settlement rather than deletion.
 files[10]{path,scope,note}:
   src/sdk/history-repair.ts,project,Recovery contract implementation and regression evidence
   src/sdk/merge/abandoned-receipts.ts,project,SDK recovery implementation and executable regression evidence
@@ -65,7 +81,7 @@ files[10]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts,project,240,"harness:codex","2026-09-05T20:44:29.203Z",local_mutation,feat/receipt-recovery-and-extension-contracts
   node scripts/run-tests.mjs test -- tests/integration/receipt-operation-boundaries.integration.spec.ts,project,240,"harness:codex","2026-09-06T05:34:01.127Z",local_mutation,feat/receipt-recovery-and-extension-contracts
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mtpdq027-fm6ops
     kind: test
     status: passed
@@ -78,7 +94,27 @@ test_runs[1]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/receipt-operation-boundaries.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtpesf4k-kvhhjb
+    kind: test
+    status: passed
+    started_at: "2026-09-06T06:05:52.134Z"
+    finished_at: "2026-09-06T06:06:32.852Z"
+    recorded_at: "2026-09-06T06:06:32.852Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/receipt-operation-boundaries.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/MERGE_SAFETY.md,project,Existing public contract to preserve and clarify
-close_reason: Implemented and locally verified; delivery proceeds through the combined PR review.
+close_reason: Completed verified PR 1208 review improvements and structured regression evidence.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-466m0j
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/receipt-operation-boundaries.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/receipt-operation-boundaries.integration.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
 body: "## Report and scope\n\nSource: https://github.com/unbraind/pm-cli/issues/1202\n\nReproduce receipt lifecycle after an aborted rebase and distinguish an abandoned candidate from a merge requiring review. Current source and Merge Safety documentation intentionally track privacy-safe durable sidecars; raw free-form retained/discarded values are clone-local under .git. Durable receipts retain hashes and only allowlisted low-cardinality scalar previews. The report has not demonstrated a secret leak. A blanket gitignore or evidence deletion would break cross-clone provenance and is not an accepted remedy.\n\n## Reported reproduction\n\n## Two defects, one reproduction\n\nRunning `git rebase`, hitting a conflict, and running `git rebase --abort` leaves behind merge-receipt state that outlives the operation it describes.\n\n## 1. The receipt survives the abort\n\nAfter `git rebase --abort`, the working tree is clean and the item is byte-identical to `HEAD`:\n\n```\n$ git diff --quiet HEAD -- .agents/pm/issues/pm-cli-website-nc0j.toon && echo identical\nidentical\n```\n\nNo merge landed. But a `state: \"pending\"` receipt persists, recording three conflicting fields (`acceptance_criteria`, `description`, `status`) with full `retained`/`discarded` values, and it is enough to fail the gate:\n\n```\n$ pm health --check-only\nok: False\nfailed_because: ['merge_decisions_unreviewed:1', 'merge_receipt_evidence_invalid:1']\n```\n\nSo an abandoned operation leaves a repository permanently red on a decision the operator explicitly abandoned. A receipt describes a merge that exists in no history and no working tree.\n\nExpected: receipts written by a merge driver during an operation that is subsequently aborted should not remain pending — either tied to the resulting commit, or discarded with the rest of the aborted state.\n\n## 2. The working-tree copy is not gitignored\n\nThe driver writes a second copy into the working tree, and it is untracked but **not ignored**:\n\n```\n$ git status --porcelain\n?? .agents/pm/merge-receipts/f9067de4-bc6c-477a-99de-c415951b2064.json\n\n$ git check-ignore -v .agents/pm/merge-receipts/f9067de4-...json\n(no match — not ignored)\n```\n\nThis is not a stale-template problem. A **fresh `pm init` on 2026.9.5** writes:\n\n```\n.agents/pm/runtime/\n.agents/pm/search/*\n.agents/pm/locks/\n.agents/pm/transactions/\n.agents/pm/checkpoints/\n!.agents/pm/search/eval-queries.json\n```\n\n`merge-receipts/` is absent. Checked across four independent repositories including a newly initialised one: zero have it ignored.\n\n### Why this matters\n\nThe documented convention for these trackers is to commit `.agents/pm/**` — every `.toon` together with its `history/*.jsonl`. An agent doing that with `git add -A` also commits the receipts. That:\n\n- publishes receipt bodies containing the **full retained and discarded text** of every conflicting field, into repositories that may be public, and\n- converts evidence the design treats as clone-local into tracked state, which changes what `merge_receipt_evidence_*` and the `tracked_runtime_cache_files` check mean. There is a guard for tracked runtime cache; there is none for tracked receipts.\n\nExpected: `pm init` ignores `.agents/pm/merge-receipts/` alongside `runtime/`, `locks/`, `transactions/` and `checkpoints/`, and existing repositories get the entry on the next write to that directory. If receipts are instead *meant* to be committed, then the health check that treats them as clone-local evidence and the `pm init` template disagree, and the intended contract should be stated.\n\n## Environment\n\n@unbrained/pm-cli 2026.9.4 (writer) and 2026.9.5 (reader and `pm init` probe), Linux, Node 22.\n\n## Delivery boundary\n\nIntake only in PR #1204. This item remains open and unclaimed; no implementation or reproduction success is asserted. Implement through the public SDK with thin CLI adapters and executable negative controls before closing."

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:observability","area:sdk","area:storage",error-taxonomy,gate,recurrence
 created_at: "2026-08-08T08:00:22.880Z"
-updated_at: "2026-09-06T05:44:43.702Z"
+updated_at: "2026-09-06T06:28:28.954Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "One shared primitive translates host filesystem and resource errno faults into declared PmCliError refusals with a bounded operation label, recovery guidance, and no path disclosure; Every awaited filesystem call site in core and sdk either routes through that primitive or carries a recorded waiver naming why the raw fault is correct; A CI gate fails when a new unguarded filesystem call site is added, so the family cannot silently regrow; The declared codes resolve in the generated error catalog, and a negative control proves a non-errno fault still propagates as a defect rather than being swallowed as environment noise"
@@ -24,7 +24,7 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-j668gl,discovered_from,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
   pm-y4kovm,verifies,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
   pm-4odf0c,recurs_from,"2026-09-06T04:59:23.511Z","harness:codex","cli:update:dep",detected
-comments[20]:
+comments[23]:
   - created_at: "2026-08-08T10:32:51.895Z"
     author: "harness:codex"
     text: "Partial tranche evidence 2026-08-08: added the public path-redacted host errno classifier/translator/async boundary for EACCES, EDQUOT, EMFILE, ENFILE, ENOMEM, ENOSPC, EPERM, and EROFS; snapshot create/restore now consume it while preserving published snapshot error codes. Generated catalog, negative controls, 22/22 linked tests, security scan, and exact full coverage pass. Acceptance is not complete: the remaining awaited filesystem sites still need routing or explicit waivers and a CI recurrence gate. Returning this item to open and releasing the claim rather than claiming whole-repo completion."
@@ -86,6 +86,15 @@ comments[20]:
   - created_at: "2026-09-06T05:44:42.721Z"
     author: "harness:codex"
     text: "Final local gates passed: repository static assurance with 100% governed docstring coverage, zero duplicate code, SDK and CLI contracts, context/token ceilings, graph composition, record integrity, package artifact, package-first dogfood, docs/skills and version policy. Exact source coverage and focused directory correction are recorded in the preceding evidence comment. No coverage threshold, source exclusion or quality budget was weakened. Hosted review, merge and release remain separate pending verification. Delivered installation copy, backup, rollback and module-graph snapshot boundaries through the shared core primitive while preserving the public SDK re-export. The Sentry PM-CLI-2S production event is still unresolved pending reviewed deployment. Every filesystem call-site migration/waiver and the recurrence prevention gate remain acceptance obligations; this umbrella returns to open rather than being falsely closed."
+  - created_at: "2026-09-06T05:49:22.254Z"
+    author: "harness:codex"
+    text: "Delivery PR: https://github.com/unbraind/pm-cli/pull/1208 reviews implementation commit 8b9612d6dfdfa917520d96717f3906419ec45e09 with linked source, tests, docs and generated changelog. Hosted CI and review are running. Local Greptile 3.5.2 reports free review quota exhausted; this is provider unavailability, not a clean review. Exact final head and review dispositions are maintained on the PR because each evidence mutation creates a newer commit."
+  - created_at: "2026-09-06T05:57:03.865Z"
+    author: "harness:codex"
+    text: "Final complete rerun supersedes the earlier structural-failure receipt: 623/623 files and 8475/8475 tests pass, with exact 62641 statements, 47517 branches, 12984 functions and 60208 lines covered (100/100/100/100). Published 2026.9.5 tracker compatibility passes with no migration warnings; final health has ten green checks and no failed_because entries, graph composition passes, and history drift verification is clean. Existing legacy hierarchy advisories and 295 incomplete historical closure records remain explicitly disclosed rather than rewritten without evidence."
+  - created_at: "2026-09-06T06:28:28.954Z"
+    author: "harness:codex"
+    text: "Consolidated review verification: 623/623 files and 8476/8476 tests pass at exact 100/100/100/100 (62643 statements, 47519 branches, 12984 functions, 60210 lines). The reproducibility fixture now isolates cwd and both tracker roots, disables external probes and rejects contamination from a changing unrelated workset. Full static quality and typecheck passed; post-closure defect evidence, docs/skills, ESLint and SDK surface checks pass. The second PR head will receive fresh hosted checks and explicit review triggers."
 learnings[2]{created_at,author,text}:
   "2026-08-17T02:30:00.618Z","harness:codex","Node can surface Linux quota exhaustion as code='Unknown system error -122' with errno=-122; portable host-boundary classification must normalize declared numeric node:os.constants.errno values rather than guess numeric literals."
   "2026-08-17T05:06:05.230Z","harness:codex","node:os.constants.errno is platform-specific: EDQUOT is declared on Linux but absent on Windows. Numeric errno tests must choose a locally declared equivalent while retaining the Linux EDQUOT path where available, and lookup tables must filter missing runtime constants before constructing numeric maps."

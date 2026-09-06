@@ -59,7 +59,7 @@ describe("merge recovery parity", () => {
     });
   });
 
-  it("verifies legacy scalar redactions through settlement and refuses tampered copies", async () => {
+  it.each(["legacy", "current"])("verifies %s scalar redactions through settlement and refuses tampered copies", async (format) => {
     await withTempPmPath(async (context) => {
       execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });
       const id = createTestItemId(context, { title: "Legacy hash redaction" });
@@ -71,7 +71,7 @@ describe("merge recovery parity", () => {
         unionFields: [],
         decisions: [
           {
-            field: "status",
+            field: "title",
             base: "open",
             ours: "closed",
             theirs: "open",
@@ -89,14 +89,17 @@ describe("merge recovery parity", () => {
       const durable = JSON.parse(
         await readFile(durablePath, "utf8"),
       ) as MergeDecisionReceipt;
-      delete durable.value_policy;
-      durable.value_availability = "hash_only";
-      durable.decisions[0]!.retained = {
-        pm_value_hash: sha256Hex(stableStringify("closed")),
-      };
-      durable.decisions[0]!.discarded = {
-        pm_value_hash: sha256Hex(stableStringify("open")),
-      };
+      expect(durable.value_policy).toBeDefined();
+      expect(durable.value_availability).toBe("hash_only");
+      if (format === "legacy") {
+        delete durable.value_policy;
+        durable.decisions[0]!.retained = {
+          pm_value_hash: sha256Hex(stableStringify("closed")),
+        };
+        durable.decisions[0]!.discarded = {
+          pm_value_hash: sha256Hex(stableStringify("open")),
+        };
+      }
       await writeFile(durablePath, JSON.stringify(durable));
       expect(
         (await inspectMergeReceiptEvidence(context.tempRoot))

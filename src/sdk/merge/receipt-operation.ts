@@ -27,6 +27,9 @@ export async function captureMergeReceiptOperation(
   cwd: string,
   itemPath: string,
 ): Promise<MergeReceiptOperation | undefined> {
+  const trimmedItemPath = itemPath.trim();
+  const normalizedItemPath =
+    /^(['"])(.*)\1$/su.exec(trimmedItemPath)?.[2] ?? trimmedItemPath;
   for (const backend of ["rebase-merge", "rebase-apply"]) {
     try {
       const { stdout: marker } = await execFileAsync(
@@ -46,7 +49,7 @@ export async function captureMergeReceiptOperation(
         continue;
       const { stdout } = await execFileAsync(
         "git",
-        ["rev-parse", "--verify", `${originalHead}:${itemPath}`],
+        ["rev-parse", "--verify", `${originalHead}:${normalizedItemPath}`],
         { cwd, timeout: 10_000 },
       );
       const originalBlob = stdout.trim();

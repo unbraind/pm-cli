@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
+/** Execute gh with argument-vector boundaries and return captured output; propagate transport failures. */
 export function runGh(args, input, executeFile = execFileSync) {
   return executeFile("gh", args, {
     encoding: "utf8",
@@ -12,6 +13,7 @@ export function runGh(args, input, executeFile = execFileSync) {
   }).trim();
 }
 
+/** Print command guidance and terminate invalid invocations before any GitHub mutation. */
 export function usage(message, dependencies = {}) {
   const writeError = dependencies.error ?? console.error;
   const exit = dependencies.exit ?? process.exit;
@@ -27,6 +29,7 @@ export function usage(message, dependencies = {}) {
   exit(2);
 }
 
+/** Parse paired flags and validate an optional content revision before dispatching a command. */
 export function parseArgs(argv) {
   const [command = "inventory", ...rest] = argv;
   const options = {};
@@ -45,6 +48,7 @@ export function parseArgs(argv) {
   return { command, options };
 }
 
+/** Resolve an explicit or current pull request and reject malformed repository or numeric identities. */
 export function resolveTarget(options, executeGh = runGh) {
   const repo = options.repo ?? JSON.parse(executeGh(["repo", "view", "--json", "nameWithOwner"])).nameWithOwner;
   const pr = Number(options.pr ?? JSON.parse(executeGh(["pr", "view", "--json", "number"])).number);
@@ -99,6 +103,7 @@ const validReactions = new Set([
   "THUMBS_UP", "THUMBS_DOWN", "LAUGH", "HOORAY", "CONFUSED", "HEART", "ROCKET", "EYES",
 ]);
 
+/** Submit a GraphQL operation with separately encoded variables and decode its response. */
 function graphql(executeGh, query, variables) {
   const args = ["api", "graphql", "-f", `query=${query}`];
   for (const [key, value] of Object.entries(variables)) {
@@ -114,6 +119,7 @@ function withReviewRevision(node) {
     : node;
 }
 
+/** Read every conversation page and nested thread page, retaining content revisions and reaction state. */
 export function fetchReviewInventory(target, executeGh = runGh) {
   const comments = [];
   const reviews = [];
@@ -175,10 +181,12 @@ export function fetchReviewInventory(target, executeGh = runGh) {
   };
 }
 
+/** Address GitHub's actual inline review reply endpoint for a selected parent comment. */
 export function inlineReplyPath(repo, pr, commentId) {
   return `repos/${repo}/pulls/${pr}/comments/${commentId}/replies`;
 }
 
+/** Address the issue-comment surface used for top-level pull-request discussion. */
 export function pullRequestCommentPath(repo, pr) {
   return `repos/${repo}/issues/${pr}/comments`;
 }
@@ -196,6 +204,7 @@ function acknowledgementComment(target, nodeId, body, executeGh, revision, comme
   return executeGh(["api", writePath, "-f", `body=${body}\n\n${marker}`]);
 }
 
+/** Capture a write result independently so acknowledgement retries can report partial completion. */
 function attemptGitHubWrite(write) {
   try {
     return { ok: true, value: JSON.parse(write()) };
@@ -204,6 +213,7 @@ function attemptGitHubWrite(write) {
   }
 }
 
+/** Validate a supported usefulness reaction and attach it to the original GitHub artifact. */
 export function addReaction(nodeId, reaction, executeGh = runGh) {
   if (!nodeId || !reaction) usage("A reaction requires --node-id and --reaction.");
   if (!validReactions.has(reaction)) usage(`Invalid reaction: ${reaction}`);
@@ -216,6 +226,7 @@ export function addReaction(nodeId, reaction, executeGh = runGh) {
   ]);
 }
 
+/** Wait for checks to settle and inventory the watched head; restart when concurrent pushes change it. */
 export function watchChecksAndInventory(target, interval, executeGh = runGh) {
   if (!Number.isInteger(interval) || interval < 10) {
     usage("watch requires --interval to be an integer of at least 10 seconds.");
@@ -255,6 +266,7 @@ export function watchChecksAndInventory(target, interval, executeGh = runGh) {
   throw new Error("PR head changed during three consecutive check-watch attempts.");
 }
 
+/** Dispatch top-level comments or independently retryable acknowledgement and reaction writes. */
 function handleTopLevelConversationWrite(command, options, executeGh, write) {
   if (command !== "comment" && command !== "acknowledge") return false;
   const target = resolveTarget(options, executeGh);
@@ -297,6 +309,7 @@ function acknowledgeInline(options, executeGh) {
   return { reaction: JSON.parse(reaction), reply: JSON.parse(reply) };
 }
 
+/** Dispatch inventory, watch and conversation operations using injectable GitHub and output boundaries. */
 export function main(argv = process.argv.slice(2), dependencies = {}) {
   const { command, options } = parseArgs(argv);
   const executeGh = dependencies.runGh ?? runGh;
@@ -328,6 +341,7 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
   }
 }
 
+/** Run the CLI only for a direct entrypoint invocation, preserving side-effect-free module imports. */
 export function runCliIfDirect(argv = process.argv, moduleUrl = import.meta.url, executeMain = main) {
   if (argv[1] && moduleUrl === pathToFileURL(argv[1]).href) executeMain();
 }

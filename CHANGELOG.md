@@ -4,13 +4,13 @@
 
 ### Fixed
 
+- GH-1200: Preview exact receipt proof before merge reconciliation ([pm-ao0bu9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ao0bu9.toon))
+- GH-1206: Verify legacy receipt redactions across hash encodings ([pm-v66zir](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v66zir.toon))
 - Refresh review acknowledgements when bot feedback changes ([pm-8we38i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8we38i.toon))
 - GH-1203: Offer actionable acceptance-evidence backfill after a warning close ([pm-ub1ott](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ub1ott.toon))
-- GH-1205: Declare root-only versus inherited extension flag reservation scope ([pm-2h8t6y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2h8t6y.toon))
 - GH-1202: Classify abandoned merge receipts without losing durable provenance ([pm-466m0j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-466m0j.toon))
+- GH-1205: Declare root-only versus inherited extension flag reservation scope ([pm-2h8t6y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2h8t6y.toon))
 - GH-1201: Recover invalid pending receipt evidence across release upgrades ([pm-2xtv84](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2xtv84.toon))
-- GH-1206: Verify legacy receipt redactions across hash encodings ([pm-v66zir](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v66zir.toon))
-- GH-1200: Preview exact receipt proof before merge reconciliation ([pm-ao0bu9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ao0bu9.toon))
 - The linked-file staleness check has no holder-lifecycle partition, so 1,220 links on closed holders warn forever while its worklist truncation hides the actionable subset behind a path count reported as a row count ([pm-zw9188](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zw9188.toon))
 - 2026.8.1 regression: governance dedupe audit rejects the restored all-lifecycle status sentinel ([pm-449do9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-449do9.toon))
 - Normalize local parent shorthand consistently with dependency identifiers ([pm-olcoon](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-olcoon.toon))
@@ -25,6 +25,7 @@
 
 ### Other
 
+- Cross-process reproducibility gate: prove CLI and MCP deterministic runs are byte-identical and fail on ambient time leaks ([pm-vklr99](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-vklr99.toon))
 - The docs gate enforces link resolution but not doc reachability, so orphaned docs pass CI and the advertised docs map silently drifts ([pm-s4y3z4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-s4y3z4.toon))
 - docs-skills-gate: validate anchor fragments in relative links ([pm-esbt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-esbt.toon))
 
@@ -306,7 +307,6 @@
 
 ### Other
 
-- Cross-process reproducibility gate: prove CLI and MCP deterministic runs are byte-identical and fail on ambient time leaks ([pm-vklr99](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-vklr99.toon))
 - Expose agent probe controls and versioned legacy-author vocabulary through pm config and SDK mutation APIs ([pm-yds9dt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-yds9dt.toon))
 - Diagnostic output budget: errors, warnings, and recovery bundles are the output an agent reads most and the only output with no declared ceiling ([pm-cha95z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cha95z.toon))
 

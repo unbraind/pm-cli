@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-22T12:30:15.775Z"
-updated_at: "2026-08-22T13:58:37.260Z"
-closed_at: "2026-08-22T13:58:36.688Z"
-completed_at: "2026-08-22T13:58:36.688Z"
+updated_at: "2026-09-06T06:28:29.483Z"
+closed_at: "2026-09-06T06:20:55.753Z"
+completed_at: "2026-09-06T06:20:55.753Z"
 author: "harness:codex"
 acceptance_criteria: The gate runs real packaged CLI and MCP transports rather than calling the context primitive directly; two isolated same-configuration runs compare byte-identical authoritative item and history outputs; a negative control proves differing seeds or absent process configuration is observable; invalid and partial environment contracts are covered; the gate is invoked by an existing mandatory CI path and has focused unit coverage
 goal: ci-detects-every-defect
@@ -18,16 +18,17 @@ why_now: GH-1089 proves SDK-only tests can stay green while the shipped binary r
 parent: pm-u9d0
 risk: medium
 confidence: high
-resolution: "Implemented a permanent real-process reproducibility gate with byte comparison, negative controls, typed transport recovery, and exact coverage of CLI/MCP boundaries."
-expected_result: Two equivalent fresh CLI/MCP process workflows produce byte-identical authoritative records; changed seeds differ; partial configuration returns stable typed recovery.
-actual_result: "Real built-process tests and independent temporary-directory smoke satisfy byte identity, seed sensitivity, and typed CLI/MCP exit-2 recovery; linked and full suites pass."
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Scope CLI and MCP subprocess cwd, project tracker and global tracker to each temporary fixture; disable external model probes."
+expected_result: Equivalent isolated process runs remain byte-identical even while another tracker workset changes.
+actual_result: Linked tests pass with deliberately changing unrelated claims; full record comparison and existing seed and invalid-configuration negative controls remain active.
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-4jk8kx,implements,"2026-08-22T12:30:15.775Z","harness:codex","cli:create:dep",detected
   pm-gh1089,verifies,"2026-08-22T12:30:15.775Z","harness:codex","cli:create:dep",detected
   pm-rbcvt2,verifies,"2026-08-22T12:30:15.775Z","harness:codex","cli:create:dep",detected
   pm-u9d0,implements,"2026-08-22T12:30:15.775Z","harness:codex","cli:create:dep",detected
   pm-a8lnoh,related,"2026-08-22T13:01:59.978Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+  pm-8we38i,discovered_from,"2026-09-06T06:17:33.618Z","harness:codex","cli:update:dep",detected
+comments[11]{created_at,author,text}:
   "2026-08-22T12:30:15.775Z","harness:codex","Duplicate check 2026-08-22: all-status certified corpus and exact/fuzzy searches for deterministic CLI,MCP,golden-byte,conformance,and process gates found broader open simulators and format programmes but no bounded transport-level reproducibility gate. This task is the executable proof for pm-gh1089 and does not claim the much wider fault simulator pm-a8lnoh or full format suite pm-4jk8kx."
   "2026-08-22T12:46:28.753Z","harness:codex","Gate evidence: the first fresh-process comparison exposed a bundle-context split; after moving the boundary into cli/main, the next gate exposed seed reuse collisions across distinct CLI invocations. The final contract uses stable step-derived CLI seeds and one advancing process-lifetime MCP sequence. Focused verification passes 54 tests with byte-identical tasks/history and typed invalid-input recovery."
   "2026-08-22T12:54:19.957Z","harness:codex","Repository-wide suite evidence: 7,775/7,776 tests passed; the only failure was the intentional 120-file directory-cap contract after adding new SDK/unit files. Moved the adapter and unit gate into focused reproducibility subdirectories; the directory-cap contract and focused process suite now pass 27/27."
@@ -36,8 +37,12 @@ comments[8]{created_at,author,text}:
   "2026-08-22T13:31:02.413Z","harness:codex","Acceptance evidence: PM-linked command passed 177/177 across real fresh CLI/MCP process comparison, SDK resolver coverage, stdio fallback, and public CLI error rendering. Full corpus passed 559/559 files and 7,778/7,778 tests at exact 100/100/100/100 coverage. Independent mktemp smoke proved byte-identical tasks/history for two built-CLI workflows plus typed exit-2 recovery from both built CLI and MCP; bounded temporary data was deleted with find -P -xdev -depth -delete."
   "2026-08-22T13:50:10.582Z","harness:codex","Review remediation: the initial release occurred before expected_result and actual_result were appended. Reopened this canonical item, cleared and restored the complete validation fields through pm before renewed closure, and linked the generated CHANGELOG.md entry."
   "2026-08-22T13:58:29.207Z","harness:codex","CodeRabbit remediation evidence: every real-process spawn is bounded at 30 seconds and assertion diagnostics include error, stdout, and stderr; strict clock negative controls cover timezone-less and parseable non-ISO values. PM-linked verification and the full 7,780-test corpus pass at exact 100/100/100/100 coverage."
-learnings[1]{created_at,author,text}:
+  "2026-09-06T06:17:34.628Z","harness:codex","New regression evidence in PR 1208: a full 8476-test run passed 8475 but failed byte comparison because subprocesses inherited a PM_PATH with no initialized settings and cwd was the real repository. Attribution fallback read the live repository runtime session, so concurrent review-item releases changed role/topic evidence between MCP runs. Reuse this canonical gate owner rather than create a duplicate. The clock/seed implementation is unchanged; the fixture must point all implicit reads at its own temporary tracker and workspace."
+  "2026-09-06T06:20:54.452Z","harness:codex","Review fix verified: all linked process, SDK clock/seed, MCP handshake and CLI error tests pass. The MCP byte-comparison scenario changes a separate temporary tracker claim workset between equivalent runs and still produces identical authoritative records. This test isolation repair is included in PR 1208; no runtime reproducibility policy or comparison field was weakened."
+  "2026-09-06T06:28:29.483Z","harness:codex","Consolidated review verification: 623/623 files and 8476/8476 tests pass at exact 100/100/100/100 (62643 statements, 47519 branches, 12984 functions, 60210 lines). The reproducibility fixture now isolates cwd and both tracker roots, disables external probes and rejects contamination from a changing unrelated workset. Full static quality and typecheck passed; post-closure defect evidence, docs/skills, ESLint and SDK surface checks pass. The second PR head will receive fresh hosted checks and explicit review triggers."
+learnings[2]{created_at,author,text}:
   "2026-08-22T13:31:02.944Z","harness:codex","A deterministic one-shot CLI process restarts its entropy sequence, so multi-step shell workflows need stable step-derived seeds. A serialized long-lived MCP transport should instead retain one validated process runner so its sequence advances across requests. Exercise both process lifetimes with authoritative byte comparisons; calling only the context primitive cannot prove the bundled transport boundary."
+  "2026-09-06T06:20:53.342Z","harness:codex","A PM_PATH whose target has no settings can fall back to cwd discovery during attribution. Process tests must set cwd and both tracker environment roots per fixture, not only pass --pm-path to the command. Disable external probes and exercise a separate changing ambient tracker so process byte identity does not depend on the real workset."
 files[4]{path,scope,note}:
   tests/integration/mcp-handshake.spec.ts,project,Long-lived stdio invalid-configuration fallback coverage
   tests/integration/reproducible-process.integration.spec.ts,project,Fresh-process byte identity and invalid-input gate
@@ -45,7 +50,7 @@ files[4]{path,scope,note}:
   tests/unit/sdk/reproducibility/process.spec.ts,project,SDK resolver and sequence runner coverage
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/reproducible-process.integration.spec.ts tests/unit/sdk/reproducibility/process.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,240
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mt4f0s0c-gnsxck
     kind: test
     status: passed
@@ -68,7 +73,19 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode}:
       node scripts/run-tests.mjs test -- tests/integration/reproducible-process.integration.spec.ts tests/unit/sdk/reproducibility/process.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/cli/cli-main-errors.spec.ts,schema,schema
-docs[1]{path,scope,note}:
+  - run_id: test-local-mtpf8v22-tsjlp9
+    kind: test
+    status: passed
+    started_at: "2026-09-06T06:19:01.179Z"
+    finished_at: "2026-09-06T06:19:19.993Z"
+    recorded_at: "2026-09-06T06:19:19.993Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/reproducible-process.integration.spec.ts tests/unit/sdk/reproducibility/process.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/cli/cli-main-errors.spec.ts,schema,schema,source,legacy
+docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated Unreleased gate entry
-close_reason: "The real CLI/MCP gate now includes strict offset validation, finite child-process deadlines with diagnostics, 179 focused and 7,780 full tests, exact 100% coverage, and corrected reviewed PM lifecycle evidence."
+  docs/AGENT_GUIDE.md,project,Isolate subprocess cwd and tracker paths to prevent ambient attribution reads
+close_reason: Repaired ambient tracker leakage in the existing real-process reproducibility gate.
 body: ""

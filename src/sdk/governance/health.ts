@@ -3232,6 +3232,7 @@ function attachHealthRemediationMaps(params: {
   }
 }
 
+/** Attribute drift to merge receipts only when read-only history repair proves their exact current snapshot. */
 async function correlateMergeReceiptHistoryDriftItems(params: {
   gitWorkspaceRoot: string | null;
   pendingMergeReceipts: MergeDecisionReceipt[];

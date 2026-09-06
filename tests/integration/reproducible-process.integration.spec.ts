@@ -17,7 +17,7 @@ const PROCESS_TIMEOUT_MS = 30_000;
 
 const temporaryRoots: string[] = [];
 
-/** Pin process identity and clock while disabling external telemetry and model discovery. */
+/** Pin entropy and clock while disabling external telemetry and model discovery. */
 function processEnvironment(
   seed = "process-conformance-seed",
 ): NodeJS.ProcessEnv {
@@ -26,6 +26,7 @@ function processEnvironment(
     PM_CLOCK: CLOCK,
     PM_CLOCK_TICK_MS: "1",
     PM_MCP_PROFILE: "full",
+    PM_AGENT_PROBES: "0",
     PM_SEED: seed,
     PM_TELEMETRY_DISABLED: "1",
     PM_TELEMETRY_OTEL_DISABLED: "1",
@@ -40,15 +41,23 @@ async function createTrackerRoot(): Promise<string> {
   return path.join(workspace, ".agents", "pm");
 }
 
+/** Run the built CLI with both explicit arguments and implicit discovery rooted in its fixture. */
 function runCli(
   pmRoot: string,
   args: string[],
   env: NodeJS.ProcessEnv = processEnvironment(),
 ) {
   return spawnSync(process.execPath, [cliPath, "--pm-path", pmRoot, ...args], {
-    cwd: repoRoot,
+    cwd: path.dirname(path.dirname(pmRoot)),
     encoding: "utf8",
-    env,
+    env: {
+      ...env,
+      PM_PATH: pmRoot,
+      PM_GLOBAL_PATH: path.join(
+        path.dirname(path.dirname(pmRoot)),
+        ".global-pm",
+      ),
+    },
     timeout: PROCESS_TIMEOUT_MS,
   });
 }
@@ -114,6 +123,7 @@ function createCliFixture(
   return payload.id ?? "";
 }
 
+/** Execute the real stdio handshake and mutations without inheriting another tracker's work context. */
 function runMcpFixture(pmRoot: string, env = processEnvironment()) {
   const requests = [
     {
@@ -145,9 +155,16 @@ function runMcpFixture(pmRoot: string, env = processEnvironment()) {
     })),
   ];
   return spawnSync(process.execPath, [mcpPath], {
-    cwd: repoRoot,
+    cwd: path.dirname(path.dirname(pmRoot)),
     encoding: "utf8",
-    env,
+    env: {
+      ...env,
+      PM_PATH: pmRoot,
+      PM_GLOBAL_PATH: path.join(
+        path.dirname(path.dirname(pmRoot)),
+        ".global-pm",
+      ),
+    },
     input: `${requests.map((request) => JSON.stringify(request)).join("\n")}\n`,
     timeout: PROCESS_TIMEOUT_MS,
   });
@@ -234,9 +251,29 @@ describe("reproducible process transport contract", () => {
   it("makes independent MCP server runs byte-identical", async () => {
     const firstRoot = await createTrackerRoot();
     const secondRoot = await createTrackerRoot();
-    for (const pmRoot of [firstRoot, secondRoot]) {
+    const ambientRoot = await createTrackerRoot();
+    initializeTracker(ambientRoot);
+    for (const [index, pmRoot] of [firstRoot, secondRoot].entries()) {
+      const ambientEnvironment = {
+        ...processEnvironment(`ambient-workset-${index}`),
+        PM_PATH: ambientRoot,
+      };
+      const ambientId = createCliFixture(
+        ambientRoot,
+        `Unrelated work ${index}`,
+        ambientEnvironment,
+      );
+      const claimed = runCli(
+        ambientRoot,
+        ["claim", ambientId],
+        ambientEnvironment,
+      );
+      expect(claimed.status, processDiagnostics(claimed)).toBe(0);
       initializeTracker(pmRoot);
-      const result = runMcpFixture(pmRoot);
+      const result = runMcpFixture(pmRoot, {
+        ...processEnvironment(),
+        PM_PATH: ambientRoot,
+      });
       expect(result.status, processDiagnostics(result)).toBe(0);
       const responses = result.stdout
         .trim()
@@ -268,12 +305,13 @@ describe("reproducible process transport contract", () => {
     const partialEnvironment = processEnvironment();
     delete partialEnvironment.PM_SEED;
     delete partialEnvironment.PM_CLOCK_TICK_MS;
+    const partialRoot = await createTrackerRoot();
 
     const cliResult = spawnSync(
       process.execPath,
       [cliPath, "--json", "--version"],
       {
-        cwd: repoRoot,
+        cwd: path.dirname(path.dirname(partialRoot)),
         encoding: "utf8",
         env: partialEnvironment,
         timeout: PROCESS_TIMEOUT_MS,
@@ -286,10 +324,7 @@ describe("reproducible process transport contract", () => {
       recovery: { missing_required_fields: ["PM_SEED"] },
     });
 
-    const mcpResult = runMcpFixture(
-      "unused-for-initialize",
-      partialEnvironment,
-    );
+    const mcpResult = runMcpFixture(partialRoot, partialEnvironment);
     expect(mcpResult.status, processDiagnostics(mcpResult)).toBe(0);
     const firstResponse = JSON.parse(mcpResult.stdout.split("\n")[0]) as {
       error?: { code?: number; data?: { code?: string; recovery?: unknown } };
