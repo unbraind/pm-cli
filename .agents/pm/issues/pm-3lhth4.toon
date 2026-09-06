@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:observability","area:sdk","area:storage",error-taxonomy,gate,recurrence
 created_at: "2026-08-08T08:00:22.880Z"
-updated_at: "2026-09-06T08:46:07.607Z"
+updated_at: "2026-09-06T08:48:42.075Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "One shared primitive translates host filesystem and resource errno faults into declared PmCliError refusals with a bounded operation label, recovery guidance, and no path disclosure; Every awaited filesystem call site in core and sdk either routes through that primitive or carries a recorded waiver naming why the raw fault is correct; A CI gate fails when a new unguarded filesystem call site is added, so the family cannot silently regrow; The declared codes resolve in the generated error catalog, and a negative control proves a non-errno fault still propagates as a defect rather than being swallowed as environment noise"
@@ -24,7 +24,7 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-j668gl,discovered_from,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
   pm-y4kovm,verifies,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
   pm-4odf0c,recurs_from,"2026-09-06T04:59:23.511Z","harness:codex","cli:update:dep",detected
-comments[30]:
+comments[31]:
   - created_at: "2026-08-08T10:32:51.895Z"
     author: "harness:codex"
     text: "Partial tranche evidence 2026-08-08: added the public path-redacted host errno classifier/translator/async boundary for EACCES, EDQUOT, EMFILE, ENFILE, ENOMEM, ENOSPC, EPERM, and EROFS; snapshot create/restore now consume it while preserving published snapshot error codes. Generated catalog, negative controls, 22/22 linked tests, security scan, and exact full coverage pass. Acceptance is not complete: the remaining awaited filesystem sites still need routing or explicit waivers and a CI recurrence gate. Returning this item to open and releasing the claim rather than claiming whole-repo completion."
@@ -116,6 +116,9 @@ comments[30]:
   - created_at: "2026-09-06T08:46:07.607Z"
     author: "harness:codex"
     text: "New Sentry PM-CLI-3A correlation, not a confirmed root cause: public pm-csv CI run https://github.com/unbraind/pm-csv/actions/runs/34014404682 on commit 40d07ecf3bbfaf17588582e9bbc89fce4a542e10 ran Node 22 close-recovery overrun tests at the event timestamp. Its F2 test reported a real recovery close terminated on a 16-byte buffer at 05:38:17.973Z, removed the temporary tracker, and the next fixture started at 05:38:18.570Z; the Sentry close/history ENOENT is 05:38:18.574Z. The immutable test wrapper delegates via spawnSync(realPm, args, {stdio: inherit}); terminating that wrapper can leave its child running while fixture cleanup removes the tracker. This is a concrete candidate for the previously unidentified CI source, requiring child-lifetime reproduction and fixture telemetry isolation verification before classifying or resolving the Sentry group. No production error is suppressed and no sibling repository is changed. All 21 recently active public PM repositories were checked for workflow starts in the bounded 04:30–05:45 UTC window; other contemporaneous runs lacked a matching close-recovery trace."
+  - created_at: "2026-09-06T08:48:42.075Z"
+    author: "harness:codex"
+    text: "Candidate mechanism reproduced independently with real Node processes (Node 26.7.0, no filesystem/API mocks): a spawnSync wrapper delegating with inherited stdio is terminated with ENOBUFS/SIGTERM after 94 ms at maxBuffer=16; its real child is still running when the caller returns and writes its completion marker later. This establishes the child-lifetime hazard underlying the pm-csv CI correlation. It does not prove the scrubbed Node 22 Sentry event came from that fixture or justify resolving PM-CLI-3A; the exact package fixture still needs reproduction and isolation correction in its owning repository."
 learnings[2]{created_at,author,text}:
   "2026-08-17T02:30:00.618Z","harness:codex","Node can surface Linux quota exhaustion as code='Unknown system error -122' with errno=-122; portable host-boundary classification must normalize declared numeric node:os.constants.errno values rather than guess numeric literals."
   "2026-08-17T05:06:05.230Z","harness:codex","node:os.constants.errno is platform-specific: EDQUOT is declared on Linux but absent on Windows. Numeric errno tests must choose a locally declared equivalent while retaining the Linux EDQUOT path where available, and lookup tables must filter missing runtime constants before constructing numeric maps."
