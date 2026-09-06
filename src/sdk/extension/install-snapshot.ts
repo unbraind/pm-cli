@@ -3,6 +3,7 @@
  *
  * Captures and restores extension files and metadata around install persistence.
  */
+import { withHostEnvironmentBoundary } from "../../core/fs/host-environment-errors.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getSettingsPath } from "../../core/store/paths.js";
@@ -43,7 +44,7 @@ export const captureExtensionInstallSnapshot = async (
   destinationDirectory: string,
   destinationExists: boolean,
   backupDirectory: string,
-): Promise<ExtensionInstallSnapshot> => {
+): Promise<ExtensionInstallSnapshot> => withHostEnvironmentBoundary("extension_install_backup", async () => {
   const managedStatePath = resolveManagedExtensionStatePath(selectedRoot);
   const settingsPath = getSettingsPath(settingsRoot);
   const [managedStateContents, settingsContents] = await Promise.all([
@@ -65,12 +66,12 @@ export const captureExtensionInstallSnapshot = async (
     settingsPath,
     settingsContents,
   };
-};
+});
 
 /** Restore directory and metadata snapshots after a partially persisted install. */
 export const restoreExtensionInstallSnapshot = async (
   snapshot: ExtensionInstallSnapshot,
-): Promise<void> => {
+): Promise<void> => withHostEnvironmentBoundary("extension_install_rollback", async () => {
   await fs.rm(snapshot.destinationDirectory, { recursive: true, force: true });
   if (snapshot.destinationExists) {
     await fs.cp(snapshot.backupDirectory, snapshot.destinationDirectory, {
@@ -89,4 +90,4 @@ export const restoreExtensionInstallSnapshot = async (
       await fs.writeFile(filePath, contents);
     }
   }
-};
+});

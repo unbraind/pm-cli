@@ -5,7 +5,7 @@
  * item enters a terminal lifecycle state.
  */
 import { EXIT_CODE } from "../core/shared/constants.js";
-import { PmCliError } from "../core/shared/errors.js";
+import { PmCliError, type PmCliErrorRecoveryPayload } from "../core/shared/errors.js";
 import type { ItemMetadata } from "../types/index.js";
 
 /** The author-controlled field from which a terminal reason was derived. */
@@ -54,6 +54,8 @@ export interface CloseOperationResult {
   item: Record<string, unknown>;
   /** Metadata fields changed by the transition. */
   changed_fields: string[];
+  /** Evidence-only update guidance when a successful warning close leaves acceptance fields missing. */
+  recovery?: PmCliErrorRecoveryPayload;
   /** Validation and lifecycle policy receipts. */
   warnings: string[];
 }

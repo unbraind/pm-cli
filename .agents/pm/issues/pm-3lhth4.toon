@@ -6,14 +6,14 @@ status: open
 priority: 1
 tags[6]: "area:observability","area:sdk","area:storage",error-taxonomy,gate,recurrence
 created_at: "2026-08-08T08:00:22.880Z"
-updated_at: "2026-09-05T19:26:31.334Z"
+updated_at: "2026-09-06T08:48:42.075Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "One shared primitive translates host filesystem and resource errno faults into declared PmCliError refusals with a bounded operation label, recovery guidance, and no path disclosure; Every awaited filesystem call site in core and sdk either routes through that primitive or carries a recorded waiver naming why the raw fault is correct; A CI gate fails when a new unguarded filesystem call site is added, so the family cannot silently regrow; The declared codes resolve in the generated error catalog, and a negative control proves a non-errno fault still propagates as a defect rather than being swallowed as environment noise"
 parent: pm-o2kc
 risk: medium
 confidence: high
-dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-1qkivy,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
   pm-4odf0c,discovered_from,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
   pm-f05lsg,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
@@ -23,7 +23,8 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp1xsw,implements,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
   pm-j668gl,discovered_from,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
   pm-y4kovm,verifies,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
-comments[15]:
+  pm-4odf0c,recurs_from,"2026-09-06T04:59:23.511Z","harness:codex","cli:update:dep",detected
+comments[31]:
   - created_at: "2026-08-08T10:32:51.895Z"
     author: "harness:codex"
     text: "Partial tranche evidence 2026-08-08: added the public path-redacted host errno classifier/translator/async boundary for EACCES, EDQUOT, EMFILE, ENFILE, ENOMEM, ENOSPC, EPERM, and EROFS; snapshot create/restore now consume it while preserving published snapshot error codes. Generated catalog, negative controls, 22/22 linked tests, security scan, and exact full coverage pass. Acceptance is not complete: the remaining awaited filesystem sites still need routing or explicit waivers and a CI recurrence gate. Returning this item to open and releasing the claim rather than claiming whole-repo completion."
@@ -70,24 +71,78 @@ comments[15]:
   - created_at: "2026-09-05T19:26:31.334Z"
     author: "harness:codex"
     text: "Additional privacy-safe correlation: production telemetry in the Sentry event window contains an install command_error and command_finish with unknown_error and exit code 1, received shortly after the event. This narrows the operation family to installation but does not distinguish destination copying, install backup/rollback, or fresh module-graph verification. The existing typed primitive can cover these boundaries in a reproduced implementation; the current PR retains the issue as unresolved and does not claim recovery from storage exhaustion."
+  - created_at: "2026-09-06T04:59:28.233Z"
+    author: "harness:codex"
+    text: "Live 2026-09-06 evidence confirms the already-recorded PM-CLI-2S recurrence remains active on release 2026.9.5. Extending the connected recovery PR to guard the installation copy, backup/rollback and fresh module graph stages with the existing typed host-fault primitive. Existing snapshot fixes remain shipped; this is recurrence coverage under the canonical owner. Full repository all-call-site enforcement is a separate acceptance obligation and will not be falsely declared complete."
+  - created_at: "2026-09-06T05:01:14.851Z"
+    author: "harness:codex"
+    text: "TDD red: two regression cases fail before implementation. Controlled capacity exhaustion at the injectable copy boundary returns a raw ENOSPC error; real POSIX permission denial during backup returns a raw EACCES error. Implementing stage-level translation while preserving non-errno defects and bounded transient-copy retries."
+  - created_at: "2026-09-06T05:02:20.107Z"
+    author: "harness:codex"
+    text: "Focused verification passes 4 files and 25 tests, including real POSIX permission failures, capacity-fault injection at the existing copy boundary, bounded retries and unchanged propagation of implementation defects. Shared classifier implementation now lives in core/fs with the existing public SDK module reexporting it, so core package verification does not depend on SDK internals."
+  - created_at: "2026-09-06T05:42:35.298Z"
+    author: "harness:codex"
+    text: "Integrated verification 2026-09-06: full source coverage is exact 100/100/100/100: statements 62641/62641, branches 47517/47517, functions 12984/12984, lines 60208/60208. The 8475-test coverage run passed 8474 tests and identified one repository directory-load failure (121 files over the 120-file SDK test folder ceiling). Moving the new receipt-schema suite into tests/unit/sdk/merge restored the limit; the focused 30-test structural/schema/review run passed. All eight active item linked-test runs passed through pm test, preserving execution receipts. Temporary installed npm and Bun consumers passed warning-close, executable evidence update, and immutable-history verification. Packed npx and bunx smoke passed across 13 packages. TypeScript and ESLint passed. Credential scan and npm advisory census found zero secrets/vulnerabilities. Hosted checks, AI review, merge and published release verification are still pending and are separate from this local evidence."
+  - created_at: "2026-09-06T05:44:42.721Z"
+    author: "harness:codex"
+    text: "Final local gates passed: repository static assurance with 100% governed docstring coverage, zero duplicate code, SDK and CLI contracts, context/token ceilings, graph composition, record integrity, package artifact, package-first dogfood, docs/skills and version policy. Exact source coverage and focused directory correction are recorded in the preceding evidence comment. No coverage threshold, source exclusion or quality budget was weakened. Hosted review, merge and release remain separate pending verification. Delivered installation copy, backup, rollback and module-graph snapshot boundaries through the shared core primitive while preserving the public SDK re-export. The Sentry PM-CLI-2S production event is still unresolved pending reviewed deployment. Every filesystem call-site migration/waiver and the recurrence prevention gate remain acceptance obligations; this umbrella returns to open rather than being falsely closed."
+  - created_at: "2026-09-06T05:49:22.254Z"
+    author: "harness:codex"
+    text: "Delivery PR: https://github.com/unbraind/pm-cli/pull/1208 reviews implementation commit 8b9612d6dfdfa917520d96717f3906419ec45e09 with linked source, tests, docs and generated changelog. Hosted CI and review are running. Local Greptile 3.5.2 reports free review quota exhausted; this is provider unavailability, not a clean review. Exact final head and review dispositions are maintained on the PR because each evidence mutation creates a newer commit."
+  - created_at: "2026-09-06T05:57:03.865Z"
+    author: "harness:codex"
+    text: "Final complete rerun supersedes the earlier structural-failure receipt: 623/623 files and 8475/8475 tests pass, with exact 62641 statements, 47517 branches, 12984 functions and 60208 lines covered (100/100/100/100). Published 2026.9.5 tracker compatibility passes with no migration warnings; final health has ten green checks and no failed_because entries, graph composition passes, and history drift verification is clean. Existing legacy hierarchy advisories and 295 incomplete historical closure records remain explicitly disclosed rather than rewritten without evidence."
+  - created_at: "2026-09-06T06:28:28.954Z"
+    author: "harness:codex"
+    text: "Consolidated review verification: 623/623 files and 8476/8476 tests pass at exact 100/100/100/100 (62643 statements, 47519 branches, 12984 functions, 60210 lines). The reproducibility fixture now isolates cwd and both tracker roots, disables external probes and rejects contamination from a changing unrelated workset. Full static quality and typecheck passed; post-closure defect evidence, docs/skills, ESLint and SDK surface checks pass. The second PR head will receive fresh hosted checks and explicit review triggers."
+  - created_at: "2026-09-06T06:50:13.184Z"
+    author: "harness:codex"
+    text: "Live closeout finding 2026-09-06: Sentry PM-CLI-3A is one handled ENOENT/open event at 05:38:18Z, environment ci, release pm-cli@2026.9.5, Node 22.23.2. Matching the public published bundle to the retained frame coordinates identifies close -> item mutation -> history append -> appendLineAtomic -> fs.open. The directory creation precedes the failed append, but the scrubbed event provides no target path or operation context that distinguishes concurrent directory removal, a dangling target or another cause. The matching telemetry window contains no identifying close failure, so causality is not established. This is recorded under the existing filesystem-boundary owner without a duplicate. The installation guards in PR #1208 do not cover this history-write event. It remains unresolved; no Sentry suppression, severity downgrade, invented reproduction or release-gate waiver was applied. A path-private reproduction and history-write failure/rollback evidence are required before claiming remediation."
+  - created_at: "2026-09-06T06:51:57.989Z"
+    author: "harness:codex"
+    text: "Post-review operational census: PR #1208 head 5a29fb4d31e1c536f8e222b8bb93a4fffb86dd7f has all hosted checks passed; exact-head DeepScan reports zero new issues and CodeFactor zero outstanding annotations. GitHub Dependabot, code-scanning and secret-scanning each return zero open alerts; #1208 is the only open PR. Sentry remains a separate deployment/reliability boundary: PM-CLI-2S awaits reviewed installation-guard deployment and PM-CLI-3A requires a history-write reproduction. These unresolved groups must not be represented as a green release reliability result."
+  - created_at: "2026-09-06T07:05:42.277Z"
+    author: "harness:codex"
+    text: "Second-review TDD red: a real POSIX parent-directory permission denial during destination cleanup escapes as raw EACCES before the installation-copy boundary. The regression requires the same bounded, path-private host_environment_permission_fault as the subsequent copy phase."
+  - created_at: "2026-09-06T07:32:24.088Z"
+    author: "harness:codex"
+    text: "Review correction verified: destination cleanup now runs within the same extension_install_copy host-error boundary as copying. A real POSIX parent-directory permission failure yields host_environment_permission_fault, leaves the empty destination unchanged, and preserves existing bounded transient-copy retry behavior. The broader filesystem migration/waiver inventory and Sentry PM-CLI-2S/3A recurrence evidence remain outstanding; this installation tranche does not close the umbrella."
+  - created_at: "2026-09-06T07:39:18.921Z"
+    author: "harness:codex"
+    text: "GH-1209 is the current release-blocker report: https://github.com/unbraind/pm-cli/issues/1209 . Scheduled Auto Release run 34018707399 on main 4f551f5d4a638bb0468af7d2e4d203790aae88ec completed unsuccessfully at sentry-telemetry-gate after preceding candidate gates passed. The exact blockers are PM-CLI-3A (ENOENT close/history append) and PM-CLI-2S (ENOSPC copyfile), both unexpected_fault, critical=0/high=2, access_ok=true. Reuse this existing filesystem owner; do not suppress/resolve the unexplained 3A event to unlock a release. The PR installation boundaries address the reproduced 2S fault family; 3A still lacks source CI context. No release-success claim is made."
+  - created_at: "2026-09-06T07:43:19.071Z"
+    author: "harness:codex"
+    text: The final linked cleanup regression passes through pm test --match extension-host-faults.integration.spec.ts. The consolidated 8477-test coverage run remains exact 100/100/100/100. The installation tranche is complete and this umbrella is open/unclaimed for the explicitly remaining migration and Sentry recurrence work.
+  - created_at: "2026-09-06T08:46:07.607Z"
+    author: "harness:codex"
+    text: "New Sentry PM-CLI-3A correlation, not a confirmed root cause: public pm-csv CI run https://github.com/unbraind/pm-csv/actions/runs/34014404682 on commit 40d07ecf3bbfaf17588582e9bbc89fce4a542e10 ran Node 22 close-recovery overrun tests at the event timestamp. Its F2 test reported a real recovery close terminated on a 16-byte buffer at 05:38:17.973Z, removed the temporary tracker, and the next fixture started at 05:38:18.570Z; the Sentry close/history ENOENT is 05:38:18.574Z. The immutable test wrapper delegates via spawnSync(realPm, args, {stdio: inherit}); terminating that wrapper can leave its child running while fixture cleanup removes the tracker. This is a concrete candidate for the previously unidentified CI source, requiring child-lifetime reproduction and fixture telemetry isolation verification before classifying or resolving the Sentry group. No production error is suppressed and no sibling repository is changed. All 21 recently active public PM repositories were checked for workflow starts in the bounded 04:30–05:45 UTC window; other contemporaneous runs lacked a matching close-recovery trace."
+  - created_at: "2026-09-06T08:48:42.075Z"
+    author: "harness:codex"
+    text: "Candidate mechanism reproduced independently with real Node processes (Node 26.7.0, no filesystem/API mocks): a spawnSync wrapper delegating with inherited stdio is terminated with ENOBUFS/SIGTERM after 94 ms at maxBuffer=16; its real child is still running when the caller returns and writes its completion marker later. This establishes the child-lifetime hazard underlying the pm-csv CI correlation. It does not prove the scrubbed Node 22 Sentry event came from that fixture or justify resolving PM-CLI-3A; the exact package fixture still needs reproduction and isolation correction in its owning repository."
 learnings[2]{created_at,author,text}:
   "2026-08-17T02:30:00.618Z","harness:codex","Node can surface Linux quota exhaustion as code='Unknown system error -122' with errno=-122; portable host-boundary classification must normalize declared numeric node:os.constants.errno values rather than guess numeric literals."
   "2026-08-17T05:06:05.230Z","harness:codex","node:os.constants.errno is platform-specific: EDQUOT is declared on Linux but absent on Windows. Numeric errno tests must choose a locally declared equivalent while retaining the Linux EDQUOT path where available, and lookup tables must filter missing runtime constants before constructing numeric maps."
-files[13]{path,scope,note}:
+files[19]{path,scope,note}:
   sdk/public-surface.json,project,Reviewed additive SDK surface snapshot
+  src/core/extensions/module-graph-snapshot.ts,project,Typed module verification copy stage
+  src/core/fs/host-environment-errors.ts,project,Shared core implementation with stable SDK reexports
   src/sdk/environment/host-environment-errors.ts,project,Shared path-redacted host errno classifier translator and async boundary
+  src/sdk/extension/install-runtime.ts,project,Typed installation copy stage
+  src/sdk/extension/install-snapshot.ts,project,Typed backup and rollback stages
   src/sdk/extension/install-sources.ts,project,Validate registry archives and type missing npm pack artifacts
   src/sdk/generated-error-code-catalog.ts,project,Generated host fault codes and preserved snapshot aliases
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated canonical host-fault source locations after moving the shared boundary
   src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated npm package archive refusal contract
   src/sdk/index.ts,project,Exports the public host environment primitives
   src/sdk/test/execution.ts,project,Apply the shared host-environment boundary to linked-test tracker seeding
   src/sdk/workspace-snapshot.ts,project,Snapshot create and restore stages consume the shared boundary while preserving stable codes
   tests/fixtures/contracts/full.json,project,Generated CLI contract snapshot for typed archive refusal
+  tests/integration/extension-host-faults.integration.spec.ts,project,Capacity classification and real permission-denied rollback boundaries
   tests/unit/commands/test-command.spec.ts,project,Portable numeric capacity-fault fixture at linked-test sandbox boundary
   tests/unit/extensions/extension-install-security.spec.ts,project,Registry archive link and missing-artifact negative controls
   tests/unit/sdk/host-environment-errors.spec.ts,project,All errno classes redaction recovery and non-errno negative controls
   tests/unit/sdk/workspace-snapshot.spec.ts,project,Snapshot integration coverage for compatible shared-boundary codes
-tests[4]:
+tests[5]:
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/sdk/workspace-snapshot.spec.ts
     scope: project
     timeout_seconds: 240
@@ -110,7 +165,15 @@ tests[4]:
       created_at: "2026-08-28T16:52:21.885Z"
       source_kind: local_mutation
       source_ref: fix/repository-test-sentry-isolation
-test_runs[4]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/extension-host-faults.integration.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-06T05:02:19.554Z"
+      source_kind: local_mutation
+      source_ref: feat/receipt-recovery-and-extension-contracts
+test_runs[6]:
   - run_id: test-local-msk8hb2h-vcmjua
     kind: test
     status: passed
@@ -152,6 +215,28 @@ test_runs[4]:
       node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/commands/test-command.spec.ts,schema,schema,source,legacy
       node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-security.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/integration/cli.integration.spec.ts -t 'npm package',schema,schema,source,local_source_ref
+  - run_id: test-local-mtpdqr6f-ylysva
+    kind: test
+    status: passed
+    started_at: "2026-09-06T05:37:06.417Z"
+    finished_at: "2026-09-06T05:37:15.542Z"
+    recorded_at: "2026-09-06T05:37:15.542Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extension-host-faults.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtpi79ap-mlxynj
+    kind: test
+    status: passed
+    started_at: "2026-09-06T07:41:55.862Z"
+    finished_at: "2026-09-06T07:42:03.985Z"
+    recorded_at: "2026-09-06T07:42:03.985Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extension-host-faults.integration.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated reachability inventory includes the new typed archive refusal
   docs/SDK_RUNTIME_BOUNDARIES.md,project,Package author guidance for host fault translation and compatibility codes

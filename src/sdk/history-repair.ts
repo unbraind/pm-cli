@@ -56,6 +56,7 @@ import type {
   ItemMetadata,
 } from "../types/index.js";
 import { resolveHistorySubject } from "./history-redact.js";
+import { isOriginalGitStateRestored } from "./merge/receipt-operation.js";
 import {
   inspectMergeReceiptEvidence,
   summarizeMergeReceipt,
@@ -106,6 +107,13 @@ export interface HistoryRepairCommandOptions {
       receipts: MergeDecisionReceipt[];
     }
   >;
+  /** Restored-origin evidence checked against the same item snapshot protected by the rewrite transaction. */
+  mergeAbandonmentProof?: {
+    /** Git workspace containing the tracked item. */
+    gitWorkspaceRoot: string;
+    /** Authoritative receipt whose original rebase state must match. */
+    receipt: MergeDecisionReceipt;
+  };
 }
 
 /** Documents the history repair result payload exchanged by command, SDK, and package integrations. */
@@ -489,6 +497,29 @@ interface HistoryRepairItemReplayContext {
   loadedItem: Awaited<ReturnType<typeof readLocatedItem>> | null;
 }
 
+/** Refuse a restored-origin audit when its exact item snapshot or clean history has changed. */
+async function assertHistoryRepairAbandonmentProof(
+  proof: HistoryRepairCommandOptions["mergeAbandonmentProof"],
+  context: HistoryRepairItemReplayContext,
+  chainOk: boolean,
+  reanchor: { entriesRehashed: number; entriesPatchRepaired: number },
+): Promise<void> {
+  if (proof === undefined) return;
+  const { receipt, gitWorkspaceRoot } = proof;
+  const canonicalPath = context.currentItemPath === null ? null
+    : path.relative(gitWorkspaceRoot, context.currentItemPath).split(path.sep).join("/");
+  if (!chainOk || reanchor.entriesRehashed !== 0 || reanchor.entriesPatchRepaired !== 0 || context.matchedChainBefore !== true ||
+      context.currentItemRawBeforeLock === null || canonicalPath !== receipt.item_path ||
+      receipt.operation === undefined ||
+      !await isOriginalGitStateRestored(gitWorkspaceRoot, receipt.item_path, receipt.operation, context.currentItemRawBeforeLock)) {
+    throw new PmCliError("Restored-origin receipt evidence no longer proves the exact clean item snapshot.", EXIT_CODE.CONFLICT, {
+      code: "merge_reconcile_receipt_evidence_untrusted",
+      recovery: { suggested_retry: "pm merge reconcile --dry-run" },
+    });
+  }
+}
+
+/** Resolve and verify receipt candidates against loaded item evidence, refusing untrusted preview and apply requests alike. */
 async function resolveHistoryRepairMergeEvidence(params: {
   options: HistoryRepairCommandOptions;
   pmRoot: string;
@@ -535,7 +566,6 @@ async function resolveHistoryRepairMergeEvidence(params: {
   if (
     mergeReceiptProof &&
     !mergeReceiptProof.trusted &&
-    params.options.dryRun !== true &&
     params.options.force !== true
   ) {
     throw new PmCliError(
@@ -703,16 +733,19 @@ function collectHistoryRepairWarnings(
   return warnings;
 }
 
+/** Revalidate item/history bytes and restored-origin Git proof under the rewrite lock before persisting. */
 async function applyHistoryRepairRewrite(params: {
   pmRoot: string;
   subject: Awaited<ReturnType<typeof resolveHistorySubject>>;
   settings: Awaited<ReturnType<typeof readSettings>>;
   typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
   historyRawBeforeLock: string | null;
-  currentItemRawBeforeLock: string | null;
+  itemReplayContext: HistoryRepairItemReplayContext;
+  mergeAbandonmentProof: HistoryRepairCommandOptions["mergeAbandonmentProof"];
+  chainOk: boolean;
+  reanchor: { entriesRehashed: number; entriesPatchRepaired: number };
   author: string;
   force: boolean | undefined;
-  loadedItem: Awaited<ReturnType<typeof readLocatedItem>> | null;
   historyPath: string;
   rewrittenEntries: HistoryEntry[];
 }): Promise<string[]> {
@@ -722,17 +755,24 @@ async function applyHistoryRepairRewrite(params: {
     settings: params.settings,
     typeRegistry: params.typeRegistry,
     historyRawBeforeLock: params.historyRawBeforeLock,
-    currentItemRawBeforeLock: params.currentItemRawBeforeLock,
+    currentItemRawBeforeLock: params.itemReplayContext.currentItemRawBeforeLock,
     operation: "history-repair",
     author: params.author,
     force: params.force,
-    itemDocument: params.loadedItem?.document ?? null,
-    applyRewrite: async ({ historyRawUnderLock }) =>
-      writeHistoryRawWithRollback({
+    itemDocument: params.itemReplayContext.loadedItem?.document ?? null,
+    applyRewrite: async ({ historyRawUnderLock }) => {
+      await assertHistoryRepairAbandonmentProof(
+        params.mergeAbandonmentProof,
+        params.itemReplayContext,
+        params.chainOk,
+        params.reanchor,
+      );
+      await writeHistoryRawWithRollback({
         historyPath: params.historyPath,
         nextHistoryRaw: historyEntriesToRaw(params.rewrittenEntries),
         historyRawUnderLock,
-      }),
+      });
+    },
     applyPostRewrite: async () =>
       runActiveOnWriteHooks({
         path: params.historyPath,
@@ -767,6 +807,22 @@ export async function runHistoryRepair(
     return salvageHistoryTail({ pmRoot, subject, settings, typeRegistry, options, author: resolveAuthor(options.author, settings.author_default) });
   }
   return repairHistorySubject({ pmRoot, subject, settings, typeRegistry, options });
+}
+
+/** Preserve explicit audit requests while reusing exact restored-origin dispositions in verified history. */
+function shouldAppendForcedHistoryAudit(
+  options: HistoryRepairCommandOptions,
+  historyEntries: readonly HistoryEntry[],
+): boolean {
+  // Receipt persistence can fail after the audited history transaction commits.
+  // Only an identical disposition satisfies a retry; unrelated audits do not.
+  const alreadyRecorded = options.mergeAbandonmentProof !== undefined &&
+    options.auditContext !== undefined &&
+    historyEntries.some((entry) =>
+      entry.op === "merge_reconcile" &&
+      stableStringify(entry.context) === stableStringify(options.auditContext),
+    );
+  return options.forceAuditEntry === true && !alreadyRecorded;
 }
 
 /** Reanchor or reconcile one resolved subject, separately from byte-preserving salvage. */
@@ -828,6 +884,7 @@ async function repairHistorySubject(params: {
     historyEntries,
     itemHashVersion,
   );
+  await assertHistoryRepairAbandonmentProof(options.mergeAbandonmentProof, itemReplayContext, chainBefore.ok, reanchor);
 
   const finalReplay = reanchor.finalDocument;
   const finalReplayHashes = replayHashVerificationCandidates(
@@ -868,7 +925,7 @@ async function repairHistorySubject(params: {
     reanchor.entriesRehashed > 0,
     reanchor.entriesPatchRepaired > 0,
     reconcileNeeded,
-    options.forceAuditEntry === true,
+    shouldAppendForcedHistoryAudit(options, historyEntries),
     provenanceNormalization.receipt.changed,
   ].some(Boolean);
   const author = resolveAuthor(options.author, settings.author_default);
@@ -921,10 +978,12 @@ async function repairHistorySubject(params: {
         settings,
         typeRegistry,
         historyRawBeforeLock,
-        currentItemRawBeforeLock: itemReplayContext.currentItemRawBeforeLock,
+        itemReplayContext,
+        mergeAbandonmentProof: options.mergeAbandonmentProof,
+        chainOk: chainBefore.ok,
+        reanchor,
         author,
         force: options.force,
-        loadedItem: itemReplayContext.loadedItem,
         historyPath: subject.historyPath,
         rewrittenEntries,
       })),

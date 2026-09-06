@@ -2,11 +2,13 @@ id: pm-ao0bu9
 title: "GH-1200: Preview exact receipt proof before merge reconciliation"
 description: Reproduce the reported dry-run/apply disagreement after a legitimate post-receipt comment. Preview must run the same exact-snapshot proof and expose the same refusal code without mutating history. The earlier remediation-registry fix does not own this per-stream proof discrepancy.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-09-05T19:06:17.234Z"
-updated_at: "2026-09-05T19:12:52.150Z"
+updated_at: "2026-09-06T06:28:25.623Z"
+closed_at: "2026-09-06T06:08:38.042Z"
+completed_at: "2026-09-06T06:08:38.042Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: A real temporary Git repository reproduces a receipt followed by comment_add before reconciliation; Dry-run and apply classify identical inputs with the same proof failure and no optimistic repaired count; Valid lossless and lossy receipts retain their existing audited settlement behavior and dry-run writes nothing
@@ -17,12 +19,15 @@ parent: pm-dj98
 risk: high
 confidence: medium
 severity: high
+resolution: Require identical trusted receipt proof during preview and application
+expected_result: Stale receipt proof is rejected in both paths without history writes
+actual_result: Stale receipt proof is rejected in both paths without history writes; linked tests and integrated gates passed. Review regressions and linked verification also pass.
 affected_version: 2026.9.5
 component: sdk/merge
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-dj98,implements,"2026-09-05T19:06:17.234Z","harness:codex","cli:create:dep",detected
   pm-r0p3at,discovered_from,"2026-09-05T19:06:17.234Z","harness:codex","cli:create:dep",detected
-comments[2]:
+comments[10]:
   - created_at: "2026-09-05T19:06:17.234Z"
     author: "harness:codex"
     text: "Duplicate-check evidence: strict complete all-status corpus contained 2642 items, including terminal history; exact GitHub issue URL was absent. Request-specific search and current open/in_progress inventories were read. Full live predecessor pm-r0p3at and parent pm-dj98 metadata plus verified history were inspected. This report extends a distinct boundary beyond the closed predecessor and is not a duplicate. Intake remains open and unclaimed."
@@ -30,11 +35,66 @@ comments[2]:
   - created_at: "2026-09-05T19:10:51.535Z"
     author: "harness:codex"
     text: "Intake evidence: GitHub issue #1200 now links this canonical owner through a public comment. The external URL remains in the report body; its redundant graph endpoint was removed because a provider URL without project lifecycle metadata creates an untyped active leaf. Local implements, discovered_from, and applicable verifies edges preserve the actual work lineage. Status remains open and unclaimed."
-notes[1]{created_at,author,text}:
+  - created_at: "2026-09-05T20:44:23.025Z"
+    author: "harness:codex"
+    text: "TDD evidence: a failing regression was recorded before the implementation path was changed. The connected recovery suite now passes nine tests across five files, covering exact preview refusal, legacy redaction consistency and tamper refusal, legacy omitted scalars, immutable acceptance backfill, root/inherited reservation parity, and actual Git rebase abort. Repository-wide gates and hosted review are still pending."
+  - created_at: "2026-09-06T05:20:15.538Z"
+    author: "harness:codex"
+    text: "Integration evidence: all 8467 tests passed. Exact coverage exposed a now-unreachable false-result branch in health attribution: an unforced proof-bearing preview now throws for untrusted evidence in both preview and apply. Health consumes success directly and preserves its fail-closed catch; existing trusted and untrusted integration controls exercise both outcomes."
+  - created_at: "2026-09-06T05:42:29.874Z"
+    author: "harness:codex"
+    text: "Integrated verification 2026-09-06: full source coverage is exact 100/100/100/100: statements 62641/62641, branches 47517/47517, functions 12984/12984, lines 60208/60208. The 8475-test coverage run passed 8474 tests and identified one repository directory-load failure (121 files over the 120-file SDK test folder ceiling). Moving the new receipt-schema suite into tests/unit/sdk/merge restored the limit; the focused 30-test structural/schema/review run passed. All eight active item linked-test runs passed through pm test, preserving execution receipts. Temporary installed npm and Bun consumers passed warning-close, executable evidence update, and immutable-history verification. Packed npx and bunx smoke passed across 13 packages. TypeScript and ESLint passed. Credential scan and npm advisory census found zero secrets/vulnerabilities. Hosted checks, AI review, merge and published release verification are still pending and are separate from this local evidence."
+  - created_at: "2026-09-06T05:44:26.507Z"
+    author: "harness:codex"
+    text: "Final local gates passed: repository static assurance with 100% governed docstring coverage, zero duplicate code, SDK and CLI contracts, context/token ceilings, graph composition, record integrity, package artifact, package-first dogfood, docs/skills and version policy. Exact source coverage and focused directory correction are recorded in the preceding evidence comment. No coverage threshold, source exclusion or quality budget was weakened. Hosted review, merge and release remain separate pending verification."
+  - created_at: "2026-09-06T05:49:18.209Z"
+    author: "harness:codex"
+    text: "Delivery PR: https://github.com/unbraind/pm-cli/pull/1208 reviews implementation commit 8b9612d6dfdfa917520d96717f3906419ec45e09 with linked source, tests, docs and generated changelog. Hosted CI and review are running. Local Greptile 3.5.2 reports free review quota exhausted; this is provider unavailability, not a clean review. Exact final head and review dispositions are maintained on the PR because each evidence mutation creates a newer commit."
+  - created_at: "2026-09-06T05:57:00.426Z"
+    author: "harness:codex"
+    text: "Final complete rerun supersedes the earlier structural-failure receipt: 623/623 files and 8475/8475 tests pass, with exact 62641 statements, 47517 branches, 12984 functions and 60208 lines covered (100/100/100/100). Published 2026.9.5 tracker compatibility passes with no migration warnings; final health has ten green checks and no failed_because entries, graph composition passes, and history drift verification is clean. Existing legacy hierarchy advisories and 295 incomplete historical closure records remain explicitly disclosed rather than rewritten without evidence."
+  - created_at: "2026-09-06T06:08:36.727Z"
+    author: "harness:codex"
+    text: "Review evidence: all three CodeRabbit inline findings were implemented and acknowledged on their original threads. The revised linked tests pass, including quoted paths with spaces, independently executed terminal argv, and current-policy hash-only provenance. All ten first-round bot artifacts received a revision-specific reaction and explanation. The Sourcery guide recommendations to ignore durable sidecars or infer a field named collections were declined with contract evidence; reviewer quota notices are not treated as approval. The original reviewed head also passed exact DeepScan and CodeFactor hosted-analysis proof. Full updated-head gates are running."
+  - created_at: "2026-09-06T06:28:25.623Z"
+    author: "harness:codex"
+    text: "Consolidated review verification: 623/623 files and 8476/8476 tests pass at exact 100/100/100/100 (62643 statements, 47519 branches, 12984 functions, 60210 lines). The reproducibility fixture now isolates cwd and both tracker roots, disables external probes and rejects contamination from a changing unrelated workset. Full static quality and typecheck passed; post-closure defect evidence, docs/skills, ESLint and SDK surface checks pass. The second PR head will receive fresh hosted checks and explicit review triggers."
+notes[2]{created_at,author,text}:
   "2026-09-05T19:06:17.234Z","harness:codex",Reproduce the reported dry-run/apply disagreement after a legitimate post-receipt comment. Preview must run the same exact-snapshot proof and expose the same refusal code without mutating history. The earlier remediation-registry fix does not own this per-stream proof discrepancy.
-files[2]{path,scope,note}:
+  "2026-09-06T04:53:27.050Z","harness:codex",Preview and apply share exact receipt proof validation. First repository coverage run caught old expectations that dry-run reported failed proof as a successful repair. Those expectations are being corrected to assert nonmutating failure parity.
+files[9]{path,scope,note}:
+  src/sdk/governance/health.ts,project,Health attribution consumes the strict preview success contract
+  src/sdk/history-repair.ts,project,SDK recovery implementation and executable regression evidence
   src/sdk/merge/receipts.ts,project,Existing implementation boundary to reproduce and improve
+  src/sdk/merge/reconcile.ts,project,SDK recovery implementation and executable regression evidence
+  tests/integration/merge-receipt-health-classification.integration.spec.ts,project,Recovery contract implementation and regression evidence
+  tests/integration/merge-recovery-parity.integration.spec.ts,project,SDK recovery implementation and executable regression evidence
+  tests/unit/commands/merge-reconcile-command.spec.ts,project,Recovery contract implementation and regression evidence
+  tests/unit/sdk/history-repair-version-contract.spec.ts,project,Recovery contract implementation and regression evidence
   tests/unit/sdk/merge-reconcile.spec.ts,project,Existing regression suite to extend; no new regression is claimed
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/merge-recovery-parity.integration.spec.ts,project,240,"harness:codex","2026-09-05T20:44:22.520Z",local_mutation,feat/receipt-recovery-and-extension-contracts
+test_runs[1]:
+  - run_id: test-local-mtpdos9s-it5ta5
+    kind: test
+    status: passed
+    started_at: "2026-09-06T05:35:28.882Z"
+    finished_at: "2026-09-06T05:35:43.648Z"
+    recorded_at: "2026-09-06T05:35:43.648Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/merge-recovery-parity.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/MERGE_SAFETY.md,project,Existing public contract to preserve and clarify
+close_reason: Completed verified PR 1208 review improvements and structured regression evidence.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-ao0bu9
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/merge-recovery-parity.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/merge-recovery-parity.integration.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
 body: "## Report and scope\n\nSource: https://github.com/unbraind/pm-cli/issues/1200\n\nReproduce the reported dry-run/apply disagreement after a legitimate post-receipt comment. Preview must run the same exact-snapshot proof and expose the same refusal code without mutating history. The earlier remediation-registry fix does not own this per-stream proof discrepancy.\n\n## Reported reproduction\n\n## Summary\n\n`pm merge reconcile --dry-run` and `pm merge reconcile` disagree about the same unchanged inputs, in the direction that makes the dry run useless: the preview reports success for streams the real run then refuses. The divergence is deterministic and reproduces on every invocation.\n\nReproduced on **@unbrained/pm-cli 2026.9.5** (also present on 2026.9.2).\n\n## Observed\n\nSame working tree, no edits between the two commands:\n\n```\n$ pm merge reconcile --dry-run --json\nok: False | totals: {'repaired': 2, 'skipped_clean': 0, 'failed': 0}\n   pm-linear-unfa -> repaired\n   pm-linear-4yle -> repaired\n\n$ pm merge reconcile --json\nok: False | totals: {'repaired': 0, 'skipped_clean': 0, 'failed': 2}\n   pm-linear-unfa -> failed  Merge receipt evidence for pm-linear-unfa does not prove the exact item snapshot (no_receipt_set_proves_snapshot).\n   pm-linear-4yle -> failed  Merge receipt evidence for pm-linear-4yle does not prove the exact item snapshot (no_receipt_set_proves_snapshot).\n```\n\n`repaired: 2 / failed: 0` becomes `repaired: 0 / failed: 2`. Every per-stream `outcome` flips from `repaired` to `failed`.\n\n## Why this matters\n\nThe dry run's stated contract is to preview the real run, and its own guidance tells the operator to rely on it:\n\n> `Review repair.streams, then rerun pm merge reconcile without --dry-run to apply audited repairs.`\n\nAn agent following that guidance concludes two streams will be repaired and proceeds. Nothing is repaired. Because the failure is about **evidence sufficiency** rather than about writing, the dry run could determine it just as well as the real run — the check is simply not being applied on the preview path.\n\nNote the dry run is not merely optimistic in aggregate: it individually labels each stream `repaired`, which is the field an agent would parse to decide.\n\n## Expected\n\n`--dry-run` should apply the same receipt-evidence validation as the apply path, so a stream that will fail with `no_receipt_set_proves_snapshot` is previewed as `failed` with that same error. If the evidence check genuinely cannot run without writing, the preview should report the outcome as undetermined rather than as `repaired`.\n\n## Detail worth keeping\n\nBoth flagged receipts are of the shape `requested_preference: ours`, `conflict_resolution: stable_value_order`, and both sit in `.git/pm-merge-receipts/` while the item files received later legitimate `comment_add` events. That later edit is what makes the receipt no longer prove the current snapshot — a completely ordinary sequence for a multi-agent repository, so this is the common case rather than a corner case.\n\n`git status` stays clean across both invocations, so the apply path writes nothing when it fails; the divergence is purely in reporting.\n\n## Environment\n\n- @unbrained/pm-cli 2026.9.5, Node 22, Linux\n- 80 items / 83 history streams, 2 clone-local receipts\n\n## Delivery boundary\n\nIntake only in PR #1204. This item remains open and unclaimed; no implementation or reproduction success is asserted. Implement through the public SDK with thin CLI adapters and executable negative controls before closing."

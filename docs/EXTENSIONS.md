@@ -99,10 +99,7 @@ Installation activates `pm.extensions`. `pm.docs`, `pm.examples`, `pm.assets`, a
 - Scaffold selectors and manifest capabilities differ: `profile` registers a profile under `schema`. The [capability matrix](SDK.md#minimal-command-extension) explains each registration, schema-governed flags, and why `schema`/`profile` omit narrow `activation.commands` so their contributions stay globally available.
 - Starter manifests declare `trusted: true`, `sandbox_profile: "strict"`, and explicit false permissions for filesystem, network, environment, and subprocess access. Declarative tests import `manifest.json` and call `assertExtensionManifestMatchesBlueprint`, detecting capability drift before publication.
 - Larger packages may use nested extension directories and declare required runtime dependencies and permissions. Validate with `pm package doctor`; its advisory `extension_schema_narrow_activation` finding recommends removing narrow activation when custom item types or fields need global availability.
-Package tests can pair `readPmPackageManifest(packageRoot)` with
-`assertPackageManifest(manifest, { resources: ... })` from
-`@unbrained/pm-cli/sdk` to prove aliases and resource paths without duplicating
-pm's manifest normalization logic.
+Package tests can pair `readPmPackageManifest(packageRoot)` with `assertPackageManifest(manifest, { resources: ... })` from `@unbrained/pm-cli/sdk` to prove aliases and resource paths without duplicating pm's manifest normalization logic.
 
 When no package manifest is present, `pm` discovers conventional extension directories:
 
@@ -290,7 +287,7 @@ Surface tokens include command handlers/overrides, parser/preflight/services/ren
 
 Some extension surfaces are intentionally single-winner: command handlers and overrides, parser overrides, preflight overrides, and format renderers. Activation is deterministic: lower manifest `priority` values load first, omitted priority defaults to `100`, equal priorities sort by package identity/path, and the last registration wins. If multiple packages register the same single-winner surface, `pm package doctor` / `pm health` report deterministic `extension_*_collision` warnings whose suffix names the winning layer/package before the displaced layer/package. `pm package describe --json` also exposes `command_ownership`: every claimant in activation order, the effective winner, collision state, and the explicit `last_activated_wins` policy. SDK hosts can build the identical table with `buildExtensionDescribeResult` and the exported `ExtensionCommandOwnership` contracts. Renderer ownership is evaluated per command: same-format renderers with disjoint `commands` lists safely coexist, while an unscoped or overlapping claim still warns; runtime `resultDiscriminator` predicates alone cannot prove static disjointness. Tracked by [pm-6mjxgq](../.agents/pm/issues/pm-6mjxgq.toon).
 
-For definition-based commands, validation is isolated per command: a malformed definition is recorded as `extension_command_quarantined:*` with a registration trace while valid siblings continue to activate. Unknown-command recovery reports that failure without recommending reinstallation.
+For definition-based commands, a malformed definition is recorded as `extension_command_quarantined:*` with a registration trace. Activation then rolls back all registrations from that extension, preserving atomic package activation. Fix the failed definition before expecting sibling commands to load. Other valid extensions retain their registrations.
 Use the warning details to resolve the overlap:
 
 ```bash
@@ -335,6 +332,8 @@ pm schema show <Type>
 pm contracts --runtime-only --schema-only --json
 pm contracts --command <command> --flags-only --json
 ```
+
+`CliFlagContract.reservation_scope` tells package authors which host flags are reserved: `inherited` flags (including their aliases) cannot be redeclared by extensions; `root_only` flags belong only to the root command. The public `GLOBAL_FLAG_CONTRACTS` table from `@unbrained/pm-cli/sdk/contracts` exposes the same classification used by runtime validation. For example, an extension may define its own boolean `--explain`; root `pm --explain` keeps its host meaning. Redeclaring inherited `--json` fails validation and rolls back that package's activation. See [pm-2h8t6y](../.agents/pm/issues/pm-2h8t6y.toon).
 
 List-valued inline flags and `registerFlags` entries share one ordered
 accumulator across their long and short aliases. For a variadic positional that

@@ -540,6 +540,7 @@ describe("clone-local merge decision receipts", () => {
         reason: "schema_invalid",
         receipt_id: "cccc-corrupt",
         validation_error: "collections",
+        validation_path: "decisions[0]",
       },
       {
         evidence_source: "clone_local",
@@ -552,12 +553,14 @@ describe("clone-local merge decision receipts", () => {
         reason: "schema_invalid",
         receipt_id: "eeee-corrupt",
         validation_error: "collections",
+        validation_path: "decisions[0]",
       },
       {
         evidence_source: "clone_local",
         reason: "schema_invalid",
         receipt_id: "ffff-corrupt",
         validation_error: "collections",
+        validation_path: "decisions[0]",
       },
     ];
     expect(await inspectMergeReceiptEvidence(workspace)).toEqual({

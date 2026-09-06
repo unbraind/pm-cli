@@ -4,6 +4,7 @@
  * Provides the post-merge SDK workflow that previews or repairs every drifted
  * item-history stream, then verifies history and storage integrity in one call.
  */
+import { settleAbandonedMergeReceipts } from "./abandoned-receipts.js";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -65,6 +66,8 @@ export interface MergeReconcileResult {
   receipts: {
     pending_before: number;
     reconciled: number;
+    /** Receipts proven to restore their original Git state; these do not represent applied merges. */
+    abandoned: number;
     summaries: MergeDecisionReceiptSummary[];
     /** Missing durable references discovered before this reconciliation. */
     missing_history_references_before: number;
@@ -389,8 +392,13 @@ export async function runMergeReconcile(
     global,
   });
   const pendingReceipts = receiptEvidence.receipts;
+  const abandonedReceiptIds = await settleAbandonedMergeReceipts({
+    cwd: gitWorkspaceRoot, receipts: pendingReceipts, dryRun,
+    author: options.author, message: options.message, global,
+  });
+  const abandonedIds = new Set(abandonedReceiptIds);
   const receiptsByItem = new Map<string, typeof pendingReceipts>();
-  for (const receipt of pendingReceipts) {
+  for (const receipt of pendingReceipts.filter((entry) => !abandonedIds.has(entry.id))) {
     const receipts = receiptsByItem.get(receipt.item_id) ?? [];
     receipts.push(receipt);
     receiptsByItem.set(receipt.item_id, receipts);
@@ -472,7 +480,7 @@ export async function runMergeReconcile(
   );
   const receiptSettlementComplete = dryRun
     ? pendingReceipts.length === 0
-    : reconciledReceiptCount === pendingReceipts.length;
+    : reconciledReceiptCount + abandonedReceiptIds.length === pendingReceipts.length;
   const ok = [
     repair.totals.failed === 0,
     mergeChecksGreen,
@@ -515,6 +523,7 @@ export async function runMergeReconcile(
     receipts: {
       pending_before: pendingReceipts.length,
       reconciled: reconciledReceiptCount,
+      abandoned: abandonedReceiptIds.length,
       summaries: pendingReceipts.map(summarizeMergeReceipt),
       missing_history_references_before: missingBefore.count,
       legacy_disposition_eligible: legacyDispositionCandidates.length,

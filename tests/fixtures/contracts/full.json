@@ -17559,7 +17559,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/environment/host-environment-errors.ts"
+        "core/fs/host-environment-errors.ts"
       ],
       "stability": "provisional"
     },
@@ -17576,7 +17576,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/environment/host-environment-errors.ts"
+        "core/fs/host-environment-errors.ts"
       ],
       "stability": "provisional"
     },
@@ -17593,7 +17593,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/environment/host-environment-errors.ts"
+        "core/fs/host-environment-errors.ts"
       ],
       "stability": "provisional"
     },
@@ -17610,7 +17610,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/environment/host-environment-errors.ts"
+        "core/fs/host-environment-errors.ts"
       ],
       "stability": "provisional"
     },

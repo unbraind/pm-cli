@@ -272,22 +272,11 @@ describe("history repair hash epoch contract", () => {
         evidence_source: "durable",
       };
 
-      const result = await runHistoryRepair(
+      await expect(runHistoryRepair(
         id,
-        {
-          dryRun: true,
-          mergeReceiptProof: {
-            gitWorkspaceRoot: context.tempRoot,
-            receipts: [forgedReceipt],
-          },
-        },
+        { dryRun: true, mergeReceiptProof: { gitWorkspaceRoot: context.tempRoot, receipts: [forgedReceipt] } },
         { path: context.pmPath },
-      );
-      expect(result.merge_receipt_proof).toEqual({
-        trusted: false,
-        reason: "no_item_receipts",
-        receipt_ids: [],
-      });
+      )).rejects.toThrow("no_item_receipts");
       await expect(
         runHistoryRepair(
           id,

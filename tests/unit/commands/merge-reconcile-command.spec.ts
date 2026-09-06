@@ -398,7 +398,7 @@ describe("merge reconcile command", () => {
         ok: false,
         dry_run: true,
         receipts: { pending_before: 1, reconciled: 0 },
-        repair: { totals: { failed: 0 } },
+        repair: { totals: { failed: 1 } },
       });
     });
   });

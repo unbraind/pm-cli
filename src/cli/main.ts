@@ -74,6 +74,7 @@ import {
   resolvePmRoot,
   readSettings,
   readSettingsWithMetadata,
+  runWithHarnessDetectionSignals,
   runWithWorkspaceHarnessSignalDescriptors,
   type GlobalOptions,
   createLazyModule,
@@ -2926,6 +2927,7 @@ async function handleRunPmCliError(params: { error: unknown; invocationArgv: str
   });
 }
 
+/** Dispatch one fresh CLI invocation with deterministic process state and tracker-scoped attribution. */
 async function runPmCliInReproducibleContext(rawArgv: string[]): Promise<void> {
   program = createPmCliProgram(CLI_VERSION);
   attachProgramLifecycleHooks(program);
@@ -2988,22 +2990,26 @@ async function runPmCliInReproducibleContext(rawArgv: string[]): Promise<void> {
       program.outputHelp();
       return;
     }
-    const invocationSettings = await readSettings(resolvePmRoot(process.cwd(), bootstrapGlobal.path));
+    const invocationPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
+    const invocationSettings = await readSettings(invocationPmRoot);
     const intentSnapshot = await loadContextIntentSnapshotForInvocation(
       invocationArgv,
-      resolvePmRoot(process.cwd(), bootstrapGlobal.path),
+      invocationPmRoot,
       bootstrapGlobal.noExtensions,
       loadRuntimeExtensionSnapshot,
     );
     await runWithDiscoveredContextIntentContracts(
       {
-        pmRoot: resolvePmRoot(process.cwd(), bootstrapGlobal.path),
+        pmRoot: invocationPmRoot,
         packages: intentSnapshot?.contextIntentPackages,
       },
       () =>
-        runWithWorkspaceHarnessSignalDescriptors(invocationSettings.agent_identity!.harness_signals, () => program.parseAsync(invocationProcessArgv), {
-          probesEnabled: invocationSettings.agent_identity?.probes_enabled,
-        }),
+        runWithHarnessDetectionSignals(
+          { env: { ...process.env, PM_PATH: invocationPmRoot }, argv: invocationProcessArgv, cwd: process.cwd() },
+          () => runWithWorkspaceHarnessSignalDescriptors(invocationSettings.agent_identity!.harness_signals, () => program.parseAsync(invocationProcessArgv), {
+            probesEnabled: invocationSettings.agent_identity?.probes_enabled,
+          }),
+        ),
     );
   } catch (error: unknown) {
     await handleRunPmCliError({ error, invocationArgv });

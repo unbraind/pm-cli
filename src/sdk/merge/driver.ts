@@ -29,6 +29,7 @@ import {
   mergeRelationshipEventStreams,
   type MergePreferredSide,
 } from "./three-way.js";
+import { captureMergeReceiptOperation } from "./receipt-operation.js";
 import {
   summarizeMergeReceipt,
   writeMergeReceipt,
@@ -287,6 +288,7 @@ export async function runMergeDriver(
           ]),
         ),
         decisions: itemMerge.conflict_decisions,
+        operation: await captureMergeReceiptOperation(process.cwd(), options.itemPath),
       };
     }
   } else {

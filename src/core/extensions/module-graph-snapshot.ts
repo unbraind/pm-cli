@@ -4,6 +4,7 @@
  * Creates fresh, caller-owned extension directory snapshots for uncached ESM
  * verification.
  */
+import { withHostEnvironmentBoundary } from "../fs/host-environment-errors.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -47,9 +48,9 @@ export async function snapshotExtensionModuleGraph(
     snapshotRoot,
     `${extension.layer}-${extension.directory.replace(/[^a-zA-Z0-9._-]/gu, "_")}`,
   );
-  await fs.cp(sourceDirectory, snapshotDirectory, {
+  await withHostEnvironmentBoundary("extension_module_graph_snapshot", () => fs.cp(sourceDirectory, snapshotDirectory, {
     recursive: true,
     force: true,
-  });
+  }));
   return path.join(snapshotDirectory, relativeEntryPath);
 }

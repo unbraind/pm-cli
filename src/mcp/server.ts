@@ -633,16 +633,18 @@ async function emitMcpChangeNotifications(
   pruneClosedMcpSubscriptionRegistries();
 }
 
+/** Resolve one tool's workspace and scope SDK attribution to that request without changing process environment. */
 async function handleToolCall(
   paramsInput: Record<string, unknown> | undefined,
   clientInfo: AgentClientInfo | undefined,
   progressiveDiscoveryNegotiated = false,
 ): Promise<Record<string, unknown>> {
+  const clientSignals = clientInfo ? { client_info: clientInfo } : {};
   return runWithHarnessDetectionSignals(
     {
       env: process.env,
       argv: process.argv,
-      ...(clientInfo ? { client_info: clientInfo } : {}),
+      ...clientSignals,
     },
     async () => {
       const params = asRecordClone(paramsInput);
@@ -691,33 +693,42 @@ async function handleToolCall(
       const workspaceIdentity = (await pathExists(getSettingsPath(pmRoot)))
         ? (await readSettings(pmRoot)).agent_identity
         : undefined;
-      return runWithWorkspaceHarnessSignalDescriptors(
-        workspaceIdentity?.harness_signals ?? [],
-        async () => {
-          // pm-qxwu: non-breaking detection of typo'd / unexpected top-level keys.
-          // additionalProperties stays true so passthrough still works; we only warn.
-          // pm-upi0 extends the same mechanism into the nested options object.
-          const action = resolveInvokedAction(name, args);
-          const warnings = [
-            ...detectUnexpectedTopLevelKeys(name, args, declaredToolKeys()),
-            ...detectUnexpectedOptionKeys(name, action, args),
-            ...(await collectMutationGuardWarnings(name, action, args)),
-          ];
-          for (const warning of warnings) {
-            console.error(`[pm-mcp] ${warning}`);
-          }
-          // cwd is applied inside the serialized activation cycle (see withActiveExtensions),
-          // so the chdir/restore is exclusive per request and cannot race a concurrent caller.
-          const result = await handler(args);
-          void emitMcpChangeNotifications(action);
-          return resultContent(
-            result,
-            warnings,
-            args.tokenAccounting === true,
-            progressiveDiscoveryNegotiated,
-          );
+      return runWithHarnessDetectionSignals(
+        {
+          env: { ...process.env, PM_PATH: pmRoot },
+          argv: process.argv,
+          cwd,
+          ...clientSignals,
         },
-        { probesEnabled: workspaceIdentity?.probes_enabled },
+        () =>
+          runWithWorkspaceHarnessSignalDescriptors(
+            workspaceIdentity?.harness_signals ?? [],
+            async () => {
+              // pm-qxwu: non-breaking detection of typo'd / unexpected top-level keys.
+              // additionalProperties stays true so passthrough still works; we only warn.
+              // pm-upi0 extends the same mechanism into the nested options object.
+              const action = resolveInvokedAction(name, args);
+              const warnings = [
+                ...detectUnexpectedTopLevelKeys(name, args, declaredToolKeys()),
+                ...detectUnexpectedOptionKeys(name, action, args),
+                ...(await collectMutationGuardWarnings(name, action, args)),
+              ];
+              for (const warning of warnings) {
+                console.error(`[pm-mcp] ${warning}`);
+              }
+              // cwd is applied inside the serialized activation cycle (see withActiveExtensions),
+              // so the chdir/restore is exclusive per request and cannot race a concurrent caller.
+              const result = await handler(args);
+              void emitMcpChangeNotifications(action);
+              return resultContent(
+                result,
+                warnings,
+                args.tokenAccounting === true,
+                progressiveDiscoveryNegotiated,
+              );
+            },
+            { probesEnabled: workspaceIdentity?.probes_enabled },
+          ),
       );
     },
   );

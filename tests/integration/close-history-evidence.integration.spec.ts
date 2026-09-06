@@ -19,6 +19,75 @@ interface HistoryEntry {
 }
 
 describe("close history evidence", () => {
+  it("routes warning closes and terminal retries to an evidence-only update", async () => {
+    await withTempPmPath(async (context) => {
+      for (const mode of ["warning", "terminal"]) {
+        const id = createTestItemId(context, {
+          title: "Recover incomplete close evidence",
+        });
+        const closed = await runClose(
+          id,
+          "Delivered",
+          { validateClose: "warn", resolution: "Implemented" },
+          { path: context.pmPath },
+        );
+        expect(closed).toHaveProperty("recovery.suggested_retry_args");
+        const recovery = (
+          closed as unknown as { recovery: { suggested_retry_args: string[] } }
+        ).recovery;
+        const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+        const before = await readFile(historyPath, "utf8");
+        let args = recovery.suggested_retry_args.map((token) =>
+          token === "<value>" ? "Verified evidence" : token,
+        );
+        if (mode === "terminal") {
+          const terminal: unknown = await runClose(
+            id,
+            "Delivered",
+            { expectedResult: "Expected", actualResult: "Observed" },
+            { path: context.pmPath },
+          ).catch((error: unknown) => error);
+          expect(terminal).toMatchObject({
+            context: {
+              recovery: {
+                suggested_retry_args: [
+                  "--pm-path",
+                  context.pmPath,
+                  "update",
+                  id,
+                  "--expected-result",
+                  "Expected",
+                  "--actual-result",
+                  "Observed",
+                ],
+              },
+            },
+          });
+          args = (
+            terminal as {
+              context: { recovery: { suggested_retry_args: string[] } };
+            }
+          ).context.recovery.suggested_retry_args;
+        }
+        expect(context.runCli([...args, "--json"]).code).toBe(0);
+        const after = await readFile(historyPath, "utf8");
+        expect(after.startsWith(before)).toBe(true);
+        expect(
+          context.runCli(["get", id, "--full", "--json"], { expectJson: true })
+            .json,
+        ).toMatchObject({
+          item: {
+            status: "closed",
+            expected_result:
+              mode === "terminal" ? "Expected" : "Verified evidence",
+            actual_result:
+              mode === "terminal" ? "Observed" : "Verified evidence",
+          },
+        });
+      }
+    });
+  });
+
   it("records structured closure evidence in the immutable close event", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, {
@@ -72,6 +141,9 @@ describe("close history evidence", () => {
         ]),
       );
       expect(history.at(-1)?.op).toBe("close");
+      await expect(
+        runClose(id, "Repeat close", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject({ context: { recovery: undefined } });
     });
   });
 });

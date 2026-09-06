@@ -1,0 +1,19 @@
+id: pm-fkohe8
+title: "GH-1207: Make advisory health checks and strict verdict authority explicit"
+description: "GitHub #1207 reports top-level ok true while the storage check has ok false with warn status, and strict CLI exit 2. The closed self-indexing finding work supplies severity and failed_because but does not make the per-check boolean or strict process verdict authoritative. Define compatible SDK and CLI semantics so agents can reliably branch without inferring precedence."
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,"area:cli","area:sdk",health,output-contract
+created_at: "2026-09-06T05:48:07.109Z"
+updated_at: "2026-09-06T05:48:07.109Z"
+author: "harness:codex"
+acceptance_criteria: "Reproduce advisory storage and strict invocation verdicts in an isolated tracker; Publish one authoritative invocation verdict with adjacent deciding reasons; Per-check booleans and severity have documented compatible semantics; SDK, CLI, summary and full projections agree for identical strictness; Preserve existing advisory versus blocking policy"
+parent: pm-larv4r
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ao0bu9,discovered_from,"2026-09-06T05:48:07.109Z","harness:codex","cli:create:dep",detected
+  pm-larv4r,implements,"2026-09-06T05:48:07.109Z","harness:codex","cli:create:dep",detected
+  pm-larv4r,recurs_from,"2026-09-06T05:48:07.109Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-06T05:48:07.109Z","harness:codex","Duplicate check 2026-09-06: strict complete all-status export of 2649 items found no GH-1207 owner. Request-specific search and open/in-progress reads were checked. Full live pm-larv4r metadata and verified history confirm its completed finding-severity scope. This new report arrived during PR 1208 review and is recorded open and unclaimed."
+body: "External report: https://github.com/unbraind/pm-cli/issues/1207\n\nExisting findings and failed_because contracts from pm-larv4r are shipped and must be reused. This item owns the remaining boolean/strictness authority boundary, not the already completed self-indexing work."

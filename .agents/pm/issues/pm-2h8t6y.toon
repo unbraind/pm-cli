@@ -2,11 +2,13 @@ id: pm-2h8t6y
 title: "GH-1205: Declare root-only versus inherited extension flag reservation scope"
 description: Clarify the published distinction between root help flags and inherited host-reserved subcommand flags. The existing preflight contract deliberately validates SUBCOMMAND_GLOBAL_FLAG_CONTRACTS; root --explain and command-local --explain can represent separate parser positions. Confirm runtime behavior and expose a typed machine-readable reservation scope for package authors without abruptly breaking existing pm-context or pm-brief commands.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-09-05T19:06:25.757Z"
-updated_at: "2026-09-05T19:12:56.439Z"
+updated_at: "2026-09-06T06:28:27.495Z"
+closed_at: "2026-09-06T05:44:37.001Z"
+completed_at: "2026-09-06T05:44:37.001Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Public contract data distinguishes root-only flags from enforced inherited subcommand reservations; Blueprint lint, runtime activation, and package author checks consume the same documented scope; Packed extension tests exercise root --explain and command-local --explain without dropping healthy sibling commands; Any compatibility change has an explicit migration contract and does not silently quarantine existing valid packages"
@@ -17,12 +19,15 @@ parent: pm-ugqx
 risk: medium
 confidence: medium
 severity: medium
+resolution: Publish inherited versus root-only host flag reservations through the shared SDK contract
+expected_result: Valid local explain flags activate; actual inherited reservations retain atomic package rejection with no compatibility policy change
+actual_result: Valid local explain flags activate; actual inherited reservations retain atomic package rejection with no compatibility policy change; linked tests and integrated gates passed.
 affected_version: 2026.9.5
 component: sdk/extensions
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-huolbk,discovered_from,"2026-09-05T19:06:25.757Z","harness:codex","cli:create:dep",detected
   pm-ugqx,implements,"2026-09-05T19:06:25.757Z","harness:codex","cli:create:dep",detected
-comments[2]:
+comments[8]:
   - created_at: "2026-09-05T19:06:25.757Z"
     author: "harness:codex"
     text: "Duplicate-check evidence: strict complete all-status corpus contained 2642 items, including terminal history; exact GitHub issue URL was absent. Request-specific search and current open/in_progress inventories were read. Full live predecessor pm-huolbk and parent pm-ugqx metadata plus verified history were inspected. This report extends a distinct boundary beyond the closed predecessor and is not a duplicate. Intake remains open and unclaimed."
@@ -30,11 +35,56 @@ comments[2]:
   - created_at: "2026-09-05T19:10:55.266Z"
     author: "harness:codex"
     text: "Intake evidence: GitHub issue #1205 now links this canonical owner through a public comment. The external URL remains in the report body; its redundant graph endpoint was removed because a provider URL without project lifecycle metadata creates an untyped active leaf. Local implements, discovered_from, and applicable verifies edges preserve the actual work lineage. Status remains open and unclaimed."
-notes[1]{created_at,author,text}:
+  - created_at: "2026-09-05T20:44:37.408Z"
+    author: "harness:codex"
+    text: "TDD evidence: a failing regression was recorded before the implementation path was changed. The connected recovery suite now passes nine tests across five files, covering exact preview refusal, legacy redaction consistency and tamper refusal, legacy omitted scalars, immutable acceptance backfill, root/inherited reservation parity, and actual Git rebase abort. Repository-wide gates and hosted review are still pending."
+  - created_at: "2026-09-06T05:42:32.691Z"
+    author: "harness:codex"
+    text: "Integrated verification 2026-09-06: full source coverage is exact 100/100/100/100: statements 62641/62641, branches 47517/47517, functions 12984/12984, lines 60208/60208. The 8475-test coverage run passed 8474 tests and identified one repository directory-load failure (121 files over the 120-file SDK test folder ceiling). Moving the new receipt-schema suite into tests/unit/sdk/merge restored the limit; the focused 30-test structural/schema/review run passed. All eight active item linked-test runs passed through pm test, preserving execution receipts. Temporary installed npm and Bun consumers passed warning-close, executable evidence update, and immutable-history verification. Packed npx and bunx smoke passed across 13 packages. TypeScript and ESLint passed. Credential scan and npm advisory census found zero secrets/vulnerabilities. Hosted checks, AI review, merge and published release verification are still pending and are separate from this local evidence."
+  - created_at: "2026-09-06T05:44:36.191Z"
+    author: "harness:codex"
+    text: "Final local gates passed: repository static assurance with 100% governed docstring coverage, zero duplicate code, SDK and CLI contracts, context/token ceilings, graph composition, record integrity, package artifact, package-first dogfood, docs/skills and version policy. Exact source coverage and focused directory correction are recorded in the preceding evidence comment. No coverage threshold, source exclusion or quality budget was weakened. Hosted review, merge and release remain separate pending verification."
+  - created_at: "2026-09-06T05:49:20.323Z"
+    author: "harness:codex"
+    text: "Delivery PR: https://github.com/unbraind/pm-cli/pull/1208 reviews implementation commit 8b9612d6dfdfa917520d96717f3906419ec45e09 with linked source, tests, docs and generated changelog. Hosted CI and review are running. Local Greptile 3.5.2 reports free review quota exhausted; this is provider unavailability, not a clean review. Exact final head and review dispositions are maintained on the PR because each evidence mutation creates a newer commit."
+  - created_at: "2026-09-06T05:57:02.256Z"
+    author: "harness:codex"
+    text: "Final complete rerun supersedes the earlier structural-failure receipt: 623/623 files and 8475/8475 tests pass, with exact 62641 statements, 47517 branches, 12984 functions and 60208 lines covered (100/100/100/100). Published 2026.9.5 tracker compatibility passes with no migration warnings; final health has ten green checks and no failed_because entries, graph composition passes, and history drift verification is clean. Existing legacy hierarchy advisories and 295 incomplete historical closure records remain explicitly disclosed rather than rewritten without evidence."
+  - created_at: "2026-09-06T06:28:27.495Z"
+    author: "harness:codex"
+    text: "Consolidated review verification: 623/623 files and 8476/8476 tests pass at exact 100/100/100/100 (62643 statements, 47519 branches, 12984 functions, 60210 lines). The reproducibility fixture now isolates cwd and both tracker roots, disables external probes and rejects contamination from a changing unrelated workset. Full static quality and typecheck passed; post-closure defect evidence, docs/skills, ESLint and SDK surface checks pass. The second PR head will receive fresh hosted checks and explicit review triggers."
+notes[2]{created_at,author,text}:
   "2026-09-05T19:06:25.757Z","harness:codex",Clarify the published distinction between root help flags and inherited host-reserved subcommand flags. The existing preflight contract deliberately validates SUBCOMMAND_GLOBAL_FLAG_CONTRACTS; root --explain and command-local --explain can represent separate parser positions. Confirm runtime behavior and expose a typed machine-readable reservation scope for package authors without abruptly breaking existing pm-context or pm-brief commands.
-files[2]{path,scope,note}:
+  "2026-09-06T04:53:29.435Z","harness:codex","Installed-package negative test exposed stale docs: loader intentionally rolls back an entire extension on command validation failure. Preserve atomic activation, document it correctly, and independently prove local explain versus root explain. The new reservation_scope metadata identifies inherited versus root_only without adding blanket reservations."
+files[5]{path,scope,note}:
+  sdk/public-surface.json,project,Recovery contract implementation and regression evidence
   src/core/extensions/flag-definition-validation.ts,project,Existing implementation boundary to reproduce and improve
+  src/sdk/cli-contracts/flag-contracts.ts,project,SDK recovery implementation and executable regression evidence
+  tests/integration/extension-host-contracts.integration.spec.ts,project,Recovery contract implementation and regression evidence
   tests/unit/core/extension-flag-definition-validation.spec.ts,project,Existing regression suite to extend; no new regression is claimed
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/extension-flag-definition-validation.spec.ts,project,240,"harness:codex","2026-09-05T20:44:36.857Z",local_mutation,feat/receipt-recovery-and-extension-contracts
+test_runs[1]:
+  - run_id: test-local-mtpdq64g-1js7rj
+    kind: test
+    status: passed
+    started_at: "2026-09-06T05:36:40.903Z"
+    finished_at: "2026-09-06T05:36:48.256Z"
+    recorded_at: "2026-09-06T05:36:48.256Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/extension-flag-definition-validation.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,Existing public contract to preserve and clarify
+close_reason: Implemented and locally verified; delivery proceeds through the combined PR review.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-2h8t6y
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/extension-host-contracts.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/extension-host-contracts.integration.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
 body: "## Report and scope\n\nSource: https://github.com/unbraind/pm-cli/issues/1205\n\nClarify the published distinction between root help flags and inherited host-reserved subcommand flags. The existing preflight contract deliberately validates SUBCOMMAND_GLOBAL_FLAG_CONTRACTS; root --explain and command-local --explain can represent separate parser positions. Confirm runtime behavior and expose a typed machine-readable reservation scope for package authors without abruptly breaking existing pm-context or pm-brief commands.\n\n## Reported reproduction\n\n## Summary\n\n`--explain` is declared host-owned in the machine-readable contracts, but an extension that declares the same spelling on one of its commands activates successfully and **wins** at runtime. The contract and the runtime disagree, so whether an extension may declare a given host flag depends on which flag it is, with nothing in the published data saying so.\n\n## What the contracts say\n\n```js\nimport { GLOBAL_FLAG_CONTRACTS, SUBCOMMAND_GLOBAL_FLAG_CONTRACTS } from \"@unbrained/pm-cli/sdk/contracts\";\n// → {\"flag\":\"--explain\",\"value_type\":\"boolean\",\"description\":\"Expand root help with command guidance.\"}\n// 43 host-owned contracts in total\n```\n\n## What the runtime does\n\n`pm-context` declares exactly that spelling on its own command:\n\n```js\n{ long: \"--explain\", description: \"Explain emitted items with ranks/scores …\", type: \"boolean\" }\n```\n\nInstalled as an extension on **2026.9.5**, it activates with no error or warning, the command registers, and the extension's flag takes effect — the host's root-help expansion never happens:\n\n```\n$ pm package install pm-context-2026.8.31.tgz\nok: true\n$ pm --help --all | grep context-pack\n  context-pack [options]   Generate a durable pm context pack for handoffs and reviews.\n$ pm context-pack --explain --limit 2\n# pm context explain\nGenerated: 2026-09-05T18:20:14.790Z\nModel: default-weighted-v1\n…\n```\n\n## Why this is a problem rather than a nicety\n\nOther flags in this same contract list *are* enforced: declaring one aborts registration at the offending command, and — as we have been bitten by before — silently drops the extension's **later** sibling commands. So the list is load-bearing for some entries and inert for others, and an extension author cannot tell which from the published data.\n\nThe two failure directions:\n\n1. **Today**: an extension shadows a documented global. A user who has that extension installed gets different behaviour from `--explain` than the host documents, with nothing reporting the conflict.\n2. **Tomorrow**: if enforcement is extended to cover `--explain`, every extension currently declaring it loses a command at activation — silently, and possibly along with unrelated sibling commands registered after it.\n\nWe currently have two packages declaring it (`pm-context`, `pm-brief`), both passing CI, both exposed to (2).\n\n## Expected\n\nPick one and make the contracts say which:\n\n- **Enforce it** — refuse activation with the same clear error used for the other host-owned flags, so the collision surfaces at install time rather than as divergent runtime behaviour; or\n- **Mark it advisory** — add a field to the contract entries distinguishing *reserved and enforced* from *reserved by convention*, so a package-side gate can check the enforced subset instead of the whole list.\n\nThe second matters because the natural way to build such a gate is to iterate `GLOBAL_FLAG_CONTRACTS` and forbid every entry — which is what one of our packages does. That gate is correct against the published contract and currently forces a user-visible flag rename for a collision the runtime does not actually have.\n\n## Environment\n\n@unbrained/pm-cli 2026.9.5, Node 22/26, Linux. Extension installed from a packed tarball into a fresh `pm init` tracker.\n\n## Delivery boundary\n\nIntake only in PR #1204. This item remains open and unclaimed; no implementation or reproduction success is asserted. Implement through the public SDK with thin CLI adapters and executable negative controls before closing."

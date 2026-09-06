@@ -1493,7 +1493,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/environment/host-environment-errors.ts"],
+    sources: ["core/fs/host-environment-errors.ts"],
     emitting_commands: ["*"],
     canonical_code: "host_environment_capacity_fault",
     aliases: [],
@@ -1506,7 +1506,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/environment/host-environment-errors.ts"],
+    sources: ["core/fs/host-environment-errors.ts"],
     emitting_commands: ["*"],
     canonical_code: "host_environment_operation_invalid",
     aliases: [],
@@ -1519,7 +1519,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/environment/host-environment-errors.ts"],
+    sources: ["core/fs/host-environment-errors.ts"],
     emitting_commands: ["*"],
     canonical_code: "host_environment_permission_fault",
     aliases: [],
@@ -1532,7 +1532,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/environment/host-environment-errors.ts"],
+    sources: ["core/fs/host-environment-errors.ts"],
     emitting_commands: ["*"],
     canonical_code: "host_environment_resource_fault",
     aliases: [],

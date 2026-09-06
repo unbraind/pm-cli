@@ -105,9 +105,21 @@ pm learnings <item-id> --add "Durable lesson for future work."
 pm test <item-id> --run --progress
 node scripts/run-tests.mjs coverage
 pm comments <item-id> "Evidence: linked test and coverage passed."
-pm close <item-id> "Acceptance criteria met; verification passed." --validate-close warn
+pm close <item-id> "Acceptance criteria met; verification passed." --resolution "Delivered behavior" --expected "Required outcome" --actual "Verified outcome" --validate-close warn
 pm release <item-id>
 ```
+
+If a warning close omitted evidence, use its `recovery.suggested_retry_args`
+to append an evidence update while preserving the original close event. See
+[Close Evidence Recovery](CLOSE_EVIDENCE_RECOVERY.md).
+
+For real subprocess tests, set `cwd`, `PM_PATH`, and `PM_GLOBAL_PATH` to the
+fixture's temporary workspace and trackers. This also isolates bootstrap and
+implicit discovery reads. Disable external probes with
+`PM_AGENT_PROBES=0` when testing deterministic process output.
+When testing conflicting ambient context, preserve that deliberate input in the
+fixture. CLI and MCP dispatch scope SDK identity signals to the resolved tracker;
+tests compare complete history bytes while the unrelated tracker's claims change.
 
 ## Token-Minimal Retrieval
 
@@ -181,6 +193,12 @@ Use the canonical [guide topic map](README.md#guide-topic-map) when local in-CLI
 
 ## Reviewed Delivery Closeout
 
+Before closing repository defects, set `escape_class` and structured
+`gate_evidence` through `pm update` as described in
+[Defect Evidence](DEFECT_RECURRENCE.md#defect-evidence-on-pm-items).
+Run `pnpm quality:defect-evidence` after the terminal transitions: a static
+gate run before closure cannot validate evidence required only for closed items.
+
 Treat PM evidence, item closure, and the generated changelog as part of the
 reviewed change. Add all evidence known before merge to the active branch,
 close and release the item there, regenerate `CHANGELOG.md`, and include those
@@ -219,7 +237,10 @@ positively and explain false or stale findings on their actual review surface.
 After each push, request the reviewers again and wait for terminal results;
 provider quota or skipped reviews are limitations, not approvals. Before merge,
 run `inventory` once more to catch new or edited feedback, and require all
-findings to have an explicit disposition.
+findings to have an explicit disposition. Compare each artifact's `revision`
+and pass it as `--revision` when acknowledging feedback, so edited bodies get
+fresh decisions and retrying a handled revision adds no duplicate reply.
+See [Review Loop](PR_REVIEW_LOOP.md) for the revision and reply contracts.
 
 ## Documentation Rules for Agents
 

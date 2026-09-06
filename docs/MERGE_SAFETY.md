@@ -186,6 +186,53 @@ receipt file that the older writer never created. Incomplete, contradictory, or
 modern summaries still fail closed. `runMergeReceiptReport` remains the
 compatible valid-only report.
 
+## Historical receipt reader compatibility
+
+Tracked by [pm-2xtv84](../.agents/pm/issues/pm-2xtv84.toon) and
+[pm-v66zir](../.agents/pm/issues/pm-v66zir.toon). Version-1 preferred-era and
+identified `requested_preference`/`clone_local` receipts may omit `base`, `ours`,
+or `theirs` when the original value was undefined. Readers normalize those slots to the explicit missing-value marker
+in memory. They still require retained/discarded evidence and valid collections;
+reading never rewrites the original file. Collection failures expose a bounded
+`validation_path`, such as `union_fields` or `decisions[0]`. The diagnostic
+category `collections` is not a property that should be added to a receipt.
+The writer now encodes all five scalar slots itself, including undefined
+retained/discarded values supplied directly through the SDK, before JSON storage.
+
+Paired clone-local and historical hash-only copies accept the original scalar
+hash encoding throughout inspection and settlement. Compatibility does not
+apply to durable copies declaring the modern value policy. Changed values or
+immutable coordinates remain copy-provenance failures. Hash-only evidence
+does not recover the original private value.
+
+## Receipts from an aborted rebase
+
+Tracked by [pm-466m0j](../.agents/pm/issues/pm-466m0j.toon). New receipts
+created during a rebase capture only its original commit and item blob in the
+typed `MergeReceiptOperation` contract. After aborting, run:
+
+```bash
+pm merge reconcile --dry-run --json
+pm merge reconcile --message "Record restored original rebase state" --json
+```
+
+Settlement requires Git to have left every active merge/rebase/cherry-pick/revert
+operation, HEAD to match the original commit, and the item in HEAD, index, and
+working tree to match the original blob. The item history must already be clean.
+The history transaction rechecks the proof against its exact protected item
+snapshot. Apply appends an explicit `merge_reconcile` event with
+`abandoned_receipts` and the reason `original_git_state_restored`; it then marks
+both copies reconciled with that settlement reason. The result counts these in
+`receipts.abandoned`, separately from applied merge decisions. Preview performs
+the same eligibility checks and leaves both history and receipts untouched.
+If receipt persistence fails after the audit commits, retry reuses the identical
+verified disposition and finishes the receipt writes without appending another
+audit event. An unrelated earlier audit does not satisfy this check.
+
+Old receipts without operation coordinates remain pending for ordinary review.
+Tracked `merge-receipts/` sidecars are durable provenance and must remain tracked.
+Deleting or ignoring them would lose the evidence needed by other clones.
+
 ## Cross-branch id collision safety
 
 Item ids are `<prefix>` plus random base36 characters, and uniqueness is only probed against the local working tree — two agents branching from the same commit can mint the same id for different items (GH-600 / pm-pibw). Two controls bound that risk:
@@ -210,6 +257,9 @@ pm merge reconcile --force --message "Accept reviewed merge decisions" --json
 ```
 
 The preview reports every drifted stream and pending receipt without mutation.
+It applies the same exact-snapshot proof requirement as apply: stale or
+unprovable receipts appear as failed streams in both modes, tracked by
+[pm-ao0bu9](../.agents/pm/issues/pm-ao0bu9.toon).
 Lossless receipts do not become discarded-value decisions and reconcile without
 `--force`, but `pm health` reports `merge_receipts_pending:<n>` and remains
 non-green until the apply pass settles them. `pm history-repair` cannot clear

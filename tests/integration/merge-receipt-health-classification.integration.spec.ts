@@ -869,11 +869,7 @@ describe("merge receipt health classification", () => {
           await removeReceiptCopies(context.tempRoot, receipt.id);
         }
       };
-      await expect(proofResult(cloneLocalReceipt, null)).resolves.toMatchObject(
-        {
-          merge_receipt_proof: { reason: "git_workspace_unavailable" },
-        },
-      );
+      await expect(proofResult(cloneLocalReceipt, null)).rejects.toThrow("git_workspace_unavailable");
       await expect(
         runHistoryRepair(
           "pm-merge-lossless",
@@ -886,9 +882,7 @@ describe("merge receipt health classification", () => {
           },
           sdkGlobal,
         ),
-      ).resolves.toMatchObject({
-        merge_receipt_proof: { reason: "no_item_receipts" },
-      });
+      ).rejects.toThrow("no_item_receipts");
       for (const callerModifiedReceipt of [
         { ...cloneLocalReceipt, evidence_source: undefined },
         {
@@ -946,12 +940,7 @@ describe("merge receipt health classification", () => {
         ].map(async (overrides) => {
           await expect(
             proveAuthoritativeDurableVariant(overrides),
-          ).resolves.toMatchObject({
-            merge_receipt_proof: {
-              trusted: false,
-              reason: "no_receipt_set_proves_snapshot",
-            },
-          });
+          ).rejects.toThrow("no_receipt_set_proves_snapshot");
         }),
       );
       await expect(
@@ -961,12 +950,7 @@ describe("merge receipt health classification", () => {
             body: hashItemScalarDecisionValue(currentItem.body),
           },
         }),
-      ).resolves.toMatchObject({
-        merge_receipt_proof: {
-          trusted: false,
-          reason: "no_receipt_set_proves_snapshot",
-        },
-      });
+      ).rejects.toThrow("no_receipt_set_proves_snapshot");
       await expect(
         proofResult({
           ...cloneLocalReceipt,
@@ -1984,9 +1968,7 @@ describe("merge receipt health classification", () => {
           },
           { path: path.join(context.tempRoot, ".agents", "pm") },
         ),
-      ).resolves.toMatchObject({
-        merge_receipt_proof: { reason: "item_path_unavailable" },
-      });
+      ).rejects.toThrow("item_path_unavailable");
     });
   }, 60_000);
 });

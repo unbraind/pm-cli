@@ -20,6 +20,53 @@ function connection(nodes: unknown[], hasNextPage = false, endCursor: string | n
 }
 
 describe("PR review loop helper", () => {
+  it("identifies edited feedback by content and review state rather than reaction timestamps", () => {
+    const read = (body: string, updatedAt: string, state = "COMMENTED") => fetchReviewInventory(
+      { owner: "unbraind", name: "pm-cli", repo: "unbraind/pm-cli", pr: 531 },
+      () => JSON.stringify({ data: { repository: { pullRequest: {
+        number: 531, url: "url", headRefOid: "abc123", updatedAt,
+        comments: connection([{ id: "top", body, updatedAt }]),
+        reviews: connection([{ id: "review", body, state, updatedAt }]),
+        reviewThreads: connection([{ id: "thread", comments: connection([{ id: "inline", body, updatedAt }]) }]),
+      } } } }),
+    );
+    const initial = read("Please cover the recovery branch", "before");
+    const reacted = read("Please cover the recovery branch", "after");
+    const edited = read("The recovery branch is now covered", "after");
+    expect(initial.comments.nodes[0]?.revision).toMatch(/^[a-f0-9]{64}$/u);
+    expect(reacted.comments.nodes[0]?.revision).toBe(initial.comments.nodes[0]?.revision);
+    expect(edited.comments.nodes[0]?.revision).not.toBe(initial.comments.nodes[0]?.revision);
+    expect(edited.reviewThreads.nodes[0]?.comments.nodes[0]?.revision).not.toBe(initial.reviewThreads.nodes[0]?.comments.nodes[0]?.revision);
+    expect(read("Please cover the recovery branch", "after", "APPROVED").reviews.nodes[0]?.revision).not.toBe(initial.reviews.nodes[0]?.revision);
+  });
+
+  it("reuses acknowledgements only for the selected source revision and actual inline thread", () => {
+    const stored: Array<{ id: number; body: string; in_reply_to_id?: number }> = [{
+      id: 0, in_reply_to_id: 99, body: `Wrong thread\n\n<!-- pm-review-ack:acknowledge-inline:${"a".repeat(64)} -->`,
+    }];
+    const executeGh = (args: string[]) => {
+      if (args.includes("--slurp")) return JSON.stringify([stored]);
+      const body = args.find((arg) => arg.startsWith("body="))?.slice(5);
+      if (body !== undefined) {
+        const comment = { id: stored.length + 1, body, ...(args[1]?.endsWith("/replies") ? { in_reply_to_id: 42 } : {}) };
+        stored.push(comment);
+        return JSON.stringify(comment);
+      }
+      return '{"ok":true}';
+    };
+    const log = vi.fn();
+    for (const command of ["acknowledge", "acknowledge-inline"]) {
+      for (const revision of ["a".repeat(64), "a".repeat(64), "b".repeat(64)]) {
+        main([command, "--repo", "unbraind/pm-cli", "--pr", "531", "--node-id", command,
+          "--comment-id", "42", "--reaction", "THUMBS_UP", "--body", "Implemented with regression proof", "--revision", revision], { runGh: executeGh, log });
+      }
+    }
+    expect(stored).toHaveLength(5);
+    expect(stored.filter((comment) => comment.in_reply_to_id === 42)).toHaveLength(2);
+    expect(stored[1]?.body).toContain(`pm-review-ack:acknowledge:${"a".repeat(64)}`);
+    expect(stored[2]?.body).toContain(`pm-review-ack:acknowledge:${"b".repeat(64)}`);
+  });
+
   it("parses command options and builds the documented inline reply endpoint", () => {
     expect(parseArgs(["reply-inline", "--pr", "531", "--comment-id", "42"])).toEqual({
       command: "reply-inline",
@@ -318,6 +365,7 @@ describe("PR review loop helper", () => {
     expect(() => main(["acknowledge-inline", "--repo", "unbraind/pm-cli", "--pr", "531"])).toThrow("exit");
     expect(() => main(["watch", "--repo", "unbraind/pm-cli", "--pr", "531", "--interval", "9"])).toThrow("exit");
     expect(() => main(["unknown"])).toThrow("exit");
+    expect(() => main(["acknowledge", "--revision", "not-a-revision"])).toThrow("exit");
 
     expect(error).toHaveBeenCalled();
     exit.mockRestore();
