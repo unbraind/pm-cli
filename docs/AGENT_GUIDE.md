@@ -114,9 +114,12 @@ to append an evidence update while preserving the original close event. See
 [Close Evidence Recovery](CLOSE_EVIDENCE_RECOVERY.md).
 
 For real subprocess tests, set `cwd`, `PM_PATH`, and `PM_GLOBAL_PATH` to the
-fixture's temporary workspace and trackers. A `--pm-path` argument alone does
-not isolate implicit attribution reads. Disable external probes with
+fixture's temporary workspace and trackers. This also isolates bootstrap and
+implicit discovery reads. Disable external probes with
 `PM_AGENT_PROBES=0` when testing deterministic process output.
+When testing conflicting ambient context, preserve that deliberate input in the
+fixture. CLI and MCP dispatch scope SDK identity signals to the resolved tracker;
+tests compare complete history bytes while the unrelated tracker's claims change.
 
 ## Token-Minimal Retrieval
 

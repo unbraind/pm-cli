@@ -23,6 +23,7 @@ function processEnvironment(
 ): NodeJS.ProcessEnv {
   return {
     ...process.env,
+    PM_PATH: undefined,
     PM_CLOCK: CLOCK,
     PM_CLOCK_TICK_MS: "1",
     PM_MCP_PROFILE: "full",
@@ -41,7 +42,7 @@ async function createTrackerRoot(): Promise<string> {
   return path.join(workspace, ".agents", "pm");
 }
 
-/** Run the built CLI with both explicit arguments and implicit discovery rooted in its fixture. */
+/** Run the built CLI against its fixture while preserving deliberately conflicting ambient discovery. */
 function runCli(
   pmRoot: string,
   args: string[],
@@ -52,7 +53,7 @@ function runCli(
     encoding: "utf8",
     env: {
       ...env,
-      PM_PATH: pmRoot,
+      PM_PATH: env.PM_PATH ?? pmRoot,
       PM_GLOBAL_PATH: path.join(
         path.dirname(path.dirname(pmRoot)),
         ".global-pm",
@@ -159,7 +160,7 @@ function runMcpFixture(pmRoot: string, env = processEnvironment()) {
     encoding: "utf8",
     env: {
       ...env,
-      PM_PATH: pmRoot,
+      PM_PATH: env.PM_PATH ?? pmRoot,
       PM_GLOBAL_PATH: path.join(
         path.dirname(path.dirname(pmRoot)),
         ".global-pm",
@@ -248,7 +249,7 @@ describe("reproducible process transport contract", () => {
     );
   });
 
-  it("makes independent MCP server runs byte-identical", async () => {
+  it.each(["CLI", "MCP"])("makes independent %s runs byte-identical despite conflicting ambient claims", async (transport) => {
     const firstRoot = await createTrackerRoot();
     const secondRoot = await createTrackerRoot();
     const ambientRoot = await createTrackerRoot();
@@ -270,6 +271,13 @@ describe("reproducible process transport contract", () => {
       );
       expect(claimed.status, processDiagnostics(claimed)).toBe(0);
       initializeTracker(pmRoot);
+      if (transport === "CLI") {
+        createCliFixture(pmRoot, "CLI explicit tracker fixture", {
+          ...processEnvironment(),
+          PM_PATH: ambientRoot,
+        });
+        continue;
+      }
       const result = runMcpFixture(pmRoot, {
         ...processEnvironment(),
         PM_PATH: ambientRoot,

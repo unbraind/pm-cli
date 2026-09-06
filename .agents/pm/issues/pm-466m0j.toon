@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-05T19:06:20.194Z"
-updated_at: "2026-09-06T06:28:27.048Z"
-closed_at: "2026-09-06T06:08:19.707Z"
-completed_at: "2026-09-06T06:08:19.707Z"
+updated_at: "2026-09-06T07:41:27.040Z"
+closed_at: "2026-09-06T07:41:26.417Z"
+completed_at: "2026-09-06T07:41:26.417Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "An actual conflicting rebase followed by abort has deterministic receipt classification and a supported recovery path; Recovery preserves immutable evidence and cannot dismiss an applied merge merely because a later snapshot differs; Fresh-clone tests prove tracked sidecars never contain arbitrary descriptions, acceptance text, or custom status values; CLI guidance clearly distinguishes clone-local raw receipts from intentionally tracked durable sidecars"
@@ -19,9 +19,9 @@ parent: pm-dj98
 risk: high
 confidence: medium
 severity: high
-resolution: Capture immutable rebase origin coordinates and append audited restored-origin settlements
-expected_result: "Real aborted rebases recover without losing provenance; dirty index, item, HEAD, history or active-operation states refuse settlement"
-actual_result: "Real aborted rebases recover without losing provenance; dirty index, item, HEAD, history or active-operation states refuse settlement; linked tests and integrated gates passed. Review regressions and linked verification also pass."
+resolution: Capture and prove restored original Git state before audited settlement; reuse an identical verified abandonment disposition after interrupted receipt persistence so retries do not duplicate history.
+expected_result: A genuine aborted rebase settles only exact restored-origin evidence; retries preserve immutable history and complete remaining receipt persistence.
+actual_result: "Real Git abort, stale HEAD/index/item and concurrent-history negative controls pass. A real EACCES after audit is retried with byte-identical history, and direct repeated settlement adds no audit. Full 8477-test suite passes with exact 100/100/100/100 coverage."
 affected_version: 2026.9.5
 component: sdk/merge
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
@@ -29,7 +29,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-baksix,discovered_from,"2026-09-05T19:06:20.194Z","harness:codex","cli:create:dep",detected
   pm-dj98,implements,"2026-09-05T19:06:20.194Z","harness:codex","cli:create:dep",detected
   pm-mg13iz,verifies,"2026-09-05T19:06:20.194Z","harness:codex","cli:create:dep",detected
-comments[10]:
+comments[13]:
   - created_at: "2026-09-05T19:06:20.194Z"
     author: "harness:codex"
     text: "Duplicate-check evidence: strict complete all-status corpus contained 2642 items, including terminal history; exact GitHub issue URL was absent. Request-specific search and current open/in_progress inventories were read. Full live predecessor pm-baksix and parent pm-dj98 metadata plus verified history were inspected. This report extends a distinct boundary beyond the closed predecessor and is not a duplicate. Intake remains open and unclaimed."
@@ -61,6 +61,15 @@ comments[10]:
   - created_at: "2026-09-06T06:28:27.048Z"
     author: "harness:codex"
     text: "Consolidated review verification: 623/623 files and 8476/8476 tests pass at exact 100/100/100/100 (62643 statements, 47519 branches, 12984 functions, 60210 lines). The reproducibility fixture now isolates cwd and both tracker roots, disables external probes and rejects contamination from a changing unrelated workset. Full static quality and typecheck passed; post-closure defect evidence, docs/skills, ESLint and SDK surface checks pass. The second PR head will receive fresh hosted checks and explicit review triggers."
+  - created_at: "2026-09-06T07:05:41.685Z"
+    author: "harness:codex"
+    text: "Second-review TDD red: a real read-only durable receipt directory interrupts settlement after the audit append and the clone-local state write. After restoring permissions, retry appends a second audit event for the same receipt. The regression asserts byte-identical history across the retry and retains a different prior merge audit as a negative control."
+  - created_at: "2026-09-06T07:32:23.407Z"
+    author: "harness:codex"
+    text: "Review correction verified: real durable-receipt write EACCES occurs after history audit and clone-local state commit. Retrying now reuses an identical disposition already in the verified history, completes pending receipt persistence, and preserves byte-identical history. A prior unrelated merge audit does not suppress the required new event. Directly replaying the same settlement also leaves history bytes unchanged on all platforms. The linked aborted-rebase regression suite passes with existing exact HEAD/index/item and concurrent-history negative controls."
+  - created_at: "2026-09-06T07:41:25.759Z"
+    author: "harness:codex"
+    text: "Final consolidated source verification: 623 files and 8477 tests pass. Exact coverage is 62651/62651 statements, 47526/47526 branches, 12989/12989 functions, 60217/60217 lines, with zero uncovered counts. The final linked real-Git retry suite passes. No coverage threshold, exclusion or ignore was added for this correction."
 notes[2]{created_at,author,text}:
   "2026-09-05T19:06:20.194Z","harness:codex",Reproduce receipt lifecycle after an aborted rebase and distinguish an abandoned candidate from a merge requiring review. Current source and Merge Safety documentation intentionally track privacy-safe durable sidecars; raw free-form retained/discarded values are clone-local under .git. Durable receipts retain hashes and only allowlisted low-cardinality scalar previews. The report has not demonstrated a secret leak. A blanket gitignore or evidence deletion would break cross-clone provenance and is not an accepted remedy.
   "2026-09-06T04:53:19.264Z","harness:codex","Restored-origin settlement preserves durable sidecars and appends an explicit abandoned_receipts audit event. Git original head/blob, clean history, index and working bytes are checked; exact loaded item bytes are revalidated under the existing rewrite snapshot contract. No implicit force or deletion."
@@ -81,7 +90,7 @@ files[10]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts,project,240,"harness:codex","2026-09-05T20:44:29.203Z",local_mutation,feat/receipt-recovery-and-extension-contracts
   node scripts/run-tests.mjs test -- tests/integration/receipt-operation-boundaries.integration.spec.ts,project,240,"harness:codex","2026-09-06T05:34:01.127Z",local_mutation,feat/receipt-recovery-and-extension-contracts
-test_runs[2]:
+test_runs[4]:
   - run_id: test-local-mtpdq027-fm6ops
     kind: test
     status: passed
@@ -106,9 +115,33 @@ test_runs[2]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/receipt-operation-boundaries.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtph3s1q-6eaf0n
+    kind: test
+    status: passed
+    started_at: "2026-09-06T07:10:45.986Z"
+    finished_at: "2026-09-06T07:11:22.046Z"
+    recorded_at: "2026-09-06T07:11:22.046Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/receipt-operation-boundaries.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtphu6ey-wgxx3e
+    kind: test
+    status: passed
+    started_at: "2026-09-06T07:31:29.453Z"
+    finished_at: "2026-09-06T07:31:53.722Z"
+    recorded_at: "2026-09-06T07:31:53.722Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/receipt-operation-boundaries.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/MERGE_SAFETY.md,project,Existing public contract to preserve and clarify
-close_reason: Completed verified PR 1208 review improvements and structured regression evidence.
+close_reason: Delivered and verified aborted-rebase recovery and retry-safe settlement in PR 1208.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

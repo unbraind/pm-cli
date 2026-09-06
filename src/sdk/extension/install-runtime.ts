@@ -250,12 +250,14 @@ export const copyExtensionDirectoryForInstall = async (
     attempt += 1
   ) {
     try {
-      await fs.rm(destinationDirectory, { recursive: true, force: true });
-      await copyExtensionDirectoryWithoutSelfNesting(
-        sourceDirectory,
-        destinationDirectory,
-        copyDirectory,
-      );
+      await withHostEnvironmentBoundary("extension_install_copy", async () => {
+        await fs.rm(destinationDirectory, { recursive: true, force: true });
+        await copyExtensionDirectoryWithoutSelfNesting(
+          sourceDirectory,
+          destinationDirectory,
+          copyDirectory,
+        );
+      });
       return;
     } catch (error: unknown) {
       if (

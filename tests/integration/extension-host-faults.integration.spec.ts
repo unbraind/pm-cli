@@ -76,6 +76,22 @@ describe("extension host filesystem faults", () => {
         } finally {
           await fs.chmod(source, 0o700);
         }
+        const protectedParent = path.join(context.tempRoot, "protected-parent");
+        const destination = path.join(protectedParent, "installed");
+        await fs.mkdir(destination, { recursive: true });
+        await fs.chmod(protectedParent, 0o500);
+        try {
+          await expect(
+            copyExtensionDirectoryForInstall(source, destination),
+          ).rejects.toMatchObject({
+            name: "PmCliError",
+            context: { code: "host_environment_permission_fault" },
+            message: expect.stringContaining("extension_install_copy"),
+          });
+          expect(await fs.readdir(destination)).toEqual([]);
+        } finally {
+          await fs.chmod(protectedParent, 0o700);
+        }
       });
     },
   );

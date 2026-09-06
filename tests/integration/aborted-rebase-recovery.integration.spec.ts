@@ -1,8 +1,9 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runMergeReconcile } from "../../src/sdk/merge/reconcile.js";
+import { settleAbandonedMergeReceipts } from "../../src/sdk/merge/abandoned-receipts.js";
 import { inspectMergeReceiptEvidence } from "../../src/sdk/merge/receipts.js";
 import {
   captureMergeReceiptOperation,
@@ -124,6 +125,15 @@ describe("aborted rebase receipt recovery", () => {
         ),
       ).toBe(false);
       git("restore", "--staged", "--", receipt.item_path);
+      await runHistoryRepair(
+        id,
+        {
+          forceAuditEntry: true,
+          auditOperation: "merge_reconcile",
+          auditContext: { merge: { abandoned_receipts: [] } },
+        },
+        { path: context.pmPath },
+      );
       const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
       const before = await readFile(historyPath, "utf8");
       const preview = await runMergeReconcile(
@@ -132,12 +142,38 @@ describe("aborted rebase receipt recovery", () => {
       );
       expect(preview.receipts).toHaveProperty("abandoned", 1);
       expect(await readFile(historyPath, "utf8")).toBe(before);
+      let interruptedHistory: string | undefined;
+      if (process.platform !== "win32" && process.getuid?.() !== 0) {
+        const durableDirectory = path.join(context.pmPath, "merge-receipts");
+        await chmod(durableDirectory, 0o500);
+        try {
+          await expect(
+            runMergeReconcile({}, { path: context.pmPath }),
+          ).rejects.toMatchObject({ code: "EACCES" });
+          interruptedHistory = await readFile(historyPath, "utf8");
+          expect(interruptedHistory.startsWith(before)).toBe(true);
+          expect(interruptedHistory).toContain("original_git_state_restored");
+        } finally {
+          await chmod(durableDirectory, 0o700);
+        }
+      }
       const applied = await runMergeReconcile({}, { path: context.pmPath });
       expect(applied.receipts).toMatchObject({ abandoned: 1, reconciled: 0 });
       expect(applied.ok).toBe(true);
       const after = await readFile(historyPath, "utf8");
+      if (interruptedHistory !== undefined)
+        expect(after).toBe(interruptedHistory);
       expect(after.startsWith(before)).toBe(true);
       expect(after).toContain("original_git_state_restored");
+      expect(
+        await settleAbandonedMergeReceipts({
+          cwd: context.tempRoot,
+          receipts: [receipt],
+          dryRun: false,
+          global: { path: context.pmPath },
+        }),
+      ).toEqual([receipt.id]);
+      expect(await readFile(historyPath, "utf8")).toBe(after);
       const settled = await inspectMergeReceiptEvidence(context.tempRoot, {
         includeReconciled: true,
       });

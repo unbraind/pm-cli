@@ -799,6 +799,22 @@ export async function runHistoryRepair(
   return repairHistorySubject({ pmRoot, subject, settings, typeRegistry, options });
 }
 
+/** Preserve explicit audit requests while reusing exact restored-origin dispositions in verified history. */
+function shouldAppendForcedHistoryAudit(
+  options: HistoryRepairCommandOptions,
+  historyEntries: readonly HistoryEntry[],
+): boolean {
+  // Receipt persistence can fail after the audited history transaction commits.
+  // Only an identical disposition satisfies a retry; unrelated audits do not.
+  const alreadyRecorded = options.mergeAbandonmentProof !== undefined &&
+    options.auditContext !== undefined &&
+    historyEntries.some((entry) =>
+      entry.op === "merge_reconcile" &&
+      stableStringify(entry.context) === stableStringify(options.auditContext),
+    );
+  return options.forceAuditEntry === true && !alreadyRecorded;
+}
+
 /** Reanchor or reconcile one resolved subject, separately from byte-preserving salvage. */
 async function repairHistorySubject(params: {
   pmRoot: string;
@@ -899,7 +915,7 @@ async function repairHistorySubject(params: {
     reanchor.entriesRehashed > 0,
     reanchor.entriesPatchRepaired > 0,
     reconcileNeeded,
-    options.forceAuditEntry === true,
+    shouldAppendForcedHistoryAudit(options, historyEntries),
     provenanceNormalization.receipt.changed,
   ].some(Boolean);
   const author = resolveAuthor(options.author, settings.author_default);

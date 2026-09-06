@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:observability","area:sdk","area:storage",error-taxonomy,gate,recurrence
 created_at: "2026-08-08T08:00:22.880Z"
-updated_at: "2026-09-06T06:28:28.954Z"
+updated_at: "2026-09-06T07:43:19.071Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "One shared primitive translates host filesystem and resource errno faults into declared PmCliError refusals with a bounded operation label, recovery guidance, and no path disclosure; Every awaited filesystem call site in core and sdk either routes through that primitive or carries a recorded waiver naming why the raw fault is correct; A CI gate fails when a new unguarded filesystem call site is added, so the family cannot silently regrow; The declared codes resolve in the generated error catalog, and a negative control proves a non-errno fault still propagates as a defect rather than being swallowed as environment noise"
@@ -24,7 +24,7 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-j668gl,discovered_from,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
   pm-y4kovm,verifies,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
   pm-4odf0c,recurs_from,"2026-09-06T04:59:23.511Z","harness:codex","cli:update:dep",detected
-comments[23]:
+comments[29]:
   - created_at: "2026-08-08T10:32:51.895Z"
     author: "harness:codex"
     text: "Partial tranche evidence 2026-08-08: added the public path-redacted host errno classifier/translator/async boundary for EACCES, EDQUOT, EMFILE, ENFILE, ENOMEM, ENOSPC, EPERM, and EROFS; snapshot create/restore now consume it while preserving published snapshot error codes. Generated catalog, negative controls, 22/22 linked tests, security scan, and exact full coverage pass. Acceptance is not complete: the remaining awaited filesystem sites still need routing or explicit waivers and a CI recurrence gate. Returning this item to open and releasing the claim rather than claiming whole-repo completion."
@@ -95,6 +95,24 @@ comments[23]:
   - created_at: "2026-09-06T06:28:28.954Z"
     author: "harness:codex"
     text: "Consolidated review verification: 623/623 files and 8476/8476 tests pass at exact 100/100/100/100 (62643 statements, 47519 branches, 12984 functions, 60210 lines). The reproducibility fixture now isolates cwd and both tracker roots, disables external probes and rejects contamination from a changing unrelated workset. Full static quality and typecheck passed; post-closure defect evidence, docs/skills, ESLint and SDK surface checks pass. The second PR head will receive fresh hosted checks and explicit review triggers."
+  - created_at: "2026-09-06T06:50:13.184Z"
+    author: "harness:codex"
+    text: "Live closeout finding 2026-09-06: Sentry PM-CLI-3A is one handled ENOENT/open event at 05:38:18Z, environment ci, release pm-cli@2026.9.5, Node 22.23.2. Matching the public published bundle to the retained frame coordinates identifies close -> item mutation -> history append -> appendLineAtomic -> fs.open. The directory creation precedes the failed append, but the scrubbed event provides no target path or operation context that distinguishes concurrent directory removal, a dangling target or another cause. The matching telemetry window contains no identifying close failure, so causality is not established. This is recorded under the existing filesystem-boundary owner without a duplicate. The installation guards in PR #1208 do not cover this history-write event. It remains unresolved; no Sentry suppression, severity downgrade, invented reproduction or release-gate waiver was applied. A path-private reproduction and history-write failure/rollback evidence are required before claiming remediation."
+  - created_at: "2026-09-06T06:51:57.989Z"
+    author: "harness:codex"
+    text: "Post-review operational census: PR #1208 head 5a29fb4d31e1c536f8e222b8bb93a4fffb86dd7f has all hosted checks passed; exact-head DeepScan reports zero new issues and CodeFactor zero outstanding annotations. GitHub Dependabot, code-scanning and secret-scanning each return zero open alerts; #1208 is the only open PR. Sentry remains a separate deployment/reliability boundary: PM-CLI-2S awaits reviewed installation-guard deployment and PM-CLI-3A requires a history-write reproduction. These unresolved groups must not be represented as a green release reliability result."
+  - created_at: "2026-09-06T07:05:42.277Z"
+    author: "harness:codex"
+    text: "Second-review TDD red: a real POSIX parent-directory permission denial during destination cleanup escapes as raw EACCES before the installation-copy boundary. The regression requires the same bounded, path-private host_environment_permission_fault as the subsequent copy phase."
+  - created_at: "2026-09-06T07:32:24.088Z"
+    author: "harness:codex"
+    text: "Review correction verified: destination cleanup now runs within the same extension_install_copy host-error boundary as copying. A real POSIX parent-directory permission failure yields host_environment_permission_fault, leaves the empty destination unchanged, and preserves existing bounded transient-copy retry behavior. The broader filesystem migration/waiver inventory and Sentry PM-CLI-2S/3A recurrence evidence remain outstanding; this installation tranche does not close the umbrella."
+  - created_at: "2026-09-06T07:39:18.921Z"
+    author: "harness:codex"
+    text: "GH-1209 is the current release-blocker report: https://github.com/unbraind/pm-cli/issues/1209 . Scheduled Auto Release run 34018707399 on main 4f551f5d4a638bb0468af7d2e4d203790aae88ec completed unsuccessfully at sentry-telemetry-gate after preceding candidate gates passed. The exact blockers are PM-CLI-3A (ENOENT close/history append) and PM-CLI-2S (ENOSPC copyfile), both unexpected_fault, critical=0/high=2, access_ok=true. Reuse this existing filesystem owner; do not suppress/resolve the unexplained 3A event to unlock a release. The PR installation boundaries address the reproduced 2S fault family; 3A still lacks source CI context. No release-success claim is made."
+  - created_at: "2026-09-06T07:43:19.071Z"
+    author: "harness:codex"
+    text: The final linked cleanup regression passes through pm test --match extension-host-faults.integration.spec.ts. The consolidated 8477-test coverage run remains exact 100/100/100/100. The installation tranche is complete and this umbrella is open/unclaimed for the explicitly remaining migration and Sentry recurrence work.
 learnings[2]{created_at,author,text}:
   "2026-08-17T02:30:00.618Z","harness:codex","Node can surface Linux quota exhaustion as code='Unknown system error -122' with errno=-122; portable host-boundary classification must normalize declared numeric node:os.constants.errno values rather than guess numeric literals."
   "2026-08-17T05:06:05.230Z","harness:codex","node:os.constants.errno is platform-specific: EDQUOT is declared on Linux but absent on Windows. Numeric errno tests must choose a locally declared equivalent while retaining the Linux EDQUOT path where available, and lookup tables must filter missing runtime constants before constructing numeric maps."
@@ -149,7 +167,7 @@ tests[5]:
       created_at: "2026-09-06T05:02:19.554Z"
       source_kind: local_mutation
       source_ref: feat/receipt-recovery-and-extension-contracts
-test_runs[5]:
+test_runs[6]:
   - run_id: test-local-msk8hb2h-vcmjua
     kind: test
     status: passed
@@ -197,6 +215,17 @@ test_runs[5]:
     started_at: "2026-09-06T05:37:06.417Z"
     finished_at: "2026-09-06T05:37:15.542Z"
     recorded_at: "2026-09-06T05:37:15.542Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extension-host-faults.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtpi79ap-mlxynj
+    kind: test
+    status: passed
+    started_at: "2026-09-06T07:41:55.862Z"
+    finished_at: "2026-09-06T07:42:03.985Z"
+    recorded_at: "2026-09-06T07:42:03.985Z"
     passed: 1
     failed: 0
     skipped: 0

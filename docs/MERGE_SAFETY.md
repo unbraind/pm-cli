@@ -225,6 +225,9 @@ snapshot. Apply appends an explicit `merge_reconcile` event with
 both copies reconciled with that settlement reason. The result counts these in
 `receipts.abandoned`, separately from applied merge decisions. Preview performs
 the same eligibility checks and leaves both history and receipts untouched.
+If receipt persistence fails after the audit commits, retry reuses the identical
+verified disposition and finishes the receipt writes without appending another
+audit event. An unrelated earlier audit does not satisfy this check.
 
 Old receipts without operation coordinates remain pending for ordinary review.
 Tracked `merge-receipts/` sidecars are durable provenance and must remain tracked.
