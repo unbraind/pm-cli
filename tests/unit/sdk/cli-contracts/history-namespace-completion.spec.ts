@@ -18,7 +18,7 @@ describe("history namespace completion and item addressing", () => {
   it("completes native Bash operations with the same flags as their legacy aliases", () => {
     const script = generateBashScript();
     for (const [leaf, alias, flag] of [
-      ["repair", "history-repair", "--salvage"],
+      ["repair", "history-repair", "--salvage-tail"],
       ["redact", "history-redact", "--literal"],
       ["compact", "history-compact", "--all-streams"],
       ["restore", "restore", "--author"],
@@ -41,7 +41,7 @@ describe("history namespace completion and item addressing", () => {
         { encoding: "utf8" },
       );
       expect(native).toBe(legacy);
-      expect(native).toContain(flag);
+      expect(native.trim().split(/\s+/)).toContain(flag);
     }
     const roots = execFileSync(
       "bash",
@@ -68,6 +68,9 @@ describe("history namespace completion and item addressing", () => {
       );
       expect(script).toContain("redact repair compact activity restore");
     }
+    expect(generateFishScript()).toContain(
+      "complete -c pm -n '__pm_history_operation activity activity' -l unbounded -d 'Return every matching activity entry'",
+    );
   });
 
   it("keeps restore switches valueless and value flags consuming arguments in Zsh and Fish", () => {

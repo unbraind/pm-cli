@@ -1148,6 +1148,7 @@ export function normalizeBootstrapInvocation(
   };
 }
 
+/** Resolve the command leaf needed for option normalization before full Commander registration is available. */
 function parseBootstrapCommandPathName(argv: string[]): string | undefined {
   const stripped = stripGlobalBootstrapTokens(argv);
   const first = stripped[0]?.trim().toLowerCase();

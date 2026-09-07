@@ -2071,6 +2071,7 @@ const EXTENSION_LIFECYCLE_FLAG_CONTRACTS_BY_SUBCOMMAND = new Map<
   ["migrate", EXTENSION_MIGRATE_FLAG_CONTRACTS],
 ]);
 
+/** Bind normalized native history paths to the stable operation keys used by shared flag contracts. */
 function normalizeCommandNameForContracts(
   commandName: string | undefined,
 ): string {

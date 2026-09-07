@@ -356,12 +356,14 @@ function renderZshArgumentSpecs(
     .join("\n");
 }
 
+/** Render root Zsh descriptions while keeping executable compatibility aliases out of default suggestions. */
 function renderZshCommandDescriptions(): string {
   return COMMAND_COMPLETION_DESCRIPTIONS.filter(([command]) => !HIDDEN_COMMAND_ALIASES.has(command)).map(
     ([command, description]) => `    '${command}:${description}'`,
   ).join("\n");
 }
 
+/** Render visible Fish root commands with shell-specific descriptions and hidden-alias filtering. */
 function renderFishCommandDescriptions(): string {
   return COMMAND_COMPLETION_DESCRIPTIONS.filter(
     ([command]) => command !== "help" && !HIDDEN_COMMAND_ALIASES.has(command),
@@ -2698,6 +2700,7 @@ complete -c pm -n '__pm_history_operation activity activity' -l author -d 'Filte
 complete -c pm -n '__pm_history_operation activity activity' -l from -d 'Lower timestamp bound (ISO/date string or relative)' -r
 complete -c pm -n '__pm_history_operation activity activity' -l to -d 'Upper timestamp bound (ISO/date string or relative)' -r
 complete -c pm -n '__pm_history_operation activity activity' -l limit -d 'Max activity entries' -r
+complete -c pm -n '__pm_history_operation activity activity' -l unbounded -d 'Return every matching activity entry'
 complete -c pm -n '__pm_history_operation activity activity' -l compact -d 'Condensed activity projection'
 complete -c pm -n '__pm_history_operation activity activity' -l raw -d 'Emit raw compact per-event activity output'
 complete -c pm -n '__pm_history_operation activity activity' -l full -d 'Show full activity entries'

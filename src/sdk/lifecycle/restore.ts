@@ -130,6 +130,7 @@ function replayCurrentDocument(history: HistoryEntry[]): ItemDocument {
   return canonicalDocument(replayToItemDocument(currentReplay));
 }
 
+/** Resolve live or deleted history and enforce the current item's stream policy before restoring a historical version. */
 async function resolveRestoreSubject(
   pmRoot: string,
   id: string,

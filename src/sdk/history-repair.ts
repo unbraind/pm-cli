@@ -216,6 +216,7 @@ export interface HistoryRepairReconciliationReport {
   recovery_hint: string | null;
 }
 
+/** Read body text or metadata from a replay document for field-level receipt verification. */
 function replayFieldValue(
   document: ReplayDocument,
   field: string,
@@ -390,6 +391,7 @@ async function canonicalRealPath(value: string): Promise<string | null> {
   }
 }
 
+/** Accept a receipt only when its canonical item path and complete declared field hashes match the captured item. */
 async function verifyReceiptAgainstSnapshot(params: {
   receipt: MergeDecisionReceipt;
   gitWorkspaceRoot: string;
@@ -629,6 +631,7 @@ async function resolveHistoryRepairMergeEvidence(params: {
   };
 }
 
+/** Compare the captured current item with the original stream tail while preserving its under-lock drift baseline. */
 function describeHistoryRepairItemReplay(
   subject: Awaited<ReturnType<typeof resolveHistorySubject>>,
   snapshot: HistoryMaintenanceSnapshot,
@@ -661,6 +664,7 @@ function describeHistoryRepairItemReplay(
   };
 }
 
+/** Preserve an explicit audit message or describe the reanchoring, patch repair, and reconciliation that occurred. */
 function buildHistoryRepairMessage(params: {
   message: string | undefined;
   entriesRehashed: number;

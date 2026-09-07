@@ -772,6 +772,7 @@ async function rollbackHistoryRedactRewrite(
   }
 }
 
+/** Dispatch deduplicated item hooks and the history hook after a redaction transaction, preserving all warnings. */
 async function runHistoryRedactWriteHooks(
   historyPath: string,
   itemHookPaths: Array<string | null>,

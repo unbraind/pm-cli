@@ -214,19 +214,10 @@ export function registerHistoryMaintenanceCommands(
           {
             literal,
             regex,
-            replacement:
-              typeof options.replacement === "string"
-                ? options.replacement
-                : undefined,
+            replacement: readOptionString(options, "replacement"),
             dryRun: options.dryRun === true,
-            author:
-              typeof options.author === "string"
-                ? options.author
-                : undefined,
-            message:
-              typeof options.message === "string"
-                ? options.message
-                : undefined,
+            author: readOptionString(options, "author"),
+            message: readOptionString(options, "message"),
             force: Boolean(options.force),
           },
           globalOptions,
@@ -284,12 +275,8 @@ export function registerHistoryMaintenanceCommands(
         assertHistoryRepairTarget(id, all);
         const repairOptions = {
           dryRun: options.dryRun === true,
-          author:
-            typeof options.author === "string" ? options.author : undefined,
-          message:
-            typeof options.message === "string"
-              ? options.message
-              : undefined,
+          author: readOptionString(options, "author"),
+          message: readOptionString(options, "message"),
           force: Boolean(options.force),
           normalizeProvenance: options.normalizeProvenance === true,
           salvageTail: options.salvageTail === true,

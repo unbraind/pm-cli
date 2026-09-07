@@ -1053,6 +1053,7 @@ async function historyIndexValidationStreamIds(
   return [...new Set([...indexed, ...authoritative])];
 }
 
+/** Read current per-stream substantive events under both projection locks, or signal contention and fallback safely. */
 async function readIndexedLatestSubstantiveEvents(
   Database: DatabaseSyncConstructor | null,
   pmRoot: string,

@@ -8,7 +8,7 @@
 
 ### Changed
 
-- History maintenance triplicates one load, verify, rewrite, re-anchor, report pipeline across redact, repair and compact instead of sharing a stream-maintenance primitive ([pm-34w8za](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-34w8za.toon))
+- Unify history maintenance with one verified SDK snapshot and rewrite pipeline ([pm-34w8za](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-34w8za.toon))
 
 ### Fixed
 

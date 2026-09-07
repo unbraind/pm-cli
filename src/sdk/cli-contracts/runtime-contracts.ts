@@ -938,6 +938,7 @@ function packageOwnedActionForCommand(command: string): string {
   return command;
 }
 
+/** Project stable SDK/MCP actions into discoverable CLI paths, retaining native and legacy history spellings. */
 function resolveActionCommandPath(action: PmToolAction): string | null {
   const historyAlias = PM_HISTORY_COMMAND_ALIASES.find((contract) => contract.alias === action);
   if (historyAlias) return `${historyAlias.canonical}|${historyAlias.alias}`;
@@ -978,6 +979,7 @@ function resolveActionCommandPath(action: PmToolAction): string | null {
   return null;
 }
 
+/** Select the exact history operation or a compatible parent/child path when filtering action descriptors. */
 function actionDescriptorMatchesSelectedCommand(
   descriptor: ActionContractDescriptor,
   selectedCommand: string,
@@ -2653,6 +2655,7 @@ function resolveContractsCommands(
   return actionContext.commandCatalog;
 }
 
+/** Hide compatibility aliases only in unscoped compact discovery while preserving explicit and full selections. */
 function resolveOutputCommands(
   selection: ContractsSelection,
   commands: string[],
@@ -2671,6 +2674,7 @@ function resolveOutputCommands(
   return commands.filter((command) => !hiddenAliases.has(command));
 }
 
+/** Resolve a command's summary identity through explicit history aliases and established root aliases. */
 function canonicalSummaryCommand(command: string): string {
   const historyAlias = PM_HISTORY_COMMAND_ALIASES.find((contract) => contract.alias === command || contract.canonical === command);
   if (historyAlias) return historyAlias.canonical;
@@ -2712,6 +2716,7 @@ const COMMAND_INTENT_SUBJECT_OVERRIDES = new Map<string, string>([
   ["workspace snapshot list", "workspace snapshots"],
 ]);
 
+/** Prefer declared core or extension intent and retain provenance when generating a fallback operation description. */
 function summarizeCommandIntent(
   command: string,
   extensionContracts: readonly ExtensionCommandContract[],
@@ -2757,6 +2762,7 @@ function summarizeCommandIntent(
   };
 }
 
+/** Build stable agent summaries with available bootstrap flags and independently selectable budget and intent metadata. */
 function buildCommandSummarySurface(
   commands: readonly string[],
   extensionContracts: readonly ExtensionCommandContract[] = [],
@@ -3007,6 +3013,7 @@ function attachSchemaContractsResult(
   result.extension_commands = extensionCommandContracts;
 }
 
+/** Attach flags, projections, and alias detail at the requested disclosure level with explicit omission reasons. */
 function attachFlagContractsResult(
   result: ContractsResult,
   selection: ContractsSelection,

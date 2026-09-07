@@ -151,6 +151,7 @@ function collectNamedItemIds(argv: string[]): NamedItemId[] {
   return namedIds;
 }
 
+/** Skip a following token only for a declared value-taking flag without an inline assignment. */
 function consumesSeparateFlagValue(
   token: string,
   nextToken: string | undefined,
@@ -168,6 +169,7 @@ function consumesSeparateFlagValue(
   return contract !== undefined && contract.value_type !== "boolean";
 }
 
+/** Detect an existing item address while excluding named IDs, flag values, and operation-specific trailing positionals. */
 function hasPositionalItemId(
   argv: string[],
   addressIndex: number,

@@ -616,6 +616,7 @@ function countHistoryStreamEntries(raw: string): number {
   return count;
 }
 
+/** Discover retained streams with lifecycle buckets and entry counts, collecting per-stream read failures for bulk reports. */
 async function collectHistoryCompactBulkCandidates(params: {
   pmRoot: string;
   settings: Awaited<ReturnType<typeof readSettings>>;
