@@ -48,6 +48,7 @@ import {
 import { BUILTIN_ITEM_TYPE_VALUES, STATUS_VALUES } from "../types/index.js";
 import { listGuideTopicIds } from "./guide-topics.js";
 import { enrichCliFlagInvocationContracts } from "./flag-invocation-contracts.js";
+import { GLOBAL_VALUE_CONSUMING_FLAGS } from "./cli-contracts/bootstrap-command-scanner.js";
 
 /** Restricts completion shell values accepted by command, SDK, and storage contracts. */
 export type CompletionShell = "bash" | "zsh" | "fish";
@@ -267,6 +268,10 @@ const GLOBAL_FLAGS = GLOBAL_FLAG_CONTRACTS.flatMap((entry) => [
 ])
   .filter((value): value is string => Boolean(value))
   .join(" ");
+
+const GLOBAL_COMPLETION_VALUE_PATTERNS = [...GLOBAL_VALUE_CONSUMING_FLAGS].join("|");
+const GLOBAL_COMPLETION_INLINE_PATTERNS = [...GLOBAL_VALUE_CONSUMING_FLAGS].map((flag) => `${flag}=*`).join("|");
+const GLOBAL_COMPLETION_SWITCH_PATTERNS = [...GLOBAL_FLAGS.split(" ").filter((flag) => !GLOBAL_VALUE_CONSUMING_FLAGS.has(flag)), "-h", "-V"].join("|");
 
 function joinCompletionValues(values: string[]): string {
   return [
@@ -761,13 +766,25 @@ export function generateBashScript(
     "    return 0",
     "  fi",
     "",
-    '  local cmd="${COMP_WORDS[1]}"',
-    "",
-    '  if [[ "$cmd" == "history" && $cword -gt 2 ]]; then',
-    '    case "${COMP_WORDS[2]}" in',
-    ...PM_HISTORY_COMMAND_ALIASES.map((entry) => `      ${entry.canonical_argv[1]}) cmd="${entry.alias}" ;;`),
+    '  local cmd="" word_index=1 word',
+    "  while (( word_index < cword )); do",
+    '    word="${COMP_WORDS[word_index]}"',
+    '    case "${word//_/-}" in',
+    `      ${GLOBAL_COMPLETION_VALUE_PATTERNS}) (( word_index += 2 )); continue ;;`,
+    `      ${GLOBAL_COMPLETION_INLINE_PATTERNS}|${GLOBAL_COMPLETION_SWITCH_PATTERNS}) (( word_index++ )); continue ;;`,
+    "      --) break ;;",
     "    esac",
-    "  fi",
+    '    if [[ -z "$cmd" ]]; then',
+    '      cmd="$word"',
+    '      [[ "$cmd" == "history" ]] || break',
+    "    else",
+    '      case "$word" in',
+    ...PM_HISTORY_COMMAND_ALIASES.map((entry) => `        ${entry.canonical_argv[1]}) cmd="${entry.alias}" ;;`),
+    "      esac",
+    "      break",
+    "    fi",
+    "    (( word_index++ ))",
+    "  done",
     '  case "$cmd" in',
     ...HISTORY_OPERATION_FLAGS.flatMap((entry) => [
       `    ${entry.alias})`,
@@ -869,7 +886,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(HEALTH_FLAGS)})`,
     "      ;;",
     "    history)",
-    '      if [[ $cword -eq 2 ]]; then',
+    '      if [[ $word_index -eq $cword ]]; then',
     `        COMPREPLY=(${compgen(`${HISTORY_FLAGS} ${HISTORY_LEAVES}`)})`,
     "      else",
     `        COMPREPLY=(${compgen(HISTORY_FLAGS)})`,
@@ -1024,17 +1041,34 @@ ${renderZshDynamicChoiceResolver("status", "completion-statuses", statusFallback
 
 _pm() {
   local context state line
-  if [[ "$words[2]" == "history" && $CURRENT -eq 3 && "$words[CURRENT]" != -* ]]; then
+  local -a words=("$words[@]")
+  local CURRENT=$CURRENT
+  local word_index=2 history_seen=0 operation_index=0 word
+  while (( word_index < CURRENT )); do
+    word="$words[word_index]"
+    case "\${word//_/-}" in
+      ${GLOBAL_COMPLETION_VALUE_PATTERNS}) (( word_index += 2 )); continue ;;
+      ${GLOBAL_COMPLETION_INLINE_PATTERNS}|${GLOBAL_COMPLETION_SWITCH_PATTERNS}) (( word_index++ )); continue ;;
+      --) break ;;
+    esac
+    if (( history_seen == 0 )); then
+      [[ "$word" == "history" ]] || break
+      history_seen=1
+    else
+      operation_index=$word_index
+      break
+    fi
+    (( word_index++ ))
+  done
+  if (( history_seen && word_index == CURRENT )) && [[ "$words[CURRENT]" != -* ]]; then
     local -a history_commands
     history_commands=(${HISTORY_LEAVES})
     _describe 'history operation' history_commands
     return
   fi
-  local -a words=("$words[@]")
-  local CURRENT=$CURRENT
-  if [[ "$words[2]" == "history" && $CURRENT -gt 3 ]]; then
-    case "$words[3]" in
-${PM_HISTORY_COMMAND_ALIASES.map((entry) => `      ${entry.canonical_argv[1]}) words=("$words[1]" "${entry.alias}" "\${words[@]:3}"); (( CURRENT-- )) ;;`).join("\n")}
+  if (( operation_index > 0 )); then
+    case "$words[operation_index]" in
+${PM_HISTORY_COMMAND_ALIASES.map((entry) => `      ${entry.canonical_argv[1]}) words=("$words[1]" "${entry.alias}" "\${words[@]:$operation_index}"); (( CURRENT -= operation_index - 2 )) ;;`).join("\n")}
     esac
   fi
   _arguments -C \\
@@ -2583,28 +2617,61 @@ complete -c pm -n '__fish_seen_subcommand_from get' -l fields -d 'Render custom 
 complete -c pm -n '__fish_seen_subcommand_from get' -l tree -d 'Include descendant subtree in result payload'
 complete -c pm -n '__fish_seen_subcommand_from get' -l tree-depth -d 'Cap subtree depth for --tree (0 = root only)' -r
 
-# Match only the command positions, keeping item history separate from maintenance.
-function __pm_history_operation
+# Read the first command positions after consuming recognized global options.
+function __pm_history_tokens
   set -l tokens (commandline -opc)
-  test "$tokens[2]" = "$argv[1]"; or begin
-    test "$tokens[2]" = history; and test "$tokens[3]" = "$argv[2]"
+  set -l skip_value 0
+  set -l positions 0
+  for token in $tokens[2..-1]
+    if test $skip_value -eq 1
+      set skip_value 0
+      continue
+    end
+    switch (string replace -a _ - -- "$token")
+      case ${GLOBAL_COMPLETION_VALUE_PATTERNS.replaceAll("|", " ")}
+        set skip_value 1
+        continue
+      case ${GLOBAL_COMPLETION_INLINE_PATTERNS.split("|").map((pattern) => `'${pattern}'`).join(" ")} ${GLOBAL_COMPLETION_SWITCH_PATTERNS.replaceAll("|", " ")}
+        continue
+      case --
+        printf '%s\\n' --
+        return
+    end
+    printf '%s\\n' "$token"
+    set positions (math $positions + 1)
+    if test $positions -eq 2; or test "$token" != history
+      return
+    end
+  end
+  if test $skip_value -eq 1
+    printf '%s\\n' --value
   end
 end
-complete -c pm -n '__fish_seen_subcommand_from history; and test (count (commandline -opc)) -eq 2' -a '${HISTORY_LEAVES}' -d 'History operation'
+
+# Match only the command positions, keeping item history separate from maintenance.
+function __pm_history_operation
+  set -l tokens (__pm_history_tokens)
+  if test "$tokens[1]" = history; and contains -- "$tokens[2]" ${HISTORY_LEAVES}
+    test "$tokens[2]" = "$argv[2]"
+  else
+    test "$tokens[1]" = "$argv[1]"
+  end
+end
+complete -c pm -n 'test (count (__pm_history_tokens)) -eq 1; and __pm_history_operation history' -a '${HISTORY_LEAVES}' -d 'History operation'
 ${RESTORE_INVOCATIONS.map((flag) => `complete -c pm -n '__pm_history_operation restore restore' -l ${flag.flag.slice(2)}${flag.takes_value ? " -r" : ""}`).join("\n")}
 
 # history / activity flags
-complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l limit -d 'Max history entries' -r
-complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l compact -d 'Condensed history projection'
-complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l full -d 'Show full history entries'
-complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l provenance -d 'Patch-free identity and agent provenance projection'
-complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l provenance-summary -d 'Include bounded provenance completeness counts'
-complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l harness -d 'Filter by recorded or vocabulary-resolved harness' -r
-complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l agent-instance -d 'Filter by privacy-safe agent instance' -r
-complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l provenance-filter -d 'Filter by exact declared provenance value' -r
-complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l diff -d 'Include per-entry field-level before/after value diffs'
-complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l field -d 'With --diff, show only entries that changed this field' -r
-complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l verify -d 'Verify history hash chain and replay integrity'
+complete -c pm -n '__pm_history_operation history'  -l limit -d 'Max history entries' -r
+complete -c pm -n '__pm_history_operation history'  -l compact -d 'Condensed history projection'
+complete -c pm -n '__pm_history_operation history'  -l full -d 'Show full history entries'
+complete -c pm -n '__pm_history_operation history'  -l provenance -d 'Patch-free identity and agent provenance projection'
+complete -c pm -n '__pm_history_operation history'  -l provenance-summary -d 'Include bounded provenance completeness counts'
+complete -c pm -n '__pm_history_operation history'  -l harness -d 'Filter by recorded or vocabulary-resolved harness' -r
+complete -c pm -n '__pm_history_operation history'  -l agent-instance -d 'Filter by privacy-safe agent instance' -r
+complete -c pm -n '__pm_history_operation history'  -l provenance-filter -d 'Filter by exact declared provenance value' -r
+complete -c pm -n '__pm_history_operation history'  -l diff -d 'Include per-entry field-level before/after value diffs'
+complete -c pm -n '__pm_history_operation history'  -l field -d 'With --diff, show only entries that changed this field' -r
+complete -c pm -n '__pm_history_operation history'  -l verify -d 'Verify history hash chain and replay integrity'
 complete -c pm -n '__fish_seen_subcommand_from events' -l since -d 'Resume after a cursor or from an ISO timestamp' -r
 complete -c pm -n '__fish_seen_subcommand_from events' -l type -d 'Filter by mutation operation' -r
 complete -c pm -n '__fish_seen_subcommand_from events' -l author -d 'Filter by mutation author' -r

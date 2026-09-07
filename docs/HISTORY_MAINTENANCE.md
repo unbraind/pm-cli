@@ -26,6 +26,10 @@ identifiers remain stable, including `history-repair` and `restore`.
 Bash, Zsh, and Fish completion expose the activity flags under both spellings,
 including `--unbounded`. The `--stream` mode is optional; Zsh offers `rows`,
 `ndjson`, and `jsonl` when a mode is supplied.
+Completion accepts global options before `history` and between `history` and
+its operation, including valued options such as `--pm-path <path>` and
+`--output-format=json`. Option values and later positional arguments do not
+select an operation; the first ordinary history argument remains the item ID.
 
 ```bash
 pm history repair --help

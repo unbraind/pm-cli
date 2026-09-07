@@ -72,6 +72,46 @@ describe("history namespace completion and item addressing", () => {
     );
   });
 
+  it("resolves history completion past global prefixes without treating values or later arguments as operations", () => {
+    const cases: { words: string[]; includes: string; excludes?: string }[] = [];
+    for (const [leaf, alias, flag] of [
+      ["redact", "history-redact", "--literal"],
+      ["repair", "history-repair", "--salvage-tail"],
+      ["compact", "history-compact", "--all-streams"],
+      ["activity", "activity", "--stream"],
+      ["restore", "restore", "--author"],
+    ]) {
+      for (const words of [
+        ["pm", "history", "--json", leaf, "--"],
+        ["pm", "--quiet", "history", "--output-format", "json", leaf, "--"],
+        ["pm", "history", "--pm-path", "repair", leaf, "--"],
+        ["pm", "history", "--path=redact", leaf, "--"],
+        ["pm", "history", "--output_include", "title", leaf, "--"],
+        ["pm", "--pm-path", "history", alias, "--"],
+        ["pm", alias, "--json", "--"],
+      ]) cases.push({ words, includes: flag });
+    }
+    cases.push(
+      { words: ["pm", "history", "--quiet", ""], includes: "redact" },
+      { words: ["pm", "--output-format=json", "history", ""], includes: "repair" },
+      { words: ["pm", "history", "--pm-path", "redact", "pm-example", "--"], includes: "--verify", excludes: "--literal" },
+      { words: ["pm", "history", "pm-example", "redact", "--"], includes: "--verify", excludes: "--literal" },
+      { words: ["pm", "history", "--", "redact", "--"], includes: "--verify", excludes: "--literal" },
+    );
+    const commands = cases.map(({ words }) =>
+      `COMP_WORDS=(${words.map((word) => `'${word.replaceAll("'", "'\\''")}'`).join(" ")}); COMP_CWORD=${words.length - 1}; _pm_completion; printf '%s ' "\${COMPREPLY[@]}"; printf '\\n'`,
+    );
+    const rows = execFileSync("bash", ["-s"], {
+      input: `${generateBashScript()}\n${commands.join("\n")}`,
+      encoding: "utf8",
+    }).trim().split("\n");
+    expect(rows).toHaveLength(cases.length);
+    for (const [index, entry] of cases.entries()) {
+      expect(rows[index].trim().split(/\s+/), entry.words.join(" ")).toContain(entry.includes);
+      if (entry.excludes) expect(rows[index].trim().split(/\s+/)).not.toContain(entry.excludes);
+    }
+  });
+
   it("keeps restore switches valueless and value flags consuming arguments in Zsh and Fish", () => {
     const zsh = generateZshScript();
     const restore = zsh.slice(zsh.indexOf("        restore)"), zsh.indexOf("        start-task|pause-task)"));
