@@ -802,6 +802,7 @@ export async function runHistoryRepair(
     typeRegistry,
     operation: "history-repair",
     options,
+    /** Plan repairs against the same bytes later checked under the write lock. */
     transform: (snapshot) =>
       buildHistoryRepairPlan({ pmRoot, subject, options }, snapshot),
   });
@@ -954,6 +955,7 @@ async function buildHistoryRepairPlan(
   return {
     changed,
     rewrittenEntries,
+    /** Require abandonment evidence before committing a repair that needs it. */
     beforeWrite: async () =>
       assertHistoryRepairAbandonmentProof(
         options.mergeAbandonmentProof,
@@ -961,6 +963,7 @@ async function buildHistoryRepairPlan(
         chainBefore.ok,
         reanchor,
       ),
+    /** Preserve repair diagnostics while incorporating verified write warnings. */
     report: ({ verification: historyVerify, warnings: writeWarnings }) => ({
       id: subject.id,
       dry_run: dryRun,

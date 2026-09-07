@@ -1812,10 +1812,12 @@ function syncCommanderActionArgs(actionCommand: Command, actionArgs: unknown[], 
 
 /** Wrap each action once so validated parser overrides and extension handlers precede the original core action. */
 function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
+  /** Traverse nested command registrations and wrap each action at most once. */
   const visit = (entry: Command): void => {
     const actionEntry = entry as ActionMutableCommand;
     if (typeof actionEntry._actionHandler === "function" && actionEntry[WRAPPED_ACTION_HANDLER] !== true) {
       const originalAction = actionEntry._actionHandler;
+      /** Apply extension parsing and dispatch while preserving core action receipts. */
       actionEntry._actionHandler = async function wrappedActionHandler(this: unknown, ...actionArgs: unknown[]): Promise<unknown> {
         const actionCommand = resolveActionCommand(actionArgs, entry);
         const startedAt = Date.now();

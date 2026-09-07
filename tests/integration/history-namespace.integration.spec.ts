@@ -7,6 +7,29 @@ import { createTaskFixture } from "../helpers/createTaskFixture.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("native history namespace compatibility", () => {
+  it("withholds option-shaped matcher values from SDK and CLI failure recovery", async () => {
+    await withTempPmPath(async (context) => {
+      for (const command of [["history", "redact"], ["history-redact"]]) {
+        for (const flag of ["--literal", "--regex", "--replacement"]) {
+          for (const value of ["--force=privacy-canary", "--json=privacy-canary"]) {
+            const args = [...command, "pm-missing", flag, value, "--json"];
+            expect(redactSensitiveCommandArgs(args)).toEqual([
+              ...command, "pm-missing", flag, "[redacted]", "--json",
+            ]);
+            const failed = context.runCli(args);
+            expect(failed.code).not.toBe(0);
+            expect(failed.stderr + failed.stdout).not.toContain("privacy-canary");
+            expect(failed.stderr + failed.stdout).toContain("[redacted]");
+          }
+          for (const value of ["--force", "--json", "--dry_run"]) {
+            const args = [...command, flag, value];
+            expect(redactSensitiveCommandArgs(args)).toEqual(args);
+          }
+        }
+      }
+    });
+  });
+
   it("preserves maintenance previews, activity projections, and default item history", async () => {
     await withTempPmPath(async (context) => {
       context.env.PM_CLOCK = "2026-09-07T00:00:00.000Z";

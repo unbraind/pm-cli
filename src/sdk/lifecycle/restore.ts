@@ -193,6 +193,7 @@ async function loadRestoreStateUnderLock(params: {
     historyRawBeforeLock: params.historyRawBeforeLock,
     currentItemRawBeforeLock: params.currentItemRawBeforeLock,
     operation: "restore",
+    /** Preserve restore-specific item decoding during the locked drift check. */
     readItem: (located) => readRestoreItem(located, params.settings, params.history),
   });
   return {

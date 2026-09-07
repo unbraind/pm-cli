@@ -16,7 +16,7 @@ these policies; the CLI exposes the same operations through one history family.
 | `pm history redact <id>` | `pm history-redact <id>` | Remove selected sensitive content |
 | `pm history repair [id]` | `pm history-repair [id]` | Repair or salvage a stream using explicit policy |
 | `pm history compact [id]` | `pm history-compact [id]` | Retain a baseline and selected history tail |
-| `pm history restore <id> <version>` | `pm restore <id> <version>` | Restore an item's historical state |
+| `pm history restore <id> <timestamp-or-version>` | `pm restore <id> <timestamp-or-version>` | Restore an item's historical state |
 
 Compatibility commands remain executable with their existing flags and result
 shapes. Default discovery omits these root aliases. `pm --all --help` and full

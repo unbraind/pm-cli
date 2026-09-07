@@ -152,6 +152,7 @@ export async function runHistoryMaintenance<Result>(
           author,
           force: options.force,
           itemDocument: loadedItem?.document ?? null,
+          /** Run the guarded plan or default rollback-safe stream replacement. */
           applyRewrite: async (verified) => {
             await plan.beforeWrite?.();
             if (plan.applyRewrite) {

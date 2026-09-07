@@ -102,7 +102,7 @@ export function redactSensitiveCommandArgs(
     if (
       redactNext &&
       !HISTORY_REDACT_PUBLIC_FLAGS.has(
-        token.split("=")[0].replaceAll("_", "-"),
+        token.replaceAll("_", "-"),
       )
     ) {
       redacted.push("[redacted]");

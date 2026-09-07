@@ -654,6 +654,7 @@ function createHistoryRedactTransaction(params: {
 > {
   let derivedIndexWarnings: string[] = [];
   return {
+    /** Rewrite history and item projections together under the derived-index lock. */
     applyRewrite: async ({ historyRawUnderLock }) => {
       const releaseDerivedIndexLock =
         await acquireItemMetadataDerivedIndexLock(
@@ -737,6 +738,7 @@ function createHistoryRedactTransaction(params: {
       }
       rethrowReleaseFailure();
     },
+    /** Combine derived-index warnings with hooks for every affected item path. */
     afterWrite: async () => [
       ...derivedIndexWarnings,
       ...(await runHistoryRedactWriteHooks(params.subject.historyPath, [
@@ -831,6 +833,7 @@ export async function runHistoryRedact(
     typeRegistry,
     operation: "history-redact",
     options,
+    /** Build the privacy-preserving rewrite from the transaction's input snapshot. */
     transform: (snapshot) =>
       buildHistoryRedactPlan(
         {
@@ -936,6 +939,7 @@ function buildHistoryRedactPlan(
       author,
       rewrittenEntries,
     }),
+    /** Report pattern counts and verification without disclosing matcher values. */
     report: ({ verification: historyVerify, warnings: writeWarnings }) => ({
       id: subject.id,
       dry_run: dryRun,

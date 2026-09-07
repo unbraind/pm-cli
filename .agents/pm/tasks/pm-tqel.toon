@@ -6,18 +6,18 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:history",simplification
 created_at: "2026-07-05T04:53:05.215Z"
-updated_at: "2026-09-07T11:33:25.565Z"
-closed_at: "2026-09-07T11:33:24.944Z"
-completed_at: "2026-09-07T11:33:24.944Z"
+updated_at: "2026-09-07T12:33:22.566Z"
+closed_at: "2026-09-07T12:33:22.020Z"
+completed_at: "2026-09-07T12:33:22.020Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: pm history gains redact/repair/compact/activity/restore subcommands with flag parity; old top-level spellings alias-shimmed with identical output; default pm history <id> view unchanged; contracts/MCP/completions/docs regenerated; existing history-* specs pass via aliases
 parent: pm-n7rr
 risk: medium
 confidence: high
-resolution: "Native history redact/repair/compact/activity/restore share SDK behavior with permanent aliases and consistent contracts, addressing, output, recovery and completion. Legacy maintenance loads only its mutation family; Fish includes unbounded activity; exact-token tests and purpose documentation strengthen the contract."
-expected_result: Agent-friendly native discovery preserves existing flags/output/default history view and avoids unnecessary legacy startup work.
-actual_result: "All 8537 tests in 637 files passed with exact 100/100/100/100. Both linked tests, zero-violation tracked static gates, all 74 touched named function docstrings, and installed npm/Bun 15-step CLI plus SDK journeys passed. First-round bot artifacts acknowledged individually; updated-head CI and re-review requested before merge."
+resolution: "Native history operations preserve permanent aliases, flags, output and SDK/MCP discovery. Recovery masks option-shaped matcher and replacement values while retaining exact public flags; restore docs describe timestamp-or-version and generated shell mappings preserve argument positions."
+expected_result: Native and legacy history commands retain compatible behavior without exposing sensitive inputs in recovery output.
+actual_result: "Final review correction verified: all 8538 tests in 637 files passed with exact 100/100/100/100 and zero uncovered counts. Final build, full quality:static chain and both linked namespace commands passed. Installed npm and Bun each passed 15 history workflow steps, public SDK execution and six option-shaped sensitive-recovery cases. Actual Zsh execution verifies all five native mappings with correct CURRENT positions; the proposed offset change is a false positive. Purpose documentation now includes maintenance callbacks; restore docs accept timestamp-or-version. Every completed-review artifact and edited revision has a reaction and contextual acknowledgement. Updated-head hosted checks and full review remain separate before merge."
 dependencies[8]:
   - id: pm-0z7n
     kind: blocked_by
@@ -52,7 +52,7 @@ dependencies[8]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[12]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-09-07T09:09:45.812Z","harness:codex","Implementation scope: history redact/repair/compact/activity/restore share existing SDK behavior with permanent legacy aliases, unchanged default history view, discoverable contracts and completion parity. Prerequisites pm-0z7n and pm-hb7ug8 read live with their implementation evidence. Delivery shares pm-34w8za maintenance substrate. Test first, preserve existing command outputs and error contracts."
   "2026-09-07T09:46:00.939Z","harness:codex","Implementation evidence: shared stream snapshot and verified maintenance pipeline integrated with redact/repair/compact and restore drift checks. Native history commands share registrations with permanent root aliases; runtime flags, output envelopes, addressing, SDK/MCP discovery and completion resolve the selected operation. Focused maintenance and namespace suites passed; full coverage and type gates are running."
   "2026-09-07T09:50:05.412Z","harness:codex","Graph evidence: full all-status graph audit covered 2653 items and 13062 directed edges with no omitted fields, missing targets, ordering cycles, isolated items or degree-one items; all active and terminal non-outcome items reach an outcome through typed relationships. Execution graph has 12 layers and the knowledge graph is one connected component. Seven historical hierarchy divergences remain informational under the existing historical policy. Added verifies edges for the maintenance substrate and permanent alias guarantees exercised by this delivery. GitHub secret-scanning and Dependabot open-alert reads both returned empty arrays."
@@ -65,6 +65,8 @@ comments[12]{created_at,author,text}:
   "2026-09-07T11:13:29.893Z","harness:codex","CI follow-up: the tracked-file static gate now includes the newly added registration module and reports one CodeFactor complexity excess (17 versus 16). Earlier local assurance ran before new files were staged, so that pass did not establish the tracked-file scan for the final tree. Direct reproduction confirms the finding; simplify repeated option string checks with the existing shared decoder, stage new files before final static verification, and rerun exact coverage. Sentry/public release evidence remains separate."
   "2026-09-07T11:18:43.915Z","harness:codex","Completed CodeRabbit review has four valid findings: generated release-note wording, omitted Fish activity --unbounded, legacy maintenance registration family overloading, and a substring-only salvage-tail assertion. Implement all four plus the CI complexity correction in one follow-up commit. Direct static scan reports 100 percent module/export/member docstrings; additionally document every touched named internal helper so the broader diff-based review is actionable. Greptile CLI reports exhausted free quota and Sourcery declined the diff size; neither is an approval."
   "2026-09-07T11:32:58.477Z","harness:codex","Review fixes verified: final rebuilt source passed all 8537 tests in 637 files with exact 100/100/100/100 and zero uncovered counts. Both linked commands passed. Final tracked-file static scan covers 1262 files with zero complexity violations and 100 percent module/export/member docstrings; all 74 touched named functions have purpose docstrings. ESLint, duplication, contracts, public SDK snapshots, generated surfaces and secret scan passed. Installed npm and Bun candidate journeys each passed 15 CLI steps plus public SDK execution. Every first-round bot artifact has a revision-specific reaction and response, with all four findings acknowledged inline."
+  "2026-09-07T12:15:30.234Z","harness:codex","Second completed review: option-shaped matcher values reproduce a recovery disclosure in both native and legacy redaction. New regression failed before the whole-token public-flag fix and passed afterward for literal, regex and replacement values; exact public flags remain recognizable. Restore docs now name timestamp-or-version. Actual Zsh execution of all five generated native mappings preserves argument vectors and CURRENT, disproving the proposed slice change."
+  "2026-09-07T12:33:21.420Z","harness:codex","Final review correction verified: all 8538 tests in 637 files passed with exact 100/100/100/100 and zero uncovered counts. Final build, full quality:static chain and both linked namespace commands passed. Installed npm and Bun each passed 15 history workflow steps, public SDK execution and six option-shaped sensitive-recovery cases. Actual Zsh execution verifies all five native mappings with correct CURRENT positions; the proposed offset change is a false positive. Purpose documentation now includes maintenance callbacks; restore docs accept timestamp-or-version. Every completed-review artifact and edited revision has a reaction and contextual acknowledgement. Updated-head hosted checks and full review remain separate before merge."
 learnings[2]{created_at,author,text}:
   "2026-09-07T10:43:15.815Z","harness:codex","Nested commands need one semantic operation mapping across parsing, item addressing, universal output, contracts, activation and completion. Completion must consume enriched takes_value metadata rather than infer boolean arity from optional raw schema fields."
   "2026-09-07T11:21:19.637Z","harness:codex",Stage newly created source files before running gates that enumerate git-tracked paths. A working-tree lint pass and a tracked-file static assurance pass can cover different file populations until the new paths enter the index.
@@ -102,7 +104,7 @@ files[30]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/history-namespace-completion.spec.ts tests/integration/history-namespace.integration.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,600,"harness:codex","2026-09-07T10:03:30.715Z",local_mutation,feat/history-maintenance-sdk-command-grammar
   node scripts/run-tests.mjs test -- tests/unit/cli/history-registration-selection.spec.ts,project,240,"harness:codex","2026-09-07T11:21:18.869Z",local_mutation,feat/history-maintenance-sdk-command-grammar
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mtr3yu7j-1wa2b0
     kind: test
     status: passed
@@ -126,10 +128,22 @@ test_runs[2]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/history-namespace-completion.spec.ts tests/integration/history-namespace.integration.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/cli/history-registration-selection.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtr7u6n1-wkxa52
+    kind: test
+    status: passed
+    started_at: "2026-09-07T12:27:03.262Z"
+    finished_at: "2026-09-07T12:27:30.205Z"
+    recorded_at: "2026-09-07T12:27:30.205Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/history-namespace-completion.spec.ts tests/integration/history-namespace.integration.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/history-registration-selection.spec.ts,schema,schema,source,local_source_ref
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,Package-generated reviewed history maintenance release notes
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated executable refusal census includes native history arguments
   docs/HISTORY_MAINTENANCE.md,project,Public history integration and compatibility contract
   docs/README.md,project,Public history integration and compatibility contract
-close_reason: "Implemented native history workflows and completed reviewed completion, startup and quality corrections."
+close_reason: Completed shared history delivery and validated the follow-up review corrections.
 body: ""

@@ -387,6 +387,7 @@ export async function runHistoryCompact(
     typeRegistry,
     operation: "history-compact",
     options,
+    /** Derive the checkpoint plan from the transaction's single input snapshot. */
     transform: (snapshot) =>
       buildHistoryCompactPlan(subject, options, snapshot),
   });
@@ -443,6 +444,7 @@ function buildHistoryCompactPlan(
   return {
     changed,
     rewrittenEntries,
+    /** Preserve compaction's public receipt using the verified rewrite outcome. */
     report: ({
       verification: rewrittenVerify,
       warnings: writeWarnings,
