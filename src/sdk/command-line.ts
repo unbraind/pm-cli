@@ -3,6 +3,8 @@
  *
  * Renders copy-safe pm command suggestions for SDK and CLI diagnostics.
  */
+import { findBootstrapCommandTokenIndex } from "./cli-contracts/bootstrap-command-scanner.js";
+
 /** Quote one Windows argument with the linear CommandLineToArgvW escaping algorithm. */
 export const quoteWindowsCommandArg = (arg: string): string => {
   let escaped = '"';
@@ -56,14 +58,17 @@ const HISTORY_REDACT_SENSITIVE_FLAGS = new Set([
   "--replacement",
 ]);
 
-/** Conservatively recognize both redaction spellings before argv parsing succeeds. */
+/** Recognize the leading redaction command after global options, even before flag validation succeeds. */
 export function isHistoryRedactInvocation(
   argv: readonly string[],
 ): boolean {
-  return (
-    argv.includes("history-redact") ||
-    (argv.includes("history") && argv.includes("redact"))
-  );
+  const rootIndex = findBootstrapCommandTokenIndex(argv);
+  if (rootIndex === undefined) return false;
+  if (argv[rootIndex] === "history-redact") return true;
+  if (argv[rootIndex] !== "history") return false;
+  const operationArgs = argv.slice(rootIndex + 1);
+  const operationIndex = findBootstrapCommandTokenIndex(operationArgs);
+  return operationIndex !== undefined && operationArgs[operationIndex] === "redact";
 }
 
 /**

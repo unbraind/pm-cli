@@ -57,6 +57,11 @@ rejected before scanning streams.
 `--min-entries` is a bulk-only threshold; single-ID compaction rejects it
 instead of silently ignoring it.
 
+Redaction diagnostics hide matcher and replacement values after resolving the
+leading command path through global options. Words such as `history` or
+`redact` appearing only as values of an unrelated command do not activate this
+privacy filter. Unknown flags still permit redaction before validation fails.
+
 ## SDK integration
 
 Use `runHistoryRedact`, `runHistoryRepair`, `runHistoryCompact`, and `runRestore`

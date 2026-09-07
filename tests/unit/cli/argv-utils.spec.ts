@@ -22,6 +22,33 @@ describe("argv-utils.normalizeLongOptionFlag", () => {
 });
 
 describe("argv-utils.redactSensitiveCommandArgs", () => {
+  it("recognizes only the leading redaction command while preserving bootstrap prefixes", () => {
+    for (const argv of [
+      [],
+      ["--json"],
+      ["--", "history", "redact", "--literal", "ordinary-value"],
+      ["create", "--title", "history", "--description", "redact", "--literal", "ordinary-value"],
+      ["create", "--title", "history-redact", "--replacement=ordinary-value"],
+      ["--pm-path", "history-redact", "create", "--regex", "ordinary-value"],
+      ["history", "pm-example", "redact", "--literal", "ordinary-value"],
+      ["history"],
+      ["history", "--", "redact", "--literal", "ordinary-value"],
+      ["history", "--author", "redact", "pm-example", "--literal", "ordinary-value"],
+    ]) {
+      expect(redactSensitiveCommandArgs(argv)).toEqual(argv);
+    }
+    for (const prefix of [
+      ["history", "redact"],
+      ["--json", "history-redact"],
+      ["--pm-path", "history", "history", "--author", "redact", "redact"],
+      ["--output-format=json", "history", "--quiet", "redact"],
+      ["--unknown", "history", "--unknown", "redact"],
+    ]) {
+      expect(redactSensitiveCommandArgs([...prefix, "--literal", "private-canary"]))
+        .toEqual([...prefix, "--literal", "[redacted]"]);
+    }
+  });
+
   it("preserves ordinary commands and redacts every history-redact input form", () => {
     expect(redactSensitiveCommandArgs(["get", "pm-example"])).toEqual([
       "get",
