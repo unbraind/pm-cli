@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",gh-issue,token-efficiency
 created_at: "2026-07-06T08:03:03.701Z"
-updated_at: "2026-08-01T00:35:36.460Z"
-closed_at: "2026-07-20T10:01:06.896Z"
+updated_at: "2026-09-07T22:39:59.639Z"
+closed_at: "2026-09-07T22:36:22.313Z"
+completed_at: "2026-07-20T10:01:06.896Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: CLI mutations default (or config-default) to id/status/changed_field_count; --full opt-ins restore old echo; MCP-parity spec green; measured reduction recorded
@@ -17,19 +18,22 @@ confidence: high
 release: v2026.7.21
 resolution: Single-item mutations default to compact id/status/change-count envelopes with explicit full and id-only compatibility controls.
 expected_result: Agent mutation responses are token-efficient by default while callers can request legacy full deltas or id-only output.
-actual_result: "Compact defaults ship across CLI and MCP with 87.82% packed output reduction, full/id-only precedence, updated token budgets, contracts, docs, and tests."
+actual_result: "Historical delivery: Compact defaults ship across CLI and MCP with 87.82% packed output reduction, full/id-only precedence, updated token budgets, contracts, docs, and tests. The new claim-specific exception is independently reproduced and remains open in pm-eqdo85."
 dependencies[4]{id,kind,created_at}:
   pm-cfed,related,"2026-07-20T08:49:49.562Z"
   pm-g9xk,related,"2026-07-20T08:49:49.562Z"
   pm-xm7c,related,"2026-07-20T08:49:49.562Z"
   pm-mpbb,implements,"2026-07-26T17:21:13.002Z"
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-20T09:59:55.002Z",codex-20260720,"Evidence: mutation commands now default to id/status/changed_field_count, --no-changed-fields preserves the compact legacy item envelope, --full-changed-fields restores the full delta, and --id-only retains precedence. Isolated packed creates measured 71-byte compact vs 583-byte full output (87.82% reduction). Token-budget consumer and manifest were updated intentionally."
   "2026-07-31T14:16:08.723Z","harness:claude-code","Closed-item conformance check 2026-07-31, filed as pm-awe3t6. No reopen proposed - the CLI half of this item shipped and holds - but the parity claim in the title is inverted at HEAD.\n\nMeasured in one sandbox tracker, same type, same fields, same second. CLI pm create --json returns 72 bytes: {id, status, changed_field_count}. MCP pm_create with identical arguments returns 373 bytes: a result wrapper containing the full ten-field item echo, an empty warnings array, a next_transition object, and changed_field_count. That is 5.2x, and it is the MCP default; the lean form on MCP requires idOnly:true, which returns 45 bytes, while the CLI needs no flag.\n\nSo this item made the CLI lean and the direction of parity reversed rather than converged: the surface that is now verbose is the one where tokens are unavoidable, because every MCP tool result enters the model context whether the agent needed it or not, whereas a CLI caller can pipe through jq and discard. The result wrapper is a second divergence - the CLI emits no such key - which is the shape difference the agent guidance warns about."
   "2026-08-01T00:35:36.460Z","harness:codex","Conformance correction 2026-08-01: pm-awe3t6 restores the parity this closed item intended. An isolated identical create now serializes to 57 bytes on both the CLI default and the MCP structured result, with the same id/status/changed_field_count keys. MCP protocol framing still wraps structuredContent.result as documented, while the mutation result itself has one cross-surface accessor shape; fullChangedFields:true remains the explicit full-envelope opt-in."
-files[6]{path,scope,note}:
+  "2026-09-07T22:31:19.318Z","harness:codex","GitHub #437 was reopened with a claim-specific conformance report on 2026-09-07. Live isolated reproduction at 94532b596 with no extensions confirms create emits a 71-byte flat id/status/changed_field_count receipt while claim emits a 517-byte item/claimed_by/previous_assignee/forced envelope. The previous compact create/update delivery remains recorded in immutable history with its historical release attribution. Full all-status duplicate search and the create guard identify this item as canonical for the report; no child duplicate was created. Reopen only the remaining claim receipt scope, leave it unclaimed, preserve full-output compatibility and ownership outcomes, and verify CLI/MCP/SDK contracts in its implementation delivery."
+  "2026-09-07T22:36:20.059Z","harness:codex","The attempted reopen would remove the already shipped July baseline from the package-generated changelog. Preserve the completed baseline and its historical release attribution instead; the distinct current claim exception is now tracked as pm-eqdo85. The duplicate guard matched the shared broad GitHub issue, but full all-status metadata inspection found no existing claim-specific item. This follows the prior separate conformance-defect lineage and does not claim the new claim behavior is fixed."
+files[7]{path,scope,note}:
   scripts/release/token-budget-gate.mjs,project,Compact mutation consumer compatibility
   scripts/release/token-budgets.json,project,Intentional agent output budget update
+  src/cli/register-mutation.ts,project,Claim receipt conformance follow-up boundary
   src/core/output/mutation-projection.ts,project,Compact default mutation envelope
   src/sdk/cli-contracts/flag-contracts.ts,project,full changed fields contract
   src/sdk/cli-program.ts,project,explicit full changed fields opt-in
@@ -41,5 +45,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-mrt1wq5g-6g4ut7,test,passed,"2026-07-20T09:57:26.862Z","2026-07-20T09:57:38.788Z","2026-07-20T09:57:38.788Z",1,0,0
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,explicit compact and full mutation controls
-close_reason: "Implemented compact mutation output by default with explicit full/id-only compatibility controls, 87.82% packed output reduction, MCP parity, token budgets, docs, and tests."
+close_reason: Preserve the historical shipped compact-mutation baseline; the newly reproduced claim exception remains open in pm-eqdo85.
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/437\n\n## Problem\nEvery CLI mutation echoes the full updated item + full `changed_fields` by default (368 B for a trivial create vs 29 B `--id-only` — 12.7x). MCP is already compact by default (`changed_field_count`, `idOnly`/`fullChangedFields` opt-ins), so the CLI is the more verbose surface and inconsistent with MCP.\n\n## Proposed fix\nMake CLI mutation default lean: `{ id, status, changed_field_count }` (+ `close_reason` on close). Full echo behind `--full` / `--full-changed-fields`; existing `--id-only`/`--quiet` stay. Config knob (e.g. `output_lean_mutations`) so the default is project-tunable; respect back-compat for scripts via config.\n\n## Definition of done\nLean default (or config-flipped default) with parity spec vs MCP compact output; docs/AGENTS.md updated; contracts:update run; measured token reduction recorded on this item."

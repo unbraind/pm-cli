@@ -45,11 +45,12 @@ describe("history maintenance registration selection", () => {
       ["history-redact"],
     ]) {
       const argv = [...command, "pm-example", `--literal=${canary}`];
+      const invocation = `pm ${command.join(" ")} pm-example --literal=${canary}`;
       const recovery = {
         recovery_mode: "compact" as const,
-        attempted_command: `pm history-redact pm-example --literal=${canary}`,
+        attempted_command: invocation,
         normalized_args: argv,
-        suggested_retry: `pm history-redact pm-example --literal=${canary}`,
+        suggested_retry: invocation,
         suggested_retry_args: argv,
       };
       const context = _testOnly.buildPmCliRecoveryContext({ recovery }, argv, "Invalid input");
