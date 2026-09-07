@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: aggregation,"area:cli","area:query",governance,output-contract
 created_at: "2026-08-13T14:27:59.356Z"
-updated_at: "2026-09-07T07:45:36.941Z"
+updated_at: "2026-09-07T08:00:36.859Z"
 closed_at: "2026-09-07T07:45:36.395Z"
 completed_at: "2026-09-07T07:45:36.395Z"
 author: "harness:claude-code"
@@ -24,7 +24,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-pj2isb,verifies,"2026-08-13T14:27:59.356Z","harness:claude-code","cli:create:dep",detected
   pm-plwm,discovered_from,"2026-08-13T14:27:59.356Z","harness:claude-code","cli:create:dep",detected
   pm-xkgq,discovered_from,"2026-08-13T14:27:59.356Z","harness:claude-code","cli:create:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-09-07T06:11:51.972Z","harness:codex","Implementation design: default set-element grouping with one contribution per distinct member; explicit tuple mode preserves legacy grouping; scalar dimensions compose with member grouping; untagged population remains an explicit null group. Tests precede implementation."
   "2026-09-07T06:24:16.366Z","harness:codex","Implementation evidence: initial regression suite passes locally; integration, additional edge cases, full coverage and release/review gates remain underway. No delivery or release completion claimed."
   "2026-09-07T06:30:05.245Z","harness:codex","Integration finding: aggregate inherited list automatic item pagination at 10,000 rows, which could undercount large workspaces. Aggregate now requests a strict complete input read, then applies bounded group pagination with an explicit cursor. This is part of the same canonical aggregation correctness and output-bound lineage."
@@ -33,6 +33,7 @@ comments[8]{created_at,author,text}:
   "2026-09-07T07:12:50.371Z","harness:codex","Acceptance scope clarification: installed npm/Bun CLI, SDK, and MCP acceptance exercised element-mode pagination; tuple compatibility is separately proven by the linked SDK/CLI regression suite, which now passes 15 targeted tests together with deadline and lifecycle cases."
   "2026-09-07T07:23:02.508Z","harness:codex","Verification update: all linked aggregation tests passed. Full coverage identified that subprocess CLI acceptance does not instrument the parent adapter; the real tuple SDK acceptance now consumes normalizeAggregateOptions directly as well. Discovery descriptions are tightened further to preserve the unchanged context budget. Concurrent build outputs caused two benchmark process failures; verification is being rerun with build steps serialized and immutable outputs during tests."
   "2026-09-07T07:45:35.802Z","harness:codex","Local implementation verification: exact full-source coverage passed at 100/100/100/100 with zero uncovered counts (60671 lines, 63170 statements, 13078 functions, 47962 branches). The full run had one stale workspace-intent assertion; that expected text was synchronized, then all 55 contracts and aggregation acceptance tests passed. Full static quality, context-quality and 56 token surfaces, typecheck, linked tests, staged secret scan, latest-release compatibility migration, 88-command package dogfood, installed npm/Bun CLI/SDK/MCP acceptance, and packed npx/bunx smoke passed. Hosted exact-head review, merge, and publication remain separate delivery steps; no hosted or released state is claimed here."
+  "2026-09-07T08:00:15.145Z","harness:codex","Hosted review correction: the first Gates (static) run rejected missing escape_class and gate_evidence after implementation closure. Both fields now identify the production behavior gap and the real regression suite that failed before the fix. No gate policy or exemption was changed. Full final local run passed all 8523 tests at exact 100/100/100/100 coverage."
 learnings[1]{created_at,author,text}:
   "2026-09-07T07:26:14.590Z","harness:codex","Membership totals and distinct item totals answer different questions. Read the complete input before paging groups, and retain missing historical categorization as an explicit population instead of fabricating tags."
 files[12]{path,scope,note}:
@@ -80,4 +81,12 @@ docs[3]{path,scope,note}:
   docs/generated/FLAG_LEXICON_BUDGETS.md,project,Generated declaration for the three implemented aggregate controls with unchanged help token budget
   docs/PLANNING_MEASUREMENTS.md,project,Public semantic and cost contracts
 close_reason: Implementation and linked acceptance completed; reviewed branch carries structured closure evidence.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: full-source-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/aggregate-set-members.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Coverage,Gates (static)
+  owner: unbraind/pm-cli maintainers
 body: ""
