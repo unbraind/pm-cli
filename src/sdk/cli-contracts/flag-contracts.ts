@@ -260,6 +260,9 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] =
 /** Public contract for aggregate flag contracts, shared by SDK and presentation-layer consumers. */
 export const AGGREGATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--group-by", list: true },
+  { flag: "--set-mode" },
+  { flag: "--limit" },
+  { flag: "--after" },
   { flag: "--count" },
   { flag: "--completion" },
   { flag: "--sum" },

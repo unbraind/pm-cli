@@ -2,21 +2,105 @@ id: pm-398z0u
 title: "Grouping by a set-valued field groups by the whole set: pm aggregate --group-by tags returns 2,022 tag-tuple rows for 2,467 items, so the governance question the command exists to answer cannot be asked"
 description: "pm aggregate is documented as aggregating grouped item counts for governance queries and accepts tags as a group-by field. It groups by the tag tuple rather than by the tag, so the answer it returns is not an aggregation in the sense the field name implies. Measured 2026-08-13.\n\npm aggregate --group-by tags returns 2,022 groups over 2,467 items. The corpus contains 1,038 distinct tags. So the command emits four fifths of a row per item, keyed by strings such as 'dependabot,github-alert,security,undici' and 'area:extensions,code,doc,milestone:5,pm-cli,priority:1,tests', and every count is dominated by ones: the largest group in the closed population is the 21 items sharing one exact four-tag tuple, and the second is 8.\n\nThe question a governance query actually asks is how many items carry a given tag. That question has 1,038 possible answers and none of them appears anywhere in the output, because an item tagged security and an item tagged security plus dependabot land in different groups and neither group is labelled security. Filtering answers it one tag at a time — --tag is a supported filter — so the information exists and the aggregation surface is the only place it is unavailable, which is the surface named after the operation.\n\nTwo second-order consequences fall out of the same measurement. The first is cost: a grouped aggregation whose row count is 82 percent of the item count is a full listing with extra steps, and it is emitted by a command whose declared ceiling is 4,000 tokens. The second is a data-quality fact the tuple grouping surfaced by accident, because null is the one tuple that does aggregate correctly: 182 closed items carry no tags at all. Those items are invisible to every tag-scoped query, tag-scoped release note bucket, and tag-scoped relevance signal in the product, and nothing measures the population.\n\nThe sequencing note matters because pm-xkgq proposes retiring the aggregate top-level and folding grouping into list --group-by. Whatever noun ends up owning it inherits this semantics, so the set-valued grouping rule should be decided before the fold rather than after."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: aggregation,"area:cli","area:query",governance,output-contract
 created_at: "2026-08-13T14:27:59.356Z"
-updated_at: "2026-08-14T05:29:17.764Z"
+updated_at: "2026-09-07T08:32:31.273Z"
+closed_at: "2026-09-07T08:32:30.765Z"
+completed_at: "2026-09-07T08:32:30.765Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "Grouping by a set-valued field groups by element: --group-by tags returns one row per distinct tag with the count of items carrying it, and an item with k tags contributes to k rows; The tuple behaviour remains reachable under an explicit spelling if it has a use, and is documented as a distinct operation rather than as the default reading of the field name; The row-count expansion is bounded and the declared ceiling is honoured; The rule for every present and future set-valued field is declared once rather than per field; The 182 untagged closed items are measured as a named population with a disposition"
 parent: pm-33cw
 risk: medium
 confidence: 93
+resolution: "Implemented distinct-member aggregation with explicit tuple compatibility, unique-item versus membership totals, complete strict input reads, and bounded group pagination across SDK/CLI/MCP contracts. Review acceptance additionally proves repeated grouping dimensions were already deduplicated; the shared MCP cursor description now accurately treats continuation as opaque and action-specific."
+expected_result: "Every set member contributes once to its group; default output stays bounded without truncating the input population, and historical absence remains visible."
+actual_result: "Real 10000-item regression counts the full corpus before returning 50 of 61 groups and the remaining 11 on continuation. Numeric membership and tuple acceptance pass. Live closed-item census measured 218 untagged items among 2362 closed records; these remain an explicit null population without invented tags. Contract-summary output measured 4108 tokens within the unchanged 4111 ceiling. Review acceptance additionally proves repeated grouping dimensions were already deduplicated; the shared MCP cursor description now accurately treats continuation as opaque and action-specific. Full final run: 8524 tests and exact 100/100/100/100 coverage."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-33cw,implements,"2026-08-13T14:27:59.356Z","harness:claude-code","cli:create:dep",detected
   pm-n7rr,implements,"2026-08-13T14:27:59.356Z","harness:claude-code","cli:create:dep",detected
   pm-pj2isb,verifies,"2026-08-13T14:27:59.356Z","harness:claude-code","cli:create:dep",detected
   pm-plwm,discovered_from,"2026-08-13T14:27:59.356Z","harness:claude-code","cli:create:dep",detected
   pm-xkgq,discovered_from,"2026-08-13T14:27:59.356Z","harness:claude-code","cli:create:dep",detected
+comments[11]{created_at,author,text}:
+  "2026-09-07T06:11:51.972Z","harness:codex","Implementation design: default set-element grouping with one contribution per distinct member; explicit tuple mode preserves legacy grouping; scalar dimensions compose with member grouping; untagged population remains an explicit null group. Tests precede implementation."
+  "2026-09-07T06:24:16.366Z","harness:codex","Implementation evidence: initial regression suite passes locally; integration, additional edge cases, full coverage and release/review gates remain underway. No delivery or release completion claimed."
+  "2026-09-07T06:30:05.245Z","harness:codex","Integration finding: aggregate inherited list automatic item pagination at 10,000 rows, which could undercount large workspaces. Aggregate now requests a strict complete input read, then applies bounded group pagination with an explicit cursor. This is part of the same canonical aggregation correctness and output-bound lineage."
+  "2026-09-07T06:48:01.074Z","harness:codex","Live acceptance census: strict aggregation over all 2362 closed items produced 1077 member groups and 9920 memberships; 218 closed items are in the explicit (untagged) population, rather than the older 182-item snapshot. Disposition: retain historical absence faithfully as a named null group; do not invent retrospective tags. Future enrichment should use evidenced historical categories. Aggregation CLI adds precisely three controls (set-mode, limit, after), with the flag-count declaration updated and help text tightened to preserve the existing help-token ceiling."
+  "2026-09-07T07:11:57.888Z","harness:codex","Packed installed acceptance passed with separate npm and Bun roots and runtimes: CLI group pagination and tuple mode, SDK numeric membership aggregation, and MCP pm_run action=aggregate. The 10000-item filesystem regression proves complete population counting before the default 50-group page. Contracts discovery surfaced the new limit/after flags at +7 tokens; two redundant intent phrases were shortened to absorb that growth without changing the agent-task budget."
+  "2026-09-07T07:12:50.371Z","harness:codex","Acceptance scope clarification: installed npm/Bun CLI, SDK, and MCP acceptance exercised element-mode pagination; tuple compatibility is separately proven by the linked SDK/CLI regression suite, which now passes 15 targeted tests together with deadline and lifecycle cases."
+  "2026-09-07T07:23:02.508Z","harness:codex","Verification update: all linked aggregation tests passed. Full coverage identified that subprocess CLI acceptance does not instrument the parent adapter; the real tuple SDK acceptance now consumes normalizeAggregateOptions directly as well. Discovery descriptions are tightened further to preserve the unchanged context budget. Concurrent build outputs caused two benchmark process failures; verification is being rerun with build steps serialized and immutable outputs during tests."
+  "2026-09-07T07:45:35.802Z","harness:codex","Local implementation verification: exact full-source coverage passed at 100/100/100/100 with zero uncovered counts (60671 lines, 63170 statements, 13078 functions, 47962 branches). The full run had one stale workspace-intent assertion; that expected text was synchronized, then all 55 contracts and aggregation acceptance tests passed. Full static quality, context-quality and 56 token surfaces, typecheck, linked tests, staged secret scan, latest-release compatibility migration, 88-command package dogfood, installed npm/Bun CLI/SDK/MCP acceptance, and packed npx/bunx smoke passed. Hosted exact-head review, merge, and publication remain separate delivery steps; no hosted or released state is claimed here."
+  "2026-09-07T08:00:15.145Z","harness:codex","Hosted review correction: the first Gates (static) run rejected missing escape_class and gate_evidence after implementation closure. Both fields now identify the production behavior gap and the real regression suite that failed before the fix. No gate policy or exemption was changed. Full final local run passed all 8523 tests at exact 100/100/100/100 coverage."
+  "2026-09-07T08:12:42.319Z","harness:codex","Review validation correction: duplicate grouping-field allegation is false. The unchanged code passed a real tags,type,tags regression because splitCommaList deduplicates by default. No redundant normalization was retained. The actual MCP cursor-description mismatch is corrected. The review finding was downvoted with an explicit inline correction."
+  "2026-09-07T08:32:30.219Z","harness:codex","Final review verification: isolated full run passed all 8524 tests across 633 files with exact 100/100/100/100 (60679 lines, 63179 statements, 13078 functions, 47964 branches). Full static gates, linked tests, installed branch npm/Bun CLI/SDK/MCP, and package artifact checks passed. Earlier refusal-probe failure disappeared with unchanged code when build-owning checks ran sequentially. CodeRabbit actionable findings are fixed or disproved with regression evidence; Greptile reports exhausted free quota and Sourcery reports review budget exhaustion, both explicit availability limitations. Published v2026.9.7 and its npm/Bun installed consumers passed separately and do not contain this branch."
+learnings[1]{created_at,author,text}:
+  "2026-09-07T07:26:14.590Z","harness:codex","Membership totals and distinct item totals answer different questions. Read the complete input before paging groups, and retain missing historical categorization as an explicit population instead of fabricating tags."
+files[12]{path,scope,note}:
+  src/cli/register-list-query.ts,project,Connected SDK implementation and regression coverage
+  src/sdk/cli-contracts/flag-contracts.ts,project,Reviewed contract and implementation coverage
+  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project,Declare exactly the three new aggregation controls without spare growth allowance
+  src/sdk/cli-contracts/registration-helpers.ts,project,Connected SDK implementation and regression coverage
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Tighten two contract intents to keep new pagination discovery inside unchanged agent-task token budget
+  src/sdk/cli-contracts/tool-option-contracts.ts,project,Connected SDK implementation and regression coverage
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Connected SDK implementation and regression coverage
+  src/sdk/query/aggregate.ts,project,Connected SDK implementation and regression coverage
+  tests/fixtures/contracts/full.json,project,Implementation and release regression evidence
+  tests/unit/commands/aggregate-command.spec.ts,project,Reviewed contract and implementation coverage
+  tests/unit/commands/aggregate-set-members.spec.ts,project,Connected SDK implementation and regression coverage
+  tests/unit/commands/contracts-command.spec.ts,project,Exact compact discovery description expectation accompanying preserved transcript token budget
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/aggregate-set-members.spec.ts,project,240,"harness:codex","2026-09-07T06:24:15.839Z",local_mutation,feat/lifecycle-coverage-set-aggregation-scheduling
+  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts,project,240,"harness:codex","2026-09-07T07:43:59.086Z",local_mutation,feat/lifecycle-coverage-set-aggregation-scheduling
+test_runs[3]:
+  - run_id: test-local-mtqwt2ls-n1pc4b
+    kind: test
+    status: passed
+    started_at: "2026-09-07T07:18:23.952Z"
+    finished_at: "2026-09-07T07:18:42.544Z"
+    recorded_at: "2026-09-07T07:18:42.544Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/aggregate-set-members.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtqxqn9s-zucty8
+    kind: test
+    status: passed
+    started_at: "2026-09-07T07:44:35.468Z"
+    finished_at: "2026-09-07T07:44:48.976Z"
+    recorded_at: "2026-09-07T07:44:48.976Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/aggregate-set-members.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtqyvnx6-95khav
+    kind: test
+    status: passed
+    started_at: "2026-09-07T08:15:43.780Z"
+    finished_at: "2026-09-07T08:16:42.714Z"
+    recorded_at: "2026-09-07T08:16:42.714Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/aggregate-set-members.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned release projection generated after verified implementation closure
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project,Generated declaration for the three implemented aggregate controls with unchanged help token budget
+  docs/PLANNING_MEASUREMENTS.md,project,Public semantic and cost contracts
+close_reason: Implementation and review corrections validated; final integrated delivery completed after the existing daily tag.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: full-source-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/aggregate-set-members.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Coverage,Gates (static)
+  owner: unbraind/pm-cli maintainers
 body: ""

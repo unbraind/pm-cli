@@ -906,6 +906,9 @@ export function normalizeAggregateOptions(
 ): AggregateOptions {
   return {
     groupBy: typeof options.groupBy === "string" ? options.groupBy : undefined,
+    setMode: typeof options.setMode === "string" ? options.setMode : undefined,
+    limit: readListOptionString(options, "limit"),
+    after: readListOptionString(options, "after"),
     count: options.count === true ? true : undefined,
     completion: options.completion === true ? true : undefined,
     sum: typeof options.sum === "string" ? options.sum : undefined,

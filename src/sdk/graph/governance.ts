@@ -29,6 +29,8 @@ import type {
 } from "./assembly.js";
 import { getWorkspaceHierarchyIntegrity } from "./assembly.js";
 import type { HierarchyIntegrityAnalysis } from "./hierarchy-integrity.js";
+import { profileRelationshipLifecycles, diffLifecycleCoverage, type RelationshipLifecycleCoverage } from "./lifecycle-coverage.js";
+export type { RelationshipPopulationCoverage, RelationshipLifecycleCoverage } from "./lifecycle-coverage.js";
 import {
   RELATIONSHIP_AUDIT_FINDING_CODES,
   type RelationshipAuditFindingCode,
@@ -72,7 +74,11 @@ export interface RelationshipCoverageTypeProfile {
 }
 
 /** Aggregate structural coverage metrics for one assembled workspace graph. */
-export interface RelationshipCoverageProfile {
+export interface RelationshipCoverageProfile extends RelationshipLifecycleCoverage {
+  /** Structural ordering acyclicity across all lifecycle states, independent of finding severity. */
+  ordering_acyclic: boolean;
+  /** Whether every ordering cycle is confined to terminal items. */
+  active_ordering_acyclic: boolean;
   /** Total indexed nodes including materialized missing placeholders. */
   nodes: number;
   /** Tracker-recorded nodes, excluding synthesized missing and external placeholders. */
@@ -1105,7 +1111,7 @@ function collectCoverageReport(
   maxSampleSize: number,
   edgesByKind: Record<string, number>,
   signal: AbortSignal | undefined,
-): RelationshipAuditReport {
+): { findings: RelationshipAuditFinding[]; profile: Omit<RelationshipCoverageProfile, keyof RelationshipLifecycleCoverage | "ordering_acyclic" | "active_ordering_acyclic"> } {
   const tallies: CoverageTallies = {
     active: 0,
     missing: 0,
@@ -1315,6 +1321,9 @@ export function auditWorkspaceRelationshipGraph(
     findings,
     profile: {
       ...coverage.profile,
+      ...profileRelationshipLifecycles(assembly, isTerminal, isSemanticContextKind, options.signal),
+      ordering_acyclic: !findings.some(finding => finding.code === "ordering_cycle" || finding.code === "legacy_ordering_cycle"),
+      active_ordering_acyclic: !findings.some(finding => finding.code === "ordering_cycle"),
       finding_subjects_by_code: findingSubjectsByCode,
     },
   };
@@ -1342,6 +1351,12 @@ export interface RelationshipAuditDelta {
   affected_subjects_by_code: Record<string, number>;
   /** Signed structural profile deltas. */
   profile: {
+    /** Whether both snapshots measured lifecycle census fields. */
+    lifecycle_comparable?: boolean;
+    /** Signed population deltas, absent for legacy baselines lacking this census. */
+    coverage_by_lifecycle?: RelationshipLifecycleCoverage["coverage_by_lifecycle"];
+    /** Signed raw-status population deltas, absent for legacy baselines. */
+    coverage_by_status?: RelationshipLifecycleCoverage["coverage_by_status"];
     /** Node-count change including missing placeholders. */
     nodes: number;
     /** Tracker-recorded node-count change excluding synthesized placeholders. */
@@ -1505,6 +1520,7 @@ export function diffRelationshipAuditSnapshots(
       semantic_edges: currentSemanticEdges - baselineSemanticEdges,
       semantic_edge_share: currentSemanticEdgeShare - baselineSemanticEdgeShare,
       coverage_by_type: coverageByType,
+      ...diffLifecycleCoverage(baseline.profile, current.profile),
     },
   };
 }

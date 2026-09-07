@@ -230,7 +230,9 @@ const PM_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   "list-blocked": 84,
   "list-closed": 84,
   "list-canceled": 84,
-  aggregate: 37,
+  // pm-398z0u: member/tuple interpretation and two group-pagination controls.
+  // Exactly the executable surface; no allowance for undeclared future flags.
+  aggregate: 40,
   context: 45,
   ctx: 45,
   get: 30,

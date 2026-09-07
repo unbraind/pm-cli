@@ -637,6 +637,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   criterion: { type: "array", items: { type: "string" } },
   clearCriteria: { type: "boolean" },
   groupBy: { type: "string" },
+  setMode: { type: "string", enum: ["element", "tuple"] },
   completion: { type: "boolean" },
   format: { type: "string" },
   unbounded: { type: "boolean" },
@@ -2026,6 +2027,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
       "sprint,release",
     ],
   },
+  setMode: {
+    description: "Aggregate array dimensions by distinct element (default), or by the complete normalized tuple. Empty sets retain a null group.",
+    examples: ["element", "tuple"],
+  },
   count: {
     description: "Enable grouped count output for aggregate action.",
   },
@@ -2089,7 +2094,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   after: {
     description:
-      "Continuation cursor resuming a bounded listing or traversal after this previously returned id.",
+      "Opaque action-specific continuation cursor returned by the preceding bounded query.",
     examples: ["pm-x1y2"],
   },
   maxPaths: {

@@ -195,6 +195,9 @@ export const TOOL_LIST_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
 /** Public contract for tool aggregate option contracts, shared by SDK and presentation-layer consumers. */
 export const TOOL_AGGREGATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "groupBy", flag: "--group-by" },
+  { param: "setMode", flag: "--set-mode" },
+  { param: "limit", flag: "--limit" },
+  { param: "after", flag: "--after" },
   { param: "sum", flag: "--sum" },
   { param: "avg", flag: "--avg" },
   ...cloneOptionContracts(TOOL_BASIC_ITEM_FILTER_OPTION_CONTRACTS),

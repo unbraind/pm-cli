@@ -28,9 +28,10 @@ import {
   type RelationshipCoverageProfile,
 } from "./governance.js";
 import { RELATIONSHIP_AUDIT_FINDING_CODES } from "./governance-contracts.js";
+import { validLifecycleSnapshot } from "./lifecycle-coverage.js";
 
 /** Envelope format version; any change invalidates persisted entries. */
-export const GRAPH_DURABLE_CACHE_VERSION = 1;
+export const GRAPH_DURABLE_CACHE_VERSION = 2;
 
 /** Workspaces below this item count skip implicit persistence. */
 export const GRAPH_DURABLE_CACHE_MIN_ITEMS = 500;
@@ -512,7 +513,7 @@ function decodeBaseline(
     if (!isNonnegativeCountRecord(affectedSubjectsByCode)) {
       return undefined;
     }
-    if (!isRecord(profile)) return undefined;
+    if (!isRecord(profile) || !validLifecycleSnapshot(profile)) return undefined;
     if (
       ![
         profile.nodes,

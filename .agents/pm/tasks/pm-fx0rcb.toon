@@ -1,0 +1,50 @@
+id: pm-fx0rcb
+title: Compact unbundled runtime JavaScript while preserving SDK declarations and Sentry source maps
+description: "The connected planning SDK additions bring the current npm pack projection to 20,030,898 bytes, exceeding the unchanged 20 MB base ceiling. Compact emitted unbundled JavaScript whitespace without renaming identifiers or bundling modules; retain declaration documentation and compose original TypeScript source maps for Sentry. Preserve all public exports, package paths, and existing artifact limits."
+type: Task
+status: closed
+priority: 1
+tags[3]: "area:release",packaging,performance
+created_at: "2026-09-07T06:53:27.314Z"
+updated_at: "2026-09-07T08:32:34.497Z"
+closed_at: "2026-09-07T07:45:41.617Z"
+completed_at: "2026-09-07T08:25:13.283Z"
+author: "harness:codex"
+parent: pm-u9d0
+resolution: "Compacted retained unbundled JavaScript whitespace during build finalization while preserving public declarations, runtime module paths and identifiers, bundled bytes, and composed original TypeScript source maps."
+expected_result: The enlarged planning SDK must fit the existing package ceiling without removing public runtime files or weakening distribution checks.
+actual_result: "Final base npm pack projection passes at 17836817 unpacked bytes and 1459 files against unchanged 20000000-byte and 1800-file limits, with zero packaged maps. Real execution, source-map composition, declaration/bundle preservation, idempotence, installed npm/Bun/MCP and packed npx/bunx acceptance passed."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-998juj,recurs_from,"2026-09-07T06:53:27.314Z","harness:codex","cli:create:dep",detected
+  pm-d2wfig,discovered_from,"2026-09-07T06:53:27.314Z","harness:codex","cli:create:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-09-07T06:53:27.314Z","harness:codex","Duplicate check: inspected full all-status 2651-item corpus for artifact/minification/packlist/footprint lineages, refreshed open and in-progress lists, and fully read pm-998juj metadata and closure. That shipped item removed packaged maps and added the budget; no active item owns whitespace compaction of retained unbundled runtime outputs. This is a new measured budget regression found by the mandatory artifact gate."
+  "2026-09-07T06:59:48.090Z","harness:codex","TDD evidence: the new real-filesystem compaction test first failed because the implementation was absent, then passed with the finalizer. It executes the compacted export in a real Node process, checks function name preservation, verifies declaration and bundled bytes are untouched, verifies composed source maps retain original TypeScript content, and checks repeated compaction is stable. The live base artifact now passes at 17,835,166 unpacked bytes and 1459 files with zero packaged maps, against unchanged 20 MB and 1800-file limits. Installed npx/bunx and final release checks remain underway."
+  "2026-09-07T07:23:02.997Z","harness:codex","Installed verification after compaction passed separate npm/Bun CLI, SDK, MCP, and terminal-exclusion acceptance; packed npx/bunx smoke also passed for all 13 bundled packages. All linked finalizer tests passed. A concurrently launched build interrupted consumers of dist during broad verification, so subsequent build-dependent gates are serialized; no product failure or passing broad run is inferred from that interrupted run."
+  "2026-09-07T07:45:41.024Z","harness:codex","Local implementation verification: exact full-source coverage passed at 100/100/100/100 with zero uncovered counts (60671 lines, 63170 statements, 13078 functions, 47962 branches). The full run had one stale workspace-intent assertion; that expected text was synchronized, then all 55 contracts and aggregation acceptance tests passed. Full static quality, context-quality and 56 token surfaces, typecheck, linked tests, staged secret scan, latest-release compatibility migration, 88-command package dogfood, installed npm/Bun CLI/SDK/MCP acceptance, and packed npx/bunx smoke passed. Hosted exact-head review, merge, and publication remain separate delivery steps; no hosted or released state is claimed here."
+  "2026-09-07T08:25:16.723Z","harness:codex","Delivery attribution correction: the earlier close recorded preliminary implementation completion before the independently scheduled v2026.9.7 tag, but that immutable tag does not contain this branch. Final integration of the release base, completed review handling, current static gates, and installed branch acceptance completed after the tag. Correct completed_at to this final integration completion so package-owned history retains this work under Unreleased. The earlier close event remains preserved."
+  "2026-09-07T08:32:34.497Z","harness:codex","Final connected-delivery verification: all 8524 tests pass with exact 100/100/100/100, full static gates and installed branch npm/Bun CLI/SDK/MCP acceptance pass. Review corrections are included before the final hosted round. Immutable daily v2026.9.7 publication and installed consumers also pass separately; this branch remains Unreleased. No open GitHub issues or dependency/security alerts were returned by the latest complete inventories."
+files[4]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Package-owned manifest refreshed when installing the latest pm-changelog for reviewed release notes
+  scripts/finalize-build.mjs,project,Implementation and release regression evidence
+  tests/unit/scripts/finalize-build.spec.ts,project,Implementation and release regression evidence
+  tests/unit/scripts/runtime-compaction.spec.ts,project,Implementation and release regression evidence
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/runtime-compaction.spec.ts tests/unit/scripts/finalize-build.spec.ts,project,240,"harness:codex","2026-09-07T06:57:16.584Z",local_mutation,feat/lifecycle-coverage-set-aggregation-scheduling
+test_runs[1]:
+  - run_id: test-local-mtqwtiqw-76sjb0
+    kind: test
+    status: passed
+    started_at: "2026-09-07T07:19:01.930Z"
+    finished_at: "2026-09-07T07:19:03.464Z"
+    recorded_at: "2026-09-07T07:19:03.464Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/runtime-compaction.spec.ts tests/unit/scripts/finalize-build.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned release projection generated after verified implementation closure
+  docs/PLANNING_MEASUREMENTS.md,project,Planning delivery packaging and preserved runtime contracts
+close_reason: Implementation and linked acceptance completed; reviewed branch carries structured closure evidence.
+body: ""
