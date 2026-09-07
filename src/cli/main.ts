@@ -3,6 +3,7 @@
  * @module cli/main
  */
 import { Command, CommanderError } from "commander";
+import { resolvePmHistoryOperation } from "../sdk/cli-contracts/command-aliases.js";
 import {
   activateExtensions,
   clearActiveExtensionHooks,
@@ -146,6 +147,7 @@ import {
   applyBootstrapPagerPolicy,
   parseBootstrapHelpRequest,
   parseBootstrapCommandName,
+  findBootstrapCommandTokenIndex,
   normalizeBootstrapInvocation,
   stripGlobalBootstrapTokens,
 } from "./bootstrap-args.js";
@@ -430,12 +432,16 @@ function buildRecoveryPayload(params: {
   };
 }
 
+/** Build replayable recovery guidance after removing sensitive matcher values from every invocation representation. */
 function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invocationArgv: string[], rawMessage: string): PmCliErrorContext {
   const safeInvocationArgv = redactSensitiveCommandArgs(invocationArgv);
+  const commandArgs = stripGlobalBootstrapTokens(safeInvocationArgv);
+  const commandIndex = findBootstrapCommandTokenIndex(commandArgs);
+  const [rootCommand, subcommand] = commandIndex === undefined ? [] : commandArgs.slice(commandIndex, commandIndex + 2);
   const explainRequested = safeInvocationArgv.includes("--explain");
   const rawExistingRecovery = context?.recovery;
   const existingRecovery =
-    rawExistingRecovery && safeInvocationArgv.includes("history-redact")
+    rawExistingRecovery && (rootCommand === "history-redact" || (rootCommand === "history" && subcommand === "redact"))
       ? {
           ...rawExistingRecovery,
           ...(rawExistingRecovery.attempted_command ? { attempted_command: renderAttemptedCommand(safeInvocationArgv) } : {}),
@@ -1208,6 +1214,7 @@ function collectLeadingCommandArgs(commandArgs: readonly string[] | undefined): 
 }
 
 /* c8 ignore start */
+/** Match leading command paths against both native history spellings and stable extension operation identities. */
 function collectActivationCommandCandidates(probe: RuntimeExtensionActivationProbe): string[] {
   /* c8 ignore next */
   const commandPath = normalizeExtensionCommandPath(probe.commandPath ?? "");
@@ -1220,7 +1227,7 @@ function collectActivationCommandCandidates(probe: RuntimeExtensionActivationPro
     parts.push(...arg.split(" ").filter((part) => part.length > 0));
     candidates.push(parts.join(" "));
   }
-  return [...new Set(candidates)];
+  return [...new Set(candidates.flatMap((candidate) => [candidate, resolvePmHistoryOperation(candidate)]))];
 }
 
 function activationCommandMatchesProbe(command: string, probe: RuntimeExtensionActivationProbe): boolean {
@@ -1806,17 +1813,20 @@ function syncCommanderActionArgs(actionCommand: Command, actionArgs: unknown[], 
   }
 }
 
+/** Wrap each action once so validated parser overrides and extension handlers precede the original core action. */
 function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
+  /** Traverse nested command registrations and wrap each action at most once. */
   const visit = (entry: Command): void => {
     const actionEntry = entry as ActionMutableCommand;
     if (typeof actionEntry._actionHandler === "function" && actionEntry[WRAPPED_ACTION_HANDLER] !== true) {
       const originalAction = actionEntry._actionHandler;
+      /** Apply extension parsing and dispatch while preserving core action receipts. */
       actionEntry._actionHandler = async function wrappedActionHandler(this: unknown, ...actionArgs: unknown[]): Promise<unknown> {
         const actionCommand = resolveActionCommand(actionArgs, entry);
         const startedAt = Date.now();
         clearResolvedGlobalOptions(actionCommand);
         let globalOptions = getGlobalOptions(actionCommand);
-        const commandPath = getCommandPath(actionCommand);
+        const commandPath = resolvePmHistoryOperation(getCommandPath(actionCommand));
         const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
         let commandArgs = actionCommand.args.map(String);
         const activeRegistrations = getActiveExtensionRegistrations();
@@ -2069,6 +2079,7 @@ const CLI_VERSION = resolvePmCliVersion(import.meta.url, ["../.."]) ?? "0.0.0";
 let program = createPmCliProgram(CLI_VERSION);
 
 /* c8 ignore start */
+/** Bind output validation, extension policy, mutation guards, and observability to the selected semantic command. */
 function attachProgramLifecycleHooks(rootProgram: Command): void {
   rootProgram.hook("preAction", async (_thisCommand, actionCommand) => {
     activeExtensionHookContext = null;
@@ -2077,7 +2088,7 @@ function attachProgramLifecycleHooks(rootProgram: Command): void {
     clearResolvedGlobalOptions(actionCommand);
     const rawGlobalOptions = actionCommand.optsWithGlobals() as Record<string, unknown>;
     const bootstrapGlobalOptions = getGlobalOptions(actionCommand);
-    const commandPath = getCommandPath(actionCommand);
+    const commandPath = resolvePmHistoryOperation(getCommandPath(actionCommand));
     let commandArgs = actionCommand.args.map(String);
     let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs);
     let globalOptions = { ...bootstrapGlobalOptions };
@@ -2271,6 +2282,9 @@ const MUTATION_COMMAND_NAMES = new Set([
   "discover",
   "docs",
   "files",
+  "history-repair",
+  "history-redact",
+  "history-compact",
   "learnings",
   "notes",
   "plan",
@@ -2333,6 +2347,7 @@ function invocationRequestsVersion(invocationArgv: string[]): boolean {
   return invocationArgv.some((token) => VERSION_FLAG_TOKENS.has(token));
 }
 
+/** Load only the selected core registration family, retaining complete discovery for help and unknown paths. */
 function resolveCoreCommandRegistrationSelection(invocationArgv: string[]): CoreCommandRegistrationSelection {
   if (invocationRequestsVersion(invocationArgv)) {
     return {

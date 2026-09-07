@@ -1166,7 +1166,7 @@ describe("contracts command runtime", () => {
           ],
         }),
         expect.objectContaining({
-          command: "activity",
+          command: "history activity",
           flags: ["--limit", "--compact", "--full"],
         }),
         expect.objectContaining({

@@ -11,6 +11,50 @@ import {
 } from "../../../src/sdk/index.js";
 
 describe("SDK output envelope contracts", () => {
+  it("validates native and legacy history transcripts using the selected operation", () => {
+    for (const [leaf, legacy, kind] of [
+      ["redact", "history-redact", "diagnostic"],
+      ["repair", "history-repair", "diagnostic"],
+      ["compact", "history-compact", "diagnostic"],
+      ["restore", "restore", "mutation_receipt"],
+      ["activity", "activity", "collection"],
+    ]) {
+      for (const args of [
+        ["history", leaf, "pm-example"],
+        [legacy, "pm-example"],
+        ["--pm-path", "history", "history", "--author", "redact", leaf, "pm-example"],
+        ["--json", "history", "--output-format=json", leaf, "--id", "pm-example"],
+      ]) {
+        const step = {
+          id: "history-operation", args, expected_exit_code: 0,
+          expected_output_kind: kind, expected_accounting_mode: "self_reported",
+          required_fields: ["id"],
+        };
+        const corpus = { version: 2, tasks: [{ id: "history", description: "Replay history operations", steps: [step] }] };
+        expect(parsePmAgentTaskTranscriptCorpus(corpus).tasks[0].steps[0].args).toEqual(args);
+        expect(() => parsePmAgentTaskTranscriptCorpus({
+          ...corpus,
+          tasks: [{ ...corpus.tasks[0], steps: [{ ...step, expected_output_kind: "entity" }] }],
+        })).toThrow(`declares ${kind}`);
+      }
+    }
+    for (const args of [
+      ["history"],
+      ["history", "--", "redact"],
+      ["history", "pm-example", "redact"],
+      ["history", "--author", "redact", "pm-example"],
+      ["list", "--title", "history", "--description", "redact"],
+    ]) {
+      expect(parsePmAgentTaskTranscriptCorpus({
+        version: 2,
+        tasks: [{ id: "ordinary", description: "Preserve ordinary read contracts", steps: [{
+          id: "read", args, expected_exit_code: 0, expected_output_kind: "collection",
+          expected_accounting_mode: "self_reported", required_fields: ["items"],
+        }] }],
+      }).tasks[0].steps[0].args).toEqual(args);
+    }
+  });
+
   it("keeps transcript command scanning on the contract-only dependency graph", async () => {
     const source = await readFile(
       new URL(

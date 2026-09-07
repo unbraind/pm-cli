@@ -147,11 +147,20 @@ export function listPmRequiredArgumentRefusalContracts(
       ),
   ),
 ): PmRequiredArgumentRefusalContract[] {
+  const rootProbeSlugs = new Set(
+    contracts.filter(({ command }) => !command.includes(" ")).map(({ command }) => probeSlug(command)),
+  );
   return contracts
     .flatMap((contract) =>
       contract.slots.flatMap((slot, index) => {
         if (!slot.required) return [];
         const commandArguments = contract.command.split(" ");
+        const commandSlug = probeSlug(contract.command);
+        // Preserve published probe IDs while distinguishing new namespace paths
+        // from an existing hyphenated root command with the same slug.
+        const commandProbeId = commandArguments.length > 1 && rootProbeSlugs.has(commandSlug)
+          ? commandArguments.map(probeSlug).join("--")
+          : commandSlug;
         const requiredFlagArguments = resolveSubcommandFlagContractsForCommand(
           contract.command,
         ).flatMap((flagContract) =>
@@ -167,7 +176,7 @@ export function listPmRequiredArgumentRefusalContracts(
         );
         return [
           {
-            probe_id: `required-argument-${probeSlug(contract.command)}-${probeSlug(slot.name)}`,
+            probe_id: `required-argument-${commandProbeId}-${probeSlug(slot.name)}`,
             command: contract.command,
             refusal_args: [
               ...commandArguments,

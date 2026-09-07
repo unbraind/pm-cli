@@ -1,0 +1,65 @@
+id: pm-zk67yf
+title: "GH-1215: Preserve original source maps through aliased build roots"
+description: Nightly macOS Node 24 run 34104192850 loses original.ts source-map attribution during runtime compaction. Reproduce filesystem root aliases and preserve composed original source mapping across repeated compaction.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-07T13:35:08.919Z"
+updated_at: "2026-09-07T13:58:47.403Z"
+closed_at: "2026-09-07T13:55:21.691Z"
+completed_at: "2026-09-07T13:55:21.691Z"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: Physical and aliased output roots retain original source mapping and sourcesContent; second compaction is byte-identical; runtime function names and declarations remain intact; macOS nightly validation passes.
+goal: project management = context management
+value: Stable packaged source attribution across supported platforms
+why_now: New GitHub report exposes an uncovered boundary in required release or agent workflows.
+parent: pm-u9d0
+risk: low
+confidence: high
+resolution: Resolve the physical output root for both esbuild entrypoints and output mapping during runtime compaction.
+expected_result: "Original source mapping, declarations, runtime names and repeated-compaction bytes remain stable through physical and aliased build roots."
+actual_result: The real directory-alias regression failed before the fix and now passes alongside the physical-root fixture. Original sourcesContent and exact second-compaction bytes are preserved. Full exact coverage and static gates pass; hosted macOS verification remains required before merge.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fx0rcb,discovered_from,"2026-09-07T13:35:08.919Z","harness:codex","cli:create:dep",detected
+  pm-fx0rcb,verifies,"2026-09-07T13:42:39.465Z","harness:codex","cli:update:dep",detected
+  pm-u9d0,implements,"2026-09-07T13:42:39.465Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-09-07T13:35:08.919Z","harness:codex","Duplicate check: complete all-status corpus of 2653 items plus open and in-progress searches contains no GH-1215 owner. Existing completed compaction work retains its release attribution. Report https://github.com/unbraind/pm-cli/issues/1215; delivery PR https://github.com/unbraind/pm-cli/pull/1217."
+  "2026-09-07T13:40:16.712Z","harness:codex","TDD evidence: real symlink-root regression failed with ../dist/original.ts before the fix. Canonical physical entry/output roots preserve original.ts and exact repeated-compaction bytes. All 26 focused platform tests pass; hosted macOS and Windows verification remains required."
+  "2026-09-07T13:47:46.106Z","harness:codex","Verification update: linked focused suites passed for all three report owners. Typecheck, ESLint and docs links passed. A freshly packed candidate installed independently with npm and Bun passed SDK exports and the complete history redaction/restore/compaction/verification journey; both installed CLIs retained Error: Unknown option --label with oversized input within the 768-token text ceiling. Full literal coverage and the complete static chain are still running; hosted platform proof is not yet available."
+  "2026-09-07T13:55:20.869Z","harness:codex","All 8541 tests across 639 files passed with literal 100/100/100/100 coverage and zero uncovered counts. The complete pnpm quality:static command, typecheck, ESLint, docs links and tracked-file secret scan passed. Linked tests and fresh installed npm/Bun candidate history plus diagnostic journeys passed. Full tracker validation is ok with zero history drift; 295 pre-existing historical resolution warnings are unchanged. Hosted exact-head CI, platform matrix and renewed bot review remain mandatory before merge; this evidence makes no publication claim."
+  "2026-09-07T13:58:46.855Z","harness:codex","Integrity clarification: the first broad validation overlapped live updates and reported transient hash drift for pm-m4uyyj and pm-zk67yf; its earlier zero-drift summary was premature. The settled validation after closure checked all 2656 items and reports zero drift, missing/unreadable streams, hash/chain mismatches, version skew or workspace mismatch. All 2372 closed items were checked and the 295 historical resolution warnings remain unchanged. Package-generated changelog and check passed using latest pm-changelog 2026.9.6."
+learnings[1]{created_at,author,text}:
+  "2026-09-07T13:48:21.880Z","harness:codex",Canonicalize both esbuild input and output roots together when filesystem aliases are possible. A real symlink or Windows junction fixture reproduces macOS temporary-root aliases without platform mocks and protects original source mapping plus idempotent compaction.
+files[3]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated Unreleased entry preserving prior release attribution
+  scripts/finalize-build.mjs,project,Implementation and executable regression for reported boundary
+  tests/unit/scripts/runtime-compaction.spec.ts,project,Implementation and executable regression for reported boundary
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/runtime-compaction.spec.ts tests/unit/scripts/finalize-build.spec.ts,project,240,"harness:codex","2026-09-07T13:41:53.602Z",local_mutation,feat/history-maintenance-sdk-command-grammar
+test_runs[1]:
+  - run_id: test-local-mtramcb7-h47krl
+    kind: test
+    status: passed
+    started_at: "2026-09-07T13:45:08.778Z"
+    finished_at: "2026-09-07T13:45:23.154Z"
+    recorded_at: "2026-09-07T13:45:23.154Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/runtime-compaction.spec.ts tests/unit/scripts/finalize-build.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Portable platform regression invariants and nightly coverage
+close_reason: Implementation and local verification complete; reviewed merge and hosted platform proof remain separately gated.
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: full-source-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/runtime-compaction.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Coverage,"Nightly (macos-latest, Node 24)"
+  owner: unbraind/pm-cli maintainers
+body: ""

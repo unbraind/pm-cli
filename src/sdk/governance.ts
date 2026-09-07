@@ -38,3 +38,4 @@ export * from "./author-attribution.js";
 export * from "./mutation-guard.js";
 export * from "./governance/provenance-health.js";
 export * from "./similarity.js";
+export * from "./history/maintenance.js";

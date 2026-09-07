@@ -5,6 +5,8 @@
  * packages, contract discovery, and regression gates. The contracts describe
  * output policy without coupling package authors to pm's renderer.
  */
+import { stripVTControlCharacters } from "node:util";
+import { resolvePmHistoryOperation } from "./command-aliases.js";
 import { PM_CORE_COMMAND_NAMES } from "./enum-contracts.js";
 
 /** Stable degradation stages applied when an output exceeds its token budget. */
@@ -232,7 +234,7 @@ const DIAGNOSTIC_BUDGET_BY_CLASS = new Map(
 
 /** Infer the conservative workload class for a core or package command. */
 export function inferPmOutputBudgetClass(command: string): PmOutputBudgetClass {
-  const [rootCommand = ""] = command.trim().split(/\s+/u);
+  const [rootCommand = ""] = resolvePmHistoryOperation(command).split(/\s+/u);
   return MUTATION_COMMANDS.has(rootCommand)
     ? "mutation"
     : DISCOVERY_COMMANDS.has(rootCommand)
@@ -323,7 +325,7 @@ export function resolvePmCommandOutputBudget(
   options: { generateFallback?: boolean } = {},
 ): PmCommandOutputBudgetContract | null {
   const normalizedCommand = command.trim().replace(/\s+/gu, " ");
-  const [rootCommand] = normalizedCommand.split(" ");
+  const [rootCommand] = resolvePmHistoryOperation(normalizedCommand).split(" ");
   const declared = OUTPUT_BUDGET_BY_COMMAND.get(
     rootCommand as (typeof PM_CORE_COMMAND_NAMES)[number],
   );
@@ -661,7 +663,14 @@ export interface PmProjectedTextDiagnostic {
   diagnostic_output: PmDiagnosticOutputReceipt;
 }
 
-/** Bind human-readable diagnostics without ever truncating the corrective action away. */
+/** Remove terminal escape sequences and controls while preserving diagnostic line breaks. */
+function sanitizeDiagnosticText(text: string): string {
+  return stripVTControlCharacters(text)
+    .replace(/\r\n/gu, "\n")
+    .replace(/[^\P{Cc}\n]/gu, " ");
+}
+
+/** Bind human-readable diagnostics while retaining their first identifying line and corrective action. */
 export function projectPmDiagnosticText(
   output: string,
   correctiveAction: string,
@@ -684,14 +693,19 @@ export function projectPmDiagnosticText(
   }
   const budget =
     explicitBudget ?? contract.default_max_estimated_tokens_by_format.text;
+  const sanitizedOutput = sanitizeDiagnosticText(output);
   const originalEstimatedTokens = estimatePmOutputTokens(
-    Buffer.byteLength(output, "utf8"),
+    Buffer.byteLength(sanitizedOutput, "utf8"),
   );
   const truncated = originalEstimatedTokens > budget;
   const actionPrefix = "What is required:\n  ";
-  const actionSuffix = `\n\nDiagnostic output exceeded its declared ${budget}-token ceiling; rerun with structured JSON for the bounded recovery envelope.`;
+  const identity = truncateDiagnosticUtf8Text(
+    sanitizedOutput.trimStart().split(/\r?\n/u, 1)[0]!.trim(),
+    320,
+  );
+  const actionSuffix = `\n\n${identity}\n\nDiagnostic output exceeded its declared ${budget}-token ceiling; rerun with structured JSON for the bounded recovery envelope.`;
   const correctiveActionText =
-    correctiveAction.trim() ||
+    sanitizeDiagnosticText(correctiveAction).trim() ||
     "Inspect the diagnostic code and retry with corrected input.";
   const availableActionBytes = Math.max(
     1,
@@ -702,7 +716,7 @@ export function projectPmDiagnosticText(
         correctiveActionText,
         availableActionBytes,
       )}${actionSuffix}`
-    : output;
+    : sanitizedOutput;
   return {
     output: projectedOutput,
     diagnostic_output: {

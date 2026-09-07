@@ -3,6 +3,7 @@
  *
  * Renders copy-safe pm command suggestions for SDK and CLI diagnostics.
  */
+import { findBootstrapCommandTokenIndex } from "./cli-contracts/bootstrap-command-scanner.js";
 
 /** Quote one Windows argument with the linear CommandLineToArgvW escaping algorithm. */
 export const quoteWindowsCommandArg = (arg: string): string => {
@@ -28,7 +29,9 @@ export const quoteCommandArg = (
   platform: NodeJS.Platform = process.platform,
 ): string => {
   const safePattern =
-    platform === "win32" ? /^[A-Za-z0-9._:/\\@=-]+$/ : /^[A-Za-z0-9._:/@=-]+$/;
+    platform === "win32"
+      ? /^[A-Za-z0-9._:/\\@=-]+$/
+      : /^[A-Za-z0-9._:/@=-]+$/;
   if (safePattern.test(arg)) {
     return arg;
   }
@@ -43,7 +46,9 @@ export const renderPmCommand = (
   argv: string[],
   platform: NodeJS.Platform = process.platform,
 ): string => {
-  const args = argv.map((token) => quoteCommandArg(token, platform)).join(" ");
+  const args = argv
+    .map((token) => quoteCommandArg(token, platform))
+    .join(" ");
   return args.length > 0 ? `pm ${args}` : "pm";
 };
 
@@ -53,20 +58,35 @@ const HISTORY_REDACT_SENSITIVE_FLAGS = new Set([
   "--replacement",
 ]);
 
+/** Recognize the leading redaction command after global options, even before flag validation succeeds. */
+export function isHistoryRedactInvocation(
+  argv: readonly string[],
+): boolean {
+  const rootIndex = findBootstrapCommandTokenIndex(argv);
+  if (rootIndex === undefined) return false;
+  if (argv[rootIndex] === "history-redact") return true;
+  if (argv[rootIndex] !== "history") return false;
+  const operationArgs = argv.slice(rootIndex + 1);
+  const operationIndex = findBootstrapCommandTokenIndex(operationArgs);
+  return operationIndex !== undefined && operationArgs[operationIndex] === "redact";
+}
+
 /**
  * Replace history-redaction matcher and replacement values before an argv
  * vector is copied into diagnostics or recovery guidance. The values are
  * inputs to a disclosure-removal operation and therefore remain sensitive
  * even when they do not resemble a conventional credential.
  */
-export function redactSensitiveCommandArgs(argv: readonly string[]): string[] {
-  if (!argv.includes("history-redact")) {
+export function redactSensitiveCommandArgs(
+  argv: readonly string[],
+): string[] {
+  if (!isHistoryRedactInvocation(argv)) {
     return [...argv];
   }
   const redacted: string[] = [];
   let redactNext = false;
   for (const token of argv) {
-    if (redactNext && !token.startsWith("-")) {
+    if (redactNext) {
       redacted.push("[redacted]");
       redactNext = false;
       continue;

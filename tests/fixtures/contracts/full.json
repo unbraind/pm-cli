@@ -4,7 +4,7 @@
       "action": "activity",
       "available": true,
       "cli_exposed": true,
-      "command_path": "activity",
+      "command_path": "history activity|activity",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -434,7 +434,7 @@
       "action": "history-compact",
       "available": true,
       "cli_exposed": true,
-      "command_path": "history-compact",
+      "command_path": "history compact|history-compact",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -444,7 +444,7 @@
       "action": "history-redact",
       "available": true,
       "cli_exposed": true,
-      "command_path": "history-redact",
+      "command_path": "history redact|history-redact",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -454,7 +454,7 @@
       "action": "history-repair",
       "available": true,
       "cli_exposed": true,
-      "command_path": "history-repair",
+      "command_path": "history repair|history-repair",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -744,7 +744,7 @@
       "action": "restore",
       "available": true,
       "cli_exposed": true,
-      "command_path": "restore",
+      "command_path": "history restore|restore",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -1057,6 +1057,106 @@
     },
     {
       "aliases": [
+        "activity"
+      ],
+      "canonical": "history activity",
+      "contracts": [
+        {
+          "alias": "activity",
+          "canonical": "history activity",
+          "canonical_argv": [
+            "history",
+            "activity"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-tqel",
+          "registration": "commander"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "history-compact"
+      ],
+      "canonical": "history compact",
+      "contracts": [
+        {
+          "alias": "history-compact",
+          "canonical": "history compact",
+          "canonical_argv": [
+            "history",
+            "compact"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-tqel",
+          "registration": "commander"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "history-redact"
+      ],
+      "canonical": "history redact",
+      "contracts": [
+        {
+          "alias": "history-redact",
+          "canonical": "history redact",
+          "canonical_argv": [
+            "history",
+            "redact"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-tqel",
+          "registration": "commander"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "history-repair"
+      ],
+      "canonical": "history repair",
+      "contracts": [
+        {
+          "alias": "history-repair",
+          "canonical": "history repair",
+          "canonical_argv": [
+            "history",
+            "repair"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-tqel",
+          "registration": "commander"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "restore"
+      ],
+      "canonical": "history restore",
+      "contracts": [
+        {
+          "alias": "restore",
+          "canonical": "history restore",
+          "canonical_argv": [
+            "history",
+            "restore"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-tqel",
+          "registration": "commander"
+        }
+      ]
+    },
+    {
+      "aliases": [
         "learning"
       ],
       "canonical": "learnings",
@@ -1336,6 +1436,11 @@
           "health",
           "help",
           "history",
+          "history activity",
+          "history compact",
+          "history redact",
+          "history repair",
+          "history restore",
           "history-author-acknowledge",
           "history-compact",
           "history-redact",
@@ -3653,6 +3758,188 @@
         },
         {
           "flag": "--format"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "history activity",
+      "flags": [
+        {
+          "flag": "--id"
+        },
+        {
+          "flag": "--op"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--from"
+        },
+        {
+          "flag": "--to"
+        },
+        {
+          "flag": "--limit"
+        },
+        {
+          "flag": "--unbounded"
+        },
+        {
+          "flag": "--compact"
+        },
+        {
+          "flag": "--raw"
+        },
+        {
+          "flag": "--full"
+        },
+        {
+          "flag": "--provenance"
+        },
+        {
+          "flag": "--provenance-summary"
+        },
+        {
+          "flag": "--harness",
+          "repeatable": true
+        },
+        {
+          "flag": "--agent-instance",
+          "repeatable": true
+        },
+        {
+          "flag": "--provenance-filter",
+          "repeatable": true
+        },
+        {
+          "flag": "--stream"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "history compact",
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "flag": "--before"
+        },
+        {
+          "flag": "--ids",
+          "list": true
+        },
+        {
+          "flag": "--all-over",
+          "value_type": "number"
+        },
+        {
+          "flag": "--closed"
+        },
+        {
+          "flag": "--all-streams"
+        },
+        {
+          "flag": "--min-entries",
+          "value_type": "number"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "history redact",
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "flag": "--literal"
+        },
+        {
+          "flag": "--regex"
+        },
+        {
+          "flag": "--replacement"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "history repair",
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "flag": "--all"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--normalize-provenance"
+        },
+        {
+          "flag": "--salvage-tail",
+          "value_type": "boolean"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "history restore",
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -9964,6 +10251,141 @@
     {
       "budget": {
         "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "history activity",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "history activity",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "items"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "history compact",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "history compact",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "history redact",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "history redact",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "history repair",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "history repair",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "history restore",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "history restore",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
         "budget_class": "mutation",
         "command": "history-author-acknowledge",
         "default_max_estimated_tokens": 2000,
@@ -12994,6 +13416,61 @@
       "intent_source": "command"
     },
     {
+      "command": "history activity",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "flags": [
+        "--limit",
+        "--compact",
+        "--full"
+      ],
+      "intent": "Read activity.",
+      "intent_source": "command"
+    },
+    {
+      "command": "history compact",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Compact history.",
+      "intent_source": "command"
+    },
+    {
+      "command": "history redact",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Redact sensitive history values.",
+      "intent_source": "command"
+    },
+    {
+      "command": "history repair",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Repair history integrity.",
+      "intent_source": "command"
+    },
+    {
+      "command": "history restore",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Restore history.",
+      "intent_source": "command"
+    },
+    {
       "command": "history-author-acknowledge",
       "default_max_estimated_tokens": 2000,
       "default_max_estimated_tokens_by_format": {
@@ -15377,6 +15854,11 @@
     "health",
     "help",
     "history",
+    "history activity",
+    "history compact",
+    "history redact",
+    "history repair",
+    "history restore",
     "history-author-acknowledge",
     "history-compact",
     "history-redact",
@@ -22420,11 +22902,74 @@
         "target": "history"
       },
       {
+        "command": "history redact",
+        "disposition": "target_noun",
+        "noun": "history",
+        "owner": "pm-tqel",
+        "target": "history redact"
+      },
+      {
+        "command": "history-redact",
+        "disposition": "consolidation",
+        "noun": "history",
+        "owner": "pm-tqel",
+        "target": "history redact"
+      },
+      {
+        "command": "history repair",
+        "disposition": "target_noun",
+        "noun": "history",
+        "owner": "pm-tqel",
+        "target": "history repair"
+      },
+      {
+        "command": "history-repair",
+        "disposition": "consolidation",
+        "noun": "history",
+        "owner": "pm-tqel",
+        "target": "history repair"
+      },
+      {
+        "command": "history compact",
+        "disposition": "target_noun",
+        "noun": "history",
+        "owner": "pm-tqel",
+        "target": "history compact"
+      },
+      {
+        "command": "history-compact",
+        "disposition": "consolidation",
+        "noun": "history",
+        "owner": "pm-tqel",
+        "target": "history compact"
+      },
+      {
+        "command": "history activity",
+        "disposition": "target_noun",
+        "noun": "history",
+        "owner": "pm-tqel",
+        "target": "history activity"
+      },
+      {
         "command": "activity",
         "disposition": "consolidation",
         "noun": "history",
         "owner": "pm-tqel",
-        "target": "history"
+        "target": "history activity"
+      },
+      {
+        "command": "history restore",
+        "disposition": "target_noun",
+        "noun": "history",
+        "owner": "pm-tqel",
+        "target": "history restore"
+      },
+      {
+        "command": "restore",
+        "disposition": "consolidation",
+        "noun": "history",
+        "owner": "pm-tqel",
+        "target": "history restore"
       },
       {
         "command": "events",
@@ -22441,35 +22986,7 @@
         "target": "history"
       },
       {
-        "command": "history-compact",
-        "disposition": "consolidation",
-        "noun": "history",
-        "owner": "pm-tqel",
-        "target": "history"
-      },
-      {
-        "command": "history-redact",
-        "disposition": "consolidation",
-        "noun": "history",
-        "owner": "pm-tqel",
-        "target": "history"
-      },
-      {
-        "command": "history-repair",
-        "disposition": "consolidation",
-        "noun": "history",
-        "owner": "pm-tqel",
-        "target": "history"
-      },
-      {
         "command": "merge",
-        "disposition": "consolidation",
-        "noun": "history",
-        "owner": "pm-tqel",
-        "target": "history"
-      },
-      {
-        "command": "restore",
         "disposition": "consolidation",
         "noun": "history",
         "owner": "pm-tqel",
@@ -23791,24 +24308,12 @@
         ]
       },
       {
-        "command": "activity",
-        "slots": []
-      },
-      {
-        "command": "events",
-        "slots": []
-      },
-      {
-        "command": "history-author-acknowledge",
-        "slots": []
-      },
-      {
-        "command": "history-compact",
+        "command": "history redact",
         "slots": [
           {
             "name": "id",
             "polymorphic": false,
-            "required": false,
+            "required": true,
             "value_kind": "item_id",
             "variadic": false
           }
@@ -23827,6 +24332,18 @@
         ]
       },
       {
+        "command": "history repair",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
         "command": "history-repair",
         "slots": [
           {
@@ -23837,6 +24354,84 @@
             "variadic": false
           }
         ]
+      },
+      {
+        "command": "history compact",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "history-compact",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "history activity",
+        "slots": []
+      },
+      {
+        "command": "activity",
+        "slots": []
+      },
+      {
+        "command": "history restore",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "restore",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "target",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "events",
+        "slots": []
+      },
+      {
+        "command": "history-author-acknowledge",
+        "slots": []
       },
       {
         "command": "merge",
@@ -23873,25 +24468,6 @@
             "name": "theirs",
             "polymorphic": false,
             "required": false,
-            "value_kind": "string",
-            "variadic": false
-          }
-        ]
-      },
-      {
-        "command": "restore",
-        "slots": [
-          {
-            "name": "id",
-            "polymorphic": false,
-            "required": true,
-            "value_kind": "item_id",
-            "variadic": false
-          },
-          {
-            "name": "target",
-            "polymorphic": false,
-            "required": true,
             "value_kind": "string",
             "variadic": false
           }
@@ -35014,6 +35590,13 @@
       },
       {
         "command": "history",
+        "modes": [
+          "compact",
+          "full"
+        ]
+      },
+      {
+        "command": "history activity",
         "modes": [
           "compact",
           "full"

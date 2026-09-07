@@ -828,6 +828,33 @@ function appendHarnessPredicate(
   parameters.push(...harnesses);
 }
 
+/** Open a supported projection only while its caller holds both index locks. */
+async function openSettledHistoryEventIndex(
+  pmRoot: string,
+  Database: DatabaseSyncConstructor,
+): Promise<DatabaseSync | undefined> {
+  const invalidations =
+    await recoverAbandonedHistoryEventIndexInvalidations(pmRoot);
+  if (
+    invalidations.pending.length > 0 ||
+    invalidations.committed.length > 0
+  ) {
+    return undefined;
+  }
+  const database = new Database(eventIndexPath(pmRoot), { readOnly: true });
+  try {
+    const version = database
+      .prepare("SELECT value FROM metadata WHERE key = 'version'")
+      .get() as { value?: unknown } | undefined;
+    if (version?.value === EVENT_INDEX_VERSION) return database;
+  } catch (error: unknown) {
+    database.close();
+    throw error;
+  }
+  database.close();
+  return undefined;
+}
+
 /** Query the optional event projection without scanning history streams. */
 export async function queryHistoryEventIndex(
   pmRoot: string,
@@ -884,25 +911,14 @@ export async function queryHistoryEventIndex(
   try {
     return await withHistoryEventIndexLock(pmRoot, async () => {
       return withHistoryEventIndexInvalidationLock(pmRoot, async () => {
-        const invalidations =
-          await recoverAbandonedHistoryEventIndexInvalidations(pmRoot);
-        if (
-          invalidations.pending.length > 0 ||
-          invalidations.committed.length > 0
-        ) {
-          return null;
-        }
-        database = new Database(eventIndexPath(pmRoot), { readOnly: true });
-        const version = database
-          .prepare("SELECT value FROM metadata WHERE key = 'version'")
-          .get() as { value?: unknown } | undefined;
+        database = await openSettledHistoryEventIndex(pmRoot, Database);
+        if (!database) return null;
         const validationStreamIds = await historyIndexValidationStreamIds(
           database,
           pmRoot,
           query.stream_ids,
         );
         if (
-          version?.value !== EVENT_INDEX_VERSION ||
           !(await historyIndexMatchesStreamSizes(
             database,
             pmRoot,
@@ -1037,6 +1053,7 @@ async function historyIndexValidationStreamIds(
   return [...new Set([...indexed, ...authoritative])];
 }
 
+/** Read current per-stream substantive events under both projection locks, or signal contention and fallback safely. */
 async function readIndexedLatestSubstantiveEvents(
   Database: DatabaseSyncConstructor | null,
   pmRoot: string,
@@ -1052,20 +1069,9 @@ async function readIndexedLatestSubstantiveEvents(
   try {
     return await withHistoryEventIndexLock(pmRoot, async () => {
       return withHistoryEventIndexInvalidationLock(pmRoot, async () => {
-        const invalidations =
-          await recoverAbandonedHistoryEventIndexInvalidations(pmRoot);
+        database = await openSettledHistoryEventIndex(pmRoot, Database);
+        if (!database) return null;
         if (
-          invalidations.pending.length > 0 ||
-          invalidations.committed.length > 0
-        ) {
-          return null;
-        }
-        database = new Database(eventIndexPath(pmRoot), { readOnly: true });
-        const version = database
-          .prepare("SELECT value FROM metadata WHERE key = 'version'")
-          .get() as { value?: unknown } | undefined;
-        if (
-          version?.value !== EVENT_INDEX_VERSION ||
           !(await historyIndexMatchesStreamSizes(database, pmRoot, streamIds))
         ) {
           database.close();

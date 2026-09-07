@@ -1,6 +1,6 @@
 # Diagnostic Output Contracts
 
-Tracker references: [pm-cha95z](../.agents/pm/tasks/pm-cha95z.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-f05lsg](../.agents/pm/features/pm-f05lsg.toon), and [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon).
+Tracker references: [pm-cha95z](../.agents/pm/tasks/pm-cha95z.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-f05lsg](../.agents/pm/features/pm-f05lsg.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), and [pm-m4uyyj](../.agents/pm/issues/pm-m4uyyj.toon).
 
 ## Agent Quick Context
 
@@ -77,8 +77,14 @@ The deterministic ladder is:
 
 Human diagnostics lead with `What is required` and next steps before explaining
 what happened. If their declared ceiling binds, the compact text still begins
-with the required action and points to structured JSON for the bounded recovery
-envelope.
+with the required action, retains the first identifying line (up to 320 UTF-8
+bytes), and points to structured JSON for the bounded recovery envelope. The
+first line should name the specific failure, such as `Error: Unknown option
+--label`. Oversized caller-input echoes are discarded before this identity;
+the retained identity and corrective action share the binding byte budget.
+The text projector strips terminal escape sequences and replaces remaining
+control characters before measuring output, including short diagnostics that
+fit the budget. Line breaks and ordinary indentation are preserved.
 
 ## Executable Assurance
 

@@ -4,6 +4,7 @@
  * Defines portable result-envelope contracts and safe mutation receipt parsing
  * for CLI, SDK, MCP, and package consumers.
  */
+import { resolvePmHistoryOperation } from "./cli-contracts/command-aliases.js";
 import { PM_CORE_COMMAND_NAMES } from "./cli-contracts/enum-contracts.js";
 
 /** Stable machine-readable result families used across pm transports. */
@@ -103,6 +104,9 @@ const DIAGNOSTIC_COMMANDS = new Set([
   "deps",
   "graph",
   "health",
+  "history-redact",
+  "history-repair",
+  "history-compact",
   "stats",
   "validate",
 ]);
@@ -189,7 +193,7 @@ export function resolvePmCommandOutputEnvelope(
   if (normalized.length === 0) {
     throw new TypeError("command must be a non-empty command path");
   }
-  const [rootCommand = normalized] = normalized.split(" ");
+  const [rootCommand = normalized] = resolvePmHistoryOperation(normalized).split(" ");
   const declared = OUTPUT_ENVELOPE_BY_COMMAND.get(rootCommand);
   return declared
     ? { ...declared, command: normalized }

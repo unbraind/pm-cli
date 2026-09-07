@@ -969,14 +969,14 @@ describe("history-repair --all (bulk drift repair)", () => {
           chainMismatches: [],
           driftedItems: [skippedId, failedId],
         });
-      const originalReadHistoryEntries = historyReadModule.readHistoryEntries;
+      const originalReadHistorySnapshot = historyReadModule.readHistorySnapshot;
       const readSpy = vi
-        .spyOn(historyReadModule, "readHistoryEntries")
+        .spyOn(historyReadModule, "readHistorySnapshot")
         .mockImplementation(async (historyPath, itemId) => {
           if (itemId === failedId) {
             throw "synthetic_non_error_failure";
           }
-          return originalReadHistoryEntries(historyPath, itemId);
+          return originalReadHistorySnapshot(historyPath, itemId);
         });
 
       try {

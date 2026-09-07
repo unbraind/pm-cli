@@ -1,0 +1,30 @@
+id: pm-eqdo85
+title: Claim ownership response repeats full metadata despite the compact mutation contract
+description: "Apply compact mutation receipt projection to claim while preserving ownership outcomes, contention semantics and explicit full output."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-09-07T22:36:19.239Z"
+updated_at: "2026-09-07T22:43:20.367Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Default claim exposes compact item identity and status with truthful change count and required ownership outcomes; explicit full output and id-only/quiet precedence remain compatible; preserve contention and no-op/refusal behavior; validate CLI/MCP/SDK parity and bounded output for metadata-rich items using real installed consumers.
+parent: pm-mpbb
+risk: medium
+confidence: high
+reporter: github
+severity: medium
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-nilh,discovered_from,"2026-09-07T22:36:19.239Z","harness:codex","cli:create:dep",detected
+  pm-mpbb,implements,"2026-09-07T22:43:20.065Z","harness:codex","cli:update:dep",detected
+  pm-tqel,discovered_from,"2026-09-07T22:43:20.065Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-07T22:36:19.239Z","harness:codex","Duplicate check: a strict full read of all 2656 items across every status had zero omissions, and complete-metadata searches found no claim-specific compact receipt item. Full live pm-nilh metadata and all 19 historical events identify the shipped create/update baseline. The duplicate guard matched that broad feature through shared GitHub #437; this is a distinct claim conformance defect, following the existing separate parity-defect precedent. Reopening the historical feature was tested and would remove its shipped July changelog entry, so retain its historical closure and record the claim-specific scope here. Explicit duplicate acknowledgement applies only to this false-positive broad-feature match. Current isolated no-extension reproduction at 94532b596: create returns 71 bytes with id/status/changed_field_count; claim returns 517 bytes with full item/claimed_by/previous_assignee/forced. Intake only, open and unclaimed."
+files[1]{path,scope,note}:
+  src/cli/register-mutation.ts,project,Claim output projection boundary
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/output/mutation-projection.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,project,300,"harness:codex","2026-09-07T22:36:19.239Z",local_mutation,feat/history-maintenance-sdk-command-grammar
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Compact and full compatibility contract
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/437#issuecomment-5575662594\n\nReproduced a remaining regression in **pm-cli 2026.9.7** on Linux / Node 22.20.0, with `--no-extensions` on every command. Reusing this closed canonical issue after searching all issue states for `claim receipt`, `claim output`, and `claim compact` and reviewing #195 and #437.\n\nIn a fresh temporary working directory:\n\n```bash\nexport PM_AUTHOR=claim-output-repro\npm init probe --json --no-extensions\npm create Task 'Mutation output reproduction' --id probe-claim \\\n  --description 'Reproduce claim output without custom extensions' \\\n  --status open --priority 2 --create-mode progressive --json --no-extensions\npm claim probe-claim --json --no-extensions\n```\n\n`create` emits the documented flat `{id, status, changed_field_count}` receipt (75 bytes in this reproduction). `claim` instead emits `{item, claimed_by, previous_assignee, forced}` with the full item (550 bytes even for this tiny fixture), no top-level `id` or `status`, and no `changed_field_count`. Claiming a populated real project epic repeats its description and complete comments, making the discrepancy substantially larger.\n\nThe current root `--help` says mutations emit a flat receipt, so callers following that documented contract cannot parse `claim` like `create`/`update`. Output projection is not a workaround: `claim --output-include item.id,item.status` correctly rejects read-only output controls.\n\nPlease include `claim` in the default compact mutation contract, retaining claim-specific outcome/ownership fields where necessary and an explicit full-output opt-in. This is reproducible without project custom extensions; no extension issue is implicated.\n\n\nCurrent-checkout verification: isolated no-extension CLI create emits 71 bytes with id/status/changed_field_count; claim emits 517 bytes with item/claimed_by/previous_assignee/forced and no top-level id/status/change count. Synthetic fixture only."

@@ -148,6 +148,7 @@ describe("agent output contracts", () => {
     );
 
     expect(projected.output).toMatch(/^What is required:/u);
+    expect(projected.output).toContain("Error: Invalid value");
     expect(projected.output).toContain("Use --status open and retry.");
     expect(projected.diagnostic_output).toMatchObject({
       budget: 192,
@@ -160,6 +161,29 @@ describe("agent output contracts", () => {
     expect(resolvePmDiagnosticOutputBudget("recovery_bundle")).toMatchObject({
       default_max_estimated_tokens_by_format: { text: 768, json: 2_000 },
     });
+  });
+
+  it("removes terminal controls from retained identity and recovery text", () => {
+    const projected = projectPmDiagnosticText(
+      `Error: \u001b[31munsafe\u001b[0m\u001b]52;c;payload\u0007\u0000\u0085\n${"detail ".repeat(2_000)}`,
+      "Retry \u001b[2Jwith corrected input.\u0007",
+      { maxEstimatedTokens: 192 },
+    );
+    expect(projected.output).toContain("Error: unsafe");
+    expect(projected.output).toContain("Retry with corrected input.");
+    expect(projected.output).not.toContain("payload");
+    expect(projected.output.replaceAll("\n", "")).not.toMatch(/\p{Cc}/u);
+    expect(projected.diagnostic_output.estimated_tokens).toBeLessThanOrEqual(192);
+  });
+
+  it("sanitizes short diagnostics while preserving line breaks and indentation", () => {
+    const projected = projectPmDiagnosticText(
+      "Error: \u001b[31munsafe\u001b[0m\u001b]52;c;payload\u0007\u0000\u0085\r\n  Retry.\r\n",
+      "Retry.",
+    );
+    expect(projected.output).toBe("Error: unsafe  \n  Retry.\n");
+    expect(projected.output.replaceAll("\n", "")).not.toMatch(/\p{Cc}/u);
+    expect(projected.diagnostic_output.truncated).toBe(false);
   });
 
   it("keeps short default-budget text unchanged and repairs an empty action", () => {

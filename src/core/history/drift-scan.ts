@@ -371,9 +371,10 @@ async function scanItemHistory(
   cache: DriftScanCacheState,
   accumulator: DriftScanAccumulator,
 ): Promise<boolean> {
-  const historyPath = getHistoryPath(pmRoot, item.id);
+  let historyPath: string;
   let stat: Stats;
   try {
+    historyPath = getHistoryPath(pmRoot, item.id);
     stat = await fs.stat(historyPath);
   } catch (error: unknown) {
     (isFileMissingError(error)

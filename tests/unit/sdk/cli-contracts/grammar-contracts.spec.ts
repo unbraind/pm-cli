@@ -29,15 +29,15 @@ describe("CLI noun-verb grammar contracts", () => {
       ok: true,
       command_count: commands.length,
       destination_count: commands.length,
-      hidden_alias_count: 10,
-      visible_top_level_count: 58,
+      hidden_alias_count: 15,
+      visible_top_level_count: 53,
       visible_top_level_ceiling:
         PM_CLI_GRAMMAR_CONTRACT.visible_top_level_ceiling,
     });
     expect(
       verifyPmCliGrammar([...commands, "list-open"], PM_COMMAND_ALIAS_CONTRACTS)
         .visible_top_level_count,
-    ).toBe(58);
+    ).toBe(53);
     expect(new Set(PM_CLI_GRAMMAR_NOUNS).size).toBe(12);
   });
 

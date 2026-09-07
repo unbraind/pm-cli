@@ -12,6 +12,15 @@ const GLOBAL = {
 } as Parameters<typeof runContracts>[1];
 
 describe("full contracts projection monotonicity", () => {
+  it("identifies native and legacy history flags with one canonical command", async () => {
+    const native = await runContracts({ command: "history repair", flagsOnly: true }, GLOBAL);
+    const legacy = await runContracts({ command: "history-repair", flagsOnly: true }, GLOBAL);
+    expect(native.command_flags?.[0]?.canonical_command).toBe("history repair");
+    expect(legacy.command_flags?.[0]?.canonical_command).toBe("history repair");
+    expect(native.command_flags?.[0]?.flags).toEqual(legacy.command_flags?.[0]?.flags);
+    expect(native.command_flags?.[0]?.positionals).toEqual(legacy.command_flags?.[0]?.positionals);
+  });
+
   it("keeps every compact command semantic in the full projection", async () => {
     const summary = await runContracts({ summary: true }, GLOBAL);
     const full = await runContracts({ full: true }, GLOBAL);
@@ -23,9 +32,10 @@ describe("full contracts projection monotonicity", () => {
         ),
       ),
     );
-    expect(full.command_summaries).toHaveLength(
-      summary.command_summaries?.length ?? 0,
-    );
+    const compactCommands = new Set(summary.command_summaries?.map((entry) => entry.command));
+    expect(full.command_summaries?.filter((entry) => !compactCommands.has(entry.command)).map((entry) => entry.command)).toEqual([
+      "activity", "history-compact", "history-redact", "history-repair", "restore",
+    ]);
     expect(summary.command_summaries).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ command: "plan create" }),

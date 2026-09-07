@@ -4,6 +4,7 @@
  * Provides CLI runtime support for Registration Helpers.
  */
 import { Option, type Command } from "commander";
+import { resolvePmHistoryOperation } from "./command-aliases.js";
 import {
   pathExists,
   refreshSearchArtifactsForMutation,
@@ -163,7 +164,7 @@ function readStringCommandOption(
 
 /** Implements get global options for the public runtime surface of this module. */
 export function getGlobalOptions(command: Command): GlobalOptions {
-  const commandPath = getCommandPath(command);
+  const commandPath = resolvePmHistoryOperation(getCommandPath(command));
   const resolved = (command as CommandWithResolvedGlobals)[
     RESOLVED_GLOBAL_OPTIONS
   ];

@@ -5,6 +5,8 @@
  * their canonical positional id while accepting `--id` as a compatibility
  * spelling, so integrations no longer need a per-command addressing table.
  */
+import { findBootstrapCommandTokenIndex } from "../cli-contracts/bootstrap-command-scanner.js";
+import { resolvePmHistoryOperation } from "../cli-contracts/command-aliases.js";
 import {
   type CliFlagContract,
   resolveSubcommandFlagContractsForCommand,
@@ -42,17 +44,6 @@ const ITEM_ID_ALIAS_SUBCOMMANDS = new Map([
   ["item", "complete"],
 ]);
 
-const GLOBAL_VALUE_FLAGS = new Set([
-  "--author",
-  "--output-budget",
-  "--output-format",
-  "--output-include",
-  "--output-limit",
-  "--output-session",
-  "--path",
-  "--pm-path",
-]);
-
 const TRAILING_POSITIONAL_COUNTS = new Map([
   ["append", 1],
   ["close", 1],
@@ -83,26 +74,16 @@ interface NamedItemId {
 }
 
 /** Return whether a command participates in the shared item-id alias contract. */
-export function supportsItemIdAlias(commandName: string | undefined): boolean {
-  const normalized = commandName?.trim().toLowerCase() ?? "";
+export function supportsItemIdAlias(
+  commandName: string | undefined,
+): boolean {
+  const normalized = resolvePmHistoryOperation(
+    commandName?.trim().toLowerCase() ?? "",
+  );
   return (
     ITEM_ID_ALIAS_COMMANDS.has(normalized) ||
     ITEM_ID_ALIAS_SUBCOMMANDS.has(normalized)
   );
-}
-
-function findCommandIndex(argv: string[]): number | undefined {
-  for (let index = 0; index < argv.length; index += 1) {
-    const token = argv[index];
-    if (token === "--") return undefined;
-    if (GLOBAL_VALUE_FLAGS.has(token)) {
-      index += 1;
-      continue;
-    }
-    if (token.startsWith("-")) continue;
-    return index;
-  }
-  return undefined;
 }
 
 /** Resolve the positional-id slot for direct and declared nested commands. */
@@ -111,6 +92,18 @@ function resolveItemAddressIndex(
   commandIndex: number,
   commandName: string,
 ): number | undefined {
+  if (commandName === "history") {
+    const leafOffset = findBootstrapCommandTokenIndex(
+      argv.slice(commandIndex + 1),
+    );
+    const leafIndex =
+      leafOffset === undefined ? undefined : commandIndex + 1 + leafOffset;
+    if (leafIndex === undefined) return commandIndex + 1;
+    const candidate = `${commandName} ${argv[leafIndex]}`;
+    const operation = resolvePmHistoryOperation(candidate);
+    if (operation !== candidate)
+      return operation === "activity" ? undefined : leafIndex! + 1;
+  }
   const declaredSubcommand = ITEM_ID_ALIAS_SUBCOMMANDS.get(commandName);
   if (declaredSubcommand === undefined) return commandIndex + 1;
   const usesDeclaredSubcommand =
@@ -158,19 +151,25 @@ function collectNamedItemIds(argv: string[]): NamedItemId[] {
   return namedIds;
 }
 
+/** Skip a following token only for a declared value-taking flag without an inline assignment. */
 function consumesSeparateFlagValue(
   token: string,
   nextToken: string | undefined,
   contractsByFlag: ReadonlyMap<string, CliFlagContract>,
 ): boolean {
   const separatorIndex = token.indexOf("=");
-  if (separatorIndex >= 0 || nextToken === undefined || nextToken.startsWith("-")) {
+  if (
+    separatorIndex >= 0 ||
+    nextToken === undefined ||
+    nextToken.startsWith("-")
+  ) {
     return false;
   }
   const contract = contractsByFlag.get(token);
   return contract !== undefined && contract.value_type !== "boolean";
 }
 
+/** Detect an existing item address while excluding named IDs, flag values, and operation-specific trailing positionals. */
 function hasPositionalItemId(
   argv: string[],
   addressIndex: number,
@@ -192,11 +191,18 @@ function hasPositionalItemId(
       trailingPositionals += 1;
       continue;
     }
-    if (consumesSeparateFlagValue(token, argv[index + 1], contractsByFlag)) {
+    if (
+      consumesSeparateFlagValue(token, argv[index + 1], contractsByFlag)
+    ) {
       index += 1;
     }
   }
-  return trailingPositionals > (TRAILING_POSITIONAL_COUNTS.get(commandPath) ?? 0);
+  return (
+    trailingPositionals >
+    (TRAILING_POSITIONAL_COUNTS.get(
+      resolvePmHistoryOperation(commandPath),
+    ) ?? 0)
+  );
 }
 
 /**
@@ -207,21 +213,12 @@ function hasPositionalItemId(
 export function normalizeItemAddressInvocation(
   argv: string[],
 ): ItemAddressInvocationResult {
-  const commandIndex = findCommandIndex(argv);
+  const commandIndex = findBootstrapCommandTokenIndex(argv);
   const commandName =
-    commandIndex === undefined ? undefined : argv[commandIndex]?.toLowerCase();
+    commandIndex === undefined
+      ? undefined
+      : argv[commandIndex]?.toLowerCase();
   if (!supportsItemIdAlias(commandName)) {
-    return { argv: [...argv], changed: false, conflict: false };
-  }
-  const commandPath =
-    ITEM_ID_ALIAS_SUBCOMMANDS.get(commandName!) ===
-    argv[commandIndex! + 1]?.toLowerCase()
-      ? `${commandName} ${argv[commandIndex! + 1]?.toLowerCase()}`
-      : commandName!;
-  const contractsByFlag = buildFlagContractMap(commandPath);
-  const namedIds = collectNamedItemIds(argv);
-  const named = namedIds[0];
-  if (!named || !named.value?.trim()) {
     return { argv: [...argv], changed: false, conflict: false };
   }
   const addressIndex = resolveItemAddressIndex(
@@ -230,6 +227,16 @@ export function normalizeItemAddressInvocation(
     commandName!,
   );
   if (addressIndex === undefined) {
+    return { argv: [...argv], changed: false, conflict: false };
+  }
+  const commandPath =
+    addressIndex > commandIndex! + 1
+      ? `${commandName} ${argv[addressIndex - 1]}`
+      : commandName!;
+  const contractsByFlag = buildFlagContractMap(commandPath);
+  const namedIds = collectNamedItemIds(argv);
+  const named = namedIds[0];
+  if (!named || !named.value?.trim()) {
     return { argv: [...argv], changed: false, conflict: false };
   }
   if (
@@ -253,7 +260,8 @@ export function normalizeItemAddressInvocation(
     ...argv.slice(0, named.index),
     ...argv.slice(named.index + named.consumed),
   ];
-  const normalizedCommandIndex = findCommandIndex(withoutNamed)!;
+  const normalizedCommandIndex =
+    findBootstrapCommandTokenIndex(withoutNamed)!;
   const normalizedAddressIndex = resolveItemAddressIndex(
     withoutNamed,
     normalizedCommandIndex,

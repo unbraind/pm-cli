@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { chmod, glob, readFile, stat, writeFile } from "node:fs/promises";
+import { chmod, glob, readFile, realpath, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { build } from "esbuild";
@@ -29,13 +29,16 @@ export async function compactRuntimeOutputs(directory) {
     cwd: directory,
     exclude: ["cli-bundle/**"],
   })) {
-    entryPoints.push(path.join(directory, relative));
+    entryPoints.push(relative);
   }
   if (entryPoints.length === 0) return;
+  // esbuild resolves source files through symlinks; use the same physical root
+  // for output paths so composed source maps remain relative and stable.
+  const outputRoot = await realpath(directory);
   await build({
-    entryPoints,
-    outdir: directory,
-    outbase: directory,
+    entryPoints: entryPoints.map((relative) => path.join(outputRoot, relative)),
+    outdir: outputRoot,
+    outbase: outputRoot,
     allowOverwrite: true,
     bundle: false,
     platform: "node",

@@ -4,6 +4,7 @@
  * Declares and applies one output-bounding vocabulary to every built-in read
  * surface without coupling package authors to command-specific option names.
  */
+import { resolvePmHistoryOperation } from "./cli-contracts/command-aliases.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import {
@@ -562,10 +563,7 @@ export function resolveReadOutputSurface(
   command: string,
   options: Record<string, unknown> = {},
 ): PmReadOutputSurface | undefined {
-  const normalizedCommand = command
-    .trim()
-    .toLowerCase()
-    .replaceAll(/\s+/gu, " ");
+  const normalizedCommand = resolvePmHistoryOperation(command.trim().toLowerCase());
   const packageMode =
     normalizedCommand === "package catalog" ||
     normalizedCommand === "packages catalog" ||

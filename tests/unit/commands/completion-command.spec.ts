@@ -545,7 +545,7 @@ describe("generateBashScript", () => {
     for (const command of ["history", "activity", "events"]) {
       expect(bash).toContain(`    ${command})`);
       expect(zsh).toContain(`        ${command})`);
-      expect(fish).toContain(`__fish_seen_subcommand_from ${command}`);
+      expect(fish).toContain(command === "activity" ? "__pm_history_operation activity activity" : `__fish_seen_subcommand_from ${command}`);
     }
     for (const flag of flags) {
       expect(bash).toContain(`--${flag}`);
@@ -557,9 +557,10 @@ describe("generateBashScript", () => {
   it("includes history-compact flags across completion scripts", () => {
     const bashScript = generateBashScript();
     expect(bashScript).toContain("history-compact)");
-    expect(bashScript).toContain(
-      "--before --ids --all-over --closed --all-streams --min-entries --dry-run --author --message --force",
-    );
+    const compactFlags = bashScript.match(/history-compact\)[\s\S]*?;;/u)?.[0];
+    for (const flag of ["--before", "--ids", "--all-over", "--closed", "--all-streams", "--min-entries", "--dry-run", "--author", "--message", "--force"]) {
+      expect(compactFlags).toContain(flag);
+    }
 
     const zshScript = generateZshScript();
     expect(zshScript).toContain("history-compact)");
@@ -571,7 +572,7 @@ describe("generateBashScript", () => {
     );
 
     const fishScript = generateFishScript();
-    expect(fishScript).toContain("__fish_seen_subcommand_from history-compact");
+    expect(fishScript).toContain("__pm_history_operation history-compact compact");
     expect(fishScript).toContain(
       "-l before -d 'Compact entries strictly before this version number or ISO timestamp'",
     );
@@ -795,12 +796,9 @@ describe("generateZshScript", () => {
       "context:Show a token-efficient project context snapshot",
     );
     expect(script).toContain("ctx:Alias for context");
-    expect(script).toContain(
-      "history-compact:Compact history streams into a synthetic baseline + retained tail",
-    );
-    expect(script).toContain(
-      "history-redact:Redact sensitive literals/patterns and recompute history hashes",
-    );
+    expect(script).not.toContain("history-compact:Compact");
+    expect(script).not.toContain("history-redact:Redact");
+    expect(script).toContain("history_commands=(redact repair compact activity restore)");
     expect(script).toContain("plan:Agent-optimized Plan item workflow");
     expect(script).toContain("notes:List or add notes for an item");
     expect(script).toContain("learnings:List or add learnings for an item");
@@ -1062,11 +1060,7 @@ describe("generateFishScript", () => {
       ["contracts", "machine-readable command and schema contracts"],
       ["health", "project tracker health"],
       ["stats", "project tracker statistics"],
-      ["history-compact", "synthetic baseline + retained tail"],
-      [
-        "history-redact",
-        "Redact sensitive literals/patterns and recompute history hashes",
-      ],
+      ["history", "Show item history entries"],
       ["plan", "Agent-optimized Plan workflow"],
     ] as [string, string][]) {
       expect(script).toContain(`-a ${cmd}`);

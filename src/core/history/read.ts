@@ -13,18 +13,26 @@ import { findFirstMergeConflictMarker } from "../shared/conflict-markers.js";
 import { PmCliError } from "../shared/errors.js";
 import type { HistoryEntry } from "../../types/index.js";
 
-/** Read and validate one item's JSONL history stream without mutating it. */
-export async function readHistoryEntries(
+/** Exact bytes and decoded entries from one read, suitable for optimistic concurrency checks. */
+export interface HistoryStreamSnapshot {
+  /** Null means the stream did not exist; an empty string means it existed without entries. */
+  raw: string | null;
+  /** Entries decoded from precisely the bytes in `raw`, after read hooks run. */
+  entries: HistoryEntry[];
+}
+
+/** Read one history stream once so replay input and the concurrency snapshot cannot disagree. */
+export async function readHistorySnapshot(
   historyPath: string,
   itemId: string,
-): Promise<HistoryEntry[]> {
+): Promise<HistoryStreamSnapshot> {
   const raw = await readFileIfExists(historyPath);
   if (raw === null) {
-    return [];
+    return { raw, entries: [] };
   }
   await runActiveOnReadHooks({ path: historyPath, scope: "project" });
   if (raw.trim() === "") {
-    return [];
+    return { raw, entries: [] };
   }
   const conflictMarker = findFirstMergeConflictMarker(raw);
   if (conflictMarker) {
@@ -63,5 +71,13 @@ export async function readHistoryEntries(
       );
     }
   }
-  return entries;
+  return { raw, entries };
+}
+
+/** Read and validate one item's JSONL history stream without mutating it. */
+export async function readHistoryEntries(
+  historyPath: string,
+  itemId: string,
+): Promise<HistoryEntry[]> {
+  return (await readHistorySnapshot(historyPath, itemId)).entries;
 }

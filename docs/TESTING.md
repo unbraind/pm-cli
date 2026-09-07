@@ -108,6 +108,20 @@ Use focused runs while iterating, then run coverage before closure when risk or 
 
 ## CI Retry and Timeout Diagnostics
 
+Platform regressions from [pm-hrhfgi](../.agents/pm/issues/pm-hrhfgi.toon) and
+[pm-zk67yf](../.agents/pm/issues/pm-zk67yf.toon) have portable negative controls.
+Complete source scans process at most 32 item files per batch; the descriptor
+pressure fixture fails unbounded reads while requiring genuine permission
+failures to remain visible. The 10,000-item aggregation fixture separately
+verifies completeness before pagination. Git fixtures that assert exact bytes
+declare repository-local `core.autocrlf=false` and `core.eol=lf` so host defaults
+cannot change the restoration target. Send generated shell scripts through
+stdin (`bash -s`) so their size cannot exceed Windows command-line limits.
+Runtime compaction is tested through a
+real directory alias as well as its physical path, including original source
+mapping and repeated-compaction byte stability. These tests run in the full
+suite on the Nightly Validation platform matrix.
+
 CI retains the 30-second per-test timeout and retries one failed attempt. A
 test that passes only on retry is reported as flaky rather than silently folded
 into the pass count; a persistent assertion still fails after the bounded
