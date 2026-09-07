@@ -148,6 +148,7 @@ describe("agent output contracts", () => {
     );
 
     expect(projected.output).toMatch(/^What is required:/u);
+    expect(projected.output).toContain("Error: Invalid value");
     expect(projected.output).toContain("Use --status open and retry.");
     expect(projected.diagnostic_output).toMatchObject({
       budget: 192,

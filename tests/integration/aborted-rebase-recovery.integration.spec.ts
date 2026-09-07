@@ -27,6 +27,9 @@ describe("aborted rebase receipt recovery", () => {
           encoding: "utf8",
         });
       git("init", "-q");
+      // Exact-byte restoration requires a fixture policy independent of host defaults.
+      git("config", "core.autocrlf", "false");
+      git("config", "core.eol", "lf");
       git("config", "user.name", "Merge Test");
       git("config", "user.email", "merge@example.invalid");
       expect(

@@ -1,0 +1,67 @@
+id: pm-m4uyyj
+title: "GH-1216: Retain diagnostic identity within bounded text output"
+description: Unknown option errors with a long description lose their error title when the 768-token text budget falls back to generic required-option guidance. Preserve the specific error identity and useful corrective action within the SDK budget contract and prove real CLI behavior.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-07T13:35:12.851Z"
+updated_at: "2026-09-07T13:59:48.438Z"
+closed_at: "2026-09-07T13:55:24.448Z"
+completed_at: "2026-09-07T13:55:24.448Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Oversized CLI unknown-option and correction-refusal diagnostics retain the specific flag and corrective action within 768 estimated tokens; minimum 192-token UTF-8 SDK budget remains binding; caller-input echoes are omitted.
+goal: project management = context management
+value: Reduce diagnostic retries and preserve useful agent context
+why_now: New GitHub report exposes an uncovered boundary in required release or agent workflows.
+parent: pm-mpbb
+risk: low
+confidence: high
+resolution: Retain a bounded first identifying line alongside corrective action in the shared SDK text diagnostic projector.
+expected_result: Long caller arguments cannot erase the rejected flag from text diagnostics; Unicode and minimum token ceilings remain binding.
+actual_result: SDK minimum-budget and real CLI regressions failed before the fix and now pass for unknown flags and refused corrections. Fresh npm/Bun installed CLIs preserve the specific flag within 768 tokens. All 8541 tests and the complete static chain pass.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-cha95z,discovered_from,"2026-09-07T13:35:12.851Z","harness:codex","cli:create:dep",detected
+  pm-cha95z,verifies,"2026-09-07T13:42:41.219Z","harness:codex","cli:update:dep",detected
+  pm-mpbb,implements,"2026-09-07T13:42:41.219Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-09-07T13:35:12.851Z","harness:codex","Duplicate check: complete all-status corpus of 2653 items plus open and in-progress searches contains no GH-1216 owner. Historical diagnostic-budget work remains completed with its original release attribution. Report https://github.com/unbraind/pm-cli/issues/1216; delivery PR https://github.com/unbraind/pm-cli/pull/1217."
+  "2026-09-07T13:40:17.271Z","harness:codex","TDD evidence: real CLI with large description and unknown --label dropped its identifying Error line; SDK minimum-budget regression also failed. Shared text projector now reserves bounded UTF-8 space for the first identifying line alongside corrective action. Full and focused verification follows."
+  "2026-09-07T13:47:46.957Z","harness:codex","Verification update: linked focused suites passed for all three report owners. Typecheck, ESLint and docs links passed. A freshly packed candidate installed independently with npm and Bun passed SDK exports and the complete history redaction/restore/compaction/verification journey; both installed CLIs retained Error: Unknown option --label with oversized input within the 768-token text ceiling. Full literal coverage and the complete static chain are still running; hosted platform proof is not yet available."
+  "2026-09-07T13:55:23.534Z","harness:codex","All 8541 tests across 639 files passed with literal 100/100/100/100 coverage and zero uncovered counts. The complete pnpm quality:static command, typecheck, ESLint, docs links and tracked-file secret scan passed. Linked tests and fresh installed npm/Bun candidate history plus diagnostic journeys passed. Full tracker validation is ok with zero history drift; 295 pre-existing historical resolution warnings are unchanged. Hosted exact-head CI, platform matrix and renewed bot review remain mandatory before merge; this evidence makes no publication claim."
+  "2026-09-07T13:58:48.748Z","harness:codex","Integrity clarification: the first broad validation overlapped live updates and reported transient hash drift for pm-m4uyyj and pm-zk67yf; its earlier zero-drift summary was premature. The settled validation after closure checked all 2656 items and reports zero drift, missing/unreadable streams, hash/chain mismatches, version skew or workspace mismatch. All 2372 closed items were checked and the 295 historical resolution warnings remain unchanged. Package-generated changelog and check passed using latest pm-changelog 2026.9.6."
+  "2026-09-07T13:59:48.438Z","harness:codex","Final packed-consumer proof: pnpm smoke:npx passed both npx and bunx for the fresh candidate with 13 packages. The final staged-file secret scan and diff check passed. All three report owners are closed and released; the live in-progress inventory is empty. Hosted branch platform checks and bot review remain pending before merge."
+learnings[1]{created_at,author,text}:
+  "2026-09-07T13:48:22.774Z","harness:codex",A diagnostic budget must preserve the instance-identifying line alongside generic corrective guidance. Long caller-input echoes are expendable; losing the rejected flag forces an otherwise unnecessary retry. Exercise minimum UTF-8 budgets and real CLI refusals independently.
+files[4]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated Unreleased entry preserving prior release attribution
+  src/sdk/cli-contracts/agent-output-contracts.ts,project,Implementation and executable regression for reported boundary
+  tests/integration/diagnostic-text-identity.integration.spec.ts,project,Implementation and executable regression for reported boundary
+  tests/unit/sdk/agent-output-contracts.spec.ts,project,Implementation and executable regression for reported boundary
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/diagnostic-text-identity.integration.spec.ts tests/unit/sdk/agent-output-contracts.spec.ts tests/unit/cli/error-guidance.spec.ts,project,240,"harness:codex","2026-09-07T13:41:55.255Z",local_mutation,feat/history-maintenance-sdk-command-grammar
+test_runs[1]:
+  - run_id: test-local-mtramtm8-gqdwkz
+    kind: test
+    status: passed
+    started_at: "2026-09-07T13:45:24.353Z"
+    finished_at: "2026-09-07T13:45:45.584Z"
+    recorded_at: "2026-09-07T13:45:45.584Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/diagnostic-text-identity.integration.spec.ts tests/unit/sdk/agent-output-contracts.spec.ts tests/unit/cli/error-guidance.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md,project,Bounded text identity and corrective action contract
+close_reason: Implementation and local verification complete; reviewed merge and hosted platform proof remain separately gated.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: full-source-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/diagnostic-text-identity.integration.spec.ts tests/unit/sdk/agent-output-contracts.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Coverage,Gates (static)
+  owner: unbraind/pm-cli maintainers
+body: ""

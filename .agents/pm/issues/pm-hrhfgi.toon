@@ -1,0 +1,68 @@
+id: pm-hrhfgi
+title: "GH-1214: Bound complete item reads and isolate Git newline fixtures on Windows"
+description: Nightly Windows Node 24 run 34104192850 exposes unreadable items in the 10000-item aggregate fixture and a CRLF byte mismatch after rebase abort. Preserve complete reads with bounded filesystem concurrency and deterministic repository newline policy.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-07T13:34:48.714Z"
+updated_at: "2026-09-07T13:58:45.530Z"
+closed_at: "2026-09-07T13:55:19.153Z"
+completed_at: "2026-09-07T13:55:19.153Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Complete 10000-item aggregation passes on Windows without shrinking the fixture; bounded descriptor-pressure reads return every readable item; permission failures remain visible; aborted rebase preserves exact fixture bytes and rejects stale Git proof.
+goal: project management = context management
+value: Reliable complete-corpus SDK queries and portable recovery assurance
+why_now: New GitHub report exposes an uncovered boundary in required release or agent workflows.
+parent: pm-u9d0
+risk: low
+confidence: high
+resolution: Bound authoritative item scans in batches of 32 and explicitly isolate exact-byte rebase fixtures from host newline policy.
+expected_result: Large complete-corpus reads do not manufacture unreadable files through descriptor exhaustion; genuine unreadable sources remain visible and Git restoration proofs retain exact byte checks.
+actual_result: Descriptor-pressure negative control failed before the fix and now retains all 128 readable items while reporting a real denied item. All linked tests including the 10000-item aggregate and rebase-abort proof pass. Full exact coverage and static gates pass; hosted Windows verification remains required before merge.
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-398z0u,discovered_from,"2026-09-07T13:34:48.714Z","harness:codex","cli:create:dep",detected
+  pm-466m0j,discovered_from,"2026-09-07T13:34:48.714Z","harness:codex","cli:create:dep",detected
+  pm-398z0u,verifies,"2026-09-07T13:42:36.852Z","harness:codex","cli:update:dep",detected
+  pm-466m0j,verifies,"2026-09-07T13:42:36.852Z","harness:codex","cli:update:dep",detected
+  pm-u9d0,implements,"2026-09-07T13:42:36.852Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-09-07T13:34:48.714Z","harness:codex","Duplicate check: complete all-status corpus of 2653 items plus open and in-progress searches contains no GH-1214 owner. Existing completed recovery and aggregation work retains historical release attribution. Report https://github.com/unbraind/pm-cli/issues/1214; delivery PR https://github.com/unbraind/pm-cli/pull/1217."
+  "2026-09-07T13:40:16.269Z","harness:codex","TDD evidence: descriptor-pressure regression returned only 48 of 128 items before the fix. Bounded 32-file batches pass complete reads and still report a genuinely denied file. All 26 focused platform tests pass including the unchanged 10000-item aggregate and exact-byte aborted rebase proof with repository-local LF policy."
+  "2026-09-07T13:47:45.306Z","harness:codex","Verification update: linked focused suites passed for all three report owners. Typecheck, ESLint and docs links passed. A freshly packed candidate installed independently with npm and Bun passed SDK exports and the complete history redaction/restore/compaction/verification journey; both installed CLIs retained Error: Unknown option --label with oversized input within the 768-token text ceiling. Full literal coverage and the complete static chain are still running; hosted platform proof is not yet available."
+  "2026-09-07T13:55:18.475Z","harness:codex","All 8541 tests across 639 files passed with literal 100/100/100/100 coverage and zero uncovered counts. The complete pnpm quality:static command, typecheck, ESLint, docs links and tracked-file secret scan passed. Linked tests and fresh installed npm/Bun candidate history plus diagnostic journeys passed. Full tracker validation is ok with zero history drift; 295 pre-existing historical resolution warnings are unchanged. Hosted exact-head CI, platform matrix and renewed bot review remain mandatory before merge; this evidence makes no publication claim."
+  "2026-09-07T13:58:45.067Z","harness:codex","Integrity clarification: the first broad validation overlapped live updates and reported transient hash drift for pm-m4uyyj and pm-zk67yf; its earlier zero-drift summary was premature. The settled validation after closure checked all 2656 items and reports zero drift, missing/unreadable streams, hash/chain mismatches, version skew or workspace mismatch. All 2372 closed items were checked and the 295 historical resolution warnings remain unchanged. Package-generated changelog and check passed using latest pm-changelog 2026.9.6."
+learnings[1]{created_at,author,text}:
+  "2026-09-07T13:48:21.098Z","harness:codex","Complete reads require bounded scheduling as well as fail-closed completeness receipts: an unbounded scan can manufacture unreadable files by exhausting descriptors. Pair deterministic resource-pressure tests with the unchanged real 10000-item platform fixture. Exact-byte Git tests must explicitly fix repository newline policy."
+files[4]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated Unreleased entry preserving prior release attribution
+  src/core/store/item-metadata-cache.ts,project,Implementation and executable regression for reported boundary
+  tests/integration/aborted-rebase-recovery.integration.spec.ts,project,Implementation and executable regression for reported boundary
+  tests/unit/core/item/item-read-concurrency.spec.ts,project,Implementation and executable regression for reported boundary
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/item/item-read-concurrency.spec.ts tests/unit/core/item/item-metadata-cache.spec.ts tests/unit/commands/aggregate-set-members.spec.ts tests/integration/aborted-rebase-recovery.integration.spec.ts,project,240,"harness:codex","2026-09-07T13:41:52.223Z",local_mutation,feat/history-maintenance-sdk-command-grammar
+test_runs[1]:
+  - run_id: test-local-mtram0gx-uirp5a
+    kind: test
+    status: passed
+    started_at: "2026-09-07T13:44:32.545Z"
+    finished_at: "2026-09-07T13:45:07.809Z"
+    recorded_at: "2026-09-07T13:45:07.809Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/item/item-read-concurrency.spec.ts tests/unit/core/item/item-metadata-cache.spec.ts tests/unit/commands/aggregate-set-members.spec.ts tests/integration/aborted-rebase-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Portable platform regression invariants and nightly coverage
+close_reason: Implementation and local verification complete; reviewed merge and hosted platform proof remain separately gated.
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: full-source-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/item/item-read-concurrency.spec.ts tests/unit/commands/aggregate-set-members.spec.ts tests/integration/aborted-rebase-recovery.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Coverage,"Nightly (windows-latest, Node 24)"
+  owner: unbraind/pm-cli maintainers
+body: ""

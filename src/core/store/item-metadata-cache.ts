@@ -1074,10 +1074,11 @@ function createDocumentCacheMutableState(): DocumentCacheMutableState {
   };
 }
 
-function collectCachedDocumentParseTasks(
+/** Scan in bounded batches so a complete corpus cannot exhaust host file descriptors. */
+async function processCachedDocumentFiles(
   dirResults: Array<{ folder: string; dirPath: string; files: string[] }>,
   context: DocumentCacheReadContext,
-): Array<Promise<void>> {
+): Promise<void> {
   const parseTasks: Array<Promise<void>> = [];
   for (const { folder, dirPath, files } of dirResults) {
     for (const file of files) {
@@ -1089,9 +1090,13 @@ function collectCachedDocumentParseTasks(
       parseTasks.push(
         processCachedDocumentFile(folder, filePath, relativePath, context),
       );
+      if (parseTasks.length === 32) {
+        await Promise.all(parseTasks);
+        parseTasks.length = 0;
+      }
     }
   }
-  return parseTasks;
+  await Promise.all(parseTasks);
 }
 
 async function persistMetadataCacheIfNeeded(params: {
@@ -1730,7 +1735,7 @@ export async function listAllDocumentCandidatesCached(
     state,
   };
 
-  await Promise.all(collectCachedDocumentParseTasks(dirResults, context));
+  await processCachedDocumentFiles(dirResults, context);
 
   const directorySignaturesAfter = await readDirectorySignatures(
     pmRoot,

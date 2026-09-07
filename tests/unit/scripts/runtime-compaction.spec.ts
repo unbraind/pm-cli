@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { transform } from "esbuild";
 import { expect, it } from "vitest";
@@ -7,7 +7,7 @@ import { createScriptHarness } from "../../helpers/scriptModule";
 
 const harness = createScriptHarness();
 
-it("compacts runtime whitespace while preserving names, declarations, bundles, and original source mappings", async () => {
+it.each([false, true])("compacts runtime whitespace while preserving names, declarations, bundles, and original source mappings (aliased root: %s)", async (aliased) => {
   const root = await harness.createTempRoot("pm-runtime-compact-");
   const dist = path.join(root, "dist");
   await mkdir(path.join(dist, "cli-bundle"), { recursive: true });
@@ -34,7 +34,9 @@ it("compacts runtime whitespace while preserving names, declarations, bundles, a
   const mod = await harness.importModule<{
     compactRuntimeOutputs: (directory: string) => Promise<void>;
   }>("scripts/finalize-build.mjs");
-  await mod.compactRuntimeOutputs(dist);
+  const buildRoot = aliased ? path.join(root, "dist-alias") : dist;
+  if (aliased) await symlink(dist, buildRoot, "junction");
+  await mod.compactRuntimeOutputs(buildRoot);
   const compact = await readFile(runtime, "utf8");
   expect(compact).toContain("function importantName");
   expect(compact.length).toBeLessThan(emitted.code.length + 39);
@@ -58,6 +60,6 @@ it("compacts runtime whitespace while preserving names, declarations, bundles, a
   expect(
     execFileSync(process.execPath, [consumer], { encoding: "utf8" }).trim(),
   ).toBe("importantName 3");
-  await mod.compactRuntimeOutputs(dist);
+  await mod.compactRuntimeOutputs(buildRoot);
   expect(await readFile(runtime, "utf8")).toBe(compact);
 });

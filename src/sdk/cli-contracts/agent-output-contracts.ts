@@ -662,7 +662,7 @@ export interface PmProjectedTextDiagnostic {
   diagnostic_output: PmDiagnosticOutputReceipt;
 }
 
-/** Bind human-readable diagnostics without ever truncating the corrective action away. */
+/** Bind human-readable diagnostics while retaining their first identifying line and corrective action. */
 export function projectPmDiagnosticText(
   output: string,
   correctiveAction: string,
@@ -690,7 +690,11 @@ export function projectPmDiagnosticText(
   );
   const truncated = originalEstimatedTokens > budget;
   const actionPrefix = "What is required:\n  ";
-  const actionSuffix = `\n\nDiagnostic output exceeded its declared ${budget}-token ceiling; rerun with structured JSON for the bounded recovery envelope.`;
+  const identity = truncateDiagnosticUtf8Text(
+    output.trimStart().split(/\r?\n/u, 1)[0]!,
+    320,
+  );
+  const actionSuffix = `\n\n${identity}\n\nDiagnostic output exceeded its declared ${budget}-token ceiling; rerun with structured JSON for the bounded recovery envelope.`;
   const correctiveActionText =
     correctiveAction.trim() ||
     "Inspect the diagnostic code and retry with corrected input.";
