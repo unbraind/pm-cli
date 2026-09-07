@@ -37,8 +37,10 @@ pm history compact pm-example --dry-run
 pm history repair pm-example --dry-run
 ```
 
-Maintenance previews do not write history or item files. Review the operation's
-report before applying a rewrite. Restore returns the standard flat mutation
+Maintenance previews do not write history or item files. Redaction, repair,
+and compaction return diagnostic report envelopes for both native and legacy
+spellings. Review the operation's report before applying a rewrite. Restore
+returns the standard flat mutation
 receipt; activity uses the existing bounded read envelope and streaming
 contracts. Universal output controls resolve against the selected leaf, so a
 restore does not inherit the parent history read envelope.
@@ -48,6 +50,8 @@ names, null bytes, and drive or stream syntax are rejected before resolution.
 Bulk compaction thresholds must be non-negative safe integers, up to
 `9007199254740991`, in both CLI flags and SDK options. Invalid thresholds are
 rejected before scanning streams.
+`--min-entries` is a bulk-only threshold; single-ID compaction rejects it
+instead of silently ignoring it.
 
 ## SDK integration
 

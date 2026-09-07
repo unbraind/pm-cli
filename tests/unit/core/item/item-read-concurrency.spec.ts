@@ -26,7 +26,7 @@ it("reads every item under descriptor pressure and still reports genuinely unrea
       active += 1;
       peak = Math.max(peak, active);
       try {
-        if (active > 48) throw Object.assign(new Error("descriptor budget exhausted"), { code: "EMFILE" });
+        if (active > 32) throw Object.assign(new Error("descriptor budget exhausted"), { code: "EMFILE" });
         if (rejectItem && String(args[0]).endsWith("pm-pressure-0.toon")) throw Object.assign(new Error("denied"), { code: "EACCES" });
         await new Promise((resolve) => setTimeout(resolve, 5));
         return await originalRead(...args);
@@ -39,7 +39,7 @@ it("reads every item under descriptor pressure and still reports genuinely unrea
       const read = () => listAllDocumentCandidatesCached(pmPath, "toon", { Task: "tasks" }, warnings, undefined, { forceSourceScan: true });
       expect(await read()).toHaveLength(128);
       expect(warnings).toEqual([]);
-      expect(peak).toBeLessThanOrEqual(48);
+      expect(peak).toBeLessThanOrEqual(32);
       rejectItem = true;
       expect(await read()).toHaveLength(127);
       expect(warnings).toEqual(["item_list_item_read_failed:tasks/pm-pressure-0.toon"]);

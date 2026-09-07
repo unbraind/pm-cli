@@ -1,12 +1,39 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { Command } from "commander";
 import { describe, expect, it } from "vitest";
+import { registerHistoryMaintenanceCommands } from "../../src/cli/register-history-maintenance.js";
 import { redactSensitiveCommandArgs } from "../../src/sdk/command-line.js";
-import { resolvePmCommandOutputEnvelope } from "../../src/sdk/output-contracts.js";
+import { isPmMutationReceipt, resolvePmCommandOutputEnvelope } from "../../src/sdk/output-contracts.js";
 import { createTaskFixture } from "../helpers/createTaskFixture.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("native history namespace compatibility", () => {
+  it("rejects bulk-only thresholds for single-ID compaction without rewriting history", async () => {
+    await withTempPmPath(async (context) => {
+      const id = "pm-single-compact-threshold";
+      createTaskFixture(context, id, "Single compaction threshold fixture");
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const before = await readFile(historyPath, "utf8");
+      for (const command of [["history", "compact"], ["history-compact"]]) {
+        const program = new Command().name("pm").option("--json").exitOverride();
+        const native = command[0] === "history";
+        registerHistoryMaintenanceCommands(native ? program.command("history") : program, native);
+        for (const value of ["0", "5"]) {
+          const args = [...command, id, "--min-entries", value, "--json"];
+          await expect(program.parseAsync(args, { from: "user" })).rejects.toMatchObject({
+            exitCode: 2,
+            message: expect.stringContaining("--min-entries applies only in bulk mode"),
+          });
+          const result = context.runCli(args);
+          expect(result.code).toBe(2);
+          expect(result.stderr + result.stdout).toContain("--min-entries applies only in bulk mode");
+          expect(await readFile(historyPath, "utf8")).toBe(before);
+        }
+      }
+    });
+  });
+
   it("rejects unsafe compaction thresholds in native and legacy commands", async () => {
     await withTempPmPath(async (context) => {
       for (const command of [["history", "compact"], ["history-compact"]]) {
@@ -83,6 +110,15 @@ describe("native history namespace compatibility", () => {
         expect(native.code, native.stderr).toBe(0);
         expect(legacy.code, legacy.stderr).toBe(0);
         expect(native.json).toEqual(legacy.json);
+        if (leaf !== "activity") {
+          expect(native.json).toMatchObject({ id, dry_run: true });
+          expect(isPmMutationReceipt(native.json)).toBe(false);
+          for (const command of [`history ${leaf}`, alias]) {
+            expect(resolvePmCommandOutputEnvelope(command)).toMatchObject({
+              kind: "diagnostic", wrapper_key: null, cardinality: "none",
+            });
+          }
+        }
       }
       const withGlobals = context.runCli(
         ["history", "--json", "repair", "--id", id, "--dry_run"],

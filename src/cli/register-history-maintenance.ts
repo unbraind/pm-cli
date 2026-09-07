@@ -88,6 +88,12 @@ async function runHistoryCompactAction(
     );
   }
   assertHistoryCompactTarget(id, { ids, allOver, scope });
+  if (id !== undefined && minEntries !== undefined) {
+    throw new PmCliError(
+      "history-compact: --min-entries applies only in bulk mode (single-id mode compacts the named stream).",
+      EXIT_CODE.USAGE,
+    );
+  }
   if (id === undefined) {
     const result = await runHistoryCompactBulk(
       {

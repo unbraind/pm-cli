@@ -505,11 +505,11 @@
   "cli_refusal_dispositions": [
     {
       "path": "src/cli/register-history-maintenance.ts",
-      "expected_count": 3,
+      "expected_count": 4,
       "rule_ownership": "all_occurrences",
       "owner": "pm-tqel",
       "disposition": "transport_validation",
-      "reason": "The three existing compact numeric and selector syntax checks moved from register-mutation into shared native and legacy registrations."
+      "reason": "Shared native and legacy registrations own compact numeric and selector syntax checks plus refusal of bulk-only min-entries in single-ID mode before SDK dispatch."
     },
     {
       "path": "src/cli/register-history-activity.ts",

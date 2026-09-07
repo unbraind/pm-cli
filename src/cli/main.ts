@@ -4,7 +4,6 @@
  */
 import { Command, CommanderError } from "commander";
 import { resolvePmHistoryOperation } from "../sdk/cli-contracts/command-aliases.js";
-import { isHistoryRedactInvocation } from "../sdk/command-line.js";
 import {
   activateExtensions,
   clearActiveExtensionHooks,
@@ -148,6 +147,7 @@ import {
   applyBootstrapPagerPolicy,
   parseBootstrapHelpRequest,
   parseBootstrapCommandName,
+  findBootstrapCommandTokenIndex,
   normalizeBootstrapInvocation,
   stripGlobalBootstrapTokens,
 } from "./bootstrap-args.js";
@@ -435,10 +435,13 @@ function buildRecoveryPayload(params: {
 /** Build replayable recovery guidance after removing sensitive matcher values from every invocation representation. */
 function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invocationArgv: string[], rawMessage: string): PmCliErrorContext {
   const safeInvocationArgv = redactSensitiveCommandArgs(invocationArgv);
+  const commandArgs = stripGlobalBootstrapTokens(safeInvocationArgv);
+  const commandIndex = findBootstrapCommandTokenIndex(commandArgs);
+  const [rootCommand, subcommand] = commandIndex === undefined ? [] : commandArgs.slice(commandIndex, commandIndex + 2);
   const explainRequested = safeInvocationArgv.includes("--explain");
   const rawExistingRecovery = context?.recovery;
   const existingRecovery =
-    rawExistingRecovery && isHistoryRedactInvocation(safeInvocationArgv)
+    rawExistingRecovery && (rootCommand === "history-redact" || (rootCommand === "history" && subcommand === "redact"))
       ? {
           ...rawExistingRecovery,
           ...(rawExistingRecovery.attempted_command ? { attempted_command: renderAttemptedCommand(safeInvocationArgv) } : {}),

@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-07T13:34:48.714Z"
-updated_at: "2026-09-07T15:00:55.686Z"
-closed_at: "2026-09-07T15:00:55.024Z"
-completed_at: "2026-09-07T15:00:55.024Z"
+updated_at: "2026-09-07T18:46:28.485Z"
+closed_at: "2026-09-07T18:46:27.496Z"
+completed_at: "2026-09-07T18:46:27.496Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Complete 10000-item aggregation passes on Windows without shrinking the fixture; bounded descriptor-pressure reads return every readable item; permission failures remain visible; aborted rebase preserves exact fixture bytes and rejects stale Git proof.
@@ -18,9 +18,9 @@ why_now: New GitHub report exposes an uncovered boundary in required release or 
 parent: pm-u9d0
 risk: low
 confidence: high
-resolution: "Authoritative complete reads use bounded concurrency with genuine read failures preserved. Exact-byte Git fixtures control newline policy, and Bash completion fixtures stream generated scripts through stdin to avoid Windows command-line limits."
-expected_result: Complete scans preserve all rows and portable fixtures exercise actual behavior on the supported platform matrix.
-actual_result: "Final local correction verified: all 8544 tests in 639 files passed with exact 100/100/100/100 and zero uncovered counts. The complete quality:static chain, linked history suites, strict 12-line/60-token history duplicate scan, docs links and ESLint passed. Fresh npm and Bun installs each passed 15 history workflow steps, SDK execution, sensitive-recovery checks, traversal refusal and oversized-threshold refusal. New exact-head hosted CI, all five Nightly Validation jobs and renewed full review remain required before merge; this is not publication evidence."
+resolution: Bound complete reads to 32 concurrent files while preserving genuine unreadable-file diagnostics. Keep portable exact-byte Git fixtures and stdin-based Bash completion fixtures. Strengthen the descriptor-pressure test to fail above 32 active reads without shrinking the separate 10000-item aggregation fixture.
+expected_result: "Complete scans return every readable row within the documented concurrency cap, preserve failures, and remain portable across supported platforms."
+actual_result: "All 8551 tests passed with exact 100% coverage and zero uncovered counts. The complete static chain, linked suites, fresh installed npm/Bun SDK/CLI checks and packed consumers passed. The two functional failures now pass, and explicit diagnostic contracts plus the tighter 32-read regression preserve supported behavior."
 dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-398z0u,discovered_from,"2026-09-07T13:34:48.714Z","harness:codex","cli:create:dep",detected
   pm-466m0j,discovered_from,"2026-09-07T13:34:48.714Z","harness:codex","cli:create:dep",detected
@@ -30,7 +30,7 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-m4uyyj,related,"2026-09-07T14:22:30.474Z","harness:codex","cli:update:dep",detected
   pm-tqel,verifies,"2026-09-07T14:22:30.474Z","harness:codex","cli:update:dep",detected
   pm-zk67yf,related,"2026-09-07T14:22:30.474Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-09-07T13:34:48.714Z","harness:codex","Duplicate check: complete all-status corpus of 2653 items plus open and in-progress searches contains no GH-1214 owner. Existing completed recovery and aggregation work retains historical release attribution. Report https://github.com/unbraind/pm-cli/issues/1214; delivery PR https://github.com/unbraind/pm-cli/pull/1217."
   "2026-09-07T13:40:16.269Z","harness:codex","TDD evidence: descriptor-pressure regression returned only 48 of 128 items before the fix. Bounded 32-file batches pass complete reads and still report a genuinely denied file. All 26 focused platform tests pass including the unchanged 10000-item aggregate and exact-byte aborted rebase proof with repository-local LF policy."
   "2026-09-07T13:47:45.306Z","harness:codex","Verification update: linked focused suites passed for all three report owners. Typecheck, ESLint and docs links passed. A freshly packed candidate installed independently with npm and Bun passed SDK exports and the complete history redaction/restore/compaction/verification journey; both installed CLIs retained Error: Unknown option --label with oversized input within the 768-token text ceiling. Full literal coverage and the complete static chain are still running; hosted platform proof is not yet available."
@@ -39,6 +39,9 @@ comments[8]{created_at,author,text}:
   "2026-09-07T14:22:32.964Z","harness:codex","Hosted run 34130535854 passed the prior 10000-item aggregate and aborted-rebase regressions, plus macOS source-map verification. Windows instead rejected the completion fixture with spawnSync bash ENAMETOOLONG before Bash executed. The fixture now streams generated code over stdin and retains every native/legacy flag and root-visibility assertion. The related sibling report links represent their shared integrity-validation evidence; verifies pm-tqel records the namespace contract exercised on Windows. The graph ratchet remains unchanged."
   "2026-09-07T14:36:17.555Z","harness:codex","Windows completion correction: generated Bash scripts now run through stdin with bash -s, preserving all native and legacy completion assertions without exceeding the Windows process command-line limit. Both linked commands passed, including the complete-read, Git fixture and completion regression suites. Hosted matrix validation remains required on the next pushed head."
   "2026-09-07T15:00:54.323Z","harness:codex","Final local correction verified: all 8544 tests in 639 files passed with exact 100/100/100/100 and zero uncovered counts. The complete quality:static chain, linked history suites, strict 12-line/60-token history duplicate scan, docs links and ESLint passed. Fresh npm and Bun installs each passed 15 history workflow steps, SDK execution, sensitive-recovery checks, traversal refusal and oversized-threshold refusal. New exact-head hosted CI, all five Nightly Validation jobs and renewed full review remain required before merge; this is not publication evidence."
+  "2026-09-07T18:11:11.470Z","harness:codex","Review hardening: tighten the descriptor-pressure regression from a 48-read threshold to the actual 32-task limit without shrinking the aggregation fixture or hiding genuine read failures. Reused the canonical unmerged delivery owner after full live metadata/history reads; no duplicate work created."
+  "2026-09-07T18:14:56.575Z","harness:codex","Review hardening verified: the descriptor-pressure fixture now rejects above 32 active reads and asserts peak <=32. All 128 source files remain readable and the genuine permission failure remains reported; the separate 10000-item aggregation fixture is unchanged. This strengthens the existing cap regression without altering production batching."
+  "2026-09-07T18:46:26.679Z","harness:codex","Final recovery and compaction boundary corrections verified: all 8551 tests across 639 files passed with exact 100/100/100/100 coverage and zero uncovered counts. The complete static quality chain passed after coverage finished, without concurrent timing contention. Both canonical owners linked namespace/platform suites, focused ESLint, docs links, fresh npm/Bun with guide-shell and packed npx/bunx/TypeScript consumers passed. Both functional regressions first failed, then passed. The descriptor-pressure regression now enforces 32 active reads while preserving actual I/O and genuine failures. Actual preview outputs and SDK contracts confirm diagnostic report envelopes for redact/repair/compact; no incompatible mutation-receipt reclassification was made. Fresh exact-head hosted review and all five platform jobs remain required before merge; this is candidate evidence, not publication evidence."
 learnings[1]{created_at,author,text}:
   "2026-09-07T13:48:21.098Z","harness:codex","Complete reads require bounded scheduling as well as fail-closed completeness receipts: an unbounded scan can manufacture unreadable files by exhausting descriptors. Pair deterministic resource-pressure tests with the unchanged real 10000-item platform fixture. Exact-byte Git tests must explicitly fix repository newline policy."
 files[5]{path,scope,note}:
@@ -50,7 +53,7 @@ files[5]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/item/item-read-concurrency.spec.ts tests/unit/core/item/item-metadata-cache.spec.ts tests/unit/commands/aggregate-set-members.spec.ts tests/integration/aborted-rebase-recovery.integration.spec.ts,project,240,"harness:codex","2026-09-07T13:41:52.223Z",local_mutation,feat/history-maintenance-sdk-command-grammar
   node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/history-namespace-completion.spec.ts,project,240,"harness:codex","2026-09-07T14:22:32.410Z",local_mutation,feat/history-maintenance-sdk-command-grammar
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mtram0gx-uirp5a
     kind: test
     status: passed
@@ -74,9 +77,21 @@ test_runs[2]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/core/item/item-read-concurrency.spec.ts tests/unit/core/item/item-metadata-cache.spec.ts tests/unit/commands/aggregate-set-members.spec.ts tests/integration/aborted-rebase-recovery.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/history-namespace-completion.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtrk9zd2-h5zhjf
+    kind: test
+    status: passed
+    started_at: "2026-09-07T18:15:18.400Z"
+    finished_at: "2026-09-07T18:15:42.662Z"
+    recorded_at: "2026-09-07T18:15:42.662Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/item/item-read-concurrency.spec.ts tests/unit/core/item/item-metadata-cache.spec.ts tests/unit/commands/aggregate-set-members.spec.ts tests/integration/aborted-rebase-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/history-namespace-completion.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/TESTING.md,project,Portable platform regression invariants and nightly coverage
-close_reason: Completed implementation and local verification of the combined history review corrections.
+close_reason: Implementation and review corrections complete with full local verification; hosted review and merge remain separately gated.
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened

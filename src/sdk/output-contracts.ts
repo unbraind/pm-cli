@@ -104,6 +104,9 @@ const DIAGNOSTIC_COMMANDS = new Set([
   "deps",
   "graph",
   "health",
+  "history-redact",
+  "history-repair",
+  "history-compact",
   "stats",
   "validate",
 ]);
