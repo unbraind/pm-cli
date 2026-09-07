@@ -129,6 +129,7 @@ export {
   type WorkspaceSnapshotRestorePlan,
 } from "./workspace-snapshot.js";
 export { flushTelemetryQueue } from "./telemetry-flush.js";
+export { PM_HISTORY_COMMAND_ALIASES, resolvePmHistoryOperation } from "./cli-contracts.js";
 export {
   EXECUTABLE_COMMAND_ALIASES,
   PM_COMMAND_ALIAS_CONTRACTS,
@@ -641,6 +642,8 @@ export * from "./duplicates.js";
 export * from "./lifecycle/reopen.js";
 export * from "./history-compact.js";
 export * from "./history-read.js";
+export * from "./history/maintenance.js";
+export { readHistorySnapshot, type HistoryStreamSnapshot } from "../core/history/read.js";
 export * from "./history-provenance.js";
 export * from "./mutation-events.js";
 export {

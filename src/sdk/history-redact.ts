@@ -3,31 +3,36 @@
  *
  * Implements the pm history redact command surface and its agent-facing runtime behavior.
  */
-import { assertInitializedTracker } from "./environment/tracker-preflight.js";
-import fs from "node:fs/promises";
 import {
-  pathExists,
-  readFileIfExists,
-  writeFileAtomic,
-} from "../core/fs/fs-utils.js";
+  resolveHistoryWorkspace,
+  resolveHistorySubject,
+  type HistorySubject,
+} from "./history/subject.js";
+export {
+  resolveHistorySubject,
+  type HistorySubject,
+} from "./history/subject.js";
+import fs from "node:fs/promises";
+import { writeFileAtomic } from "../core/fs/fs-utils.js";
 import {
   createHistoryEntry,
   resealHistoryRewrite,
   verifyHistoryRecordHash,
 } from "../core/history/history.js";
 import { invalidateHistoryDriftCacheForPath } from "../core/history/drift-cache.js";
-import { executeHistoryRewrite } from "../core/history/history-rewrite.js";
+import {
+  runHistoryMaintenance,
+  type HistoryMaintenancePlan,
+  type HistoryMaintenanceSnapshot,
+} from "./history/maintenance.js";
 import {
   EMPTY_REPLAY_DOCUMENT,
   historyEntriesToRaw,
   replayHash,
   replayToItemDocument,
-  verifyHistoryChain,
   type ReplayDocument,
 } from "../core/history/replay.js";
 import { applyHistoryPatch } from "../core/history/projection.js";
-import { readHistoryEntries } from "../core/history/read.js";
-import { normalizeItemId, normalizeRawItemId } from "../core/item/id.js";
 import {
   canonicalDocument,
   serializeItemDocument,
@@ -37,22 +42,13 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { nowIso } from "../core/shared/time.js";
-import {
-  getActiveExtensionRegistrations,
-  runActiveOnWriteHooks,
-} from "../core/extensions/index.js";
-import { locateItem, readLocatedItem } from "../core/store/item-store.js";
+import { runActiveOnWriteHooks } from "../core/extensions/index.js";
 import {
   acquireItemMetadataDerivedIndexLock,
   refreshItemMetadataDerivedIndex,
 } from "../core/store/item-metadata-cache.js";
-import {
-  getHistoryPath,
-  getItemPath,
-  resolvePmRoot,
-} from "../core/store/paths.js";
+import { getItemPath } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
-import { resolveAuthor } from "../core/shared/author.js";
 import type {
   HistoryEntry,
   HistoryPatchOp,
@@ -114,16 +110,6 @@ interface HistoryRedactNextItem {
   raw: string | null;
   path: string | null;
   document: ItemDocument | null;
-}
-
-/** Documents the history subject payload exchanged by command, SDK, and package integrations. */
-export interface HistorySubject {
-  /** Stable identifier used to reference this record across commands and storage. */
-  id: string;
-  /** Filesystem path used for history resolution. */
-  historyPath: string;
-  /** Value that configures or reports located for this contract. */
-  located: Awaited<ReturnType<typeof locateItem>>;
 }
 
 /** Documents the history redact result payload exchanged by command, SDK, and package integrations. */
@@ -570,20 +556,6 @@ function hasItemMetadata(replay: ReplayDocument): boolean {
   return Object.keys(replay.metadata).length > 0;
 }
 
-async function loadHistoryRedactCurrentItem(
-  subject: HistorySubject,
-  settings: Awaited<ReturnType<typeof readSettings>>,
-): Promise<HistoryRedactCurrentItem> {
-  const currentItemPath = subject.located?.itemPath ?? null;
-  if (!subject.located) {
-    return { raw: null, path: currentItemPath, document: null };
-  }
-  const loaded = await readLocatedItem(subject.located, {
-    schema: settings.schema,
-  });
-  return { raw: loaded.raw, path: currentItemPath, document: loaded.document };
-}
-
 function resolveHistoryRedactNextItem(params: {
   pmRoot: string;
   subject: HistorySubject;
@@ -666,35 +638,28 @@ function buildHistoryRedactEntries(params: {
   return { rewrittenEntries, auditEntryAdded: true };
 }
 
-async function applyHistoryRedactRewrite(params: {
+/** Couple history and item redaction with rollback and derived-index lock release. */
+function createHistoryRedactTransaction(params: {
   pmRoot: string;
   subject: HistorySubject;
   settings: Awaited<ReturnType<typeof readSettings>>;
   typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
-  historyRawBeforeLock: string | null;
   currentItem: HistoryRedactCurrentItem;
   nextItem: HistoryRedactNextItem;
   author: string;
-  force: boolean | undefined;
   rewrittenEntries: HistoryEntry[];
-}): Promise<string[]> {
+}): Pick<
+  HistoryMaintenancePlan<HistoryRedactResult>,
+  "applyRewrite" | "afterWrite"
+> {
   let derivedIndexWarnings: string[] = [];
-  return executeHistoryRewrite({
-    pmRoot: params.pmRoot,
-    subject: params.subject,
-    settings: params.settings,
-    typeRegistry: params.typeRegistry,
-    historyRawBeforeLock: params.historyRawBeforeLock,
-    currentItemRawBeforeLock: params.currentItem.raw,
-    operation: "history-redact",
-    author: params.author,
-    force: params.force,
-    itemDocument: params.currentItem.document,
+  return {
     applyRewrite: async ({ historyRawUnderLock }) => {
-      const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
-        params.pmRoot,
-        params.author,
-      );
+      const releaseDerivedIndexLock =
+        await acquireItemMetadataDerivedIndexLock(
+          params.pmRoot,
+          params.author,
+        );
       const affectedItemPaths = new Set<string>();
       if (params.currentItem.path) {
         affectedItemPaths.add(params.currentItem.path);
@@ -715,7 +680,10 @@ async function applyHistoryRedactRewrite(params: {
             params.nextItem.raw !== null &&
             params.nextItem.raw !== params.currentItem.raw
           ) {
-            await writeFileAtomic(params.nextItem.path, params.nextItem.raw);
+            await writeFileAtomic(
+              params.nextItem.path,
+              params.nextItem.raw,
+            );
           }
           if (
             params.currentItem.path &&
@@ -743,7 +711,9 @@ async function applyHistoryRedactRewrite(params: {
           }
           throw error;
         }
-        await invalidateHistoryDriftCacheForPath(params.subject.historyPath);
+        await invalidateHistoryDriftCacheForPath(
+          params.subject.historyPath,
+        );
         const itemPath = params.nextItem.path ?? params.currentItem.path;
         if (itemPath) {
           derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
@@ -767,14 +737,14 @@ async function applyHistoryRedactRewrite(params: {
       }
       rethrowReleaseFailure();
     },
-    applyPostRewrite: async () => [
+    afterWrite: async () => [
       ...derivedIndexWarnings,
       ...(await runHistoryRedactWriteHooks(params.subject.historyPath, [
         params.nextItem.path,
         params.currentItem.path,
       ])),
     ],
-  });
+  };
 }
 
 async function rollbackHistoryRedactRewrite(
@@ -808,7 +778,9 @@ async function runHistoryRedactWriteHooks(
 ): Promise<string[]> {
   const hookWarnings: string[] = [];
   const uniqueItemHookPaths = new Set(
-    itemHookPaths.filter((itemPath): itemPath is string => itemPath !== null),
+    itemHookPaths.filter(
+      (itemPath): itemPath is string => itemPath !== null,
+    ),
   );
   for (const itemHookPath of uniqueItemHookPaths) {
     hookWarnings.push(
@@ -829,64 +801,20 @@ async function runHistoryRedactWriteHooks(
   return hookWarnings;
 }
 
-/** Implements resolve history subject for the public runtime surface of this module. */
-export async function resolveHistorySubject(
-  pmRoot: string,
-  id: string,
-  settings: Awaited<ReturnType<typeof readSettings>>,
-  typeToFolder: Record<string, string>,
-): Promise<HistorySubject> {
-  const located = await locateItem(
-    pmRoot,
-    id,
-    settings.id_prefix,
-    settings.item_format,
-    typeToFolder,
-  );
-  if (located) {
-    return {
-      id: located.id,
-      historyPath: getHistoryPath(pmRoot, located.id),
-      located,
-    };
-  }
-
-  const normalizedId = normalizeItemId(id, settings.id_prefix);
-  const rawNormalizedId = normalizeRawItemId(id);
-  const candidateIds =
-    normalizedId === rawNormalizedId
-      ? [normalizedId]
-      : [normalizedId, rawNormalizedId];
-  for (const candidateId of candidateIds) {
-    const historyPath = getHistoryPath(pmRoot, candidateId);
-    if (await pathExists(historyPath)) {
-      return {
-        id: candidateId,
-        historyPath,
-        located: null,
-      };
-    }
-  }
-  throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
-}
-
 /** Implements run history redact for the public runtime surface of this module. */
 export async function runHistoryRedact(
   id: string,
   options: HistoryRedactCommandOptions,
   global: GlobalOptions,
 ): Promise<HistoryRedactResult> {
-  const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  await assertInitializedTracker(pmRoot);
-
-  const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(
-    settings,
-    getActiveExtensionRegistrations(),
+  const { pmRoot, settings, typeRegistry } = await resolveHistoryWorkspace(
+    global.path,
   );
   const replacementInput = options.replacement ?? "";
   const replacementIsDefault = replacementInput.length === 0;
-  const replacement = replacementIsDefault ? "[redacted]" : replacementInput;
+  const replacement = replacementIsDefault
+    ? "[redacted]"
+    : replacementInput;
   const rules = buildRedactionRules(options.literal, options.regex);
   const subject = await resolveHistorySubject(
     pmRoot,
@@ -895,26 +823,61 @@ export async function runHistoryRedact(
     typeRegistry.type_to_folder,
   );
 
-  if (!(await pathExists(subject.historyPath))) {
-    throw new PmCliError(
-      `No history stream exists for ${subject.id}.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
-  const historyRawBeforeLock = await readFileIfExists(subject.historyPath);
-  const historyEntries = await readHistoryEntries(
-    subject.historyPath,
-    subject.id,
-  );
-  if (historyEntries.length === 0) {
-    throw new PmCliError(
-      `No history entries exist for ${subject.id}; nothing to redact.`,
-      EXIT_CODE.USAGE,
-    );
-  }
+  return runHistoryMaintenance({
+    pmRoot,
+    subject,
+    settings,
+    typeRegistry,
+    operation: "history-redact",
+    options,
+    transform: (snapshot) =>
+      buildHistoryRedactPlan(
+        {
+          pmRoot,
+          subject,
+          settings,
+          typeRegistry,
+          options,
+          rules,
+          replacement,
+          replacementIsDefault,
+        },
+        snapshot,
+      ),
+  });
+}
 
+/** Plan redaction and its coupled item transaction through the shared maintenance boundary. */
+function buildHistoryRedactPlan(
+  params: {
+    pmRoot: string;
+    subject: HistorySubject;
+    settings: Awaited<ReturnType<typeof readSettings>>;
+    typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
+    options: HistoryRedactCommandOptions;
+    rules: RedactionRule[];
+    replacement: string;
+    replacementIsDefault: boolean;
+  },
+  snapshot: HistoryMaintenanceSnapshot,
+): HistoryMaintenancePlan<HistoryRedactResult> {
+  const {
+    pmRoot,
+    subject,
+    settings,
+    typeRegistry,
+    options,
+    rules,
+    replacement,
+    replacementIsDefault,
+  } = params;
+  const historyEntries = snapshot.entries;
   const integritySnapshot = inspectHistoryIntegrity(historyEntries);
-  const rewritten = rewriteHistoryEntries(historyEntries, rules, replacement);
+  const rewritten = rewriteHistoryEntries(
+    historyEntries,
+    rules,
+    replacement,
+  );
   const preexistingHashMismatches =
     integritySnapshot.hashMismatchesBefore +
     integritySnapshot.hashMismatchesAfter;
@@ -930,7 +893,11 @@ export async function runHistoryRedact(
     warnings.push("history_redact_no_matches");
   }
 
-  const currentItem = await loadHistoryRedactCurrentItem(subject, settings);
+  const currentItem: HistoryRedactCurrentItem = {
+    raw: snapshot.loadedItem?.raw ?? null,
+    path: subject.located?.itemPath ?? null,
+    document: snapshot.loadedItem?.document ?? null,
+  };
   const nextItem = resolveHistoryRedactNextItem({
     pmRoot,
     subject,
@@ -945,7 +912,7 @@ export async function runHistoryRedact(
     /* c8 ignore next -- null-coalescing item-content comparison branch is exercised in broader command integration coverage. */
     (currentItem.raw ?? null) !== (nextItem.raw ?? null);
 
-  const author = resolveAuthor(options.author, settings.author_default);
+  const author = snapshot.author;
   const redactionMessage = buildHistoryRedactMessage(options, rewritten);
   const { rewrittenEntries, auditEntryAdded } = buildHistoryRedactEntries({
     rewritten,
@@ -955,67 +922,55 @@ export async function runHistoryRedact(
     author,
     message: redactionMessage,
   });
-  const historyVerify = verifyHistoryChain(rewrittenEntries);
-  /* c8 ignore start -- invalid rewritten chains are covered by history verification unit tests. */
-  if (!historyVerify.ok) {
-    throw new PmCliError(
-      `history-redact produced an invalid rewritten chain (${historyVerify.errors.join(", ")}).`,
-      EXIT_CODE.GENERIC_FAILURE,
-    );
-  }
-  /* c8 ignore stop */
-
-  if (!dryRun && changed) {
-    warnings.push(
-      ...(await applyHistoryRedactRewrite({
-        pmRoot,
-        subject,
-        settings,
-        typeRegistry,
-        historyRawBeforeLock,
-        currentItem,
-        nextItem,
-        author,
-        force: options.force,
-        rewrittenEntries,
-      })),
-    );
-  }
-
   return {
-    id: subject.id,
-    dry_run: dryRun,
     changed,
-    patterns: {
-      literal_count: rules.filter((rule) => rule.kind === "literal").length,
-      regex_count: rules.filter((rule) => rule.kind === "regex").length,
-      total_count: rules.length,
-      replacement_is_default: replacementIsDefault,
-    },
-    history: {
-      path: subject.historyPath,
-      entries_scanned: historyEntries.length,
-      entries_changed: rewritten.entriesChanged,
-      replacements: rewritten.replacements,
-      hash_mismatches_before: integritySnapshot.hashMismatchesBefore,
-      hash_mismatches_after: integritySnapshot.hashMismatchesAfter,
-      preexisting_hash_mismatches: preexistingHashMismatches,
-      audit_entry_added: auditEntryAdded,
-      verify_ok: historyVerify.ok,
-      verify_errors: historyVerify.errors,
-    },
-    item: {
-      existed_before: currentItem.path !== null,
-      exists_after: nextItem.path !== null,
-      path_before: currentItem.path,
-      path_after: nextItem.path,
-      changed: itemChanged,
-    },
-    /* c8 ignore next -- warning dedupe ordering is covered indirectly by command-level smoke tests. */
-    warnings: [...new Set(warnings)].sort((left, right) =>
-      left.localeCompare(right),
-    ),
-    generated_at: nowIso(),
+    rewrittenEntries,
+    ...createHistoryRedactTransaction({
+      pmRoot,
+      subject,
+      settings,
+      typeRegistry,
+      currentItem,
+      nextItem,
+      author,
+      rewrittenEntries,
+    }),
+    report: ({ verification: historyVerify, warnings: writeWarnings }) => ({
+      id: subject.id,
+      dry_run: dryRun,
+      changed,
+      patterns: {
+        literal_count: rules.filter((rule) => rule.kind === "literal")
+          .length,
+        regex_count: rules.filter((rule) => rule.kind === "regex").length,
+        total_count: rules.length,
+        replacement_is_default: replacementIsDefault,
+      },
+      history: {
+        path: subject.historyPath,
+        entries_scanned: historyEntries.length,
+        entries_changed: rewritten.entriesChanged,
+        replacements: rewritten.replacements,
+        hash_mismatches_before: integritySnapshot.hashMismatchesBefore,
+        hash_mismatches_after: integritySnapshot.hashMismatchesAfter,
+        preexisting_hash_mismatches: preexistingHashMismatches,
+        audit_entry_added: auditEntryAdded,
+        verify_ok: historyVerify.ok,
+        verify_errors: historyVerify.errors,
+      },
+      item: {
+        existed_before: currentItem.path !== null,
+        exists_after: nextItem.path !== null,
+        path_before: currentItem.path,
+        path_after: nextItem.path,
+        changed: itemChanged,
+      },
+      /* c8 ignore next -- warning dedupe ordering is covered indirectly by command-level smoke tests. */
+      warnings: [...new Set([...warnings, ...writeWarnings])].sort(
+        (left, right) => left.localeCompare(right),
+      ),
+      generated_at: nowIso(),
+    }),
   };
 }
 

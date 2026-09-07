@@ -6,6 +6,7 @@
  * completion, and the `pm contracts` command all read these contracts so the
  * flag surface stays single-sourced across the CLI, SDK, and MCP boundaries.
  */
+import { resolvePmHistoryOperation } from "./command-aliases.js";
 import { normalizeUniqueStringList } from "./string-lists.js";
 import { RESERVED_EXTENSION_HOST_FLAGS } from "../../core/extensions/reserved-host-flags.js";
 import {
@@ -2076,7 +2077,7 @@ function normalizeCommandNameForContracts(
   if (typeof commandName !== "string") {
     return "";
   }
-  return commandName.trim().toLowerCase();
+  return resolvePmHistoryOperation(commandName.trim().toLowerCase());
 }
 
 /** Returns whether a normalized command path owns a concrete core flag-contract row. Surface-less commands such as `help` intentionally return false, while positional virtual paths such as `workspace snapshot create` return true. */

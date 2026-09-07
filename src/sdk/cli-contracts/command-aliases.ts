@@ -30,11 +30,35 @@ export interface PmCommandAliasContract {
   owner: string;
 }
 
+/** History namespace aliases preserve the existing SDK and MCP operation identities. */
+export const PM_HISTORY_COMMAND_ALIASES: readonly PmCommandAliasContract[] = [
+  ["history-redact", "history redact"],
+  ["history-repair", "history repair"],
+  ["history-compact", "history compact"],
+  ["activity", "history activity"],
+  ["restore", "history restore"],
+].map(([alias, canonical]) => ({
+  alias,
+  canonical,
+  canonical_argv: canonical.split(" "),
+  lifecycle: "permanent",
+  hidden: true,
+  registration: "commander",
+  owner: "pm-tqel",
+}));
+
+/** Resolve a native history leaf to its stable SDK operation; other paths retain their identity. */
+export function resolvePmHistoryOperation(command: string): string {
+  const normalized = command.trim().replace(/\s+/gu, " ");
+  return PM_HISTORY_COMMAND_ALIASES.find((alias) => alias.canonical === normalized)?.alias ?? normalized;
+}
+
 /**
  * Public command-alias table. Deprecated aliases must remain executable but
  * are intentionally absent from default help and completion discovery.
  */
 export const PM_COMMAND_ALIAS_CONTRACTS: readonly PmCommandAliasContract[] = [
+  ...PM_HISTORY_COMMAND_ALIASES,
   {
     alias: "tests",
     canonical: "test",

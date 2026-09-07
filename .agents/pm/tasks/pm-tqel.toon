@@ -2,18 +2,23 @@ id: pm-tqel
 title: "Consolidate history commands: history-redact/history-repair/history-compact/activity/restore under pm history subcommands"
 description: "pm history <id> stays the default view; history-redact -> pm history redact, history-repair -> pm history repair, history-compact -> pm history compact, activity -> pm history activity, restore -> pm history restore (old spellings aliased). Duplicate check: no existing history-namespace item; history feature items are all closed deliverables."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:history",simplification
 created_at: "2026-07-05T04:53:05.215Z"
-updated_at: "2026-07-31T06:08:50.089Z"
+updated_at: "2026-09-07T10:51:08.852Z"
+closed_at: "2026-09-07T10:48:31.234Z"
+completed_at: "2026-09-07T10:48:31.234Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: pm history gains redact/repair/compact/activity/restore subcommands with flag parity; old top-level spellings alias-shimmed with identical output; default pm history <id> view unchanged; contracts/MCP/completions/docs regenerated; existing history-* specs pass via aliases
 parent: pm-n7rr
 risk: medium
 confidence: high
-dependencies[6]:
+resolution: "Added history redact/repair/compact/activity/restore with shared SDK behavior and legacy spellings; unified contracts, addressing, output, refusal recovery, SDK/MCP discovery and shell completion. Published integration documentation and regenerated contract surfaces."
+expected_result: Native commands preserve legacy flags/output and default history view while giving agents consistent progressive discovery and recovery.
+actual_result: "All 8536 tests passed with exact 100/100/100/100; linked namespace/completion tests, static gates, packed npx/bunx smoke, npm/Bun installed candidate parity and SDK execution passed. Today existing immutable release was verified separately; new code awaits the next eligible daily release."
+dependencies[8]:
   - id: pm-0z7n
     kind: blocked_by
     created_at: "2026-07-05T04:55:00.104Z"
@@ -35,4 +40,78 @@ dependencies[6]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
+  - id: pm-0z7n
+    kind: verifies
+    created_at: "2026-09-07T09:50:03.946Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-34w8za
+    kind: verifies
+    created_at: "2026-09-07T09:50:03.946Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[9]{created_at,author,text}:
+  "2026-09-07T09:09:45.812Z","harness:codex","Implementation scope: history redact/repair/compact/activity/restore share existing SDK behavior with permanent legacy aliases, unchanged default history view, discoverable contracts and completion parity. Prerequisites pm-0z7n and pm-hb7ug8 read live with their implementation evidence. Delivery shares pm-34w8za maintenance substrate. Test first, preserve existing command outputs and error contracts."
+  "2026-09-07T09:46:00.939Z","harness:codex","Implementation evidence: shared stream snapshot and verified maintenance pipeline integrated with redact/repair/compact and restore drift checks. Native history commands share registrations with permanent root aliases; runtime flags, output envelopes, addressing, SDK/MCP discovery and completion resolve the selected operation. Focused maintenance and namespace suites passed; full coverage and type gates are running."
+  "2026-09-07T09:50:05.412Z","harness:codex","Graph evidence: full all-status graph audit covered 2653 items and 13062 directed edges with no omitted fields, missing targets, ordering cycles, isolated items or degree-one items; all active and terminal non-outcome items reach an outcome through typed relationships. Execution graph has 12 layers and the knowledge graph is one connected component. Seven historical hierarchy divergences remain informational under the existing historical policy. Added verifies edges for the maintenance substrate and permanent alias guarantees exercised by this delivery. GitHub secret-scanning and Dependabot open-alert reads both returned empty arrays."
+  "2026-09-07T10:17:31.429Z","harness:codex","Installed candidate acceptance passed independently under npm and Bun using the packed working-tree artifact: create/update, redaction preview and apply with canary removal verified in raw history bytes, restore, compaction, repeated full-chain verification, repair preview, native/legacy activity equality, named history addressing, native flag contracts, and public SDK export execution. Both executables resolved inside their isolated installation roots. This is candidate-artifact evidence, distinct from the already-published daily version. GitHub open Dependabot, code-scanning and secret-scanning inventories remain empty; repository secret scan passed."
+  "2026-09-07T10:22:38.239Z","harness:codex","Distribution verification: scheduled Auto Release run 34095818006 completed successfully on 2026-09-07 and public v2026.9.7 is a non-draft stable release. Anonymous exact-version npm metadata, npx and bunx explicit/default CLI dispatch, MCP stdio and HTTP discovery (Skills and Apps), all declared bin coverage, and executor negative controls passed. Exact public npm and Bun installed agent sessions each passed 11 bounded steps. These prove the existing immutable daily release; this branch remains the next eligible release candidate. The broader packed-candidate npx/bunx smoke also passed with 13 packages and TypeScript consumer validation."
+  "2026-09-07T10:32:23.962Z","harness:codex","TDD follow-up: the exact coverage run passed all 8533 tests but exposed unvisited native parsing branches. Added real bootstrap normalization and canonical contract selection cases. A new restore completion arity test failed because raw flag metadata lacks explicit boolean types; Zsh and Fish now consume the shared enriched invocation contract, keeping --force/--json valueless and --author/--message/--pm-path value-taking. All 115 targeted completion and contract tests passed. Regenerated the refusal census from SDK contracts after native probe identity normalization. Full coverage and the remaining static chain are rerunning without threshold or exclusion changes."
+  "2026-09-07T10:38:29.044Z","harness:codex",All 8536 tests passed; exact coverage found one obsolete startsWith(history-) summary fallback after every supported legacy history command moved to explicit alias contracts. Removed the unreachable heuristic instead of inventing a command solely to execute it. Coverage and contract verification will be rerun on this final source.
+  "2026-09-07T10:48:12.547Z","harness:codex","Final local verification passed: all 8536 tests across 636 files with exact 100/100/100/100 and zero uncovered counts. Linked namespace/completion/grammar tests passed. Final build and the full static command chain passed across resumed runs, including an isolated rerun of timing-sensitive gates. Native and compatibility flag/output parity, default history addressing, permanent aliases, SDK exports and installed npm/Bun workflows are verified. Latest pm-changelog 2026.9.6 is installed; generated notes will be reviewed with this delivery. Existing review inventory/watch/acknowledgement tooling will cover every bot artifact and edited revision before merge."
+  "2026-09-07T10:51:08.852Z","harness:codex","Post-closure tracker validation: all 2653 item streams checked with zero history drift, missing/unreadable streams, chain/hash mismatches, version skew or workspace-state mismatches. Resolution validation retains 295 historical incomplete structured-close records, matching the initial all-status corpus; both delivered items include complete immutable resolution/expected/actual evidence. Changelog check passed using pm-changelog 2026.9.6; repository secret scan passed. No tracked work remains in progress."
+learnings[1]{created_at,author,text}:
+  "2026-09-07T10:43:15.815Z","harness:codex","Nested commands need one semantic operation mapping across parsing, item addressing, universal output, contracts, activation and completion. Completion must consume enriched takes_value metadata rather than infer boolean arity from optional raw schema fields."
+files[29]{path,scope,note}:
+  scripts/release/surface-replication-sets.json,project,Preserve refusal ownership after registration extraction and shared workspace initialization
+  src/cli/main.ts,project,History maintenance and native command delivery
+  src/cli/register-history-activity.ts,project,Native and legacy shared command definitions
+  src/cli/register-history-maintenance.ts,project,Native and legacy shared command definitions
+  src/cli/register-list-query.ts,project,Native history namespace and activity registration
+  src/cli/register-mutation.ts,project,Legacy maintenance registration delegation
+  src/sdk/agent/item-addressing.ts,project,History maintenance and native command delivery
+  src/sdk/agent/refusal-corpus-contracts.ts,project,History SDK and command compatibility verification
+  src/sdk/cli-bootstrap.ts,project,History maintenance and native command delivery
+  src/sdk/cli-contracts.ts,project,History maintenance and native command delivery
+  src/sdk/cli-contracts/agent-output-contracts.ts,project,History maintenance and native command delivery
+  src/sdk/cli-contracts/command-aliases.ts,project,Permanent hidden history alias contracts
+  src/sdk/cli-contracts/flag-contracts.ts,project,History maintenance and native command delivery
+  src/sdk/cli-contracts/grammar-contracts.ts,project,History maintenance and native command delivery
+  src/sdk/cli-contracts/registration-helpers.ts,project,History maintenance and native command delivery
+  src/sdk/cli-contracts/runtime-contracts.ts,project,History maintenance and native command delivery
+  src/sdk/command-line.ts,project,History maintenance and native command delivery
+  src/sdk/completion.ts,project,History maintenance and native command delivery
+  src/sdk/flag-invocation-contracts.ts,project,History maintenance and native command delivery
+  src/sdk/output-contracts.ts,project,History maintenance and native command delivery
+  src/sdk/read-output-contracts.ts,project,History maintenance and native command delivery
+  tests/fixtures/contracts/full.json,project,Generated native history command contract snapshot
+  tests/integration/history-namespace.integration.spec.ts,project,Native CLI parity and privacy acceptance
+  tests/unit/commands/completion-command.spec.ts,project,History maintenance and native command delivery
+  tests/unit/commands/contracts-command.spec.ts,project,History SDK and command compatibility verification
+  tests/unit/scripts/refusal-closure-gate.spec.ts,project,History SDK and command compatibility verification
+  tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,History maintenance and native command delivery
+  tests/unit/sdk/cli-contracts/history-namespace-completion.spec.ts,project,History maintenance and native command delivery
+  tests/unit/sdk/contracts-full-projection.spec.ts,project,History SDK and command compatibility verification
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/history-namespace-completion.spec.ts tests/integration/history-namespace.integration.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,600,"harness:codex","2026-09-07T10:03:30.715Z",local_mutation,feat/history-maintenance-sdk-command-grammar
+test_runs[1]:
+  - run_id: test-local-mtr3yu7j-1wa2b0
+    kind: test
+    status: passed
+    started_at: "2026-09-07T10:38:51.561Z"
+    finished_at: "2026-09-07T10:39:08.911Z"
+    recorded_at: "2026-09-07T10:39:08.911Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/history-namespace-completion.spec.ts tests/integration/history-namespace.integration.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated reviewed history maintenance release notes
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated executable refusal census includes native history arguments
+  docs/HISTORY_MAINTENANCE.md,project,Public history integration and compatibility contract
+  docs/README.md,project,Public history integration and compatibility contract
+close_reason: Implemented and verified native history command workflows with permanent compatibility aliases for reviewed delivery.
 body: ""

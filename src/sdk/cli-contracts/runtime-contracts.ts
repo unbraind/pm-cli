@@ -141,6 +141,7 @@ import {
   type PmDiagnosticOutputBudgetContract,
   type PmCommandAliasContract,
 } from "../cli-contracts.js";
+import { PM_HISTORY_COMMAND_ALIASES, resolvePmHistoryOperation } from "./command-aliases.js";
 import { PM_POSITIONAL_ACTION_FLAG_CONTRACTS } from "./flag-contracts.js";
 import {
   GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES,
@@ -290,6 +291,8 @@ export interface ContractsResult {
   list_projections?: ListCommandProjectionSurface[];
   /** Value that configures or reports command aliases for this contract. */
   command_aliases?: CommandAliasSurface[];
+  /** Compact projections omit alias lifecycle metadata; restore it with --full. */
+  command_alias_contracts_omitted_reason?: string;
   /** Noun–verb routing policy and exhaustive current-command destinations. */
   grammar_contracts?: {
     nouns: readonly string[];
@@ -915,9 +918,10 @@ const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<
   ),
 ];
 
-const CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map(
-  CORE_COMMAND_FLAG_CONTRACT_ENTRIES,
-);
+const CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map(CORE_COMMAND_FLAG_CONTRACT_ENTRIES);
+for (const { alias, canonical } of PM_HISTORY_COMMAND_ALIASES) {
+  CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND.set(canonical, CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND.get(alias)!);
+}
 
 /* c8 ignore start -- extension contract shaping utilities are exercised by dedicated extension/runtime integration suites. */
 function packageOwnedActionForCommand(command: string): string {
@@ -935,6 +939,8 @@ function packageOwnedActionForCommand(command: string): string {
 }
 
 function resolveActionCommandPath(action: PmToolAction): string | null {
+  const historyAlias = PM_HISTORY_COMMAND_ALIASES.find((contract) => contract.alias === action);
+  if (historyAlias) return `${historyAlias.canonical}|${historyAlias.alias}`;
   if (
     PM_CORE_COMMAND_NAMES.includes(
       action as (typeof PM_CORE_COMMAND_NAMES)[number],
@@ -976,6 +982,8 @@ function actionDescriptorMatchesSelectedCommand(
   descriptor: ActionContractDescriptor,
   selectedCommand: string,
 ): boolean {
+  const historyOperation = resolvePmHistoryOperation(selectedCommand);
+  if (historyOperation !== selectedCommand) return descriptor.action === historyOperation;
   if (descriptor.command_path === null) {
     return false;
   }
@@ -2657,16 +2665,17 @@ function resolveOutputCommands(
   }
   const hiddenAliases = new Set(
     PM_COMMAND_ALIAS_CONTRACTS.filter(
-      (contract) => contract.hidden && contract.lifecycle === "deprecated",
+      (contract) => contract.hidden && (contract.lifecycle === "deprecated" || (!selection.fullOutput && !selection.availabilityOnly)),
     ).map((contract) => contract.alias),
   );
   return commands.filter((command) => !hiddenAliases.has(command));
 }
 
 function canonicalSummaryCommand(command: string): string {
+  const historyAlias = PM_HISTORY_COMMAND_ALIASES.find((contract) => contract.alias === command || contract.canonical === command);
+  if (historyAlias) return historyAlias.canonical;
   const rootCommand = command.split(" ")[0]!;
   if (rootCommand.startsWith("list-")) return "list";
-  if (rootCommand.startsWith("history-")) return "history";
   return COMMAND_ALIAS_TO_CANONICAL.get(rootCommand) ?? rootCommand;
 }
 
@@ -2708,7 +2717,7 @@ function summarizeCommandIntent(
   extensionContracts: readonly ExtensionCommandContract[],
 ): Required<Pick<CommandSummarySurface, "intent" | "intent_source">> {
   const declared =
-    COMMAND_INTENTS.get(command) ??
+    COMMAND_INTENTS.get(resolvePmHistoryOperation(command)) ??
     (command.includes(" ")
       ? undefined
       : COMMAND_INTENTS.get(canonicalSummaryCommand(command)));
@@ -2782,7 +2791,7 @@ function buildCommandSummarySurface(
           .flatMap((contract) => contract.flags.map((flag) => flag.flag)),
       ]);
       const flags = (
-        AGENT_BOOTSTRAP_FLAGS.get(command) ??
+        AGENT_BOOTSTRAP_FLAGS.get(resolvePmHistoryOperation(command)) ??
         AGENT_BOOTSTRAP_FLAGS.get(canonicalRoot) ??
         AGENT_BOUNDED_FLAG_PRIORITY
       ).filter((flag) => availableFlags.has(flag));
@@ -3034,7 +3043,12 @@ function attachFlagContractsResult(
   } else {
     result.command_flags_omitted_reason = "unfiltered_default_brief";
   }
-  result.command_aliases = commandAliases;
+  result.command_aliases = selection.fullOutput
+    ? commandAliases
+    : commandAliases.map(({ canonical, aliases }) => ({ canonical, aliases }));
+  if (!selection.fullOutput) {
+    result.command_alias_contracts_omitted_reason = "compact_projection; restore with --full";
+  }
 }
 
 function attachCommanderAliasContractsResult(

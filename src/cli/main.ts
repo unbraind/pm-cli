@@ -3,6 +3,8 @@
  * @module cli/main
  */
 import { Command, CommanderError } from "commander";
+import { resolvePmHistoryOperation } from "../sdk/cli-contracts/command-aliases.js";
+import { isHistoryRedactInvocation } from "../sdk/command-line.js";
 import {
   activateExtensions,
   clearActiveExtensionHooks,
@@ -435,7 +437,7 @@ function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invoc
   const explainRequested = safeInvocationArgv.includes("--explain");
   const rawExistingRecovery = context?.recovery;
   const existingRecovery =
-    rawExistingRecovery && safeInvocationArgv.includes("history-redact")
+    rawExistingRecovery && isHistoryRedactInvocation(safeInvocationArgv)
       ? {
           ...rawExistingRecovery,
           ...(rawExistingRecovery.attempted_command ? { attempted_command: renderAttemptedCommand(safeInvocationArgv) } : {}),
@@ -1220,7 +1222,7 @@ function collectActivationCommandCandidates(probe: RuntimeExtensionActivationPro
     parts.push(...arg.split(" ").filter((part) => part.length > 0));
     candidates.push(parts.join(" "));
   }
-  return [...new Set(candidates)];
+  return [...new Set(candidates.flatMap((candidate) => [candidate, resolvePmHistoryOperation(candidate)]))];
 }
 
 function activationCommandMatchesProbe(command: string, probe: RuntimeExtensionActivationProbe): boolean {
@@ -1816,7 +1818,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         const startedAt = Date.now();
         clearResolvedGlobalOptions(actionCommand);
         let globalOptions = getGlobalOptions(actionCommand);
-        const commandPath = getCommandPath(actionCommand);
+        const commandPath = resolvePmHistoryOperation(getCommandPath(actionCommand));
         const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
         let commandArgs = actionCommand.args.map(String);
         const activeRegistrations = getActiveExtensionRegistrations();
@@ -2077,7 +2079,7 @@ function attachProgramLifecycleHooks(rootProgram: Command): void {
     clearResolvedGlobalOptions(actionCommand);
     const rawGlobalOptions = actionCommand.optsWithGlobals() as Record<string, unknown>;
     const bootstrapGlobalOptions = getGlobalOptions(actionCommand);
-    const commandPath = getCommandPath(actionCommand);
+    const commandPath = resolvePmHistoryOperation(getCommandPath(actionCommand));
     let commandArgs = actionCommand.args.map(String);
     let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs);
     let globalOptions = { ...bootstrapGlobalOptions };

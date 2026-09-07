@@ -3,6 +3,10 @@
  *
  * Renders copy-safe pm command suggestions for SDK and CLI diagnostics.
  */
+import {
+  BOOTSTRAP_BOOLEAN_FLAGS,
+  GLOBAL_VALUE_CONSUMING_FLAGS,
+} from "./cli-contracts/bootstrap-command-scanner.js";
 
 /** Quote one Windows argument with the linear CommandLineToArgvW escaping algorithm. */
 export const quoteWindowsCommandArg = (arg: string): string => {
@@ -28,7 +32,9 @@ export const quoteCommandArg = (
   platform: NodeJS.Platform = process.platform,
 ): string => {
   const safePattern =
-    platform === "win32" ? /^[A-Za-z0-9._:/\\@=-]+$/ : /^[A-Za-z0-9._:/@=-]+$/;
+    platform === "win32"
+      ? /^[A-Za-z0-9._:/\\@=-]+$/
+      : /^[A-Za-z0-9._:/@=-]+$/;
   if (safePattern.test(arg)) {
     return arg;
   }
@@ -43,7 +49,9 @@ export const renderPmCommand = (
   argv: string[],
   platform: NodeJS.Platform = process.platform,
 ): string => {
-  const args = argv.map((token) => quoteCommandArg(token, platform)).join(" ");
+  const args = argv
+    .map((token) => quoteCommandArg(token, platform))
+    .join(" ");
   return args.length > 0 ? `pm ${args}` : "pm";
 };
 
@@ -53,20 +61,50 @@ const HISTORY_REDACT_SENSITIVE_FLAGS = new Set([
   "--replacement",
 ]);
 
+const HISTORY_REDACT_PUBLIC_FLAGS = new Set([
+  ...HISTORY_REDACT_SENSITIVE_FLAGS,
+  ...BOOTSTRAP_BOOLEAN_FLAGS,
+  ...GLOBAL_VALUE_CONSUMING_FLAGS,
+  "--dry-run",
+  "--force",
+  "--message",
+  "--profile",
+  "--explain",
+  "--help",
+  "-h",
+]);
+
+/** Conservatively recognize both redaction spellings before argv parsing succeeds. */
+export function isHistoryRedactInvocation(
+  argv: readonly string[],
+): boolean {
+  return (
+    argv.includes("history-redact") ||
+    (argv.includes("history") && argv.includes("redact"))
+  );
+}
+
 /**
  * Replace history-redaction matcher and replacement values before an argv
  * vector is copied into diagnostics or recovery guidance. The values are
  * inputs to a disclosure-removal operation and therefore remain sensitive
  * even when they do not resemble a conventional credential.
  */
-export function redactSensitiveCommandArgs(argv: readonly string[]): string[] {
-  if (!argv.includes("history-redact")) {
+export function redactSensitiveCommandArgs(
+  argv: readonly string[],
+): string[] {
+  if (!isHistoryRedactInvocation(argv)) {
     return [...argv];
   }
   const redacted: string[] = [];
   let redactNext = false;
   for (const token of argv) {
-    if (redactNext && !token.startsWith("-")) {
+    if (
+      redactNext &&
+      !HISTORY_REDACT_PUBLIC_FLAGS.has(
+        token.split("=")[0].replaceAll("_", "-"),
+      )
+    ) {
       redacted.push("[redacted]");
       redactNext = false;
       continue;

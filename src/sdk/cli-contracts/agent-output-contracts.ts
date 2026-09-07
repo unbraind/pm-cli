@@ -5,6 +5,7 @@
  * packages, contract discovery, and regression gates. The contracts describe
  * output policy without coupling package authors to pm's renderer.
  */
+import { resolvePmHistoryOperation } from "./command-aliases.js";
 import { PM_CORE_COMMAND_NAMES } from "./enum-contracts.js";
 
 /** Stable degradation stages applied when an output exceeds its token budget. */
@@ -232,7 +233,7 @@ const DIAGNOSTIC_BUDGET_BY_CLASS = new Map(
 
 /** Infer the conservative workload class for a core or package command. */
 export function inferPmOutputBudgetClass(command: string): PmOutputBudgetClass {
-  const [rootCommand = ""] = command.trim().split(/\s+/u);
+  const [rootCommand = ""] = resolvePmHistoryOperation(command).split(/\s+/u);
   return MUTATION_COMMANDS.has(rootCommand)
     ? "mutation"
     : DISCOVERY_COMMANDS.has(rootCommand)
@@ -323,7 +324,7 @@ export function resolvePmCommandOutputBudget(
   options: { generateFallback?: boolean } = {},
 ): PmCommandOutputBudgetContract | null {
   const normalizedCommand = command.trim().replace(/\s+/gu, " ");
-  const [rootCommand] = normalizedCommand.split(" ");
+  const [rootCommand] = resolvePmHistoryOperation(normalizedCommand).split(" ");
   const declared = OUTPUT_BUDGET_BY_COMMAND.get(
     rootCommand as (typeof PM_CORE_COMMAND_NAMES)[number],
   );

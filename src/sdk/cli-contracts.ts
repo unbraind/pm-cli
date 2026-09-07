@@ -17,6 +17,8 @@ export type {
 export {
   EXECUTABLE_COMMAND_ALIASES,
   PM_COMMAND_ALIAS_CONTRACTS,
+  PM_HISTORY_COMMAND_ALIASES,
+  resolvePmHistoryOperation,
   renderPmCommandAliasMigrationHint,
   resolvePmCommandAlias,
   type PmCommandAliasContract,

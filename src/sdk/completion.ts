@@ -8,7 +8,6 @@ import { listPmCommandsForTier } from "./agent-capability-contracts.js";
 import { SCAFFOLD_CAPABILITIES } from "./extension/scaffold.js";
 import {
   AGGREGATE_FLAG_CONTRACTS,
-  ACTIVITY_FLAG_CONTRACTS,
   APPEND_FLAG_CONTRACTS,
   CALENDAR_FLAG_CONTRACTS,
   CLOSE_MANY_FLAG_CONTRACTS,
@@ -34,6 +33,8 @@ import {
   LIST_FILTER_FLAG_CONTRACTS,
   NEXT_FLAG_CONTRACTS,
   PM_COMMAND_ALIAS_CONTRACTS,
+  PM_HISTORY_COMMAND_ALIASES,
+  resolveSubcommandFlagContractsForCommand,
   PACKAGE_FLAG_CONTRACTS,
   PLAN_FLAG_CONTRACTS,
   SEARCH_FLAG_CONTRACTS,
@@ -46,6 +47,7 @@ import {
 } from "./cli-contracts.js";
 import { BUILTIN_ITEM_TYPE_VALUES, STATUS_VALUES } from "../types/index.js";
 import { listGuideTopicIds } from "./guide-topics.js";
+import { enrichCliFlagInvocationContracts } from "./flag-invocation-contracts.js";
 
 /** Restricts completion shell values accepted by command, SDK, and storage contracts. */
 export type CompletionShell = "bash" | "zsh" | "fish";
@@ -95,6 +97,10 @@ const LIST_FLAGS = toCompletionFlagString(LIST_FILTER_FLAG_CONTRACTS);
 const AGGREGATE_FLAGS = toCompletionFlagString(AGGREGATE_FLAG_CONTRACTS);
 const APPEND_FLAGS = toCompletionFlagString(APPEND_FLAG_CONTRACTS);
 const COPY_FLAGS = toCompletionFlagString(COPY_FLAG_CONTRACTS);
+const RESTORE_INVOCATIONS = enrichCliFlagInvocationContracts(
+  "restore",
+  resolveSubcommandFlagContractsForCommand("restore"),
+);
 const FOCUS_FLAGS = toCompletionFlagString(FOCUS_FLAG_CONTRACTS);
 const MEET_FLAGS = toCompletionFlagString(MEET_FLAG_CONTRACTS);
 const REMIND_FLAGS = toCompletionFlagString(REMIND_FLAG_CONTRACTS);
@@ -103,7 +109,11 @@ const GET_FLAGS = toCompletionFlagString(GET_FLAG_CONTRACTS);
 const UPDATE_FLAGS = toCompletionFlagString(UPDATE_FLAG_CONTRACTS);
 const UPDATE_MANY_FLAGS = toCompletionFlagString(UPDATE_MANY_FLAG_CONTRACTS);
 const CLOSE_MANY_FLAGS = toCompletionFlagString(CLOSE_MANY_FLAG_CONTRACTS);
-const ACTIVITY_FLAGS = toCompletionFlagString(ACTIVITY_FLAG_CONTRACTS);
+const HISTORY_LEAVES = PM_HISTORY_COMMAND_ALIASES.map((entry) => entry.canonical_argv[1]).join(" ");
+const HISTORY_OPERATION_FLAGS = PM_HISTORY_COMMAND_ALIASES.map((entry) => ({
+  ...entry,
+  flags: toCompletionFlagString(resolveSubcommandFlagContractsForCommand(entry.alias)),
+}));
 const HISTORY_FLAGS = toCompletionFlagString(HISTORY_FLAG_CONTRACTS);
 const HISTORY_AUTHOR_ACKNOWLEDGE_FLAGS = toCompletionFlagString(
   HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS,
@@ -347,14 +357,14 @@ function renderZshArgumentSpecs(
 }
 
 function renderZshCommandDescriptions(): string {
-  return COMMAND_COMPLETION_DESCRIPTIONS.map(
+  return COMMAND_COMPLETION_DESCRIPTIONS.filter(([command]) => !HIDDEN_COMMAND_ALIASES.has(command)).map(
     ([command, description]) => `    '${command}:${description}'`,
   ).join("\n");
 }
 
 function renderFishCommandDescriptions(): string {
   return COMMAND_COMPLETION_DESCRIPTIONS.filter(
-    ([command]) => command !== "help",
+    ([command]) => command !== "help" && !HIDDEN_COMMAND_ALIASES.has(command),
   )
     .map(([command, description]) => {
       const fishDescription =
@@ -751,7 +761,18 @@ export function generateBashScript(
     "",
     '  local cmd="${COMP_WORDS[1]}"',
     "",
+    '  if [[ "$cmd" == "history" && $cword -gt 2 ]]; then',
+    '    case "${COMP_WORDS[2]}" in',
+    ...PM_HISTORY_COMMAND_ALIASES.map((entry) => `      ${entry.canonical_argv[1]}) cmd="${entry.alias}" ;;`),
+    "    esac",
+    "  fi",
     '  case "$cmd" in',
+    ...HISTORY_OPERATION_FLAGS.flatMap((entry) => [
+      `    ${entry.alias})`,
+      `      COMPREPLY=(${compgen(entry.flags)})`,
+      "      return 0",
+      "      ;;",
+    ]),
     "    list)",
     `      COMPREPLY=(${compgen(listFlags)})`,
     "      ;;",
@@ -846,25 +867,20 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(HEALTH_FLAGS)})`,
     "      ;;",
     "    history)",
-    `      COMPREPLY=(${compgen(HISTORY_FLAGS)})`,
+    '      if [[ $cword -eq 2 ]]; then',
+    `        COMPREPLY=(${compgen(`${HISTORY_FLAGS} ${HISTORY_LEAVES}`)})`,
+    "      else",
+    `        COMPREPLY=(${compgen(HISTORY_FLAGS)})`,
+    "      fi",
     "      ;;",
     "    events)",
     `      COMPREPLY=(${compgen(EVENTS_FLAGS)})`,
-    "      ;;",
-    "    history-compact)",
-    `      COMPREPLY=(${compgen("--before --ids --all-over --closed --all-streams --min-entries --dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    history-author-acknowledge)",
     `      COMPREPLY=(${compgen(`${HISTORY_AUTHOR_ACKNOWLEDGE_FLAGS} --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help`)})`,
     "      ;;",
     "    get)",
     `      COMPREPLY=(${compgen(GET_FLAGS)})`,
-    "      ;;",
-    "    history-redact)",
-    `      COMPREPLY=(${compgen("--literal --regex --replacement --dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
-    "      ;;",
-    "    history-repair)",
-    `      COMPREPLY=(${compgen("--all --dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    schema)",
     `      COMPREPLY=(${compgen("list show show-status add-type remove-type add-status remove-status add-field remove-field list-fields show-field apply-preset rename-type rename-field remap-status --description --default-status --folder --alias --role --order --type --commands --cli-flag --required --required-on-create --no-allow-unset --required-types --infer --min-count --apply --to --migration-id --dry-run --author --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -874,9 +890,6 @@ export function generateBashScript(
     "      ;;",
     "    plan)",
     `      COMPREPLY=(${compgen(`${PLAN_SUBCOMMANDS_LIST} ${PLAN_FLAGS}`)})`,
-    "      ;;",
-    "    activity)",
-    `      COMPREPLY=(${compgen(ACTIVITY_FLAGS)})`,
     "      ;;",
     "    contracts)",
     `      COMPREPLY=(${compgen(CONTRACTS_FLAGS)})`,
@@ -899,7 +912,7 @@ export function generateBashScript(
     "    delete)",
     `      COMPREPLY=(${compgen(DELETE_MUTATION_FLAGS)})`,
     "      ;;",
-    "    claim|restore|start-task|pause-task)",
+    "    claim|start-task|pause-task)",
     `      COMPREPLY=(${compgen(MUTATION_FLAGS)})`,
     "      ;;",
     "    meet|event)",
@@ -1009,6 +1022,19 @@ ${renderZshDynamicChoiceResolver("status", "completion-statuses", statusFallback
 
 _pm() {
   local context state line
+  if [[ "$words[2]" == "history" && $CURRENT -eq 3 && "$words[CURRENT]" != -* ]]; then
+    local -a history_commands
+    history_commands=(${HISTORY_LEAVES})
+    _describe 'history operation' history_commands
+    return
+  fi
+  local -a words=("$words[@]")
+  local CURRENT=$CURRENT
+  if [[ "$words[2]" == "history" && $CURRENT -gt 3 ]]; then
+    case "$words[3]" in
+${PM_HISTORY_COMMAND_ALIASES.map((entry) => `      ${entry.canonical_argv[1]}) words=("$words[1]" "${entry.alias}" "\${words[@]:3}"); (( CURRENT-- )) ;;`).join("\n")}
+    esac
+  fi
   _arguments -C \\
     '--json[Output JSON instead of TOON]' \\
     '--all[Reveal every public command and compatibility alias]' \\
@@ -1462,6 +1488,8 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         history-repair)
           _arguments \\
+            '--salvage-tail[Recover an invalid suffix after a verified prefix]' \\
+            '--normalize-provenance[Remove invalid provenance with aggregate evidence]' \\
             '--all[Repair every drifted stream in one audited pass]' \\
             '--dry-run[Preview the re-anchor impact without writing the history file]' \\
             '--author[Mutation author]:author' \\
@@ -1843,6 +1871,10 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--force[Force override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
+          ;;
+        restore)
+          _arguments \\
+${renderZshArgumentSpecs(RESTORE_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.description}]${flag.takes_value ? ":value" : ""}'`), { trailingContinuation: false })}
           ;;
         start-task|pause-task)
           _arguments \\
@@ -2548,18 +2580,28 @@ complete -c pm -n '__fish_seen_subcommand_from get' -l fields -d 'Render custom 
 complete -c pm -n '__fish_seen_subcommand_from get' -l tree -d 'Include descendant subtree in result payload'
 complete -c pm -n '__fish_seen_subcommand_from get' -l tree-depth -d 'Cap subtree depth for --tree (0 = root only)' -r
 
+# Match only the command positions, keeping item history separate from maintenance.
+function __pm_history_operation
+  set -l tokens (commandline -opc)
+  test "$tokens[2]" = "$argv[1]"; or begin
+    test "$tokens[2]" = history; and test "$tokens[3]" = "$argv[2]"
+  end
+end
+complete -c pm -n '__fish_seen_subcommand_from history; and test (count (commandline -opc)) -eq 2' -a '${HISTORY_LEAVES}' -d 'History operation'
+${RESTORE_INVOCATIONS.map((flag) => `complete -c pm -n '__pm_history_operation restore restore' -l ${flag.flag.slice(2)}${flag.takes_value ? " -r" : ""}`).join("\n")}
+
 # history / activity flags
-complete -c pm -n '__fish_seen_subcommand_from history'  -l limit -d 'Max history entries' -r
-complete -c pm -n '__fish_seen_subcommand_from history'  -l compact -d 'Condensed history projection'
-complete -c pm -n '__fish_seen_subcommand_from history'  -l full -d 'Show full history entries'
-complete -c pm -n '__fish_seen_subcommand_from history'  -l provenance -d 'Patch-free identity and agent provenance projection'
-complete -c pm -n '__fish_seen_subcommand_from history'  -l provenance-summary -d 'Include bounded provenance completeness counts'
-complete -c pm -n '__fish_seen_subcommand_from history'  -l harness -d 'Filter by recorded or vocabulary-resolved harness' -r
-complete -c pm -n '__fish_seen_subcommand_from history'  -l agent-instance -d 'Filter by privacy-safe agent instance' -r
-complete -c pm -n '__fish_seen_subcommand_from history'  -l provenance-filter -d 'Filter by exact declared provenance value' -r
-complete -c pm -n '__fish_seen_subcommand_from history'  -l diff -d 'Include per-entry field-level before/after value diffs'
-complete -c pm -n '__fish_seen_subcommand_from history'  -l field -d 'With --diff, show only entries that changed this field' -r
-complete -c pm -n '__fish_seen_subcommand_from history'  -l verify -d 'Verify history hash chain and replay integrity'
+complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l limit -d 'Max history entries' -r
+complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l compact -d 'Condensed history projection'
+complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l full -d 'Show full history entries'
+complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l provenance -d 'Patch-free identity and agent provenance projection'
+complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l provenance-summary -d 'Include bounded provenance completeness counts'
+complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l harness -d 'Filter by recorded or vocabulary-resolved harness' -r
+complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l agent-instance -d 'Filter by privacy-safe agent instance' -r
+complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l provenance-filter -d 'Filter by exact declared provenance value' -r
+complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l diff -d 'Include per-entry field-level before/after value diffs'
+complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l field -d 'With --diff, show only entries that changed this field' -r
+complete -c pm -n '__fish_seen_subcommand_from history; and not __fish_seen_subcommand_from ${HISTORY_LEAVES}'  -l verify -d 'Verify history hash chain and replay integrity'
 complete -c pm -n '__fish_seen_subcommand_from events' -l since -d 'Resume after a cursor or from an ISO timestamp' -r
 complete -c pm -n '__fish_seen_subcommand_from events' -l type -d 'Filter by mutation operation' -r
 complete -c pm -n '__fish_seen_subcommand_from events' -l author -d 'Filter by mutation author' -r
@@ -2573,16 +2615,16 @@ complete -c pm -n '__fish_seen_subcommand_from events' -l agent-instance -d 'Fil
 complete -c pm -n '__fish_seen_subcommand_from events' -l provenance-filter -d 'Filter by exact declared provenance value' -r
 complete -c pm -n '__fish_seen_subcommand_from events' -l follow -d 'Continue emitting committed events'
 complete -c pm -n '__fish_seen_subcommand_from events' -l interval-ms -d 'Empty-read delay while following' -r
-complete -c pm -n '__fish_seen_subcommand_from history-compact' -l before -d 'Compact entries strictly before this version number or ISO timestamp' -r
-complete -c pm -n '__fish_seen_subcommand_from history-compact' -l ids -d 'Bulk: compact an explicit comma-separated list of item ids' -r
-complete -c pm -n '__fish_seen_subcommand_from history-compact' -l all-over -d 'Bulk: compact every stream with more than N entries' -r
-complete -c pm -n '__fish_seen_subcommand_from history-compact' -l closed -d 'Bulk: compact only closed (terminal) items streams'
-complete -c pm -n '__fish_seen_subcommand_from history-compact' -l all-streams -d 'Bulk: compact every history stream regardless of lifecycle state'
-complete -c pm -n '__fish_seen_subcommand_from history-compact' -l min-entries -d 'Bulk: skip streams with at most N entries' -r
-complete -c pm -n '__fish_seen_subcommand_from history-compact' -l dry-run -d 'Preview compaction impact without writing the history file'
-complete -c pm -n '__fish_seen_subcommand_from history-compact' -l author -d 'Mutation author' -r
-complete -c pm -n '__fish_seen_subcommand_from history-compact' -l message -d 'Audit history message' -r
-complete -c pm -n '__fish_seen_subcommand_from history-compact' -l force -d 'Force ownership/lock override'
+complete -c pm -n '__pm_history_operation history-compact compact' -l before -d 'Compact entries strictly before this version number or ISO timestamp' -r
+complete -c pm -n '__pm_history_operation history-compact compact' -l ids -d 'Bulk: compact an explicit comma-separated list of item ids' -r
+complete -c pm -n '__pm_history_operation history-compact compact' -l all-over -d 'Bulk: compact every stream with more than N entries' -r
+complete -c pm -n '__pm_history_operation history-compact compact' -l closed -d 'Bulk: compact only closed (terminal) items streams'
+complete -c pm -n '__pm_history_operation history-compact compact' -l all-streams -d 'Bulk: compact every history stream regardless of lifecycle state'
+complete -c pm -n '__pm_history_operation history-compact compact' -l min-entries -d 'Bulk: skip streams with at most N entries' -r
+complete -c pm -n '__pm_history_operation history-compact compact' -l dry-run -d 'Preview compaction impact without writing the history file'
+complete -c pm -n '__pm_history_operation history-compact compact' -l author -d 'Mutation author' -r
+complete -c pm -n '__pm_history_operation history-compact compact' -l message -d 'Audit history message' -r
+complete -c pm -n '__pm_history_operation history-compact compact' -l force -d 'Force ownership/lock override'
 complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l event -d 'Actionable unknown-author event' -r
 complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l all-actionable -d 'Select every currently actionable event'
 complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l dry-run -d 'Preview a deterministic source-bound plan'
@@ -2591,18 +2633,20 @@ complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l li
 complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l attributed-author -d 'Principal attributed by maintainer review' -r
 complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l reviewer -d 'Reviewer recording the disposition' -r
 complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l reason -d 'Evidence-backed review rationale' -r
-complete -c pm -n '__fish_seen_subcommand_from history-redact' -l literal -d 'Literal string matcher to redact from history/item payloads' -r
-complete -c pm -n '__fish_seen_subcommand_from history-redact' -l regex -d 'Regex matcher to redact (/pattern/flags or raw pattern)' -r
-complete -c pm -n '__fish_seen_subcommand_from history-redact' -l replacement -d 'Replacement text (defaults to [redacted])' -r
-complete -c pm -n '__fish_seen_subcommand_from history-redact' -l dry-run -d 'Preview redaction impact without writing files'
-complete -c pm -n '__fish_seen_subcommand_from history-redact' -l author -d 'Mutation author' -r
-complete -c pm -n '__fish_seen_subcommand_from history-redact' -l message -d 'Audit history message' -r
-complete -c pm -n '__fish_seen_subcommand_from history-redact' -l force -d 'Force ownership/lock override'
-complete -c pm -n '__fish_seen_subcommand_from history-repair' -l all -d 'Repair every drifted stream in one audited pass'
-complete -c pm -n '__fish_seen_subcommand_from history-repair' -l dry-run -d 'Preview the re-anchor impact without writing the history file'
-complete -c pm -n '__fish_seen_subcommand_from history-repair' -l author -d 'Mutation author' -r
-complete -c pm -n '__fish_seen_subcommand_from history-repair' -l message -d 'Audit history message' -r
-complete -c pm -n '__fish_seen_subcommand_from history-repair' -l force -d 'Force ownership/lock override'
+complete -c pm -n '__pm_history_operation history-redact redact' -l literal -d 'Literal string matcher to redact from history/item payloads' -r
+complete -c pm -n '__pm_history_operation history-redact redact' -l regex -d 'Regex matcher to redact (/pattern/flags or raw pattern)' -r
+complete -c pm -n '__pm_history_operation history-redact redact' -l replacement -d 'Replacement text (defaults to [redacted])' -r
+complete -c pm -n '__pm_history_operation history-redact redact' -l dry-run -d 'Preview redaction impact without writing files'
+complete -c pm -n '__pm_history_operation history-redact redact' -l author -d 'Mutation author' -r
+complete -c pm -n '__pm_history_operation history-redact redact' -l message -d 'Audit history message' -r
+complete -c pm -n '__pm_history_operation history-redact redact' -l force -d 'Force ownership/lock override'
+complete -c pm -n '__pm_history_operation history-repair repair' -l salvage-tail -d 'Recover an invalid suffix after a verified prefix'
+complete -c pm -n '__pm_history_operation history-repair repair' -l normalize-provenance -d 'Remove invalid provenance with aggregate evidence'
+complete -c pm -n '__pm_history_operation history-repair repair' -l all -d 'Repair every drifted stream in one audited pass'
+complete -c pm -n '__pm_history_operation history-repair repair' -l dry-run -d 'Preview the re-anchor impact without writing the history file'
+complete -c pm -n '__pm_history_operation history-repair repair' -l author -d 'Mutation author' -r
+complete -c pm -n '__pm_history_operation history-repair repair' -l message -d 'Audit history message' -r
+complete -c pm -n '__pm_history_operation history-repair repair' -l force -d 'Force ownership/lock override'
 complete -c pm -n '__fish_seen_subcommand_from schema' -a 'list show show-status add-type remove-type add-status remove-status add-field remove-field list-fields show-field apply-preset rename-type rename-field remap-status' -d 'Schema subcommand'
 complete -c pm -n '__fish_seen_subcommand_from schema' -l description -d 'Human description for the custom item type, status, or field' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l default-status -d 'Default status hint for the custom item type' -r
@@ -2648,21 +2692,21 @@ complete -c pm -n '__fish_seen_subcommand_from plan' -l promote-to-item-dep -d '
 complete -c pm -n '__fish_seen_subcommand_from plan' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from plan' -l message -d 'Mutation message' -r
 complete -c pm -n '__fish_seen_subcommand_from plan' -l force -d 'Force ownership override'
-complete -c pm -n '__fish_seen_subcommand_from activity' -l id -d 'Filter by item ID' -r
-complete -c pm -n '__fish_seen_subcommand_from activity' -l op -d 'Filter by history operation' -r
-complete -c pm -n '__fish_seen_subcommand_from activity' -l author -d 'Filter by history author' -r
-complete -c pm -n '__fish_seen_subcommand_from activity' -l from -d 'Lower timestamp bound (ISO/date string or relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from activity' -l to -d 'Upper timestamp bound (ISO/date string or relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from activity' -l limit -d 'Max activity entries' -r
-complete -c pm -n '__fish_seen_subcommand_from activity' -l compact -d 'Condensed activity projection'
-complete -c pm -n '__fish_seen_subcommand_from activity' -l raw -d 'Emit raw compact per-event activity output'
-complete -c pm -n '__fish_seen_subcommand_from activity' -l full -d 'Show full activity entries'
-complete -c pm -n '__fish_seen_subcommand_from activity' -l provenance -d 'Patch-free identity and agent provenance projection'
-complete -c pm -n '__fish_seen_subcommand_from activity' -l provenance-summary -d 'Include bounded provenance completeness counts'
-complete -c pm -n '__fish_seen_subcommand_from activity' -l harness -d 'Filter by recorded or vocabulary-resolved harness' -r
-complete -c pm -n '__fish_seen_subcommand_from activity' -l agent-instance -d 'Filter by privacy-safe agent instance' -r
-complete -c pm -n '__fish_seen_subcommand_from activity' -l provenance-filter -d 'Filter by exact declared provenance value' -r
-complete -c pm -n '__fish_seen_subcommand_from activity' -l stream -d 'Emit line-delimited JSON rows (requires --json)'
+complete -c pm -n '__pm_history_operation activity activity' -l id -d 'Filter by item ID' -r
+complete -c pm -n '__pm_history_operation activity activity' -l op -d 'Filter by history operation' -r
+complete -c pm -n '__pm_history_operation activity activity' -l author -d 'Filter by history author' -r
+complete -c pm -n '__pm_history_operation activity activity' -l from -d 'Lower timestamp bound (ISO/date string or relative)' -r
+complete -c pm -n '__pm_history_operation activity activity' -l to -d 'Upper timestamp bound (ISO/date string or relative)' -r
+complete -c pm -n '__pm_history_operation activity activity' -l limit -d 'Max activity entries' -r
+complete -c pm -n '__pm_history_operation activity activity' -l compact -d 'Condensed activity projection'
+complete -c pm -n '__pm_history_operation activity activity' -l raw -d 'Emit raw compact per-event activity output'
+complete -c pm -n '__pm_history_operation activity activity' -l full -d 'Show full activity entries'
+complete -c pm -n '__pm_history_operation activity activity' -l provenance -d 'Patch-free identity and agent provenance projection'
+complete -c pm -n '__pm_history_operation activity activity' -l provenance-summary -d 'Include bounded provenance completeness counts'
+complete -c pm -n '__pm_history_operation activity activity' -l harness -d 'Filter by recorded or vocabulary-resolved harness' -r
+complete -c pm -n '__pm_history_operation activity activity' -l agent-instance -d 'Filter by privacy-safe agent instance' -r
+complete -c pm -n '__pm_history_operation activity activity' -l provenance-filter -d 'Filter by exact declared provenance value' -r
+complete -c pm -n '__pm_history_operation activity activity' -l stream -d 'Emit line-delimited JSON rows (requires --json)'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l action -d 'Filter schema by tool action' -r
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l command -d 'Scope output to one command (narrow-by-default)' -r
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l summary -d 'Return compact command intent summary'

@@ -7,10 +7,11 @@ import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import jsonPatch from "fast-json-patch";
 import fs from "node:fs/promises";
 import { readLocatedItemSnapshot } from "../../core/store/item-store.js";
+import { readHistorySnapshot } from "../../core/history/read.js";
+import { verifyHistoryRewriteNoDrift } from "../../core/history/history-rewrite.js";
+import { resolveHistorySubject } from "../history/subject.js";
 import { historyVersionOffset } from "../../core/history/version-address.js";
 import {
-  pathExists,
-  readFileIfExists,
   writeFileAtomic,
   appendHistoryEntry,
   createHistoryEntry,
@@ -18,8 +19,6 @@ import {
   replayToItemDocument,
   toReplayDocument,
   enforceHistoryStreamPolicyForItem,
-  normalizeItemId,
-  normalizeRawItemId,
   canonicalDocument,
   serializeItemDocument,
   resolveItemTypeRegistry,
@@ -36,7 +35,6 @@ import {
   locateItem,
   createMutationGuardSdk,
   readLocatedItem,
-  getHistoryPath,
   getItemPath,
   resolvePmRoot,
   readSettings,
@@ -46,7 +44,6 @@ import {
   applyHistoryPatch,
   ensureMaterializedHistoryTarget as ensureMaterializedRestoreTarget,
   extractPatchFailureContext,
-  readHistoryEntries,
   replayHistoryToTarget as replayToTarget,
   resolveHistoryTarget,
 } from "../history-read.js";
@@ -139,50 +136,13 @@ async function resolveRestoreSubject(
   settings: Awaited<ReturnType<typeof readSettings>>,
   typeToFolder: Record<string, string>,
 ): Promise<ResolvedRestoreSubject> {
-  const located = await locateItem(
-    pmRoot,
-    id,
-    settings.id_prefix,
-    settings.item_format,
-    typeToFolder,
-  );
-  if (located) {
-    const historyPath = getHistoryPath(pmRoot, located.id);
-    const historyPolicy = await enforceHistoryStreamPolicyForItem({
-      pmRoot,
-      settings,
-      itemId: located.id,
-      commandLabel: "restore",
-    });
-    return {
-      id: located.id,
-      historyPath,
-      located,
-      historyPolicyWarnings: historyPolicy.warnings,
-    };
-  }
-
-  const normalizedId = normalizeItemId(id, settings.id_prefix);
-  const rawNormalizedId = normalizeRawItemId(id);
-  /* c8 ignore start -- raw-id fallback is covered by normalize-item-id utility tests. */
-  const candidateIds =
-    normalizedId === rawNormalizedId
-      ? [normalizedId]
-      : [normalizedId, rawNormalizedId];
-  /* c8 ignore stop */
-  for (const candidateId of candidateIds) {
-    const historyPath = getHistoryPath(pmRoot, candidateId);
-    if (await pathExists(historyPath)) {
-      return {
-        id: candidateId,
-        historyPath,
-        located: null,
-        historyPolicyWarnings: [],
-      };
-    }
-  }
-
-  throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
+  const subject = await resolveHistorySubject(pmRoot, id, settings, typeToFolder);
+  const historyPolicy = subject.located
+    ? await enforceHistoryStreamPolicyForItem({
+        pmRoot, settings, itemId: subject.id, commandLabel: "restore",
+      })
+    : { warnings: [] };
+  return { ...subject, historyPolicyWarnings: historyPolicy.warnings };
 }
 
 function changedFields(
@@ -214,10 +174,9 @@ function changedFields(
 /** Reload item and history under the caller's lock, refusing changes since the recovery snapshot. */
 async function loadRestoreStateUnderLock(params: {
   pmRoot: string;
-  resolvedId: string;
   subject: ResolvedRestoreSubject;
   settings: Awaited<ReturnType<typeof readSettings>>;
-  typeToFolder: Record<string, string>;
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
   historyRawBeforeLock: string | null;
   currentItemRawBeforeLock: string | null;
   history: HistoryEntry[];
@@ -225,34 +184,19 @@ async function loadRestoreStateUnderLock(params: {
   loadedItemUnderLock: Awaited<ReturnType<typeof readRestoreItem>> | null;
   existingItemPath: string | null;
 }> {
-  const historyRawUnderLock = await readFileIfExists(
-    params.subject.historyPath,
-  );
-  if (historyRawUnderLock !== params.historyRawBeforeLock) {
-    throw new PmCliError(
-      `History for ${params.resolvedId} changed while waiting for lock; retry restore.`,
-      EXIT_CODE.CONFLICT,
-    );
-  }
-  const locatedUnderLock = await locateItem(
-    params.pmRoot,
-    params.resolvedId,
-    params.settings.id_prefix,
-    params.settings.item_format,
-    params.typeToFolder,
-  );
-  const loadedItemUnderLock = locatedUnderLock
-    ? await readRestoreItem(locatedUnderLock, params.settings, params.history)
-    : null;
-  if ((loadedItemUnderLock?.raw ?? null) !== params.currentItemRawBeforeLock) {
-    throw new PmCliError(
-      `Item ${params.resolvedId} changed while waiting for lock; retry restore.`,
-      EXIT_CODE.CONFLICT,
-    );
-  }
+  const verified = await verifyHistoryRewriteNoDrift({
+    pmRoot: params.pmRoot,
+    subject: params.subject,
+    settings: params.settings,
+    typeRegistry: params.typeRegistry,
+    historyRawBeforeLock: params.historyRawBeforeLock,
+    currentItemRawBeforeLock: params.currentItemRawBeforeLock,
+    operation: "restore",
+    readItem: (located) => readRestoreItem(located, params.settings, params.history),
+  });
   return {
-    loadedItemUnderLock,
-    existingItemPath: locatedUnderLock?.itemPath ?? null,
+    loadedItemUnderLock: verified.loadedItemUnderLock,
+    existingItemPath: verified.locatedUnderLock?.itemPath ?? null,
   };
 }
 
@@ -366,8 +310,7 @@ export async function runRestore(
     typeRegistry.type_to_folder,
   );
   const resolvedId = subject.id;
-  const historyRawBeforeLock = await readFileIfExists(subject.historyPath);
-  const history = await readHistoryEntries(subject.historyPath, resolvedId);
+  const { raw: historyRawBeforeLock, entries: history } = await readHistorySnapshot(subject.historyPath, resolvedId);
   if (history.length === 0) {
     throw new PmCliError(
       `No history exists for ${resolvedId}; restore is unavailable.`,
@@ -410,10 +353,9 @@ export async function runRestore(
     const { loadedItemUnderLock, existingItemPath } =
       await loadRestoreStateUnderLock({
         pmRoot,
-        resolvedId,
         subject,
         settings,
-        typeToFolder: typeRegistry.type_to_folder,
+        typeRegistry,
         historyRawBeforeLock,
         currentItemRawBeforeLock,
         history,

@@ -14,7 +14,10 @@ import { resolveGovernanceKnobs } from "../store/settings.js";
 import type { ItemDocument, PmSettings } from "../../types/index.js";
 import { invalidateHistoryDriftCacheForPath } from "./drift-cache.js";
 
-type LoadedItem = Awaited<ReturnType<typeof readLocatedItem>>;
+type LoadedItem = Awaited<ReturnType<typeof readLocatedItem>> & {
+  /** Whether the document was reconstructed while preserving unreadable source bytes. */
+  recovered?: boolean;
+};
 type HistoryRawWriter = (filePath: string, content: string) => Promise<void>;
 
 /** Documents the history rewrite subject payload exchanged by command, SDK, and package integrations. */
@@ -78,6 +81,8 @@ export interface VerifyHistoryRewriteDriftParams {
   currentItemRawBeforeLock: string | null;
   /** Short operation name used in the conflict message (e.g. "history-redact"). */
   operation: string;
+  /** Optional recovery reader retaining exact unreadable item bytes and a verified reconstructed document. */
+  readItem?: (located: NonNullable<Awaited<ReturnType<typeof locateItem>>>) => Promise<LoadedItem>;
 }
 
 /** Documents the verified history rewrite state payload exchanged by command, SDK, and package integrations. */
@@ -111,9 +116,11 @@ export async function verifyHistoryRewriteNoDrift(
     params.typeRegistry.type_to_folder,
   );
   const loadedItemUnderLock = locatedUnderLock
-    ? await readLocatedItem(locatedUnderLock, {
-        schema: params.settings.schema,
-      })
+    ? params.readItem
+      ? await params.readItem(locatedUnderLock)
+      : await readLocatedItem(locatedUnderLock, {
+          schema: params.settings.schema,
+        })
     : null;
   if (
     (loadedItemUnderLock?.raw ?? null) !==

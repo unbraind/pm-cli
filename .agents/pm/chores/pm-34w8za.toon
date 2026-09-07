@@ -2,23 +2,74 @@ id: pm-34w8za
 title: "History maintenance triplicates one load, verify, rewrite, re-anchor, report pipeline across redact, repair and compact instead of sharing a stream-maintenance primitive"
 description: "The history subsystem is 5,807 lines across 18 files. Three of them are the maintenance operations and they are the three largest: src/sdk/history-redact.ts at 930 lines, src/sdk/history-compact.ts at 878, src/sdk/history-repair.ts at 728. Each performs the same pipeline — read the stream, verify the hash chain, apply a per-operation transform, re-anchor the chain, reconcile against the on-disk item, and emit a dry-run plan plus an applied report — and each implements that pipeline separately. A shared src/core/history/history-rewrite.ts exists at 226 lines but covers only part of it.\n\nMeasured with jscpd in strict mode at 12 lines and 60 tokens over src, packages and scripts (the repository gate runs at 22 lines and 115 tokens, which reports zero; that sensitivity gap is pm-xspd). Clone pairs inside this family:\n\n  sdk/history-redact.ts:784   <-> sdk/history-repair.ts:452    22 lines, 95 tokens\n  sdk/history-compact.ts:372  <-> sdk/history-repair.ts:400    16 lines, 92 tokens\n  sdk/history-compact.ts:412  <-> sdk/history-read.ts:122      20 lines, 73 tokens\n  cli/commands/copy.ts:110    <-> sdk/history-repair.ts:439    19 lines, 88 tokens\n  cli/commands/restore.ts:144 <-> sdk/history-redact.ts:738    19 lines, 80 tokens\n  cli/commands/copy.ts:110    <-> sdk/history-compact.ts:411   15 lines, 74 tokens\n  cli/commands/copy.ts:110    <-> cli/commands/restore.ts:336  15 lines, 71 tokens\n\nThe last four matter beyond duplication: cli/commands/copy.ts and cli/commands/restore.ts are re-implementing stream handling that the SDK owns, which is the SDK-first inversion pm-usfg exists to remove.\n\nThe cost is not line count, it is that each maintenance operation can drift in how it verifies and re-anchors. That is the exact surface where a divergence is silent and unrecoverable: a rewriter that re-anchors slightly differently from its siblings produces a stream that verifies under one command and not another. It also multiplies the work of every future history invariant by three.\n\nConsolidating is a simplification with zero capability change: the three commands keep their flags, output shapes and semantics, and differ only in the transform they hand to one shared maintenance primitive.\n\nScope boundary. pm-yh8r owns intra-file LOC decomposition as a general policy; pm-xspd owns the duplication-detection gate; pm-9yfo owns proving every mutation appends history; pm-klo8 owns the workspace-level stream. This is the specific consolidation of the item-stream maintenance pipeline that all of them assume exists."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[5]: "area:quality","area:sdk",history,refactor,simplification
 created_at: "2026-07-25T21:38:53.550Z"
-updated_at: "2026-07-31T14:23:58.574Z"
+updated_at: "2026-09-07T10:48:30.653Z"
+closed_at: "2026-09-07T10:48:30.083Z"
+completed_at: "2026-09-07T10:48:30.083Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "One SDK primitive owns the load, verify, transform, re-anchor, reconcile and report pipeline for item history streams, and redact, repair and compact are expressed as transforms handed to it. cli/commands/copy.ts and cli/commands/restore.ts consume that primitive rather than re-implementing stream handling. The externally observable behaviour of every history command — flags, dry-run plans, applied reports, exit codes — is unchanged, asserted by the existing suites passing without modification. A jscpd run at 12 lines and 60 tokens reports no remaining clone pair inside the history family."
 parent: pm-o2kc
 risk: medium
 confidence: high
+resolution: "Redact, repair and compact share snapshot loading, plan verification, guarded rewrite and report handling. Restore reuses snapshot/drift primitives; existing copy lifecycle ownership and operation-specific privacy, evidence, salvage and rollback semantics are preserved."
+expected_result: One SDK maintenance substrate preserves compatibility and removes remaining history-family clones at 12 lines and 60 tokens.
+actual_result: "All 8536 tests passed with exact 100/100/100/100, three linked commands passed, stricter history scan found zero clones, static gates passed, and isolated npm/Bun candidate mutation journeys passed."
 dependencies[5]{id,kind,created_at}:
   pm-9yfo,related,"2026-07-25T21:38:53.550Z"
   pm-usfg,related,"2026-07-25T21:38:53.550Z"
   pm-xspd,related,"2026-07-25T21:38:53.550Z"
   pm-yh8r,related,"2026-07-25T21:38:53.550Z"
   pm-o2kc,implements,"2026-07-26T05:56:14.981Z"
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-31T14:23:58.574Z","harness:claude-code","Scope input 2026-07-31 from pm-aka8m7. This chore consolidates the load, verify, rewrite, re-anchor, report pipeline across redact, repair and compact, and that consolidation is the right and only place to add one thing all three paths currently omit.\n\nreanchorHistoryEntries at src/core/history/replay.ts:365-370 overwrites before_hash and after_hash in place and retains the prior values nowhere - the result carries an entriesRehashed count and a per-entry rehashed boolean. Every one of the three commands this chore unifies therefore destroys the anchors its inputs committed to, and so does every union merge, since src/sdk/merge/three-way.ts:57 documents reanchored as true for every union. Adding retention per command would mean writing it three times and would leave the merge driver's own path a fourth; adding it at the unified pipeline covers all four at once.\n\nRecommend widening this chore's acceptance criteria to include the retention hook - the shared pipeline emits the original anchor pair for each rewritten entry to whichever durable sink the owning command chooses - without taking on the storage-location decision, which belongs to pm-aka8m7. That keeps this chore mechanical while making the fix a one-site change afterwards rather than a four-site one."
+  "2026-09-07T09:09:45.363Z","harness:codex","Implementation scope: complete all-status CLI read returned 2653 items with complete receipt, no omissions, no unreadable records. Reuse existing maintenance lineage with pm-tqel; no new duplicate. Current source already retains reanchor evidence and CLI copy/restore are SDK reexports. Consolidate remaining subject resolution, consistent input snapshots, transform verification and guarded application while preserving operation-specific reconciliation, privacy, checkpoint and rollback semantics. GitHub initial inventory: zero open PRs, issues, Dependabot alerts and code-scanning alerts; three latest auto-release runs succeeded."
+  "2026-09-07T09:45:05.663Z","harness:codex","Implementation evidence: shared stream snapshot and verified maintenance pipeline integrated with redact/repair/compact and restore drift checks. Native history commands share registrations with permanent root aliases; runtime flags, output envelopes, addressing, SDK/MCP discovery and completion resolve the selected operation. Focused maintenance and namespace suites passed; full coverage and type gates are running."
+  "2026-09-07T09:52:27.953Z","harness:codex","Verification progress: full source typechecking, repository ESLint, zero-clone duplicate gates, public documentation links and flag invocation parity passed. The command-grammar run overlapped a test-wrapper rebuild and observed one transient module-export failure; help succeeds on the settled build and the grammar gate is being rerun without overlapping builds. SDK surface generation also identified the required aggregate re-exports for the new history alias contracts; those are now added."
+  "2026-09-07T10:07:09.045Z","harness:codex","Verification progress: 71 focused command and SDK regression tests passed after native history addressing and contract fixes. SDK surface refresh records additive optional omission metadata and the equivalent PmSettings signature. The stricter 12-line/60-token history scan identified a remaining workspace initialization clone and a settled event-index opening clone; both now share typed helpers without changing lock order or error ownership. Full coverage and repository assurance are running; these are not yet final green claims."
+  "2026-09-07T10:11:29.194Z","harness:codex","Gate migration rationale: five direct workspace initialization guards now call one shared resolver. The direct-call ratchet moves from 50 to the observed 47, while a new minimum of five resolver delegations and explicit per-file parity contracts protect all five maintenance entrypoints plus the shared assertion. Added real uninitialized-workspace rejection coverage for redact, repair, repair-all, compact and compact-bulk. No initialization refusal was removed."
+  "2026-09-07T10:48:12.031Z","harness:codex","Final local verification passed: all 8536 tests in 636 files; exact coverage 63186/63186 statements, 47977/47977 branches, 13105/13105 functions and 60680/60680 lines. All three linked verification commands passed, including the stricter 12-line/60-token history duplicate scan. Final build, ESLint, contract/generated snapshots, SDK surface, repository assurance, command/refusal/token/parity gates, graph composition and record integrity passed. Import and transport benchmarks passed in isolation after a CPU-contended run. No coverage exclusions, thresholds or timing budgets were relaxed."
+learnings[1]{created_at,author,text}:
+  "2026-09-07T10:43:14.796Z","harness:codex",Read stream bytes and decoded entries in one snapshot before planning. A second independent read can bind a rewrite to different source bytes; item and stream drift must both be rechecked under the existing write lock.
+files[15]{path,scope,note}:
+  sdk/public-surface.json,project,History SDK and command compatibility verification
+  src/core/history/event-index.ts,project,Shared settled projection opening after history rewrites
+  src/core/history/history-rewrite.ts,project,Shared restore drift verification
+  src/core/history/read.ts,project,Atomic history snapshot reader
+  src/sdk/governance.ts,project,Governance SDK exports
+  src/sdk/history-compact.ts,project,Shared maintenance orchestration
+  src/sdk/history-read.ts,project,Read-side subject resolution no longer imports a mutation implementation
+  src/sdk/history-redact.ts,project,Shared maintenance with coupled rollback
+  src/sdk/history-repair.ts,project,Shared maintenance orchestration
+  src/sdk/history/maintenance.ts,project,Shared maintenance and subject primitives
+  src/sdk/history/subject.ts,project,Shared maintenance and subject primitives
+  src/sdk/index.ts,project,Public SDK exports
+  src/sdk/lifecycle/restore.ts,project,Recovery snapshot and drift gate
+  tests/unit/commands/history-repair-command.spec.ts,project,Reader failure boundary regression
+  tests/unit/sdk/history/maintenance.spec.ts,project,Transaction failure and persistence coverage
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/history/maintenance.spec.ts tests/unit/commands/history-repair-command.spec.ts tests/integration/history-compact-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,project,600,"harness:codex","2026-09-07T10:03:29.246Z",local_mutation,feat/history-maintenance-sdk-command-grammar
+  pnpm exec jscpd src/core/history src/sdk/history src/sdk/history-redact.ts src/sdk/history-repair.ts src/sdk/history-compact.ts src/sdk/history-read.ts src/sdk/lifecycle/restore.ts src/sdk/lifecycle/copy.ts --min-lines 12 --min-tokens 60 --mode strict --format typescript --reporters console --silent,project,120,"harness:codex","2026-09-07T10:08:43.422Z",local_mutation,feat/history-maintenance-sdk-command-grammar
+  node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/history-rewrite.spec.ts tests/unit/commands/restore-command.spec.ts,project,600,"harness:codex","2026-09-07T10:18:05.997Z",local_mutation,feat/history-maintenance-sdk-command-grammar
+test_runs[1]:
+  - run_id: test-local-mtr3zfid-8u976c
+    kind: test
+    status: passed
+    started_at: "2026-09-07T10:38:50.436Z"
+    finished_at: "2026-09-07T10:39:36.517Z"
+    recorded_at: "2026-09-07T10:39:36.517Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/history/maintenance.spec.ts tests/unit/commands/history-repair-command.spec.ts tests/integration/history-compact-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,schema,schema,source,local_source_ref
+      pnpm exec jscpd src/core/history src/sdk/history src/sdk/history-redact.ts src/sdk/history-repair.ts src/sdk/history-compact.ts src/sdk/history-read.ts src/sdk/lifecycle/restore.ts src/sdk/lifecycle/copy.ts --min-lines 12 --min-tokens 60 --mode strict --format typescript --reporters console --silent,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/history-rewrite.spec.ts tests/unit/commands/restore-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/HISTORY_MAINTENANCE.md,project,Public history integration and compatibility contract
+  docs/README.md,project,Public history integration and compatibility contract
+close_reason: Implemented and verified the shared SDK history maintenance pipeline for reviewed delivery.
 body: ""

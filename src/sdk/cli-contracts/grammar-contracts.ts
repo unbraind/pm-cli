@@ -8,6 +8,8 @@
  */
 import {
   resolvePmCommandAlias,
+  PM_HISTORY_COMMAND_ALIASES,
+  resolvePmHistoryOperation,
   type PmCommandAliasContract,
 } from "./command-aliases.js";
 
@@ -788,15 +790,14 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
     ...destinationRows("history", "history", "target_noun", "pm-pbyu", [
       "history",
     ]),
+    ...PM_HISTORY_COMMAND_ALIASES.flatMap(({ alias, canonical }) => [
+      ...destinationRows("history", canonical, "target_noun", "pm-tqel", [canonical]),
+      ...destinationRows("history", canonical, "consolidation", "pm-tqel", [alias]),
+    ]),
     ...destinationRows("history", "history", "consolidation", "pm-tqel", [
-      "activity",
       "events",
       "history-author-acknowledge",
-      "history-compact",
-      "history-redact",
-      "history-repair",
       "merge",
-      "restore",
     ]),
     ...destinationRows(
       "history",
@@ -960,7 +961,7 @@ export const PM_COMMAND_POSITIONAL_CONTRACTS: readonly PmCommandPositionalContra
     command,
     slots:
       resolvePmPositionalActionContract(command)?.slots ??
-      EXPLICIT_POSITIONAL_SLOTS.get(command) ??
+      EXPLICIT_POSITIONAL_SLOTS.get(resolvePmHistoryOperation(command)) ??
       [],
   }));
 

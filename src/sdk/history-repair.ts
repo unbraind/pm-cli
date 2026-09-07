@@ -3,25 +3,20 @@
  *
  * Implements the pm history repair command surface and its agent-facing runtime behavior.
  */
-import { assertInitializedTracker } from "./environment/tracker-preflight.js";
-import { salvageHistoryTail, type HistorySalvageReceipt } from "./history/salvage.js";
+import {
+  salvageHistoryTail,
+  type HistorySalvageReceipt,
+} from "./history/salvage.js";
 import { realpath } from "node:fs/promises";
 import path from "node:path";
 import jsonPatch from "fast-json-patch";
 import { patchPathToChangedField } from "../core/history/history-diff.js";
-import { pathExists, readFileIfExists } from "../core/fs/fs-utils.js";
 import {
-  executeHistoryRewrite,
-  writeHistoryRawWithRollback,
-} from "../core/history/history-rewrite.js";
-import {
-  historyEntriesToRaw,
   normalizeReplayPatchOps,
   reanchorHistoryEntries,
   replayHashVerificationCandidates,
   resolveHistoryRepairItemHashVersion,
   toReplayDocument,
-  verifyHistoryChain,
   verifyHistoryChainWithVersion,
   type ReplayDocument,
 } from "../core/history/replay.js";
@@ -32,30 +27,33 @@ import {
 import { classifyHistoryEvent } from "../core/history/event-classification.js";
 import { scanHistoryDrift } from "../core/history/drift-scan.js";
 import { invalidateHistoryDriftCache } from "../core/history/drift-cache.js";
-import { readHistoryEntries } from "../core/history/read.js";
-import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
-import { sha256Hex, stableStringify } from "../core/shared/serialization.js";
+import {
+  sha256Hex,
+  stableStringify,
+} from "../core/shared/serialization.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import { nowIso } from "../core/shared/time.js";
-import {
-  getActiveExtensionRegistrations,
-  runActiveOnWriteHooks,
-} from "../core/extensions/index.js";
 import {
   listAllItemMetadataWithBody,
   readLocatedItem,
 } from "../core/store/item-store.js";
-import { resolvePmRoot } from "../core/store/paths.js";
-import { readSettings } from "../core/store/settings.js";
 import type {
   HistoryEntry,
   HistoryPatchOp,
   ItemMetadata,
 } from "../types/index.js";
-import { resolveHistorySubject } from "./history-redact.js";
+import {
+  resolveHistoryWorkspace,
+  resolveHistorySubject,
+} from "./history/subject.js";
+import {
+  runHistoryMaintenance,
+  type HistoryMaintenanceSnapshot,
+  type HistoryMaintenancePlan,
+} from "./history/maintenance.js";
 import { isOriginalGitStateRestored } from "./merge/receipt-operation.js";
 import {
   inspectMergeReceiptEvidence,
@@ -218,7 +216,10 @@ export interface HistoryRepairReconciliationReport {
   recovery_hint: string | null;
 }
 
-function replayFieldValue(document: ReplayDocument, field: string): unknown {
+function replayFieldValue(
+  document: ReplayDocument,
+  field: string,
+): unknown {
   return field === "body"
     ? document.body
     : (document.metadata as unknown as Record<string, unknown>)[field];
@@ -292,7 +293,9 @@ function collectReconciliationEvents(
         entryFields.add(patchPathToChangedField(op.from));
       }
     }
-    const overlap = [...remaining].filter((field) => entryFields.has(field));
+    const overlap = [...remaining].filter((field) =>
+      entryFields.has(field),
+    );
     if (overlap.length === 0) {
       continue;
     }
@@ -338,8 +341,14 @@ export function analyzeReconciliationDiscard(
   const revertedFields = new Set(
     [...reconciledFields].filter((field) => !preservedFields.has(field)),
   );
-  const discardedEvents = collectReconciliationEvents(entries, revertedFields);
-  const preservedEvents = collectReconciliationEvents(entries, preservedFields);
+  const discardedEvents = collectReconciliationEvents(
+    entries,
+    revertedFields,
+  );
+  const preservedEvents = collectReconciliationEvents(
+    entries,
+    preservedFields,
+  );
   const sortedReconciledFields = [...reconciledFields].sort((left, right) =>
     left.localeCompare(right),
   );
@@ -416,7 +425,9 @@ async function verifyReceiptAgainstSnapshot(params: {
   >;
   const valuesMatch = declaredFields.every((field) => {
     const value =
-      field === "body" ? params.currentItemReplay.body : currentMetadata[field];
+      field === "body"
+        ? params.currentItemReplay.body
+        : currentMetadata[field];
     return [
       hashItemScalarDecisionValue(value),
       sha256Hex(stableStringify(encodeItemScalarDecisionValue(value))),
@@ -506,16 +517,36 @@ async function assertHistoryRepairAbandonmentProof(
 ): Promise<void> {
   if (proof === undefined) return;
   const { receipt, gitWorkspaceRoot } = proof;
-  const canonicalPath = context.currentItemPath === null ? null
-    : path.relative(gitWorkspaceRoot, context.currentItemPath).split(path.sep).join("/");
-  if (!chainOk || reanchor.entriesRehashed !== 0 || reanchor.entriesPatchRepaired !== 0 || context.matchedChainBefore !== true ||
-      context.currentItemRawBeforeLock === null || canonicalPath !== receipt.item_path ||
-      receipt.operation === undefined ||
-      !await isOriginalGitStateRestored(gitWorkspaceRoot, receipt.item_path, receipt.operation, context.currentItemRawBeforeLock)) {
-    throw new PmCliError("Restored-origin receipt evidence no longer proves the exact clean item snapshot.", EXIT_CODE.CONFLICT, {
-      code: "merge_reconcile_receipt_evidence_untrusted",
-      recovery: { suggested_retry: "pm merge reconcile --dry-run" },
-    });
+  const canonicalPath =
+    context.currentItemPath === null
+      ? null
+      : path
+          .relative(gitWorkspaceRoot, context.currentItemPath)
+          .split(path.sep)
+          .join("/");
+  if (
+    !chainOk ||
+    reanchor.entriesRehashed !== 0 ||
+    reanchor.entriesPatchRepaired !== 0 ||
+    context.matchedChainBefore !== true ||
+    context.currentItemRawBeforeLock === null ||
+    canonicalPath !== receipt.item_path ||
+    receipt.operation === undefined ||
+    !(await isOriginalGitStateRestored(
+      gitWorkspaceRoot,
+      receipt.item_path,
+      receipt.operation,
+      context.currentItemRawBeforeLock,
+    ))
+  ) {
+    throw new PmCliError(
+      "Restored-origin receipt evidence no longer proves the exact clean item snapshot.",
+      EXIT_CODE.CONFLICT,
+      {
+        code: "merge_reconcile_receipt_evidence_untrusted",
+        recovery: { suggested_retry: "pm merge reconcile --dry-run" },
+      },
+    );
   }
 }
 
@@ -598,16 +629,14 @@ async function resolveHistoryRepairMergeEvidence(params: {
   };
 }
 
-async function loadHistoryRepairItemReplay(
+function describeHistoryRepairItemReplay(
   subject: Awaited<ReturnType<typeof resolveHistorySubject>>,
-  settings: Awaited<ReturnType<typeof readSettings>>,
-  historyEntries: HistoryEntry[],
+  snapshot: HistoryMaintenanceSnapshot,
   itemHashVersion: HistoryItemHashVersion,
-): Promise<HistoryRepairItemReplayContext> {
+): HistoryRepairItemReplayContext {
   const currentItemPath = subject.located?.itemPath ?? null;
-  const loadedItem = subject.located
-    ? await readLocatedItem(subject.located, { schema: settings.schema })
-    : null;
+  const loadedItem = snapshot.loadedItem;
+  const historyEntries = snapshot.entries;
   if (!loadedItem) {
     return {
       currentItemReplay: null,
@@ -638,7 +667,10 @@ function buildHistoryRepairMessage(params: {
   entriesPatchRepaired: number;
   reconcileNeeded: boolean;
 }): string {
-  if (typeof params.message === "string" && params.message.trim().length > 0) {
+  if (
+    typeof params.message === "string" &&
+    params.message.trim().length > 0
+  ) {
     return params.message;
   }
   /* v8 ignore start -- message suffix/plural variants are deterministic formatting fallbacks around the covered repair outcomes */
@@ -733,68 +765,14 @@ function collectHistoryRepairWarnings(
   return warnings;
 }
 
-/** Revalidate item/history bytes and restored-origin Git proof under the rewrite lock before persisting. */
-async function applyHistoryRepairRewrite(params: {
-  pmRoot: string;
-  subject: Awaited<ReturnType<typeof resolveHistorySubject>>;
-  settings: Awaited<ReturnType<typeof readSettings>>;
-  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
-  historyRawBeforeLock: string | null;
-  itemReplayContext: HistoryRepairItemReplayContext;
-  mergeAbandonmentProof: HistoryRepairCommandOptions["mergeAbandonmentProof"];
-  chainOk: boolean;
-  reanchor: { entriesRehashed: number; entriesPatchRepaired: number };
-  author: string;
-  force: boolean | undefined;
-  historyPath: string;
-  rewrittenEntries: HistoryEntry[];
-}): Promise<string[]> {
-  return executeHistoryRewrite({
-    pmRoot: params.pmRoot,
-    subject: params.subject,
-    settings: params.settings,
-    typeRegistry: params.typeRegistry,
-    historyRawBeforeLock: params.historyRawBeforeLock,
-    currentItemRawBeforeLock: params.itemReplayContext.currentItemRawBeforeLock,
-    operation: "history-repair",
-    author: params.author,
-    force: params.force,
-    itemDocument: params.itemReplayContext.loadedItem?.document ?? null,
-    applyRewrite: async ({ historyRawUnderLock }) => {
-      await assertHistoryRepairAbandonmentProof(
-        params.mergeAbandonmentProof,
-        params.itemReplayContext,
-        params.chainOk,
-        params.reanchor,
-      );
-      await writeHistoryRawWithRollback({
-        historyPath: params.historyPath,
-        nextHistoryRaw: historyEntriesToRaw(params.rewrittenEntries),
-        historyRawUnderLock,
-      });
-    },
-    applyPostRewrite: async () =>
-      runActiveOnWriteHooks({
-        path: params.historyPath,
-        scope: "project",
-        op: "history_repair:history",
-      }),
-  });
-}
-
 /** Implements run history repair for the public runtime surface of this module. */
 export async function runHistoryRepair(
   id: string,
   options: HistoryRepairCommandOptions,
   global: GlobalOptions,
 ): Promise<HistoryRepairResult> {
-  const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  await assertInitializedTracker(pmRoot);
-
-  const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(
-    settings,
-    getActiveExtensionRegistrations(),
+  const { pmRoot, settings, typeRegistry } = await resolveHistoryWorkspace(
+    global.path,
   );
   const subject = await resolveHistorySubject(
     pmRoot,
@@ -804,9 +782,25 @@ export async function runHistoryRepair(
   );
 
   if (options.salvageTail === true) {
-    return salvageHistoryTail({ pmRoot, subject, settings, typeRegistry, options, author: resolveAuthor(options.author, settings.author_default) });
+    return salvageHistoryTail({
+      pmRoot,
+      subject,
+      settings,
+      typeRegistry,
+      options,
+      author: resolveAuthor(options.author, settings.author_default),
+    });
   }
-  return repairHistorySubject({ pmRoot, subject, settings, typeRegistry, options });
+  return runHistoryMaintenance({
+    pmRoot,
+    subject,
+    settings,
+    typeRegistry,
+    operation: "history-repair",
+    options,
+    transform: (snapshot) =>
+      buildHistoryRepairPlan({ pmRoot, subject, options }, snapshot),
+  });
 }
 
 /** Preserve explicit audit requests while reusing exact restored-origin dispositions in verified history. */
@@ -816,43 +810,30 @@ function shouldAppendForcedHistoryAudit(
 ): boolean {
   // Receipt persistence can fail after the audited history transaction commits.
   // Only an identical disposition satisfies a retry; unrelated audits do not.
-  const alreadyRecorded = options.mergeAbandonmentProof !== undefined &&
+  const alreadyRecorded =
+    options.mergeAbandonmentProof !== undefined &&
     options.auditContext !== undefined &&
-    historyEntries.some((entry) =>
-      entry.op === "merge_reconcile" &&
-      stableStringify(entry.context) === stableStringify(options.auditContext),
+    historyEntries.some(
+      (entry) =>
+        entry.op === "merge_reconcile" &&
+        stableStringify(entry.context) ===
+          stableStringify(options.auditContext),
     );
   return options.forceAuditEntry === true && !alreadyRecorded;
 }
 
-/** Reanchor or reconcile one resolved subject, separately from byte-preserving salvage. */
-async function repairHistorySubject(params: {
-  pmRoot: string;
-  subject: Awaited<ReturnType<typeof resolveHistorySubject>>;
-  settings: Awaited<ReturnType<typeof readSettings>>;
-  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
-  options: HistoryRepairCommandOptions;
-}): Promise<HistoryRepairResult> {
-  const { pmRoot, subject, settings, typeRegistry, options } = params;
-  if (!(await pathExists(subject.historyPath))) {
-    throw new PmCliError(
-      `No history stream exists for ${subject.id}.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
-  const historyRawBeforeLock = await readFileIfExists(subject.historyPath);
-  const historyEntries = await readHistoryEntries(
-    subject.historyPath,
-    subject.id,
-  );
-  if (historyEntries.length === 0) {
-    throw new PmCliError(
-      `No history entries exist for ${subject.id}; nothing to repair.`,
-      EXIT_CODE.USAGE,
-    );
-  }
-
-  const chainBefore = verifyHistoryChain(historyEntries);
+/** Reanchor and reconcile as a plan whose receipt proof is repeated under the shared write lock. */
+async function buildHistoryRepairPlan(
+  params: {
+    pmRoot: string;
+    subject: Awaited<ReturnType<typeof resolveHistorySubject>>;
+    options: HistoryRepairCommandOptions;
+  },
+  snapshot: HistoryMaintenanceSnapshot,
+): Promise<HistoryMaintenancePlan<HistoryRepairResult>> {
+  const { pmRoot, subject, options } = params;
+  const historyEntries = snapshot.entries;
+  const chainBefore = snapshot.verification;
   const chainVersionBefore = verifyHistoryChainWithVersion(historyEntries);
   const provenanceNormalization = options.normalizeProvenance
     ? normalizeInvalidHistoryProvenance(historyEntries)
@@ -878,13 +859,17 @@ async function repairHistorySubject(params: {
     itemHashVersion,
   );
 
-  const itemReplayContext = await loadHistoryRepairItemReplay(
+  const itemReplayContext = describeHistoryRepairItemReplay(
     subject,
-    settings,
-    historyEntries,
+    snapshot,
     itemHashVersion,
   );
-  await assertHistoryRepairAbandonmentProof(options.mergeAbandonmentProof, itemReplayContext, chainBefore.ok, reanchor);
+  await assertHistoryRepairAbandonmentProof(
+    options.mergeAbandonmentProof,
+    itemReplayContext,
+    chainBefore.ok,
+    reanchor,
+  );
 
   const finalReplay = reanchor.finalDocument;
   const finalReplayHashes = replayHashVerificationCandidates(
@@ -928,7 +913,7 @@ async function repairHistorySubject(params: {
     shouldAppendForcedHistoryAudit(options, historyEntries),
     provenanceNormalization.receipt.changed,
   ].some(Boolean);
-  const author = resolveAuthor(options.author, settings.author_default);
+  const author = snapshot.author;
   const dryRun = Boolean(options.dryRun);
 
   const repairMessage = buildHistoryRepairMessage({
@@ -956,78 +941,64 @@ async function repairHistorySubject(params: {
     explicitItemHashVersion: reanchor.explicitItemHashVersion,
   });
 
-  const historyVerify = verifyHistoryChain(rewrittenEntries);
-  if (!historyVerify.ok) {
-    throw new PmCliError(
-      `history-repair produced an invalid rewritten chain (${historyVerify.errors.join(", ")}).`,
-      EXIT_CODE.GENERIC_FAILURE,
-    );
-  }
-
   const warnings = collectHistoryRepairWarnings(
     changed,
     reanchor.skippedOps,
     reconciliation,
   );
 
-  if (changed && !dryRun) {
-    warnings.push(
-      ...(await applyHistoryRepairRewrite({
-        pmRoot,
-        subject,
-        settings,
-        typeRegistry,
-        historyRawBeforeLock,
-        itemReplayContext,
-        mergeAbandonmentProof: options.mergeAbandonmentProof,
-        chainOk: chainBefore.ok,
-        reanchor,
-        author,
-        force: options.force,
-        historyPath: subject.historyPath,
-        rewrittenEntries,
-      })),
-    );
-  }
-
   return {
-    id: subject.id,
-    dry_run: dryRun,
     changed,
-    history: {
-      path: subject.historyPath,
-      entries_scanned: historyEntries.length,
-      chain_drift_before: !chainBefore.ok,
-      entries_rehashed: reanchor.entriesRehashed,
-      entries_patch_repaired: reanchor.entriesPatchRepaired,
-      converted_replace_to_add: reanchor.convertedReplaceToAdd,
-      skipped_ops: reanchor.skippedOps,
-      reconciled_with_item: reconcileNeeded,
-      audit_entry_added: auditEntryAdded,
-      verify_ok: historyVerify.ok,
-      verify_errors: historyVerify.errors,
-      item_hash_version_before: chainVersionBefore.item_hash_version ?? null,
-      item_hash_version_after: itemHashVersion,
-      version_disposition:
-        explicitVersionsBefore.size > 1
-          ? "selected_for_ambiguous_stream"
-          : "preserved",
-    },
-    item: {
-      exists: itemReplayContext.currentItemPath !== null,
-      path: itemReplayContext.currentItemPath,
-      matched_chain_before: itemReplayContext.matchedChainBefore,
-    },
-    provenance_normalization: {
-      requested: options.normalizeProvenance === true,
-      ...provenanceNormalization.receipt,
-    },
-    ...(reconciliation ? { reconciliation } : {}),
-    ...(mergeReceiptProof ? { merge_receipt_proof: mergeReceiptProof } : {}),
-    warnings: [...new Set(warnings)].sort((left, right) =>
-      left.localeCompare(right),
-    ),
-    generated_at: nowIso(),
+    rewrittenEntries,
+    beforeWrite: async () =>
+      assertHistoryRepairAbandonmentProof(
+        options.mergeAbandonmentProof,
+        itemReplayContext,
+        chainBefore.ok,
+        reanchor,
+      ),
+    report: ({ verification: historyVerify, warnings: writeWarnings }) => ({
+      id: subject.id,
+      dry_run: dryRun,
+      changed,
+      history: {
+        path: subject.historyPath,
+        entries_scanned: historyEntries.length,
+        chain_drift_before: !chainBefore.ok,
+        entries_rehashed: reanchor.entriesRehashed,
+        entries_patch_repaired: reanchor.entriesPatchRepaired,
+        converted_replace_to_add: reanchor.convertedReplaceToAdd,
+        skipped_ops: reanchor.skippedOps,
+        reconciled_with_item: reconcileNeeded,
+        audit_entry_added: auditEntryAdded,
+        verify_ok: historyVerify.ok,
+        verify_errors: historyVerify.errors,
+        item_hash_version_before:
+          chainVersionBefore.item_hash_version ?? null,
+        item_hash_version_after: itemHashVersion,
+        version_disposition:
+          explicitVersionsBefore.size > 1
+            ? "selected_for_ambiguous_stream"
+            : "preserved",
+      },
+      item: {
+        exists: itemReplayContext.currentItemPath !== null,
+        path: itemReplayContext.currentItemPath,
+        matched_chain_before: itemReplayContext.matchedChainBefore,
+      },
+      provenance_normalization: {
+        requested: options.normalizeProvenance === true,
+        ...provenanceNormalization.receipt,
+      },
+      ...(reconciliation ? { reconciliation } : {}),
+      ...(mergeReceiptProof
+        ? { merge_receipt_proof: mergeReceiptProof }
+        : {}),
+      warnings: [...new Set([...warnings, ...writeWarnings])].sort(
+        (left, right) => left.localeCompare(right),
+      ),
+      generated_at: nowIso(),
+    }),
   };
 }
 
@@ -1100,15 +1071,13 @@ export async function runHistoryRepairAll(
   global: GlobalOptions,
 ): Promise<HistoryRepairAllResult> {
   if (options.salvageTail === true) {
-    throw new PmCliError("Tail salvage requires one explicit item ID; --all is not supported.", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Tail salvage requires one explicit item ID; --all is not supported.",
+      EXIT_CODE.USAGE,
+    );
   }
-  const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  await assertInitializedTracker(pmRoot);
-
-  const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(
-    settings,
-    getActiveExtensionRegistrations(),
+  const { pmRoot, settings, typeRegistry } = await resolveHistoryWorkspace(
+    global.path,
   );
   const itemReadWarnings: string[] = [];
   const items = await listAllItemMetadataWithBody(

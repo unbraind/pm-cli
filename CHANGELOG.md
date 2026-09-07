@@ -6,6 +6,10 @@
 
 - Derived scheduling: propagate milestone deadlines backward through the ordering graph so every gating item carries a latest-start date instead of only six dates existing in the whole plan ([pm-d2wfig](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-d2wfig.toon))
 
+### Changed
+
+- History maintenance triplicates one load, verify, rewrite, re-anchor, report pipeline across redact, repair and compact instead of sharing a stream-maintenance primitive ([pm-34w8za](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-34w8za.toon))
+
 ### Fixed
 
 - Grouping by a set-valued field groups by the whole set: pm aggregate --group-by tags returns 2,022 tag-tuple rows for 2,467 items, so the governance question the command exists to answer cannot be asked ([pm-398z0u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-398z0u.toon))
@@ -13,6 +17,7 @@
 
 ### Other
 
+- Consolidate history commands: history-redact/history-repair/history-compact/activity/restore under pm history subcommands ([pm-tqel](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-tqel.toon))
 - Compact unbundled runtime JavaScript while preserving SDK declarations and Sentry source maps ([pm-fx0rcb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fx0rcb.toon))
 - Adopt PR 1212 release and secret-scanner action pins with matching workflow contracts ([pm-shpocu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-shpocu.toon))
 

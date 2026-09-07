@@ -3,6 +3,7 @@
  *
  * Compiles flag vocabulary into a complete machine-readable invocation model.
  */
+import { resolvePmHistoryOperation } from "./cli-contracts/command-aliases.js";
 import type { CliFlagContract } from "./cli-contracts.js";
 
 /** Supported channels through which a flag obtains its value. */
@@ -338,8 +339,9 @@ export function enrichCliFlagInvocationContract(
   command: string,
   contract: CliFlagContract,
 ): CliFlagInvocationContract {
-  const takesValue = flagTakesValue(command, contract);
-  const inputSources = resolveFlagInputSources(command, contract.flag);
+  const operation = resolvePmHistoryOperation(command);
+  const takesValue = flagTakesValue(operation, contract);
+  const inputSources = resolveFlagInputSources(operation, contract.flag);
   const description =
     contract.description ??
     FLAG_DESCRIPTIONS[contract.flag] ??
@@ -351,7 +353,7 @@ export function enrichCliFlagInvocationContract(
     value_required:
       takesValue &&
       !OPTIONAL_VALUE_FLAGS.has(contract.flag) &&
-      !OPTIONAL_VALUE_COMMAND_FLAGS.has(`${command}:${contract.flag}`),
+      !OPTIONAL_VALUE_COMMAND_FLAGS.has(`${operation}:${contract.flag}`),
     ...(takesValue ? { value_name: contract.value_name ?? "value" } : {}),
     value_type: takesValue ? (contract.value_type ?? "string") : "boolean",
     required: contract.required === true,
@@ -362,7 +364,7 @@ export function enrichCliFlagInvocationContract(
     contract.flag !== "--stdin-json"
       ? { stdin_token: "-" as const }
       : {}),
-    ...(AT_PATH_FILE_COMMAND_FLAGS.has(`${command}:${contract.flag}`)
+    ...(AT_PATH_FILE_COMMAND_FLAGS.has(`${operation}:${contract.flag}`)
       ? { file_token_prefix: "@" as const }
       : {}),
   };

@@ -3,7 +3,6 @@
  *
  * Implements the pm history compact command surface and its agent-facing runtime behavior.
  */
-import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
@@ -19,26 +18,18 @@ import {
   type HistoryCompactScope,
 } from "../core/history/history-compact-bulk.js";
 import {
-  executeHistoryRewrite,
-  writeHistoryRawWithRollback,
-} from "../core/history/history-rewrite.js";
-import {
   cloneEmptyReplayDocument,
-  historyEntriesToRaw,
   replayHashVerificationCandidates,
   replayToItemDocument,
   toReplayDocument,
-  verifyHistoryChain,
   type ReplayDocument,
 } from "../core/history/replay.js";
 import { applyHistoryPatch } from "../core/history/projection.js";
-import { readHistoryEntries } from "../core/history/read.js";
 import { historyVersionOffset } from "../core/history/version-address.js";
-import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { lifecycleClassifierFromStatusRegistry } from "../core/governance/metadata-coverage.js";
 import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { listAllItemMetadataLight } from "../core/store/item-store.js";
-import { pathExists, readFileIfExists } from "../core/fs/fs-utils.js";
+import { pathExists } from "../core/fs/fs-utils.js";
 import {
   normalizeBulkIdsValue,
   parseBulkIdsText,
@@ -48,17 +39,19 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { nowIso } from "../core/shared/time.js";
-import {
-  getActiveExtensionRegistrations,
-  runActiveOnReadHooks,
-  runActiveOnWriteHooks,
-} from "../core/extensions/index.js";
+import { runActiveOnReadHooks } from "../core/extensions/index.js";
 import { readLocatedItem } from "../core/store/item-store.js";
-import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
-import { resolveAuthor } from "../core/shared/author.js";
 import type { HistoryEntry } from "../types/index.js";
-import { resolveHistorySubject } from "./history-redact.js";
+import {
+  resolveHistoryWorkspace,
+  resolveHistorySubject,
+} from "./history/subject.js";
+import {
+  runHistoryMaintenance,
+  type HistoryMaintenanceSnapshot,
+  type HistoryMaintenancePlan,
+} from "./history/maintenance.js";
 
 /** Documents the history compact command options payload exchanged by command, SDK, and package integrations. */
 export interface HistoryCompactCommandOptions {
@@ -226,14 +219,10 @@ function replayHistoryAndResolveCheckpoint(
 }
 
 /** Snapshot the live item and compare it with the stream's supported historical hash surfaces. */
-async function loadHistoryCompactCurrentItem(
-  subject: Awaited<ReturnType<typeof resolveHistorySubject>>,
-  settings: Awaited<ReturnType<typeof readSettings>>,
+function describeHistoryCompactCurrentItem(
+  loadedItem: HistoryMaintenanceSnapshot["loadedItem"],
   historyEntries: HistoryEntry[],
-): Promise<HistoryCompactCurrentItem> {
-  const loadedItem = subject.located
-    ? await readLocatedItem(subject.located, { schema: settings.schema })
-    : null;
+): HistoryCompactCurrentItem {
   if (!loadedItem) {
     return {
       loadedItem: null,
@@ -245,9 +234,14 @@ async function loadHistoryCompactCurrentItem(
   return {
     loadedItem,
     currentItemRawBeforeLock: loadedItem.raw,
-    matchedChainBefore: SUPPORTED_HISTORY_ITEM_HASH_VERSIONS.some((version) =>
-      (lastEntry.item_hash_version === undefined || lastEntry.item_hash_version === version) &&
-      replayHashVerificationCandidates(toReplayDocument(loadedItem.document), version).includes(lastEntry.after_hash),
+    matchedChainBefore: SUPPORTED_HISTORY_ITEM_HASH_VERSIONS.some(
+      (version) =>
+        (lastEntry.item_hash_version === undefined ||
+          lastEntry.item_hash_version === version) &&
+        replayHashVerificationCandidates(
+          toReplayDocument(loadedItem.document),
+          version,
+        ).includes(lastEntry.after_hash),
     ),
   };
 }
@@ -307,7 +301,9 @@ function buildHistoryCompactEntries(params: {
     params.historyEntries,
     params.boundary.compactCount,
   );
-  const retained = params.historyEntries.slice(params.boundary.compactCount);
+  const retained = params.historyEntries.slice(
+    params.boundary.compactCount,
+  );
   const offset = historyVersionOffset(params.historyEntries, true);
   const baselineEntry = createHistoryEntry({
     nowIso: params.historyEntries[params.boundary.compactCount - 1]!.ts,
@@ -319,26 +315,34 @@ function buildHistoryCompactEntries(params: {
     context: {
       history_compaction: {
         contract_version: 1,
-        version_offset: offset === null ? null : offset + params.boundary.compactCount - 1,
+        version_offset:
+          offset === null
+            ? null
+            : offset + params.boundary.compactCount - 1,
         checkpoint_timestamp_semantics: "last_compacted_entry",
         pruned_entry_count: params.boundary.compactCount,
         pruned_stream_digest: hashHistoryStream(
           params.historyEntries.slice(0, params.boundary.compactCount),
         ),
         retained_proof: "stream_digest_and_checkpoint",
-        limitation: "individual_pruned_entries_require_pre_compaction_stream",
+        limitation:
+          "individual_pruned_entries_require_pre_compaction_stream",
       },
     },
   });
-  const checkpointEntry = params.historyEntries[params.boundary.compactCount - 1]!;
+  const checkpointEntry =
+    params.historyEntries[params.boundary.compactCount - 1]!;
   // Preserve the checkpoint's epoch and semantic hash variant. Do not introduce
   // an explicit epoch into an unversioned stream: it would pin later legacy reads.
-  const rewrittenEntries = [sealHistoryRecord({
-    ...baselineEntry,
-    before_hash: params.historyEntries[0]!.before_hash,
-    after_hash: checkpointEntry.after_hash,
-    item_hash_version: checkpointEntry.item_hash_version,
-  }), ...retained];
+  const rewrittenEntries = [
+    sealHistoryRecord({
+      ...baselineEntry,
+      before_hash: params.historyEntries[0]!.before_hash,
+      after_hash: checkpointEntry.after_hash,
+      item_hash_version: checkpointEntry.item_hash_version,
+    }),
+    ...retained,
+  ];
   if (!params.dryRun) {
     rewrittenEntries.push(
       createHistoryEntry({
@@ -347,7 +351,10 @@ function buildHistoryCompactEntries(params: {
         op: "history_compact",
         before: replayToItemDocument(finalReplay),
         after: replayToItemDocument(finalReplay),
-        message: buildHistoryCompactMessage(params.options, params.boundary),
+        message: buildHistoryCompactMessage(
+          params.options,
+          params.boundary,
+        ),
       }),
     );
   }
@@ -358,58 +365,14 @@ function buildHistoryCompactEntries(params: {
   };
 }
 
-async function applyHistoryCompactRewrite(params: {
-  pmRoot: string;
-  subject: Awaited<ReturnType<typeof resolveHistorySubject>>;
-  settings: Awaited<ReturnType<typeof readSettings>>;
-  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
-  historyRawBeforeLock: string;
-  currentItemRawBeforeLock: string | null;
-  author: string;
-  force: boolean | undefined;
-  loadedItem: Awaited<ReturnType<typeof readLocatedItem>> | null;
-  historyPath: string;
-  rewrittenEntries: HistoryEntry[];
-}): Promise<string[]> {
-  return executeHistoryRewrite({
-    pmRoot: params.pmRoot,
-    subject: params.subject,
-    settings: params.settings,
-    typeRegistry: params.typeRegistry,
-    historyRawBeforeLock: params.historyRawBeforeLock,
-    currentItemRawBeforeLock: params.currentItemRawBeforeLock,
-    operation: "history-compact",
-    author: params.author,
-    force: params.force,
-    itemDocument: params.loadedItem?.document ?? null,
-    applyRewrite: async ({ historyRawUnderLock }) =>
-      writeHistoryRawWithRollback({
-        historyPath: params.historyPath,
-        nextHistoryRaw: historyEntriesToRaw(params.rewrittenEntries),
-        historyRawUnderLock,
-      }),
-    applyPostRewrite: async () =>
-      runActiveOnWriteHooks({
-        path: params.historyPath,
-        scope: "project",
-        op: "history_compact:history",
-      }),
-  });
-}
-
 /** Implements run history compact for the public runtime surface of this module. */
 export async function runHistoryCompact(
   id: string,
   options: HistoryCompactCommandOptions,
   global: GlobalOptions,
 ): Promise<HistoryCompactResult> {
-  const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  await assertInitializedTracker(pmRoot);
-
-  const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(
-    settings,
-    getActiveExtensionRegistrations(),
+  const { pmRoot, settings, typeRegistry } = await resolveHistoryWorkspace(
+    global.path,
   );
   const subject = await resolveHistorySubject(
     pmRoot,
@@ -417,23 +380,27 @@ export async function runHistoryCompact(
     settings,
     typeRegistry.type_to_folder,
   );
-  const historyPath = subject.historyPath;
-  const historyRawBeforeLock = await readFileIfExists(historyPath);
-  if (historyRawBeforeLock === null) {
-    throw new PmCliError(
-      `No history stream exists for ${subject.id}.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
-  const historyEntries = await readHistoryEntries(historyPath, subject.id);
-  if (historyEntries.length === 0) {
-    throw new PmCliError(
-      `No history entries exist for ${subject.id}; nothing to compact.`,
-      EXIT_CODE.USAGE,
-    );
-  }
+  return runHistoryMaintenance({
+    pmRoot,
+    subject,
+    settings,
+    typeRegistry,
+    operation: "history-compact",
+    options,
+    transform: (snapshot) =>
+      buildHistoryCompactPlan(subject, options, snapshot),
+  });
+}
 
-  const chainVerification = verifyHistoryChain(historyEntries);
+/** Plan checkpoint preservation without duplicating snapshot or transaction ownership. */
+function buildHistoryCompactPlan(
+  subject: Awaited<ReturnType<typeof resolveHistorySubject>>,
+  options: HistoryCompactCommandOptions,
+  snapshot: HistoryMaintenanceSnapshot,
+): HistoryMaintenancePlan<HistoryCompactResult> {
+  const historyPath = subject.historyPath;
+  const historyEntries = snapshot.entries;
+  const chainVerification = snapshot.verification;
   if (!chainVerification.ok) {
     throw new PmCliError(
       `history-compact requires a valid history chain (${chainVerification.errors.join(", ")}). Run pm history-repair ${subject.id} first.`,
@@ -444,15 +411,14 @@ export async function runHistoryCompact(
   const boundary = parseBeforeBoundary(options.before, historyEntries);
   const changed = boundary.compactCount > 0;
   const dryRun = Boolean(options.dryRun);
-  const author = resolveAuthor(options.author, settings.author_default);
+  const author = snapshot.author;
   const warnings: string[] = [];
   if (!changed) {
     warnings.push("history_compact_noop_before_boundary");
   }
 
-  const currentItem = await loadHistoryCompactCurrentItem(
-    subject,
-    settings,
+  const currentItem = describeHistoryCompactCurrentItem(
+    snapshot.loadedItem,
     historyEntries,
   );
   if (currentItem.matchedChainBefore === false) {
@@ -469,64 +435,47 @@ export async function runHistoryCompact(
       options,
     });
 
-  const rewrittenVerify = verifyHistoryChain(rewrittenEntries);
-  if (!rewrittenVerify.ok) {
-    throw new PmCliError(
-      `history-compact produced an invalid rewritten chain (${rewrittenVerify.errors.join(", ")}).`,
-      EXIT_CODE.GENERIC_FAILURE,
-    );
-  }
-
-  if (changed && !dryRun) {
-    warnings.push(
-      ...(await applyHistoryCompactRewrite({
-        pmRoot,
-        subject,
-        settings,
-        typeRegistry,
-        historyRawBeforeLock,
-        currentItemRawBeforeLock: currentItem.currentItemRawBeforeLock,
-        author,
-        force: options.force,
-        loadedItem: currentItem.loadedItem,
-        historyPath,
-        rewrittenEntries,
-      })),
-    );
-  }
-
   const offset = historyVersionOffset(historyEntries, true);
   const firstRetainedEntry =
-    boundary.retainedCount > 0 && offset !== null ? offset + boundary.compactCount + 1 : null;
+    boundary.retainedCount > 0 && offset !== null
+      ? offset + boundary.compactCount + 1
+      : null;
   return {
-    id: subject.id,
-    dry_run: dryRun,
     changed,
-    compact_boundary: {
-      kind: boundary.kind,
-      before: boundary.raw,
-      entries_compacted: boundary.compactCount,
-      entries_retained: boundary.retainedCount,
-      first_retained_entry: firstRetainedEntry,
-    },
-    history: {
-      path: historyPath,
-      entries_scanned: historyEntries.length,
-      entries_after: rewrittenEntries.length,
-      baseline_entry_added: baselineEntryAdded,
-      audit_entry_added: auditEntryAdded,
-      verify_ok: rewrittenVerify.ok,
-      verify_errors: rewrittenVerify.errors,
-    },
-    item: {
-      exists: subject.located !== null,
-      path: subject.located?.itemPath ?? null,
-      matched_chain_before: currentItem.matchedChainBefore,
-    },
-    warnings: [...new Set(warnings)].sort((left, right) =>
-      left.localeCompare(right),
-    ),
-    generated_at: nowIso(),
+    rewrittenEntries,
+    report: ({
+      verification: rewrittenVerify,
+      warnings: writeWarnings,
+    }) => ({
+      id: subject.id,
+      dry_run: dryRun,
+      changed,
+      compact_boundary: {
+        kind: boundary.kind,
+        before: boundary.raw,
+        entries_compacted: boundary.compactCount,
+        entries_retained: boundary.retainedCount,
+        first_retained_entry: firstRetainedEntry,
+      },
+      history: {
+        path: historyPath,
+        entries_scanned: historyEntries.length,
+        entries_after: rewrittenEntries.length,
+        baseline_entry_added: baselineEntryAdded,
+        audit_entry_added: auditEntryAdded,
+        verify_ok: rewrittenVerify.ok,
+        verify_errors: rewrittenVerify.errors,
+      },
+      item: {
+        exists: subject.located !== null,
+        path: subject.located?.itemPath ?? null,
+        matched_chain_before: currentItem.matchedChainBefore,
+      },
+      warnings: [...new Set([...warnings, ...writeWarnings])].sort(
+        (left, right) => left.localeCompare(right),
+      ),
+      generated_at: nowIso(),
+    }),
   };
 }
 
@@ -675,7 +624,9 @@ async function collectHistoryCompactBulkCandidates(params: {
   candidates: HistoryCompactBulkCandidate[];
   preselectionErrors: HistoryCompactBulkItemResult[];
 }> {
-  const statusRegistry = resolveRuntimeStatusRegistry(params.settings.schema);
+  const statusRegistry = resolveRuntimeStatusRegistry(
+    params.settings.schema,
+  );
   const classifier = lifecycleClassifierFromStatusRegistry(statusRegistry);
   const items = await listAllItemMetadataLight(
     params.pmRoot,
@@ -685,7 +636,9 @@ async function collectHistoryCompactBulkCandidates(params: {
     params.settings.schema,
   );
   const bucketById = new Map(
-    items.map((item) => [item.id, classifier.classify(item.status)] as const),
+    items.map(
+      (item) => [item.id, classifier.classify(item.status)] as const,
+    ),
   );
   const historyDir = path.join(params.pmRoot, "history");
   const candidates: HistoryCompactBulkCandidate[] = [];
@@ -811,13 +764,8 @@ export async function runHistoryCompactBulk(
   global: GlobalOptions,
 ): Promise<HistoryCompactBulkResult> {
   const normalizedOptions = normalizeHistoryCompactBulkOptions(options);
-  const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  await assertInitializedTracker(pmRoot);
-
-  const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(
-    settings,
-    getActiveExtensionRegistrations(),
+  const { pmRoot, settings, typeRegistry } = await resolveHistoryWorkspace(
+    global.path,
   );
   const { candidates, preselectionErrors } =
     await collectHistoryCompactBulkCandidates({

@@ -13,7 +13,17 @@
       "owner": "pm-6qiwan",
       "source_roots": ["src/sdk"],
       "required_pattern": "assertInitializedTracker(pmRoot)",
-      "minimum_occurrences": 50,
+      "minimum_occurrences": 47,
+      "forbidden_patterns": [
+        "Tracker is not initialized at ${pmRoot}. Run pm init first."
+      ]
+    },
+    {
+      "id": "history-workspace-preflight-delegation",
+      "owner": "pm-34w8za",
+      "source_roots": ["src/sdk"],
+      "required_pattern": "await resolveHistoryWorkspace(",
+      "minimum_occurrences": 5,
       "forbidden_patterns": [
         "Tracker is not initialized at ${pmRoot}. Run pm init first."
       ]
@@ -494,8 +504,24 @@
   ],
   "cli_refusal_dispositions": [
     {
+      "path": "src/cli/register-history-maintenance.ts",
+      "expected_count": 3,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-tqel",
+      "disposition": "transport_validation",
+      "reason": "The three existing compact numeric and selector syntax checks moved from register-mutation into shared native and legacy registrations."
+    },
+    {
+      "path": "src/cli/register-history-activity.ts",
+      "expected_count": 2,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-tqel",
+      "disposition": "transport_validation",
+      "reason": "The two existing activity projection and JSON streaming checks moved from register-list-query into shared native and legacy registrations."
+    },
+    {
       "path": "src/cli/register-mutation.ts",
-      "expected_count": 17,
+      "expected_count": 14,
       "rule_ownership": "all_occurrences",
       "owner": "pm-185870",
       "disposition": "transport_validation",
@@ -511,7 +537,7 @@
     },
     {
       "path": "src/cli/register-list-query.ts",
-      "expected_count": 14,
+      "expected_count": 12,
       "rule_ownership": "all_occurrences",
       "owner": "pm-0xmajx",
       "disposition": "transport_validation",
@@ -591,6 +617,29 @@
     }
   ],
   "refusal_parity_contracts": [
+    {
+      "id": "history-workspace-initialization",
+      "owner": "pm-34w8za",
+      "code": "tracker_not_initialized",
+      "members": [
+        {
+          "path": "src/sdk/history/subject.ts",
+          "contains_all": ["await assertInitializedTracker(pmRoot)", "resolveHistoryWorkspace"]
+        },
+        {
+          "path": "src/sdk/history-redact.ts",
+          "contains_all": ["await resolveHistoryWorkspace("]
+        },
+        {
+          "path": "src/sdk/history-repair.ts",
+          "contains_all": ["await resolveHistoryWorkspace("]
+        },
+        {
+          "path": "src/sdk/history-compact.ts",
+          "contains_all": ["await resolveHistoryWorkspace("]
+        }
+      ]
+    },
     {
       "id": "project-runtime-stale-mutation",
       "owner": "pm-1eted6",

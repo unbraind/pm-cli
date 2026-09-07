@@ -33,7 +33,7 @@ import { PmCliError } from "../core/shared/errors.js";
 import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import type { HistoryEntry, ItemDocument } from "../types/index.js";
-import { resolveHistorySubject } from "./history-redact.js";
+import { resolveHistorySubject } from "./history/subject.js";
 export {
   findHistoryIdentityDiscontinuities,
   type HistoryIdentityDiscontinuity,
