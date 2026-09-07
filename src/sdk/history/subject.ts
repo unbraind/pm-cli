@@ -46,6 +46,8 @@ export async function resolveHistorySubject(
   settings: PmSettings,
   typeToFolder: Record<string, string>,
 ): Promise<HistorySubject> {
+  // Validate before locateItem probes paths as well as before retained-stream reads.
+  getHistoryPath(pmRoot, normalizeRawItemId(id));
   const located = await locateItem(
     pmRoot,
     id,

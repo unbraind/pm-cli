@@ -7,6 +7,26 @@ import { createTaskFixture } from "../helpers/createTaskFixture.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("native history namespace compatibility", () => {
+  it("rejects unsafe compaction thresholds in native and legacy commands", async () => {
+    await withTempPmPath(async (context) => {
+      for (const command of [["history", "compact"], ["history-compact"]]) {
+        for (const flag of ["--all-over", "--min-entries"]) {
+          for (const value of ["9007199254740992", "9".repeat(310)]) {
+            const result = context.runCli([
+              ...command, "--all-streams", flag, value, "--dry-run", "--json",
+            ]);
+            expect(result.code).toBe(2);
+            expect(result.stderr + result.stdout).toContain("must be a non-negative integer");
+          }
+          const valid = context.runCli([
+            ...command, "--all-streams", flag, String(Number.MAX_SAFE_INTEGER), "--dry-run", "--json",
+          ]);
+          expect(valid.code, valid.stderr).toBe(0);
+        }
+      }
+    });
+  });
+
   it("withholds option-shaped matcher values from SDK and CLI failure recovery", async () => {
     await withTempPmPath(async (context) => {
       for (const command of [["history", "redact"], ["history-redact"]]) {

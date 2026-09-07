@@ -115,7 +115,9 @@ pressure fixture fails unbounded reads while requiring genuine permission
 failures to remain visible. The 10,000-item aggregation fixture separately
 verifies completeness before pagination. Git fixtures that assert exact bytes
 declare repository-local `core.autocrlf=false` and `core.eol=lf` so host defaults
-cannot change the restoration target. Runtime compaction is tested through a
+cannot change the restoration target. Send generated shell scripts through
+stdin (`bash -s`) so their size cannot exceed Windows command-line limits.
+Runtime compaction is tested through a
 real directory alias as well as its physical path, including original source
 mapping and repeated-compaction byte stability. These tests run in the full
 suite on the Nightly Validation platform matrix.

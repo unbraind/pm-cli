@@ -6,43 +6,94 @@ status: closed
 priority: 3
 tags[5]: "area:quality","area:sdk",history,refactor,simplification
 created_at: "2026-07-25T21:38:53.550Z"
-updated_at: "2026-09-07T12:33:25.050Z"
-closed_at: "2026-09-07T12:33:23.808Z"
-completed_at: "2026-09-07T12:33:23.808Z"
+updated_at: "2026-09-07T15:02:00.457Z"
+closed_at: "2026-09-07T15:00:51.150Z"
+completed_at: "2026-09-07T15:00:51.150Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "One SDK primitive owns the load, verify, transform, re-anchor, reconcile and report pipeline for item history streams, and redact, repair and compact are expressed as transforms handed to it. cli/commands/copy.ts and cli/commands/restore.ts consume that primitive rather than re-implementing stream handling. The externally observable behaviour of every history command — flags, dry-run plans, applied reports, exit codes — is unchanged, asserted by the existing suites passing without modification. A jscpd run at 12 lines and 60 tokens reports no remaining clone pair inside the history family."
 parent: pm-o2kc
 risk: medium
 confidence: high
-resolution: "One verified SDK snapshot and guarded maintenance pipeline owns redaction, repair and compaction orchestration; restore shares drift primitives. Operation-specific privacy, evidence, rollback and salvage remain intact, with documented transaction callbacks."
-expected_result: Shared orchestration preserves verified history semantics and explicit operation-specific policies.
-actual_result: "Final review correction verified: all 8538 tests in 637 files passed with exact 100/100/100/100 and zero uncovered counts. Final build, full quality:static chain and both linked namespace commands passed. Installed npm and Bun each passed 15 history workflow steps, public SDK execution and six option-shaped sensitive-recovery cases. Actual Zsh execution verifies all five native mappings with correct CURRENT positions; the proposed offset change is a false positive. Purpose documentation now includes maintenance callbacks; restore docs accept timestamp-or-version. Every completed-review artifact and edited revision has a reaction and contextual acknowledgement. Updated-head hosted checks and full review remain separate before merge."
-dependencies[5]{id,kind,created_at}:
-  pm-9yfo,related,"2026-07-25T21:38:53.550Z"
-  pm-usfg,related,"2026-07-25T21:38:53.550Z"
-  pm-xspd,related,"2026-07-25T21:38:53.550Z"
-  pm-yh8r,related,"2026-07-25T21:38:53.550Z"
-  pm-o2kc,implements,"2026-07-26T05:56:14.981Z"
-comments[11]{created_at,author,text}:
-  "2026-07-31T14:23:58.574Z","harness:claude-code","Scope input 2026-07-31 from pm-aka8m7. This chore consolidates the load, verify, rewrite, re-anchor, report pipeline across redact, repair and compact, and that consolidation is the right and only place to add one thing all three paths currently omit.\n\nreanchorHistoryEntries at src/core/history/replay.ts:365-370 overwrites before_hash and after_hash in place and retains the prior values nowhere - the result carries an entriesRehashed count and a per-entry rehashed boolean. Every one of the three commands this chore unifies therefore destroys the anchors its inputs committed to, and so does every union merge, since src/sdk/merge/three-way.ts:57 documents reanchored as true for every union. Adding retention per command would mean writing it three times and would leave the merge driver's own path a fourth; adding it at the unified pipeline covers all four at once.\n\nRecommend widening this chore's acceptance criteria to include the retention hook - the shared pipeline emits the original anchor pair for each rewritten entry to whichever durable sink the owning command chooses - without taking on the storage-location decision, which belongs to pm-aka8m7. That keeps this chore mechanical while making the fix a one-site change afterwards rather than a four-site one."
-  "2026-09-07T09:09:45.363Z","harness:codex","Implementation scope: complete all-status CLI read returned 2653 items with complete receipt, no omissions, no unreadable records. Reuse existing maintenance lineage with pm-tqel; no new duplicate. Current source already retains reanchor evidence and CLI copy/restore are SDK reexports. Consolidate remaining subject resolution, consistent input snapshots, transform verification and guarded application while preserving operation-specific reconciliation, privacy, checkpoint and rollback semantics. GitHub initial inventory: zero open PRs, issues, Dependabot alerts and code-scanning alerts; three latest auto-release runs succeeded."
-  "2026-09-07T09:45:05.663Z","harness:codex","Implementation evidence: shared stream snapshot and verified maintenance pipeline integrated with redact/repair/compact and restore drift checks. Native history commands share registrations with permanent root aliases; runtime flags, output envelopes, addressing, SDK/MCP discovery and completion resolve the selected operation. Focused maintenance and namespace suites passed; full coverage and type gates are running."
-  "2026-09-07T09:52:27.953Z","harness:codex","Verification progress: full source typechecking, repository ESLint, zero-clone duplicate gates, public documentation links and flag invocation parity passed. The command-grammar run overlapped a test-wrapper rebuild and observed one transient module-export failure; help succeeds on the settled build and the grammar gate is being rerun without overlapping builds. SDK surface generation also identified the required aggregate re-exports for the new history alias contracts; those are now added."
-  "2026-09-07T10:07:09.045Z","harness:codex","Verification progress: 71 focused command and SDK regression tests passed after native history addressing and contract fixes. SDK surface refresh records additive optional omission metadata and the equivalent PmSettings signature. The stricter 12-line/60-token history scan identified a remaining workspace initialization clone and a settled event-index opening clone; both now share typed helpers without changing lock order or error ownership. Full coverage and repository assurance are running; these are not yet final green claims."
-  "2026-09-07T10:11:29.194Z","harness:codex","Gate migration rationale: five direct workspace initialization guards now call one shared resolver. The direct-call ratchet moves from 50 to the observed 47, while a new minimum of five resolver delegations and explicit per-file parity contracts protect all five maintenance entrypoints plus the shared assertion. Added real uninitialized-workspace rejection coverage for redact, repair, repair-all, compact and compact-bulk. No initialization refusal was removed."
-  "2026-09-07T10:48:12.031Z","harness:codex","Final local verification passed: all 8536 tests in 636 files; exact coverage 63186/63186 statements, 47977/47977 branches, 13105/13105 functions and 60680/60680 lines. All three linked verification commands passed, including the stricter 12-line/60-token history duplicate scan. Final build, ESLint, contract/generated snapshots, SDK surface, repository assurance, command/refusal/token/parity gates, graph composition and record integrity passed. Import and transport benchmarks passed in isolation after a CPU-contended run. No coverage exclusions, thresholds or timing budgets were relaxed."
-  "2026-09-07T11:21:20.355Z","harness:codex","Review correction: title now describes the completed shared SDK pipeline so package-generated release notes do not repeat the original defect as current architecture. Preserve the detailed original problem statement and immutable resolution/history. Added purpose documentation to touched internal event-index, repair, redaction, compaction and restore helpers; no maintenance policy or thresholds changed."
-  "2026-09-07T11:32:58.931Z","harness:codex","Review fixes verified: final 8537-test suite passed with exact 100/100/100/100 and zero uncovered counts; all three linked verification commands passed, including the strict history duplicate scan. Completed shared-pipeline title and purpose docstrings preserve historical problem/evidence records. Final tracked-source static gate passed, and installed npm/Bun redaction, restoration, compaction, chain verification and SDK execution passed again."
-  "2026-09-07T12:29:14.462Z","harness:codex","Review documentation follow-up: transaction callbacks now explain locked rewrite ownership, coupled rollback, abandonment proof checks, privacy-safe reports and restore decoding. Full final suite passed all 8538 tests with exact 100/100/100/100; rebuilt npm and Bun candidates passed 15-step history journeys, public SDK execution and six additional sensitive-recovery cases each. A temporary-host inode exhaustion interrupted one Bun install; removing only this session disposable dependency folders resolved it, and the rerun passed."
-  "2026-09-07T12:33:23.088Z","harness:codex","Final review correction verified: all 8538 tests in 637 files passed with exact 100/100/100/100 and zero uncovered counts. Final build, full quality:static chain and both linked namespace commands passed. Installed npm and Bun each passed 15 history workflow steps, public SDK execution and six option-shaped sensitive-recovery cases. Actual Zsh execution verifies all five native mappings with correct CURRENT positions; the proposed offset change is a false positive. Purpose documentation now includes maintenance callbacks; restore docs accept timestamp-or-version. Every completed-review artifact and edited revision has a reaction and contextual acknowledgement. Updated-head hosted checks and full review remain separate before merge."
+resolution: "One verified SDK snapshot and guarded maintenance pipeline owns redaction, repair and compaction orchestration, with shared restoration drift primitives and operation-specific privacy, rollback, salvage and retained evidence. History IDs are constrained before path access; complete drift scans classify invalid identities without aborting."
+expected_result: Shared maintenance preserves history integrity and refuses unsafe targets while retaining complete diagnostic scans.
+actual_result: "Final local correction verified: all 8544 tests in 639 files passed with exact 100/100/100/100 and zero uncovered counts. The complete quality:static chain, linked history suites, strict 12-line/60-token history duplicate scan, docs links and ESLint passed. Fresh npm and Bun installs each passed 15 history workflow steps, SDK execution, sensitive-recovery checks, traversal refusal and oversized-threshold refusal. New exact-head hosted CI, all five Nightly Validation jobs and renewed full review remain required before merge; this is not publication evidence."
+dependencies[4]:
+  - id: pm-yh8r
+    kind: related
+    created_at: "2026-07-25T21:38:53.550Z"
+  - id: pm-o2kc
+    kind: implements
+    created_at: "2026-07-26T05:56:14.981Z"
+  - id: pm-usfg
+    kind: implements
+    created_at: "2026-09-07T14:37:11.436Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-xspd
+    kind: discovered_from
+    created_at: "2026-09-07T14:37:11.436Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[15]:
+  - created_at: "2026-07-31T14:23:58.574Z"
+    author: "harness:claude-code"
+    text: "Scope input 2026-07-31 from pm-aka8m7. This chore consolidates the load, verify, rewrite, re-anchor, report pipeline across redact, repair and compact, and that consolidation is the right and only place to add one thing all three paths currently omit.\n\nreanchorHistoryEntries at src/core/history/replay.ts:365-370 overwrites before_hash and after_hash in place and retains the prior values nowhere - the result carries an entriesRehashed count and a per-entry rehashed boolean. Every one of the three commands this chore unifies therefore destroys the anchors its inputs committed to, and so does every union merge, since src/sdk/merge/three-way.ts:57 documents reanchored as true for every union. Adding retention per command would mean writing it three times and would leave the merge driver's own path a fourth; adding it at the unified pipeline covers all four at once.\n\nRecommend widening this chore's acceptance criteria to include the retention hook - the shared pipeline emits the original anchor pair for each rewritten entry to whichever durable sink the owning command chooses - without taking on the storage-location decision, which belongs to pm-aka8m7. That keeps this chore mechanical while making the fix a one-site change afterwards rather than a four-site one."
+  - created_at: "2026-09-07T09:09:45.363Z"
+    author: "harness:codex"
+    text: "Implementation scope: complete all-status CLI read returned 2653 items with complete receipt, no omissions, no unreadable records. Reuse existing maintenance lineage with pm-tqel; no new duplicate. Current source already retains reanchor evidence and CLI copy/restore are SDK reexports. Consolidate remaining subject resolution, consistent input snapshots, transform verification and guarded application while preserving operation-specific reconciliation, privacy, checkpoint and rollback semantics. GitHub initial inventory: zero open PRs, issues, Dependabot alerts and code-scanning alerts; three latest auto-release runs succeeded."
+  - created_at: "2026-09-07T09:45:05.663Z"
+    author: "harness:codex"
+    text: "Implementation evidence: shared stream snapshot and verified maintenance pipeline integrated with redact/repair/compact and restore drift checks. Native history commands share registrations with permanent root aliases; runtime flags, output envelopes, addressing, SDK/MCP discovery and completion resolve the selected operation. Focused maintenance and namespace suites passed; full coverage and type gates are running."
+  - created_at: "2026-09-07T09:52:27.953Z"
+    author: "harness:codex"
+    text: "Verification progress: full source typechecking, repository ESLint, zero-clone duplicate gates, public documentation links and flag invocation parity passed. The command-grammar run overlapped a test-wrapper rebuild and observed one transient module-export failure; help succeeds on the settled build and the grammar gate is being rerun without overlapping builds. SDK surface generation also identified the required aggregate re-exports for the new history alias contracts; those are now added."
+  - created_at: "2026-09-07T10:07:09.045Z"
+    author: "harness:codex"
+    text: "Verification progress: 71 focused command and SDK regression tests passed after native history addressing and contract fixes. SDK surface refresh records additive optional omission metadata and the equivalent PmSettings signature. The stricter 12-line/60-token history scan identified a remaining workspace initialization clone and a settled event-index opening clone; both now share typed helpers without changing lock order or error ownership. Full coverage and repository assurance are running; these are not yet final green claims."
+  - created_at: "2026-09-07T10:11:29.194Z"
+    author: "harness:codex"
+    text: "Gate migration rationale: five direct workspace initialization guards now call one shared resolver. The direct-call ratchet moves from 50 to the observed 47, while a new minimum of five resolver delegations and explicit per-file parity contracts protect all five maintenance entrypoints plus the shared assertion. Added real uninitialized-workspace rejection coverage for redact, repair, repair-all, compact and compact-bulk. No initialization refusal was removed."
+  - created_at: "2026-09-07T10:48:12.031Z"
+    author: "harness:codex"
+    text: "Final local verification passed: all 8536 tests in 636 files; exact coverage 63186/63186 statements, 47977/47977 branches, 13105/13105 functions and 60680/60680 lines. All three linked verification commands passed, including the stricter 12-line/60-token history duplicate scan. Final build, ESLint, contract/generated snapshots, SDK surface, repository assurance, command/refusal/token/parity gates, graph composition and record integrity passed. Import and transport benchmarks passed in isolation after a CPU-contended run. No coverage exclusions, thresholds or timing budgets were relaxed."
+  - created_at: "2026-09-07T11:21:20.355Z"
+    author: "harness:codex"
+    text: "Review correction: title now describes the completed shared SDK pipeline so package-generated release notes do not repeat the original defect as current architecture. Preserve the detailed original problem statement and immutable resolution/history. Added purpose documentation to touched internal event-index, repair, redaction, compaction and restore helpers; no maintenance policy or thresholds changed."
+  - created_at: "2026-09-07T11:32:58.931Z"
+    author: "harness:codex"
+    text: "Review fixes verified: final 8537-test suite passed with exact 100/100/100/100 and zero uncovered counts; all three linked verification commands passed, including the strict history duplicate scan. Completed shared-pipeline title and purpose docstrings preserve historical problem/evidence records. Final tracked-source static gate passed, and installed npm/Bun redaction, restoration, compaction, chain verification and SDK execution passed again."
+  - created_at: "2026-09-07T12:29:14.462Z"
+    author: "harness:codex"
+    text: "Review documentation follow-up: transaction callbacks now explain locked rewrite ownership, coupled rollback, abandonment proof checks, privacy-safe reports and restore decoding. Full final suite passed all 8538 tests with exact 100/100/100/100; rebuilt npm and Bun candidates passed 15-step history journeys, public SDK execution and six additional sensitive-recovery cases each. A temporary-host inode exhaustion interrupted one Bun install; removing only this session disposable dependency folders resolved it, and the rerun passed."
+  - created_at: "2026-09-07T12:33:23.088Z"
+    author: "harness:codex"
+    text: "Final review correction verified: all 8538 tests in 637 files passed with exact 100/100/100/100 and zero uncovered counts. Final build, full quality:static chain and both linked namespace commands passed. Installed npm and Bun each passed 15 history workflow steps, public SDK execution and six option-shaped sensitive-recovery cases. Actual Zsh execution verifies all five native mappings with correct CURRENT positions; the proposed offset change is a false positive. Purpose documentation now includes maintenance callbacks; restore docs accept timestamp-or-version. Every completed-review artifact and edited revision has a reaction and contextual acknowledgement. Updated-head hosted checks and full review remain separate before merge."
+  - created_at: "2026-09-07T14:32:34.407Z"
+    author: "harness:codex"
+    text: "Relationship refinement: replace three generic links with SDK implementation lineage, provenance from the original clone census, and an incoming verification edge from the planned completeness gate. The verification direction describes future gate coverage; it does not claim that gate is implemented. See the typed dependency rows and their update events for exact identities."
+    edited_at: "2026-09-07T14:35:52.868Z"
+  - created_at: "2026-09-07T14:32:35.664Z"
+    author: "harness:codex"
+    text: "Review regression: crafted history identifiers and oversized CLI selectors both failed new negative tests before correction. History paths now reject separators, traversal-only names, null bytes and drive/stream syntax before retained resolution; safe legacy names remain accepted. Focused nine-test run passes; full verification follows."
+  - created_at: "2026-09-07T14:41:45.620Z"
+    author: "harness:codex"
+    text: "Full 8544-test run found one boundary regression: drift scanning constructs the guarded history path outside its per-stream error classifier, so an existing synthetic unsafe identifier aborts the complete scan. Move path validation inside that classifier to report the item as unreadable while continuing; retain the path rejection and existing regression assertions."
+  - created_at: "2026-09-07T15:00:50.557Z"
+    author: "harness:codex"
+    text: "Final local correction verified: all 8544 tests in 639 files passed with exact 100/100/100/100 and zero uncovered counts. The complete quality:static chain, linked history suites, strict 12-line/60-token history duplicate scan, docs links and ESLint passed. Fresh npm and Bun installs each passed 15 history workflow steps, SDK execution, sensitive-recovery checks, traversal refusal and oversized-threshold refusal. New exact-head hosted CI, all five Nightly Validation jobs and renewed full review remain required before merge; this is not publication evidence."
 learnings[1]{created_at,author,text}:
   "2026-09-07T10:43:14.796Z","harness:codex",Read stream bytes and decoded entries in one snapshot before planning. A second independent read can bind a rewrite to different source bytes; item and stream drift must both be rechecked under the existing write lock.
-files[15]{path,scope,note}:
+files[18]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Managed latest changelog package activation for reviewed release notes
   sdk/public-surface.json,project,History SDK and command compatibility verification
+  src/core/history/drift-scan.ts,project,Classify unsafe stream identities without aborting complete drift scans
   src/core/history/event-index.ts,project,Shared settled projection opening after history rewrites
   src/core/history/history-rewrite.ts,project,Shared restore drift verification
   src/core/history/read.ts,project,Atomic history snapshot reader
+  src/core/store/paths.ts,project,Constrain history identifiers before filesystem access
   src/sdk/governance.ts,project,Governance SDK exports
   src/sdk/history-compact.ts,project,Shared maintenance orchestration
   src/sdk/history-read.ts,project,Read-side subject resolution no longer imports a mutation implementation
@@ -54,11 +105,12 @@ files[15]{path,scope,note}:
   src/sdk/lifecycle/restore.ts,project,Recovery snapshot and drift gate
   tests/unit/commands/history-repair-command.spec.ts,project,Reader failure boundary regression
   tests/unit/sdk/history/maintenance.spec.ts,project,Transaction failure and persistence coverage
-tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/history/maintenance.spec.ts tests/unit/commands/history-repair-command.spec.ts tests/integration/history-compact-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,project,600,"harness:codex","2026-09-07T10:03:29.246Z",local_mutation,feat/history-maintenance-sdk-command-grammar
   pnpm exec jscpd src/core/history src/sdk/history src/sdk/history-redact.ts src/sdk/history-repair.ts src/sdk/history-compact.ts src/sdk/history-read.ts src/sdk/lifecycle/restore.ts src/sdk/lifecycle/copy.ts --min-lines 12 --min-tokens 60 --mode strict --format typescript --reporters console --silent,project,120,"harness:codex","2026-09-07T10:08:43.422Z",local_mutation,feat/history-maintenance-sdk-command-grammar
   node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/history-rewrite.spec.ts tests/unit/commands/restore-command.spec.ts,project,600,"harness:codex","2026-09-07T10:18:05.997Z",local_mutation,feat/history-maintenance-sdk-command-grammar
-test_runs[2]:
+  node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts,project,240,"harness:codex","2026-09-07T14:42:33.366Z",local_mutation,feat/history-maintenance-sdk-command-grammar
+test_runs[3]:
   - run_id: test-local-mtr3zfid-8u976c
     kind: test
     status: passed
@@ -85,8 +137,22 @@ test_runs[2]:
       node scripts/run-tests.mjs test -- tests/unit/sdk/history/maintenance.spec.ts tests/unit/commands/history-repair-command.spec.ts tests/integration/history-compact-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,schema,schema,source,local_source_ref
       pnpm exec jscpd src/core/history src/sdk/history src/sdk/history-redact.ts src/sdk/history-repair.ts src/sdk/history-compact.ts src/sdk/history-read.ts src/sdk/lifecycle/restore.ts src/sdk/lifecycle/copy.ts --min-lines 12 --min-tokens 60 --mode strict --format typescript --reporters console --silent,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/history-rewrite.spec.ts tests/unit/commands/restore-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtrcpdo1-cylh52
+    kind: test
+    status: passed
+    started_at: "2026-09-07T14:43:04.076Z"
+    finished_at: "2026-09-07T14:43:44.113Z"
+    recorded_at: "2026-09-07T14:43:44.113Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/history/maintenance.spec.ts tests/unit/commands/history-repair-command.spec.ts tests/integration/history-compact-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,schema,schema,source,local_source_ref
+      pnpm exec jscpd src/core/history src/sdk/history src/sdk/history-redact.ts src/sdk/history-repair.ts src/sdk/history-compact.ts src/sdk/history-read.ts src/sdk/lifecycle/restore.ts src/sdk/lifecycle/copy.ts --min-lines 12 --min-tokens 60 --mode strict --format typescript --reporters console --silent,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/history-rewrite.spec.ts tests/unit/commands/restore-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/HISTORY_MAINTENANCE.md,project,Public history integration and compatibility contract
   docs/README.md,project,Public history integration and compatibility contract
-close_reason: Completed shared history delivery and validated the follow-up review corrections.
+close_reason: Completed implementation and local verification of the combined history review corrections.
 body: ""

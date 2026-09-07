@@ -39,6 +39,12 @@ receipt; activity uses the existing bounded read envelope and streaming
 contracts. Universal output controls resolve against the selected leaf, so a
 restore does not inherit the parent history read envelope.
 
+History identifiers must be a single filename: path separators, traversal-only
+names, null bytes, and drive or stream syntax are rejected before resolution.
+Bulk compaction thresholds must be non-negative safe integers, up to
+`9007199254740991`, in both CLI flags and SDK options. Invalid thresholds are
+rejected before scanning streams.
+
 ## SDK integration
 
 Use `runHistoryRedact`, `runHistoryRepair`, `runHistoryCompact`, and `runRestore`

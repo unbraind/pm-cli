@@ -12,9 +12,9 @@
 
 ### Fixed
 
+- GH-1214: Bound complete item reads and isolate Git newline fixtures on Windows ([pm-hrhfgi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hrhfgi.toon))
 - GH-1216: Retain diagnostic identity within bounded text output ([pm-m4uyyj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m4uyyj.toon))
 - GH-1215: Preserve original source maps through aliased build roots ([pm-zk67yf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zk67yf.toon))
-- GH-1214: Bound complete item reads and isolate Git newline fixtures on Windows ([pm-hrhfgi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hrhfgi.toon))
 - Grouping by a set-valued field groups by the whole set: pm aggregate --group-by tags returns 2,022 tag-tuple rows for 2,467 items, so the governance question the command exists to answer cannot be asked ([pm-398z0u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-398z0u.toon))
 - The graph completeness audit scopes every coverage metric to active nodes, so it certifies a saturated graph while 1,796 of 2,079 nodes are unmeasured ([pm-6olc95](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6olc95.toon))
 

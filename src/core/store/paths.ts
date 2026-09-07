@@ -8,9 +8,11 @@ import os from "node:os";
 import path from "node:path";
 import {
   PM_DIRNAME,
+  EXIT_CODE,
   SETTINGS_FILENAME,
   TYPE_TO_FOLDER,
 } from "../shared/constants.js";
+import { PmCliError } from "../shared/errors.js";
 import { toDefaultFolder } from "../item/type-registry.js";
 import type { ItemFormat, ItemType } from "../../types/index.js";
 
@@ -40,6 +42,7 @@ export const ITEM_FILE_EXTENSIONS: Array<
   keyof typeof ITEM_FORMAT_BY_EXTENSION
 > = [".md", ".toon"];
 
+/** Probe discovery candidates without turning inaccessible ancestors into fatal errors. */
 function pathExists(pathValue: string): boolean {
   try {
     statSync(pathValue);
@@ -54,6 +57,7 @@ function pathExists(pathValue: string): boolean {
 // receive pm writes), so root-layout candidates need a pm-specific marker.
 // `pm init` always writes both markers; explicit --path/PM_PATH targets skip
 // this check because they carry user intent.
+/** Require tracker-specific markers before implicitly adopting a root-layout settings file. */
 function isPmSettingsFile(settingsPath: string): boolean {
   try {
     const parsed: unknown = JSON.parse(readFileSync(settingsPath, "utf8"));
@@ -70,6 +74,7 @@ function isPmSettingsFile(settingsPath: string): boolean {
   }
 }
 
+/** Find the nearest initialized tracker in conventional or explicitly marked root layout. */
 function discoverPmRootFromAncestors(cwd: string): string | undefined {
   let current = path.resolve(cwd);
   while (true) {
@@ -209,8 +214,14 @@ export function getItemFormatFromPath(itemPath: string): ItemFormat | null {
   return ITEM_FORMAT_BY_EXTENSION[extension] ?? null;
 }
 
-/** Implements get history path for the public runtime surface of this module. */
+/** Constrain stream identifiers to a single portable filename before any read or rewrite. */
 export function getHistoryPath(pmRoot: string, id: string): string {
+  if (!/^(?!\.{1,2}$)[^/\\:\0]+$/.test(id)) {
+    throw new PmCliError(
+      "Invalid history item id: expected a single filename.",
+      EXIT_CODE.USAGE,
+    );
+  }
   return path.join(pmRoot, "history", `${id}.jsonl`);
 }
 

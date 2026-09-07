@@ -246,6 +246,7 @@ function describeHistoryCompactCurrentItem(
   };
 }
 
+/** Describe the applied boundary in the durable compaction audit marker. */
 function buildHistoryCompactMessage(
   options: HistoryCompactCommandOptions,
   boundary: HistoryCompactBoundary,
@@ -266,6 +267,7 @@ function buildHistoryCompactMessage(
   } before ${boundary.raw}.`;
 }
 
+/** Identify the checkpoint boundary retained by the synthetic baseline record. */
 function buildHistoryCompactBaselineMessage(
   boundary: HistoryCompactBoundary,
 ): string {
@@ -507,9 +509,19 @@ export interface HistoryCompactBulkCommandOptions {
 type NormalizedHistoryCompactBulkCommandOptions =
   HistoryCompactBulkCommandOptions & { ids?: string[] };
 
+/** Reject unsafe numeric selectors and normalize bulk IDs before workspace discovery. */
 function normalizeHistoryCompactBulkOptions(
   options: HistoryCompactBulkCommandOptions,
 ): NormalizedHistoryCompactBulkCommandOptions {
+  for (const key of ["allOver", "minEntries"] as const) {
+    const value = options[key];
+    if (value !== undefined && (!Number.isSafeInteger(value) || value < 0)) {
+      throw new PmCliError(
+        `history-compact ${key} must be a non-negative safe integer.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+  }
   const normalizedIdsText = normalizeBulkIdsValue(options.ids);
   if (options.ids !== undefined && normalizedIdsText === "") {
     throw new PmCliError(
@@ -608,6 +620,7 @@ export function assertHistoryCompactTarget(
   }
 }
 
+/** Count nonempty stream records without decoding payloads during bulk selection. */
 function countHistoryStreamEntries(raw: string): number {
   let count = 0;
   for (const line of raw.split(/\r?\n/)) {
@@ -679,6 +692,7 @@ async function collectHistoryCompactBulkCandidates(params: {
   return { candidates, preselectionErrors };
 }
 
+/** Apply a selected stream independently while retaining skips and failures in the bulk receipt. */
 async function runHistoryCompactBulkRow(params: {
   row: ReturnType<typeof selectHistoryCompactBulkTargets>[number];
   options: HistoryCompactBulkCommandOptions;

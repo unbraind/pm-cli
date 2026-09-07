@@ -17,6 +17,12 @@ import { normalizeBootstrapInvocation } from "../../../../src/sdk/cli-bootstrap.
 describe("history namespace completion and item addressing", () => {
   it("completes native Bash operations with the same flags as their legacy aliases", () => {
     const script = generateBashScript();
+    /** Send the generated script through stdin so Windows argv limits cannot truncate execution. */
+    const complete = (words: string, cword: number): string =>
+      execFileSync("bash", ["-s"], {
+        input: `${script}\nCOMP_WORDS=(${words}); COMP_CWORD=${cword}; _pm_completion; printf '%s\\n' "\${COMPREPLY[@]}"`,
+        encoding: "utf8",
+      });
     for (const [leaf, alias, flag] of [
       ["repair", "history-repair", "--salvage-tail"],
       ["redact", "history-redact", "--literal"],
@@ -24,33 +30,12 @@ describe("history namespace completion and item addressing", () => {
       ["restore", "restore", "--author"],
       ["activity", "activity", "--stream"],
     ]) {
-      const native = execFileSync(
-        "bash",
-        [
-          "-c",
-          `${script}\nCOMP_WORDS=(pm history ${leaf} --); COMP_CWORD=3; _pm_completion; printf '%s\\n' "\${COMPREPLY[@]}"`,
-        ],
-        { encoding: "utf8" },
-      );
-      const legacy = execFileSync(
-        "bash",
-        [
-          "-c",
-          `${script}\nCOMP_WORDS=(pm ${alias} --); COMP_CWORD=2; _pm_completion; printf '%s\\n' "\${COMPREPLY[@]}"`,
-        ],
-        { encoding: "utf8" },
-      );
+      const native = complete(`pm history ${leaf} --`, 3);
+      const legacy = complete(`pm ${alias} --`, 2);
       expect(native).toBe(legacy);
       expect(native.trim().split(/\s+/)).toContain(flag);
     }
-    const roots = execFileSync(
-      "bash",
-      [
-        "-c",
-        `${script}\nCOMP_WORDS=(pm ''); COMP_CWORD=1; _pm_completion; printf '%s\\n' "\${COMPREPLY[@]}"`,
-      ],
-      { encoding: "utf8" },
-    ).split("\n");
+    const roots = complete("pm ''", 1).split("\n");
     expect(roots).toContain("history");
     expect(roots).not.toContain("history-repair");
     expect(roots).not.toContain("activity");

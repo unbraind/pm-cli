@@ -40,13 +40,14 @@ function parseNonNegativeIntFlag(
   if (typeof raw !== "string") {
     return undefined;
   }
-  if (!/^\d+$/.test(raw.trim())) {
+  const parsed = Number.parseInt(raw, 10);
+  if (!/^\d+$/.test(raw.trim()) || !Number.isSafeInteger(parsed)) {
     throw new PmCliError(
       `history-compact ${flag} must be a non-negative integer.`,
       EXIT_CODE.USAGE,
     );
   }
-  return Number.parseInt(raw, 10);
+  return parsed;
 }
 
 /** Resolve bulk input sources and delegate single or multi-stream compaction to the SDK. */

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { createHistoryEntry } from "../../../../src/core/history/history.js";
 import { resolveItemTypeRegistry } from "../../../../src/core/item/type-registry.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
+import { getHistoryPath } from "../../../../src/core/store/paths.js";
 import { runHistoryMaintenance } from "../../../../src/sdk/history/maintenance.js";
 import { resolveHistorySubject } from "../../../../src/sdk/history-redact.js";
 import { runHistoryRedact } from "../../../../src/sdk/history-redact.js";
@@ -19,6 +20,46 @@ import { createTaskFixture } from "../../../helpers/createTaskFixture.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 describe("SDK history maintenance transaction", () => {
+  it("refuses unsafe SDK thresholds before inspecting the workspace", async () => {
+    await withTempPmPath(async (context) => {
+      for (const key of ["allOver", "minEntries"]) {
+        for (const value of [Infinity, NaN, Number.MAX_SAFE_INTEGER + 1, -1, 0.5]) {
+          await expect(
+            runHistoryCompactBulk(
+              { [key]: value, scope: "all-streams" },
+              { path: path.join(context.tempRoot, "uninitialized") },
+            ),
+          ).rejects.toThrow(/must be a non-negative safe integer/);
+        }
+      }
+    });
+  });
+
+  it("rejects non-filename history IDs before resolving retained streams", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      const registry = resolveItemTypeRegistry(settings, []);
+      const outside = path.join(context.pmPath, "outside.jsonl");
+      await writeFile(outside, "private history canary\n");
+      for (const id of [
+        "../outside", "..\\outside", "nested/id", "", ".", "..", "C:outside", "bad\0id",
+      ]) {
+        expect(() => getHistoryPath(context.pmPath, id)).toThrow(/history item id/i);
+        await expect(
+          resolveHistorySubject(context.pmPath, id, settings, registry.type_to_folder),
+        ).rejects.toThrow(/history item id/i);
+      }
+      expect(await readFile(outside, "utf8")).toBe("private history canary\n");
+      const legacy = "legacy..retained";
+      await writeFile(getHistoryPath(context.pmPath, legacy), "");
+      await expect(
+        resolveHistorySubject(
+          context.pmPath, ` #${legacy.toUpperCase()} `, settings, registry.type_to_folder,
+        ),
+      ).resolves.toMatchObject({ id: legacy, located: null });
+    });
+  });
+
   it("refuses uninitialized workspaces before every single and bulk maintenance plan", async () => {
     await withTempPmPath(async (context) => {
       const root = path.join(context.tempRoot, "uninitialized");
