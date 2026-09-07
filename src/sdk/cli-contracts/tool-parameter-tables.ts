@@ -2094,7 +2094,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   after: {
     description:
-      "Continuation cursor resuming a bounded listing or traversal after this previously returned id.",
+      "Opaque action-specific continuation cursor returned by the preceding bounded query.",
     examples: ["pm-x1y2"],
   },
   maxPaths: {

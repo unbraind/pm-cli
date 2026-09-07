@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026.9.7 - 2026-09-07
+## Unreleased
 
 ### Added
 
@@ -10,11 +10,17 @@
 
 - Grouping by a set-valued field groups by the whole set: pm aggregate --group-by tags returns 2,022 tag-tuple rows for 2,467 items, so the governance question the command exists to answer cannot be asked ([pm-398z0u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-398z0u.toon))
 - The graph completeness audit scopes every coverage metric to active nodes, so it certifies a saturated graph while 1,796 of 2,079 nodes are unmeasured ([pm-6olc95](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6olc95.toon))
-- Release preparation omits the calendar date and fails post-tag main CI ([pm-071wg4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-071wg4.toon))
 
 ### Other
 
 - Compact unbundled runtime JavaScript while preserving SDK declarations and Sentry source maps ([pm-fx0rcb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fx0rcb.toon))
+- Adopt PR 1212 release and secret-scanner action pins with matching workflow contracts ([pm-shpocu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-shpocu.toon))
+
+## 2026.9.7 - 2026-09-07
+
+### Fixed
+
+- Release preparation omits the calendar date and fails post-tag main CI ([pm-071wg4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-071wg4.toon))
 
 ## 2026.9.6 - 2026-09-06
 

@@ -130,6 +130,9 @@ The pure derivation defaults to a work bound of 100,000 input items plus graph
 nodes and edges, checked before graph passes. Larger inputs return
 `work_limit_exceeded: true` and `complete: false` with no manufactured schedule.
 Rows, residual samples, findings, and path identifiers obey the supplied `limit`.
+All retained paths also share a total identifier budget of `maxWork`, so large
+finding limits cannot create quadratic path evidence. Exhaustion preserves exact
+counts and sets both `path_truncated` and the result's `truncated` flag.
 The workspace CLI still pays its existing metadata-read and graph-assembly cost;
 the derivation bound is not a claim that loading a million-item workspace is free.
 Summary mode suppresses the evidence arrays and retains their counts.

@@ -21,7 +21,7 @@ export interface DeadlineScheduleItem {
 export interface DeadlineScheduleOptions {
   /** Explicit clock instant; defaults to the invocation time. */
   now?: string;
-  /** Maximum nodes plus edges inspected; larger graphs return a declared residual. */
+  /** Input nodes plus edges plus items ceiling; also caps total retained path identifiers. */
   maxWork?: number;
   /** Maximum rows, residual samples, findings, and identifiers per finding path. */
   limit?: number;
@@ -120,10 +120,13 @@ interface ScheduleState {
 function propagateLatest(
   order: readonly string[],
   states: Map<string, ScheduleState>,
+  signal?: AbortSignal,
 ): void {
   for (let index = order.length - 1; index >= 0; index -= 1) {
+    signal?.throwIfAborted();
     const state = states.get(order[index]!)!;
     for (const id of state.successors) {
+      signal?.throwIfAborted();
       const successor = states.get(id)!;
       if (successor.latest === undefined || successor.duration === undefined)
         continue;
@@ -141,10 +144,12 @@ function deadlinePath(
   id: string,
   states: Map<string, ScheduleState>,
   limit: number,
+  signal?: AbortSignal,
 ): { path: string[]; path_truncated: boolean } {
   const reverse: string[] = [];
   let current: string | undefined = id;
   while (current !== undefined && reverse.length < limit) {
+    signal?.throwIfAborted();
     reverse.push(current);
     current = states.get(current)!.predecessor;
   }
@@ -224,6 +229,7 @@ function propagateEarliest(
         ? null
         : state.earliest + state.duration;
     for (const next of state.successors) {
+      signal?.throwIfAborted();
       const target = states.get(next)!;
       if (finish === null) target.earliest = null;
       else if (
@@ -250,6 +256,8 @@ function collectDatedState(
   result: DeadlineScheduleResult,
   now: number,
   limit: number,
+  pathBudget: { remaining: number },
+  signal?: AbortSignal,
 ): void {
   const duration = state.duration!;
   if (state.latest !== undefined) {
@@ -270,14 +278,22 @@ function collectDatedState(
     state.earliest + duration > state.deadline
   ) {
     result.overcommitted_count += 1;
-    if (result.overcommitted.length < limit)
+    if (result.overcommitted.length < limit) {
+      const evidence = deadlinePath(
+        id,
+        states,
+        Math.min(limit, pathBudget.remaining),
+        signal,
+      );
+      pathBudget.remaining -= evidence.path.length;
+      if (evidence.path_truncated) result.truncated = true;
       result.overcommitted.push({
         deadline_id: id,
         deadline: state.item!.deadline!,
         shortfall_minutes: state.earliest + duration - state.deadline,
-        ...deadlinePath(id, states, limit),
+        ...evidence,
       });
-    else result.truncated = true;
+    } else result.truncated = true;
   }
 }
 
@@ -288,9 +304,11 @@ function collectScheduleResult(
   result: DeadlineScheduleResult,
   now: number,
   limit: number,
+  maxPathEntries: number,
   residual: (id: string, reason: DeadlineScheduleResidual["reason"]) => void,
   signal?: AbortSignal,
 ): void {
+  const pathBudget = { remaining: maxPathEntries };
   for (const id of nodes) {
     signal?.throwIfAborted();
     const state = states.get(id)!;
@@ -312,13 +330,22 @@ function collectScheduleResult(
       continue;
     }
     if (state.earliest === null) residual(id, "unknown_predecessor_estimate");
-    collectDatedState(id, state, states, result, now, limit);
+    collectDatedState(
+      id,
+      state,
+      states,
+      result,
+      now,
+      limit,
+      pathBudget,
+      signal,
+    );
   }
 }
 
 /**
  * Derive estimated latest starts and deadline shortfalls without mutating inputs.
- * Work is O(V+E) plus bounded finding-path reconstruction. Unknown predecessors
+ * Work is O(V+E) plus at most maxWork total finding-path identifiers. Unknown predecessors
  * invalidate earliest finish; unknown successors cannot transfer dated bounds.
  * Date-only ISO values denote UTC midnight, consistently with Date.parse.
  */
@@ -369,13 +396,14 @@ export function deriveRelationshipDeadlines(
   const states = initializeStates(nodes, items, now, residual, options.signal);
   indexScheduleEdges(graph, states, options.signal);
   const order = propagateEarliest(nodes, states, options.signal);
-  propagateLatest(order, states);
+  propagateLatest(order, states, options.signal);
   collectScheduleResult(
     nodes,
     states,
     result,
     now,
     limit,
+    maxWork,
     residual,
     options.signal,
   );

@@ -52,6 +52,12 @@ describe("set-valued aggregation", () => {
       ]);
       expect(result.totals.items_grouped).toBe(3);
       expect(result.totals.group_memberships).toBe(4);
+      const repeated = await runAggregate(
+        { groupBy: "tags,type,tags", sum: "estimated_minutes" },
+        { path: context.pmPath },
+      );
+      expect(repeated.groups).toEqual(result.groups);
+      expect(repeated.totals).toEqual(result.totals);
       expect(result.groups.at(-1)?.group_label).toContain("(untagged)");
       const first = await runAggregate(
         { groupBy: "tags", limit: 1 },

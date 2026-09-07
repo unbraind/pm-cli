@@ -7,6 +7,41 @@ import {
 } from "../../../../src/sdk/relationships.js";
 
 describe("deadline-derived scheduling", () => {
+  it("shares one path-evidence budget across all overdue commitments", () => {
+    const items = Array.from({ length: 40 }, (_, index) => ({
+      id: `pm-${String(index).padStart(2, "0")}`,
+      title: "Dated chain",
+      status: "open",
+      estimated_minutes: 1,
+      ...(index > 0
+        ? { blocked_by: `pm-${String(index - 1).padStart(2, "0")}` }
+        : {}),
+      deadline: "2026-09-07T00:00:00Z",
+    }));
+    const graph = assembleWorkspaceRelationshipGraph(items).graph;
+    const result = deriveRelationshipDeadlines(graph, items, {
+      now: "2026-09-07T00:00:00Z",
+      limit: 40,
+      maxWork: 120,
+      signal: new AbortController().signal,
+    });
+    expect(result).toMatchObject({
+      complete: true,
+      work_limit_exceeded: false,
+      scheduled_count: 40,
+      overcommitted_count: 40,
+      truncated: true,
+    });
+    expect(result.overcommitted).toHaveLength(40);
+    expect(
+      result.overcommitted.reduce((sum, item) => sum + item.path.length, 0),
+    ).toBe(120);
+    expect(result.overcommitted.at(-1)).toMatchObject({
+      path: [],
+      path_truncated: true,
+      shortfall_minutes: 40,
+    });
+  });
   it("propagates estimates backward and clears shortfall when the deadline moves later", () => {
     const items = [
       {

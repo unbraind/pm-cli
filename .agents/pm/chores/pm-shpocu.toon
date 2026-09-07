@@ -2,23 +2,28 @@ id: pm-shpocu
 title: Adopt PR 1212 release and secret-scanner action pins with matching workflow contracts
 description: "Integrate the Dependabot github-actions group update to softprops/action-gh-release 3.0.3 and TruffleHog 3.97.4 in the connected SDK/CLI delivery. Preserve immutable SHA pins and scanner policy, synchronize the exact workflow contract that made PR 1212 coverage fail, and close the superseded dependency PR after reviewed integration."
 type: Chore
-status: in_progress
+status: closed
 priority: 1
 tags[4]: "area:ci",dependencies,"github:1212",supply-chain
 created_at: "2026-09-07T06:38:14.116Z"
-updated_at: "2026-09-07T07:23:03.532Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#2483b936bff70633c5287ff9"
+updated_at: "2026-09-07T08:32:34.991Z"
+closed_at: "2026-09-07T08:14:04.616Z"
+completed_at: "2026-09-07T08:14:04.616Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: Both reviewed immutable action pins are adopted; exact workflow contracts pass; dependency PR 1212 has a canonical PM link and is superseded by the reviewed combined delivery; security inventories and required checks have no actionable findings.
 parent: pm-u9d0
+resolution: "Adopted verified softprops/action-gh-release v3.0.3 and trufflehog v3.97.4 immutable pins, updating the exact release-action assertion."
+expected_result: No stale dependency PR remains and hosted security/coverage tests accept both pinned updates.
+actual_result: "Both upstream tag targets verified, 14 workflow tests passed, replacement PR1213 security scans and coverage passed, both PR1212 bot artifacts acknowledged, and PR1212 closed as superseded."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4ris,verifies,"2026-09-07T06:38:14.116Z","harness:codex","cli:create:dep",detected
   pm-k47gdd,recurs_from,"2026-09-07T06:38:14.116Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-09-07T06:38:14.116Z","harness:codex","Duplicate check: full all-status snapshot of 2651 items plus live TruffleHog and 1212 searches and open/in-progress lists found no owner for these exact versions or PR. Closed pm-k47gdd owns the previous compatible action refresh and remains historical; this new PR-specific recurrence retains that lineage. PR 1212 head b01ca9d has a deterministic failed assertion for the old softprops SHA, not a scanner finding."
   "2026-09-07T07:23:03.532Z","harness:codex","Live GitHub inventory on 2026-09-07: open Dependabot alerts [], secret-scanning alerts [], code-scanning alerts [], open issues []. PR 1212 remains the only open PR; both exact action revisions were adopted here, and its 14 workflow-contract tests passed through the linked test runner. Its review artifacts were acknowledged with reactions and scoped replies; closure awaits reviewed integration."
+  "2026-09-07T08:14:03.306Z","harness:codex","PR1212 superseded by the combined PR1213 after both immutable action pins passed upstream tag verification, exact workflow regression tests, hosted coverage and security scans. Final inventory confirms both dependency PR bot artifacts are unchanged, reacted to, and acknowledged. PR1212 is closed without an independent merge; the reviewed replacement carries the changes."
+  "2026-09-07T08:32:34.991Z","harness:codex","Final connected-delivery verification: all 8524 tests pass with exact 100/100/100/100, full static gates and installed branch npm/Bun CLI/SDK/MCP acceptance pass. Review corrections are included before the final hosted round. Immutable daily v2026.9.7 publication and installed consumers also pass separately; this branch remains Unreleased. No open GitHub issues or dependency/security alerts were returned by the latest complete inventories."
 files[3]{path,scope,note}:
   .github/workflows/release.yml,project,Reviewed contract and implementation coverage
   .github/workflows/security.yml,project,Reviewed contract and implementation coverage
@@ -37,4 +42,5 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+close_reason: Dependency updates and exact workflow assertions integrated into the reviewed combined delivery; superseded PR1212 closed.
 body: ""
