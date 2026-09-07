@@ -72,6 +72,19 @@ describe("history namespace completion and item addressing", () => {
     );
   });
 
+  it("offers a value-taking item ID for every history maintenance operation in Zsh and Fish", () => {
+    const zsh = generateZshScript();
+    const fish = generateFishScript().split("\n");
+    for (const leaf of ["redact", "repair", "compact"]) {
+      const start = zsh.indexOf(`        history-${leaf})`);
+      const operation = zsh.slice(start, zsh.indexOf("          ;;", start));
+      expect(operation).toContain("--id[");
+      expect(operation.split("\n").find((line) => line.includes("--id["))).toContain(":id");
+      expect(fish.find((line) => line.includes(`__pm_history_operation history-${leaf} ${leaf}' -l id `)))
+        .toMatch(/ -r$/);
+    }
+  });
+
   it("resolves history completion past global prefixes without treating values or later arguments as operations", () => {
     const cases: { words: string[]; includes: string; excludes?: string }[] = [];
     for (const [leaf, alias, flag] of [

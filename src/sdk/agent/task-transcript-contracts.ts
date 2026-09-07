@@ -8,7 +8,11 @@ import {
   isPmSuccessfulExitCode,
   resolvePmCommandExitContract,
 } from "../cli-contracts/command-exit-contracts.js";
-import { parseBootstrapCommandName } from "../cli-contracts/bootstrap-command-scanner.js";
+import {
+  findBootstrapCommandTokenIndex,
+  parseBootstrapCommandName,
+} from "../cli-contracts/bootstrap-command-scanner.js";
+import { resolvePmHistoryOperation } from "../cli-contracts/command-aliases.js";
 import {
   PM_OUTPUT_ENVELOPE_KINDS,
   resolvePmCommandOutputEnvelope,
@@ -166,11 +170,18 @@ function assertTranscriptStepOutputContract(
       `${field} only refusal steps may declare expected_error_code or expected_refusal_surface`,
     );
   }
-  const command = parseBootstrapCommandName(args);
-  if (command === undefined) {
+  const commandIndex = findBootstrapCommandTokenIndex(args);
+  if (commandIndex === undefined) {
     throw new TypeError(
       `${field}.args must identify a command after global flags`,
     );
+  }
+  let command = args[commandIndex].trim().toLowerCase();
+  if (command === "history") {
+    const operation = parseBootstrapCommandName(args.slice(commandIndex + 1));
+    if (operation !== undefined) {
+      command = resolvePmHistoryOperation(`history ${operation}`);
+    }
   }
   const exitContract = resolvePmCommandExitContract(command);
   if (

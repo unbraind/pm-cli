@@ -1474,6 +1474,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         history-compact)
           _arguments \\
+            '--id[Item ID (alternative to positional ID)]:id' \\
             '--before[Compact entries strictly before this version number or ISO timestamp]:before' \\
             '--ids[Bulk: compact an explicit comma-separated list of item ids]:ids' \\
             '--all-over[Bulk: compact every stream with more than N entries]:all-over' \\
@@ -1512,6 +1513,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         history-redact)
           _arguments \\
+            '--id[Item ID (alternative to positional ID)]:id' \\
             '--literal[Literal string matcher to redact from history/item payloads]:literal' \\
             '--regex[Regex matcher to redact (/pattern/flags or raw pattern)]:regex' \\
             '--replacement[Replacement text (defaults to [redacted])]:replacement' \\
@@ -1524,6 +1526,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         history-repair)
           _arguments \\
+            '--id[Item ID (alternative to positional ID)]:id' \\
             '--salvage-tail[Recover an invalid suffix after a verified prefix]' \\
             '--normalize-provenance[Remove invalid provenance with aggregate evidence]' \\
             '--all[Repair every drifted stream in one audited pass]' \\
@@ -2686,6 +2689,7 @@ complete -c pm -n '__fish_seen_subcommand_from events' -l provenance-filter -d '
 complete -c pm -n '__fish_seen_subcommand_from events' -l follow -d 'Continue emitting committed events'
 complete -c pm -n '__fish_seen_subcommand_from events' -l interval-ms -d 'Empty-read delay while following' -r
 complete -c pm -n '__pm_history_operation history-compact compact' -l before -d 'Compact entries strictly before this version number or ISO timestamp' -r
+complete -c pm -n '__pm_history_operation history-compact compact' -l id -d 'Item ID (alternative to positional ID)' -r
 complete -c pm -n '__pm_history_operation history-compact compact' -l ids -d 'Bulk: compact an explicit comma-separated list of item ids' -r
 complete -c pm -n '__pm_history_operation history-compact compact' -l all-over -d 'Bulk: compact every stream with more than N entries' -r
 complete -c pm -n '__pm_history_operation history-compact compact' -l closed -d 'Bulk: compact only closed (terminal) items streams'
@@ -2704,6 +2708,7 @@ complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l at
 complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l reviewer -d 'Reviewer recording the disposition' -r
 complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l reason -d 'Evidence-backed review rationale' -r
 complete -c pm -n '__pm_history_operation history-redact redact' -l literal -d 'Literal string matcher to redact from history/item payloads' -r
+complete -c pm -n '__pm_history_operation history-redact redact' -l id -d 'Item ID (alternative to positional ID)' -r
 complete -c pm -n '__pm_history_operation history-redact redact' -l regex -d 'Regex matcher to redact (/pattern/flags or raw pattern)' -r
 complete -c pm -n '__pm_history_operation history-redact redact' -l replacement -d 'Replacement text (defaults to [redacted])' -r
 complete -c pm -n '__pm_history_operation history-redact redact' -l dry-run -d 'Preview redaction impact without writing files'
@@ -2711,6 +2716,7 @@ complete -c pm -n '__pm_history_operation history-redact redact' -l author -d 'M
 complete -c pm -n '__pm_history_operation history-redact redact' -l message -d 'Audit history message' -r
 complete -c pm -n '__pm_history_operation history-redact redact' -l force -d 'Force ownership/lock override'
 complete -c pm -n '__pm_history_operation history-repair repair' -l salvage-tail -d 'Recover an invalid suffix after a verified prefix'
+complete -c pm -n '__pm_history_operation history-repair repair' -l id -d 'Item ID (alternative to positional ID)' -r
 complete -c pm -n '__pm_history_operation history-repair repair' -l normalize-provenance -d 'Remove invalid provenance with aggregate evidence'
 complete -c pm -n '__pm_history_operation history-repair repair' -l all -d 'Repair every drifted stream in one audited pass'
 complete -c pm -n '__pm_history_operation history-repair repair' -l dry-run -d 'Preview the re-anchor impact without writing the history file'

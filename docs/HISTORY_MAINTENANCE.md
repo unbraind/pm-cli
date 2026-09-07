@@ -30,6 +30,8 @@ Completion accepts global options before `history` and between `history` and
 its operation, including valued options such as `--pm-path <path>` and
 `--output-format=json`. Option values and later positional arguments do not
 select an operation; the first ordinary history argument remains the item ID.
+Zsh and Fish also offer the value-taking `--id` alternative for redaction,
+repair, and compaction under both native and compatibility spellings.
 
 ```bash
 pm history repair --help
@@ -48,6 +50,10 @@ returns the standard flat mutation
 receipt; activity uses the existing bounded read envelope and streaming
 contracts. Universal output controls resolve against the selected leaf, so a
 restore does not inherit the parent history read envelope.
+SDK agent-task transcripts resolve the selected history operation through
+leading and interleaved global options before validating output and exit
+contracts. Native maintenance steps use diagnostic reports, restore uses a
+mutation receipt, and ordinary item history retains its collection contract.
 
 History identifiers must be a single filename: path separators, traversal-only
 names, null bytes, and drive or stream syntax are rejected before resolution.
