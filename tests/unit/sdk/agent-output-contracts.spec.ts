@@ -163,6 +163,19 @@ describe("agent output contracts", () => {
     });
   });
 
+  it("removes terminal controls from retained identity and recovery text", () => {
+    const projected = projectPmDiagnosticText(
+      `Error: \u001b[31munsafe\u001b[0m\u001b]52;c;payload\u0007\u0000\u0085\n${"detail ".repeat(2_000)}`,
+      "Retry \u001b[2Jwith corrected input.\u0007",
+      { maxEstimatedTokens: 192 },
+    );
+    expect(projected.output).toContain("Error: unsafe");
+    expect(projected.output).toContain("Retry with corrected input.");
+    expect(projected.output).not.toContain("payload");
+    expect(projected.output.replaceAll("\n", "")).not.toMatch(/\p{Cc}/u);
+    expect(projected.diagnostic_output.estimated_tokens).toBeLessThanOrEqual(192);
+  });
+
   it("keeps short default-budget text unchanged and repairs an empty action", () => {
     const short = projectPmDiagnosticText("Short diagnostic", "Retry.");
     const repaired = projectPmDiagnosticText("detail ".repeat(2_000), "   ", {

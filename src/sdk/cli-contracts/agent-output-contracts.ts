@@ -5,6 +5,7 @@
  * packages, contract discovery, and regression gates. The contracts describe
  * output policy without coupling package authors to pm's renderer.
  */
+import { stripVTControlCharacters } from "node:util";
 import { resolvePmHistoryOperation } from "./command-aliases.js";
 import { PM_CORE_COMMAND_NAMES } from "./enum-contracts.js";
 
@@ -662,6 +663,11 @@ export interface PmProjectedTextDiagnostic {
   diagnostic_output: PmDiagnosticOutputReceipt;
 }
 
+/** Remove terminal escape sequences and non-printing controls from bounded diagnostic fragments. */
+function sanitizeDiagnosticText(text: string): string {
+  return stripVTControlCharacters(text).replace(/\p{Cc}/gu, " ").trim();
+}
+
 /** Bind human-readable diagnostics while retaining their first identifying line and corrective action. */
 export function projectPmDiagnosticText(
   output: string,
@@ -691,12 +697,12 @@ export function projectPmDiagnosticText(
   const truncated = originalEstimatedTokens > budget;
   const actionPrefix = "What is required:\n  ";
   const identity = truncateDiagnosticUtf8Text(
-    output.trimStart().split(/\r?\n/u, 1)[0]!,
+    sanitizeDiagnosticText(output.trimStart().split(/\r?\n/u, 1)[0]!),
     320,
   );
   const actionSuffix = `\n\n${identity}\n\nDiagnostic output exceeded its declared ${budget}-token ceiling; rerun with structured JSON for the bounded recovery envelope.`;
   const correctiveActionText =
-    correctiveAction.trim() ||
+    sanitizeDiagnosticText(correctiveAction) ||
     "Inspect the diagnostic code and retry with corrected input.";
   const availableActionBytes = Math.max(
     1,

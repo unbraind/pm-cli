@@ -13,10 +13,9 @@ export async function describeItemOwnershipConflict(
   itemId: string,
   assignee: string,
 ): Promise<string> {
-  const history = await readHistoryEntries(
-    getHistoryPath(pmRoot, itemId),
-    itemId,
-  ).catch(() => []);
+  const history = await Promise.resolve()
+    .then(() => readHistoryEntries(getHistoryPath(pmRoot, itemId), itemId))
+    .catch(() => []);
   const latestOwnershipOperation = [...history]
     .reverse()
     .find((entry) =>

@@ -82,6 +82,8 @@ bytes), and points to structured JSON for the bounded recovery envelope. The
 first line should name the specific failure, such as `Error: Unknown option
 --label`. Oversized caller-input echoes are discarded before this identity;
 the retained identity and corrective action share the binding byte budget.
+The bounded fallback strips terminal escape sequences and replaces remaining
+control characters before measuring those fragments.
 
 ## Executable Assurance
 

@@ -43,7 +43,7 @@ describe("native history namespace compatibility", () => {
           }
           for (const value of ["--force", "--json", "--dry_run"]) {
             const args = [...command, flag, value];
-            expect(redactSensitiveCommandArgs(args)).toEqual(args);
+            expect(redactSensitiveCommandArgs(args)).toEqual([...command, flag, "[redacted]"]);
           }
         }
       }

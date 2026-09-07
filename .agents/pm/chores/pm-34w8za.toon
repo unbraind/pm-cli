@@ -6,18 +6,18 @@ status: closed
 priority: 3
 tags[5]: "area:quality","area:sdk",history,refactor,simplification
 created_at: "2026-07-25T21:38:53.550Z"
-updated_at: "2026-09-07T15:02:00.457Z"
-closed_at: "2026-09-07T15:00:51.150Z"
-completed_at: "2026-09-07T15:00:51.150Z"
+updated_at: "2026-09-07T15:51:22.519Z"
+closed_at: "2026-09-07T15:51:21.957Z"
+completed_at: "2026-09-07T15:51:21.957Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "One SDK primitive owns the load, verify, transform, re-anchor, reconcile and report pipeline for item history streams, and redact, repair and compact are expressed as transforms handed to it. cli/commands/copy.ts and cli/commands/restore.ts consume that primitive rather than re-implementing stream handling. The externally observable behaviour of every history command — flags, dry-run plans, applied reports, exit codes — is unchanged, asserted by the existing suites passing without modification. A jscpd run at 12 lines and 60 tokens reports no remaining clone pair inside the history family."
 parent: pm-o2kc
 risk: medium
 confidence: high
-resolution: "One verified SDK snapshot and guarded maintenance pipeline owns redaction, repair and compaction orchestration, with shared restoration drift primitives and operation-specific privacy, rollback, salvage and retained evidence. History IDs are constrained before path access; complete drift scans classify invalid identities without aborting."
-expected_result: Shared maintenance preserves history integrity and refuses unsafe targets while retaining complete diagnostic scans.
-actual_result: "Final local correction verified: all 8544 tests in 639 files passed with exact 100/100/100/100 and zero uncovered counts. The complete quality:static chain, linked history suites, strict 12-line/60-token history duplicate scan, docs links and ESLint passed. Fresh npm and Bun installs each passed 15 history workflow steps, SDK execution, sensitive-recovery checks, traversal refusal and oversized-threshold refusal. New exact-head hosted CI, all five Nightly Validation jobs and renewed full review remain required before merge; this is not publication evidence."
+resolution: "One verified SDK snapshot and guarded maintenance pipeline owns redaction, repair and compaction, with shared restoration drift primitives. History paths are constrained before access; drift scans classify unreadable streams; best-effort ownership catches invalid path construction while authoritative assurance and mutation enforcement reject invalid history."
+expected_result: "History maintenance preserves privacy, rollback, verified evidence and compatible output; best-effort ownership failure cannot escape as an unrelated path error."
+actual_result: "Unsafe identity fallback first failed, then passed. Full history, ownership, assurance and repository tests passed at exact 100% coverage; installed npm/Bun public SDK checks passed."
 dependencies[4]:
   - id: pm-yh8r
     kind: related
@@ -37,7 +37,7 @@ dependencies[4]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[15]:
+comments[17]:
   - created_at: "2026-07-31T14:23:58.574Z"
     author: "harness:claude-code"
     text: "Scope input 2026-07-31 from pm-aka8m7. This chore consolidates the load, verify, rewrite, re-anchor, report pipeline across redact, repair and compact, and that consolidation is the right and only place to add one thing all three paths currently omit.\n\nreanchorHistoryEntries at src/core/history/replay.ts:365-370 overwrites before_hash and after_hash in place and retains the prior values nowhere - the result carries an entriesRehashed count and a per-entry rehashed boolean. Every one of the three commands this chore unifies therefore destroys the anchors its inputs committed to, and so does every union merge, since src/sdk/merge/three-way.ts:57 documents reanchored as true for every union. Adding retention per command would mean writing it three times and would leave the merge driver's own path a fourth; adding it at the unified pipeline covers all four at once.\n\nRecommend widening this chore's acceptance criteria to include the retention hook - the shared pipeline emits the original anchor pair for each rewritten entry to whichever durable sink the owning command chooses - without taking on the storage-location decision, which belongs to pm-aka8m7. That keeps this chore mechanical while making the fix a one-site change afterwards rather than a four-site one."
@@ -84,9 +84,15 @@ comments[15]:
   - created_at: "2026-09-07T15:00:50.557Z"
     author: "harness:codex"
     text: "Final local correction verified: all 8544 tests in 639 files passed with exact 100/100/100/100 and zero uncovered counts. The complete quality:static chain, linked history suites, strict 12-line/60-token history duplicate scan, docs links and ESLint passed. Fresh npm and Bun installs each passed 15 history workflow steps, SDK execution, sensitive-recovery checks, traversal refusal and oversized-threshold refusal. New exact-head hosted CI, all five Nightly Validation jobs and renewed full review remain required before merge; this is not publication evidence."
+  - created_at: "2026-09-07T15:36:16.095Z"
+    author: "harness:codex"
+    text: "Review regression reproduced: synchronous getHistoryPath throw escaped the best-effort ownership catch. Path evaluation now happens inside the guarded promise; focused test passes. Strict stream policy deliberately refuses invalid input, and assurance history has no unreadable receipt and already rejects corrupt streams; neither may silently omit invalid history. Drift scans retain explicit per-stream unreadable evidence."
+  - created_at: "2026-09-07T15:51:21.388Z"
+    author: "harness:codex"
+    text: "Final review corrections verified: all 8546 tests across 639 files passed with exact 63201/63201 statements, 47976/47976 branches, 13108/13108 functions and 60695/60695 lines. Full static quality, all linked tests, docs links and focused ESLint passed. Fresh npm and Bun installations each passed 15 history steps and public SDK checks, including sanitized bounded diagnostics and best-effort ownership fallback. Packed npx/bunx smoke passed. Fresh hosted review and all five platform jobs remain required before merge; this is local candidate evidence, not publication evidence."
 learnings[1]{created_at,author,text}:
   "2026-09-07T10:43:14.796Z","harness:codex",Read stream bytes and decoded entries in one snapshot before planning. A second independent read can bind a rewrite to different source bytes; item and stream drift must both be rechecked under the existing write lock.
-files[18]{path,scope,note}:
+files[20]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Managed latest changelog package activation for reviewed release notes
   sdk/public-surface.json,project,History SDK and command compatibility verification
   src/core/history/drift-scan.ts,project,Classify unsafe stream identities without aborting complete drift scans
@@ -103,14 +109,17 @@ files[18]{path,scope,note}:
   src/sdk/history/subject.ts,project,Shared maintenance and subject primitives
   src/sdk/index.ts,project,Public SDK exports
   src/sdk/lifecycle/restore.ts,project,Recovery snapshot and drift gate
+  src/sdk/ownership-source.ts,project,Guard best-effort history path evaluation
   tests/unit/commands/history-repair-command.spec.ts,project,Reader failure boundary regression
+  tests/unit/sdk/claim-public-surface.spec.ts,project,Unsafe history ID ownership fallback regression
   tests/unit/sdk/history/maintenance.spec.ts,project,Transaction failure and persistence coverage
-tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[5]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/history/maintenance.spec.ts tests/unit/commands/history-repair-command.spec.ts tests/integration/history-compact-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,project,600,"harness:codex","2026-09-07T10:03:29.246Z",local_mutation,feat/history-maintenance-sdk-command-grammar
   pnpm exec jscpd src/core/history src/sdk/history src/sdk/history-redact.ts src/sdk/history-repair.ts src/sdk/history-compact.ts src/sdk/history-read.ts src/sdk/lifecycle/restore.ts src/sdk/lifecycle/copy.ts --min-lines 12 --min-tokens 60 --mode strict --format typescript --reporters console --silent,project,120,"harness:codex","2026-09-07T10:08:43.422Z",local_mutation,feat/history-maintenance-sdk-command-grammar
   node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/history-rewrite.spec.ts tests/unit/commands/restore-command.spec.ts,project,600,"harness:codex","2026-09-07T10:18:05.997Z",local_mutation,feat/history-maintenance-sdk-command-grammar
   node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts,project,240,"harness:codex","2026-09-07T14:42:33.366Z",local_mutation,feat/history-maintenance-sdk-command-grammar
-test_runs[3]:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/claim-public-surface.spec.ts,project,240,"harness:codex","2026-09-07T15:36:13.972Z",local_mutation,feat/history-maintenance-sdk-command-grammar
+test_runs[4]:
   - run_id: test-local-mtr3zfid-8u976c
     kind: test
     status: passed
@@ -151,8 +160,23 @@ test_runs[3]:
       pnpm exec jscpd src/core/history src/sdk/history src/sdk/history-redact.ts src/sdk/history-repair.ts src/sdk/history-compact.ts src/sdk/history-read.ts src/sdk/lifecycle/restore.ts src/sdk/lifecycle/copy.ts --min-lines 12 --min-tokens 60 --mode strict --format typescript --reporters console --silent,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/history-rewrite.spec.ts tests/unit/commands/restore-command.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtrepugj-j8fs1m
+    kind: test
+    status: passed
+    started_at: "2026-09-07T15:38:25.062Z"
+    finished_at: "2026-09-07T15:40:05.107Z"
+    recorded_at: "2026-09-07T15:40:05.107Z"
+    passed: 5
+    failed: 0
+    skipped: 0
+    executions[5]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/history/maintenance.spec.ts tests/unit/commands/history-repair-command.spec.ts tests/integration/history-compact-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,schema,schema,source,local_source_ref
+      pnpm exec jscpd src/core/history src/sdk/history src/sdk/history-redact.ts src/sdk/history-repair.ts src/sdk/history-compact.ts src/sdk/history-read.ts src/sdk/lifecycle/restore.ts src/sdk/lifecycle/copy.ts --min-lines 12 --min-tokens 60 --mode strict --format typescript --reporters console --silent,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/history-rewrite.spec.ts tests/unit/commands/restore-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/claim-public-surface.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/HISTORY_MAINTENANCE.md,project,Public history integration and compatibility contract
   docs/README.md,project,Public history integration and compatibility contract
-close_reason: Completed implementation and local verification of the combined history review corrections.
+close_reason: Review corrections complete with full local verification; hosted review and merge remain separately gated.
 body: ""

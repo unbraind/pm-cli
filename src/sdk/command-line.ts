@@ -3,11 +3,6 @@
  *
  * Renders copy-safe pm command suggestions for SDK and CLI diagnostics.
  */
-import {
-  BOOTSTRAP_BOOLEAN_FLAGS,
-  GLOBAL_VALUE_CONSUMING_FLAGS,
-} from "./cli-contracts/bootstrap-command-scanner.js";
-
 /** Quote one Windows argument with the linear CommandLineToArgvW escaping algorithm. */
 export const quoteWindowsCommandArg = (arg: string): string => {
   let escaped = '"';
@@ -61,19 +56,6 @@ const HISTORY_REDACT_SENSITIVE_FLAGS = new Set([
   "--replacement",
 ]);
 
-const HISTORY_REDACT_PUBLIC_FLAGS = new Set([
-  ...HISTORY_REDACT_SENSITIVE_FLAGS,
-  ...BOOTSTRAP_BOOLEAN_FLAGS,
-  ...GLOBAL_VALUE_CONSUMING_FLAGS,
-  "--dry-run",
-  "--force",
-  "--message",
-  "--profile",
-  "--explain",
-  "--help",
-  "-h",
-]);
-
 /** Conservatively recognize both redaction spellings before argv parsing succeeds. */
 export function isHistoryRedactInvocation(
   argv: readonly string[],
@@ -99,12 +81,7 @@ export function redactSensitiveCommandArgs(
   const redacted: string[] = [];
   let redactNext = false;
   for (const token of argv) {
-    if (
-      redactNext &&
-      !HISTORY_REDACT_PUBLIC_FLAGS.has(
-        token.replaceAll("_", "-"),
-      )
-    ) {
+    if (redactNext) {
       redacted.push("[redacted]");
       redactNext = false;
       continue;
