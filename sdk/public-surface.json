@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1865,
+    "covered_symbols": 1875,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1866
+    "required_symbols": 1876
   },
   "breaking_acknowledgements": [
     {
@@ -1765,6 +1765,36 @@
       ],
       "package_version": "2026.9.5",
       "reason": "Add optional strict_read to assurance workspace contexts so recurrence consumers reject incomplete source corpora"
+    },
+    {
+      "changes": [
+        "signature ./sdk:AggregateOptions",
+        "signature ./sdk:AggregateResult",
+        "signature ./sdk:GRAPH_DURABLE_CACHE_VERSION",
+        "signature ./sdk:GraphSlackResult",
+        "signature ./sdk:RelationshipAuditDelta",
+        "signature ./sdk:RelationshipCoverageProfile",
+        "signature ./sdk/core:AggregateOptions",
+        "signature ./sdk/core:AggregateResult",
+        "signature ./sdk/graph:GRAPH_DURABLE_CACHE_VERSION",
+        "signature ./sdk/graph:GraphSlackResult",
+        "signature ./sdk/graph:RelationshipAuditDelta",
+        "signature ./sdk/graph:RelationshipCoverageProfile",
+        "signature ./sdk/query:AggregateOptions",
+        "signature ./sdk/query:AggregateResult",
+        "signature ./sdk/runtime:AggregateOptions",
+        "signature ./sdk/runtime:AggregateResult"
+      ],
+      "package_version": "2026.9.6",
+      "reason": "Add lifecycle census and derived deadline contracts; aggregate set fields now use element membership by default with explicit tuple compatibility and bounded group pagination."
+    },
+    {
+      "changes": [
+        "signature ./sdk:GraphSlackResult",
+        "signature ./sdk/graph:GraphSlackResult"
+      ],
+      "package_version": "2026.9.6",
+      "reason": "Add lifecycle census and derived active deadline scheduling; default set aggregation expands members with explicit tuple compatibility and bounded group pages."
     }
   ],
   "entrypoints": {
@@ -2195,13 +2225,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AggregateOptions",
-          "signature": "export interface AggregateOptions { groupBy?: string; count?: boolean; completion?: boolean; sum?: string; avg?: string; includeUnparented?: boolean; status?: string; type?: string; tag?: string; priority?: string; deadlineBefore?: string; deadlineAfter?: string; assignee?: string; assigneeFilter?: string; parent?: string; sprint?: string; release?: string; }"
+          "signature": "export interface AggregateOptions { groupBy?: string; setMode?: string; limit?: string | number; after?: string; count?: boolean; completion?: boolean; sum?: string; avg?: string; includeUnparented?: boolean; status?: string; type?: string; tag?: string; priority?: string; deadlineBefore?: string; deadlineAfter?: string; assignee?: string; assigneeFilter?: string; parent?: string; sprint?: string; release?: string; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "AggregateResult",
-          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; }; filters: { group_by: AggregateGroupField[]; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; status_values?: ItemStatus[]; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
+          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; returned_count: number; truncated: boolean; next_after: string | null; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; group_memberships: number; }; filters: { group_by: AggregateGroupField[]; set_mode: \"element\" | \"tuple\"; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; status_values?: ItemStatus[]; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
         },
         {
           "classification": "supported",
@@ -5271,6 +5301,42 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "DeadlineOvercommitment",
+          "signature": "export interface DeadlineOvercommitment { deadline_id: string; deadline: string; shortfall_minutes: number; path: string[]; path_truncated: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DeadlineScheduleItem",
+          "signature": "export interface DeadlineScheduleItem { id: string; estimated_minutes?: number; deadline?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DeadlineScheduleOptions",
+          "signature": "export interface DeadlineScheduleOptions { now?: string; maxWork?: number; limit?: number; signal?: AbortSignal; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DeadlineScheduleResidual",
+          "signature": "export interface DeadlineScheduleResidual { id: string; reason: \"unknown_estimate\" | \"unknown_predecessor_estimate\" | \"cycle_or_gated_by_cycle\" | \"invalid_deadline\" | \"date_range_exceeded\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DeadlineScheduleResult",
+          "signature": "export interface DeadlineScheduleResult { as_of: string; basis: \"derived_elapsed_minutes\"; complete: boolean; truncated: boolean; work_limit_exceeded: boolean; scheduled_count: number; residual_count: number; overcommitted_count: number; rows: DeadlineScheduleRow[]; residuals: DeadlineScheduleResidual[]; overcommitted: DeadlineOvercommitment[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DeadlineScheduleRow",
+          "signature": "export interface DeadlineScheduleRow { id: string; deadline_id: string; latest_start: string; slack_minutes: number | null; }"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "declineServiceOverride",
           "signature": "() => ServiceOverrideDecision | calls: () => ServiceOverrideDecision"
@@ -5850,6 +5916,12 @@
           "kind": "function",
           "name": "derivePmRecoveryReferenceObligations",
           "signature": "(probeId: string, envelope: unknown) => PmRecoveryReferenceObligation[] | calls: (probeId: string, envelope: unknown) => PmRecoveryReferenceObligation[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "deriveRelationshipDeadlines",
+          "signature": "(graph: RelationshipGraph, items: readonly DeadlineScheduleItem[], options?: DeadlineScheduleOptions) => DeadlineScheduleResult | calls: (graph: RelationshipGraph, items: readonly DeadlineScheduleItem[], options?: DeadlineScheduleOptions) => DeadlineScheduleResult"
         },
         {
           "classification": "advanced_export",
@@ -7745,7 +7817,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "GRAPH_DURABLE_CACHE_VERSION",
-          "signature": "1"
+          "signature": "2"
         },
         {
           "classification": "contract_data",
@@ -7782,6 +7854,12 @@
           "kind": "interface",
           "name": "GraphAuditResult",
           "signature": "export interface GraphAuditResult { subcommand: \"audit\"; finding_count: number; findings_by_severity: Record<string, number>; findings_by_code: Record<string, number>; affected_subjects_by_severity: Record<string, number>; affected_subjects_by_code: Record<string, number>; profile: Omit<RelationshipAuditReport[\"profile\"], \"finding_subjects_by_code\"> & Partial<Pick<RelationshipAuditReport[\"profile\"], \"finding_subjects_by_code\">>; legacy_alias_counts?: Record<string, number>; findings?: RelationshipAuditReport[\"findings\"]; baseline?: RelationshipAuditDelta; cache?: GraphCacheMetadata; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "GraphAuditSummaryResult",
+          "signature": "export interface GraphAuditSummaryResult extends Omit<GraphAuditResult, \"profile\"> { profile: Pick<GraphAuditResult[\"profile\"], \"nodes\" | \"recorded_nodes\" | \"edges\" | \"active_nodes\" | \"terminal_nodes\" | \"missing_nodes\" | \"ordering_acyclic\" | \"active_ordering_acyclic\"> & { coverage_by_lifecycle: Record<\"all\" | \"active\" | \"terminal\", Omit<RelationshipPopulationCoverage, \"degree_histogram\">>; }; }"
         },
         {
           "classification": "supported",
@@ -7967,7 +8045,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphSlackResult",
-          "signature": "export interface GraphSlackResult { subcommand: \"slack\"; acyclic: boolean; makespan: number; scheduled_count: number; critical_count: number; critical_path_length: number; cycle_count: number; truncated: boolean; critical_path?: string[]; rows?: GraphScheduleRow[]; cache?: GraphCacheMetadata; }"
+          "signature": "export interface GraphSlackResult { deadline_schedule?: { population: \"active\"; } & Omit<DeadlineScheduleResult, \"rows\" | \"residuals\" | \"overcommitted\"> & Partial<Pick<DeadlineScheduleResult, \"rows\" | \"residuals\" | \"overcommitted\">>; subcommand: \"slack\"; acyclic: boolean; makespan: number; scheduled_count: number; critical_count: number; critical_path_length: number; cycle_count: number; truncated: boolean; critical_path?: string[]; rows?: GraphScheduleRow[]; cache?: GraphCacheMetadata; }"
         },
         {
           "classification": "supported",
@@ -14573,7 +14651,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipAuditDelta",
-          "signature": "export interface RelationshipAuditDelta { baseline_saved_at: string; same_snapshot: boolean; affected_subjects_by_code: Record<string, number>; profile: { nodes: number; recorded_nodes?: number; edges: number; informative_edges?: number; redundant_edges?: number; ordering_contradiction_edges?: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }; }"
+          "signature": "export interface RelationshipAuditDelta { baseline_saved_at: string; same_snapshot: boolean; affected_subjects_by_code: Record<string, number>; profile: { lifecycle_comparable?: boolean; coverage_by_lifecycle?: RelationshipLifecycleCoverage[\"coverage_by_lifecycle\"]; coverage_by_status?: RelationshipLifecycleCoverage[\"coverage_by_status\"]; nodes: number; recorded_nodes?: number; edges: number; informative_edges?: number; redundant_edges?: number; ordering_contradiction_edges?: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }; }"
         },
         {
           "classification": "supported",
@@ -14693,7 +14771,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipCoverageProfile",
-          "signature": "export interface RelationshipCoverageProfile { nodes: number; recorded_nodes?: number; edges: number; informative_edges?: number; redundant_edges?: number; ordering_contradiction_edges?: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; articulation_points: number; bridge_edges: number; outcome_nodes: number; outcome_reachability_basis: Record<RelationshipOutcomeTraversal, string>; active_outcome_reachable_nodes: number; active_outcome_unreachable_nodes: number; active_outcome_reachability_basis_points: number; terminal_nodes: number; terminal_outcome_reachable_nodes: number; terminal_outcome_unreachable_nodes: number; terminal_outcome_reachability_basis_points: number; outcome_reachable_nodes: number; outcome_unreachable_nodes: number; outcome_reachability_basis_points: number; finding_subjects_by_code: Record<RelationshipAuditFindingCode, number>; }"
+          "signature": "export interface RelationshipCoverageProfile extends RelationshipLifecycleCoverage { ordering_acyclic: boolean; active_ordering_acyclic: boolean; nodes: number; recorded_nodes?: number; edges: number; informative_edges?: number; redundant_edges?: number; ordering_contradiction_edges?: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; articulation_points: number; bridge_edges: number; outcome_nodes: number; outcome_reachability_basis: Record<RelationshipOutcomeTraversal, string>; active_outcome_reachable_nodes: number; active_outcome_unreachable_nodes: number; active_outcome_reachability_basis_points: number; terminal_nodes: number; terminal_outcome_reachable_nodes: number; terminal_outcome_unreachable_nodes: number; terminal_outcome_reachability_basis_points: number; outcome_reachable_nodes: number; outcome_unreachable_nodes: number; outcome_reachability_basis_points: number; finding_subjects_by_code: Record<RelationshipAuditFindingCode, number>; }"
         },
         {
           "classification": "supported",
@@ -14950,6 +15028,12 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "RelationshipLifecycleCoverage",
+          "signature": "export interface RelationshipLifecycleCoverage { coverage_by_lifecycle: Record<\"all\" | \"active\" | \"terminal\", RelationshipPopulationCoverage>; coverage_by_status: Record<string, RelationshipPopulationCoverage>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "RelationshipNeighborEdge",
           "signature": "export interface RelationshipNeighborEdge { id: string; edge: RelationshipEdge; }"
         },
@@ -14964,6 +15048,12 @@
           "kind": "interface",
           "name": "RelationshipPath",
           "signature": "export interface RelationshipPath { nodes: string[]; edges: RelationshipEdge[]; length: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "RelationshipPopulationCoverage",
+          "signature": "export interface RelationshipPopulationCoverage { nodes: number; isolated: number; degree_leq_one: number; semantic_nodes: number; without_semantic_edges: number; degree_histogram: Record<string, number>; }"
         },
         {
           "classification": "supported",
@@ -23507,13 +23597,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AggregateOptions",
-          "signature": "export interface AggregateOptions { groupBy?: string; count?: boolean; completion?: boolean; sum?: string; avg?: string; includeUnparented?: boolean; status?: string; type?: string; tag?: string; priority?: string; deadlineBefore?: string; deadlineAfter?: string; assignee?: string; assigneeFilter?: string; parent?: string; sprint?: string; release?: string; }"
+          "signature": "export interface AggregateOptions { groupBy?: string; setMode?: string; limit?: string | number; after?: string; count?: boolean; completion?: boolean; sum?: string; avg?: string; includeUnparented?: boolean; status?: string; type?: string; tag?: string; priority?: string; deadlineBefore?: string; deadlineAfter?: string; assignee?: string; assigneeFilter?: string; parent?: string; sprint?: string; release?: string; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "AggregateResult",
-          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; }; filters: { group_by: AggregateGroupField[]; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; status_values?: ItemStatus[]; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
+          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; returned_count: number; truncated: boolean; next_after: string | null; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; group_memberships: number; }; filters: { group_by: AggregateGroupField[]; set_mode: \"element\" | \"tuple\"; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; status_values?: ItemStatus[]; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
         },
         {
           "classification": "supported",
@@ -26428,6 +26518,42 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "DeadlineOvercommitment",
+          "signature": "export interface DeadlineOvercommitment { deadline_id: string; deadline: string; shortfall_minutes: number; path: string[]; path_truncated: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DeadlineScheduleItem",
+          "signature": "export interface DeadlineScheduleItem { id: string; estimated_minutes?: number; deadline?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DeadlineScheduleOptions",
+          "signature": "export interface DeadlineScheduleOptions { now?: string; maxWork?: number; limit?: number; signal?: AbortSignal; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DeadlineScheduleResidual",
+          "signature": "export interface DeadlineScheduleResidual { id: string; reason: \"unknown_estimate\" | \"unknown_predecessor_estimate\" | \"cycle_or_gated_by_cycle\" | \"invalid_deadline\" | \"date_range_exceeded\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DeadlineScheduleResult",
+          "signature": "export interface DeadlineScheduleResult { as_of: string; basis: \"derived_elapsed_minutes\"; complete: boolean; truncated: boolean; work_limit_exceeded: boolean; scheduled_count: number; residual_count: number; overcommitted_count: number; rows: DeadlineScheduleRow[]; residuals: DeadlineScheduleResidual[]; overcommitted: DeadlineOvercommitment[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DeadlineScheduleRow",
+          "signature": "export interface DeadlineScheduleRow { id: string; deadline_id: string; latest_start: string; slack_minutes: number | null; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "DependencyReferenceHolder",
           "signature": "export interface DependencyReferenceHolder { id: string; status: ItemStatus; parent?: string; blocked_by?: string; dependencies?: Dependency[]; }"
         },
@@ -26442,6 +26568,12 @@
           "kind": "function",
           "name": "dependencyToRelationship",
           "signature": "(source: string, dependency: Dependency, registry?: RelationshipKindRegistry) => RelationshipEdge | calls: (source: string, dependency: Dependency, registry?: RelationshipKindRegistry) => RelationshipEdge"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "deriveRelationshipDeadlines",
+          "signature": "(graph: RelationshipGraph, items: readonly DeadlineScheduleItem[], options?: DeadlineScheduleOptions) => DeadlineScheduleResult | calls: (graph: RelationshipGraph, items: readonly DeadlineScheduleItem[], options?: DeadlineScheduleOptions) => DeadlineScheduleResult"
         },
         {
           "classification": "supported",
@@ -26555,7 +26687,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "GRAPH_DURABLE_CACHE_VERSION",
-          "signature": "1"
+          "signature": "2"
         },
         {
           "classification": "supported",
@@ -26586,6 +26718,12 @@
           "kind": "interface",
           "name": "GraphAuditResult",
           "signature": "export interface GraphAuditResult { subcommand: \"audit\"; finding_count: number; findings_by_severity: Record<string, number>; findings_by_code: Record<string, number>; affected_subjects_by_severity: Record<string, number>; affected_subjects_by_code: Record<string, number>; profile: Omit<RelationshipAuditReport[\"profile\"], \"finding_subjects_by_code\"> & Partial<Pick<RelationshipAuditReport[\"profile\"], \"finding_subjects_by_code\">>; legacy_alias_counts?: Record<string, number>; findings?: RelationshipAuditReport[\"findings\"]; baseline?: RelationshipAuditDelta; cache?: GraphCacheMetadata; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "GraphAuditSummaryResult",
+          "signature": "export interface GraphAuditSummaryResult extends Omit<GraphAuditResult, \"profile\"> { profile: Pick<GraphAuditResult[\"profile\"], \"nodes\" | \"recorded_nodes\" | \"edges\" | \"active_nodes\" | \"terminal_nodes\" | \"missing_nodes\" | \"ordering_acyclic\" | \"active_ordering_acyclic\"> & { coverage_by_lifecycle: Record<\"all\" | \"active\" | \"terminal\", Omit<RelationshipPopulationCoverage, \"degree_histogram\">>; }; }"
         },
         {
           "classification": "supported",
@@ -26771,7 +26909,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphSlackResult",
-          "signature": "export interface GraphSlackResult { subcommand: \"slack\"; acyclic: boolean; makespan: number; scheduled_count: number; critical_count: number; critical_path_length: number; cycle_count: number; truncated: boolean; critical_path?: string[]; rows?: GraphScheduleRow[]; cache?: GraphCacheMetadata; }"
+          "signature": "export interface GraphSlackResult { deadline_schedule?: { population: \"active\"; } & Omit<DeadlineScheduleResult, \"rows\" | \"residuals\" | \"overcommitted\"> & Partial<Pick<DeadlineScheduleResult, \"rows\" | \"residuals\" | \"overcommitted\">>; subcommand: \"slack\"; acyclic: boolean; makespan: number; scheduled_count: number; critical_count: number; critical_path_length: number; cycle_count: number; truncated: boolean; critical_path?: string[]; rows?: GraphScheduleRow[]; cache?: GraphCacheMetadata; }"
         },
         {
           "classification": "supported",
@@ -26975,7 +27113,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipAuditDelta",
-          "signature": "export interface RelationshipAuditDelta { baseline_saved_at: string; same_snapshot: boolean; affected_subjects_by_code: Record<string, number>; profile: { nodes: number; recorded_nodes?: number; edges: number; informative_edges?: number; redundant_edges?: number; ordering_contradiction_edges?: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }; }"
+          "signature": "export interface RelationshipAuditDelta { baseline_saved_at: string; same_snapshot: boolean; affected_subjects_by_code: Record<string, number>; profile: { lifecycle_comparable?: boolean; coverage_by_lifecycle?: RelationshipLifecycleCoverage[\"coverage_by_lifecycle\"]; coverage_by_status?: RelationshipLifecycleCoverage[\"coverage_by_status\"]; nodes: number; recorded_nodes?: number; edges: number; informative_edges?: number; redundant_edges?: number; ordering_contradiction_edges?: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }; }"
         },
         {
           "classification": "supported",
@@ -27095,7 +27233,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipCoverageProfile",
-          "signature": "export interface RelationshipCoverageProfile { nodes: number; recorded_nodes?: number; edges: number; informative_edges?: number; redundant_edges?: number; ordering_contradiction_edges?: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; articulation_points: number; bridge_edges: number; outcome_nodes: number; outcome_reachability_basis: Record<RelationshipOutcomeTraversal, string>; active_outcome_reachable_nodes: number; active_outcome_unreachable_nodes: number; active_outcome_reachability_basis_points: number; terminal_nodes: number; terminal_outcome_reachable_nodes: number; terminal_outcome_unreachable_nodes: number; terminal_outcome_reachability_basis_points: number; outcome_reachable_nodes: number; outcome_unreachable_nodes: number; outcome_reachability_basis_points: number; finding_subjects_by_code: Record<RelationshipAuditFindingCode, number>; }"
+          "signature": "export interface RelationshipCoverageProfile extends RelationshipLifecycleCoverage { ordering_acyclic: boolean; active_ordering_acyclic: boolean; nodes: number; recorded_nodes?: number; edges: number; informative_edges?: number; redundant_edges?: number; ordering_contradiction_edges?: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; edge_share_by_kind: Record<string, number>; semantic_edges: number; semantic_edge_share: number; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; articulation_points: number; bridge_edges: number; outcome_nodes: number; outcome_reachability_basis: Record<RelationshipOutcomeTraversal, string>; active_outcome_reachable_nodes: number; active_outcome_unreachable_nodes: number; active_outcome_reachability_basis_points: number; terminal_nodes: number; terminal_outcome_reachable_nodes: number; terminal_outcome_unreachable_nodes: number; terminal_outcome_reachability_basis_points: number; outcome_reachable_nodes: number; outcome_unreachable_nodes: number; outcome_reachability_basis_points: number; finding_subjects_by_code: Record<RelationshipAuditFindingCode, number>; }"
         },
         {
           "classification": "supported",
@@ -27352,6 +27490,12 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "RelationshipLifecycleCoverage",
+          "signature": "export interface RelationshipLifecycleCoverage { coverage_by_lifecycle: Record<\"all\" | \"active\" | \"terminal\", RelationshipPopulationCoverage>; coverage_by_status: Record<string, RelationshipPopulationCoverage>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "RelationshipNeighborEdge",
           "signature": "export interface RelationshipNeighborEdge { id: string; edge: RelationshipEdge; }"
         },
@@ -27366,6 +27510,12 @@
           "kind": "interface",
           "name": "RelationshipPath",
           "signature": "export interface RelationshipPath { nodes: string[]; edges: RelationshipEdge[]; length: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "RelationshipPopulationCoverage",
+          "signature": "export interface RelationshipPopulationCoverage { nodes: number; isolated: number; degree_leq_one: number; semantic_nodes: number; without_semantic_edges: number; degree_histogram: Record<string, number>; }"
         },
         {
           "classification": "supported",
@@ -28031,13 +28181,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AggregateOptions",
-          "signature": "export interface AggregateOptions { groupBy?: string; count?: boolean; completion?: boolean; sum?: string; avg?: string; includeUnparented?: boolean; status?: string; type?: string; tag?: string; priority?: string; deadlineBefore?: string; deadlineAfter?: string; assignee?: string; assigneeFilter?: string; parent?: string; sprint?: string; release?: string; }"
+          "signature": "export interface AggregateOptions { groupBy?: string; setMode?: string; limit?: string | number; after?: string; count?: boolean; completion?: boolean; sum?: string; avg?: string; includeUnparented?: boolean; status?: string; type?: string; tag?: string; priority?: string; deadlineBefore?: string; deadlineAfter?: string; assignee?: string; assigneeFilter?: string; parent?: string; sprint?: string; release?: string; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "AggregateResult",
-          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; }; filters: { group_by: AggregateGroupField[]; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; status_values?: ItemStatus[]; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
+          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; returned_count: number; truncated: boolean; next_after: string | null; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; group_memberships: number; }; filters: { group_by: AggregateGroupField[]; set_mode: \"element\" | \"tuple\"; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; status_values?: ItemStatus[]; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
         },
         {
           "classification": "supported",
@@ -29795,13 +29945,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AggregateOptions",
-          "signature": "export interface AggregateOptions { groupBy?: string; count?: boolean; completion?: boolean; sum?: string; avg?: string; includeUnparented?: boolean; status?: string; type?: string; tag?: string; priority?: string; deadlineBefore?: string; deadlineAfter?: string; assignee?: string; assigneeFilter?: string; parent?: string; sprint?: string; release?: string; }"
+          "signature": "export interface AggregateOptions { groupBy?: string; setMode?: string; limit?: string | number; after?: string; count?: boolean; completion?: boolean; sum?: string; avg?: string; includeUnparented?: boolean; status?: string; type?: string; tag?: string; priority?: string; deadlineBefore?: string; deadlineAfter?: string; assignee?: string; assigneeFilter?: string; parent?: string; sprint?: string; release?: string; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "AggregateResult",
-          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; }; filters: { group_by: AggregateGroupField[]; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; status_values?: ItemStatus[]; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
+          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; returned_count: number; truncated: boolean; next_after: string | null; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; group_memberships: number; }; filters: { group_by: AggregateGroupField[]; set_mode: \"element\" | \"tuple\"; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; status_values?: ItemStatus[]; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
         },
         {
           "classification": "supported",

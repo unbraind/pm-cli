@@ -666,7 +666,7 @@ describe("GitHub workflow contract", () => {
       'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-github-release --json',
       'node scripts/release/verify-installed-agent-session.mjs --version "${RELEASE_TAG#v}" --manager both --json',
       'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-package --json',
-      "uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228",
+      "uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64",
       "tag_name: ${{ env.RELEASE_TAG }}",
       PINNED_ACTIONS.uploadArtifact,
       "path: coverage",

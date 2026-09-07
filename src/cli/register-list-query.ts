@@ -1150,40 +1150,43 @@ export function registerListQueryCommands(
   if (shouldRegister("aggregate")) {
     const aggregateCommand = program
       .command("aggregate")
-      .description("Aggregate grouped item counts for governance queries.")
+      .description("Group item counts and numeric measures.")
+      .option("--set-mode <value>", "Set grouping: element (default)|tuple")
+      .option("--limit <value>", "Group page size (default: 50)")
+      .option("--after <value>", "Continue with next_after cursor")
       .option(
         "--group-by <value>",
-        "Comma-separated group-by fields (supported: parent,type,priority,status,assignee,tags,sprint,release)",
+        "Fields: parent,type,priority,status,assignee,tags,sprint,release (comma-separated)",
       )
-      .option("--count", "Return grouped counts (default behavior)")
+      .option("--count", "Counts (default)")
       .option(
         "--completion",
-        "Add open/in_progress/closed/other counts and completion_pct per group",
+        "Status counts and completion_pct",
       )
-      .option("--sum <field>", "Sum a numeric field per group")
-      .option("--avg <field>", "Average a numeric field per group")
+      .option("--sum <field>", "Group numeric sum")
+      .option("--avg <field>", "Group numeric average")
       .option(
         "--include-unparented",
-        "Include unparented rows when grouping by parent",
+        "Keep unparented group",
       )
-      .option("--status <value>", "Filter by item status")
-      .option("--type <value>", "Filter by item type")
+      .option("--status <value>", "Item status")
+      .option("--type <value>", "Item type")
       .option("--tag <value>", "Filter by tag")
       .option("--priority <value>", "Filter by priority")
       .option(
         "--deadline-before <value>",
-        "Filter by deadline upper bound (ISO/date string or relative)",
+        "Latest deadline (ISO/date or relative)",
       )
       .option(
         "--deadline-after <value>",
-        "Filter by deadline lower bound (ISO/date string or relative)",
+        "Earliest deadline (ISO/date or relative)",
       )
       .option("--assignee <value>", "Filter by assignee")
       .option(
         "--assignee-filter <value>",
-        "Filter assignee presence: assigned|unassigned",
+        "Assignee presence: assigned|unassigned",
       )
-      .option("--parent <value>", "Filter by parent item ID")
+      .option("--parent <value>", "Parent ID")
       .option("--sprint <value>", "Filter by sprint")
       .option("--release <value>", "Filter by release");
     // Hidden pure snake_case underscore-duplicate aliases (kept parse-functional).

@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { _testOnlyAggregateCommand, runAggregate } from "../../../src/cli/commands/aggregate.js";
 import { runSchemaAddField } from "../../../src/cli/commands/schema.js";
 import { runNormalize } from "../../../packages/pm-governance-audit/extensions/governance-audit/normalize.ts";
@@ -576,6 +576,7 @@ describe("runAggregate", () => {
       const byTags = await runAggregate(
         {
           groupBy: "tags",
+          setMode: "tuple",
           count: true,
         },
         { path: context.pmPath },
@@ -895,48 +896,15 @@ describe("runAggregate", () => {
 
   it("supports sum-only numeric aggregation and emits forwarded list warnings", async () => {
     await withTempPmPath(async (context) => {
-      vi.resetModules();
-      const runListMock = vi.fn(async () => ({
-        items: [
-          {
-            type: "Task",
-            status: "open",
-            priority: 3,
-            tags: [],
-          },
-        ],
-        warnings: ["aggregate:list-warning"],
-      }));
-      vi.doMock("../../../src/sdk/query/list.js", () => ({
-        runList: runListMock,
-      }));
-
-      try {
-        const aggregateModule = await import("../../../src/sdk/query/aggregate.js");
-        const result = await aggregateModule.runAggregate(
-          {
-            groupBy: "status",
-            sum: "priority",
-          },
-          { path: context.pmPath },
-        );
-
-        expect(runListMock).toHaveBeenCalledTimes(1);
-        expect(result.warnings).toEqual(["aggregate:list-warning"]);
-        expect(result.groups.map(stripGroupLabel)).toEqual([
-          {
-            group: {
-              status: "open",
-            },
-            count: 1,
-            null_count: 0,
-            sum: 3,
-          },
-        ]);
-      } finally {
-        vi.doUnmock("../../../src/cli/commands/list.js");
-        vi.resetModules();
-      }
+      createItem(context, { title: "Sum and warning", type: "Task", status: "open", priority: 3, tags: "known" });
+      const result = await runAggregate(
+        { groupBy: "status", sum: "priority", tag: "known,absent" },
+        { path: context.pmPath },
+      );
+      expect(result.warnings).toContain("unknown_tags:absent");
+      expect(result.groups.map(stripGroupLabel)).toEqual([
+        { group: { status: "open" }, count: 1, null_count: 0, sum: 3 },
+      ]);
     });
   });
 

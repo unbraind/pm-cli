@@ -66,6 +66,7 @@ pm guide release --json
 - [SDK Agent Environments](AGENT_ENVIRONMENTS.md) - calibrated observations, total verdicts, isolated episodes, and an executable public-SDK environment.
 - [Improvement Ledger and History Analytics](IMPROVEMENT_ANALYTICS.md) - audited quantitative observations, live provenance coverage, and bounded observational fleet outcomes.
 - [Project Assurance Primitives](ASSURANCE.md) - SDK-owned measurements, assertions, lifecycle gates, cost receipts, and durable verdict history shared by CLI and MCP.
+- [Planning Measurements](PLANNING_MEASUREMENTS.md) - lifecycle coverage, set-membership aggregation, and derived deadline constraints.
 - [Defect Recurrence and Boundary Evidence](DEFECT_RECURRENCE.md) - captured external samples, structured defect-escape evidence, incremental change-risk indexing, and executable recovery-producer census.
 - [Recurrence and Executable Recovery Contracts](RECURRENCE_RECOVERY_CONTRACTS.md) - terminal-item recurrence, duplicate-intake routing, capability-aware reindex recovery, and target-aware generated test guidance.
 - [Trustworthy Context and Evidence Contracts](TRUSTWORTHY_CONTEXT_EVIDENCE.md) - full-record assurance, graph composition, boolean health rows, lossless linked-test removal, and role-labelled recovery.

@@ -2,11 +2,13 @@ id: pm-d2wfig
 title: "Derived scheduling: propagate milestone deadlines backward through the ordering graph so every gating item carries a latest-start date instead of only six dates existing in the whole plan"
 description: Derive latest-start dates and time-based slack by propagating milestone deadlines backward through the ordering graph using recorded estimates. Report over-committed paths and unknown-estimate residuals explicitly while keeping the computation bounded from scratch workspaces through million-item portfolios.
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[5]: analytics,governance,graph,planning,scheduling
 created_at: "2026-08-13T08:53:22.763Z"
-updated_at: "2026-08-14T10:14:32.485Z"
+updated_at: "2026-09-07T07:45:39.580Z"
+closed_at: "2026-09-07T07:45:39.053Z"
+completed_at: "2026-09-07T07:45:39.053Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "Latest-start dates are derived for every item on an ordering path to a dated item, from that item's deadline and the estimates on the path, and are reported as derived rather than stored as authored deadlines; Slack is reported in time units alongside the existing topological layer slack, so an item with layer slack and no date slack is distinguishable from one with both; A path whose accumulated estimates cannot fit between now and the gated deadline is reported as an over-committed path, naming the deadline, the path and the shortfall; Items with no estimate are reported as an explicit unschedulable residual rather than being treated as zero-duration, so the derivation never silently manufactures feasibility; Derivation is bounded and stays inside the graph analytics token and latency budgets at million-item scale, and degrades to a declared partial result rather than a full scan; A negative control proves the over-commitment finding fires when a deadline is moved earlier than its path allows and clears when it is moved back"
@@ -19,9 +21,46 @@ why_now: "The milestone ladder now carries deadlines from 2026-10-31 to 2028-06-
 parent: pm-96h7
 risk: medium
 confidence: 85
+resolution: "Implemented read-only elapsed-minute latest-start, temporal slack, and overcommitment analysis using recorded estimates and authored deadlines, with active workspace selection and fresh results after topology cache lookup."
+expected_result: "Dated commitments derive constraints on prerequisite work; missing estimates and cycles remain explicit residuals, with bounded cost and evidence."
+actual_result: "Negative controls prove early deadlines produce the exact shortfall/path and later deadlines clear it; unknown durations never imply zero-cost feasibility. Closed historical work is excluded by the workspace adapter. One million actual graph nodes return the declared default work-limit residual in the measured pure derivation preflight, with no claim of free workspace loading."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,implements,"2026-08-13T08:53:22.763Z","harness:claude-code","cli:create:dep",detected
   pm-96h7,implements,"2026-08-13T08:53:22.763Z","harness:claude-code","cli:create:dep",detected
   pm-gxs55a,discovered_from,"2026-08-13T08:53:22.763Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-13T08:53:22.763Z","harness:claude-code","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-09-07T06:11:52.434Z","harness:codex","Implementation design: preserve existing unit-weight slack and add deadline/estimate-derived SDK analysis with backward constraints, missing-estimate/cycle residuals, and bounded path evidence. No authored deadline mutation."
+  "2026-09-07T06:24:19.363Z","harness:codex","Implementation evidence: initial regression suite passes locally; integration, additional edge cases, full coverage and release/review gates remain underway. No delivery or release completion claimed."
+  "2026-09-07T06:48:02.034Z","harness:codex","Dogfood regression: scheduling the complete historical graph manufactured 552 overdue deadline findings from completed work. A real temporary-workspace regression reproduced a completed milestone counted as overdue. The workspace adapter now selects active nodes using the schema status registry, explicitly reports population=active, and derives fresh evidence after cache lookup using the reproducible clock. The pure graph SDK retains caller-selected population semantics."
+  "2026-09-07T06:49:21.435Z","harness:codex","Scale experiment on one million actual RelationshipGraph nodes (not a mocked graph): graph construction took 1840.6 ms; default bounded deadline derivation returned work_limit_exceeded=true and complete=false in 0.797 ms, with a 239-byte result. This proves the pure derivation preflight boundary; it does not claim constant-cost workspace loading or construction. Full small-graph regression coverage verifies actual forward/backward scheduling and negative controls."
+  "2026-09-07T07:45:38.469Z","harness:codex","Local implementation verification: exact full-source coverage passed at 100/100/100/100 with zero uncovered counts (60671 lines, 63170 statements, 13078 functions, 47962 branches). The full run had one stale workspace-intent assertion; that expected text was synchronized, then all 55 contracts and aggregation acceptance tests passed. Full static quality, context-quality and 56 token surfaces, typecheck, linked tests, staged secret scan, latest-release compatibility migration, 88-command package dogfood, installed npm/Bun CLI/SDK/MCP acceptance, and packed npx/bunx smoke passed. Hosted exact-head review, merge, and publication remain separate delivery steps; no hosted or released state is claimed here."
+learnings[1]{created_at,author,text}:
+  "2026-09-07T07:26:13.982Z","harness:codex","Keep authored dates separate from derived constraints. Recompute time-sensitive schedules after topology cache lookup, exclude schema-terminal work in the active workspace adapter, and declare missing estimates or exceeded work bounds instead of assuming feasibility."
+files[5]{path,scope,note}:
+  src/sdk/graph/deadline-scheduling.ts,project,Connected SDK implementation and regression coverage
+  src/sdk/graph/index.ts,project,Connected SDK implementation and regression coverage
+  src/sdk/graph/run.ts,project,Connected SDK implementation and regression coverage
+  tests/unit/sdk/graph/deadline-scheduling.spec.ts,project,Connected SDK implementation and regression coverage
+  tests/unit/sdk/graph/deadline-workspace.spec.ts,project,Regression for excluding completed historical work from active scheduling
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/graph/deadline-scheduling.spec.ts,project,240,"harness:codex","2026-09-07T06:24:18.834Z",local_mutation,feat/lifecycle-coverage-set-aggregation-scheduling
+  node scripts/run-tests.mjs test -- tests/unit/sdk/graph/deadline-workspace.spec.ts,project,240,"harness:codex","2026-09-07T06:49:47.099Z",local_mutation,feat/lifecycle-coverage-set-aggregation-scheduling
+test_runs[1]:
+  - run_id: test-local-mtqwtaeb-02edwb
+    kind: test
+    status: passed
+    started_at: "2026-09-07T07:18:43.297Z"
+    finished_at: "2026-09-07T07:18:52.643Z"
+    recorded_at: "2026-09-07T07:18:52.643Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/graph/deadline-scheduling.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/graph/deadline-workspace.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned release projection generated after verified implementation closure
+  docs/PLANNING_MEASUREMENTS.md,project,Public semantic and cost contracts
+close_reason: Implementation and linked acceptance completed; reviewed branch carries structured closure evidence.
 body: "## The census\n\nOpen items (open, in_progress, blocked, draft): 339. Carrying a deadline: 6. Those six are exactly the outcome milestones. Every other open item is undated.\n\nThe nineteen items that directly gate the six milestones by `blocked_by` — pm-pbyu, pm-1kxs, pm-usfg, pm-xpumg4, pm-9yfo, pm-9rxu, pm-2sbj8p, pm-atfm, pm-tch9cs, pm-4k6b, pm-agou, pm-zclzll, pm-rtn5h6, pm-pae3wo, pm-ygli86, pm-8jdc, pm-li2fj5, pm-nfrhf0, pm-t8a0x1 — carry no deadline between them.\n\n## The plan that exists and is coherent\n\nThe milestone layer is genuinely well formed, which is why derivation is now possible:\n\n| milestone | deadline | est. min | gated by |\n|---|---|---|---|\n| pm-j82fd3 command grammar | 2026-10-31 | 4,800 | pbyu, 1kxs |\n| pm-9rgaal SDK-complete core | 2026-12-31 | 6,000 | j82fd3, usfg, xpumg4 |\n| pm-w7ccmv provable history | 2027-03-31 | 5,400 | 9yfo |\n| pm-o87av6 proven scale | 2027-09-30 | 9,600 | 9rgaal, 9rxu, 2sbj8p, atfm, tch9cs, 4k6b |\n| pm-xp1xsw v1.0 GA contract | 2027-12-31 | 3,600 | 9rgaal, agou, j82fd3, w7ccmv, o87av6, zclzll, rtn5h6, pae3wo, ygli86 |\n| pm-t4d7nz universal platform | 2028-06-30 | 12,000 | 9rgaal, w7ccmv, o87av6, xp1xsw, 8jdc, li2fj5, nfrhf0, t8a0x1 |\n\nEvery milestone's deadline is later than every milestone that gates it, so the dated layer is internally consistent. The ordering is a genuine DAG, not a ring. The estimates are present. All three inputs a backward pass needs are already recorded.\n\n## Why the existing analytic cannot answer it\n\n`pm graph slack` on this tracker reports `makespan: 10`, `scheduled_count: 560`, `critical_count: 22`, `critical_path_length: 9`. Those are topological layers. The unit is hops, not time. So the surface that computes slack cannot read the six deadlines, and the six deadlines constrain nothing the surface computes.\n\nThe consequence is that \"critical\" currently means \"on the longest chain of hops\", which is not the same as \"on the path that will miss its date\". An item can sit on a nine-hop critical path with two years of date slack, and an item one hop from a milestone can be the only thing that will actually be late. Today those rank identically.\n\n## Boundary, so this does not become date fabrication\n\nThe derivation must produce *derived latest-start*, never an authored `deadline`. Writing dates onto 333 items would create a second schedule to disagree with the first, and would make the numbers unfalsifiable — exactly the failure mode a hand-maintained ledger always produces. The dates stay computed, the inputs stay the recorded deadline plus the recorded estimates plus the recorded edges, and an item with no estimate is reported as unschedulable rather than assumed instantaneous.\n\nThat residual is large today and should be visible from the first run: estimates exist widely, but the 915 items missing `estimated_minutes` across all statuses are exactly the population that would otherwise be silently treated as free."

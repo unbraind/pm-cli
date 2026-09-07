@@ -20,6 +20,7 @@ import {
 import { type ItemStatus } from "../../types/index.js";
 import { buildListQueryFilters } from "./list-filter-shared.js";
 import { runList } from "./list.js";
+import { parsePositiveInteger } from "../dependencies.js";
 
 type AggregateGroupField =
   | "parent"
@@ -60,6 +61,12 @@ const AGGREGATE_GROUP_FIELDS: AggregateGroupField[] = [
 export interface AggregateOptions {
   /** Value that configures or reports group by for this contract. */
   groupBy?: string;
+  /** Group array fields by distinct element (default), or by their entire normalized tuple. */
+  setMode?: string;
+  /** Maximum emitted groups, defaulting to 50 independently of input item count. */
+  limit?: string | number;
+  /** Resume after the exact group cursor returned by the preceding page. */
+  after?: string;
   /** Value that configures or reports count for this contract. */
   count?: boolean;
   /** Value that configures or reports completion for this contract. */
@@ -126,15 +133,25 @@ export interface AggregateResult {
   groups: AggregateRow[];
   /** Value that configures or reports count for this contract. */
   count: number;
+  /** Number of groups in this page. */
+  returned_count: number;
+  /** Whether additional groups remain after this page. */
+  truncated: boolean;
+  /** Exact group-key cursor for the next page, or null when complete. */
+  next_after: string | null;
   /** Value that configures or reports totals for this contract. */
   totals: {
     items_considered: number;
     items_grouped: number;
     items_skipped_unparented: number;
+    /** Membership contributions; may exceed items_grouped when an item belongs to several groups. */
+    group_memberships: number;
   };
   /** Value that configures or reports filters for this contract. */
   filters: {
     group_by: AggregateGroupField[];
+    /** Declared interpretation of every set-valued grouping dimension. */
+    set_mode: "element" | "tuple";
     count: boolean;
     completion: boolean;
     sum?: string | null;
@@ -183,7 +200,11 @@ interface NumericAggregation {
 
 function parseNumericAggregation(
   options: AggregateOptions,
-  allowedFields: readonly string[] = ["estimate", "estimated_minutes", "priority"],
+  allowedFields: readonly string[] = [
+    "estimate",
+    "estimated_minutes",
+    "priority",
+  ],
 ): NumericAggregation | null {
   const sumField = options.sum?.trim();
   const avgField = options.avg?.trim();
@@ -483,6 +504,35 @@ function updateAggregateAccumulator(params: {
   }
 }
 
+/** Accumulate one item into each of its distinct set-membership groups. */
+function accumulateItemGroups(
+  grouped: Map<string, AggregateAccumulator>,
+  groups: AggregateGroupRecord[],
+  groupBy: AggregateGroupField[],
+  context: Omit<
+    Parameters<typeof updateAggregateAccumulator>[0],
+    "accumulator"
+  >,
+): void {
+  for (const group of groups) {
+    const key = buildGroupKey(groupBy, group);
+    const existing = grouped.get(key);
+    if (existing) {
+      updateAggregateAccumulator({ ...context, accumulator: existing });
+      continue;
+    }
+    const accumulator = createAggregateAccumulator(group, context.numericValue);
+    if (context.includeCompletion) {
+      updateCompletionCounts(
+        accumulator,
+        context.item.status,
+        context.statusRegistry,
+      );
+    }
+    grouped.set(key, accumulator);
+  }
+}
+
 function buildAggregateGroup(
   groupBy: AggregateGroupField[],
   item: AggregateListedItem,
@@ -492,6 +542,30 @@ function buildAggregateGroup(
     group[field] = resolveGroupValue(field, item);
   }
   return group;
+}
+
+/** Expand array dimensions through distinct normalized members; scalar dimensions retain one value and empty sets retain a null bucket. */
+function buildAggregateGroups(
+  groupBy: AggregateGroupField[],
+  item: AggregateListedItem,
+  setMode: "element" | "tuple",
+): AggregateGroupRecord[] {
+  let groups = [buildAggregateGroup(groupBy, item)];
+  if (setMode === "tuple") return groups;
+  for (const field of groupBy) {
+    const raw = item[field];
+    if (!Array.isArray(raw)) continue;
+    const members = [
+      ...new Set(
+        raw.map((value) => value.trim().toLowerCase()).filter(Boolean),
+      ),
+    ].sort();
+    if (members.length === 0) continue;
+    groups = groups.flatMap((group) =>
+      members.map((member) => ({ ...group, [field]: member })),
+    );
+  }
+  return groups;
 }
 
 function finalizeAggregateRow(
@@ -528,6 +602,7 @@ function finalizeAggregateRow(
 
 function buildAggregateFilters(params: {
   groupBy: AggregateGroupField[];
+  setMode: "element" | "tuple";
   includeCompletion: boolean;
   includeUnparented: boolean;
   status: ItemStatus[] | undefined;
@@ -536,6 +611,7 @@ function buildAggregateFilters(params: {
 }): AggregateResult["filters"] {
   return {
     group_by: params.groupBy,
+    set_mode: params.setMode,
     count: true,
     completion: params.includeCompletion,
     include_unparented: params.includeUnparented,
@@ -580,62 +656,67 @@ export async function runAggregate(
     "estimate",
     "estimated_minutes",
     "priority",
-    ...resolveRuntimeFieldRegistry(settings.schema).definitions
-      .filter((definition) => definition.type === "number")
+    ...resolveRuntimeFieldRegistry(settings.schema)
+      .definitions.filter((definition) => definition.type === "number")
       .map((definition) => definition.metadata_key),
   ];
   const groupBy = parseGroupBy(options.groupBy);
+  const setMode = options.setMode ?? "element";
+  if (setMode !== "element" && setMode !== "tuple") {
+    throw new PmCliError(
+      "Aggregate --set-mode must be element or tuple",
+      EXIT_CODE.USAGE,
+    );
+  }
   const status = parseStatus(options.status, statusRegistry);
   const numericAggregation = parseNumericAggregation(
     options,
-    [...new Set(numericFields)].sort((left, right) => left.localeCompare(right)),
+    [...new Set(numericFields)].sort((left, right) =>
+      left.localeCompare(right),
+    ),
   );
   const includeCompletion = options.completion === true;
   const includeUnparented = options.includeUnparented === true;
 
   const listed = await runList(
     undefined,
-    { ...buildListQueryFilters(options), status: options.status },
+    {
+      ...buildListQueryFilters(options),
+      status: options.status,
+      noTruncate: true,
+      strictRead: true,
+    },
     global,
   );
 
   const grouped = new Map<string, AggregateAccumulator>();
   let skippedUnparented = 0;
   let groupedItemCount = 0;
+  let groupMemberships = 0;
 
   for (const listedItem of listed.items) {
     const item = listedItem as AggregateListedItem;
-    const group = buildAggregateGroup(groupBy, item);
     if (
       groupBy.includes("parent") &&
-      group.parent === null &&
+      item.parent === undefined &&
       !includeUnparented
     ) {
       skippedUnparented += 1;
       continue;
     }
-    const key = buildGroupKey(groupBy, group);
-    const existing = grouped.get(key);
     const numericValue =
       numericAggregation === null
         ? null
         : readNumericAggregateValue(item, numericAggregation.field);
-    if (existing) {
-      updateAggregateAccumulator({
-        accumulator: existing,
-        item,
-        statusRegistry,
-        includeCompletion,
-        numericAggregation,
-        numericValue,
-      });
-    } else {
-      const accumulator = createAggregateAccumulator(group, numericValue);
-      if (includeCompletion) {
-        updateCompletionCounts(accumulator, item.status, statusRegistry);
-      }
-      grouped.set(key, accumulator);
-    }
+    const itemGroups = buildAggregateGroups(groupBy, item, setMode);
+    accumulateItemGroups(grouped, itemGroups, groupBy, {
+      item,
+      statusRegistry,
+      includeCompletion,
+      numericAggregation,
+      numericValue,
+    });
+    groupMemberships += itemGroups.length;
     groupedItemCount += 1;
   }
 
@@ -653,15 +734,17 @@ export async function runAggregate(
     listed.warnings && listed.warnings.length > 0 ? listed.warnings : undefined;
 
   return {
-    groups,
+    ...pageAggregateGroups(groups, groupBy, options),
     count: groups.length,
     totals: {
       items_considered: listed.items.length,
       items_grouped: groupedItemCount,
       items_skipped_unparented: skippedUnparented,
+      group_memberships: groupMemberships,
     },
     filters: buildAggregateFilters({
       groupBy,
+      setMode,
       includeCompletion,
       includeUnparented,
       status,
@@ -670,6 +753,37 @@ export async function runAggregate(
     }),
     now: nowIso(),
     ...(warnings ? { warnings } : {}),
+  };
+}
+
+/** Page deterministic grouped results without applying item pagination before aggregation. */
+function pageAggregateGroups(
+  groups: AggregateRow[],
+  groupBy: AggregateGroupField[],
+  options: AggregateOptions,
+): Pick<
+  AggregateResult,
+  "groups" | "returned_count" | "truncated" | "next_after"
+> {
+  const limit = parsePositiveInteger(options.limit, "limit") ?? 50;
+  const previous =
+    options.after === undefined
+      ? -1
+      : groups.findIndex(
+          (row) => buildGroupKey(groupBy, row.group) === options.after,
+        );
+  if (options.after !== undefined && previous < 0)
+    throw new PmCliError(
+      "Aggregate --after cursor is absent from the current grouping; restart without --after.",
+      EXIT_CODE.USAGE,
+    );
+  const page = groups.slice(previous + 1, previous + 1 + limit);
+  const truncated = previous + 1 + page.length < groups.length;
+  return {
+    groups: page,
+    returned_count: page.length,
+    truncated,
+    next_after: truncated ? buildGroupKey(groupBy, page.at(-1)!.group) : null,
   };
 }
 

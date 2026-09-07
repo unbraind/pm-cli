@@ -1175,7 +1175,7 @@ describe("contracts command runtime", () => {
         }),
         expect.objectContaining({
           command: "workspace",
-          intent: "Manage portable workspace primitives.",
+          intent: "Manage workspaces.",
         }),
         expect.objectContaining({
           command: "plan create",

@@ -63,6 +63,15 @@ export {
   type RelationshipScheduleRow,
 } from "./scheduling.js";
 export {
+  deriveRelationshipDeadlines,
+  type DeadlineScheduleItem,
+  type DeadlineScheduleOptions,
+  type DeadlineScheduleRow,
+  type DeadlineScheduleResidual,
+  type DeadlineOvercommitment,
+  type DeadlineScheduleResult,
+} from "./deadline-scheduling.js";
+export {
   assembleWorkspaceRelationshipGraph,
   collectDanglingDependencyReferences,
   collectDuplicateDependencyRows,
@@ -97,6 +106,8 @@ export {
   type RelationshipAuditSnapshot,
   type RelationshipCoverageProfile,
   type RelationshipCoverageTypeProfile,
+  type RelationshipPopulationCoverage,
+  type RelationshipLifecycleCoverage,
 } from "./governance.js";
 export {
   analyzeHierarchyIntegrity,
@@ -164,6 +175,7 @@ export {
   type GraphAnalyzeResult,
   type GraphArticulationResult,
   type GraphAuditResult,
+  type GraphAuditSummaryResult,
   type GraphBridgeRow,
   type GraphCentralityResult,
   type GraphCentralityRow,

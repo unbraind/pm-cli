@@ -1566,6 +1566,15 @@
           "list": true
         },
         {
+          "flag": "--set-mode"
+        },
+        {
+          "flag": "--limit"
+        },
+        {
+          "flag": "--after"
+        },
+        {
           "flag": "--count"
         },
         {
@@ -12325,6 +12334,10 @@
         "json": 6000,
         "toon": 4000
       },
+      "flags": [
+        "--limit",
+        "--after"
+      ],
       "intent": "Group counts.",
       "intent_source": "command"
     },
@@ -12368,7 +12381,7 @@
         "json": 6000,
         "toon": 4000
       },
-      "intent": "Derive checks from evidence.",
+      "intent": "Derive checks.",
       "intent_source": "command"
     },
     {
@@ -13040,7 +13053,7 @@
         "json": 3000,
         "toon": 2000
       },
-      "intent": "Mutate work through typed operations.",
+      "intent": "Mutate items.",
       "intent_source": "command"
     },
     {
@@ -13850,7 +13863,7 @@
         "json": 6000,
         "toon": 4000
       },
-      "intent": "Manage portable workspace primitives.",
+      "intent": "Manage workspaces.",
       "intent_source": "command"
     },
     {
@@ -41950,6 +41963,13 @@
             "const": "aggregate",
             "description": "Tool action to execute."
           },
+          "after": {
+            "description": "Continuation cursor resuming a bounded listing or traversal after this previously returned id.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
+          },
           "assignee": {
             "description": "Assignee identity.",
             "type": "string"
@@ -42009,6 +42029,21 @@
             "default": true,
             "description": "Emit machine-readable JSON output.",
             "type": "boolean"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
@@ -42183,6 +42218,18 @@
           },
           "release": {
             "description": "Release.",
+            "type": "string"
+          },
+          "setMode": {
+            "description": "Aggregate array dimensions by distinct element (default), or by the complete normalized tuple. Empty sets retain a null group.",
+            "enum": [
+              "element",
+              "tuple"
+            ],
+            "examples": [
+              "element",
+              "tuple"
+            ],
             "type": "string"
           },
           "sprint": {

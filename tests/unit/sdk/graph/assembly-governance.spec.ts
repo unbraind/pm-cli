@@ -591,6 +591,13 @@ describe("relationship graph governance", () => {
         isolated_active_nodes: 0,
         degree_leq_one_active_nodes: 0,
         coverage_by_type: {},
+        coverage_by_status: {},
+        coverage_by_lifecycle: Object.fromEntries(["all", "active", "terminal"].map(key => [key, {
+          nodes: 0, isolated: 0, degree_leq_one: 0, semantic_nodes: 0,
+          without_semantic_edges: 0, degree_histogram: {},
+        }])),
+        ordering_acyclic: true,
+        active_ordering_acyclic: true,
         articulation_points: 0,
         bridge_edges: 0,
         outcome_nodes: 0,
@@ -1287,6 +1294,7 @@ describe("diffRelationshipAuditSnapshots", () => {
       },
       profile: {
         nodes: 2,
+        lifecycle_comparable: false,
         recorded_nodes: 2,
         edges: 0,
         informative_edges: 0,

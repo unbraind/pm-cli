@@ -29,6 +29,7 @@ describe("finalize-build", () => {
   it("chmods present outputs and skips absent ones", async () => {
     const chmod = vi.fn(async () => {});
     vi.doMock("node:fs/promises", () => ({
+      glob: vi.fn().mockReturnValue([]),
       chmod,
       readFile: vi.fn(async () => "{}"),
       writeFile: vi.fn(async () => {}),
@@ -48,6 +49,7 @@ describe("finalize-build", () => {
   it("defaults repoRoot to process.cwd() when no argument is given", async () => {
     const chmod = vi.fn(async () => {});
     vi.doMock("node:fs/promises", () => ({
+      glob: vi.fn().mockReturnValue([]),
       chmod,
       readFile: vi.fn(async () => "{}"),
       writeFile: vi.fn(async () => {}),
@@ -60,6 +62,7 @@ describe("finalize-build", () => {
 
   it("rethrows a non-ENOENT stat error", async () => {
     vi.doMock("node:fs/promises", () => ({
+      glob: vi.fn().mockReturnValue([]),
       chmod: vi.fn(async () => {}),
       stat: vi.fn(async () => {
         throw Object.assign(new Error("perm"), { code: "EACCES" });

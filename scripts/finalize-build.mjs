@@ -1,23 +1,59 @@
 #!/usr/bin/env node
 
-import { chmod, readFile, stat, writeFile } from "node:fs/promises";
+import { chmod, glob, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { build } from "esbuild";
 
 async function outputExists(filePath) {
   try {
     await stat(filePath);
     return true;
   } catch (error) {
-    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
       return false;
     }
     throw error;
   }
 }
 
+/** Compact retained runtime modules without changing identifiers, module boundaries, or declarations. */
+export async function compactRuntimeOutputs(directory) {
+  const entryPoints = [];
+  for await (const relative of glob("**/*.js", {
+    cwd: directory,
+    exclude: ["cli-bundle/**"],
+  })) {
+    entryPoints.push(path.join(directory, relative));
+  }
+  if (entryPoints.length === 0) return;
+  await build({
+    entryPoints,
+    outdir: directory,
+    outbase: directory,
+    allowOverwrite: true,
+    bundle: false,
+    platform: "node",
+    format: "esm",
+    target: "node22",
+    minifyWhitespace: true,
+    minifyIdentifiers: false,
+    minifySyntax: false,
+    sourcemap: true,
+    sourcesContent: true,
+    legalComments: "inline",
+    logLevel: "silent",
+  });
+}
+
 /** Finalize executable modes and the semantically identical compact public SDK manifest. */
 export async function main(repoRoot = process.cwd()) {
+  await compactRuntimeOutputs(path.join(repoRoot, "dist"));
   const executableOutputs = [
     path.join(repoRoot, "dist", "cli.js"),
     path.join(repoRoot, "dist", "mcp", "server.js"),
@@ -43,7 +79,10 @@ export async function main(repoRoot = process.cwd()) {
 }
 
 /* c8 ignore start -- CLI auto-run guard; logic covered via exported main() */
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   main().catch((error) => {
     console.error(error);
     process.exit(1);

@@ -18,6 +18,7 @@ import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.j
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { nowIso } from "../../core/shared/time.js";
 import { createUnknownSubcommandError } from "../agent/subcommand-recovery.js";
 import { listAllItemMetadataLight } from "../../core/store/item-store.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
@@ -33,7 +34,10 @@ import {
   analyzeKnowledgeGraph,
   analyzeRelationshipExecution,
 } from "../relationship-analytics.js";
-import type { RelationshipQueryMeta } from "../relationships.js";
+import {
+  RelationshipGraph,
+  type RelationshipQueryMeta,
+} from "../relationships.js";
 import {
   computeRelationshipDominators,
   detectRelationshipCommunities,
@@ -44,6 +48,11 @@ import {
   findRelationshipCutStructure,
 } from "./centrality.js";
 import { analyzeRelationshipSchedule } from "./scheduling.js";
+import {
+  deriveRelationshipDeadlines,
+  type DeadlineScheduleResult,
+  type DeadlineScheduleItem,
+} from "./deadline-scheduling.js";
 import {
   assembleWorkspaceRelationshipGraph,
   getWorkspaceHierarchyIntegrity,
@@ -74,6 +83,7 @@ import {
   type RelationshipAuditReport,
   type RelationshipAuditSnapshot,
 } from "./governance.js";
+import type { RelationshipPopulationCoverage } from "./lifecycle-coverage.js";
 import { RELATIONSHIP_AUDIT_FINDING_CODES } from "./governance-contracts.js";
 import {
   planRelationshipRemediation,
@@ -488,6 +498,14 @@ export interface GraphScheduleRow {
 
 /** Result envelope for the critical-path slack subcommand. */
 export interface GraphSlackResult {
+  /** Fresh estimate-based deadline constraints; computed outside topology caches. */
+  deadline_schedule?: { population: "active" } & Omit<
+    DeadlineScheduleResult,
+    "rows" | "residuals" | "overcommitted"
+  > &
+    Partial<
+      Pick<DeadlineScheduleResult, "rows" | "residuals" | "overcommitted">
+    >;
   /** Executed graph subcommand. */
   subcommand: "slack";
   /** Whether the order-bearing graph is acyclic. */
@@ -510,6 +528,31 @@ export interface GraphSlackResult {
   rows?: GraphScheduleRow[];
   /** Cache observability for this invocation. */
   cache?: GraphCacheMetadata;
+}
+
+/** Compact lifecycle census returned by audit summary; detailed distributions restore with --full. */
+export interface GraphAuditSummaryResult extends Omit<
+  GraphAuditResult,
+  "profile"
+> {
+  /** Recorded population totals, structural verdicts, and lifecycle connectivity counts. */
+  profile: Pick<
+    GraphAuditResult["profile"],
+    | "nodes"
+    | "recorded_nodes"
+    | "edges"
+    | "active_nodes"
+    | "terminal_nodes"
+    | "missing_nodes"
+    | "ordering_acyclic"
+    | "active_ordering_acyclic"
+  > & {
+    /** Exact lifecycle counts; degree histograms and status/type distributions require full output. */
+    coverage_by_lifecycle: Record<
+      "all" | "active" | "terminal",
+      Omit<RelationshipPopulationCoverage, "degree_histogram">
+    >;
+  };
 }
 
 /** One node ranked by structural centrality with directed fan-in/fan-out. */
@@ -615,7 +658,7 @@ export type GraphResult =
   | GraphIndexResult;
 
 /** Graph result with an explicit complete-or-summary row declaration. */
-export type ProjectedGraphResult = GraphResult & {
+export type ProjectedGraphResult = (GraphResult | GraphAuditSummaryResult) & {
   /** Self-describing row projection used to derive a bounded omission receipt. */
   projection: OutputProjectionDeclaration;
 };
@@ -626,8 +669,42 @@ function attachGraphProjection(
   summary: boolean,
   rowGroup?: string,
 ): ProjectedGraphResult {
+  let projected: GraphResult | GraphAuditSummaryResult = result;
+  if (summary && result.subcommand === "audit") {
+    const {
+      nodes,
+      recorded_nodes,
+      edges,
+      active_nodes,
+      terminal_nodes,
+      missing_nodes,
+      ordering_acyclic,
+      active_ordering_acyclic,
+      coverage_by_lifecycle,
+    } = result.profile;
+    const populations = Object.fromEntries(
+      Object.entries(coverage_by_lifecycle).map(([key, population]) => {
+        const { degree_histogram: _histogram, ...counts } = population;
+        return [key, counts];
+      }),
+    ) as GraphAuditSummaryResult["profile"]["coverage_by_lifecycle"];
+    projected = {
+      ...result,
+      profile: {
+        nodes,
+        recorded_nodes,
+        edges,
+        active_nodes,
+        terminal_nodes,
+        missing_nodes,
+        ordering_acyclic,
+        active_ordering_acyclic,
+        coverage_by_lifecycle: populations,
+      },
+    };
+  }
   return {
-    ...result,
+    ...projected,
     projection: {
       mode: summary ? "summary" : "full",
       declared_field_groups:
@@ -1485,6 +1562,45 @@ async function persistDurableGraphResultBestEffort(
   }
 }
 
+/** Compute fresh date-sensitive evidence after topology caching and honor summary projection. */
+function attachDeadlineSchedule(
+  value: GraphResult,
+  invocation: GraphInvocation,
+  items: readonly DeadlineScheduleItem[],
+  isTerminal: (status: string) => boolean,
+): void {
+  if (value.subcommand !== "slack") return;
+  const terminal = new Set(
+    invocation.assembly.details
+      .filter((detail) => isTerminal(detail.status))
+      .map((detail) => detail.id),
+  );
+  const graph = invocation.assembly.graph;
+  const activeGraph = new RelationshipGraph(
+    graph.nodes().filter((id) => !terminal.has(id)),
+    graph
+      .edges()
+      .filter(
+        (edge) => !terminal.has(edge.source) && !terminal.has(edge.target),
+      ),
+    graph.registry(),
+  );
+  const analysis = deriveRelationshipDeadlines(
+    activeGraph,
+    items.filter((item) => !terminal.has(item.id)),
+    {
+      now: nowIso(),
+      limit: invocation.limit ?? DEFAULT_SAMPLE_LIMIT,
+    },
+  );
+  const { rows, residuals, overcommitted, ...counts } = analysis;
+  value.deadline_schedule = {
+    population: "active",
+    ...counts,
+    ...(invocation.summary ? {} : { rows, residuals, overcommitted }),
+  };
+}
+
 /** Implements run graph for the public runtime surface of this module. */
 export async function runGraph(
   subcommandRaw: string,
@@ -1612,5 +1728,6 @@ export async function runGraph(
     durable:
       durableValue !== undefined ? "hit" : persistEnabled ? "miss" : "off",
   };
+  attachDeadlineSchedule(value, invocation, items, isTerminal);
   return attachGraphProjection(value, invocation.summary, "result_rows");
 }
