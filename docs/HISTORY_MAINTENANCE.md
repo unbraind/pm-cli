@@ -23,6 +23,10 @@ shapes. Default discovery omits these root aliases. `pm --all --help` and full
 contracts retain the compatibility inventory. SDK function names and MCP action
 identifiers remain stable, including `history-repair` and `restore`.
 
+Bash, Zsh, and Fish completion expose the activity flags under both spellings,
+including `--unbounded`. The `--stream` mode is optional; Zsh offers `rows`,
+`ndjson`, and `jsonl` when a mode is supplied.
+
 ```bash
 pm history repair --help
 pm contracts --command "history compact" --flags-only --json

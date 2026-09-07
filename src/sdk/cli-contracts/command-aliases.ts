@@ -31,19 +31,19 @@ export interface PmCommandAliasContract {
 }
 
 /** History namespace aliases preserve the existing SDK and MCP operation identities. */
-export const PM_HISTORY_COMMAND_ALIASES: readonly PmCommandAliasContract[] = [
+export const PM_HISTORY_COMMAND_ALIASES: readonly PmCommandAliasContract[] = ([
   ["history-redact", "history redact"],
   ["history-repair", "history repair"],
   ["history-compact", "history compact"],
   ["activity", "history activity"],
   ["restore", "history restore"],
-].map(([alias, canonical]) => ({
+] as const).map(([alias, canonical]) => ({
   alias,
   canonical,
   canonical_argv: canonical.split(" "),
-  lifecycle: "permanent",
+  lifecycle: "permanent" as const,
   hidden: true,
-  registration: "commander",
+  registration: "commander" as const,
   owner: "pm-tqel",
 }));
 

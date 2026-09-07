@@ -1568,6 +1568,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--from[Lower timestamp bound (ISO/date string or relative)]:date' \\
             '--to[Upper timestamp bound (ISO/date string or relative)]:date' \\
             '--limit[Max entries]:number' \\
+            '--unbounded[Return every matching activity entry]' \\
             '--compact[Condensed activity projection]' \\
             '--raw[Emit raw compact per-event activity output]' \\
             '--full[Show full activity entries]' \\
@@ -1576,7 +1577,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '*--harness[Filter by recorded or vocabulary-resolved harness]:harness' \\
             '*--agent-instance[Filter by privacy-safe agent instance]:instance' \\
             '*--provenance-filter[Filter by exact declared provenance value]:dimension=value' \\
-            '--stream[Emit line-delimited JSON rows (requires --json)]:mode' \\
+            '--stream[Emit line-delimited JSON rows (requires --json)]::mode:(rows ndjson jsonl)' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;

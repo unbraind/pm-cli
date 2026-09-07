@@ -12,6 +12,7 @@ import {
   normalizeItemAddressInvocation,
   supportsItemIdAlias,
 } from "../../../../src/sdk/agent/item-addressing.js";
+import { ACTIVITY_FLAG_CONTRACTS } from "../../../../src/sdk/cli-contracts/flag-contracts.js";
 import { normalizeBootstrapInvocation } from "../../../../src/sdk/cli-bootstrap.js";
 
 describe("history namespace completion and item addressing", () => {
@@ -34,6 +35,11 @@ describe("history namespace completion and item addressing", () => {
       const legacy = complete(`pm ${alias} --`, 2);
       expect(native).toBe(legacy);
       expect(native.trim().split(/\s+/)).toContain(flag);
+      if (leaf === "activity") {
+        for (const contract of ACTIVITY_FLAG_CONTRACTS) {
+          expect(native.trim().split(/\s+/)).toContain(contract.flag);
+        }
+      }
     }
     const roots = complete("pm ''", 1).split("\n");
     expect(roots).toContain("history");
@@ -41,7 +47,7 @@ describe("history namespace completion and item addressing", () => {
     expect(roots).not.toContain("activity");
   });
 
-  it("exposes native routing in Zsh and Fish scripts", () => {
+  it("exposes native routing and complete activity options in Zsh and Fish scripts", () => {
     for (const [shell, script] of [
       ["zsh", generateZshScript()],
       ["fish", generateFishScript()],
@@ -53,6 +59,14 @@ describe("history namespace completion and item addressing", () => {
       );
       expect(script).toContain("redact repair compact activity restore");
     }
+    const zsh = generateZshScript();
+    const activity = zsh.slice(zsh.indexOf("        activity)"), zsh.indexOf("        contracts)"));
+    const fish = generateFishScript().split("\n").filter((line) => line.includes("__pm_history_operation activity activity"));
+    for (const contract of ACTIVITY_FLAG_CONTRACTS) {
+      expect(activity).toContain(`${contract.flag}[`);
+      expect(fish.some((line) => line.includes(`-l ${contract.flag.slice(2)} `))).toBe(true);
+    }
+    expect(activity.split("\n").find((line) => line.includes("--stream["))).toContain("]::mode");
     expect(generateFishScript()).toContain(
       "complete -c pm -n '__pm_history_operation activity activity' -l unbounded -d 'Return every matching activity entry'",
     );
