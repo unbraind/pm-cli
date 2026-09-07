@@ -663,9 +663,11 @@ export interface PmProjectedTextDiagnostic {
   diagnostic_output: PmDiagnosticOutputReceipt;
 }
 
-/** Remove terminal escape sequences and non-printing controls from bounded diagnostic fragments. */
+/** Remove terminal escape sequences and controls while preserving diagnostic line breaks. */
 function sanitizeDiagnosticText(text: string): string {
-  return stripVTControlCharacters(text).replace(/\p{Cc}/gu, " ").trim();
+  return stripVTControlCharacters(text)
+    .replace(/\r\n/gu, "\n")
+    .replace(/[^\P{Cc}\n]/gu, " ");
 }
 
 /** Bind human-readable diagnostics while retaining their first identifying line and corrective action. */
@@ -691,18 +693,19 @@ export function projectPmDiagnosticText(
   }
   const budget =
     explicitBudget ?? contract.default_max_estimated_tokens_by_format.text;
+  const sanitizedOutput = sanitizeDiagnosticText(output);
   const originalEstimatedTokens = estimatePmOutputTokens(
-    Buffer.byteLength(output, "utf8"),
+    Buffer.byteLength(sanitizedOutput, "utf8"),
   );
   const truncated = originalEstimatedTokens > budget;
   const actionPrefix = "What is required:\n  ";
   const identity = truncateDiagnosticUtf8Text(
-    sanitizeDiagnosticText(output.trimStart().split(/\r?\n/u, 1)[0]!),
+    sanitizedOutput.trimStart().split(/\r?\n/u, 1)[0]!.trim(),
     320,
   );
   const actionSuffix = `\n\n${identity}\n\nDiagnostic output exceeded its declared ${budget}-token ceiling; rerun with structured JSON for the bounded recovery envelope.`;
   const correctiveActionText =
-    sanitizeDiagnosticText(correctiveAction) ||
+    sanitizeDiagnosticText(correctiveAction).trim() ||
     "Inspect the diagnostic code and retry with corrected input.";
   const availableActionBytes = Math.max(
     1,
@@ -713,7 +716,7 @@ export function projectPmDiagnosticText(
         correctiveActionText,
         availableActionBytes,
       )}${actionSuffix}`
-    : output;
+    : sanitizedOutput;
   return {
     output: projectedOutput,
     diagnostic_output: {

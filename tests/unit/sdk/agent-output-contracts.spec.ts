@@ -176,6 +176,16 @@ describe("agent output contracts", () => {
     expect(projected.diagnostic_output.estimated_tokens).toBeLessThanOrEqual(192);
   });
 
+  it("sanitizes short diagnostics while preserving line breaks and indentation", () => {
+    const projected = projectPmDiagnosticText(
+      "Error: \u001b[31munsafe\u001b[0m\u001b]52;c;payload\u0007\u0000\u0085\r\n  Retry.\r\n",
+      "Retry.",
+    );
+    expect(projected.output).toBe("Error: unsafe  \n  Retry.\n");
+    expect(projected.output.replaceAll("\n", "")).not.toMatch(/\p{Cc}/u);
+    expect(projected.diagnostic_output.truncated).toBe(false);
+  });
+
   it("keeps short default-budget text unchanged and repairs an empty action", () => {
     const short = projectPmDiagnosticText("Short diagnostic", "Retry.");
     const repaired = projectPmDiagnosticText("detail ".repeat(2_000), "   ", {
