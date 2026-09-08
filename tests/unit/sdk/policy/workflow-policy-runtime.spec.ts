@@ -5,6 +5,7 @@ import { sealHistoryRecord } from "../../../../src/core/history/history.js";
 import type { HistoryEntry } from "../../../../src/types/index.js";
 import type { WorkflowPolicyAction } from "../../../../src/sdk/governance/workflow-policy.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
+import { acquireLock } from "../../../../src/core/lock/lock.js";
 import { deleteItem } from "../../../../src/core/store/item-store.js";
 import { commitImportedItem } from "../../../../src/sdk/package-import-adapters.js";
 import { PmClient } from "../../../../src/sdk/runtime.js";
@@ -142,6 +143,22 @@ describe("workspace workflow policy enforcement", () => {
       const params = { pmRoot: pmPath, id: imported.id, itemPath, document: { metadata: imported, body: "" }, author: "importer", message: "Import source", settings, conflictWarningPrefix: "import_lock" };
       await expect(commitImportedItem(params)).rejects.toMatchObject({ code: "workflow_policy_refused" });
       await expect(readFile(itemPath)).rejects.toMatchObject({ code: "ENOENT" });
+      const releaseAuditLock = await acquireLock(pmPath, "workspace-history", 60, "other-writer", false, false, 0);
+      try {
+        await expect(commitImportedItem({ ...params, settings: { ...settings, locks: { ...settings.locks, wait_ms: 0 } } })).rejects.toMatchObject({
+          code: "workflow_policy_audit_failed", cause: { code: "lock_conflict" },
+        });
+      } finally {
+        await releaseAuditLock();
+      }
+      const auditPath = path.join(pmPath, "history", "_workspace.jsonl");
+      const auditBefore = await readFile(auditPath, "utf8");
+      await rm(auditPath);
+      await mkdir(auditPath);
+      await expect(commitImportedItem(params)).rejects.toMatchObject({ code: "workflow_policy_audit_failed", cause: expect.any(Error) });
+      await expect(readFile(itemPath)).rejects.toMatchObject({ code: "ENOENT" });
+      await rm(auditPath, { recursive: true });
+      await writeFile(auditPath, auditBefore);
       expect(await commitImportedItem({ ...params, document: { metadata: imported, body: "Verified import source" } })).toMatchObject({ committed: true });
       expect(await readFile(path.join(pmPath, "history", `${imported.id}.jsonl`), "utf8")).toContain('"workflow_policies"');
     });

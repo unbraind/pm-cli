@@ -302,10 +302,9 @@ function missingRequiredPolicyFields(fields: string[], input: WorkflowPolicyInpu
 }
 
 /** Resolve independent evidence against the proposed record or the record being deleted. */
-function hasMatchingWorkflowApproval(policy: WorkflowPolicy, input: WorkflowPolicyInput, authors: string[]): boolean {
+function hasMatchingWorkflowApproval(policy: WorkflowPolicy, input: WorkflowPolicyInput, authors: string[], policyFingerprint: string): boolean {
   // Applicability excludes creation, so every approval has a previous record.
   const record = input.after ?? input.before!;
-  const policyFingerprint = workflowPolicyFingerprint(policy);
   const contentFingerprint = workflowApprovalFingerprint(policy, record);
   return input.approvals?.some((approval) =>
     approval.policy_fingerprint === policyFingerprint &&
@@ -314,7 +313,7 @@ function hasMatchingWorkflowApproval(policy: WorkflowPolicy, input: WorkflowPoli
 }
 
 /** Evaluate one bounded requirement against the actual before/after values. */
-function evaluatePolicyRule(policy: WorkflowPolicy, input: WorkflowPolicyInput): { satisfied: boolean; missing_fields: string[]; remediation: string } {
+function evaluatePolicyRule(policy: WorkflowPolicy, input: WorkflowPolicyInput, policyFingerprint: string): { satisfied: boolean; missing_fields: string[]; remediation: string } {
   const rule = policy.rule;
   const changedStatus = input.before?.status !== input.after?.status;
   const fieldsChanged = "fields" in rule && rule.fields.some((field) =>
@@ -332,19 +331,36 @@ function evaluatePolicyRule(policy: WorkflowPolicy, input: WorkflowPolicyInput):
     case "field_writers":
       return { satisfied: !fieldsChanged || rule.authors.includes(input.author), missing_fields: [], remediation: "Have a declared field writer change the protected fields." };
     case "approval":
-      return { satisfied: !changedStatus || hasMatchingWorkflowApproval(policy, input, rule.authors),
+      return { satisfied: !changedStatus || hasMatchingWorkflowApproval(policy, input, rule.authors, policyFingerprint),
         missing_fields: [], remediation: `Record an independent approval with pm schema policy-approve <item-id> --policy ${policy.id} after preparing the reviewed fields.` };
   }
 }
 
-/** Evaluate every matching rule; a later advisory can never override a refusal. */
-export function evaluateWorkflowPolicies(document: WorkflowPolicyDocument, input: WorkflowPolicyInput): WorkflowPolicyEvaluation {
+/** Evaluate matching rules using declaration hashes owned by the current evaluation or snapshot. */
+function evaluateWorkflowPolicySnapshot(document: WorkflowPolicyDocument, input: WorkflowPolicyInput, fingerprint: (policy: WorkflowPolicy) => string): WorkflowPolicyEvaluation {
   const decisions = document.policies.filter((policy) => workflowPolicyApplies(policy, input)).map((policy): WorkflowPolicyDecision => {
     const requested = policy.effect ?? "advise";
-    return { policy_id: policy.id, policy_fingerprint: workflowPolicyFingerprint(policy), rule: policy.rule.kind,
+    const policyFingerprint = fingerprint(policy);
+    return { policy_id: policy.id, policy_fingerprint: policyFingerprint, rule: policy.rule.kind,
       effect: requested === "refuse" && document.enforcement !== "refuse" ? "warn" : requested,
-      ...evaluatePolicyRule(policy, input) };
+      ...evaluatePolicyRule(policy, input, policyFingerprint) };
   });
   return { allowed: !decisions.some((decision) => !decision.satisfied && decision.effect === "refuse"), decisions,
     warnings: decisions.filter((decision) => !decision.satisfied).map((decision) => `workflow_policy:${decision.effect}:${decision.policy_id}:${decision.rule}`) };
+}
+
+/** Evaluate current declarations; a later advisory can never override a refusal. */
+export function evaluateWorkflowPolicies(document: WorkflowPolicyDocument, input: WorkflowPolicyInput): WorkflowPolicyEvaluation {
+  return evaluateWorkflowPolicySnapshot(document, input, workflowPolicyFingerprint);
+}
+
+/**
+ * Capture a private normalized declaration snapshot for repeated evaluation.
+ * Each policy is hashed once; later edits to the caller's mutable document do
+ * not alter this evaluator. Create another evaluator to adopt those edits.
+ */
+export function createWorkflowPolicyEvaluator(document: WorkflowPolicyDocument): (input: WorkflowPolicyInput) => WorkflowPolicyEvaluation {
+  const snapshot = parseWorkflowPolicyDocument(document);
+  const fingerprints = new Map(snapshot.policies.map((policy) => [policy, workflowPolicyFingerprint(policy)]));
+  return (input) => evaluateWorkflowPolicySnapshot(snapshot, input, (policy) => fingerprints.get(policy)!);
 }

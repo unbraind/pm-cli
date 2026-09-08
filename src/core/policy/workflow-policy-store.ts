@@ -142,12 +142,23 @@ export async function enforceWorkflowMutation(params: {
   });
   if (result.allowed) return result;
   const refused = result.decisions.filter((decision) => !decision.satisfied && decision.effect === "refuse");
-  if (!params.dryRun) await appendWorkspaceAuditEvent({
-    pmRoot: params.pmRoot, op: "policy_refused", author: params.author,
-    context: { item_id: params.after?.metadata.id ?? params.before?.metadata.id, operation: params.operation, workflow_policies: result.decisions },
-    message: "Workflow policy refused a proposed item mutation.",
-    lockTtlSeconds: params.settings.locks.ttl_seconds, lockWaitMs: params.settings.locks.wait_ms,
-  });
+  if (!params.dryRun) {
+    try {
+      await appendWorkspaceAuditEvent({
+        pmRoot: params.pmRoot, op: "policy_refused", author: params.author,
+        context: { item_id: params.after?.metadata.id ?? params.before?.metadata.id, operation: params.operation, workflow_policies: result.decisions },
+        message: "Workflow policy refused a proposed item mutation.",
+        lockTtlSeconds: params.settings.locks.ttl_seconds, lockWaitMs: params.settings.locks.wait_ms,
+      });
+    } catch (cause: unknown) {
+      const error = new PmCliError("Workflow policy refusal could not be recorded in workspace history.", EXIT_CODE.CONFLICT, {
+        code: "workflow_policy_audit_failed",
+        nextSteps: ["Resolve workspace-history lock or storage failures, then retry the refused mutation; no item changes were written."],
+      });
+      error.cause = cause;
+      throw error;
+    }
+  }
   const summary = refused.slice(0, 3).map((decision) => `${decision.policy_id} (${decision.rule})`).join(", ");
   const remaining = refused.length > 3 ? ` and ${refused.length - 3} more` : "";
   throw new PmCliError(`Workflow policy refused ${params.operation}: ${summary}${remaining}.`, EXIT_CODE.CONFLICT, {

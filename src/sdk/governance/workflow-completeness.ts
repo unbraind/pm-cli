@@ -3,7 +3,7 @@
  *
  * Reduces declarative field requirements into bounded, content-free diagnostics.
  */
-import { evaluateWorkflowPolicies, type WorkflowPolicyDocument, type WorkflowPolicyDecision } from "../../core/policy/workflow-policy.js";
+import { createWorkflowPolicyEvaluator, type WorkflowPolicyDocument, type WorkflowPolicyDecision } from "../../core/policy/workflow-policy.js";
 import type { ValidateCheck } from "./validate.js";
 
 /** One item-policy violation, retaining field paths but never field values. */
@@ -30,8 +30,9 @@ export function buildWorkflowCompletenessCheck(
   let violationCount = 0;
   let incompleteItems = 0;
   let refused = 0;
+  const evaluate = createWorkflowPolicyEvaluator(document);
   for (const item of items) {
-    const evaluation = evaluateWorkflowPolicies(document, {
+    const evaluation = evaluate({
       operation: "update", author: "", before: item, after: item, completeness_only: true,
     });
     const missing = evaluation.decisions.filter((decision) => !decision.satisfied);

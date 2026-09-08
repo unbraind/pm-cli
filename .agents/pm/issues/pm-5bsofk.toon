@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-07T22:30:37.538Z"
-updated_at: "2026-09-08T21:02:26.071Z"
+updated_at: "2026-09-08T21:30:02.783Z"
 closed_at: "2026-09-08T20:41:36.422Z"
 completed_at: "2026-09-08T20:41:36.422Z"
 author: "harness:codex"
@@ -20,7 +20,7 @@ reporter: github
 severity: medium
 resolution: "Implemented bounded SDK/CLI/MCP copy planning and safe archive alternatives, with real packed-install acceptance now using the existing Windows npm launcher helpers."
 expected_result: "Directory and archive planning retain their existing semantics, and the same real pack/install acceptance runs on supported operating systems."
-actual_result: "All 8620 tests pass at exact 100/100/100/100 coverage. All three linked package commands, four TypeScript projects and static assurance pass. Linux and macOS hosted suites passed; the corrected-head Windows run remains a merge requirement. The original feature remains attributed to v2026.9.8."
+actual_result: "All 8620 tests pass at exact 100/100/100/100 coverage. Full Nightly runs 34276455079 on e12d30b15 and 34278393319 on 4885591 passed Linux Node 22/24/25, macOS Node 24 and Windows Node 24, including the real npm-pack acceptance. All three linked package commands, four TypeScript projects and static assurance pass. The original feature remains attributed to v2026.9.8."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-0682l4,discovered_from,"2026-09-07T22:30:37.538Z","harness:codex","cli:create:dep",detected
   pm-lw6acw,discovered_from,"2026-09-07T22:30:37.538Z","harness:codex","cli:create:dep",detected

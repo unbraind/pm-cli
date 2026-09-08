@@ -79,6 +79,11 @@ Refused mutations preserve item state and item history, and append a workspace
 refusal event. Accepted mutations attach bounded policy decisions to their normal
 history event. Diagnostics contain policy ids and missing field paths, without
 copying reviewed content into errors.
+If the mandatory refusal audit cannot be appended, the mutation instead raises
+`workflow_policy_audit_failed` and preserves the original failure in the SDK
+error's `cause`. Item data remains unchanged; resolve the workspace history lock
+or storage failure before retrying. Package imports do not downgrade this error
+to an item-lock warning.
 
 ## Completeness reports and SDK
 
@@ -100,6 +105,12 @@ The published `@unbrained/pm-cli/sdk/governance` entrypoint exports
 `workflowPolicy(action, name, options)`. CLI `schema` and MCP `pm_schema` use the
 same action vocabulary and SDK implementation; MCP options accept camelCase
 keys and structured JSON definitions.
+
+For repeated pure evaluation, `createWorkflowPolicyEvaluator(document)` returns
+an evaluator that owns a private normalized policy snapshot and hashes each
+declaration once. Later edits to the supplied document do not change that
+snapshot; create another evaluator to adopt them. Completeness validation uses
+one such snapshot for the whole supplied corpus.
 
 The schema contract version is 4.16. Existing schema operations remain available;
 `SchemaResult` now also includes `WorkflowPolicyActionResult`. Consumers that

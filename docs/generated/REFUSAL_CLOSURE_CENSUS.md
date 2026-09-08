@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 370
+- Catalog error codes: 371
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 351
-- Coverage fraction: 0.051351
+- Uncovered error codes: 352
+- Coverage fraction: 0.051213
 - Closed-domain probes: 19
 - Grammar probes: 97
 
@@ -366,6 +366,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `visible_surface_ceiling_exceeded` | `visible_surface_ceiling_exceeded` | uncovered | none | 0 |
 | `workflow_duplicate_type` | `workflow_duplicate_type` | uncovered | none | 0 |
 | `workflow_policy_approval_history_invalid` | `workflow_policy_approval_history_invalid` | uncovered | none | 0 |
+| `workflow_policy_audit_failed` | `workflow_policy_audit_failed` | uncovered | none | 0 |
 | `workflow_policy_input_unreadable` | `workflow_policy_input_unreadable` | uncovered | none | 0 |
 | `workflow_policy_invalid` | `workflow_policy_invalid` | uncovered | none | 0 |
 | `workflow_policy_refused` | `workflow_policy_refused` | uncovered | none | 0 |

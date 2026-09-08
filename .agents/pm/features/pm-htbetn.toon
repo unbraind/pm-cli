@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[6]: context-management,data-quality,governance,schema,standards,validation
 created_at: "2026-07-26T10:01:01.886Z"
-updated_at: "2026-09-08T18:35:23.131Z"
-closed_at: "2026-09-08T18:35:22.543Z"
-completed_at: "2026-09-08T18:35:22.543Z"
+updated_at: "2026-09-08T21:57:59.136Z"
+closed_at: "2026-09-08T21:57:58.519Z"
+completed_at: "2026-09-08T21:57:58.519Z"
 author: "harness:opencode"
 estimated_minutes: 600
 acceptance_criteria: Contract declared as schema data with built-in defaults per type; pm validate reports per-type completeness violations; warn/require follows governance policy; custom types extend via schema; negative-control fixture in CI proves a malformed item fails
@@ -19,9 +19,9 @@ why_now: "2026-07-26 review found close-time completeness (pm-wenq) tracked but 
 parent: pm-33cw
 risk: low
 confidence: high
-resolution: "Implemented configurable per-type lifecycle completeness using shared require_fields policies, opt-in presets and machine-readable validation summaries. Completeness now derives source validity only from item-read diagnostics and preserves unrelated history advice."
-expected_result: Custom types and lifecycle stages declare required fields as schema data; validation reports counts and bounded examples with strict-exit negative controls.
-actual_result: "Full suite: 8620 tests in 652 files passed with exact 100/100/100/100 coverage. After the one-use metadata initializer was inlined, all 137 focused validation/attribution/contract tests and the direct static gate passed. All linked tests, manual CLI acceptance, typecheck, generated contracts, secret scan and zero-vulnerability dependency audit passed. Full current-head hosted review and preflight remain merge requirements."
+resolution: "Delivered customizable per-type lifecycle completeness rules, optional built-in presets and counts-first validation. Each corpus scan reuses one private policy snapshot; unrelated history diagnostics cannot falsely invalidate item-source completeness."
+expected_result: "Schema-defined lifecycle requirements are validated consistently for custom item types and statuses, with bounded per-type diagnostics and no repeated policy hashing per item."
+actual_result: "Linked completeness and author-attribution checks pass; snapshot mutation isolation and fresh-evaluator behavior pass. Sixth-round verification: all 8622 tests in 653 files pass with exact 100/100/100/100 coverage and zero uncovered statements, branches, functions and lines. All four TypeScript projects, the full quality:static gate, serialized docs/skills checks, and every linked test command pass. Both original clone profiles remain unchanged; the supplementary historical-table profile also passes. Final pushed-head CI, full platform matrix, review and preflight remain required before merge."
 dependencies[9]:
   - id: pm-4k6b
     kind: related
@@ -53,13 +53,15 @@ dependencies[9]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-09-08T15:40:12.258Z","harness:codex","Verification evidence: custom-type completeness aggregation, bounded diagnostic examples, counts-only projection, CLI strict-exit negative control and remediation pass. The report and lifecycle write enforcement share the same require_fields evaluator. Public documentation now has a reachable index entry. Related implementation dependency is recorded on pm-mj42og."
   "2026-09-08T16:24:43.390Z","harness:codex","Verification: the linked sandboxed completeness checks pass, including custom types, bounded examples, counts-only projection, explicit refusal under strict-exit, and remediation to a clean result. The shared policy suite also passes and default validate includes completeness. No default policies are installed into existing trackers."
   "2026-09-08T16:50:58.717Z","harness:codex","Final implementation evidence: Linked completeness tests pass for custom types, counts-only output, refusal and remediation. The full 8615-test run passes with exact 100/100/100/100 source coverage; manual strict completeness validation passes."
   "2026-09-08T18:20:14.151Z","harness:codex","Third-round TDD: the existing unknown-author scenario failed after adding an assertion that completeness remains ok. Capture item-read incompleteness immediately after reading items, before unrelated history advice is appended. The fix preserves fail-closed behavior for unreadable item sources."
   "2026-09-08T18:31:49.458Z","harness:codex","Third-round verification: full 8620-test coverage passes at exact 100/100/100/100. Real unknown-author history advice no longer marks completeness as an incomplete source; a malformed item file still produces an error. A separate compiled CLI run in a temporary tracker preserved validate_history_unknown_author_events:1 while reporting completeness status ok."
   "2026-09-08T18:35:21.923Z","harness:codex","Final third-round evidence: Completeness now derives source validity only from item-read diagnostics and preserves unrelated history advice. Full suite: 8620 tests in 652 files passed with exact 100/100/100/100 coverage. After the one-use metadata initializer was inlined, all 137 focused validation/attribution/contract tests and the direct static gate passed. All linked tests, manual CLI acceptance, typecheck, generated contracts, secret scan and zero-vulnerability dependency audit passed. Full current-head hosted review and preflight remain merge requirements."
+  "2026-09-08T21:35:01.279Z","harness:codex","Sixth-round correction: completeness creates one private policy evaluator for the whole corpus, avoiding repeated declaration serialization and SHA-256 work. The snapshot regression fails before the new API and passes afterward, including caller mutation and fresh evaluator behavior."
+  "2026-09-08T21:57:57.834Z","harness:codex","Sixth-round verification: all 8622 tests in 653 files pass with exact 100/100/100/100 coverage and zero uncovered statements, branches, functions and lines. All four TypeScript projects, the full quality:static gate, serialized docs/skills checks, and every linked test command pass. Both original clone profiles remain unchanged; the supplementary historical-table profile also passes. Final pushed-head CI, full platform matrix, review and preflight remain required before merge."
 files[6]{path,scope,note}:
   src/cli/register-operations.ts,project,Completeness-flag-adapter
   src/sdk/governance/validate.ts,project,Counts-first-validation-integration
@@ -69,7 +71,7 @@ files[6]{path,scope,note}:
   tests/unit/sdk/policy/workflow-completeness.spec.ts,project,Completeness-negative-control
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/sdk/policy/workflow-completeness.spec.ts,project,240,"harness:codex","2026-09-08T18:20:13.583Z",local_mutation,feat/declarative-workflow-policies
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mtsvei3o-4n4i9x
     kind: test
     status: passed
@@ -92,7 +94,18 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/sdk/policy/workflow-completeness.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtt7l51o-qz1hdb
+    kind: test
+    status: passed
+    started_at: "2026-09-08T21:55:46.824Z"
+    finished_at: "2026-09-08T21:56:00.588Z"
+    recorded_at: "2026-09-08T21:56:00.588Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/sdk/policy/workflow-completeness.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/WORKFLOW_POLICIES.md,project,Completeness-policy-configuration
-close_reason: Third-round implementation and regression verification complete; merge remains governed by the new head checks.
+close_reason: Connected implementation and review regressions verified; final hosted gates govern merge.
 body: ""

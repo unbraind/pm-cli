@@ -2434,4 +2434,17 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     canonical_code: "missing_allowed_values",
     aliases: [],
   },
+  {
+    code: "missing_budget",
+    meaning: "Missing budget condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_budget",
+    aliases: [],
+  },
 ];

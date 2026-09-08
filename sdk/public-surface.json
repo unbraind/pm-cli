@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1918,
+    "covered_symbols": 1919,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1919
+    "required_symbols": 1920
   },
   "breaking_acknowledgements": [
     {
@@ -5327,6 +5327,12 @@
           "kind": "function",
           "name": "createUnknownSubcommandError",
           "signature": "(options: UnknownSubcommandErrorOptions) => PmCliError | calls: (options: UnknownSubcommandErrorOptions) => PmCliError"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "createWorkflowPolicyEvaluator",
+          "signature": "(document: WorkflowPolicyDocument) => (input: WorkflowPolicyInput) => WorkflowPolicyEvaluation | calls: (document: WorkflowPolicyDocument) => (input: WorkflowPolicyInput) => WorkflowPolicyEvaluation"
         },
         {
           "classification": "advanced_export",
@@ -25712,6 +25718,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "createWorkflowPolicyEvaluator",
+          "signature": "(document: WorkflowPolicyDocument) => (input: WorkflowPolicyInput) => WorkflowPolicyEvaluation | calls: (document: WorkflowPolicyDocument) => (input: WorkflowPolicyInput) => WorkflowPolicyEvaluation"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "DEFECT_ESCAPE_CLASSES",
           "signature": "readonly [\"production_defect\", \"nightly_regression\", \"scanner_finding\", \"review_caught_late\"]"
@@ -30980,6 +30992,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "createWorkflowPolicyEvaluator",
+          "signature": "(document: WorkflowPolicyDocument) => (input: WorkflowPolicyInput) => WorkflowPolicyEvaluation | calls: (document: WorkflowPolicyDocument) => (input: WorkflowPolicyInput) => WorkflowPolicyEvaluation"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "CURRENT_ITEM_FORMAT_VERSION",
           "signature": "1"
@@ -34526,6 +34544,7 @@
     "visible_surface_ceiling_exceeded",
     "workflow_duplicate_type",
     "workflow_policy_approval_history_invalid",
+    "workflow_policy_audit_failed",
     "workflow_policy_input_unreadable",
     "workflow_policy_invalid",
     "workflow_policy_refused",

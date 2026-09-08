@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseDependencyAdditions } from "../../../../src/sdk/lifecycle/update.js";
+import { _testOnlyUpdateCommand, parseDependencyAdditions } from "../../../../src/sdk/lifecycle/update.js";
 import { ensureEnumValue } from "../../../../src/sdk/lifecycle/recurrence-parsers.js";
 import { DEPENDENCY_KIND_VALUES } from "../../../../src/types/index.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
@@ -7,6 +7,9 @@ import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 describe("enum constraint recovery", () => {
   it("separates the stored field key from its readable dependency label", () => {
     expect(() => parseDependencyAdditions(["id=pm-target,kind=invalid"], "pm", "2026-09-08T00:00:00.000Z", "writer")).toThrow(expect.objectContaining({
+      context: expect.objectContaining({ field: "kind", required: expect.stringContaining("dependency kind") }),
+    }));
+    expect(() => _testOnlyUpdateCommand.parseDependencyRemovals(["id=pm-target,kind=invalid"], "pm")).toThrow(expect.objectContaining({
       context: expect.objectContaining({ field: "kind", required: expect.stringContaining("dependency kind") }),
     }));
     expect(() => ensureEnumValue("invalid", ["low", "high"], "risk")).toThrow(expect.objectContaining({

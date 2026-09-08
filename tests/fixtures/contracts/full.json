@@ -22319,6 +22319,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "workflow_policy_audit_failed",
+      "class": "conflict",
+      "code": "workflow_policy_audit_failed",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Workflow policy audit failed condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/policy/workflow-policy-store.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "workflow_policy_input_unreadable",
       "class": "conflict",
       "code": "workflow_policy_input_unreadable",

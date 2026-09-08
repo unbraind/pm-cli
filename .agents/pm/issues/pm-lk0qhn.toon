@@ -6,28 +6,30 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-08T16:15:39.497Z"
-updated_at: "2026-09-08T17:32:23.201Z"
-closed_at: "2026-09-08T17:32:22.586Z"
-completed_at: "2026-09-08T17:32:22.586Z"
+updated_at: "2026-09-08T21:58:01.159Z"
+closed_at: "2026-09-08T21:58:00.475Z"
+completed_at: "2026-09-08T21:58:00.475Z"
 author: "harness:codex"
 acceptance_criteria: Invalid dependency kinds name the field and accepted values in structured required guidance; text and JSON are actionable; rejected updates preserve the item; the shared parser retains the same accepted vocabulary.
 parent: pm-96h7
 severity: low
 repro_steps: "Run update with --dep id=<valid-id>,kind=relates_to and inspect required/next_steps in JSON error output."
-resolution: "Shared enum validation preserves the accepted dependency kind set and readable retry guidance; create, update-add and update-remove identify context.field as kind."
-expected_result: Invalid dependency kinds produce actionable text/JSON guidance and canonical SDK field identity without changing item data.
-actual_result: "Direct SDK and compiled CLI regressions pass, including complete before/after state equality. Linked tests and all 8619 repository tests pass at exact 100/100/100/100 coverage."
+resolution: "Preserved accepted dependency-kind constraints and concrete retry guidance through structured SDK errors and CLI text/JSON rendering, while retaining the canonical machine-readable kind key for create, addition and removal parsers."
+expected_result: Invalid dependency kinds retain named accepted values and context.field=kind across every parser without changing item or history state.
+actual_result: "Direct create, update-addition and dependency-removal parser assertions pass alongside real CLI text/JSON and unchanged-state regressions. Sixth-round verification: all 8622 tests in 653 files pass with exact 100/100/100/100 coverage and zero uncovered statements, branches, functions and lines. All four TypeScript projects, the full quality:static gate, serialized docs/skills checks, and every linked test command pass. Both original clone profiles remain unchanged; the supplementary historical-table profile also passes. Final pushed-head CI, full platform matrix, review and preflight remain required before merge."
 component: sdk/lifecycle
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4020c5,discovered_from,"2026-09-08T16:15:39.497Z","harness:codex","cli:create:dep",detected
   pm-gggs,blocked_by,"2026-09-08T16:15:39.497Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-09-08T16:15:39.497Z","harness:codex","Duplicate check: all-status inventory and dependency kind error search inspected; full pm-4020c5 confirms canonical write semantics and ontology are delivered. This residual rendering defect is distinct from canonicalization and has no existing owning item."
   "2026-09-08T16:18:42.192Z","harness:codex","TDD evidence: the compiled CLI regression failed because required contained only Use values that match documented command constraints. The parser now supplies the field label, accepted set and concrete retry in structured context, preserving useful guidance when generic rendering omits parser detail. No rejected value is copied into the new recovery fields."
   "2026-09-08T16:21:40.008Z","harness:codex","Green verification: the compiled CLI regression passes for text and JSON; structured required names dependency kind and all accepted values, and the rejected update preserves the complete get result. The change adds no branches or accepted values and applies through the shared create/update recurrence parser."
   "2026-09-08T16:51:02.478Z","harness:codex","Final implementation evidence: The regression failed before the fix and passes afterward through the compiled CLI for text and JSON, including complete before/after state equality. The full 8615-test run passes at exact 100/100/100/100 coverage."
   "2026-09-08T17:24:50.899Z","harness:codex","Review correction: separate human dependency kind label from the stored kind error-context key at create, update-add and update-remove call sites. Direct SDK error assertion verifies context.field=kind; compiled CLI text/JSON tests retain the complete allowed-value guidance and verify item state is unchanged. Focused enum tests pass."
   "2026-09-08T17:32:21.871Z","harness:codex","Final review-correction evidence for PR #1224: Direct SDK and compiled CLI regressions pass, including complete before/after state equality. Linked tests and all 8619 repository tests pass at exact 100/100/100/100 coverage."
+  "2026-09-08T21:35:01.781Z","harness:codex","Sixth-round regression: the existing direct parser test now also invokes _testOnlyUpdateCommand.parseDependencyRemovals and verifies context.field=kind plus the human dependency-kind constraint. Real CLI text/JSON and state-preservation assertions remain intact."
+  "2026-09-08T21:57:59.733Z","harness:codex","Sixth-round verification: all 8622 tests in 653 files pass with exact 100/100/100/100 coverage and zero uncovered statements, branches, functions and lines. All four TypeScript projects, the full quality:static gate, serialized docs/skills checks, and every linked test command pass. Both original clone profiles remain unchanged; the supplementary historical-table profile also passes. Final pushed-head CI, full platform matrix, review and preflight remain required before merge."
 files[4]{path,scope,note}:
   src/sdk/lifecycle/create.ts,project,Keep machine-readable dependency kind distinct from display label
   src/sdk/lifecycle/recurrence-parsers.ts,project,Shared-enum-constraint-context
@@ -35,7 +37,7 @@ files[4]{path,scope,note}:
   tests/unit/sdk/recovery/enum-constraint-guidance.spec.ts,project,Rendered-constraint-negative-control
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/enum-constraint-guidance.spec.ts,project,240,"harness:codex","2026-09-08T16:18:40.960Z",local_mutation,feat/declarative-workflow-policies
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mtsvn8ev-ooi0ev
     kind: test
     status: passed
@@ -58,9 +60,20 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/enum-constraint-guidance.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtt7ldp1-lmwl5e
+    kind: test
+    status: passed
+    started_at: "2026-09-08T21:56:01.102Z"
+    finished_at: "2026-09-08T21:56:11.797Z"
+    recorded_at: "2026-09-08T21:56:11.797Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/enum-constraint-guidance.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/DEPENDENCY_KIND_CONTRACT.md,project,Existing-canonical-and-alias-vocabulary
-close_reason: Implementation and first-round review corrections verified for PR #1224.
+close_reason: Connected implementation and review regressions verified; final hosted gates govern merge.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

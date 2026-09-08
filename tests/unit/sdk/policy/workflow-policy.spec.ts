@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  evaluateWorkflowPolicies, parseWorkflowPolicy, parseWorkflowPolicyDocument,
+  createWorkflowPolicyEvaluator, evaluateWorkflowPolicies, parseWorkflowPolicy, parseWorkflowPolicyDocument,
   readWorkflowPolicyField, workflowPolicyApplies, workflowPolicyFingerprint,
   workflowApprovalFingerprint, type WorkflowPolicy, type WorkflowPolicyInput,
 } from "../../../../src/core/policy/workflow-policy.js";
@@ -16,6 +16,21 @@ function evaluate(policy: WorkflowPolicy, change: WorkflowPolicyInput = input) {
 }
 
 describe("declarative workflow policies", () => {
+  it("reuses a private policy snapshot without retaining mutable caller declarations", () => {
+    const document = parseWorkflowPolicyDocument({ version: 1, policies: [requirement] });
+    const snapshot = createWorkflowPolicyEvaluator(document);
+    const expected = evaluateWorkflowPolicies(document, input);
+    expect(snapshot(input)).toEqual(expected);
+    document.policies[0].effect = "advise";
+    document.policies[0].rule = { kind: "require_fields", fields: ["title"] };
+    document.enforcement = "refuse";
+    expect(snapshot(input)).toEqual(expected);
+    expect(snapshot({ ...input, after: { ...input.after, resolution: "Reviewed" } }).allowed).toBe(true);
+    expect(createWorkflowPolicyEvaluator(document)(input)).toEqual(evaluateWorkflowPolicies(document, input));
+    expect(createWorkflowPolicyEvaluator(document)(input).decisions[0].policy_fingerprint).not.toBe(expected.decisions[0].policy_fingerprint);
+    expect(createWorkflowPolicyEvaluator({ version: 1, enforcement: "advise", policies: [] })(input)).toEqual({ allowed: true, decisions: [], warnings: [] });
+  });
+
   it("requires both workspace and policy consent and never lets an advisory override a refusal", () => {
     const document = parseWorkflowPolicyDocument({ version: 1, policies: [requirement] });
     expect(evaluateWorkflowPolicies(document, input)).toMatchObject({ allowed: true, decisions: [{ satisfied: false, effect: "warn" }] });

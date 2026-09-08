@@ -88,6 +88,16 @@ so PR-local CodeFactor maintainability annotations fail locally before commit or
 push. Existing legacy high-complexity test fixtures are tracked separately and
 must not be used as precedent for new changed production/script code.
 
+`lint:duplicates` runs three zero-clone profiles: the broad repository profile,
+the production cross-format profile, and a supplemental long-table profile at
+28 lines / 80 tokens. The last profile detects the historical GH-508 normalizer
+tables below the other profiles' token floors; it does not replace their shorter
+line thresholds. Its real detector regression rejects the historical table rows
+and accepts a shared declaration. The earlier 12-line / 60-token exploratory
+census informed calibration, but is not the enforced profile. These bounded
+profiles do not claim complete equivalence with hosted analyzers.
+See [pm-xspd](../.agents/pm/chores/pm-xspd.toon) for calibration evidence.
+
 The local parity rules catch analyzer classes before push. The mandatory hosted
 proof runs after the final commit is pushed and both apps have finished:
 
