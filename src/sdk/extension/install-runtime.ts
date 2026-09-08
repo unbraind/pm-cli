@@ -163,7 +163,7 @@ export const copyExtensionDirectoryWithoutSelfNesting = async (
     return;
   }
   if (!isPathWithinDirectory(canonicalSource, canonicalDestination)) {
-    await copyDirectory(sourceDirectory, destinationDirectory, {
+    await copyDirectory(canonicalSource, destinationDirectory, {
       recursive: true,
       force: true,
     });
@@ -194,12 +194,12 @@ export const copyExtensionDirectoryWithoutSelfNesting = async (
   );
   const stagedDirectory = path.join(stagingRoot, "extension");
   try {
-    await copyDirectory(sourceDirectory, stagedDirectory, {
+    await copyDirectory(canonicalSource, stagedDirectory, {
       recursive: true,
       force: true,
       filter: (sourcePath) => includesExtensionCopyPath(
         canonicalSource, canonicalDestination,
-        path.resolve(canonicalSource, path.relative(resolvedSource, path.resolve(sourcePath))),
+        path.resolve(sourcePath),
       ),
     });
     await copyDirectory(stagedDirectory, destinationDirectory, {

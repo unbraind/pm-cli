@@ -15,6 +15,8 @@ describe("bounded extension copy planning", () => {
       await fs.writeFile(path.join(source, "node_modules", "dev"), "development");
       const plan = await planExtensionDirectoryCopy(source, path.join(root, "destination"));
       expect(plan).toMatchObject({ copy_scope: "directory_snapshot", files: 2, bytes: 29, complete: true, development_entries: 2 });
+      await fs.mkdir(path.join(source, "plugins", ".agents"), { recursive: true });
+      await fs.writeFile(path.join(source, "plugins", ".agents", "state.json"), "tracker state");
       const nested = await planExtensionDirectoryCopy(source, path.join(source, ".agents", "pm", "extensions", "sample"));
       expect(nested).toMatchObject({ copy_scope: "nested_filtered_snapshot", files: 1, bytes: 18, complete: true });
       expect(await planExtensionDirectoryCopy(source, source)).toMatchObject({ copy_scope: "in_place", files: 0, bytes: 0, complete: true });

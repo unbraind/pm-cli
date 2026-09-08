@@ -29,7 +29,8 @@ describe("claim transport receipts", () => {
       const id = "pm-mcpreceipt";
       createTaskFixture(context, id, "MCP and SDK ownership receipt acceptance");
       const args = { path: context.pmPath, noExtensions: true, author: "test-author" };
-      expect(await runAction({ ...args, action: "claim", id })).toMatchObject({ id, changed_field_count: 2, claimed_by: "test-author" });
+      expect(await runAction({ ...args, action: "claim", id, message: "Explicit MCP claim reason" })).toMatchObject({ id, changed_field_count: 2, claimed_by: "test-author" });
+      expect(context.runCli(["history", id, "--full", "--json"], { expectJson: true }).json).toMatchObject({ history: expect.arrayContaining([expect.objectContaining({ op: "claim", message: "Explicit MCP claim reason" })]) });
       expect(await runAction({ ...args, action: "claim", id, idOnly: true })).toEqual({ id, status: "open" });
       expect(await new PmClient({ pmRoot: context.pmPath, noExtensions: true, author: "test-author" }).claim(id)).toMatchObject({ item: { id }, changed_fields: [] });
       const selected = await runAction({ ...args, action: "claim", next: true });
@@ -39,9 +40,14 @@ describe("claim transport receipts", () => {
       expect(await runAction({ ...args, action: "claim", fullChangedFields: true, options: { next: true } })).toMatchObject({ item: { id }, recommendation: expect.any(Object) });
       const contender = { ...args, author: "contender", action: "claim", id };
       expect(await runAction({ ...contender, options: { ifAvailable: true } })).toMatchObject({ id, skipped: true, changed_field_count: 0 });
+      expect(await runAction({ ...contender, ifAvailable: true })).toMatchObject({ id, skipped: true, claimed_by: "test-author", changed_field_count: 0 });
       expect(await runAction({ ...contender, force: true })).toMatchObject({ id, claimed_by: "contender", previous_assignee: "test-author", forced: true, warnings: ["claim_takeover:test-author->contender"] });
       expect(await runAction({ ...args, action: "claim", id, options: { force: true } })).toMatchObject({ id, forced: true, claimed_by: "test-author" });
       expect(await runAction({ ...args, action: "claim", next: true, options: { tag: "absent", ifAvailable: true } })).toMatchObject({ available: false, item: null, skipped: true, attempts: 0 });
+      expect(await runAction({ ...args, action: "claim", id, force: true, message: "Flat reason", options: { author: "nested-author", message: "Nested options reason" } })).toMatchObject({ id, claimed_by: "nested-author", forced: true });
+      expect(context.runCli(["history", id, "--full", "--json"], { expectJson: true }).json).toMatchObject({ history: expect.arrayContaining([expect.objectContaining({ op: "claim", author: "nested-author", message: "Nested options reason" })]) });
+      expect(await runAction({ ...args, action: "claim", next: true, options: { author: "nested-author" } })).toMatchObject({ id, claimed_by: "nested-author", changed_field_count: 0 });
+      await expect(runAction({ ...args, action: "claim", id, ifAvailable: true, options: { ifAvailable: false } })).rejects.toMatchObject({ context: { code: "already_claimed_by" } });
       await expect(runAction({ ...args, action: "claim" })).rejects.toThrow("Missing required argument: id");
     });
   });

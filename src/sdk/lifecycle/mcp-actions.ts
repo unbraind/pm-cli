@@ -30,10 +30,10 @@ export interface LifecycleMutationActionContext {
 export async function runMcpClaimAction(context: LifecycleMutationActionContext): Promise<unknown> {
   const { changedFields, idOnly, runnerOptions } = withMutationCompaction(context.args, context.options);
   const force = context.force === true || runnerOptions.force === true;
-  const selectionOptions = { ...runnerOptions, ...context.args };
+  const selectionOptions = { ...context.args, ...runnerOptions };
   const result = context.args.next === true || runnerOptions.next === true
     ? await runClaimNext(force, context.global, selectionOptions, selectionOptions)
-    : await runClaim(requireLifecycleItemId(context, runnerOptions), force, context.global, runnerOptions);
+    : await runClaim(requireLifecycleItemId(context, runnerOptions), force, context.global, selectionOptions);
   return projectMutationResult(result, {
     changedFields,
     compactEnvelope: changedFields === "compact" && !idOnly,

@@ -8,7 +8,7 @@ export function includesExtensionCopyPath(source: string, destination: string, c
   if (relative !== "" && !isPathWithinDirectory(source, candidate)) return false;
   if (candidate === destination || isPathWithinDirectory(destination, candidate)) return false;
   const segments = relative.split(path.sep);
-  return segments[0] !== ".agents" && !segments.some(
-    (segment) => segment === "node_modules" || segment.startsWith(".pm-extension-install-backup-"),
+  return !segments.some(
+    (segment) => segment === ".agents" || segment === "node_modules" || segment.startsWith(".pm-extension-install-backup-"),
   );
 }

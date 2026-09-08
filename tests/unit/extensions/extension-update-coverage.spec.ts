@@ -41,9 +41,11 @@ describe("package update evidence coverage", () => {
   it("keeps successful checks, empty scopes, and expected unmanaged builtins complete", () => {
     const builtin: ManagedExtensionSummary = { ...installed, update_check_status: "skipped_non_github", source: { kind: "builtin", input: "beads", location: "beads", name: "beads", package: "@unbrained/pm-beads" } };
     for (const rows of [[], [installed], [builtin], [{ ...installed, name: "builtin-example", managed: false, update_check_status: "skipped_unmanaged" as const }]]) {
-      expect(buildExtensionTriageSummary("project", [], rows)).toMatchObject({
+      const result = buildExtensionTriageSummary("project", [], rows);
+      expect(result).toMatchObject({
         status: "ok", update_health_coverage: "full", update_health_partial: false,
       });
+      expect(result.remediation.join(" ")).not.toContain("--fix-managed-state");
     }
   });
 });

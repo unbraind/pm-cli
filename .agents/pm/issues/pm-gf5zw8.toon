@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-08T07:41:46.288Z"
-updated_at: "2026-09-08T08:53:57.982Z"
-closed_at: "2026-09-08T08:53:57.316Z"
-completed_at: "2026-09-08T08:53:57.316Z"
+updated_at: "2026-09-08T10:51:00.106Z"
+closed_at: "2026-09-08T10:50:59.560Z"
+completed_at: "2026-09-08T10:50:59.560Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "All-skipped npm, mixed checked/skipped, failed and not-checked managed sources report partial update coverage; successful checks and expected builtins retain valid semantics; SDK CLI and isolated installed-package acceptance agree."
@@ -19,28 +19,35 @@ impact: Prevents false full-coverage receipts after npm or local adoption
 parent: pm-ugqx
 risk: medium
 confidence: high
-resolution: "Implemented honest package update coverage for skipped, failed and not-checked sources; only checked sources contribute known updates, with source-specific remediation and host-owned builtin exemptions."
-expected_result: "Activation health stays distinct from upstream freshness; adopted local or npm sources remain partial until an applicable check succeeds, and strict doctor exposes that gap."
-actual_result: "All 8579 tests passed at exact 100/100/100/100. Dedicated skipped/failed/mixed/unchecked controls, 137 lifecycle regressions, and strict inert-service integration passed, including both linked doctor commands. Installed npm and Bun archive packages activated successfully while reporting partial update coverage. Docstring coverage is 100 percent; all static gate components passed. Hosted review and merge verification follow this reviewed closure."
+resolution: Implemented truthful update-check coverage and availability totals with status-specific remediation; expected unmanaged builtins receive no contradictory adoption advice. A disposable false-full-coverage mutant verifies the gate.
+expected_result: "Activation remains distinct from upstream freshness, skipped and failed sources remain partial, and expected unmanaged exemptions apply consistently to remediation."
+actual_result: "8581 tests across 645 files passed with zero uncovered counts: statements 63343/63343, branches 48101/48101, functions 13129/13129 and lines 60821/60821. Nine linked PM commands passed. Full static verification, final build/lint/structural/type checks and idle import/startup gates passed with unchanged budgets. Rebuilt npm and Bun consumers passed source-alias snapshots, destination-alias in-place planning, archive activation, compact/full claims and truthful partial freshness. All three source controls prove baseline exit 0 and unsafe-mutant exit 1. Hosted re-review follows the corrective push."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-hjrr,discovered_from,"2026-09-08T07:41:46.288Z","harness:codex","cli:create:dep",detected
   pm-ugqx,implements,"2026-09-08T07:41:46.288Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-09-08T07:41:46.288Z","harness:codex","Duplicate check: strict full all-status CLI read returned 2718 items with complete status and zero omissions. Searched full metadata for GH-1219 and skipped_non_github and update-health; existing pm-hjrr owns the historical doctor implementation but no item owns this coverage defect. GitHub issue body and doctor summary source confirm only unmanaged adoption currently controls coverage. Full historical doctor metadata inspected."
   "2026-09-08T07:44:36.112Z","harness:codex","TDD evidence: five update-coverage cases added; four failed against baseline for skipped non-GitHub, failed, not-checked and mixed results. SDK summary correction passes all five. Activation evidence remains independent; availability counts now require successful checks."
   "2026-09-08T08:08:02.283Z","harness:codex","Regression evidence: dedicated skipped/failed/not-checked update coverage controls and all 137 existing extension-command tests pass; local adoption continues to report partial coverage. Installed/active state is independent from update verification."
   "2026-09-08T08:39:20.056Z","harness:codex","Installed npm and Bun acceptance independently confirmed that the active local archive package reports partial update coverage and skipped_non_github status. This distinguishes activation success from missing upstream evidence. Pre-merge Sentry/telemetry gate passed with zero unresolved or blocking Sentry issues, 2.29 percent finish failure rate, and zero failures without error codes; post-merge release evidence remains separate."
   "2026-09-08T08:53:56.591Z","harness:codex","Final local evidence: All 8579 tests passed at exact 100/100/100/100. Dedicated skipped/failed/mixed/unchecked controls, 137 lifecycle regressions, and strict inert-service integration passed, including both linked doctor commands. Installed npm and Bun archive packages activated successfully while reporting partial update coverage. Docstring coverage is 100 percent; all static gate components passed. Hosted review and merge verification follow this reviewed closure."
-files[5]{path,scope,note}:
+  "2026-09-08T10:33:40.085Z","harness:codex","Second-round TDD: expected unmanaged builtins had full update coverage but received --fix-managed-state advice. Removed the contradictory fallback; actionable unmanaged entries retain adoption remediation. The existing expected-unmanaged regression now asserts no adoption advice. Also corrected the parallel gate-evidence issue proactively: a distinct disposable source mutant falsely reports full coverage for a skipped source, and the control proves baseline exit 0 versus mutant exit 1. All focused regressions and both lifecycle control baselines/mutants pass."
+  "2026-09-08T10:42:40.343Z","harness:codex","Standalone control command evidence: lifecycle-evidence-control.mjs --update-coverage exits 0; adding --negative-control exits 1 after changing the actual SDK summary to falsely report full coverage. Both commands ran to terminal state. Installed npm and Bun packages still report partial coverage for their active archive sources."
+  "2026-09-08T10:50:58.918Z","harness:codex","Final second-round local evidence: 8581 tests across 645 files passed with zero uncovered counts: statements 63343/63343, branches 48101/48101, functions 13129/13129 and lines 60821/60821. Nine linked PM commands passed. Full static verification, final build/lint/structural/type checks and idle import/startup gates passed with unchanged budgets. Rebuilt npm and Bun consumers passed source-alias snapshots, destination-alias in-place planning, archive activation, compact/full claims and truthful partial freshness. All three source controls prove baseline exit 0 and unsafe-mutant exit 1. Hosted re-review follows the corrective push."
+files[8]{path,scope,note}:
+  scripts/release/isolated-regression-control.mjs,project,Second-round regression and independent mutation-control evidence
+  scripts/release/lifecycle-evidence-control.mjs,project,Second-round regression and independent mutation-control evidence
   src/sdk/extension.ts,project,Doctor summary shares verified update counts
   src/sdk/extension/doctor.ts,project,Truthful check coverage and remediation
   tests/integration/service-pass-through-package.integration.spec.ts,project,Strict doctor distinguishes inert activation from unverified updates
   tests/unit/extensions/extension-command.spec.ts,project,Lifecycle adoption must retain unknown update coverage
   tests/unit/extensions/extension-update-coverage.spec.ts,project,Skipped failed mixed and unchecked negative controls
-tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  tests/unit/scripts/lifecycle-evidence-control.spec.ts,project,Second-round regression and independent mutation-control evidence
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-update-coverage.spec.ts,project,240,"harness:codex","2026-09-08T07:44:37.006Z",local_mutation,feat/package-planning-update-health-claim-receipts
   node scripts/run-tests.mjs test -- tests/integration/service-pass-through-package.integration.spec.ts tests/unit/extensions/extension-command.spec.ts,project,300,"harness:codex","2026-09-08T08:33:58.346Z",local_mutation,feat/package-planning-update-health-claim-receipts
-test_runs[1]:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/lifecycle-evidence-control.spec.ts,project,240,"harness:codex","2026-09-08T10:33:31.523Z",local_mutation,feat/package-planning-update-health-claim-receipts
+test_runs[2]:
   - run_id: test-local-mtsfb42q-hgv2tn
     kind: test
     status: passed
@@ -53,17 +60,30 @@ test_runs[1]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/extensions/extension-update-coverage.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/service-pass-through-package.integration.spec.ts tests/unit/extensions/extension-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtsjnrbq-lpd066
+    kind: test
+    status: passed
+    started_at: "2026-09-08T10:44:52.634Z"
+    finished_at: "2026-09-08T10:46:11.990Z"
+    recorded_at: "2026-09-08T10:46:11.990Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-update-coverage.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/service-pass-through-package.integration.spec.ts tests/unit/extensions/extension-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/lifecycle-evidence-control.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,Package-owned generated update coverage release evidence
   docs/EXTENSIONS.md,project,Distinguishes adoption and update verification
   docs/PACKAGE_EVIDENCE.md,project,Honest update coverage and strict doctor semantics
-close_reason: "Implemented and locally verified the public SDK/CLI/MCP contract with reviewed tracker evidence, linked acceptance and exact coverage."
+close_reason: Implemented and locally verified the full public SDK/CLI/MCP evidence contract and review corrections.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
   gate_id: package-update-coverage
-  negative_control: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-update-coverage.spec.ts
-  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-update-coverage.spec.ts
+  negative_control: node scripts/release/lifecycle-evidence-control.mjs --update-coverage --negative-control
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-update-coverage.spec.ts,node scripts/run-tests.mjs test -- tests/unit/scripts/lifecycle-evidence-control.spec.ts
   hosted_checks[1]: Gates (coverage)
   owner: pm-gf5zw8
 body: ""

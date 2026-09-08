@@ -646,7 +646,6 @@ function buildExtensionTriageRemediation(params: {
   policyWarningCount: number;
   unmanagedActionRequiredTotal: number;
   notCheckedTotal: number;
-  skippedUnmanagedTotal: number;
   skippedNonGithubTotal: number;
   updateAvailableTotal: number;
 }): string[] {
@@ -659,7 +658,6 @@ function buildExtensionTriageRemediation(params: {
     policyWarningCount,
     unmanagedActionRequiredTotal,
     notCheckedTotal,
-    skippedUnmanagedTotal,
     skippedNonGithubTotal,
     updateAvailableTotal,
   } = params;
@@ -689,10 +687,6 @@ function buildExtensionTriageRemediation(params: {
   if (unmanagedActionRequiredTotal > 0) {
     remediation.push(
       `Update-check coverage is partial because unmanaged extensions need adoption. Adopt existing installs via ${lifecycleFlagCommand(options, "manage")} ${scopeFlag} --fix-managed-state (or ${lifecycleFlagCommand(options, "adopt-all")} ${scopeFlag}, ${lifecycleFlagCommand(options, "adopt")} <name> ${scopeFlag}, or reinstall via ${lifecycleFlagCommand(options, "install")} ${scopeFlag} <source>).`,
-    );
-  } else if (skippedUnmanagedTotal > 0) {
-    remediation.push(
-      `Loaded unmanaged extensions are currently treated as informational. Use ${lifecycleFlagCommand(options, "manage")} ${scopeFlag} --fix-managed-state to adopt them for update checks.`,
     );
   }
   if (skippedNonGithubTotal > 0) {
@@ -754,7 +748,6 @@ export function buildExtensionTriageSummary(
     updateCheckStatusTotals[entry.update_check_status] += 1;
   }
   const updateCheckFailedTotal = updateCheckStatusTotals.failed;
-  const skippedUnmanagedTotal = updateCheckStatusTotals.skipped_unmanaged;
   const skippedNonGithubTotal = extensions.filter(
     (entry) => entry.update_check_status === "skipped_non_github" && entry.source?.kind !== "builtin",
   ).length;
@@ -790,7 +783,6 @@ export function buildExtensionTriageSummary(
     policyWarningCount: policyWarnings.warning_count,
     unmanagedActionRequiredTotal: unmanagedActionRequiredExtensions.length,
     notCheckedTotal: updateCheckStatusTotals.not_checked,
-    skippedUnmanagedTotal,
     skippedNonGithubTotal,
     updateAvailableTotal,
   });

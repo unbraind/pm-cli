@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-07T22:30:37.538Z"
-updated_at: "2026-09-08T10:00:45.836Z"
-closed_at: "2026-09-08T10:00:45.068Z"
-completed_at: "2026-09-08T10:00:45.068Z"
+updated_at: "2026-09-08T10:50:56.677Z"
+closed_at: "2026-09-08T10:50:56.068Z"
+completed_at: "2026-09-08T10:50:56.068Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "SDK and CLI local-source planning identifies directory versus archive source and bounded file/byte estimates before copying; large development trees receive a working npm pack and archive-install suggestion; preserve directory snapshots, ignored scripts, dependency resolution, containment and exact host SDK linking; real isolated directory and archive acceptance covers the published consumer flow."
@@ -17,9 +17,9 @@ risk: medium
 confidence: high
 reporter: github
 severity: medium
-resolution: "Bounded copy plans and dry-run receipts preserve containment, packed-source alternatives and in-place destination aliases; strict generic dry-run requires an install selector and source. A disposable unsafe completeness mutant proves the regression gate fails."
-expected_result: "Agents can inspect accurate bounded copy cost before destination writes, use valid SDK/CLI/MCP requests and execute packed alternatives without changing existing install semantics."
-actual_result: "8580 tests across 644 files passed at exact 100/100/100/100. Full static command plus late-correction build, lint, structural and contract checks passed; idle import/startup gates and all three linked suites passed. Rebuilt npm and Bun consumers passed archive activation, compact claims, truthful freshness and destination-alias in-place acceptance. Baseline mutation control exits 0 and unsafe source mutant exits 1. Hosted exact-head review follows the corrective push."
+resolution: "Implemented bounded SDK/CLI/MCP copy plans and dry-run receipts, strict generic install constraints, nested tracker exclusions, and correct source/destination alias semantics, with executable unsafe completeness control."
+expected_result: "Planning accurately reports lower bounds before destination writes, and the actual installer produces matching directory snapshots and safe nested exclusions."
+actual_result: "8581 tests across 645 files passed with zero uncovered counts: statements 63343/63343, branches 48101/48101, functions 13129/13129 and lines 60821/60821. Nine linked PM commands passed. Full static verification, final build/lint/structural/type checks and idle import/startup gates passed with unchanged budgets. Rebuilt npm and Bun consumers passed source-alias snapshots, destination-alias in-place planning, archive activation, compact/full claims and truthful partial freshness. All three source controls prove baseline exit 0 and unsafe-mutant exit 1. Hosted re-review follows the corrective push."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-0682l4,discovered_from,"2026-09-07T22:30:37.538Z","harness:codex","cli:create:dep",detected
   pm-lw6acw,discovered_from,"2026-09-07T22:30:37.538Z","harness:codex","cli:create:dep",detected
@@ -27,7 +27,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-tqel,discovered_from,"2026-09-07T22:43:19.233Z","harness:codex","cli:update:dep",detected
   pm-0682l4,verifies,"2026-09-08T08:25:51.107Z","harness:codex","cli:update:dep",detected
   pm-lw6acw,verifies,"2026-09-08T08:25:51.107Z","harness:codex","cli:update:dep",detected
-comments[14]:
+comments[17]:
   - created_at: "2026-09-07T22:30:37.538Z"
     author: "harness:codex"
     text: "Duplicate check: strict full all-status corpus read returned all 2656 items with complete=true and zero omissions; searched all metadata for GH-1218, copy scope/cost/size and local/archive package installs. No existing copy-cost planning item exists. Historical pm-0682l4 owns nested-destination recursion and pm-lw6acw owns implemented archive acceptance; neither owns this external-destination cost visibility request. Full relevant metadata and issue report read. Source inspection confirms the external-destination branch currently invokes recursive cp without the nested-layout filter. Reported timings are host-dependent and were not independently benchmarked here. Intake only: open and unclaimed."
@@ -71,10 +71,20 @@ comments[14]:
   - created_at: "2026-09-08T10:00:44.385Z"
     author: "harness:codex"
     text: "Final corrected-head local evidence: all 8580 tests in 644 files passed. Exact coverage: statements 63339/63339, branches 48095/48095, functions 13126/13126 and lines 60818/60818. The full static command passed; the late symlink correction additionally passed a fresh build, focused lint, structural gate, SDK/contract snapshots, all 39 focused tests and rebuilt npm/Bun acceptance. All three linked package suites passed. Final idle import and CLI startup checks passed with unchanged limits. No coverage exclusions, duplicate allowances, complexity limits or suppression budgets were added. Six concrete review findings are included in the corrective delivery; the issue-scope/docstring warnings were withdrawn by the reviewer."
-files[23]{path,scope,note}:
+  - created_at: "2026-09-08T10:33:38.979Z"
+    author: "harness:codex"
+    text: "Second-round TDD: new nested .agents assertions failed in both planner and real alias-source copying. The shared nested-snapshot filter now excludes tracker segments at every depth. The real copy regression additionally exposed that fs.cp on the source-root symlink preserved the alias instead of taking a directory snapshot; copying the canonical source fixes that for nested and external destinations. Internal links remain links and external directory snapshots preserve their existing unfiltered semantics. All 20 focused regressions now pass. The original entry-limit mutation control still passes baseline and rejects its unsafe mutant after extraction of the shared isolated runner."
+  - created_at: "2026-09-08T10:42:38.815Z"
+    author: "harness:codex"
+    text: "Second-round verification: the full static command passed. The final option-precedence correction additionally passed a fresh build, focused ESLint and the complete structural gate with no violations. Newly packed npm and Bun consumers passed source-alias real-directory snapshots, destination-alias in-place SDK planning, archive activation, compact/full claims, and truthful partial update coverage. Full type checking passed. Canonical coverage is now running before final closure."
+  - created_at: "2026-09-08T10:50:55.517Z"
+    author: "harness:codex"
+    text: "Final second-round local evidence: 8581 tests across 645 files passed with zero uncovered counts: statements 63343/63343, branches 48101/48101, functions 13129/13129 and lines 60821/60821. Nine linked PM commands passed. Full static verification, final build/lint/structural/type checks and idle import/startup gates passed with unchanged budgets. Rebuilt npm and Bun consumers passed source-alias snapshots, destination-alias in-place planning, archive activation, compact/full claims and truthful partial freshness. All three source controls prove baseline exit 0 and unsafe-mutant exit 1. Hosted re-review follows the corrective push."
+files[25]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,CLI-managed provenance for latest pm-changelog 2026.9.8 used to generate reviewed release notes
   scripts/release/flag-help-baseline.json,project,Install dry-run contract and exact generated surface baselines
   scripts/release/flag-spelling-baseline.json,project,Install dry-run contract and exact generated surface baselines
+  scripts/release/isolated-regression-control.mjs,project,Second-round regression and independent mutation-control evidence
   scripts/release/package-install-plan-control.mjs,project,Isolated source mutant must fail the real entry-limit regression
   sdk/public-surface.json,project,Install dry-run contract and exact generated surface baselines
   src/cli/register-setup.ts,project,CLI install planning and multi-source counts
@@ -90,6 +100,7 @@ files[23]{path,scope,note}:
   src/sdk/runtime-input.ts,project,Install dry-run contract and exact generated surface baselines
   tests/fixtures/contracts/full.json,project,Install dry-run contract and exact generated surface baselines
   tests/unit/commands/contracts-command.spec.ts,project,Install dry-run contract and exact generated surface baselines
+  tests/unit/extensions/extension-copy-safety.spec.ts,project,Second-round regression and independent mutation-control evidence
   tests/unit/extensions/extension-install-dry-run.spec.ts,project,Real directory and packed archive acceptance
   tests/unit/extensions/extension-install-plan.spec.ts,project,Bounded filesystem planning controls
   tests/unit/scripts/flag-lexicon-gate.spec.ts,project,Generated compatibility census includes four new dry-run spellings and previously executable options
@@ -99,7 +110,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-copy-safety.spec.ts tests/unit/extensions/extension-install-security.spec.ts,project,300,"harness:codex","2026-09-07T22:30:37.538Z",local_mutation,feat/history-maintenance-sdk-command-grammar
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-plan.spec.ts tests/unit/extensions/extension-install-dry-run.spec.ts tests/unit/extensions/extension-copy-safety.spec.ts,project,240,"harness:codex","2026-09-08T08:00:38.025Z",local_mutation,feat/package-planning-update-health-claim-receipts
   node scripts/run-tests.mjs test -- tests/unit/scripts/package-install-plan-control.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,240,"harness:codex","2026-09-08T09:29:54.670Z",local_mutation,feat/package-planning-update-health-claim-receipts
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mtsf84df-scho88
     kind: test
     status: passed
@@ -136,12 +147,25 @@ test_runs[3]:
       node scripts/run-tests.mjs test -- tests/unit/extensions/extension-copy-safety.spec.ts tests/unit/extensions/extension-install-security.spec.ts,schema,schema,source,acknowledged
       node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-plan.spec.ts tests/unit/extensions/extension-install-dry-run.spec.ts tests/unit/extensions/extension-copy-safety.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/scripts/package-install-plan-control.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtsjkjw0-q98xvc
+    kind: test
+    status: passed
+    started_at: "2026-09-08T10:43:08.902Z"
+    finished_at: "2026-09-08T10:43:42.384Z"
+    recorded_at: "2026-09-08T10:43:42.384Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-copy-safety.spec.ts tests/unit/extensions/extension-install-security.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-plan.spec.ts tests/unit/extensions/extension-install-dry-run.spec.ts tests/unit/extensions/extension-copy-safety.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/package-install-plan-control.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,schema,schema,source,local_source_ref
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,Package-owned generated install planning release evidence
   docs/EXTENSIONS.md,project,Compatibility contract for follow-up implementation
   docs/generated/FLAG_LEXICON_BUDGETS.md,project,Exact one-flag install planning budget
   docs/PACKAGE_EVIDENCE.md,project,Bounded planning and packed alternatives
-close_reason: "Implemented and verified package planning and review corrections across public SDK, CLI and MCP with exact coverage and installed acceptance."
+close_reason: Implemented and locally verified the full public SDK/CLI/MCP evidence contract and review corrections.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_added
