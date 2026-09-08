@@ -6,24 +6,24 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-08T15:32:57.518Z"
-updated_at: "2026-09-08T20:41:38.796Z"
-closed_at: "2026-09-08T20:41:38.011Z"
-completed_at: "2026-09-08T20:41:38.011Z"
+updated_at: "2026-09-08T23:33:29.391Z"
+closed_at: "2026-09-08T23:33:28.846Z"
+completed_at: "2026-09-08T23:33:28.846Z"
 author: "harness:codex"
 acceptance_criteria: Budget truncation emits a cause-specific retry beside legacy alias guidance; increasing the named budget returns more rows; exhausted session budgets name the session option; canonical alias migration remains equivalent independently of token limits.
 parent: pm-5t33or
 severity: low
 repro_steps: Request list output above the default token ceiling with --limit; inspect migration_hints and retry using only the recommended --output-limit alias.
-resolution: Budget recovery hints identify the binding command or session ceiling and explain how to resume withheld rows with the existing output cursor under a fresh larger session.
-expected_result: "Agents can execute the suggested recovery without repeating previously emitted rows, and list help preserves its token ceiling."
-actual_result: "The cursor hint regression failed before the correction and passed afterward; its fresh-session continuation returns exactly the withheld rows. Linked tests, all 8620 full-suite tests, exact 100/100/100/100 coverage and static/docstring/token assurance pass."
+resolution: "Budget recovery identifies command and session ceilings, preserves alias guidance, and resumes withheld rows through the documented recovery cursor and transport bindings. The public type and guide explicitly define restore_with=recovery as a reference."
+expected_result: Agents can resolve the declared recovery object and continue without repeated or skipped rows while preserving token ceilings.
+actual_result: "The existing session consumer regression executes the returned reference and SDK binding. All 13 focused recovery and real transport tests, linked verification, build, four typechecks, docs, static/docstrings, ESLint and snapshots pass. Runtime JavaScript is unchanged. Previous exact-head preflight passed 8623 tests at 100/100/100/100; final-head hosted gates and full review govern merge."
 component: sdk/read-output
 regression: false
 customer_impact: Agents can waste repeated calls changing row limits while the token budget remains binding.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-8nev0o,recurs_from,"2026-09-08T15:32:57.518Z","harness:codex","cli:create:dep",detected
   pm-xam9bt,blocked_by,"2026-09-08T15:32:57.518Z","harness:codex","cli:create:dep",detected
-comments[8]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-09-08T15:32:57.518Z","harness:codex","Duplicate-check evidence: complete all-status inventory and targeted Budget-truncated search inspected. No item owns the misleading adjacent migration hint reported by GitHub #1222. Existing closed continuation and monotonic recovery items retain their delivered scope."
   "2026-09-08T16:24:42.723Z","harness:codex","Verification: linked budget-hint tests pass for the default output ceiling, executable larger-budget retry and exhausted session ceiling. All 22 legacy include-mode recommendations remain behavior-equivalent in the compiled CLI test using an explicit unbounded token budget, so payload growth cannot masquerade as an alias-provenance regression. Audit and secret checks passed; terminal defect negative control exits 1 with the expected missing-evidence findings."
   "2026-09-08T16:46:46.532Z","harness:codex","Token gate evidence: the first descriptive budget hint increased the fixed contracts discovery transcript by 26 estimated tokens. Condensed the actionable hint and its recovery pointer without changing the baseline or dropping either budget/cursor remedy. The unchanged agent-task token gate now passes; budget and all alias regression tests pass after the wording change."
@@ -32,6 +32,8 @@ comments[8]{created_at,author,text}:
   "2026-09-08T17:32:23.782Z","harness:codex","Final review-correction evidence for PR #1224: Executable budget retry, exhausted-session, all alias parity and real Commander help checks pass. List help remains 18 tokens below its unchanged ceiling; full coverage is exact 100/100/100/100 across 8619 passing tests."
   "2026-09-08T20:27:16.398Z","harness:codex","Fifth-round TDD: the existing session-budget test failed on the missing output-cursor hint. The correction shares the continuation suffix across both binding-budget sources; the same test now executes the cursor with a fresh larger output session and asserts that it resumes exactly after previously emitted rows."
   "2026-09-08T20:41:16.021Z","harness:codex","Final fifth-round local evidence: the missing-hint assertion failed before the fix and passes after it; executable continuation with a fresh larger session returns exactly the previously withheld rows. All 44 focused tests and the linked recovery test pass. Full source coverage is exact 100/100/100/100 across 8620 tests, and static/docstring/token assurance passes without budget changes."
+  "2026-09-08T23:30:30.236Z","harness:codex","Review diagnosis: the public guide already declares a single structured recovery cursor with transport bindings, and real pagination tests execute it. The restore_with type docstring incorrectly calls every value an executable instruction. Clarify the reference contract instead of duplicating opaque cursor payloads; retain existing token ceilings and runtime behavior."
+  "2026-09-08T23:33:28.228Z","harness:codex","Eighth-round review clarification: the public type and guide explicitly define restore_with=recovery as a required reference to the adjacent cursor and CLI/SDK/MCP bindings. The existing session regression now resolves that reference, applies its declared SDK field and receives exactly the withheld rows. All 13 focused recovery and real transport tests pass, along with the linked test, build, four TypeScript projects, docs gate, structural/docstring gate, ESLint and SDK/contracts snapshots. Transpiled runtime JavaScript is byte-identical with comments removed; no runtime behavior, cursor payload or token limit changes. The preceding 751919467 full preflight passed all 8623 tests at exact 100/100/100/100, and its five-platform Nightly passed on the first attempt. Final-head hosted checks, preflight and review follow this documentation clarification."
 files[4]{path,scope,note}:
   src/cli/register-list-query.ts,project,Explain row alias and binding output budget in list help
   src/sdk/read-output-contracts.ts,project,Shared-recovery-hint
@@ -39,7 +41,7 @@ files[4]{path,scope,note}:
   tests/unit/sdk/recovery/read-output-budget-hints.spec.ts,project,Executable-budget-recovery
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-budget-hints.spec.ts,project,240,"harness:codex","2026-09-08T15:34:09.979Z",local_mutation,feat/declarative-workflow-policies
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mtsvem3j-c37qyh
     kind: test
     status: passed
@@ -73,10 +75,21 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-budget-hints.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mttb1rmg-97r8cj
+    kind: test
+    status: passed
+    started_at: "2026-09-08T23:32:45.638Z"
+    finished_at: "2026-09-08T23:32:55.191Z"
+    recorded_at: "2026-09-08T23:32:55.191Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-budget-hints.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/OUTPUT_TOKEN_ACCOUNTING.md,project,Output-and-session-budget-dimensions
   docs/READ_OUTPUT_CONTRACTS.md,project,Canonical-budget-and-alias-contract
-close_reason: Implementation and fifth-round corrections verified locally; current-head hosted review and gates govern merge.
+close_reason: Binding-budget recovery and the structured continuation reference are verified.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

@@ -244,7 +244,7 @@ export interface PmReadOutputTruncationDisclosure {
   recovery_budget_multiplier: number | null;
   /** Bounded continuation instructions for every compacted declared row path. */
   continuations: PmReadOutputContinuation[];
-  /** Executable recovery instruction for retrieving the complete result. */
+  /** Retry guidance, or `recovery` to require the adjacent cursor and transport bindings. */
   restore_with: string;
   /** Transport-specific machine recovery options. */
   recovery:

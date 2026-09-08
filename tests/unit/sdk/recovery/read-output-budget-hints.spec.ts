@@ -35,8 +35,13 @@ describe("binding output budget recovery hints", () => {
     expect(result.read_output?.migration_hints[0]).toContain("remaining 2000-token session budget");
     expect(result.read_output?.migration_hints[0]).toContain("new output session");
     expect(result.read_output?.migration_hints[0]).toContain("--output-cursor");
+    const disclosure = result.output_budget_truncation!;
+    expect(disclosure.restore_with).toBe("recovery");
+    const recovery = disclosure[disclosure.restore_with as "recovery"];
+    if (!("cursor" in recovery)) throw new Error("Fixture must provide cursor recovery");
+    expect(recovery).toMatchObject({ cli: "--output-cursor", sdk: "outputCursor", mcp: "outputCursor" });
     const resumed = applyReadOutputDimensions("list", {
-      outputBudget: "unbounded", outputCursor: result.next_cursor,
+      outputBudget: "unbounded", [recovery.sdk]: recovery.cursor,
       outputSession: { version: 1, id: "resumed", token_budget: 100000, spent_tokens: 0, seen_item_ids: [] },
     }, { items, count: items.length });
     expect(resumed).toMatchObject({ items: items.slice(result.items.length) });

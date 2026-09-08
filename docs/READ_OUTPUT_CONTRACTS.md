@@ -167,6 +167,11 @@ Cursor recovery carries the opaque value once in `recovery.cursor` and declares
 the accepting `cli`, `sdk`, and `mcp` binding beside it. This avoids
 serializing the same cursor once per transport while retaining an executable,
 machine-readable binding for each surface.
+When `restore_with` is `"recovery"`, consumers must resolve the adjacent
+`recovery` object: pass its `cursor` value through `cli` (`--output-cursor`)
+or the `sdk`/`mcp` field (`outputCursor`) while repeating the original query.
+The string is a reference, not a shell command. Other `restore_with` values
+provide retry guidance when no declared row collection can continue.
 
 Budget-compacted declared row paths are independently resumable. The
 disclosure's `continuations` entries name the row path, retained/remaining/total
