@@ -1301,6 +1301,37 @@ describe("runSearch", () => {
     }
   });
 
+  it("resolves auto to hybrid when a configured provider pairs with an extension vector adapter and no built-in store (pm-n8a6e7)", async () => {
+    setupExtensionVectorAdapterScenario({
+      id: "pm-adapter-auto",
+      title: "vector extension auto",
+      query: () => [{ id: "pm-adapter-auto", score: 0.91 }],
+    });
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({
+        search: { provider: "openai" },
+        vector_store: { adapter: "ext-vector" },
+      }),
+    );
+    const fetchMock = vi.fn(async (url: unknown) => {
+      if (!String(url).includes("/v1/embeddings")) {
+        throw new Error(`Unexpected fetch target: ${String(url)}`);
+      }
+      return makeJsonResponse({ data: [{ index: 0, embedding: [0.1, 0.2] }] });
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+    try {
+      const { runSearch } = await import("../../../src/cli/commands/search.js");
+      const result = await runSearch("vector", {}, { path: "/tmp/pm-search" });
+      expect(result.mode).toBe("hybrid");
+      expect(result.mode_source).toBe("auto");
+      expect(result.items.map((entry) => entry.item.id)).toContain("pm-adapter-auto");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("warns that semantic results are effectively lexical when vector matching contributes no hits", async () => {
     setupExtensionVectorAdapterScenario({
       id: "pm-empty-corpus",

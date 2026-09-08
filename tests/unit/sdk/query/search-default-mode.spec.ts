@@ -8,6 +8,7 @@ import { clearSettingsReadCache } from "../../../../src/core/store/settings-read
 import { readSettings, serializeSettings } from "../../../../src/core/store/settings.js";
 import {
   SEARCH_DEFAULT_MODE_VALUES,
+  parseSearchMode,
   resolveEffectiveSearchMode,
   resolveSearchDefaultModeSetting,
 } from "../../../../src/sdk/query/search-contracts.js";
@@ -33,6 +34,13 @@ describe("sdk/query search default mode (pm-n8a6e7)", () => {
     expect(resolveSearchDefaultModeSetting({ search: { default_mode: " HYBRID " } })).toBe("hybrid");
     expect(resolveSearchDefaultModeSetting({ search: { default_mode: "keyword" } })).toBe("keyword");
     expect(resolveSearchDefaultModeSetting({ search: { default_mode: "semantic" } })).toBe("semantic");
+  });
+
+  it("keeps the raw parser's keyword fallback for callers that pass no mode", () => {
+    // The runtime resolver never calls the parser without a mode, but the
+    // parser stays a public helper whose absent-input contract is keyword.
+    expect(parseSearchMode(undefined)).toBe("keyword");
+    expect(parseSearchMode(" Hybrid ")).toBe("hybrid");
   });
 
   it("lets an explicit request win and validates it", () => {
