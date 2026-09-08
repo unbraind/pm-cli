@@ -231,7 +231,7 @@
     "github-slugger": "2.0.0",
     "greptile": "^3.5.2",
     "jscpd": "^5.1.2",
-    "marked": "18.0.11",
+    "marked": "18.0.12",
     "parse5": "8.0.1",
     "tsx": "^4.23.13",
     "typescript": "^6.0.3",

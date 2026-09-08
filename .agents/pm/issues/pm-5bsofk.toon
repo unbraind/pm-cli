@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-07T22:30:37.538Z"
-updated_at: "2026-09-08T20:41:37.155Z"
+updated_at: "2026-09-08T21:02:26.071Z"
 closed_at: "2026-09-08T20:41:36.422Z"
 completed_at: "2026-09-08T20:41:36.422Z"
 author: "harness:codex"
@@ -28,7 +28,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-tqel,discovered_from,"2026-09-07T22:43:19.233Z","harness:codex","cli:update:dep",detected
   pm-0682l4,verifies,"2026-09-08T08:25:51.107Z","harness:codex","cli:update:dep",detected
   pm-lw6acw,verifies,"2026-09-08T08:25:51.107Z","harness:codex","cli:update:dep",detected
-comments[19]:
+comments[20]:
   - created_at: "2026-09-07T22:30:37.538Z"
     author: "harness:codex"
     text: "Duplicate check: strict full all-status corpus read returned all 2656 items with complete=true and zero omissions; searched all metadata for GH-1218, copy scope/cost/size and local/archive package installs. No existing copy-cost planning item exists. Historical pm-0682l4 owns nested-destination recursion and pm-lw6acw owns implemented archive acceptance; neither owns this external-destination cost visibility request. Full relevant metadata and issue report read. Source inspection confirms the external-destination branch currently invokes recursive cp without the nested-layout filter. Reported timings are host-dependent and were not independently benchmarked here. Intake only: open and unclaimed."
@@ -87,6 +87,9 @@ comments[19]:
   - created_at: "2026-09-08T20:41:14.767Z"
     author: "harness:codex"
     text: "Verification: all 8620 tests across 652 files pass with exact 100/100/100/100 coverage. The three inherited linked commands were inspected, explicitly acknowledged through PM, and passed; the initial refusal was foreign-source trust, not an assertion failure. The test now verifies the advertised npm command, uses existing platform-specific launcher helpers, retains real archive install assertions and reports child-launch errors. The prior Windows run is the failing baseline; corrected-head Windows CI remains required. Historical v2026.9.8 release attribution is pinned separately from this acceptance correction."
+  - created_at: "2026-09-08T21:02:26.071Z"
+    author: "harness:codex"
+    text: "Hosted correction confirmed before merge: full Nightly run 34276455079 on e12d30b15 completed successfully. Windows Node 24 job 102230558067 passed its complete test suite in 15m38s, including the previously failing real npm-pack acceptance. Linux Node 22/24/25 and macOS Node 24 all passed; Linux Node 24 also passed full coverage, static quality and compatibility. No test was removed, skipped or weakened for this correction."
 files[25]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,CLI-managed provenance for latest pm-changelog 2026.9.8 used to generate reviewed release notes
   scripts/release/flag-help-baseline.json,project,Install dry-run contract and exact generated surface baselines
