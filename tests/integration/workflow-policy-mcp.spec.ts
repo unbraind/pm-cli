@@ -21,10 +21,10 @@ describe("declarative policy MCP parity", () => {
       }
       expect(properties.definition).toMatchObject({ anyOf: [{ type: "object" }, { type: "string" }] });
       const put = await handleRequest({ jsonrpc: "2.0", id: 1, method: "tools/call", params: {
-        name: "pm_schema", arguments: { path: pmPath, subcommand: "policy-put", name: "evidence", definition: {
+        name: "pm_schema", arguments: { path: pmPath, subcommand: "policy-put", name: "evidence", definition: JSON.stringify({
           id: "evidence", effect: "refuse", subject: { statuses: ["closed"] },
           rule: { kind: "require_fields", fields: ["actual_result"] },
-        } },
+        }) },
       } });
       expect(put).toMatchObject({ structuredContent: { result: { changed: true } } });
       const preview = await handleRequest({ jsonrpc: "2.0", id: 4, method: "tools/call", params: {

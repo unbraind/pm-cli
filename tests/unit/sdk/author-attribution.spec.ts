@@ -426,9 +426,12 @@ describe("SDK author attribution primitives", () => {
         actionable_events: [{ item_id: "pm-actionable", line: 1 }],
       },
     });
-    expect((await runValidate({}, { path: pmRoot })).warnings).toContain(
+    const actionableValidation = await runValidate({}, { path: pmRoot });
+    expect(actionableValidation.warnings).toContain(
       "validate_history_unknown_author_events:1",
     );
+    expect(actionableValidation.checks.find((check) => check.name === "completeness")).toMatchObject({ status: "ok", ok: true });
+    expect(actionableValidation.warnings).not.toContain("validate_completeness_source_incomplete");
   });
 
   it("dispositions actionable unknown authors through append-only workspace history", async () => {

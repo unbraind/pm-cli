@@ -1250,21 +1250,14 @@ function summarizeDuplicateIssueCodes(
   };
 }
 
-function initializeMissingMetadataByField(): Record<
-  ValidateMetadataRequiredField,
-  string[]
-> {
-  return Object.fromEntries(
-    SUPPORTED_METADATA_REQUIRED_FIELDS.map((field) => [field, [] as string[]]),
-  ) as Record<ValidateMetadataRequiredField, string[]>;
-}
-
 function collectMissingMetadataByField(
   items: ItemWithBody[],
   statusRegistry: RuntimeStatusRegistry,
   enforcePlanningFieldsOnTerminal: boolean,
 ): Record<ValidateMetadataRequiredField, string[]> {
-  const missingByField = initializeMissingMetadataByField();
+  const missingByField = Object.fromEntries(
+    SUPPORTED_METADATA_REQUIRED_FIELDS.map((field) => [field, [] as string[]]),
+  ) as Record<ValidateMetadataRequiredField, string[]>;
   for (const item of items) {
     for (const field of SUPPORTED_METADATA_REQUIRED_FIELDS) {
       if (
@@ -3390,6 +3383,7 @@ async function executeRequestedValidateChecks(params: {
   parentCycleSeverity: ValidateDependencyCycleSeverity;
   fileScanMode: ValidateFileScanMode;
   initialWarnings: string[];
+  sourceIncomplete: boolean;
 }): Promise<ValidateCheckExecutionState> {
   const state: ValidateCheckExecutionState = {
     checks: [],
@@ -3406,7 +3400,7 @@ async function executeRequestedValidateChecks(params: {
     params.options.allAffectedIds === true ||
     params.global.json === true;
   if (params.requestedChecks.has("completeness")) {
-    const built = buildWorkflowCompletenessCheck(await readWorkflowPolicies(params.pmRoot), params.items, fullDiagnostics ? Infinity : DIAGNOSTIC_LIST_SUMMARY_LIMIT, params.initialWarnings.length > 0);
+    const built = buildWorkflowCompletenessCheck(await readWorkflowPolicies(params.pmRoot), params.items, fullDiagnostics ? Infinity : DIAGNOSTIC_LIST_SUMMARY_LIMIT, params.sourceIncomplete);
     recordValidateCheck(state, built, fixHintsEnabled);
   }
   if (params.requestedChecks.has("metadata")) {
@@ -3657,6 +3651,7 @@ export async function runValidate(
     typeToFolder: typeRegistry.type_to_folder,
     warnings: itemReadWarnings,
   });
+  const sourceIncomplete = itemReadWarnings.length > 0;
   if (requestedChecks.has("history_drift")) {
     const authorAttribution = await scanHistoryAuthorAttribution(pmRoot);
     if (authorAttribution.actionable_unknown_event_count > 0) {
@@ -3701,6 +3696,7 @@ export async function runValidate(
     parentCycleSeverity,
     fileScanMode,
     initialWarnings: [...new Set(itemReadWarnings)],
+    sourceIncomplete,
   });
 
   // Remediation phase (pm-c3sz / pm-8jss / pm-0v2m). Plans are derived from

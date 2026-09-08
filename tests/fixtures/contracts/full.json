@@ -47581,7 +47581,10 @@
           },
           "definition": {
             "description": "Workflow policy declaration for policy-put, or proposed item fields for policy-check.",
-            "type": "object"
+            "type": [
+              "object",
+              "string"
+            ]
           },
           "description": {
             "description": "Item description text.",

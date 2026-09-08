@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[6]: context-management,data-quality,governance,schema,standards,validation
 created_at: "2026-07-26T10:01:01.886Z"
-updated_at: "2026-09-08T16:50:59.978Z"
-closed_at: "2026-09-08T16:50:59.379Z"
-completed_at: "2026-09-08T16:50:59.379Z"
+updated_at: "2026-09-08T18:35:23.131Z"
+closed_at: "2026-09-08T18:35:22.543Z"
+completed_at: "2026-09-08T18:35:22.543Z"
 author: "harness:opencode"
 estimated_minutes: 600
 acceptance_criteria: Contract declared as schema data with built-in defaults per type; pm validate reports per-type completeness violations; warn/require follows governance policy; custom types extend via schema; negative-control fixture in CI proves a malformed item fails
@@ -19,9 +19,9 @@ why_now: "2026-07-26 review found close-time completeness (pm-wenq) tracked but 
 parent: pm-33cw
 risk: low
 confidence: high
-resolution: "Implemented configurable per-type lifecycle completeness using shared require_fields policies, opt-in presets and machine-readable validation summaries."
+resolution: "Implemented configurable per-type lifecycle completeness using shared require_fields policies, opt-in presets and machine-readable validation summaries. Completeness now derives source validity only from item-read diagnostics and preserves unrelated history advice."
 expected_result: Custom types and lifecycle stages declare required fields as schema data; validation reports counts and bounded examples with strict-exit negative controls.
-actual_result: "Linked completeness tests pass for custom types, counts-only output, refusal and remediation. The full 8615-test run passes with exact 100/100/100/100 source coverage; manual strict completeness validation passes."
+actual_result: "Full suite: 8620 tests in 652 files passed with exact 100/100/100/100 coverage. After the one-use metadata initializer was inlined, all 137 focused validation/attribution/contract tests and the direct static gate passed. All linked tests, manual CLI acceptance, typecheck, generated contracts, secret scan and zero-vulnerability dependency audit passed. Full current-head hosted review and preflight remain merge requirements."
 dependencies[9]:
   - id: pm-4k6b
     kind: related
@@ -53,19 +53,23 @@ dependencies[9]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[3]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-08T15:40:12.258Z","harness:codex","Verification evidence: custom-type completeness aggregation, bounded diagnostic examples, counts-only projection, CLI strict-exit negative control and remediation pass. The report and lifecycle write enforcement share the same require_fields evaluator. Public documentation now has a reachable index entry. Related implementation dependency is recorded on pm-mj42og."
   "2026-09-08T16:24:43.390Z","harness:codex","Verification: the linked sandboxed completeness checks pass, including custom types, bounded examples, counts-only projection, explicit refusal under strict-exit, and remediation to a clean result. The shared policy suite also passes and default validate includes completeness. No default policies are installed into existing trackers."
   "2026-09-08T16:50:58.717Z","harness:codex","Final implementation evidence: Linked completeness tests pass for custom types, counts-only output, refusal and remediation. The full 8615-test run passes with exact 100/100/100/100 source coverage; manual strict completeness validation passes."
-files[5]{path,scope,note}:
+  "2026-09-08T18:20:14.151Z","harness:codex","Third-round TDD: the existing unknown-author scenario failed after adding an assertion that completeness remains ok. Capture item-read incompleteness immediately after reading items, before unrelated history advice is appended. The fix preserves fail-closed behavior for unreadable item sources."
+  "2026-09-08T18:31:49.458Z","harness:codex","Third-round verification: full 8620-test coverage passes at exact 100/100/100/100. Real unknown-author history advice no longer marks completeness as an incomplete source; a malformed item file still produces an error. A separate compiled CLI run in a temporary tracker preserved validate_history_unknown_author_events:1 while reporting completeness status ok."
+  "2026-09-08T18:35:21.923Z","harness:codex","Final third-round evidence: Completeness now derives source validity only from item-read diagnostics and preserves unrelated history advice. Full suite: 8620 tests in 652 files passed with exact 100/100/100/100 coverage. After the one-use metadata initializer was inlined, all 137 focused validation/attribution/contract tests and the direct static gate passed. All linked tests, manual CLI acceptance, typecheck, generated contracts, secret scan and zero-vulnerability dependency audit passed. Full current-head hosted review and preflight remain merge requirements."
+files[6]{path,scope,note}:
   src/cli/register-operations.ts,project,Completeness-flag-adapter
   src/sdk/governance/validate.ts,project,Counts-first-validation-integration
   src/sdk/governance/workflow-completeness.ts,project,Shared-completeness-evaluation
   tests/unit/commands/validate-command.spec.ts,project,Default validation includes declarative completeness checks
+  tests/unit/sdk/author-attribution.spec.ts,project,History warnings must not invalidate the item completeness scan
   tests/unit/sdk/policy/workflow-completeness.spec.ts,project,Completeness-negative-control
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/policy/workflow-completeness.spec.ts,project,240,"harness:codex","2026-09-08T15:46:56.933Z",local_mutation,feat/declarative-workflow-policies
-test_runs[1]:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/sdk/policy/workflow-completeness.spec.ts,project,240,"harness:codex","2026-09-08T18:20:13.583Z",local_mutation,feat/declarative-workflow-policies
+test_runs[2]:
   - run_id: test-local-mtsvei3o-4n4i9x
     kind: test
     status: passed
@@ -77,7 +81,18 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/policy/workflow-completeness.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtt0a05n-7e1w7c
+    kind: test
+    status: passed
+    started_at: "2026-09-08T18:31:16.323Z"
+    finished_at: "2026-09-08T18:31:23.723Z"
+    recorded_at: "2026-09-08T18:31:23.723Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/sdk/policy/workflow-completeness.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/WORKFLOW_POLICIES.md,project,Completeness-policy-configuration
-close_reason: Implementation and linked verification complete; reviewed PR gates govern merge and publication separately.
+close_reason: Third-round implementation and regression verification complete; merge remains governed by the new head checks.
 body: ""

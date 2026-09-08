@@ -1,3 +1,5 @@
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildWorkflowCompletenessCheck } from "../../../../src/sdk/governance/workflow-completeness.js";
 import { parseWorkflowPolicyDocument } from "../../../../src/core/policy/workflow-policy.js";
@@ -41,6 +43,10 @@ describe("lifecycle completeness", () => {
       expect(await client.validate({ checkCompleteness: true })).toMatchObject({ ok: false });
       await client.update(created.item.id, { body: "Verified record" });
       expect(runCli(["validate", "--check-completeness", "--strict-exit", "--json"]).status).toBe(0);
+      await writeFile(path.join(pmPath, "tasks", "pm-unreadable.toon"), "invalid tracker record\n");
+      const unreadable = await client.validate({ checkCompleteness: true });
+      expect(unreadable.checks[0]).toMatchObject({ name: "completeness", status: "error", ok: false });
+      expect(unreadable.warnings).toContain("validate_completeness_source_incomplete");
     });
   });
 });

@@ -668,6 +668,9 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
 export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
   Record<PmToolAction, Record<string, unknown>>
 > = {
+  schema: {
+    definition: { type: ["object", "string"] },
+  },
   assurance: {
     definition: ASSURANCE_DEFINITION_SCHEMA,
     kind: {
