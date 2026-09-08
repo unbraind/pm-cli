@@ -99,6 +99,12 @@ flag contract for each one.
 
 ## References
 
+Use the [generated capability routing](../../../docs/generated/AGENT_CAPABILITY_ROUTING.md)
+to discover the complete contract-owned surface. A capability that does not
+suit this project's real workflow should have a sandbox scenario or an explicit
+waiver on its canonical item; creating artificial production data is not proof
+of useful adoption.
+
 | Need                              | Load                                                | Cost     |
 | --------------------------------- | ---------------------------------------------------- | -------- |
 | Lifecycle recipes                  | [Extension lifecycle](references/LIFECYCLE.md)       | ~450 tok |

@@ -1,7 +1,7 @@
 import { chmod, mkdir, mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { SETTINGS_DEFAULTS } from "../../../../src/core/shared/constants.js";
 import {
   buildVectorDeletePlan,
@@ -17,6 +17,16 @@ import {
 import type { PmSettings } from "../../../../src/types.js";
 
 const LANCE_DB_SNAPSHOT_DIR = ".pm-cli-local-vectors";
+const vectorTestRoots: string[] = [];
+async function vectorTestRoot(): Promise<string> {
+  const root = await mkdtemp(join(tmpdir(), "pm-vector-test-"));
+  vectorTestRoots.push(root);
+  return join(root, "vectors");
+}
+afterEach(async () => {
+  await Promise.all(vectorTestRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+});
+
 
 function makeSettings(): PmSettings {
   return structuredClone(SETTINGS_DEFAULTS);
@@ -554,7 +564,7 @@ describe("executeVectorQuery", () => {
   });
 
   it("executes deterministic LanceDB local query helpers and validates remote timeout input", async () => {
-    const localPath = `/tmp/lancedb-local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const localPath = await vectorTestRoot();
     await expect(
       executeVectorUpsert(
         {
@@ -992,7 +1002,7 @@ describe("executeVectorUpsert", () => {
       executeVectorUpsert(
         {
           name: "lancedb",
-          path: "/tmp/lance",
+          path: await vectorTestRoot(),
         },
         [{ id: "pm-a1", vector: [0.7] }],
         {
@@ -1208,7 +1218,7 @@ describe("executeVectorDelete", () => {
   });
 
   it("supports LanceDB local deletion and normalizes remote failures", async () => {
-    const localPath = `/tmp/lancedb-delete-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const localPath = await vectorTestRoot();
     await expect(
       executeVectorDelete(
         {

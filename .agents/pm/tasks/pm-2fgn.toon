@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: packages,pm-cli,refactor,sdk,templates
 created_at: "2026-05-14T06:05:23.576Z"
-updated_at: "2026-07-26T17:01:55.209Z"
+updated_at: "2026-09-08T05:36:38.424Z"
 author: codex-agent
 acceptance_criteria: pm-templates package is TypeScript-authored and installable; installed package handles templates commands through dynamic command registration; SDK exposes needed stable helpers without internal deep imports; core fallback remains compatible; focused tests and temp-project dogfood pass.
 parent: pm-59gj
@@ -14,12 +14,12 @@ release: v2026.5.14
 resolution: Extracted create-template functionality into the TypeScript-authored pm-templates package while preserving core compatibility fallback.
 expected_result: pm-templates installs and handles templates list/save/show through dynamic package command registration with public SDK helpers.
 actual_result: "Focused package tests, isolated dogfood, full coverage, release gates, Sentry/telemetry, health, and reindex evidence passed during the extraction run."
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-59gj,implements,"2026-07-26T17:01:55.027Z",null,null
-  pm-f3q4,related,"2026-07-26T17:01:55.027Z",null,null
-  pm-fdla,related,"2026-07-26T17:01:55.027Z",null,null
-  pm-mb4n,related,"2026-07-26T17:01:55.027Z",null,null
-  pm-pznn,related,"2026-07-26T17:01:55.027Z",null,null
+dependencies[5]{id,kind,created_at}:
+  pm-59gj,implements,"2026-07-26T17:01:55.027Z"
+  pm-f3q4,related,"2026-07-26T17:01:55.027Z"
+  pm-fdla,related,"2026-07-26T17:01:55.027Z"
+  pm-mb4n,related,"2026-07-26T17:01:55.027Z"
+  pm-pznn,related,"2026-07-26T17:01:55.027Z"
 comments[11]{created_at,author,text}:
   "2026-05-14T06:05:23.576Z",codex-agent,"Duplicate check 2026-05-14: pm search templates package extraction found only closed templates feature/issues plus parent pm-59gj; net-new extraction child under pm-59gj and selected as first implementation slice."
   "2026-05-14T06:06:27.299Z",codex-agent,"Implementation approach: adding a bundled pm-templates package that registers templates/list/save/show handlers via public SDK types and runtime helpers; keeping the current core templates command as a compatibility fallback while installed package contracts prove the extraction path."
@@ -32,7 +32,7 @@ comments[11]{created_at,author,text}:
   "2026-05-14T06:33:09.539Z",codex-agent,"Post-gate health follow-up: pm validate --check-history-drift now reports only the five known historical hash mismatches (pm-54d, pm-f3q4, pm-fdla, pm-mb4n, pm-tq1). pm reindex --mode hybrid --progress refreshed search status with 707 unchanged items and stale_items=0."
   "2026-05-14T08:47:22.216Z",codex-agent,"Hard-extraction progress 2026-05-14: create --template now resolves template payloads only through installed templates command handlers (no direct core template fallback), templates package runtime now uses deterministic PM_CLI_PACKAGE_ROOT SDK loading, and repeatable template options now preserve single CLI values. Updated unit/integration help/runtime coverage for package-owned command availability. Validation passed: pnpm build and the same focused + integration suites listed on pm-pznn."
   "2026-05-14T10:11:00.586Z",codex-package-refactor,"Final verification 2026-05-14: hard extraction of templates remains green with no core fallback in create --template, plus full coverage, package smoke, package-first dogfood, and release gates (docs/static quality/telemetry/sentry)."
-files[13]{path,scope,note}:
+files[14]{path,scope,note}:
   packages/pm-templates/extensions/templates/index.ts,project,templates package command registration
   packages/pm-templates/extensions/templates/runtime.js,project,generated runtime parity for deterministic loader and repeatable options
   packages/pm-templates/extensions/templates/runtime.ts,project,templates package runtime via public SDK
@@ -46,6 +46,7 @@ files[13]{path,scope,note}:
   tests/unit/extension-command.spec.ts,project,bundled package alias/catalog/install-all coverage
   tests/unit/package-manifest.spec.ts,project,first-party package manifest and import hygiene coverage
   tests/unit/templates-command.spec.ts,project,installed package templates behavior
+  packages/pm-templates/extensions/templates/package.json,project,Exact artifact link for the package or gate delivered by this canonical item
 tests[3]:
   - command: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts
     scope: project

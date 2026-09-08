@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: "area:extensions","area:packages",dx,exemplar
 created_at: "2026-06-07T10:05:50.627Z"
-updated_at: "2026-07-26T17:01:10.642Z"
+updated_at: "2026-09-08T05:36:37.384Z"
 author: audit-platform-agent
 acceptance_criteria: "- A first-party exemplar package demonstrates registerCommand + registerFlags + registerParser\n- Ships hand-maintained .js alongside .ts (per ADR pm-tsio)\n- Listed in marketplace.json + docs; smoke-tested"
 parent: pm-ugqx
@@ -16,9 +16,9 @@ release: v2026.6.10
 resolution: Added pm-command-kit exemplar package and fixed runtime support for dynamic command/core flag parsing.
 expected_result: Package authors have a first-party registerCommand/registerFlags/registerParser exemplar that works when installed.
 actual_result: "packages/pm-command-kit demonstrates command, parser, and flag APIs; temp smoke installed and exercised it successfully."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-tsio,related,"2026-07-26T17:01:10.379Z",null,null
-  pm-ugqx,implements,"2026-07-26T17:01:10.379Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-tsio,related,"2026-07-26T17:01:10.379Z"
+  pm-ugqx,implements,"2026-07-26T17:01:10.379Z"
 comments[11]{created_at,author,text}:
   "2026-06-07T17:04:45.923Z",maintainer-agent,"Audit 2026-06-07 (SDK agent F2/F3): 7 of 13 registration APIs have NO first-party exemplar (registerParser, registerPreflight, registerRenderer, registerItemTypes, registerItemFields, registerVectorStoreAdapter, registerMigration). The custom item-type path (the 'any kind of project' differentiator) is prose-only in SDK.md. The scaffold (extension/scaffold.ts) only emits registerCommand + capabilities:['commands']. Suggest a pm-incident exemplar (Incident type + severity field + renderer + parser/preflight) and richer scaffold capability stubs."
   "2026-06-09T17:46:12.562Z",packages-agent,"Starting: building commands-capability exemplar package (registerCommand full CommandDefinition + registerFlags + registerParser), modeled on pm-todos/pm-guide-shell."
@@ -31,7 +31,7 @@ comments[11]{created_at,author,text}:
   "2026-06-09T19:04:41.192Z",codex-implementation-agent,"PR #152 Gemini follow-up fix: stripLooseCommandOptionTokens now preserves positional arguments after boolean extension flags, and command-kit runEchoCommand defensively handles missing/null args/options. Focused tests cover --upper hello and malformed context behavior; full coverage rerun remains 100%."
   "2026-06-09T19:20:01.114Z",codex-implementation-agent,"PR #152 Gemini final follow-up fix: dynamic option registration now treats valueless flags as boolean, non-boolean/required flags as required-value options, and stripLooseCommandOptionTokens respects the -- option separator. Focused integration tests and full coverage rerun pass."
   "2026-06-09T19:37:35.922Z",codex-implementation-agent,"PR #152 final reviewer-follow-up verification: focused extension tests passed (5 files, 200 tests); full coverage passed 149 files / 2621 tests at 100% statements, branches, functions, and lines; isolated temp smoke passed for init, install command-kit, command-kit echo --upper hello --repeat 2 --json, list --kit-note smoke --json, and package doctor --project --detail deep --json."
-files[12]{path,scope,note}:
+files[13]{path,scope,note}:
   packages/pm-command-kit/extensions/command-kit/index.js,project,runtime command-kit exemplar
   packages/pm-command-kit/extensions/command-kit/index.ts,project,typed command-kit exemplar
   packages/pm-command-kit/extensions/command-kit/manifest.json,project,command-kit extension manifest
@@ -44,6 +44,7 @@ files[12]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,install-all count coverage
   tests/unit/extension-command.spec.ts,project,command-kit registration and catalog tests
   tests/unit/main-loose-options.spec.ts,project,loose option strip coverage
+  packages/pm-command-kit/extensions/command-kit/package.json,project,Exact artifact link for the package or gate delivered by this canonical item
 tests[2]{command,scope,timeout_seconds,note}:
   "pnpm contracts:check",project,180,contract snapshot validation
   "pnpm quality:docs-links",project,180,SDK command-kit docs link validation

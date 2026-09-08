@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: "area:storage",data-durability,gh-issue,history,merge,multi-agent
 created_at: "2026-07-26T22:04:13.514Z"
-updated_at: "2026-07-27T00:28:51.296Z"
+updated_at: "2026-09-08T05:57:19.477Z"
 closed_at: "2026-07-27T00:28:49.106Z"
 author: "harness:claude-code"
 estimated_minutes: 180
@@ -21,12 +21,28 @@ resolution: "Merge decisions now persist as Git-local receipts, are queryable th
 expected_result: "A merge that discards a field value leaves a durable, queryable record of what was discarded."
 actual_result: "The report is printed to the driver's stdout during git merge and then lost; the file has no markers, validate reports ok true, and no command can recover the discarded value."
 component: merge-driver
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-2sbj8p,implements,"2026-07-26T22:04:13.514Z",null,null
-  pm-76dnfg,verifies,"2026-07-26T22:04:13.514Z",null,null
-  pm-c0wthb,related,"2026-07-26T22:04:13.514Z",null,null
-  pm-pdr8t1,related,"2026-07-26T22:04:13.514Z",null,null
-  pm-szv11n,implements,"2026-07-26T22:04:13.514Z",null,null
+dependencies[6]:
+  - id: pm-2sbj8p
+    kind: implements
+    created_at: "2026-07-26T22:04:13.514Z"
+  - id: pm-76dnfg
+    kind: verifies
+    created_at: "2026-07-26T22:04:13.514Z"
+  - id: pm-c0wthb
+    kind: related
+    created_at: "2026-07-26T22:04:13.514Z"
+  - id: pm-pdr8t1
+    kind: related
+    created_at: "2026-07-26T22:04:13.514Z"
+  - id: pm-szv11n
+    kind: implements
+    created_at: "2026-07-26T22:04:13.514Z"
+  - id: pm-9j2r3b
+    kind: discovered_from
+    created_at: "2026-09-08T05:57:13.740Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[4]{created_at,author,text}:
   "2026-07-26T23:47:23.453Z","harness:codex","Implementation evidence: item merges now emit structured scalar decisions into a Git-local pm-merge-receipts store; pm merge report exposes the recoverable retained/discarded values locally, while committed history receives only field names, provenance, and SHA-256 value hashes. Receipt damage/outside-Git behavior, reconciliation state, CLI usage, public SDK exports, and privacy-safe history assertions are covered. The packed branch proof produced count=1 and reconciled=1."
   "2026-07-26T23:49:54.614Z","harness:codex","Final local verification: linked PM tests pass; full sandboxed suite passes 376 files and 6,437 tests at exact 100% statements (44,398/44,398), branches (31,515/31,515), functions (9,082/9,082), and lines (43,135/43,135). Lint, zero-duplicate scan, 100% docstring/static quality, SDK surface/import/transport ratchets, docs/skills, secret scan, npm audit, compatibility, packed npx, 88-command package-first dogfood, and Sentry 14-day zero-critical/zero-high gate pass. Live tracker strict validation checked 2,117 items and 2,128 history streams with zero drift, duplicate IDs, config errors, driver drift, or pending receipts. Telemetry successfully flushed to the configured endpoint at 2026-07-26T23:49:30.656Z."

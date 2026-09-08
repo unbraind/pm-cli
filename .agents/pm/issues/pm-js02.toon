@@ -6,12 +6,14 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",dx,recovery
 created_at: "2026-06-25T00:06:32.677Z"
-updated_at: "2026-07-26T17:17:40.056Z"
+updated_at: "2026-09-08T05:33:25.277Z"
 author: codex-audit-20260625
 parent: pm-mpbb
 release: v2026.6.30
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-mpbb,implements,"2026-07-26T17:17:39.831Z",null,null
+resolution: "Fixed CodeRabbit vocabulary follow-up: missing-target headlines now use active package/extension target wording, with linked MCP/unit tests and full coverage passing."
+actual_result: "Fixed CodeRabbit vocabulary follow-up: missing-target headlines now use active package/extension target wording, with linked MCP/unit tests and full coverage passing."
+dependencies[1]{id,kind,created_at}:
+  pm-mpbb,implements,"2026-07-26T17:17:39.831Z"
 comments[11]{created_at,author,text}:
   "2026-06-25T00:12:20.747Z",codex-audit-20260625,"Evidence: compiled CLI now returns unknown_lifecycle_action for package descirbe/catalogx with suggested_retry pm package describe/catalog. Focused test passed: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts (110 tests)."
   "2026-06-25T00:42:17.795Z",codex-audit-20260625,"Evidence update: strict coverage initially caught new recovery branches; tests now cover exact action fallback, short typos, nearest later candidate ranking, and structured package recovery. Full release gate later passed literal 100/100/100/100 coverage."

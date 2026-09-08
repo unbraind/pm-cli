@@ -6,10 +6,11 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T12:42:27.592Z"
-updated_at: "2026-08-10T12:03:43.342Z"
+updated_at: "2026-09-08T05:33:12.080Z"
 author: claude-code-agent
 release: v2026.6.16
 resolution: All 3 child features shipped (pm-7snq/pm-hntj/pm-mfl1) in one PR. Plan type excluded from changelog.
+actual_result: All 3 child features (pm-7snq/pm-hntj/pm-mfl1) shipped in PR #251 and verified present in 2026.6.13 (--has-* / --filter-*-missing filters + stats utilization). Plan complete.
 dependencies[5]:
   - id: pm-7snq
     kind: related

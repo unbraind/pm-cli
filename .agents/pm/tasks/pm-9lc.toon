@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:restore",core,"milestone:2",pm-cli
 created_at: "2026-02-17T23:02:09.056Z"
-updated_at: "2026-07-26T17:08:25.850Z"
+updated_at: "2026-09-08T05:56:39.217Z"
 deadline: "2026-02-27T23:02:09.056Z"
 assignee: steve
 author: steve
@@ -41,10 +41,24 @@ fixed_version: archive-2026q2
 component: project-management/restore-by-timestamp-or-version-with-replay-and-
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Restore by timestamp or version with replay and hash validation.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-c0r,parent,"2026-02-17T23:02:09.056Z",steve,null
-  pm-u9r,blocks,"2026-02-17T23:02:09.056Z",steve,null
-  pm-c0r,implements,"2026-07-26T17:08:25.594Z",null,null
+dependencies[4]:
+  - id: pm-c0r
+    kind: parent
+    created_at: "2026-02-17T23:02:09.056Z"
+    author: steve
+  - id: pm-u9r
+    kind: blocks
+    created_at: "2026-02-17T23:02:09.056Z"
+    author: steve
+  - id: pm-c0r
+    kind: implements
+    created_at: "2026-07-26T17:08:25.594Z"
+  - id: pm-o2kc
+    kind: implements
+    created_at: "2026-09-08T05:56:39.016Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[3]{created_at,author,text}:
   "2026-02-18T02:07:53.911Z",steve,"Planned change-set: add pm restore command with timestamp/version target resolution, deterministic history replay with hash verification, atomic item rewrite, and appended restore history event. Update PRD/README command matrix before wiring implementation and add unit+integration coverage in sandbox tests."
   "2026-02-18T02:24:17.663Z",steve,"Implemented pm restore end-to-end: added src/commands/restore.ts with timestamp/version target resolution, RFC6902 replay with before/after hash verification, assignment/lock enforcement, atomic restore write, rollback-on-history-append-failure, and restore history event append. Wired CLI surface via src/cli/main.ts + src/cli/commands/index.ts and updated README/PRD command contracts before implementation. Verification: pm test pm-9lc --run --timeout 900 --json passed all 3 linked sandbox commands; coverage command reports 100% lines/branches/functions/statements for list.ts, restore.ts, test-all.ts. Regression: pm test-all --status in_progress --timeout 900 --json => totals items=6 linked_tests=12 passed=12 failed=0 skipped=0."

@@ -41,8 +41,9 @@ pm guide workflows --depth brief
 ## Non-Negotiables
 
 - Author identity is detected automatically. **Never pass `--author` and never
-  set `PM_AUTHOR`.** The harness, model, effort, role, and topic are probed and
-  recorded on every history entry.
+  set `PM_AUTHOR`.** Supported harness signals can supply model, effort, role,
+  and topic. Missing observations remain unknown; do not infer them from a
+  configured default or invent provenance for historical entries.
 - Never edit files under `.agents/pm` directly. Every mutation goes through `pm`.
 - Never claim an item's state from memory. Read it live before asserting it.
 - Claim before substantial edits; release when paused, handed off, or closed.
@@ -62,7 +63,7 @@ pm test  <ID> --add command="node scripts/run-tests.mjs test -- <target>",scope=
 pm comments <ID> "Evidence: <what changed and what passed>"
 pm learnings <ID> --add "<lesson that outlives this item>"
 pm test <ID> --run --progress
-pm close <ID> "<reason with evidence>" --validate-close warn
+pm close <ID> "<reason with evidence>" --resolution "<delivered change>" --expected "<required outcome>" --actual "<observed outcome>" --validate-close warn
 pm release <ID>
 ```
 
@@ -78,7 +79,7 @@ enters, and use these drift-gated references:
 `pm help` shows the bounded core tier. Use `pm guide capabilities`, `pm
 contracts --summary`, or `pm <command> --help --json` for progressive
 disclosure into the wider surface. Durable lessons and history maintenance
-(`pm learnings`, `pm history --verify`, `history-repair`, `history-redact`,
+(`pm learnings`, `pm history <ID> --verify`, `history-repair`, `history-redact`,
 `history-compact`, `close-many`) are routed by `pm guide evidence`.
 
 ## Token Discipline

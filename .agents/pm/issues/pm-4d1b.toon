@@ -6,10 +6,11 @@ status: closed
 priority: 2
 tags[2]: agent-ux,telemetry
 created_at: "2026-05-29T22:52:30.430Z"
-updated_at: "2026-08-10T12:02:11.084Z"
+updated_at: "2026-09-08T05:30:36.380Z"
 author: telemetry-agent
 release: v2026.5.30
 resolution: Fixed
+actual_result: "create now maps common type synonyms (Bug/defect/incident->Issue, enhancement/story->Feature, change->Chore, ticket/todo->Task) to canonical registered types with a note, only as a fallback when the type is not registered. Verified live."
 dependencies[2]:
   - id: pm-th6y
     kind: discovered_from

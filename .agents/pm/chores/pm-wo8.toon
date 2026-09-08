@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: ci,github-actions,pm-cli,release-readiness
 created_at: "2026-02-17T23:37:41.134Z"
-updated_at: "2026-07-26T17:28:52.714Z"
+updated_at: "2026-09-08T06:18:37.186Z"
 deadline: "2026-02-22T23:37:41.134Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -41,11 +41,22 @@ fixed_version: archive-2026q2
 component: project-management/ci-workflows-and-quality-gates
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for CI workflows and quality gates.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-912,related,"2026-02-17T23:37:41.134Z",cursor-agent,null
-  pm-ote,parent,"2026-02-17T23:37:41.134Z",cursor-agent,null
-  pm-pq8,related,"2026-02-17T23:37:41.134Z",cursor-agent,null
-  pm-ote,implements,"2026-07-26T17:28:52.359Z",null,null
+dependencies[4]:
+  - id: pm-912
+    kind: related
+    created_at: "2026-02-17T23:37:41.134Z"
+    author: cursor-agent
+  - id: pm-ote
+    kind: parent
+    created_at: "2026-02-17T23:37:41.134Z"
+    author: cursor-agent
+  - id: pm-pq8
+    kind: related
+    created_at: "2026-02-17T23:37:41.134Z"
+    author: cursor-agent
+  - id: pm-ote
+    kind: implements
+    created_at: "2026-07-26T17:28:52.359Z"
 comments[170]{created_at,author,text}:
   "2026-02-18T00:03:22.876Z",cursor-agent,"Added GitHub Actions workflows: ci.yml runs on push/PR across ubuntu+macos+windows with setup-node pnpm cache and strict coverage gate; nightly.yml runs scheduled/workflow_dispatch validation only (no publish)."
   "2026-02-18T00:16:41.583Z",cursor-agent,"Validation rerun: pnpm test:coverage and pnpm typecheck both pass in current tree and are wired into CI workflows."
@@ -221,7 +232,7 @@ notes[1]{created_at,author,text}:
   "2026-04-01T20:33:27.803Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:33:29.668Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[57]{path,scope,note}:
+files[58]{path,scope,note}:
   .github/workflows/ci.yml,project,PR/push CI with cross-platform coverage gate
   .github/workflows/nightly.yml,project,Scheduled validation workflow without publish actions
   AGENTS.md,project,align all-fields template with create flags
@@ -279,6 +290,7 @@ files[57]{path,scope,note}:
   tests/unit/todos-extension.spec.ts,project,branch coverage for todos import-export internals
   tests/unit/update-command.spec.ts,project,unit coverage for runUpdate branch matrix
   vitest.config.ts,project,coverage thresholds and scope
+  codecov.yml,project,Exact tracked artifact owned by the canonical capability and verified against repository commit history
 tests[29]:
   - command: node scripts/run-tests.mjs coverage
     scope: project

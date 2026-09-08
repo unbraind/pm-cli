@@ -1,0 +1,62 @@
+id: pm-bukwmy
+title: Reject repository-local test scratch roots before sandbox fixtures can mutate the real Git workspace
+description: "Setting TMPDIR inside the checkout makes disposable test fixtures inherit the real Git root and ancestor tracker. Observed coverage fixtures replaced repository .gitattributes and .gitignore managed sections and invalidated no-Git assertions. The package-owned test runner must reject this configuration before starting build or Vitest, including symlink aliases of the checkout; external scratch roots remain supported."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-08T05:41:23.494Z"
+updated_at: "2026-09-08T06:56:00.537Z"
+closed_at: "2026-09-08T06:55:59.820Z"
+completed_at: "2026-09-08T06:55:59.820Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Repository-local and symlink-aliased temporary roots fail before child execution with a clear remediation.; External temporary roots still run sandboxed test and coverage modes without changing real Git or tracker state.
+parent: pm-u9d0
+risk: high
+confidence: high
+resolution: "The test runner rejects checkout-local scratch directories, including symlink aliases, before build or fixture execution. Real vector, SDK and socket fixtures use owned portable temporary paths."
+expected_result: Prevent fixtures from discovering and modifying the real repository through a checkout-local temporary root; retain safe external-root execution.
+actual_result: "93 linked regression tests pass, including the runner negative controls and portable fixtures. The full suite with four workers and exact coverage passes using an external scratch root. No lock threshold or coverage threshold was weakened."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ay3l0p,discovered_from,"2026-09-08T05:41:23.494Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-08T05:41:23.494Z","harness:codex","Duplicate check: full 2658-item all-status inventory and live search test sandbox TMPDIR repository git; pm-ay3l0p fixes inherited PM source variables, pm-p5u6 tracks temporary footprint. Neither owns Git ancestor discovery through TMPDIR. New bounded runner guard follows the observed Sep 8 coverage failure."
+  "2026-09-08T06:41:04.469Z","harness:codex","Reproduction cleanup evidence: the managed extension registry changed only its generated timestamp, with identical package entries. Test-created Git fence changes were restored and the two precisely identified synthetic merge receipts were quarantined from the runtime evidence set. Final verification uses an external scratch root without a tracker ancestor."
+  "2026-09-08T06:55:58.650Z","harness:codex","Final verification: full sandbox coverage completed successfully with --maxWorkers 4; all exact coverage thresholds pass. Static gates, docs/skills, SDK boundary/parity and graph/record-integrity gates pass. Earlier environmental failures and the resource-contention rerun remain documented; this evidence applies to the final local delivery."
+files[6]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Managed extension registry regenerated during reproduction; only timestamp changed and package entries are identical
+  scripts/run-tests.mjs,project,Reject checkout-local scratch roots
+  tests/unit/core/search/vector-store-adapter.spec.ts,project,Owned temporary vector fixtures
+  tests/unit/scripts/run-tests.spec.ts,project,Runner safety negative controls
+  tests/unit/sdk/mcp/skills.spec.ts,project,Portable temporary MCP socket fixture
+  tests/unit/sdk/sdk-universal-tool-entry-success.spec.ts,project,Portable temporary SDK exemplar
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/unit/core/search/vector-store-adapter.spec.ts tests/unit/sdk/sdk-universal-tool-entry-success.spec.ts tests/unit/sdk/mcp/skills.spec.ts tests/unit/core/store/store-paths.spec.ts tests/integration/legacy-merge-receipt-history.integration.spec.ts tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts,project,240,"harness:codex","2026-09-08T06:10:39.760Z",local_mutation,main
+test_runs[2]:
+  - run_id: test-local-mtsa3yrw-3dorhq
+    kind: test
+    status: passed
+    started_at: "2026-09-08T06:18:37.623Z"
+    finished_at: "2026-09-08T06:18:51.980Z"
+    recorded_at: "2026-09-08T06:18:51.980Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/unit/core/search/vector-store-adapter.spec.ts tests/unit/sdk/sdk-universal-tool-entry-success.spec.ts tests/unit/sdk/mcp/skills.spec.ts tests/unit/core/store/store-paths.spec.ts tests/integration/legacy-merge-receipt-history.integration.spec.ts tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtsa694q-wjd3x8
+    kind: test
+    status: passed
+    started_at: "2026-09-08T06:20:22.177Z"
+    finished_at: "2026-09-08T06:20:38.714Z"
+    recorded_at: "2026-09-08T06:20:38.714Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/unit/core/search/vector-store-adapter.spec.ts tests/unit/sdk/sdk-universal-tool-entry-success.spec.ts tests/unit/sdk/mcp/skills.spec.ts tests/unit/core/store/store-paths.spec.ts tests/integration/legacy-merge-receipt-history.integration.spec.ts tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Temporary workspace isolation and cleanup contract
+close_reason: Implemented and verified the scoped fix; exact published-version acceptance remains separate.
+body: ""

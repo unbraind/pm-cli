@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:cli",dx,perf,scripts,tech-debt
 created_at: "2026-07-06T09:04:36.860Z"
-updated_at: "2026-08-09T16:21:33.779Z"
+updated_at: "2026-09-08T06:09:37.560Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: compile-cache dir bounded (stale entries pruned or non-current versions dropped); every mkdtemp-using script cleans its sandbox via try/finally + signal handlers; aborted smoke runs leave no >100MB residue in /tmp
@@ -46,6 +46,8 @@ comments[18]{created_at,author,text}:
   "2026-07-21T10:52:29.795Z",codex-root-20260721,"Greptile contract remediation verified: resolver now trims empty versions to development and rewrites a leading dot, so every generated token is accepted by pruning; scoped, empty, dot-prefixed, and traversal-shaped cases are covered. Full 6053-test suite remains exact 100/100/100/100."
   "2026-07-22T19:18:04.059Z",codex-sdk-boundary-20260722,"GitHub provenance: GH-626 now contains a direct system-of-record link to this canonical release temp/cache cleanup lineage; the GitHub issue is closed while this broader pm follow-up remains open."
   "2026-08-09T16:21:33.779Z","harness:codex","Fresh reproduction 2026-08-09 after PR #952: the published 2026.8.9 installed-agent verifier completed all 10 lifecycle steps under both npm and Bun with ok:true, then the verifier process exited nonzero because final recursive cleanup hit ENOTEMPTY on its temporary root. Reusing this broader open item rather than creating a duplicate; the result proves acceptance behavior is healthy while cleanup can still mask success."
+notes[1]{created_at,author,text}:
+  "2026-09-08T06:09:36.684Z","harness:codex","Temporary storage observation 2026-09-08: the host default temporary filesystem reached its 1,048,576-inode limit while still showing free bytes. Tests honoring an external tmpdir could proceed, but hard-coded /tmp fixtures still failed. The current isolation repair pm-bukwmy switches the affected vector, SDK exemplar and MCP Skills fixtures to owned tmpdir roots and preserves cleanup. No unrelated temporary files were deleted. A scratch directory beneath another initialized tracker can still affect ancestor-discovery tests even when outside this checkout; document that boundary and keep long-term temporary footprint/cleanup and runner isolation as separate acceptance scopes."
 files[13]{path,scope,note}:
   scripts/contracts-snapshot-cleanup.mjs,project,Contracts cleanup delegates to shared retry policy
   scripts/release/token-budget-gate.mjs,project,Bounded retry cleanup for token-budget sandbox

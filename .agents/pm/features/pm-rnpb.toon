@@ -6,30 +6,66 @@ status: closed
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-07-26T17:25:05.275Z"
+updated_at: "2026-09-08T05:30:35.479Z"
 deadline: "2026-06-01T00:00:00.000Z"
 author: codex-audit
 estimated_minutes: 300
 acceptance_criteria: Audit findings are actionable and deduplicated; changed files and verification commands are linked; temporary dogfood project validates core workflows; any discovered bugs with safe fixes are remediated and tested.
 parent: pm-jrjt
 release: v2026.5.27
-dependencies[16]{id,kind,created_at,author,source_kind}:
-  pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-  pm-0c9q,related,"2026-07-26T17:25:04.940Z",null,null
-  pm-0d0q,related,"2026-07-26T17:25:04.940Z",null,null
-  pm-0g2p,related,"2026-07-26T17:25:04.940Z",null,null
-  pm-1lef,related,"2026-07-26T17:25:04.940Z",null,null
-  pm-1nht,related,"2026-07-26T17:25:04.940Z",null,null
-  pm-1pah,related,"2026-07-26T17:25:04.940Z",null,null
-  pm-2723,related,"2026-07-26T17:25:04.940Z",null,null
-  pm-27yz,related,"2026-07-26T17:25:04.940Z",null,null
-  pm-2awd,related,"2026-07-26T17:25:04.940Z",null,null
-  pm-2cqx,related,"2026-07-26T17:25:04.940Z",null,null
-  pm-2rj1,related,"2026-07-26T17:25:04.940Z",null,null
-  pm-3cbk,related,"2026-07-26T17:25:04.940Z",null,null
-  pm-3pbs,related,"2026-07-26T17:25:04.940Z",null,null
-  pm-3y56,related,"2026-07-26T17:25:04.940Z",null,null
-  pm-jrjt,implements,"2026-07-26T17:25:04.940Z",null,null
+resolution: Consolidated perf/reliability umbrella scope delivered and merged in PR #75.
+expected_result: Audit findings are actionable and deduplicated; changed files and verification commands are linked; temporary dogfood project validates core workflows; any discovered bugs with safe fixes are remediated and tested.
+actual_result: Consolidated perf/reliability umbrella scope delivered and merged in PR #75.
+dependencies[16]:
+  - id: pm-jrjt
+    kind: parent
+    created_at: "2026-05-03T13:20:01.343Z"
+    author: codex-audit
+  - id: pm-0c9q
+    kind: related
+    created_at: "2026-07-26T17:25:04.940Z"
+  - id: pm-0d0q
+    kind: related
+    created_at: "2026-07-26T17:25:04.940Z"
+  - id: pm-0g2p
+    kind: related
+    created_at: "2026-07-26T17:25:04.940Z"
+  - id: pm-1lef
+    kind: related
+    created_at: "2026-07-26T17:25:04.940Z"
+  - id: pm-1nht
+    kind: related
+    created_at: "2026-07-26T17:25:04.940Z"
+  - id: pm-1pah
+    kind: related
+    created_at: "2026-07-26T17:25:04.940Z"
+  - id: pm-2723
+    kind: related
+    created_at: "2026-07-26T17:25:04.940Z"
+  - id: pm-27yz
+    kind: related
+    created_at: "2026-07-26T17:25:04.940Z"
+  - id: pm-2awd
+    kind: related
+    created_at: "2026-07-26T17:25:04.940Z"
+  - id: pm-2cqx
+    kind: related
+    created_at: "2026-07-26T17:25:04.940Z"
+  - id: pm-2rj1
+    kind: related
+    created_at: "2026-07-26T17:25:04.940Z"
+  - id: pm-3cbk
+    kind: related
+    created_at: "2026-07-26T17:25:04.940Z"
+  - id: pm-3pbs
+    kind: related
+    created_at: "2026-07-26T17:25:04.940Z"
+  - id: pm-3y56
+    kind: related
+    created_at: "2026-07-26T17:25:04.940Z"
+  - id: pm-jrjt
+    kind: implements
+    created_at: "2026-07-26T17:25:04.940Z"
 comments[316]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
@@ -356,121 +392,344 @@ learnings[3]{created_at,author,text}:
   "2026-05-17T07:37:01.283Z",codex-agent,"Durable learning: strict 100% branch coverage is valuable for agent UX changes because nullable fallback expressions can silently introduce uncovered impossible branches; prefer explicit state predicates over defensive null coalescing in logically constrained paths."
   "2026-05-17T08:33:31.156Z",codex-agent,"Durable learning: when adding default terse projections for agent UX, preserve semantic override paths (include-body, explicit full/compact/fields) so feature-level defaults do not silently drop required payloads in existing workflows."
   "2026-05-22T15:44:58.334Z",maintainer-agent,"Startup perf: the single biggest CLI startup cost was importing zod (~85ms) eagerly via settings.ts, which is on the hot read path of nearly every command (list/get/search/context/create/update all readSettings). zod was used in exactly ONE file. Replacing it with a dependency-free validator (src/core/store/settings-validator.ts) that mirrors safeParse exactly cut settings import 157ms->14ms and every command ~38% (--help 227->140ms, list 540->340ms). Lesson: profile per-module import cost (node --input-type=module timing each import) before assuming the bottleneck is your own code; a single eager dep on the hot path dominates."
-files[114]{path,scope,note}:
-  .github/workflows/auto-release.yml,project,auto-release build before pm-changelog generation
-  .github/workflows/ci.yml,project,CI smoke gate runs package-first dogfood
-  .github/workflows/docs.yml,project,lightweight-docs-only-ci-gate
-  .github/workflows/release.yml,project,release-docs-skills-gate
-  CHANGELOG.md,project,regenerated changelog after closing stale completed items
-  CHANGELOG.pm.md,project,Tracker changelog regenerated after closing duplicate-code items so CI static changelog check passes
-  docs/EXTENSIONS.md,project,dedupe-package-extension-reference
-  package.json,project,raise brace-expansion override to fixed production dependency version
-  packages/pm-calendar/extensions/calendar/index.js,project,calendar output service JS parity
-  packages/pm-calendar/extensions/calendar/index.ts,project,calendar output service fallback
-  packages/pm-calendar/extensions/calendar/runtime.js,project,calendar package runtime JS parity
-  packages/pm-calendar/extensions/calendar/runtime.ts,project,calendar package markdown output renderer
-  packages/pm-guide-shell/extensions/guide-shell/index.js,project,guide output service JS parity
-  packages/pm-guide-shell/extensions/guide-shell/index.ts,project,guide output service fallback
-  packages/pm-search-advanced/extensions/search-advanced/index.js,project,search-advanced shipped JS parity
-  packages/pm-search-advanced/extensions/search-advanced/index.ts,project,manifest-capability-parity
-  packages/pm-search-advanced/extensions/search-advanced/runtime.js,project,search-advanced runtime JS parity
-  packages/pm-search-advanced/extensions/search-advanced/runtime.ts,project,strip parsed search-advanced flags from query
-  pnpm-lock.yaml,project,refresh lockfile for brace-expansion 5.0.6
-  README.md,project,public README hygiene update
-  scripts/check-secrets.mjs,project,detect absolute home-path and user@private-host leakage
-  scripts/dogfood-package-first.mjs,project,latest isolated dogfood harness
-  scripts/gen-package-runtime-loaders.mjs,project,"review fix: generated runtime loaders rethrow runtime/evaluation failures"
-  scripts/plugin-mcp-smoke-harness.mjs,project,"review fix: tolerate malformed non-JSON child stdout"
-  scripts/release/docs-skills-gate.mjs,project,retry temporary cleanup to avoid ENOTEMPTY release-gate false failure
-  scripts/release/release-relevance.mjs,project,pure release relevance helper for tests
-  scripts/release/run-gates.mjs,project,release gates run package-first dogfood
-  scripts/release/run-release-pipeline.mjs,project,skip auto-release when CHANGELOG Unreleased has no promotable content
-  scripts/release/sentry-telemetry-gate.mjs,project,fallback to authenticated Sentry CLI when release gate API token access fails
-  scripts/release/static-quality-gate.mjs,project,raise max source line threshold for expanded loader
-  src/cli.ts,project,nonblocking sentry startup for CLI responsiveness
-  src/cli/commander-usage.ts,project,required-option retry flag normalization
-  src/cli/commands/activity.ts,project,harden activity output for malformed legacy history rows
-  src/cli/commands/claim.ts,project,claim skipped response coverage and claimed_by branch hardening
-  src/cli/commands/completion.ts,project,Add get projection flags to shell completions
-  src/cli/commands/config.ts,project,config positional value routing
-  src/cli/commands/contracts.ts,project,use compact flag contracts in command surface
-  src/cli/commands/create.ts,project,event date alias for create
-  src/cli/commands/docs.ts,project,type support for docs list option
-  src/cli/commands/extension.ts,project,fix extension reload/watch usage guidance
-  src/cli/commands/get.ts,project,get depth projections for low-token agent reads
-  src/cli/commands/health.ts,project,health brief projection for low-token agent diagnostics
-  src/cli/commands/history.ts,project,Avoid duplicated compact history diff payload for token efficiency
-  src/cli/commands/init.ts,project,agent-friendly init defaults and author_default
-  src/cli/commands/linked-test-parsers.ts,project,"review note: document local validation regex risk boundary"
-  src/cli/commands/list.ts,project,null
-  src/cli/commands/plan.ts,project,Plan show field projection UX fix
-  src/cli/commands/reindex.ts,project,reindex uses shared calendar-aware corpus
-  src/cli/commands/search.ts,project,keyword search scores reminder/event corpus and short phrase matches
-  src/cli/commands/test.ts,project,type support for test list option
-  src/cli/commands/update.ts,project,event date alias for update
-  src/cli/commands/validate.ts,project,metadata output token-noise reduction verification
-  src/cli/error-guidance.ts,project,required-option guidance normalization
-  src/cli/help-content.ts,project,agent help documents get fields
-  src/cli/help-json-payload.ts,project,compact machine-readable help aliases for token-efficient agent help
-  src/cli/main.ts,project,error-path sentry initialization
-  src/cli/register-list-query.ts,project,align search CLI flags with advertised search contract
-  src/cli/register-mutation.ts,project,address PR review append source counting and docs list propagation
-  src/cli/register-operations.ts,project,contracts help text clarifies --full heavy surfaces
-  src/cli/register-setup.ts,project,init flags for defaults and author
-  src/cli/registration-helpers.ts,project,null
-  src/core/config/positional-value.ts,project,pure config positional router
-  src/core/extensions/extension-types.ts,project,canonical extension contract constants and default governance policy factory
-  src/core/extensions/loader.ts,project,chain output_format service overrides for package renderers
-  src/core/item/status.ts,project,null-safe malformed legacy status normalization
-  src/core/output/output.ts,project,null
-  src/core/schema/runtime-schema.ts,project,harden runtime schema normalization against malformed config tokens
-  src/core/search/cache.ts,project,semantic mutation refresh uses shared calendar-aware corpus
-  src/core/search/corpus.ts,project,shared search corpus builder includes calendar reminders/events
-  src/core/search/embedding-batches.ts,project,provider-aware semantic input bounding
-  src/core/search/semantic-defaults.ts,project,prefer qwen Ollama embedding auto default
-  src/core/sentry/instrument.ts,project,recursive path scrub across nested sentry event payloads
-  src/core/shared/constants.ts,project,"review fix: default status registry clones nested arrays"
-  src/core/store/front-matter-cache.ts,project,null
-  src/core/store/item-store.ts,project,did-you-mean not-found helper wired through update no-op path
-  src/mcp/server.ts,project,null
-  src/sdk/cli-contracts.ts,project,compact alias duplicate flag contracts for agent schema
-  src/sdk/runtime.ts,project,public getContracts SDK helper
-  tests/helpers/withTempPmPath.ts,project,allow spawned CLI stdin regression tests
-  tests/integration/ci-workflow-contract.spec.ts,project,workflow contract covers dogfood and Sentry token fallback
-  tests/integration/claude-plugin-contract.spec.ts,project,plugin MCP tool list regression
-  tests/integration/cli.integration.spec.ts,project,init defaults author regression
-  tests/integration/config-positional-cli.integration.spec.ts,project,CLI parser config positional regression split from large integration file
-  tests/integration/help-runtime.spec.ts,project,help coverage for keyword-first search mode flags
-  tests/integration/mcp-dynamic-package-actions.spec.ts,project,MCP get projection and plan stepRef regression
-  tests/integration/release-automation-contract.spec.ts,project,auto-release ordering and release relevance regressions
-  tests/integration/release-readiness-runtime.spec.ts,project,release-readiness guard for nonblocking sentry startup
-  tests/unit/check-secrets.spec.ts,project,line-number regression for secret scanner review
-  tests/unit/claim-command.spec.ts,project,claim if-available and takeover warning regression coverage
-  tests/unit/completion-command.spec.ts,project,bash completion regression for health fast-path flags
-  tests/unit/config-command.spec.ts,project,runConfig positional routing coverage
-  tests/unit/config-positional-value.spec.ts,project,pure router coverage
-  tests/unit/contracts-command.spec.ts,project,regression for canonical flag surface with aliases
-  tests/unit/create-command.spec.ts,project,create event date alias regression
-  tests/unit/embedding-batches.spec.ts,project,regression for oversized ollama embedding input truncation
-  tests/unit/error-guidance.spec.ts,project,retry guidance regression
-  tests/unit/extension-command.spec.ts,project,package-init-scaffold-regression
-  tests/unit/files-docs-command.spec.ts,project,docs list non-mutation review coverage
-  tests/unit/get-append-command.spec.ts,project,get depth projection regression
-  tests/unit/health-command.spec.ts,project,health brief projection regression coverage
-  tests/unit/package-import-adapters.spec.ts,project,review regression coverage for blank author fallback
-  tests/unit/package-runtime-options.spec.ts,project,review regression coverage for trimmed package string options
-  tests/unit/plan-command.spec.ts,project,Plan field projection regression
-  tests/unit/registration-helpers.spec.ts,project,PM-CLI-T regression coverage
-  tests/unit/runtime-schema-command-flags.spec.ts,project,regression for malformed config token normalization
-  tests/unit/search-advanced-runtime.spec.ts,project,direct package runtime coverage
-  tests/unit/search-cache.spec.ts,project,regression for bounded semantic refresh corpus input
-  tests/unit/search-command.spec.ts,project,regression for reminder/event search matches
-  tests/unit/search-corpus.spec.ts,project,unit coverage for semantic corpus helper branches
-  tests/unit/semantic-defaults.spec.ts,project,qwen Ollama model preference regression
-  tests/unit/sentry-helpers.spec.ts,project,regression for nested sentry event scrub behavior
-  tests/unit/shared-constants-errors.spec.ts,project,review regression coverage for status default cloning
-  tests/unit/update-command.spec.ts,project,update event date alias regression
-  vitest.config.ts,project,coverage include list covers new search corpus helper
+files[114]:
+  - path: .github/workflows/auto-release.yml
+    scope: project
+    note: auto-release build before pm-changelog generation
+  - path: .github/workflows/ci.yml
+    scope: project
+    note: CI smoke gate runs package-first dogfood
+  - path: .github/workflows/docs.yml
+    scope: project
+    note: lightweight-docs-only-ci-gate
+  - path: .github/workflows/release.yml
+    scope: project
+    note: release-docs-skills-gate
+  - path: CHANGELOG.md
+    scope: project
+    note: regenerated changelog after closing stale completed items
+  - path: CHANGELOG.pm.md
+    scope: project
+    note: Tracker changelog regenerated after closing duplicate-code items so CI static changelog check passes
+  - path: docs/EXTENSIONS.md
+    scope: project
+    note: dedupe-package-extension-reference
+  - path: package.json
+    scope: project
+    note: raise brace-expansion override to fixed production dependency version
+  - path: packages/pm-calendar/extensions/calendar/index.js
+    scope: project
+    note: calendar output service JS parity
+  - path: packages/pm-calendar/extensions/calendar/index.ts
+    scope: project
+    note: calendar output service fallback
+  - path: packages/pm-calendar/extensions/calendar/runtime.js
+    scope: project
+    note: calendar package runtime JS parity
+  - path: packages/pm-calendar/extensions/calendar/runtime.ts
+    scope: project
+    note: calendar package markdown output renderer
+  - path: packages/pm-guide-shell/extensions/guide-shell/index.js
+    scope: project
+    note: guide output service JS parity
+  - path: packages/pm-guide-shell/extensions/guide-shell/index.ts
+    scope: project
+    note: guide output service fallback
+  - path: packages/pm-search-advanced/extensions/search-advanced/index.js
+    scope: project
+    note: search-advanced shipped JS parity
+  - path: packages/pm-search-advanced/extensions/search-advanced/index.ts
+    scope: project
+    note: manifest-capability-parity
+  - path: packages/pm-search-advanced/extensions/search-advanced/runtime.js
+    scope: project
+    note: search-advanced runtime JS parity
+  - path: packages/pm-search-advanced/extensions/search-advanced/runtime.ts
+    scope: project
+    note: strip parsed search-advanced flags from query
+  - path: pnpm-lock.yaml
+    scope: project
+    note: refresh lockfile for brace-expansion 5.0.6
+  - path: README.md
+    scope: project
+    note: public README hygiene update
+  - path: scripts/check-secrets.mjs
+    scope: project
+    note: detect absolute home-path and user@private-host leakage
+  - path: scripts/dogfood-package-first.mjs
+    scope: project
+    note: latest isolated dogfood harness
+  - path: scripts/gen-package-runtime-loaders.mjs
+    scope: project
+    note: "review fix: generated runtime loaders rethrow runtime/evaluation failures"
+  - path: scripts/plugin-mcp-smoke-harness.mjs
+    scope: project
+    note: "review fix: tolerate malformed non-JSON child stdout"
+  - path: scripts/release/docs-skills-gate.mjs
+    scope: project
+    note: retry temporary cleanup to avoid ENOTEMPTY release-gate false failure
+  - path: scripts/release/release-relevance.mjs
+    scope: project
+    note: pure release relevance helper for tests
+  - path: scripts/release/run-gates.mjs
+    scope: project
+    note: release gates run package-first dogfood
+  - path: scripts/release/run-release-pipeline.mjs
+    scope: project
+    note: skip auto-release when CHANGELOG Unreleased has no promotable content
+  - path: scripts/release/sentry-telemetry-gate.mjs
+    scope: project
+    note: fallback to authenticated Sentry CLI when release gate API token access fails
+  - path: scripts/release/static-quality-gate.mjs
+    scope: project
+    note: raise max source line threshold for expanded loader
+  - path: src/cli.ts
+    scope: project
+    note: nonblocking sentry startup for CLI responsiveness
+  - path: src/cli/commander-usage.ts
+    scope: project
+    note: required-option retry flag normalization
+  - path: src/cli/commands/activity.ts
+    scope: project
+    note: harden activity output for malformed legacy history rows
+  - path: src/cli/commands/claim.ts
+    scope: project
+    note: claim skipped response coverage and claimed_by branch hardening
+  - path: src/cli/commands/completion.ts
+    scope: project
+    note: Add get projection flags to shell completions
+  - path: src/cli/commands/config.ts
+    scope: project
+    note: config positional value routing
+  - path: src/cli/commands/contracts.ts
+    scope: project
+    note: use compact flag contracts in command surface
+  - path: src/cli/commands/create.ts
+    scope: project
+    note: event date alias for create
+  - path: src/cli/commands/docs.ts
+    scope: project
+    note: type support for docs list option
+  - path: src/cli/commands/extension.ts
+    scope: project
+    note: fix extension reload/watch usage guidance
+  - path: src/cli/commands/get.ts
+    scope: project
+    note: get depth projections for low-token agent reads
+  - path: src/cli/commands/health.ts
+    scope: project
+    note: health brief projection for low-token agent diagnostics
+  - path: src/cli/commands/history.ts
+    scope: project
+    note: Avoid duplicated compact history diff payload for token efficiency
+  - path: src/cli/commands/init.ts
+    scope: project
+    note: agent-friendly init defaults and author_default
+  - path: src/cli/commands/linked-test-parsers.ts
+    scope: project
+    note: "review note: document local validation regex risk boundary"
+  - path: src/cli/commands/list.ts
+    scope: project
+  - path: src/cli/commands/plan.ts
+    scope: project
+    note: Plan show field projection UX fix
+  - path: src/cli/commands/reindex.ts
+    scope: project
+    note: reindex uses shared calendar-aware corpus
+  - path: src/cli/commands/search.ts
+    scope: project
+    note: keyword search scores reminder/event corpus and short phrase matches
+  - path: src/cli/commands/test.ts
+    scope: project
+    note: type support for test list option
+  - path: src/cli/commands/update.ts
+    scope: project
+    note: event date alias for update
+  - path: src/cli/commands/validate.ts
+    scope: project
+    note: metadata output token-noise reduction verification
+  - path: src/cli/error-guidance.ts
+    scope: project
+    note: required-option guidance normalization
+  - path: src/cli/help-content.ts
+    scope: project
+    note: agent help documents get fields
+  - path: src/cli/help-json-payload.ts
+    scope: project
+    note: compact machine-readable help aliases for token-efficient agent help
+  - path: src/cli/main.ts
+    scope: project
+    note: error-path sentry initialization
+  - path: src/cli/register-list-query.ts
+    scope: project
+    note: align search CLI flags with advertised search contract
+  - path: src/cli/register-mutation.ts
+    scope: project
+    note: address PR review append source counting and docs list propagation
+  - path: src/cli/register-operations.ts
+    scope: project
+    note: contracts help text clarifies --full heavy surfaces
+  - path: src/cli/register-setup.ts
+    scope: project
+    note: init flags for defaults and author
+  - path: src/cli/registration-helpers.ts
+    scope: project
+  - path: src/core/config/positional-value.ts
+    scope: project
+    note: pure config positional router
+  - path: src/core/extensions/extension-types.ts
+    scope: project
+    note: canonical extension contract constants and default governance policy factory
+  - path: src/core/extensions/loader.ts
+    scope: project
+    note: chain output_format service overrides for package renderers
+  - path: src/core/item/status.ts
+    scope: project
+    note: null-safe malformed legacy status normalization
+  - path: src/core/output/output.ts
+    scope: project
+  - path: src/core/schema/runtime-schema.ts
+    scope: project
+    note: harden runtime schema normalization against malformed config tokens
+  - path: src/core/search/cache.ts
+    scope: project
+    note: semantic mutation refresh uses shared calendar-aware corpus
+  - path: src/core/search/corpus.ts
+    scope: project
+    note: shared search corpus builder includes calendar reminders/events
+  - path: src/core/search/embedding-batches.ts
+    scope: project
+    note: provider-aware semantic input bounding
+  - path: src/core/search/semantic-defaults.ts
+    scope: project
+    note: prefer qwen Ollama embedding auto default
+  - path: src/core/sentry/instrument.ts
+    scope: project
+    note: recursive path scrub across nested sentry event payloads
+  - path: src/core/shared/constants.ts
+    scope: project
+    note: "review fix: default status registry clones nested arrays"
+  - path: src/core/store/front-matter-cache.ts
+    scope: project
+  - path: src/core/store/item-store.ts
+    scope: project
+    note: did-you-mean not-found helper wired through update no-op path
+  - path: src/mcp/server.ts
+    scope: project
+  - path: src/sdk/cli-contracts.ts
+    scope: project
+    note: compact alias duplicate flag contracts for agent schema
+  - path: src/sdk/runtime.ts
+    scope: project
+    note: public getContracts SDK helper
+  - path: tests/helpers/withTempPmPath.ts
+    scope: project
+    note: allow spawned CLI stdin regression tests
+  - path: tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    note: workflow contract covers dogfood and Sentry token fallback
+  - path: tests/integration/claude-plugin-contract.spec.ts
+    scope: project
+    note: plugin MCP tool list regression
+  - path: tests/integration/cli.integration.spec.ts
+    scope: project
+    note: init defaults author regression
+  - path: tests/integration/config-positional-cli.integration.spec.ts
+    scope: project
+    note: CLI parser config positional regression split from large integration file
+  - path: tests/integration/help-runtime.spec.ts
+    scope: project
+    note: help coverage for keyword-first search mode flags
+  - path: tests/integration/mcp-dynamic-package-actions.spec.ts
+    scope: project
+    note: MCP get projection and plan stepRef regression
+  - path: tests/integration/release-automation-contract.spec.ts
+    scope: project
+    note: auto-release ordering and release relevance regressions
+  - path: tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    note: release-readiness guard for nonblocking sentry startup
+  - path: tests/unit/check-secrets.spec.ts
+    scope: project
+    note: line-number regression for secret scanner review
+  - path: tests/unit/claim-command.spec.ts
+    scope: project
+    note: claim if-available and takeover warning regression coverage
+  - path: tests/unit/completion-command.spec.ts
+    scope: project
+    note: bash completion regression for health fast-path flags
+  - path: tests/unit/config-command.spec.ts
+    scope: project
+    note: runConfig positional routing coverage
+  - path: tests/unit/config-positional-value.spec.ts
+    scope: project
+    note: pure router coverage
+  - path: tests/unit/contracts-command.spec.ts
+    scope: project
+    note: regression for canonical flag surface with aliases
+  - path: tests/unit/create-command.spec.ts
+    scope: project
+    note: create event date alias regression
+  - path: tests/unit/embedding-batches.spec.ts
+    scope: project
+    note: regression for oversized ollama embedding input truncation
+  - path: tests/unit/error-guidance.spec.ts
+    scope: project
+    note: retry guidance regression
+  - path: tests/unit/extension-command.spec.ts
+    scope: project
+    note: package-init-scaffold-regression
+  - path: tests/unit/files-docs-command.spec.ts
+    scope: project
+    note: docs list non-mutation review coverage
+  - path: tests/unit/get-append-command.spec.ts
+    scope: project
+    note: get depth projection regression
+  - path: tests/unit/health-command.spec.ts
+    scope: project
+    note: health brief projection regression coverage
+  - path: tests/unit/package-import-adapters.spec.ts
+    scope: project
+    note: review regression coverage for blank author fallback
+  - path: tests/unit/package-runtime-options.spec.ts
+    scope: project
+    note: review regression coverage for trimmed package string options
+  - path: tests/unit/plan-command.spec.ts
+    scope: project
+    note: Plan field projection regression
+  - path: tests/unit/registration-helpers.spec.ts
+    scope: project
+    note: PM-CLI-T regression coverage
+  - path: tests/unit/runtime-schema-command-flags.spec.ts
+    scope: project
+    note: regression for malformed config token normalization
+  - path: tests/unit/search-advanced-runtime.spec.ts
+    scope: project
+    note: direct package runtime coverage
+  - path: tests/unit/search-cache.spec.ts
+    scope: project
+    note: regression for bounded semantic refresh corpus input
+  - path: tests/unit/search-command.spec.ts
+    scope: project
+    note: regression for reminder/event search matches
+  - path: tests/unit/search-corpus.spec.ts
+    scope: project
+    note: unit coverage for semantic corpus helper branches
+  - path: tests/unit/semantic-defaults.spec.ts
+    scope: project
+    note: qwen Ollama model preference regression
+  - path: tests/unit/sentry-helpers.spec.ts
+    scope: project
+    note: regression for nested sentry event scrub behavior
+  - path: tests/unit/shared-constants-errors.spec.ts
+    scope: project
+    note: review regression coverage for status default cloning
+  - path: tests/unit/update-command.spec.ts
+    scope: project
+    note: update event date alias regression
+  - path: vitest.config.ts
+    scope: project
+    note: coverage include list covers new search corpus helper
 tests[68]:
   - command: "manual temp-project smoke: init; install local pm-todos; install npm:local pm-beads; package doctor deep; beads import; todos export; health; validate"
     scope: project

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: bare-core,packages,refactor,sdk
 created_at: "2026-07-12T19:54:18.150Z"
-updated_at: "2026-07-26T17:06:17.271Z"
+updated_at: "2026-09-08T05:36:39.075Z"
 closed_at: "2026-07-13T00:37:27.603Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -18,17 +18,17 @@ release: v2026.7.13
 resolution: completed
 expected_result: Four audit implementations live in pm-governance-audit and disappear from public core SDK exports.
 actual_result: "All four runtimes moved, audit SDK exports removed, and installed-package parity passes."
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-2p7a,related,"2026-07-26T17:06:17.068Z",null,null
-  pm-98cz,related,"2026-07-26T17:06:17.068Z",null,null
-  pm-rjqr,related,"2026-07-26T17:06:17.068Z",null,null
-  pm-usfg,related,"2026-07-26T17:06:17.068Z",null,null
-  pm-vjk3,implements,"2026-07-26T17:06:17.068Z",null,null
-  pm-xzhz,related,"2026-07-26T17:06:17.068Z",null,null
-  pm-yu6d,related,"2026-07-26T17:06:17.068Z",null,null
+dependencies[7]{id,kind,created_at}:
+  pm-2p7a,related,"2026-07-26T17:06:17.068Z"
+  pm-98cz,related,"2026-07-26T17:06:17.068Z"
+  pm-rjqr,related,"2026-07-26T17:06:17.068Z"
+  pm-usfg,related,"2026-07-26T17:06:17.068Z"
+  pm-vjk3,implements,"2026-07-26T17:06:17.068Z"
+  pm-xzhz,related,"2026-07-26T17:06:17.068Z"
+  pm-yu6d,related,"2026-07-26T17:06:17.068Z"
 comments[1]{created_at,author,text}:
   "2026-07-12T23:37:42.648Z",codex-pm-audit-extraction,"Implementation evidence: four audit command implementations moved from src/cli/commands into pm-governance-audit; public SDK audit runners/types removed; package uses an install-safe generic SDK adapter. SDK gap pm-yu6d filed before promoting three existing primitives."
-files[15]{path,scope,note}:
+files[16]{path,scope,note}:
   packages/pm-governance-audit/extensions/governance-audit/comments-audit.ts,project,package-owned audit runtime extraction
   packages/pm-governance-audit/extensions/governance-audit/dedupe-audit.ts,project,package-owned audit runtime extraction
   packages/pm-governance-audit/extensions/governance-audit/dedupe-merge.ts,project,package-owned audit runtime extraction
@@ -44,5 +44,6 @@ files[15]{path,scope,note}:
   src/cli/commands/normalize.ts,project,561 LOC to relocate
   src/sdk/index.ts,project,"delete audit runner exports :276-281"
   src/sdk/runtime.ts,project,"delete audit runner exports :429-453"
+  packages/pm-governance-audit/extensions/governance-audit/package.json,project,Exact artifact link for the package or gate delivered by this canonical item
 close_reason: Moved all four audit command implementations out of core CLI/SDK into pm-governance-audit with generic SDK-only dependencies and full behavior coverage.
 body: ""

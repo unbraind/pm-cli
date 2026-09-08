@@ -6,17 +6,20 @@ status: closed
 priority: 3
 tags[4]: "area:docs",cleanup,hygiene,living-map
 created_at: "2026-05-31T19:45:42.689Z"
-updated_at: "2026-07-26T17:12:32.749Z"
+updated_at: "2026-09-08T05:32:37.890Z"
 author: maintainer-agent
 acceptance_criteria: Remove or replace the stale header lines (point to the living docs epic); keep docs/README history refs marked as closed; build+docs-skills pass.
 value: "Six docs files carry 'Tracked documentation work: pm-1sb2/pm-3042/pm-r9gu' header lines pointing to closed items, implying active tracking and confusing agents that orient on headers."
 parent: pm-u9d0
 release: v2026.6.6
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-1sb2,related,"2026-07-26T17:12:32.543Z",null,null
-  pm-3042,related,"2026-07-26T17:12:32.543Z",null,null
-  pm-r9gu,related,"2026-07-26T17:12:32.543Z",null,null
-  pm-u9d0,implements,"2026-07-26T17:12:32.543Z",null,null
+resolution: Replaced stale closed tracker references with living docs epic references; legacy refs explicitly marked closed.
+expected_result: Remove or replace the stale header lines (point to the living docs epic); keep docs/README history refs marked as closed; build+docs-skills pass.
+actual_result: Replaced stale closed tracker references with living docs epic references; legacy refs explicitly marked closed.
+dependencies[4]{id,kind,created_at}:
+  pm-1sb2,related,"2026-07-26T17:12:32.543Z"
+  pm-3042,related,"2026-07-26T17:12:32.543Z"
+  pm-r9gu,related,"2026-07-26T17:12:32.543Z"
+  pm-u9d0,implements,"2026-07-26T17:12:32.543Z"
 comments[1]{created_at,author,text}:
   "2026-06-06T02:39:35.371Z",codex-docs-release-bundle,"Cleaned stale closed tracker header references across docs/QUICKSTART.md, docs/COMMANDS.md, docs/AGENT_GUIDE.md, docs/RELEASING.md, docs/CONFIGURATION.md, docs/TESTING.md, and docs/ARCHITECTURE.md by pointing tracked documentation work to living epic pm-u9d0. Updated README/docs/README tracker sections to show active epic plus explicitly marked legacy closed references."
 files[9]{path,scope,note}:

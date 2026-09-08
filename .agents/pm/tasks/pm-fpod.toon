@@ -6,9 +6,11 @@ status: closed
 priority: 1
 tags[2]: audit,session-2026-07-02
 created_at: "2026-07-02T21:26:27.682Z"
-updated_at: "2026-08-10T12:03:01.915Z"
+updated_at: "2026-09-08T05:33:27.011Z"
 author: unknown
 release: v2026.7.3
+resolution: "2026-07-02/03 full ecosystem audit complete. Six lanes executed and closed with evidence (A pm-kes3, B pm-6vy7, C pm-hfli, D pm-3l76, E pm-p99b, F pm-mo2v). Fixes shipped on branch docs-freshness-and-ci-hardening: docs freshness (28 MCP tools, Node 22.18, CI matrix, package caveats, capability-matrix dedupe, orphan links, starter-extension vocabulary), CI hardening (auto-release actions:read, 3 new secret-scan rules, release env branch policy live). Follow-ups filed: pm-3wsi, pm-ghf1, pm-llrp, pm-gdi7, pm-z1pv. Verification: 5278 tests 100% coverage, eslint zero output, docs gate green, secret scan clean, Sentry 0 crit/high, telemetry real-time 0.62% error rate."
+actual_result: "2026-07-02/03 full ecosystem audit complete. Six lanes executed and closed with evidence (A pm-kes3, B pm-6vy7, C pm-hfli, D pm-3l76, E pm-p99b, F pm-mo2v). Fixes shipped on branch docs-freshness-and-ci-hardening: docs freshness (28 MCP tools, Node 22.18, CI matrix, package caveats, capability-matrix dedupe, orphan links, starter-extension vocabulary), CI hardening (auto-release actions:read, 3 new secret-scan rules, release env branch policy live). Follow-ups filed: pm-3wsi, pm-ghf1, pm-llrp, pm-gdi7, pm-z1pv. Verification: 5278 tests 100% coverage, eslint zero output, docs gate green, secret scan clean, Sentry 0 crit/high, telemetry real-time 0.62% error rate."
 dependencies[14]:
   - id: pm-3l76
     kind: related

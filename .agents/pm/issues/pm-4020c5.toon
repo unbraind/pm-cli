@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-25T20:40:06.211Z"
-updated_at: "2026-08-09T01:24:43.124Z"
+updated_at: "2026-09-08T05:57:10.430Z"
 closed_at: "2026-08-08T23:25:11.846Z"
 completed_at: "2026-08-08T23:25:11.846Z"
 author: "harness:claude-code"
@@ -18,13 +18,31 @@ confidence: 85
 resolution: Canonical registry-driven writes with explicit legacy alias observability
 expected_result: Every accepted alias stores one canonical kind while historical terminal rows remain untouched and discoverable
 actual_result: Create/update canonicalize all built-in aliases; contracts publishes ontology; deps and graph audit emit legacy alias counts; tests and manual compiled CLI acceptance pass
-dependencies[6]{id,kind,created_at}:
-  pm-4jqm,related,"2026-07-25T20:40:06.211Z"
-  pm-fs8q9x,related,"2026-07-25T20:40:06.211Z"
-  pm-hnc9w7,related,"2026-07-25T20:40:06.211Z"
-  pm-m9xv,implements,"2026-07-25T20:40:06.211Z"
-  pm-p9a4,related,"2026-07-25T20:40:06.211Z"
-  pm-rggtvd,related,"2026-07-25T20:40:06.211Z"
+dependencies[7]:
+  - id: pm-4jqm
+    kind: related
+    created_at: "2026-07-25T20:40:06.211Z"
+  - id: pm-fs8q9x
+    kind: related
+    created_at: "2026-07-25T20:40:06.211Z"
+  - id: pm-hnc9w7
+    kind: related
+    created_at: "2026-07-25T20:40:06.211Z"
+  - id: pm-m9xv
+    kind: implements
+    created_at: "2026-07-25T20:40:06.211Z"
+  - id: pm-p9a4
+    kind: related
+    created_at: "2026-07-25T20:40:06.211Z"
+  - id: pm-rggtvd
+    kind: related
+    created_at: "2026-07-25T20:40:06.211Z"
+  - id: pm-fl0c
+    kind: discovered_from
+    created_at: "2026-09-08T05:57:06.682Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[10]{created_at,author,text}:
   "2026-07-28T14:58:18.971Z","harness:claude-code","Direction evidence for the lexicon decision, measured 2026-07-28.\n\nControl established in an isolated sandbox: an item X declaring a dependency row of kind blocks against Y makes X the predecessor of Y — pm graph predecessors Y returns X, pm graph successors X returns Y. The mirrored spelling, Y declaring blocked_by against X, produces the same ordering for the graph engine and additionally reaches the scheduler. Neither write stores a mirror row on the other endpoint, so the two spellings are stored asymmetrically and resolved asymmetrically.\n\nTwo consequences for this item's scope, both now filed or recorded rather than remembered.\n\nFirst, the read side is not merely alias-blind, it is consumer-inconsistent. The graph engine honours blocks; blocker resolution in src/core/item/actionability.ts matches the single literal blocked_by and cannot see it. 219 blocks rows against 127 declared blocked_by rows means the spelling the scheduler ignores is the more common of the two. Owner filed as pm-jkbqt8, blocked on this item because canonicalization is the upstream fix.\n\nSecond, the corpus already contains the same kind used in two opposite senses within one item. Every v1-era root declares blocks against pm-doxj, meaning the v1 milestone precedes the roadmap, which is correct. The same items also declare blocks against their own predecessor milestone, meaning Milestone 1 precedes Milestone 0, which is inverted. Twelve such rows across the delivery and PRD chains. This is the concrete instance the direction decision has to rule on, and it is checkable without interpreting prose because the two readings contradict each other inside the same item. Full evidence on pm-1w6scp.\n\nWhatever this item decides, the acceptance test is now available for free: a paired write of both spellings must produce identical predecessor, successor and readiness results, and the twelve inverted legacy rows must land on a stated disposition rather than being silently canonicalized on read while staying wrong on disk."
   "2026-08-03T20:43:29.376Z","harness:claude-code","The alias is not legacy. Measured 2026-08-03 over the full corpus by parsing dependency rows structurally rather than through the graph profile.\n\nThere are 43 related_to rows. 35 of them sit on items created on or after 2026-07-25, and the newest two were written today. The alias is therefore being minted continuously by current authoring at current HEAD, not inherited from a pre-canonicalization era. The earlier reading that treated a handful of related_to rows as legacy noise on closed holders is superseded by this count.\n\nThe reason it stays invisible is the inconsistency this item already owns. related_to canonicalizes on read, so the graph audit profile reports it inside related and edges_by_kind never shows the alias. A maintainer looking at the canonical census sees one associative kind and concludes the vocabulary is settled. Only a structural parse of the stored rows shows two.\n\nThis makes the write-time canonicalization criterion the load-bearing one rather than a tidiness item. As long as reads canonicalize and writes do not, the corpus accumulates a second spelling at a measurable rate while every reporting surface asserts that it does not exist, and the divergence is unbounded because nothing can observe it.\n\nThe rows themselves stay untouched. All 43 holders are terminal, and rewriting kinds on terminal items churns changelog row ordering for no gain. The fix belongs at the write boundary, after which the stored rows can be normalized once as part of a single deliberate pass rather than opportunistically.\n"

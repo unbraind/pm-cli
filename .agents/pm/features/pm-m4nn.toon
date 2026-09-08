@@ -6,14 +6,17 @@ status: closed
 priority: 3
 tags[4]: agent-ux,"area:cli","area:lifecycle",living-map
 created_at: "2026-05-31T19:43:36.545Z"
-updated_at: "2026-07-26T17:19:59.124Z"
+updated_at: "2026-09-08T05:32:26.304Z"
 author: maintainer-agent
 acceptance_criteria: "pm copy <id> [--title] [--status open] copies type/priority/desc/body/tags/parent/assignee/etc.; resets id/status/timestamps/close fields; history notes source; MCP contract."
 value: "Agents re-create same-shape items (recurring audits, template issues) by re-specifying all fields. pm copy clones non-lifecycle fields into a fresh open item."
 parent: pm-mpbb
 release: v2026.6.7
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-mpbb,implements,"2026-07-26T17:19:58.911Z",null,null
+resolution: "Implemented pm copy command, MCP/tool contracts, completion updates, and dedicated tests with manual copy validation."
+expected_result: "pm copy <id> [--title] [--status open] copies type/priority/desc/body/tags/parent/assignee/etc.; resets id/status/timestamps/close fields; history notes source; MCP contract."
+actual_result: "Implemented pm copy command, MCP/tool contracts, completion updates, and dedicated tests with manual copy validation."
+dependencies[1]{id,kind,created_at}:
+  pm-mpbb,implements,"2026-07-26T17:19:58.911Z"
 comments[2]{created_at,author,text}:
   "2026-06-06T10:40:48.149Z",codex-5-3,"Evidence: added pm copy command with lifecycle field reset, source-id history suffix, MCP pm_copy tool wiring, enum/contracts, completion surfaces, and dedicated unit coverage. Verified via node scripts/run-tests.mjs test -- tests/unit/copy-command.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/release-readiness-runtime.spec.ts and manual sandbox copy+close flow."
   "2026-06-06T11:31:14.964Z",codex-5-3,"Post-close follow-up on PR #120: wired MCP runAction copy path to honor top-level title/message/author args, added fish completion --force parity for pm copy, and validated with targeted tests plus full coverage (100%). Commit dc016aa4."

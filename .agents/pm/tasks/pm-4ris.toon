@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-14T21:47:46.436Z"
-updated_at: "2026-08-03T09:55:07.593Z"
+updated_at: "2026-09-08T06:18:36.963Z"
 closed_at: "2026-08-03T09:51:53.585Z"
 completed_at: "2026-08-03T09:51:53.585Z"
 author: maintainer-agent
@@ -31,10 +31,11 @@ comments[7]{created_at,author,text}:
   "2026-07-25T17:05:55.143Z","harness:codex","Final evidence: after squashing the PR-only commits, TruffleHog 3.96.0 scanned aa7e76be..b7974127 with verified+unknown fail mode and reported 0 verified / 0 unknown findings. Current-tree secret scan and exact-head 6,370-test 100% coverage also pass."
   "2026-08-03T09:51:52.861Z","harness:codex","Regression correction evidence 2026-08-03: scheduled run 30798451130 failed because provider timeouts classified ordinary PM hash-chain values as unknown Sentry tokens. Reproduced with TruffleHog 3.96.0, including false positives on hashes and a function name. The hard gate now scans all Git history for provider-verified live credentials with --fail-on-scan-errors; deterministic current-tree credential shapes remain mandatory through Trivy plus pnpm security:scan. Exact full-history proof scanned 88,655 chunks / 143,087,116 bytes with zero verified and zero unverified outputs. Focused workflow contract passed 12/12; full repository coverage passed 424 files / 6,773 tests at exact 100/100/100/100; lint, zero-clone jscpd, 100% docstrings, static/package/SDK/token/context gates, and tracked secret scan passed."
   "2026-08-03T09:55:07.593Z","harness:codex","GitHub delivery: PR #881 https://github.com/unbraind/pm-cli/pull/881 carries the deterministic full-history credential verification correction. The PR body links this canonical item; exact pre-push proof is recorded above."
-files[3]{path,scope,note}:
+files[4]{path,scope,note}:
   .github/workflows/security.yml,project,Deterministic full-history verified credential and scan-error policy
   tests/integration/ci-workflow-contract.spec.ts,project,Pin scanner flags and exact reviewed exclusion allowlist
   tests/unit/commands/health-command.spec.ts,project,Runtime-composed URI fixture and clean branch-history proof
+  .trufflehog-exclude-paths.txt,project,Exact tracked artifact owned by the canonical capability and verified against repository commit history
 tests[2]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,300,Security workflow and exact exclusion allowlist contract
   "pnpm security:scan",project,300,Repository secret scan

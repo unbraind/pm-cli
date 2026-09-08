@@ -2,8 +2,7 @@ import { afterAll, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => {
   const fs = process.getBuiltinModule("node:fs");
-  const workspace = `/tmp/pm-sdk-custom-entry-${process.pid}-${Date.now()}`;
-  fs.mkdirSync(workspace, { recursive: true });
+  const workspace = fs.mkdtempSync(process.getBuiltinModule("node:path").join(process.getBuiltinModule("node:os").tmpdir(), "pm-sdk-custom-entry-"));
   fs.writeFileSync(
     `${workspace}/README.md`,
     "# Executable workspace\n",

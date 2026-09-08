@@ -6,10 +6,11 @@ status: closed
 priority: 2
 tags[4]: cache,list,perf,startup
 created_at: "2026-05-29T22:28:11.242Z"
-updated_at: "2026-08-10T12:02:28.560Z"
+updated_at: "2026-09-08T05:30:36.104Z"
 author: maintainer-agent
 release: v2026.5.30
 resolution: Fixed
+actual_result: Split metadata cache into light + lazily-loaded collections tiers; hot list/stats/deps/activity/calendar/close/test-all paths use listAllFrontMatterLight and skip the heavy collections cache.
 dependencies[5]:
   - id: pm-4r5t
     kind: related

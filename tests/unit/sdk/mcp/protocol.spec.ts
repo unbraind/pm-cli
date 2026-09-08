@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   PM_MCP_ERROR_CODES,
   PM_MCP_LEGACY_PROTOCOL_VERSIONS,
+  PM_MCP_LOG_LEVELS,
   PM_MCP_META_KEYS,
   PM_MCP_PROTOCOL_VERSION,
   PM_MCP_SUPPORTED_PROTOCOL_VERSIONS,
@@ -138,6 +139,31 @@ describe("MCP 2026-07-28 SDK protocol contracts", () => {
       protocolVersion: PM_MCP_PROTOCOL_VERSION,
       clientCapabilities: {},
     });
+  });
+
+  it("validates the specification logging vocabulary without carrying opt-in between requests", () => {
+    const levels = [
+      "debug", "info", "notice", "warning", "error", "critical", "alert", "emergency",
+    ];
+    expect(PM_MCP_LOG_LEVELS).toEqual(levels);
+    expect(PM_MCP_META_KEYS.logLevel).toBe("io.modelcontextprotocol/logLevel");
+    for (const logLevel of levels) {
+      const params = {
+        _meta: { ...MODERN_META, [PM_MCP_META_KEYS.logLevel]: logLevel },
+      };
+      const before = structuredClone(params);
+      expect(resolveMcpRequestContext(params)).toMatchObject({ logLevel });
+      expect(params).toEqual(before);
+      expect(resolveMcpRequestContext({ _meta: MODERN_META })).not.toHaveProperty("logLevel");
+    }
+    for (const invalid of [null, 1, true, {}, [], "", "INFO", " info ", "private-input"]) {
+      expect(() => resolveMcpRequestContext({
+        _meta: { ...MODERN_META, [PM_MCP_META_KEYS.logLevel]: invalid },
+      })).toThrow(expect.objectContaining({
+        code: -32602,
+        data: { field: PM_MCP_META_KEYS.logLevel, allowed: levels },
+      }));
+    }
   });
 
   it("validates HTTP header parity and request-local capabilities", () => {

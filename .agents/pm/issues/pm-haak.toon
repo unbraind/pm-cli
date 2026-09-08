@@ -6,13 +6,15 @@ status: closed
 priority: 2
 tags[4]: "area:config","area:schema",data-durability,living-map
 created_at: "2026-06-03T23:24:08.579Z"
-updated_at: "2026-07-26T17:15:18.303Z"
+updated_at: "2026-09-08T05:32:43.878Z"
 author: claude-code-agent
 value: "Pre-existing data-integrity bug surfaced during PR #106 (Codex review). Affects all file-backed schema sections; extended to type_workflows by the per-type workflow feature. Without it, file-driven schema customization (the documented workflow) becomes unreliable after any settings write."
 parent: pm-8jdc
 release: v2026.6.6
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-8jdc,implements,"2026-07-26T17:15:18.102Z",null,null
+resolution: "Implemented and verified schema-integrity persistence fix with regression tests, full gates, and manual temp-dir reproduction."
+actual_result: "Implemented and verified schema-integrity persistence fix with regression tests, full gates, and manual temp-dir reproduction."
+dependencies[1]{id,kind,created_at}:
+  pm-8jdc,implements,"2026-07-26T17:15:18.102Z"
 comments[5]{created_at,author,text}:
   "2026-06-06T03:03:24.893Z",codex-schema-integrity,"Execution kickoff: implementing schema-integrity fix so writeSettings no longer persists file-backed schema sections merged at read time; adding regression coverage in settings/config command specs plus manual temp-dir reproduction/verification."
   "2026-06-06T03:06:53.201Z",codex-schema-integrity,"Implemented read/write persist-source tracking in settings store: readSettingsWithMetadata now attaches source-vs-runtime schema snapshots, and serializeSettings/writeSettings persist source-authored file-backed sections (item_types.definitions, schema.statuses/fields/type_workflows) unless explicitly modified by the caller. Added regression coverage in settings-store and config-command specs; focused verification passed: node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/sdk-index.spec.ts (176 tests)."

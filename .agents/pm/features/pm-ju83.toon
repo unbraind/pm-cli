@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: api,"area:graph","area:sdk",performance,relationships,sdk-first
 created_at: "2026-07-13T21:58:11.171Z"
-updated_at: "2026-07-26T17:17:42.351Z"
+updated_at: "2026-09-08T05:33:32.801Z"
 closed_at: "2026-07-22T21:36:22.523Z"
 author: codex-root
 estimated_minutes: 720
@@ -21,24 +21,27 @@ parent: pm-96h7
 risk: high
 confidence: medium
 release: v2026.7.23
-dependencies[17]{id,kind,created_at,author,source_kind}:
-  pm-801d,related,"2026-07-13T21:58:11.171Z",null,null
-  pm-8xr8,related,"2026-07-13T21:58:11.171Z",null,null
-  pm-usfg,related,"2026-07-13T21:58:11.171Z",null,null
-  pm-7n5a,related,"2026-07-17T21:46:55.824Z",null,null
-  pm-xtrd,related,"2026-07-18T05:54:10.629Z",null,null
-  pm-4e12,related,"2026-07-26T17:17:42.032Z",null,null
-  pm-8ngt,related,"2026-07-26T17:17:42.032Z",null,null
-  pm-96h7,implements,"2026-07-26T17:17:42.032Z",null,null
-  pm-9rxu,related,"2026-07-26T17:17:42.032Z",null,null
-  pm-b24b,related,"2026-07-26T17:17:42.032Z",null,null
-  pm-d4ns,related,"2026-07-26T17:17:42.032Z",null,null
-  pm-ds3b,related,"2026-07-26T17:17:42.032Z",null,null
-  pm-e02lgu,related,"2026-07-26T17:17:42.032Z",null,null
-  pm-m2il,related,"2026-07-26T17:17:42.032Z",null,null
-  pm-u5zr,related,"2026-07-26T17:17:42.032Z",null,null
-  pm-upi0,related,"2026-07-26T17:17:42.032Z",null,null
-  pm-yh8r,related,"2026-07-26T17:17:42.032Z",null,null
+resolution: "Completed the public relationship graph platform across its full lineage: typed ontologies, immutable event history, durable migration/index/cache infrastructure, bounded graph queries and analytics, portable content-addressed snapshots, storage-neutral CAS adapters, federation, reusable adapter conformance, deterministic property fixtures, million-node acceptance, public docs, installed-package proof, and exact repository-wide 100/100/100/100 coverage."
+expected_result: "The registry defines built-in and extension-provided kinds with direction, inverse, order-bearing and hierarchy flags, cardinality, payload schema, lifecycle, aliases, and compatibility version; Mutation APIs validate endpoints and invariants then append attributable immutable events without direct state rewrites; Read APIs cover adjacency, predecessors, successors, ancestors, descendants, shortest and constrained paths, transitive closure, reverse impact, and induced bounded subgraphs; Every query supports deterministic ordering, typed filters, field projection, cursor or streaming continuation, cancellation, snapshot selection, and explicit cost or truncation metadata; Indexes are rebuildable from history, incrementally maintained, crash safe, observable, and optional for small projects; Thin CLI and MCP adapters call public SDK APIs without hidden core imports; shell-safe JSON, JSONL, TOON, and counts-first outputs preserve pipeline composability; Contract, property, replay, concurrency, migration, and scale tests cover legacy kinds, custom kinds, cycles, snapshots, and one million items"
+actual_result: "Completed the public relationship graph platform across its full lineage: typed ontologies, immutable event history, durable migration/index/cache infrastructure, bounded graph queries and analytics, portable content-addressed snapshots, storage-neutral CAS adapters, federation, reusable adapter conformance, deterministic property fixtures, million-node acceptance, public docs, installed-package proof, and exact repository-wide 100/100/100/100 coverage."
+dependencies[17]{id,kind,created_at}:
+  pm-801d,related,"2026-07-13T21:58:11.171Z"
+  pm-8xr8,related,"2026-07-13T21:58:11.171Z"
+  pm-usfg,related,"2026-07-13T21:58:11.171Z"
+  pm-7n5a,related,"2026-07-17T21:46:55.824Z"
+  pm-xtrd,related,"2026-07-18T05:54:10.629Z"
+  pm-4e12,related,"2026-07-26T17:17:42.032Z"
+  pm-8ngt,related,"2026-07-26T17:17:42.032Z"
+  pm-96h7,implements,"2026-07-26T17:17:42.032Z"
+  pm-9rxu,related,"2026-07-26T17:17:42.032Z"
+  pm-b24b,related,"2026-07-26T17:17:42.032Z"
+  pm-d4ns,related,"2026-07-26T17:17:42.032Z"
+  pm-ds3b,related,"2026-07-26T17:17:42.032Z"
+  pm-e02lgu,related,"2026-07-26T17:17:42.032Z"
+  pm-m2il,related,"2026-07-26T17:17:42.032Z"
+  pm-u5zr,related,"2026-07-26T17:17:42.032Z"
+  pm-upi0,related,"2026-07-26T17:17:42.032Z"
+  pm-yh8r,related,"2026-07-26T17:17:42.032Z"
 comments[76]{created_at,author,text}:
   "2026-07-13T21:58:11.171Z",codex-root,"Duplicate check 2026-07-13: SDK-first inventory contains generic query and lifecycle promotion slices but no stable typed relationship registry plus bounded graph algorithm API; this is a new promotion slice under pm-96h7 and relates to pm-usfg."
   "2026-07-14T07:46:26.495Z",codex-gpt5-root,"Evidence: delivered the first broad public graph foundation: versioned built-in/custom relationship registry, alias compatibility, immutable in-memory index construction from item metadata, deterministic adjacency/closure/reverse-impact/shortest-path/subgraph queries with cancellation and explicit cost/truncation metadata, SDK barrel/docs, and validate integration. Packed tarball consumer proved a custom company owns graph plus real CLI lifecycle. Full repository run passed 286 files/5664 tests; focused all-source coverage for relationships.ts is 100/100/100/100. Remaining event mutation, durable incremental index, snapshot/streaming, MCP projection, and million-item scale acceptance stay on this feature, so it will return to open rather than be falsely closed."

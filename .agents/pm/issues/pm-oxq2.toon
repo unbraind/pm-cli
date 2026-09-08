@@ -6,12 +6,14 @@ status: closed
 priority: 3
 tags[4]: audit-2026-06-13,disk,extensions,performance
 created_at: "2026-06-12T22:48:14.706Z"
-updated_at: "2026-07-26T17:22:26.047Z"
+updated_at: "2026-09-08T05:33:02.442Z"
 author: audit-quality-agent
 parent: pm-y7sc
 release: v2026.6.20
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-y7sc,implements,"2026-07-26T17:22:25.823Z",null,null
+resolution: "Resolved by skipping nested host CLI installs for npm package extensions, linking @unbrained/pm-cli to the active host package root, preserving package runtime metadata, updating SDK/package docs, updating @sentry/node to 10.59.0, and verifying with focused tests, manual temp smoke, full 100/100/100/100 coverage, static/contracts/security/changelog/Sentry/telemetry gates."
+actual_result: "Resolved by skipping nested host CLI installs for npm package extensions, linking @unbrained/pm-cli to the active host package root, preserving package runtime metadata, updating SDK/package docs, updating @sentry/node to 10.59.0, and verifying with focused tests, manual temp smoke, full 100/100/100/100 coverage, static/contracts/security/changelog/Sentry/telemetry gates."
+dependencies[1]{id,kind,created_at}:
+  pm-y7sc,implements,"2026-07-26T17:22:25.823Z"
 comments[5]{created_at,author,text}:
   "2026-06-18T00:03:43.439Z",codex-audit-agent,"Audit evidence from PR #266 on 2026-06-18: pnpm changelog:pm regenerated CHANGELOG.md successfully, but the subsequent pnpm changelog:pm:check wrapper stalled for several minutes inside pm install npm:pm-changelog --project -> npm install @unbrained/pm-cli@>=2026.6.7. Direct installed-extension check via node dist/cli.js changelog generate --check returned unchanged. This confirms the project-scope extension peer install cost can block release/check workflows, not just consume disk."
   "2026-06-19T14:35:41.446Z",codex-impl,"Evidence: Full coverage passed after branch-fixture follow-up: 230 files, 4655 tests, statements 100% (29786/29786), branches 100% (23309/23309), functions 100% (4955/4955), lines 100% (28619/28619). Manual temp smoke passed in /tmp/pm-sdk-install-smoke-lAsXNs: npm package installed, doctor ok, SDK command discovered, installed @unbrained/pm-cli realpath matched checkout, nested @sentry absent."

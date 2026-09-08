@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-12T02:57:25.496Z"
-updated_at: "2026-08-12T09:06:05.160Z"
+updated_at: "2026-09-08T05:56:50.312Z"
 closed_at: "2026-08-12T09:05:28.705Z"
 completed_at: "2026-08-12T09:05:28.705Z"
 author: "harness:codex"
@@ -18,9 +18,10 @@ confidence: high
 resolution: Recovery guidance now resolves the semantic subcommand with the shared bootstrap parser and never interprets global option values as command names.
 expected_result: Global flags before or after a subcommand produce the same valid command-specific recovery example without exposing option values.
 actual_result: "Recovery guidance selected the first non-flag argv token, so a global --pm-path value could become the displayed command name."
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-185870,related,"2026-08-12T02:57:25.496Z","harness:codex","cli:create:dep",detected
   pm-fs8q9x,related,"2026-08-12T02:57:25.496Z","harness:codex","cli:create:dep",detected
+  pm-n7rr,implements,"2026-09-08T05:56:50.148Z","harness:codex","cli:update:dep",detected
 comments[4]{created_at,author,text}:
   "2026-08-12T02:57:25.496Z","harness:codex","Duplicate check: all-status searches for GH-984, global --pm-path placement, plan show missing-id examples, and option-value-as-command found adjacent closed recovery item pm-185870 and open grammar conformance pm-fs8q9x, but no exact owner. Source: https://github.com/unbraind/pm-cli/issues/984"
   "2026-08-12T02:57:42.017Z","harness:codex","Live reproduction during duplicate search: quoting the query '--pm-path before subcommand example path value' still caused the host-owned global option to be parsed out of the search argument and produced an Unknown option refusal for the search path. This confirms the same raw-argv/global-option ambiguity reaches ordinary agent recovery workflows; no item was claimed because this session is only documenting the newly reported owner."

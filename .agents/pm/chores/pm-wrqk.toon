@@ -6,11 +6,21 @@ status: closed
 priority: 3
 tags[2]: "area:cleanup",refactor
 created_at: "2026-06-07T17:03:26.340Z"
-updated_at: "2026-07-26T17:28:55.940Z"
+updated_at: "2026-09-08T05:56:56.529Z"
 author: maintainer-agent
 parent: pm-mpbb
 release: v2026.6.8
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-mpbb,implements,"2026-07-26T17:28:55.702Z",null,null
+resolution: "Shipped: removed dead IIFE + 2 unused exports; added resolvePmCliVersion dedup across 4 readers; dropped unused fs/path imports in main.ts."
+actual_result: "Shipped: removed dead IIFE + 2 unused exports; added resolvePmCliVersion dedup across 4 readers; dropped unused fs/path imports in main.ts."
+dependencies[2]:
+  - id: pm-mpbb
+    kind: implements
+    created_at: "2026-07-26T17:28:55.702Z"
+  - id: pm-96wm
+    kind: discovered_from
+    created_at: "2026-09-08T05:56:56.286Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 close_reason: "Shipped: removed dead IIFE + 2 unused exports; added resolvePmCliVersion dedup across 4 readers; dropped unused fs/path imports in main.ts."
 body: ""

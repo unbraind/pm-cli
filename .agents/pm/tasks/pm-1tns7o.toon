@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: convergence,gate,merge,property-testing
 created_at: "2026-08-02T21:05:06.550Z"
-updated_at: "2026-08-02T21:10:20.069Z"
+updated_at: "2026-09-08T05:57:31.633Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "The convergence property varies at least one scalar metadata field and the body in addition to union collections, and compares the whole merged document rather than a single field; The property asserts both application-order independence and merge-direction independence, exercising each branch pair as ours and as theirs; A deliberate regression that makes any union field direction-dependent, and a deliberate regression in the scalar path, each fail the suite; Every field class the merge distinguishes — union collection, latest-timestamp, scalar three-way — is named in the property and covered by at least one generated case, and adding a new field class without extending the property fails a conformance check"
@@ -16,11 +16,12 @@ why_now: The ADR that must choose the convergence model is blocked on evidence t
 parent: pm-33cw
 risk: high
 confidence: high
-dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-76dnfg,discovered_from,"2026-08-02T21:10:19.903Z","harness:claude-code","cli:update:dep",detected
   pm-9c7h9x,related,"2026-08-02T21:10:19.903Z","harness:claude-code","cli:update:dep",detected
   pm-a8lnoh,related,"2026-08-02T21:10:19.903Z","harness:claude-code","cli:update:dep",detected
   pm-dlx7v7,verifies,"2026-08-02T21:10:19.903Z","harness:claude-code","cli:update:dep",detected
   pm-ei6x66,related,"2026-08-02T21:10:19.903Z","harness:claude-code","cli:update:dep",detected
   pm-o87av6,implements,"2026-08-02T21:10:19.903Z","harness:claude-code","cli:update:dep",detected
+  pm-wlqxg3,verifies,"2026-09-08T05:57:31.345Z","harness:codex","cli:update:dep",detected
 body: ""

@@ -6,14 +6,17 @@ status: closed
 priority: 3
 tags[3]: "area:cli",living-map,query
 created_at: "2026-05-31T19:43:36.830Z"
-updated_at: "2026-07-26T17:10:37.307Z"
+updated_at: "2026-09-08T05:32:26.619Z"
 author: maintainer-agent
 acceptance_criteria: pm aggregate --sum/--avg <numeric-field> --group-by <f> outputs per-group sum/avg+count+null_count; filters pass through.
 value: aggregate only counts. Sprint planning/throughput need sum/avg of estimated_minutes by sprint/type. Existing group_by+filters already handle the hard part.
 parent: pm-mpbb
 release: v2026.6.7
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-mpbb,implements,"2026-07-26T17:10:37.082Z",null,null
+resolution: Implemented aggregate sum/avg with contracts/completion and verified with tests and manual aggregate run.
+expected_result: pm aggregate --sum/--avg <numeric-field> --group-by <f> outputs per-group sum/avg+count+null_count; filters pass through.
+actual_result: Implemented aggregate sum/avg with contracts/completion and verified with tests and manual aggregate run.
+dependencies[1]{id,kind,created_at}:
+  pm-mpbb,implements,"2026-07-26T17:10:37.082Z"
 comments[1]{created_at,author,text}:
   "2026-06-06T10:40:43.079Z",codex-5-3,"Evidence: implemented aggregate numeric --sum/--avg grouped stats with null_count and filter passthrough, plus completion and contracts updates. Verified via node scripts/run-tests.mjs test -- tests/unit/aggregate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts and manual sandbox run pm aggregate --group-by parent --sum estimate --avg estimate --json."
 files[7]{path,scope,note}:

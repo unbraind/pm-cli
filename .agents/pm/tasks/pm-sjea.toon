@@ -6,12 +6,14 @@ status: closed
 priority: 2
 tags[3]: "area:extensions","area:sdk",refactor
 created_at: "2026-06-23T14:45:48.821Z"
-updated_at: "2026-07-26T17:25:41.863Z"
+updated_at: "2026-09-08T05:33:22.871Z"
 author: claude-code-agent
 parent: pm-1w0d
 release: v2026.6.24
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-1w0d,implements,"2026-07-26T17:25:41.629Z",null,null
+resolution: Extracted core/extensions/version-compat.ts (parseComparableVersion/compareComparableVersions + pure evaluatePmMin/MaxVersionBound). Loader now delegates; async wrappers format the same extension_pm_*_version_* warnings verbatim. Verified byte-identical via exact-match loader tests + 100% coverage.
+actual_result: Extracted core/extensions/version-compat.ts (parseComparableVersion/compareComparableVersions + pure evaluatePmMin/MaxVersionBound). Loader now delegates; async wrappers format the same extension_pm_*_version_* warnings verbatim. Verified byte-identical via exact-match loader tests + 100% coverage.
+dependencies[1]{id,kind,created_at}:
+  pm-1w0d,implements,"2026-07-26T17:25:41.629Z"
 files[2]{path,scope,note}:
   src/core/extensions/version-compat.ts,project,New shared version-compat core (parse/compare + pure pm_min/pm_max bound evaluators)
   src/core/extensions/loader.ts,project,Loader delegates compat to shared core; async wrappers format identical warning strings

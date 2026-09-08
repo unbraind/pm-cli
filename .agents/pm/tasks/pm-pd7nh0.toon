@@ -2,25 +2,50 @@ id: pm-pd7nh0
 title: "MCP 2026-07-28 per-request log level is neither read nor negatively controlled, and the conformance matrix has no row for it"
 description: "The 2026-07-28 key-changes list (item 5) removes logging/setLevel and sets log level per request through the _meta key io.modelcontextprotocol/logLevel; servers MUST NOT emit notifications/message for requests that did not include the field. The literal appears in zero source files and zero tests. pm never emits notifications/message, so the MUST NOT holds vacuously, but nothing proves it and the conformance matrix in docs/MCP_2026_07_28_CONFORMANCE.md assigns the requirement no owner and no evidence row, which is the one shape the matrix promised not to have.\n\nAcceptance: the request-metadata parser accepts and validates the key against the specification level enum and refuses an invalid level with -32602 while leaving the request otherwise processable; a negative control proves no notifications/message frame is emitted on stdio and Streamable HTTP for a request that omits the key, and that a request carrying the key is accepted unchanged; the matrix gains the row with owner and executable evidence; the generated deprecation inventory and the removed-method controls stay green."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[4]: "area:sdk",conformance,mcp,protocol
 created_at: "2026-09-04T18:25:04.356Z"
-updated_at: "2026-09-04T18:26:11.615Z"
+updated_at: "2026-09-08T06:55:56.525Z"
+closed_at: "2026-09-08T06:55:54.591Z"
+completed_at: "2026-09-08T06:55:54.591Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: The request-metadata parser accepts and validates io.modelcontextprotocol/logLevel against the specification enum and refuses an invalid level with -32602; A negative control proves no notifications/message frame is emitted on stdio and Streamable HTTP for a request that omits the key; The conformance matrix gains the row with owner and executable evidence and the deprecation inventory stays green
 parent: pm-rs9vry
 risk: low
 confidence: high
+resolution: The public SDK validates request-local MCP logLevel metadata against all eight severities and rejects malformed values with -32602; real stdio and HTTP transports prove omitted metadata cannot emit protocol logging.
+expected_result: "Accept the optional deprecated metadata interoperably without request-state carryover, unauthorized notifications or CLI-only logic."
+actual_result: 38 focused SDK/stdio/HTTP tests pass; the full sandbox suite and exact coverage gate pass. Conformance documentation and additive public SDK snapshot are updated. Publication remains a separate release acceptance step.
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-s00mpf,implements,"2026-09-04T18:25:04.356Z","harness:claude-code","cli:create:dep",detected
   pm-vae5ec,verifies,"2026-09-04T18:25:04.356Z","harness:claude-code","cli:create:dep",detected
   pm-vzcisw,discovered_from,"2026-09-04T18:25:04.356Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-09-04T18:26:10.441Z","harness:claude-code","Duplicate check: searched MCP log level, notifications message, per-request logging metadata. The deprecation-migration chore (linked discovered_from) removed logging setLevel but the per-request key has no owner. Literal census on the 2026.9.4 tree: zero source files, zero tests."
-files[1]{path,scope,note}:
+  "2026-09-08T06:55:51.169Z","harness:codex","Final verification: full sandbox coverage completed successfully with --maxWorkers 4; all exact coverage thresholds pass. Static gates, docs/skills, SDK boundary/parity and graph/record-integrity gates pass. Earlier environmental failures and the resource-contention rerun remain documented; this evidence applies to the final local delivery."
+files[5]{path,scope,note}:
+  sdk/public-surface.json,project,Request-local log-level validation and real-transport conformance evidence
   src/sdk/mcp/protocol.ts,project,request metadata keys where the log level key must be parsed
+  tests/integration/mcp-stateless-protocol.spec.ts,project,Request-local log-level validation and real-transport conformance evidence
+  tests/integration/mcp-streamable-http.spec.ts,project,Request-local log-level validation and real-transport conformance evidence
+  tests/unit/sdk/mcp/protocol.spec.ts,project,Request-local log-level validation and real-transport conformance evidence
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/protocol.spec.ts tests/integration/mcp-stateless-protocol.spec.ts tests/integration/mcp-streamable-http.spec.ts,project,240,"harness:codex","2026-09-08T05:36:23.750Z",local_mutation,main
+test_runs[1]:
+  - run_id: test-local-mtsa19d3-53rmxt
+    kind: test
+    status: passed
+    started_at: "2026-09-08T06:16:31.892Z"
+    finished_at: "2026-09-08T06:16:45.735Z"
+    recorded_at: "2026-09-08T06:16:45.735Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/protocol.spec.ts tests/integration/mcp-stateless-protocol.spec.ts tests/integration/mcp-streamable-http.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/MCP_2026_07_28_CONFORMANCE.md,project,matrix row to add
+close_reason: Implemented and verified the scoped fix; exact published-version acceptance remains separate.
 body: ""

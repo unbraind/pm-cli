@@ -57,8 +57,10 @@ proportional to what you import.
 Query the shipped surface instead of guessing a symbol name:
 
 ```bash
-jq -r '.entrypoints["./sdk/graph"].symbols[].name' \
-  node_modules/@unbrained/pm-cli/sdk/public-surface.json | head -40
+node --input-type=module -e '
+  import surface from "@unbrained/pm-cli/sdk/public-surface.json" with { type: "json" };
+  console.log(JSON.stringify(surface));
+' | jq -r '.entrypoints["./sdk/graph"].symbols[:40][].name'
 ```
 
 ## Non-Negotiables
@@ -98,6 +100,13 @@ Every package export that declares a `types` path must carry a classification,
 so a new public entrypoint cannot ship ungoverned.
 
 ## References
+
+The [generated capability routing](../../../docs/generated/AGENT_CAPABILITY_ROUTING.md)
+covers every declared family. Expand only the family needed, then query its
+published SDK symbols and runtime contract. For MCP integrations, start with
+the [current conformance matrix](../../../docs/MCP_2026_07_28_CONFORMANCE.md)
+and its SDK-owned request, transport, task, subscription, Skills, and Apps
+contracts; distinguish implementation evidence from exact-release acceptance.
 
 | Need                                        | Load                                                    | Cost     |
 | ------------------------------------------- | -------------------------------------------------------- | -------- |

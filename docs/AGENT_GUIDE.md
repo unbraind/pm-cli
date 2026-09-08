@@ -288,7 +288,7 @@ Use these defaults unless the task requires otherwise:
 Concurrent agents work on ordinary Git branches/worktrees; tracker artifacts need the semantic merge contract from [Merge Safety](MERGE_SAFETY.md). The short loop:
 
 - After a fresh clone or new worktree, run `pm merge install` once so the field-aware merge drivers back the committed `.gitattributes` fence.
-- After every merge that touches `.agents/pm`, run `pm merge reconcile --dry-run --json`, review the receipt classification, then apply `pm merge reconcile`. Add `--force` only after explicitly accepting or re-applying every discarded scalar value. Finish with `pm validate --check-storage-integrity` and `pm history --verify --strict-exit`.
+- After every merge that touches `.agents/pm`, run `pm merge reconcile --dry-run --json`, review the receipt classification, then apply `pm merge reconcile`. Add `--force` only after explicitly accepting or re-applying every discarded scalar value. Finish with `pm validate --check-storage-integrity --check-history-drift`, then `pm history <id> --verify --strict-exit` for each affected stream (`_workspace` for workspace state).
 - Repositories fanning out many branches between merges should raise id entropy: `pm config project set ids_token_length 6`.
 - Use `--add-ac`/`--remove-ac` (not `--ac`) so concurrent acceptance-criteria edits merge instead of clobbering.
 

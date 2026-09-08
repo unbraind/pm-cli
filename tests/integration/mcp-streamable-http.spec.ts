@@ -91,6 +91,32 @@ afterEach(async () => {
 });
 
 describe("MCP 2026-07-28 Streamable HTTP", () => {
+  it("validates per-request logging metadata and returns no protocol log frames", async () => {
+    const { baseUrl } = await startServer();
+    for (const logLevel of [undefined, "debug", "invalid", undefined]) {
+      const request = modernRequest("server/discover");
+      const headers = buildMcpHttpRequestHeaders({ request });
+      const params = request.params as { _meta: Record<string, unknown> };
+      if (logLevel !== undefined) params._meta[PM_MCP_META_KEYS.logLevel] = logLevel;
+      const response = await fetch(`${baseUrl}/mcp`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(request),
+      });
+      expect(response.headers.get("content-type")).toContain("application/json");
+      const text = await response.text();
+      expect(text).not.toContain("notifications/message");
+      const result: unknown = JSON.parse(text);
+      if (logLevel === "invalid") {
+        expect(result).toMatchObject({
+          error: { code: -32602, data: { field: PM_MCP_META_KEYS.logLevel } },
+        });
+      } else {
+        expect(result).toMatchObject({ id: 1, result: { resultType: "complete" } });
+      }
+    }
+  });
+
   it("rejects transport adapters that bypass subscription request validation", async () => {
     const sink = vi.fn();
     await expect(

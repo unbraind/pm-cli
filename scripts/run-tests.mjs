@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
+import { realpathSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -34,6 +35,23 @@ function runChild(command, args, env) {
   });
 }
 
+function assertExternalTemporaryDirectory() {
+  const relative = path.relative(
+    realpathSync(process.cwd()),
+    realpathSync(tmpdir()),
+  );
+  if (
+    relative === "" ||
+    (relative !== ".." &&
+      !relative.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relative))
+  ) {
+    throw new Error(
+      "Test temporary directory is inside the workspace. Set TMPDIR (or TEMP/TMP on Windows) to an existing directory outside the checkout.",
+    );
+  }
+}
+
 /**
  * Build and execute the requested Vitest mode in disposable tracker roots.
  *
@@ -47,6 +65,16 @@ async function run() {
     console.error(
       `Invalid mode "${resolved.mode}". Use "test", "coverage", or "coverage-shard".`,
     );
+    process.exitCode = 2;
+    return;
+  }
+
+  // Fixtures discover Git and tracker roots through ancestors. A disposable
+  // directory inside this workspace therefore cannot provide test isolation.
+  try {
+    assertExternalTemporaryDirectory();
+  } catch (error) {
+    console.error(`Unsafe test temporary directory: ${error.message}`);
     process.exitCode = 2;
     return;
   }

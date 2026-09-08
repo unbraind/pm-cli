@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: agent-ux,"area:sdk",concurrency,context,graph,scale
 created_at: "2026-07-25T06:17:52.754Z"
-updated_at: "2026-08-14T14:36:38.475Z"
+updated_at: "2026-09-08T06:16:30.663Z"
 author: unknown
 estimated_minutes: 1200
 acceptance_criteria: "An SDK primitive returns a bounded allocation over the ready set for a described fleet, deterministic for a fixed workspace state and fleet description; Allocation accounts for declared agent capabilities, existing claims, graph criticality (slack and critical path), and spread, and each assignment carries an explainable reason naming the deciding signals; A fleet of one produces exactly the ranking pm next produces today, so the primitive is a strict generalization with no behavioural regression; Advice never bypasses atomic claim: an agent that acts on stale advice loses the claim race safely and re-requests; Contention benchmarks show measurably higher throughput and lower wasted claim attempts than independent ranking at hundreds and thousands of simulated agents; The primitive is bounded in tokens and latency at million-item scale and degrades explicitly rather than scanning the workspace"
@@ -59,4 +59,6 @@ dependencies[12]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
+notes[1]{created_at,author,text}:
+  "2026-09-08T06:01:48.475Z","harness:codex","Fleet allocation experiment: build a bounded ready frontier, derive capability eligibility and occupancy from public SDK views, then compare a deterministic greedy matching baseline with sparse min-cost matching or auction allocation. Candidate arcs are capped per agent; report omitted work and unscheduled constraints. Never call a full dense O(agents*items) solve the production path. Claim remains the authoritative atomic action; stale advice must lose safely and retry with bounded jitter. Measure completed work, p95 claim latency, wasted attempts, critical-path delay and fairness under heterogeneous agents, network/IO faults and branch divergence. One-agent behavior must match the documented baseline."
 body: ""

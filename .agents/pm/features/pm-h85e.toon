@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: agent-experience,"area:cli",context,extensions,gh-issue
 created_at: "2026-07-06T21:09:04.826Z"
-updated_at: "2026-08-03T19:48:01.173Z"
+updated_at: "2026-09-08T05:56:53.844Z"
 closed_at: "2026-08-03T19:40:19.423Z"
 completed_at: "2026-08-03T19:40:19.423Z"
 author: maintainer-agent
@@ -18,7 +18,7 @@ confidence: medium
 resolution: "PR #884 added bounded static extension_health projection to context output, healthy/degraded summaries, markdown and structured rendering, and a correctly normalized --no-extension-health CLI/SDK/MCP opt-out."
 expected_result: "Context packets expose compact installed-extension health when packages exist, omit zero-value noise, preserve token budgets, and allow callers to suppress the projection."
 actual_result: "Before this change, agents could not see extension degradation in normal context and had to run separate diagnostic commands, increasing context cost and delaying recovery."
-dependencies[5]:
+dependencies[6]:
   - id: pm-tu71
     kind: related
     created_at: "2026-07-14T17:05:07.982Z"
@@ -37,6 +37,12 @@ dependencies[5]:
   - id: pm-mpbb
     kind: implements
     created_at: "2026-08-03T18:39:43.892Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-3rgp
+    kind: discovered_from
+    created_at: "2026-09-08T05:56:53.659Z"
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected

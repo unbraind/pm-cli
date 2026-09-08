@@ -6,12 +6,14 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-06-18T09:15:06.847Z"
-updated_at: "2026-07-26T17:05:21.794Z"
+updated_at: "2026-09-08T05:33:16.026Z"
 author: claude-code-agent
 parent: pm-mpbb
 release: v2026.6.19
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-mpbb,implements,"2026-07-26T17:05:21.470Z",null,null
+resolution: "Shipped validate governance accuracy bundle (GH-275/276/277/278): duplicate-code parent/child + closed-as-duplicate suppression, terminal-item planning-field exemption, files --remove path-only clarity. 100/100/100/100 coverage (4527 tests), static + security + contracts gates green."
+actual_result: "Shipped validate governance accuracy bundle (GH-275/276/277/278): duplicate-code parent/child + closed-as-duplicate suppression, terminal-item planning-field exemption, files --remove path-only clarity. 100/100/100/100 coverage (4527 tests), static + security + contracts gates green."
+dependencies[1]{id,kind,created_at}:
+  pm-mpbb,implements,"2026-07-26T17:05:21.470Z"
 comments[3]{created_at,author,text}:
   "2026-06-18T09:34:19.748Z",claude-code-agent,"Opened PR #279 (https://github.com/unbraind/pm-cli/pull/279). Triggered CodeRabbit/Gemini/Codex review. CI running."
   "2026-06-18T09:50:10.295Z",claude-code-agent,"Review round 1: Gemini flagged case-insensitive parent matching (accepted, c48f6782 + regression test) and full-corpus parent resolution (declined — would suppress genuine sibling collisions; GH-275 deliberately scopes to same-code group). Codex not connected; Sourcery rate-limited; CodeRabbit completed no blocking findings. 100% coverage maintained. Re-triggered bots."

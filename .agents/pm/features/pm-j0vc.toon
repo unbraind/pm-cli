@@ -6,13 +6,15 @@ status: closed
 priority: 3
 tags[3]: backlog,cli,context
 created_at: "2026-06-10T09:00:57.732Z"
-updated_at: "2026-07-26T17:17:03.561Z"
+updated_at: "2026-09-08T05:32:57.534Z"
 author: maintainer-agent
 parent: pm-mpbb
 release: v2026.6.16
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-ds0m,related,"2026-07-26T17:17:03.327Z",null,null
-  pm-hnjf,related,"2026-07-26T17:17:03.327Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:17:03.327Z",null,null
+resolution: "Shipped pm context --depth full (all sections, no per-section cap). --fields row projection split to pm-hnjf. GH-156."
+actual_result: "Shipped pm context --depth full (all sections, no per-section cap). --fields row projection split to pm-hnjf. GH-156."
+dependencies[3]{id,kind,created_at}:
+  pm-ds0m,related,"2026-07-26T17:17:03.327Z"
+  pm-hnjf,related,"2026-07-26T17:17:03.327Z"
+  pm-mpbb,implements,"2026-07-26T17:17:03.327Z"
 close_reason: "Shipped pm context --depth full (all sections, no per-section cap). --fields row projection split to pm-hnjf. GH-156."
 body: ""

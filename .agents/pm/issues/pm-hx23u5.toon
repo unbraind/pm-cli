@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:extensions","area:sdk",gh-issue,invariants,mutation,security,transactions
 created_at: "2026-08-01T13:27:20.518Z"
-updated_at: "2026-08-01T15:05:15.482Z"
+updated_at: "2026-09-08T05:33:37.162Z"
 closed_at: "2026-08-01T14:39:31.642Z"
 completed_at: "2026-08-01T14:39:31.642Z"
 author: "harness:codex"
@@ -14,6 +14,7 @@ acceptance_criteria: "Public guard contracts expose before, proposed after, chan
 parent: pm-usfg
 severity: high
 repro_steps: "Register an immutable content-addressed custom type, reference one item, then mutate it through pm update; the extension can only detect the invalid write afterward"
+resolution: "Delivered fail-closed transactional extension mutation guards across SDK authoring, lifecycle persistence, testing, contracts, docs, and 100% coverage."
 expected_result: A capability-gated public guard can atomically allow or deny every core item mutation with stable remediation
 actual_result: Available hooks are post-commit or warning-only and cannot enforce invariants
 affected_version: 2026.8.1

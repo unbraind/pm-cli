@@ -6,10 +6,11 @@ status: closed
 priority: 3
 tags[4]: agent-ux,cli,dogfood-2026-06-12,never-block
 created_at: "2026-06-12T16:19:39.149Z"
-updated_at: "2026-08-10T12:02:59.423Z"
+updated_at: "2026-09-08T05:33:01.305Z"
 author: maintainer-agent
 release: v2026.6.16
 resolution: "pm close now derives the close reason from the next-best signal when require_close_reason is on and no positional/--reason text is given. Precedence: explicit reason > --duplicate-of ('Duplicate of <id>') > --resolution summary. Resolution still persists to metadata.resolution. Unit tests cover all three precedence branches + the still-blocks case."
+actual_result: "pm close now derives the close reason from the next-best signal when require_close_reason is on and no positional/--reason text is given. Precedence: explicit reason > --duplicate-of ('Duplicate of <id>') > --resolution summary. Resolution still persists to metadata.resolution. Unit tests cover all three precedence branches + the still-blocks case."
 dependencies[2]:
   - id: pm-doxj
     kind: blocks

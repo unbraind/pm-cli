@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: codefactor,duplication,quality-gate
 created_at: "2026-07-11T02:58:27.882Z"
-updated_at: "2026-08-29T14:58:32.438Z"
+updated_at: "2026-09-08T05:57:20.201Z"
 closed_at: "2026-08-29T14:58:31.975Z"
 completed_at: "2026-08-29T14:58:31.975Z"
 author: maintainer-agent
@@ -18,7 +18,7 @@ confidence: medium
 resolution: "Enabled JavaScript-TypeScript cross-format clone detection in the production source profile at the established 22-line threshold, with a narrow type-only parser waiver that remains covered by the repository-wide profile."
 expected_result: The source duplication gate compares JavaScript and TypeScript without weakening the normal repository scan.
 actual_result: "Both jscpd profiles analyze 1,141 repository files and 450 production-source files respectively with zero clones; a regression locks cross-format configuration, equal line thresholds, and waiver scope."
-dependencies[3]:
+dependencies[5]:
   - id: pm-zuw8
     kind: related
     created_at: "2026-07-11T02:58:27.882Z"
@@ -29,6 +29,18 @@ dependencies[3]:
     kind: blocked_by
     created_at: "2026-07-27T12:52:10.199Z"
     author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-6sqo
+    kind: discovered_from
+    created_at: "2026-09-08T05:57:19.821Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-7wmq
+    kind: discovered_from
+    created_at: "2026-09-08T05:57:19.821Z"
+    author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
 comments[9]{created_at,author,text}:

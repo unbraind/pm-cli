@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cache,extensions,install
 created_at: "2026-07-18T12:18:13.064Z"
-updated_at: "2026-08-10T12:05:53.324Z"
+updated_at: "2026-09-08T05:33:33.298Z"
 closed_at: "2026-07-23T15:37:27.183Z"
 author: maintainer-agent
 estimated_minutes: 180
@@ -15,6 +15,9 @@ parent: pm-doxj
 risk: medium
 confidence: high
 release: v2026.7.24
+resolution: "Post-install activation now snapshots the complete extension directory into a fresh caller-owned module graph, preventing stale transitive ESM reuse; full coverage and reinstall proof pass."
+expected_result: Reinstall/upgrade activation verification loads the just-installed module graph rather than stale ESM cache entries; an extension adding a named dependency export upgrades successfully in one process; unchanged extension install and fresh-process doctor behavior remain covered; diagnostics distinguish package defects from verifier cache state.
+actual_result: "Post-install activation now snapshots the complete extension directory into a fresh caller-owned module graph, preventing stale transitive ESM reuse; full coverage and reinstall proof pass."
 dependencies[4]:
   - id: pm-8fxc
     kind: related

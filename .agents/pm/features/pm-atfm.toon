@@ -6,14 +6,14 @@ status: open
 priority: 1
 tags[4]: context,quality-gate,relevance,scale
 created_at: "2026-07-06T23:25:57.317Z"
-updated_at: "2026-08-01T20:25:34.303Z"
+updated_at: "2026-09-08T06:08:13.064Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: Golden corpus (one real-shaped and one synthetic pm-mi2x workspace) with graded judgments versioned in-repo; offline runner scores pm context and pm next with rank-aware quality metrics; baseline of the current structural assembler recorded before pm-4k6b lands; CI gate fails on quality regression beyond a documented threshold; harness consumes only public SDK read primitives; documented workflow for adding new judgment cases
 parent: pm-9rxu
 risk: medium
 confidence: medium
-dependencies[6]:
+dependencies[68]:
   - id: pm-4k6b
     kind: related
     created_at: "2026-07-10T21:38:37.208Z"
@@ -35,6 +35,378 @@ dependencies[6]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
+  - id: pm-22x2
+    kind: discovered_from
+    created_at: "2026-09-08T05:57:30.656Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-bwyw
+    kind: verifies
+    created_at: "2026-09-08T05:57:30.656Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-u8n5
+    kind: discovered_from
+    created_at: "2026-09-08T05:57:30.656Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-0d8cx0
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-0uvib0
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-2owmm9
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-3t4fpz
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-4lg7gl
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-5ay6gn
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-5wc91d
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-77pz59
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-7go3ml
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-7xva2q
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-8996e1
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-8ryvgm
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-9lhtuf
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-a795un
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-bj248h
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-cg9tgx
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-cpnzmc
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-cxydzq
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-ex5p2u
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-f6kmj2
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-fdb8e8
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-fr9ok0
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-h3l0th
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-hlf7ca
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-hnnsk4
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-ieskvz
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-isldic
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-j0hhum
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-j915gx
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-jd2wst
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-jxszo5
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-l4a5q9
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-ltygoc
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-mo38ao
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-n7fpe8
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-n7u3he
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-nh1348
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-nmti7j
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-oadvw7
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-oiml5g
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-oz1p2u
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-p5x04j
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-pyny5e
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-qy48yz
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-ra49iv
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-stdu2g
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-tnkni6
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-u64x78
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-u7dei0
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-u8rjvb
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-uk74i4
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-ur2t9o
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-uzjalq
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-v3grp9
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-w0x318
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-wsyj7k
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-x8cw63
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-xfta80
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-zhowns
+    kind: verifies
+    created_at: "2026-09-08T06:08:12.890Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[9]{created_at,author,text}:
   "2026-07-06T23:51:08.193Z",codex-agent,"Planning evidence 2026-07-07: pm-atfm remains the canonical quality harness for context/next relevance. Added non-duplicate child slices pm-lixy (graded scenario corpus across scratch, real-shaped, scale, and returning-agent continuity cases) and pm-xmp5 (offline runner + CI gate). Done definition should mirror search-eval rigor but score context assembly: rank-aware quality, required-item recall, continuity-delta coverage, and token-budget adherence. This keeps pm-4k6b weight tuning evidence-driven instead of aesthetic.\n"
   "2026-07-09T19:10:26.051Z",codex-root-20260709,"Progress evidence: context/next evaluation harness now has public SDK runner contracts, reviewable golden workspaces, committed baseline, required CI gate, and documented intentional-update workflow."
@@ -45,6 +417,8 @@ comments[9]{created_at,author,text}:
   "2026-07-10T05:53:29.680Z",codex-root-20260709,"Verification evidence 2026-07-10: full sandbox suite passed 270 files / 5,505 tests with exact 100% statements, branches, functions, and lines. pm test-all over the seven active items passed 8 linked commands with 0 failures and 1 duplicate-safe skip. pnpm typecheck, contracts:check, lint (ESLint + 0 jscpd clones + static quality/token budget), docs-skills, context-eval, security scan, and audit all passed. Live CodeFactor reports A+ and 0 issues. Fresh packed npm install at /tmp/pm-cli-sdk-path-proof-XIsSsh activated 11 bundled packages in a path-target tracker, left caller extension files at zero, and passed CLI/SDK context plus isolated doctor with zero blocking failures. pm health is clean and history drift is zero."
   "2026-07-25T12:33:44.265Z","harness:claude-code","Registry input 2026-07-25 (directed maintainer pass): pm-4k6b note (22) proposes counterfactual replay evaluation under this harness — replaying a candidate scorer against recorded request points from real sessions and comparing on whether subsequently touched items were served, at what rank, and at what token cost. It is off-policy evaluation and must be documented with its honest limit: it cannot observe what an agent would have done with items it never saw, so it bounds improvement rather than proving it, and a replay win still requires a live comparison before a default changes. Its value is filtering — rejecting most scoring proposals on recorded data rather than shipping them. Recorded here so the harness scope covers counterfactual comparison and not only graded judgments; see pm-g8t7b9 for the full ownership disposition."
   "2026-08-01T20:21:52.786Z","harness:codex","Evaluation design 2026-08-01: the context harness should stratify three-item scratch, real-shaped team, returning-agent, high-contention fleet, deep-history, adversarial metadata, and million-item synthetic scenarios. Judgments distinguish required, useful, redundant, misleading, and unsafe context. Gates report recall at budget, NDCG, first-relevant rank, continuity delta coverage, blocker and decision coverage, duplication, tokens per useful fact, latency, memory, and ranking stability. Counterfactual and ablation runs isolate each signal; frozen seeds and snapshot fingerprints make regressions reproducible. Quality thresholds are profile-specific so optimizing the million-item case cannot degrade the seconds-old scratch project."
+notes[1]{created_at,author,text}:
+  "2026-09-08T06:02:00.086Z","harness:codex","Evaluation portfolio update: every promoted algorithm slug gets graded judgments, an unchanged deterministic baseline and a falsifiable promotion/rejection threshold chosen before measuring. Required scenario axes: tiny/minutes; real repository; sparse/dense graphs; skewed types/authors; long inactive epochs; returning sessions; canceled/refuted evidence; reopened work; schema extensions; concurrent branches; cold/stale indexes; missing provider; and 100k/1M scale. Report ranking relevance, critical evidence recall, task completion, provenance correctness and tokens/latency separately. Offline replay cannot establish on-policy improvement by itself; use reproducible episodes for that claim and keep held-out evaluation outside adaptive tuning."
 learnings[1]{created_at,author,text}:
   "2026-07-25T12:41:54.275Z","harness:claude-code","An evaluation mechanism must never be owned by the item whose work it evaluates. When a scoring item owns its own harness, the harness's acceptance criteria are written to be satisfiable by that scorer, and a genuinely falsifying result becomes a scope negotiation rather than a finding. Keeping the judgment corpus, the replay harness, and the counterfactual evaluator under an evaluation-owned item — with scoring items depending on them rather than containing them — is what preserves the ability to reject a scoring idea on evidence."
 files[4]{path,scope,note}:

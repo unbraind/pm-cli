@@ -6,14 +6,16 @@ status: closed
 priority: 2
 tags[4]: audit-2026-06-13,dedup,history,refactor
 created_at: "2026-06-12T22:47:32.675Z"
-updated_at: "2026-07-27T04:12:40.611Z"
+updated_at: "2026-09-08T05:33:01.475Z"
 author: audit-quality-agent
 parent: pm-y7sc
 release: v2026.6.16
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-kbm9,related,"2026-07-26T17:10:44.568Z",null,null
-  pm-y7sc,implements,"2026-07-26T17:10:44.568Z",null,null
-  pm-kbm9,discovered_from,"2026-07-27T04:12:40.326Z",null,null
+resolution: Merged in PR #246 with linked implementation + verification evidence; no remaining blockers in this scope.
+actual_result: Merged in PR #246 with linked implementation + verification evidence; no remaining blockers in this scope.
+dependencies[3]{id,kind,created_at}:
+  pm-kbm9,related,"2026-07-26T17:10:44.568Z"
+  pm-y7sc,implements,"2026-07-26T17:10:44.568Z"
+  pm-kbm9,discovered_from,"2026-07-27T04:12:40.326Z"
 comments[2]{created_at,author,text}:
   "2026-06-16T11:10:22.325Z",codex-sdk-cli-consolidation-20260616,"Evidence: extracted executeHistoryRewrite in core/history/history-rewrite.ts and switched history-redact/repair/compact to the shared orchestration while preserving per-command rollback/hook behavior. Verified with focused history unit/integration tests."
   "2026-06-16T12:30:25.507Z",codex-sdk-cli-consolidation-20260616,"Merged via PR #246 (Consolidate SDK/CLI core primitives, UX diagnostics, and release reliability). Post-review follow-up commits addressed bot feedback; CI gates are green including strict coverage 100/100/100/100 and CodeQL/compat/smoke checks."

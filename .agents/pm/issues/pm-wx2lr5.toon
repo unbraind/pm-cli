@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:sdk","area:testing",authoring,extensions,gh-issue,host-parity
 created_at: "2026-08-01T13:27:06.241Z"
-updated_at: "2026-08-01T15:18:29.285Z"
+updated_at: "2026-09-08T05:33:36.982Z"
 closed_at: "2026-08-01T14:39:33.261Z"
 completed_at: "2026-08-01T14:39:33.261Z"
 author: "harness:codex"
@@ -14,6 +14,7 @@ acceptance_criteria: "Default test dispatch constructs a real host-bound SDK fro
 parent: pm-usfg
 severity: high
 repro_steps: Use createExtensionTestHarness with a registered command that reads context.sdk.client; runCommand throws because context.sdk is undefined
+resolution: "Delivered production-shaped host-bound SDK injection and typed overrides in the extension command test harness, with packed consumer and measured import-cost proof."
 expected_result: runCommand supplies the same host-bound ExtensionCommandSdk as installed dispatch and permits typed explicit injection
 actual_result: runCommand builds CommandHandlerContext without sdk and exposes no injection option
 affected_version: 2026.8.1

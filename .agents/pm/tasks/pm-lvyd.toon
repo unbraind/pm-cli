@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: "area:storage",concurrency,performance,scale
 created_at: "2026-07-06T21:24:56.660Z"
-updated_at: "2026-08-14T14:36:40.307Z"
+updated_at: "2026-09-08T06:09:41.040Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: "Stress scenario in the scale harness drives 1000 parallel agents doing claim --next/update/close against one workspace; measures claim success latency distribution and lock contention; any throughput fixes (lock backoff tuning, claim sharding) land with before/after numbers; zero corruption and zero history drift under the stress run"
@@ -50,4 +50,6 @@ dependencies[8]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
+notes[1]{created_at,author,text}:
+  "2026-09-08T06:09:40.075Z","harness:codex","Verification observation 2026-09-08: a full heavily parallel coverage run completed 8559 passing tests but the standalone context-read-cost default workload hit the existing 3000ms usage-ledger lock wait at four writers. The same two-test benchmark suite passed alone in 6.02 seconds, with its real concurrent writer/byte/recall assertions intact. Do not infer a source regression or a fleet-scale pass from either result. Preserve contention/latency receipts and repeat the full suite with bounded worker concurrency after tracker mutation work settles. The production lock bound was not increased and the failure was not hidden by weakening an assertion."
 body: ""

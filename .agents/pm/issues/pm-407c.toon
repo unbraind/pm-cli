@@ -6,10 +6,11 @@ status: closed
 priority: 2
 tags[4]: bug,config,search,semantic
 created_at: "2026-05-29T22:28:36.468Z"
-updated_at: "2026-08-10T12:02:10.428Z"
+updated_at: "2026-09-08T05:30:36.183Z"
 author: maintainer-agent
 release: v2026.5.30
 resolution: Fixed in perf/cache-split-and-agent-ux
+actual_result: "Per-field semantic auto-defaults: hasCompetingSemanticConfiguration only bails on a competing provider/store (openai/qdrant or non-ollama/non-lancedb); missing Ollama/LanceDB leaves are filled individually + hardened against partial settings objects (no crash when search/providers parents are absent)."
 dependencies[2]:
   - id: pm-th6y
     kind: discovered_from

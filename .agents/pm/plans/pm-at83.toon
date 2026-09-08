@@ -6,9 +6,11 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-05T14:37:43.450Z"
-updated_at: "2026-08-10T12:03:40.057Z"
+updated_at: "2026-09-08T05:32:44.486Z"
 author: maintainer-agent
 release: v2026.6.6
+resolution: "Merged PR #113 after green CI, manual temp smoke, reviewer feedback fixes, and upstream pm-changelog follow-up PR #31."
+actual_result: "Merged PR #113 after green CI, manual temp smoke, reviewer feedback fixes, and upstream pm-changelog follow-up PR #31."
 dependencies[16]:
   - id: pm-3puw
     kind: related

@@ -19,15 +19,16 @@ Skipping this is the single most common cause of tracker merge conflicts.
 
 ## Ownership Across Agents
 
-- `pm claim <ID>` before substantial edits. A claim is a recorded lease, not a
-  lock file, and it survives branching.
+- `pm claim <ID>` before substantial edits. Claim provenance is recorded with
+  the item and must be reconciled across branches.
 - `pm release <ID>` when pausing, handing off, closing, or canceling.
-- `pm list --status in_progress` shows what the fleet currently holds.
+- `pm list --status in_progress` shows work marked as executing. A claim alone
+  does not set that status; inspect `pm get <ID>` for its current claim state.
 - Never force an ownership or lock override without explicit human approval.
 
-Author identity is detected per invocation — harness, model, effort, role, and
-topic — so two agents on the same branch remain distinguishable in history
-without anyone passing `--author`.
+Author identity is detected per invocation from available harness signals.
+Model, effort, role, and topic observations are retained when available; their
+absence is not evidence of a particular model or role. No `--author` is needed.
 
 ## What Merges Field-Aware
 
@@ -51,8 +52,12 @@ reconciliation. Always run the post-merge gate:
 
 ```bash
 pm merge report
+pm merge reconcile --dry-run --json
+# After reviewing the receipt, apply the reconciliation.
 pm merge reconcile --message "Post-merge history reconciliation"
-pm validate --check-history-drift
+pm validate --check-storage-integrity --check-history-drift
+pm history <ID> --verify --strict-exit
+pm history _workspace --verify --strict-exit
 pm health --check-only
 ```
 
@@ -67,6 +72,10 @@ pm graph audit
 pm activity --limit 20
 ```
 
-History is append-only and hash-chained. `--check-history-drift` compares each
-stream's recorded chain against its contents, so a silently rewritten entry
-fails the check rather than passing unnoticed.
+Ordinary mutations append hash-chained history. `--check-history-drift` checks
+chain/replay agreement, and `history <ID> --verify --strict-exit` verifies a
+specific stream. These checks detect corruption and inconsistent rewrites;
+they do not independently prove that an attacker never replaced a whole chain
+and recomputed its hashes. Detached attestations or externally anchored
+receipts provide that separate proof boundary. Never rewrite historical
+evidence merely to make a graph or completeness metric look better.

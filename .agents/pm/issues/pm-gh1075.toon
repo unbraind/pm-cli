@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: ci,github,nightly,node24,windows
 created_at: "2026-08-21T05:42:10.609Z"
-updated_at: "2026-08-21T16:11:12.313Z"
+updated_at: "2026-09-08T05:56:46.292Z"
 closed_at: "2026-08-21T16:11:11.671Z"
 completed_at: "2026-08-21T16:11:11.671Z"
 author: "harness:codex"
@@ -19,8 +19,9 @@ expected_result: "All Nightly validation jobs pass on the exact fix branch, incl
 actual_result: "Nightly run 32500201496 passed Ubuntu Node 22/24/25, macOS Node 24, and windows-latest Node 24; the Windows job completed successfully in 11m34s. PR #1079 exact-head checks also passed."
 affected_version: 2026.8.21
 component: Nightly Validation workflow
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-zno2iu,incident_from,"2026-08-21T06:19:27.251Z","harness:codex","cli:update:dep",detected
+  pm-u9d0,implements,"2026-09-08T05:56:46.149Z","harness:codex","cli:update:dep",detected
 comments[6]{created_at,author,text}:
   "2026-08-21T05:42:10.609Z","harness:codex","Duplicate check 2026-08-21: searched all 2,526 PM items and Windows nightly lineage for run 32447807398 and GitHub #1075; prior Windows items cover older exact failures, not this run. Source: https://github.com/unbraind/pm-cli/issues/1075"
   "2026-08-21T15:42:09.786Z","harness:codex","Reproduction evidence 2026-08-21: exact-main manual Nightly run 32497483748 reproduced Windows Node 24 only. 65 search-command tests fail because the suite hard-codes D:\\tmp\\pm-search without initializing a tracker after fail-closed tracker preflight; context-integrity-primitives also timed out at 30s. Linux Node 22/24/25 and macOS Node 24 passed. Proceeding with harness-only repair; product preflight remains unchanged."

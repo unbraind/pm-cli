@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: active-items,backfill,graph,relationships,task,"wave:1"
 created_at: "2026-07-13T22:00:05.456Z"
-updated_at: "2026-07-26T05:54:52.182Z"
+updated_at: "2026-09-08T06:38:27.465Z"
 author: codex-root
 estimated_minutes: 720
 acceptance_criteria: "Consume only reviewed Wave 0 findings and accepted edge semantics; every operation includes source evidence, confidence, author, and rationale; Prioritize story-to-delivery, decision-to-implementation, prerequisite ordering, discovered-from, evidence, release, incident, and SDK-to-adapter relationships; Partition work by canonical lineage and bounded item count so agents can claim non-overlapping batches and resume from durable cursors; Each batch runs duplicate, semantic graph, lifecycle, history-drift, and health validation and records graph-quality and token-context deltas; Low-confidence and conflicting cases remain investigations or waivers; no generic related edge is added solely for connectivity; Finish when every active item has a reviewed classification and either valid relationships, an intentional-isolate waiver, or an explicit remediation owner"
@@ -19,14 +19,20 @@ why_now: "Active work has the highest context value and lowest changelog risk, w
 parent: pm-a8zm
 risk: medium
 confidence: medium
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-1kxs,related,"2026-07-13T22:00:05.456Z",null,null
-  pm-4jqm,blocked_by,"2026-07-13T22:00:05.456Z",null,null
-  pm-4k6b,related,"2026-07-13T22:00:05.456Z",null,null
-  pm-6x7o,blocked_by,"2026-07-13T22:00:05.456Z",null,null
-  pm-p9a4,blocked_by,"2026-07-13T22:00:05.456Z",null,null
-  pm-usfg,related,"2026-07-13T22:00:05.456Z",null,null
-  pm-a8zm,implements,"2026-07-26T05:54:51.985Z",null,null
-comments[1]{created_at,author,text}:
+dependencies[7]{id,kind,created_at}:
+  pm-1kxs,related,"2026-07-13T22:00:05.456Z"
+  pm-4jqm,blocked_by,"2026-07-13T22:00:05.456Z"
+  pm-4k6b,related,"2026-07-13T22:00:05.456Z"
+  pm-6x7o,blocked_by,"2026-07-13T22:00:05.456Z"
+  pm-p9a4,blocked_by,"2026-07-13T22:00:05.456Z"
+  pm-usfg,related,"2026-07-13T22:00:05.456Z"
+  pm-a8zm,implements,"2026-07-26T05:54:51.985Z"
+comments[3]{created_at,author,text}:
   "2026-07-13T22:00:05.456Z",codex-root,"Duplicate check 2026-07-13: no existing open item owns systematic evidence-backed active-item relationship enrichment across capability lineages; existing epics own their features while this task owns only cross-lineage graph remediation batches."
+  "2026-09-08T06:32:43.425Z","harness:codex","Final graph correction: the fixed redundancy ceiling rejected 34 newly implied shortcuts. Removed those exact rows with explicit alternate-path witnesses and retained the older event history. This preserves ordering reachability and the deeper prerequisite paths without weakening the 67-edge ceiling. The prior intermediate 13590-edge count is superseded by the final graph receipt."
+  "2026-09-08T06:38:27.009Z","harness:codex","Graph prose measurement: preserve the fixed ceiling and all mechanism prose. Added exact-passage exemptions for 59 draft duplicate-search result inventories and the terminal recovery residual inventory. These passages explicitly describe search or measurement subjects, following the existing inventory exemption contract; fabricating relationships to them would misrepresent lineage."
+notes[1]{created_at,author,text}:
+  "2026-09-08T06:23:09.480Z","harness:codex","All-status portfolio and graph evidence 2026-09-08: initial complete inventory 2658 items, 60702 complete events through the recorded cutoff and 2673 original streams, including closed/canceled and deleted history. The final planned population is 2718 after 59 deduplicated algorithm/cognitive experiment drafts plus the observed runner-isolation issue. Graph analysis after enrichment reports 13590 unique directed edges, a connected corpus, zero missing or isolated active nodes, zero ordering cycles and a 12-layer ordering DAG. No generic related link was added. Added relationships distinguish delivery, discovery, evaluation and actual input prerequisites; three newly added inverse duplicates were removed after graph audit while preserving the original authored spellings. Low-confidence prose-only mentions remain governed by pm-6x7o rather than being converted mechanically. Registry proposals have individual scope, inputs, evaluation and ADR gates. Remaining programme work is ongoing per-edge semantic governance as the portfolio changes, not an untracked second backlog."
+files[1]{path,scope,note}:
+  .agents/pm/assurance.json,project,Exact-passage inventory exemptions preserve graph relationship semantics without changing any threshold
 body: "## Priority order\n\n1. Priority-zero and priority-one stories and decisions.\n2. SDK-first and CLI simplification delivery chains.\n3. Context engine, scale, history integrity, releases, packages, and governance.\n4. Remaining active features, tasks, chores, plans, issues, and reminders.\n\n## Batch contract\n\nSnapshot; claim; bounded finding set; exact operations; dry-run validation; mutation; post-checks; evidence comment; metric delta; cursor checkpoint; release."

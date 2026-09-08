@@ -6,16 +6,27 @@ status: closed
 priority: 2
 tags[2]: "area:type-safety",refactor
 created_at: "2026-06-07T17:04:16.950Z"
-updated_at: "2026-07-26T17:27:08.582Z"
+updated_at: "2026-09-08T05:56:54.610Z"
 author: maintainer-agent
 parent: pm-o2kc
 release: v2026.6.20
 resolution: Typed mutation/replay result cleanup shipped by replacing plan/restore/replay ItemMetadata double-casts with typed mutateItem returns and centralized replay conversion.
 expected_result: "plan.ts, restore.ts, and core/history/replay.ts no longer contain as unknown as ItemMetadata, while existing plan/restore/replay behavior remains unchanged."
 actual_result: "No as unknown as ItemMetadata casts remain in the targeted source files; focused tests, build, static quality, contracts, full 100% coverage, temp-dir restore smoke, Sentry/telemetry gate, version/security, and changelog checks passed."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-vn9l,related,"2026-06-19T23:34:53.262Z",codex-implementation,null
-  pm-o2kc,implements,"2026-07-26T17:27:08.345Z",null,null
+dependencies[3]:
+  - id: pm-vn9l
+    kind: related
+    created_at: "2026-06-19T23:34:53.262Z"
+    author: codex-implementation
+  - id: pm-o2kc
+    kind: implements
+    created_at: "2026-07-26T17:27:08.345Z"
+  - id: pm-96wm
+    kind: discovered_from
+    created_at: "2026-09-08T05:56:54.443Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[4]{created_at,author,text}:
   "2026-06-19T23:32:52.571Z",codex-implementation,"Evidence: focused tests passed (4 files, 185 tests); pnpm build passed; pnpm quality:static passed; pnpm contracts:check passed; full coverage passed with Statements/Branches/Functions/Lines = 100/100/100/100 across 4697 tests."
   "2026-06-19T23:33:07.266Z",codex-implementation,"Manual temp-dir smoke: isolated PM_PATH=/tmp/tmp.4vtUlG1gka/project/.agents/pm and PM_GLOBAL_PATH=/tmp/tmp.4vtUlG1gka/global; ran init --type-preset agile, plan create --template feature-implementation --claim, plan complete-step, comments --add, restore <plan> 2, validate --check-resolution --check-history-drift, and plan show. Result: all commands passed; restore replay produced no warnings and history_drift was ok."

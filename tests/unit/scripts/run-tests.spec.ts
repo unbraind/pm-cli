@@ -30,6 +30,70 @@ function mockFsPromises() {
 }
 
 describe("run-tests", () => {
+  it.each([".", "nested/scratch"])(
+    "rejects a resolved workspace scratch root %s before creating fixtures",
+    async (suffix) => {
+      const spawn = vi.fn(() => closeChild(0));
+      vi.doMock("node:child_process", () => ({ spawn }));
+      vi.doMock("node:fs", () => ({
+        realpathSync: vi.fn()
+          .mockReturnValueOnce(process.cwd())
+          .mockReturnValueOnce(path.resolve(process.cwd(), suffix)),
+      }));
+      mockFsPromises();
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      process.argv = ["node", "scripts/run-tests.mjs", "test"];
+      await harness.importModule("scripts/run-tests.mjs");
+      expect(process.exitCode).toBe(2);
+      expect(spawn).not.toHaveBeenCalled();
+      expect(mkdtempMock).not.toHaveBeenCalled();
+      expect(String(errorSpy.mock.calls.at(-1)?.[0])).toContain("outside the checkout");
+    },
+  );
+
+  it("rejects an unavailable temporary root before child execution", async () => {
+    const spawn = vi.fn(() => closeChild(0));
+    vi.doMock("node:child_process", () => ({ spawn }));
+    vi.doMock("node:fs", () => ({ realpathSync: () => { throw new Error("unavailable"); } }));
+    mockFsPromises();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    process.argv = ["node", "scripts/run-tests.mjs", "test"];
+    await harness.importModule("scripts/run-tests.mjs");
+    expect(process.exitCode).toBe(2);
+    expect(spawn).not.toHaveBeenCalled();
+  });
+
+  it("allows the workspace parent as an external scratch root", async () => {
+    const spawn = vi.fn(() => closeChild(0));
+    vi.doMock("node:child_process", () => ({ spawn }));
+    vi.doMock("node:fs", () => ({
+      realpathSync: vi.fn()
+        .mockReturnValueOnce(process.cwd())
+        .mockReturnValueOnce(path.dirname(process.cwd())),
+    }));
+    mockFsPromises();
+    process.argv = ["node", "scripts/run-tests.mjs", "test"];
+    await harness.importModule("scripts/run-tests.mjs");
+    expect(process.exitCode).toBe(0);
+    expect(spawn).toHaveBeenCalledTimes(2);
+  });
+
+  it("allows a temporary root on a different Windows drive", async () => {
+    const spawn = vi.fn(() => closeChild(0));
+    vi.doMock("node:child_process", () => ({ spawn }));
+    vi.doMock("node:path", () => ({ default: path.win32, ...path.win32 }));
+    vi.doMock("node:fs", () => ({
+      realpathSync: vi.fn()
+        .mockReturnValueOnce("C:\\workspace")
+        .mockReturnValueOnce("D:\\scratch"),
+    }));
+    mockFsPromises();
+    process.argv = ["node", "scripts/run-tests.mjs", "test"];
+    await harness.importModule("scripts/run-tests.mjs");
+    expect(process.exitCode).toBe(0);
+    expect(spawn).toHaveBeenCalledTimes(2);
+  });
+
   it("rejects an unknown mode with exit code 2 and never spawns", async () => {
     const spawn = vi.fn(() => closeChild(0));
     vi.doMock("node:child_process", () => ({ spawn }));

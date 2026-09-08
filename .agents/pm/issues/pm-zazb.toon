@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,cli,dependencies,dogfood,validation
 created_at: "2026-07-10T11:10:11.237Z"
-updated_at: "2026-08-10T12:02:53.846Z"
+updated_at: "2026-09-08T05:33:31.977Z"
 closed_at: "2026-07-10T13:18:58.128Z"
 author: maintainer-agent
 estimated_minutes: 45
@@ -17,6 +17,9 @@ release: v2026.7.11
 severity: medium
 environment: "@unbrained/pm-cli 2026.7.10, live tracker"
 repro_steps: "pm create issue t --ac a --dep related:pm-x26a --json; pm deps <new-id> shows dependency id pm-related:pm-x26a with missing: true"
+resolution: Implemented and verified in the schema-driven input fidelity SDK/CLI bundle with full 100/100/100/100 coverage and installed-package proof.
+expected_result: "Malformed --dep values containing '=',':' or ',' but not matching the documented CSV grammar fail fast with the expected id=<id>,kind=<kind> hint; bare-id values that do not resolve to an existing item after prefix normalization warn or error instead of writing a dangling edge; regression tests cover create and update paths"
+actual_result: Implemented and verified in the schema-driven input fidelity SDK/CLI bundle with full 100/100/100/100 coverage and installed-package proof.
 dependencies[12]:
   - id: pm-b84u
     kind: related

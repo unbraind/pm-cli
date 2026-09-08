@@ -807,6 +807,10 @@ describe("MCP 2026-07-28 stateless server", () => {
     child.stdout.on("data", (chunk: Buffer) => stdoutChunks.push(chunk));
     child.stderr.on("data", (chunk: Buffer) => stderrChunks.push(chunk));
 
+    const logParams = modernParams();
+    (logParams._meta as Record<string, unknown>)[PM_MCP_META_KEYS.logLevel] = "debug";
+    const invalidLogParams = modernParams();
+    (invalidLogParams._meta as Record<string, unknown>)[PM_MCP_META_KEYS.logLevel] = "invalid";
     const requests = [
       {
         jsonrpc: "2.0",
@@ -822,6 +826,9 @@ describe("MCP 2026-07-28 stateless server", () => {
         method: "missing/current",
         params: modernParams(),
       },
+      { jsonrpc: "2.0", id: 15, method: "server/discover", params: logParams },
+      { jsonrpc: "2.0", id: 16, method: "server/discover", params: invalidLogParams },
+      { jsonrpc: "2.0", id: 17, method: "server/discover", params: modernParams() },
     ];
     child.stdin.end(
       `${requests.map((request) => JSON.stringify(request)).join("\n")}\n`,
@@ -852,7 +859,17 @@ describe("MCP 2026-07-28 stateless server", () => {
       .map((line) => JSON.parse(line) as Record<string, unknown>);
     expect(exitCode).toBe(0);
     expect(Buffer.concat(stderrChunks).toString("utf8")).toBe("");
-    expect(responses).toHaveLength(4);
+    expect(responses).toHaveLength(7);
+    expect(responses.some((response) => response.method === "notifications/message")).toBe(false);
+    expect(responses.find((response) => response.id === 15)).toMatchObject({
+      result: { resultType: "complete" },
+    });
+    expect(responses.find((response) => response.id === 16)).toMatchObject({
+      error: { code: -32602, data: { field: PM_MCP_META_KEYS.logLevel } },
+    });
+    expect(responses.find((response) => response.id === 17)).toMatchObject({
+      result: { resultType: "complete" },
+    });
     expect(responses[0]).toMatchObject({
       id: 11,
       result: { resultType: "complete" },

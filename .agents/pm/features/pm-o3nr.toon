@@ -6,15 +6,18 @@ status: closed
 priority: 1
 tags[4]: "area:search","area:semantic",performance,ux
 created_at: "2026-06-07T10:04:28.723Z"
-updated_at: "2026-07-26T17:21:36.953Z"
+updated_at: "2026-09-08T05:32:49.159Z"
 author: audit-data-agent
 acceptance_criteria: "- `pm reindex --mode semantic` defaults to stale-only (only re-embeds items whose `updated_at` differs from ledger)\n- `pm reindex --mode semantic --full` forces a full re-embed (current behaviour)\n- Progress output shows `X stale of Y total items to re-embed`\n- Help text explains the default stale-only behaviour and the --full override"
 parent: pm-ydp6
 risk: low
 confidence: high
 release: v2026.6.10
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-ydp6,implements,"2026-07-26T17:21:36.699Z",null,null
+resolution: Delivered stale-first semantic reindex UX with explicit full rebuild override and test coverage.
+expected_result: "- `pm reindex --mode semantic` defaults to stale-only (only re-embeds items whose `updated_at` differs from ledger)\n- `pm reindex --mode semantic --full` forces a full re-embed (current behaviour)\n- Progress output shows `X stale of Y total items to re-embed`\n- Help text explains the default stale-only behaviour and the --full override"
+actual_result: Delivered stale-first semantic reindex UX with explicit full rebuild override and test coverage.
+dependencies[1]{id,kind,created_at}:
+  pm-ydp6,implements,"2026-07-26T17:21:36.699Z"
 comments[2]{created_at,author,text}:
   "2026-06-09T22:05:15.174Z",codex-active-pm-cycle-20260610,"Duplicate-check evidence (active large-PR cycle 2026-06-10): pm context/search/list-open/list-in-progress plus targeted queries over coverage/reindex/settings/telemetry confirm this item is the canonical open lineage for its scope and is now claimed for implementation."
   "2026-06-09T22:47:11.252Z",codex-active-pm-cycle-20260610,Reindex command now defaults semantic/hybrid runs to stale-only vectors and reports stale-vs-total progress; --full forces rebuild when requested.

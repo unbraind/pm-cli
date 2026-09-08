@@ -6,15 +6,18 @@ status: closed
 priority: 2
 tags[3]: "area:storage",correctness,durability
 created_at: "2026-06-07T10:02:44.972Z"
-updated_at: "2026-07-26T17:05:59.001Z"
+updated_at: "2026-09-08T05:32:45.558Z"
 author: audit-data-agent
 acceptance_criteria: "- `writeFileAtomic` catches `EXDEV` and falls back to: write to a tmp in `os.tmpdir()`, copy to target, unlink tmp\n- OR falls back to a non-atomic `writeFile` with a warning so the file is never left corrupt\n- Both `fs-utils.ts` and the LanceDB snapshot writer handle this case\n- Unit test covering the EXDEV code path (mock `rename` to throw EXDEV)"
 parent: pm-o2kc
 risk: low
 confidence: high
 release: v2026.6.8
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-o2kc,implements,"2026-07-26T17:05:54.518Z",null,null
+resolution: Hardened writeFileAtomic for EXDEV fallback and routed LanceDB snapshot persistence through shared atomic writer with regressions; linked/full verification passed; merged via PR #144.
+expected_result: "- `writeFileAtomic` catches `EXDEV` and falls back to: write to a tmp in `os.tmpdir()`, copy to target, unlink tmp\n- OR falls back to a non-atomic `writeFile` with a warning so the file is never left corrupt\n- Both `fs-utils.ts` and the LanceDB snapshot writer handle this case\n- Unit test covering the EXDEV code path (mock `rename` to throw EXDEV)"
+actual_result: Hardened writeFileAtomic for EXDEV fallback and routed LanceDB snapshot persistence through shared atomic writer with regressions; linked/full verification passed; merged via PR #144.
+dependencies[1]{id,kind,created_at}:
+  pm-o2kc,implements,"2026-07-26T17:05:54.518Z"
 comments[2]{created_at,author,text}:
   "2026-06-07T12:58:08.103Z",codex-active-pm-cycle-20260607,"Implemented EXDEV-safe atomic write fallback: src/core/fs/fs-utils.ts now falls back to copyFile+cleanup when rename raises EXDEV; non-EXDEV failures still clean temp then rethrow. LanceDB snapshot persistence now uses writeFileAtomic via src/core/search/vector-stores.ts. Added regressions in tests/unit/fs-utils.spec.ts and tests/unit/vector-store-adapter.spec.ts including EXDEV fallback path. Verification: focused suite pass."
   "2026-06-07T13:01:27.891Z",codex-active-pm-cycle-20260607,Full verification stack passed (build/typecheck/coverage/contracts/static/security/audit/compatibility/sentry). Linked tests pass via pm test --run for fs-utils + vector-store adapter EXDEV scenarios.

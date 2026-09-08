@@ -6,14 +6,17 @@ status: closed
 priority: 2
 tags[5]: "area:docs",contributor-ux,living-map,onboarding,story
 created_at: "2026-05-31T19:49:47.011Z"
-updated_at: "2026-07-26T17:00:34.849Z"
+updated_at: "2026-09-08T05:32:39.284Z"
 author: maintainer-agent
 acceptance_criteria: "ONBOARDING.md covers setup, safe tests, real tracker workflow, release overview, hard never-do list, diagnostics; linked from README+CONTRIBUTING"
 parent: pm-u9d0
 release: v2026.6.6
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-oh5h,related,"2026-05-31T19:49:47.011Z",null,null
-  pm-u9d0,implements,"2026-07-26T17:00:34.485Z",null,null
+resolution: "Story delivered: single onboarding guide implemented and discoverability links added; verification passed."
+expected_result: "ONBOARDING.md covers setup, safe tests, real tracker workflow, release overview, hard never-do list, diagnostics; linked from README+CONTRIBUTING"
+actual_result: "Story delivered: single onboarding guide implemented and discoverability links added; verification passed."
+dependencies[2]{id,kind,created_at}:
+  pm-oh5h,related,"2026-05-31T19:49:47.011Z"
+  pm-u9d0,implements,"2026-07-26T17:00:34.485Z"
 comments[1]{created_at,author,text}:
   "2026-06-06T02:39:34.644Z",codex-docs-release-bundle,"Story completed via new unified onboarding path. docs/ONBOARDING.md now centralizes setup/testing/tracker/release guidance and is linked from README, CONTRIBUTING, and docs/README for discoverability. Verification gates passed including docs-skills/docs-links and full 100% coverage run."
 files[4]{path,scope,note}:

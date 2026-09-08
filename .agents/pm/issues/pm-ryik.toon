@@ -6,11 +6,13 @@ status: closed
 priority: 1
 tags[3]: agent-ux,"area:storage",never-block
 created_at: "2026-06-07T17:03:25.350Z"
-updated_at: "2026-07-26T17:25:15.025Z"
+updated_at: "2026-09-08T05:32:54.807Z"
 author: maintainer-agent
 parent: pm-mpbb
 release: v2026.6.8
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-mpbb,implements,"2026-07-26T17:25:14.764Z",null,null
+resolution: "Shipped: resolvePmRoot redirects explicit project-root --path/PM_PATH into .agents/pm (verified the previously-failing case now works). Back-compat preserved for pm init --path and direct tracker roots."
+actual_result: "Shipped: resolvePmRoot redirects explicit project-root --path/PM_PATH into .agents/pm (verified the previously-failing case now works). Back-compat preserved for pm init --path and direct tracker roots."
+dependencies[1]{id,kind,created_at}:
+  pm-mpbb,implements,"2026-07-26T17:25:14.764Z"
 close_reason: "Shipped: resolvePmRoot redirects explicit project-root --path/PM_PATH into .agents/pm (verified the previously-failing case now works). Back-compat preserved for pm init --path and direct tracker roots."
 body: ""

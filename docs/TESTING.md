@@ -50,6 +50,15 @@ children, then cleans the roots up. Instrumentation tests can still exercise
 Sentry initialization through their mocked module boundary; ordinary negative
 fixtures must never create production incidents from a developer host.
 
+Temporary directories must live outside the checkout and outside any ancestor
+workspace with initialized tracker data. The runner rejects a checkout-local
+temporary root, including a symlink alias, before starting build or test
+processes ([pm-bukwmy](../.agents/pm/issues/pm-bukwmy.toon)). If the default
+temporary filesystem is full, set `TMPDIR` (or `TEMP`/`TMP` on Windows) to an
+existing isolated scratch directory; an ignored directory inside the repository
+is not isolated. Filesystem fixtures must honor `node:os`'s `tmpdir()` and remove
+only the temporary directories they created.
+
 Public SDK changes additionally run semantic surface and import-cost contracts:
 
 ```bash

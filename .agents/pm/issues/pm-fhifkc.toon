@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: assurance,ci,governance,history,immutability,merge-safety
 created_at: "2026-08-13T14:37:01.915Z"
-updated_at: "2026-08-13T14:39:58.770Z"
+updated_at: "2026-09-08T05:57:02.100Z"
 closed_at: "2026-08-13T14:39:50.473Z"
 completed_at: "2026-08-13T14:39:50.473Z"
 author: "harness:claude-code"
@@ -17,12 +17,13 @@ confidence: 97
 resolution: All three ci-triggered assurance gates now run on pull requests; the append-only history assertion is evaluated before merge instead of only nightly.
 expected_result: "A changeset that violates history-append-only, graph composition, or tracker context quality fails its own pull request."
 actual_result: "Only tracker-context-quality was wired to pull requests; graph-composition and record-integrity reached a runner only via pnpm quality:static in nightly.yml and release.yml, so both were evaluated only after the change had merged."
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-1jzupz,implements,"2026-08-13T14:37:01.915Z","harness:claude-code","cli:create:dep",detected
   pm-4ok4ex,verifies,"2026-08-13T14:37:01.915Z","harness:claude-code","cli:create:dep",detected
   pm-rtn5h6,implements,"2026-08-13T14:37:01.915Z","harness:claude-code","cli:create:dep",detected
   pm-t7wn04,discovered_from,"2026-08-13T14:37:01.915Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-08-13T14:37:01.915Z","harness:claude-code","cli:create:dep",detected
+  pm-cu1i,discovered_from,"2026-09-08T05:57:01.926Z","harness:codex","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-08-13T14:39:46.138Z","harness:claude-code","Evidence: ci.yml step 'Run tracker context-quality ratchets' replaced by 'Run tracker assurance gates', which now runs all three ci-triggered gates on the static matrix leg — tracker-context-quality, graph-composition and record-integrity.\n\nVerified locally on the same tree: all three return verdict pass under --trigger ci --dry-run --json, and scripts/release/gate-registry.mjs still reports ok with registered_gate_count 12 and enforced_pipeline_count 18, so renaming the step did not break gate discovery.\n\nScope note for the residual: this change makes the wiring correct today and does not make it self-checking. The equivalence between the set of gates declaring the ci trigger and the set wired into the pull-request workflow is still maintained by hand, which is the recurrence risk the description names. That half stays open on this item's acceptance criteria and belongs with pm-1jzupz, whose premise is that enforcement is declared data rather than duplicated lists."
 files[1]{path,scope,note}:

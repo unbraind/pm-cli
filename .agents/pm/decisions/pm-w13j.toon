@@ -6,23 +6,25 @@ status: closed
 priority: 1
 tags[4]: adr,"area:ci","area:tests",coverage
 created_at: "2026-06-09T22:05:03.764Z"
-updated_at: "2026-07-27T04:11:28.807Z"
+updated_at: "2026-09-08T05:32:56.919Z"
 author: codex-active-pm-cycle-20260610
 parent: pm-m2u1
 release: v2026.6.16
-dependencies[12]{id,kind,created_at,author,source_kind}:
-  pm-0hx2,related,"2026-07-26T17:28:23.118Z",null,null
-  pm-6tch,related,"2026-07-26T17:28:23.118Z",null,null
-  pm-7sq6,related,"2026-07-26T17:28:23.118Z",null,null
-  pm-df9k,related,"2026-07-26T17:28:23.118Z",null,null
-  pm-f2ne,related,"2026-07-26T17:28:23.118Z",null,null
-  pm-h4zb,related,"2026-07-26T17:28:23.118Z",null,null
-  pm-kjmx,related,"2026-07-26T17:28:23.118Z",null,null
-  pm-krwu,related,"2026-07-26T17:28:23.118Z",null,null
-  pm-m2u1,implements,"2026-07-26T17:28:23.118Z",null,null
-  pm-vks9,related,"2026-07-26T17:28:23.118Z",null,null
-  pm-xau3,related,"2026-07-26T17:28:23.118Z",null,null
-  pm-7sq6,supersedes,"2026-07-27T04:11:28.536Z",null,null
+resolution: "Accepted & live: literal all-src 100/100/100/100 gate in vitest.config.ts, verified green (26190 stmts, 20463 branches, 4402 funcs, 25166 lines)."
+actual_result: "Accepted & live: literal all-src 100/100/100/100 gate in vitest.config.ts, verified green (26190 stmts, 20463 branches, 4402 funcs, 25166 lines)."
+dependencies[12]{id,kind,created_at}:
+  pm-0hx2,related,"2026-07-26T17:28:23.118Z"
+  pm-6tch,related,"2026-07-26T17:28:23.118Z"
+  pm-7sq6,related,"2026-07-26T17:28:23.118Z"
+  pm-df9k,related,"2026-07-26T17:28:23.118Z"
+  pm-f2ne,related,"2026-07-26T17:28:23.118Z"
+  pm-h4zb,related,"2026-07-26T17:28:23.118Z"
+  pm-kjmx,related,"2026-07-26T17:28:23.118Z"
+  pm-krwu,related,"2026-07-26T17:28:23.118Z"
+  pm-m2u1,implements,"2026-07-26T17:28:23.118Z"
+  pm-vks9,related,"2026-07-26T17:28:23.118Z"
+  pm-xau3,related,"2026-07-26T17:28:23.118Z"
+  pm-7sq6,supersedes,"2026-07-27T04:11:28.536Z"
 comments[176]{created_at,author,text}:
   "2026-06-09T22:05:15.975Z",codex-active-pm-cycle-20260610,"Duplicate-check evidence (active large-PR cycle 2026-06-10): pm context/search/list-open/list-in-progress plus targeted queries over coverage/reindex/settings/telemetry confirm this item is the canonical open lineage for its scope and is now claimed for implementation."
   "2026-06-09T22:47:30.704Z",codex-active-pm-cycle-20260610,"Current baseline after policy switch: full suite passes but coverage gate is 78.04% lines / 70.65% branches (all src now included). Decision remains in_progress until literal 100% all-src threshold is met with additional test/refactor work."

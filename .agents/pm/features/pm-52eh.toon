@@ -6,12 +6,14 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T11:28:40.145Z"
-updated_at: "2026-07-26T17:04:24.590Z"
+updated_at: "2026-09-08T05:33:11.923Z"
 author: codex-sdk-cli-consolidation-20260616
 parent: pm-mpbb
 release: v2026.6.19
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-mpbb,implements,"2026-07-26T17:04:24.279Z",null,null
+resolution: "Implemented GH-208 linked-test sandbox ergonomics: package-manager scripts are accepted because runtime injects sandbox PM roots, direct runner binaries remain guarded, docs/PRD updated, and focused plus full coverage gates passed."
+actual_result: "Implemented GH-208 linked-test sandbox ergonomics: package-manager scripts are accepted because runtime injects sandbox PM roots, direct runner binaries remain guarded, docs/PRD updated, and focused plus full coverage gates passed."
+dependencies[1]{id,kind,created_at}:
+  pm-mpbb,implements,"2026-07-26T17:04:24.279Z"
 comments[5]{created_at,author,text}:
   "2026-06-18T11:55:06.905Z",codex-gpt5,"Implementation note: subagent linked-test lane recommended allowing package-manager scripts because runtime already injects sandbox PM_PATH/PM_GLOBAL_PATH, while continuing to reject direct runner binaries such as vitest/node --test/npx vitest. Focused tests passed: node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts tests/unit/commands/test-all-command.spec.ts tests/unit/core/history/history-append-overrides.spec.ts. pm docs append hit same-owner lock conflict, so docs are linked via pm files without forcing."
   "2026-06-18T12:21:55.716Z",codex-gpt5,"Final evidence: full coverage passed at 100/100/100/100 (4540 tests), pnpm build, pnpm quality:static, pnpm quality:docs-links, pnpm contracts:check, pm validate --check-resolution --check-history-drift, pnpm changelog:pm:check, pnpm security:scan, pnpm audit --audit-level moderate, manual temp-dir linked-test smoke, and sentry telemetry gate all passed. GitHub triage found no open PRs, no open Dependabot alerts, and only commander major latest 15.0.0 beyond wanted 14.0.3."

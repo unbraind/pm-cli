@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:extensions","area:sdk",consistency,custom-types,gh-issue,item-lifecycle
 created_at: "2026-08-01T13:27:35.279Z"
-updated_at: "2026-08-01T14:39:35.613Z"
+updated_at: "2026-09-08T05:33:37.341Z"
 closed_at: "2026-08-01T14:39:34.889Z"
 completed_at: "2026-08-01T14:39:34.889Z"
 author: "harness:codex"
@@ -14,6 +14,7 @@ acceptance_criteria: "All core item and annotation mutation locators consume the
 parent: pm-usfg
 severity: high
 repro_steps: "Install an extension registering Run in runs, create through context.sdk.client, then call client.close or pm update without persisting the type in schema/types.json"
+resolution: Delivered active extension item-type registry parity across close and full installed custom-type lifecycle acceptance.
 expected_result: Every read and mutation path resolves extension-contributed item folders from the same active registry
 actual_result: get/list/create find a registered custom type item while update and close return Item ID not found
 affected_version: 2026.8.1

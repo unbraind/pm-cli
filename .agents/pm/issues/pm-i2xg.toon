@@ -6,12 +6,14 @@ status: closed
 priority: 1
 tags[3]: agent-ux,"area:ci",reliability
 created_at: "2026-06-07T19:58:13.334Z"
-updated_at: "2026-07-26T17:16:16.957Z"
+updated_at: "2026-09-08T05:32:56.504Z"
 author: codex-agent-ux-reliability-20260607
 parent: pm-u9d0
 release: v2026.6.8
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-u9d0,implements,"2026-07-26T17:16:16.775Z",null,null
+resolution: Completed via PR #147 merge; smoke temp-root cleanup hardened and CI smokes passed after fix.
+actual_result: Completed via PR #147 merge; smoke temp-root cleanup hardened and CI smokes passed after fix.
+dependencies[1]{id,kind,created_at}:
+  pm-u9d0,implements,"2026-07-26T17:16:16.775Z"
 comments[5]{created_at,author,text}:
   "2026-06-07T19:58:21.972Z",codex-agent-ux-reliability-20260607,"Execution kickoff: no equivalent open issue found for current main CI Gates (smokes) ENOTEMPTY temp-root cleanup failure from run 27099519817; tracking fix in this item and this PR."
   "2026-06-07T20:28:59.591Z",codex-agent-ux-reliability-20260607,"Implemented smoke cleanup hardening in scripts/smoke-npx-from-pack.mjs: extracted cleanupTempRoot with transient ENOTEMPTY/EBUSY/EPERM retry loop, top-level entry pruning between retries, and synchronous backoff. Cleanup failures now emit warning text instead of masking successful smoke assertions. Added direct unit tests for nested-dir removal + idempotent missing-path handling. Local helper tests pass (2/2). Full smoke script still exceeded local runtime budget in this environment during npx execution (no output before manual termination), so CI re-run remains the authoritative end-to-end signal for the original ENOTEMPTY path."

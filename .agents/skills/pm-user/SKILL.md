@@ -78,6 +78,10 @@ the criteria; `--dep` **appends**.
 
 ## Capability Map
 
+The complete, drift-gated [capability routing](../../../docs/generated/AGENT_CAPABILITY_ROUTING.md)
+is generated from SDK contracts. This table routes common workflows; use
+`pm guide capabilities` for the whole installed surface.
+
 | Need                        | Entry                                    | Guide topic  |
 | --------------------------- | ---------------------------------------- | ------------ |
 | What should I do next       | `pm next`                                | `quickstart` |
@@ -111,3 +115,4 @@ Aggregate on a scalar field when a per-value count is what you want.
 | Triage and planning procedures     | [Workflows](references/WORKFLOWS.md)          | ~350 tok |
 | Prompt templates                   | [Prompts](references/PROMPTS.md)              | ~250 tok |
 | Backlog structure and item quality | [Backlog shaping](references/BACKLOG_SHAPING.md) | ~900 tok |
+| Complete ecosystem review and long-term planning | [Ecosystem planning](references/ECOSYSTEM_PLANNING.md) | on demand |

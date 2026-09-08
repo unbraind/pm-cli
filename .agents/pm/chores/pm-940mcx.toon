@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-08-22T17:47:07.479Z"
-updated_at: "2026-08-22T23:26:51.675Z"
+updated_at: "2026-09-08T05:56:51.024Z"
 closed_at: "2026-08-22T23:26:51.114Z"
 completed_at: "2026-08-22T23:26:51.114Z"
 author: "harness:codex"
@@ -18,6 +18,8 @@ release: v2026.8.23
 resolution: "Updated ESLint to compatible 10.9.0 and preserved zero-warning lint, type safety, exact coverage, dependency audit, and secret-scan gates."
 expected_result: "ESLint 10.9.0 resolves cleanly without weakening lint, type, coverage, dependency, or secret-scan assurance."
 actual_result: The compatible dependency and lockfile update passes all five recorded structured verification commands.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-92if,implements,"2026-09-08T05:56:50.764Z","harness:codex","cli:update:dep",detected
 comments[3]{created_at,author,text}:
   "2026-08-22T17:47:07.479Z","harness:codex","Duplicate check: exact all-status search for ESLint 10.9.0 dependency update returned zero items; broader all-status eslint dependency search found no matching version-update item, so this child is net-new under the canonical code-quality lineage."
   "2026-08-22T18:26:49.319Z","harness:codex","Verification evidence 2026-08-22: ESLint resolves to 10.9.0; pnpm lint:eslint and typecheck passed, the full 7,794-test suite passed with exact 100/100/100/100 coverage, pnpm audit reports no known vulnerabilities, and the tracked-secret scan is clean. pnpm outdated now reports only the separately governed incompatible majors npm-package-arg 14 and TypeScript 7."

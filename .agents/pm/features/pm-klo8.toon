@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:config","area:history","area:storage",audit-trail,pm-cli
 created_at: "2026-07-06T23:08:35.037Z"
-updated_at: "2026-07-26T17:18:34.774Z"
+updated_at: "2026-09-08T05:57:23.744Z"
 closed_at: "2026-07-23T19:10:48.024Z"
 author: maintainer-agent
 estimated_minutes: 300
@@ -18,19 +18,51 @@ release: v2026.7.24
 resolution: Delivered append-only hash-chained workspace audit history across singleton configuration and activation state mutations.
 expected_result: "Workspace mutations are attributable, race-safe, drift-detectable, and visible through history and activity."
 actual_result: "Settings, schema, profile, init reruns, templates, and package activation state are audited with rollback and verified packed-consumer coverage."
-dependencies[12]{id,kind,created_at,author,source_kind}:
-  pm-bgcu,related,"2026-07-06T23:10:04.566Z",maintainer-agent,null
-  pm-e200,related,"2026-07-06T23:10:04.566Z",maintainer-agent,null
-  pm-3z0k,related,"2026-07-25T22:09:07.349Z",null,null
-  pm-9j2r3b,related,"2026-07-25T22:09:07.349Z",null,null
-  pm-9yfo,related,"2026-07-25T22:09:07.349Z",null,null
-  pm-u14c,related,"2026-07-25T22:09:07.349Z",null,null
-  pm-w7ccmv,verifies,"2026-07-25T22:09:07.349Z",null,null
-  pm-dijg,related,"2026-07-26T17:18:34.512Z",null,null
-  pm-doxj,related,"2026-07-26T17:18:34.512Z",null,null
-  pm-g6qd,related,"2026-07-26T17:18:34.512Z",null,null
-  pm-o2kc,implements,"2026-07-26T17:18:34.512Z",null,null
-  pm-tqel,related,"2026-07-26T17:18:34.512Z",null,null
+dependencies[13]:
+  - id: pm-bgcu
+    kind: related
+    created_at: "2026-07-06T23:10:04.566Z"
+    author: maintainer-agent
+  - id: pm-e200
+    kind: related
+    created_at: "2026-07-06T23:10:04.566Z"
+    author: maintainer-agent
+  - id: pm-3z0k
+    kind: related
+    created_at: "2026-07-25T22:09:07.349Z"
+  - id: pm-9j2r3b
+    kind: related
+    created_at: "2026-07-25T22:09:07.349Z"
+  - id: pm-9yfo
+    kind: related
+    created_at: "2026-07-25T22:09:07.349Z"
+  - id: pm-u14c
+    kind: related
+    created_at: "2026-07-25T22:09:07.349Z"
+  - id: pm-w7ccmv
+    kind: verifies
+    created_at: "2026-07-25T22:09:07.349Z"
+  - id: pm-dijg
+    kind: related
+    created_at: "2026-07-26T17:18:34.512Z"
+  - id: pm-doxj
+    kind: related
+    created_at: "2026-07-26T17:18:34.512Z"
+  - id: pm-g6qd
+    kind: related
+    created_at: "2026-07-26T17:18:34.512Z"
+  - id: pm-o2kc
+    kind: implements
+    created_at: "2026-07-26T17:18:34.512Z"
+  - id: pm-tqel
+    kind: related
+    created_at: "2026-07-26T17:18:34.512Z"
+  - id: pm-9lc
+    kind: discovered_from
+    created_at: "2026-09-08T05:57:20.467Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[6]{created_at,author,text}:
   "2026-07-23T17:40:01.962Z",claude-code-agent,"Implementation start 2026-07-23: activated because pm-dijg requires its canonical workspace audit dependency. Scope is a reusable HistoryEntry-compatible workspace stream, atomic append under workspace mutation locks, verification coverage, and schema-migration integration; no duplicate item created."
   "2026-07-23T19:00:15.567Z",claude-code-agent,"Implementation evidence: added the append-only hash-chained _workspace HistoryEntry stream, audited singleton writers with rollback, history/activity rendering, drift validation, and coverage for settings/config, schema, profile, init reruns, saved templates, and project package activation/deactivation state changes. Packed-consumer verification observed 8 valid entries and health/validation ok."

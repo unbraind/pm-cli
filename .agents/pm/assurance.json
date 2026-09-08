@@ -757,6 +757,306 @@
             "holder_id": "pm-gxs55a",
             "text_contains": "carry neither a semantic nor an ordering edge",
             "reason": "This sentence names the items that are the measurement's own subjects. Linking a measurement to the population it measured would destroy the property being reported, which is the analysis-subject case already exempted for the measurement owner."
+          },
+          {
+            "holder_id": "pm-0d8cx0",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-0uvib0",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-2owmm9",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-3t4fpz",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-4lg7gl",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-5ay6gn",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-5wc91d",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-77pz59",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-7go3ml",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-7xva2q",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-8996e1",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-8ryvgm",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-9lhtuf",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-a795un",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-bj248h",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-cg9tgx",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-cpnzmc",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-cxydzq",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-ex5p2u",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-f6kmj2",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-fdb8e8",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-fr9ok0",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-h3l0th",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-hlf7ca",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-hnnsk4",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-ieskvz",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-isldic",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-j0hhum",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-j915gx",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-jd2wst",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-jxszo5",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-l4a5q9",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-ltygoc",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-mo38ao",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-n7fpe8",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-n7u3he",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-nh1348",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-nmti7j",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-oadvw7",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-oiml5g",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-oz1p2u",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-p5x04j",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-pyny5e",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-qy48yz",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-ra49iv",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-stdu2g",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-tnkni6",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-u64x78",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-u7dei0",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-u8rjvb",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-uk74i4",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-ur2t9o",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-uzjalq",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-v3grp9",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-w0x318",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-wsyj7k",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-x8cw63",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-xfta80",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-zhowns",
+            "text_contains": "Duplicate check: complete all-status 2658-item title/metadata catalog and source ledger reviewed;",
+            "reason": "This create-time passage inventories nearest search results rejected as duplicate owners; it asserts no relationship. Mechanism prose and other passages remain measured."
+          },
+          {
+            "holder_id": "pm-e9zh",
+            "text_contains": "Terminal evidence recovery completed for this bounded pass:",
+            "reason": "This evidence inventory enumerates residual historical records with unknown fields; it asserts no semantic or ordering relationship to those records. Other passages remain measured."
           }
         ]
       },

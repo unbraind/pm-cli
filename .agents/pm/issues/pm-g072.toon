@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: argument-injection,command-injection,extensions,security,windows
 created_at: "2026-07-14T19:07:23.786Z"
-updated_at: "2026-07-26T17:14:10.883Z"
+updated_at: "2026-09-08T05:33:32.968Z"
 closed_at: "2026-07-23T16:00:01.018Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -15,12 +15,15 @@ parent: pm-qwoy
 risk: high
 confidence: high
 release: v2026.7.24
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-6ixn,related,"2026-07-14T19:07:23.786Z",null,null
-  pm-ngjd,related,"2026-07-14T19:07:23.786Z",null,null
-  pm-4v4c,related,"2026-07-23T14:58:59.369Z",null,null
-  pm-albl,related,"2026-07-26T17:14:10.635Z",null,null
-  pm-qwoy,implements,"2026-07-26T17:14:10.635Z",null,null
+resolution: Install validation now accepts npm comparator whitespace while eliminating caller-controlled dependency specs from Windows shell argv; review remediation passes full coverage.
+expected_result: "runtimeDependencyInstallSpecs (src/sdk/extension/install-sources.ts) validates each dependency name against npm package-name grammar and rejects names beginning with '-'; version values are npm-grammar validated, valid whitespace-bearing comparator ranges are accepted, and unsafe shell metacharacters are rejected; runtime dependencies are read from an isolated validated manifest so no caller-controlled spec crosses the Windows shell argv boundary; the fixed npm invocation ends options with '--'; regression tests cover leading-dash names, shell metacharacters, comparator whitespace, and win32/POSIX runner boundaries"
+actual_result: Install validation now accepts npm comparator whitespace while eliminating caller-controlled dependency specs from Windows shell argv; review remediation passes full coverage.
+dependencies[5]{id,kind,created_at}:
+  pm-6ixn,related,"2026-07-14T19:07:23.786Z"
+  pm-ngjd,related,"2026-07-14T19:07:23.786Z"
+  pm-4v4c,related,"2026-07-23T14:58:59.369Z"
+  pm-albl,related,"2026-07-26T17:14:10.635Z"
+  pm-qwoy,implements,"2026-07-26T17:14:10.635Z"
 comments[5]{created_at,author,text}:
   "2026-07-23T14:21:38.052Z",claude-code-agent,"Implementation start 2026-07-23: selected after live 1,922-item all-status inventory, full canonical metadata/history review, and GitHub/release/security reconciliation. This item is actively edited in one coherent SDK/package authoring wave spanning scaffold contracts, flag arity, install validation, activation freshness, schema storage, renderer ownership, and public documentation; no duplicate item was created."
   "2026-07-23T14:59:19.368Z",claude-code-agent,"Implementation evidence: registry dependency names and versions now pass npm-package-arg validation, reject option-leading and shell-control input, and are installed behind npm's explicit -- option fence. The subprocess seam is injected for deterministic POSIX/Windows shell tests; focused security tests passed."

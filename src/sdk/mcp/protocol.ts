@@ -39,9 +39,25 @@ export const PM_MCP_ERROR_CODES = {
 export const PM_MCP_META_KEYS = {
   clientCapabilities: "io.modelcontextprotocol/clientCapabilities",
   clientInfo: "io.modelcontextprotocol/clientInfo",
+  logLevel: "io.modelcontextprotocol/logLevel",
   protocolVersion: "io.modelcontextprotocol/protocolVersion",
   serverInfo: "io.modelcontextprotocol/serverInfo",
 } as const;
+
+/** Request-local severity vocabulary retained by the deprecated logging contract. */
+export const PM_MCP_LOG_LEVELS = [
+  "debug",
+  "info",
+  "notice",
+  "warning",
+  "error",
+  "critical",
+  "alert",
+  "emergency",
+] as const;
+
+/** An explicit logging opt-in applies only to the request carrying it. */
+export type PmMcpLogLevel = (typeof PM_MCP_LOG_LEVELS)[number];
 
 /** MCP implementation identity carried in request and result metadata. */
 export interface PmMcpImplementation {
@@ -80,6 +96,8 @@ export interface PmMcpRequestContext {
   clientCapabilities: PmMcpClientCapabilities;
   /** Optional bounded client identity used only for diagnostics/provenance. */
   clientInfo?: PmMcpImplementation;
+  /** Optional request-local logging threshold; absence forbids protocol log notifications. */
+  logLevel?: PmMcpLogLevel;
 }
 
 /** Required fields attached to every modern successful result. */
@@ -185,6 +203,22 @@ export function parseMcpImplementation(
   return parsed;
 }
 
+/** Validate optional logging metadata without retaining or echoing unknown values. */
+function parseMcpLogLevel(value: unknown): PmMcpLogLevel | undefined {
+  if (value === undefined) return undefined;
+  if (
+    typeof value !== "string" ||
+    !PM_MCP_LOG_LEVELS.includes(value as PmMcpLogLevel)
+  ) {
+    throw new PmMcpProtocolError(
+      "Invalid MCP logLevel metadata",
+      PM_MCP_ERROR_CODES.invalidParams,
+      { field: PM_MCP_META_KEYS.logLevel, allowed: [...PM_MCP_LOG_LEVELS] },
+    );
+  }
+  return value as PmMcpLogLevel;
+}
+
 /** Validate the stateless metadata required on every modern MCP request. */
 export function resolveMcpRequestContext(params: unknown): PmMcpRequestContext {
   const meta = isMcpRecord(params) ? params._meta : undefined;
@@ -228,10 +262,12 @@ export function resolveMcpRequestContext(params: unknown): PmMcpRequestContext {
     );
   }
   const clientInfo = parseMcpImplementation(meta[PM_MCP_META_KEYS.clientInfo]);
+  const logLevel = parseMcpLogLevel(meta[PM_MCP_META_KEYS.logLevel]);
   return {
     protocolVersion: PM_MCP_PROTOCOL_VERSION,
     clientCapabilities,
     ...(clientInfo ? { clientInfo } : {}),
+    ...(logLevel ? { logLevel } : {}),
   };
 }
 

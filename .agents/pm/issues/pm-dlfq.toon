@@ -6,12 +6,14 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli",dependencies,github-issue
 created_at: "2026-06-02T15:51:49.839Z"
-updated_at: "2026-07-26T17:12:09.435Z"
+updated_at: "2026-09-08T05:32:42.960Z"
 author: codex-gpt5
 parent: pm-mpbb
 release: v2026.6.5
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-mpbb,implements,"2026-07-26T17:12:09.174Z",null,null
+resolution: "Fixed GitHub #98 by parsing dependency type aliases for create/update/remove paths and verified with linked sandbox test: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts (198 tests passed)."
+actual_result: "Fixed GitHub #98 by parsing dependency type aliases for create/update/remove paths and verified with linked sandbox test: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts (198 tests passed)."
+dependencies[1]{id,kind,created_at}:
+  pm-mpbb,implements,"2026-07-26T17:12:09.174Z"
 comments[3]{created_at,author,text}:
   "2026-06-02T15:54:49.273Z",codex-gpt5,"Implementation evidence: create/update dependency parsers now recognize type as structured dependency metadata, normalize type=blocked-by to blocked_by, and support the same alias in --dep-remove selectors. Focused regression passed: 3 files, 198 tests."
   "2026-06-02T15:59:26.567Z",codex-gpt5,"Static gate follow-up: moved the CLI regression into tests/integration/dependency-alias.integration.spec.ts so tests/integration/cli.integration.spec.ts stays below the file-length threshold."

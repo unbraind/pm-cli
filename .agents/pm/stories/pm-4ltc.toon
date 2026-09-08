@@ -6,12 +6,14 @@ status: closed
 priority: 2
 tags[4]: "area:packages","area:sdk",dx,scaffold
 created_at: "2026-06-21T02:04:00.412Z"
-updated_at: "2026-07-26T17:04:02.450Z"
+updated_at: "2026-09-08T05:33:18.696Z"
 author: claude-code-agent
 parent: pm-ugqx
 release: v2026.6.21
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-ugqx,implements,"2026-07-26T17:04:02.243Z",null,null
+resolution: "Shipped package-mode scaffold sample test (node:test + SDK testing helpers), .gitignore, npm test script, README Validate section, and next_steps validation hint. Verified the generated test passes against the real SDK; extension-only scaffold unchanged."
+actual_result: "Shipped package-mode scaffold sample test (node:test + SDK testing helpers), .gitignore, npm test script, README Validate section, and next_steps validation hint. Verified the generated test passes against the real SDK; extension-only scaffold unchanged."
+dependencies[1]{id,kind,created_at}:
+  pm-ugqx,implements,"2026-07-26T17:04:02.243Z"
 notes[1]{created_at,author,text}:
   "2026-06-21T02:13:07.797Z",claude-code-agent,"Implemented + verified end-to-end: scaffolded a package in a temp dir, symlinked the built @unbrained/pm-cli, ran 'node --test' on the generated index.test.js → PASS against the real SDK testing helpers. Extension-only scaffold stays minimal (3 files: manifest.json/index.js/README.md) because it cannot npm-install the peer SDK. 100% coverage (30288 stmts/23669 branches) + docstring + static gates all green."
 learnings[2]{created_at,author,text}:

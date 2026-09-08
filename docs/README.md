@@ -52,6 +52,7 @@ pm guide release --json
 - [MCP Remote Transport, Authorization, and Migration](MCP_REMOTE_TRANSPORT_SECURITY.md) - Streamable HTTP operation, subscriptions, OAuth and trace boundaries, threat model, and deprecated-feature ratchet.
 - [SDK Artifact Output Contracts](SDK_ARTIFACT_OUTPUT.md) - clean stdout/file exporter channels, bounded receipts, binary-safe delivery, and shared NDJSON terminal framing.
 - [Context Relevance and Packing](CONTEXT_RELEVANCE.md) - shared CLI/SDK signals, derived-store provenance, ranking explanations, and token budgets.
+- [Context Algorithm Portfolio](CONTEXT_ALGORITHM_PORTFOLIO.md) - stable proposal slugs, historical aliases, individual owners, cognitive compositions, and experiment gates.
 - [Output Projection and Omission Contracts](OUTPUT_PROJECTION_CONTRACTS.md) - explicit withheld-field receipts, mode-paired row keys, and completion resolver outcomes.
 - [Output Token Accounting](OUTPUT_TOKEN_ACCOUNTING.md) - opt-in CLI/MCP byte attribution, bounded receipt overhead, and release-level tokens-per-task baselines.
 - [SDK Context Platform](SDK_CONTEXT.md) - task-oriented entry point for authoritative reads, ranking, package workflows, diagnostics, recovery, and verification.

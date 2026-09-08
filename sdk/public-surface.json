@@ -1804,6 +1804,14 @@
       ],
       "package_version": "2026.9.7",
       "reason": "pm-tqel and pm-34w8za: additive optional ContractsResult omission metadata; resolveHistorySubject settings now names the identical PmSettings type directly. Existing call shapes and SDK operations remain compatible."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_MCP_META_KEYS",
+        "signature ./sdk:PmMcpRequestContext"
+      ],
+      "package_version": "2026.9.7",
+      "reason": "MCP 2026-07-28 additive metadata contract: add the optional logLevel request property and its namespaced key; existing request shapes and callers remain valid. Tracked by pm-pd7nh0 with SDK and real-transport compatibility tests."
     }
   ],
   "entrypoints": {
@@ -11767,8 +11775,14 @@
         {
           "classification": "advanced_export",
           "kind": "value",
+          "name": "PM_MCP_LOG_LEVELS",
+          "signature": "readonly [\"debug\", \"info\", \"notice\", \"warning\", \"error\", \"critical\", \"alert\", \"emergency\"]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
           "name": "PM_MCP_META_KEYS",
-          "signature": "{ readonly clientCapabilities: \"io.modelcontextprotocol/clientCapabilities\"; readonly clientInfo: \"io.modelcontextprotocol/clientInfo\"; readonly protocolVersion: \"io.modelcontextprotocol/protocolVersion\"; readonly serverInfo: \"io.modelcontextprotocol/serverInfo\"; }"
+          "signature": "{ readonly clientCapabilities: \"io.modelcontextprotocol/clientCapabilities\"; readonly clientInfo: \"io.modelcontextprotocol/clientInfo\"; readonly logLevel: \"io.modelcontextprotocol/logLevel\"; readonly protocolVersion: \"io.modelcontextprotocol/protocolVersion\"; readonly serverInfo: \"io.modelcontextprotocol/serverInfo\"; }"
         },
         {
           "classification": "advanced_export",
@@ -12792,6 +12806,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "type",
+          "name": "PmMcpLogLevel",
+          "signature": "export type PmMcpLogLevel = (typeof PM_MCP_LOG_LEVELS)[number];"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "interface",
           "name": "PmMcpPromptArgumentContract",
           "signature": "export interface PmMcpPromptArgumentContract { name: string; description: string; required: boolean; }"
@@ -12824,7 +12844,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmMcpRequestContext",
-          "signature": "export interface PmMcpRequestContext { protocolVersion: (typeof PM_MCP_SUPPORTED_PROTOCOL_VERSIONS)[number]; clientCapabilities: PmMcpClientCapabilities; clientInfo?: PmMcpImplementation; }"
+          "signature": "export interface PmMcpRequestContext { protocolVersion: (typeof PM_MCP_SUPPORTED_PROTOCOL_VERSIONS)[number]; clientCapabilities: PmMcpClientCapabilities; clientInfo?: PmMcpImplementation; logLevel?: PmMcpLogLevel; }"
         },
         {
           "classification": "advanced_export",

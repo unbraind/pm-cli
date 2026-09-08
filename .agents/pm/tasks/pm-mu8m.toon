@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,cli,codegen,contracts,drift-gate
 created_at: "2026-07-06T22:18:14.074Z"
-updated_at: "2026-07-27T20:14:38.804Z"
+updated_at: "2026-09-08T05:57:06.290Z"
 closed_at: "2026-07-27T20:14:35.584Z"
 author: maintainer-agent
 estimated_minutes: 480
@@ -17,13 +17,37 @@ confidence: high
 resolution: implemented
 expected_result: "Completions, MCP registrations, and command docs share generated contract data with a mandatory drift gate."
 actual_result: "Completion command sets, MCP profiles, generated tier docs, and contract schemas share the public capability contract; exact-head review fixes and all local gates pass."
-dependencies[6]{id,kind,created_at}:
-  pm-xwah,related,"2026-07-16T05:45:19.734Z"
-  pm-e2bq,related,"2026-07-25T06:29:18.278Z"
-  pm-wt43zj,related,"2026-07-25T06:29:18.278Z"
-  pm-xgcp18,related,"2026-07-25T06:29:18.278Z"
-  pm-1kxs,implements,"2026-07-25T20:44:22.071Z"
-  pm-kxci8x,implements,"2026-07-26T05:59:24.550Z"
+dependencies[8]:
+  - id: pm-xwah
+    kind: related
+    created_at: "2026-07-16T05:45:19.734Z"
+  - id: pm-e2bq
+    kind: related
+    created_at: "2026-07-25T06:29:18.278Z"
+  - id: pm-wt43zj
+    kind: related
+    created_at: "2026-07-25T06:29:18.278Z"
+  - id: pm-xgcp18
+    kind: related
+    created_at: "2026-07-25T06:29:18.278Z"
+  - id: pm-1kxs
+    kind: implements
+    created_at: "2026-07-25T20:44:22.071Z"
+  - id: pm-kxci8x
+    kind: implements
+    created_at: "2026-07-26T05:59:24.550Z"
+  - id: pm-kjbh
+    kind: discovered_from
+    created_at: "2026-09-08T05:57:05.553Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-zx13
+    kind: discovered_from
+    created_at: "2026-09-08T05:57:05.553Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[7]{created_at,author,text}:
   "2026-07-27T13:20:29.165Z","harness:codex","Scope decision: this delivery consumes the existing contract-derived completion and MCP primitives but does not actively edit the generated-surface wiring item; returning it to open so only actively implemented work remains in progress."
   "2026-07-27T16:42:31.098Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
