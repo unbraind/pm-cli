@@ -29,7 +29,7 @@ async function installOutputPackage(
 }
 
 describe("package service pass-through integration", () => {
-  it("keeps an inert third-party service package clean under strict isolated doctor", async () => {
+  it("distinguishes an inert service from unverified local update coverage under strict doctor", async () => {
     await withTempPmPath(async (context) => {
       const install = await installOutputPackage(
         context.pmPath,
@@ -58,7 +58,8 @@ describe("package service pass-through integration", () => {
         { expectJson: true },
       );
 
-      expect(doctor.code).toBe(0);
+      expect(doctor.code).toBe(1);
+      expect(doctor.json).toMatchObject({ details: { summary: { warning_codes: ["extension_update_health_partial_coverage"], update_health_partial: true, activation_failure_count: 0 } } });
       expect(
         (
           doctor.json as {

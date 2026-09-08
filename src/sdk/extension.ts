@@ -93,6 +93,8 @@ import { collectGlobalOutputOverrideDoctorWarnings } from "./extension/output-ow
 import { collectMcpCustomFieldCollisionDoctorWarnings } from "./extension/custom-field-collisions.js";
 import { checkGithubUpdate } from "./extension/update-check.js";
 import { runExtensionMigrateAction } from "./extension/migrations.js";
+import { buildBundledInstallReceipt } from "./extension/install-receipts.js";
+import { buildExtensionInstallPlan, type ExtensionInstallPlan, type ExtensionCopyPlanOptions } from "./extension/install-plan.js";
 import { inspectExtensionAuthorManifestAtPmRoot } from "./extension/author-manifest.js";
 import {
   resolveExtensionInstallSourceIdentity,
@@ -268,8 +270,10 @@ export interface ExtensionCommandOptions {
   declarative?: boolean;
   /** Value that configures or reports vocabulary for this contract. */
   vocabulary?: "extension" | "package";
-  /** Plan migration work without invoking extension code. */
+  /** Plan migrations or resolve install sources and estimate copying without destination writes or activation. */
   dryRun?: boolean;
+  /** SDK limits and cancellation for install copy-cost enumeration. */
+  copyPlan?: ExtensionCopyPlanOptions;
 }
 
 /** Documents the managed extension summary payload exchanged by command, SDK, and package integrations. */
@@ -335,7 +339,7 @@ export interface ExtensionCommandResult {
   /** Value that configures or reports warnings for this contract. */
   warnings: string[];
   /** Value that configures or reports details for this contract. */
-  details: Record<string, unknown>;
+  details: Record<string, unknown> & { install_plan?: ExtensionInstallPlan };
 }
 
 const NATIVE_OUTPUT_MARKER = "__pm_native_output";
@@ -1727,8 +1731,8 @@ const assertExtensionActionOptionScope = (
     },
     {
       triggered: options.dryRun === true,
-      allowed: action === "migrate",
-      message: "--dry-run is only valid with --migrate.",
+      allowed: action === "migrate" || action === "install",
+      message: "--dry-run is only valid with --migrate or --install.",
     },
   ];
   const invalidGuard = guards.find(
@@ -2110,6 +2114,7 @@ interface ExtensionInstallUnderLockInput {
   sourceResolution: ExtensionInstallSourceResolution;
   installSource: ReturnType<typeof parseExtensionInstallSource>;
   resolvedSource: Awaited<ReturnType<typeof resolveInstallSource>>;
+  installPlan?: ExtensionInstallPlan;
 }
 
 /** Preserve original install time and only advance update time when source content changed. */
@@ -2408,6 +2413,7 @@ const performExtensionInstallUnderLock = async (
       },
       source: persisted.sourceRecord,
       source_resolution: input.sourceResolution,
+      ...(input.installPlan ? { install_plan: input.installPlan } : {}),
       destination_path: persisted.destinationDirectory,
       overwritten: [
         persisted.destinationExists,
@@ -2464,34 +2470,9 @@ const runBundledExtensionInstallAll = async (
     });
   }
   warnings.push(...packages.flatMap((entry) => entry.result.warnings));
-  const installedAll = packages.every((entry) => entry.result.ok);
   return withResult(
-    {
-      installed_all: installedAll,
-      installed_count: packages.filter((entry) => entry.result.ok).length,
-      failed_count: packages.filter((entry) => !entry.result.ok).length,
-      packages: packages.map((entry) => {
-        const details = entry.result.details;
-        return {
-          alias: entry.alias,
-          ok: entry.result.ok,
-          extension: details.extension,
-          source: details.source,
-          source_resolution: details.source_resolution,
-          destination_path: details.destination_path,
-          activated: details.activated,
-          settings_changed: details.settings_changed,
-          command_paths: details.command_paths,
-          action_paths: details.action_paths,
-          command_discovery: details.command_discovery,
-          verification: details.verification,
-          runtime_activation_status: details.runtime_activation_status,
-          activation_diagnostics: details.activation_diagnostics,
-          warnings: entry.result.warnings,
-        };
-      }),
-    },
-    installedAll,
+    buildBundledInstallReceipt(packages, options.dryRun === true),
+    packages.every((entry) => entry.result.ok),
   );
 };
 
@@ -2533,6 +2514,16 @@ const runSingleExtensionInstall = async (
     const destinationDirectoryName = normalizeManagedDirectoryName(
       validated.manifest.name,
     );
+    const installPlan = ctx.options.dryRun === true || (installSource.kind === "local" && bundledAliasName === null)
+      ? await buildExtensionInstallPlan(resolvedSource, path.join(resolvedRoots.selected_root, destinationDirectoryName), ctx.scope, ctx.options.copyPlan)
+      : undefined;
+    if (ctx.options.dryRun === true) {
+      return ctx.withResult({
+        dry_run: true, installed: false, activated: false,
+        extension: { name: validated.manifest.name, version: validated.manifest.version },
+        source_resolution: sourceResolution, install_plan: installPlan,
+      });
+    }
     return await withExtensionInstallLock(
       resolvedRoots.settings_root,
       destinationDirectoryName,
@@ -2545,6 +2536,7 @@ const runSingleExtensionInstall = async (
           sourceResolution,
           installSource,
           resolvedSource,
+          installPlan,
         }),
     );
   } finally {
@@ -3321,9 +3313,8 @@ const runExtensionDoctorAction = async (
     },
     unknown_capability_count: capabilityGuidance.length,
     capability_contract_version: capabilityContract.version,
-    update_available_total: runtimeInstalledExtensions.filter(
-      (entry) => entry.update_available === true,
-    ).length,
+    update_available_total: triage.update_available_total,
+    update_check_status_totals: triage.update_check_status_totals,
     update_health_coverage: triage.update_health_coverage,
     update_health_partial: triage.update_health_partial,
     update_check_failed_total: runtimeInstalledExtensions.filter(

@@ -37,6 +37,8 @@ export const NO_AVAILABLE_NEXT_ITEM_CODE = "no_available_next_item";
 export interface ClaimResult {
   /** Value that configures or reports item for this contract. */
   item: Record<string, unknown>;
+  /** Metadata fields changed by this claim; empty for an idempotent or skipped claim. */
+  changed_fields?: string[];
   /** Value that configures or reports claimed by for this contract. */
   claimed_by: string;
   /** Value that configures or reports previous assignee for this contract. */
@@ -210,10 +212,13 @@ export async function runClaim(
         }
         mutationWarnings.push(`claim_takeover:${previousAssignee}->${author}`);
       }
-      document.metadata.assignee = author;
-      document.metadata.claim_principal = claimPrincipal;
+      const ownership = { assignee: author, claim_principal: claimPrincipal };
+      const changedFields = (["assignee", "claim_principal"] as const).filter(
+        (field) => document.metadata[field] !== ownership[field],
+      );
+      Object.assign(document.metadata, ownership);
       return {
-        changedFields: ["assignee", "claim_principal"],
+        changedFields,
         warnings: mutationWarnings,
       };
     },
@@ -230,6 +235,7 @@ export async function runClaim(
 
   return {
     item: toItemRecord(result.item),
+    changed_fields: result.changedFields,
     claimed_by:
       skipped && previousAssignee !== null ? previousAssignee : author,
     previous_assignee: previousAssignee,

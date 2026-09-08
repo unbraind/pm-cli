@@ -115,7 +115,7 @@ import {
   type AggregateResult,
 } from "./query/aggregate.js";
 import { runAppend } from "./lifecycle/append.js";
-import { runClaim, runClaimNext, runRelease } from "./lifecycle/claim.js";
+import { runClaim, runRelease } from "./lifecycle/claim.js";
 import { runCloseMany } from "./lifecycle/close-many.js";
 import { normalizeAnnotationTransportOptions } from "./annotations.js";
 import { runComments } from "./comments.js";
@@ -211,7 +211,7 @@ import {
   runMcpHistoryCompactAction,
   runMcpHistoryRepairAction,
 } from "./history-mcp.js";
-import { runMcpCloseAction, runMcpReopenAction } from "./lifecycle/mcp-actions.js";
+import { runMcpClaimAction, runMcpCloseAction, runMcpReopenAction } from "./lifecycle/mcp-actions.js";
 import {
   actionGlobalOptions as globalOptions,
   closeManyOptionsFromFlat,
@@ -3699,15 +3699,7 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   update: runMcpUpdateAction,
   "item-reopen": runMcpReopenAction,
   restore: runMcpRestoreAction,
-  claim: (ctx) =>
-    ctx.options.next === true || ctx.args.next === true
-      ? runClaimNext(
-          ctx.force,
-          ctx.global,
-          { ...ctx.options, ...ctx.args },
-          { ...ctx.options, ...ctx.args },
-        )
-      : runClaim(requireMcpItemId(ctx), ctx.force, ctx.global, ctx.options),
+  claim: runMcpClaimAction,
   release: (ctx) =>
     runRelease(requireMcpItemId(ctx), ctx.force, ctx.global, ctx.options),
   "start-task": runMcpStartTaskAction,

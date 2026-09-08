@@ -414,6 +414,8 @@ async function runMultiTargetExtensionInstalls(
         ok: targetOk,
         extension: details.extension,
         source: details.source,
+        install_plan: details.install_plan,
+        dry_run: details.dry_run,
         destination_path: details.destination_path,
         activated: details.activated,
         settings_changed: details.settings_changed,
@@ -519,7 +521,8 @@ async function executeExtensionInstallCommand(
     ok: failedCount === 0,
     action: "install",
     scope: normalizedOptions.global === true ? "global" : "project",
-    installed_count: rows.length - failedCount,
+    installed_count: normalizedOptions.dryRun === true ? 0 : rows.length - failedCount,
+    ...(normalizedOptions.dryRun === true ? { dry_run: true, planned_count: rows.length - failedCount } : {}),
     failed_count: failedCount,
     targets: rows,
     warnings: [...new Set(warnings)].sort((left, right) =>
@@ -592,7 +595,7 @@ async function executeUpgradeCommand(
   }
   const result = await runUpgrade(
     target,
-    command.opts() as Record<string, unknown>,
+    command.optsWithGlobals() as Record<string, unknown>,
     globalOptions,
   );
   printResult(result, globalOptions);
@@ -627,6 +630,7 @@ function registerLifecycleCommand(
       collect,
     )
     .option("--install", `Install a ${noun} source`)
+    .option("--dry-run", "Resolve install sources and estimate copying without destination writes or activation")
     .option("--uninstall", `Uninstall an installed ${noun}`)
     .option("--explore", `List discovered ${plural} in selected scope`)
     .option("--list", "Alias for --explore")
@@ -765,6 +769,7 @@ function registerLifecycleCommand(
   addLifecycleScopeOptions(
     lifecycleCommand
       .command("install")
+      .option("--dry-run", "Resolve sources and estimate copying without destination writes or activation")
       .argument(
         "[targets...]",
         `${noun[0]!.toUpperCase()}${noun.slice(1)} source (local path, bundled alias, npm: source, wildcard, or GitHub source)`,
@@ -1395,6 +1400,7 @@ export function registerSetupCommands(program: Command): void {
   addPackageScopeOptions(
     program
       .command("install", { hidden: true })
+      .option("--dry-run", "Resolve sources and estimate copying without destination writes or activation")
       .argument(
         "[targets...]",
         "Package source (local path, bundled alias, npm: source, wildcard, or GitHub source)",

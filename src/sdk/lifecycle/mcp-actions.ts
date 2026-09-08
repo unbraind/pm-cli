@@ -9,6 +9,7 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { runClose } from "./close.js";
 import { runReopen } from "./reopen.js";
+import { runClaim, runClaimNext } from "./claim.js";
 import { readRuntimeString, withMutationCompaction } from "../runtime-input.js";
 
 /** Minimal generic dispatch context consumed by lifecycle mutation adapters. */
@@ -23,6 +24,21 @@ export interface LifecycleMutationActionContext {
   force?: boolean;
   /** Presentation-neutral global command options. */
   global: GlobalOptions;
+}
+
+/** Dispatch explicit and ranked claims through the same compact receipt contract. */
+export async function runMcpClaimAction(context: LifecycleMutationActionContext): Promise<unknown> {
+  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(context.args, context.options);
+  const force = context.force === true || runnerOptions.force === true;
+  const selectionOptions = { ...runnerOptions, ...context.args };
+  const result = context.args.next === true || runnerOptions.next === true
+    ? await runClaimNext(force, context.global, selectionOptions, selectionOptions)
+    : await runClaim(requireLifecycleItemId(context, runnerOptions), force, context.global, runnerOptions);
+  return projectMutationResult(result, {
+    changedFields,
+    compactEnvelope: changedFields === "compact" && !idOnly,
+    idOnly,
+  });
 }
 
 function requireLifecycleItemId(

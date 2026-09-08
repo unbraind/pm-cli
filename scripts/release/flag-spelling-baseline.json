@@ -357,6 +357,13 @@
     },
     {
       "command": "config",
+      "canonical_flag": "--value",
+      "accepted_spellings": [
+        "--value"
+      ]
+    },
+    {
+      "command": "config",
       "canonical_flag": "--criterion",
       "accepted_spellings": [
         "--criterion"
@@ -603,6 +610,13 @@
     },
     {
       "command": "extension",
+      "canonical_flag": "--dry-run",
+      "accepted_spellings": [
+        "--dry-run"
+      ]
+    },
+    {
+      "command": "extension",
       "canonical_flag": "--init",
       "accepted_spellings": [
         "--init"
@@ -971,6 +985,13 @@
       "canonical_flag": "--author",
       "accepted_spellings": [
         "--author"
+      ]
+    },
+    {
+      "command": "package",
+      "canonical_flag": "--dry-run",
+      "accepted_spellings": [
+        "--dry-run"
       ]
     },
     {
@@ -1354,6 +1375,13 @@
     },
     {
       "command": "packages",
+      "canonical_flag": "--dry-run",
+      "accepted_spellings": [
+        "--dry-run"
+      ]
+    },
+    {
+      "command": "packages",
       "canonical_flag": "--init",
       "accepted_spellings": [
         "--init"
@@ -1729,6 +1757,13 @@
       "canonical_flag": "--author",
       "accepted_spellings": [
         "--author"
+      ]
+    },
+    {
+      "command": "install",
+      "canonical_flag": "--dry-run",
+      "accepted_spellings": [
+        "--dry-run"
       ]
     },
     {
@@ -3786,6 +3821,13 @@
       "accepted_spellings": [
         "--token-budget",
         "--token_budget"
+      ]
+    },
+    {
+      "command": "list-all",
+      "canonical_flag": "--status",
+      "accepted_spellings": [
+        "--status"
       ]
     },
     {
@@ -7947,6 +7989,27 @@
     },
     {
       "command": "aggregate",
+      "canonical_flag": "--set-mode",
+      "accepted_spellings": [
+        "--set-mode"
+      ]
+    },
+    {
+      "command": "aggregate",
+      "canonical_flag": "--limit",
+      "accepted_spellings": [
+        "--limit"
+      ]
+    },
+    {
+      "command": "aggregate",
+      "canonical_flag": "--after",
+      "accepted_spellings": [
+        "--after"
+      ]
+    },
+    {
+      "command": "aggregate",
       "canonical_flag": "--count",
       "accepted_spellings": [
         "--count"
@@ -9843,6 +9906,13 @@
     },
     {
       "command": "duplicates",
+      "canonical_flag": "--exhaustive",
+      "accepted_spellings": [
+        "--exhaustive"
+      ]
+    },
+    {
+      "command": "duplicates",
       "canonical_flag": "--status",
       "accepted_spellings": [
         "--status"
@@ -10184,6 +10254,27 @@
       "canonical_flag": "--author",
       "accepted_spellings": [
         "--author"
+      ]
+    },
+    {
+      "command": "next",
+      "canonical_flag": "--include-decisions",
+      "accepted_spellings": [
+        "--include-decisions"
+      ]
+    },
+    {
+      "command": "next",
+      "canonical_flag": "--include-gates",
+      "accepted_spellings": [
+        "--include-gates"
+      ]
+    },
+    {
+      "command": "next",
+      "canonical_flag": "--include-containers",
+      "accepted_spellings": [
+        "--include-containers"
       ]
     },
     {
@@ -13501,6 +13592,51 @@
     },
     {
       "command": "update-many",
+      "canonical_flag": "--status",
+      "accepted_spellings": [
+        "--status"
+      ]
+    },
+    {
+      "command": "update-many",
+      "canonical_flag": "--assignee",
+      "accepted_spellings": [
+        "--assignee"
+      ]
+    },
+    {
+      "command": "update-many",
+      "canonical_flag": "--parent",
+      "accepted_spellings": [
+        "--parent"
+      ]
+    },
+    {
+      "command": "update-many",
+      "canonical_flag": "--blocked-by",
+      "accepted_spellings": [
+        "--blocked-by",
+        "--blocked_by"
+      ]
+    },
+    {
+      "command": "update-many",
+      "canonical_flag": "--blocked-reason",
+      "accepted_spellings": [
+        "--blocked-reason",
+        "--blocked_reason"
+      ]
+    },
+    {
+      "command": "update-many",
+      "canonical_flag": "--unblock-note",
+      "accepted_spellings": [
+        "--unblock-note",
+        "--unblock_note"
+      ]
+    },
+    {
+      "command": "update-many",
       "canonical_flag": "--filter-status",
       "accepted_spellings": [
         "--filter-status"
@@ -15416,6 +15552,13 @@
     },
     {
       "command": "append",
+      "canonical_flag": "--text",
+      "accepted_spellings": [
+        "--text"
+      ]
+    },
+    {
+      "command": "append",
       "canonical_flag": "--message",
       "accepted_spellings": [
         "--message"
@@ -16052,6 +16195,34 @@
         "--add",
         "--learning",
         "--text"
+      ]
+    },
+    {
+      "command": "learnings",
+      "canonical_flag": "--stdin",
+      "accepted_spellings": [
+        "--stdin"
+      ]
+    },
+    {
+      "command": "learnings",
+      "canonical_flag": "--file",
+      "accepted_spellings": [
+        "--file"
+      ]
+    },
+    {
+      "command": "learnings",
+      "canonical_flag": "--edit",
+      "accepted_spellings": [
+        "--edit"
+      ]
+    },
+    {
+      "command": "learnings",
+      "canonical_flag": "--delete",
+      "accepted_spellings": [
+        "--delete"
       ]
     },
     {
@@ -17749,6 +17920,13 @@
       "canonical_flag": "--author",
       "accepted_spellings": [
         "--author"
+      ]
+    },
+    {
+      "command": "test",
+      "canonical_flag": "--list",
+      "accepted_spellings": [
+        "--list"
       ]
     },
     {
@@ -20147,6 +20325,20 @@
       "canonical_flag": "--include-decisions",
       "accepted_spellings": [
         "--include-decisions"
+      ]
+    },
+    {
+      "command": "claim",
+      "canonical_flag": "--include-gates",
+      "accepted_spellings": [
+        "--include-gates"
+      ]
+    },
+    {
+      "command": "claim",
+      "canonical_flag": "--include-containers",
+      "accepted_spellings": [
+        "--include-containers"
       ]
     },
     {

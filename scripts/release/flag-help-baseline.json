@@ -15,27 +15,27 @@
     },
     {
       "command": "extension",
-      "help_bytes": 5639,
-      "estimated_tokens": 1410,
-      "maximum_tokens": 1410
+      "help_bytes": 5797,
+      "estimated_tokens": 1450,
+      "maximum_tokens": 1450
     },
     {
       "command": "package",
-      "help_bytes": 5838,
-      "estimated_tokens": 1460,
-      "maximum_tokens": 1460
+      "help_bytes": 5996,
+      "estimated_tokens": 1499,
+      "maximum_tokens": 1499
     },
     {
       "command": "packages",
-      "help_bytes": 5838,
-      "estimated_tokens": 1460,
-      "maximum_tokens": 1460
+      "help_bytes": 5996,
+      "estimated_tokens": 1499,
+      "maximum_tokens": 1499
     },
     {
       "command": "install",
-      "help_bytes": 716,
-      "estimated_tokens": 179,
-      "maximum_tokens": 179
+      "help_bytes": 850,
+      "estimated_tokens": 213,
+      "maximum_tokens": 213
     },
     {
       "command": "upgrade",
@@ -111,9 +111,9 @@
     },
     {
       "command": "aggregate",
-      "help_bytes": 1405,
-      "estimated_tokens": 352,
-      "maximum_tokens": 352
+      "help_bytes": 1306,
+      "estimated_tokens": 327,
+      "maximum_tokens": 327
     },
     {
       "command": "context",
@@ -147,9 +147,9 @@
     },
     {
       "command": "duplicates",
-      "help_bytes": 486,
-      "estimated_tokens": 122,
-      "maximum_tokens": 122
+      "help_bytes": 417,
+      "estimated_tokens": 105,
+      "maximum_tokens": 105
     },
     {
       "command": "eval",
@@ -159,15 +159,15 @@
     },
     {
       "command": "next",
-      "help_bytes": 1681,
-      "estimated_tokens": 421,
+      "help_bytes": 1875,
+      "estimated_tokens": 469,
       "maximum_tokens": 469
     },
     {
       "command": "history",
-      "help_bytes": 1639,
-      "estimated_tokens": 410,
-      "maximum_tokens": 410
+      "help_bytes": 1630,
+      "estimated_tokens": 408,
+      "maximum_tokens": 408
     },
     {
       "command": "events",
@@ -369,8 +369,8 @@
     },
     {
       "command": "claim",
-      "help_bytes": 1444,
-      "estimated_tokens": 361,
+      "help_bytes": 1628,
+      "estimated_tokens": 407,
       "maximum_tokens": 407
     },
     {

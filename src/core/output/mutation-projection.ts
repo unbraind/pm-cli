@@ -188,6 +188,11 @@ function appendCompactMutationEvidence(result: Record<string, unknown>, item: Re
   if (Array.isArray(result.warnings) && result.warnings.length > 0)
     compact.warnings = result.warnings;
   if (isPlainObject(result.recovery)) compact.recovery = result.recovery;
+  if (typeof result.claimed_by === "string") {
+    for (const key of ["claimed_by", "previous_assignee", "forced", "skipped", "available", "attempts"]) {
+      if (Object.hasOwn(result, key)) compact[key] = result[key];
+    }
+  }
 }
 
 function compactUpdateManyRows(envelope: Record<string, unknown>): {

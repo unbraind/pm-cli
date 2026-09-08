@@ -662,6 +662,7 @@ export const CONFIG_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for extension flag contracts, shared by SDK and presentation-layer consumers. */
 export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--dry-run" },
   { flag: "--init" },
   { flag: "--scaffold" },
   { flag: "--capability" },
@@ -728,6 +729,7 @@ export const PACKAGE_INIT_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for extension install flag contracts, shared by SDK and presentation-layer consumers. */
 export const EXTENSION_INSTALL_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--dry-run" },
   { flag: "--project" },
   { flag: "--local" },
   { flag: "--global" },
@@ -804,6 +806,7 @@ export const EXTENSION_ADOPT_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for install flag contracts, shared by SDK and presentation-layer consumers. */
 export const INSTALL_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--dry-run" },
   { flag: "--project" },
   { flag: "--local" },
   { flag: "--global" },

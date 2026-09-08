@@ -2,6 +2,18 @@ import { describe, expect, it } from "vitest";
 import { projectMutationResult } from "../../../../src/core/output/mutation-projection.js";
 
 describe("projectMutationResult", () => {
+  it("preserves ownership and selection outcomes while removing rich item metadata", () => {
+    const ownership = {
+      claimed_by: "owner", previous_assignee: null, forced: false,
+      skipped: true, available: true, attempts: 2,
+    };
+    const result = { ...ownership, item: { id: "pm-a", status: "open", body: "large" }, changed_fields: [] };
+    expect(projectMutationResult(result, { compactEnvelope: true })).toEqual({
+      ...ownership, id: "pm-a", status: "open", changed_field_count: 0,
+    });
+    expect(projectMutationResult(result, { changedFields: "full" })).toBe(result);
+    expect(projectMutationResult(result, { idOnly: true })).toEqual({ id: "pm-a", status: "open" });
+  });
   it("returns the result unchanged in full mode (default)", () => {
     const result = {
       item: { id: "pm-a1b2" },

@@ -2,11 +2,13 @@ id: pm-eqdo85
 title: Claim ownership response repeats full metadata despite the compact mutation contract
 description: "Apply compact mutation receipt projection to claim while preserving ownership outcomes, contention semantics and explicit full output."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-09-07T22:36:19.239Z"
-updated_at: "2026-09-07T22:43:20.367Z"
+updated_at: "2026-09-08T08:53:55.851Z"
+closed_at: "2026-09-08T08:53:55.185Z"
+completed_at: "2026-09-08T08:53:55.185Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Default claim exposes compact item identity and status with truthful change count and required ownership outcomes; explicit full output and id-only/quiet precedence remain compatible; preserve contention and no-op/refusal behavior; validate CLI/MCP/SDK parity and bounded output for metadata-rich items using real installed consumers.
@@ -15,16 +17,58 @@ risk: medium
 confidence: high
 reporter: github
 severity: medium
+resolution: "Implemented actual claim delta fields and shared compact CLI/MCP ownership receipts; idempotent claims return zero changes, while typed SDK and explicit full output retain complete item data."
+expected_result: "Metadata-rich claims emit bounded identity/status/change-count and ownership evidence without changing contention, forced takeover, quiet, id-only or explicit full behavior."
+actual_result: "All 8579 tests passed at exact 100/100/100/100, including real CLI/MCP ownership and ranked-claim cases. Both linked claim suites passed. Installed npm and Bun consumers returned 140-byte serialized compact receipts for 18000-byte descriptions, zero-change repeat receipts, and full CLI/SDK readback. Structural quality and idle transport gates passed. Hosted review and merge verification follow this reviewed closure."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-nilh,discovered_from,"2026-09-07T22:36:19.239Z","harness:codex","cli:create:dep",detected
   pm-mpbb,implements,"2026-09-07T22:43:20.065Z","harness:codex","cli:update:dep",detected
   pm-tqel,discovered_from,"2026-09-07T22:43:20.065Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-09-07T22:36:19.239Z","harness:codex","Duplicate check: a strict full read of all 2656 items across every status had zero omissions, and complete-metadata searches found no claim-specific compact receipt item. Full live pm-nilh metadata and all 19 historical events identify the shipped create/update baseline. The duplicate guard matched that broad feature through shared GitHub #437; this is a distinct claim conformance defect, following the existing separate parity-defect precedent. Reopening the historical feature was tested and would remove its shipped July changelog entry, so retain its historical closure and record the claim-specific scope here. Explicit duplicate acknowledgement applies only to this false-positive broad-feature match. Current isolated no-extension reproduction at 94532b596: create returns 71 bytes with id/status/changed_field_count; claim returns 517 bytes with full item/claimed_by/previous_assignee/forced. Intake only, open and unclaimed."
-files[1]{path,scope,note}:
+  "2026-09-08T07:52:17.597Z","harness:codex","TDD evidence: claim change-field assertions and ownership projection failed against baseline. SDK now returns claim delta fields and idempotent repeat claims return zero delta; shared projection retains ownership and selection outcomes. Focused 46 tests passed. MCP dispatch and installed-consumer acceptance remain to be completed."
+  "2026-09-08T08:33:18.643Z","harness:codex","Full canonical suite passed all 8579 tests across 643 files. Exact coverage is 100 percent statements/functions/lines with two new CLI multi-target dry-run branches uncovered; claim has complete coverage. Static quality found runClaim complexity 17 against maximum16, so ownership changes are now compared through a two-field typed filter; the gate remains unchanged. Focused validation is running."
+  "2026-09-08T08:39:18.598Z","harness:codex","Installed npm and Bun consumers each returned a 140-byte serialized compact claim receipt for an item with an 18000-byte description; repeated claim returned changed_field_count=0. Explicit full CLI and typed SDK claim retained the description. Both consumers completed close, release and resolution/history-drift validation in isolated workspaces."
+  "2026-09-08T08:53:54.467Z","harness:codex","Final local evidence: All 8579 tests passed at exact 100/100/100/100, including real CLI/MCP ownership and ranked-claim cases. Both linked claim suites passed. Installed npm and Bun consumers returned 140-byte serialized compact receipts for 18000-byte descriptions, zero-change repeat receipts, and full CLI/SDK readback. Structural quality and idle transport gates passed. Hosted review and merge verification follow this reviewed closure."
+files[11]{path,scope,note}:
   src/cli/register-mutation.ts,project,Claim output projection boundary
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  src/core/output/mutation-projection.ts,project,Compact ownership evidence
+  src/sdk/cli-contracts/tool-schema.ts,project,Strict MCP claim projection options
+  src/sdk/lifecycle/claim.ts,project,Actual ownership deltas and idempotent claims
+  src/sdk/lifecycle/mcp-actions.ts,project,MCP claim projection adapter
+  src/sdk/runtime.ts,project,Shared adapter dispatch preserves typed full SDK calls
+  tests/integration/release-readiness-runtime.spec.ts,project,Explicit full claim reads and additive mutation receipt contract
+  tests/unit/commands/claim-command.spec.ts,project,Actual idempotent and skipped ownership deltas
+  tests/unit/commands/claim-receipts.spec.ts,project,Large metadata CLI MCP and typed SDK receipts
+  tests/unit/core/output/mutation-projection.spec.ts,project,Ownership evidence survives shared projection
+  tests/unit/sdk/execution/execution-roles.spec.ts,project,Explicit full claim reads and additive mutation receipt contract
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/output/mutation-projection.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,project,300,"harness:codex","2026-09-07T22:36:19.239Z",local_mutation,feat/history-maintenance-sdk-command-grammar
-docs[1]{path,scope,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/claim-command.spec.ts tests/unit/commands/claim-receipts.spec.ts tests/unit/core/output/mutation-projection.spec.ts,project,240,"harness:codex","2026-09-08T08:00:38.631Z",local_mutation,feat/package-planning-update-health-claim-receipts
+test_runs[1]:
+  - run_id: test-local-mtsf9abx-ar8psb
+    kind: test
+    status: passed
+    started_at: "2026-09-08T08:42:05.172Z"
+    finished_at: "2026-09-08T08:42:58.317Z"
+    recorded_at: "2026-09-08T08:42:58.317Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/output/mutation-projection.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/commands/claim-command.spec.ts tests/unit/commands/claim-receipts.spec.ts tests/unit/core/output/mutation-projection.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned generated compact claim release evidence
   docs/COMMANDS.md,project,Compact and full compatibility contract
+  docs/SCRIPTING.md,project,Claim transport projections and ownership evidence
+close_reason: "Implemented and locally verified the public SDK/CLI/MCP contract with reviewed tracker evidence, linked acceptance and exact coverage."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: claim-transport-receipts
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/claim-receipts.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/commands/claim-receipts.spec.ts
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-eqdo85
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/437#issuecomment-5575662594\n\nReproduced a remaining regression in **pm-cli 2026.9.7** on Linux / Node 22.20.0, with `--no-extensions` on every command. Reusing this closed canonical issue after searching all issue states for `claim receipt`, `claim output`, and `claim compact` and reviewing #195 and #437.\n\nIn a fresh temporary working directory:\n\n```bash\nexport PM_AUTHOR=claim-output-repro\npm init probe --json --no-extensions\npm create Task 'Mutation output reproduction' --id probe-claim \\\n  --description 'Reproduce claim output without custom extensions' \\\n  --status open --priority 2 --create-mode progressive --json --no-extensions\npm claim probe-claim --json --no-extensions\n```\n\n`create` emits the documented flat `{id, status, changed_field_count}` receipt (75 bytes in this reproduction). `claim` instead emits `{item, claimed_by, previous_assignee, forced}` with the full item (550 bytes even for this tiny fixture), no top-level `id` or `status`, and no `changed_field_count`. Claiming a populated real project epic repeats its description and complete comments, making the discrepancy substantially larger.\n\nThe current root `--help` says mutations emit a flat receipt, so callers following that documented contract cannot parse `claim` like `create`/`update`. Output projection is not a workaround: `claim --output-include item.id,item.status` correctly rejects read-only output controls.\n\nPlease include `claim` in the default compact mutation contract, retaining claim-specific outcome/ownership fields where necessary and an explicit full-output opt-in. This is reproducible without project custom extensions; no extension issue is implicated.\n\n\nCurrent-checkout verification: isolated no-extension CLI create emits 71 bytes with id/status/changed_field_count; claim emits 517 bytes with item/claimed_by/previous_assignee/forced and no top-level id/status/change count. Synthetic fixture only."

@@ -644,7 +644,8 @@ function buildExtensionTriageRemediation(params: {
   scopeFlag: string;
   updateCheckFailedTotal: number;
   policyWarningCount: number;
-  updateHealthPartial: boolean;
+  unmanagedActionRequiredTotal: number;
+  notCheckedTotal: number;
   skippedUnmanagedTotal: number;
   skippedNonGithubTotal: number;
   updateAvailableTotal: number;
@@ -656,7 +657,8 @@ function buildExtensionTriageRemediation(params: {
     scopeFlag,
     updateCheckFailedTotal,
     policyWarningCount,
-    updateHealthPartial,
+    unmanagedActionRequiredTotal,
+    notCheckedTotal,
     skippedUnmanagedTotal,
     skippedNonGithubTotal,
     updateAvailableTotal,
@@ -684,7 +686,7 @@ function buildExtensionTriageRemediation(params: {
       }
     }
   }
-  if (updateHealthPartial) {
+  if (unmanagedActionRequiredTotal > 0) {
     remediation.push(
       `Update-check coverage is partial because unmanaged extensions need adoption. Adopt existing installs via ${lifecycleFlagCommand(options, "manage")} ${scopeFlag} --fix-managed-state (or ${lifecycleFlagCommand(options, "adopt-all")} ${scopeFlag}, ${lifecycleFlagCommand(options, "adopt")} <name> ${scopeFlag}, or reinstall via ${lifecycleFlagCommand(options, "install")} ${scopeFlag} <source>).`,
     );
@@ -695,8 +697,11 @@ function buildExtensionTriageRemediation(params: {
   }
   if (skippedNonGithubTotal > 0) {
     remediation.push(
-      `Non-GitHub managed extensions are skipped by update checks. Use doctor output for non-update diagnostics.`,
+      "Update-check coverage is partial: non-GitHub managed sources were not checked. Inspect their registry or source directly; zero detected updates does not mean these packages are current. Runtime activation health is independent.",
     );
+  }
+  if (notCheckedTotal > 0) {
+    remediation.push(`Update-check coverage is partial: some sources have no completed check. Run ${lifecycleFlagCommand(options, "manage")} ${scopeFlag} to request update checks.`);
   }
   if (updateAvailableTotal > 0) {
     remediation.push(
@@ -725,7 +730,7 @@ export function buildExtensionTriageSummary(
   const enabledTotal = extensions.filter((entry) => entry.enabled).length;
   const activeTotal = extensions.filter((entry) => entry.active).length;
   const updateAvailableTotal = extensions.filter(
-    (entry) => entry.update_available === true,
+    (entry) => entry.update_check_status === "checked" && entry.update_available === true,
   ).length;
   const unmanagedExtensions = extensions.filter(
     (entry) => entry.managed === false,
@@ -750,14 +755,18 @@ export function buildExtensionTriageSummary(
   }
   const updateCheckFailedTotal = updateCheckStatusTotals.failed;
   const skippedUnmanagedTotal = updateCheckStatusTotals.skipped_unmanaged;
-  const skippedNonGithubTotal = updateCheckStatusTotals.skipped_non_github;
-  const updateHealthPartial = unmanagedActionRequiredExtensions.length > 0;
+  const skippedNonGithubTotal = extensions.filter(
+    (entry) => entry.update_check_status === "skipped_non_github" && entry.source?.kind !== "builtin",
+  ).length;
+  const partialCoverageWarnings = Object.entries({
+    skipped_unmanaged: unmanagedActionRequiredExtensions.length,
+    skipped_non_github: skippedNonGithubTotal,
+    failed: updateCheckFailedTotal,
+    not_checked: updateCheckStatusTotals.not_checked,
+  }).filter(([, count]) => count > 0)
+    .map(([status, count]) => `extension_update_health_partial_coverage:${status}:${count}`);
+  const updateHealthPartial = partialCoverageWarnings.length > 0;
   const updateHealthCoverage = updateHealthPartial ? "partial" : "full";
-  const partialCoverageWarnings = updateHealthPartial
-    ? [
-        `extension_update_health_partial_coverage:skipped_unmanaged:${unmanagedActionRequiredExtensions.length}`,
-      ]
-    : [];
   const effectiveWarnings = [
     ...new Set([...normalizedWarnings, ...partialCoverageWarnings]),
   ].sort((left, right) => left.localeCompare(right));
@@ -773,13 +782,14 @@ export function buildExtensionTriageSummary(
     options,
   );
   const remediation = buildExtensionTriageRemediation({
-    normalizedWarnings,
+    normalizedWarnings: effectiveWarnings,
     options,
     scope,
     scopeFlag,
     updateCheckFailedTotal,
     policyWarningCount: policyWarnings.warning_count,
-    updateHealthPartial,
+    unmanagedActionRequiredTotal: unmanagedActionRequiredExtensions.length,
+    notCheckedTotal: updateCheckStatusTotals.not_checked,
     skippedUnmanagedTotal,
     skippedNonGithubTotal,
     updateAvailableTotal,

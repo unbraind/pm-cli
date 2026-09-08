@@ -1563,6 +1563,7 @@ describe("release readiness runtime coverage", () => {
       expect(claimResult.code).toBe(0);
       expectTopLevelKeyOrder(claimResult.json, [
         "item",
+        "changed_fields",
         "claimed_by",
         "previous_assignee",
         "forced",

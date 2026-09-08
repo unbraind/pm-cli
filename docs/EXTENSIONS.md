@@ -16,6 +16,7 @@ pm package upgrade --dry-run
 Hidden `pm extension ...`, `pm install ...`, and `pm upgrade ...` aliases remain supported for compatibility. They execute the canonical package handlers, keep stdout machine-compatible, and emit one migration hint on stderr unless the public config key `ux_deprecation_hints` (stored at `ux.deprecation_hints`) is disabled. Related docs: [SDK](SDK.md), [Configuration](CONFIGURATION.md), [Testing](TESTING.md), [Command Reference](COMMANDS.md), [Extension Author Contracts](EXTENSION_AUTHOR_CONTRACTS.md).
 
 ## Package Sources
+See [Install plans and update evidence](PACKAGE_EVIDENCE.md) for copy-cost planning and freshness semantics.
 
 `pm package install` accepts local, registry, and GitHub sources:
 

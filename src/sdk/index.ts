@@ -191,6 +191,13 @@ export {
 } from "./governance/validate.js";
 export { runExtension, type ExtensionCommandAction } from "./extension.js";
 export {
+  buildExtensionInstallPlan,
+  planExtensionDirectoryCopy,
+  type ExtensionCopyPlan,
+  type ExtensionCopyPlanOptions,
+  type ExtensionInstallPlan,
+} from "./extension/install-plan.js";
+export {
   resolveExtensionInstallSourceIdentity,
   type ExtensionInstallSourceCandidate,
   type ExtensionInstallSourceResolution,
