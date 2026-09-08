@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1888,
+    "covered_symbols": 1918,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1889
+    "required_symbols": 1919
   },
   "breaking_acknowledgements": [
     {
@@ -1844,6 +1844,22 @@
       ],
       "package_version": "2026.9.8",
       "reason": "pm-n8a6e7: PmSettings.search gains the optional default_mode key (auto|keyword|semantic|hybrid); existing settings literals stay valid and readers normalize an absent key to auto, so no consumer breaks"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk:PmClient",
+        "signature ./sdk:SchemaResult",
+        "signature ./sdk:ValidateCommandOptions",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/core:PmClient",
+        "signature ./sdk/governance:ValidateCommandOptions",
+        "signature ./sdk/runtime:PmClient",
+        "signature ./sdk/runtime:SchemaResult",
+        "signature ./sdk/runtime:ValidateCommandOptions"
+      ],
+      "package_version": "2026.9.8",
+      "reason": "pm-mj42og and pm-htbetn add workflowPolicy, completeness selection, and a policy schema-result union branch; schema contract advances from 4.15.0 to 4.16.0; existing methods and parameters remain available"
     }
   ],
   "entrypoints": {
@@ -3695,6 +3711,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "buildWorkflowCompletenessCheck",
+          "signature": "(document: WorkflowPolicyDocument, items: readonly (Readonly<Record<string, unknown>> & { id: string; type: string; status: string; })[], rowLimit?: number, sourceIncomplete?: boolean) => { check: ValidateCheck; warnings: string[]; } | calls: (document: WorkflowPolicyDocument, items: readonly (Readonly<Record<string, unknown>> & { id: string; type: string; status: string; })[], rowLimit?: number, sourceIncomplete?: boolean) => { check: ValidateCheck; warnings: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "buildWorkspaceMemorySnapshot",
           "signature": "(items: readonly ItemMetadata[], options: { statusRegistry: RuntimeStatusRegistry; sourceCursor: string; now: string; }) => WorkspaceMemorySnapshot | calls: (items: readonly ItemMetadata[], options: { statusRegistry: RuntimeStatusRegistry; sourceCursor: string; now: string; }) => WorkspaceMemorySnapshot"
         },
@@ -5181,6 +5203,12 @@
           "signature": "<T>(importer: () => Promise<T>) => () => Promise<T> | calls: <T>(importer: () => Promise<T>) => () => Promise<T>"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "createLifecycleCompletenessPolicies",
+          "signature": "() => WorkflowPolicyDocument | calls: () => WorkflowPolicyDocument"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "createMcpStaticBearerVerifier",
@@ -6523,6 +6551,12 @@
           "kind": "function",
           "name": "evaluateVerdictContract",
           "signature": "(contract: VerdictContract, recorded: WorkspaceRecordedState) => VerdictResult | calls: (contract: VerdictContract, recorded: WorkspaceRecordedState) => VerdictResult"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "evaluateWorkflowPolicies",
+          "signature": "(document: WorkflowPolicyDocument, input: WorkflowPolicyInput) => WorkflowPolicyEvaluation | calls: (document: WorkflowPolicyDocument, input: WorkflowPolicyInput) => WorkflowPolicyEvaluation"
         },
         {
           "classification": "contract_data",
@@ -10017,6 +10051,18 @@
           "signature": "1000000"
         },
         {
+          "classification": "supported",
+          "kind": "value",
+          "name": "MAX_WORKFLOW_POLICIES",
+          "signature": "256"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "MAX_WORKFLOW_POLICY_TERMS",
+          "signature": "64"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "maybeRunFirstUseTelemetryPrompt",
@@ -11309,6 +11355,18 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "parseWorkflowPolicy",
+          "signature": "(value: unknown) => WorkflowPolicy | calls: (value: unknown) => WorkflowPolicy"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseWorkflowPolicyDocument",
+          "signature": "(value: unknown) => WorkflowPolicyDocument | calls: (value: unknown) => WorkflowPolicyDocument"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "partitionDecisionEntries",
           "signature": "(ready: ActionableEntry[], includeDecisions: boolean, typeRegistry?: ItemTypeRegistry) => { agent: ActionableEntry[]; decisions: ActionableEntry[]; } | calls: (ready: ActionableEntry[], includeDecisions: boolean, typeRegistry?: ItemTypeRegistry) => { agent: ActionableEntry[]; decisions: ActionableEntry[]; }"
         },
@@ -12138,7 +12196,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.15.0\""
+          "signature": "\"4.16.0\""
         },
         {
           "classification": "contract_data",
@@ -12246,7 +12304,7 @@
           "classification": "supported",
           "kind": "class",
           "name": "PmClient",
-          "signature": "export declare class PmClient { private readonly defaults; constructor(options?: PmClientOptions); static forActiveExtensionHost(options: PmClientOptions): PmClient; run(action: PmActionName, args?: PmClientRunArgs): Promise<unknown>; private runTyped; context<Options extends ReadOptions<ContextOptions> = ContextOptions>(options?: Options): ReadPromise<ContextResult, Options>; listAllItemMetadataLight(): Promise<ItemMetadata[]>; list<Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options): ReadPromise<ListResult, Options>; listAllComplete(options?: PmCompleteListOptions): Promise<PmCompleteListResult>; search<Options extends ReadOptions<SearchOptions> = SearchOptions>(query: string, options?: Options): ReadPromise<SearchResult, Options>; get<Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options): ReadPromise<GetResult, Options>; next<Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options): ReadPromise<NextResult, Options>; aggregate<Options extends ReadOptions<AggregateOptions> = AggregateOptions>(options?: Options): ReadPromise<AggregateResult, Options>; stats<Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions>(options?: Options): ReadPromise<StatsResult, Options>; duplicates<Options extends ReadOptions<DuplicatesCommandOptions> = DuplicatesCommandOptions>(options?: Options): ReadPromise<DuplicatesResult, Options>; comments<Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions>(id: string, options?: Options): ReadPromise<CommentsResult, Options>; notes<Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(id: string, options?: Options): ReadPromise<NotesResult, Options>; learnings(id: string, options?: LearningsCommandOptions): Promise<LearningsResult>; files<Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(id: string, options?: Options): ReadPromise<FilesResult, Options>; filesDiscover(id: string, options?: FilesDiscoverOptions): Promise<FilesDiscoverResult>; filesLookup(options: FilesLookupOptions): Promise<FilesLookupResult>; docs<Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(id: string, options?: Options): ReadPromise<DocsResult, Options>; deps<Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(id: string, options?: Options): ReadPromise<DepsResult, Options>; graph<Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: Options): ReadPromise<GraphResult, Options>; append(id: string, body: string, options?: PmClientFullMutationOptions): Promise<AppendResult>; init(prefix?: string, options?: InitCommandOptions): Promise<InitResult>; config(scope: string, configAction: string, key?: string, value?: string, options?: ConfigCommandOptions): Promise<ConfigResult>; schema(subcommand: SchemaSubcommand, options?: PmActionOptions): Promise<SchemaResult>; schemaList(): Promise<SchemaListResult>; schemaShow(name: string): Promise<SchemaShowResult>; schemaAddType(name: string, options?: SchemaAddTypeCommandOptions): Promise<SchemaAddTypeResult>; schemaRemoveType(name: string, options?: SchemaRemoveTypeCommandOptions): Promise<SchemaRemoveTypeResult>; schemaAddStatus(name: string, options?: SchemaAddStatusCommandOptions): Promise<SchemaAddStatusResult>; schemaRemoveStatus(name: string, options?: SchemaRemoveStatusCommandOptions): Promise<SchemaRemoveStatusResult>; schemaAddField(name: string, options?: SchemaAddFieldCommandOptions): Promise<SchemaAddFieldResult>; schemaRemoveField(name: string, options?: SchemaRemoveFieldCommandOptions): Promise<SchemaRemoveFieldResult>; schemaListFields(): Promise<SchemaListFieldsResult>; schemaShowField(name: string): Promise<SchemaShowFieldResult>; schemaApplyPreset(typePreset: string, options?: SchemaApplyPresetCommandOptions): Promise<SchemaApplyPresetResult>; schemaInferTypes(options?: SchemaAddTypeInferCommandOptions): Promise<SchemaAddTypeInferResult>; schemaRenameType(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaRenameField(from: string, to: string, options: RunSchemaEvolutionMigrationOptions, type?: string): Promise<SchemaEvolutionMigrationResult>; schemaRemapStatus(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaShowStatus(name: string): Promise<SchemaShowStatusResult>; profile(subcommand: ProfileSubcommand, options?: PmActionOptions): Promise<ProfileResult>; profileList(): Promise<ProfileListResult>; profileShow(name: string): Promise<ProfileShowResult>; profileApply(name: string, options?: ProfileApplyCommandOptions): Promise<ProfileApplyResult>; profileLint(name: string): Promise<ProfileLintResult>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts: true; }>(options: Options): ReadPromise<ValidateCountsResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts?: false; } = ValidateCommandOptions & { counts?: false; }>(options?: Options): ReadPromise<ValidateResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions>>(options: Options): ReadPromise<ValidateResult | ValidateCountsResult, Options>; health<Options extends ReadOptions<RunHealthOptions> = RunHealthOptions>(options?: Options): ReadPromise<HealthResult, Options>; gc(options?: GcCommandOptions): Promise<GcResult>; assurance(input: AssuranceActionInput): Promise<AssuranceActionResult>; historyRedact(id: string, options: HistoryRedactCommandOptions): Promise<HistoryRedactResult>; historyRepair(id: string, options?: HistoryRepairCommandOptions): Promise<HistoryRepairResult>; historyRepairAll(options?: HistoryRepairCommandOptions): Promise<HistoryRepairAllResult>; historyCompact(id: string, options?: HistoryCompactCommandOptions): Promise<HistoryCompactResult>; historyCompactBulk(options: HistoryCompactBulkCommandOptions): Promise<HistoryCompactBulkResult>; historyAuthorAcknowledge(options: AcknowledgeUnknownAuthorEventsOptions): Promise<UnknownAuthorAcknowledgmentResult>; plan(subcommand: PlanSubcommand, id?: string, options?: PlanCommandOptions, stepRef?: string, reorderTo?: number): Promise<PlanCommandResult>; planCreate(options: PlanCommandOptions): Promise<PlanCommandResult>; planShow(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planAddStep(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUpdateStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planCompleteStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planBlockStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planReorderStep(id: string, stepRef: string, reorderTo: number, options?: PlanCommandOptions): Promise<PlanCommandResult>; planRemoveStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planLink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUnlink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDecision(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDiscovery(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planValidation(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planResume(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planApprove(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planMaterialize(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; create(options?: PmCreateActionOptions): Promise<CreateResult>; update(id: string, options?: PmUpdateActionOptions): Promise<UpdateResult>; reopen(id: string, reason: string, options?: ReopenCommandOptions): Promise<ReopenResult>; close(id: string, reason: string, options?: PmClientCloseActionOptions): Promise<CloseResult>; claim(id: string, options?: PmClientFullMutationOptions): Promise<ClaimResult>; claimNext(options?: ClaimNextOptions): Promise<ClaimNextResult>; release(id: string, options?: PmClientFullMutationOptions): Promise<ReleaseResult>; copy(id: string, options?: PmClientFullMutationOptions): Promise<CopyResult>; delete(id: string, options?: PmClientFullMutationOptions): Promise<DeleteResult>; restore(id: string, target: string, options?: PmClientFullMutationOptions): Promise<RestoreResult>; focus(id?: string, options?: PmClientFullMutationOptions): Promise<FocusResult>; startTask(id: string, options?: PmClientFullMutationOptions): Promise<StartTaskResult>; pauseTask(id: string, options?: PmClientFullMutationOptions): Promise<PauseTaskResult>; closeTask(id: string, reason: string, options?: PmClientFullMutationOptions): Promise<CloseTaskResult>; extension(target?: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionList(options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionActivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionDeactivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; package(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageList(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageInstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageUninstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDoctor(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageManage(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDescribe(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageReload(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageCatalog<Options extends ReadOptions<PackageCommandOptions> = PackageCommandOptions>(options?: Options): ReadPromise<PackageCommandResult, Options>; packageActivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDeactivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageMigrate(options?: PackageCommandOptions): Promise<PackageCommandResult>; upgrade(target?: string, options?: UpgradeCommandOptions): Promise<UpgradeResult>; }"
+          "signature": "export declare class PmClient { private readonly defaults; constructor(options?: PmClientOptions); static forActiveExtensionHost(options: PmClientOptions): PmClient; run(action: PmActionName, args?: PmClientRunArgs): Promise<unknown>; private runTyped; context<Options extends ReadOptions<ContextOptions> = ContextOptions>(options?: Options): ReadPromise<ContextResult, Options>; listAllItemMetadataLight(): Promise<ItemMetadata[]>; list<Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options): ReadPromise<ListResult, Options>; listAllComplete(options?: PmCompleteListOptions): Promise<PmCompleteListResult>; search<Options extends ReadOptions<SearchOptions> = SearchOptions>(query: string, options?: Options): ReadPromise<SearchResult, Options>; get<Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options): ReadPromise<GetResult, Options>; next<Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options): ReadPromise<NextResult, Options>; aggregate<Options extends ReadOptions<AggregateOptions> = AggregateOptions>(options?: Options): ReadPromise<AggregateResult, Options>; stats<Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions>(options?: Options): ReadPromise<StatsResult, Options>; duplicates<Options extends ReadOptions<DuplicatesCommandOptions> = DuplicatesCommandOptions>(options?: Options): ReadPromise<DuplicatesResult, Options>; comments<Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions>(id: string, options?: Options): ReadPromise<CommentsResult, Options>; notes<Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(id: string, options?: Options): ReadPromise<NotesResult, Options>; learnings(id: string, options?: LearningsCommandOptions): Promise<LearningsResult>; files<Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(id: string, options?: Options): ReadPromise<FilesResult, Options>; filesDiscover(id: string, options?: FilesDiscoverOptions): Promise<FilesDiscoverResult>; filesLookup(options: FilesLookupOptions): Promise<FilesLookupResult>; docs<Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(id: string, options?: Options): ReadPromise<DocsResult, Options>; deps<Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(id: string, options?: Options): ReadPromise<DepsResult, Options>; graph<Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: Options): ReadPromise<GraphResult, Options>; append(id: string, body: string, options?: PmClientFullMutationOptions): Promise<AppendResult>; init(prefix?: string, options?: InitCommandOptions): Promise<InitResult>; config(scope: string, configAction: string, key?: string, value?: string, options?: ConfigCommandOptions): Promise<ConfigResult>; schema(subcommand: SchemaSubcommand, options?: PmActionOptions): Promise<SchemaResult>; workflowPolicy(action: WorkflowPolicyAction, name?: string, options?: WorkflowPolicyActionOptions): Promise<WorkflowPolicyActionResult>; schemaList(): Promise<SchemaListResult>; schemaShow(name: string): Promise<SchemaShowResult>; schemaAddType(name: string, options?: SchemaAddTypeCommandOptions): Promise<SchemaAddTypeResult>; schemaRemoveType(name: string, options?: SchemaRemoveTypeCommandOptions): Promise<SchemaRemoveTypeResult>; schemaAddStatus(name: string, options?: SchemaAddStatusCommandOptions): Promise<SchemaAddStatusResult>; schemaRemoveStatus(name: string, options?: SchemaRemoveStatusCommandOptions): Promise<SchemaRemoveStatusResult>; schemaAddField(name: string, options?: SchemaAddFieldCommandOptions): Promise<SchemaAddFieldResult>; schemaRemoveField(name: string, options?: SchemaRemoveFieldCommandOptions): Promise<SchemaRemoveFieldResult>; schemaListFields(): Promise<SchemaListFieldsResult>; schemaShowField(name: string): Promise<SchemaShowFieldResult>; schemaApplyPreset(typePreset: string, options?: SchemaApplyPresetCommandOptions): Promise<SchemaApplyPresetResult>; schemaInferTypes(options?: SchemaAddTypeInferCommandOptions): Promise<SchemaAddTypeInferResult>; schemaRenameType(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaRenameField(from: string, to: string, options: RunSchemaEvolutionMigrationOptions, type?: string): Promise<SchemaEvolutionMigrationResult>; schemaRemapStatus(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaShowStatus(name: string): Promise<SchemaShowStatusResult>; profile(subcommand: ProfileSubcommand, options?: PmActionOptions): Promise<ProfileResult>; profileList(): Promise<ProfileListResult>; profileShow(name: string): Promise<ProfileShowResult>; profileApply(name: string, options?: ProfileApplyCommandOptions): Promise<ProfileApplyResult>; profileLint(name: string): Promise<ProfileLintResult>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts: true; }>(options: Options): ReadPromise<ValidateCountsResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts?: false; } = ValidateCommandOptions & { counts?: false; }>(options?: Options): ReadPromise<ValidateResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions>>(options: Options): ReadPromise<ValidateResult | ValidateCountsResult, Options>; health<Options extends ReadOptions<RunHealthOptions> = RunHealthOptions>(options?: Options): ReadPromise<HealthResult, Options>; gc(options?: GcCommandOptions): Promise<GcResult>; assurance(input: AssuranceActionInput): Promise<AssuranceActionResult>; historyRedact(id: string, options: HistoryRedactCommandOptions): Promise<HistoryRedactResult>; historyRepair(id: string, options?: HistoryRepairCommandOptions): Promise<HistoryRepairResult>; historyRepairAll(options?: HistoryRepairCommandOptions): Promise<HistoryRepairAllResult>; historyCompact(id: string, options?: HistoryCompactCommandOptions): Promise<HistoryCompactResult>; historyCompactBulk(options: HistoryCompactBulkCommandOptions): Promise<HistoryCompactBulkResult>; historyAuthorAcknowledge(options: AcknowledgeUnknownAuthorEventsOptions): Promise<UnknownAuthorAcknowledgmentResult>; plan(subcommand: PlanSubcommand, id?: string, options?: PlanCommandOptions, stepRef?: string, reorderTo?: number): Promise<PlanCommandResult>; planCreate(options: PlanCommandOptions): Promise<PlanCommandResult>; planShow(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planAddStep(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUpdateStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planCompleteStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planBlockStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planReorderStep(id: string, stepRef: string, reorderTo: number, options?: PlanCommandOptions): Promise<PlanCommandResult>; planRemoveStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planLink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUnlink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDecision(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDiscovery(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planValidation(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planResume(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planApprove(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planMaterialize(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; create(options?: PmCreateActionOptions): Promise<CreateResult>; update(id: string, options?: PmUpdateActionOptions): Promise<UpdateResult>; reopen(id: string, reason: string, options?: ReopenCommandOptions): Promise<ReopenResult>; close(id: string, reason: string, options?: PmClientCloseActionOptions): Promise<CloseResult>; claim(id: string, options?: PmClientFullMutationOptions): Promise<ClaimResult>; claimNext(options?: ClaimNextOptions): Promise<ClaimNextResult>; release(id: string, options?: PmClientFullMutationOptions): Promise<ReleaseResult>; copy(id: string, options?: PmClientFullMutationOptions): Promise<CopyResult>; delete(id: string, options?: PmClientFullMutationOptions): Promise<DeleteResult>; restore(id: string, target: string, options?: PmClientFullMutationOptions): Promise<RestoreResult>; focus(id?: string, options?: PmClientFullMutationOptions): Promise<FocusResult>; startTask(id: string, options?: PmClientFullMutationOptions): Promise<StartTaskResult>; pauseTask(id: string, options?: PmClientFullMutationOptions): Promise<PauseTaskResult>; closeTask(id: string, reason: string, options?: PmClientFullMutationOptions): Promise<CloseTaskResult>; extension(target?: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionList(options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionActivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionDeactivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; package(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageList(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageInstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageUninstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDoctor(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageManage(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDescribe(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageReload(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageCatalog<Options extends ReadOptions<PackageCommandOptions> = PackageCommandOptions>(options?: Options): ReadPromise<PackageCommandResult, Options>; packageActivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDeactivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageMigrate(options?: PackageCommandOptions): Promise<PackageCommandResult>; upgrade(target?: string, options?: UpgradeCommandOptions): Promise<UpgradeResult>; }"
         },
         {
           "classification": "advanced_export",
@@ -14371,6 +14429,18 @@
           "kind": "function",
           "name": "readVectorizationStatusLedger",
           "signature": "(pmRoot: string) => Promise<VectorizationStatusLedgerReadResult> | calls: (pmRoot: string) => Promise<VectorizationStatusLedgerReadResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "readWorkflowPolicies",
+          "signature": "(pmRoot: string) => Promise<WorkflowPolicyDocument> | calls: (pmRoot: string) => Promise<WorkflowPolicyDocument>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "readWorkflowPolicyField",
+          "signature": "(record: Readonly<Record<string, unknown>> | null, field: string) => unknown | calls: (record: Readonly<Record<string, unknown>> | null, field: string) => unknown"
         },
         {
           "classification": "advanced_export",
@@ -17193,6 +17263,12 @@
           "signature": "<T>(recipe: WorkspaceRecipe, operation: () => Promise<T>) => Promise<T> | calls: <T>(recipe: WorkspaceRecipe, operation: () => Promise<T>) => Promise<T>"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runWorkflowPolicyAction",
+          "signature": "(action: WorkflowPolicyAction, name: string | undefined, options?: WorkflowPolicyActionOptions, global?: Pick<GlobalOptions, \"path\">) => Promise<WorkflowPolicyActionResult> | calls: (action: WorkflowPolicyAction, name: string | undefined, options?: WorkflowPolicyActionOptions, global?: Pick<GlobalOptions, \"path\">) => Promise<WorkflowPolicyActionResult>"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "runWorkspaceTransactionGc",
@@ -17532,7 +17608,7 @@
           "classification": "advanced_export",
           "kind": "type",
           "name": "SchemaResult",
-          "signature": "export type SchemaResult = SchemaInspectResult | SchemaListResult | SchemaShowResult | SchemaShowStatusResult | SchemaListFieldsResult | SchemaShowFieldResult | SchemaAddTypeResult | SchemaRemoveTypeResult | SchemaAddStatusResult | SchemaRemoveStatusResult | SchemaAddFieldResult | SchemaRemoveFieldResult | SchemaApplyPresetResult | SchemaAddTypeInferResult | SchemaEvolutionMigrationResult;"
+          "signature": "export type SchemaResult = WorkflowPolicyActionResult | SchemaInspectResult | SchemaListResult | SchemaShowResult | SchemaShowStatusResult | SchemaListFieldsResult | SchemaShowFieldResult | SchemaAddTypeResult | SchemaRemoveTypeResult | SchemaAddStatusResult | SchemaRemoveStatusResult | SchemaAddFieldResult | SchemaRemoveFieldResult | SchemaApplyPresetResult | SchemaAddTypeInferResult | SchemaEvolutionMigrationResult;"
         },
         {
           "classification": "advanced_export",
@@ -19242,7 +19318,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ValidateCommandOptions",
-          "signature": "export interface ValidateCommandOptions { checkMetadata?: boolean; checkResolution?: boolean; checkLifecycle?: boolean; checkStaleBlockers?: boolean; dependencyCycleSeverity?: string; parentCycleSeverity?: string; checkFiles?: boolean; includePmInternals?: boolean; verboseFileLists?: boolean; verboseDiagnostics?: boolean; allAffectedIds?: boolean; checkHistoryDrift?: boolean; checkStorageIntegrity?: boolean; checkCommandReferences?: boolean; scanMode?: string; metadataProfile?: string; fixHints?: boolean; autoFix?: boolean; dryRun?: boolean; fixScope?: string[]; pruneMissing?: boolean; counts?: boolean; full?: boolean; }"
+          "signature": "export interface ValidateCommandOptions { checkCompleteness?: boolean; checkMetadata?: boolean; checkResolution?: boolean; checkLifecycle?: boolean; checkStaleBlockers?: boolean; dependencyCycleSeverity?: string; parentCycleSeverity?: string; checkFiles?: boolean; includePmInternals?: boolean; verboseFileLists?: boolean; verboseDiagnostics?: boolean; allAffectedIds?: boolean; checkHistoryDrift?: boolean; checkStorageIntegrity?: boolean; checkCommandReferences?: boolean; scanMode?: string; metadataProfile?: string; fixHints?: boolean; autoFix?: boolean; dryRun?: boolean; fixScope?: string[]; pruneMissing?: boolean; counts?: boolean; full?: boolean; }"
         },
         {
           "classification": "supported",
@@ -19561,6 +19637,126 @@
           "kind": "function",
           "name": "withMcpCachePolicy",
           "signature": "<Payload extends Record<string, unknown>>(payload: Payload, policy: PmMcpCachePolicy) => Payload & PmMcpCachePolicy | calls: <Payload extends Record<string, unknown>>(payload: Payload, policy: PmMcpCachePolicy) => Payload & PmMcpCachePolicy"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "WORKFLOW_POLICY_ACTIONS",
+          "signature": "readonly [\"policies\", \"policy-put\", \"policy-remove\", \"policy-mode\", \"policy-check\", \"policy-approve\", \"policy-presets\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "WORKFLOW_POLICY_DOCUMENT_SCHEMA",
+          "signature": "{ readonly $schema: \"https://json-schema.org/draft/2020-12/schema\"; readonly title: \"pm workflow policy registry\"; readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"version\", \"policies\"]; readonly properties: { readonly version: { readonly const: 1; }; readonly enforcement: { readonly enum: readonly [\"advise\", \"refuse\"]; readonly default: \"advise\"; }; readonly policies: { readonly type: \"array\"; readonly maxItems: 256; readonly items: { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"id\", \"rule\"]; readonly properties: { readonly id: { readonly type: \"string\"; readonly minLength: 1; readonly maxLength: 128; readonly pattern: \"^[a-zA-Z0-9][a-zA-Z0-9._-]*$\"; }; readonly description: { readonly type: \"string\"; readonly minLength: 1; readonly maxLength: 500; readonly pattern: \"\\\\S\"; }; readonly effect: { readonly enum: readonly [\"advise\", \"warn\", \"refuse\"]; }; readonly subject: { readonly type: \"object\"; readonly additionalProperties: false; readonly properties: { readonly dependency: { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\"]; readonly properties: { readonly kind: { type: string; minLength: number; maxLength: number; pattern: string; }; readonly id: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }; }; readonly rule: { readonly oneOf: readonly [{ readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"fields\"]; readonly properties: { readonly kind: { readonly const: \"require_fields\"; }; readonly fields: { items: { pattern: string; type: string; minLength: number; maxLength: number; }; type: string; minItems: number; maxItems: number; }; }; }, { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"authors\"]; readonly properties: { readonly kind: { readonly const: \"authors\"; }; readonly authors: { type: string; minItems: number; maxItems: number; items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }, ...{ type: string; additionalProperties: boolean; required: string[]; properties: { kind: { const: string; }; fields: { items: { pattern: string; type: string; minLength: number; maxLength: number; }; type: string; minItems: number; maxItems: number; }; authors: { type: string; minItems: number; maxItems: number; items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }[], { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"allowed\"]; readonly properties: { readonly kind: { readonly const: \"transition\"; }; readonly allowed: { readonly type: \"array\"; readonly maxItems: 64; readonly items: { readonly type: \"array\"; readonly minItems: 2; readonly maxItems: 2; readonly items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }; }]; }; }; }; }; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "WORKFLOW_POLICY_SCHEMA",
+          "signature": "{ readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"id\", \"rule\"]; readonly properties: { readonly id: { readonly type: \"string\"; readonly minLength: 1; readonly maxLength: 128; readonly pattern: \"^[a-zA-Z0-9][a-zA-Z0-9._-]*$\"; }; readonly description: { readonly type: \"string\"; readonly minLength: 1; readonly maxLength: 500; readonly pattern: \"\\\\S\"; }; readonly effect: { readonly enum: readonly [\"advise\", \"warn\", \"refuse\"]; }; readonly subject: { readonly type: \"object\"; readonly additionalProperties: false; readonly properties: { readonly dependency: { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\"]; readonly properties: { readonly kind: { type: string; minLength: number; maxLength: number; pattern: string; }; readonly id: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }; }; readonly rule: { readonly oneOf: readonly [{ readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"fields\"]; readonly properties: { readonly kind: { readonly const: \"require_fields\"; }; readonly fields: { items: { pattern: string; type: string; minLength: number; maxLength: number; }; type: string; minItems: number; maxItems: number; }; }; }, { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"authors\"]; readonly properties: { readonly kind: { readonly const: \"authors\"; }; readonly authors: { type: string; minItems: number; maxItems: number; items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }, ...{ type: string; additionalProperties: boolean; required: string[]; properties: { kind: { const: string; }; fields: { items: { pattern: string; type: string; minLength: number; maxLength: number; }; type: string; minItems: number; maxItems: number; }; authors: { type: string; minItems: number; maxItems: number; items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }[], { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"allowed\"]; readonly properties: { readonly kind: { readonly const: \"transition\"; }; readonly allowed: { readonly type: \"array\"; readonly maxItems: 64; readonly items: { readonly type: \"array\"; readonly minItems: 2; readonly maxItems: 2; readonly items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }; }]; }; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "workflowApprovalFingerprint",
+          "signature": "(policy: WorkflowPolicy, record: Readonly<Record<string, unknown>>) => string | calls: (policy: WorkflowPolicy, record: Readonly<Record<string, unknown>>) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowApprovalReceipt",
+          "signature": "export interface WorkflowApprovalReceipt { id: string; policy_id: string; policy_fingerprint: string; content_fingerprint: string; warnings: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowCompletenessViolation",
+          "signature": "export interface WorkflowCompletenessViolation { id: string; type: string; status: string; decision: WorkflowPolicyDecision; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicy",
+          "signature": "export interface WorkflowPolicy { id: string; description?: string; subject?: WorkflowPolicySubject; effect?: WorkflowPolicyEffect; rule: WorkflowPolicyRule; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "WorkflowPolicyAction",
+          "signature": "export type WorkflowPolicyAction = (typeof WORKFLOW_POLICY_ACTIONS)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyActionOptions",
+          "signature": "export interface WorkflowPolicyActionOptions { definition?: unknown; policy?: string; dryRun?: boolean; author?: string; message?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyActionResult",
+          "signature": "export interface WorkflowPolicyActionResult { policy_result: true; action: WorkflowPolicyAction; changed: boolean; result: WorkflowPolicyDocument | WorkflowPolicyEvaluation | WorkflowApprovalReceipt; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "workflowPolicyApplies",
+          "signature": "(policy: WorkflowPolicy, input: WorkflowPolicyInput) => boolean | calls: (policy: WorkflowPolicy, input: WorkflowPolicyInput) => boolean"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyApproval",
+          "signature": "export interface WorkflowPolicyApproval { policy_fingerprint: string; content_fingerprint: string; author: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyDecision",
+          "signature": "export interface WorkflowPolicyDecision { policy_id: string; policy_fingerprint: string; rule: WorkflowPolicyRule[\"kind\"]; effect: WorkflowPolicyEffect; satisfied: boolean; missing_fields: string[]; remediation: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyDocument",
+          "signature": "export interface WorkflowPolicyDocument { version: 1; enforcement: \"advise\" | \"refuse\"; policies: WorkflowPolicy[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "WorkflowPolicyEffect",
+          "signature": "export type WorkflowPolicyEffect = \"advise\" | \"warn\" | \"refuse\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyEvaluation",
+          "signature": "export interface WorkflowPolicyEvaluation { allowed: boolean; decisions: WorkflowPolicyDecision[]; warnings: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "workflowPolicyFingerprint",
+          "signature": "(policy: WorkflowPolicy) => string | calls: (policy: WorkflowPolicy) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyInput",
+          "signature": "export interface WorkflowPolicyInput { operation: string; author: string; before: Readonly<Record<string, unknown>> | null; after: Readonly<Record<string, unknown>> | null; approvals?: readonly WorkflowPolicyApproval[]; completeness_only?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "WorkflowPolicyRule",
+          "signature": "export type WorkflowPolicyRule = { kind: \"require_fields\"; fields: string[]; } | { kind: \"transition\"; allowed: [ string, string ][]; } | { kind: \"authors\"; authors: string[]; } | { kind: \"field_writers\"; fields: string[]; authors: string[]; } | { kind: \"approval\"; fields: string[]; authors: string[]; };"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicySubject",
+          "signature": "export interface WorkflowPolicySubject { types?: string[]; tags?: string[]; statuses?: string[]; operations?: string[]; parents?: string[]; dependency?: { kind: string; id?: string; }; }"
         },
         {
           "classification": "supported",
@@ -22458,7 +22654,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.15.0\""
+          "signature": "\"4.16.0\""
         },
         {
           "classification": "contract_data",
@@ -24504,7 +24700,7 @@
           "classification": "supported",
           "kind": "class",
           "name": "PmClient",
-          "signature": "export declare class PmClient { private readonly defaults; constructor(options?: PmClientOptions); static forActiveExtensionHost(options: PmClientOptions): PmClient; run(action: PmActionName, args?: PmClientRunArgs): Promise<unknown>; private runTyped; context<Options extends ReadOptions<ContextOptions> = ContextOptions>(options?: Options): ReadPromise<ContextResult, Options>; listAllItemMetadataLight(): Promise<ItemMetadata[]>; list<Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options): ReadPromise<ListResult, Options>; listAllComplete(options?: PmCompleteListOptions): Promise<PmCompleteListResult>; search<Options extends ReadOptions<SearchOptions> = SearchOptions>(query: string, options?: Options): ReadPromise<SearchResult, Options>; get<Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options): ReadPromise<GetResult, Options>; next<Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options): ReadPromise<NextResult, Options>; aggregate<Options extends ReadOptions<AggregateOptions> = AggregateOptions>(options?: Options): ReadPromise<AggregateResult, Options>; stats<Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions>(options?: Options): ReadPromise<StatsResult, Options>; duplicates<Options extends ReadOptions<DuplicatesCommandOptions> = DuplicatesCommandOptions>(options?: Options): ReadPromise<DuplicatesResult, Options>; comments<Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions>(id: string, options?: Options): ReadPromise<CommentsResult, Options>; notes<Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(id: string, options?: Options): ReadPromise<NotesResult, Options>; learnings(id: string, options?: LearningsCommandOptions): Promise<LearningsResult>; files<Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(id: string, options?: Options): ReadPromise<FilesResult, Options>; filesDiscover(id: string, options?: FilesDiscoverOptions): Promise<FilesDiscoverResult>; filesLookup(options: FilesLookupOptions): Promise<FilesLookupResult>; docs<Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(id: string, options?: Options): ReadPromise<DocsResult, Options>; deps<Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(id: string, options?: Options): ReadPromise<DepsResult, Options>; graph<Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: Options): ReadPromise<GraphResult, Options>; append(id: string, body: string, options?: PmClientFullMutationOptions): Promise<AppendResult>; init(prefix?: string, options?: InitCommandOptions): Promise<InitResult>; config(scope: string, configAction: string, key?: string, value?: string, options?: ConfigCommandOptions): Promise<ConfigResult>; schema(subcommand: SchemaSubcommand, options?: PmActionOptions): Promise<SchemaResult>; schemaList(): Promise<SchemaListResult>; schemaShow(name: string): Promise<SchemaShowResult>; schemaAddType(name: string, options?: SchemaAddTypeCommandOptions): Promise<SchemaAddTypeResult>; schemaRemoveType(name: string, options?: SchemaRemoveTypeCommandOptions): Promise<SchemaRemoveTypeResult>; schemaAddStatus(name: string, options?: SchemaAddStatusCommandOptions): Promise<SchemaAddStatusResult>; schemaRemoveStatus(name: string, options?: SchemaRemoveStatusCommandOptions): Promise<SchemaRemoveStatusResult>; schemaAddField(name: string, options?: SchemaAddFieldCommandOptions): Promise<SchemaAddFieldResult>; schemaRemoveField(name: string, options?: SchemaRemoveFieldCommandOptions): Promise<SchemaRemoveFieldResult>; schemaListFields(): Promise<SchemaListFieldsResult>; schemaShowField(name: string): Promise<SchemaShowFieldResult>; schemaApplyPreset(typePreset: string, options?: SchemaApplyPresetCommandOptions): Promise<SchemaApplyPresetResult>; schemaInferTypes(options?: SchemaAddTypeInferCommandOptions): Promise<SchemaAddTypeInferResult>; schemaRenameType(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaRenameField(from: string, to: string, options: RunSchemaEvolutionMigrationOptions, type?: string): Promise<SchemaEvolutionMigrationResult>; schemaRemapStatus(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaShowStatus(name: string): Promise<SchemaShowStatusResult>; profile(subcommand: ProfileSubcommand, options?: PmActionOptions): Promise<ProfileResult>; profileList(): Promise<ProfileListResult>; profileShow(name: string): Promise<ProfileShowResult>; profileApply(name: string, options?: ProfileApplyCommandOptions): Promise<ProfileApplyResult>; profileLint(name: string): Promise<ProfileLintResult>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts: true; }>(options: Options): ReadPromise<ValidateCountsResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts?: false; } = ValidateCommandOptions & { counts?: false; }>(options?: Options): ReadPromise<ValidateResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions>>(options: Options): ReadPromise<ValidateResult | ValidateCountsResult, Options>; health<Options extends ReadOptions<RunHealthOptions> = RunHealthOptions>(options?: Options): ReadPromise<HealthResult, Options>; gc(options?: GcCommandOptions): Promise<GcResult>; assurance(input: AssuranceActionInput): Promise<AssuranceActionResult>; historyRedact(id: string, options: HistoryRedactCommandOptions): Promise<HistoryRedactResult>; historyRepair(id: string, options?: HistoryRepairCommandOptions): Promise<HistoryRepairResult>; historyRepairAll(options?: HistoryRepairCommandOptions): Promise<HistoryRepairAllResult>; historyCompact(id: string, options?: HistoryCompactCommandOptions): Promise<HistoryCompactResult>; historyCompactBulk(options: HistoryCompactBulkCommandOptions): Promise<HistoryCompactBulkResult>; historyAuthorAcknowledge(options: AcknowledgeUnknownAuthorEventsOptions): Promise<UnknownAuthorAcknowledgmentResult>; plan(subcommand: PlanSubcommand, id?: string, options?: PlanCommandOptions, stepRef?: string, reorderTo?: number): Promise<PlanCommandResult>; planCreate(options: PlanCommandOptions): Promise<PlanCommandResult>; planShow(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planAddStep(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUpdateStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planCompleteStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planBlockStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planReorderStep(id: string, stepRef: string, reorderTo: number, options?: PlanCommandOptions): Promise<PlanCommandResult>; planRemoveStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planLink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUnlink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDecision(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDiscovery(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planValidation(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planResume(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planApprove(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planMaterialize(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; create(options?: PmCreateActionOptions): Promise<CreateResult>; update(id: string, options?: PmUpdateActionOptions): Promise<UpdateResult>; reopen(id: string, reason: string, options?: ReopenCommandOptions): Promise<ReopenResult>; close(id: string, reason: string, options?: PmClientCloseActionOptions): Promise<CloseResult>; claim(id: string, options?: PmClientFullMutationOptions): Promise<ClaimResult>; claimNext(options?: ClaimNextOptions): Promise<ClaimNextResult>; release(id: string, options?: PmClientFullMutationOptions): Promise<ReleaseResult>; copy(id: string, options?: PmClientFullMutationOptions): Promise<CopyResult>; delete(id: string, options?: PmClientFullMutationOptions): Promise<DeleteResult>; restore(id: string, target: string, options?: PmClientFullMutationOptions): Promise<RestoreResult>; focus(id?: string, options?: PmClientFullMutationOptions): Promise<FocusResult>; startTask(id: string, options?: PmClientFullMutationOptions): Promise<StartTaskResult>; pauseTask(id: string, options?: PmClientFullMutationOptions): Promise<PauseTaskResult>; closeTask(id: string, reason: string, options?: PmClientFullMutationOptions): Promise<CloseTaskResult>; extension(target?: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionList(options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionActivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionDeactivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; package(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageList(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageInstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageUninstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDoctor(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageManage(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDescribe(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageReload(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageCatalog<Options extends ReadOptions<PackageCommandOptions> = PackageCommandOptions>(options?: Options): ReadPromise<PackageCommandResult, Options>; packageActivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDeactivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageMigrate(options?: PackageCommandOptions): Promise<PackageCommandResult>; upgrade(target?: string, options?: UpgradeCommandOptions): Promise<UpgradeResult>; }"
+          "signature": "export declare class PmClient { private readonly defaults; constructor(options?: PmClientOptions); static forActiveExtensionHost(options: PmClientOptions): PmClient; run(action: PmActionName, args?: PmClientRunArgs): Promise<unknown>; private runTyped; context<Options extends ReadOptions<ContextOptions> = ContextOptions>(options?: Options): ReadPromise<ContextResult, Options>; listAllItemMetadataLight(): Promise<ItemMetadata[]>; list<Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options): ReadPromise<ListResult, Options>; listAllComplete(options?: PmCompleteListOptions): Promise<PmCompleteListResult>; search<Options extends ReadOptions<SearchOptions> = SearchOptions>(query: string, options?: Options): ReadPromise<SearchResult, Options>; get<Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options): ReadPromise<GetResult, Options>; next<Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options): ReadPromise<NextResult, Options>; aggregate<Options extends ReadOptions<AggregateOptions> = AggregateOptions>(options?: Options): ReadPromise<AggregateResult, Options>; stats<Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions>(options?: Options): ReadPromise<StatsResult, Options>; duplicates<Options extends ReadOptions<DuplicatesCommandOptions> = DuplicatesCommandOptions>(options?: Options): ReadPromise<DuplicatesResult, Options>; comments<Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions>(id: string, options?: Options): ReadPromise<CommentsResult, Options>; notes<Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(id: string, options?: Options): ReadPromise<NotesResult, Options>; learnings(id: string, options?: LearningsCommandOptions): Promise<LearningsResult>; files<Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(id: string, options?: Options): ReadPromise<FilesResult, Options>; filesDiscover(id: string, options?: FilesDiscoverOptions): Promise<FilesDiscoverResult>; filesLookup(options: FilesLookupOptions): Promise<FilesLookupResult>; docs<Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(id: string, options?: Options): ReadPromise<DocsResult, Options>; deps<Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(id: string, options?: Options): ReadPromise<DepsResult, Options>; graph<Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: Options): ReadPromise<GraphResult, Options>; append(id: string, body: string, options?: PmClientFullMutationOptions): Promise<AppendResult>; init(prefix?: string, options?: InitCommandOptions): Promise<InitResult>; config(scope: string, configAction: string, key?: string, value?: string, options?: ConfigCommandOptions): Promise<ConfigResult>; schema(subcommand: SchemaSubcommand, options?: PmActionOptions): Promise<SchemaResult>; workflowPolicy(action: WorkflowPolicyAction, name?: string, options?: WorkflowPolicyActionOptions): Promise<WorkflowPolicyActionResult>; schemaList(): Promise<SchemaListResult>; schemaShow(name: string): Promise<SchemaShowResult>; schemaAddType(name: string, options?: SchemaAddTypeCommandOptions): Promise<SchemaAddTypeResult>; schemaRemoveType(name: string, options?: SchemaRemoveTypeCommandOptions): Promise<SchemaRemoveTypeResult>; schemaAddStatus(name: string, options?: SchemaAddStatusCommandOptions): Promise<SchemaAddStatusResult>; schemaRemoveStatus(name: string, options?: SchemaRemoveStatusCommandOptions): Promise<SchemaRemoveStatusResult>; schemaAddField(name: string, options?: SchemaAddFieldCommandOptions): Promise<SchemaAddFieldResult>; schemaRemoveField(name: string, options?: SchemaRemoveFieldCommandOptions): Promise<SchemaRemoveFieldResult>; schemaListFields(): Promise<SchemaListFieldsResult>; schemaShowField(name: string): Promise<SchemaShowFieldResult>; schemaApplyPreset(typePreset: string, options?: SchemaApplyPresetCommandOptions): Promise<SchemaApplyPresetResult>; schemaInferTypes(options?: SchemaAddTypeInferCommandOptions): Promise<SchemaAddTypeInferResult>; schemaRenameType(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaRenameField(from: string, to: string, options: RunSchemaEvolutionMigrationOptions, type?: string): Promise<SchemaEvolutionMigrationResult>; schemaRemapStatus(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaShowStatus(name: string): Promise<SchemaShowStatusResult>; profile(subcommand: ProfileSubcommand, options?: PmActionOptions): Promise<ProfileResult>; profileList(): Promise<ProfileListResult>; profileShow(name: string): Promise<ProfileShowResult>; profileApply(name: string, options?: ProfileApplyCommandOptions): Promise<ProfileApplyResult>; profileLint(name: string): Promise<ProfileLintResult>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts: true; }>(options: Options): ReadPromise<ValidateCountsResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts?: false; } = ValidateCommandOptions & { counts?: false; }>(options?: Options): ReadPromise<ValidateResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions>>(options: Options): ReadPromise<ValidateResult | ValidateCountsResult, Options>; health<Options extends ReadOptions<RunHealthOptions> = RunHealthOptions>(options?: Options): ReadPromise<HealthResult, Options>; gc(options?: GcCommandOptions): Promise<GcResult>; assurance(input: AssuranceActionInput): Promise<AssuranceActionResult>; historyRedact(id: string, options: HistoryRedactCommandOptions): Promise<HistoryRedactResult>; historyRepair(id: string, options?: HistoryRepairCommandOptions): Promise<HistoryRepairResult>; historyRepairAll(options?: HistoryRepairCommandOptions): Promise<HistoryRepairAllResult>; historyCompact(id: string, options?: HistoryCompactCommandOptions): Promise<HistoryCompactResult>; historyCompactBulk(options: HistoryCompactBulkCommandOptions): Promise<HistoryCompactBulkResult>; historyAuthorAcknowledge(options: AcknowledgeUnknownAuthorEventsOptions): Promise<UnknownAuthorAcknowledgmentResult>; plan(subcommand: PlanSubcommand, id?: string, options?: PlanCommandOptions, stepRef?: string, reorderTo?: number): Promise<PlanCommandResult>; planCreate(options: PlanCommandOptions): Promise<PlanCommandResult>; planShow(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planAddStep(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUpdateStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planCompleteStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planBlockStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planReorderStep(id: string, stepRef: string, reorderTo: number, options?: PlanCommandOptions): Promise<PlanCommandResult>; planRemoveStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planLink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUnlink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDecision(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDiscovery(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planValidation(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planResume(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planApprove(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planMaterialize(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; create(options?: PmCreateActionOptions): Promise<CreateResult>; update(id: string, options?: PmUpdateActionOptions): Promise<UpdateResult>; reopen(id: string, reason: string, options?: ReopenCommandOptions): Promise<ReopenResult>; close(id: string, reason: string, options?: PmClientCloseActionOptions): Promise<CloseResult>; claim(id: string, options?: PmClientFullMutationOptions): Promise<ClaimResult>; claimNext(options?: ClaimNextOptions): Promise<ClaimNextResult>; release(id: string, options?: PmClientFullMutationOptions): Promise<ReleaseResult>; copy(id: string, options?: PmClientFullMutationOptions): Promise<CopyResult>; delete(id: string, options?: PmClientFullMutationOptions): Promise<DeleteResult>; restore(id: string, target: string, options?: PmClientFullMutationOptions): Promise<RestoreResult>; focus(id?: string, options?: PmClientFullMutationOptions): Promise<FocusResult>; startTask(id: string, options?: PmClientFullMutationOptions): Promise<StartTaskResult>; pauseTask(id: string, options?: PmClientFullMutationOptions): Promise<PauseTaskResult>; closeTask(id: string, reason: string, options?: PmClientFullMutationOptions): Promise<CloseTaskResult>; extension(target?: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionList(options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionActivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionDeactivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; package(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageList(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageInstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageUninstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDoctor(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageManage(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDescribe(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageReload(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageCatalog<Options extends ReadOptions<PackageCommandOptions> = PackageCommandOptions>(options?: Options): ReadPromise<PackageCommandResult, Options>; packageActivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDeactivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageMigrate(options?: PackageCommandOptions): Promise<PackageCommandResult>; upgrade(target?: string, options?: UpgradeCommandOptions): Promise<UpgradeResult>; }"
         },
         {
           "classification": "supported",
@@ -25468,6 +25664,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "buildWorkflowCompletenessCheck",
+          "signature": "(document: WorkflowPolicyDocument, items: readonly (Readonly<Record<string, unknown>> & { id: string; type: string; status: string; })[], rowLimit?: number, sourceIncomplete?: boolean) => { check: ValidateCheck; warnings: string[]; } | calls: (document: WorkflowPolicyDocument, items: readonly (Readonly<Record<string, unknown>> & { id: string; type: string; status: string; })[], rowLimit?: number, sourceIncomplete?: boolean) => { check: ValidateCheck; warnings: string[]; }"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "CapturedBoundaryRecord",
           "signature": "export interface CapturedBoundaryRecord { id: string; producer: string; consumer: string; format: string; fixture_path: string; }"
@@ -25501,6 +25703,12 @@
           "kind": "function",
           "name": "createEmptyAssuranceDocument",
           "signature": "() => AssuranceDocument | calls: () => AssuranceDocument"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "createLifecycleCompletenessPolicies",
+          "signature": "() => WorkflowPolicyDocument | calls: () => WorkflowPolicyDocument"
         },
         {
           "classification": "supported",
@@ -25729,6 +25937,12 @@
           "kind": "function",
           "name": "evaluateSimilarityGovernance",
           "signature": "(candidate: SimilarItemCandidate, options: FindSimilarItemsOptions & { mode: \"advisory\" | \"off\" | \"strict\"; allowDuplicate?: boolean; }) => Promise<SimilarityAdvisory | undefined> | calls: (candidate: SimilarItemCandidate, options: FindSimilarItemsOptions & { mode: \"off\" | \"advisory\" | \"strict\"; allowDuplicate?: boolean; }) => Promise<SimilarityAdvisory | undefined>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "evaluateWorkflowPolicies",
+          "signature": "(document: WorkflowPolicyDocument, input: WorkflowPolicyInput) => WorkflowPolicyEvaluation | calls: (document: WorkflowPolicyDocument, input: WorkflowPolicyInput) => WorkflowPolicyEvaluation"
         },
         {
           "classification": "supported",
@@ -25966,6 +26180,18 @@
         },
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "MAX_WORKFLOW_POLICIES",
+          "signature": "256"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "MAX_WORKFLOW_POLICY_TERMS",
+          "signature": "64"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "MutationActionContract",
           "signature": "export interface MutationActionContract { action: string; history_scope: MutationHistoryScope; }"
@@ -26035,6 +26261,18 @@
           "kind": "function",
           "name": "parseUnknownAuthorHistoryEventCoordinates",
           "signature": "(values: readonly string[]) => UnknownAuthorHistoryEvent[] | calls: (values: readonly string[]) => UnknownAuthorHistoryEvent[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseWorkflowPolicy",
+          "signature": "(value: unknown) => WorkflowPolicy | calls: (value: unknown) => WorkflowPolicy"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseWorkflowPolicyDocument",
+          "signature": "(value: unknown) => WorkflowPolicyDocument | calls: (value: unknown) => WorkflowPolicyDocument"
         },
         {
           "classification": "supported",
@@ -26113,6 +26351,18 @@
           "kind": "function",
           "name": "putAssuranceDeclarationBundle",
           "signature": "(pmRoot: string, bundle: AssuranceDeclarationBundle, options?: AssuranceMutationOptions) => Promise<AssuranceBundleMutationReceipt> | calls: (pmRoot: string, bundle: AssuranceDeclarationBundle, options?: AssuranceMutationOptions) => Promise<AssuranceBundleMutationReceipt>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "readWorkflowPolicies",
+          "signature": "(pmRoot: string) => Promise<WorkflowPolicyDocument> | calls: (pmRoot: string) => Promise<WorkflowPolicyDocument>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "readWorkflowPolicyField",
+          "signature": "(record: Readonly<Record<string, unknown>> | null, field: string) => unknown | calls: (record: Readonly<Record<string, unknown>> | null, field: string) => unknown"
         },
         {
           "classification": "supported",
@@ -26209,6 +26459,12 @@
           "kind": "function",
           "name": "runValidate",
           "signature": "{ (options: ValidateCommandOptions & { counts: true; }, global: GlobalOptions, services?: ValidateMutationServices): Promise<ValidateCountsResult>; (options: ValidateCommandOptions & { counts?: false; }, global: GlobalOptions, services?: ValidateMutationServices): Promise<ValidateResult>; (options: ValidateCommandOptions, global: GlobalOptions, services?: ValidateMutationServices): Promise<ValidateResult | ValidateCountsResult>; } | calls: (options: ValidateCommandOptions & { counts: true; }, global: GlobalOptions, services?: ValidateMutationServices) => Promise<ValidateCountsResult> ; (options: ValidateCommandOptions & { counts?: false; }, global: GlobalOptions, services?: ValidateMutationServices) => Promise<ValidateResult> ; (options: ValidateCommandOptions, global: GlobalOptions, services?: ValidateMutationServices) => Promise<ValidateResult | ValidateCountsResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runWorkflowPolicyAction",
+          "signature": "(action: WorkflowPolicyAction, name: string | undefined, options?: WorkflowPolicyActionOptions, global?: Pick<GlobalOptions, \"path\">) => Promise<WorkflowPolicyActionResult> | calls: (action: WorkflowPolicyAction, name: string | undefined, options?: WorkflowPolicyActionOptions, global?: Pick<GlobalOptions, \"path\">) => Promise<WorkflowPolicyActionResult>"
         },
         {
           "classification": "supported",
@@ -26436,7 +26692,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ValidateCommandOptions",
-          "signature": "export interface ValidateCommandOptions { checkMetadata?: boolean; checkResolution?: boolean; checkLifecycle?: boolean; checkStaleBlockers?: boolean; dependencyCycleSeverity?: string; parentCycleSeverity?: string; checkFiles?: boolean; includePmInternals?: boolean; verboseFileLists?: boolean; verboseDiagnostics?: boolean; allAffectedIds?: boolean; checkHistoryDrift?: boolean; checkStorageIntegrity?: boolean; checkCommandReferences?: boolean; scanMode?: string; metadataProfile?: string; fixHints?: boolean; autoFix?: boolean; dryRun?: boolean; fixScope?: string[]; pruneMissing?: boolean; counts?: boolean; full?: boolean; }"
+          "signature": "export interface ValidateCommandOptions { checkCompleteness?: boolean; checkMetadata?: boolean; checkResolution?: boolean; checkLifecycle?: boolean; checkStaleBlockers?: boolean; dependencyCycleSeverity?: string; parentCycleSeverity?: string; checkFiles?: boolean; includePmInternals?: boolean; verboseFileLists?: boolean; verboseDiagnostics?: boolean; allAffectedIds?: boolean; checkHistoryDrift?: boolean; checkStorageIntegrity?: boolean; checkCommandReferences?: boolean; scanMode?: string; metadataProfile?: string; fixHints?: boolean; autoFix?: boolean; dryRun?: boolean; fixScope?: string[]; pruneMissing?: boolean; counts?: boolean; full?: boolean; }"
         },
         {
           "classification": "supported",
@@ -26485,6 +26741,126 @@
           "kind": "interface",
           "name": "WaivedBoundaryRecord",
           "signature": "export interface WaivedBoundaryRecord { id: string; producer: string; consumer: string; format: string; waiver_reason: string; waiver_owner: string; waiver_expires_at: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "WORKFLOW_POLICY_ACTIONS",
+          "signature": "readonly [\"policies\", \"policy-put\", \"policy-remove\", \"policy-mode\", \"policy-check\", \"policy-approve\", \"policy-presets\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "WORKFLOW_POLICY_DOCUMENT_SCHEMA",
+          "signature": "{ readonly $schema: \"https://json-schema.org/draft/2020-12/schema\"; readonly title: \"pm workflow policy registry\"; readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"version\", \"policies\"]; readonly properties: { readonly version: { readonly const: 1; }; readonly enforcement: { readonly enum: readonly [\"advise\", \"refuse\"]; readonly default: \"advise\"; }; readonly policies: { readonly type: \"array\"; readonly maxItems: 256; readonly items: { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"id\", \"rule\"]; readonly properties: { readonly id: { readonly type: \"string\"; readonly minLength: 1; readonly maxLength: 128; readonly pattern: \"^[a-zA-Z0-9][a-zA-Z0-9._-]*$\"; }; readonly description: { readonly type: \"string\"; readonly minLength: 1; readonly maxLength: 500; readonly pattern: \"\\\\S\"; }; readonly effect: { readonly enum: readonly [\"advise\", \"warn\", \"refuse\"]; }; readonly subject: { readonly type: \"object\"; readonly additionalProperties: false; readonly properties: { readonly dependency: { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\"]; readonly properties: { readonly kind: { type: string; minLength: number; maxLength: number; pattern: string; }; readonly id: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }; }; readonly rule: { readonly oneOf: readonly [{ readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"fields\"]; readonly properties: { readonly kind: { readonly const: \"require_fields\"; }; readonly fields: { items: { pattern: string; type: string; minLength: number; maxLength: number; }; type: string; minItems: number; maxItems: number; }; }; }, { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"authors\"]; readonly properties: { readonly kind: { readonly const: \"authors\"; }; readonly authors: { type: string; minItems: number; maxItems: number; items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }, ...{ type: string; additionalProperties: boolean; required: string[]; properties: { kind: { const: string; }; fields: { items: { pattern: string; type: string; minLength: number; maxLength: number; }; type: string; minItems: number; maxItems: number; }; authors: { type: string; minItems: number; maxItems: number; items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }[], { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"allowed\"]; readonly properties: { readonly kind: { readonly const: \"transition\"; }; readonly allowed: { readonly type: \"array\"; readonly maxItems: 64; readonly items: { readonly type: \"array\"; readonly minItems: 2; readonly maxItems: 2; readonly items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }; }]; }; }; }; }; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "WORKFLOW_POLICY_SCHEMA",
+          "signature": "{ readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"id\", \"rule\"]; readonly properties: { readonly id: { readonly type: \"string\"; readonly minLength: 1; readonly maxLength: 128; readonly pattern: \"^[a-zA-Z0-9][a-zA-Z0-9._-]*$\"; }; readonly description: { readonly type: \"string\"; readonly minLength: 1; readonly maxLength: 500; readonly pattern: \"\\\\S\"; }; readonly effect: { readonly enum: readonly [\"advise\", \"warn\", \"refuse\"]; }; readonly subject: { readonly type: \"object\"; readonly additionalProperties: false; readonly properties: { readonly dependency: { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\"]; readonly properties: { readonly kind: { type: string; minLength: number; maxLength: number; pattern: string; }; readonly id: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }; }; readonly rule: { readonly oneOf: readonly [{ readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"fields\"]; readonly properties: { readonly kind: { readonly const: \"require_fields\"; }; readonly fields: { items: { pattern: string; type: string; minLength: number; maxLength: number; }; type: string; minItems: number; maxItems: number; }; }; }, { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"authors\"]; readonly properties: { readonly kind: { readonly const: \"authors\"; }; readonly authors: { type: string; minItems: number; maxItems: number; items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }, ...{ type: string; additionalProperties: boolean; required: string[]; properties: { kind: { const: string; }; fields: { items: { pattern: string; type: string; minLength: number; maxLength: number; }; type: string; minItems: number; maxItems: number; }; authors: { type: string; minItems: number; maxItems: number; items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }[], { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"allowed\"]; readonly properties: { readonly kind: { readonly const: \"transition\"; }; readonly allowed: { readonly type: \"array\"; readonly maxItems: 64; readonly items: { readonly type: \"array\"; readonly minItems: 2; readonly maxItems: 2; readonly items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }; }]; }; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "workflowApprovalFingerprint",
+          "signature": "(policy: WorkflowPolicy, record: Readonly<Record<string, unknown>>) => string | calls: (policy: WorkflowPolicy, record: Readonly<Record<string, unknown>>) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowApprovalReceipt",
+          "signature": "export interface WorkflowApprovalReceipt { id: string; policy_id: string; policy_fingerprint: string; content_fingerprint: string; warnings: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowCompletenessViolation",
+          "signature": "export interface WorkflowCompletenessViolation { id: string; type: string; status: string; decision: WorkflowPolicyDecision; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicy",
+          "signature": "export interface WorkflowPolicy { id: string; description?: string; subject?: WorkflowPolicySubject; effect?: WorkflowPolicyEffect; rule: WorkflowPolicyRule; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "WorkflowPolicyAction",
+          "signature": "export type WorkflowPolicyAction = (typeof WORKFLOW_POLICY_ACTIONS)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyActionOptions",
+          "signature": "export interface WorkflowPolicyActionOptions { definition?: unknown; policy?: string; dryRun?: boolean; author?: string; message?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyActionResult",
+          "signature": "export interface WorkflowPolicyActionResult { policy_result: true; action: WorkflowPolicyAction; changed: boolean; result: WorkflowPolicyDocument | WorkflowPolicyEvaluation | WorkflowApprovalReceipt; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "workflowPolicyApplies",
+          "signature": "(policy: WorkflowPolicy, input: WorkflowPolicyInput) => boolean | calls: (policy: WorkflowPolicy, input: WorkflowPolicyInput) => boolean"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyApproval",
+          "signature": "export interface WorkflowPolicyApproval { policy_fingerprint: string; content_fingerprint: string; author: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyDecision",
+          "signature": "export interface WorkflowPolicyDecision { policy_id: string; policy_fingerprint: string; rule: WorkflowPolicyRule[\"kind\"]; effect: WorkflowPolicyEffect; satisfied: boolean; missing_fields: string[]; remediation: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyDocument",
+          "signature": "export interface WorkflowPolicyDocument { version: 1; enforcement: \"advise\" | \"refuse\"; policies: WorkflowPolicy[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "WorkflowPolicyEffect",
+          "signature": "export type WorkflowPolicyEffect = \"advise\" | \"warn\" | \"refuse\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyEvaluation",
+          "signature": "export interface WorkflowPolicyEvaluation { allowed: boolean; decisions: WorkflowPolicyDecision[]; warnings: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "workflowPolicyFingerprint",
+          "signature": "(policy: WorkflowPolicy) => string | calls: (policy: WorkflowPolicy) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyInput",
+          "signature": "export interface WorkflowPolicyInput { operation: string; author: string; before: Readonly<Record<string, unknown>> | null; after: Readonly<Record<string, unknown>> | null; approvals?: readonly WorkflowPolicyApproval[]; completeness_only?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "WorkflowPolicyRule",
+          "signature": "export type WorkflowPolicyRule = { kind: \"require_fields\"; fields: string[]; } | { kind: \"transition\"; allowed: [ string, string ][]; } | { kind: \"authors\"; authors: string[]; } | { kind: \"field_writers\"; fields: string[]; authors: string[]; } | { kind: \"approval\"; fields: string[]; authors: string[]; };"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicySubject",
+          "signature": "export interface WorkflowPolicySubject { types?: string[]; tags?: string[]; statuses?: string[]; operations?: string[]; parents?: string[]; dependency?: { kind: string; id?: string; }; }"
         },
         {
           "classification": "supported",
@@ -30286,6 +30662,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "buildWorkflowCompletenessCheck",
+          "signature": "(document: WorkflowPolicyDocument, items: readonly (Readonly<Record<string, unknown>> & { id: string; type: string; status: string; })[], rowLimit?: number, sourceIncomplete?: boolean) => { check: ValidateCheck; warnings: string[]; } | calls: (document: WorkflowPolicyDocument, items: readonly (Readonly<Record<string, unknown>> & { id: string; type: string; status: string; })[], rowLimit?: number, sourceIncomplete?: boolean) => { check: ValidateCheck; warnings: string[]; }"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "BUILTIN_ITEM_TYPE_VALUES",
           "signature": "readonly [\"Epic\", \"Feature\", \"Task\", \"Chore\", \"Issue\", \"Decision\", \"Event\", \"Reminder\", \"Milestone\", \"Meeting\", \"Plan\"]"
@@ -30563,6 +30945,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "createLifecycleCompletenessPolicies",
+          "signature": "() => WorkflowPolicyDocument | calls: () => WorkflowPolicyDocument"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "createPmCliExpectedError",
           "signature": "(message: string, options?: CreatePmCliExpectedErrorOptions) => PmCliExpectedError | calls: (message: string, options?: CreatePmCliExpectedErrorOptions) => PmCliExpectedError"
         },
@@ -30727,6 +31115,12 @@
           "kind": "function",
           "name": "estimatePmOutputTokens",
           "signature": "(utf8Bytes: number) => number | calls: (utf8Bytes: number) => number"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "evaluateWorkflowPolicies",
+          "signature": "(document: WorkflowPolicyDocument, input: WorkflowPolicyInput) => WorkflowPolicyEvaluation | calls: (document: WorkflowPolicyDocument, input: WorkflowPolicyInput) => WorkflowPolicyEvaluation"
         },
         {
           "classification": "supported",
@@ -31336,6 +31730,18 @@
         },
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "MAX_WORKFLOW_POLICIES",
+          "signature": "256"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "MAX_WORKFLOW_POLICY_TERMS",
+          "signature": "64"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "next",
           "signature": "<Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<NextResult, Options> | calls: <Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<NextResult, Options>"
@@ -31527,6 +31933,18 @@
           "signature": "(raw: string) => string[] | calls: (raw: string) => string[]"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseWorkflowPolicy",
+          "signature": "(value: unknown) => WorkflowPolicy | calls: (value: unknown) => WorkflowPolicy"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseWorkflowPolicyDocument",
+          "signature": "(value: unknown) => WorkflowPolicyDocument | calls: (value: unknown) => WorkflowPolicyDocument"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "pathExists",
@@ -31620,7 +32038,7 @@
           "classification": "supported",
           "kind": "class",
           "name": "PmClient",
-          "signature": "export declare class PmClient { private readonly defaults; constructor(options?: PmClientOptions); static forActiveExtensionHost(options: PmClientOptions): PmClient; run(action: PmActionName, args?: PmClientRunArgs): Promise<unknown>; private runTyped; context<Options extends ReadOptions<ContextOptions> = ContextOptions>(options?: Options): ReadPromise<ContextResult, Options>; listAllItemMetadataLight(): Promise<ItemMetadata[]>; list<Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options): ReadPromise<ListResult, Options>; listAllComplete(options?: PmCompleteListOptions): Promise<PmCompleteListResult>; search<Options extends ReadOptions<SearchOptions> = SearchOptions>(query: string, options?: Options): ReadPromise<SearchResult, Options>; get<Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options): ReadPromise<GetResult, Options>; next<Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options): ReadPromise<NextResult, Options>; aggregate<Options extends ReadOptions<AggregateOptions> = AggregateOptions>(options?: Options): ReadPromise<AggregateResult, Options>; stats<Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions>(options?: Options): ReadPromise<StatsResult, Options>; duplicates<Options extends ReadOptions<DuplicatesCommandOptions> = DuplicatesCommandOptions>(options?: Options): ReadPromise<DuplicatesResult, Options>; comments<Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions>(id: string, options?: Options): ReadPromise<CommentsResult, Options>; notes<Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(id: string, options?: Options): ReadPromise<NotesResult, Options>; learnings(id: string, options?: LearningsCommandOptions): Promise<LearningsResult>; files<Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(id: string, options?: Options): ReadPromise<FilesResult, Options>; filesDiscover(id: string, options?: FilesDiscoverOptions): Promise<FilesDiscoverResult>; filesLookup(options: FilesLookupOptions): Promise<FilesLookupResult>; docs<Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(id: string, options?: Options): ReadPromise<DocsResult, Options>; deps<Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(id: string, options?: Options): ReadPromise<DepsResult, Options>; graph<Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: Options): ReadPromise<GraphResult, Options>; append(id: string, body: string, options?: PmClientFullMutationOptions): Promise<AppendResult>; init(prefix?: string, options?: InitCommandOptions): Promise<InitResult>; config(scope: string, configAction: string, key?: string, value?: string, options?: ConfigCommandOptions): Promise<ConfigResult>; schema(subcommand: SchemaSubcommand, options?: PmActionOptions): Promise<SchemaResult>; schemaList(): Promise<SchemaListResult>; schemaShow(name: string): Promise<SchemaShowResult>; schemaAddType(name: string, options?: SchemaAddTypeCommandOptions): Promise<SchemaAddTypeResult>; schemaRemoveType(name: string, options?: SchemaRemoveTypeCommandOptions): Promise<SchemaRemoveTypeResult>; schemaAddStatus(name: string, options?: SchemaAddStatusCommandOptions): Promise<SchemaAddStatusResult>; schemaRemoveStatus(name: string, options?: SchemaRemoveStatusCommandOptions): Promise<SchemaRemoveStatusResult>; schemaAddField(name: string, options?: SchemaAddFieldCommandOptions): Promise<SchemaAddFieldResult>; schemaRemoveField(name: string, options?: SchemaRemoveFieldCommandOptions): Promise<SchemaRemoveFieldResult>; schemaListFields(): Promise<SchemaListFieldsResult>; schemaShowField(name: string): Promise<SchemaShowFieldResult>; schemaApplyPreset(typePreset: string, options?: SchemaApplyPresetCommandOptions): Promise<SchemaApplyPresetResult>; schemaInferTypes(options?: SchemaAddTypeInferCommandOptions): Promise<SchemaAddTypeInferResult>; schemaRenameType(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaRenameField(from: string, to: string, options: RunSchemaEvolutionMigrationOptions, type?: string): Promise<SchemaEvolutionMigrationResult>; schemaRemapStatus(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaShowStatus(name: string): Promise<SchemaShowStatusResult>; profile(subcommand: ProfileSubcommand, options?: PmActionOptions): Promise<ProfileResult>; profileList(): Promise<ProfileListResult>; profileShow(name: string): Promise<ProfileShowResult>; profileApply(name: string, options?: ProfileApplyCommandOptions): Promise<ProfileApplyResult>; profileLint(name: string): Promise<ProfileLintResult>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts: true; }>(options: Options): ReadPromise<ValidateCountsResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts?: false; } = ValidateCommandOptions & { counts?: false; }>(options?: Options): ReadPromise<ValidateResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions>>(options: Options): ReadPromise<ValidateResult | ValidateCountsResult, Options>; health<Options extends ReadOptions<RunHealthOptions> = RunHealthOptions>(options?: Options): ReadPromise<HealthResult, Options>; gc(options?: GcCommandOptions): Promise<GcResult>; assurance(input: AssuranceActionInput): Promise<AssuranceActionResult>; historyRedact(id: string, options: HistoryRedactCommandOptions): Promise<HistoryRedactResult>; historyRepair(id: string, options?: HistoryRepairCommandOptions): Promise<HistoryRepairResult>; historyRepairAll(options?: HistoryRepairCommandOptions): Promise<HistoryRepairAllResult>; historyCompact(id: string, options?: HistoryCompactCommandOptions): Promise<HistoryCompactResult>; historyCompactBulk(options: HistoryCompactBulkCommandOptions): Promise<HistoryCompactBulkResult>; historyAuthorAcknowledge(options: AcknowledgeUnknownAuthorEventsOptions): Promise<UnknownAuthorAcknowledgmentResult>; plan(subcommand: PlanSubcommand, id?: string, options?: PlanCommandOptions, stepRef?: string, reorderTo?: number): Promise<PlanCommandResult>; planCreate(options: PlanCommandOptions): Promise<PlanCommandResult>; planShow(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planAddStep(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUpdateStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planCompleteStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planBlockStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planReorderStep(id: string, stepRef: string, reorderTo: number, options?: PlanCommandOptions): Promise<PlanCommandResult>; planRemoveStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planLink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUnlink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDecision(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDiscovery(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planValidation(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planResume(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planApprove(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planMaterialize(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; create(options?: PmCreateActionOptions): Promise<CreateResult>; update(id: string, options?: PmUpdateActionOptions): Promise<UpdateResult>; reopen(id: string, reason: string, options?: ReopenCommandOptions): Promise<ReopenResult>; close(id: string, reason: string, options?: PmClientCloseActionOptions): Promise<CloseResult>; claim(id: string, options?: PmClientFullMutationOptions): Promise<ClaimResult>; claimNext(options?: ClaimNextOptions): Promise<ClaimNextResult>; release(id: string, options?: PmClientFullMutationOptions): Promise<ReleaseResult>; copy(id: string, options?: PmClientFullMutationOptions): Promise<CopyResult>; delete(id: string, options?: PmClientFullMutationOptions): Promise<DeleteResult>; restore(id: string, target: string, options?: PmClientFullMutationOptions): Promise<RestoreResult>; focus(id?: string, options?: PmClientFullMutationOptions): Promise<FocusResult>; startTask(id: string, options?: PmClientFullMutationOptions): Promise<StartTaskResult>; pauseTask(id: string, options?: PmClientFullMutationOptions): Promise<PauseTaskResult>; closeTask(id: string, reason: string, options?: PmClientFullMutationOptions): Promise<CloseTaskResult>; extension(target?: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionList(options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionActivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionDeactivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; package(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageList(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageInstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageUninstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDoctor(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageManage(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDescribe(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageReload(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageCatalog<Options extends ReadOptions<PackageCommandOptions> = PackageCommandOptions>(options?: Options): ReadPromise<PackageCommandResult, Options>; packageActivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDeactivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageMigrate(options?: PackageCommandOptions): Promise<PackageCommandResult>; upgrade(target?: string, options?: UpgradeCommandOptions): Promise<UpgradeResult>; }"
+          "signature": "export declare class PmClient { private readonly defaults; constructor(options?: PmClientOptions); static forActiveExtensionHost(options: PmClientOptions): PmClient; run(action: PmActionName, args?: PmClientRunArgs): Promise<unknown>; private runTyped; context<Options extends ReadOptions<ContextOptions> = ContextOptions>(options?: Options): ReadPromise<ContextResult, Options>; listAllItemMetadataLight(): Promise<ItemMetadata[]>; list<Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options): ReadPromise<ListResult, Options>; listAllComplete(options?: PmCompleteListOptions): Promise<PmCompleteListResult>; search<Options extends ReadOptions<SearchOptions> = SearchOptions>(query: string, options?: Options): ReadPromise<SearchResult, Options>; get<Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options): ReadPromise<GetResult, Options>; next<Options extends ReadOptions<NextOptions> = NextOptions>(options?: Options): ReadPromise<NextResult, Options>; aggregate<Options extends ReadOptions<AggregateOptions> = AggregateOptions>(options?: Options): ReadPromise<AggregateResult, Options>; stats<Options extends ReadOptions<StatsCommandOptions> = StatsCommandOptions>(options?: Options): ReadPromise<StatsResult, Options>; duplicates<Options extends ReadOptions<DuplicatesCommandOptions> = DuplicatesCommandOptions>(options?: Options): ReadPromise<DuplicatesResult, Options>; comments<Options extends ReadOptions<CommentsCommandOptions> = CommentsCommandOptions>(id: string, options?: Options): ReadPromise<CommentsResult, Options>; notes<Options extends ReadOptions<NotesCommandOptions> = NotesCommandOptions>(id: string, options?: Options): ReadPromise<NotesResult, Options>; learnings(id: string, options?: LearningsCommandOptions): Promise<LearningsResult>; files<Options extends ReadOptions<FilesCommandOptions> = FilesCommandOptions>(id: string, options?: Options): ReadPromise<FilesResult, Options>; filesDiscover(id: string, options?: FilesDiscoverOptions): Promise<FilesDiscoverResult>; filesLookup(options: FilesLookupOptions): Promise<FilesLookupResult>; docs<Options extends ReadOptions<DocsCommandOptions> = DocsCommandOptions>(id: string, options?: Options): ReadPromise<DocsResult, Options>; deps<Options extends ReadOptions<DepsCommandOptions> = DepsCommandOptions>(id: string, options?: Options): ReadPromise<DepsResult, Options>; graph<Options extends ReadOptions<GraphCommandOptions> = GraphCommandOptions>(subcommand: GraphSubcommand, ids?: { id?: string; target?: string; }, options?: Options): ReadPromise<GraphResult, Options>; append(id: string, body: string, options?: PmClientFullMutationOptions): Promise<AppendResult>; init(prefix?: string, options?: InitCommandOptions): Promise<InitResult>; config(scope: string, configAction: string, key?: string, value?: string, options?: ConfigCommandOptions): Promise<ConfigResult>; schema(subcommand: SchemaSubcommand, options?: PmActionOptions): Promise<SchemaResult>; workflowPolicy(action: WorkflowPolicyAction, name?: string, options?: WorkflowPolicyActionOptions): Promise<WorkflowPolicyActionResult>; schemaList(): Promise<SchemaListResult>; schemaShow(name: string): Promise<SchemaShowResult>; schemaAddType(name: string, options?: SchemaAddTypeCommandOptions): Promise<SchemaAddTypeResult>; schemaRemoveType(name: string, options?: SchemaRemoveTypeCommandOptions): Promise<SchemaRemoveTypeResult>; schemaAddStatus(name: string, options?: SchemaAddStatusCommandOptions): Promise<SchemaAddStatusResult>; schemaRemoveStatus(name: string, options?: SchemaRemoveStatusCommandOptions): Promise<SchemaRemoveStatusResult>; schemaAddField(name: string, options?: SchemaAddFieldCommandOptions): Promise<SchemaAddFieldResult>; schemaRemoveField(name: string, options?: SchemaRemoveFieldCommandOptions): Promise<SchemaRemoveFieldResult>; schemaListFields(): Promise<SchemaListFieldsResult>; schemaShowField(name: string): Promise<SchemaShowFieldResult>; schemaApplyPreset(typePreset: string, options?: SchemaApplyPresetCommandOptions): Promise<SchemaApplyPresetResult>; schemaInferTypes(options?: SchemaAddTypeInferCommandOptions): Promise<SchemaAddTypeInferResult>; schemaRenameType(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaRenameField(from: string, to: string, options: RunSchemaEvolutionMigrationOptions, type?: string): Promise<SchemaEvolutionMigrationResult>; schemaRemapStatus(from: string, to: string, options: RunSchemaEvolutionMigrationOptions): Promise<SchemaEvolutionMigrationResult>; schemaShowStatus(name: string): Promise<SchemaShowStatusResult>; profile(subcommand: ProfileSubcommand, options?: PmActionOptions): Promise<ProfileResult>; profileList(): Promise<ProfileListResult>; profileShow(name: string): Promise<ProfileShowResult>; profileApply(name: string, options?: ProfileApplyCommandOptions): Promise<ProfileApplyResult>; profileLint(name: string): Promise<ProfileLintResult>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts: true; }>(options: Options): ReadPromise<ValidateCountsResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions> & { counts?: false; } = ValidateCommandOptions & { counts?: false; }>(options?: Options): ReadPromise<ValidateResult, Options>; validate<Options extends ReadOptions<ValidateCommandOptions>>(options: Options): ReadPromise<ValidateResult | ValidateCountsResult, Options>; health<Options extends ReadOptions<RunHealthOptions> = RunHealthOptions>(options?: Options): ReadPromise<HealthResult, Options>; gc(options?: GcCommandOptions): Promise<GcResult>; assurance(input: AssuranceActionInput): Promise<AssuranceActionResult>; historyRedact(id: string, options: HistoryRedactCommandOptions): Promise<HistoryRedactResult>; historyRepair(id: string, options?: HistoryRepairCommandOptions): Promise<HistoryRepairResult>; historyRepairAll(options?: HistoryRepairCommandOptions): Promise<HistoryRepairAllResult>; historyCompact(id: string, options?: HistoryCompactCommandOptions): Promise<HistoryCompactResult>; historyCompactBulk(options: HistoryCompactBulkCommandOptions): Promise<HistoryCompactBulkResult>; historyAuthorAcknowledge(options: AcknowledgeUnknownAuthorEventsOptions): Promise<UnknownAuthorAcknowledgmentResult>; plan(subcommand: PlanSubcommand, id?: string, options?: PlanCommandOptions, stepRef?: string, reorderTo?: number): Promise<PlanCommandResult>; planCreate(options: PlanCommandOptions): Promise<PlanCommandResult>; planShow(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planAddStep(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUpdateStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planCompleteStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planBlockStep(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planReorderStep(id: string, stepRef: string, reorderTo: number, options?: PlanCommandOptions): Promise<PlanCommandResult>; planRemoveStep(id: string, stepRef: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planLink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planUnlink(id: string, stepRef: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDecision(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planDiscovery(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planValidation(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planResume(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; planApprove(id: string, options?: PlanCommandOptions): Promise<PlanCommandResult>; planMaterialize(id: string, options: PlanCommandOptions): Promise<PlanCommandResult>; create(options?: PmCreateActionOptions): Promise<CreateResult>; update(id: string, options?: PmUpdateActionOptions): Promise<UpdateResult>; reopen(id: string, reason: string, options?: ReopenCommandOptions): Promise<ReopenResult>; close(id: string, reason: string, options?: PmClientCloseActionOptions): Promise<CloseResult>; claim(id: string, options?: PmClientFullMutationOptions): Promise<ClaimResult>; claimNext(options?: ClaimNextOptions): Promise<ClaimNextResult>; release(id: string, options?: PmClientFullMutationOptions): Promise<ReleaseResult>; copy(id: string, options?: PmClientFullMutationOptions): Promise<CopyResult>; delete(id: string, options?: PmClientFullMutationOptions): Promise<DeleteResult>; restore(id: string, target: string, options?: PmClientFullMutationOptions): Promise<RestoreResult>; focus(id?: string, options?: PmClientFullMutationOptions): Promise<FocusResult>; startTask(id: string, options?: PmClientFullMutationOptions): Promise<StartTaskResult>; pauseTask(id: string, options?: PmClientFullMutationOptions): Promise<PauseTaskResult>; closeTask(id: string, reason: string, options?: PmClientFullMutationOptions): Promise<CloseTaskResult>; extension(target?: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionList(options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionActivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; extensionDeactivate(target: string, options?: ExtensionCommandOptions): Promise<ExtensionCommandResult>; package(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageList(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageInstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageUninstall(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDoctor(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageManage(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDescribe(target?: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageReload(options?: PackageCommandOptions): Promise<PackageCommandResult>; packageCatalog<Options extends ReadOptions<PackageCommandOptions> = PackageCommandOptions>(options?: Options): ReadPromise<PackageCommandResult, Options>; packageActivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageDeactivate(target: string, options?: PackageCommandOptions): Promise<PackageCommandResult>; packageMigrate(options?: PackageCommandOptions): Promise<PackageCommandResult>; upgrade(target?: string, options?: UpgradeCommandOptions): Promise<UpgradeResult>; }"
         },
         {
           "classification": "advanced_export",
@@ -31963,6 +32381,18 @@
           "kind": "function",
           "name": "readStringOption",
           "signature": "(options: Record<string, unknown>, key: string, aliases?: string[]) => string | undefined | calls: (options: Record<string, unknown>, key: string, aliases?: string[]) => string | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "readWorkflowPolicies",
+          "signature": "(pmRoot: string) => Promise<WorkflowPolicyDocument> | calls: (pmRoot: string) => Promise<WorkflowPolicyDocument>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "readWorkflowPolicyField",
+          "signature": "(record: Readonly<Record<string, unknown>> | null, field: string) => unknown | calls: (record: Readonly<Record<string, unknown>> | null, field: string) => unknown"
         },
         {
           "classification": "supported",
@@ -32331,6 +32761,12 @@
           "signature": "<T>(options: ActiveExtensionScopeOptions, run: () => Promise<T>) => Promise<T> | calls: <T>(options: ActiveExtensionScopeOptions, run: () => Promise<T>) => Promise<T>"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runWorkflowPolicyAction",
+          "signature": "(action: WorkflowPolicyAction, name: string | undefined, options?: WorkflowPolicyActionOptions, global?: Pick<GlobalOptions, \"path\">) => Promise<WorkflowPolicyActionResult> | calls: (action: WorkflowPolicyAction, name: string | undefined, options?: WorkflowPolicyActionOptions, global?: Pick<GlobalOptions, \"path\">) => Promise<WorkflowPolicyActionResult>"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "scanItemFormatVersions",
@@ -32550,7 +32986,7 @@
           "classification": "advanced_export",
           "kind": "type",
           "name": "SchemaResult",
-          "signature": "export type SchemaResult = SchemaInspectResult | SchemaListResult | SchemaShowResult | SchemaShowStatusResult | SchemaListFieldsResult | SchemaShowFieldResult | SchemaAddTypeResult | SchemaRemoveTypeResult | SchemaAddStatusResult | SchemaRemoveStatusResult | SchemaAddFieldResult | SchemaRemoveFieldResult | SchemaApplyPresetResult | SchemaAddTypeInferResult | SchemaEvolutionMigrationResult;"
+          "signature": "export type SchemaResult = WorkflowPolicyActionResult | SchemaInspectResult | SchemaListResult | SchemaShowResult | SchemaShowStatusResult | SchemaListFieldsResult | SchemaShowFieldResult | SchemaAddTypeResult | SchemaRemoveTypeResult | SchemaAddStatusResult | SchemaRemoveStatusResult | SchemaAddFieldResult | SchemaRemoveFieldResult | SchemaApplyPresetResult | SchemaAddTypeInferResult | SchemaEvolutionMigrationResult;"
         },
         {
           "classification": "advanced_export",
@@ -32976,7 +33412,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ValidateCommandOptions",
-          "signature": "export interface ValidateCommandOptions { checkMetadata?: boolean; checkResolution?: boolean; checkLifecycle?: boolean; checkStaleBlockers?: boolean; dependencyCycleSeverity?: string; parentCycleSeverity?: string; checkFiles?: boolean; includePmInternals?: boolean; verboseFileLists?: boolean; verboseDiagnostics?: boolean; allAffectedIds?: boolean; checkHistoryDrift?: boolean; checkStorageIntegrity?: boolean; checkCommandReferences?: boolean; scanMode?: string; metadataProfile?: string; fixHints?: boolean; autoFix?: boolean; dryRun?: boolean; fixScope?: string[]; pruneMissing?: boolean; counts?: boolean; full?: boolean; }"
+          "signature": "export interface ValidateCommandOptions { checkCompleteness?: boolean; checkMetadata?: boolean; checkResolution?: boolean; checkLifecycle?: boolean; checkStaleBlockers?: boolean; dependencyCycleSeverity?: string; parentCycleSeverity?: string; checkFiles?: boolean; includePmInternals?: boolean; verboseFileLists?: boolean; verboseDiagnostics?: boolean; allAffectedIds?: boolean; checkHistoryDrift?: boolean; checkStorageIntegrity?: boolean; checkCommandReferences?: boolean; scanMode?: string; metadataProfile?: string; fixHints?: boolean; autoFix?: boolean; dryRun?: boolean; fixScope?: string[]; pruneMissing?: boolean; counts?: boolean; full?: boolean; }"
         },
         {
           "classification": "supported",
@@ -32989,6 +33425,126 @@
           "kind": "interface",
           "name": "ValidateResult",
           "signature": "export interface ValidateResult { ok: boolean; has_warnings: boolean; checks: ValidateCheck[]; warnings: string[]; fixes?: ValidateFixesSummary; generated_at: string; projection: OutputProjectionDeclaration; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "WORKFLOW_POLICY_ACTIONS",
+          "signature": "readonly [\"policies\", \"policy-put\", \"policy-remove\", \"policy-mode\", \"policy-check\", \"policy-approve\", \"policy-presets\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "WORKFLOW_POLICY_DOCUMENT_SCHEMA",
+          "signature": "{ readonly $schema: \"https://json-schema.org/draft/2020-12/schema\"; readonly title: \"pm workflow policy registry\"; readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"version\", \"policies\"]; readonly properties: { readonly version: { readonly const: 1; }; readonly enforcement: { readonly enum: readonly [\"advise\", \"refuse\"]; readonly default: \"advise\"; }; readonly policies: { readonly type: \"array\"; readonly maxItems: 256; readonly items: { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"id\", \"rule\"]; readonly properties: { readonly id: { readonly type: \"string\"; readonly minLength: 1; readonly maxLength: 128; readonly pattern: \"^[a-zA-Z0-9][a-zA-Z0-9._-]*$\"; }; readonly description: { readonly type: \"string\"; readonly minLength: 1; readonly maxLength: 500; readonly pattern: \"\\\\S\"; }; readonly effect: { readonly enum: readonly [\"advise\", \"warn\", \"refuse\"]; }; readonly subject: { readonly type: \"object\"; readonly additionalProperties: false; readonly properties: { readonly dependency: { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\"]; readonly properties: { readonly kind: { type: string; minLength: number; maxLength: number; pattern: string; }; readonly id: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }; }; readonly rule: { readonly oneOf: readonly [{ readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"fields\"]; readonly properties: { readonly kind: { readonly const: \"require_fields\"; }; readonly fields: { items: { pattern: string; type: string; minLength: number; maxLength: number; }; type: string; minItems: number; maxItems: number; }; }; }, { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"authors\"]; readonly properties: { readonly kind: { readonly const: \"authors\"; }; readonly authors: { type: string; minItems: number; maxItems: number; items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }, ...{ type: string; additionalProperties: boolean; required: string[]; properties: { kind: { const: string; }; fields: { items: { pattern: string; type: string; minLength: number; maxLength: number; }; type: string; minItems: number; maxItems: number; }; authors: { type: string; minItems: number; maxItems: number; items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }[], { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"allowed\"]; readonly properties: { readonly kind: { readonly const: \"transition\"; }; readonly allowed: { readonly type: \"array\"; readonly maxItems: 64; readonly items: { readonly type: \"array\"; readonly minItems: 2; readonly maxItems: 2; readonly items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }; }]; }; }; }; }; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "WORKFLOW_POLICY_SCHEMA",
+          "signature": "{ readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"id\", \"rule\"]; readonly properties: { readonly id: { readonly type: \"string\"; readonly minLength: 1; readonly maxLength: 128; readonly pattern: \"^[a-zA-Z0-9][a-zA-Z0-9._-]*$\"; }; readonly description: { readonly type: \"string\"; readonly minLength: 1; readonly maxLength: 500; readonly pattern: \"\\\\S\"; }; readonly effect: { readonly enum: readonly [\"advise\", \"warn\", \"refuse\"]; }; readonly subject: { readonly type: \"object\"; readonly additionalProperties: false; readonly properties: { readonly dependency: { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\"]; readonly properties: { readonly kind: { type: string; minLength: number; maxLength: number; pattern: string; }; readonly id: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }; }; readonly rule: { readonly oneOf: readonly [{ readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"fields\"]; readonly properties: { readonly kind: { readonly const: \"require_fields\"; }; readonly fields: { items: { pattern: string; type: string; minLength: number; maxLength: number; }; type: string; minItems: number; maxItems: number; }; }; }, { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"authors\"]; readonly properties: { readonly kind: { readonly const: \"authors\"; }; readonly authors: { type: string; minItems: number; maxItems: number; items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }, ...{ type: string; additionalProperties: boolean; required: string[]; properties: { kind: { const: string; }; fields: { items: { pattern: string; type: string; minLength: number; maxLength: number; }; type: string; minItems: number; maxItems: number; }; authors: { type: string; minItems: number; maxItems: number; items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }[], { readonly type: \"object\"; readonly additionalProperties: false; readonly required: readonly [\"kind\", \"allowed\"]; readonly properties: { readonly kind: { readonly const: \"transition\"; }; readonly allowed: { readonly type: \"array\"; readonly maxItems: 64; readonly items: { readonly type: \"array\"; readonly minItems: 2; readonly maxItems: 2; readonly items: { type: string; minLength: number; maxLength: number; pattern: string; }; }; }; }; }]; }; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "workflowApprovalFingerprint",
+          "signature": "(policy: WorkflowPolicy, record: Readonly<Record<string, unknown>>) => string | calls: (policy: WorkflowPolicy, record: Readonly<Record<string, unknown>>) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowApprovalReceipt",
+          "signature": "export interface WorkflowApprovalReceipt { id: string; policy_id: string; policy_fingerprint: string; content_fingerprint: string; warnings: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowCompletenessViolation",
+          "signature": "export interface WorkflowCompletenessViolation { id: string; type: string; status: string; decision: WorkflowPolicyDecision; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicy",
+          "signature": "export interface WorkflowPolicy { id: string; description?: string; subject?: WorkflowPolicySubject; effect?: WorkflowPolicyEffect; rule: WorkflowPolicyRule; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "WorkflowPolicyAction",
+          "signature": "export type WorkflowPolicyAction = (typeof WORKFLOW_POLICY_ACTIONS)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyActionOptions",
+          "signature": "export interface WorkflowPolicyActionOptions { definition?: unknown; policy?: string; dryRun?: boolean; author?: string; message?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyActionResult",
+          "signature": "export interface WorkflowPolicyActionResult { policy_result: true; action: WorkflowPolicyAction; changed: boolean; result: WorkflowPolicyDocument | WorkflowPolicyEvaluation | WorkflowApprovalReceipt; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "workflowPolicyApplies",
+          "signature": "(policy: WorkflowPolicy, input: WorkflowPolicyInput) => boolean | calls: (policy: WorkflowPolicy, input: WorkflowPolicyInput) => boolean"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyApproval",
+          "signature": "export interface WorkflowPolicyApproval { policy_fingerprint: string; content_fingerprint: string; author: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyDecision",
+          "signature": "export interface WorkflowPolicyDecision { policy_id: string; policy_fingerprint: string; rule: WorkflowPolicyRule[\"kind\"]; effect: WorkflowPolicyEffect; satisfied: boolean; missing_fields: string[]; remediation: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyDocument",
+          "signature": "export interface WorkflowPolicyDocument { version: 1; enforcement: \"advise\" | \"refuse\"; policies: WorkflowPolicy[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "WorkflowPolicyEffect",
+          "signature": "export type WorkflowPolicyEffect = \"advise\" | \"warn\" | \"refuse\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyEvaluation",
+          "signature": "export interface WorkflowPolicyEvaluation { allowed: boolean; decisions: WorkflowPolicyDecision[]; warnings: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "workflowPolicyFingerprint",
+          "signature": "(policy: WorkflowPolicy) => string | calls: (policy: WorkflowPolicy) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicyInput",
+          "signature": "export interface WorkflowPolicyInput { operation: string; author: string; before: Readonly<Record<string, unknown>> | null; after: Readonly<Record<string, unknown>> | null; approvals?: readonly WorkflowPolicyApproval[]; completeness_only?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "WorkflowPolicyRule",
+          "signature": "export type WorkflowPolicyRule = { kind: \"require_fields\"; fields: string[]; } | { kind: \"transition\"; allowed: [ string, string ][]; } | { kind: \"authors\"; authors: string[]; } | { kind: \"field_writers\"; fields: string[]; authors: string[]; } | { kind: \"approval\"; fields: string[]; authors: string[]; };"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkflowPolicySubject",
+          "signature": "export interface WorkflowPolicySubject { types?: string[]; tags?: string[]; statuses?: string[]; operations?: string[]; parents?: string[]; dependency?: { kind: string; id?: string; }; }"
         },
         {
           "classification": "supported",
@@ -33969,6 +34525,11 @@
     "vectorization_stale_items_remaining",
     "visible_surface_ceiling_exceeded",
     "workflow_duplicate_type",
+    "workflow_policy_approval_history_invalid",
+    "workflow_policy_input_unreadable",
+    "workflow_policy_invalid",
+    "workflow_policy_refused",
+    "workflow_policy_registry_invalid",
     "workflow_status_unknown",
     "workflow_transition_malformed",
     "workflow_type_empty",

@@ -3,6 +3,7 @@
  *
  * Provides CLI runtime support for Register Mutation.
  */
+import { WORKFLOW_POLICY_ACTIONS } from "../sdk/cli-contracts/enum-contracts.js";
 import type { Command } from "commander";
 import {
   type GlobalOptions,
@@ -1408,6 +1409,19 @@ async function runSchemaAction(
       allowed: SCHEMA_SUBCOMMANDS,
     });
   }
+  const policyAction = WORKFLOW_POLICY_ACTIONS.find(
+    (action) => action === normalizedSubcommand,
+  );
+  if (policyAction) {
+    printResult(await schemaModule.runWorkflowPolicyAction(policyAction, name, {
+      definition: options.definition,
+      policy: readOptionString(options, "policy"),
+      message: readOptionString(options, "message"),
+      author: readOptionString(options, "author"),
+      dryRun: options.dryRun === true,
+    }, globalOptions), globalOptions);
+    return;
+  }
   const result = await dispatchSchemaSubcommand(schemaModule, {
     normalizedSubcommand,
     typeName,
@@ -2775,9 +2789,12 @@ export function registerMutationCommands(
 
   const schemaCommand = program
     .command("schema")
+    .option("--definition <json>", "Policy or proposed fields JSON")
+    .option("--policy <id>", "Policy id for policy-approve")
+    .option("--message <text>", "Audit rationale for a policy mutation")
     .argument(
       "[subcommand]",
-      "Required; Schema subcommand: list, show, show-status, add/remove type/status/field, rename-type, rename-field, remap-status, or a custom item type name shorthand",
+      "Required; schema verb (list/show, add/remove, rename/remap, policy-*), or custom type shorthand",
     )
     .argument(
       "[name]",
@@ -2785,11 +2802,11 @@ export function registerMutationCommands(
     )
     .option(
       "--description <text>",
-      "Human description for the custom item type, status, or field",
+      "Type, status, or field description",
     )
     .option(
       "--default-status <status>",
-      "Default status hint recorded for the custom item type",
+      "Default status for this type",
     )
     .option("--folder <dir>", "Storage folder for items of this custom type")
     .option(
@@ -2809,7 +2826,7 @@ export function registerMutationCommands(
     )
     .option(
       "--commands <list>",
-      "Commands a custom field is wired onto (add-field; repeatable, comma-friendly): create, update, update_many, list, search, calendar, context",
+      "Field commands (repeatable/csv): create, update, update_many, list, search, calendar, context",
       collect,
     )
     .option(
@@ -2849,12 +2866,12 @@ export function registerMutationCommands(
     )
     .option(
       "--dry-run",
-      "Plan a schema migration without writing schema, items, or history",
+      "Preview schema changes without writes",
     )
     .option("--author <value>", "Mutation author")
     .option("--force", "Force ownership/lock override")
     .description(
-      "Inspect and manage config-driven runtime schema (types, statuses, fields, presets).",
+      "Manage types, statuses, fields, presets, and workflow policies.",
     );
   // Hidden pure snake_case underscore-duplicate alias.
   addHiddenOption(

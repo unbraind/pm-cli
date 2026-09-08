@@ -67,6 +67,11 @@ export function ensureEnumValue<T extends string>(
     throw new PmCliError(
       `Invalid ${label} value "${value}". Allowed: ${allowed.join(", ")}`,
       EXIT_CODE.USAGE,
+      {
+        field: label,
+        required: `${label} must be one of: ${allowed.join(", ")}.`,
+        nextSteps: [`Choose an allowed ${label} and retry the mutation.`],
+      },
     );
   }
   return value as T;

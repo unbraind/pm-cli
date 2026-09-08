@@ -4,6 +4,7 @@
  * Defines the Tool Definitions module for pm CLI source.
  */
 import {
+  WORKFLOW_POLICY_ACTIONS,
   GRAPH_SUBCOMMAND_VALUES,
   PM_DISCOVERABLE_TOOL_ACTIONS,
 } from "../sdk/cli-contracts/enum-contracts.js";
@@ -676,7 +677,7 @@ const RAW_TOOLS: ToolDefinition[] = [
       "Inspect or modify the workspace item-type/status/field schema (pm schema). " +
       "subcommand selects the operation; name carries the item type name (show/add-type/remove-type), status id (show-status/add-status/remove-status), or field key (show-field/add-field/remove-field). " +
       "apply-preset adopts a domain type preset; add-type with infer=true derives types from title-prefix conventions. " +
-      "Schema mutations write workspace config files, not item history.",
+      "Policy verbs author declarations, preview changes, set enforcement, and record content-bound approvals. Registry mutations write workspace history; approvals write item history.",
     inputSchema: objectSchema(
       {
         subcommand: {
@@ -694,6 +695,7 @@ const RAW_TOOLS: ToolDefinition[] = [
             "list-fields",
             "show-field",
             "apply-preset",
+            ...WORKFLOW_POLICY_ACTIONS,
           ],
           description: "Schema subcommand to run.",
         },

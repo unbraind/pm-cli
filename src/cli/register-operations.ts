@@ -523,6 +523,7 @@ async function runValidateAction(
       checkMetadata: Boolean(options.checkMetadata),
       metadataProfile: readOptionString(options, "metadataProfile"),
       checkResolution: Boolean(options.checkResolution),
+      checkCompleteness: Boolean(options.checkCompleteness),
       checkLifecycle: Boolean(options.checkLifecycle),
       checkStaleBlockers: Boolean(options.checkStaleBlockers),
       dependencyCycleSeverity: readOptionString(
@@ -1169,14 +1170,15 @@ export function registerOperationCommands(program: Command): void {
   program
     .command("validate")
     .description(
-      "Run standalone metadata, resolution, lifecycle, files, linked-command reference, and history drift validation checks.",
+      "Validate metadata, lifecycle policies, files, command references, and history.",
     )
     .option("--check-metadata", "Run metadata completeness checks")
     .option(
       "--metadata-profile <value>",
-      "Select metadata validation profile for --check-metadata (core|strict|custom)",
+      "Metadata profile (core|strict|custom)",
     )
     .option("--check-resolution", "Run closed-item resolution metadata checks")
+    .option("--check-completeness", "Check declarative lifecycle field requirements")
     .option(
       "--check-lifecycle",
       "Run active-item lifecycle governance drift checks",
@@ -1212,7 +1214,7 @@ export function registerOperationCommands(program: Command): void {
     )
     .option(
       "--verbose-diagnostics",
-      "Include full validate diagnostic ID lists instead of compact summaries",
+      "Include full diagnostic ID lists",
     )
     .option(
       "--all-affected-ids",
@@ -1229,7 +1231,7 @@ export function registerOperationCommands(program: Command): void {
     )
     .option(
       "--auto-fix",
-      "Apply the safe, deterministic subset of fix-hint remediations (field backfills) automatically",
+      "Apply safe, deterministic field backfills",
     )
     .option(
       "--dry-run",
@@ -1242,7 +1244,7 @@ export function registerOperationCommands(program: Command): void {
     )
     .option(
       "--prune-missing",
-      "Remove stale linked-file/doc LINKS whose paths classified as deleted (never touches real files)",
+      "Remove deleted-path file/doc links; preserves real files",
     )
     .option("--check-history-drift", "Run item/history hash drift checks")
     .option(

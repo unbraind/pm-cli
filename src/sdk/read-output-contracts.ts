@@ -1706,6 +1706,10 @@ function attachReadOutputTruncationDisclosure(
     },
   );
   const primary = continuations[0];
+  const budgetHint = bindingBudget.source === "session"
+    ? `Truncated by the remaining ${bindingBudget.tokens}-token session budget; start a new output session with a larger token_budget.`
+    : `${bindingBudget.tokens}-token: raise --output-budget${primary ? "; page --output-cursor" : ""}`;
+  receipt.migration_hints = [budgetHint, ...resolved.migration_hints];
   const recoveryBudget = resolveReadOutputRecoveryBudget({
     effective_budget_tokens: bindingBudget.tokens,
     measured_result_tokens: measuredResultTokens,
@@ -1731,7 +1735,7 @@ function attachReadOutputTruncationDisclosure(
       : recoveryBudget.recovery_budget_multiplier,
     continuations,
     restore_with: primary
-      ? "Use recovery binding."
+      ? "recovery"
       : `Retry with --output-budget ${recoveryBudget.output_budget} because no declared row collection can be continued.`,
     recovery: primary
       ? {

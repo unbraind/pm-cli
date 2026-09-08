@@ -4,6 +4,7 @@
  * Implements the pm create command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { enforceWorkflowMutation } from "../../core/policy/workflow-policy-store.js";
 import {
   assertNoAmbiguousBareCommaEntry,
   looksLikeStructuredKeyValueEntry,
@@ -2602,6 +2603,9 @@ async function writeCreatedItem(params: {
           relationshipRegistry,
         );
       }
+      const workflowPolicy = await enforceWorkflowMutation({
+        pmRoot, settings, operation: "create", author, before: null, after: afterDocument,
+      });
       await runActiveBeforeMutationHooks({
         pm_root: pmRoot,
         operation: "create",
@@ -2653,6 +2657,7 @@ async function writeCreatedItem(params: {
             before: beforeDocument,
             after: afterDocument,
             message: historyMessage,
+            context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
           });
           await appendHistoryEntry(historyPath, entry);
         } catch (error: unknown) {
@@ -2675,6 +2680,7 @@ async function writeCreatedItem(params: {
         await releaseDerivedIndexLock();
       }
       hookWarnings = [
+        ...workflowPolicy.warnings,
         ...(graphBeforeCreate
           ? collectNewOrderingCycleWarnings(
               graphBeforeCreate,

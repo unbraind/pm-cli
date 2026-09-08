@@ -399,6 +399,7 @@ describe("runValidate", () => {
       createTask(context, "validate-default-checks");
       const result = await runValidate({}, { path: context.pmPath });
       expect(result.checks.map((entry) => entry.name)).toEqual([
+        "completeness",
         "metadata",
         "resolution",
         "lifecycle",

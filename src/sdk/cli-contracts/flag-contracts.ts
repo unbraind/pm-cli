@@ -472,6 +472,9 @@ export const HISTORY_COMPACT_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for schema flag contracts, shared by SDK and presentation-layer consumers. */
 export const SCHEMA_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--definition", value_name: "json" },
+  { flag: "--policy", value_name: "id" },
+  { flag: "--message", value_name: "value" },
   { flag: "--description" },
   { flag: "--default-status", aliases: ["--default_status"] },
   { flag: "--folder" },
@@ -1144,6 +1147,7 @@ export const HEALTH_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for validate flag contracts, shared by SDK and presentation-layer consumers. */
 export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--check-completeness", value_type: "boolean" },
   { flag: "--check-metadata" },
   { flag: "--metadata-profile" },
   { flag: "--check-resolution" },

@@ -108,6 +108,8 @@ import {
   type ActivityCommandOptions,
 } from "./query/activity.js";
 import { runAssuranceDispatch, type AssuranceActionInput, type AssuranceActionResult } from "./governance/assurance-action.js";
+import { WORKFLOW_POLICY_ACTIONS, runWorkflowPolicyAction, type WorkflowPolicyAction, type WorkflowPolicyActionOptions, type WorkflowPolicyActionResult } from "./governance/workflow-policy.js";
+export * from "./governance/workflow-policy.js";
 export type * from "./governance/assurance-action-contracts.js";
 import {
   runAggregate,
@@ -942,6 +944,11 @@ export class PmClient {
     options: PmActionOptions = {},
   ): Promise<SchemaResult> {
     return this.runTyped("schema", { options: { ...options, subcommand } });
+  }
+
+  /** Author, preview, or approve workflow policies in this client's workspace. */
+  workflowPolicy(action: WorkflowPolicyAction, name?: string, options: WorkflowPolicyActionOptions = {}): Promise<WorkflowPolicyActionResult> {
+    return this.runTyped("schema", { name, options: { ...options, subcommand: action } });
   }
 
   /** List built-in, custom, and extension-provided schema types/statuses. */
@@ -3373,14 +3380,20 @@ function runMcpSchemaAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> | unknown {
   const schema = createMcpSchemaContext(ctx);
+  const policyAction = WORKFLOW_POLICY_ACTIONS.find((action) => action === schema.subcommand);
+  if (policyAction) return runWorkflowPolicyAction(policyAction, schema.name, {
+    definition: ctx.args.definition ?? ctx.options.definition,
+    policy: readString(ctx.args, "policy") ?? readString(ctx.options, "policy"),
+    message: readString(ctx.args, "message") ?? readString(ctx.options, "message"),
+    author: schema.author,
+    dryRun: ctx.args.dryRun === true || ctx.options.dryRun === true,
+  }, ctx.global);
   const simpleResult = runMcpSchemaReadOrRemoveAction(schema);
   if (simpleResult !== null) {
     return simpleResult;
   }
   if (
-    schema.subcommand === "rename-type" ||
-    schema.subcommand === "rename-field" ||
-    schema.subcommand === "remap-status"
+    ["rename-type", "rename-field", "remap-status"].includes(schema.subcommand)
   ) {
     return runMcpSchemaMigrationAction(schema);
   }

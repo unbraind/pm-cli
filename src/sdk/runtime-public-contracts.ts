@@ -12,6 +12,7 @@ import type { ContractsCommandOptions } from "./cli-contracts/runtime-contracts.
 import type { UpdateResult } from "./lifecycle/update.js";
 import type { ClaimResult, ReleaseResult } from "./lifecycle/claim.js";
 import type { CloseResult } from "./lifecycle/close.js";
+import type { WorkflowPolicyActionResult } from "./governance/workflow-policy.js";
 import type {
   SchemaAddFieldResult,
   SchemaAddStatusResult,
@@ -80,6 +81,7 @@ export type PmActionOptions = Record<string, unknown>;
 
 /** Union returned by the generic schema customization helper. */
 export type SchemaResult =
+  | WorkflowPolicyActionResult
   | SchemaInspectResult
   | SchemaListResult
   | SchemaShowResult

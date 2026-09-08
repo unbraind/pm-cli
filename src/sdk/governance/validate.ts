@@ -4,6 +4,8 @@
  * Implements the pm validate command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { buildWorkflowCompletenessCheck } from "./workflow-completeness.js";
+import { readWorkflowPolicies } from "../../core/policy/workflow-policy-store.js";
 import fs from "node:fs/promises";
 import { realpathSync } from "node:fs";
 import type { Dirent } from "node:fs";
@@ -129,6 +131,7 @@ import {
 } from "./validate-normalization.js";
 
 type ValidateCheckName =
+  | "completeness"
   | "metadata"
   | "resolution"
   | "lifecycle"
@@ -296,6 +299,8 @@ const execFileAsync = promisify(execFile);
 
 /** Documents the validate command options payload exchanged by command, SDK, and package integrations. */
 export interface ValidateCommandOptions {
+  /** Evaluate workspace field requirements for each item's current lifecycle status. */
+  checkCompleteness?: boolean;
   /** Value that configures or reports check metadata for this contract. */
   checkMetadata?: boolean;
   /** Value that configures or reports check resolution for this contract. */
@@ -1156,6 +1161,7 @@ function resolveRequestedChecks(
   options: ValidateCommandOptions,
 ): Set<ValidateCheckName> {
   const requested = new Set<ValidateCheckName>();
+  if (options.checkCompleteness) requested.add("completeness");
   if (options.checkMetadata) {
     requested.add("metadata");
   }
@@ -1198,6 +1204,7 @@ function resolveRequestedChecks(
       requested.add("command_references");
       requested.add("history_drift");
       requested.add("format_version");
+      requested.add("completeness");
       requested.add("storage_integrity");
     }
     return requested;
@@ -3398,6 +3405,10 @@ async function executeRequestedValidateChecks(params: {
     params.options.verboseDiagnostics === true ||
     params.options.allAffectedIds === true ||
     params.global.json === true;
+  if (params.requestedChecks.has("completeness")) {
+    const built = buildWorkflowCompletenessCheck(await readWorkflowPolicies(params.pmRoot), params.items, fullDiagnostics ? Infinity : DIAGNOSTIC_LIST_SUMMARY_LIMIT, params.initialWarnings.length > 0);
+    recordValidateCheck(state, built, fixHintsEnabled);
+  }
   if (params.requestedChecks.has("metadata")) {
     const built = buildMetadataCheck(
       params.items,
@@ -3640,7 +3651,7 @@ export async function runValidate(
   const itemReadWarnings: string[] = [];
   const items = await readValidateItems({
     includeBody:
-      requestedChecks.has("history_drift") || requestedChecks.has("metadata"),
+      (["history_drift", "metadata", "completeness"] as const).some((check) => requestedChecks.has(check)),
     pmRoot,
     settings,
     typeToFolder: typeRegistry.type_to_folder,

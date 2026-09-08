@@ -1,0 +1,57 @@
+id: pm-lk0qhn
+title: Preserve dependency kind constraints in rendered enum errors
+description: GitHub #1223 shows create/update dependency kind validation has a precise parser message but rendered errors retain only generic invalid_argument_value guidance. Preserve the named field and accepted values through structured error context shared by CLI MCP and SDK without copying arbitrary rejected content into recovery instructions.
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-09-08T16:15:39.497Z"
+updated_at: "2026-09-08T16:51:03.881Z"
+closed_at: "2026-09-08T16:51:03.189Z"
+completed_at: "2026-09-08T16:51:03.189Z"
+author: "harness:codex"
+acceptance_criteria: Invalid dependency kinds name the field and accepted values in structured required guidance; text and JSON are actionable; rejected updates preserve the item; the shared parser retains the same accepted vocabulary.
+parent: pm-96h7
+severity: low
+repro_steps: "Run update with --dep id=<valid-id>,kind=relates_to and inspect required/next_steps in JSON error output."
+resolution: "Shared enum validation preserves the field name, accepted values and actionable retry in structured recovery context."
+expected_result: Invalid dependency kinds report their accepted vocabulary in both text and JSON while rejected updates preserve item state.
+actual_result: "The regression failed before the fix and passes afterward through the compiled CLI for text and JSON, including complete before/after state equality. The full 8615-test run passes at exact 100/100/100/100 coverage."
+component: sdk/lifecycle
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4020c5,discovered_from,"2026-09-08T16:15:39.497Z","harness:codex","cli:create:dep",detected
+  pm-gggs,blocked_by,"2026-09-08T16:15:39.497Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-08T16:15:39.497Z","harness:codex","Duplicate check: all-status inventory and dependency kind error search inspected; full pm-4020c5 confirms canonical write semantics and ontology are delivered. This residual rendering defect is distinct from canonicalization and has no existing owning item."
+  "2026-09-08T16:18:42.192Z","harness:codex","TDD evidence: the compiled CLI regression failed because required contained only Use values that match documented command constraints. The parser now supplies the field label, accepted set and concrete retry in structured context, preserving useful guidance when generic rendering omits parser detail. No rejected value is copied into the new recovery fields."
+  "2026-09-08T16:21:40.008Z","harness:codex","Green verification: the compiled CLI regression passes for text and JSON; structured required names dependency kind and all accepted values, and the rejected update preserves the complete get result. The change adds no branches or accepted values and applies through the shared create/update recurrence parser."
+  "2026-09-08T16:51:02.478Z","harness:codex","Final implementation evidence: The regression failed before the fix and passes afterward through the compiled CLI for text and JSON, including complete before/after state equality. The full 8615-test run passes at exact 100/100/100/100 coverage."
+files[2]{path,scope,note}:
+  src/sdk/lifecycle/recurrence-parsers.ts,project,Shared-enum-constraint-context
+  tests/unit/sdk/recovery/enum-constraint-guidance.spec.ts,project,Rendered-constraint-negative-control
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/enum-constraint-guidance.spec.ts,project,240,"harness:codex","2026-09-08T16:18:40.960Z",local_mutation,feat/declarative-workflow-policies
+test_runs[1]:
+  - run_id: test-local-mtsvn8ev-ooi0ev
+    kind: test
+    status: passed
+    started_at: "2026-09-08T16:21:38.719Z"
+    finished_at: "2026-09-08T16:21:42.871Z"
+    recorded_at: "2026-09-08T16:21:42.871Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/enum-constraint-guidance.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/DEPENDENCY_KIND_CONTRACT.md,project,Existing-canonical-and-alias-vocabulary
+close_reason: Implementation and linked verification complete; reviewed PR gates govern merge and publication separately.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/release/defect-evidence-gate.mjs --negative-control --json
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/enum-constraint-guidance.spec.ts
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
+  owner: pm-96h7
+body: ""

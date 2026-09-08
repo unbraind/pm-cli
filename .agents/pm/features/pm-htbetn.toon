@@ -2,11 +2,13 @@ id: pm-htbetn
 title: "Lifecycle field-completeness contract: each item type declares the fields required at each status transition, machine-checked by pm validate"
 description: "Best-practice PM structure exists only by convention: Epics carry charters, Stories carry persona-goal-benefit, Decisions carry context/options/consequences, Features carry acceptance criteria, closed items carry resolution evidence — but pm validate checks only close-time resolution fields (pm-wenq) and nothing else. Define a per-type, per-transition field-completeness contract as schema data (not hardcoded): type X moving to status Y requires/expects fields Z, with warn vs require per governance policy. Validate gains a --check-completeness class reporting per-type violations; CI rides the pm-kpftft ratchet so completeness only improves. Schema customization (pm-8jdc) lets projects extend the contract for custom types; the GA contract (pm-xp1xsw) publishes the built-in defaults. This is what turns 'well-defined pm items' from a social norm into a checked invariant, and it gives the context engine (pm-4k6b) a machine-readable knowledge-density signal."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[6]: context-management,data-quality,governance,schema,standards,validation
 created_at: "2026-07-26T10:01:01.886Z"
-updated_at: "2026-09-08T13:33:04.278Z"
+updated_at: "2026-09-08T16:50:59.978Z"
+closed_at: "2026-09-08T16:50:59.379Z"
+completed_at: "2026-09-08T16:50:59.379Z"
 author: "harness:opencode"
 estimated_minutes: 600
 acceptance_criteria: Contract declared as schema data with built-in defaults per type; pm validate reports per-type completeness violations; warn/require follows governance policy; custom types extend via schema; negative-control fixture in CI proves a malformed item fails
@@ -17,14 +19,65 @@ why_now: "2026-07-26 review found close-time completeness (pm-wenq) tracked but 
 parent: pm-33cw
 risk: low
 confidence: high
-expected_result: "Each item type declares the fields required at each status transition as schema data, and pm validate reports per-type completeness violations."
-dependencies[8]{id,kind,created_at}:
-  pm-4k6b,related,"2026-07-26T10:01:14.841Z"
-  pm-6x7o,related,"2026-07-26T10:01:14.841Z"
-  pm-8jdc,related,"2026-07-26T10:01:14.841Z"
-  pm-e9yevx,discovered_from,"2026-07-26T10:01:14.841Z"
-  pm-kpftft,related,"2026-07-26T10:01:14.841Z"
-  pm-wenq,related,"2026-07-26T10:01:14.841Z"
-  pm-xp1xsw,verifies,"2026-07-26T10:01:14.841Z"
-  pm-z5nb,related,"2026-07-26T10:01:14.841Z"
+resolution: "Implemented configurable per-type lifecycle completeness using shared require_fields policies, opt-in presets and machine-readable validation summaries."
+expected_result: Custom types and lifecycle stages declare required fields as schema data; validation reports counts and bounded examples with strict-exit negative controls.
+actual_result: "Linked completeness tests pass for custom types, counts-only output, refusal and remediation. The full 8615-test run passes with exact 100/100/100/100 source coverage; manual strict completeness validation passes."
+dependencies[9]:
+  - id: pm-4k6b
+    kind: related
+    created_at: "2026-07-26T10:01:14.841Z"
+  - id: pm-6x7o
+    kind: related
+    created_at: "2026-07-26T10:01:14.841Z"
+  - id: pm-8jdc
+    kind: related
+    created_at: "2026-07-26T10:01:14.841Z"
+  - id: pm-e9yevx
+    kind: discovered_from
+    created_at: "2026-07-26T10:01:14.841Z"
+  - id: pm-kpftft
+    kind: related
+    created_at: "2026-07-26T10:01:14.841Z"
+  - id: pm-wenq
+    kind: related
+    created_at: "2026-07-26T10:01:14.841Z"
+  - id: pm-xp1xsw
+    kind: verifies
+    created_at: "2026-07-26T10:01:14.841Z"
+  - id: pm-z5nb
+    kind: related
+    created_at: "2026-07-26T10:01:14.841Z"
+  - id: pm-mj42og
+    kind: blocked_by
+    created_at: "2026-09-08T15:29:31.274Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[3]{created_at,author,text}:
+  "2026-09-08T15:40:12.258Z","harness:codex","Verification evidence: custom-type completeness aggregation, bounded diagnostic examples, counts-only projection, CLI strict-exit negative control and remediation pass. The report and lifecycle write enforcement share the same require_fields evaluator. Public documentation now has a reachable index entry. Related implementation dependency is recorded on pm-mj42og."
+  "2026-09-08T16:24:43.390Z","harness:codex","Verification: the linked sandboxed completeness checks pass, including custom types, bounded examples, counts-only projection, explicit refusal under strict-exit, and remediation to a clean result. The shared policy suite also passes and default validate includes completeness. No default policies are installed into existing trackers."
+  "2026-09-08T16:50:58.717Z","harness:codex","Final implementation evidence: Linked completeness tests pass for custom types, counts-only output, refusal and remediation. The full 8615-test run passes with exact 100/100/100/100 source coverage; manual strict completeness validation passes."
+files[5]{path,scope,note}:
+  src/cli/register-operations.ts,project,Completeness-flag-adapter
+  src/sdk/governance/validate.ts,project,Counts-first-validation-integration
+  src/sdk/governance/workflow-completeness.ts,project,Shared-completeness-evaluation
+  tests/unit/commands/validate-command.spec.ts,project,Default validation includes declarative completeness checks
+  tests/unit/sdk/policy/workflow-completeness.spec.ts,project,Completeness-negative-control
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/policy/workflow-completeness.spec.ts,project,240,"harness:codex","2026-09-08T15:46:56.933Z",local_mutation,feat/declarative-workflow-policies
+test_runs[1]:
+  - run_id: test-local-mtsvei3o-4n4i9x
+    kind: test
+    status: passed
+    started_at: "2026-09-08T16:14:28.593Z"
+    finished_at: "2026-09-08T16:14:55.524Z"
+    recorded_at: "2026-09-08T16:14:55.524Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/policy/workflow-completeness.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/WORKFLOW_POLICIES.md,project,Completeness-policy-configuration
+close_reason: Implementation and linked verification complete; reviewed PR gates govern merge and publication separately.
 body: ""

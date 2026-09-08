@@ -810,8 +810,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     },
     schema: {
       required: ["subcommand"],
-      // No --message: schema mutations write config files, not item history.
       optional: [
+        "definition",
+        "policy",
+        "message",
         "name",
         "description",
         "defaultStatus",
@@ -838,6 +840,11 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "force",
       ],
       conditionalRequired: [
+        { property: "subcommand", value: "policy-put", required: ["name", "definition"] },
+        { property: "subcommand", value: "policy-remove", required: ["name"] },
+        { property: "subcommand", value: "policy-mode", required: ["name"] },
+        { property: "subcommand", value: "policy-check", required: ["name"] },
+        { property: "subcommand", value: "policy-approve", required: ["name", "policy"] },
         { property: "subcommand", value: "show", required: ["name"] },
         { property: "subcommand", value: "show-status", required: ["name"] },
         { property: "subcommand", value: "add-type", required: ["name"] },
@@ -1265,6 +1272,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     },
     validate: {
       optional: [
+        "checkCompleteness",
         "checkStorageIntegrity",
         "checkMetadata",
         "metadataProfile",
@@ -1793,7 +1801,7 @@ function createLazyContractSchema(
 }
 
 /** Canonical version of the action-scoped strict MCP tool-parameters schema (`PM_TOOL_PARAMETERS_SCHEMA`). Exported as the single source of truth so the MCP server, the `pm contracts` command, SDK consumers, and contract tests bind to one version constant. Bump the patch/minor for additive, backward-compatible schema changes; bump the MAJOR for breaking changes — the major also drives the `$id` `tool-parameters-v{major}` slug, so the two never drift. */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.15.0" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.16.0" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the

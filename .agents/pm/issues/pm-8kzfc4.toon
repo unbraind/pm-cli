@@ -1,0 +1,61 @@
+id: pm-8kzfc4
+title: Explain binding token budgets beside read-output alias migration hints
+description: "GitHub issue #1222 reports that output_budget_reached responses suggest migrating --limit to --output-limit without naming the binding token ceiling. Existing cursor continuation and monotonic recovery primitives are delivered by pm-8nev0o and pm-xam9bt; this residual UX defect concerns the adjacent migration_hints and list help. Add a cause-specific bounded recovery hint shared by SDK CLI and MCP, retain alias guidance, and prove that the prescribed retry changes the binding budget."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-08T15:32:57.518Z"
+updated_at: "2026-09-08T16:51:01.906Z"
+closed_at: "2026-09-08T16:51:01.228Z"
+completed_at: "2026-09-08T16:51:01.228Z"
+author: "harness:codex"
+acceptance_criteria: Budget truncation emits a cause-specific retry beside legacy alias guidance; increasing the named budget returns more rows; exhausted session budgets name the session option; canonical alias migration remains equivalent independently of token limits.
+parent: pm-5t33or
+severity: low
+repro_steps: Request list output above the default token ceiling with --limit; inspect migration_hints and retry using only the recommended --output-limit alias.
+resolution: Budget truncation now adds cause-specific output/session budget recovery beside the retained alias migration guidance.
+expected_result: Recovery names the binding token ceiling and enables a retry that returns more data without confusing row aliases with token budgets.
+actual_result: Real CLI/SDK regression checks pass for larger-budget retry and exhausted session ceilings. All 22 alias cases retain parity under explicit unbounded output; full source coverage is exact 100/100/100/100.
+component: sdk/read-output
+regression: false
+customer_impact: Agents can waste repeated calls changing row limits while the token budget remains binding.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8nev0o,recurs_from,"2026-09-08T15:32:57.518Z","harness:codex","cli:create:dep",detected
+  pm-xam9bt,blocked_by,"2026-09-08T15:32:57.518Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-08T15:32:57.518Z","harness:codex","Duplicate-check evidence: complete all-status inventory and targeted Budget-truncated search inspected. No item owns the misleading adjacent migration hint reported by GitHub #1222. Existing closed continuation and monotonic recovery items retain their delivered scope."
+  "2026-09-08T16:24:42.723Z","harness:codex","Verification: linked budget-hint tests pass for the default output ceiling, executable larger-budget retry and exhausted session ceiling. All 22 legacy include-mode recommendations remain behavior-equivalent in the compiled CLI test using an explicit unbounded token budget, so payload growth cannot masquerade as an alias-provenance regression. Audit and secret checks passed; terminal defect negative control exits 1 with the expected missing-evidence findings."
+  "2026-09-08T16:46:46.532Z","harness:codex","Token gate evidence: the first descriptive budget hint increased the fixed contracts discovery transcript by 26 estimated tokens. Condensed the actionable hint and its recovery pointer without changing the baseline or dropping either budget/cursor remedy. The unchanged agent-task token gate now passes; budget and all alias regression tests pass after the wording change."
+  "2026-09-08T16:51:00.597Z","harness:codex","Final implementation evidence: Real CLI/SDK regression checks pass for larger-budget retry and exhausted session ceilings. All 22 alias cases retain parity under explicit unbounded output; full source coverage is exact 100/100/100/100."
+files[3]{path,scope,note}:
+  src/sdk/read-output-contracts.ts,project,Shared-recovery-hint
+  tests/unit/sdk/read-output-migration-hints.spec.ts,project,Budget-independent-alias-parity
+  tests/unit/sdk/recovery/read-output-budget-hints.spec.ts,project,Executable-budget-recovery
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-budget-hints.spec.ts,project,240,"harness:codex","2026-09-08T15:34:09.979Z",local_mutation,feat/declarative-workflow-policies
+test_runs[1]:
+  - run_id: test-local-mtsvem3j-c37qyh
+    kind: test
+    status: passed
+    started_at: "2026-09-08T16:14:57.416Z"
+    finished_at: "2026-09-08T16:15:00.703Z"
+    recorded_at: "2026-09-08T16:15:00.703Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-budget-hints.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/OUTPUT_TOKEN_ACCOUNTING.md,project,Output-and-session-budget-dimensions
+  docs/READ_OUTPUT_CONTRACTS.md,project,Canonical-budget-and-alias-contract
+close_reason: Implementation and linked verification complete; reviewed PR gates govern merge and publication separately.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/release/defect-evidence-gate.mjs --negative-control --json
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-budget-hints.spec.ts tests/unit/sdk/read-output-migration-hints.spec.ts
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
+  owner: pm-5t33or
+body: ""

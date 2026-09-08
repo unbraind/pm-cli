@@ -4,6 +4,7 @@
  * Implements the SDK-owned restore lifecycle operation shared by every surface.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { enforceWorkflowMutation } from "../../core/policy/workflow-policy-store.js";
 import jsonPatch from "fast-json-patch";
 import fs from "node:fs/promises";
 import { readLocatedItemSnapshot } from "../../core/store/item-store.js";
@@ -378,6 +379,10 @@ export async function runRestore(
       currentState.document,
       restoredDocument,
     );
+    const workflowPolicy = await enforceWorkflowMutation({
+      pmRoot, settings, operation: "restore", author,
+      before: currentState.document, after: restoredDocument,
+    });
     await runActiveBeforeMutationHooks({
       pm_root: pmRoot,
       operation: "restore",
@@ -421,6 +426,7 @@ export async function runRestore(
         before: currentState.document,
         after: restoredDocument,
         message: options.message,
+        context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
       });
       try {
         await appendHistoryEntry(subject.historyPath, historyEntry);
@@ -481,6 +487,7 @@ export async function runRestore(
       },
       changed_fields: restoreChangedFields,
       warnings: [
+        ...workflowPolicy.warnings,
         ...(loadedItemUnderLock?.recovered ? ["restore_unreadable_item_recovered"] : []),
         ...subject.historyPolicyWarnings,
         ...ownershipWarnings,
