@@ -164,7 +164,7 @@ async function approvePolicy(name: string, options: WorkflowPolicyActionOptions,
   return { policy_result: true, action: "policy-approve", changed: true, result: { id: mutation.item.id, ...evidence!, warnings: mutation.warnings } };
 }
 
-/** Execute policy operations through the same SDK semantics on every transport. */
+/** Execute policy operations on every transport; policy-mode uses name as advise|refuse, validated by the registry parser. */
 export async function runWorkflowPolicyAction(action: WorkflowPolicyAction, name: string | undefined, options: WorkflowPolicyActionOptions = {}, global: Pick<GlobalOptions, "path"> = {}): Promise<WorkflowPolicyActionResult> {
   if (!WORKFLOW_POLICY_ACTIONS.includes(action)) throw new PmCliError("Unknown workflow policy action.", EXIT_CODE.USAGE);
   if (action === "policy-presets") return { policy_result: true, action, changed: false, result: createLifecycleCompletenessPolicies() };

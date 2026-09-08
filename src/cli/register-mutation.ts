@@ -2798,7 +2798,7 @@ export function registerMutationCommands(
     )
     .argument(
       "[name]",
-      "Definition name, or source name for rename/remap migrations",
+      "Definition/source name or item id; policy-mode: advise|refuse",
     )
     .option(
       "--description <text>",

@@ -714,7 +714,7 @@ const RAW_TOOLS: ToolDefinition[] = [
         name: {
           type: "string",
           description:
-            "Item type name (show/add-type/remove-type), status id (show-status/add-status/remove-status), or custom field key (show-field/add-field/remove-field). Required for those subcommands.",
+            "Item type name, status id, field key, policy id, or item id for the selected schema verb; policy-mode requires advise|refuse.",
         },
         description: {
           type: "string",

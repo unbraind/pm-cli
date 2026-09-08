@@ -904,6 +904,10 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(GET_FLAGS)})`,
     "      ;;",
     "    schema)",
+    '      if [[ "$prev" == "policy-mode" ]]; then',
+    `        COMPREPLY=(${compgen("advise refuse")})`,
+    "        return",
+    "      fi",
     `      COMPREPLY=(${compgen(`${SCHEMA_SUBCOMMAND_CHOICES} --definition --policy --message --description --default-status --folder --alias --role --order --type --commands --cli-flag --required --required-on-create --no-allow-unset --required-types --infer --min-count --apply --to --migration-id --dry-run --author --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help`)})`,
     "      ;;",
     "    profile)",
@@ -1540,6 +1544,10 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
         schema)
+          if [[ "\${words[CURRENT-1]}" == policy-mode ]]; then
+            compadd advise refuse
+            return
+          fi
           _arguments \\
             '1:subcommand:(${SCHEMA_SUBCOMMAND_CHOICES})' \\
             '--definition[Policy definition or proposed fields JSON]:json' \\
@@ -2731,6 +2739,7 @@ complete -c pm -n '__pm_history_operation history-repair repair' -l author -d 'M
 complete -c pm -n '__pm_history_operation history-repair repair' -l message -d 'Audit history message' -r
 complete -c pm -n '__pm_history_operation history-repair repair' -l force -d 'Force ownership/lock override'
 complete -c pm -n '__fish_seen_subcommand_from schema' -a '${SCHEMA_SUBCOMMAND_CHOICES}' -d 'Schema subcommand'
+complete -c pm -n '__fish_seen_subcommand_from schema; and __fish_seen_subcommand_from policy-mode' -a 'advise refuse' -d 'Policy enforcement'
 complete -c pm -n '__fish_seen_subcommand_from schema' -l definition -d 'Policy definition or proposed fields JSON' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l policy -d 'Approval policy id' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l message -d 'History rationale' -r

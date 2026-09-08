@@ -809,6 +809,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       ],
     },
     schema: {
+      mutuallyExclusiveWhen: [[
+        { property: "subcommand", schema: { const: "policy-mode" } },
+        { property: "name", schema: { not: { enum: ["advise", "refuse"] } } },
+      ]],
       required: ["subcommand"],
       optional: [
         "definition",

@@ -2383,7 +2383,7 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     policy: { description: "Declared approval rule id for policy-approve." },
     name: {
       description:
-        "Custom item type name (add-type/remove-type/show), custom status id (show-status/add-status/remove-status), or custom field key (add-field/remove-field/show-field). Required for those subcommands.",
+        "Custom item type name, status id, field key, policy id, or item id for the selected schema verb; policy-mode requires advise|refuse.",
       examples: ["Spike", "review", "component"],
     },
   },

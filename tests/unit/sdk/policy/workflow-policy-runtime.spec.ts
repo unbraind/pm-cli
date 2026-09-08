@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile, rm } from "node:fs/promises";
+import { mkdir, readFile, writeFile, rm, symlink } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { sealHistoryRecord } from "../../../../src/core/history/history.js";
@@ -191,9 +191,16 @@ describe("workspace workflow policy enforcement", () => {
       await expect(readWorkflowApprovals(pmPath, item.id)).rejects.toMatchObject({ code: "workflow_policy_approval_history_invalid" });
       await writeFile(historyPath, JSON.stringify(sealHistoryRecord({ ...entry, op: "policy_approve", context: { workflow_approval: { policy_fingerprint: 5 } } })));
       expect(await readWorkflowApprovals(pmPath, item.id)).toEqual([]);
+      const policyPath = path.join(pmPath, "schema", "policies.json");
+      await mkdir(path.dirname(policyPath), { recursive: true });
+      await symlink(policyPath, policyPath, "junction");
+      await expect(readWorkflowPolicies(pmPath)).rejects.toThrow();
       await rm(path.join(pmPath, "schema"), { recursive: true, force: true });
       await writeFile(path.join(pmPath, "schema"), "not a directory");
-      await expect(readWorkflowPolicies(pmPath)).rejects.toMatchObject({ code: "ENOTDIR" });
+      await expect(readWorkflowPolicies(pmPath)).rejects.toMatchObject({ code: "workflow_policy_input_unreadable" });
+      await expect(readWorkflowPolicies(path.join(pmPath, "schema", "nested"))).rejects.toThrow();
+      expect(await readWorkflowPolicies(path.join(pmPath, "missing", "nested"))).toMatchObject({ policies: [] });
+      expect(await readWorkflowPolicies(path.join(path.parse(pmPath).root, `pm-absent-${process.pid}-${Date.now()}`))).toMatchObject({ policies: [] });
     });
   });
 

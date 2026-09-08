@@ -19,7 +19,22 @@ describe("declarative policy MCP parity", () => {
         expect(properties).toHaveProperty(key);
         expect(nested.properties[key]).toEqual(properties[key]);
       }
+      expect(properties.name).toMatchObject({ description: expect.stringContaining("advise|refuse") });
+      expect(schema!.inputSchema.allOf).toContainEqual({ not: { allOf: [
+        { properties: { subcommand: { const: "policy-mode" } }, required: ["subcommand"] },
+        { properties: { name: { not: { enum: ["advise", "refuse"] } } }, required: ["name"] },
+      ] } });
       expect(properties.definition).toMatchObject({ anyOf: [{ type: "object" }, { type: "string" }] });
+      for (const mode of ["advise", "refuse"]) {
+        expect(await handleRequest({ jsonrpc: "2.0", id: 5, method: "tools/call", params: {
+          name: "pm_schema", arguments: { path: pmPath, subcommand: "policy-mode", name: mode, dryRun: true },
+        } })).toMatchObject({ structuredContent: { result: { changed: false, result: { enforcement: mode } } } });
+      }
+      await expect(handleRequest({ jsonrpc: "2.0", id: 6, method: "tools/call", params: {
+        name: "pm_schema", arguments: { path: pmPath, subcommand: "policy-mode", name: "invalid" },
+      } })).rejects.toThrow();
+      expect(runCli(["schema", "--help"]).stdout).toContain("advise|refuse");
+      expect(runCli(["schema", "policy-mode", "invalid"]).code).not.toBe(0);
       const put = await handleRequest({ jsonrpc: "2.0", id: 1, method: "tools/call", params: {
         name: "pm_schema", arguments: { path: pmPath, subcommand: "policy-put", name: "evidence", definition: JSON.stringify({
           id: "evidence", effect: "refuse", subject: { statuses: ["closed"] },

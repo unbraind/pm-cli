@@ -32,6 +32,22 @@ export const MAX_WORKFLOW_APPROVAL_HISTORY_BYTES = 4_194_304;
 
 /** Read at most the declared byte ceiling plus one sentinel byte, always closing the handle. */
 async function readBoundedPolicyFile(file: string, maxBytes: number): Promise<string | null> {
+  // Validate ancestors explicitly: Windows may report ENOENT below a regular file.
+  let ancestor = path.dirname(file);
+  while (ancestor !== path.parse(file).root) {
+    const stats = await fs.stat(ancestor).catch((error: unknown) => {
+      if (isFileMissingError(error)) return null;
+      throw error;
+    });
+    if (stats !== null) {
+      if (!stats.isDirectory()) throw new PmCliError("Workflow policy storage ancestor must be a directory.", EXIT_CODE.CONFLICT, {
+        code: "workflow_policy_input_unreadable",
+        nextSteps: ["Restore the policy or approval history directory before retrying."],
+      });
+      break;
+    }
+    ancestor = path.dirname(ancestor);
+  }
   const handle = await fs.open(file, "r").catch((error: unknown) => {
     if (isFileMissingError(error)) return null;
     throw error;
