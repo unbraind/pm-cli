@@ -34,6 +34,12 @@ describe("binding output budget recovery hints", () => {
     if (isReadOutputBudgetExceeded(result)) throw new Error("Fixture must retain useful rows");
     expect(result.read_output?.migration_hints[0]).toContain("remaining 2000-token session budget");
     expect(result.read_output?.migration_hints[0]).toContain("new output session");
+    expect(result.read_output?.migration_hints[0]).toContain("--output-cursor");
+    const resumed = applyReadOutputDimensions("list", {
+      outputBudget: "unbounded", outputCursor: result.next_cursor,
+      outputSession: { version: 1, id: "resumed", token_budget: 100000, spent_tokens: 0, seen_item_ids: [] },
+    }, { items, count: items.length });
+    expect(resumed).toMatchObject({ items: items.slice(result.items.length) });
   });
 
 });

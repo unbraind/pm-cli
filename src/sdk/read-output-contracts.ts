@@ -1706,9 +1706,10 @@ function attachReadOutputTruncationDisclosure(
     },
   );
   const primary = continuations[0];
+  const continuationHint = primary ? "; page --output-cursor" : "";
   const budgetHint = bindingBudget.source === "session"
-    ? `Truncated by the remaining ${bindingBudget.tokens}-token session budget; start a new output session with a larger token_budget.`
-    : `${bindingBudget.tokens}-token: raise --output-budget${primary ? "; page --output-cursor" : ""}`;
+    ? `Truncated by the remaining ${bindingBudget.tokens}-token session budget; start a new output session with a larger token_budget${continuationHint}.`
+    : `${bindingBudget.tokens}-token: raise --output-budget${continuationHint}`;
   receipt.migration_hints = [budgetHint, ...resolved.migration_hints];
   const recoveryBudget = resolveReadOutputRecoveryBudget({
     effective_budget_tokens: bindingBudget.tokens,

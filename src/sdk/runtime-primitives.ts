@@ -124,7 +124,26 @@ export {
   type HistoryRecordHashVersion,
 } from "../core/history/history.js";
 export { readHistoryEntries } from "../core/history/read.js";
-export * from "../core/history/workspace-history.js";
+export {
+  appendWorkspaceAuditEvent,
+  appendWorkspaceHistoryChange,
+  getWorkspaceHistoryPath,
+  inspectWorkspaceHistoryState,
+  mutateWorkspaceJsonWithHistory,
+  reconcileWorkspaceJsonHistory,
+  restoreWorkspaceJsonFromHistory,
+  WORKSPACE_HISTORY_ID,
+  writeWorkspaceJsonWithHistory,
+  type WorkspaceAuditEventOptions,
+  type WorkspaceHistoryChange,
+  type WorkspaceHistoryStateAgreement,
+  type WorkspaceJsonMutation,
+  type WorkspaceJsonMutationOptions,
+  type WorkspaceJsonReconciliationOptions,
+  type WorkspaceJsonRestoreOptions,
+  type WorkspaceJsonRestoreResult,
+  type WorkspaceJsonWriteOptions,
+} from "../core/history/workspace-history.js";
 export {
   normalizeReplayPatchOps,
   reanchorHistoryEntries,

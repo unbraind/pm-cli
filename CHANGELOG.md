@@ -25,9 +25,9 @@
 
 ### Fixed
 
+- GH-1218: expose local package copy scope and packed-install alternatives ([pm-5bsofk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5bsofk.toon))
 - GH-1219: report truthful package update coverage for skipped and failed checks ([pm-gf5zw8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gf5zw8.toon))
 - Claim ownership response repeats full metadata despite the compact mutation contract ([pm-eqdo85](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eqdo85.toon))
-- GH-1218: expose local package copy scope and packed-install alternatives ([pm-5bsofk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5bsofk.toon))
 - Reject repository-local test scratch roots before sandbox fixtures can mutate the real Git workspace ([pm-bukwmy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bukwmy.toon))
 - GH-1214: Bound complete item reads and isolate Git newline fixtures on Windows ([pm-hrhfgi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hrhfgi.toon))
 - GH-1216: Preserve diagnostic identity and sanitize short and bounded error text ([pm-m4uyyj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m4uyyj.toon))

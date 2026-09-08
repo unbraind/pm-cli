@@ -6,30 +6,32 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-08T15:32:57.518Z"
-updated_at: "2026-09-08T17:32:25.299Z"
-closed_at: "2026-09-08T17:32:24.517Z"
-completed_at: "2026-09-08T17:32:24.517Z"
+updated_at: "2026-09-08T20:41:38.796Z"
+closed_at: "2026-09-08T20:41:38.011Z"
+completed_at: "2026-09-08T20:41:38.011Z"
 author: "harness:codex"
 acceptance_criteria: Budget truncation emits a cause-specific retry beside legacy alias guidance; increasing the named budget returns more rows; exhausted session budgets name the session option; canonical alias migration remains equivalent independently of token limits.
 parent: pm-5t33or
 severity: low
 repro_steps: Request list output above the default token ceiling with --limit; inspect migration_hints and retry using only the recommended --output-limit alias.
-resolution: "Read recovery hints name the binding output or session token budget before alias migration advice, and list help explains the row alias and independent token ceiling."
-expected_result: Agents can choose an effective budget retry directly and understand --limit compatibility before making a read.
-actual_result: "Executable budget retry, exhausted-session, all alias parity and real Commander help checks pass. List help remains 18 tokens below its unchanged ceiling; full coverage is exact 100/100/100/100 across 8619 passing tests."
+resolution: Budget recovery hints identify the binding command or session ceiling and explain how to resume withheld rows with the existing output cursor under a fresh larger session.
+expected_result: "Agents can execute the suggested recovery without repeating previously emitted rows, and list help preserves its token ceiling."
+actual_result: "The cursor hint regression failed before the correction and passed afterward; its fresh-session continuation returns exactly the withheld rows. Linked tests, all 8620 full-suite tests, exact 100/100/100/100 coverage and static/docstring/token assurance pass."
 component: sdk/read-output
 regression: false
 customer_impact: Agents can waste repeated calls changing row limits while the token budget remains binding.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-8nev0o,recurs_from,"2026-09-08T15:32:57.518Z","harness:codex","cli:create:dep",detected
   pm-xam9bt,blocked_by,"2026-09-08T15:32:57.518Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-09-08T15:32:57.518Z","harness:codex","Duplicate-check evidence: complete all-status inventory and targeted Budget-truncated search inspected. No item owns the misleading adjacent migration hint reported by GitHub #1222. Existing closed continuation and monotonic recovery items retain their delivered scope."
   "2026-09-08T16:24:42.723Z","harness:codex","Verification: linked budget-hint tests pass for the default output ceiling, executable larger-budget retry and exhausted session ceiling. All 22 legacy include-mode recommendations remain behavior-equivalent in the compiled CLI test using an explicit unbounded token budget, so payload growth cannot masquerade as an alias-provenance regression. Audit and secret checks passed; terminal defect negative control exits 1 with the expected missing-evidence findings."
   "2026-09-08T16:46:46.532Z","harness:codex","Token gate evidence: the first descriptive budget hint increased the fixed contracts discovery transcript by 26 estimated tokens. Condensed the actionable hint and its recovery pointer without changing the baseline or dropping either budget/cursor remedy. The unchanged agent-task token gate now passes; budget and all alias regression tests pass after the wording change."
   "2026-09-08T16:51:00.597Z","harness:codex","Final implementation evidence: Real CLI/SDK regression checks pass for larger-budget retry and exhausted session ceilings. All 22 alias cases retain parity under explicit unbounded output; full source coverage is exact 100/100/100/100."
   "2026-09-08T17:24:49.745Z","harness:codex","Review correction: list --help now identifies --limit as an alias for --output-limit and explains that --output-budget may cap rows. Real Commander help and executable recovery tests pass. Concise updated-at wording preserves intent and keeps list help 18 tokens below the unchanged ceiling; token task gate remains green."
   "2026-09-08T17:32:23.782Z","harness:codex","Final review-correction evidence for PR #1224: Executable budget retry, exhausted-session, all alias parity and real Commander help checks pass. List help remains 18 tokens below its unchanged ceiling; full coverage is exact 100/100/100/100 across 8619 passing tests."
+  "2026-09-08T20:27:16.398Z","harness:codex","Fifth-round TDD: the existing session-budget test failed on the missing output-cursor hint. The correction shares the continuation suffix across both binding-budget sources; the same test now executes the cursor with a fresh larger output session and asserts that it resumes exactly after previously emitted rows."
+  "2026-09-08T20:41:16.021Z","harness:codex","Final fifth-round local evidence: the missing-hint assertion failed before the fix and passes after it; executable continuation with a fresh larger session returns exactly the previously withheld rows. All 44 focused tests and the linked recovery test pass. Full source coverage is exact 100/100/100/100 across 8620 tests, and static/docstring/token assurance passes without budget changes."
 files[4]{path,scope,note}:
   src/cli/register-list-query.ts,project,Explain row alias and binding output budget in list help
   src/sdk/read-output-contracts.ts,project,Shared-recovery-hint
@@ -37,7 +39,7 @@ files[4]{path,scope,note}:
   tests/unit/sdk/recovery/read-output-budget-hints.spec.ts,project,Executable-budget-recovery
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-budget-hints.spec.ts,project,240,"harness:codex","2026-09-08T15:34:09.979Z",local_mutation,feat/declarative-workflow-policies
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mtsvem3j-c37qyh
     kind: test
     status: passed
@@ -60,10 +62,21 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-budget-hints.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtt4sc1p-ok4j8h
+    kind: test
+    status: passed
+    started_at: "2026-09-08T20:37:24.614Z"
+    finished_at: "2026-09-08T20:37:37.405Z"
+    recorded_at: "2026-09-08T20:37:37.405Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-budget-hints.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/OUTPUT_TOKEN_ACCOUNTING.md,project,Output-and-session-budget-dimensions
   docs/READ_OUTPUT_CONTRACTS.md,project,Canonical-budget-and-alias-contract
-close_reason: Implementation and first-round review corrections verified for PR #1224.
+close_reason: Implementation and fifth-round corrections verified locally; current-head hosted review and gates govern merge.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

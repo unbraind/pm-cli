@@ -6,20 +6,21 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-07T22:30:37.538Z"
-updated_at: "2026-09-08T10:50:56.677Z"
-closed_at: "2026-09-08T10:50:56.068Z"
-completed_at: "2026-09-08T10:50:56.068Z"
+updated_at: "2026-09-08T20:41:37.155Z"
+closed_at: "2026-09-08T20:41:36.422Z"
+completed_at: "2026-09-08T20:41:36.422Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "SDK and CLI local-source planning identifies directory versus archive source and bounded file/byte estimates before copying; large development trees receive a working npm pack and archive-install suggestion; preserve directory snapshots, ignored scripts, dependency resolution, containment and exact host SDK linking; real isolated directory and archive acceptance covers the published consumer flow."
 parent: pm-ugqx
 risk: medium
 confidence: high
+release: 2026.9.8
 reporter: github
 severity: medium
-resolution: "Implemented bounded SDK/CLI/MCP copy plans and dry-run receipts, strict generic install constraints, nested tracker exclusions, and correct source/destination alias semantics, with executable unsafe completeness control."
-expected_result: "Planning accurately reports lower bounds before destination writes, and the actual installer produces matching directory snapshots and safe nested exclusions."
-actual_result: "8581 tests across 645 files passed with zero uncovered counts: statements 63343/63343, branches 48101/48101, functions 13129/13129 and lines 60821/60821. Nine linked PM commands passed. Full static verification, final build/lint/structural/type checks and idle import/startup gates passed with unchanged budgets. Rebuilt npm and Bun consumers passed source-alias snapshots, destination-alias in-place planning, archive activation, compact/full claims and truthful partial freshness. All three source controls prove baseline exit 0 and unsafe-mutant exit 1. Hosted re-review follows the corrective push."
+resolution: "Implemented bounded SDK/CLI/MCP copy planning and safe archive alternatives, with real packed-install acceptance now using the existing Windows npm launcher helpers."
+expected_result: "Directory and archive planning retain their existing semantics, and the same real pack/install acceptance runs on supported operating systems."
+actual_result: "All 8620 tests pass at exact 100/100/100/100 coverage. All three linked package commands, four TypeScript projects and static assurance pass. Linux and macOS hosted suites passed; the corrected-head Windows run remains a merge requirement. The original feature remains attributed to v2026.9.8."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-0682l4,discovered_from,"2026-09-07T22:30:37.538Z","harness:codex","cli:create:dep",detected
   pm-lw6acw,discovered_from,"2026-09-07T22:30:37.538Z","harness:codex","cli:create:dep",detected
@@ -27,7 +28,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-tqel,discovered_from,"2026-09-07T22:43:19.233Z","harness:codex","cli:update:dep",detected
   pm-0682l4,verifies,"2026-09-08T08:25:51.107Z","harness:codex","cli:update:dep",detected
   pm-lw6acw,verifies,"2026-09-08T08:25:51.107Z","harness:codex","cli:update:dep",detected
-comments[17]:
+comments[19]:
   - created_at: "2026-09-07T22:30:37.538Z"
     author: "harness:codex"
     text: "Duplicate check: strict full all-status corpus read returned all 2656 items with complete=true and zero omissions; searched all metadata for GH-1218, copy scope/cost/size and local/archive package installs. No existing copy-cost planning item exists. Historical pm-0682l4 owns nested-destination recursion and pm-lw6acw owns implemented archive acceptance; neither owns this external-destination cost visibility request. Full relevant metadata and issue report read. Source inspection confirms the external-destination branch currently invokes recursive cp without the nested-layout filter. Reported timings are host-dependent and were not independently benchmarked here. Intake only: open and unclaimed."
@@ -80,6 +81,12 @@ comments[17]:
   - created_at: "2026-09-08T10:50:55.517Z"
     author: "harness:codex"
     text: "Final second-round local evidence: 8581 tests across 645 files passed with zero uncovered counts: statements 63343/63343, branches 48101/48101, functions 13129/13129 and lines 60821/60821. Nine linked PM commands passed. Full static verification, final build/lint/structural/type checks and idle import/startup gates passed with unchanged budgets. Rebuilt npm and Bun consumers passed source-alias snapshots, destination-alias in-place planning, archive activation, compact/full claims and truthful partial freshness. All three source controls prove baseline exit 0 and unsafe-mutant exit 1. Hosted re-review follows the corrective push."
+  - created_at: "2026-09-08T20:23:05.879Z"
+    author: "harness:codex"
+    text: "Cross-platform evidence: manual Nightly run 34272102940 on 0369bcb46 passed Linux Node 22/24/25 and macOS Node 24. Windows passed all new policy suites but failed the existing packed-alternative acceptance at extension-install-dry-run.spec.ts:56, with child status null. The test directly spawns npm without the existing Windows npm.cmd and shell helpers used by the installer. Reusing this canonical linked-test lineage; no duplicate item or runtime planning regression is asserted."
+  - created_at: "2026-09-08T20:41:14.767Z"
+    author: "harness:codex"
+    text: "Verification: all 8620 tests across 652 files pass with exact 100/100/100/100 coverage. The three inherited linked commands were inspected, explicitly acknowledged through PM, and passed; the initial refusal was foreign-source trust, not an assertion failure. The test now verifies the advertised npm command, uses existing platform-specific launcher helpers, retains real archive install assertions and reports child-launch errors. The prior Windows run is the failing baseline; corrected-head Windows CI remains required. Historical v2026.9.8 release attribution is pinned separately from this acceptance correction."
 files[25]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,CLI-managed provenance for latest pm-changelog 2026.9.8 used to generate reviewed release notes
   scripts/release/flag-help-baseline.json,project,Install dry-run contract and exact generated surface baselines
@@ -110,7 +117,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-copy-safety.spec.ts tests/unit/extensions/extension-install-security.spec.ts,project,300,"harness:codex","2026-09-07T22:30:37.538Z",local_mutation,feat/history-maintenance-sdk-command-grammar
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-plan.spec.ts tests/unit/extensions/extension-install-dry-run.spec.ts tests/unit/extensions/extension-copy-safety.spec.ts,project,240,"harness:codex","2026-09-08T08:00:38.025Z",local_mutation,feat/package-planning-update-health-claim-receipts
   node scripts/run-tests.mjs test -- tests/unit/scripts/package-install-plan-control.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,240,"harness:codex","2026-09-08T09:29:54.670Z",local_mutation,feat/package-planning-update-health-claim-receipts
-test_runs[4]:
+test_runs[6]:
   - run_id: test-local-mtsf84df-scho88
     kind: test
     status: passed
@@ -160,12 +167,38 @@ test_runs[4]:
       node scripts/run-tests.mjs test -- tests/unit/extensions/extension-copy-safety.spec.ts tests/unit/extensions/extension-install-security.spec.ts,schema,schema,source,acknowledged
       node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-plan.spec.ts tests/unit/extensions/extension-install-dry-run.spec.ts tests/unit/extensions/extension-copy-safety.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/scripts/package-install-plan-control.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtt4s1km-3fgupj
+    kind: test
+    status: failed
+    started_at: "2026-09-08T20:37:00.856Z"
+    finished_at: "2026-09-08T20:37:23.830Z"
+    recorded_at: "2026-09-08T20:37:23.830Z"
+    passed: 2
+    failed: 1
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-copy-safety.spec.ts tests/unit/extensions/extension-install-security.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-plan.spec.ts tests/unit/extensions/extension-install-dry-run.spec.ts tests/unit/extensions/extension-copy-safety.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/scripts/package-install-plan-control.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,schema,schema,source,foreign_source_ref
+  - run_id: test-local-mtt4tcfb-1rivzp
+    kind: test
+    status: passed
+    started_at: "2026-09-08T20:37:47.878Z"
+    finished_at: "2026-09-08T20:38:24.551Z"
+    recorded_at: "2026-09-08T20:38:24.551Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-copy-safety.spec.ts tests/unit/extensions/extension-install-security.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-plan.spec.ts tests/unit/extensions/extension-install-dry-run.spec.ts tests/unit/extensions/extension-copy-safety.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/scripts/package-install-plan-control.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,schema,schema,source,acknowledged
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,Package-owned generated install planning release evidence
   docs/EXTENSIONS.md,project,Compatibility contract for follow-up implementation
   docs/generated/FLAG_LEXICON_BUDGETS.md,project,Exact one-flag install planning budget
   docs/PACKAGE_EVIDENCE.md,project,Bounded planning and packed alternatives
-close_reason: Implemented and locally verified the full public SDK/CLI/MCP evidence contract and review corrections.
+close_reason: Implementation and fifth-round corrections verified locally; current-head hosted review and gates govern merge.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_added
