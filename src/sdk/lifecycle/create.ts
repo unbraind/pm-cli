@@ -490,7 +490,7 @@ function parseDependencies(
     const explicitAuthor = parseOptionalString(kv.author);
     return {
       id: normalizeDependencySeedId(id, prefix, sourceKind),
-      kind: ensureEnumValue(kind, DEPENDENCY_KIND_VALUES, "dependency kind"),
+      kind: ensureEnumValue(kind, DEPENDENCY_KIND_VALUES, "dependency kind", "kind"),
       created_at: parseCreatedAt(kv.created_at, nowValue),
       author: explicitAuthor ?? fallbackAuthor,
       source_kind: sourceKind ?? "cli:create:dep",

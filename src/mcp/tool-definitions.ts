@@ -68,6 +68,17 @@ const READ_OUTPUT_TOOL_PROPERTIES = {
   },
 } as const;
 
+/** Discoverable workflow authoring options accepted at either MCP argument level. */
+const workflowPolicyOptionProperties = {
+  definition: {
+    anyOf: [{ type: "object" }, { type: "string" }],
+    description: "Policy declaration for policy-put, or proposed metadata for policy-check; structured JSON or JSON text.",
+  },
+  policy: { type: "string", description: "Approval policy id for policy-approve." },
+  message: { type: "string", description: "History explanation for policy mutations and approvals." },
+  dryRun: { type: "boolean", description: "Preview registry changes without writing; policy-approve rejects previews." },
+};
+
 /** MCP transport parameters layered over every canonical action schema. */
 export const TOOL_SCHEMA_BASE = {
   type: "object",
@@ -680,6 +691,7 @@ const RAW_TOOLS: ToolDefinition[] = [
       "Policy verbs author declarations, preview changes, set enforcement, and record content-bound approvals. Registry mutations write workspace history; approvals write item history.",
     inputSchema: objectSchema(
       {
+        ...workflowPolicyOptionProperties,
         subcommand: {
           type: "string",
           enum: [
@@ -793,6 +805,7 @@ const RAW_TOOLS: ToolDefinition[] = [
         options: {
           type: "object",
           description: "Additional schema options using camelCase keys.",
+          properties: workflowPolicyOptionProperties,
         },
       },
       ["subcommand"],

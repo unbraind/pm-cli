@@ -877,7 +877,7 @@ export function parseDependencyAdditions(
     const explicitAuthor = parseOptionalDependencyString(kv.author);
     return {
       id: normalizeDependencySeedId(id, prefix, sourceKind),
-      kind: ensureEnum(kind, DEPENDENCY_KIND_VALUES, "dependency kind"),
+      kind: ensureEnum(kind, DEPENDENCY_KIND_VALUES, "dependency kind", "kind"),
       created_at: parseDependencyCreatedAt(kv.created_at, nowIso),
       author: explicitAuthor ?? fallbackAuthor,
       source_kind: sourceKind ?? "cli:update:dep",
@@ -932,7 +932,7 @@ function parseDependencyRemovals(
       return {
         id: normalizeDependencySeedId(idRaw, prefix, sourceKind),
         kind: kindRaw
-          ? ensureEnum(kindRaw, DEPENDENCY_KIND_VALUES, "dependency kind")
+          ? ensureEnum(kindRaw, DEPENDENCY_KIND_VALUES, "dependency kind", "kind")
           : undefined,
         source_kind: sourceKind,
         author,

@@ -1420,34 +1420,34 @@ async function runSchemaAction(
       author: readOptionString(options, "author"),
       dryRun: options.dryRun === true,
     }, globalOptions), globalOptions);
-    return;
-  }
-  const result = await dispatchSchemaSubcommand(schemaModule, {
-    normalizedSubcommand,
-    typeName,
-    options,
-    aliases: stringArrayOption(options.alias),
-    roles: stringArrayOption(options.role),
-    commands: splitCollectedCommaList(options.commands),
-    requiredTypes: splitCollectedCommaList(options.requiredTypes),
-    defaultStatus: pickStringOption(
-      options.defaultStatus,
-      options.default_status,
-    ),
-    order: parseSchemaOrderOption(options.order),
-    minCount: parseSchemaOrderOption(options.minCount),
-    author: readOptionString(options, "author"),
-    force: Boolean(options.force),
-    description: readOptionString(options, "description"),
-    globalOptions,
-  });
-  if (
-    globalOptions.json === true ||
-    globalOptions.defaultOutputFormat === "json"
-  ) {
-    printResult(result, globalOptions);
-  } else if (!globalOptions.quiet) {
-    renderSchemaResultHuman(schemaModule, result);
+  } else {
+    const result = await dispatchSchemaSubcommand(schemaModule, {
+      normalizedSubcommand,
+      typeName,
+      options,
+      aliases: stringArrayOption(options.alias),
+      roles: stringArrayOption(options.role),
+      commands: splitCollectedCommaList(options.commands),
+      requiredTypes: splitCollectedCommaList(options.requiredTypes),
+      defaultStatus: pickStringOption(
+        options.defaultStatus,
+        options.default_status,
+      ),
+      order: parseSchemaOrderOption(options.order),
+      minCount: parseSchemaOrderOption(options.minCount),
+      author: readOptionString(options, "author"),
+      force: Boolean(options.force),
+      description: readOptionString(options, "description"),
+      globalOptions,
+    });
+    if (
+      globalOptions.json === true ||
+      globalOptions.defaultOutputFormat === "json"
+    ) {
+      printResult(result, globalOptions);
+    } else if (!globalOptions.quiet) {
+      renderSchemaResultHuman(schemaModule, result);
+    }
   }
   if (globalOptions.profile) {
     printError(`profile:command=schema took_ms=${Date.now() - startedAt}`);

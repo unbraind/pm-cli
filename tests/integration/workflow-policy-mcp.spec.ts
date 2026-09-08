@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Command } from "commander";
 import { registerMutationCommands } from "../../src/cli/register-mutation.js";
 import { handleRequest } from "../../src/mcp/server.js";
@@ -13,6 +13,13 @@ describe("declarative policy MCP parity", () => {
       const { item } = await client.create({ title: "Transport parity" });
       const schema = TOOLS.find((tool) => tool.name === "pm_schema");
       expect(JSON.stringify(schema?.inputSchema)).toContain("policy-put");
+      const properties = schema!.inputSchema.properties as Record<string, unknown>;
+      const nested = properties.options as { properties: Record<string, unknown> };
+      for (const key of ["definition", "policy", "message", "dryRun"]) {
+        expect(properties).toHaveProperty(key);
+        expect(nested.properties[key]).toEqual(properties[key]);
+      }
+      expect(properties.definition).toMatchObject({ anyOf: [{ type: "object" }, { type: "string" }] });
       const put = await handleRequest({ jsonrpc: "2.0", id: 1, method: "tools/call", params: {
         name: "pm_schema", arguments: { path: pmPath, subcommand: "policy-put", name: "evidence", definition: {
           id: "evidence", effect: "refuse", subject: { statuses: ["closed"] },
@@ -20,6 +27,13 @@ describe("declarative policy MCP parity", () => {
         } },
       } });
       expect(put).toMatchObject({ structuredContent: { result: { changed: true } } });
+      const preview = await handleRequest({ jsonrpc: "2.0", id: 4, method: "tools/call", params: {
+        name: "pm_schema", arguments: { path: pmPath, subcommand: "policy-remove", name: "evidence", options: { dryRun: true, message: "Preview removal" } },
+      } });
+      expect(preview).toMatchObject({ structuredContent: { result: { changed: false } } });
+      const profile = runCli(["schema", "policies", "--profile", "--json"]);
+      expect(profile.code).toBe(0);
+      expect(profile.stderr).toMatch(/profile:command=schema took_ms=\d+/);
       const program = new Command().exitOverride().option("--quiet").option("--pm-path <value>");
       registerMutationCommands(program);
       await program.parseAsync(["schema", "policy-mode", "refuse", "--quiet", "--pm-path", pmPath], { from: "user" });
@@ -36,4 +50,21 @@ describe("declarative policy MCP parity", () => {
       expect(JSON.stringify(accepted)).toContain('"closed"');
     });
   });
+  it("emits the common schema profile epilogue for policy actions", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const stderr = vi.spyOn(process.stderr, "write");
+      try {
+        for (const profile of [false, true]) {
+          stderr.mockClear();
+          const program = new Command().exitOverride().option("--quiet").option("--profile").option("--pm-path <value>");
+          registerMutationCommands(program);
+          await program.parseAsync(["schema", "policies", "--quiet", "--pm-path", pmPath, ...(profile ? ["--profile"] : [])], { from: "user" });
+          expect(stderr.mock.calls.some(([text]) => String(text).includes("profile:command=schema"))).toBe(profile);
+        }
+      } finally {
+        stderr.mockRestore();
+      }
+    });
+  });
+
 });

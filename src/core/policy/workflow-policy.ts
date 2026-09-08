@@ -209,7 +209,7 @@ export function parseWorkflowPolicy(value: unknown): WorkflowPolicy {
   const raw = policyObject(value, ["id", "description", "subject", "effect", "rule"], "policy");
   const id = policyText(raw.id, "id");
   if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(id)) return invalidPolicy("id must be a stable token");
-  if (raw.effect !== undefined && !["advise", "warn", "refuse"].includes(String(raw.effect)))
+  if (raw.effect !== undefined && (typeof raw.effect !== "string" || !["advise", "warn", "refuse"].includes(raw.effect)))
     return invalidPolicy("effect must be advise, warn, or refuse");
   return { id, rule: parsePolicyRule(raw.rule),
     ...(raw.subject === undefined ? {} : { subject: parsePolicySubject(raw.subject) }),
@@ -263,6 +263,13 @@ export function workflowApprovalFingerprint(policy: WorkflowPolicy, record: Read
     fields: fields.map((field) => [field, readWorkflowPolicyField(record, field)]) })).digest("hex");
 }
 
+/** Match one declared outgoing edge without traversing the target record. */
+function matchesPolicyDependency(expected: NonNullable<WorkflowPolicySubject["dependency"]>, dependencies: unknown): boolean {
+  return Array.isArray(dependencies) && dependencies.some((edge: unknown) =>
+    typeof edge === "object" && edge !== null && "kind" in edge && edge.kind === expected.kind &&
+    (expected.id === undefined || ("id" in edge && edge.id === expected.id)));
+}
+
 /** Match against a snapshot without graph traversal or corpus enumeration. */
 function matchesPolicySubject(subject: WorkflowPolicySubject, record: Readonly<Record<string, unknown>>, operation: string): boolean {
   if (subject.types && !subject.types.some((type) => type.toLowerCase() === String(record.type).toLowerCase())) return false;
@@ -270,18 +277,14 @@ function matchesPolicySubject(subject: WorkflowPolicySubject, record: Readonly<R
   if (subject.operations && !subject.operations.includes(operation)) return false;
   if (subject.parents && !subject.parents.includes(String(record.parent))) return false;
   if (subject.tags && (!Array.isArray(record.tags) || !subject.tags.some((tag) => (record.tags as unknown[]).includes(tag)))) return false;
-  if (subject.dependency) {
-    const expected = subject.dependency;
-    if (!Array.isArray(record.dependencies) || !record.dependencies.some((edge: unknown) =>
-      typeof edge === "object" && edge !== null && "kind" in edge && edge.kind === expected.kind &&
-      (expected.id === undefined || ("id" in edge && edge.id === expected.id)))) return false;
-  }
+  if (subject.dependency && !matchesPolicyDependency(subject.dependency, record.dependencies)) return false;
   return true;
 }
 
 /** Match both sides so removing a tag or changing type cannot evade a rule. */
 export function workflowPolicyApplies(policy: WorkflowPolicy, input: WorkflowPolicyInput): boolean {
   if (input.completeness_only && policy.rule.kind !== "require_fields") return false;
+  if (policy.rule.kind === "approval" && input.before === null) return false;
   const subject = policy.subject ?? {};
   // Status selectors describe the destination; other scope changes check both sides.
   const status = input.after?.status ?? input.before?.status;
@@ -296,6 +299,18 @@ function missingRequiredPolicyFields(fields: string[], input: WorkflowPolicyInpu
   const missing = input.after && (input.completeness_only || changedStatus || fieldsChanged || scopeChanged)
     ? fields.filter((field) => !hasPolicyValue(readWorkflowPolicyField(input.after, field))) : [];
   return missing;
+}
+
+/** Resolve independent evidence against the proposed record or the record being deleted. */
+function hasMatchingWorkflowApproval(policy: WorkflowPolicy, input: WorkflowPolicyInput, authors: string[]): boolean {
+  // Applicability excludes creation, so every approval has a previous record.
+  const record = input.after ?? input.before!;
+  const policyFingerprint = workflowPolicyFingerprint(policy);
+  const contentFingerprint = workflowApprovalFingerprint(policy, record);
+  return input.approvals?.some((approval) =>
+    approval.policy_fingerprint === policyFingerprint &&
+    approval.content_fingerprint === contentFingerprint &&
+    approval.author !== input.author && authors.includes(approval.author)) ?? false;
 }
 
 /** Evaluate one bounded requirement against the actual before/after values. */
@@ -317,10 +332,7 @@ function evaluatePolicyRule(policy: WorkflowPolicy, input: WorkflowPolicyInput):
     case "field_writers":
       return { satisfied: !fieldsChanged || rule.authors.includes(input.author), missing_fields: [], remediation: "Have a declared field writer change the protected fields." };
     case "approval":
-      return { satisfied: !changedStatus || Boolean(input.after && input.approvals?.some((approval) =>
-        approval.policy_fingerprint === workflowPolicyFingerprint(policy) &&
-        approval.content_fingerprint === workflowApprovalFingerprint(policy, input.after!) &&
-        approval.author !== input.author && rule.authors.includes(approval.author))),
+      return { satisfied: !changedStatus || hasMatchingWorkflowApproval(policy, input, rule.authors),
         missing_fields: [], remediation: `Record an independent approval with pm schema policy-approve <item-id> --policy ${policy.id} after preparing the reviewed fields.` };
   }
 }

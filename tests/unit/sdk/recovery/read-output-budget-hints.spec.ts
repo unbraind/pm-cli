@@ -1,7 +1,15 @@
+import { Command } from "commander";
+import { registerListQueryCommands } from "../../../../src/cli/register-list-query.js";
 import { describe, expect, it } from "vitest";
 import { applyReadOutputDimensions, isReadOutputBudgetExceeded } from "../../../../src/sdk/read-output-contracts.js";
 
 describe("binding output budget recovery hints", () => {
+  it("explains both the compatibility alias and binding token ceiling in list help", () => {
+    const program = new Command();
+    registerListQueryCommands(program, { commandFilter: new Set(["list"]) });
+    const help = program.commands.find((command) => command.name() === "list")!.helpInformation();
+    expect(help.replace(/\s+/g, " ")).toMatch(/--limit <n>\s+Alias for --output-limit; --output-budget may cap rows/);
+  });
   it("places the binding budget remedy before alias hints and makes progress when executed", () => {
     const items = Array.from({ length: 300 }, (_, index) => ({ id: `pm-${index}`, title: `Evidence ${index} ${"content ".repeat(20)}` }));
     const source = { items, count: items.length, total: items.length, has_more: false };

@@ -38,7 +38,7 @@ describe("declarative workflow policies", () => {
       types: ["Feature", "Feature"], tags: ["finance"], statuses: ["closed"], operations: ["update"], parents: ["pm-parent"], dependency: { kind: "verifies", id: "pm-parent" },
     } })).toMatchObject({ id: "completion", description: "Useful rule", subject: { types: ["Feature"], dependency: { id: "pm-parent" } } });
     expect(parseWorkflowPolicy({ ...requirement, subject: { dependency: { kind: "verifies" } } }).subject?.dependency).toEqual({ kind: "verifies" });
-    for (const value of [null, [], "bad", { ...requirement, typo: true }, { ...requirement, id: "bad/id" }, { ...requirement, id: " " }, { ...requirement, id: "x".repeat(129) }, { ...requirement, effect: "deny" }, { ...requirement, subject: { typo: true } }, { ...requirement, description: "x".repeat(501) }]) expect(() => parseWorkflowPolicy(value)).toThrow();
+    for (const value of [null, [], "bad", { ...requirement, typo: true }, { ...requirement, id: "bad/id" }, { ...requirement, id: " " }, { ...requirement, id: "x".repeat(129) }, { ...requirement, effect: "deny" }, { ...requirement, effect: ["refuse"] }, { ...requirement, effect: null }, { ...requirement, subject: { typo: true } }, { ...requirement, description: "x".repeat(501) }]) expect(() => parseWorkflowPolicy(value)).toThrow();
     for (const rule of [
       { kind: "typo" }, { kind: "require_fields", fields: [] }, { kind: "authors", authors: [""] },
       { kind: "require_fields", fields: ["__proto__.x"] }, { kind: "require_fields", fields: ["x.constructor"] },
@@ -96,7 +96,10 @@ describe("declarative workflow policies", () => {
     expect(evaluate(policy, { ...input, approvals: [approval] }).allowed).toBe(true);
     for (const mismatch of [{ author: "writer" }, { author: "other" }, { policy_fingerprint: "old" }, { content_fingerprint: "old" }]) expect(evaluate(policy, { ...input, approvals: [{ ...approval, ...mismatch }] }).allowed).toBe(false);
     expect(evaluate(policy, { ...input, before: input.after }).allowed).toBe(true);
-    expect(evaluate(policy, { ...input, after: null, approvals: [approval] }).allowed).toBe(false);
+    expect(evaluate(policy, { ...input, before: null }).decisions).toEqual([]);
+    expect(evaluate(policy, { ...input, after: null, approvals: [approval] }).allowed).toBe(true);
+    expect(evaluate(policy, { ...input, after: null }).allowed).toBe(false);
+    expect(evaluate(policy, { ...input, before: { ...input.before, body: "changed" }, after: null, approvals: [approval] }).allowed).toBe(false);
     expect(workflowApprovalFingerprint(policy, { ...input.after, id: "pm-other" })).not.toBe(approval.content_fingerprint);
     expect(workflowApprovalFingerprint(requirement, input.after!)).toHaveLength(64);
   });

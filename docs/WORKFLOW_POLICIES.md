@@ -41,7 +41,7 @@ escape a protected scope by removing its tag or changing its type.
 | `transition` | `allowed` | Allows listed `[from, to]` status pairs; `$create` and `$delete` represent absent records |
 | `authors` | `authors` | Requires a listed mutation actor |
 | `field_writers` | `fields`, `authors` | Requires a listed actor when protected fields change |
-| `approval` | `fields`, `authors` | Requires an independent approval of the proposed content when status changes |
+| `approval` | `fields`, `authors` | Requires independent approval when an existing item changes status or is deleted |
 
 Operation selectors use exact history operation names. Unknown declaration keys
 are errors. Policies contain no executable expressions or regular expressions.
@@ -69,6 +69,11 @@ Unrelated metadata changes do not. The actor performing the transition must diff
 from the approval actor. Only sealed approval events from a verified item history
 chain count. `policy-check` previews transitions; `policy-approve` always records
 an event and rejects `--dry-run`.
+
+Approval rules apply to existing items. Creation and initial imports have no
+reviewable history and skip approval requirements; use `transition` rules with
+`["$create", "open"]` to constrain their initial status. Deletion requires approval
+of the current record, using the same content and independent-actor checks.
 
 Refused mutations preserve item state and item history, and append a workspace
 refusal event. Accepted mutations attach bounded policy decisions to their normal

@@ -33699,15 +33699,22 @@
             "type": "string"
           },
           "definition": {
-            "description": "Workflow policy declaration for policy-put, or proposed item fields for policy-check.",
-            "type": "object"
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Policy declaration for policy-put, or proposed metadata for policy-check; structured JSON or JSON text."
           },
           "description": {
             "description": "Custom item type, status, or field description for add-type/add-status/add-field.",
             "type": "string"
           },
           "dryRun": {
-            "description": "Preview command effects without mutating storage artifacts.",
+            "description": "Preview registry changes without writing; policy-approve rejects previews.",
             "type": "boolean"
           },
           "fieldType": {
@@ -33746,7 +33753,7 @@
             "type": "boolean"
           },
           "message": {
-            "description": "History message for mutation audit trail.",
+            "description": "History explanation for policy mutations and approvals.",
             "type": "string"
           },
           "migrationId": {
@@ -33774,6 +33781,31 @@
           },
           "options": {
             "description": "Additional schema options using camelCase keys.",
+            "properties": {
+              "definition": {
+                "anyOf": [
+                  {
+                    "type": "object"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "description": "Policy declaration for policy-put, or proposed metadata for policy-check; structured JSON or JSON text."
+              },
+              "dryRun": {
+                "description": "Preview registry changes without writing; policy-approve rejects previews.",
+                "type": "boolean"
+              },
+              "message": {
+                "description": "History explanation for policy mutations and approvals.",
+                "type": "string"
+              },
+              "policy": {
+                "description": "Approval policy id for policy-approve.",
+                "type": "string"
+              }
+            },
             "type": "object"
           },
           "order": {
@@ -33793,7 +33825,7 @@
             "type": "string"
           },
           "policy": {
-            "description": "Declared approval rule id for policy-approve.",
+            "description": "Approval policy id for policy-approve.",
             "type": "string"
           },
           "profile": {

@@ -4,13 +4,13 @@
 
 ### Added
 
-- Lifecycle field-completeness contract: each item type declares the fields required at each status transition, machine-checked by pm validate ([pm-htbetn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-htbetn.toon))
 - Declarative policy engine: item-level transition, approval, and authorship rules declared as data and enforced consistently at the SDK layer ([pm-mj42og](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-mj42og.toon))
+- Lifecycle field-completeness contract: each item type declares the fields required at each status transition, machine-checked by pm validate ([pm-htbetn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-htbetn.toon))
 
 ### Fixed
 
-- Preserve dependency kind constraints in rendered enum errors ([pm-lk0qhn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lk0qhn.toon))
 - Explain binding token budgets beside read-output alias migration hints ([pm-8kzfc4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8kzfc4.toon))
+- Preserve dependency kind constraints in rendered enum errors ([pm-lk0qhn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lk0qhn.toon))
 - pm search defaults to keyword on a workspace whose vector index is complete, so the shipped Ollama semantic default never reaches the default query path ([pm-n8a6e7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-n8a6e7.toon))
 
 ## 2026.9.8 - 2026-09-08

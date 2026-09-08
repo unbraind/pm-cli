@@ -6,9 +6,9 @@ status: closed
 priority: 3
 tags[6]: "area:sdk",governance,platform,policy,universal-domain,workflow
 created_at: "2026-07-25T12:39:45.946Z"
-updated_at: "2026-09-08T16:53:04.770Z"
-closed_at: "2026-09-08T16:50:57.418Z"
-completed_at: "2026-09-08T16:50:57.418Z"
+updated_at: "2026-09-08T17:32:21.263Z"
+closed_at: "2026-09-08T17:32:20.536Z"
+completed_at: "2026-09-08T17:32:20.536Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "A policy is declared data naming subject, rule, and effect, validated against a published schema, with no code required to express a common rule; Enforcement lives in the SDK so CLI, MCP, packages, and direct SDK consumers observe identical outcomes, proven by a test that exercises the same policy through every surface; The default effect is advisory; refusal is opt-in per policy and per workspace, so adopting the engine cannot break an existing workflow silently; A refusal names the policy that refused, the rule that matched, and the corrective action, within the diagnostic token budget; The documentation states that detected identity is unverified and that this engine is a workflow mechanism rather than an authorization boundary, with signed identity named as the prerequisite for any stronger claim; Policy evaluation cost is bounded and measured at fleet scale, and a workspace with no policies pays no measurable cost; Every policy decision that changes an outcome is recorded in history, so an audit can reconstruct which rule shaped which mutation"
@@ -20,9 +20,9 @@ outcome: Business workflows with approvals and role boundaries run on pm without
 parent: pm-33cw
 risk: high
 confidence: 55
-resolution: "Data-declared workflow policies now enforce consistently in the SDK mutation paths and expose authoring, preview, approvals, and versioned contracts through CLI and MCP."
-expected_result: "Declared transition, required-field, actor, writer and approval rules are bounded, advisory by default, opt-in refusing, and retain immutable decision evidence."
-actual_result: "All 8615 tests pass at exact 100/100/100/100 coverage. Real SDK, CLI, MCP, import, delete and restore scenarios pass; isolated manual acceptance verifies atomic refusal, independent approval and evidence-backed closure. Build, typecheck, contracts and linked tests pass."
+resolution: "Delivered SDK-owned declarative workflow policies, bounded evaluation and audited mutation enforcement; strict effect parsing, independent content-bound approvals for existing transitions and deletion, discoverable CLI/MCP authoring and shared profiling."
+expected_result: "Every supported mutation surface evaluates the same portable requirements, with opt-in refusal, actionable bounded diagnostics, and no impossible initial-creation approval."
+actual_result: "All 8619 tests in 652 files pass with exact 100/100/100/100 coverage. All linked policy tests, manual compiled CLI reviewed-deletion acceptance, build, typecheck, contracts and static quality pass. Docstring coverage is 100 percent; no new exclusions or relaxed limits."
 dependencies[15]:
   - id: pm-33cw
     kind: related
@@ -78,7 +78,7 @@ dependencies[15]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[11]{created_at,author,text}:
+comments[18]{created_at,author,text}:
   "2026-07-29T16:56:18.081Z","harness:claude-code","Evidence that the transition half of this policy engine has no substrate at all today, measured on a sandbox tracker at build 2026.7.29.\n\nWhat is declared. The workspace schema file schema/workflows.json contains exactly six entries, and all six are role-to-status-name aliases: draft_status, open_status, in_progress_status, blocked_status, close_status, canceled_status. There is no transition list, no guard, no precondition and no required-field rule anywhere in schema data. So the lifecycle state machine exists only as control flow inside the mutation paths, and nothing publishes it.\n\nWhat that permits. A closed item moved to in_progress through update --status succeeds, exit 0, changed_field_count 4. A closed item moved to draft succeeds - into a tier the corpus has never once written, 0 of 40,856 entries. Closing an already-closed item succeeds and overwrites the stored close reason. None of the three emits a warning.\n\nWhy this matters beyond tidiness. Custom statuses can be registered with a lifecycle role, so a domain pack can add states; it cannot say which states may follow which, who may perform the move, or what must be supplied. That makes the universal-customization claim thin in exactly the place a non-software domain needs it most: a review state that anyone can leave, an approval that requires no approver. It also means an agent - or a reinforcement-learning policy treating the mutation surface as an action space - has no machine-readable way to enumerate the legal actions for an item in a given state, so legality can only be discovered by attempting a mutation and reading the outcome.\n\nScope note. The specific reopen transition and the clearing of terminal fields belong to pm-83cz0o. What is recorded here is the absence of a declared transition relation for this engine to enforce.\n"
   "2026-09-08T15:00:44.688Z","harness:codex","Live lineage correction: pm-f4r1 shipped per-type allowed transitions and pm-hx23u5 shipped transactional extension mutation guards. Current implementation confirms both foundations exist. This delivery extends them with data-declared subjects, transition/field/approval/authorship rules, advisory defaults and opt-in refusal; identity remains unverified workflow provenance. Full all-status CLI inventory inspected: 2721 items, completeness complete, no truncation. Related completeness work reuses pm-htbetn; no duplicate created."
   "2026-09-08T15:31:41.797Z","harness:codex","Implementation evidence: pure declaration parsing, bounded policy IO, transactional lifecycle/import enforcement, content-bound independent approvals, public SDK authoring and CLI/MCP schema verbs are implemented. Thirteen focused SDK/CLI tests and a real MCP handler parity scenario pass; typecheck and focused ESLint pass. Repository-wide coverage and compatibility gates are now running. Approval identities are explicitly documented as unverified workflow provenance."
@@ -90,6 +90,13 @@ comments[11]{created_at,author,text}:
   "2026-09-08T16:30:28.196Z","harness:codex","Static gate found a help-contract regression: shortening the schema operand description removed the Required; marker used by structured help to expose semantic requiredness. Restored that marker while retaining the compact text; the CLI still permits custom-type shorthand and rejects an absent operand through its existing actionable error."
   "2026-09-08T16:37:46.724Z","harness:codex","Final local test evidence: all 8615 tests in 652 files pass; coverage is exact 100/100/100/100 with zero uncovered statements, branches, functions or lines. Compatible @types/node 26.5.0 is now installed after the existing release-age window; runtime dependency range >=22 is preserved. Build, all four TypeScript projects, contract snapshot and generated capability freshness pass after the update."
   "2026-09-08T16:50:56.781Z","harness:codex","Final implementation evidence: All 8615 tests pass at exact 100/100/100/100 coverage. Real SDK, CLI, MCP, import, delete and restore scenarios pass; isolated manual acceptance verifies atomic refusal, independent approval and evidence-backed closure. Build, typecheck, contracts and linked tests pass."
+  "2026-09-08T16:55:45.225Z","harness:codex","Pre-merge TDD evidence: a policy effect supplied as an array containing refuse was accepted because String coercion matched the vocabulary, then its non-string value bypassed effective refusal. The regression failed before the fix. Parsing now requires the actual value to be a string before checking the accepted set, and the existing malformed-vocabulary table covers array and null inputs."
+  "2026-09-08T16:59:10.609Z","harness:codex","The hardened parser passes all 19 focused policy/completeness/MCP scenarios and retains exact policy source coverage: 311 statements, 295 branches, 70 functions, 249 lines, all covered. A separate temporary-tracker compiled CLI check rejects the malformed array effect with workflow_policy_invalid and leaves the registry absent. No mocks or exclusions were added."
+  "2026-09-08T17:21:04.771Z","harness:codex","Review corrections: reject non-string policy effects; approval applies only to existing item transitions and validates current content on deletion, allowing creation without an impossible preexisting approval; expose definition/policy/message/dryRun in both MCP argument locations; retain the common schema profiling epilogue. Extract bounded edge and approval matching to satisfy static complexity limits without exemptions. Regression checks include real SDK, compiled CLI and MCP operations."
+  "2026-09-08T17:24:48.473Z","harness:codex","Review round 1 validation: 26 focused tests pass across policy evaluation/storage, completeness, real MCP/CLI parity, enum recovery and list help. Direct static-quality gate passes with zero violations and exact 100 percent source/export/member docstring coverage, without threshold changes. Greptile CLI reports free review quota exhausted; Sourcery reports weekly 250000-diff-character quota exhausted. These are review availability limitations, not approvals. CodeRabbit findings have individual reactions and replies; full coverage is running before the next push."
+  "2026-09-08T17:27:21.555Z","harness:codex","Manual review-fix acceptance passed in a fresh temporary tracker using separate compiled CLI processes: create under global approval refusal mode; refuse deletion without approval (exit 4); record independent approval; refuse same-actor deletion; preview deletion without removing the item; delete as the writer; verify all three immutable history entries with zero errors. Both PM roots were sandboxed and telemetry disabled for the fixture."
+  "2026-09-08T17:30:00.788Z","harness:codex","Hosted review availability detail: cubic completed its check as neutral because its monthly review line limit is exhausted (40392 of 40000; provider states October 1 reset). No source finding or approval was returned by that check. CodeRabbit supplied the actionable first-round review; Greptile and Sourcery quota limitations remain separately recorded."
+  "2026-09-08T17:32:19.918Z","harness:codex","Final review-correction evidence for PR #1224: All 8619 tests in 652 files pass with exact 100/100/100/100 coverage. All linked policy tests, manual compiled CLI reviewed-deletion acceptance, build, typecheck, contracts and static quality pass. Docstring coverage is 100 percent; no new exclusions or relaxed limits."
 learnings[1]{created_at,author,text}:
   "2026-09-08T16:21:40.696Z","harness:codex","Mutation policy checks should run under the item lock before persistence; retain complete decisions in immutable history while bounding user-facing diagnostics. Approval fingerprints must bind the complete policy revision and reviewed content, and actor provenance must not be presented as authentication."
 files[31]{path,scope,note}:
@@ -126,7 +133,7 @@ files[31]{path,scope,note}:
   tests/unit/sdk/policy/workflow-policy.spec.ts,project,Shared-policy-enforcement-and-contract-verification
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/policy tests/integration/workflow-policy-mcp.spec.ts,project,240,"harness:codex","2026-09-08T15:46:55.708Z",local_mutation,feat/declarative-workflow-policies
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mtsvdvk8-fndx2y
     kind: test
     status: passed
@@ -138,11 +145,22 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/policy tests/integration/workflow-policy-mcp.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtsy4hp0-boetkv
+    kind: test
+    status: passed
+    started_at: "2026-09-08T17:31:00.449Z"
+    finished_at: "2026-09-08T17:31:07.284Z"
+    recorded_at: "2026-09-08T17:31:07.284Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/policy tests/integration/workflow-policy-mcp.spec.ts,schema,schema,source,local_source_ref
 docs[5]{path,scope,note}:
   CHANGELOG.md,project,Package-generated-workflow-delivery-release-notes
   docs/generated/FLAG_LEXICON_BUDGETS.md,project,Generated exact executable flag census
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated-policy-error-closure-inventory
   docs/README.md,project,Public-policy-documentation-entrypoint
   docs/WORKFLOW_POLICIES.md,project,Policy-authoring-and-contracts
-close_reason: Implementation and linked verification complete; reviewed PR gates govern merge and publication separately.
+close_reason: Implementation and first-round review corrections verified for PR #1224.
 body: ""

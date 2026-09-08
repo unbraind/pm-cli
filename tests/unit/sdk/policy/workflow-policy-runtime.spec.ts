@@ -54,6 +54,24 @@ describe("workspace workflow policy enforcement", () => {
       await expect(client.close(item.id, "Complete", { author: "writer" })).resolves.toMatchObject({ item: { status: "closed" } });
     });
   });
+  it("allows initial creation under global approval rules and requires reviewed deletion", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
+      await client.workflowPolicy("policy-put", "review", { definition: {
+        id: "review", effect: "refuse",
+        rule: { kind: "approval", fields: ["body"], authors: ["reviewer"] },
+      } });
+      await client.workflowPolicy("policy-mode", "refuse");
+      const { item } = await client.create({ title: "Reviewable record", body: "Reviewed content", author: "writer" });
+      const settings = await readSettings(pmPath);
+      const deletion = { pmRoot: pmPath, settings, id: item.id, author: "writer" };
+      await expect(deleteItem(deletion)).rejects.toMatchObject({ code: "workflow_policy_refused" });
+      await client.workflowPolicy("policy-approve", item.id, { policy: "review", author: "reviewer" });
+      await expect(deleteItem({ ...deletion, author: "reviewer" })).rejects.toMatchObject({ code: "workflow_policy_refused" });
+      await expect(deleteItem(deletion)).resolves.toMatchObject({ item: { id: item.id } });
+    });
+  });
+
   it("previews registry changes, preserves no-ops, and validates authoring inputs", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const global = { path: pmPath };
