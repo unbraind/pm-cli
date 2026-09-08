@@ -126,6 +126,7 @@ const PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS: Partial<
   update: ["fullChangedFields", "idOnly"],
   "item-reopen": ["fullChangedFields", "idOnly"],
   close: ["fullChangedFields", "idOnly"],
+  claim: ["fullChangedFields", "idOnly"],
   restore: ["fullChangedFields", "idOnly"],
   append: ["fullChangedFields"],
   "update-many": ["fullChangedFields"],
@@ -225,6 +226,8 @@ export interface PmActionSchemaContract {
   /** Value that configures or reports dependent any of required for this contract. */
   dependentAnyOfRequired?: Array<{
     property: string;
+    /** Apply the dependency only for this boolean value; omission means property presence. */
+    value?: boolean;
     anyOfRequired: Array<string[]>;
   }>;
   /** Value that configures or reports conditional required for this contract. */
@@ -416,6 +419,7 @@ const LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = [
 ];
 
 const MANAGED_EXTENSION_PACKAGE_OPTION_KEYS = [
+  "dryRun",
   "target",
   "scope",
   "capability",
@@ -462,7 +466,7 @@ function managedLifecycleSchemaContracts(
       ],
     },
     [`${prefix}-install`]: {
-      optional: ["target", "github", "scope", "ref"],
+      optional: ["target", "github", "scope", "ref", "dryRun"],
       anyOfRequired: [["target"], ["github"]],
     },
     [`${prefix}-uninstall`]: { required: ["target"], optional: ["scope"] },
@@ -496,6 +500,12 @@ function managedLifecycleSchemaContracts(
     [`${prefix}-deactivate`]: { required: ["target"], optional: ["scope"] },
     [prefix]: {
       optional: MANAGED_EXTENSION_PACKAGE_OPTION_KEYS,
+      dependentAnyOfRequired: [
+        { property: "dryRun", value: true, anyOfRequired: [["install", "target"], ["install", "github"]] },
+      ],
+      mutuallyExclusiveWhen: [
+        [{ property: "dryRun", schema: { const: true } }, { property: "install", schema: { const: false } }],
+      ],
     },
   };
 }
@@ -566,7 +576,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     ...managedLifecycleSchemaContracts("package"),
     "package-upgrade": UPGRADE_ACTION_SCHEMA_CONTRACT,
     install: {
-      optional: ["target", "github", "scope", "ref"],
+      optional: ["target", "github", "scope", "ref", "dryRun"],
       anyOfRequired: [["target"], ["github"]],
     },
     upgrade: UPGRADE_ACTION_SCHEMA_CONTRACT,
@@ -1550,6 +1560,14 @@ function buildOneOfSchemaEntries(
   });
 }
 
+/** Match property presence or a specific value before applying a cross-field requirement. */
+function schemaPropertyCondition(property: string, value?: string | boolean): Record<string, unknown> {
+  return {
+    ...(value === undefined ? {} : { properties: { [property]: { const: value } } }),
+    required: [property],
+  };
+}
+
 /** Build the consolidated `allOf` constraint list for an action's contract, appending branches in a fixed order — conditional-required (`if`/`then`), then dependent any-of-required, then mutually-exclusive (`not`/`required`) — so a given contract always serializes to a byte-identical schema. Returns an empty array when the contract declares none of these constraints, letting the caller omit the `allOf` key entirely. */
 function buildActionScopedAllOf(
   contract: PmActionSchemaContract,
@@ -1558,12 +1576,7 @@ function buildActionScopedAllOf(
   if (contract.conditionalRequired && contract.conditionalRequired.length > 0) {
     for (const entry of contract.conditionalRequired) {
       allOf.push({
-        if: {
-          properties: {
-            [entry.property]: { const: entry.value },
-          },
-          required: [entry.property],
-        },
+        if: schemaPropertyCondition(entry.property, entry.value),
         // eslint-disable-next-line unicorn/no-thenable -- JSON Schema conditional keyword, not a Promise-like object.
         then: {
           required: entry.required,
@@ -1577,7 +1590,7 @@ function buildActionScopedAllOf(
   ) {
     for (const entry of contract.dependentAnyOfRequired) {
       allOf.push({
-        if: { required: [entry.property] },
+        if: schemaPropertyCondition(entry.property, entry.value),
         // eslint-disable-next-line unicorn/no-thenable -- JSON Schema conditional keyword, not a Promise-like object.
         then: {
           anyOf: entry.anyOfRequired.map((requiredFields) => ({
@@ -1780,7 +1793,7 @@ function createLazyContractSchema(
 }
 
 /** Canonical version of the action-scoped strict MCP tool-parameters schema (`PM_TOOL_PARAMETERS_SCHEMA`). Exported as the single source of truth so the MCP server, the `pm contracts` command, SDK consumers, and contract tests bind to one version constant. Bump the patch/minor for additive, backward-compatible schema changes; bump the MAJOR for breaking changes — the major also drives the `$id` `tool-parameters-v{major}` slug, so the two never drift. */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.14.0" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.15.0" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the

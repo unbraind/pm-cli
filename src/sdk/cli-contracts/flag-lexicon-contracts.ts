@@ -211,13 +211,14 @@ export function listPmFlagSpellingInventory(): readonly PmFlagSpellingInventoryE
 // pm-2bqgs7: reconcile already executable options omitted by the previous
 // declared-only census. pm-08mt4k adds two explicit scheduling opt-ins to next
 // and claim; aliases remain free and every future increase still fails closed.
+// pm-5bsofk adds one install planning opt-in to each executable install surface.
 const PM_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   init: 30,
   config: 36,
-  extension: 53,
-  package: 54,
-  packages: 54,
-  install: 26,
+  extension: 54,
+  package: 55,
+  packages: 55,
+  install: 27,
   upgrade: 29,
   create: 100,
   copy: 24,

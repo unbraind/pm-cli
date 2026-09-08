@@ -68,7 +68,7 @@ describe("schema-driven work execution", () => {
       expect(optedIn.recommended?.type).toBe("Milestone");
       const client = new PmClient({ pmRoot: context.pmPath });
       expect(await client.run("next", { options: { includeGates: true } })).toMatchObject({ recommended: { type: "Milestone" } });
-      expect(await client.run("claim", { next: true, includeGates: true, ifAvailable: true })).toMatchObject({ available: true, item: { type: "Milestone" } });
+      expect(await client.run("claim", { next: true, includeGates: true, ifAvailable: true, fullChangedFields: true })).toMatchObject({ available: true, item: { type: "Milestone" } });
     });
   });
 

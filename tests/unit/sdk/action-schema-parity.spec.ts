@@ -32,8 +32,30 @@ interface CompletenessBaseline {
 }
 
 describe("action-scoped MCP schema parity", () => {
+  it("versions install planning and explicit claim receipt projections", () => {
+    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.15.0");
+    for (const action of ["install", "extension-install", "package-install", "extension", "package"] as const) {
+      const schema = _testOnlyCliContracts.buildActionScopedToolSchema(action) as SchemaWithProperties;
+      expect(schema.properties?.dryRun, action).toMatchObject({ type: "boolean" });
+    }
+    for (const action of ["extension", "package"] as const) {
+      const schema = _testOnlyCliContracts.buildActionScopedToolSchema(action) as { allOf?: Array<{ if?: unknown; then?: unknown }> };
+      expect(schema.allOf?.[0]?.if, action).toEqual({ required: ["dryRun"], properties: { dryRun: { const: true } } });
+      expect(schema.allOf?.[0]?.then, action).toEqual({ anyOf: [{ required: ["install", "target"] }, { required: ["install", "github"] }] });
+      expect(schema.allOf, action).toContainEqual({
+        not: { allOf: [
+          { properties: { dryRun: { const: true } }, required: ["dryRun"] },
+          { properties: { install: { const: false } }, required: ["install"] },
+        ] },
+      });
+    }
+    const claim = _testOnlyCliContracts.buildActionScopedToolSchema("claim") as SchemaWithProperties;
+    for (const property of ["idOnly", "fullChangedFields"]) {
+      expect(claim.properties?.[property]).toMatchObject({ type: "boolean" });
+    }
+  });
+
   it("versions the additive single-stream salvage contract", () => {
-    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.14.0");
     const schema = _testOnlyCliContracts.buildActionScopedToolSchema(
       "history-repair",
     ) as { allOf?: unknown[]; properties?: Record<string, unknown> };

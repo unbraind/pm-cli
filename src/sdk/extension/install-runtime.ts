@@ -4,6 +4,7 @@
  * Provides cross-platform extension copy safety and owner-bound install locks.
  */
 import { withHostEnvironmentBoundary } from "../../core/fs/host-environment-errors.js";
+import { includesExtensionCopyPath } from "./copy-scope.js";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -162,44 +163,13 @@ export const copyExtensionDirectoryWithoutSelfNesting = async (
     return;
   }
   if (!isPathWithinDirectory(canonicalSource, canonicalDestination)) {
-    await copyDirectory(sourceDirectory, destinationDirectory, {
+    await copyDirectory(canonicalSource, destinationDirectory, {
       recursive: true,
       force: true,
     });
     return;
   }
 
-  const shouldCopySourcePath = (sourcePath: string): boolean => {
-    const resolvedCandidate = path.resolve(sourcePath);
-    if (
-      resolvedCandidate !== resolvedSource &&
-      !isPathWithinDirectory(resolvedSource, resolvedCandidate)
-    ) {
-      return false;
-    }
-    const canonicalCandidate = path.resolve(
-      canonicalSource,
-      path.relative(resolvedSource, resolvedCandidate),
-    );
-    if (
-      canonicalCandidate === canonicalDestination ||
-      isPathWithinDirectory(canonicalDestination, canonicalCandidate)
-    ) {
-      return false;
-    }
-    const relative = path.relative(canonicalSource, canonicalCandidate);
-    const segments = relative.split(path.sep);
-    if (
-      segments.some(
-        (segment) =>
-          segment === "node_modules" ||
-          segment.startsWith(".pm-extension-install-backup-"),
-      )
-    ) {
-      return false;
-    }
-    return segments[0] !== ".agents";
-  };
 
   const systemTempDirectory = await fs
     .realpath(path.resolve(temporaryDirectory))
@@ -224,10 +194,13 @@ export const copyExtensionDirectoryWithoutSelfNesting = async (
   );
   const stagedDirectory = path.join(stagingRoot, "extension");
   try {
-    await copyDirectory(sourceDirectory, stagedDirectory, {
+    await copyDirectory(canonicalSource, stagedDirectory, {
       recursive: true,
       force: true,
-      filter: shouldCopySourcePath,
+      filter: (sourcePath) => includesExtensionCopyPath(
+        canonicalSource, canonicalDestination,
+        path.resolve(sourcePath),
+      ),
     });
     await copyDirectory(stagedDirectory, destinationDirectory, {
       recursive: true,

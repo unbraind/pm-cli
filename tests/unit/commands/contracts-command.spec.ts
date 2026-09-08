@@ -1949,6 +1949,7 @@ describe("contracts command runtime", () => {
       GLOBAL_OPTIONS,
     );
     expect(installFlags.command_flags?.[0]?.flags).toEqual([
+      { flag: "--dry-run" },
       { flag: "--project" },
       { flag: "--local" },
       { flag: "--global" },

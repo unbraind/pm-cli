@@ -288,6 +288,9 @@ describe("runClaim/runRelease", () => {
       expect(result.previous_assignee).toBeNull();
       expect(result.forced).toBe(false);
       expect(result.item.assignee).toBe("test-author");
+      expect(result).toHaveProperty("changed_fields", ["assignee", "claim_principal"]);
+      const repeated = await runClaim(id, false, { path: context.pmPath });
+      expect(repeated).toHaveProperty("changed_fields", []);
     });
   });
 
@@ -533,6 +536,7 @@ describe("runClaim/runRelease", () => {
         expectJson: true,
       });
       expect(result.skipped).toBe(true);
+      expect(result).toHaveProperty("changed_fields", []);
       expect(result.previous_assignee).toBe("other-author");
       expect(result.item.assignee).toBe("other-author");
       expect(result.warnings).toEqual(

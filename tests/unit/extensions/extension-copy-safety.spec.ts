@@ -1,5 +1,6 @@
 import {
   cp,
+  lstat,
   mkdir,
   mkdtemp,
   readFile,
@@ -59,6 +60,8 @@ describe("extension install copy containment", () => {
     );
     await mkdir(source, { recursive: true });
     await writeFile(path.join(source, "manifest.json"), "manifest\n", "utf8");
+    await mkdir(path.join(source, "plugins", ".agents"), { recursive: true });
+    await writeFile(path.join(source, "plugins", ".agents", "state.json"), "tracker state");
     await symlink(
       source,
       sourceAlias,
@@ -73,9 +76,15 @@ describe("extension install copy containment", () => {
     expect(
       await readFile(path.join(destination, "manifest.json"), "utf8"),
     ).toBe("manifest\n");
+    await expect(readFile(path.join(destination, "plugins", ".agents", "state.json"))).rejects.toMatchObject({ code: "ENOENT" });
+    expect((await lstat(destination)).isDirectory()).toBe(true);
+    const externalDestination = path.join(root, "external-destination");
+    await _testOnly.copyExtensionDirectoryWithoutSelfNesting(sourceAlias, externalDestination, cp);
+    expect((await lstat(externalDestination)).isDirectory()).toBe(true);
+    expect(await readFile(path.join(externalDestination, "plugins", ".agents", "state.json"), "utf8")).toBe("tracker state");
   });
 
-  it("maps alias-spelled traversal paths into the canonical source namespace", async () => {
+  it("filters canonical traversal paths and rejects paths outside the source", async () => {
     const root = await mkdtemp(
       path.join(os.tmpdir(), "pm-extension-copy-filter-alias-"),
     );
@@ -101,7 +110,7 @@ describe("extension install copy containment", () => {
       if (options?.filter) {
         destinationFilterCovered =
           options.filter(
-            path.join(sourceAlias, ".agents", "pm", "extensions", "demo"),
+            path.join(source, ".agents", "pm", "extensions", "demo"),
             "",
           ) === false;
         outsideFilterCovered =

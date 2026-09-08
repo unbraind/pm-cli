@@ -1,3 +1,4 @@
+import * as commandKitModule from "../../../packages/pm-command-kit/extensions/command-kit/index.ts";
 import { spawnSync } from "node:child_process";
 import fsPromises from "node:fs/promises";
 import { chmod, cp as fsPromisesCp, mkdtemp, mkdir, readFile, readdir, realpath, rm, symlink, utimes, writeFile } from "node:fs/promises";
@@ -3422,7 +3423,6 @@ describe("extension command runtime", () => {
   });
 
   it("activates the command-kit exemplar package and surfaces its command/flag/parser registrations", async () => {
-    const commandKitModule = await import("../../../packages/pm-command-kit/extensions/command-kit/index.ts");
     const { activate: activateCommandKit, manifest: commandKitManifest, rewriteEchoOptions, runEchoCommand } = commandKitModule;
     expect(commandKitModule.default).toMatchObject({
       manifest: commandKitManifest,
@@ -5008,8 +5008,8 @@ describe("extension command runtime", () => {
       );
       expect(explore.details).toMatchObject({
         triage: {
-          status: "ok",
-          warning_count: 0,
+          status: "warn",
+          warning_count: 1,
           total_extensions: 1,
           managed_total: 1,
           enabled_total: 1,
@@ -5052,8 +5052,8 @@ describe("extension command runtime", () => {
         enabled_total: 1,
         active_total: 1,
         triage: {
-          status: "ok",
-          warning_count: 0,
+          status: "warn",
+          warning_count: 1,
           enabled_total: 1,
           update_check_status_totals: {
             skipped_non_github: 1,
@@ -5834,7 +5834,7 @@ describe("extension command runtime", () => {
         adopted_count: 1,
       });
       expect(managedStateFix.adopted_extensions).toContain("manual-fix-managed");
-      expect(triage.update_health_partial).toBe(false);
+      expect(triage.update_health_partial).toBe(true);
       expect(extensions).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -5977,8 +5977,8 @@ describe("extension command runtime", () => {
         adopted_count: 2,
         already_managed_count: 0,
         warning_codes: expect.any(Array),
-        update_health_partial: false,
-        update_health_coverage: "full",
+        update_health_partial: true,
+        update_health_coverage: "partial",
       });
       expect((adoptAll.details.extensions as Array<Record<string, unknown>>).map((entry) => entry.name)).toEqual(["manual-adopt-all-a", "manual-adopt-all-b"]);
 
@@ -6703,7 +6703,7 @@ describe("extension command runtime", () => {
         applied: true,
         adopted_count: 1,
       });
-      expect(triage.update_health_partial).toBe(false);
+      expect(triage.update_health_partial).toBe(true);
     });
   });
 

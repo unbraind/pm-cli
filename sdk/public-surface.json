@@ -1812,6 +1812,29 @@
       ],
       "package_version": "2026.9.7",
       "reason": "MCP 2026-07-28 additive metadata contract: add the optional logLevel request property and its namespaced key; existing request shapes and callers remain valid. Tracked by pm-pd7nh0 with SDK and real-transport compatibility tests."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ClaimResult",
+        "signature ./sdk:ExtensionCommandOptions",
+        "signature ./sdk:ExtensionCommandResult",
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/core:ClaimResult",
+        "signature ./sdk/runtime:ClaimResult",
+        "signature ./sdk/runtime:ExtensionCommandOptions",
+        "signature ./sdk/runtime:ExtensionCommandResult"
+      ],
+      "package_version": "2026.9.7",
+      "reason": "pm-5bsofk and pm-eqdo85: add optional bounded copy planning and claim mutation evidence; type the previously untyped install_plan details key; additive MCP schema 4.15.0. Existing SDK claim methods retain full results. Custom command results using install_plan must match the documented plan type."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmActionSchemaContract",
+        "signature ./sdk/contracts:PmActionSchemaContract"
+      ],
+      "package_version": "2026.9.7",
+      "reason": "Add optional boolean value matching to dependentAnyOfRequired; existing presence-based contracts remain compatible. Strict package and extension dry-run requests require install:true and a source."
     }
   ],
   "entrypoints": {
@@ -3493,6 +3516,12 @@
           "signature": "(target: string | undefined, loadResult: ExtensionLoadResult, activationResult: ExtensionActivationResult) => ExtensionDescribeResult | calls: (target: string | undefined, loadResult: ExtensionLoadResult, activationResult: ExtensionActivationResult) => ExtensionDescribeResult"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "buildExtensionInstallPlan",
+          "signature": "(resolved: ResolvedInstallSource, destination: string, scope: \"global\" | \"project\", options?: ExtensionCopyPlanOptions) => Promise<ExtensionInstallPlan> | calls: (resolved: ResolvedInstallSource, destination: string, scope: \"project\" | \"global\", options?: ExtensionCopyPlanOptions) => Promise<ExtensionInstallPlan>"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "buildGovernanceMissingFilterEcho",
@@ -3904,7 +3933,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ClaimResult",
-          "signature": "export interface ClaimResult { item: Record<string, unknown>; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; }"
+          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; }"
         },
         {
           "classification": "supported",
@@ -6844,7 +6873,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ExtensionCommandOptions",
-          "signature": "export interface ExtensionCommandOptions { install?: boolean; uninstall?: boolean; explore?: boolean; manage?: boolean; describe?: boolean; markdown?: boolean; output?: string; reload?: boolean; doctor?: boolean; catalog?: boolean; init?: boolean; scaffold?: boolean; strictExit?: boolean; failOnWarn?: boolean; adopt?: boolean; adoptAll?: boolean; activate?: boolean; deactivate?: boolean; migrate?: boolean; project?: boolean; local?: boolean; global?: boolean; gh?: string; github?: string; ref?: string; detail?: string; trace?: boolean; watch?: boolean; runtimeProbe?: boolean; fixManagedState?: boolean; isolated?: boolean; ignoreGlobal?: boolean; fields?: string; capability?: string; declarative?: boolean; vocabulary?: \"extension\" | \"package\"; dryRun?: boolean; }"
+          "signature": "export interface ExtensionCommandOptions { install?: boolean; uninstall?: boolean; explore?: boolean; manage?: boolean; describe?: boolean; markdown?: boolean; output?: string; reload?: boolean; doctor?: boolean; catalog?: boolean; init?: boolean; scaffold?: boolean; strictExit?: boolean; failOnWarn?: boolean; adopt?: boolean; adoptAll?: boolean; activate?: boolean; deactivate?: boolean; migrate?: boolean; project?: boolean; local?: boolean; global?: boolean; gh?: string; github?: string; ref?: string; detail?: string; trace?: boolean; watch?: boolean; runtimeProbe?: boolean; fixManagedState?: boolean; isolated?: boolean; ignoreGlobal?: boolean; fields?: string; capability?: string; declarative?: boolean; vocabulary?: \"extension\" | \"package\"; dryRun?: boolean; copyPlan?: ExtensionCopyPlanOptions; }"
         },
         {
           "classification": "advanced_export",
@@ -6862,7 +6891,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ExtensionCommandResult",
-          "signature": "export interface ExtensionCommandResult { ok: boolean; action: ExtensionCommandAction; scope: ExtensionScope; roots: { project: string; global: string; selected: string; settings_root: string; }; warnings: string[]; details: Record<string, unknown>; }"
+          "signature": "export interface ExtensionCommandResult { ok: boolean; action: ExtensionCommandAction; scope: ExtensionScope; roots: { project: string; global: string; selected: string; settings_root: string; }; warnings: string[]; details: Record<string, unknown> & { install_plan?: ExtensionInstallPlan; }; }"
         },
         {
           "classification": "supported",
@@ -6875,6 +6904,18 @@
           "kind": "interface",
           "name": "ExtensionContributionInventory",
           "signature": "export interface ExtensionContributionInventory { schema_version: 1; commands?: string[]; command_overrides?: string[]; command_handlers?: string[]; hooks?: string[]; flag_commands?: string[]; item_types?: string[]; item_fields?: string[]; relationship_kinds?: string[]; migrations?: string[]; profiles?: string[]; importers?: string[]; exporters?: string[]; search_providers?: string[]; vector_store_adapters?: string[]; assurance_providers?: string[]; parser_overrides?: string[]; service_overrides?: string[]; renderer_overrides?: string[]; renderer_ownership?: Array<{ format: OutputRendererFormat; commands: string[]; result_discriminator: boolean; }>; preflight_overrides?: number; preflight_ownership?: Array<{ commands: string[]; }>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ExtensionCopyPlan",
+          "signature": "export interface ExtensionCopyPlan { copy_scope: \"directory_snapshot\" | \"nested_filtered_snapshot\" | \"in_place\"; source_directory: string; destination_directory: string; files: number; bytes: number; directories: number; symlinks: number; other_entries: number; scanned_entries: number; excluded_entries: number; development_entries: number; complete: boolean; stop_reason: \"complete\" | \"entry_limit\" | \"depth_limit\"; max_entries: number; max_depth: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ExtensionCopyPlanOptions",
+          "signature": "export interface ExtensionCopyPlanOptions { maxEntries?: number; maxDepth?: number; signal?: AbortSignal; }"
         },
         {
           "classification": "advanced_export",
@@ -6953,6 +6994,12 @@
           "kind": "interface",
           "name": "ExtensionHostVersionCopy",
           "signature": "export interface ExtensionHostVersionCopy { version: string; path: string; layout: \"host\" | \"npm\" | \"pnpm\" | \"other\"; consumers: string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ExtensionInstallPlan",
+          "signature": "export interface ExtensionInstallPlan { source_mode: \"directory\" | \"archive\" | \"npm\" | \"github\"; archive_bytes?: number; copy: ExtensionCopyPlan; packed_alternative?: { cwd: string; pack: { command: \"npm\"; args: string[]; }; install: { command: \"pm\"; args: string[]; }; archive_argument: \"pack_result[0].filename\"; }; }"
         },
         {
           "classification": "advanced_export",
@@ -11366,6 +11413,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "function",
+          "name": "planExtensionDirectoryCopy",
+          "signature": "(sourceDirectory: string, destinationDirectory: string, options?: ExtensionCopyPlanOptions) => Promise<ExtensionCopyPlan> | calls: (sourceDirectory: string, destinationDirectory: string, options?: ExtensionCopyPlanOptions) => Promise<ExtensionCopyPlan>"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "type",
           "name": "PlanOperationOptions",
           "signature": "export type PlanOperationOptions = PlanCommandOptions;"
@@ -12076,7 +12129,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.14.0\""
+          "signature": "\"4.15.0\""
         },
         {
           "classification": "contract_data",
@@ -12118,7 +12171,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmActionSchemaContract",
-          "signature": "export interface PmActionSchemaContract { required?: string[]; optional?: string[]; anyOfRequired?: Array<string[]>; oneOfRequired?: Array<string[]>; dependentAnyOfRequired?: Array<{ property: string; anyOfRequired: Array<string[]>; }>; conditionalRequired?: Array<{ property: string; value: string; required: string[]; }>; mutuallyExclusive?: Array<string[]>; mutuallyExclusiveWhen?: Array<Array<{ property: string; schema: Record<string, unknown>; }>>; }"
+          "signature": "export interface PmActionSchemaContract { required?: string[]; optional?: string[]; anyOfRequired?: Array<string[]>; oneOfRequired?: Array<string[]>; dependentAnyOfRequired?: Array<{ property: string; value?: boolean; anyOfRequired: Array<string[]>; }>; conditionalRequired?: Array<{ property: string; value: string; required: string[]; }>; mutuallyExclusive?: Array<string[]>; mutuallyExclusiveWhen?: Array<Array<{ property: string; schema: Record<string, unknown>; }>>; }"
         },
         {
           "classification": "contract_data",
@@ -22372,7 +22425,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.14.0\""
+          "signature": "\"4.15.0\""
         },
         {
           "classification": "contract_data",
@@ -22384,7 +22437,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmActionSchemaContract",
-          "signature": "export interface PmActionSchemaContract { required?: string[]; optional?: string[]; anyOfRequired?: Array<string[]>; oneOfRequired?: Array<string[]>; dependentAnyOfRequired?: Array<{ property: string; anyOfRequired: Array<string[]>; }>; conditionalRequired?: Array<{ property: string; value: string; required: string[]; }>; mutuallyExclusive?: Array<string[]>; mutuallyExclusiveWhen?: Array<Array<{ property: string; schema: Record<string, unknown>; }>>; }"
+          "signature": "export interface PmActionSchemaContract { required?: string[]; optional?: string[]; anyOfRequired?: Array<string[]>; oneOfRequired?: Array<string[]>; dependentAnyOfRequired?: Array<{ property: string; value?: boolean; anyOfRequired: Array<string[]>; }>; conditionalRequired?: Array<{ property: string; value: string; required: string[]; }>; mutuallyExclusive?: Array<string[]>; mutuallyExclusiveWhen?: Array<Array<{ property: string; schema: Record<string, unknown>; }>>; }"
         },
         {
           "classification": "contract_data",
@@ -23842,7 +23895,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ClaimResult",
-          "signature": "export interface ClaimResult { item: Record<string, unknown>; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; }"
+          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; }"
         },
         {
           "classification": "supported",
@@ -30226,7 +30279,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ClaimResult",
-          "signature": "export interface ClaimResult { item: Record<string, unknown>; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; }"
+          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -30640,13 +30693,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ExtensionCommandOptions",
-          "signature": "export interface ExtensionCommandOptions { install?: boolean; uninstall?: boolean; explore?: boolean; manage?: boolean; describe?: boolean; markdown?: boolean; output?: string; reload?: boolean; doctor?: boolean; catalog?: boolean; init?: boolean; scaffold?: boolean; strictExit?: boolean; failOnWarn?: boolean; adopt?: boolean; adoptAll?: boolean; activate?: boolean; deactivate?: boolean; migrate?: boolean; project?: boolean; local?: boolean; global?: boolean; gh?: string; github?: string; ref?: string; detail?: string; trace?: boolean; watch?: boolean; runtimeProbe?: boolean; fixManagedState?: boolean; isolated?: boolean; ignoreGlobal?: boolean; fields?: string; capability?: string; declarative?: boolean; vocabulary?: \"extension\" | \"package\"; dryRun?: boolean; }"
+          "signature": "export interface ExtensionCommandOptions { install?: boolean; uninstall?: boolean; explore?: boolean; manage?: boolean; describe?: boolean; markdown?: boolean; output?: string; reload?: boolean; doctor?: boolean; catalog?: boolean; init?: boolean; scaffold?: boolean; strictExit?: boolean; failOnWarn?: boolean; adopt?: boolean; adoptAll?: boolean; activate?: boolean; deactivate?: boolean; migrate?: boolean; project?: boolean; local?: boolean; global?: boolean; gh?: string; github?: string; ref?: string; detail?: string; trace?: boolean; watch?: boolean; runtimeProbe?: boolean; fixManagedState?: boolean; isolated?: boolean; ignoreGlobal?: boolean; fields?: string; capability?: string; declarative?: boolean; vocabulary?: \"extension\" | \"package\"; dryRun?: boolean; copyPlan?: ExtensionCopyPlanOptions; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ExtensionCommandResult",
-          "signature": "export interface ExtensionCommandResult { ok: boolean; action: ExtensionCommandAction; scope: ExtensionScope; roots: { project: string; global: string; selected: string; settings_root: string; }; warnings: string[]; details: Record<string, unknown>; }"
+          "signature": "export interface ExtensionCommandResult { ok: boolean; action: ExtensionCommandAction; scope: ExtensionScope; roots: { project: string; global: string; selected: string; settings_root: string; }; warnings: string[]; details: Record<string, unknown> & { install_plan?: ExtensionInstallPlan; }; }"
         },
         {
           "classification": "advanced_export",

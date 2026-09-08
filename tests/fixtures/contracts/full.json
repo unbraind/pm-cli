@@ -3364,6 +3364,9 @@
       "command": "extension install",
       "flags": [
         {
+          "flag": "--dry-run"
+        },
+        {
           "flag": "--project"
         },
         {
@@ -4741,6 +4744,9 @@
       "command": "package",
       "flags": [
         {
+          "flag": "--dry-run"
+        },
+        {
           "flag": "--init"
         },
         {
@@ -5030,6 +5036,9 @@
       "command": "package install",
       "flags": [
         {
+          "flag": "--dry-run"
+        },
+        {
           "flag": "--project"
         },
         {
@@ -5158,6 +5167,9 @@
     {
       "command": "packages",
       "flags": [
+        {
+          "flag": "--dry-run"
+        },
         {
           "flag": "--init"
         },
@@ -5447,6 +5459,9 @@
     {
       "command": "packages install",
       "flags": [
+        {
+          "flag": "--dry-run"
+        },
         {
           "flag": "--project"
         },
@@ -25969,9 +25984,17 @@
             "description": "Format.",
             "type": "string"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "pm item id, for example pm-abc1.",
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "ifAvailable": {
             "description": "If Available.",
@@ -37639,6 +37662,10 @@
             "const": "extension-install",
             "description": "Tool action to execute."
           },
+          "dryRun": {
+            "description": "Preview command effects without mutating storage artifacts.",
+            "type": "boolean"
+          },
           "github": {
             "description": "GitHub shorthand owner/repo[/path] source for package/extension install actions.",
             "examples": [
@@ -38784,6 +38811,10 @@
           "action": {
             "const": "package-install",
             "description": "Tool action to execute."
+          },
+          "dryRun": {
+            "description": "Preview command effects without mutating storage artifacts.",
+            "type": "boolean"
           },
           "github": {
             "description": "GitHub shorthand owner/repo[/path] source for package/extension install actions.",
@@ -40164,6 +40195,62 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "dryRun": {
+                  "const": true
+                }
+              },
+              "required": [
+                "dryRun"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "install",
+                    "target"
+                  ]
+                },
+                {
+                  "required": [
+                    "install",
+                    "github"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "dryRun": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "dryRun"
+                  ]
+                },
+                {
+                  "properties": {
+                    "install": {
+                      "const": false
+                    }
+                  },
+                  "required": [
+                    "install"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "package",
@@ -40222,6 +40309,10 @@
           },
           "doctor": {
             "description": "Doctor.",
+            "type": "boolean"
+          },
+          "dryRun": {
+            "description": "Preview command effects without mutating storage artifacts.",
             "type": "boolean"
           },
           "explore": {
@@ -56322,12 +56413,20 @@
             "description": "Format.",
             "type": "string"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "ifAvailable": {
             "description": "If Available.",
@@ -57273,10 +57372,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.14.0"
+    "x-schema-version": "4.15.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.14.0",
+  "schema_version": "4.15.0",
   "selected": {
     "action": null,
     "availability_only": false,

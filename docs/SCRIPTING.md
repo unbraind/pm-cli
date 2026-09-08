@@ -78,6 +78,27 @@ declaring every command's default token ceiling. Use `pm contracts --full
 with TOON- and JSON-specific token ceilings for every active core or package
 command.
 
+Claim receipts ([pm-eqdo85](../.agents/pm/issues/pm-eqdo85.toon)) also keep
+`claimed_by`, `previous_assignee`, and `forced`. Conditional contention adds
+`skipped`; ranked claims add `available` and `attempts`. The change count
+reflects ownership fields actually changed: an unchanged repeat or skipped
+claim reports zero and does not write a duplicate mutation event.
+
+```bash
+pm claim pm-a1b2 --json
+pm claim pm-a1b2 --if-available --json
+pm claim --next --json
+pm claim pm-a1b2 --full-changed-fields --json
+```
+
+Use `--full-changed-fields` to restore the complete item, `changed_fields`,
+and ranked-selection recommendation. `--id-only` returns only identity and
+status; `--quiet` suppresses stdout. Direct typed SDK `claim` and
+`claimNext` calls return the full result. Generic SDK/MCP actions use the
+compact transport contract and accept `fullChangedFields` or `idOnly`.
+Custom SDK claim runners may omit the optional `changed_fields` member;
+receipts without that evidence retain their existing envelope.
+
 JSON object field order is not an API. Consume fields by name. Read envelopes keep the stable pagination vocabulary `items`, `count`, `total`, `has_more`, and, when another page exists, `next_cursor`. The `filters` object echoes the effective query scope. Plain `pm list` and `pm search` are all-status reads and disclose `filters.status: "all"`; lifecycle-specific commands such as `pm list-open` remain explicit shortcuts.
 
 Projection flags intentionally change row shape. Use `--fields` when a script requires an exact subset, `--brief` or `--compact` only when the documented sparse shape is sufficient, and `--full` when linked metadata is required. Check `row_contract` on generic read surfaces that expose one; do not infer omitted fields as empty values.

@@ -307,6 +307,9 @@ const HOISTED_ACTION_OPTION_KEYS: Readonly<Record<string, readonly string[]>> =
     comments: ["ifAbsent"],
     notes: ["ifAbsent"],
     learnings: ["ifAbsent"],
+    extension: ["dryRun"],
+    package: ["dryRun"],
+    install: ["dryRun"],
     upgrade: [
       "scope",
       "dryRun",
