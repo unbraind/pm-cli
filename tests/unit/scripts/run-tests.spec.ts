@@ -63,7 +63,8 @@ describe("run-tests", () => {
     expect(spawn).not.toHaveBeenCalled();
   });
 
-  it("allows the workspace parent as an external scratch root", async () => {
+  it.each(["0", "1"])("allows the workspace parent with skip-build=%s", async (skipBuild) => {
+    process.env.PM_RUN_TESTS_SKIP_BUILD = skipBuild;
     const spawn = vi.fn(() => closeChild(0));
     vi.doMock("node:child_process", () => ({ spawn }));
     vi.doMock("node:fs", () => ({
@@ -75,10 +76,11 @@ describe("run-tests", () => {
     process.argv = ["node", "scripts/run-tests.mjs", "test"];
     await harness.importModule("scripts/run-tests.mjs");
     expect(process.exitCode).toBe(0);
-    expect(spawn).toHaveBeenCalledTimes(2);
+    expect(spawn).toHaveBeenCalledTimes(skipBuild === "1" ? 1 : 2);
   });
 
-  it("allows a temporary root on a different Windows drive", async () => {
+  it.each(["0", "1"])("allows a different Windows drive with skip-build=%s", async (skipBuild) => {
+    process.env.PM_RUN_TESTS_SKIP_BUILD = skipBuild;
     const spawn = vi.fn(() => closeChild(0));
     vi.doMock("node:child_process", () => ({ spawn }));
     vi.doMock("node:path", () => ({ default: path.win32, ...path.win32 }));
@@ -91,7 +93,7 @@ describe("run-tests", () => {
     process.argv = ["node", "scripts/run-tests.mjs", "test"];
     await harness.importModule("scripts/run-tests.mjs");
     expect(process.exitCode).toBe(0);
-    expect(spawn).toHaveBeenCalledTimes(2);
+    expect(spawn).toHaveBeenCalledTimes(skipBuild === "1" ? 1 : 2);
   });
 
   it("rejects an unknown mode with exit code 2 and never spawns", async () => {

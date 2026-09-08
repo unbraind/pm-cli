@@ -67,6 +67,13 @@ pm close <ID> "<reason with evidence>" --resolution "<delivered change>" --expec
 pm release <ID>
 ```
 
+Before closing a repository defect, inspect its declared `escape_class` and
+`gate_evidence` contract and record the required structured evidence. In pm-cli,
+follow [Defect Evidence](../../../docs/DEFECT_RECURRENCE.md#defect-evidence-on-pm-items)
+and run `pnpm quality:defect-evidence` **after** closure: a gate run while the item
+is active cannot prove terminal-only requirements. Verify runner changes with
+both build-enabled and prebuilt CI environments.
+
 ## Capability Map
 
 Capability families and their commands are generated from the public SDK

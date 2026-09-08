@@ -6,24 +6,26 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-08T05:41:23.494Z"
-updated_at: "2026-09-08T06:56:00.537Z"
-closed_at: "2026-09-08T06:55:59.820Z"
-completed_at: "2026-09-08T06:55:59.820Z"
+updated_at: "2026-09-08T07:22:02.040Z"
+closed_at: "2026-09-08T07:09:27.039Z"
+completed_at: "2026-09-08T07:09:27.039Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Repository-local and symlink-aliased temporary roots fail before child execution with a clear remediation.; External temporary roots still run sandboxed test and coverage modes without changing real Git or tracker state.
 parent: pm-u9d0
 risk: high
 confidence: high
-resolution: "The test runner rejects checkout-local scratch directories, including symlink aliases, before build or fixture execution. Real vector, SDK and socket fixtures use owned portable temporary paths."
-expected_result: Prevent fixtures from discovering and modifying the real repository through a checkout-local temporary root; retain safe external-root execution.
-actual_result: "93 linked regression tests pass, including the runner negative controls and portable fixtures. The full suite with four workers and exact coverage passes using an external scratch root. No lock threshold or coverage threshold was weakened."
+resolution: Reject workspace-local temporary roots before child execution; use portable owned fixture paths; test both inherited build modes and require structured terminal defect evidence.
+expected_result: Protect the real tracker and Git workspace while allowing external scratch roots in local and prebuilt CI execution.
+actual_result: "All 95 linked tests pass with CI skip-build enabled, including 24 runner tests covering both explicit build modes. Production code retains the full local 100-percent coverage result; post-closure defect and static gates are required before the correction push."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-ay3l0p,discovered_from,"2026-09-08T05:41:23.494Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-09-08T05:41:23.494Z","harness:codex","Duplicate check: full 2658-item all-status inventory and live search test sandbox TMPDIR repository git; pm-ay3l0p fixes inherited PM source variables, pm-p5u6 tracks temporary footprint. Neither owns Git ancestor discovery through TMPDIR. New bounded runner guard follows the observed Sep 8 coverage failure."
   "2026-09-08T06:41:04.469Z","harness:codex","Reproduction cleanup evidence: the managed extension registry changed only its generated timestamp, with identical package entries. Test-created Git fence changes were restored and the two precisely identified synthetic merge receipts were quarantined from the runtime evidence set. Final verification uses an external scratch root without a tracker ancestor."
   "2026-09-08T06:55:58.650Z","harness:codex","Final verification: full sandbox coverage completed successfully with --maxWorkers 4; all exact coverage thresholds pass. Static gates, docs/skills, SDK boundary/parity and graph/record-integrity gates pass. Earlier environmental failures and the resource-contention rerun remain documented; this evidence applies to the final local delivery."
+  "2026-09-08T07:09:24.247Z","harness:codex","Hosted correction verified: the two external-root tests explicitly cover skip-build 0 and 1; 24 runner tests pass with inherited PM_RUN_TESTS_SKIP_BUILD=1 and all 95 linked tests pass in that environment. The production guard is unchanged from the 8562-test, exact-100-percent local run. Required defect taxonomy and structured gate evidence are now attached; the developer skill requires the evidence gate after terminal transitions. Hosted code and coverage checks will run on the correction commit."
+  "2026-09-08T07:22:02.040Z","harness:codex","Post-closure verification completed: pnpm quality:defect-evidence passes with zero findings, and the entire pnpm quality:static command exits 0 including docs/skills, SDK contracts, all repository assurance providers, tracker-context-quality, graph composition and record integrity. Package-owned changelog generation/check preserve all 2330 current memberships. The corrected item and workspace history streams verify against their current state."
 files[6]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Managed extension registry regenerated during reproduction; only timestamp changed and package entries are identical
   scripts/run-tests.mjs,project,Reject checkout-local scratch roots
@@ -33,7 +35,7 @@ files[6]{path,scope,note}:
   tests/unit/sdk/sdk-universal-tool-entry-success.spec.ts,project,Portable temporary SDK exemplar
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/unit/core/search/vector-store-adapter.spec.ts tests/unit/sdk/sdk-universal-tool-entry-success.spec.ts tests/unit/sdk/mcp/skills.spec.ts tests/unit/core/store/store-paths.spec.ts tests/integration/legacy-merge-receipt-history.integration.spec.ts tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts,project,240,"harness:codex","2026-09-08T06:10:39.760Z",local_mutation,main
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mtsa3yrw-3dorhq
     kind: test
     status: passed
@@ -56,7 +58,27 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/unit/core/search/vector-store-adapter.spec.ts tests/unit/sdk/sdk-universal-tool-entry-success.spec.ts tests/unit/sdk/mcp/skills.spec.ts tests/unit/core/store/store-paths.spec.ts tests/integration/legacy-merge-receipt-history.integration.spec.ts tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts,schema,schema,source,local_source_ref
-docs[1]{path,scope,note}:
+  - run_id: test-local-mtsbvt5n-o91qgg
+    kind: test
+    status: passed
+    started_at: "2026-09-08T07:08:14.167Z"
+    finished_at: "2026-09-08T07:08:30.682Z"
+    recorded_at: "2026-09-08T07:08:30.682Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/unit/core/search/vector-store-adapter.spec.ts tests/unit/sdk/sdk-universal-tool-entry-success.spec.ts tests/unit/sdk/mcp/skills.spec.ts tests/unit/core/store/store-paths.spec.ts tests/integration/legacy-merge-receipt-history.integration.spec.ts tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  .agents/skills/pm-developer/SKILL.md,project,Require declared structured defect evidence and a post-closure gate to prevent terminal-only validation escapes
   docs/TESTING.md,project,Temporary workspace isolation and cleanup contract
-close_reason: Implemented and verified the scoped fix; exact published-version acceptance remains separate.
+close_reason: Fixed unsafe scratch-root admission and verified build-enabled and prebuilt CI test modes.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: full-source-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs coverage -- --maxWorkers 4,PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts,"pnpm quality:defect-evidence"
+  hosted_checks[3]: Coverage,Windows regression (Node 24),Gates (static)
+  owner: unbraind/pm-cli maintainers
 body: ""
