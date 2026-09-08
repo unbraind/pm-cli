@@ -28,6 +28,7 @@ import {
   parseTypeFilterSet,
 } from "./multi-value-filters.js";
 import {
+  resolveProviderConfigSource,
   executeEmbeddingRequest,
   resolveEmbeddingProviders,
   type EmbeddingProviderConfig,
@@ -135,17 +136,18 @@ import {
   parseSearchBoolean,
   parseSearchDeadline,
   parseSearchMatchMode,
-  parseSearchMode,
   parseSearchProjection,
   parseSearchTokens,
   parseSemanticWeightOverride,
   parseTimestampWindow,
+  resolveEffectiveSearchMode,
   resolveHybridSemanticWeight,
   resolveSearchMaxResults,
   resolveSearchScoreThreshold,
   resolveSearchTuning,
   validateSearchProjectionFields,
   type SearchMatchMode,
+  type SearchModeSource,
   type SearchOptions,
   type SearchProjectionConfig,
   type SearchProjectionMode,
@@ -158,11 +160,15 @@ import {
 } from "../workspace-memory.js";
 
 export type {
+  SearchDefaultMode,
   SearchMatchMode,
+  SearchModeResolution,
+  SearchModeSource,
   SearchOptions,
   SearchTuning,
 } from "./search-contracts.js";
 export {
+  resolveEffectiveSearchMode,
   resolveHybridSemanticWeight,
   resolveSearchMaxResults,
   resolveSearchScoreThreshold,
@@ -249,6 +255,8 @@ export type SearchResultItem = SearchHit | Record<string, unknown>;
 interface SearchResultBase {
   query: string;
   mode: SearchMode;
+  /** Which layer chose `mode` before any runtime fallback: the caller, `search.default_mode`, or the workspace-state default. */
+  mode_source?: SearchModeSource;
   items: SearchResultItem[];
   count: number;
   // GH-181: total matched hits after filters/threshold but BEFORE the limit
@@ -1531,8 +1539,9 @@ function emptySearchResult(
   rerank: RerankConfig,
   projection: SearchProjectionConfig,
   warnings: string[],
-  runtimeFieldFilters?: Record<string, unknown>,
-  countOnly = false,
+  runtimeFieldFilters: Record<string, unknown> | undefined,
+  countOnly: boolean,
+  modeSource: SearchModeSource,
 ): SearchResult {
   // --count consistency: a count-only query that matches nothing must still
   // carry the same { count_only: true, total } shape as the non-empty path.
@@ -1554,6 +1563,7 @@ function emptySearchResult(
     return {
       query: query.trim(),
       mode,
+      ...compactModeSource(modeSource),
       items: [],
       count: 0,
       ...countExtras,
@@ -1566,6 +1576,7 @@ function emptySearchResult(
   return {
     query: query.trim(),
     mode,
+    mode_source: modeSource,
     items: [],
     count: 0,
     ...countExtras,
@@ -2620,6 +2631,7 @@ interface SearchRuntimeContext {
     rerank: ExtensionSearchProviderRerank;
   } | null;
   effectiveMode: SearchMode;
+  modeSource: SearchModeSource;
 }
 
 interface FilteredSearchCorpus {
@@ -2631,6 +2643,7 @@ interface FilteredSearchCorpus {
 interface SearchResponseContext {
   query: string;
   effectiveMode: SearchMode;
+  modeSource: SearchModeSource;
   matchMode: SearchMatchMode;
   options: SearchOptions;
   includeLinked: boolean;
@@ -2802,8 +2815,53 @@ async function resolveSearchRuntimeContext(
     queryExpansionExtension: resolveQueryExpansionExtension(queryExpansion),
     rerank,
     rerankExtension: resolveRerankExtension(settings),
-    effectiveMode: parseSearchMode(prepared.options.mode),
+    ...resolveRuntimeSearchMode({
+      requested: prepared.options.mode,
+      settings,
+      configuredProvider: storedSettings.search?.provider ?? null,
+      providerResolution,
+      vectorResolution,
+      extensionSearchProvider,
+      extensionVectorAdapter,
+    }),
   };
+}
+
+/**
+ * Decide the mode for this query. The semantic path counts as runnable only when
+ * the stored settings name the active provider themselves (the same
+ * `configured` verdict `pm health` reports): auto-detected Ollama/LanceDB
+ * runtime defaults keep a bare search on the keyword path so an unconfigured
+ * host never pays an embedding round-trip it did not ask for, while a configured
+ * and resolvable provider + store (or an extension search provider) makes hybrid
+ * the default the moment the index exists.
+ */
+function resolveRuntimeSearchMode(params: {
+  requested: unknown;
+  settings: PmSettings;
+  configuredProvider: string | null;
+  providerResolution: EmbeddingProviderResolution;
+  vectorResolution: VectorStoreResolution;
+  extensionSearchProvider: ReturnType<typeof resolveExtensionSearchProvider>;
+  extensionVectorAdapter: ReturnType<typeof resolveExtensionVectorAdapter>;
+}): { effectiveMode: SearchMode; modeSource: SearchModeSource } {
+  const providerConfigured =
+    resolveProviderConfigSource(
+      params.providerResolution.active?.name,
+      params.configuredProvider,
+    ) === "configured";
+  const builtInRunnable =
+    providerConfigured &&
+    (params.vectorResolution.active !== null ||
+      params.extensionVectorAdapter !== null);
+  const semanticRunnable =
+    params.extensionSearchProvider !== null || builtInRunnable;
+  const resolution = resolveEffectiveSearchMode({
+    requested: params.requested,
+    settings: params.settings,
+    semanticRunnable,
+  });
+  return { effectiveMode: resolution.mode, modeSource: resolution.source };
 }
 
 async function loadFilteredSearchCorpus(
@@ -2929,6 +2987,7 @@ function buildEmptySearchResultFromContext(
     response.warnings,
     response.runtimeFieldFilters,
     countOnly,
+    response.modeSource,
   );
 }
 
@@ -3140,6 +3199,7 @@ function buildCountOnlySearchResult(
       {
         query: response.query.trim(),
         mode: response.effectiveMode,
+        ...compactModeSource(response.modeSource),
         items: [],
         count: total,
         total,
@@ -3167,6 +3227,7 @@ function buildCountOnlySearchResult(
     {
       query: response.query.trim(),
       mode: response.effectiveMode,
+      mode_source: response.modeSource,
       items: [],
       count: total,
       total,
@@ -3192,6 +3253,18 @@ function buildCountOnlySearchResult(
     },
     response.warnings,
   );
+}
+
+/**
+ * Compact responses carry `mode_source` only when `search.default_mode` pinned
+ * the mode: a caller that passed `--mode` already knows it chose the mode, and
+ * `auto` is the documented default, so echoing either would spend tokens on a
+ * fact the reader already holds. Verbose responses always carry the source.
+ */
+function compactModeSource(
+  source: SearchModeSource,
+): { mode_source?: SearchModeSource } {
+  return source === "settings" ? { mode_source: source } : {};
 }
 
 function withSearchWarnings(
@@ -3272,6 +3345,7 @@ function buildSearchResultForHits(
       {
         query: response.query.trim(),
         mode: response.effectiveMode,
+        ...compactModeSource(response.modeSource),
         items: projectedItems,
         count: projectedItems.length,
         ...truncationExtras,
@@ -3298,6 +3372,7 @@ function buildSearchResultForHits(
   return {
     query: response.query.trim(),
     mode: response.effectiveMode,
+    mode_source: response.modeSource,
     items: projectedItems,
     count: projectedItems.length,
     ...truncationExtras,
@@ -3369,6 +3444,7 @@ export async function runSearch(
   }
   const responseBase = {
     query: prepared.query,
+    modeSource: runtime.modeSource,
     matchMode: prepared.matchMode,
     options: prepared.options,
     includeLinked: prepared.includeLinked,

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: all-status,backfill,evidence,graph,history,provenance,relationships
 created_at: "2026-07-24T23:48:08.571Z"
-updated_at: "2026-07-31T06:08:29.585Z"
+updated_at: "2026-09-08T13:32:56.479Z"
 author: maintainer-agent
 estimated_minutes: 2400
 acceptance_criteria: "A reproducible extractor derives candidate edges from history messages, evidence comments, linked files, and linked test runs, emitting source and confidence for each; Only candidates whose source and confidence can be stated are materialised; unexplainable candidates are logged to an uncertainty ledger, never written; Derived edges carry the derivation source so a later correction can supersede rather than silently overwrite; Terminal items are touched only inside a dedicated changelog-safe batch, with the changelog effect measured and regenerated last; Re-running the extractor is idempotent: no duplicate edges, no timestamp churn on unchanged items"
@@ -19,6 +19,7 @@ why_now: "The reconstruction wave is declared in the plan strategy but has no ta
 parent: pm-a8zm
 risk: medium
 confidence: medium
+expected_result: "Evidence, incident, release and package relationships are reconstructed from history and linked resources by a reproducible extractor that records source and confidence for every edge."
 dependencies[10]:
   - id: pm-6x7o
     kind: related

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:sdk",ci,defect-detection,mutation-testing,quality-gate,testing
 created_at: "2026-07-24T23:46:02.748Z"
-updated_at: "2026-07-31T10:16:02.310Z"
+updated_at: "2026-09-08T13:32:07.638Z"
 author: maintainer-agent
 estimated_minutes: 1200
 acceptance_criteria: "A mutation-testing run produces a reproducible score for the SDK core module set in CI; The score is ratcheted: regressions fail, improvements move the floor, matching the existing suppressions-ratchet discipline; Runtime is bounded — incremental or partitioned execution keeps the gate inside the nightly budget rather than the pull-request budget if necessary; Surviving mutants are triaged with either a new assertion or a written equivalent-mutant waiver; no blanket ignores"
@@ -19,6 +19,7 @@ why_now: "The coverage ADR settled the coverage question; the next honest questi
 parent: pm-u9d0
 risk: medium
 confidence: medium
+expected_result: "A reproducible mutation score for SDK core runs in CI within the nightly budget, ratcheted so regressions fail and improvements raise the floor."
 dependencies[9]:
   - id: pm-0yi7
     kind: related

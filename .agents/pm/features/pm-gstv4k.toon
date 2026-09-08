@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: agent-identity,"area:mcp","area:security",delegation,dpop,token-exchange,workload-identity
 created_at: "2026-08-28T20:22:23.663Z"
-updated_at: "2026-08-28T20:58:32.013Z"
+updated_at: "2026-09-08T13:31:53.822Z"
 deadline: "2027-09-30T00:00:00.000Z"
 author: "harness:codex"
 estimated_minutes: 1200
@@ -14,6 +14,7 @@ acceptance_criteria: Agent and workload identities are cryptographically bound a
 parent: pm-opw1l3
 risk: critical
 confidence: medium
+expected_result: "Autonomous and delegated agents authenticate with bound, discoverable identities and attenuated authority, with no long-lived shared secrets and every delegation recorded."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-3zh9s4,discovered_from,"2026-08-28T20:22:23.663Z","harness:codex","cli:create:dep",detected
   pm-dj98,implements,"2026-08-28T20:22:23.663Z","harness:codex","cli:create:dep",detected

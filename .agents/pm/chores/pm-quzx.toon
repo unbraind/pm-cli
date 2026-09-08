@@ -6,13 +6,14 @@ status: open
 priority: 2
 tags[3]: ecosystem,governance,packages
 created_at: "2026-07-15T19:40:58.243Z"
-updated_at: "2026-08-09T06:05:31.854Z"
+updated_at: "2026-09-08T13:32:44.832Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Canonical home decided per package (extend an existing implementation, never a third); non-canonical repo README points to the canonical package and repo is archived or repurposed; capability divergence documented (external pm-beads import+export+validate+diff+bead_id schema vs in-repo import-only) with migration note; ecosystem dependency-range convention documented (caret year-range with verified floor; no exact pins, no unbounded >=) and pm-ops exact-pin 2026.7.13 plus pm-beads >=2026.7.10 ranges fixed; floor-verification folded into the reusable ecosystem smoke harness or the pm-o8um Verified-tier checklist"
 parent: pm-ugqx
 risk: medium
 confidence: high
+expected_result: "Beads and Todos each have one canonical package, duplicates redirect or retire, and every external package follows one verified dependency-range policy."
 dependencies[3]{id,kind,created_at}:
   pm-o8um,related,"2026-07-15T19:40:58.243Z"
   pm-tll8,related,"2026-07-16T05:45:20.378Z"

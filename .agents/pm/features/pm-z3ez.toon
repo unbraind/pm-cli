@@ -6,13 +6,14 @@ status: open
 priority: 1
 tags[5]: agents,distribution,mcp,onboarding,skills
 created_at: "2026-07-13T09:31:21.359Z"
-updated_at: "2026-08-25T05:19:26.046Z"
+updated_at: "2026-09-08T13:31:55.846Z"
 author: maintainer-agent
 estimated_minutes: 1200
 acceptance_criteria: "pm-mcp published to the official MCP Registry with verified namespace, version-pinned launch command, transports, runtime requirement, permissions/local-data behavior; one canonical portable Agent Skills source tree derives the Claude and Codex skill packages (no hand-maintained copies) with trigger-oriented descriptions plus positive and near-miss trigger tests; pm setup-agent <client|all> detects the client, installs/updates skills, configures version-pinned MCP, selects a tool profile, verifies handshake, and runs a read-only pm context smoke test; pm agent doctor verifies runtime, workspace discovery, MCP launch, profile, skill/plugin versions, contract compatibility, context read, token size, and mutation identity; an agent project profile (pm profile apply agent) composes pm-brief, pm-context, compact context depth, search defaults, and minimal guidance; generated repository guidance stays tiny (a few pm commands + contracts pointer, detail lives in skills/pm guide); Codex plugin never silently runs a newer @latest MCP server than the installed plugin (bundle, pin, or fail clearly — same class as pm-l9wl on the Claude side)"
 parent: pm-wjfa
 risk: medium
 confidence: medium
+expected_result: "Agents find and install pm through a verified registry record, one canonical skills source, a setup command and a doctor, with every plugin version-coherent with the core."
 dependencies[2]{id,kind,created_at}:
   pm-l9wl,related,"2026-07-13T09:31:21.359Z"
   pm-wjfa,implements,"2026-07-26T05:54:44.496Z"

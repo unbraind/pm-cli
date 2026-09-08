@@ -6,13 +6,14 @@ status: open
 priority: 2
 tags[5]: agent-ux,"area:cli","area:contracts",simplification,token-efficiency
 created_at: "2026-07-11T10:47:29.123Z"
-updated_at: "2026-08-27T17:34:34.275Z"
+updated_at: "2026-09-08T13:32:31.331Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: "Every command accepts one identical output-format flag contract; a single written envelope spec covers all read/mutation/diagnostic shapes; the per-command trap class is gone (search --format-only vs notes/validate --json-only vs activity .activity decoy); zero feature loss: all current spellings kept as deprecation-tracked aliases; contract tests assert flag+envelope parity across the full surface"
 parent: pm-mpbb
 risk: medium
 confidence: medium
+expected_result: "Every command accepts one output-format flag contract and emits one documented envelope shape, with every old spelling preserved as a tracked alias."
 dependencies[7]:
   - id: pm-cfed
     kind: related

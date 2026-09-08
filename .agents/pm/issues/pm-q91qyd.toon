@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: ci,governance,provenance,release,traceability
 created_at: "2026-07-27T12:46:06.729Z"
-updated_at: "2026-08-01T09:53:06.977Z"
+updated_at: "2026-09-08T13:32:06.173Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A reconciliation control compares the full declared release set (changelog sections and git tags) against the full delivered set (registry versions) across all history, not only the most recent cut; Each divergence class is reported separately and named: declared-but-never-delivered, delivered-but-undocumented, and tagged-but-unsectioned, because the three have different causes and different remedies; The current 18 divergences are dispositioned individually as either a real gap to backfill or a recorded historical exception with a reason, so the baseline is explained rather than merely frozen; The control runs on a schedule and fails loudly, so a divergence introduced by a partial release is visible the same week rather than at the next manual reconciliation; The reconciliation reads the registry through the same published-artifact path the acceptance stage uses, so it is proof of delivery and not proof of intent"
@@ -17,6 +17,7 @@ why_now: The terminal release attribution backfill made the changelog authoritat
 parent: pm-u9d0
 risk: medium
 confidence: high
+expected_result: "One reconciliation control compares changelog sections, git tags and registry versions across all history and names each divergence class separately."
 dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-44u3wt,discovered_from,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
   pm-7zs0,related,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected

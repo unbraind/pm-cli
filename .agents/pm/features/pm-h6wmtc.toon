@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[7]: compliance,durability,governance,history,long-horizon,privacy,retention
 created_at: "2026-07-26T17:06:59.506Z"
-updated_at: "2026-08-14T14:36:43.158Z"
+updated_at: "2026-09-08T13:33:25.499Z"
 author: "harness:claude-code"
 estimated_minutes: 900
 acceptance_criteria: "The workspace can declare retention classes and schedules as configuration, and the classification of an item or field is data rather than convention; An erasure request resolves to a deterministic set of streams, entries and fields, and the operation reports exactly what it destroyed and what it preserved; A stream that has been redacted and then compacted still verifies end to end for a reader holding only the format specification and the published verification rule; The policy distinguishes what may be destroyed from what must survive — the fact that a mutation occurred, its ordering, its author class, and the chain linkage — so proof of process survives destruction of content; Destructive policy operations are themselves recorded as audited events that cannot be removed by a later run of the same policy; A tombstone is left wherever content was removed so a later reader sees a deliberate absence and not silent corruption; Small workspaces with no declared policy behave exactly as today with no new required configuration"
@@ -19,6 +19,7 @@ why_now: "Redaction, compaction and repair have all shipped independently; the p
 parent: pm-o2kc
 risk: high
 confidence: low
+expected_result: "Retention classes and erasure requests are declared configuration, and an erasure destroys exactly the stated data while proof over the remaining history still verifies."
 dependencies[13]:
   - id: pm-34w8za
     kind: related

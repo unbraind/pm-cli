@@ -1320,6 +1320,9 @@ export type SearchMutationRefreshPolicy =
   | "semantic_configured"
   | "semantic_auto";
 
+/** Restricts the declared default search mode: `auto` derives hybrid-or-keyword from workspace state, a concrete mode pins it. */
+export type SearchDefaultMode = "auto" | "keyword" | "semantic" | "hybrid";
+
 /** Documents the search query expansion settings payload exchanged by command, SDK, and package integrations. */
 export interface SearchQueryExpansionSettings {
   /** Whether enabled applies to this operation. */
@@ -1499,6 +1502,8 @@ export interface PmSettings {
     embedding_timeout_ms: number;
     scanner_max_batch_retries: number;
     provider?: string;
+    /** Mode a search runs in when the caller passes none: `auto` (default) resolves to hybrid when semantic search is explicitly configured and runnable, keyword otherwise; a concrete mode pins it. Optional on the type so existing settings literals stay valid; readers always normalize it. */
+    default_mode?: SearchDefaultMode;
     /** Optional allow-list of corpus field names embedded for semantic search (see DEFAULT_SEARCH_CORPUS_FIELDS in core/search/corpus.ts). When unset or empty, the full default field set is used (backward compatible). When set, only the named fields are embedded — letting teams opt structured signals (priority, assignee, risk, acceptance_criteria, etc.) in/out for token efficiency. Changing this re-flags items stale on the next refresh. */
     corpus_fields?: string[];
     mutation_refresh_policy: SearchMutationRefreshPolicy;

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[8]: "area:sdk",ci,concurrency,defect-detection,durability,multi-agent,simulation,testing
 created_at: "2026-07-24T23:46:28.176Z"
-updated_at: "2026-09-08T06:02:06.647Z"
+updated_at: "2026-09-08T13:31:49.330Z"
 author: maintainer-agent
 estimated_minutes: 3600
 acceptance_criteria: "A seeded scheduler drives concurrent claim, mutate, commit, merge, and compaction operations with reproducible interleavings from a single seed; Fault injection covers partial writes, fsync failure, EIO, ENOSPC, process kill between journal and apply, and lock-holder death; After every simulated schedule, workspace invariants are asserted: history chain verifies, storage integrity validates, no lost update, no duplicate id, no orphaned lock; A failing schedule reports a seed that reproduces the failure deterministically, and the seed is recordable on the resulting pm item; Nightly runs sweep a seed corpus; discovered failing seeds become permanent regression cases"
@@ -19,6 +19,7 @@ why_now: "Multi-agent operation is a stated product requirement and the storage 
 parent: pm-dj98
 risk: high
 confidence: medium
+expected_result: "A single seed reproduces any concurrent interleaving or injected IO failure, and every simulated schedule leaves the workspace invariants intact or produces a named regression fixture."
 dependencies[17]:
   - id: pm-9yfo
     kind: related

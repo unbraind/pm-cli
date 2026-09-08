@@ -388,6 +388,16 @@ Advanced relevance tuning is opt-in:
 When query expansion or rerank providers fail, `pm search` degrades gracefully and keeps the query runnable; warning codes are emitted in the result payload.
 `pm search` filter metadata now reports `query_expansion_*` and `rerank_*` fields so automation can detect when advanced tuning is active.
 
+`search.default_mode` decides the mode a bare `pm search` runs in (`--mode` always wins):
+
+| Value                | Behavior                                                                                                                                                          |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `auto`               | default; `hybrid` when `search.provider` names the active embedding provider and a vector store or extension adapter resolves (or an extension search provider is active), `keyword` otherwise |
+| `keyword`            | pin exact-token ranking for every bare search                                                                                                                     |
+| `semantic`, `hybrid` | pin the semantic path; an unreachable provider still degrades to keyword hits with a `search_semantic_fallback` warning                                            |
+
+Every search result reports `mode_source` (`explicit`, `settings`, or `auto`) beside the effective `mode`.
+
 Mutation commands invalidate keyword search caches immediately. Semantic vector refresh is controlled by `search.mutation_refresh_policy`:
 
 | Policy                | Behavior                                                                                                            |
@@ -399,6 +409,7 @@ Mutation commands invalidate keyword search caches immediately. Semantic vector 
 Useful commands:
 
 ```bash
+pm config project set search_default_mode keyword
 pm config project set search_mutation_refresh_policy cache_only
 pm config project set search_embedding_corpus_max_characters 12000
 pm config project set search_query_expansion_enabled true
@@ -468,7 +479,7 @@ pm config project set qdrant_api_key '<QDRANT_API_KEY>'   # omit on unauthentica
 
 After changing any of these, run `pm reindex --mode hybrid` so the vector index reflects the new provider/store. `pm search ... --mode semantic|hybrid` emits a `vector_index_stale` warning when items have been modified since the last reindex.
 
-**Refresh contract (important for agents):** by default a mutation (`pm create`/`pm update`) does **not** synchronously re-embed the changed item, so a brand-new item is absent from `--mode semantic|hybrid` results until the next `pm reindex`. This keeps writes fast. Control the tradeoff with `search.mutation_refresh_policy`: `cache_only` (never refresh on write — fastest), `semantic_auto` (refresh when implicit Ollama/LanceDB defaults are active), or `semantic_configured` (refresh only when semantic search is explicitly configured). Keyword mode (`--mode keyword`, the default) always reflects writes immediately because it reads items directly.
+**Refresh contract (important for agents):** by default a mutation (`pm create`/`pm update`) does **not** synchronously re-embed the changed item, so a brand-new item is absent from `--mode semantic|hybrid` results until the next `pm reindex`. This keeps writes fast. Control the tradeoff with `search.mutation_refresh_policy`: `cache_only` (never refresh on write — fastest), `semantic_auto` (refresh when implicit Ollama/LanceDB defaults are active), or `semantic_configured` (refresh only when semantic search is explicitly configured). Keyword mode (`--mode keyword`, or the `auto` default on a workspace without a configured semantic provider) always reflects writes immediately because it reads items directly.
 
 ## Custom Item Types
 

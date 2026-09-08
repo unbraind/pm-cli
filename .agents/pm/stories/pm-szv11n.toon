@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: concurrency,identity,merge,multi-agent,story
 created_at: "2026-07-25T12:32:19.634Z"
-updated_at: "2026-08-02T21:10:23.531Z"
+updated_at: "2026-09-08T13:24:44.050Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "An end-to-end scenario runs multiple agents on divergent branches performing claim, work, evidence, and close, then merges in several orders and asserts the same final state; Every agent's history entries are present after merge with their own author, harness, and model provenance intact and no cross-author loss; Claims are respected while held and correctly released or reported as stale after merge, with no item left claimed by nobody yet unreleasable; Evidence links — files, docs, tests, comments, notes — survive merge with no silent drops, asserted by count and content; Concurrent non-contradictory work from different agents is all present after merge, and contradictory work resolves deterministically with the resolution recorded; The scenario runs at a fleet size large enough to exercise contention rather than as a two-agent illustration"
@@ -18,6 +18,7 @@ outcome: The multi-agent guarantees have one composite acceptance surface instea
 parent: pm-dj98
 risk: medium
 confidence: 70
+expected_result: "Agents on divergent branches claim, work, record evidence and close, and after merging in any order every agent's history, provenance, claims and evidence links are intact."
 dependencies[15]:
   - id: pm-03pq3o
     kind: related

@@ -1,0 +1,25 @@
+id: pm-2ksptv
+title: "Direct-main commits are analyzer-blind: DeepScan and CodeFactor only analyze pull-request heads, so every direct push refuses the next scheduled cut until a PR lands on top"
+description: "Measured 2026-09-08 against the live GitHub commit statuses and check runs. The direct-main commit 5da0aa6e5 (pushed 2026-09-08 without a pull request) carries exactly one commit status, codecov/patch, and no check runs from any analyzer. The pull-request head 41ac9470f merged the same morning carries DeepScan, CodeRabbit and Hound statuses plus CodeFactor and Semgrep check runs. The hosted analysis gate (scripts/release/hosted-analysis-gate.mjs) accepts three evidence forms, exact-commit analysis, identical-tree reviewed-PR analysis, and the deterministic release transform, and a direct-main commit can satisfy none of them because the two analyzers it requires are wired to pull requests only. pm-u1baah closed on the statement that releases from the default branch are supported with analyzer evidence; that support is real for the version-bump transform and unreachable for every other direct-main commit, so the closed item's premise does not hold for the workflow this repository actually runs.\n\nConsequence, measured over the sixteen most recent scheduled runs: three of nine failures (08-29, 09-05, 09-08) are this refusal, the largest single failing stage, and each one blocked the day's cut until a PR-borne commit landed on top. Agents in this repository are instructed to push to main directly, so the condition recurs by design rather than by accident, and the daily release contract (one automatic cut per UTC day when Unreleased is non-empty) is broken on every such day. The gate is not wrong to refuse: nothing analyzed those commits. The gap is that push-time analysis on main produces no exact-commit evidence.\n\nExpected: either the analyzers produce exact-commit evidence for pushes to main (DeepScan and CodeFactor both support default-branch analysis on push; enabling it is a service-side setting and must be verified by the statuses API on a real direct commit), or the gate accepts an equivalent hosted verdict that this repository's own CI computes on push, declared as data on the release gate rather than as another script. Whichever path is chosen, the acceptance test is the same: a direct-main commit that passed CI is releasable by the next scheduled run without a follow-up pull request, and pm-e70zh5's stage breakdown stops attributing failures to provenance."
+type: Issue
+status: open
+priority: 1
+tags[4]: ci,provenance,recurrence,release
+created_at: "2026-09-08T13:16:45.898Z"
+updated_at: "2026-09-08T14:02:29.767Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "A direct-main commit that passed CI carries exact-commit DeepScan and CodeFactor evidence (or a declared equivalent hosted verdict) readable from the commit statuses or check-runs API; The scheduled auto-release run following a direct push to main cuts the release without a follow-up pull request, proven on a real commit; The hosted analysis gate names the evidence form it accepted for a direct-main head in its JSON receipt; pm-e70zh5's failing-stage breakdown records zero provenance refusals over the thirty scheduled runs after the fix lands"
+parent: pm-u9d0
+risk: high
+confidence: high
+expected_result: "A direct push to main is releasable by the next scheduled cut, so the one-automatic-release-per-day contract holds regardless of whether the change arrived through a pull request"
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-e70zh5,discovered_from,"2026-09-08T13:16:45.898Z","harness:claude-code","cli:create:dep",detected
+  pm-u1baah,recurs_from,"2026-09-08T13:16:45.898Z","harness:claude-code","cli:create:dep",detected
+  pm-u9d0,implements,"2026-09-08T13:16:45.898Z","harness:claude-code","cli:create:dep",detected
+  pm-xp1xsw,implements,"2026-09-08T13:16:45.898Z","harness:claude-code","cli:create:dep",detected
+  pm-xcrlkl,recurs_from,"2026-09-08T14:01:33.282Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-08T13:16:57.715Z","harness:claude-code","Duplicate check before filing: semantic search for 'DeepScan CodeFactor analyze direct pushes to main so direct commits carry exact analyzer evidence' returned only closed lineage (pm-39cqqx, pm-xcrlkl, pm-u1baah, pm-ji5c, pm-izid) and no open owner; pm-e70zh5 owns the rate, pm-44u3wt the cron window, pm-uenmu9 the same-day guard, pm-k9m6wc release immutability. Evidence: gh api commits/5da0aa6e5/status lists codecov/patch only and check-runs list nothing from an analyzer; commits/41ac9470f/status lists DeepScan, CodeRabbit, Hound and check-runs list codefactor-io/CodeFactor and semgrep. Scheduled run 34199116643 failed step 'Verify release analyzer provenance before build' with direct_main_policy refuse_without_exact_commit_analyzer_evidence."
+body: ""

@@ -6,13 +6,14 @@ status: open
 priority: 1
 tags[4]: "area:sdk",graph,performance,scale
 created_at: "2026-08-07T17:12:55.432Z"
-updated_at: "2026-08-07T17:12:55.432Z"
+updated_at: "2026-09-08T13:32:02.398Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "Every graph analytic declares a cost class and a bound, and a call whose corpus would exceed the bound is refused or served by a declared approximation rather than run to completion silently; An analytic that cannot be exact at the declared scale tiers has a sampled or approximate path, and the served envelope states which one answered so a reader never mistakes an estimate for an exact value; The cold and warm cost of each analytic is measured by a benchmark at more than one scale tier, and the million-item fixture that already exists is pointed at the analytics rather than only at adapter synchronization; Durable index entries are bounded by an explicit policy, and the entry count and its eviction rule are readable rather than implied by cache growth; A row bound never implies a compute bound: either --limit reduces the work performed, or the envelope states that it does not"
 parent: pm-9rxu
 risk: high
 confidence: high
+expected_result: "Every graph analytic declares a cost class and bound, refuses or approximates beyond it with the envelope naming which answered, and a fresh clone never pays a silent exact-Brandes rebuild."
 dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,related,"2026-08-07T17:12:55.432Z","harness:claude-code","cli:create:dep",detected
   pm-4vz6mz,discovered_from,"2026-08-07T17:12:55.432Z","harness:claude-code","cli:create:dep",detected

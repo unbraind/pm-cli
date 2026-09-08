@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[8]: adr,concurrency,decision,federation,long-term,merge,multi-agent,storage
 created_at: "2026-07-24T23:48:31.411Z"
-updated_at: "2026-08-14T10:20:08.634Z"
+updated_at: "2026-09-08T13:24:41.811Z"
 author: maintainer-agent
 estimated_minutes: 900
 acceptance_criteria: "The decision states the concurrency and divergence regime under which field-aware three-way merge is proven sufficient, with measured evidence; Rejected alternatives are recorded with their reasons, including full conflict-free replicated data types and operation-log-only storage; Any adopted change states its format_version and migration implications and its effect on the plain-text, git-diffable storage property; The decision names the acceptance evidence source — the merge conformance suite and the simulation harness — rather than asserting a position; The decision states the merge-direction regime explicitly: whether scalar conflict resolution must be direction-independent, and if it may not be, which recorded artifact makes a discarded value recoverable and which surface reports an unreconciled divergence; The decision states the identity regime alongside the merge regime: the id width required for a stated corpus size and concurrent-agent count, and what a merge does when two independently created items share one id"
@@ -19,6 +19,7 @@ why_now: The merge-safety program has closed and federation is on the roadmap. T
 parent: pm-m2u1
 risk: high
 confidence: low
+expected_result: "The convergence model is decided with measured evidence: the regime where field-aware merge suffices is stated, alternatives are recorded with reasons, and format and storage implications are explicit."
 dependencies[14]:
   - id: pm-76dnfg
     kind: blocked_by

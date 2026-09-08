@@ -61,6 +61,14 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
       "Search embedding provider name (e.g. openai, ollama, or an extension provider).",
   },
   {
+    key: "search_default_mode",
+    path: "search.default_mode",
+    kind: "string",
+    choices: ["auto", "keyword", "semantic", "hybrid"],
+    summary:
+      "Mode a bare pm search runs in: auto (hybrid when semantic search is explicitly configured and runnable, else keyword), or a pinned keyword, semantic, or hybrid.",
+  },
+  {
     key: "search_mutation_refresh_policy",
     path: "search.mutation_refresh_policy",
     kind: "string",

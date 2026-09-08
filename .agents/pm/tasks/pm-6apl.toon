@@ -6,13 +6,14 @@ status: open
 priority: 2
 tags[4]: agent-ux,"area:cli","area:observability",simplification
 created_at: "2026-07-05T04:53:34.685Z"
-updated_at: "2026-07-31T06:08:54.692Z"
+updated_at: "2026-09-08T13:32:52.588Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: pm ops stats/health/validate/gc/telemetry/eval subcommands with flag parity after ADR pm-pbyu acceptance; old spellings alias-shimmed with byte-identical output (CI scripts unaffected); contracts/MCP/completions/docs regenerated; existing specs pass via aliases
 parent: pm-n7rr
 risk: low
 confidence: medium
+expected_result: "stats, health, validate, gc, telemetry and eval are verbs of pm ops with byte-identical output, and every old spelling keeps working as an alias."
 dependencies[7]:
   - id: pm-0z7n
     kind: blocked_by

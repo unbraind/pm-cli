@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: changelog,ci,governance,ordering,provenance,release
 created_at: "2026-07-26T17:35:13.800Z"
-updated_at: "2026-08-10T12:17:28.430Z"
+updated_at: "2026-09-08T13:32:44.085Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "Row order within a release section derives from a key that does not change when an item is edited; The drift check proves that a metadata write on an already-published item produces a byte-identical changelog, not merely an unchanged section assignment; The chosen key is deterministic across machines and across regeneration order, so two agents regenerating from the same tracker state produce identical bytes; Existing published sections are regenerated once under the new key and the resulting diff is reviewed as a one-time reordering rather than being suppressed; The ordering rule is documented where the changelog conventions live, so it is not rediscovered by the next bulk pass"
@@ -19,6 +19,7 @@ why_now: "Attribution is now stamped, so ordering is the only remaining reason a
 parent: pm-pcys9n
 risk: low
 confidence: high
+expected_result: "Rows within a changelog section are ordered by an edit-independent key, so a metadata write on a published item regenerates a byte-identical changelog."
 dependencies[9]{id,kind,created_at}:
   pm-10l1vm,related,"2026-07-26T17:35:13.800Z"
   pm-3j6it6,discovered_from,"2026-07-26T17:35:13.800Z"

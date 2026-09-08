@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: "area:mcp",discovery,interoperability,metadata,server-card,well-known
 created_at: "2026-08-28T20:22:32.953Z"
-updated_at: "2026-08-28T20:58:33.016Z"
+updated_at: "2026-09-08T13:32:29.021Z"
 deadline: "2027-06-30T00:00:00.000Z"
 author: "harness:codex"
 estimated_minutes: 480
@@ -14,6 +14,7 @@ acceptance_criteria: A versioned server card declares identity endpoints support
 parent: pm-opw1l3
 risk: high
 confidence: low
+expected_result: A versioned server card generated from the SDK contracts lets a host reason about a pm MCP server before connecting without leaking private facts.
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-vae5ec,discovered_from,"2026-08-28T20:22:32.953Z","harness:codex","cli:create:dep",detected
   pm-x705zo,verifies,"2026-08-28T20:22:32.953Z","harness:codex","cli:create:dep",detected

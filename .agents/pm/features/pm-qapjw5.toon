@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: ci,context-management,governance,provenance,quality-gate,traceability
 created_at: "2026-07-26T10:00:23.657Z"
-updated_at: "2026-07-26T10:56:20.170Z"
+updated_at: "2026-09-08T13:33:03.389Z"
 author: "harness:opencode"
 estimated_minutes: 360
 acceptance_criteria: "CI fails a changeset with no resolvable pm-id and no waiver; negative-control fixture proves the failure; waiver usage is itself a tracked, queryable event; gate registered in pm-k6t4yb with owner and failure taxonomy"
@@ -17,13 +17,14 @@ why_now: 2026-07-26 ecosystem review found the forward direction of traceability
 parent: pm-u9d0
 risk: low
 confidence: high
-dependencies[8]{id,kind,created_at,author,source_kind}:
-  pm-33cw,related,"2026-07-26T10:00:38.248Z",null,null
-  pm-9yfo,related,"2026-07-26T10:00:38.248Z",null,null
-  pm-e9yevx,discovered_from,"2026-07-26T10:00:38.248Z",null,null
-  pm-f86lth,related,"2026-07-26T10:00:38.248Z",null,null
-  pm-k6t4yb,related,"2026-07-26T10:00:38.248Z",null,null
-  pm-kpftft,related,"2026-07-26T10:00:38.248Z",null,null
-  pm-rtn5h6,related,"2026-07-26T10:00:38.248Z",null,null
-  pm-w7ccmv,verifies,"2026-07-26T10:00:38.248Z",null,null
+expected_result: "CI fails any changeset that references no tracked pm item and carries no waiver, and every waiver is itself a queryable recorded event."
+dependencies[8]{id,kind,created_at}:
+  pm-33cw,related,"2026-07-26T10:00:38.248Z"
+  pm-9yfo,related,"2026-07-26T10:00:38.248Z"
+  pm-e9yevx,discovered_from,"2026-07-26T10:00:38.248Z"
+  pm-f86lth,related,"2026-07-26T10:00:38.248Z"
+  pm-k6t4yb,related,"2026-07-26T10:00:38.248Z"
+  pm-kpftft,related,"2026-07-26T10:00:38.248Z"
+  pm-rtn5h6,related,"2026-07-26T10:00:38.248Z"
+  pm-w7ccmv,verifies,"2026-07-26T10:00:38.248Z"
 body: ""

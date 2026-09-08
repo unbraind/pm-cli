@@ -813,7 +813,9 @@ describe("list-query command actions", () => {
       vi.mocked(runSearch) as never,
       1,
     );
-    expect(options.mode).toBe("keyword");
+    // The default mode is SDK policy (search.default_mode); the CLI passes
+    // an absent mode through instead of re-deriving a literal (pm-n8a6e7).
+    expect(options.mode).toBeUndefined();
 
     await runCli("search", "--semantic", "drift");
     options = lastCallArg<Record<string, unknown>>(

@@ -1057,6 +1057,14 @@
             "holder_id": "pm-e9zh",
             "text_contains": "Terminal evidence recovery completed for this bounded pass:",
             "reason": "This evidence inventory enumerates residual historical records with unknown fields; it asserts no semantic or ordering relationship to those records. Other passages remain measured."
+          },
+          {
+            "holder_id": "pm-n8a6e7",
+            "reason": "The duplicate-check and implementation-evidence comments inventory the search results the measured query returned and the adjacent search owners the check surfaced; naming a result is a measurement statement, not a pairwise relationship, and the owners that are related carry typed edges."
+          },
+          {
+            "holder_id": "pm-2ksptv",
+            "reason": "The duplicate-check comment inventories the closed analyzer-gate lineage the semantic search returned; naming a search result is a measurement statement, not a pairwise relationship, and the items that are related carry typed edges."
           }
         ]
       },

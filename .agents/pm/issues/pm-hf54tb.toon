@@ -6,13 +6,14 @@ status: open
 priority: 1
 tags[6]: "area:mcp","area:observability","area:telemetry",denominator,governance,protocol
 created_at: "2026-08-30T10:40:58.579Z"
-updated_at: "2026-08-30T11:19:41.771Z"
+updated_at: "2026-09-08T13:31:52.429Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Every completed MCP handshake and every modern per-request dispatch records the protocol revision it negotiated, together with the bounded client name and version already parsed from clientInfo, through the existing telemetry channel and under the existing redaction policy; A bounded read reports, per release window, the distinct revisions requested and the count and identity of clients per revision, so the two-consecutive-window sunset criterion is evaluable rather than rhetorical; A refused handshake is recorded as a distinct outcome from an accepted one, so a host locked out by an accept-list gap appears as a measurable population rather than as an unreproducible support report; The two documents that state the sunset rule cite the specific read that evaluates it, so the criterion names its own evidence source; A negative control proves the read reports zero for a revision no client requested, so presence in the report cannot be an artifact of the declared accept list; No revision, client name, or version is recorded in a form that violates the existing telemetry consent and redaction contract"
 parent: pm-5oj5
 risk: high
 confidence: 95
+expected_result: "Every MCP handshake and per-request dispatch records the negotiated revision and client identity, so the legacy adapter can be retired on measured telemetry rather than assertion."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-edywqn,discovered_from,"2026-08-30T10:40:58.579Z","harness:claude-code","cli:create:dep",detected
   pm-rs9vry,implements,"2026-08-30T10:40:58.579Z","harness:claude-code","cli:create:dep",detected

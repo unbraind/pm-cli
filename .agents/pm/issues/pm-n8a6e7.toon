@@ -1,0 +1,86 @@
+id: pm-n8a6e7
+title: "pm search defaults to keyword on a workspace whose vector index is complete, so the shipped Ollama semantic default never reaches the default query path"
+description: "Measured 2026-09-08 on the live 2719-item workspace. The vectorization ledger (search/vectorization-status.json) reports 2719 of 2719 items embedded with provider ollama, model qwen3-embedding:0.6b, 1024 dimensions, and pm health reports vectorization ok. Yet a bare pm search (the form every skill, AGENTS.md quickstart line and the generated agent-guidance block instruct, 21 fenced occurrences, 0 of them naming a mode) runs in keyword mode: the top result for \"make command output cheaper in tokens for coding agents\" is the roadmap hub pm-doxj (score 5399) followed by the context-engine hub pm-4k6b, while --mode hybrid returns pm-t5dt4z, pm-kvxqp1 and pm-5t33or (the three items that actually own output token cost) in 1.3 seconds. The cold-start duplicate check every agent performs therefore runs against the weakest retrieval the workspace has.\n\nThree layers agree on the literal and none consults index state: parseSearchMode(undefined) returns \"keyword\" in src/sdk/query/search-contracts.ts, the CLI re-derives the same literal in src/cli/register-list-query.ts (mode fallback \"keyword\", help text \"default: keyword\"), and settings.search has no key for a default mode at all, so no workspace can change it without passing --mode on every call. pm-67uh closed on 2026-05 with the acceptance criterion \"When Ollama is available locally, default pm search mode resolves to semantic-capable hybrid behavior with no manual setup; explicit user settings still take precedence\". The shipped runtime defaults (semantic-defaults.ts) fill provider, model and vector-store leaves, which is why the index exists, but the mode default itself never moved. The SDK already degrades any semantic failure to keyword hits with a search_semantic_fallback warning, so an index-aware hybrid default cannot block an agent when Ollama is down.\n\nExpected: the default mode is an SDK policy resolved from workspace state and settings, not a presentation-layer literal. A settings key search.default_mode accepts auto, keyword, semantic or hybrid with default auto; auto resolves to hybrid exactly when the built-in semantic path can run (an active embedding provider plus an active vector store or extension adapter, or an extension search provider) and to keyword otherwise; the response reports mode_source (explicit, settings or auto) so the reader can tell a chosen mode from a derived one; the CLI passes mode through unchanged and its help text says auto; docs and the config key registry declare the key."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,recurrence,sdk-first,search,semantic
+created_at: "2026-09-08T13:02:28.189Z"
+updated_at: "2026-09-08T14:21:48.561Z"
+closed_at: "2026-09-08T14:21:47.777Z"
+completed_at: "2026-09-08T14:21:47.777Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "search.default_mode is a declared settings key (auto|keyword|semantic|hybrid, default auto) accepted by the validator, the nested config registry and pm config set; With auto, a workspace whose stored search.provider names the active embedding provider and whose vector store resolves runs bare pm search in hybrid mode, and a workspace without that configuration runs keyword, proven by specs in both directions; Verbose search responses always report mode_source (explicit, settings or auto); compact responses report it only when settings pinned the mode; the CLI no longer re-derives the default from a literal; pm search --help and docs/COMMANDS.md and docs/CONFIGURATION.md describe the auto default and the key, and the contracts snapshot, intent calibration ledger and recurrence policy are regenerated or registered; A bare pm search on this workspace returns the semantic ranking for the measured query and the semantic fallback warning still appears when the provider is unreachable"
+parent: pm-ydp6
+risk: medium
+confidence: high
+resolution: "search-contracts.ts owns SearchDefaultMode, SearchModeSource and resolveEffectiveSearchMode; search.ts resolves the runtime mode from the health-consistent configured verdict; search.default_mode declared in types, defaults, validator, serializer and config registry; CLI literal removed; verbose responses carry mode_source, compact only for settings; docs, contracts snapshot, calibration ledger, recurrence family, SDK surface snapshot updated"
+expected_result: "Bare pm search uses the strongest retrieval the workspace can run, chosen by the SDK from configured provider and store state, with the choice visible in verbose responses and pinnable through settings"
+actual_result: "On this workspace a bare pm search reports mode hybrid with the semantic ranking (pm-t5dt4z, pm-kvxqp1, pm-5t33or, pm-cu1i for the measured query); explicit --mode keyword reports mode_source explicit; a workspace without a configured provider stays keyword and never contacts a provider; a failing provider degrades to keyword hits with the fallback warning"
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4957pz,discovered_from,"2026-09-08T13:02:28.189Z","harness:claude-code","cli:create:dep",detected
+  pm-67uh,recurs_from,"2026-09-08T13:02:28.189Z","harness:claude-code","cli:create:dep",detected
+  pm-9rgaal,implements,"2026-09-08T13:02:28.189Z","harness:claude-code","cli:create:dep",detected
+  pm-ydp6,implements,"2026-09-08T13:02:28.189Z","harness:claude-code","cli:create:dep",detected
+  pm-4k6b,implements,"2026-09-08T14:01:32.368Z","harness:claude-code","cli:update:dep",detected
+  pm-pbyu,implements,"2026-09-08T14:01:32.368Z","harness:claude-code","cli:update:dep",detected
+  pm-wn3r,recurs_from,"2026-09-08T14:01:32.368Z","harness:claude-code","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-08T13:02:40.492Z","harness:claude-code","Duplicate check before filing: hybrid searches for 'pm search defaults to keyword mode even though semantic index exists' and 'search mode selection policy declared in settings hybrid default' returned only closed lineage (pm-wn3r, pm-67uh, pm-75k9, pm-2xwh, pm-qyyv) and no open owner; pm-28cf (provider string normalization), pm-p1g43q (retrieval quality contract) and pm-vjgqj5 (Ollama batch ceiling) own adjacent but distinct defects. Verified facts: parseSearchMode(undefined) returns keyword in src/sdk/query/search-contracts.ts line 72; src/cli/register-list-query.ts line 692 re-derives the keyword literal and line 1357 prints default keyword; settings.search declares no mode key (src/core/shared/constants.ts line 314); vectorization-status.json reports 2719 embedded, ollama, qwen3-embedding:0.6b, 1024 dims."
+  "2026-09-08T13:38:52.411Z","harness:claude-code","Implementation evidence 2026-09-08. SDK: search-contracts.ts gains SearchDefaultMode, SEARCH_DEFAULT_MODE_VALUES, SearchModeSource, resolveSearchDefaultModeSetting and resolveEffectiveSearchMode; search.ts resolves the runtime mode through resolveRuntimeSearchMode, which counts the semantic path as runnable only when resolveProviderConfigSource (the predicate pm health publishes as provider_source) returns configured for the stored search.provider and a vector store or extension adapter resolves, or an extension search provider is active. Settings: search.default_mode (default auto) declared in types, defaults, validator, serializer key order and the nested config registry as search_default_mode. CLI: the keyword literal and its help text are gone; help says default auto. Live on this workspace after the change: bare search mode hybrid, top hits pm-t5dt4z, pm-kvxqp1, pm-5t33or, pm-cu1i (was pm-doxj, pm-4k6b, pm-rnpb, pm-92if); explicit --mode keyword reports mode_source explicit; count-only under auto reports 666 hybrid matches versus 946 keyword. Golden set (pm eval --k 10): hybrid nDCG 0.8244 / MRR 0.90 / recall 0.8364, keyword 0.7451 / 0.80 / 0.8727, semantic 0.7890 / 0.85 / 0.8182. Gate repairs the change required: recurrence family presentation-layer-default-re-derivation registered so the recurs_from edge passes the defect-evidence gate; intent calibration ledger re-approved (+21 bytes of mode_source in the unbounded verbose walk); help text kept at the previous token length because the lexicon ratchet has zero headroom; compact responses omit mode_source for explicit and auto after the agent-task token ratchet showed six tokens per search for a fact the default already states. Targeted specs: 100 of 100 across search-command and search-default-mode, 188 across the settings, constants, alias and nested-settings suites."
+  "2026-09-08T13:49:26.557Z","harness:claude-code","SDK surface: the snapshot gate classified the optional default_mode key on PmSettings.search as a signature change on ./sdk, ./sdk/core and ./sdk/runtime and refused a silent update; acknowledged with a recorded reason (existing settings literals stay valid, readers normalize an absent key to auto) alongside four additive exports: SearchDefaultMode, SearchModeResolution, SearchModeSource and resolveEffectiveSearchMode on ./sdk and ./sdk/query."
+  "2026-09-08T14:03:18.664Z","harness:claude-code","Graph-composition gate: the seven related rows first written for the duplicate-check neighbours pushed the assurance related count to 6060 against its 6053 ceiling (the ceiling is denominated in declared rows, where pm graph audit reports 5570 deduplicated), so they were withdrawn; the citation holders pm-n8a6e7 and pm-2ksptv are exempted from the prose-edge-gaps measure with recorded reasons in the same shape as the pm-7zs0 exemption, and pm-p1g43q now carries blocked_by pm-n8a6e7 because its bare-search recall targets depend on the default mode being settled SDK policy. Dry-run verdict after the change: pass, prose-edge-gaps 1342 of 1343, related 6053 of 6053."
+learnings[3]{created_at,author,text}:
+  "2026-09-08T13:34:35.247Z","harness:claude-code","A closed feature's acceptance criterion is a claim the current build must still keep. pm-67uh closed in May on \"default pm search mode resolves to hybrid when Ollama is available\", and by September three layers agreed on a keyword literal (SDK parse default, CLI fallback, no settings key) with every test green, because no test executed the criterion against the runtime. Re-execute the AC of the closed item that owns a behaviour before trusting the behaviour."
+  "2026-09-08T13:34:35.867Z","harness:claude-code","An index-aware default must key off the same verdict the diagnostics already publish, not off whether defaults were applied. The first cut of auto treated auto_ollama_defaults_applied as \"implicit\" and resolved keyword on this very workspace, because one mirror leaf (search.embedding_model) was empty and the defaults filler touched it. resolveProviderConfigSource, the function pm health uses for provider_source, is the honest predicate: configured when the stored search.provider names the active provider."
+  "2026-09-08T13:34:36.523Z","harness:claude-code","Three gates react to a one-line output change and each has its own sanctioned repair: a recurs_from edge is refused by the defect-evidence gate until the lineage is registered as a family in config/defect-recurrence-policy.json; the intent calibration ledger is a byte ratchet that needs pnpm context:intent:calibrate --update plus a reviewed diff (here 21 bytes of mode_source, one fewer compacted row at tier 1); the help-token budget has zero headroom per command, so new help text must be no longer than what it replaces (default: auto) or the ceiling must be raised with a dated comment."
+files[21]{path,scope,note}:
+  config/defect-recurrence-policy.json,project,presentation-layer-default-re-derivation recurrence family
+  scripts/release/context-intent-calibration.json,project,recalibrated for the mode_source line in search responses
+  sdk/public-surface.json,project,acknowledged PmSettings signature change for the optional search.default_mode key plus four additive SDK symbols
+  src/cli/register-list-query.ts,project,pm-n8a6e7 default search mode resolution
+  src/core/config/nested-settings.ts,project,pm-n8a6e7 default search mode resolution
+  src/core/shared/constants.ts,project,pm-n8a6e7 default search mode resolution
+  src/core/store/settings-validator.ts,project,pm-n8a6e7 default search mode resolution
+  src/core/store/settings.ts,project,pm-n8a6e7 default search mode resolution
+  src/mcp/tool-definitions.ts,project,pm-n8a6e7 default search mode resolution
+  src/sdk/query/search-contracts.ts,project,pm-n8a6e7 default search mode resolution
+  src/sdk/query/search.ts,project,pm-n8a6e7 default search mode resolution
+  src/types.ts,project,pm-n8a6e7 default search mode resolution
+  tests/fixtures/contracts/full.json,project,pm-n8a6e7 default search mode resolution
+  tests/integration/help-runtime.spec.ts,project,asserts the auto default and the mode_source key order
+  tests/integration/release-readiness-runtime.spec.ts,project,asserts the auto default and the mode_source key order
+  tests/unit/commands/config-key-aliases-search.spec.ts,project,pm-n8a6e7 default search mode resolution
+  tests/unit/commands/register-commands.spec.ts,project,asserts the auto default and the mode_source key order
+  tests/unit/commands/search-command.spec.ts,project,pm-n8a6e7 default search mode resolution
+  tests/unit/core/shared/shared-constants-errors.spec.ts,project,pm-n8a6e7 default search mode resolution
+  tests/unit/core/store/settings-store.spec.ts,project,pm-n8a6e7 default search mode resolution
+  tests/unit/sdk/query/search-default-mode.spec.ts,project,pm-n8a6e7 default search mode resolution
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/query/search-default-mode.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/core/store/settings-store.spec.ts tests/unit/commands/config-key-aliases-search.spec.ts,project,240,"harness:claude-code","2026-09-08T13:15:54.624Z",local_mutation,main
+test_runs[1]:
+  - run_id: test-local-mtspuj72-vn9y8o
+    kind: test
+    status: passed
+    started_at: "2026-09-08T13:39:14.014Z"
+    finished_at: "2026-09-08T13:39:25.742Z"
+    recorded_at: "2026-09-08T13:39:25.742Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/query/search-default-mode.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/core/store/settings-store.spec.ts tests/unit/commands/config-key-aliases-search.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,Default search mode section
+  docs/CONFIGURATION.md,project,search.default_mode key
+close_reason: "Default search mode is SDK policy: search.default_mode (auto by default) resolves hybrid when the stored provider is configured and a store resolves, keyword otherwise; verified live on this workspace (bare search now hybrid, golden-set nDCG 0.8244 vs 0.7451 keyword), 8591 tests green after three spec updates, full lint chain green, gates repaired with recorded reasons"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-n8a6e7
+  gate_id: presentation-layer-default-re-derivation
+  negative_control: tests/unit/commands/search-command.spec.ts pins search.default_mode keyword with a configured provider and asserts the provider is never contacted; tests/unit/sdk/query/search-default-mode.spec.ts asserts auto resolves keyword when the semantic path is not runnable
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/query/search-default-mode.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/config-key-aliases-search.spec.ts
+  hosted_checks[1]: CI / Gates (coverage)
+body: ""

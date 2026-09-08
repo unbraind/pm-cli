@@ -6,13 +6,14 @@ status: open
 priority: 2
 tags[6]: episodes,evaluation,lifecycle,provisional,rl-substrate,schema
 created_at: "2026-07-28T22:31:58.389Z"
-updated_at: "2026-07-28T22:31:58.389Z"
+updated_at: "2026-09-08T13:33:01.734Z"
 author: "harness:claude-code"
 estimated_minutes: 900
 acceptance_criteria: "The provisional role is declared in the lifecycle registry rather than inferred from a status name, so custom statuses can adopt the same role and the built-in draft status is simply the first member; Provisional items are excluded by default from pm next, pm context, changelog derivation, aggregate rollups, and every relevance-scored surface, and each exclusion is a declared property of the role rather than a per-command condition; An explicit opt-in flag includes provisional items on any read surface, with a bounded and declared cost, so an episode can see its own speculative work without changing any default; Promotion and discard are distinct recorded transitions with their own history operations, and the recorded op vocabulary declares them, satisfying the enumeration rule pm-0elqjj establishes; A discarded provisional item leaves every hash chain verifiable and its id permanently retired rather than reusable, asserted by a test that runs pm history --verify and an id-reuse probe after discard; Provisional writes are per-item and require no workspace-level snapshot, proven by a concurrency test in which one agent explores and discards while another agent's permanent writes to the same workspace are unaffected; An episode can declare that all of its writes default to provisional, so a harness does not have to mark each write, and the declaration is part of the portable episode specification"
 parent: pm-8jdc
 risk: medium
 confidence: medium
+expected_result: "Provisional items are fully recorded yet excluded from proof-bearing surfaces until promoted, with the role declared in the lifecycle registry."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-0mhspz,related,"2026-07-28T22:31:58.389Z","harness:claude-code","cli:create:dep",detected
   pm-e3gn0z,related,"2026-07-28T22:31:58.389Z","harness:claude-code","cli:create:dep",detected

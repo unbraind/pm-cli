@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: "area:security",ci,governance,history,privacy,secret-guard
 created_at: "2026-07-26T17:50:28.439Z"
-updated_at: "2026-08-03T06:45:31.243Z"
+updated_at: "2026-09-08T13:32:50.145Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The rule inventory is a single declared source consumed by both the write-time mutation guard and the static secret gate, so neither can carry a rule the other lacks; A test fails when the two rule sets diverge, rather than the divergence being discovered by a push that trips the gate; Rules that are deliberately gate-only are declared as such with a recorded reason, so an intentional asymmetry is visible instead of accidental; The guard's advise and block modes apply the full inventory across every mutation surface, matching how the credential rules already behave; Matched values stay redacted in errors, telemetry, and recovery bundles for the newly shared rules exactly as they are for the credential rules; Documentation states which rules block a write and which only fail a build, so an author knows before writing which is which"
@@ -19,6 +19,7 @@ why_now: "The gap was exercised for real this session: a host path reached an im
 parent: pm-qwoy
 risk: medium
 confidence: high
+expected_result: "The write-time mutation guard and the CI secret gate consume one declared rule inventory, and a test fails the moment the two diverge."
 dependencies[13]:
   - id: pm-34w8za
     kind: related

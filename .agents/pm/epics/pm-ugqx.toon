@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:extensions","area:packages","area:sdk",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:11.928Z"
-updated_at: "2026-08-22T07:28:09.968Z"
+updated_at: "2026-09-08T13:24:29.967Z"
 author: maintainer-agent
 estimated_minutes: 960
 acceptance_criteria: "All open extension and package backlog children closed or waived; install, describe, scaffold, and preflight flows verified end-to-end from a packed tarball in both ESM and CJS host projects."
@@ -17,6 +17,7 @@ why_now: "SDK completeness, universal-domain profiles, agent plugins, and extern
 parent: pm-doxj
 risk: low
 confidence: high
+expected_result: "A package author scaffolds, installs, describes and preflights an extension end to end from a packed tarball in both ESM and CJS hosts."
 dependencies[5]:
   - id: pm-9rgaal
     kind: related

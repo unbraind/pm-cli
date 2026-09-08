@@ -311,6 +311,7 @@ describe("core/store/settings", () => {
         "embedding_timeout_ms",
         "scanner_max_batch_retries",
         "provider",
+        "default_mode",
         "mutation_refresh_policy",
         "query_expansion",
         "rerank",
@@ -695,6 +696,7 @@ describe("core/store/settings", () => {
   it("falls back from invalid runtime customization leaves during serialization", () => {
     const settings = structuredClone(SETTINGS_DEFAULTS) as unknown as Record<string, unknown>;
     settings.search = {
+      default_mode: "sometimes",
       mutation_refresh_policy: "always",
       query_expansion: { enabled: "yes", provider: 42 },
       rerank: { enabled: "no", model: 99, top_k: 0 },
@@ -708,6 +710,7 @@ describe("core/store/settings", () => {
 
     const parsed = JSON.parse(serializeSettings(settings as never)) as {
       search: {
+        default_mode: string;
         mutation_refresh_policy: string;
         query_expansion: { enabled: boolean; provider: string };
         rerank: { enabled: boolean; model: string; top_k: number };
@@ -720,6 +723,7 @@ describe("core/store/settings", () => {
       };
     };
 
+    expect(parsed.search.default_mode).toBe(SETTINGS_DEFAULTS.search.default_mode);
     expect(parsed.search.mutation_refresh_policy).toBe(SETTINGS_DEFAULTS.search.mutation_refresh_policy);
     expect(parsed.search.query_expansion).toEqual(SETTINGS_DEFAULTS.search.query_expansion);
     expect(parsed.search.rerank).toEqual(SETTINGS_DEFAULTS.search.rerank);

@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[9]: "area:history","area:privacy",continuity,"horizon:far",immutability,milestone,outcome,roadmap,standards
 created_at: "2026-08-14T14:35:39.995Z"
-updated_at: "2026-09-08T06:02:19.410Z"
+updated_at: "2026-09-08T13:24:50.703Z"
 deadline: "2036-12-31T00:00:00.000Z"
 author: "harness:codex"
 estimated_minutes: 129600
@@ -20,6 +20,7 @@ why_now: Provable history ends at restoration under current contracts while alre
 parent: pm-doxj
 risk: critical
 confidence: low
+expected_result: "A synthetic multi-decade corpus spanning every format and schema generation remains readable, queryable and independently verifiable, with every migration lossless and represented as new evidence."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-bbk8we,blocked_by,"2026-08-14T14:35:39.995Z","harness:codex","cli:create:dep",detected
   pm-e5yupa,blocked_by,"2026-08-14T14:35:39.995Z","harness:codex","cli:create:dep",detected

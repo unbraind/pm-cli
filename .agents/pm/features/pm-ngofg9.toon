@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: agentic-messaging,"area:mcp","area:sdk",channels,events,long-running,webhooks
 created_at: "2026-08-28T20:22:14.270Z"
-updated_at: "2026-08-28T20:58:31.045Z"
+updated_at: "2026-09-08T13:32:30.614Z"
 deadline: "2027-03-31T00:00:00.000Z"
 author: "harness:codex"
 estimated_minutes: 900
@@ -14,6 +14,7 @@ acceptance_criteria: Webhook and channel capabilities are explicitly discovered 
 parent: pm-opw1l3
 risk: high
 confidence: medium
+expected_result: "Long-running agents receive authenticated server events over webhooks or channels that compose with tasks, subscriptions, progress, steering and cancellation without polling."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-klxax7,implements,"2026-08-28T20:22:14.270Z","harness:codex","cli:create:dep",detected
   pm-rzs24j,discovered_from,"2026-08-28T20:22:14.270Z","harness:codex","cli:create:dep",detected

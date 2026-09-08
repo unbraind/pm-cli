@@ -6,13 +6,14 @@ status: open
 priority: 1
 tags[5]: governance,graph,history,release,timeline
 created_at: "2026-08-11T13:51:47.918Z"
-updated_at: "2026-08-30T10:45:11.788Z"
+updated_at: "2026-09-08T13:31:53.122Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A release epoch is representable as a first-class node with a declared type, so epoch membership and epoch order are edges rather than a scalar plus a version parse; Every item carrying a release value is joined to its epoch by a typed edge, and the join is derived from the recorded value rather than asserted item by item; Consecutive epochs carry a typed ordering edge, so a traversal reconstructs the full release sequence without interpreting version identifiers; Traversal answers what shipped in a named release and which release preceded it, and both are bounded reads rather than full-corpus group-bys; Items with no release value appear as a named residual population rather than being silently excluded, so a shipped but unstamped item is visible; The epoch representation is derived and reproducible from the immutable record alone, so it never becomes a fourth release ledger to disagree with the three that already exist"
 parent: pm-96h7
 risk: medium
 confidence: 90
+expected_result: "Every release is a first-class graph node joined to the items it shipped and ordered against its neighbours, so the timeline is walkable by graph algorithms without parsing a scalar."
 dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-1w6scp,related,"2026-08-11T13:51:47.918Z","harness:claude-code","cli:create:dep",detected
   pm-3yzyfe,related,"2026-08-11T13:51:47.918Z","harness:claude-code","cli:create:dep",detected

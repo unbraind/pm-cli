@@ -681,18 +681,9 @@ async function runSearchAction(
     query,
   ]);
   const searchOptions = normalizeSearchOptions(intentOptions);
-  const result = await runSearch(
-    query,
-    {
-      ...searchOptions,
-      mode:
-        typeof searchOptions.mode === "string" &&
-        searchOptions.mode.trim().length > 0
-          ? searchOptions.mode
-          : "keyword",
-    },
-    globalOptions,
-  );
+  // The default mode is SDK policy (search.default_mode, auto = hybrid when the
+  // workspace configured semantic search and it can run): never re-derive it here.
+  const result = await runSearch(query, searchOptions, globalOptions);
   const outputFormat =
     typeof intentOptions.format === "string"
       ? intentOptions.format.trim().toLowerCase()
@@ -1354,7 +1345,7 @@ export function registerListQueryCommands(
       )
       .option(
         "--mode <value>",
-        "Search mode: keyword|semantic|hybrid (default: keyword)",
+        "Search mode: keyword|semantic|hybrid (default: auto)",
       )
       .option("--semantic", "Shorthand for --mode semantic")
       .option("--hybrid", "Shorthand for --mode hybrid")

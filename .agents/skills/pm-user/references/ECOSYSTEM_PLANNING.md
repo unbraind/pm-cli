@@ -11,7 +11,7 @@ implementation starts with bounded context and expands only its active lineage.
 
 ```bash
 pm context --limit 10 --for orient
-pm search "<request keywords>" --limit 10
+pm search "<request keywords>" --limit 10   # hybrid when semantic search is configured, keyword otherwise
 pm list --status open --limit 20
 pm list --status in_progress --limit 20
 pm list --all --no-truncate --full --include-body --strict-read --json

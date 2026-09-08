@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,grammar,"horizon:near",milestone,outcome,token-efficiency
 created_at: "2026-07-24T23:42:39.540Z"
-updated_at: "2026-07-29T21:24:11.090Z"
+updated_at: "2026-09-08T13:24:33.680Z"
 deadline: "2026-10-31T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 4800
@@ -20,6 +20,7 @@ why_now: "The surface is still growing (graph, plan, merge, history-* families a
 parent: pm-doxj
 risk: medium
 confidence: high
+expected_result: "The command surface fits one screen, no capability was removed, every old spelling resolves through an alias with a migration hint, and tokens per completed task measurably fell."
 dependencies[21]:
   - id: pm-0z7n
     kind: related

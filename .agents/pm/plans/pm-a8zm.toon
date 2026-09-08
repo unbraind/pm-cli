@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: all-status,audit,backfill,graph,plan,relationships,resumable
 created_at: "2026-07-13T21:59:23.505Z"
-updated_at: "2026-08-28T20:58:45.617Z"
+updated_at: "2026-09-08T13:24:38.842Z"
 author: codex-root
 estimated_minutes: 1800
 acceptance_criteria: "Every item is classified as correctly connected, intentional root, intentional archive or isolate, waived with rationale, or remediation debt with an exact next action; All legacy edge kinds and aliases are mapped to canonical semantics with source evidence; ambiguous relationships remain investigations rather than guessed rewrites; Execution is partitioned into bounded cursor-based waves with snapshots, checkpoints, deterministic ordering, idempotency, resume, rollback-by-new-event, and multi-agent claim boundaries; Active strategic lineages are enriched before terminal history; closed or canceled items change only in dedicated changelog-safe batches coordinated with pm-e9zh; Every mutation records author, timestamp, rationale, source evidence, confidence, previous meaning, and resulting validation evidence in immutable history; Post-wave audits show no new duplicates, dangling endpoints, false order cycles, history drift, or unexplained policy violations and publish graph-quality deltas; The process is benchmarked and token-bounded for one million items and safe under concurrent agents without full-memory or full-output requirements"
@@ -19,6 +19,7 @@ why_now: "The baseline identifies meaningful graph debt, but direct bulk mutatio
 parent: pm-6x7o
 risk: high
 confidence: medium
+expected_result: "Every item across all statuses is classified as correctly connected, intentional root, waived, or remediation debt with a next action, and the enrichment ran in resumable, reviewable waves."
 dependencies[13]:
   - id: pm-6x7o
     kind: blocked_by

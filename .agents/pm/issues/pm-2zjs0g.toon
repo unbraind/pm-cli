@@ -6,13 +6,14 @@ status: open
 priority: 1
 tags[3]: ci,recurrence,reliability
 created_at: "2026-08-03T20:34:28.473Z"
-updated_at: "2026-08-03T20:56:44.179Z"
+updated_at: "2026-09-08T13:32:04.279Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "A durable per-leg failure-rate report is derivable from recorded data alone and states occurrences, distinct affected days, and repair latency over a caller-chosen window; The alert channel carries a stable recurrence identity so a repaired occurrence does not reset the count, and the identity survives closure of the alert and of the tracking item; A declared threshold on the rate changes behaviour rather than only reporting, and the behaviour change is recorded where the release decision can read it; The historical 28 occurrences and the tracker items that repaired them are reconciled into one queryable family with no hand-maintained list; A negative control proves the meter reports zero on a period with no failures rather than failing open"
 parent: pm-u9d0
 risk: high
 confidence: 90
+expected_result: "Per-leg nightly failure rate, distinct days and repair latency are derivable from recorded data, and a repaired occurrence keeps its recurrence identity instead of resetting the count."
 dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-1qkivy,implements,"2026-08-03T20:35:36.738Z","harness:claude-code","cli:update:dep",detected
   pm-e70zh5,discovered_from,"2026-08-03T20:35:36.738Z","harness:claude-code","cli:update:dep",detected

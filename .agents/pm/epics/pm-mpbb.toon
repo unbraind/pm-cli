@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:cli","area:lifecycle",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:10.452Z"
-updated_at: "2026-08-22T07:28:08.900Z"
+updated_at: "2026-09-08T13:24:30.687Z"
 author: maintainer-agent
 estimated_minutes: 960
 acceptance_criteria: Never-block error contract holds across the command surface (recovery bundle with next steps on every failure path); agent-UX review findings closed or waived.
@@ -17,6 +17,7 @@ why_now: The live agent-facing surface exposes 72 top-level commands and 178 dec
 parent: pm-doxj
 risk: low
 confidence: high
+expected_result: "Every failure path returns a recovery bundle an agent can act on without out-of-band context, and the command surface serves agents and humans with equal ergonomics."
 dependencies[6]:
   - id: pm-5t33or
     kind: related

@@ -563,7 +563,10 @@
       "escape_class": "production_defect",
       "triggers": {
         "item_ids": [
-          "pm-998juj"
+          "pm-998juj",
+          "pm-u1baah",
+          "pm-xcrlkl",
+          "pm-2ksptv"
         ]
       },
       "checks": {
@@ -584,7 +587,10 @@
       "historical_item_ids": [
         "pm-998juj",
         "pm-dm2vfz",
-        "pm-e63v1x"
+        "pm-e63v1x",
+        "pm-u1baah",
+        "pm-xcrlkl",
+        "pm-2ksptv"
       ],
       "budget": {
         "max_escape_rate": 0,
@@ -746,6 +752,54 @@
       },
       "historical_item_ids": [
         "pm-vhdc"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.05
+      }
+    },
+    {
+      "id": "presentation-layer-default-re-derivation",
+      "version": 1,
+      "title": "A shipped SDK default is re-derived as a literal in a presentation layer, so the acceptance criterion of the closed feature stops holding without any test failing",
+      "owner_item_id": "pm-n8a6e7",
+      "escape_class": "production_defect",
+      "triggers": {
+        "file_patterns": [
+          "src/cli/register-list-query.ts",
+          "src/sdk/query/search-contracts.ts",
+          "src/sdk/query/search.ts",
+          "src/core/config/nested-settings.ts",
+          "src/core/store/settings-validator.ts"
+        ],
+        "item_ids": [
+          "pm-67uh",
+          "pm-n8a6e7",
+          "pm-wn3r"
+        ],
+        "tags": [
+          "search",
+          "sdk-first",
+          "agent-ux"
+        ]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/unit/sdk/query/search-default-mode.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/config-key-aliases-search.spec.ts"
+        ],
+        "hosted": [
+          "CI / Gates (coverage)"
+        ]
+      },
+      "negative_control": {
+        "item_ids": [
+          "pm-n8a6e7"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-67uh",
+        "pm-n8a6e7",
+        "pm-wn3r"
       ],
       "budget": {
         "max_escape_rate": 0,

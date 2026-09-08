@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[8]: backfill,changelog-safe,graph,history,relationships,task,terminal-items,"wave:2"
 created_at: "2026-07-13T22:00:29.132Z"
-updated_at: "2026-09-08T06:23:13.209Z"
+updated_at: "2026-09-08T13:33:19.467Z"
 author: codex-root
 estimated_minutes: 1800
 acceptance_criteria: "Start only after Wave 1 policy and tooling are accepted and pm-e9zh terminal evidence workflow is unblocked or explicitly coordinated; Partition terminal work by historical epoch, canonical parent lineage, release or incident boundary, and bounded batch size with non-overlapping claims; Infer candidate edges only from durable evidence such as original descriptions, comments, history events, linked commits or PRs, files, docs, tests, releases, and explicit identifiers; Human review is required for ambiguous retyping, inferred prerequisites, conflicting evidence, and high-impact graph hubs; unresolved cases retain uncertainty rather than fabricated links; Corrections append superseding events and preserve prior versions; each item remains restorable and explainable at every snapshot; Every batch includes package-owned changelog generation and review after the final tracker mutation plus duplicate, lifecycle, graph, health, history-chain, and release-boundary validation; Completion classifies every terminal item and demonstrates bounded resumability, stable indexes, and compact audit summaries at million-item scale"
@@ -19,6 +19,7 @@ why_now: "Terminal items are most of the tracker and carry rich history, but the
 parent: pm-a8zm
 risk: high
 confidence: low
+expected_result: "Closed and canceled items carry evidence-backed lineage edges reconstructed in changelog-safe, epoch-ordered batches after the active graph policy is proven."
 dependencies[11]:
   - id: pm-e9zh
     kind: blocked_by

@@ -6,32 +6,33 @@ status: open
 priority: 1
 tags[4]: agent-story,agent-ux,"area:cli",changelog-exclude
 created_at: "2026-07-05T04:52:38.075Z"
-updated_at: "2026-07-26T05:49:06.493Z"
+updated_at: "2026-09-08T13:24:35.727Z"
 author: maintainer-agent
 estimated_minutes: 30
 acceptance_criteria: pm --help lists ~15 nouns on one screen; each noun help page enumerates all verbs/flags; an agent transcript can complete a create->annotate->close workflow using only tiered help for discovery; old spellings still work
 parent: pm-n7rr
 risk: low
 confidence: high
-dependencies[20]{id,kind,created_at,author,source_kind}:
-  pm-0z7n,blocked_by,"2026-07-13T22:02:12.776Z",null,null
-  pm-6apl,blocked_by,"2026-07-13T22:02:12.776Z",null,null
-  pm-e2bq,blocked_by,"2026-07-13T22:02:12.776Z",null,null
-  pm-eq4x,blocked_by,"2026-07-13T22:02:12.776Z",null,null
-  pm-ik19,blocked_by,"2026-07-13T22:02:12.776Z",null,null
-  pm-kcs4,blocked_by,"2026-07-13T22:02:12.776Z",null,null
-  pm-lp4j,blocked_by,"2026-07-13T22:02:12.776Z",null,null
-  pm-mu8m,blocked_by,"2026-07-13T22:02:12.776Z",null,null
-  pm-npr3,blocked_by,"2026-07-13T22:02:12.776Z",null,null
-  pm-o3fh,blocked_by,"2026-07-13T22:02:12.776Z",null,null
-  pm-pfqi,blocked_by,"2026-07-13T22:02:12.776Z",null,null
-  pm-tnud,blocked_by,"2026-07-13T22:02:12.776Z",null,null
-  pm-tqel,blocked_by,"2026-07-13T22:02:12.776Z",null,null
-  pm-xkgq,blocked_by,"2026-07-13T22:02:12.776Z",null,null
-  pm-yql1,blocked_by,"2026-07-13T22:02:12.776Z",null,null
-  pm-ka6d,related,"2026-07-25T06:29:21.588Z",null,null
-  pm-yf07b7,related,"2026-07-25T06:29:21.588Z",null,null
-  pm-fs8q9x,related,"2026-07-25T12:40:22.277Z",null,null
-  pm-kxci8x,related,"2026-07-25T12:40:22.277Z",null,null
-  pm-j82fd3,implements,"2026-07-26T05:49:06.287Z",null,null
+expected_result: "A coding agent completes create, annotate and close using only tiered help for discovery, never guessing among sibling top-level spellings."
+dependencies[20]{id,kind,created_at}:
+  pm-0z7n,blocked_by,"2026-07-13T22:02:12.776Z"
+  pm-6apl,blocked_by,"2026-07-13T22:02:12.776Z"
+  pm-e2bq,blocked_by,"2026-07-13T22:02:12.776Z"
+  pm-eq4x,blocked_by,"2026-07-13T22:02:12.776Z"
+  pm-ik19,blocked_by,"2026-07-13T22:02:12.776Z"
+  pm-kcs4,blocked_by,"2026-07-13T22:02:12.776Z"
+  pm-lp4j,blocked_by,"2026-07-13T22:02:12.776Z"
+  pm-mu8m,blocked_by,"2026-07-13T22:02:12.776Z"
+  pm-npr3,blocked_by,"2026-07-13T22:02:12.776Z"
+  pm-o3fh,blocked_by,"2026-07-13T22:02:12.776Z"
+  pm-pfqi,blocked_by,"2026-07-13T22:02:12.776Z"
+  pm-tnud,blocked_by,"2026-07-13T22:02:12.776Z"
+  pm-tqel,blocked_by,"2026-07-13T22:02:12.776Z"
+  pm-xkgq,blocked_by,"2026-07-13T22:02:12.776Z"
+  pm-yql1,blocked_by,"2026-07-13T22:02:12.776Z"
+  pm-ka6d,related,"2026-07-25T06:29:21.588Z"
+  pm-yf07b7,related,"2026-07-25T06:29:21.588Z"
+  pm-fs8q9x,related,"2026-07-25T12:40:22.277Z"
+  pm-kxci8x,related,"2026-07-25T12:40:22.277Z"
+  pm-j82fd3,implements,"2026-07-26T05:49:06.287Z"
 body: ""

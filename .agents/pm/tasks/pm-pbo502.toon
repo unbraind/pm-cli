@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: "area:ci","area:mcp",conformance,continuous-ingestion,roadmap,sdk,standards
 created_at: "2026-08-28T20:22:36.383Z"
-updated_at: "2026-08-28T20:58:33.569Z"
+updated_at: "2026-09-08T13:32:28.202Z"
 deadline: "2027-12-31T00:00:00.000Z"
 author: "harness:codex"
 estimated_minutes: 600
@@ -14,6 +14,7 @@ acceptance_criteria: Official sources and revisions are recorded with retrieval 
 parent: pm-opw1l3
 risk: high
 confidence: high
+expected_result: "Every upstream MCP specification, extension or roadmap change is classified against SDK, CLI, servers, packages, docs and tests with one owner or an explicit no-impact decision."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-55yf1t,discovered_from,"2026-08-28T20:22:36.383Z","harness:codex","cli:create:dep",detected
   pm-opw1l3,verifies,"2026-08-28T20:22:36.383Z","harness:codex","cli:create:dep",detected

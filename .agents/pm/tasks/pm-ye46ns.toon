@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[5]: depth,graph,history,relationships,traceability
 created_at: "2026-07-27T12:47:29.095Z"
-updated_at: "2026-08-01T10:05:26.715Z"
+updated_at: "2026-09-08T13:33:30.054Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Candidate ordering edges are extracted only from durable text that names an identifier and states a precedence relation in the sentence itself; Direction is taken from the sentence, and any candidate whose direction is ambiguous or whose sentence names the derived item rather than the prerequisite is dropped rather than resolved by guessing; Every dropped candidate is counted and the drop reasons are reported, so the refusal rate is visible evidence rather than silent filtering; Applied edges are typed blocked_by, create no new cycles, and leave graph audit findings and validate warning classes no worse than before the tranche; The resulting change in ordering depth is measured and reported: predecessor coverage, layer count, and longest ordering path before and after; The extraction runs bounded and resumable so it is executable against a corpus far larger than this workspace"
@@ -17,6 +17,7 @@ why_now: "Connectivity is saturated at one component and zero orphans, which mak
 parent: pm-gxs55a
 risk: medium
 confidence: high
+expected_result: "Ordering edges for terminal work are recovered only from sentences that name an identifier and state precedence, with every dropped candidate logged."
 dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-08mt4k,related,"2026-07-27T12:48:06.644Z","harness:claude-code","cli:update:dep",detected
   pm-3j6it6,related,"2026-07-27T12:48:06.644Z","harness:claude-code","cli:update:dep",detected

@@ -6,7 +6,7 @@ status: open
 priority: 4
 tags[6]: digital-twin,domain-pack,exemplar,horizon-far,story,universal-platform
 created_at: "2026-07-26T10:01:39.743Z"
-updated_at: "2026-07-26T10:56:21.248Z"
+updated_at: "2026-09-08T13:24:54.946Z"
 author: "harness:opencode"
 estimated_minutes: 2400
 acceptance_criteria: "A domain pack models org structure, objectives, approvals, and assets with zero pm-core changes; an independent reviewer can operate the twin for a simulated quarter using only SDK primitives; every pm-core gap encountered is filed as a tracked item"
@@ -17,13 +17,14 @@ why_now: "Filed as the compositional counterpart to slice exemplars during the 2
 parent: pm-8jdc
 risk: low
 confidence: medium
-dependencies[8]{id,kind,created_at,author,source_kind}:
-  pm-e9yevx,discovered_from,"2026-07-26T10:01:54.380Z",null,null
-  pm-g608fc,related,"2026-07-26T10:01:54.380Z",null,null
-  pm-iiv1gl,related,"2026-07-26T10:01:54.380Z",null,null
-  pm-kr3t,related,"2026-07-26T10:01:54.380Z",null,null
-  pm-mj42og,related,"2026-07-26T10:01:54.380Z",null,null
-  pm-odohgb,related,"2026-07-26T10:01:54.380Z",null,null
-  pm-t4d7nz,verifies,"2026-07-26T10:01:54.380Z",null,null
-  pm-xc68,implements,"2026-07-26T10:01:54.380Z",null,null
+expected_result: "An organization runs a simulated quarter of org structure, objectives, approvals and assets as one domain pack on pm primitives with zero core changes, and every gap met is a tracked item."
+dependencies[8]{id,kind,created_at}:
+  pm-e9yevx,discovered_from,"2026-07-26T10:01:54.380Z"
+  pm-g608fc,related,"2026-07-26T10:01:54.380Z"
+  pm-iiv1gl,related,"2026-07-26T10:01:54.380Z"
+  pm-kr3t,related,"2026-07-26T10:01:54.380Z"
+  pm-mj42og,related,"2026-07-26T10:01:54.380Z"
+  pm-odohgb,related,"2026-07-26T10:01:54.380Z"
+  pm-t4d7nz,verifies,"2026-07-26T10:01:54.380Z"
+  pm-xc68,implements,"2026-07-26T10:01:54.380Z"
 body: ""

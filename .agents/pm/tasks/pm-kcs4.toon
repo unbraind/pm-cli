@@ -6,13 +6,14 @@ status: open
 priority: 2
 tags[3]: agent-ux,"area:cli",simplification
 created_at: "2026-07-05T05:08:52.089Z"
-updated_at: "2026-07-31T06:08:46.726Z"
+updated_at: "2026-09-08T13:32:55.294Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "context noun exposes next and focus verbs with payloads identical to the standalone commands; pm next / pm focus keep working as aliases with suppressible hints; spelling-parity spec green; contracts, completions, docs, and MCP names regenerated; top-level help shows a single navigation noun."
 parent: pm-n7rr
 risk: low
 confidence: high
+expected_result: "next and focus are verbs of the context noun with identical payloads, and pm next and pm focus keep working forever as aliases."
 dependencies[6]:
   - id: pm-0z7n
     kind: blocked_by

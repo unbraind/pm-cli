@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: agent-environment,"area:sdk",conformance,rl
 created_at: "2026-08-01T09:49:21.045Z"
-updated_at: "2026-09-08T06:32:42.708Z"
+updated_at: "2026-09-08T13:32:13.364Z"
 author: "harness:claude-code"
 estimated_minutes: 1440
 acceptance_criteria: "One episode driven end to end in CI on every release candidate: seeded reset, scripted action sequence, bounded observation per step with published cost honoured, verdict at termination, trajectory replaying to the same verdict from immutable history alone; two runs on different machines produce byte-identical trajectories; the build fails if any import escapes the published SDK entrypoints; no model, policy or RL framework dependency enters this repository"
@@ -17,6 +17,7 @@ why_now: The three other programme seams are now filed; the exemplar is what pro
 parent: pm-klxax7
 risk: medium
 confidence: medium
+expected_result: "A reset, step, observe, score environment built on published SDK surface runs one episode in CI on every release candidate with byte-identical trajectories across machines."
 dependencies[20]{id,kind,created_at,author,source_kind,author_source}:
   pm-9rgaal,implements,"2026-08-01T09:49:21.045Z","harness:claude-code","cli:create:dep",detected
   pm-a8lnoh,related,"2026-08-01T09:49:21.045Z","harness:claude-code","cli:create:dep",detected

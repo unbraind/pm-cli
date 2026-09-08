@@ -254,6 +254,16 @@ Use only one updated-at window per list call: `--today`, `--recent`, and `--upda
 
 Keyword mode now applies the configured `search.max_results` default (50) when `--limit` is omitted, so a broad query no longer returns every hit. When the limit drops rows the result adds a top-level `total` (pre-limit match count).
 
+### Default search mode (pm-n8a6e7)
+
+A bare `pm search` runs in the mode the SDK resolves from `search.default_mode`, never from a literal in the CLI. `auto` (the default) picks `hybrid` exactly when the stored settings name the active embedding provider (`search.provider`, the same `configured` verdict `pm health` reports) and a vector store or extension adapter resolves, or when an extension search provider is active; every other workspace runs `keyword`. Auto-detected Ollama/LanceDB runtime defaults do not count as configured, so an unconfigured host never pays an embedding round-trip it did not ask for. A concrete `search.default_mode` (`keyword`, `semantic`, `hybrid`) pins the answer, and `--mode` always wins. The result reports `mode` (what ran, after any runtime fallback) beside `mode_source` (`explicit`, `settings`, or `auto`), so a caller can tell a chosen mode from a derived one (compact responses carry `mode_source` only for `settings`, since `explicit` is the caller's own choice and `auto` is the documented default); when the provider is unreachable a hybrid default still degrades to keyword hits with the usual `search_semantic_fallback` warning.
+
+```bash
+pm search "context budget"                       # auto: hybrid here because search.provider is configured and the index resolves
+pm config project set search_default_mode keyword   # pin keyword for a workspace that prefers exact-token results
+pm search "context budget" --mode semantic       # explicit request, mode_source: explicit
+```
+
 ```bash
 pm search "reminder validation queue" --match-mode and          # require all three tokens
 pm search "exact title phrase" --match-mode exact               # contiguous-phrase match

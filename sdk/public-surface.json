@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1884,
+    "covered_symbols": 1888,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1885
+    "required_symbols": 1889
   },
   "breaking_acknowledgements": [
     {
@@ -1835,6 +1835,15 @@
       ],
       "package_version": "2026.9.7",
       "reason": "Add optional boolean value matching to dependentAnyOfRequired; existing presence-based contracts remain compatible. Strict package and extension dry-run requests require install:true and a source."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmSettings",
+        "signature ./sdk/core:PmSettings",
+        "signature ./sdk/runtime:PmSettings"
+      ],
+      "package_version": "2026.9.8",
+      "reason": "pm-n8a6e7: PmSettings.search gains the optional default_mode key (auto|keyword|semantic|hybrid); existing settings literals stay valid and readers normalize an absent key to auto, so no consumer breaks"
     }
   ],
   "entrypoints": {
@@ -13443,7 +13452,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmSettings",
-          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { probes_enabled?: boolean; identity_vocabulary?: { version: number; aliases: Record<string, string>; }; harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_resolvers?: Record<string, \"ai_agent_version\" | \"claude_session_file\">; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; ux?: { deprecation_hints?: boolean; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; allow_untrusted_linked_tests: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { probes_enabled?: boolean; identity_vocabulary?: { version: number; aliases: Record<string, string>; }; harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_resolvers?: Record<string, \"ai_agent_version\" | \"claude_session_file\">; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; ux?: { deprecation_hints?: boolean; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; allow_untrusted_linked_tests: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; default_mode?: SearchDefaultMode; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
         },
         {
           "classification": "advanced_export",
@@ -15732,6 +15741,12 @@
           "signature": "export interface ResolvedItemTypeDefinition { name: string; description?: string; folder: string; aliases: string[]; default_status?: string; execution_role?: ItemTypeDefinition[\"execution_role\"]; required_create_fields: string[]; required_create_repeatables: string[]; options: ItemTypeOptionDefinition[]; command_option_policies: ItemTypeCommandOptionPolicy[]; }"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveEffectiveSearchMode",
+          "signature": "(params: { requested: unknown; settings: unknown; semanticRunnable: boolean; }) => SearchModeResolution | calls: (params: { requested: unknown; settings: unknown; semanticRunnable: boolean; }) => SearchModeResolution"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "resolveEmbeddingProviders",
@@ -17689,6 +17704,12 @@
         },
         {
           "classification": "supported",
+          "kind": "type",
+          "name": "SearchDefaultMode",
+          "signature": "export type SearchDefaultMode = \"auto\" | SearchMode;"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "SearchHit",
           "signature": "export interface SearchHit { item: ItemMetadata; score: number; matched_fields: string[]; matched_all_terms?: boolean; exact_id_match?: boolean; highlights?: SearchHitHighlight[]; }"
@@ -17710,6 +17731,18 @@
           "kind": "type",
           "name": "SearchMode",
           "signature": "export type SearchMode = \"keyword\" | \"semantic\" | \"hybrid\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SearchModeResolution",
+          "signature": "export interface SearchModeResolution { mode: SearchMode; source: SearchModeSource; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "SearchModeSource",
+          "signature": "export type SearchModeSource = \"explicit\" | \"settings\" | \"auto\";"
         },
         {
           "classification": "supported",
@@ -24585,7 +24618,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmSettings",
-          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { probes_enabled?: boolean; identity_vocabulary?: { version: number; aliases: Record<string, string>; }; harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_resolvers?: Record<string, \"ai_agent_version\" | \"claude_session_file\">; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; ux?: { deprecation_hints?: boolean; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; allow_untrusted_linked_tests: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { probes_enabled?: boolean; identity_vocabulary?: { version: number; aliases: Record<string, string>; }; harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_resolvers?: Record<string, \"ai_agent_version\" | \"claude_session_file\">; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; ux?: { deprecation_hints?: boolean; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; allow_untrusted_linked_tests: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; default_mode?: SearchDefaultMode; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
         },
         {
           "classification": "supported",
@@ -29756,6 +29789,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "resolveEffectiveSearchMode",
+          "signature": "(params: { requested: unknown; settings: unknown; semanticRunnable: boolean; }) => SearchModeResolution | calls: (params: { requested: unknown; settings: unknown; semanticRunnable: boolean; }) => SearchModeResolution"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "resolveHybridSemanticWeight",
           "signature": "(settings: unknown) => number | calls: (settings: unknown) => number"
         },
@@ -29917,6 +29956,12 @@
         },
         {
           "classification": "supported",
+          "kind": "type",
+          "name": "SearchDefaultMode",
+          "signature": "export type SearchDefaultMode = \"auto\" | SearchMode;"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "SearchHit",
           "signature": "export interface SearchHit { item: ItemMetadata; score: number; matched_fields: string[]; matched_all_terms?: boolean; exact_id_match?: boolean; highlights?: SearchHitHighlight[]; }"
@@ -29938,6 +29983,18 @@
           "kind": "type",
           "name": "SearchMode",
           "signature": "export type SearchMode = \"keyword\" | \"semantic\" | \"hybrid\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SearchModeResolution",
+          "signature": "export interface SearchModeResolution { mode: SearchMode; source: SearchModeSource; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "SearchModeSource",
+          "signature": "export type SearchModeSource = \"explicit\" | \"settings\" | \"auto\";"
         },
         {
           "classification": "supported",
@@ -31767,7 +31824,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmSettings",
-          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { probes_enabled?: boolean; identity_vocabulary?: { version: number; aliases: Record<string, string>; }; harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_resolvers?: Record<string, \"ai_agent_version\" | \"claude_session_file\">; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; ux?: { deprecation_hints?: boolean; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; allow_untrusted_linked_tests: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { probes_enabled?: boolean; identity_vocabulary?: { version: number; aliases: Record<string, string>; }; harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_resolvers?: Record<string, \"ai_agent_version\" | \"claude_session_file\">; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; ux?: { deprecation_hints?: boolean; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; allow_untrusted_linked_tests: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; default_mode?: SearchDefaultMode; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
         },
         {
           "classification": "supported",

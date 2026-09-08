@@ -320,6 +320,7 @@ export const SETTINGS_DEFAULTS: PmSettings = {
     embedding_timeout_ms: 30_000,
     scanner_max_batch_retries: 3,
     provider: "",
+    default_mode: "auto",
     mutation_refresh_policy: "semantic_configured",
     query_expansion: {
       enabled: false,

@@ -1962,6 +1962,7 @@ describe("release readiness runtime coverage", () => {
       expectTopLevelKeyOrder(searchAdvancedResult.json, [
         "query",
         "mode",
+        "mode_source",
         "items",
         "count",
         "applied_limit",

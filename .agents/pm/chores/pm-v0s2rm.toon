@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:ci","area:mcp",contract-drift,gate-gap,test-hygiene
 created_at: "2026-07-30T09:30:52.934Z"
-updated_at: "2026-07-30T09:31:50.500Z"
+updated_at: "2026-09-08T13:32:58.892Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "The two undeclared options are removed from the integration suite or declared by the contracts they are asserted against, with the covered behaviour restated so the assertion means something; an MCP unknown-option warning emitted anywhere in our own CI fails that job rather than passing advisorily, with a declared allowlist for any warning intentionally tolerated and a reason recorded per entry; a negative control proves the new gate fires by introducing one undeclared option and observing a red run; the gate is registered in the gate inventory so it cannot silently stop running"
@@ -19,6 +19,7 @@ parent: pm-5k4v
 risk: low
 confidence: high
 severity: medium
+expected_result: "Our own MCP integration suite passes no undeclared option, and an unknown-option warning anywhere in CI fails the job unless explicitly allowlisted."
 affected_version: 2026.7.30
 component: mcp/tool-definitions
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:

@@ -6,13 +6,14 @@ status: open
 priority: 3
 tags[5]: analytics,"area:graph","area:sdk",governance,planning
 created_at: "2026-07-25T17:48:39.569Z"
-updated_at: "2026-09-08T06:02:25.510Z"
+updated_at: "2026-09-08T13:33:21.105Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "Forecasts are computed from immutable history alone (throughput sampled from real completion events, never from estimated_minutes as a basis); output is a distribution with P50/P85/P95 per milestone or subtree, never a single date; the simulation walks blocked_by/parent edges so dependency serialization is reflected; sampling is conditioned by reference class (type/tag/parent) with documented back-off to the global class when a class is sparse; modeled scope growth is included as a sampled variable; every published forecast is recorded and scored against the realized outcome, and the calibration hit rate is queryable; raw simulation rows are available as NDJSON for jq; computation is built on promoted SDK primitives and surfaced through the existing pm-brief package, adding no core command"
 parent: pm-ugqx
 risk: medium
 confidence: medium
+expected_result: "Every milestone carries a P50, P85 and P95 completion distribution sampled from recorded throughput and the dependency graph, with a calibration ledger scoring past forecasts."
 dependencies[8]:
   - id: pm-7ob5
     kind: related

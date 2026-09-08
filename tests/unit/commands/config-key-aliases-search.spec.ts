@@ -21,6 +21,7 @@ const DEFAULT_GLOBAL_OPTIONS: GlobalOptions = {
 // a missing or misnamed entry breaks this test immediately.
 const EXPECTED_ALIASES: Record<string, string> = {
   search_provider: "search.provider",
+  search_default_mode: "search.default_mode",
   search_mutation_refresh_policy: "search.mutation_refresh_policy",
   search_query_expansion_enabled: "search.query_expansion.enabled",
   search_query_expansion_provider: "search.query_expansion.provider",
@@ -85,7 +86,7 @@ describe("config nested-setting aliases (pm-7ilo)", () => {
       expect(descriptor, `missing nested-setting alias: ${alias}`).toBeDefined();
       expect(descriptor!.path).toBe(expectedPath);
     }
-    expect(Object.keys(EXPECTED_ALIASES)).toHaveLength(26);
+    expect(Object.keys(EXPECTED_ALIASES)).toHaveLength(27);
   });
 
   it("resolves both kebab-case and snake_case forms of each alias", () => {

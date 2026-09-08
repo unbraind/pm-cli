@@ -21,7 +21,7 @@ agent can rebuild the full situation from it alone.
 | ---- | ------------------------------------- | --------- | ------------------------------ |
 | 0    | This file                             | ~650 tok  | Always.                        |
 | 1    | `pm context --limit 10`               | ~2.1k     | Orient in an existing project. |
-| 1    | `pm search "<terms>" --limit 10`      | ~0.5-1k   | Before creating anything.      |
+| 1    | `pm search "<terms>" --limit 10`      | ~0.5-1k   | Before creating anything; mode is resolved by `search.default_mode` (hybrid when semantic search is configured). |
 | 2    | `pm guide <topic> --depth brief`      | ~0.6-1k   | An unfamiliar family.          |
 | 3    | `references/*.md` below               | ~0.3-1k   | Procedure detail.              |
 
@@ -46,7 +46,7 @@ pm guide commands --depth brief
 
 ```bash
 pm context --limit 10
-pm search "<request keywords>" --limit 10
+pm search "<request keywords>" --limit 10   # mode_source in the result tells you whether hybrid or keyword ran
 pm list --status open --limit 20 --brief
 # reuse if it exists; otherwise create with lineage
 pm create --create-mode progressive \

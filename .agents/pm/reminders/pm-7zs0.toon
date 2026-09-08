@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-09-08T06:09:33.842Z"
+updated_at: "2026-09-08T13:32:17.395Z"
 reminders[1]{at,text}:
   "2026-08-30T06:00:00.000Z",Verify the next eligible daily cut contains main 57d4a074 or a descendant and advances tag GitHub Release npm npx bunx analyzers Sentry telemetry and queue evidence then rearm
 author: maintainer-agent
@@ -15,6 +15,7 @@ acceptance_criteria: "After each merge to main, the next daily release tags vYYY
 parent: pm-u9d0
 risk: low
 confidence: high
+expected_result: "After each merge to main the next daily release tags a new date version and advances npm latest, and any discrepancy is triaged the same day."
 dependencies[10]:
   - id: pm-7n5a
     kind: related

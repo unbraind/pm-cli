@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[6]: "area:sdk","area:storage",federation,long-horizon,multi-agent,scale
 created_at: "2026-07-25T12:30:34.401Z"
-updated_at: "2026-08-15T14:18:00.369Z"
+updated_at: "2026-09-08T13:33:24.576Z"
 author: "harness:claude-code"
 estimated_minutes: 1200
 acceptance_criteria: "A workspace declares peers by repository coordinate, and cross-workspace references are first-class identifiers distinguishable from local ones in every projection; Peer state is a locally cached, integrity-verified snapshot of the peer's public projection, and every read reports the snapshot's age; Aggregation across peers is a bounded read-side fold that honors the token budget and reports partial results with named missing peers rather than failing; Writes to a peer workspace are impossible through federation, asserted by a test that attempts every mutation path against a federated reference; A cross-workspace dependency cycle is detected and reported as a fact with the participating workspaces named, never as a crash or a silent drop; An unreachable peer degrades to last-known state with explicit staleness, and a workspace with no peers behaves exactly as it does today, proven by snapshot; Federated identifiers survive merge, history replay, and format migration with the same guarantees as local identifiers"
@@ -18,6 +18,7 @@ outcome: "An organization runs one tracker per repository and still gets program
 parent: pm-o2kc
 risk: high
 confidence: 50
+expected_result: A workspace declares peers by repository coordinate and resolves cross-workspace references and aggregated bounded context from integrity-verified cached snapshots.
 dependencies[16]:
   - id: pm-3oqjnc
     kind: related

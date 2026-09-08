@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: data-quality,governance,metadata,normalization,relevance,tracker-governance
 created_at: "2026-07-26T10:59:12.234Z"
-updated_at: "2026-07-29T04:34:56.161Z"
+updated_at: "2026-09-08T13:33:01.019Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "Every field dominated by a repeated literal is classified: the value is either replaced with a recoverable fact, cleared so the field is honestly empty, or retained with a recorded rationale that says explicitly it is an archival marker rather than an observation; Clearing and reclassification are ordinary history-recorded mutations, so the original values stay recoverable and the change is explainable; A validation surface reports fields whose values are dominated by a single literal beyond a declared threshold, so this condition is detectable in future rather than discovered by census; Completeness reporting distinguishes a field that is populated from a field that is populated with distinct meaningful values; The relevance engine's signal set is checked against the result, so no scoring signal depends on a field the pass emptied or reclassified; The pass runs under the release-attribution protocol so it produces no unintended changelog movement"
@@ -19,6 +19,7 @@ why_now: "The relevance engine is being extended with more metadata signals now,
 parent: pm-33cw
 risk: medium
 confidence: 85
+expected_result: "Every placeholder-dominated field on terminal items is replaced with a recovered fact, honestly cleared, or retained with a recorded archival rationale."
 dependencies[10]{id,kind,created_at}:
   pm-33cw,implements,"2026-07-26T10:59:12.234Z"
   pm-4k6b,related,"2026-07-26T10:59:12.234Z"

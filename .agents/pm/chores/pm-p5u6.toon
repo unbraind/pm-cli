@@ -6,13 +6,14 @@ status: open
 priority: 2
 tags[5]: "area:cli",dx,perf,scripts,tech-debt
 created_at: "2026-07-06T09:04:36.860Z"
-updated_at: "2026-09-08T06:09:37.560Z"
+updated_at: "2026-09-08T13:32:16.724Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: compile-cache dir bounded (stale entries pruned or non-current versions dropped); every mkdtemp-using script cleans its sandbox via try/finally + signal handlers; aborted smoke runs leave no >100MB residue in /tmp
 parent: pm-u9d0
 risk: low
 confidence: high
+expected_result: "The Node compile cache stays bounded and every smoke or dogfood sandbox cleans itself up on failure, leaving no large residue in the temp directory."
 dependencies[3]:
   - id: pm-j8vq
     kind: related

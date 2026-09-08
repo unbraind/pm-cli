@@ -6,13 +6,14 @@ status: open
 priority: 2
 tags[7]: agent-ux,"area:cli","area:contracts",completion,internal-command,simplification,token-efficiency
 created_at: "2026-07-18T14:04:52.766Z"
-updated_at: "2026-09-05T16:52:15.011Z"
+updated_at: "2026-09-08T13:32:23.037Z"
 author: codex-ecosystem-planner
 estimated_minutes: 120
 acceptance_criteria: "Default pm --help and compact contracts do not list completion-statuses, completion-tags, or completion-types; generated bash/zsh/fish completion still resolves runtime statuses, tags, and types; an explicit internal or completion-plumbing discovery path remains testable; byte-for-byte completion behavior and exit semantics are preserved; snapshots, contracts, docs, and token-budget baselines prove zero feature loss and reduced default surface."
 parent: pm-n7rr
 risk: low
 confidence: high
+expected_result: "The completion helper entrypoints disappear from default help and compact contracts while generated shell completion keeps resolving runtime statuses, tags and types."
 dependencies[7]:
   - id: pm-e2bq
     kind: related

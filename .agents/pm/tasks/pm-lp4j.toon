@@ -6,13 +6,14 @@ status: open
 priority: 2
 tags[4]: agent-ux,"area:cli",internal-command,simplification
 created_at: "2026-07-06T22:23:03.453Z"
-updated_at: "2026-08-01T09:56:19.156Z"
+updated_at: "2026-09-08T13:32:50.859Z"
 author: codex
 estimated_minutes: 120
 acceptance_criteria: test-runs-worker is hidden from default pm --help and from default contracts summaries; an explicit internal/plumbing discovery path remains for the worker when needed by test-run orchestration; no user-facing feature is removed; contracts/completions/docs/tests are updated so the worker cannot reappear as a canonical top-level command.
 parent: pm-n7rr
 risk: low
 confidence: high
+expected_result: test-runs-worker is absent from default help and contracts while an explicit plumbing path keeps it invocable for orchestration.
 dependencies[4]:
   - id: pm-oslr
     kind: related

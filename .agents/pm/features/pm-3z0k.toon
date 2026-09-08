@@ -6,13 +6,14 @@ status: open
 priority: 3
 tags[3]: governance,history,immutable-record
 created_at: "2026-07-06T23:19:12.124Z"
-updated_at: "2026-08-24T14:26:38.503Z"
+updated_at: "2026-09-08T13:33:23.699Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "attest export produces a documented, versioned bundle covering all item and workspace history streams with a workspace rollup digest; verify against a bundle detects any post-export stream rewrite and names the diverged streams; verify runs read-only with no locks and works on a bare clone; compact/redact/repair produce lineage-visible digest transitions (tested); SDK exposes export/verify primitives with reference docs; bundle stays small (KBs, independent of workspace size beyond stream count)"
 parent: pm-o2kc
 risk: low
 confidence: medium
+expected_result: "A detached proof bundle exports for every history stream and verifies standalone on a bare clone, naming any stream rewritten after export."
 dependencies[10]:
   - id: pm-9yfo
     kind: related

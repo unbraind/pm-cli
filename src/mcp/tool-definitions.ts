@@ -283,7 +283,7 @@ const RAW_TOOLS: ToolDefinition[] = [
     description:
       "Search pm items with keyword, semantic, or hybrid search. " +
       "Defaults to a compact projection for token efficiency. " +
-      "Pass options.mode=keyword|semantic|hybrid, options.limit=N to cap hits, " +
+      "Pass options.mode=keyword|semantic|hybrid (default follows search.default_mode: auto runs hybrid when semantic search is configured and runnable, else keyword; the result reports mode_source), options.limit=N to cap hits, " +
       "options.status='all' for no lifecycle restriction, " +
       "options.fields='id,title,score' for a custom projection, or options.full=true for full item bodies (can be large). " +
       "The result echoes the applied filters and projection mode in query_summary.",

@@ -6,13 +6,14 @@ status: open
 priority: 2
 tags[5]: agent-ux,"area:cli","area:sdk",composability,scale
 created_at: "2026-07-25T17:49:14.861Z"
-updated_at: "2026-08-17T10:03:26.480Z"
+updated_at: "2026-09-08T13:32:35.105Z"
 author: "harness:claude-code"
 estimated_minutes: 600
 acceptance_criteria: "Every row-producing read (list, search, context, next, activity, graph, aggregate, deps) supports line-delimited row output through one contract-declared mode with both existing spellings preserved as aliases; rows are produced incrementally through an SDK iterator path, proven by a bounded-heap test over a large synthetic workspace and an early-termination test asserting the producer stops when the consumer closes the pipe; envelope metadata (count, cursor, truncation) is emitted as a final trailer record carrying a declared discriminator key so streams stay self-describing and resumable via --after; EPIPE is handled silently with the exit code declared by the pm-psy1 scripting contract; the row schema per surface is contract-declared and drift-gated; docs carry worked jq and xargs pipelines against a million-item workspace"
 parent: pm-9rxu
 risk: medium
 confidence: high
+expected_result: "Every row-producing read streams line-delimited rows incrementally in constant memory through one contract-declared mode, with a self-describing trailer and correct early termination."
 dependencies[11]{id,kind,created_at}:
   pm-5gf0xf,related,"2026-07-25T17:49:14.861Z"
   pm-801d,related,"2026-07-25T17:49:14.861Z"

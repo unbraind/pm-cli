@@ -6,13 +6,14 @@ status: open
 priority: 2
 tags[7]: "area:sdk",attestation,context-management,determinism,eval,provenance,rl
 created_at: "2026-07-28T10:05:39.511Z"
-updated_at: "2026-09-08T05:58:07.746Z"
+updated_at: "2026-09-08T13:32:19.613Z"
 author: "harness:claude-code"
 estimated_minutes: 600
 acceptance_criteria: "The same recorded state, token budget and scoring version produce a byte-identical context assembly, proven by a determinism test and a deliberate-nondeterminism negative control; An assembly envelope names the point-in-time anchor, the scoring version, the token budget and the candidate-set filters that produced it; An assembly can be replayed later from its declared inputs and shown to match what the record supported at that anchor; A compact digest over the assembly and its declared inputs is independently verifiable against history without trusting the producer; Attestation is opt-in per call or per workspace and its cost is a by-product of an assembly that already ran, with the default read path measurably unchanged; Scoring changes bump a declared scoring version so an older attested assembly is never silently reinterpreted under newer scoring"
 parent: pm-9rxu
 risk: high
 confidence: 72
+expected_result: "A context assembly names the inputs that produced it, reproduces byte-identically from them, and can be verified later, giving reads the same standing as mutations."
 dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-3z0k,related,"2026-07-28T10:05:39.511Z","harness:claude-code","cli:create:dep",detected
   pm-4k6b,related,"2026-07-28T10:05:39.511Z","harness:claude-code","cli:create:dep",detected

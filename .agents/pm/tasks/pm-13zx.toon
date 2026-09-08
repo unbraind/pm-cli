@@ -6,16 +6,17 @@ status: open
 priority: 3
 tags[4]: benchmarking,code-quality,deepsource,performance
 created_at: "2026-07-14T22:42:23.658Z"
-updated_at: "2026-07-26T05:55:14.585Z"
+updated_at: "2026-09-08T13:33:42.933Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "All 36 performance findings dispositioned: real wins land as fixes benchmarked against the pm-mi2x scale harness / CodSpeed benches when on hot paths; non-issues suppressed with rationale; category reads 0"
 parent: pm-vlnc
 risk: low
 confidence: medium
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-87bu,blocked_by,"2026-07-14T22:42:23.658Z",null,null
-  pm-9rxu,related,"2026-07-14T22:42:23.658Z",null,null
-  pm-o87av6,related,"2026-07-24T23:53:53.540Z",null,null
-  pm-vlnc,implements,"2026-07-26T05:55:14.347Z",null,null
+expected_result: "All thirty-six DeepSource performance findings are fixed with benchmarks or suppressed with rationale, and the category reads zero."
+dependencies[4]{id,kind,created_at}:
+  pm-87bu,blocked_by,"2026-07-14T22:42:23.658Z"
+  pm-9rxu,related,"2026-07-14T22:42:23.658Z"
+  pm-o87av6,related,"2026-07-24T23:53:53.540Z"
+  pm-vlnc,implements,"2026-07-26T05:55:14.347Z"
 body: ""

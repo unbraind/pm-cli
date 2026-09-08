@@ -117,7 +117,7 @@
           "bytes_per_row": 202.31,
           "optimized_walk_bytes": 453791,
           "repeated_metadata_control_bytes": 509636,
-          "unbounded_single_call_bytes": 1890494,
+          "unbounded_single_call_bytes": 1890515,
           "optimized_to_unbounded_ratio": 0.24
         }
       }

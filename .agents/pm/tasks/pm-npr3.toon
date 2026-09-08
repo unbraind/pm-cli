@@ -6,13 +6,14 @@ status: open
 priority: 3
 tags[3]: "area:cli","area:schema",cli-simplification
 created_at: "2026-07-06T21:57:44.898Z"
-updated_at: "2026-07-31T06:08:56.682Z"
+updated_at: "2026-09-08T13:33:31.960Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "ADR pm-pbyu's grammar table gains an explicit mapping for init, config, schema, and profile (kept, merged, or verb-moved) with rationale; overlaps are resolved on paper (schema presets vs profile archetypes vs config keys); if any spelling moves, follow-up wiring items are filed under pm-n7rr with alias shims per pm-0z7n"
 parent: pm-n7rr
 risk: medium
 confidence: medium
+expected_result: "The grammar ADR maps init, config, schema and profile explicitly with rationale, and any moved spelling has a filed wiring item with an alias shim."
 dependencies[6]:
   - id: pm-kl19
     kind: related

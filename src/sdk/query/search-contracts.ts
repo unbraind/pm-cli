@@ -295,6 +295,68 @@ export function resolveSearchMaxResults(settings: unknown): number {
   return 50;
 }
 
+/** Restricts the declared default search mode: a concrete mode pins it, `auto` derives it from workspace state. */
+export type SearchDefaultMode = "auto" | SearchMode;
+
+/** Every value `search.default_mode` accepts, in declaration order. */
+export const SEARCH_DEFAULT_MODE_VALUES: readonly SearchDefaultMode[] = [
+  "auto",
+  "keyword",
+  "semantic",
+  "hybrid",
+];
+
+/** Names which layer chose the effective search mode for one query. Verbose responses always carry it; compact responses carry it only for `settings`, since `explicit` is the caller's own choice and `auto` is the documented default. */
+export type SearchModeSource = "explicit" | "settings" | "auto";
+
+/** Documents the effective search mode together with the layer that chose it. */
+export interface SearchModeResolution {
+  /** The mode the query will execute in before any runtime fallback. */
+  mode: SearchMode;
+  /** `explicit` when the caller passed a mode, `settings` when `search.default_mode` pins one, `auto` when derived from workspace state. */
+  source: SearchModeSource;
+}
+
+/** Resolve the declared `search.default_mode` setting, falling back to `auto` for absent or invalid values. */
+export function resolveSearchDefaultModeSetting(
+  settings: unknown,
+): SearchDefaultMode {
+  const candidate = (settings as { search?: { default_mode?: unknown } })
+    .search?.default_mode;
+  if (typeof candidate !== "string") {
+    return "auto";
+  }
+  const normalized = candidate.trim().toLowerCase();
+  return SEARCH_DEFAULT_MODE_VALUES.includes(normalized as SearchDefaultMode)
+    ? (normalized as SearchDefaultMode)
+    : "auto";
+}
+
+/**
+ * Resolve the mode a search executes in. An explicit request always wins and is
+ * validated by {@link parseSearchMode}; otherwise a concrete `search.default_mode`
+ * pins the answer; otherwise `auto` picks `hybrid` exactly when the semantic path
+ * is explicitly configured and runnable, and `keyword` in every other case, so a
+ * workspace that built a vector index is searched with it without any flag.
+ */
+export function resolveEffectiveSearchMode(params: {
+  requested: unknown;
+  settings: unknown;
+  semanticRunnable: boolean;
+}): SearchModeResolution {
+  if (typeof params.requested === "string" && params.requested.trim().length > 0) {
+    return { mode: parseSearchMode(params.requested), source: "explicit" };
+  }
+  const declared = resolveSearchDefaultModeSetting(params.settings);
+  if (declared !== "auto") {
+    return { mode: declared, source: "settings" };
+  }
+  return {
+    mode: params.semanticRunnable ? "hybrid" : "keyword",
+    source: "auto",
+  };
+}
+
 /** Resolve the configured minimum result score. */
 export function resolveSearchScoreThreshold(settings: unknown): number {
   const candidate = (settings as { search?: { score_threshold?: unknown } })

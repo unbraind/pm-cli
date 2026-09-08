@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: agent-ux,"area:cli","area:contracts",refactor,simplification
 created_at: "2026-07-05T04:51:21.783Z"
-updated_at: "2026-09-08T06:01:12.201Z"
+updated_at: "2026-09-08T13:24:16.344Z"
 author: maintainer-agent
 estimated_minutes: 2400
 acceptance_criteria: Top-level command list fits one help screen (~15 nouns); every pre-existing command spelling still works (hidden alias shims + deprecation notice); contracts/MCP/completions/docs regenerated with zero feature regression; agent token cost of 'pm --help' + contracts measurably reduced; all existing tests pass unchanged (aliases keep old spellings valid)
@@ -17,6 +17,7 @@ why_now: "The command surface has grown command-by-command to ~60 top-level entr
 parent: pm-mpbb
 risk: medium
 confidence: high
+expected_result: "An agent reads one help screen of nouns, drills into a noun for its verbs, and completes every workflow with fewer tokens per finished task than today, while every old spelling still resolves."
 dependencies[21]:
   - id: pm-usfg
     kind: related

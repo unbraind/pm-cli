@@ -6,13 +6,14 @@ status: open
 priority: 1
 tags[7]: "area:governance","area:sdk",assurance,configurability,enforcement,measurement-ratchet,universal
 created_at: "2026-08-10T20:55:05.456Z"
-updated_at: "2026-08-10T20:58:39.520Z"
+updated_at: "2026-09-08T13:32:00.045Z"
 author: "harness:claude-code"
 estimated_minutes: 2400
 acceptance_criteria: "The full assurance model is declarable as workspace data through pm commands, with no repository code required to add, retune, scope, or retire a bound; The SDK exposes the primitives so the CLI, MCP, and any embedding host evaluate identical semantics, and the CLI adds no assurance logic of its own; This repository dogfoods the result: every bespoke gate script is either retired onto the primitives or carries a recorded disposition explaining why it cannot be; A gate's identity is a declared id in the registry, never a workflow step title, and the inventory is derived from the registry rather than from prose pattern-matching; Presets make the model usable on a new project in one command for at least software-delivery, research, agent-environment, and operations shapes"
 parent: pm-33cw
 risk: medium
 confidence: 80
+expected_result: "Measurements, invariants and gates are workspace data evaluated identically by CLI, MCP and SDK, and this repository runs its quality contract with no bespoke gate scripts."
 dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-33cw,implements,"2026-08-10T20:55:05.456Z","harness:claude-code","cli:create:dep",detected
   pm-4vz6mz,related,"2026-08-10T20:55:05.456Z","harness:claude-code","cli:create:dep",detected

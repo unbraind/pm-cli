@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:governance","area:graph",audit,data-quality,relationships,validation
 created_at: "2026-07-13T21:59:02.798Z"
-updated_at: "2026-08-01T20:25:29.567Z"
+updated_at: "2026-09-08T13:32:04.878Z"
 author: codex-root
 estimated_minutes: 480
 acceptance_criteria: "Audits validate registered kinds, endpoints, direction and inverse rules, payload schema, cardinality, canonical aliases, duplicate identity, provenance, and snapshot consistency; Cycle checks operate only over declared order-bearing kinds and remain separate from associative strongly connected component analysis; Coverage profiles vary by item type, lifecycle state, project profile, age, and role; roots, archives, decisions, reminders, and scratch work can be explicitly valid isolates; Reports include counts, rates, severity, deterministic bounded samples, cursors, change since baseline, and machine-readable issue and remediation codes; Dry-run plans propose exact add, remove, retype, supersede, waive, or investigate operations with confidence and source evidence; no auto-fix invents an edge; Active and terminal remediation are separated; closed-item changes require dedicated changelog-safe batches and immutable audit history; Health, validate, stats, aggregate, and package audit surfaces reuse one SDK policy and finding contract with token-efficient default output"
@@ -19,6 +19,7 @@ why_now: "Current validation covers basic dependency integrity but the all-statu
 parent: pm-96h7
 risk: medium
 confidence: high
+expected_result: "Graph governance reports semantic edge errors, order-bearing cycles, coverage by type and lifecycle, isolates and stale links, and emits machine-executable remediation plans."
 dependencies[7]{id,kind,created_at}:
   pm-33cw,related,"2026-07-13T21:59:02.798Z"
   pm-4jqm,blocked_by,"2026-07-13T21:59:02.798Z"

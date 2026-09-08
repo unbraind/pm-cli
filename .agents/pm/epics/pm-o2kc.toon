@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: "area:history","area:storage",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:10.941Z"
-updated_at: "2026-08-22T07:28:13.340Z"
+updated_at: "2026-09-08T13:24:26.670Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "History chain integrity gates stay green; gc, compact, redact, and repair flows verified on large workspaces; no open data-loss classes."
@@ -17,6 +17,7 @@ why_now: "The workspace already contains 53,059 immutable entries across 2,548 s
 parent: pm-doxj
 risk: low
 confidence: high
+expected_result: "History chains verify on every workspace size, maintenance flows are safe on large trackers, and no known class of data loss remains open."
 dependencies[5]:
   - id: pm-2sbj8p
     kind: related

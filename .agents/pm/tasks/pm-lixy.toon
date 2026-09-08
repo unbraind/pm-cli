@@ -6,13 +6,14 @@ status: open
 priority: 2
 tags[4]: context,eval,quality-gate,relevance
 created_at: "2026-07-06T23:50:40.432Z"
-updated_at: "2026-07-31T00:31:50.838Z"
+updated_at: "2026-09-08T13:32:57.353Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "Corpus includes a tiny scratch workspace, a real-shaped medium workspace, synthetic pm-mi2x scale fixtures, and continuity cases from pm-bwyw; each scenario records focus/query/claim state, expected item grades, token budget, and rationale; corpus format is documented and reviewable; phase-1 judgments baseline current structural context behavior before pm-4k6b changes ranking."
 parent: pm-atfm
 risk: medium
 confidence: medium
+expected_result: "A graded scenario corpus spanning scratch, medium, scale and returning-agent cases defines what good context assembly means and baselines current behaviour."
 dependencies[6]:
   - id: pm-bwyw
     kind: related

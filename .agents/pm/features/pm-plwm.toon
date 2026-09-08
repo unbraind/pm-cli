@@ -6,13 +6,14 @@ status: open
 priority: 3
 tags[5]: "area:cli","area:search",composability,pm-sdk,scale
 created_at: "2026-07-06T23:09:13.604Z"
-updated_at: "2026-09-08T06:01:28.790Z"
+updated_at: "2026-09-08T13:33:21.919Z"
 author: maintainer-agent
 estimated_minutes: 360
 acceptance_criteria: "pm list and pm search accept a predicate expression (--where or extended inline field:value mini-language) supporting AND/OR/NOT grouping, comparison operators over built-in and custom fields (priority<=1, estimated_minutes>60, updated_at ranges), and tag membership; evaluation happens inside the read path against the persistent derived index (pm-801d) with cursor pagination (pm-dfg0) so output stays O(result); works with --format ndjson for downstream jq/grep; the same predicate primitive is exposed in the public SDK query API; parse errors are agent-friendly (position + expected tokens); no new top-level noun — flag placement per ADR pm-pbyu; grammar documented and contract-listed."
 parent: pm-9rxu
 risk: medium
 confidence: medium
+expected_result: "pm list and pm search accept a predicate expression evaluated inside the indexed read path, keeping complex selections proportional to the result at a million items."
 dependencies[6]:
   - id: pm-801d
     kind: blocked_by

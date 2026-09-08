@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: agent-loop,measurement,self-improvement,strategy
 created_at: "2026-08-05T18:09:34.908Z"
-updated_at: "2026-09-08T06:01:44.019Z"
+updated_at: "2026-09-08T13:24:15.493Z"
 author: "harness:claude-code"
 estimated_minutes: 2400
 acceptance_criteria: "A declared cycle exists — observe, propose, gate, land, re-measure — whose every turn is a tracked item carrying a receipt naming the metric, the baseline, and the post-change value; Candidate selection is derived from evidence already in the record rather than from filing recency; Every shipped cycle can answer, from tracked data alone, whether pm got better and by how much; The loop composes the existing measurement surfaces rather than duplicating them: the population ratchet, the defect-recurrence gate, the escape ratchet, the dogfood ratchet, trajectory projection, and the token corpus"
@@ -17,6 +17,7 @@ why_now: "The tracker already records recurrence, escape, output-cost, graph, re
 parent: pm-doxj
 risk: medium
 confidence: medium
+expected_result: "pm selects its own next improvement from recorded evidence and proves, from tracked data alone, whether and by how much the declared metric moved after the change landed."
 dependencies[21]{id,kind,created_at,author,source_kind,author_source}:
   pm-1qkivy,blocked_by,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected
   pm-2vs1za,related,"2026-08-05T18:10:19.487Z","harness:claude-code","cli:update:dep",detected

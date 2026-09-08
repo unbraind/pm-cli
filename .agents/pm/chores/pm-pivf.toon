@@ -6,13 +6,14 @@ status: open
 priority: 3
 tags[3]: metadata,tracker-governance,validate
 created_at: "2026-07-04T19:01:47.101Z"
-updated_at: "2026-08-03T20:37:43.701Z"
+updated_at: "2026-09-08T13:33:29.270Z"
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: "pm validate reports duplicate_issue_codes_count: 0 (or the GH-209 pair is exempted by an agreed follow-up rule with a spec); changelog:pm:check stays green in the same change; no closed item silently migrates release buckets.; The by-design exemption reads the typed derivation channel, not only the scalar parent: within a code group an item carrying a discovered_from, supersedes, or incident_from row that points at another item in the same group is dropped from collision detection, resolved against the same-code group only, exactly as the existing parent rule is; A negative control proves the rule is not over-broad: a same-code pair with no edge is still reported, and a same-code pair joined only by a related row is still reported, because related asserts similarity and not lineage; One upstream issue may map to more than one item when the report surfaced more than one defect, expressed as a typed relation between the items rather than tolerated by naming, and the duplicate-code check passes on that structure"
 parent: pm-33cw
 risk: low
 confidence: high
+expected_result: "pm validate reports zero duplicate issue codes, with the GH-209 pair exempted by a typed derivation rule, and no closed item moves release buckets."
 dependencies[7]:
   - id: pm-wrbe
     kind: blocked_by

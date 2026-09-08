@@ -6,13 +6,14 @@ status: open
 priority: 3
 tags[3]: agent-ux,"area:cli",cli-simplification
 created_at: "2026-07-06T21:57:38.146Z"
-updated_at: "2026-07-31T06:08:53.373Z"
+updated_at: "2026-09-08T13:33:32.819Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: Grouped-count queries are reachable from a consolidated noun (list or ops stats) with identical output fields; aggregate keeps working as a hidden alias emitting the one-line migration hint per ADR pm-pbyu; contracts/completions/docs/MCP regenerated; spelling-parity spec covers old vs new invocation
 parent: pm-n7rr
 risk: medium
 confidence: medium
+expected_result: "Grouped counts are reachable from a consolidated noun with identical fields, and aggregate keeps working as a hidden alias with a migration hint."
 dependencies[6]:
   - id: pm-pfqi
     kind: related

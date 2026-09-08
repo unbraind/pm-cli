@@ -47,6 +47,7 @@ import type {
   ItemTypeDefinition,
   PmSettings,
   GovernancePreset,
+  SearchDefaultMode,
   SearchMutationRefreshPolicy,
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
@@ -314,6 +315,20 @@ function normalizeSearchMutationRefreshPolicy(
     return value;
   }
   return SETTINGS_DEFAULTS.search.mutation_refresh_policy;
+}
+
+function normalizeSearchDefaultMode(value: unknown): SearchDefaultMode {
+  if (
+    value === "auto" ||
+    value === "keyword" ||
+    value === "semantic" ||
+    value === "hybrid"
+  ) {
+    return value;
+  }
+  // Mirrors SETTINGS_DEFAULTS.search.default_mode; the key is optional on the
+  // type so existing settings literals stay valid, hence the literal here.
+  return "auto";
 }
 
 function normalizeSearchQueryExpansionEnabled(value: unknown): boolean {
@@ -1042,6 +1057,7 @@ function buildSearchSettings(
   return {
     ...defaults.search,
     ...settings.search,
+    default_mode: normalizeSearchDefaultMode(settings.search?.default_mode),
     mutation_refresh_policy: normalizeSearchMutationRefreshPolicy(
       settings.search?.mutation_refresh_policy,
     ),
@@ -1445,6 +1461,7 @@ function orderSerializedSettingsSections(
     "embedding_timeout_ms",
     "scanner_max_batch_retries",
     "provider",
+    "default_mode",
     "mutation_refresh_policy",
     "query_expansion",
     "rerank",
@@ -1578,6 +1595,7 @@ function buildSerializedSearchSettings(
   return {
     ...SETTINGS_DEFAULTS.search,
     ...baseSettings.search,
+    default_mode: normalizeSearchDefaultMode(baseSettings.search?.default_mode),
     mutation_refresh_policy: normalizeSearchMutationRefreshPolicy(
       baseSettings.search?.mutation_refresh_policy,
     ),

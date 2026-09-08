@@ -6,13 +6,14 @@ status: open
 priority: 1
 tags[2]: "area:quality",refactor
 created_at: "2026-07-11T10:47:52.058Z"
-updated_at: "2026-08-04T09:18:07.013Z"
+updated_at: "2026-09-08T13:32:03.599Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "main.ts, extensions/loader.ts, sdk/runtime.ts, register-mutation.ts, completion.ts each at or under 80% of the 3400 effective-line gate; splits are behavior-preserving (byte-identical outputs on goldens, contract tests green); vitest.config mirrored test paths updated; jscpd clean; coverage gate holds 100%; no decomposition of files fenced to other owners"
 parent: pm-92if
 risk: medium
 confidence: high
+expected_result: The five near-cap infrastructure files sit at or under eighty percent of the LOC gate through behaviour-preserving splits with all gates green.
 dependencies[3]{id,kind,created_at}:
   pm-jt3b,related,"2026-07-11T10:47:52.058Z"
   pm-usfg,related,"2026-07-11T10:47:52.058Z"

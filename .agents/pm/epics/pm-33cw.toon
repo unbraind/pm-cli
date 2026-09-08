@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:governance","area:health","area:validate",backlog,living-map,pm-cli
 created_at: "2026-07-04T19:46:21.526Z"
-updated_at: "2026-08-22T07:28:10.551Z"
+updated_at: "2026-09-08T13:24:29.162Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "pm validate/health warnings each map to an open remediation item; metadata-coverage predicates + issue-code + content-field governance stay accurate (no false positives, no missed real gaps); remediation registry keeps every finding machine-executable."
@@ -17,6 +17,7 @@ why_now: "The complete corpus is structurally sound but still carries 295 legacy
 parent: pm-doxj
 risk: low
 confidence: high
+expected_result: "Every validate and health warning maps to an open remediation owner, and governance predicates report no false positives and miss no real gap."
 dependencies[3]{id,kind,created_at}:
   pm-bzmeaa,related,"2026-07-24T23:54:43.262Z"
   pm-rtn5h6,related,"2026-07-24T23:54:43.262Z"

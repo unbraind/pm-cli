@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: "area:mcp","area:sdk",interoperability,long-horizon,roadmap,standards
 created_at: "2026-08-28T20:21:17.896Z"
-updated_at: "2026-08-28T20:21:17.896Z"
+updated_at: "2026-09-08T13:24:39.584Z"
 deadline: "2027-12-31T00:00:00.000Z"
 author: "harness:codex"
 estimated_minutes: 480
@@ -14,6 +14,7 @@ acceptance_criteria: Every official roadmap priority has one canonical owner and
 parent: pm-5k4v
 risk: high
 confidence: medium
+expected_result: "Each post-2026-07-28 MCP capability has one owner, an upstream evidence link, a public SDK contract before adapters, and released-consumer proof, with proposals never presented as conformance."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-rs9vry,discovered_from,"2026-08-28T20:21:17.896Z","harness:codex","cli:create:dep",detected
   pm-t4d7nz,implements,"2026-08-28T20:21:17.896Z","harness:codex","cli:create:dep",detected

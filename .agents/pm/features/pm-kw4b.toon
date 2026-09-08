@@ -6,13 +6,14 @@ status: open
 priority: 2
 tags[4]: benchmark,evaluation,marketing,proof
 created_at: "2026-07-13T09:32:20.341Z"
-updated_at: "2026-09-08T06:32:41.296Z"
+updated_at: "2026-09-08T13:32:14.791Z"
 author: maintainer-agent
 estimated_minutes: 1800
 acceptance_criteria: "Six scenario families published: orientation after session reset, next-work selection, duplicate avoidance, budgeted handoff (1k/2k/4k tokens), evidence-backed closure, multi-worker concurrency; baselines include no-context-file, static AGENTS.md, raw task dump, pm list, pm context, pm next, pm brief, and a custom scorer (never only a strawman); deterministic metrics first (nDCG, reciprocal rank, required recall, continuity coverage, token-budget adherence, per-signal attribution — all already in the SDK); end-to-end metrics reported per model/version/client/pm-version/profile/budget/date and never collapsed into one vague claim; public /context-bench methodology + results pages and a repository; CI badge; launch claim limited to what the published corpus supports (e.g. required-context recall and budget thresholds met), no productivity percentages"
 parent: pm-wjfa
 risk: medium
 confidence: medium
+expected_result: "A public, reproducible context-quality benchmark publishes six scenario families, honest baselines and results a third party can re-run."
 dependencies[5]{id,kind,created_at}:
   pm-atfm,blocked_by,"2026-07-13T09:32:20.341Z"
   pm-lixy,related,"2026-07-13T09:32:20.341Z"

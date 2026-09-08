@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:cli","area:storage",initiative,performance,scale
 created_at: "2026-07-06T21:24:01.069Z"
-updated_at: "2026-08-07T17:13:56.196Z"
+updated_at: "2026-09-08T13:24:43.321Z"
 author: maintainer-agent
 estimated_minutes: 4800
 acceptance_criteria: "Benchmark harness proves: context/next/list/search/get p95 < 1s and default output < 5k tokens on a synthetic 1M-item workspace; 1000-agent parallel claim/update stress runs with zero corruption, zero history drift, bounded retry latency; all changes behind format_version gating with green migration tests; zero feature or behavior regression at small scale"
@@ -17,6 +17,7 @@ why_now: "Read paths are O(workspace) directory scans and outputs are unbounded;
 parent: pm-o2kc
 risk: high
 confidence: medium
+expected_result: "On a synthetic million-item workspace every context, next, list, search and get call answers in under a second within a bounded token budget, and a thousand-agent stress run corrupts nothing."
 dependencies[7]{id,kind,created_at}:
   pm-5t33or,related,"2026-07-24T23:54:38.949Z"
   pm-o87av6,related,"2026-07-24T23:54:38.949Z"

@@ -977,6 +977,140 @@ describe("runSearch", () => {
     }
   });
 
+  it("runs a bare search in hybrid mode when the stored settings name the active provider and reports mode_source (pm-n8a6e7)", async () => {
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({ search: { provider: "openai" } }),
+    );
+    seedSingleTokenItem({
+      id: "pm-auto-hybrid",
+      title: "token auto hybrid",
+      description: "token description",
+      tags: ["token"],
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = makeEmbeddingAndVectorSearchFetch({
+      vectorResult: [{ id: "pm-auto-hybrid", score: 0.9 }],
+    });
+    try {
+      const { runSearch } = await import("../../../src/cli/commands/search.js");
+      const auto = await runSearch("token", {}, { path: "/tmp/pm-search" });
+      expect(auto.mode).toBe("hybrid");
+      expect(auto.mode_source).toBe("auto");
+      expect(auto.items.map((entry) => entry.item.id)).toContain("pm-auto-hybrid");
+
+      const explicit = await runSearch(
+        "token",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(explicit.mode).toBe("semantic");
+      expect(explicit.mode_source).toBe("explicit");
+      // Compact responses omit the source when the caller chose the mode.
+      const explicitCompact = await runSearch(
+        "token",
+        { mode: "semantic", compact: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(explicitCompact.mode).toBe("semantic");
+      expect(explicitCompact.mode_source).toBeUndefined();
+
+      const countOnly = await runSearch(
+        "token",
+        { count: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(countOnly.count_only).toBe(true);
+      expect(countOnly.mode).toBe("hybrid");
+      expect(countOnly.mode_source).toBe("auto");
+
+      // Compact responses omit the source for the documented auto default.
+      const compactCount = await runSearch(
+        "token",
+        { count: true, compact: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(compactCount.mode).toBe("hybrid");
+      expect(compactCount.mode_source).toBeUndefined();
+
+      const compactHits = await runSearch(
+        "token",
+        { compact: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(compactHits.mode).toBe("hybrid");
+      expect(compactHits.mode_source).toBeUndefined();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("pins a bare search to keyword when search.default_mode is concrete and never contacts the provider (pm-n8a6e7)", async () => {
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({
+        search: { provider: "openai", default_mode: "keyword" },
+      }),
+    );
+    seedSingleTokenItem({
+      id: "pm-pinned-keyword",
+      title: "token pinned",
+      description: "token description",
+      tags: ["token"],
+    });
+    const fetchMock = vi.fn(async () => {
+      throw new Error("provider must not be called for a pinned keyword default");
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+    try {
+      const { runSearch } = await import("../../../src/cli/commands/search.js");
+      const pinned = await runSearch("token", {}, { path: "/tmp/pm-search" });
+      expect(pinned.mode).toBe("keyword");
+      expect(pinned.mode_source).toBe("settings");
+      expect(pinned.count).toBe(1);
+      expect(fetchMock).not.toHaveBeenCalled();
+      // A pinned mode is the one surprising case, so compact output keeps it.
+      const pinnedCompact = await runSearch(
+        "token",
+        { compact: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(pinnedCompact.mode_source).toBe("settings");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("degrades an auto hybrid default to keyword hits with a fallback warning when the provider fails (pm-n8a6e7)", async () => {
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({ search: { provider: "openai" } }),
+    );
+    seedSingleTokenItem({
+      id: "pm-auto-fallback",
+      title: "token auto fallback",
+      description: "token description",
+      tags: ["token"],
+    });
+    const fetchMock = vi.fn(async () => {
+      throw new Error("connect ECONNREFUSED embedding backend");
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+    try {
+      const { runSearch } = await import("../../../src/cli/commands/search.js");
+      const degraded = await runSearch("token", {}, { path: "/tmp/pm-search" });
+      expect(degraded.mode).toBe("keyword");
+      expect(degraded.mode_source).toBe("auto");
+      expect(degraded.count).toBe(1);
+      expect(
+        degraded.warnings?.some((warning) =>
+          warning.startsWith("search_hybrid_fallback:"),
+        ),
+      ).toBe(true);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("returns deterministic empty semantic and hybrid results for limit=0 without embedding/vector requests", async () => {
     const semanticSettings = makeSemanticSearchSettings();
     const indexedItem = makeItemMetadata({

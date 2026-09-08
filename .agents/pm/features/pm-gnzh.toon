@@ -6,13 +6,14 @@ status: open
 priority: 2
 tags[4]: program,scorecard,security,supply-chain
 created_at: "2026-07-14T22:39:59.630Z"
-updated_at: "2026-08-07T08:08:07.887Z"
+updated_at: "2026-09-08T13:32:45.629Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: Every non-10 Scorecard check has a child item; agent-executable children shipped; human/community-gated children have their gate documented; aggregate score re-measured after each child closes (weekly cron or workflow_dispatch) and progress noted here; program closes when the score is 10.0 or every remaining gap is formally accepted with rationale on this item
 parent: pm-qwoy
 risk: medium
 confidence: high
+expected_result: "Every non-ten Scorecard check has a child item shipped or formally accepted, and the aggregate score is re-measured after each closure until it reads ten or every gap is accepted."
 dependencies[6]{id,kind,created_at}:
   pm-k7dp,related,"2026-07-14T22:39:59.630Z"
   pm-6ixn,related,"2026-07-24T23:53:13.579Z"

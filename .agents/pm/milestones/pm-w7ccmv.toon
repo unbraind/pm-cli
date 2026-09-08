@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: audit,history,"horizon:mid",immutability,integrity,milestone,outcome
 created_at: "2026-07-24T23:43:21.135Z"
-updated_at: "2026-07-29T21:27:59.810Z"
+updated_at: "2026-09-08T13:24:32.938Z"
 deadline: "2027-03-31T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 5400
@@ -20,6 +20,7 @@ why_now: "Workspace-scoped mutations (schema, config, profile, init) still leave
 parent: pm-doxj
 risk: high
 confidence: medium
+expected_result: "Every mutation is an append-only, hash-verifiable, attributable entry that a third party can verify standalone and restore to any version."
 dependencies[17]:
   - id: pm-33cw
     kind: related

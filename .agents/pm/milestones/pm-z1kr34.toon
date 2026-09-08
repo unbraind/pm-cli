@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[10]: "area:concurrency","area:federation",context-management,fleet,"horizon:far",milestone,multi-agent,outcome,roadmap,scale
 created_at: "2026-08-14T14:35:08.974Z"
-updated_at: "2026-08-14T14:35:08.974Z"
+updated_at: "2026-09-08T13:24:51.376Z"
 deadline: "2032-12-31T00:00:00.000Z"
 author: "harness:codex"
 estimated_minutes: 86400
@@ -20,6 +20,7 @@ why_now: Federation allocation and thousand-agent work are individually tracked 
 parent: pm-doxj
 risk: critical
 confidence: low
+expected_result: A reference deployment coordinates a thousand agents across a hundred federated workspaces with no lost acknowledged mutation and bounded context cost at million-item aggregate scale.
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-o87av6,blocked_by,"2026-08-14T14:35:08.974Z","harness:codex","cli:create:dep",detected
   pm-odohgb,blocked_by,"2026-08-14T14:35:08.974Z","harness:codex","cli:create:dep",detected

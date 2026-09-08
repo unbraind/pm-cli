@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: "area:config","area:schema",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:13.016Z"
-updated_at: "2026-08-22T07:28:12.217Z"
+updated_at: "2026-09-08T13:24:27.541Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "Any project archetype can model its domain end-to-end with schema add/remove type, custom statuses, per-type workflows, and config keys without code changes; plan pm-z5nb completed."
@@ -17,6 +17,7 @@ why_now: "The universal-domain milestone and RL/evaluation programme now depend 
 parent: pm-doxj
 risk: low
 confidence: high
+expected_result: "Any project archetype models its domain end to end with runtime schema, statuses, workflows and config keys, with no change to pm core."
 dependencies[4]{id,kind,created_at}:
   pm-pae3wo,related,"2026-07-24T23:54:47.632Z"
   pm-t4d7nz,related,"2026-07-24T23:54:47.632Z"

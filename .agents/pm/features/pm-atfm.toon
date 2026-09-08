@@ -6,13 +6,14 @@ status: open
 priority: 1
 tags[4]: context,quality-gate,relevance,scale
 created_at: "2026-07-06T23:25:57.317Z"
-updated_at: "2026-09-08T06:08:13.064Z"
+updated_at: "2026-09-08T13:31:48.517Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: Golden corpus (one real-shaped and one synthetic pm-mi2x workspace) with graded judgments versioned in-repo; offline runner scores pm context and pm next with rank-aware quality metrics; baseline of the current structural assembler recorded before pm-4k6b lands; CI gate fails on quality regression beyond a documented threshold; harness consumes only public SDK read primitives; documented workflow for adding new judgment cases
 parent: pm-9rxu
 risk: medium
 confidence: medium
+expected_result: A CI gate scores pm context and pm next against graded golden workspaces with rank-aware metrics and fails on a regression beyond a documented threshold.
 dependencies[68]:
   - id: pm-4k6b
     kind: related

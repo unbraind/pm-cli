@@ -6,13 +6,14 @@ status: open
 priority: 3
 tags[4]: governance,pm-cli,quality-gate,self-hosting
 created_at: "2026-07-25T17:49:53.478Z"
-updated_at: "2026-08-01T09:52:03.399Z"
+updated_at: "2026-09-08T13:33:30.937Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "A report derived from the runtime schema and contract tables plus workspace history lists every shipped agent-reachable capability with its last-exercised timestamp in this workspace or never; every never-exercised capability carries a recorded disposition of adopt, cover (named scenario test), or waive (documented reason) on its owning item; a gate fails when a capability is neither exercised nor dispositioned, and the undispositioned set is shrinking-only so a newly shipped capability must arrive with its disposition; the currently-zero set (custom fields, custom statuses, applied profiles, Meeting/Event items, extension-contributed types and relationship kinds) is dispositioned as the first pass; the report is token-budgeted and runnable in CI"
 parent: pm-33cw
 risk: low
 confidence: high
+expected_result: "Every shipped agent-reachable capability is exercised by real tracked work here or carries an adopt, cover or waive disposition, enforced by a gate."
 dependencies[11]{id,kind,created_at}:
   pm-8jdc,related,"2026-07-25T17:49:53.478Z"
   pm-jkjt,related,"2026-07-25T17:49:53.478Z"

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:contracts","area:mcp","area:sdk",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:12.309Z"
-updated_at: "2026-08-25T05:19:22.529Z"
+updated_at: "2026-09-08T13:24:21.029Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: MCP tool surface stays in lockstep with CLI flags via contracts gates; narrow tools cover all frequent operations; zero action-schema drift findings.
@@ -17,6 +17,7 @@ why_now: "CLI grammar consolidation, package-owned commands, output budgets, and
 parent: pm-doxj
 risk: low
 confidence: high
+expected_result: "Every CLI capability is reachable over MCP with zero schema drift, and the server tracks the current protocol through generated, gate-checked contracts."
 dependencies[11]:
   - id: pm-5t33or
     kind: related

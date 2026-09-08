@@ -6,13 +6,14 @@ status: open
 priority: 4
 tags[3]: architecture,"area:storage",long-term
 created_at: "2026-07-06T22:00:10.231Z"
-updated_at: "2026-08-14T14:36:36.661Z"
+updated_at: "2026-09-08T13:24:53.484Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "Exploration outcome is an ADR under pm-m2u1 covering: monorepo multi-tracker layout (several .agents/pm roots), cross-workspace item references/dependencies, org-level read aggregation (context/list/search across workspaces), and identity/claim semantics across workspaces; explicitly decides what is out of scope; follow-up implementation items filed only after the ADR is accepted"
 parent: pm-o2kc
 risk: high
 confidence: low
+expected_result: "An accepted ADR defines multi-workspace layout, cross-workspace references, org-level aggregation and cross-workspace identity, with explicit out-of-scope decisions before any implementation."
 dependencies[10]:
   - id: pm-bl8x
     kind: related

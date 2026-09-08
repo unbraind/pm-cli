@@ -6,13 +6,14 @@ status: open
 priority: 1
 tags[6]: "area:observability","area:sdk","area:storage",error-taxonomy,gate,recurrence
 created_at: "2026-08-08T08:00:22.880Z"
-updated_at: "2026-09-06T08:48:42.075Z"
+updated_at: "2026-09-08T13:31:51.127Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "One shared primitive translates host filesystem and resource errno faults into declared PmCliError refusals with a bounded operation label, recovery guidance, and no path disclosure; Every awaited filesystem call site in core and sdk either routes through that primitive or carries a recorded waiver naming why the raw fault is correct; A CI gate fails when a new unguarded filesystem call site is added, so the family cannot silently regrow; The declared codes resolve in the generated error catalog, and a negative control proves a non-errno fault still propagates as a defect rather than being swallowed as environment noise"
 parent: pm-o2kc
 risk: medium
 confidence: high
+expected_result: "Every host filesystem fault at any awaited call site becomes a declared refusal with recovery guidance and no path disclosure, and a gate catches a new raw fault before it ships."
 dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-1qkivy,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
   pm-4odf0c,discovered_from,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected

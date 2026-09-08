@@ -93,6 +93,7 @@ describe("shared constants and errors contracts", () => {
       embedding_timeout_ms: 30000,
       scanner_max_batch_retries: 3,
       provider: "",
+      default_mode: "auto",
       mutation_refresh_policy: "semantic_configured",
       query_expansion: {
         enabled: false,

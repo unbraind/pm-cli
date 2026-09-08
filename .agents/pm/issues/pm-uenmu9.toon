@@ -6,13 +6,14 @@ status: open
 priority: 2
 tags[4]: ci,policy,release,versioning
 created_at: "2026-07-31T14:13:07.836Z"
-updated_at: "2026-08-30T11:30:58.412Z"
+updated_at: "2026-09-08T13:32:26.775Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "A scheduled or issue-triggered automatic path can publish at most one version for a UTC date, with a negative control that a second automatic attempt skips before version mutation; An explicit workflow_dispatch after the daily release can mint the next stable YYYY.M.D-N follow-up and records immutable manual-trigger provenance; Every version parser, comparator, synchronizer, changelog grouper, package range, plugin manifest, release verifier, npm check, npx probe, and bunx probe is inventoried and covered for base and ordinal forms; Concurrent manual dispatches allocate one ordinal without collision or duplicate publication; Partial-release recovery distinguishes retrying the existing version from requesting a distinct follow-up; docs/RELEASING.md states the two paths and their exact receipts; focused tests plus the full local and hosted release gates prove npm, npx, Bun, and bunx behavior without publishing during validation"
 parent: pm-u9d0
 risk: medium
 confidence: 92
+expected_result: "Automatic paths publish at most one version per UTC day, and an explicit manual dispatch can mint a dash-numbered follow-up with recorded provenance."
 dependencies[16]{id,kind,created_at,author,source_kind,author_source}:
   pm-7zs0,related,"2026-07-31T14:20:56.077Z","harness:claude-code","cli:update:dep",detected
   pm-9gxi,related,"2026-07-31T14:20:56.077Z","harness:claude-code","cli:update:dep",detected

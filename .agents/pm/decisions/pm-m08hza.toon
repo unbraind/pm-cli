@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: adr,context-management,evidence-gated,long-term,portfolio-governance,roadmap
 created_at: "2026-07-22T18:24:13.924Z"
-updated_at: "2026-09-08T06:02:12.744Z"
+updated_at: "2026-09-08T13:24:36.386Z"
 author: codex-root
 estimated_minutes: 180
 acceptance_criteria: "The policy defines Current, Emerging, Expansion, and Exploratory horizons by evidence and dependency readiness rather than dates; Every horizon entry references an existing canonical item or passes an all-status duplicate check before creation; Promotion requires explicit acceptance evidence, predecessor state, scale or quality proof where applicable, and an append-only decision comment; Demotion, splitting, merging, rejection, and supersedence preserve prior rationale in immutable history; Cross-cutting quality, security, documentation, SDK parity, graph completeness, and token-efficiency gates apply to every horizon; The living milestone can render a bounded horizon summary without replacing detailed item metadata or creating parallel backlogs"
@@ -19,6 +19,7 @@ why_now: "The ecosystem now spans command simplification, SDK-first architecture
 parent: pm-m2u1
 risk: low
 confidence: 75
+expected_result: "Every roadmap entry sits in an evidence-defined horizon, moves only with recorded acceptance evidence, and keeps its prior rationale in immutable history when demoted, split or superseded."
 dependencies[9]:
   - id: pm-33cw
     kind: related
