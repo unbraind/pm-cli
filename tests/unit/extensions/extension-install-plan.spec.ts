@@ -46,7 +46,11 @@ describe("bounded extension copy planning", () => {
       expect(await planExtensionDirectoryCopy(source, destination)).toMatchObject({ complete: true, symlinks: 1, files: 1, bytes: 7 });
       const alias = path.join(root, "alias");
       await fs.symlink(source, alias, process.platform === "win32" ? "junction" : "dir");
+      expect(await planExtensionDirectoryCopy(source, alias)).toMatchObject({ copy_scope: "in_place", files: 0, bytes: 0, scanned_entries: 0 });
       expect(await planExtensionDirectoryCopy(alias, path.join(alias, "installed"))).toMatchObject({ copy_scope: "nested_filtered_snapshot", source_directory: await fs.realpath(source) });
+      const replacedAlias = path.join(root, "replaced-alias");
+      await fs.symlink(path.join(source, "deep"), replacedAlias, process.platform === "win32" ? "junction" : "dir");
+      expect(await planExtensionDirectoryCopy(source, replacedAlias)).toMatchObject({ copy_scope: "directory_snapshot", files: 1, bytes: 7 });
       await expect(planExtensionDirectoryCopy(source, destination, { maxDepth: 0 })).rejects.toThrow("maxDepth");
     } finally {
       await fs.rm(root, { recursive: true, force: true });

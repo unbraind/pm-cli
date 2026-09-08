@@ -1827,6 +1827,14 @@
       ],
       "package_version": "2026.9.7",
       "reason": "pm-5bsofk and pm-eqdo85: add optional bounded copy planning and claim mutation evidence; type the previously untyped install_plan details key; additive MCP schema 4.15.0. Existing SDK claim methods retain full results. Custom command results using install_plan must match the documented plan type."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmActionSchemaContract",
+        "signature ./sdk/contracts:PmActionSchemaContract"
+      ],
+      "package_version": "2026.9.7",
+      "reason": "Add optional boolean value matching to dependentAnyOfRequired; existing presence-based contracts remain compatible. Strict package and extension dry-run requests require install:true and a source."
     }
   ],
   "entrypoints": {
@@ -12163,7 +12171,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmActionSchemaContract",
-          "signature": "export interface PmActionSchemaContract { required?: string[]; optional?: string[]; anyOfRequired?: Array<string[]>; oneOfRequired?: Array<string[]>; dependentAnyOfRequired?: Array<{ property: string; anyOfRequired: Array<string[]>; }>; conditionalRequired?: Array<{ property: string; value: string; required: string[]; }>; mutuallyExclusive?: Array<string[]>; mutuallyExclusiveWhen?: Array<Array<{ property: string; schema: Record<string, unknown>; }>>; }"
+          "signature": "export interface PmActionSchemaContract { required?: string[]; optional?: string[]; anyOfRequired?: Array<string[]>; oneOfRequired?: Array<string[]>; dependentAnyOfRequired?: Array<{ property: string; value?: boolean; anyOfRequired: Array<string[]>; }>; conditionalRequired?: Array<{ property: string; value: string; required: string[]; }>; mutuallyExclusive?: Array<string[]>; mutuallyExclusiveWhen?: Array<Array<{ property: string; schema: Record<string, unknown>; }>>; }"
         },
         {
           "classification": "contract_data",
@@ -22429,7 +22437,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmActionSchemaContract",
-          "signature": "export interface PmActionSchemaContract { required?: string[]; optional?: string[]; anyOfRequired?: Array<string[]>; oneOfRequired?: Array<string[]>; dependentAnyOfRequired?: Array<{ property: string; anyOfRequired: Array<string[]>; }>; conditionalRequired?: Array<{ property: string; value: string; required: string[]; }>; mutuallyExclusive?: Array<string[]>; mutuallyExclusiveWhen?: Array<Array<{ property: string; schema: Record<string, unknown>; }>>; }"
+          "signature": "export interface PmActionSchemaContract { required?: string[]; optional?: string[]; anyOfRequired?: Array<string[]>; oneOfRequired?: Array<string[]>; dependentAnyOfRequired?: Array<{ property: string; value?: boolean; anyOfRequired: Array<string[]>; }>; conditionalRequired?: Array<{ property: string; value: string; required: string[]; }>; mutuallyExclusive?: Array<string[]>; mutuallyExclusiveWhen?: Array<Array<{ property: string; schema: Record<string, unknown>; }>>; }"
         },
         {
           "classification": "contract_data",

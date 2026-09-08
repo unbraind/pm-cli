@@ -226,6 +226,8 @@ export interface PmActionSchemaContract {
   /** Value that configures or reports dependent any of required for this contract. */
   dependentAnyOfRequired?: Array<{
     property: string;
+    /** Apply the dependency only for this boolean value; omission means property presence. */
+    value?: boolean;
     anyOfRequired: Array<string[]>;
   }>;
   /** Value that configures or reports conditional required for this contract. */
@@ -498,6 +500,12 @@ function managedLifecycleSchemaContracts(
     [`${prefix}-deactivate`]: { required: ["target"], optional: ["scope"] },
     [prefix]: {
       optional: MANAGED_EXTENSION_PACKAGE_OPTION_KEYS,
+      dependentAnyOfRequired: [
+        { property: "dryRun", value: true, anyOfRequired: [["install", "target"], ["install", "github"]] },
+      ],
+      mutuallyExclusiveWhen: [
+        [{ property: "dryRun", schema: { const: true } }, { property: "install", schema: { const: false } }],
+      ],
     },
   };
 }
@@ -1552,6 +1560,14 @@ function buildOneOfSchemaEntries(
   });
 }
 
+/** Match property presence or a specific value before applying a cross-field requirement. */
+function schemaPropertyCondition(property: string, value?: string | boolean): Record<string, unknown> {
+  return {
+    ...(value === undefined ? {} : { properties: { [property]: { const: value } } }),
+    required: [property],
+  };
+}
+
 /** Build the consolidated `allOf` constraint list for an action's contract, appending branches in a fixed order — conditional-required (`if`/`then`), then dependent any-of-required, then mutually-exclusive (`not`/`required`) — so a given contract always serializes to a byte-identical schema. Returns an empty array when the contract declares none of these constraints, letting the caller omit the `allOf` key entirely. */
 function buildActionScopedAllOf(
   contract: PmActionSchemaContract,
@@ -1560,12 +1576,7 @@ function buildActionScopedAllOf(
   if (contract.conditionalRequired && contract.conditionalRequired.length > 0) {
     for (const entry of contract.conditionalRequired) {
       allOf.push({
-        if: {
-          properties: {
-            [entry.property]: { const: entry.value },
-          },
-          required: [entry.property],
-        },
+        if: schemaPropertyCondition(entry.property, entry.value),
         // eslint-disable-next-line unicorn/no-thenable -- JSON Schema conditional keyword, not a Promise-like object.
         then: {
           required: entry.required,
@@ -1579,7 +1590,7 @@ function buildActionScopedAllOf(
   ) {
     for (const entry of contract.dependentAnyOfRequired) {
       allOf.push({
-        if: { required: [entry.property] },
+        if: schemaPropertyCondition(entry.property, entry.value),
         // eslint-disable-next-line unicorn/no-thenable -- JSON Schema conditional keyword, not a Promise-like object.
         then: {
           anyOf: entry.anyOfRequired.map((requiredFields) => ({

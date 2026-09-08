@@ -24,6 +24,9 @@ installs also return their pre-copy plan. SDK callers can use
 `planExtensionDirectoryCopy(source, destination, { maxEntries, maxDepth, signal })`
 or `PmClient.packageInstall(source, { project: true, dryRun: true, copyPlan })`;
 the defaults inspect at most 10,000 entries and 64 directory levels.
+Strict MCP requests use `install`, `package-install`, or `extension-install`
+with `target` or `github` and `dryRun: true`. Generic `package` and `extension`
+requests also require `install: true` and a source when enabling `dryRun`.
 
 ```bash
 pm package install ./local-package --project --dry-run --json
@@ -41,6 +44,18 @@ The SDK adds optional `copyPlan` controls and a typed optional
 `details.install_plan`. Custom result constructors that previously placed an
 unrelated value under that key must migrate to the declared plan type. Other
 extension detail fields retain their open record contract.
+
+The install-plan regression has a reproducible source-mutation control:
+
+```bash
+node scripts/release/package-install-plan-control.mjs
+node scripts/release/package-install-plan-control.mjs --negative-control
+```
+
+The baseline exits zero. The negative control changes only a disposable source
+copy to report a complete entry-limited scan, then runs the same real filesystem
+test and exits one. The linked control test requires both outcomes; the checkout
+and project tracker are never mutated by the control.
 
 ## Update verification
 

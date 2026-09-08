@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-07T22:30:37.538Z"
-updated_at: "2026-09-08T08:55:35.763Z"
-closed_at: "2026-09-08T08:53:53.336Z"
-completed_at: "2026-09-08T08:53:53.336Z"
+updated_at: "2026-09-08T10:00:45.836Z"
+closed_at: "2026-09-08T10:00:45.068Z"
+completed_at: "2026-09-08T10:00:45.068Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "SDK and CLI local-source planning identifies directory versus archive source and bounded file/byte estimates before copying; large development trees receive a working npm pack and archive-install suggestion; preserve directory snapshots, ignored scripts, dependency resolution, containment and exact host SDK linking; real isolated directory and archive acceptance covers the published consumer flow."
@@ -17,9 +17,9 @@ risk: medium
 confidence: high
 reporter: github
 severity: medium
-resolution: "Implemented bounded SDK directory-copy planning, shared containment exclusions, source-mode receipts, script-free packed alternatives, and CLI/MCP install dry-run with truthful single, multi-target and bundled counts."
-expected_result: Agents can inspect local install cost before destination writes and execute a verified packed alternative while preserving existing snapshot and archive safety.
-actual_result: "All 8579 tests passed at exact 100/100/100/100. Both linked package suites passed. Real npm and Bun installed consumers planned without destination mutation, packed and activated archives, and exercised exported SDK planning; npx and bunx resolved the installed artifact. All static gate components passed; startup timing passed on an idle rerun after a contention-only failure. Docstrings are 100 percent. Hosted review and merge verification follow this reviewed closure."
+resolution: "Bounded copy plans and dry-run receipts preserve containment, packed-source alternatives and in-place destination aliases; strict generic dry-run requires an install selector and source. A disposable unsafe completeness mutant proves the regression gate fails."
+expected_result: "Agents can inspect accurate bounded copy cost before destination writes, use valid SDK/CLI/MCP requests and execute packed alternatives without changing existing install semantics."
+actual_result: "8580 tests across 644 files passed at exact 100/100/100/100. Full static command plus late-correction build, lint, structural and contract checks passed; idle import/startup gates and all three linked suites passed. Rebuilt npm and Bun consumers passed archive activation, compact claims, truthful freshness and destination-alias in-place acceptance. Baseline mutation control exits 0 and unsafe source mutant exits 1. Hosted exact-head review follows the corrective push."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-0682l4,discovered_from,"2026-09-07T22:30:37.538Z","harness:codex","cli:create:dep",detected
   pm-lw6acw,discovered_from,"2026-09-07T22:30:37.538Z","harness:codex","cli:create:dep",detected
@@ -27,7 +27,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-tqel,discovered_from,"2026-09-07T22:43:19.233Z","harness:codex","cli:update:dep",detected
   pm-0682l4,verifies,"2026-09-08T08:25:51.107Z","harness:codex","cli:update:dep",detected
   pm-lw6acw,verifies,"2026-09-08T08:25:51.107Z","harness:codex","cli:update:dep",detected
-comments[9]:
+comments[14]:
   - created_at: "2026-09-07T22:30:37.538Z"
     author: "harness:codex"
     text: "Duplicate check: strict full all-status corpus read returned all 2656 items with complete=true and zero omissions; searched all metadata for GH-1218, copy scope/cost/size and local/archive package installs. No existing copy-cost planning item exists. Historical pm-0682l4 owns nested-destination recursion and pm-lw6acw owns implemented archive acceptance; neither owns this external-destination cost visibility request. Full relevant metadata and issue report read. Source inspection confirms the external-destination branch currently invokes recursive cp without the nested-layout filter. Reported timings are host-dependent and were not independently benchmarked here. Intake only: open and unclaimed."
@@ -56,10 +56,26 @@ comments[9]:
   - created_at: "2026-09-08T08:55:35.763Z"
     author: "harness:codex"
     text: "Reviewed closeout preparation: latest published pm-changelog 2026.9.8 was installed through the package CLI, which owns managed provenance. Generation adds exactly the three delivered issues to Unreleased and preserves all historical entries; check mode is part of final closeout. The 88-command package-first dogfood, public compatibility check, full type tests/examples/packages, 56 token surfaces and packed npx/bunx smoke all passed. Optional remote semantic dogfood was not enabled."
-files[21]{path,scope,note}:
+  - created_at: "2026-09-08T09:38:44.893Z"
+    author: "harness:codex"
+    text: "PR #1221 first-round corrections: generic dryRun:true now requires install:true plus target or github in the strict schema; false and unrelated lifecycle requests remain valid. Preserved literal action types. The independent Draft 2020-12 validator passed eight combinations. Added a disposable source-mutation control: baseline exit 0, unsafe entry-limit complete=true mutant exit 1; the PM-linked control/schema test passed and asserts both outcomes. All five actionable CodeRabbit findings received direct replies and usefulness reactions; broader issue/scope warnings were answered with existing caller and issue-history evidence. Full static and coverage gates are being repeated before the next reviewed closure."
+  - created_at: "2026-09-08T09:41:15.565Z"
+    author: "harness:codex"
+    text: "Provider availability evidence for PR #1221: GitHub Greptile requests received no visible review; the local greptile-review-gate returned skipped=true, reason=greptile free review quota exhausted. Cubic reported its monthly line limit and Sourcery its seven-day character limit. These are explicit review limitations, not approvals. CodeRabbit completed a five-finding review; each finding has a direct response and reaction, and review will be retriggered for the corrected head."
+  - created_at: "2026-09-08T09:49:18.730Z"
+    author: "harness:codex"
+    text: "Additional first-round CodeRabbit source finding reproduced red: destination symlink to source reported directory_snapshot with seven bytes instead of in_place with zero copied entries. The planner now reuses installation areDirectoriesEquivalent before classifying scope. Regression also checks a destination symlink to a different directory retains replacement-copy semantics. Existing nested-source aliases and copy-safety cases stay covered. This fix is part of the same forthcoming corrected head; no new review round was started early."
+  - created_at: "2026-09-08T09:54:49.104Z"
+    author: "harness:codex"
+    text: "Rebuilt installed-consumer acceptance passed for both npm and Bun after the symlink correction. The public SDK reports destination aliases back to the source as in_place with zero files; directory planning remains complete, the suggested npm-pack/archive-install workflow activates successfully, doctor reports partial freshness, and npx/bunx resolve the installed candidate. Compact claims remain 140 bytes for an 18000-byte description. Candidate version is still 2026.9.7; publication is verified separately after merge. Final structural report: 600/600 module headers, 4746/4746 exported declarations and 8656/8656 members documented, with existing suppression and complexity budgets unchanged."
+  - created_at: "2026-09-08T10:00:44.385Z"
+    author: "harness:codex"
+    text: "Final corrected-head local evidence: all 8580 tests in 644 files passed. Exact coverage: statements 63339/63339, branches 48095/48095, functions 13126/13126 and lines 60818/60818. The full static command passed; the late symlink correction additionally passed a fresh build, focused lint, structural gate, SDK/contract snapshots, all 39 focused tests and rebuilt npm/Bun acceptance. All three linked package suites passed. Final idle import and CLI startup checks passed with unchanged limits. No coverage exclusions, duplicate allowances, complexity limits or suppression budgets were added. Six concrete review findings are included in the corrective delivery; the issue-scope/docstring warnings were withdrawn by the reviewer."
+files[23]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,CLI-managed provenance for latest pm-changelog 2026.9.8 used to generate reviewed release notes
   scripts/release/flag-help-baseline.json,project,Install dry-run contract and exact generated surface baselines
   scripts/release/flag-spelling-baseline.json,project,Install dry-run contract and exact generated surface baselines
+  scripts/release/package-install-plan-control.mjs,project,Isolated source mutant must fail the real entry-limit regression
   sdk/public-surface.json,project,Install dry-run contract and exact generated surface baselines
   src/cli/register-setup.ts,project,CLI install planning and multi-source counts
   src/sdk/cli-contracts/flag-contracts.ts,project,Discoverable dry-run install contracts
@@ -77,11 +93,13 @@ files[21]{path,scope,note}:
   tests/unit/extensions/extension-install-dry-run.spec.ts,project,Real directory and packed archive acceptance
   tests/unit/extensions/extension-install-plan.spec.ts,project,Bounded filesystem planning controls
   tests/unit/scripts/flag-lexicon-gate.spec.ts,project,Generated compatibility census includes four new dry-run spellings and previously executable options
+  tests/unit/scripts/package-install-plan-control.spec.ts,project,Real baseline and mutant execution with asserted opposite exit codes
   tests/unit/sdk/action-schema-parity.spec.ts,project,Install dry-run contract and exact generated surface baselines
-tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-copy-safety.spec.ts tests/unit/extensions/extension-install-security.spec.ts,project,300,"harness:codex","2026-09-07T22:30:37.538Z",local_mutation,feat/history-maintenance-sdk-command-grammar
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-plan.spec.ts tests/unit/extensions/extension-install-dry-run.spec.ts tests/unit/extensions/extension-copy-safety.spec.ts,project,240,"harness:codex","2026-09-08T08:00:38.025Z",local_mutation,feat/package-planning-update-health-claim-receipts
-test_runs[1]:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/package-install-plan-control.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,240,"harness:codex","2026-09-08T09:29:54.670Z",local_mutation,feat/package-planning-update-health-claim-receipts
+test_runs[3]:
   - run_id: test-local-mtsf84df-scho88
     kind: test
     status: passed
@@ -94,18 +112,42 @@ test_runs[1]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/extensions/extension-copy-safety.spec.ts tests/unit/extensions/extension-install-security.spec.ts,schema,schema,source,acknowledged
       node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-plan.spec.ts tests/unit/extensions/extension-install-dry-run.spec.ts tests/unit/extensions/extension-copy-safety.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtsh33bo-67yexn
+    kind: test
+    status: passed
+    started_at: "2026-09-08T09:34:02.815Z"
+    finished_at: "2026-09-08T09:34:08.532Z"
+    recorded_at: "2026-09-08T09:34:08.532Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/package-install-plan-control.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtshzyam-ok898a
+    kind: test
+    status: passed
+    started_at: "2026-09-08T09:59:26.236Z"
+    finished_at: "2026-09-08T09:59:41.662Z"
+    recorded_at: "2026-09-08T09:59:41.662Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-copy-safety.spec.ts tests/unit/extensions/extension-install-security.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-plan.spec.ts tests/unit/extensions/extension-install-dry-run.spec.ts tests/unit/extensions/extension-copy-safety.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/package-install-plan-control.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,schema,schema,source,local_source_ref
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,Package-owned generated install planning release evidence
   docs/EXTENSIONS.md,project,Compatibility contract for follow-up implementation
   docs/generated/FLAG_LEXICON_BUDGETS.md,project,Exact one-flag install planning budget
   docs/PACKAGE_EVIDENCE.md,project,Bounded planning and packed alternatives
-close_reason: "Implemented and locally verified the public SDK/CLI/MCP contract with reviewed tracker evidence, linked acceptance and exact coverage."
+close_reason: "Implemented and verified package planning and review corrections across public SDK, CLI and MCP with exact coverage and installed acceptance."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_added
   gate_id: package-install-copy-plan
-  negative_control: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-plan.spec.ts tests/unit/extensions/extension-install-dry-run.spec.ts
-  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-plan.spec.ts tests/unit/extensions/extension-install-dry-run.spec.ts
+  negative_control: node scripts/release/package-install-plan-control.mjs --negative-control
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-plan.spec.ts tests/unit/extensions/extension-install-dry-run.spec.ts,node scripts/run-tests.mjs test -- tests/unit/scripts/package-install-plan-control.spec.ts tests/unit/sdk/action-schema-parity.spec.ts
   hosted_checks[1]: Gates (coverage)
   owner: pm-5bsofk
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/1218\n\nWhen an agent installs a built local package directory into a different project, the directory-copy path can make development dependencies and generated output dominate the work, with no copy-size estimate or hint that an existing packed-artifact path would avoid it.\n\nObserved on published `@unbrained/pm-cli 2026.9.7`, Node 24.19.0, Linux, while validating the public pm-ops package:\n\n- The isolated acceptance test's `pm install <local package checkout> --project --json` exceeded its unchanged 30-second child-process limit twice. Reusing the npm content cache did not resolve it.\n- That checkout carried 144 MiB of `node_modules`.\n- `npm pack --ignore-scripts --json` produced a 144,565-byte archive with 615,643 unpacked bytes across 25 entries.\n- Installing that archive through the existing local-tarball support retained the package-doctor, real CLI routing and host-SDK fallback assertions. The complete installed-CLI test passed in 20.09 seconds. This is the whole test's time, not an isolated installation benchmark, and the timing is host-dependent.\n\nThe published `sdk/extension/install-runtime` directory-copy path uses a recursive copy without a filter when the destination is outside the source. This is distinct from the nested-destination bug fixed in #827 and the already implemented tarball support in #844.\n\nCould the local-source install plan expose the copy scope and estimated file/byte count, and suggest `npm pack` plus `pm package install <archive.tgz>` when the directory contains substantial development/generated data? A machine-readable source mode and copy-cost receipt would let agents choose deliberately before starting a bounded operation.\n\nThis is an agent-UX request, not a request to silently change local-directory snapshot semantics or weaken install verification. Preserve explicit directory installs, ignored-script policy, runtime dependency resolution and exact host SDK linking. Acceptance should cover both directory and tarball sources and verify that the suggested command works in an isolated project."

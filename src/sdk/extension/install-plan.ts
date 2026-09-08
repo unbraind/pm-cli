@@ -7,7 +7,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import { includesExtensionCopyPath } from "./copy-scope.js";
 import { resolveCanonicalExtensionInstallDestination } from "./install-runtime.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
-import type { ResolvedInstallSource } from "./install-sources.js";
+import { areDirectoriesEquivalent, type ResolvedInstallSource } from "./install-sources.js";
 
 /** Limits filesystem enumeration independently of the size of the source tree. */
 export interface ExtensionCopyPlanOptions {
@@ -112,8 +112,9 @@ export async function planExtensionDirectoryCopy(
   signal?.throwIfAborted();
   const source = await fs.realpath(sourceDirectory);
   const destination = await resolveCanonicalExtensionInstallDestination(destinationDirectory);
+  const installInPlace = await areDirectoriesEquivalent(source, destination);
   signal?.throwIfAborted();
-  const scope = source === destination ? "in_place"
+  const scope = installInPlace ? "in_place"
     : isPathWithinDirectory(source, destination) ? "nested_filtered_snapshot" : "directory_snapshot";
   const plan: ExtensionCopyPlan = {
     copy_scope: scope, source_directory: source, destination_directory: destination,

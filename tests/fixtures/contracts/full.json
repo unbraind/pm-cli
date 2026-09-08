@@ -40195,6 +40195,62 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "dryRun": {
+                  "const": true
+                }
+              },
+              "required": [
+                "dryRun"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "install",
+                    "target"
+                  ]
+                },
+                {
+                  "required": [
+                    "install",
+                    "github"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "dryRun": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "dryRun"
+                  ]
+                },
+                {
+                  "properties": {
+                    "install": {
+                      "const": false
+                    }
+                  },
+                  "required": [
+                    "install"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "package",
