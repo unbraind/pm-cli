@@ -4,6 +4,7 @@
  * Reduces declarative field requirements into bounded, content-free diagnostics.
  */
 import { createWorkflowPolicyEvaluator, type WorkflowPolicyDocument, type WorkflowPolicyDecision } from "../../core/policy/workflow-policy.js";
+import { readWorkflowPolicies } from "../../core/policy/workflow-policy-store.js";
 import type { ValidateCheck } from "./validate.js";
 
 /** One item-policy violation, retaining field paths but never field values. */
@@ -16,6 +17,25 @@ export interface WorkflowCompletenessViolation {
   status: string;
   /** Exact rule and missing-field evidence. */
   decision: WorkflowPolicyDecision;
+}
+
+/** Load the policy snapshot while containing storage failures in an error check so other validation can continue. */
+export async function readWorkflowCompletenessCheck(
+  pmRoot: string,
+  items: Parameters<typeof buildWorkflowCompletenessCheck>[1],
+  rowLimit?: number,
+  sourceIncomplete?: boolean,
+): Promise<{ check: ValidateCheck; warnings: string[] }> {
+  const document = await readWorkflowPolicies(pmRoot).catch(() => null);
+  if (document === null) return {
+    check: { name: "completeness", status: "error", ok: false, details: {
+      policy_registry_readable: false,
+      policy_registry_path: "schema/policies.json",
+      remediation_hint: "Repair schema/policies.json, then rerun pm validate.",
+    } },
+    warnings: ["validate_completeness_policy_registry_unreadable"],
+  };
+  return buildWorkflowCompletenessCheck(document, items, rowLimit, sourceIncomplete);
 }
 
 /** Evaluate every supplied item while bounding the diagnostic rows independently. */

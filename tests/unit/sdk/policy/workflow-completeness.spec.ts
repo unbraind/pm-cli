@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildWorkflowCompletenessCheck } from "../../../../src/sdk/governance/workflow-completeness.js";
@@ -12,6 +12,44 @@ const declaration = {
 };
 
 describe("lifecycle completeness", () => {
+  it("reports invalid policy storage without hiding other validation diagnostics or rewriting evidence", async () => {
+    await withTempPmPath(async ({ pmPath, runCli }) => {
+      const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
+      const created = await client.create({ title: "Missing planning evidence" });
+      const historyPath = path.join(pmPath, "history", `${created.item.id}.jsonl`);
+      const history = await readFile(historyPath, "utf8");
+      const policyPath = path.join(pmPath, "schema", "policies.json");
+      await mkdir(path.dirname(policyPath), { recursive: true });
+      for (const raw of ["{", '{"version":2,"policies":[]}', Buffer.from([0xff])]) {
+        await writeFile(policyPath, raw);
+        const report = await client.validate({ checkCompleteness: true, checkMetadata: true, counts: true });
+        expect(report).toMatchObject({ ok: false, checks: [
+          { name: "completeness", status: "error", ok: false, details: { policy_registry_readable: false } },
+          { name: "metadata", status: "warn" },
+        ] });
+        expect(report.warnings).toContain("validate_completeness_policy_registry_unreadable");
+        expect(await readFile(policyPath)).toEqual(Buffer.from(raw));
+      }
+      const cli = runCli(["validate", "--strict-exit", "--json", "--output-budget", "unbounded"]);
+      expect(cli.status).toBe(1);
+      const report = JSON.parse(cli.stdout);
+      expect(report.checks).toEqual(expect.arrayContaining([
+        expect.objectContaining({ name: "completeness", status: "error" }),
+        expect.objectContaining({ name: "metadata", status: "warn" }),
+        expect.objectContaining({ name: "storage_integrity" }),
+      ]));
+      await rm(policyPath);
+      await mkdir(policyPath);
+      expect(await client.validate({ checkCompleteness: true, checkMetadata: true })).toMatchObject({ ok: false, checks: [
+        { name: "completeness", status: "error" }, { name: "metadata", status: "warn" },
+      ] });
+      await rm(policyPath, { recursive: true });
+      await writeFile(policyPath, '{"version":1,"policies":[]}');
+      expect(await client.validate({ checkCompleteness: true })).toMatchObject({ ok: true });
+      expect(await readFile(historyPath, "utf8")).toBe(history);
+    });
+  });
+
   it("counts the whole corpus while bounding rows and grouping missing evidence by custom type", () => {
     const document = parseWorkflowPolicyDocument({ version: 1, policies: [declaration] });
     const items = Array.from({ length: 8 }, (_, index) => ({ id: `pm-${index}`, type: index < 7 ? "Purchase" : "Task", status: "closed", body: "" }));

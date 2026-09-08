@@ -98,6 +98,9 @@ types and lifecycle using `policy-put`. Completeness reports group counts by typ
 return bounded violation examples, and use only `require_fields` declarations.
 Default validation includes this check; projects without declarations remain
 unaffected.
+An unreadable or malformed `schema/policies.json` produces an error-level
+`completeness` result with a repair hint. Other requested validation checks still
+run, and `--strict-exit` fails until the policy registry is repaired.
 
 The published `@unbrained/pm-cli/sdk/governance` entrypoint exports
 `runWorkflowPolicyAction`, `evaluateWorkflowPolicies`, policy types, parsers,

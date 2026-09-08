@@ -4,8 +4,7 @@
  * Implements the pm validate command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
-import { buildWorkflowCompletenessCheck } from "./workflow-completeness.js";
-import { readWorkflowPolicies } from "../../core/policy/workflow-policy-store.js";
+import { readWorkflowCompletenessCheck } from "./workflow-completeness.js";
 import fs from "node:fs/promises";
 import { realpathSync } from "node:fs";
 import type { Dirent } from "node:fs";
@@ -3400,7 +3399,7 @@ async function executeRequestedValidateChecks(params: {
     params.options.allAffectedIds === true ||
     params.global.json === true;
   if (params.requestedChecks.has("completeness")) {
-    const built = buildWorkflowCompletenessCheck(await readWorkflowPolicies(params.pmRoot), params.items, fullDiagnostics ? Infinity : DIAGNOSTIC_LIST_SUMMARY_LIMIT, params.sourceIncomplete);
+    const built = await readWorkflowCompletenessCheck(params.pmRoot, params.items, fullDiagnostics ? Infinity : DIAGNOSTIC_LIST_SUMMARY_LIMIT, params.sourceIncomplete);
     recordValidateCheck(state, built, fixHintsEnabled);
   }
   if (params.requestedChecks.has("metadata")) {
