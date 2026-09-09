@@ -15,6 +15,7 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `item-reopen` | full | lifecycle |
 | `copy` | full | intake |
 | `focus` | standard | intake |
+| `context focus` | standard | intake |
 | `list` | core | context |
 | `list-all` | standard | context |
 | `list-draft` | full | context |
@@ -31,9 +32,12 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `search` | core | context |
 | `duplicates` | full | context |
 | `eval` | full | context |
+| `ops eval` | full | context |
 | `next` | core | context |
+| `context next` | core | context |
 | `history` | standard | evidence |
 | `events` | standard | evidence |
+| `history events` | standard | evidence |
 | `history-redact` | full | evidence |
 | `history-repair` | full | evidence |
 | `history-compact` | full | evidence |
@@ -58,12 +62,18 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `plan` | core | graph |
 | `test` | standard | quality |
 | `test-all` | full | quality |
+| `ops test-all` | full | quality |
 | `telemetry` | full | workspace |
+| `ops telemetry` | full | workspace |
 | `stats` | full | context |
+| `ops stats` | full | context |
 | `health` | standard | workspace |
+| `ops health` | standard | workspace |
 | `validate` | core | quality |
+| `ops validate` | core | quality |
 | `assurance` | full | quality |
 | `gc` | full | workspace |
+| `ops gc` | full | workspace |
 | `workspace` | full | workspace |
 | `contracts` | standard | quality |
 | `claim` | core | lifecycle |
@@ -75,6 +85,7 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `event` | full | automation |
 | `remind` | full | automation |
 | `help` | core | context |
+| `ops` | core | quality |
 | `completion-statuses` | internal | internal |
 | `completion-tags` | internal | internal |
 | `completion-types` | internal | internal |

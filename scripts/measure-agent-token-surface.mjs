@@ -13,7 +13,9 @@ import { fileURLToPath } from "node:url";
 import {
   PM_CORE_COMMAND_NAMES,
   PM_POSITIONAL_ACTION_CONTRACTS,
+  PM_NAMESPACED_COMMAND_ALIASES,
 } from "../dist/sdk/cli-contracts.js";
+import { resolvePmCommandVisibilityTier } from "../dist/sdk/agent-capability-contracts.js";
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CONFIGURED_PM_BIN = process.env.PM_BIN;
@@ -30,17 +32,25 @@ const DEFAULT_BASELINE = join(
 const POSITIONAL_ACTION_COMMAND_NAMES = PM_POSITIONAL_ACTION_CONTRACTS.map(
   ({ command }) => command,
 );
+// Canonical core leaves remain measured after their root aliases leave help.
+const NAMESPACED_CORE_COMMAND_NAMES = PM_NAMESPACED_COMMAND_ALIASES
+  .filter(({ canonical }) => resolvePmCommandVisibilityTier(canonical) === "core")
+  .map(({ canonical }) => canonical);
 const REQUIRED_COMMAND_NAMES = new Set([
+  ...NAMESPACED_CORE_COMMAND_NAMES,
+  ...NAMESPACED_CORE_COMMAND_NAMES.map((command) => command.split(" ")[0]),
   ...PM_CORE_COMMAND_NAMES,
   ...POSITIONAL_ACTION_COMMAND_NAMES,
 ]);
 
+/** Estimate display tokens from UTF-8 bytes using the same conservative four-byte convention as the report. */
 function tokens(bytes) {
   return Math.ceil(bytes / 4);
 }
 
 /** Build a versioned regression baseline with explicit percentage headroom. */
 export function buildBaseline(report, headroom = 1.1) {
+  /** Apply configured headroom when creating a new baseline; existing regression ceilings are checked independently. */
   const budget = (measurement) => Math.ceil(measurement.bytes * headroom);
   return {
     version: 2,
@@ -72,6 +82,7 @@ export function buildBaseline(report, headroom = 1.1) {
 export function compareBaseline(report, baseline) {
   const violations = [];
   const surfaces = baseline.surfaces ?? {};
+  /** Collect missing or exceeded ceilings so the gate reports every measured regression together. */
   const compare = (name, bytes, maxBytes) => {
     if (!Number.isFinite(maxBytes)) {
       violations.push(`${name}: missing baseline`);
@@ -129,6 +140,7 @@ export function compareBaseline(report, baseline) {
   return violations;
 }
 
+/** Measure complete CLI output in bytes, including usage refusals that carry their response on stdout. */
 function measure(args) {
   try {
     const out = execFileSync(
@@ -150,6 +162,7 @@ function measure(args) {
   }
 }
 
+/** Discover visible roots and required native leaves without losing hidden-alias budget coverage. */
 function listCommands() {
   const help = execFileSync(
     PM_BIN,
@@ -173,6 +186,7 @@ function listCommands() {
     rootHelpBytes: Buffer.byteLength(help),
     names: [
       ...names,
+      ...NAMESPACED_CORE_COMMAND_NAMES.filter((name) => !names.includes(name)),
       ...POSITIONAL_ACTION_COMMAND_NAMES.filter(
         (name) => !names.includes(name),
       ),
@@ -180,6 +194,7 @@ function listCommands() {
   };
 }
 
+/** Measure one real MCP tools/list response and terminate the child after a response or bounded timeout. */
 function measureMcpToolsList() {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [MCP_SERVER], {

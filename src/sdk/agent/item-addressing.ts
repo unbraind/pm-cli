@@ -6,7 +6,7 @@
  * spelling, so integrations no longer need a per-command addressing table.
  */
 import { findBootstrapCommandTokenIndex } from "../cli-contracts/bootstrap-command-scanner.js";
-import { resolvePmHistoryOperation } from "../cli-contracts/command-aliases.js";
+import { resolvePmCommandOperation } from "../cli-contracts/command-aliases.js";
 import {
   type CliFlagContract,
   resolveSubcommandFlagContractsForCommand,
@@ -77,7 +77,7 @@ interface NamedItemId {
 export function supportsItemIdAlias(
   commandName: string | undefined,
 ): boolean {
-  const normalized = resolvePmHistoryOperation(
+  const normalized = resolvePmCommandOperation(
     commandName?.trim().toLowerCase() ?? "",
   );
   return (
@@ -86,23 +86,26 @@ export function supportsItemIdAlias(
   );
 }
 
+/** Keep namespace verbs separate from default history item addresses and unaddressed context reads. */
+function resolveNamespacedItemAddressIndex(argv: string[], commandIndex: number, commandName: string): number | undefined {
+  const fallback = commandName === "history" ? commandIndex + 1 : undefined;
+  const leafOffset = findBootstrapCommandTokenIndex(argv.slice(commandIndex + 1));
+  if (leafOffset === undefined) return fallback;
+  const leafIndex = commandIndex + 1 + leafOffset;
+  const candidate = `${commandName} ${argv[leafIndex]}`;
+  const operation = resolvePmCommandOperation(candidate);
+  if (operation === candidate) return fallback;
+  return supportsItemIdAlias(operation) ? leafIndex + 1 : undefined;
+}
+
 /** Resolve the positional-id slot for direct and declared nested commands. */
 function resolveItemAddressIndex(
   argv: string[],
   commandIndex: number,
   commandName: string,
 ): number | undefined {
-  if (commandName === "history") {
-    const leafOffset = findBootstrapCommandTokenIndex(
-      argv.slice(commandIndex + 1),
-    );
-    const leafIndex =
-      leafOffset === undefined ? undefined : commandIndex + 1 + leafOffset;
-    if (leafIndex === undefined) return commandIndex + 1;
-    const candidate = `${commandName} ${argv[leafIndex]}`;
-    const operation = resolvePmHistoryOperation(candidate);
-    if (operation !== candidate)
-      return operation === "activity" ? undefined : leafIndex! + 1;
+  if (commandName === "history" || commandName === "context" || commandName === "ctx") {
+    return resolveNamespacedItemAddressIndex(argv, commandIndex, commandName);
   }
   const declaredSubcommand = ITEM_ID_ALIAS_SUBCOMMANDS.get(commandName);
   if (declaredSubcommand === undefined) return commandIndex + 1;
@@ -200,7 +203,7 @@ function hasPositionalItemId(
   return (
     trailingPositionals >
     (TRAILING_POSITIONAL_COUNTS.get(
-      resolvePmHistoryOperation(commandPath),
+      resolvePmCommandOperation(commandPath),
     ) ?? 0)
   );
 }
@@ -218,7 +221,7 @@ export function normalizeItemAddressInvocation(
     commandIndex === undefined
       ? undefined
       : argv[commandIndex]?.toLowerCase();
-  if (!supportsItemIdAlias(commandName)) {
+  if (commandName !== "context" && commandName !== "ctx" && !supportsItemIdAlias(commandName)) {
     return { argv: [...argv], changed: false, conflict: false };
   }
   const addressIndex = resolveItemAddressIndex(

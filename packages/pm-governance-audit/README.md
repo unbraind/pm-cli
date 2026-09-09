@@ -23,7 +23,7 @@ bodies and full before/after snapshots.
 - `pm dedupe-audit`
 - `pm dedupe-merge`
 - `pm comments-audit`
-- `pm normalize`
+- `pm ops normalize`
 
 The package also augments existing commands with audit-only flags:
 
@@ -63,7 +63,7 @@ pm install audit --project
 pm dedupe-audit --mode parent_scope --status all --limit 20 --json
 pm dedupe-merge --keep pm-canonical --close pm-duplicate --dry-run --json
 pm comments-audit --latest 3 --limit-items 20 --limit-rows 50 --json
-pm normalize --dry-run --json
+pm ops normalize --dry-run --json
 ```
 
 `dedupe-audit --status all` explicitly selects every status and is equivalent
@@ -80,3 +80,5 @@ For `comments-audit`, `--limit-items` caps item
 scanning while `--limit-rows` caps emitted comment rows across the whole
 result. The older `--limit` spelling remains a deprecated alias for
 `--limit-rows`; do not combine the two row-limit spellings.
+
+`pm normalize` remains a compatibility alias for `pm ops normalize`.

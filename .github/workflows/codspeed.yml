@@ -44,6 +44,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Disable unused Chrome APT sources
+        run: |
+          # pm-zvy31w: Chrome index outages must not block Ubuntu instrument dependencies.
+          # Preserve the unused sources without relaxing package signature or hash checks.
+          for chrome_source in /etc/apt/sources.list.d/google-chrome.list /etc/apt/sources.list.d/google-chrome.sources; do
+            if [ -f "${chrome_source}" ]; then
+              sudo mv -- "${chrome_source}" "${chrome_source}.disabled"
+            fi
+          done
+
       - name: Run benchmarks
         uses: CodSpeedHQ/action@373d6868929f444bc08d901fd0eb0ad52a8875ea # v5.2.1
         with:

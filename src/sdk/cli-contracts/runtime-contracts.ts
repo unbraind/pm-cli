@@ -114,6 +114,7 @@ import {
   PROFILE_FLAG_CONTRACTS,
   SEARCH_COMMANDER_STRING_OPTION_CONTRACTS,
   EVAL_FLAG_CONTRACTS,
+  EVENTS_FLAG_CONTRACTS,
   WORKSPACE_FLAG_CONTRACTS,
   NEXT_FLAG_CONTRACTS,
   SEARCH_FLAG_CONTRACTS,
@@ -141,7 +142,7 @@ import {
   type PmDiagnosticOutputBudgetContract,
   type PmCommandAliasContract,
 } from "../cli-contracts.js";
-import { PM_HISTORY_COMMAND_ALIASES, resolvePmHistoryOperation } from "./command-aliases.js";
+import { PM_NAMESPACED_COMMAND_ALIASES, resolvePmCommandOperation } from "./command-aliases.js";
 import { PM_POSITIONAL_ACTION_FLAG_CONTRACTS } from "./flag-contracts.js";
 import {
   GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES,
@@ -625,6 +626,7 @@ const PACKAGE_OWNED_COMMANDS = new Set<string>([
   "completion-types",
   "guide",
   "reindex",
+  "normalize",
   "templates",
   "templates list",
   "templates save",
@@ -646,6 +648,7 @@ const PACKAGE_OWNED_COMMAND_INSTALL_HINTS = new Map<string, string>([
   ["completion-types", "guide-shell"],
   ["guide", "guide-shell"],
   ["reindex", "search-advanced"],
+  ["normalize", "governance-audit"],
   ["templates", "templates"],
   ["templates list", "templates"],
   ["templates save", "templates"],
@@ -861,6 +864,7 @@ const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<
   ["get", GET_FLAG_CONTRACTS],
   ["search", SEARCH_FLAG_CONTRACTS],
   ["eval", EVAL_FLAG_CONTRACTS],
+  ["events", EVENTS_FLAG_CONTRACTS],
   ["workspace", WORKSPACE_FLAG_CONTRACTS],
   ["workspace position", []],
   ["workspace snapshot", WORKSPACE_FLAG_CONTRACTS],
@@ -905,6 +909,7 @@ const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<
   ["test-runs", TEST_RUNS_FLAG_CONTRACTS],
   ["gc", GC_FLAG_CONTRACTS],
   ["stats", STATS_FLAG_CONTRACTS],
+  ["ops", []],
   ["duplicates", DUPLICATES_FLAG_CONTRACTS],
   ["validate", VALIDATE_FLAG_CONTRACTS],
   ["health", HEALTH_FLAG_CONTRACTS],
@@ -919,8 +924,9 @@ const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<
 ];
 
 const CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map(CORE_COMMAND_FLAG_CONTRACT_ENTRIES);
-for (const { alias, canonical } of PM_HISTORY_COMMAND_ALIASES) {
-  CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND.set(canonical, CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND.get(alias)!);
+for (const { alias, canonical } of PM_NAMESPACED_COMMAND_ALIASES) {
+  const flags = CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND.get(alias);
+  if (flags !== undefined) CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND.set(canonical, flags);
 }
 
 /* c8 ignore start -- extension contract shaping utilities are exercised by dedicated extension/runtime integration suites. */
@@ -938,9 +944,9 @@ function packageOwnedActionForCommand(command: string): string {
   return command;
 }
 
-/** Project stable SDK/MCP actions into discoverable CLI paths, retaining native and legacy history spellings. */
+/** Project stable SDK/MCP actions into discoverable CLI paths, retaining native and legacy spellings. */
 function resolveActionCommandPath(action: PmToolAction): string | null {
-  const historyAlias = PM_HISTORY_COMMAND_ALIASES.find((contract) => contract.alias === action);
+  const historyAlias = PM_NAMESPACED_COMMAND_ALIASES.find((contract) => contract.alias === action);
   if (historyAlias) return `${historyAlias.canonical}|${historyAlias.alias}`;
   if (
     PM_CORE_COMMAND_NAMES.includes(
@@ -984,7 +990,7 @@ function actionDescriptorMatchesSelectedCommand(
   descriptor: ActionContractDescriptor,
   selectedCommand: string,
 ): boolean {
-  const historyOperation = resolvePmHistoryOperation(selectedCommand);
+  const historyOperation = resolvePmCommandOperation(selectedCommand);
   if (historyOperation !== selectedCommand) return descriptor.action === historyOperation;
   if (descriptor.command_path === null) {
     return false;
@@ -1662,6 +1668,7 @@ interface ActionContractDescriptor {
   command_path: string | null;
 }
 
+/** Merge stable core and package action identities with canonical command paths for contract discovery. */
 function collectActionContractDescriptors(
   extensionContracts: ExtensionCommandContract[],
   options: { includePackageOwnedActions?: boolean } = {},
@@ -1702,7 +1709,7 @@ function collectActionContractDescriptors(
       action: contract.action,
       provider: "extension",
       requires_extension: true,
-      command_path: normalizeCommandPath(contract.command),
+      command_path: PM_NAMESPACED_COMMAND_ALIASES.find((entry) => entry.alias === contract.command)?.canonical ?? normalizeCommandPath(contract.command),
     });
   }
   return [...descriptors.values()].sort((left, right) =>
@@ -1711,6 +1718,7 @@ function collectActionContractDescriptors(
   /* c8 ignore stop */
 }
 
+/** Derive invocability from active handlers and policy, preserving installation hints for unavailable optional operations. */
 function resolveActionAvailability(
   descriptor: ActionContractDescriptor,
   runtimeProbe: RuntimeExtensionActionProbe,
@@ -1733,10 +1741,10 @@ function resolveActionAvailability(
     ? splitCommandPathAliases(descriptor.command_path)
     : [];
   const extensionCommandAvailable = commandPaths.some((commandPath) =>
-    runtimeProbe.handlers.has(commandPath),
+    runtimeProbe.handlers.has(resolvePmCommandOperation(commandPath)),
   );
   const optionalPackageHint = commandPaths
-    .map((commandPath) => PACKAGE_OWNED_COMMAND_INSTALL_HINTS.get(commandPath))
+    .map((commandPath) => PACKAGE_OWNED_COMMAND_INSTALL_HINTS.get(resolvePmCommandOperation(commandPath)))
     .find((hint): hint is string => typeof hint === "string");
   const invocable =
     runtimeProbe.disabledReason === null && extensionCommandAvailable;
@@ -1769,8 +1777,9 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   );
 }
 
+/** Recognize core flag contracts while keeping package-owned operations outside the core provider surface. */
 function isCoreCommandPath(command: string): boolean {
-  if (PACKAGE_OWNED_COMMANDS.has(command)) {
+  if (PACKAGE_OWNED_COMMANDS.has(resolvePmCommandOperation(command))) {
     return false;
   }
   return CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND.has(command);
@@ -1892,6 +1901,7 @@ function mergeFlagContracts(
   /* c8 ignore stop */
 }
 
+/** Merge core, runtime field, and extension flags for each public command path with optional semantic metadata. */
 function buildCommandFlagSurface(
   commands: string[],
   extensionFlagMap: ReturnType<typeof collectExtensionFlagContractsByCommand>,
@@ -1906,7 +1916,7 @@ function buildCommandFlagSurface(
         runtimeFieldFlagMap.get(
           normalizeCommandForRuntimeFieldFlags(command),
         ) ?? [];
-      const extensionFlags = extensionFlagMap.get(command);
+      const extensionFlags = extensionFlagMap.get(resolvePmCommandOperation(command));
       const coreWithRuntime = mergeFlagContracts(coreFlags, runtimeFlags);
       const flags = mergeFlagContracts(
         coreWithRuntime,
@@ -2270,6 +2280,7 @@ async function resolveContractsRuntimeContext(
   };
 }
 
+/** Include absent optional actions only when explicitly requested through availability discovery. */
 function shouldIncludePackageOwnedActions(
   selection: ContractsSelection,
 ): boolean {
@@ -2278,10 +2289,11 @@ function shouldIncludePackageOwnedActions(
     ((selection.selectedAction !== undefined &&
       PACKAGE_OWNED_ACTIONS.has(selection.selectedAction)) ||
       (selection.selectedCommand !== undefined &&
-        PACKAGE_OWNED_COMMANDS.has(selection.selectedCommand)))
+        PACKAGE_OWNED_COMMANDS.has(resolvePmCommandOperation(selection.selectedCommand))))
   );
 }
 
+/** Scope action discovery and synthesize optional package descriptors needed to explain unavailable command selections. */
 function collectContractsActionDescriptors(
   selection: ContractsSelection,
   mergedExtensionContracts: ExtensionCommandContract[],
@@ -2304,13 +2316,13 @@ function collectContractsActionDescriptors(
   if (
     shouldIncludePackageOwnedActions(selection) &&
     selection.selectedCommand !== undefined &&
-    PACKAGE_OWNED_COMMANDS.has(selection.selectedCommand) &&
+    PACKAGE_OWNED_COMMANDS.has(resolvePmCommandOperation(selection.selectedCommand)) &&
     !actionDescriptors.some(
       (entry) => entry.command_path === selection.selectedCommand,
     )
   ) {
     actionDescriptors.push({
-      action: packageOwnedActionForCommand(selection.selectedCommand),
+      action: packageOwnedActionForCommand(resolvePmCommandOperation(selection.selectedCommand)),
       provider: "extension",
       requires_extension: true,
       command_path: selection.selectedCommand,
@@ -2332,6 +2344,7 @@ function assertKnownContractsAction(
   }
 }
 
+/** Collect sorted core and active package command paths, retaining native namespace paths and compatibility aliases. */
 function buildContractsCommandCatalog(
   actionDescriptors: ActionContractDescriptor[],
   mergedExtensionContracts: ExtensionCommandContract[],
@@ -2339,16 +2352,19 @@ function buildContractsCommandCatalog(
   return [
     ...new Set([
       ...PM_CORE_COMMAND_NAMES.filter(
-        (entry) => !PACKAGE_OWNED_COMMANDS.has(entry),
+        (entry) => !PACKAGE_OWNED_COMMANDS.has(resolvePmCommandOperation(entry)),
       ),
       ...[...CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND.keys()].filter(
-        (entry) => !PACKAGE_OWNED_COMMANDS.has(entry),
+        (entry) => !PACKAGE_OWNED_COMMANDS.has(resolvePmCommandOperation(entry)),
       ),
       /* c8 ignore next -- action descriptors always include concrete command paths in command-scoped test fixtures. */
       ...actionDescriptors.flatMap((entry) =>
         entry.command_path ? splitCommandPathAliases(entry.command_path) : [],
       ),
-      ...mergedExtensionContracts.flatMap((entry) => entry.command.split("|")),
+      ...mergedExtensionContracts.flatMap((entry) => entry.command.split("|").flatMap((command) => {
+        const canonical = PM_NAMESPACED_COMMAND_ALIASES.find((alias) => alias.alias === command)?.canonical;
+        return canonical === undefined ? [command] : [command, canonical];
+      })),
     ]),
   ]
     .map((entry) => normalizeCommandPath(entry))
@@ -2445,6 +2461,7 @@ function buildUnknownCommandError(command: string): PmCliError {
   });
 }
 
+/** Validate a selected command and distinguish namespace, missing package, and unknown command recovery. */
 function assertKnownContractsCommand(
   selection: ContractsSelection,
   commandCatalog: string[],
@@ -2466,7 +2483,7 @@ function assertKnownContractsCommand(
     );
   }
   const packageHint = PACKAGE_OWNED_COMMAND_INSTALL_HINTS.get(
-    selection.selectedCommand,
+    resolvePmCommandOperation(selection.selectedCommand),
   );
   if (packageHint) {
     throw buildPackageOwnedCommandError(selection.selectedCommand, packageHint);
@@ -2474,6 +2491,7 @@ function assertKnownContractsCommand(
   throw buildUnknownCommandError(selection.selectedCommand);
 }
 
+/** Validate command and action selection together, then derive scoped descriptors and runtime availability. */
 function resolveContractsActionContext(
   selection: ContractsSelection,
   runtime: ContractsRuntimeContext,
@@ -2489,7 +2507,7 @@ function resolveContractsActionContext(
   );
   assertKnownContractsCommand(selection, commandCatalog);
   const selectedPackageOwnedAction = selection.selectedCommand
-    ? PACKAGE_OWNED_COMMAND_ACTIONS.get(selection.selectedCommand)
+    ? PACKAGE_OWNED_COMMAND_ACTIONS.get(resolvePmCommandOperation(selection.selectedCommand))
     : undefined;
   const commandScopedDescriptors = selection.selectedCommand
     ? actionDescriptors.filter((descriptor) =>
@@ -2671,12 +2689,15 @@ function resolveOutputCommands(
       (contract) => contract.hidden && (contract.lifecycle === "deprecated" || (!selection.fullOutput && !selection.availabilityOnly)),
     ).map((contract) => contract.alias),
   );
+  if (selection.summary && !selection.fullOutput) {
+    for (const alias of COMMAND_ALIAS_TO_CANONICAL.keys()) hiddenAliases.add(alias);
+  }
   return commands.filter((command) => !hiddenAliases.has(command));
 }
 
-/** Resolve a command's summary identity through explicit history aliases and established root aliases. */
+/** Resolve a command's summary identity through explicit namespace aliases and established root aliases. */
 function canonicalSummaryCommand(command: string): string {
-  const historyAlias = PM_HISTORY_COMMAND_ALIASES.find((contract) => contract.alias === command || contract.canonical === command);
+  const historyAlias = PM_NAMESPACED_COMMAND_ALIASES.find((contract) => contract.alias === command || contract.canonical === command);
   if (historyAlias) return historyAlias.canonical;
   const rootCommand = command.split(" ")[0]!;
   if (rootCommand.startsWith("list-")) return "list";
@@ -2722,7 +2743,7 @@ function summarizeCommandIntent(
   extensionContracts: readonly ExtensionCommandContract[],
 ): Required<Pick<CommandSummarySurface, "intent" | "intent_source">> {
   const declared =
-    COMMAND_INTENTS.get(resolvePmHistoryOperation(command)) ??
+    COMMAND_INTENTS.get(resolvePmCommandOperation(command)) ??
     (command.includes(" ")
       ? undefined
       : COMMAND_INTENTS.get(canonicalSummaryCommand(command)));
@@ -2730,7 +2751,7 @@ function summarizeCommandIntent(
     return { intent: declared, intent_source: "command" };
   }
   const extensionContract = extensionContracts.find((contract) =>
-    splitCommandPathAliases(contract.command).includes(command),
+    splitCommandPathAliases(contract.command).includes(resolvePmCommandOperation(command)),
   );
   if (
     extensionContract?.intent !== null &&
@@ -2792,12 +2813,12 @@ function buildCommandSummarySurface(
         ...resolveCoreCommandFlags(command).map((contract) => contract.flag),
         ...extensionContracts
           .filter((contract) =>
-            splitCommandPathAliases(contract.command).includes(command),
+            splitCommandPathAliases(contract.command).includes(resolvePmCommandOperation(command)),
           )
           .flatMap((contract) => contract.flags.map((flag) => flag.flag)),
       ]);
       const flags = (
-        AGENT_BOOTSTRAP_FLAGS.get(resolvePmHistoryOperation(command)) ??
+        AGENT_BOOTSTRAP_FLAGS.get(resolvePmCommandOperation(command)) ??
         AGENT_BOOTSTRAP_FLAGS.get(canonicalRoot) ??
         AGENT_BOUNDED_FLAG_PRIORITY
       ).filter((flag) => availableFlags.has(flag));
@@ -2862,6 +2883,7 @@ function buildCommandExitContractGroups(
   return [...groups.values()];
 }
 
+/** Select provider contracts by semantic operation or action scope, preserving equivalent public command paths. */
 function resolveExtensionCommandContracts(
   selection: ContractsSelection,
   runtime: ContractsRuntimeContext,
@@ -2870,7 +2892,7 @@ function resolveExtensionCommandContracts(
   if (selection.selectedCommand) {
     return runtime.extensionContracts.filter((entry) =>
       splitCommandPathAliases(entry.command).includes(
-        selection.selectedCommand as string,
+        resolvePmCommandOperation(selection.selectedCommand as string),
       ),
     );
   }

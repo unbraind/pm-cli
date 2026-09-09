@@ -8,6 +8,7 @@ import {
   hasSubcommandFlagContractsForCommand,
   PM_COMMAND_ALIAS_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
+  resolvePmCommandOperation,
 } from "../sdk/cli-contracts.js";
 import {
   commandOptionFlagLabel,
@@ -107,12 +108,13 @@ const EXTENSION_TIER_ORDER = {
   internal: 3,
 } as const;
 
+/** Resolve semantic package metadata, or fold descendant tiers and families for a namespace. */
 function resolveExtensionCommandSurface(
   commandPath: string,
   descriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
   allowDescendants = true,
 ): ExtensionCommandSurface | undefined {
-  const exact = descriptors.get(commandPath);
+  const exact = descriptors.get(resolvePmCommandOperation(commandPath));
   if (exact) return exact;
   if (!allowDescendants) return undefined;
   const descendants = [...descriptors.entries()]
@@ -133,6 +135,7 @@ function resolveExtensionCommandSurface(
   };
 }
 
+/** Find a registered command or known positional parent; reject missing namespace leaves instead of returning root help. */
 function resolveCommandFromPathTokens(
   root: Command,
   pathTokens: string[],
@@ -145,6 +148,7 @@ function resolveCommandFromPathTokens(
     return exactCommand;
   }
   const requestedPath = pathTokens.join(" ");
+  if (resolvePmCommandOperation(requestedPath) !== requestedPath) return null;
   if (
     !PM_CORE_COMMAND_NAMES.some(
       (commandName) => commandName === requestedPath,
@@ -366,6 +370,7 @@ function buildHelpArgumentSummaries(command: Command): HelpArgumentSummary[] {
   });
 }
 
+/** Describe discoverable children with semantic tiers and package metadata, retaining hidden public commands for full discovery. */
 function buildHelpSubcommandSummaries(
   command: Command,
   extensionDescriptors: ReadonlyMap<
@@ -388,7 +393,7 @@ function buildHelpSubcommandSummaries(
     )
     .map((entry) => {
       const commandPath = normalizeHelpCommandPath(getCommandPath(entry));
-      const rootCommand = commandPath.split(" ")[0]!;
+      const rootCommand = commandPath;
       const declaredTier = getPmCommandHelpVisibilityTier(entry);
       const extensionDescriptor = resolveExtensionCommandSurface(
         commandPath,
@@ -583,6 +588,7 @@ function buildPositionalActionHelpProjection(
   };
 }
 
+/** Build structured help for the requested command path, including canonical metadata, flags, aliases, and examples. */
 function buildJsonHelpPayload(
   rootProgram: Command,
   targetCommand: Command,
@@ -603,10 +609,10 @@ function buildJsonHelpPayload(
   const positionalAction = resolvePmPositionalActionContract(resolvedPath);
   const projectedPath = positionalAction?.command ?? commanderPath;
   const commandPath = projectedPath.length > 0 ? projectedPath : undefined;
-  const rootCommandPath = commandPath?.split(" ")[0];
+  const rootCommandPath = commandPath;
   const fallbackNarrative = resolveHelpNarrative(commandPath, detailMode);
   const extensionDescriptor = commandPath
-    ? extensionDescriptors.get(commandPath)
+    ? extensionDescriptors.get(resolvePmCommandOperation(commandPath))
     : undefined;
   const extensionSurface = commandPath
     ? resolveExtensionCommandSurface(
@@ -678,6 +684,7 @@ export async function maybeRenderBootstrapJsonHelp(
   rootProgram: Command,
   argv: string[],
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+  requestedArgv: string[] = argv,
 ): Promise<boolean> {
   const bootstrapGlobal = parseBootstrapGlobalOptions(argv);
   if (!bootstrapGlobal.json) {
@@ -693,7 +700,7 @@ export async function maybeRenderBootstrapJsonHelp(
   );
   if (!targetCommand) {
     if (!bootstrapGlobal.quiet) {
-      const unknownMessage = `unknown command '${helpRequest.commandPathTokens.join(" ")}'`;
+      const unknownMessage = `unknown command '${resolvePmCommandOperation(helpRequest.commandPathTokens.join(" "))}'`;
       const runtimeContext = buildUnknownCommandGuidanceFromRuntime(
         unknownMessage,
         rootProgram,
@@ -727,6 +734,7 @@ export async function maybeRenderBootstrapJsonHelp(
       helpRequest.commandPathTokens,
       extensionDescriptors,
     );
+    payload.requested_path = parseBootstrapHelpRequest(requestedArgv).commandPathTokens;
     writeStdout(`${JSON.stringify(payload, null, 2)}\n`);
   }
   process.exitCode = EXIT_CODE.SUCCESS;

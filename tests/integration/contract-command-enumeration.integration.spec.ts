@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PM_COMMAND_ALIAS_CONTRACTS } from "../../src/sdk/cli-contracts/command-aliases.js";
 import { listPmCommandsForTier } from "../../src/sdk/agent-capability-contracts.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
@@ -62,7 +63,7 @@ describe("contract command enumeration", () => {
 
       expect(enumeratedRoots).toEqual(resolvedRoots);
       expect(helpCommands).toEqual(
-        [...listPmCommandsForTier("core"), "ctx"].sort(),
+        [...listPmCommandsForTier("core").filter((command) => !command.includes(" ") && !PM_COMMAND_ALIAS_CONTRACTS.some((alias) => alias.alias === command && alias.hidden)), "ctx"].sort(),
       );
       for (const required of ["context", "search", "list"]) {
         expect(enumeratedRoots).toContain(required);

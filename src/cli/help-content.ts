@@ -19,6 +19,7 @@ import {
 } from "../sdk/agent-capability-contracts.js";
 import {
   PM_COMMAND_ALIAS_CONTRACTS,
+  PM_CONTEXT_OPS_COMMAND_ALIASES,
   renderPmCommandAliasMigrationHint,
 } from "../sdk/cli-contracts.js";
 
@@ -174,6 +175,10 @@ export function isFullHelpDiscovery(argv: readonly string[]): boolean {
 }
 
 const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
+  ops: {
+    why: "Groups workspace diagnostics, quality checks, and maintenance under one discoverable command.",
+    examples: ["pm ops health --summary", "pm ops validate --check-history-drift", "pm ops --help"],
+  },
   init: {
     why: "Bootstraps tracker storage and settings so all other commands can run safely.",
     examples: [
@@ -575,7 +580,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
   },
   next: {
-    why: "Answers 'what should I work on now?' in one read: the single highest-priority ready item with rationale, plus the ranked ready and blocked queues (project management = context management).",
+    why: "Answers 'what should I work on now?' with the highest-priority ready item, rationale, and ranked ready and blocked queues.",
     examples: [
       "pm next",
       "pm next --json",
@@ -921,6 +926,16 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
   },
 };
+
+for (const { alias, canonical } of PM_CONTEXT_OPS_COMMAND_ALIASES) {
+  const bundle = HELP_BY_COMMAND_PATH[alias];
+  if (bundle) {
+    HELP_BY_COMMAND_PATH[canonical] = {
+      ...bundle,
+      examples: bundle.examples.map((example) => example.replace(`pm ${alias}`, `pm ${canonical}`)),
+    };
+  }
+}
 
 /** Public contract for root help bundle, shared by SDK and presentation-layer consumers. */
 export const ROOT_HELP_BUNDLE: HelpBundle = {

@@ -1098,12 +1098,16 @@ describe("docs-skills-gate", () => {
       mockUtilsWithRepo(fixtureRoot, runCommand);
       const scriptPath = path.join(process.cwd(), "scripts/release/docs-skills-gate.mjs");
       process.argv = ["node", scriptPath, "--json"];
-      const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-      await harness.importModuleStable("scripts/release/docs-skills-gate.mjs");
-      await harness.waitForCondition(() => {
-        expect(stdoutSpy).toHaveBeenCalled();
+      // The real gate can outlive a short polling deadline under coverage.
+      // Await its terminal output before fixture cleanup restores process state.
+      const output = new Promise<string>((resolve) => {
+        vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
+          resolve(String(chunk));
+          return true;
+        });
       });
-      const payload = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0] ?? "{}")) as {
+      await harness.importModuleStable("scripts/release/docs-skills-gate.mjs");
+      const payload = JSON.parse(await output) as {
         ok: boolean;
         checks: { mode: string };
         failures: string[];
@@ -1124,12 +1128,16 @@ describe("docs-skills-gate", () => {
       mockUtilsWithRepo(fixtureRoot, runCommand);
       const scriptPath = path.join(process.cwd(), "scripts/release/docs-skills-gate.mjs");
       process.argv = ["node", scriptPath, "--links-only", "--json"];
-      const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-      await harness.importModuleStable("scripts/release/docs-skills-gate.mjs");
-      await harness.waitForCondition(() => {
-        expect(stdoutSpy).toHaveBeenCalled();
+      // The real gate can outlive a short polling deadline under coverage.
+      // Await its terminal output before fixture cleanup restores process state.
+      const output = new Promise<string>((resolve) => {
+        vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
+          resolve(String(chunk));
+          return true;
+        });
       });
-      const payload = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0] ?? "{}")) as {
+      await harness.importModuleStable("scripts/release/docs-skills-gate.mjs");
+      const payload = JSON.parse(await output) as {
         ok: boolean;
         checks: { mode: string };
         failures: string[];

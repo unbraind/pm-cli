@@ -1,19 +1,23 @@
 id: pm-3i9q8g
-title: "normalize, reindex and events are maintenance and read surfaces with no declared noun, so three agent-facing commands sit outside the grammar the freeze will lock"
+title: "Native pm ops normalize, pm ops reindex and pm history events with compatibility aliases"
 description: "Place normalize and reindex under the diagnostics and maintenance noun, and reconcile events with the canonical history and activity read surface. Preserve existing spellings as hidden aliases so consolidation reduces discovery cost without removing shell or automation compatibility."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[3]: cli-grammar,consolidation,ops
 created_at: "2026-08-05T18:07:55.312Z"
-updated_at: "2026-09-08T13:32:41.149Z"
+updated_at: "2026-09-09T16:51:34.760Z"
+closed_at: "2026-09-09T16:51:34.029Z"
+completed_at: "2026-09-09T16:51:34.029Z"
 author: "harness:claude-code"
 estimated_minutes: 200
 acceptance_criteria: "normalize and reindex are placed under the diagnostics/maintenance noun alongside stats, health, validate, gc, telemetry and eval; events resolves against the history and activity read surfaces so one concept has one home; Every current spelling survives as a hidden alias; no maintenance capability is removed"
 parent: pm-n7rr
 risk: low
 confidence: high
-expected_result: "normalize and reindex live under the maintenance noun and events resolves against the history and activity surface, with every current spelling kept as an alias."
+resolution: "Native ops normalize, ops reindex and history events preserve package ownership and compatibility aliases, with explicit unavailable and installed action-availability assertions."
+expected_result: Optional operations stay unavailable before installation and available after activation; native and legacy invocations retain equivalent outputs.
+actual_result: "Full static gates, typecheck, 8639 tests and exact 100/100/100/100 coverage passed; linked acceptance, package behavior and token budget checks passed."
 dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-0z7n,blocked_by,"2026-08-05T18:08:42.524Z","harness:claude-code","cli:update:dep",detected
   pm-j82fd3,implements,"2026-08-05T18:08:42.524Z","harness:claude-code","cli:update:dep",detected
@@ -25,4 +29,76 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-ez1dfg,related,"2026-08-05T18:08:45.316Z","harness:claude-code","cli:update:dep",detected
   pm-qljv,related,"2026-08-05T18:08:45.316Z","harness:claude-code","cli:update:dep",detected
   pm-tqel,related,"2026-08-05T18:08:45.316Z","harness:claude-code","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-09-09T04:24:20.123Z","harness:codex","Implementation evidence: native command node placement preserves existing SDK handlers; bootstrap aliases, runtime contracts, capability routing, package availability, positional addressing, and three shell completions share declared mappings. TDD reproduced missing namespace support, then verified native/legacy argv and real isolated tracker reads. Broader quality gates and package acceptance are in progress."
+  "2026-09-09T04:42:08.994Z","harness:codex","Verification update: focused native/legacy and help/contract suite exercised 271 cases; 270 passed and one obsolete package-hint expectation was corrected. Native JSON help now retains optional-package installation recovery. GitHub live inventory found no open issues or PRs and no open Dependabot/code-scanning/secret-scanning alerts. Full coverage and static gates must finish before closure."
+  "2026-09-09T04:56:37.711Z","harness:codex","Manual acceptance passed in a disposable workspace using real search-advanced and governance-audit packages: ops reindex keyword refresh, ops normalize dry-run, five native/legacy JSON output comparisons, focus persistence and history verification. Scoped native contract reads now include the package descriptor; unavailable native JSON help includes package installation recovery."
+  "2026-09-09T05:15:39.213Z","harness:codex","Verification: linked sandbox-safe suite passed 42 tests across 8 files. Real search-advanced reindex and governance-audit normalize dry-run succeeded after package installation in an isolated workspace. Native and legacy JSON/help contracts, missing-provider recovery hints, default item history, and history events passed. Independent npm/Bun tarball installs resolved both public SDK entrypoints and native command paths."
+  "2026-09-09T05:29:24.692Z","harness:codex","Final verification: 8639 tests in 655 files passed; exact coverage 100/100/100/100 with zero uncovered counts (63818 statements, 48528 branches, 13248 functions, 61196 lines). Full static gates and source documentation requirements passed without relaxed thresholds. Linked suites, typecheck, secret scan, native/legacy temporary-workspace acceptance, real package installation, independent npm/Bun SDK consumers, and npx/bunx packed smoke with 13 packages passed. GitHub issue/PR and security alert inventories were clear before opening this delivery PR."
+  "2026-09-09T16:51:33.254Z","harness:codex","Review verification: 8639 tests across 655 files passed, exact coverage 100/100/100/100 with zero uncovered counts (63823 statements, 48528 branches, 13252 functions, 61201 lines). Full static quality, typecheck and the 57-surface token gate passed without relaxed existing ceilings. Each canonical linked namespace suite passed 42 tests; the new token-measurement link passed 12 tests. CodeRabbit accepted the three strengthened test assertions. The latest pm-changelog 2026.9.9 is installed; outcome titles feed package-generated release notes. PR 1225 requires a fresh hosted review on the forthcoming push."
+learnings[1]{created_at,author,text}:
+  "2026-09-09T05:19:58.494Z","harness:codex","Install namespace placement after package registration, move the existing Commander node, and resolve contracts through the stable operation identity. This preserves optional package boundaries and avoids cloned handler/parser drift."
+files[27]{path,scope,note}:
+  scripts/release/flag-invocation-parity.mjs,project,Namespace discovery compatibility and release verification
+  sdk/public-surface.json,project,Namespace discovery compatibility and release verification
+  src/cli/command-namespaces.ts,project,Shared native namespace contracts and verification
+  src/cli/help-content.ts,project,Shared native namespace contracts and verification
+  src/cli/help-json-payload.ts,project,Namespace discovery compatibility and release verification
+  src/cli/main.ts,project,Shared native namespace contracts and verification
+  src/sdk/agent-capability-contracts.ts,project,Shared native namespace contracts and verification
+  src/sdk/agent/item-addressing.ts,project,Shared native namespace contracts and verification
+  src/sdk/cli-bootstrap.ts,project,Shared native namespace contracts and verification
+  src/sdk/cli-contracts.ts,project,Shared native namespace contracts and verification
+  src/sdk/cli-contracts/command-aliases.ts,project,Shared native namespace contracts and verification
+  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project,Shared native namespace contracts and verification
+  src/sdk/cli-contracts/grammar-contracts.ts,project,Shared native namespace contracts and verification
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Shared native namespace contracts and verification
+  src/sdk/completion.ts,project,Shared native namespace contracts and verification
+  src/sdk/index.ts,project,Shared native namespace contracts and verification
+  tests/fixtures/contracts/full.json,project,Namespace discovery compatibility and release verification
+  tests/helpers/cliRunner.ts,project,Exercise real source handlers through shared output capture for truthful CLI coverage
+  tests/integration/context-ops-namespace.integration.spec.ts,project,Shared native namespace contracts and verification
+  tests/integration/contract-command-enumeration.integration.spec.ts,project,Namespace discovery compatibility and release verification
+  tests/integration/help-runtime.spec.ts,project,Namespace discovery compatibility and release verification
+  tests/integration/release-readiness-runtime.spec.ts,project,Namespace discovery compatibility and release verification
+  tests/unit/cli/command-namespaces.spec.ts,project,Shared native namespace contracts and verification
+  tests/unit/commands/completion-command.spec.ts,project,Namespace discovery compatibility and release verification
+  tests/unit/commands/contracts-command.spec.ts,project,Namespace discovery compatibility and release verification
+  tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,Shared native namespace contracts and verification
+  tests/unit/sdk/contracts-full-projection.spec.ts,project,Namespace discovery compatibility and release verification
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/command-namespaces.spec.ts tests/unit/sdk/cli-contracts tests/integration/context-ops-namespace.integration.spec.ts,project,240,"harness:codex","2026-09-09T04:24:19.565Z",local_mutation,feat/context-ops-command-namespaces
+test_runs[2]:
+  - run_id: test-local-mttn9v3o-jfup1e
+    kind: test
+    status: passed
+    started_at: "2026-09-09T05:14:48.527Z"
+    finished_at: "2026-09-09T05:15:08.340Z"
+    recorded_at: "2026-09-09T05:15:08.340Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/command-namespaces.spec.ts tests/unit/sdk/cli-contracts tests/integration/context-ops-namespace.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtuc07ig-i652ld
+    kind: test
+    status: passed
+    started_at: "2026-09-09T16:47:07.556Z"
+    finished_at: "2026-09-09T16:47:28.264Z"
+    recorded_at: "2026-09-09T16:47:28.264Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/command-namespaces.spec.ts tests/unit/sdk/cli-contracts tests/integration/context-ops-namespace.integration.spec.ts,schema,schema,source,local_source_ref
+docs[8]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated reviewed delivery attribution
+  docs/COMMAND_NAMESPACES.md,project,Native commands compatibility and package ownership
+  docs/generated/AGENT_CAPABILITY_ROUTING.md,project,Namespace discovery compatibility and release verification
+  docs/generated/AGENT_COMMAND_SURFACE.md,project,Namespace discovery compatibility and release verification
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project,Namespace discovery compatibility and release verification
+  docs/README.md,project,Namespace discovery compatibility and release verification
+  packages/pm-governance-audit/README.md,project,Namespace discovery compatibility and release verification
+  packages/pm-search-advanced/README.md,project,Namespace discovery compatibility and release verification
+close_reason: Implementation and review corrections verified locally; hosted rereview and merge remain separate delivery evidence.
 body: ""

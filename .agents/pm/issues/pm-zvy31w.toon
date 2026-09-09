@@ -1,0 +1,89 @@
+id: pm-zvy31w
+title: Isolate CodSpeed dependency setup from unrelated Chrome APT index failures
+description: "The benchmark runner inherits an unused Chrome APT source. PR 1225 run 34384419100 attempts 1 and 2 fail before benchmarks because its Packages.gz hash differs from the signed index. Preserve the source files but disable them in this disposable benchmark runner, retaining signature verification for Ubuntu dependencies."
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-09-09T17:59:53.701Z"
+updated_at: "2026-09-09T18:42:35.181Z"
+closed_at: "2026-09-09T18:42:34.125Z"
+completed_at: "2026-09-09T18:42:34.125Z"
+author: "harness:codex"
+acceptance_criteria: Only unused Chrome sources disabled; Ubuntu sources and verification intact; present and absent fixtures plus workflow checks pass; hosted benchmarks execute and upload.
+parent: pm-yh6t
+severity: medium
+resolution: Preserve and disable only unused Chrome sources; enforce four actual-step fixture populations and idempotence; narrow the script type explicitly for TypeScript and static analysis.
+expected_result: "Signed Ubuntu dependencies and unrelated sources are retained, benchmark data uploads, and workflow regressions fail clearly."
+actual_result: "Hosted 7dd3b run 34386816996 executed/uploaded 11 benchmarks. Final local guard correction passed 14 linked tests, ESLint and typecheck. Removed-step and widened-loop negative controls failed as intended. Hosted DeepScan recheck pending next push."
+component: ci/codspeed
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6apl,discovered_from,"2026-09-09T17:59:53.701Z","harness:codex","cli:create:dep",detected
+  pm-w16muu,discovered_from,"2026-09-09T17:59:53.701Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-09T17:59:53.701Z","harness:codex","Duplicate check: 84 all-status CodSpeed matches and zero exact Hash Sum mismatch matches. Full reads distinguish completed adoption pm-yh6t and completed cache fix pm-w16muu from this new Chrome index failure. Open and in-progress inventories checked."
+  "2026-09-09T18:02:56.420Z","harness:codex","Verification: the actual YAML shell step passed disposable present-source, repeated-execution and absent-source fixtures. Both google-chrome.list and google-chrome.sources are preserved as disabled files; Ubuntu and an unrelated provider source retain identical bytes. Pinned actionlint 1.7.12 and ShellCheck passed, and the sandboxed workflow contract suite passed all 14 tests. The earlier full source suite passed 8639 tests with exact 100/100/100/100; this correction changes only CI YAML and PM/changelog data. Hosted benchmark acceptance remains pending for the correction push."
+  "2026-09-09T18:25:42.538Z","harness:codex","Review follow-up: committed actual-step regression fixtures now cover absent, list-only, Deb822-only and both source formats, repeated execution, preserved bytes and unrelated Ubuntu/Microsoft sources. All 14 tests passed focused and linked; ESLint and typecheck passed. Two temporary workflow mutations (removed isolation step and widened file loop) each failed the test; original workflow restored exactly. Hosted run 34386816996 executed and uploaded all 11 benchmarks at 7dd3b7f6a; all 30 available checks passed, with 3 provider/expected skips. No application source changed after the exact 100/100/100/100 full-suite pass."
+  "2026-09-09T18:42:33.174Z","harness:codex","DeepScan e1d0567 report 234366166 flagged the test cast because its dataflow model does not narrow through expect(...).toBeTypeOf. Replaced that assertion/cast with an explicit typeof guard and reused one steps array for existing lookups, preserving the ESLint complexity ceiling. All 14 linked workflow contract tests, ESLint and typecheck passed. No application-source changes; hosted DeepScan acceptance awaits the next push. Report: https://deepscan.io/dashboard/#view=project&pid=32092&iid=234366166"
+files[2]{path,scope,note}:
+  .github/workflows/codspeed.yml,project,Preserve and disable only unused Chrome APT sources before signed Ubuntu instrument setup
+  tests/integration/ci-workflow-contract.spec.ts,project,Execute the actual Chrome-source workflow step against disposable source fixtures
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,240,"harness:codex","2026-09-09T18:01:43.545Z",local_mutation,feat/context-ops-command-namespaces
+test_runs[4]:
+  - run_id: test-local-mtueoxbd-npwu44
+    kind: test
+    status: passed
+    started_at: "2026-09-09T18:02:27.463Z"
+    finished_at: "2026-09-09T18:02:40.680Z"
+    recorded_at: "2026-09-09T18:02:40.680Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtuff2fj-12wtxt
+    kind: test
+    status: passed
+    started_at: "2026-09-09T18:22:43.652Z"
+    finished_at: "2026-09-09T18:23:00.367Z"
+    recorded_at: "2026-09-09T18:23:00.367Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtug2a9w-eedy23
+    kind: test
+    status: passed
+    started_at: "2026-09-09T18:40:47.027Z"
+    finished_at: "2026-09-09T18:41:03.620Z"
+    recorded_at: "2026-09-09T18:41:03.620Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtug3aib-2si58s
+    kind: test
+    status: passed
+    started_at: "2026-09-09T18:41:34.222Z"
+    finished_at: "2026-09-09T18:41:50.579Z"
+    recorded_at: "2026-09-09T18:41:50.579Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated dependency setup correction
+close_reason: Chrome-source isolation has hosted benchmark proof and committed behavioral regressions with explicit type narrowing.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-zvy31w
+  gate_id: codspeed-signed-apt-bootstrap
+  negative_control: "Committed actual-step regression covers no Chrome source, list only, Deb822 only, and both, repeated twice with bytes preserved and unrelated sources retained. Removing the step and widening its loop each failed the test; original workflow restored exactly."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,Pinned actionlint 1.7.12 with embedded ShellCheck,"Actual workflow shell step in disposable present, repeated and absent source fixtures"
+  hosted_checks[1]: "CodSpeed run 34386816996 at 7dd3b7f6a994d18f0b21cb81b3ad2e2420b19b26 executed 11 benchmarks and uploaded performance data; 30 available checks passed, 3 expected/provider skips."
+body: ""

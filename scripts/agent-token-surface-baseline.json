@@ -30,11 +30,13 @@
       "claim",
       "close",
       "context",
+      "context next",
       "create",
       "get",
       "init",
       "list",
-      "next",
+      "ops",
+      "ops validate",
       "plan",
       "plan add-step",
       "plan approve",
@@ -55,7 +57,6 @@
       "release",
       "search",
       "update",
-      "validate",
       "workspace position",
       "workspace snapshot create",
       "workspace snapshot delete",
@@ -85,11 +86,11 @@
       "create": 9394,
       "list": 9204,
       "search": 8261,
-      "validate": 4870,
+      "ops validate": 4870,
       "context": 3441,
       "get": 3049,
       "init": 2204,
-      "next": 2165,
+      "context next": 2165,
       "close": 2077,
       "claim": 2020,
       "assurance risk": 1152,
@@ -110,7 +111,8 @@
       "workspace snapshot delete": 888,
       "release": 537,
       "workspace position": 136,
-      "assurance lineages": 1229
+      "assurance lineages": 1229,
+      "ops": 1591
     }
   }
 }

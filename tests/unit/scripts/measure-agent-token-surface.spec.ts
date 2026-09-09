@@ -25,9 +25,11 @@ const LS_HELP =
   "Usage: pm ls [options] — a deliberately longer help payload for sorting";
 const GET_HELP_STDOUT = "GET HELP VIA STDOUT";
 const ACTION_HELP = "POSITIONAL ACTION HELP";
-const ACTION_COMMAND_NAMES = PM_POSITIONAL_ACTION_CONTRACTS.map(
-  ({ command }) => command,
-);
+const SCOPED_COMMAND_NAMES = [
+  ...PM_POSITIONAL_ACTION_CONTRACTS.map(({ command }) => command),
+  "context next",
+  "ops validate",
+];
 const CONTRACTS = {
   summary_toon: "SUMMARY-TOON",
   summary_json: "SUMMARY-JSON-PAYLOAD",
@@ -40,17 +42,14 @@ interface ExecOverrides {
   lsHelp?: () => string;
 }
 
-function keyOf(args: readonly string[]): string {
-  return args.join(" ");
-}
-
+/** Model measured CLI outputs and stdout-bearing usage failures while rejecting undeclared command invocations. */
 function createExecFileSync(overrides: ExecOverrides = {}) {
   return vi.fn((_command: string, args: readonly string[]) => {
     const commandArgs =
       args[0]?.endsWith("dist/cli.js") || args[0]?.endsWith("dist\\cli.js")
         ? args.slice(1)
         : args;
-    const key = keyOf(commandArgs);
+    const key = commandArgs.join(" ");
     if (key === "--version") return "9.9.9-test\n";
     if (key === "--help --no-pager") return ROOT_HELP;
     if (key === "ls --help --no-pager") {
@@ -60,7 +59,7 @@ function createExecFileSync(overrides: ExecOverrides = {}) {
       throw Object.assign(new Error("exit 2"), { stdout: GET_HELP_STDOUT });
     }
     if (
-      ACTION_COMMAND_NAMES.some(
+      SCOPED_COMMAND_NAMES.some(
         (command) => key === `${command} --help --no-pager`,
       )
     ) {
@@ -87,6 +86,7 @@ interface FakeMcpChild {
   spawn: ReturnType<typeof vi.fn>;
 }
 
+/** Expose request-driven MCP stdout and process events so timeout, malformed response, and child-failure paths can be controlled independently. */
 function createMcpChild(
   onRequest: (child: FakeMcpChild["child"]) => void,
 ): FakeMcpChild {
@@ -99,6 +99,7 @@ function createMcpChild(
   return { child, spawn };
 }
 
+/** Replace both subprocess entrypoints together so measurement fixtures cannot launch undeclared real commands. */
 function mockChildProcess(
   execFileSync: ReturnType<typeof vi.fn>,
   spawn: ReturnType<typeof vi.fn>,
@@ -106,6 +107,7 @@ function mockChildProcess(
   vi.doMock("node:child_process", () => ({ execFileSync, spawn }));
 }
 
+/** Connect deterministic CLI responses and a valid MCP tools list as the baseline for contract mutation tests. */
 function configureSuccessfulMeasurement(): void {
   const execFileSync = createExecFileSync();
   const { spawn } = createMcpChild((mcp) => {
@@ -121,6 +123,7 @@ function configureSuccessfulMeasurement(): void {
   mockChildProcess(execFileSync, spawn);
 }
 
+/** Build a complete high-ceiling fixture so each negative test can isolate the baseline contract it invalidates. */
 function permissiveBaseline(overrides: Record<string, unknown> = {}): string {
   return JSON.stringify({
     version: 2,
@@ -138,9 +141,9 @@ function permissiveBaseline(overrides: Record<string, unknown> = {}): string {
         bounded_full: 1_000_000,
       },
       commands: Object.fromEntries(
-        ["ls", "get", ...ACTION_COMMAND_NAMES].map((name) => [name, 1_000_000]),
+        ["ls", "get", ...SCOPED_COMMAND_NAMES].map((name) => [name, 1_000_000]),
       ),
-      required_commands: ["get", "ls", ...ACTION_COMMAND_NAMES].sort(
+      required_commands: ["get", "ls", ...SCOPED_COMMAND_NAMES].sort(
         (left, right) => left.localeCompare(right),
       ),
     },
@@ -179,6 +182,7 @@ interface TokenSurfaceModule {
   compareBaseline: (report: Report, baseline: TokenSurfaceBaseline) => string[];
 }
 
+/** Execute the measurement script through the isolated module harness and decode its terminal JSON report. */
 async function importAndCaptureReport(): Promise<Report> {
   const stdoutWrite = vi
     .spyOn(process.stdout, "write")
@@ -189,6 +193,7 @@ async function importAndCaptureReport(): Promise<Report> {
   return JSON.parse(payload) as Report;
 }
 
+/** Capture a measurement report alongside the real baseline builder and comparator exports for contract assertions. */
 async function importAndCaptureModule(): Promise<{
   report: Report;
   module: TokenSurfaceModule;
@@ -236,12 +241,12 @@ describe("measure-agent-token-surface", () => {
     });
     // "help" is filtered, the alias line contributes only its primary name, and
     // the deeper-indented continuation line is skipped without ending the scan.
-    expect(report.command_count).toBe(2 + ACTION_COMMAND_NAMES.length);
+    expect(report.command_count).toBe(2 + SCOPED_COMMAND_NAMES.length);
     expect(report.commands.map((entry) => entry.name)).toEqual(
-      expect.arrayContaining(["ls", "get"]),
+      expect.arrayContaining(["ls", "get", "context next", "ops validate"]),
     );
     expect(report.commands.map((entry) => entry.name)).toEqual(
-      expect.arrayContaining(ACTION_COMMAND_NAMES),
+      expect.arrayContaining(SCOPED_COMMAND_NAMES),
     );
     expect(report.commands.find(({ name }) => name === "get")?.bytes).toBe(
       Buffer.byteLength(GET_HELP_STDOUT),
@@ -249,7 +254,7 @@ describe("measure-agent-token-surface", () => {
     const perCommand =
       Buffer.byteLength(LS_HELP) +
       Buffer.byteLength(GET_HELP_STDOUT) +
-      ACTION_COMMAND_NAMES.length * Buffer.byteLength(ACTION_HELP);
+      SCOPED_COMMAND_NAMES.length * Buffer.byteLength(ACTION_HELP);
     expect(report.per_command_total.bytes).toBe(perCommand);
     expect(report.full_help_surface).toEqual({
       bytes: rootBytes + perCommand,
@@ -322,7 +327,7 @@ describe("measure-agent-token-surface", () => {
       1,
     );
     expect(coreBaseline.surfaces.required_commands).toEqual(
-      ["get", "list", ...ACTION_COMMAND_NAMES].sort((left, right) =>
+      ["get", "list", ...SCOPED_COMMAND_NAMES].sort((left, right) =>
         left.localeCompare(right),
       ),
     );
@@ -373,7 +378,7 @@ describe("measure-agent-token-surface", () => {
       report,
       incompleteBaseline,
     );
-    expect(incompleteViolations).toHaveLength(6 + ACTION_COMMAND_NAMES.length);
+    expect(incompleteViolations).toHaveLength(6 + SCOPED_COMMAND_NAMES.length);
     expect(incompleteViolations).toEqual(
       expect.arrayContaining([
         "contracts.summary_toon: missing baseline",
@@ -385,7 +390,7 @@ describe("measure-agent-token-surface", () => {
       surfaces: undefined,
     } as unknown as TokenSurfaceBaseline);
     expect(missingSurfaceViolations).toHaveLength(
-      10 + ACTION_COMMAND_NAMES.length,
+      10 + SCOPED_COMMAND_NAMES.length,
     );
     expect(missingSurfaceViolations).toContain(
       "commands.get: missing baseline",
@@ -449,7 +454,7 @@ describe("measure-agent-token-surface", () => {
         "utf8",
       );
       expect(stdoutWrite).toHaveBeenCalledWith(
-        `Agent token-surface gate passed (${11 + ACTION_COMMAND_NAMES.length} surfaces).\n`,
+        `Agent token-surface gate passed (${11 + SCOPED_COMMAND_NAMES.length} surfaces).\n`,
       );
     } finally {
       stdoutWrite.mockRestore();

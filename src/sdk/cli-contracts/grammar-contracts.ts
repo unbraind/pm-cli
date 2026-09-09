@@ -9,6 +9,7 @@
 import {
   resolvePmCommandAlias,
   PM_HISTORY_COMMAND_ALIASES,
+  PM_CONTEXT_OPS_COMMAND_ALIASES,
   resolvePmHistoryOperation,
   type PmCommandAliasContract,
 } from "./command-aliases.js";
@@ -766,6 +767,8 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "focus",
       "next",
     ]),
+    ...destinationRows("context", "context next", "consolidation", "pm-kcs4", ["ctx next"]),
+    ...destinationRows("context", "context focus", "consolidation", "pm-kcs4", ["ctx focus"]),
     ...destinationRows("search", "search", "target_noun", "pm-pbyu", [
       "search",
     ]),
@@ -902,6 +905,8 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "pm-o3fh",
       ["event", "meet", "remind"],
     ),
+    ...destinationRows("ops", "ops", "target_noun", "pm-6apl", ["ops"]),
+    ...destinationRows("ops", "ops normalize", "package_owned", "package:pm-governance-audit", ["normalize"]),
     ...destinationRows("ops", "ops", "consolidation", "pm-6apl", [
       "assurance",
       "config",
@@ -951,7 +956,15 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
         "guide",
       ],
     ),
-  ];
+  ].flatMap((entry): PmCommandDestinationContract[] => {
+    const alias = PM_CONTEXT_OPS_COMMAND_ALIASES.find((candidate) => candidate.alias === entry.command);
+    if (!alias) return [entry];
+    const noun = alias.canonical_argv[0] as PmCommandDestinationContract["noun"];
+    return [
+      { ...entry, noun, target: alias.canonical, owner: alias.owner },
+      { ...entry, command: alias.canonical, noun, target: alias.canonical, owner: alias.owner, disposition: entry.disposition === "package_owned" ? "package_owned" : "target_noun" },
+    ];
+  });
 
 /** Exhaustive current command and positional-action signature table. */
 export const PM_COMMAND_POSITIONAL_CONTRACTS: readonly PmCommandPositionalContract[] =
@@ -1323,7 +1336,8 @@ export function verifyPmCliGrammar(
       nounSet,
     ),
     ...validateDestinationCensus(commandSet, destinations),
-    ...validateAliasTargets(aliases, commandSet),
+    ...validateAliasTargets(aliases.filter((alias) => commandSet.has(alias.alias) ||
+      !(destinationsByCommand.get(alias.canonical) ?? []).some((destination) => destination.disposition === "package_owned")), commandSet),
   ];
   const hiddenAliasNames = new Set(
     aliases.filter((alias) => alias.hidden).map((alias) => alias.alias),

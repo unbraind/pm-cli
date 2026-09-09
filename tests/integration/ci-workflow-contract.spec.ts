@@ -1,4 +1,5 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import fg from "fast-glob";
@@ -10,6 +11,7 @@ import {
   relativeToRepo,
 } from "../../scripts/release/static-quality-gate.mts";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
+import { withTempDir } from "../helpers/temp.js";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -145,15 +147,21 @@ describe("GitHub workflow contract", () => {
         benchmarks?: {
           name?: unknown;
           "runs-on"?: unknown;
-          steps?: Array<{ name?: unknown; uses?: unknown; with?: unknown }>;
+          steps?: Array<{
+            name?: unknown;
+            uses?: unknown;
+            with?: unknown;
+            run?: unknown;
+          }>;
         };
       };
     };
     const benchmarkJob = parsedWorkflow.jobs?.benchmarks;
-    const setupNodeStep = benchmarkJob?.steps?.find(
+    const steps = benchmarkJob?.steps ?? [];
+    const setupNodeStep = steps.find(
       (step) => step.name === "Setup Node.js",
     );
-    const codSpeedStep = benchmarkJob?.steps?.find(
+    const codSpeedStep = steps.find(
       (step) =>
         typeof step.uses === "string" &&
         step.uses.startsWith("CodSpeedHQ/action@"),
@@ -174,6 +182,51 @@ describe("GitHub workflow contract", () => {
       run: "pnpm vitest bench --run --config vitest.bench.config.ts",
     });
     expect(codSpeedOptions?.mode).not.toBe("walltime");
+
+    const chromeStepIndex = steps.findIndex(
+      (step) => step.name === "Disable unused Chrome APT sources",
+    );
+    expect(chromeStepIndex).toBeGreaterThanOrEqual(0);
+    expect(chromeStepIndex).toBeLessThan(steps.indexOf(codSpeedStep!));
+    const chromeScript = steps[chromeStepIndex]?.run;
+    if (typeof chromeScript !== "string") {
+      throw new Error("Chrome APT isolation step must provide a shell script");
+    }
+
+    // Run the real workflow body with relative fixture paths and no privilege escalation.
+    const isolatedScript = `sudo() { "$@"; }\n${chromeScript.replaceAll("/etc/apt/sources.list.d", "sources.list.d")}`;
+    for (const chromeFiles of [
+      [],
+      ["google-chrome.list"],
+      ["google-chrome.sources"],
+      ["google-chrome.list", "google-chrome.sources"],
+    ]) {
+      await withTempDir("pm-codspeed-apt-", async (root) => {
+        const sources = path.join(root, "sources.list.d");
+        await mkdir(sources);
+        const retained = ["ubuntu.sources", "microsoft-prod.list"];
+        for (const name of [...retained, ...chromeFiles]) {
+          await writeFile(path.join(sources, name), `source: ${name}\n`);
+        }
+        for (let execution = 0; execution < 2; execution += 1) {
+          execFileSync("bash", ["-euo", "pipefail", "-s"], {
+            cwd: root,
+            input: isolatedScript,
+            encoding: "utf8",
+            timeout: 10_000,
+          });
+          expect((await readdir(sources)).sort()).toEqual(
+            [...retained, ...chromeFiles.map((name) => `${name}.disabled`)].sort(),
+          );
+          for (const name of [...retained, ...chromeFiles]) {
+            const actualName = chromeFiles.includes(name) ? `${name}.disabled` : name;
+            expect(await readFile(path.join(sources, actualName), "utf8")).toBe(
+              `source: ${name}\n`,
+            );
+          }
+        }
+      });
+    }
   });
 
   it("keeps CI matrix and quality-gate steps aligned with release requirements", async () => {

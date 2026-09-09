@@ -35,6 +35,7 @@ pm guide release --json
 - [Onboarding](ONBOARDING.md) - first-two-hours maintainer and contributor setup.
 - [Agent Guide](AGENT_GUIDE.md) - canonical agent loop, tracker linking, and token-minimal command choices.
 - [Command Reference](COMMANDS.md) - command families with examples and when to use each family.
+- [Context and Operations Namespaces](COMMAND_NAMESPACES.md) - native navigation, diagnostics, event streams, and compatibility aliases.
 - [CLI Scripting Contract](SCRIPTING.md) - exit codes, flat mutation receipts versus read envelopes, stdout/stderr boundaries, stable JSON fields, uniform OR filters, and shell composition recipes.
 - [Configuration](CONFIGURATION.md) - settings, storage formats, output, search, validation, and environment variables.
 - [Testing](TESTING.md) - sandbox-safe local tests and linked-test orchestration.

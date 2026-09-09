@@ -432,7 +432,11 @@ function rewriteCommandAlias(
   argv: string[],
   trace: BootstrapNormalizationEvent[],
 ): string[] {
-  const index = findBootstrapCommandTokenIndex(argv);
+  let index = findBootstrapCommandTokenIndex(argv);
+  if (index !== undefined && argv[index] === "help") {
+    const offset = findBootstrapCommandTokenIndex(argv.slice(index + 1));
+    index = offset === undefined ? undefined : index + 1 + offset;
+  }
   if (index === undefined) {
     return argv;
   }
@@ -441,11 +445,11 @@ function rewriteCommandAlias(
   if (!canonical) {
     return argv;
   }
-  const rewritten = [...argv];
-  rewritten[index] = canonical;
+  const canonicalTokens = canonical.split(" ");
+  const rewritten = [...argv.slice(0, index), ...canonicalTokens, ...argv.slice(index + 1)];
   trace.push({
     from: token,
-    to: [canonical],
+    to: canonicalTokens,
     reason: "command_alias",
     confidence: "high",
   });
@@ -1154,7 +1158,7 @@ function parseBootstrapCommandPathName(argv: string[]): string | undefined {
   const first = stripped[0]?.trim().toLowerCase();
   const second = stripped[1]?.trim().toLowerCase();
   const historyPath = `${first} ${second}`;
-  if (first === "history" && resolvePmHistoryOperation(historyPath) !== historyPath) return historyPath;
+  if (resolvePmHistoryOperation(historyPath) !== historyPath) return historyPath;
   if (
     (first === "extension" || first === "package" || first === "packages") &&
     typeof second === "string" &&

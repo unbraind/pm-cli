@@ -199,7 +199,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(detailedHelp.stdout).toContain(
         "use --dry-run to preview targets without deleting files",
       );
-      expect(detailedHelp.stdout).toContain("pm gc --dry-run");
+      expect(detailedHelp.stdout).toContain("pm ops gc --dry-run");
     });
   });
 

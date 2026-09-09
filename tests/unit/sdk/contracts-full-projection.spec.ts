@@ -34,7 +34,7 @@ describe("full contracts projection monotonicity", () => {
     );
     const compactCommands = new Set(summary.command_summaries?.map((entry) => entry.command));
     expect(full.command_summaries?.filter((entry) => !compactCommands.has(entry.command)).map((entry) => entry.command)).toEqual([
-      "activity", "history-compact", "history-redact", "history-repair", "restore",
+      "activity", "ctx", "eval", "events", "focus", "gc", "health", "history-compact", "history-redact", "history-repair", "next", "packages", "restore", "stats", "telemetry", "test-all", "validate",
     ]);
     expect(summary.command_summaries).toEqual(
       expect.arrayContaining([

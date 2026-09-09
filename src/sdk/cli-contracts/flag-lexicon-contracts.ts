@@ -12,6 +12,7 @@ import {
   PM_COMMAND_CAPABILITY_CONTRACTS,
   type PmCommandCapabilityFamily,
 } from "../agent-capability-contracts.js";
+import { PM_CONTEXT_OPS_COMMAND_ALIASES, resolvePmCommandOperation } from "./command-aliases.js";
 import { enrichCliFlagInvocationContracts } from "../flag-invocation-contracts.js";
 
 /** Stable value kinds used by the public flag lexicon. */
@@ -125,7 +126,7 @@ export function resolvePmFlagSemanticConcept(
   if (flag === "--output-budget") return "rendered-output-byte-budget";
   if (flag === "--token-budget") return "context-intent-token-budget";
   if (flag === "--full") {
-    const concept = FULL_PROJECTION_CONCEPT_BY_COMMAND[command];
+    const concept = FULL_PROJECTION_CONCEPT_BY_COMMAND[resolvePmCommandOperation(command)];
     if (concept === undefined) {
       throw new Error(
         `Command ${command} exposes --full without a registered projection concept.`,
@@ -212,7 +213,7 @@ export function listPmFlagSpellingInventory(): readonly PmFlagSpellingInventoryE
 // declared-only census. pm-08mt4k adds two explicit scheduling opt-ins to next
 // and claim; aliases remain free and every future increase still fails closed.
 // pm-5bsofk adds one install planning opt-in to each executable install surface.
-const PM_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
+const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   init: 30,
   config: 36,
   extension: 54,
@@ -293,6 +294,15 @@ const PM_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   remind: 29,
   "test-runs-worker": 25,
 } satisfies Readonly<Record<string, number>>);
+
+/** Native paths inherit the identical flag ceiling of their compatibility operation. */
+const PM_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
+  ...LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS,
+  ...Object.fromEntries(PM_CONTEXT_OPS_COMMAND_ALIASES.flatMap(({ alias, canonical }) => {
+    const maximum = (LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS as Readonly<Record<string, number>>)[alias];
+    return maximum === undefined ? [] : [[canonical, maximum]];
+  })),
+});
 
 /** Return persisted no-growth ratchets with current counts derived from the canonical vocabulary. */
 export function listPmCommandFlagBudgets(): readonly PmCommandFlagBudget[] {

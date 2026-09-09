@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Isolate CodSpeed dependency setup from unrelated Chrome APT index failures ([pm-zvy31w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zvy31w.toon))
+
+### Other
+
+- Native pm ops stats, health, validate, gc, telemetry, eval and test-all with compatible root commands ([pm-6apl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-6apl.toon))
+- Native pm context next and pm context focus with permanent navigation aliases ([pm-kcs4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kcs4.toon))
+- Native pm ops normalize, pm ops reindex and pm history events with compatibility aliases ([pm-3i9q8g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3i9q8g.toon))
+
 ## 2026.9.9 - 2026-09-09
 
 ### Added
