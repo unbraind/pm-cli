@@ -82,9 +82,12 @@ import {
   resolveGovernanceKnobs,
 } from "../core/store/settings.js";
 import { resolvePmToolCustomFieldCollision } from "./cli-contracts/tool-schema.js";
+import { WORKFLOW_POLICY_ACTIONS } from "./governance/workflow-policy.js";
+export * from "./governance/workflow-policy.js";
 
 /** Public contract for schema subcommands, shared by SDK and presentation-layer consumers. */
 export const SCHEMA_SUBCOMMANDS = [
+  ...WORKFLOW_POLICY_ACTIONS,
   "add-type",
   "remove-type",
   "add-status",

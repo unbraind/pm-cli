@@ -11,6 +11,7 @@ import {
   KNOWN_EXTENSION_SERVICE_NAMES,
   KNOWN_EXTENSION_TRUST_MODES,
 } from "../../core/extensions/extension-types.js";
+export { WORKFLOW_POLICY_ACTIONS } from "../../core/policy/workflow-policy.js";
 import { PM_COMMAND_ALIAS_CONTRACTS } from "./command-aliases.js";
 
 /** Public contract for pm extension capability contracts, shared by SDK and presentation-layer consumers. */

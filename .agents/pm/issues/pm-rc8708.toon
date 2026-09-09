@@ -1,0 +1,61 @@
+id: pm-rc8708
+title: "GHSA-gqvv-2mrq-wpjv: Hono: Incomplete fix for CVE-2026-39408: `toSSG()` still writes files outside the output directory"
+description: "### Summary\n\nThe fix released for CVE-2026-39408 does not cover every traversal sequence. `toSSG()` can still write files outside the configured output directory when a route parameter contains consecutive parent-directory segments.\n\n### Details\n\nStatic site generation builds each output path from the route path and the values supplied through `ssgParams`, then verifies that the result stays inside the output directory. That check normalizes the path with the same routine that built it, and the routine did not fully collapse runs of consecutive parent-directory segments. A value carrying enough of them produces a path the check accepts, but the filesystem resolves outside the output directory.\n\nThe earlier fix handled a single parent-directory segment, so it blocks the sequence reported at the time while leaving longer runs unhandled. The check also treated output directories that differ only in how they are rooted as equivalent.\n\nThis arises when an application generates a static site from route parameter values it does not fully control — slugs coming from a CMS, an API, or user submissions.\n\n### Impact\n\nA value reaching `ssgParams` from an untrusted source can cause build output to be written outside the intended output directory, carrying whatever content the route handler produced.\n\nThis may lead to:\n\n- files being created or overwritten elsewhere in the build environment\n- generated artifacts or deployment output being altered\n\nThis affects build-time static site generation only; request-time routing is not affected. Applications whose `ssgParams` values are entirely developer-controlled are not affected.\n\nSource: https://github.com/advisories/GHSA-gqvv-2mrq-wpjv\nObserved by pnpm audit on the transitive development graph @modelcontextprotocol/ext-apps -> @modelcontextprotocol/sdk -> hono 4.13.4. The upstream patched floor is 4.13.5; maintained 4.13.7 supports Node >=16.9 and predates the release-age window. No direct pm source import of Hono, toSSG, or parseBody was found; this is dependency remediation, not a claim of a demonstrated pm exploit."
+type: Issue
+status: closed
+priority: 1
+tags[4]: dependencies,dev-dependency,mcp,security
+created_at: "2026-09-09T00:11:33.921Z"
+updated_at: "2026-09-09T00:22:22.517Z"
+closed_at: "2026-09-09T00:22:21.870Z"
+completed_at: "2026-09-09T00:22:21.870Z"
+author: "harness:codex"
+acceptance_criteria: The shared override excludes vulnerable Hono versions; the lockfile resolves patched Hono; audit reports zero advisories; frozen installation and MCP consumers pass.
+parent: pm-abvpgh
+reporter: npm audit and GitHub Advisory Database
+severity: medium
+environment: pnpm workspace dependency graph on PR 1224
+repro_steps: Run pnpm audit --json on the pre-override lockfile and observe GHSA-gqvv-2mrq-wpjv.
+resolution: "Enforced Hono >=4.13.5 <5.0.0 and regenerated the lockfile at 4.13.7, removing the three reported Hono advisories while retaining runtime support and release-age policy."
+expected_result: "The vulnerable Hono versions are excluded; dependency audit is clean, frozen installation is reproducible and MCP consumers and repository verification pass."
+actual_result: "Patched graph verification: all 8623 tests in 653 files pass at exact 100/100/100/100 coverage with zero uncovered counts: 63729 statements, 48461 branches, 13216 functions and 61134 lines. All four TypeScript projects and every linked audit, frozen-install and real MCP workflow/HTTP/Apps/transport check pass. pnpm audit reports zero advisories and pnpm why resolves only Hono 4.13.7. Documentation, structural/docstring, graph-composition and record-integrity gates pass. Final pushed-head hosted checks, full platform matrix, preflight and full review govern merge."
+affected_version: hono@4.13.4
+fixed_version: hono@4.13.7
+component: MCP Apps transitive development dependency graph
+customer_impact: A known moderate upstream vulnerability remains in the dependency graph until the patched Hono resolution is enforced.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6ixn,implements,"2026-09-09T00:11:33.921Z","harness:codex","cli:create:dep",detected
+  pm-mlpn91,discovered_from,"2026-09-09T00:11:33.921Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-09T00:11:33.921Z","harness:codex","Duplicate check: live full all-status inventory contains 2723 items with complete metadata and no omissions; exact Hono/GHSA literal inspection found no matching item. Targeted keyword/advisory searches and open/in-progress inventories were inspected. The existing qs remediation pm-mlpn91 governs the dependency-floor pattern but is not a duplicate of these newly published Hono findings."
+  "2026-09-09T00:14:19.460Z","harness:codex","Red/green dependency evidence: the final pre-patch npm audit returned three moderate Hono advisories on 4.13.4, published at 2026-09-08 21:22-21:23 UTC. A shared >=4.13.5 <5.0.0 override now resolves every Hono edge to 4.13.7. The maintained patch was published September 4 and supports Node >=16.9; no release-age exception or runtime-floor change is used. All linked audit and frozen-install commands pass, and real MCP workflow, streamable HTTP, Apps and transport checks pass. Fresh pnpm audit reports zero advisories across 436 dependencies. Full coverage and typecheck are running before reviewed closure."
+  "2026-09-09T00:22:19.697Z","harness:codex","Patched graph verification: all 8623 tests in 653 files pass at exact 100/100/100/100 coverage with zero uncovered counts: 63729 statements, 48461 branches, 13216 functions and 61134 lines. All four TypeScript projects and every linked audit, frozen-install and real MCP workflow/HTTP/Apps/transport check pass. pnpm audit reports zero advisories and pnpm why resolves only Hono 4.13.7. Documentation, structural/docstring, graph-composition and record-integrity gates pass. Final pushed-head hosted checks, full platform matrix, preflight and full review govern merge."
+files[2]{path,scope,note}:
+  pnpm-lock.yaml,project,Resolve all Hono edges to the maintained compatible patch
+  pnpm-workspace.yaml,project,Enforce the patched Hono 4.x security floor
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  pnpm audit --audit-level low,project,240,"harness:codex","2026-09-09T00:12:18.171Z",local_mutation,feat/declarative-workflow-policies
+test_runs[1]:
+  - run_id: test-local-mttch95o-mhnfww
+    kind: test
+    status: passed
+    started_at: "2026-09-09T00:12:56.120Z"
+    finished_at: "2026-09-09T00:12:57.372Z"
+    recorded_at: "2026-09-09T00:12:57.372Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm audit --audit-level low,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated security remediation entry
+close_reason: Patched the Hono dependency graph and verified scanner and consumer acceptance.
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: transitive-hono-security-floor
+  negative_control: "Before the override, pnpm audit --json returned GHSA-gqvv-2mrq-wpjv on hono 4.13.4."
+  local_checks[3]: pnpm audit --audit-level low,pnpm install --frozen-lockfile,node scripts/run-tests.mjs test -- tests/integration/workflow-policy-mcp.spec.ts
+  hosted_checks[3]: Security and Script Quality,CI / Gates (coverage),Nightly
+  owner: pm-abvpgh
+body: ""

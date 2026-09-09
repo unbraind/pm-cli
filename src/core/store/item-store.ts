@@ -4,6 +4,7 @@
  * Reads and writes tracker storage with format-aware helpers for Item Store.
  */
 import fs from "node:fs/promises";
+import { enforceWorkflowMutation } from "../policy/workflow-policy-store.js";
 import { recordItemMetadataEnumeration } from "./item-metadata-read-work.js";
 import path from "node:path";
 import {
@@ -669,6 +670,10 @@ async function mutateItemWithDeferredHistoryContext(
       schema: params.settings.schema,
       extensionFieldNames: params.extensionFieldNames,
     });
+    const workflowPolicy = await enforceWorkflowMutation({
+      pmRoot: params.pmRoot, settings: params.settings, operation: params.op,
+      author: params.author, before: beforeDocument, after: afterDocument,
+    });
     await runActiveBeforeMutationHooks({
       pm_root: params.pmRoot,
       operation: params.op,
@@ -745,7 +750,9 @@ async function mutateItemWithDeferredHistoryContext(
         before: beforeDocument,
         after: afterDocument,
         message: params.message,
-        context: historyContext,
+        context: workflowPolicy.decisions.length === 0 ? historyContext : {
+          ...historyContext, workflow_policies: workflowPolicy.decisions,
+        },
       });
       try {
         await appendHistoryEntry(historyPath, entry);
@@ -819,6 +826,7 @@ async function mutateItemWithDeferredHistoryContext(
       warnings: [
         ...parseWarnings,
         ...(mutation.warnings ?? []),
+        ...workflowPolicy.warnings,
         ...historyPolicy.warnings,
         ...serviceWriteOverride.warnings,
         ...derivedIndexWarnings,
@@ -951,6 +959,10 @@ export async function deleteItem(params: {
       schema: params.settings.schema,
       extensionFieldNames,
     });
+    const workflowPolicy = await enforceWorkflowMutation({
+      pmRoot: params.pmRoot, settings: params.settings, operation: "delete",
+      author: params.author, before: beforeDocument, after: null, dryRun: params.dryRun,
+    });
     await runActiveBeforeMutationHooks({
       pm_root: params.pmRoot,
       operation: "delete",
@@ -979,6 +991,7 @@ export async function deleteItem(params: {
       before: beforeDocument,
       after: tombstoneDocument,
       message: params.message,
+      context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
     });
     const historyPath = getHistoryPath(params.pmRoot, located.id);
     const serviceDeleteOverride = await runActiveServiceOverride(
@@ -1021,6 +1034,7 @@ export async function deleteItem(params: {
         targetPath: effectiveItemPath,
         warnings: [
           ...parseWarnings,
+          ...workflowPolicy.warnings,
           ...historyPolicy.warnings,
           ...serviceDeleteOverride.warnings,
         ],
@@ -1098,6 +1112,7 @@ export async function deleteItem(params: {
       changedFields: ["deleted"],
       warnings: [
         ...parseWarnings,
+        ...workflowPolicy.warnings,
         ...historyPolicy.warnings,
         ...serviceDeleteOverride.warnings,
         ...derivedIndexWarnings,

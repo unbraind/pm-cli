@@ -452,6 +452,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   checkMetadata: { type: "boolean" },
   metadataProfile: { type: "string", enum: ["core", "strict", "custom"] },
   checkResolution: { type: "boolean" },
+  checkCompleteness: { type: "boolean" },
   checkLifecycle: { type: "boolean" },
   checkStaleBlockers: { type: "boolean" },
   dependencyCycleSeverity: { type: "string", enum: ["off", "warn", "error"] },
@@ -667,6 +668,9 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
 export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
   Record<PmToolAction, Record<string, unknown>>
 > = {
+  schema: {
+    definition: { type: ["object", "string"] },
+  },
   assurance: {
     definition: ASSURANCE_DEFINITION_SCHEMA,
     kind: {
@@ -1779,6 +1783,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   checkResolution: {
     description: "Run closed-item resolution metadata checks.",
   },
+  checkCompleteness: { description: "Evaluate declarative lifecycle field requirements, with per-type counts and bounded missing-field diagnostics." },
   checkLifecycle: {
     description: "Run active-item lifecycle governance drift checks.",
   },
@@ -2374,9 +2379,11 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     },
   },
   schema: {
+    definition: { description: "Workflow policy declaration for policy-put, or proposed item fields for policy-check." },
+    policy: { description: "Declared approval rule id for policy-approve." },
     name: {
       description:
-        "Custom item type name (add-type/remove-type/show), custom status id (show-status/add-status/remove-status), or custom field key (add-field/remove-field/show-field). Required for those subcommands.",
+        "Custom item type name, status id, field key, policy id, or item id for the selected schema verb; policy-mode requires advise|refuse.",
       examples: ["Spike", "review", "component"],
     },
   },

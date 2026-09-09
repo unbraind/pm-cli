@@ -254,7 +254,8 @@ const PM_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   // already registered at runtime for reconcile and report; declaring them
   // makes the contract truthful rather than growing the surface.
   merge: 27,
-  schema: 40,
+  // pm-mj42og: definition, policy id, and audit message for declarative workflows.
+  schema: 43,
   profile: 22,
   activity: 35,
   restore: 23,
@@ -276,7 +277,8 @@ const PM_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   telemetry: 21,
   stats: 29,
   health: 36,
-  validate: 45,
+  // pm-htbetn: explicit completeness selection; no spare flag allowance.
+  validate: 46,
   assurance: 30,
   gc: 22,
   workspace: 23,

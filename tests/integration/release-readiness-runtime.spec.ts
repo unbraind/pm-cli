@@ -316,6 +316,7 @@ const REQUIRED_VALIDATE_FLAGS = [
   "--check-metadata",
   "--metadata-profile",
   "--check-resolution",
+  "--check-completeness",
   "--check-lifecycle",
   "--check-stale-blockers",
   "--dependency-cycle-severity",
@@ -1233,7 +1234,7 @@ describe("release readiness runtime coverage", () => {
       expect(validateHelp.code).toBe(0);
       expect(validateHelp.stdout).toContain("Usage: pm validate [options]");
       expect(validateHelp.stdout).toContain(
-        "Run standalone metadata, resolution, lifecycle, files, linked-command reference,",
+        "Validate metadata, lifecycle policies, files, command references, and history.",
       );
       for (const flag of REQUIRED_VALIDATE_FLAGS) {
         expect(validateHelp.stdout).toContain(flag);

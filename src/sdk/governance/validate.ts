@@ -4,6 +4,7 @@
  * Implements the pm validate command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { readWorkflowCompletenessCheck } from "./workflow-completeness.js";
 import fs from "node:fs/promises";
 import { realpathSync } from "node:fs";
 import type { Dirent } from "node:fs";
@@ -129,6 +130,7 @@ import {
 } from "./validate-normalization.js";
 
 type ValidateCheckName =
+  | "completeness"
   | "metadata"
   | "resolution"
   | "lifecycle"
@@ -296,6 +298,8 @@ const execFileAsync = promisify(execFile);
 
 /** Documents the validate command options payload exchanged by command, SDK, and package integrations. */
 export interface ValidateCommandOptions {
+  /** Evaluate workspace field requirements for each item's current lifecycle status. */
+  checkCompleteness?: boolean;
   /** Value that configures or reports check metadata for this contract. */
   checkMetadata?: boolean;
   /** Value that configures or reports check resolution for this contract. */
@@ -1156,6 +1160,7 @@ function resolveRequestedChecks(
   options: ValidateCommandOptions,
 ): Set<ValidateCheckName> {
   const requested = new Set<ValidateCheckName>();
+  if (options.checkCompleteness) requested.add("completeness");
   if (options.checkMetadata) {
     requested.add("metadata");
   }
@@ -1198,6 +1203,7 @@ function resolveRequestedChecks(
       requested.add("command_references");
       requested.add("history_drift");
       requested.add("format_version");
+      requested.add("completeness");
       requested.add("storage_integrity");
     }
     return requested;
@@ -1243,21 +1249,14 @@ function summarizeDuplicateIssueCodes(
   };
 }
 
-function initializeMissingMetadataByField(): Record<
-  ValidateMetadataRequiredField,
-  string[]
-> {
-  return Object.fromEntries(
-    SUPPORTED_METADATA_REQUIRED_FIELDS.map((field) => [field, [] as string[]]),
-  ) as Record<ValidateMetadataRequiredField, string[]>;
-}
-
 function collectMissingMetadataByField(
   items: ItemWithBody[],
   statusRegistry: RuntimeStatusRegistry,
   enforcePlanningFieldsOnTerminal: boolean,
 ): Record<ValidateMetadataRequiredField, string[]> {
-  const missingByField = initializeMissingMetadataByField();
+  const missingByField = Object.fromEntries(
+    SUPPORTED_METADATA_REQUIRED_FIELDS.map((field) => [field, [] as string[]]),
+  ) as Record<ValidateMetadataRequiredField, string[]>;
   for (const item of items) {
     for (const field of SUPPORTED_METADATA_REQUIRED_FIELDS) {
       if (
@@ -3383,6 +3382,7 @@ async function executeRequestedValidateChecks(params: {
   parentCycleSeverity: ValidateDependencyCycleSeverity;
   fileScanMode: ValidateFileScanMode;
   initialWarnings: string[];
+  sourceIncomplete: boolean;
 }): Promise<ValidateCheckExecutionState> {
   const state: ValidateCheckExecutionState = {
     checks: [],
@@ -3398,6 +3398,10 @@ async function executeRequestedValidateChecks(params: {
     params.options.verboseDiagnostics === true ||
     params.options.allAffectedIds === true ||
     params.global.json === true;
+  if (params.requestedChecks.has("completeness")) {
+    const built = await readWorkflowCompletenessCheck(params.pmRoot, params.items, fullDiagnostics ? Infinity : DIAGNOSTIC_LIST_SUMMARY_LIMIT, params.sourceIncomplete);
+    recordValidateCheck(state, built, fixHintsEnabled);
+  }
   if (params.requestedChecks.has("metadata")) {
     const built = buildMetadataCheck(
       params.items,
@@ -3640,12 +3644,13 @@ export async function runValidate(
   const itemReadWarnings: string[] = [];
   const items = await readValidateItems({
     includeBody:
-      requestedChecks.has("history_drift") || requestedChecks.has("metadata"),
+      (["history_drift", "metadata", "completeness"] as const).some((check) => requestedChecks.has(check)),
     pmRoot,
     settings,
     typeToFolder: typeRegistry.type_to_folder,
     warnings: itemReadWarnings,
   });
+  const sourceIncomplete = itemReadWarnings.length > 0;
   if (requestedChecks.has("history_drift")) {
     const authorAttribution = await scanHistoryAuthorAttribution(pmRoot);
     if (authorAttribution.actionable_unknown_event_count > 0) {
@@ -3690,6 +3695,7 @@ export async function runValidate(
     parentCycleSeverity,
     fileScanMode,
     initialWarnings: [...new Set(itemReadWarnings)],
+    sourceIncomplete,
   });
 
   // Remediation phase (pm-c3sz / pm-8jss / pm-0v2m). Plans are derived from

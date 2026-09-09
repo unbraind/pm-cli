@@ -1,0 +1,10 @@
+{
+  "source_commit": "28afde592c66f7066dc93151bc4c9f214c7c2aa0",
+  "source_path": "src/cli/commands/create.ts",
+  "source_lines": [
+    335,
+    362
+  ],
+  "description": "Verbatim reported table rows enclosed in a standalone array declaration.",
+  "source": "export const normalizers = [{\n    optionKey: \"comment\",\n    clearFlagKey: \"clearComments\",\n    valueFlag: \"--comment\",\n    clearFlag: \"--clear-comments\",\n  },\n  {\n    optionKey: \"note\",\n    clearFlagKey: \"clearNotes\",\n    valueFlag: \"--note\",\n    clearFlag: \"--clear-notes\",\n  },\n  {\n    optionKey: \"learning\",\n    clearFlagKey: \"clearLearnings\",\n    valueFlag: \"--learning\",\n    clearFlag: \"--clear-learnings\",\n  },\n  {\n    optionKey: \"file\",\n    clearFlagKey: \"clearFiles\",\n    valueFlag: \"--file\",\n    clearFlag: \"--clear-files\",\n  },\n  {\n    optionKey: \"test\",\n    clearFlagKey: \"clearTests\",\n    valueFlag: \"--test\",\n    clearFlag: \"--clear-tests\",\n}];\n"
+}

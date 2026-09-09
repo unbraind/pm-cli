@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 365
+- Catalog error codes: 371
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 346
-- Coverage fraction: 0.052055
+- Uncovered error codes: 352
+- Coverage fraction: 0.051213
 - Closed-domain probes: 19
 - Grammar probes: 97
 
@@ -365,6 +365,12 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `vectorization_stale_items_remaining` | `vectorization_stale_items_remaining` | uncovered | none | 0 |
 | `visible_surface_ceiling_exceeded` | `visible_surface_ceiling_exceeded` | uncovered | none | 0 |
 | `workflow_duplicate_type` | `workflow_duplicate_type` | uncovered | none | 0 |
+| `workflow_policy_approval_history_invalid` | `workflow_policy_approval_history_invalid` | uncovered | none | 0 |
+| `workflow_policy_audit_failed` | `workflow_policy_audit_failed` | uncovered | none | 0 |
+| `workflow_policy_input_unreadable` | `workflow_policy_input_unreadable` | uncovered | none | 0 |
+| `workflow_policy_invalid` | `workflow_policy_invalid` | uncovered | none | 0 |
+| `workflow_policy_refused` | `workflow_policy_refused` | uncovered | none | 0 |
+| `workflow_policy_registry_invalid` | `workflow_policy_registry_invalid` | uncovered | none | 0 |
 | `workflow_status_unknown` | `workflow_status_unknown` | uncovered | none | 0 |
 | `workflow_transition_malformed` | `workflow_transition_malformed` | uncovered | none | 0 |
 | `workflow_type_empty` | `workflow_type_empty` | uncovered | none | 0 |

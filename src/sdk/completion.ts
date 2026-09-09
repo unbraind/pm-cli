@@ -3,6 +3,7 @@
  *
  * Implements the pm completion command surface and its agent-facing runtime behavior.
  */
+import { WORKFLOW_POLICY_ACTIONS } from "./cli-contracts/enum-contracts.js";
 import { EXIT_CODE, PmCliError } from "./runtime-primitives.js";
 import { listPmCommandsForTier } from "./agent-capability-contracts.js";
 import { SCAFFOLD_CAPABILITIES } from "./extension/scaffold.js";
@@ -134,6 +135,7 @@ const HEALTH_FLAGS = toCompletionFlagString(HEALTH_FLAG_CONTRACTS);
 const INIT_FLAGS = toCompletionFlagString(INIT_FLAG_CONTRACTS);
 const CONTRACTS_FLAGS = toCompletionFlagString(CONTRACTS_FLAG_CONTRACTS);
 const PLAN_FLAGS = toCompletionFlagString(PLAN_FLAG_CONTRACTS);
+const SCHEMA_SUBCOMMAND_CHOICES = `${WORKFLOW_POLICY_ACTIONS.join(" ")} list show show-status add-type remove-type add-status remove-status add-field remove-field list-fields show-field apply-preset rename-type rename-field remap-status`;
 const PLAN_SUBCOMMANDS_LIST =
   "create show add-step update-step complete-step block-step reorder-step remove-step link unlink decision discovery validation resume approve materialize";
 const COMPLETION_FLAGS = toCompletionFlagString(COMPLETION_FLAG_CONTRACTS);
@@ -880,7 +882,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("list status logs stop resume --status --limit --stream --tail --force --author --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    validate)",
-    `      COMPREPLY=(${compgen("--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --dependency-cycle-severity --parent-cycle-severity --check-files --scan-mode --include-pm-internals --verbose-file-lists --verbose-diagnostics --all-affected-ids --strict-exit --fail-on-warn --fix-hints --auto-fix --dry-run --fix-scope --prune-missing --check-history-drift --check-command-references --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--check-completeness --check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --dependency-cycle-severity --parent-cycle-severity --check-files --scan-mode --include-pm-internals --verbose-file-lists --verbose-diagnostics --all-affected-ids --strict-exit --fail-on-warn --fix-hints --auto-fix --dry-run --fix-scope --prune-missing --check-history-drift --check-command-references --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    health)",
     `      COMPREPLY=(${compgen(HEALTH_FLAGS)})`,
@@ -902,7 +904,11 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(GET_FLAGS)})`,
     "      ;;",
     "    schema)",
-    `      COMPREPLY=(${compgen("list show show-status add-type remove-type add-status remove-status add-field remove-field list-fields show-field apply-preset rename-type rename-field remap-status --description --default-status --folder --alias --role --order --type --commands --cli-flag --required --required-on-create --no-allow-unset --required-types --infer --min-count --apply --to --migration-id --dry-run --author --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    '      if [[ "$prev" == "policy-mode" ]]; then',
+    `        COMPREPLY=(${compgen("advise refuse")})`,
+    "        return",
+    "      fi",
+    `      COMPREPLY=(${compgen(`${SCHEMA_SUBCOMMAND_CHOICES} --definition --policy --message --description --default-status --folder --alias --role --order --type --commands --cli-flag --required --required-on-create --no-allow-unset --required-types --infer --min-count --apply --to --migration-id --dry-run --author --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help`)})`,
     "      ;;",
     "    profile)",
     `      COMPREPLY=(${compgen("list show apply lint agile ops research --dry-run --author --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1538,8 +1544,16 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
         schema)
+          if [[ "\${words[CURRENT-1]}" == policy-mode ]]; then
+            compadd advise refuse
+            return
+          fi
           _arguments \\
-            '1:subcommand:(list show show-status add-type remove-type add-status remove-status add-field remove-field list-fields show-field apply-preset rename-type rename-field remap-status)' \\
+            '1:subcommand:(${SCHEMA_SUBCOMMAND_CHOICES})' \\
+            '--definition[Policy definition or proposed fields JSON]:json' \\
+            '--policy[Approval policy id]:id' \\
+            '--message[History rationale]:text' \\
+            '--dry-run[Preview schema changes]' \\
             '--description[Human description for the custom item type, status, or field]:text' \\
             '--default-status[Default status hint for the custom item type]:status' \\
             '--folder[Storage folder for items of this custom type]:dir' \\
@@ -1935,6 +1949,7 @@ ${renderZshArgumentSpecs(RESTORE_INVOCATIONS.map((flag) => `'${flag.flag}[${flag
           ;;
         validate)
           _arguments \\
+            '--check-completeness[Check declarative required fields]' \\
             '--check-metadata[Run metadata completeness checks]' \\
             '--metadata-profile[Select metadata validation profile for --check-metadata]:(core strict custom)' \\
             '--check-resolution[Run closed-item resolution metadata checks]' \\
@@ -2723,7 +2738,12 @@ complete -c pm -n '__pm_history_operation history-repair repair' -l dry-run -d '
 complete -c pm -n '__pm_history_operation history-repair repair' -l author -d 'Mutation author' -r
 complete -c pm -n '__pm_history_operation history-repair repair' -l message -d 'Audit history message' -r
 complete -c pm -n '__pm_history_operation history-repair repair' -l force -d 'Force ownership/lock override'
-complete -c pm -n '__fish_seen_subcommand_from schema' -a 'list show show-status add-type remove-type add-status remove-status add-field remove-field list-fields show-field apply-preset rename-type rename-field remap-status' -d 'Schema subcommand'
+complete -c pm -n '__fish_seen_subcommand_from schema' -a '${SCHEMA_SUBCOMMAND_CHOICES}' -d 'Schema subcommand'
+complete -c pm -n '__fish_seen_subcommand_from schema; and __fish_seen_subcommand_from policy-mode' -a 'advise refuse' -d 'Policy enforcement'
+complete -c pm -n '__fish_seen_subcommand_from schema' -l definition -d 'Policy definition or proposed fields JSON' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l policy -d 'Approval policy id' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l message -d 'History rationale' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l dry-run -d 'Preview schema changes'
 complete -c pm -n '__fish_seen_subcommand_from schema' -l description -d 'Human description for the custom item type, status, or field' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l default-status -d 'Default status hint for the custom item type' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l folder -d 'Storage folder for items of this custom type' -r
@@ -3010,6 +3030,7 @@ complete -c pm -n '__fish_seen_subcommand_from close-many' -l rollback          
 complete -c pm -n '__fish_seen_subcommand_from close-many' -l no-checkpoint          -d 'Disable checkpoint creation during apply mode'
 
 # validate flags
+complete -c pm -n '__fish_seen_subcommand_from validate' -l check-completeness -d 'Check declarative required fields'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-metadata -d 'Run metadata completeness checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l metadata-profile -d 'Select metadata validation profile for --check-metadata' -r -a 'core strict custom'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-resolution -d 'Run closed-item resolution metadata checks'

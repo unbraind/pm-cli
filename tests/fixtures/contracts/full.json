@@ -7266,6 +7266,18 @@
       "command": "schema",
       "flags": [
         {
+          "flag": "--definition",
+          "value_name": "json"
+        },
+        {
+          "flag": "--policy",
+          "value_name": "id"
+        },
+        {
+          "flag": "--message",
+          "value_name": "value"
+        },
+        {
           "flag": "--description"
         },
         {
@@ -8592,6 +8604,10 @@
     {
       "command": "validate",
       "flags": [
+        {
+          "flag": "--check-completeness",
+          "value_type": "boolean"
+        },
         {
           "flag": "--check-metadata"
         },
@@ -22286,6 +22302,108 @@
     },
     {
       "aliases": [],
+      "canonical_code": "workflow_policy_approval_history_invalid",
+      "class": "conflict",
+      "code": "workflow_policy_approval_history_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Workflow policy approval history invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/policy/workflow-policy-store.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "workflow_policy_audit_failed",
+      "class": "conflict",
+      "code": "workflow_policy_audit_failed",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Workflow policy audit failed condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/policy/workflow-policy-store.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "workflow_policy_input_unreadable",
+      "class": "conflict",
+      "code": "workflow_policy_input_unreadable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Workflow policy input unreadable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/policy/workflow-policy-store.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "workflow_policy_invalid",
+      "class": "usage",
+      "code": "workflow_policy_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Workflow policy invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/policy/workflow-policy.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "workflow_policy_refused",
+      "class": "conflict",
+      "code": "workflow_policy_refused",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Workflow policy refused condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/policy/workflow-policy-store.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "workflow_policy_registry_invalid",
+      "class": "conflict",
+      "code": "workflow_policy_registry_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Workflow policy registry invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/policy/workflow-policy-store.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "workflow_status_unknown",
       "class": "usage",
       "code": "workflow_status_unknown",
@@ -33242,10 +33360,97 @@
       ]
     },
     {
-      "description": "Inspect or modify the workspace item-type/status/field schema (pm schema). subcommand selects the operation; name carries the item type name (show/add-type/remove-type), status id (show-status/add-status/remove-status), or field key (show-field/add-field/remove-field). apply-preset adopts a domain type preset; add-type with infer=true derives types from title-prefix conventions. Schema mutations write workspace config files, not item history.",
+      "description": "Inspect or modify the workspace item-type/status/field schema (pm schema). subcommand selects the operation; name carries the item type name (show/add-type/remove-type), status id (show-status/add-status/remove-status), or field key (show-field/add-field/remove-field). apply-preset adopts a domain type preset; add-type with infer=true derives types from title-prefix conventions. Policy verbs author declarations, preview changes, set enforcement, and record content-bound approvals. Registry mutations write workspace history; approvals write item history.",
       "input_schema": {
         "additionalProperties": true,
         "allOf": [
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "policy-put"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name",
+                "definition"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "policy-remove"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "policy-mode"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "policy-check"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "policy-approve"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name",
+                "policy"
+              ]
+            }
+          },
           {
             "if": {
               "properties": {
@@ -33469,6 +33674,37 @@
                 "typePreset"
               ]
             }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "subcommand": {
+                      "const": "policy-mode"
+                    }
+                  },
+                  "required": [
+                    "subcommand"
+                  ]
+                },
+                {
+                  "properties": {
+                    "name": {
+                      "not": {
+                        "enum": [
+                          "advise",
+                          "refuse"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                }
+              ]
+            }
           }
         ],
         "properties": {
@@ -33510,12 +33746,23 @@
             "description": "Default status for add-type.",
             "type": "string"
           },
+          "definition": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Policy declaration for policy-put, or proposed metadata for policy-check; structured JSON or JSON text."
+          },
           "description": {
             "description": "Custom item type, status, or field description for add-type/add-status/add-field.",
             "type": "string"
           },
           "dryRun": {
-            "description": "Preview command effects without mutating storage artifacts.",
+            "description": "Preview registry changes without writing; policy-approve rejects previews.",
             "type": "boolean"
           },
           "fieldType": {
@@ -33553,6 +33800,10 @@
             "description": "Emit machine-readable JSON output.",
             "type": "boolean"
           },
+          "message": {
+            "description": "History explanation for policy mutations and approvals.",
+            "type": "string"
+          },
           "migrationId": {
             "description": "Optional stable idempotency override used to persist and resume a schema migration plan; omitted values are derived from the workspace and normalized request.",
             "examples": [
@@ -33565,7 +33816,7 @@
             "type": "number"
           },
           "name": {
-            "description": "Item type name (show/add-type/remove-type), status id (show-status/add-status/remove-status), or custom field key (show-field/add-field/remove-field). Required for those subcommands.",
+            "description": "Item type name, status id, field key, policy id, or item id for the selected schema verb; policy-mode requires advise|refuse.",
             "type": "string"
           },
           "noExtensions": {
@@ -33578,6 +33829,31 @@
           },
           "options": {
             "description": "Additional schema options using camelCase keys.",
+            "properties": {
+              "definition": {
+                "anyOf": [
+                  {
+                    "type": "object"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "description": "Policy declaration for policy-put, or proposed metadata for policy-check; structured JSON or JSON text."
+              },
+              "dryRun": {
+                "description": "Preview registry changes without writing; policy-approve rejects previews.",
+                "type": "boolean"
+              },
+              "message": {
+                "description": "History explanation for policy mutations and approvals.",
+                "type": "string"
+              },
+              "policy": {
+                "description": "Approval policy id for policy-approve.",
+                "type": "string"
+              }
+            },
             "type": "object"
           },
           "order": {
@@ -33594,6 +33870,10 @@
               "pm",
               "node dist/cli.js"
             ],
+            "type": "string"
+          },
+          "policy": {
+            "description": "Approval policy id for policy-approve.",
             "type": "string"
           },
           "profile": {
@@ -33651,7 +33931,14 @@
               "remove-field",
               "list-fields",
               "show-field",
-              "apply-preset"
+              "apply-preset",
+              "policies",
+              "policy-put",
+              "policy-remove",
+              "policy-mode",
+              "policy-check",
+              "policy-approve",
+              "policy-presets"
             ],
             "type": "string"
           },
@@ -35138,6 +35425,10 @@
           },
           "checkCommandReferences": {
             "description": "Run linked-command PM-ID reference checks.",
+            "type": "boolean"
+          },
+          "checkCompleteness": {
+            "description": "Evaluate declarative lifecycle field requirements, with per-type counts and bounded missing-field diagnostics.",
             "type": "boolean"
           },
           "checkFiles": {
@@ -46966,6 +47257,93 @@
             "if": {
               "properties": {
                 "subcommand": {
+                  "const": "policy-put"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name",
+                "definition"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "policy-remove"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "policy-mode"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "policy-check"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "policy-approve"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name",
+                "policy"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
                   "const": "show"
                 }
               },
@@ -47185,6 +47563,37 @@
                 "typePreset"
               ]
             }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "subcommand": {
+                      "const": "policy-mode"
+                    }
+                  },
+                  "required": [
+                    "subcommand"
+                  ]
+                },
+                {
+                  "properties": {
+                    "name": {
+                      "not": {
+                        "enum": [
+                          "advise",
+                          "refuse"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                }
+              ]
+            }
           }
         ],
         "properties": {
@@ -47249,6 +47658,13 @@
             ],
             "type": "string"
           },
+          "definition": {
+            "description": "Workflow policy declaration for policy-put, or proposed item fields for policy-check.",
+            "type": [
+              "object",
+              "string"
+            ]
+          },
           "description": {
             "description": "Item description text.",
             "type": "string"
@@ -47297,6 +47713,10 @@
             "description": "Emit machine-readable JSON output.",
             "type": "boolean"
           },
+          "message": {
+            "description": "History message for mutation audit trail.",
+            "type": "string"
+          },
           "migrationId": {
             "description": "Optional stable idempotency override used to persist and resume a schema migration plan; omitted values are derived from the workspace and normalized request.",
             "examples": [
@@ -47313,7 +47733,7 @@
             "type": "number"
           },
           "name": {
-            "description": "Custom item type name (add-type/remove-type/show), custom status id (show-status/add-status/remove-status), or custom field key (add-field/remove-field/show-field). Required for those subcommands.",
+            "description": "Custom item type name, status id, field key, policy id, or item id for the selected schema verb; policy-mode requires advise|refuse.",
             "examples": [
               "Spike",
               "review",
@@ -47360,6 +47780,10 @@
               "pm",
               "node dist/cli.js"
             ],
+            "type": "string"
+          },
+          "policy": {
+            "description": "Declared approval rule id for policy-approve.",
             "type": "string"
           },
           "profile": {
@@ -53777,6 +54201,10 @@
             "description": "Run linked-command PM-ID reference checks.",
             "type": "boolean"
           },
+          "checkCompleteness": {
+            "description": "Evaluate declarative lifecycle field requirements, with per-type counts and bounded missing-field diagnostics.",
+            "type": "boolean"
+          },
           "checkFiles": {
             "description": "Run linked-file and orphaned-file checks.",
             "type": "boolean"
@@ -57372,10 +57800,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.15.0"
+    "x-schema-version": "4.16.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.15.0",
+  "schema_version": "4.16.0",
   "selected": {
     "action": null,
     "availability_only": false,

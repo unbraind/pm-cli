@@ -474,7 +474,7 @@ function registerListCommand(
     .option("--recent", "Filter to items updated in the last 7 days")
     .option(
       "--updated-after <value>",
-      'Filter by updated_at lower bound: ISO timestamp or signed relative (e.g. "-2h"/"-7d" for the past). "Changed since my last window" → --updated-after <ISO>',
+      'Updated since ISO timestamp or signed relative (-2h/-7d for past); use last-window ISO',
     )
     .option(
       "--updated-before <value>",
@@ -516,7 +516,7 @@ function registerListCommand(
       "--filter-metadata-missing",
       "Show only items missing any tracked metadata (AC, estimate, or resolution)",
     )
-    .option("--limit <n>", "Limit returned item count")
+    .option("--limit <n>", "Alias for --output-limit; --output-budget may cap rows")
     .option(
       "--offset <n>",
       "Skip the first n matching rows before limit is applied",

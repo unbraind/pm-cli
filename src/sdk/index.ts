@@ -653,26 +653,6 @@ export * from "./history/maintenance.js";
 export { readHistorySnapshot, type HistoryStreamSnapshot } from "../core/history/read.js";
 export * from "./history-provenance.js";
 export * from "./mutation-events.js";
-export {
-  appendWorkspaceAuditEvent,
-  appendWorkspaceHistoryChange,
-  getWorkspaceHistoryPath,
-  inspectWorkspaceHistoryState,
-  mutateWorkspaceJsonWithHistory,
-  reconcileWorkspaceJsonHistory,
-  restoreWorkspaceJsonFromHistory,
-  WORKSPACE_HISTORY_ID,
-  writeWorkspaceJsonWithHistory,
-  type WorkspaceAuditEventOptions,
-  type WorkspaceHistoryChange,
-  type WorkspaceHistoryStateAgreement,
-  type WorkspaceJsonMutation,
-  type WorkspaceJsonMutationOptions,
-  type WorkspaceJsonReconciliationOptions,
-  type WorkspaceJsonRestoreOptions,
-  type WorkspaceJsonRestoreResult,
-  type WorkspaceJsonWriteOptions,
-} from "../core/history/workspace-history.js";
 export * from "./history-redact.js";
 export { _testOnly } from "./history-redact.js";
 export * from "./history-repair.js";

@@ -244,7 +244,7 @@ export interface PmReadOutputTruncationDisclosure {
   recovery_budget_multiplier: number | null;
   /** Bounded continuation instructions for every compacted declared row path. */
   continuations: PmReadOutputContinuation[];
-  /** Executable recovery instruction for retrieving the complete result. */
+  /** Retry guidance, or `recovery` to require the adjacent cursor and transport bindings. */
   restore_with: string;
   /** Transport-specific machine recovery options. */
   recovery:
@@ -1706,6 +1706,11 @@ function attachReadOutputTruncationDisclosure(
     },
   );
   const primary = continuations[0];
+  const continuationHint = primary ? "; page --output-cursor" : "";
+  const budgetHint = bindingBudget.source === "session"
+    ? `Truncated by the remaining ${bindingBudget.tokens}-token session budget; start a new output session with a larger token_budget${continuationHint}.`
+    : `${bindingBudget.tokens}-token: raise --output-budget${continuationHint}`;
+  receipt.migration_hints = [budgetHint, ...resolved.migration_hints];
   const recoveryBudget = resolveReadOutputRecoveryBudget({
     effective_budget_tokens: bindingBudget.tokens,
     measured_result_tokens: measuredResultTokens,
@@ -1731,7 +1736,7 @@ function attachReadOutputTruncationDisclosure(
       : recoveryBudget.recovery_budget_multiplier,
     continuations,
     restore_with: primary
-      ? "Use recovery binding."
+      ? "recovery"
       : `Retry with --output-budget ${recoveryBudget.output_budget} because no declared row collection can be continued.`,
     recovery: primary
       ? {

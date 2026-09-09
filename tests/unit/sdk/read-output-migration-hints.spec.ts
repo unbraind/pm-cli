@@ -307,6 +307,8 @@ describe("read-output migration hints are executable", () => {
             flag,
             "--output-limit",
             "unbounded",
+            "--output-budget",
+            "unbounded",
             "--json",
             "--no-extensions",
           ],
@@ -319,6 +321,8 @@ describe("read-output migration hints are executable", () => {
             "--output-include",
             token,
             "--output-limit",
+            "unbounded",
+            "--output-budget",
             "unbounded",
             "--json",
             "--no-extensions",
@@ -338,7 +342,7 @@ describe("read-output migration hints are executable", () => {
           (legacy.json as { read_output: Record<string, unknown> }).read_output,
           `${command} ${flag} must identify only the caller-supplied compatibility alias`,
         ).toMatchObject({
-          canonical_options_used: ["--output-limit"],
+          canonical_options_used: ["--output-limit", "--output-budget"],
           legacy_aliases_used: [flag],
         });
         expect(
@@ -346,7 +350,7 @@ describe("read-output migration hints are executable", () => {
             .read_output,
           `${command} --output-include ${token} must retain canonical provenance`,
         ).toMatchObject({
-          canonical_options_used: ["--output-include", "--output-limit"],
+          canonical_options_used: ["--output-include", "--output-limit", "--output-budget"],
           legacy_aliases_used: [],
           migration_hints: [],
         });

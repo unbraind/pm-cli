@@ -4,6 +4,7 @@
  * Defines the Tool Definitions module for pm CLI source.
  */
 import {
+  WORKFLOW_POLICY_ACTIONS,
   GRAPH_SUBCOMMAND_VALUES,
   PM_DISCOVERABLE_TOOL_ACTIONS,
 } from "../sdk/cli-contracts/enum-contracts.js";
@@ -66,6 +67,17 @@ const READ_OUTPUT_TOOL_PROPERTIES = {
       "Opaque continuation cursor returned after budget compaction of a declared row collection.",
   },
 } as const;
+
+/** Discoverable workflow authoring options accepted at either MCP argument level. */
+const workflowPolicyOptionProperties = {
+  definition: {
+    anyOf: [{ type: "object" }, { type: "string" }],
+    description: "Policy declaration for policy-put, or proposed metadata for policy-check; structured JSON or JSON text.",
+  },
+  policy: { type: "string", description: "Approval policy id for policy-approve." },
+  message: { type: "string", description: "History explanation for policy mutations and approvals." },
+  dryRun: { type: "boolean", description: "Preview registry changes without writing; policy-approve rejects previews." },
+};
 
 /** MCP transport parameters layered over every canonical action schema. */
 export const TOOL_SCHEMA_BASE = {
@@ -676,9 +688,10 @@ const RAW_TOOLS: ToolDefinition[] = [
       "Inspect or modify the workspace item-type/status/field schema (pm schema). " +
       "subcommand selects the operation; name carries the item type name (show/add-type/remove-type), status id (show-status/add-status/remove-status), or field key (show-field/add-field/remove-field). " +
       "apply-preset adopts a domain type preset; add-type with infer=true derives types from title-prefix conventions. " +
-      "Schema mutations write workspace config files, not item history.",
+      "Policy verbs author declarations, preview changes, set enforcement, and record content-bound approvals. Registry mutations write workspace history; approvals write item history.",
     inputSchema: objectSchema(
       {
+        ...workflowPolicyOptionProperties,
         subcommand: {
           type: "string",
           enum: [
@@ -694,13 +707,14 @@ const RAW_TOOLS: ToolDefinition[] = [
             "list-fields",
             "show-field",
             "apply-preset",
+            ...WORKFLOW_POLICY_ACTIONS,
           ],
           description: "Schema subcommand to run.",
         },
         name: {
           type: "string",
           description:
-            "Item type name (show/add-type/remove-type), status id (show-status/add-status/remove-status), or custom field key (show-field/add-field/remove-field). Required for those subcommands.",
+            "Item type name, status id, field key, policy id, or item id for the selected schema verb; policy-mode requires advise|refuse.",
         },
         description: {
           type: "string",
@@ -791,6 +805,7 @@ const RAW_TOOLS: ToolDefinition[] = [
         options: {
           type: "object",
           description: "Additional schema options using camelCase keys.",
+          properties: workflowPolicyOptionProperties,
         },
       },
       ["subcommand"],

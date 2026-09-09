@@ -5,6 +5,7 @@ import { Command } from "commander";
 import { describe, expect, it, vi } from "vitest";
 import { registerSetupCommands } from "../../../src/cli/register-setup.js";
 import { PmClient, runAction } from "../../../src/sdk/runtime.js";
+import { resolveNpmCommandName, shouldRunNpmCommandInShell } from "../../../src/sdk/extension/install-sources.js";
 import { writeTestExtension } from "../../helpers/extensions.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -52,8 +53,9 @@ describe("package install dry run", () => {
       expect(installed.details).toMatchObject({ install_plan: { copy: { files: 4, complete: true } } });
       expect(await fs.readFile(path.join(destination, "dist", "artifact"), "utf8")).toBe("artifact");
       const alternative = result.details.install_plan!.packed_alternative!;
-      const packed = spawnSync(alternative.pack.command, alternative.pack.args, { cwd: alternative.cwd, encoding: "utf8", env: { ...process.env, npm_config_cache: path.join(context.tempRoot, "npm-cache") } });
-      expect(packed.status, packed.stderr).toBe(0);
+      expect(alternative.pack.command).toBe("npm");
+      const packed = spawnSync(resolveNpmCommandName(), alternative.pack.args, { cwd: alternative.cwd, encoding: "utf8", shell: shouldRunNpmCommandInShell(), env: { ...process.env, npm_config_cache: path.join(context.tempRoot, "npm-cache") } });
+      expect(packed.status, packed.error?.message ?? packed.stderr).toBe(0);
       const [{ filename }] = JSON.parse(packed.stdout) as Array<{ filename: string }>;
       const archive = path.join(alternative.cwd, filename);
       const archivePlan = await client.packageInstall(archive, { project: true, dryRun: true });

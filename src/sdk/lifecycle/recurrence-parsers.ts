@@ -62,11 +62,17 @@ export function ensureEnumValue<T extends string>(
   value: string,
   allowed: readonly T[],
   label: string,
+  field: string = label,
 ): T {
   if (!allowed.includes(value as T)) {
     throw new PmCliError(
       `Invalid ${label} value "${value}". Allowed: ${allowed.join(", ")}`,
       EXIT_CODE.USAGE,
+      {
+        field,
+        required: `${label} must be one of: ${allowed.join(", ")}.`,
+        nextSteps: [`Choose an allowed ${label} and retry the mutation.`],
+      },
     );
   }
   return value as T;

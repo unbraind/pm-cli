@@ -18,6 +18,7 @@ import {
   createHistoryEntry,
 } from "../core/history/history.js";
 import { acquireLock } from "../core/lock/lock.js";
+import { enforceWorkflowMutation } from "../core/policy/workflow-policy-store.js";
 import { parseTags } from "../core/item/parse.js";
 import { normalizeStatusInput } from "../core/item/status.js";
 import { serializeItemDocument } from "../core/item/item-format.js";
@@ -603,6 +604,9 @@ export async function commitImportedItem(
       settings.locks.wait_ms,
     );
     try {
+      const workflowPolicy = await enforceWorkflowMutation({
+        pmRoot, settings, operation: "import", author, before: null, after: document,
+      });
       await writeFileAtomic(
         itemPath,
         serializeItemDocument(document, { format: "toon" }),
@@ -615,9 +619,11 @@ export async function commitImportedItem(
           before: beforeDocument,
           after: document,
           message,
+          context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
         });
         await appendHistoryEntry(historyPath, entry);
         const writeWarnings = [
+          ...workflowPolicy.warnings,
           ...(await runActiveOnWriteHooks({
             path: itemPath,
             scope: "project",
@@ -648,7 +654,7 @@ export async function commitImportedItem(
       await releaseLock();
     }
   } catch (error: unknown) {
-    if (error instanceof PmCliError && error.exitCode === EXIT_CODE.CONFLICT) {
+    if (error instanceof PmCliError && error.exitCode === EXIT_CODE.CONFLICT && !error.code?.startsWith("workflow_policy_")) {
       return {
         committed: false,
         conflictWarning: `${conflictWarningPrefix}:${id}`,

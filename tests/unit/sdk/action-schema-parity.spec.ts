@@ -32,8 +32,13 @@ interface CompletenessBaseline {
 }
 
 describe("action-scoped MCP schema parity", () => {
+  it("accepts workflow policy definitions as objects or JSON strings", () => {
+    const schema = _testOnlyCliContracts.buildActionScopedToolSchema("schema") as SchemaWithProperties;
+    expect(schema.properties?.definition).toMatchObject({ type: ["object", "string"] });
+    expect(PM_TOOL_PARAMETER_PROPERTIES.definition).toEqual({ type: "object" });
+  });
   it("versions install planning and explicit claim receipt projections", () => {
-    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.15.0");
+    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.16.0");
     for (const action of ["install", "extension-install", "package-install", "extension", "package"] as const) {
       const schema = _testOnlyCliContracts.buildActionScopedToolSchema(action) as SchemaWithProperties;
       expect(schema.properties?.dryRun, action).toMatchObject({ type: "boolean" });

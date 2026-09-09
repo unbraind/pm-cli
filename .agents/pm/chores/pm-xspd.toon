@@ -6,18 +6,19 @@ status: closed
 priority: 3
 tags[3]: codefactor,duplication,quality-gate
 created_at: "2026-07-11T02:58:27.882Z"
-updated_at: "2026-09-08T05:57:20.201Z"
-closed_at: "2026-08-29T14:58:31.975Z"
-completed_at: "2026-08-29T14:58:31.975Z"
+updated_at: "2026-09-08T21:58:03.136Z"
+closed_at: "2026-09-08T21:58:02.430Z"
+completed_at: "2026-09-08T21:58:02.430Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "jscpd config detects the GH-508-class clone shape (create.ts/update.ts normalizer tables) on a pre-fix checkout, via lowered minTokens or a second low-token/high-line profile; lint:duplicates still passes on main after pm-zuw8 lands; false-positive review documented if thresholds are lowered"
 parent: pm-92if
 risk: low
 confidence: medium
-resolution: "Enabled JavaScript-TypeScript cross-format clone detection in the production source profile at the established 22-line threshold, with a narrow type-only parser waiver that remains covered by the repository-wide profile."
-expected_result: The source duplication gate compares JavaScript and TypeScript without weakening the normal repository scan.
-actual_result: "Both jscpd profiles analyze 1,141 repository files and 450 production-source files respectively with zero clones; a regression locks cross-format configuration, equal line thresholds, and waiver scope."
+release: 2026.8.29
+resolution: "Closed the recorded long-table clone sensitivity gap with a mandatory supplementary 28-line/80-token cross-format profile and a real historical regression. Consolidated workspace-history exports under one explicit SDK owner, retaining aggregate availability."
+expected_result: Mandatory local duplicate checks reject the historical GH-508 low-token table class and accept shared declarations without weakening existing profiles or adding exclusions.
+actual_result: "Actual pre-fix GH-508 source files produce two clones (31 lines/96 tokens and 29 lines/82 tokens). The verbatim table fixture fails at 29 lines/101 tokens and passes after shared re-export. Current source passes all three profiles. Current 22/60 calibration and the distinct shorter GH-1002 shape are documented without claiming full CodeFactor parity; its duplicated exports are consolidated. Historical release attribution stays 2026.8.29. Sixth-round verification: all 8622 tests in 653 files pass with exact 100/100/100/100 coverage and zero uncovered statements, branches, functions and lines. All four TypeScript projects, the full quality:static gate, serialized docs/skills checks, and every linked test command pass. Both original clone profiles remain unchanged; the supplementary historical-table profile also passes. Final pushed-head CI, full platform matrix, review and preflight remain required before merge."
 dependencies[5]:
   - id: pm-zuw8
     kind: related
@@ -43,7 +44,7 @@ dependencies[5]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[9]{created_at,author,text}:
+comments[17]{created_at,author,text}:
   "2026-07-30T09:54:48.476Z","harness:codex","GitHub intake 2026-07-30: GH-819 reports the current flag-contracts table clone that the existing high-threshold jscpd profile misses. This canonical sensitivity-gap chore owns the report and will be actively remediated in the SDK intent-budget bundle. https://github.com/unbraind/pm-cli/issues/819"
   "2026-07-30T10:27:26.312Z","harness:codex","Implementation evidence: shared create/update content, ownership, issue, and portfolio flag registries remove the reported hosted duplicate block; repo-wide jscpd reports zero clones."
   "2026-07-30T11:24:16.928Z","harness:codex","Delivery boundary: GH-819's exact hosted clone was removed through shared SDK flag registries and repo-wide jscpd reports zero clones. The canonical sensitivity-gap chore remains open because the lower-token detection profile and documented false-positive calibration are not yet shipped."
@@ -53,12 +54,20 @@ comments[9]{created_at,author,text}:
   "2026-08-28T23:24:28.542Z","harness:codex","Verification evidence: both jscpd profiles reported zero clones across 1,141 repository files and 469 production-source files; CodeFactor and repository static assurance passed with zero violations; full coverage passed exact 100/100/100/100."
   "2026-08-29T14:19:33.358Z","harness:codex","Exact-head CodeRabbit finding confirmed: installed jscpd 5.0.16 keeps JavaScript and TypeScript in separate clone pools without cross-format grouping, allowing erasable TypeScript/JavaScript duplication to bypass the zero-clone gate. Reopened for both mandatory configs plus a negative control."
   "2026-08-29T14:58:20.026Z","harness:codex","Evidence: pnpm lint:duplicates passed with zero clones across the 1,141-file repository profile and 450-file cross-format source profile. The full 586-file/8,123-test coverage run passed at exact 100% statements (60,167/60,167), branches (45,395/45,395), functions (12,514/12,514), and lines (57,937/57,937); pnpm quality:static passed. The annotation-adapter consolidation experiment was reverted because the surface-replication gate correctly requires its complete SDK/docs contract set; the final gate preserves that boundary."
+  "2026-09-08T15:38:47.059Z","harness:codex","Live recurrence verification 2026-09-08: Chrome CodeFactor main overview and issues page still report one Duplicate Code finding at src/sdk/index.ts:656 and src/sdk/runtime-primitives.ts:127, matching the reopened GitHub #1002 report. Local dual-profile jscpd remains zero. The shipped cross-format gate is intact; the remaining instance is a repeated workspace-history export list. Reuse this canonical lineage to remove the duplicate declaration without changing public exports or weakening gates."
+  "2026-09-08T16:24:42.115Z","harness:codex","Current verification: both mandatory clone profiles pass with zero clones. The historical linked regression command initially refused its older source_ref; after reading its complete sandboxed test source, acknowledged the exact commands using the clone-local trust mechanism and reran both linked checks successfully. Public export signatures remain covered by the SDK surface gate."
+  "2026-09-08T16:51:04.460Z","harness:codex","Final implementation evidence: Both mandatory duplicate profiles and linked regression checks pass. SDK surface verification preserves existing export signatures and full source coverage is exact 100/100/100/100. Hosted analyzer confirmation remains part of the PR merge gate."
+  "2026-09-08T20:28:01.650Z","harness:codex","Fifth-round review correction: moved the single explicit workspace-history symbol list into runtime-primitives and removed the aggregate barrel duplicate. This preserves existing exports while preventing a future wildcard expansion from bypassing the intended list. No snapshot allowance or clone threshold is changed."
+  "2026-09-08T20:41:15.366Z","harness:codex","Final fifth-round local evidence: public SDK snapshot and all four TypeScript projects pass; all nine runtime workspace-history values retain identical identity through both compiled entrypoints. Both clone profiles and the linked 16-test context regression pass. Full source coverage remains exact 100/100/100/100 across 8620 tests; the repository static/source/docstring/token and negative-control assurance gate passes all six assertions without relaxed budgets."
+  "2026-09-08T21:35:00.030Z","harness:codex","Calibration correction: the original 22/115 repository and 22/114 cross-format profiles both miss the actual GH-508 pre-fix files at 28afde592c66f7066dc93151bc4c9f214c7c2aa0. A supplementary 28-line/80-token cross-format source profile detects both real table clones (31 lines/96 tokens and 29 lines/82 tokens), while the current source corpus has zero clones at that profile. Both existing profiles remain unchanged. The earlier 12/60 census was exploratory and exposed broader shorter repetitions; it was not the shipped threshold. Current 22/60 calibration finds eight groups, including the 75-token type-stripping self-overlap in loader.ts. The added high-line profile addresses the recorded long-table acceptance class without new source exclusions. GH-1002 is a shorter 20-line explicit export list; its duplicate declaration is removed and hosted CodeFactor is clean, but the long-table profile does not claim to detect that distinct short-list shape."
+  "2026-09-08T21:36:27.431Z","harness:codex","Sixth-round verification: the committed real jscpd regression first failed because the supplementary profile was absent, then passed by detecting the historical 28-row fixture as a 29-line/101-token clone. Replacing the second table with a shared re-export clears the clone. Both original profiles and the added profile pass on the current repository. Full pre-fix GH-508 source files were also exercised independently, yielding the original 31/96 and 29/82 clone detections. The current shipped jscpd version is 5.1.2; this measurement does not reuse older-version census counts."
+  "2026-09-08T21:58:01.724Z","harness:codex","Sixth-round verification: all 8622 tests in 653 files pass with exact 100/100/100/100 coverage and zero uncovered statements, branches, functions and lines. All four TypeScript projects, the full quality:static gate, serialized docs/skills checks, and every linked test command pass. Both original clone profiles remain unchanged; the supplementary historical-table profile also passes. Final pushed-head CI, full platform matrix, review and preflight remain required before merge."
 notes[2]{created_at,author,text}:
   "2026-07-25T07:14:41.243Z","harness:claude-code","Sensitivity measurement 2026-07-25 quantifying the blind spot. At the committed .jscpd.json thresholds (minLines 22, minTokens 115, strict mode, 748 files / 418,637 lines) the repo reports zero clones — a clean pass. Re-running the identical file set at minLines 12 / minTokens 60 reports 402 clone groups, 6,403 duplicated lines (1.53%) and 34,408 duplicated tokens, so the entire duplication signal lives between the two settings. Composition of the lower-threshold set: the large majority are test files (static-quality-gate.spec.ts, sentry-telemetry-gate.spec.ts, sdk/graph/*.spec.ts, sdk/merge-safety.spec.ts, workspace-transaction.spec.ts, smoke-*.spec.ts), which is the pm-ld0z spec-decomposition territory rather than product duplication. Product-side groups worth triage: src/cli/commands/copy.ts around lines 118-136 appears in ten overlapping groups against multiple partners, src/cli/commands/create.ts at 338 and 1025, src/cli/error-guidance.ts at 452 and 508, src/cli/commands/reindex.ts at 894 and 1133, src/cli/main.ts at 3285, src/cli/register-mutation.ts at 54-90, plus per-package clones in packages/pm-beads, pm-calendar, pm-governance-audit, pm-guide-shell, pm-linked-test-adapters and pm-templates runtimes. The copy.ts cluster is the strongest single candidate: one region matching ten partners is the signature of a table or option-mapping shape that wants a shared helper."
   "2026-07-25T21:39:12.318Z","harness:claude-code","Cross-file duplication census 2026-07-25, run against the shipped tree with jscpd strict mode at 12 lines / 60 tokens over src, packages and scripts. The repository gate (22 lines / 115 tokens) reports zero clones on the same tree, so everything below is invisible to it — this is the sensitivity gap this item owns, measured rather than argued.\n\n112 clone pairs total, 47 of them cross-file. The cross-file set is not noise; it partitions into four coherent classes:\n\n1. History maintenance pipeline (7 pairs) — redact/repair/compact/read plus cli copy and restore. Filed as pm-34w8za; that item carries the pair list.\n2. CLI re-implementing SDK logic (4 pairs) — cli/commands/comments.ts:100 vs sdk/annotations.ts:219, cli/commands/calendar.ts:1019 vs sdk/query/list.ts:1000, cli/commands/update-many.ts:704 vs pm-governance-audit/normalize.ts:227, cli/register-mutation.ts:54 vs sdk/cli-contracts/tool-schema.ts:600 (37 lines, the largest pair in the repository). This class is the SDK-first inversion pm-usfg tracks; duplication detection is how it shows up mechanically.\n3. Package activation boilerplate (5 pairs) — pm-beads vs pm-todos runtime.ts three times, pm-guide-shell vs pm-linked-test-adapters, pm-calendar vs pm-governance-audit vs pm-search-advanced flag tables. Every first-party package hand-rolls the same loader and the same standard filter-flag declarations; nothing in the SDK offers them.\n4. Contract table restatements (3 pairs) — core/store/settings-validator.ts:37 vs types.ts:1175, core/extensions/extension-types.ts:200 vs sdk/extension.ts:459, sdk/files.ts:39 vs sdk/linked-artifacts.ts:69.\n\nClass 4 is the shape that produced GH-508 in the first place. Classes 2 and 3 are the ones a threshold change would newly surface, and both are pointing at real missing abstractions rather than at cosmetic copying, so lowering the threshold is likely to be productive rather than merely noisy. Suggested calibration evidence when this item is worked: 12/60 yields 47 cross-file pairs with a 0.94 percent duplicated-token rate over 823k tokens, which is a workable starting gate if the four classes above are cleared first."
 learnings[1]{created_at,author,text}:
   "2026-08-28T23:24:38.885Z","harness:codex","Duplication gates need separate corpus calibration: a broad high-threshold profile controls total repetition while a production-only lower-line profile catches compact table clones without test-fixture noise."
-files[6]:
+files[11]:
   - path: .agents/pm/extensions/.managed-extensions.json
     scope: project
     note: Managed governance and guide package activation used by repository quality verification
@@ -67,16 +76,31 @@ files[6]:
   - path: .jscpd.source.json
     scope: project
     note: lower-line production source clone gate
+  - path: .jscpd.tables.json
+    scope: project
+    note: Supplemental low-token long-table clone profile
   - path: package.json
     scope: project
     note: mandatory combined duplication script
   - path: src/sdk/cli-contracts/flag-contracts.ts
     scope: project
     note: Shared create and update flag groups remove hosted duplicate findings
+  - path: src/sdk/index.ts
+    scope: project
+    note: Single explicit workspace-history export owner with transitive aggregate availability
+  - path: src/sdk/runtime-primitives.ts
+    scope: project
+    note: Remove-repeated-workspace-history-export-list
+  - path: tests/fixtures/quality/gh508-normalizer-table.json
+    scope: project
+    note: Verbatim GH-508 table rows with immutable source provenance
   - path: tests/unit/regressions/context-integrity-recovery.spec.ts
     scope: project
     note: Cross-surface regression and exact-coverage evidence for the context recovery delivery
-tests[2]:
+  - path: tests/unit/scripts/release/duplicate-table-profile.spec.ts
+    scope: project
+    note: Real detector rejects historical table clones and accepts shared declarations
+tests[3]:
   - command: "pnpm lint:duplicates"
     scope: project
     timeout_seconds: 240
@@ -89,7 +113,15 @@ tests[2]:
       source_kind: local_mutation
       source_ref: feat/sdk-context-integrity-recovery
     note: connected context integrity regression suite
-test_runs[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/duplicate-table-profile.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-08T21:34:59.322Z"
+      source_kind: local_mutation
+      source_ref: feat/declarative-workflow-policies
+test_runs[6]:
   - run_id: test-local-mtdkyge4-c3j9ze
     kind: test
     status: passed
@@ -114,7 +146,57 @@ test_runs[2]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "pnpm lint:duplicates",schema,schema,source,legacy
       node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
-docs[1]{path,scope,note}:
+  - run_id: test-local-mtsvew6b-gm7e11
+    kind: test
+    status: failed
+    started_at: "2026-09-08T16:15:02.800Z"
+    finished_at: "2026-09-08T16:15:13.763Z"
+    recorded_at: "2026-09-08T16:15:13.763Z"
+    passed: 1
+    failed: 1
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm lint:duplicates",schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,foreign_source_ref
+  - run_id: test-local-mtsvilrg-yh1t1s
+    kind: test
+    status: passed
+    started_at: "2026-09-08T16:17:48.270Z"
+    finished_at: "2026-09-08T16:18:06.891Z"
+    recorded_at: "2026-09-08T16:18:06.891Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm lint:duplicates",schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,acknowledged
+  - run_id: test-local-mtt4tolp-03m5s6
+    kind: test
+    status: passed
+    started_at: "2026-09-08T20:38:25.383Z"
+    finished_at: "2026-09-08T20:38:40.333Z"
+    recorded_at: "2026-09-08T20:38:40.333Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm lint:duplicates",schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,acknowledged
+  - run_id: test-local-mtt7lw9v-u7dzfz
+    kind: test
+    status: passed
+    started_at: "2026-09-08T21:56:12.270Z"
+    finished_at: "2026-09-08T21:56:35.875Z"
+    recorded_at: "2026-09-08T21:56:35.875Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm lint:duplicates",schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/duplicate-table-profile.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
   docs/CONTEXT_RECOVERY_PRIMITIVES.md,project,context integrity and recovery contract
-close_reason: Cross-format source duplication gate delivered with scoped parser waiver and exact quality evidence.
+  docs/TESTING.md,project,Measured supplementary clone profile and exact detector scope
+close_reason: Connected implementation and review regressions verified; final hosted gates govern merge.
 body: ""

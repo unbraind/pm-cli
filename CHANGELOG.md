@@ -2,9 +2,22 @@
 
 ## Unreleased
 
+### Added
+
+- Lifecycle field-completeness contract: each item type declares the fields required at each status transition, machine-checked by pm validate ([pm-htbetn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-htbetn.toon))
+- Declarative policy engine: item-level transition, approval, and authorship rules declared as data and enforced consistently at the SDK layer ([pm-mj42og](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-mj42og.toon))
+
 ### Fixed
 
+- Explain binding token budgets beside read-output alias migration hints ([pm-8kzfc4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8kzfc4.toon))
+- Preserve dependency kind constraints in rendered enum errors ([pm-lk0qhn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lk0qhn.toon))
 - pm search defaults to keyword on a workspace whose vector index is complete, so the shipped Ollama semantic default never reaches the default query path ([pm-n8a6e7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-n8a6e7.toon))
+
+### Security
+
+- GHSA-crvj-82cr-hjcx: Hono: Query parser reads parameters after the URL fragment, causing cache-key and proxy interpretation differentials ([pm-vnv467](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vnv467.toon))
+- GHSA-g6gw-c38x-mqfc: Hono: Unbounded dot-notation nesting in `parseBody()` can cause memory exhaustion ([pm-gxt0mx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gxt0mx.toon))
+- GHSA-gqvv-2mrq-wpjv: Hono: Incomplete fix for CVE-2026-39408: `toSSG()` still writes files outside the output directory ([pm-rc8708](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rc8708.toon))
 
 ## 2026.9.8 - 2026-09-08
 
@@ -18,9 +31,9 @@
 
 ### Fixed
 
+- GH-1218: expose local package copy scope and packed-install alternatives ([pm-5bsofk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5bsofk.toon))
 - GH-1219: report truthful package update coverage for skipped and failed checks ([pm-gf5zw8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gf5zw8.toon))
 - Claim ownership response repeats full metadata despite the compact mutation contract ([pm-eqdo85](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eqdo85.toon))
-- GH-1218: expose local package copy scope and packed-install alternatives ([pm-5bsofk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5bsofk.toon))
 - Reject repository-local test scratch roots before sandbox fixtures can mutate the real Git workspace ([pm-bukwmy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bukwmy.toon))
 - GH-1214: Bound complete item reads and isolate Git newline fixtures on Windows ([pm-hrhfgi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hrhfgi.toon))
 - GH-1216: Preserve diagnostic identity and sanitize short and bounded error text ([pm-m4uyyj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m4uyyj.toon))
@@ -219,9 +232,9 @@
 
 ### Other
 
+- Close the jscpd/CodeFactor sensitivity gap: minTokens 115 misses low-token table clones the CodeFactor bot still files ([pm-xspd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xspd.toon))
 - Refresh @sentry/node 10.72 with packed SDK and release proof ([pm-mwhv33](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-mwhv33.toon))
 - Refresh compatible 2026-08-29 dependency releases ([pm-vwuidf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-vwuidf.toon))
-- Close the jscpd/CodeFactor sensitivity gap: minTokens 115 misses low-token table clones the CodeFactor bot still files ([pm-xspd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xspd.toon))
 
 ## 2026.8.28 - 2026-08-28
 
