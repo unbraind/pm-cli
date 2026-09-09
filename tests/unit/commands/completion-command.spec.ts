@@ -1356,6 +1356,7 @@ describe("runCompletion", () => {
       command_flags: {
         list: ["--customer_segment", "--alpha_segment"],
         search: ["--customer_segment"],
+        context: ["--context_segment"],
       },
     } satisfies CompletionRuntimeConfig;
 
@@ -1405,6 +1406,15 @@ describe("runCompletion", () => {
     );
     expect(fishResult.script).toContain(
       "-l customer-segment -d 'Runtime schema field flag' -r",
+    );
+    expect(fishResult.script).toContain(
+      "complete -c pm -n '__pm_history_operation context' -l context-segment -d 'Runtime schema field flag' -r",
+    );
+    expect(fishResult.script).not.toContain(
+      "__fish_seen_subcommand_from context' -l context-segment",
+    );
+    expect(fishResult.script).not.toContain(
+      "__fish_seen_subcommand_from ctx' -l context-segment",
     );
   });
 

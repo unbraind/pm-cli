@@ -43,12 +43,14 @@ const REQUIRED_COMMAND_NAMES = new Set([
   ...POSITIONAL_ACTION_COMMAND_NAMES,
 ]);
 
+/** Estimate display tokens from UTF-8 bytes using the same conservative four-byte convention as the report. */
 function tokens(bytes) {
   return Math.ceil(bytes / 4);
 }
 
 /** Build a versioned regression baseline with explicit percentage headroom. */
 export function buildBaseline(report, headroom = 1.1) {
+  /** Apply configured headroom when creating a new baseline; existing regression ceilings are checked independently. */
   const budget = (measurement) => Math.ceil(measurement.bytes * headroom);
   return {
     version: 2,
@@ -80,6 +82,7 @@ export function buildBaseline(report, headroom = 1.1) {
 export function compareBaseline(report, baseline) {
   const violations = [];
   const surfaces = baseline.surfaces ?? {};
+  /** Collect missing or exceeded ceilings so the gate reports every measured regression together. */
   const compare = (name, bytes, maxBytes) => {
     if (!Number.isFinite(maxBytes)) {
       violations.push(`${name}: missing baseline`);
@@ -137,6 +140,7 @@ export function compareBaseline(report, baseline) {
   return violations;
 }
 
+/** Measure complete CLI output in bytes, including usage refusals that carry their response on stdout. */
 function measure(args) {
   try {
     const out = execFileSync(
@@ -190,6 +194,7 @@ function listCommands() {
   };
 }
 
+/** Measure one real MCP tools/list response and terminate the child after a response or bounded timeout. */
 function measureMcpToolsList() {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [MCP_SERVER], {

@@ -6,18 +6,18 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli","area:observability",simplification
 created_at: "2026-07-05T04:53:34.685Z"
-updated_at: "2026-09-09T16:51:32.567Z"
-closed_at: "2026-09-09T16:51:31.916Z"
-completed_at: "2026-09-09T16:51:31.916Z"
+updated_at: "2026-09-09T17:39:17.490Z"
+closed_at: "2026-09-09T17:39:16.400Z"
+completed_at: "2026-09-09T17:39:16.400Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: pm ops stats/health/validate/gc/telemetry/eval subcommands with flag parity after ADR pm-pbyu acceptance; old spellings alias-shimmed with byte-identical output (CI scripts unaffected); contracts/MCP/completions/docs regenerated; existing specs pass via aliases
 parent: pm-n7rr
 risk: low
 confidence: medium
-resolution: "Native ops diagnostics and maintenance reuse existing SDK operations, retain compatible root commands, and preserve token measurement of canonical core leaves under existing budgets."
-expected_result: "All operation paths, package boundaries and discovery surfaces remain compatible; canonical help stays inside inherited token ceilings."
-actual_result: "Full static gates, typecheck, 8639 tests and exact 100/100/100/100 coverage passed; linked acceptance, package behavior and token budget checks passed."
+resolution: Delivered native ops diagnostics and maintenance with compatible root aliases and unchanged SDK/MCP operation identities. Canonical namespace help remains measured under inherited token ceilings; maintained measurement helpers are documented.
+expected_result: Ops commands preserve machine-readable results and extension ownership while canonical help stays within existing token ceilings.
+actual_result: "Full static gates, linked tests, typecheck, package acceptance and 8639-test exact coverage passed. Canonical help measurements remain below all existing ceilings; baseline values were not relaxed."
 dependencies[7]:
   - id: pm-0z7n
     kind: blocked_by
@@ -46,7 +46,7 @@ dependencies[7]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[11]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-09-09T04:24:17.594Z","harness:codex","Implementation evidence: native command node placement preserves existing SDK handlers; bootstrap aliases, runtime contracts, capability routing, package availability, positional addressing, and three shell completions share declared mappings. TDD reproduced missing namespace support, then verified native/legacy argv and real isolated tracker reads. Broader quality gates and package acceptance are in progress."
   "2026-09-09T04:42:07.069Z","harness:codex","Verification update: focused native/legacy and help/contract suite exercised 271 cases; 270 passed and one obsolete package-hint expectation was corrected. Native JSON help now retains optional-package installation recovery. GitHub live inventory found no open issues or PRs and no open Dependabot/code-scanning/secret-scanning alerts. Full coverage and static gates must finish before closure."
   "2026-09-09T05:05:51.867Z","harness:codex","Distribution and safety evidence: packed local tarball installed independently with npm and Bun; both Node and Bun executed native/legacy CLI parity and imported the new SDK aliases/resolver through both published SDK entrypoints. Bash, Zsh and Fish syntax validation passed; real Fish completion returned native flags with global option values interleaved. Sentry 14-day gate returned critical=0/high=0; secret scan and all three GitHub alert inventories were clear."
@@ -58,6 +58,9 @@ comments[11]{created_at,author,text}:
   "2026-09-09T16:37:47.785Z","harness:codex","Review correction: canonical context next and ops validate remain measured after their root aliases leave default help. Existing per-command and aggregate ceilings are unchanged; the new ops root has its own bounded baseline. Shortened navigation rationale to fit its inherited ceiling. The 57-surface gate passed. Added regression checks for native help leaves, unavailable optional reindex and installed availability, completion row alignment, and docstrings for touched named functions."
   "2026-09-09T16:43:30.996Z","harness:codex","Release health evidence refreshed: scheduled Auto Release 34324368050 and Release v2026.9.9 run 34326222024 succeeded. Fresh public-registry acceptance of 2026.9.9 passed every declared bin through npx and bunx, including CLI contracts, stdio MCP, HTTP discovery, and missing-bin negative controls. This publication predates PR 1225 and is not publication evidence for the namespace changes."
   "2026-09-09T16:51:31.203Z","harness:codex","Review verification: 8639 tests across 655 files passed, exact coverage 100/100/100/100 with zero uncovered counts (63823 statements, 48528 branches, 13252 functions, 61201 lines). Full static quality, typecheck and the 57-surface token gate passed without relaxed existing ceilings. Each canonical linked namespace suite passed 42 tests; the new token-measurement link passed 12 tests. CodeRabbit accepted the three strengthened test assertions. The latest pm-changelog 2026.9.9 is installed; outcome titles feed package-generated release notes. PR 1225 requires a fresh hosted review on the forthcoming push."
+  "2026-09-09T17:17:24.520Z","harness:codex","Review round 2: rejected a proposed baseline reset with measured evidence: ops validate 4158 <= 4870 bytes, context next 2112 <= 2165, ops 1446 <= 1591, total help 231168 <= 251257. Regeneration would raise context next to 2324 bytes, violating the retained-ceiling requirement. Added descriptive JSDoc throughout the maintained measurement script and fixture helpers, and inlined its trivial single-use argument-key wrapper. All touched named callables now have JSDoc according to the TypeScript AST."
+  "2026-09-09T17:37:59.350Z","harness:codex","Verification note: the first final coverage attempt overlapped full static quality and timed out one existing whole-repository absence-tolerance scan at 30 seconds; 8638 other tests passed. The unchanged focused file then passed all 19 tests in 3.15 seconds. Full static quality completed successfully. A fresh full coverage run is executing alone; no test timeout, exclusion, baseline or coverage threshold was changed."
+  "2026-09-09T17:39:15.307Z","harness:codex","Final review correction verification: the isolated full suite passed 8639 tests in 655 files with exact 100/100/100/100 and zero uncovered counts: 63824 statements, 48530 branches, 13252 functions, 61202 lines. Full static quality and typecheck passed; both items passed both sandboxed linked commands. Real Fish reproduced the original leak and passed context/ctx positives plus focus/next negatives after correction. All touched named callables have descriptive JSDoc by AST inspection; this is scoped evidence, not a repository-wide function-documentation percentage. Every received review artifact was reacted to and replied to; the baseline-reset finding was rejected with unchanged-ceiling measurements. Final hosted verification follows the correction push in PR 1225."
 notes[1]{created_at,author,text}:
   "2026-07-06T08:04:51.703Z",maintainer-agent,"Scope addition from audit #7 (2026-07-06): include 'test-all' in the ops grouping (workspace-wide linked-test run is a diagnostic, not an item facet). Target verb set becomes: stats, health, validate, gc, telemetry, eval, test-all. See ADR addendum comment on pm-pbyu."
 learnings[1]{created_at,author,text}:
@@ -98,7 +101,7 @@ files[32]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/cli/command-namespaces.spec.ts tests/unit/sdk/cli-contracts tests/integration/context-ops-namespace.integration.spec.ts,project,240,"harness:codex","2026-09-09T04:24:17.002Z",local_mutation,feat/context-ops-command-namespaces
   node scripts/run-tests.mjs test -- tests/unit/scripts/measure-agent-token-surface.spec.ts,project,240,"harness:codex","2026-09-09T16:37:45.530Z",local_mutation,feat/context-ops-command-namespaces
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mttn83ru-ljbmsy
     kind: test
     status: passed
@@ -122,6 +125,18 @@ test_runs[2]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/cli/command-namespaces.spec.ts tests/unit/sdk/cli-contracts tests/integration/context-ops-namespace.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/scripts/measure-agent-token-surface.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtud4how-dsn5jl
+    kind: test
+    status: passed
+    started_at: "2026-09-09T17:18:15.175Z"
+    finished_at: "2026-09-09T17:18:47.695Z"
+    recorded_at: "2026-09-09T17:18:47.695Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/command-namespaces.spec.ts tests/unit/sdk/cli-contracts tests/integration/context-ops-namespace.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/measure-agent-token-surface.spec.ts,schema,schema,source,local_source_ref
 docs[8]{path,scope,note}:
   CHANGELOG.md,project,Package-generated reviewed delivery attribution
   docs/COMMAND_NAMESPACES.md,project,Native commands compatibility and package ownership
@@ -131,5 +146,5 @@ docs[8]{path,scope,note}:
   docs/README.md,project,Namespace discovery compatibility and release verification
   packages/pm-governance-audit/README.md,project,Namespace discovery compatibility and release verification
   packages/pm-search-advanced/README.md,project,Namespace discovery compatibility and release verification
-close_reason: Implementation and review corrections verified locally; hosted rereview and merge remain separate delivery evidence.
+close_reason: Implementation and review corrections verified for PR 1225.
 body: ""

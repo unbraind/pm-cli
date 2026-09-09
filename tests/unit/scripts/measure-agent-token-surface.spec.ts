@@ -42,17 +42,14 @@ interface ExecOverrides {
   lsHelp?: () => string;
 }
 
-function keyOf(args: readonly string[]): string {
-  return args.join(" ");
-}
-
+/** Model measured CLI outputs and stdout-bearing usage failures while rejecting undeclared command invocations. */
 function createExecFileSync(overrides: ExecOverrides = {}) {
   return vi.fn((_command: string, args: readonly string[]) => {
     const commandArgs =
       args[0]?.endsWith("dist/cli.js") || args[0]?.endsWith("dist\\cli.js")
         ? args.slice(1)
         : args;
-    const key = keyOf(commandArgs);
+    const key = commandArgs.join(" ");
     if (key === "--version") return "9.9.9-test\n";
     if (key === "--help --no-pager") return ROOT_HELP;
     if (key === "ls --help --no-pager") {
@@ -89,6 +86,7 @@ interface FakeMcpChild {
   spawn: ReturnType<typeof vi.fn>;
 }
 
+/** Expose request-driven MCP stdout and process events so timeout, malformed response, and child-failure paths can be controlled independently. */
 function createMcpChild(
   onRequest: (child: FakeMcpChild["child"]) => void,
 ): FakeMcpChild {
@@ -101,6 +99,7 @@ function createMcpChild(
   return { child, spawn };
 }
 
+/** Replace both subprocess entrypoints together so measurement fixtures cannot launch undeclared real commands. */
 function mockChildProcess(
   execFileSync: ReturnType<typeof vi.fn>,
   spawn: ReturnType<typeof vi.fn>,
@@ -108,6 +107,7 @@ function mockChildProcess(
   vi.doMock("node:child_process", () => ({ execFileSync, spawn }));
 }
 
+/** Connect deterministic CLI responses and a valid MCP tools list as the baseline for contract mutation tests. */
 function configureSuccessfulMeasurement(): void {
   const execFileSync = createExecFileSync();
   const { spawn } = createMcpChild((mcp) => {
@@ -123,6 +123,7 @@ function configureSuccessfulMeasurement(): void {
   mockChildProcess(execFileSync, spawn);
 }
 
+/** Build a complete high-ceiling fixture so each negative test can isolate the baseline contract it invalidates. */
 function permissiveBaseline(overrides: Record<string, unknown> = {}): string {
   return JSON.stringify({
     version: 2,
@@ -181,6 +182,7 @@ interface TokenSurfaceModule {
   compareBaseline: (report: Report, baseline: TokenSurfaceBaseline) => string[];
 }
 
+/** Execute the measurement script through the isolated module harness and decode its terminal JSON report. */
 async function importAndCaptureReport(): Promise<Report> {
   const stdoutWrite = vi
     .spyOn(process.stdout, "write")
@@ -191,6 +193,7 @@ async function importAndCaptureReport(): Promise<Report> {
   return JSON.parse(payload) as Report;
 }
 
+/** Capture a measurement report alongside the real baseline builder and comparator exports for contract assertions. */
 async function importAndCaptureModule(): Promise<{
   report: Report;
   module: TokenSurfaceModule;

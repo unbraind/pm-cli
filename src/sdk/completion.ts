@@ -536,6 +536,7 @@ function renderZshBulkSelectionFilterSpecs(
   ]);
 }
 
+/** Render schema field flags behind command predicates, isolating context snapshots from navigation leaves. */
 function renderFishRuntimeFieldFlagSpecs(
   commands: string[],
   runtimeFlags: string[] | undefined,
@@ -548,9 +549,12 @@ function renderFishRuntimeFieldFlagSpecs(
   }
   const lines: string[] = [];
   for (const command of commands) {
+    const predicate = command === "context"
+      ? "__pm_history_operation"
+      : "__fish_seen_subcommand_from";
     for (const flag of normalizedFlags) {
       lines.push(
-        `complete -c pm -n '__fish_seen_subcommand_from ${command}' -l ${flag} -d 'Runtime schema field flag' -r`,
+        `complete -c pm -n '${predicate} ${command}' -l ${flag} -d 'Runtime schema field flag' -r`,
       );
     }
   }
@@ -2155,7 +2159,7 @@ export function generateFishScript(
     runtime.command_flags?.calendar,
   );
   const fishContextRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(
-    ["context", "ctx"],
+    ["context"],
     runtime.command_flags?.context,
   );
   const dynamicTagResolver = useEagerTagExpansion
