@@ -32,6 +32,8 @@ describe("agent capability contracts", () => {
     const routing = renderPmCapabilityRoutingMarkdown();
     expect(routing).toContain("| lifecycle |");
     expect(routing).toContain("`claim`");
+    for (const command of ["update many", "close many", "close delete", "history restore", "history activity", "history redact", "history repair", "history compact"]) expect(routing).toContain("`" + command + "`");
+    for (const alias of ["update-many", "close-many", "delete", "start-task", "pause-task", "close-task", "restore", "activity", "history-redact"]) expect(routing).not.toContain("`" + alias + "`");
   });
 
   it("one tier-field edit changes CLI, MCP, completion, and docs projections", () => {

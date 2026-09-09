@@ -28,7 +28,7 @@ const NON_WORKABLE_TYPES = new Set([
 /**
  * Suggest the next lifecycle transition for a freshly created (or open) item.
  *
- * Returns a `pm start-task` hint when the item is a workable type currently in
+ * Returns a `pm claim --start` hint when the item is a workable type currently in
  * the workspace open status AND the workflow defines a distinct `in_progress`
  * status to advance to. Returns `undefined` (no hint) otherwise — including for
  * scheduling types and workflows that collapse `in_progress` into `open` — so
@@ -53,5 +53,5 @@ export function suggestNextLifecycleTransition(
   if (inProgress === undefined || inProgress === statusRegistry.open_status) {
     return undefined;
   }
-  return { command: `pm start-task ${id}`, to_status: inProgress };
+  return { command: `pm claim ${id} --start`, to_status: inProgress };
 }

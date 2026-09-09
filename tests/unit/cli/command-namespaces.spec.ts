@@ -41,6 +41,9 @@ describe("canonical navigation and operations namespaces", () => {
     ["normalize", "ops", "normalize"],
     ["reindex", "ops", "reindex"],
     ["events", "history", "events"],
+    ["update-many", "update", "many"],
+    ["close-many", "close", "many"],
+    ["delete", "close", "delete"],
   ])("retains the %s invocation through canonical argv", (legacy, noun, verb) => {
     expect(normalizeBootstrapInvocation(["help", legacy]).argv).toEqual(["help", noun, verb]);
     expect(normalizeBootstrapInvocation([legacy, "--help"]).argv).toEqual([noun, verb, "--help"]);
@@ -50,6 +53,17 @@ describe("canonical navigation and operations namespaces", () => {
 
 
 describe("namespace contracts and shell routing", () => {
+  it("keeps lifecycle leaf verbs out of item addresses and normalizes their own flags", () => {
+    for (const prefix of [["delete"], ["close", "delete"]]) {
+      expect(normalizeBootstrapInvocation([...prefix, "--id", "pm-a", "--dry-run"]).argv).toEqual(["close", "delete", "pm-a", "--dry-run"]);
+      expect(() => normalizeBootstrapInvocation([...prefix, "pm-a", "--id", "pm-b"])).toThrow("not both");
+    }
+    expect(normalizeBootstrapInvocation(["update", "--id", "pm-a", "--title", "Title"]).argv).toEqual(["update", "pm-a", "--title", "Title"]);
+    expect(normalizeBootstrapInvocation(["close", "--id", "pm-a", "Done"]).argv).toEqual(["close", "pm-a", "Done"]);
+    expect(normalizeBootstrapInvocation(["update", "many", "--filter_status", "open"]).argv).toEqual(["update", "many", "--filter-status", "open"]);
+    expect(normalizeBootstrapInvocation(["close", "many", "--ids", "pm-a"]).argv).toEqual(["close", "many", "--ids", "pm-a"]);
+  });
+
   it("preserves native and legacy SDK flag contracts", () => {
     for (const { alias, canonical } of PM_CONTEXT_OPS_COMMAND_ALIASES) {
       expect(resolvePmCommandOperation(canonical)).toBe(alias);
@@ -87,6 +101,16 @@ describe("namespace contracts and shell routing", () => {
       { words: ["pm", verb, "--"], flag },
       { words: ["pm", "--pm-path", verb, noun, "--json", verb, "--"], flag },
     ]);
+    cases.push(
+      { words: ["pm", "update", "many", "--"], flag: "--filter-status" },
+      { words: ["pm", "close", "many", "--"], flag: "--reason" },
+      { words: ["pm", "--json", "close", "delete", "--"], flag: "--dry-run" },
+      { words: ["pm", "claim", "--"], flag: "--start" },
+      { words: ["pm", "release", "--"], flag: "--pause" },
+      { words: ["pm", "close", "pm-example", "--"], flag: "--release-assignment" },
+      { words: ["pm", "update", "m"], flag: "many" },
+      { words: ["pm", "close", "d"], flag: "delete" },
+    );
     const commands = cases.map(({ words }) => `COMP_WORDS=(${words.map((word) => `'${word}'`).join(" ")}); COMP_CWORD=${words.length - 1}; _pm_completion; printf '%s ' "\${COMPREPLY[@]}"; printf '\\n'`);
     const stdout = execFileSync("bash", ["-s"], { input: `${generateBashScript()}\n${commands.join("\n")}`, encoding: "utf8" });
     const rows = stdout.split("\n");

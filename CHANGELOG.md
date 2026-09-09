@@ -2,12 +2,17 @@
 
 ## Unreleased
 
+### Changed
+
+- Fold bulk and destructive lifecycle variants into their base nouns: update-many into update, close-many into close, delete/restore placement per ADR ([pm-ik19](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ik19.toon))
+
 ### Fixed
 
 - Isolate CodSpeed dependency setup from unrelated Chrome APT index failures ([pm-zvy31w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zvy31w.toon))
 
 ### Other
 
+- Fold lifecycle sugar start-task/pause-task/close-task into claim/release/close flags (hidden aliases) ([pm-eq4x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-eq4x.toon))
 - Native pm ops stats, health, validate, gc, telemetry, eval and test-all with compatible root commands ([pm-6apl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-6apl.toon))
 - Native pm context next and pm context focus with permanent navigation aliases ([pm-kcs4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kcs4.toon))
 - Native pm ops normalize, pm ops reindex and pm history events with compatibility aliases ([pm-3i9q8g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3i9q8g.toon))

@@ -11,7 +11,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 - Uncovered error codes: 352
 - Coverage fraction: 0.051213
 - Closed-domain probes: 19
-- Grammar probes: 97
+- Grammar probes: 98
 
 | Error code | Canonical code | Disposition | Evidence kinds | Probe count |
 | --- | --- | --- | --- | --- |
@@ -211,7 +211,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `missing_parameter_alias` | `missing_parameter_alias` | uncovered | none | 0 |
 | `missing_positive_execution_receipt` | `missing_positive_execution_receipt` | uncovered | none | 0 |
 | `missing_probe` | `missing_probe` | uncovered | none | 0 |
-| `missing_required_argument` | `missing_required_argument` | executable | grammar | 60 |
+| `missing_required_argument` | `missing_required_argument` | executable | grammar | 61 |
 | `missing_required_option` | `missing_required_option` | uncovered | none | 0 |
 | `missing_suggested_retry` | `missing_suggested_retry` | uncovered | none | 0 |
 | `missing_suggested_retry_args` | `missing_suggested_retry_args` | uncovered | none | 0 |

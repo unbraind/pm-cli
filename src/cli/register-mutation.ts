@@ -33,6 +33,7 @@ import {
 } from "./commands/merge.js";
 import { runAppend } from "./commands/append.js";
 import { runClose } from "./commands/close.js";
+import { runCloseTask } from "../sdk/lifecycle/task-composition.js";
 import { runCloseMany } from "./commands/close-many.js";
 import { runCopy } from "./commands/copy.js";
 import { runCreate } from "./commands/create.js";
@@ -1058,7 +1059,8 @@ async function runCloseAction(
     undefined;
   const resolvedText =
     typeof text === "string" && text.length > 0 ? text : reasonFromOption;
-  const result = await runClose(
+  const close = options.releaseAssignment === true ? runCloseTask : runClose;
+  const result = await close(
     id,
     resolvedText,
     {
@@ -2321,6 +2323,7 @@ export function registerMutationCommands(
 
   const closeCommand = program
     .command("close")
+    .option("--release-assignment", "Release ownership after closure")
     .argument("<id>", "Item id")
     .argument("[text]", "Close reason text (alias: --reason)")
     .option(
@@ -2347,16 +2350,16 @@ export function registerMutationCommands(
     )
     .option(
       "--resolution <value>",
-      "Set the closure resolution summary inline (same field --validate-close strict checks; previously required a prior pm update)",
+      "Closure resolution summary (checked by --validate-close strict)",
     )
     .option(
       "--expected-result <value>",
-      "Set the expected-result note inline (closure validation field)",
+      "Expected outcome for closure validation",
     )
     .option("--expected <value>", "Short alias for --expected-result")
     .option(
       "--actual-result <value>",
-      "Set the actual-result note inline (closure validation field)",
+      "Observed outcome for closure validation",
     )
     .option("--actual <value>", "Short alias for --actual-result")
     .option("--force", "Force ownership override")

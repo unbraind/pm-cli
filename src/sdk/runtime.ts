@@ -117,7 +117,9 @@ import {
   type AggregateResult,
 } from "./query/aggregate.js";
 import { runAppend } from "./lifecycle/append.js";
-import { runClaim, runRelease } from "./lifecycle/claim.js";
+import { runRelease } from "./lifecycle/claim.js";
+import { runStartTask, runPauseTask, runCloseTask } from "./lifecycle/task-composition.js";
+export { runStartTask, runPauseTask, runCloseTask, type TaskCompositionOptions } from "./lifecycle/task-composition.js";
 import { runCloseMany } from "./lifecycle/close-many.js";
 import { normalizeAnnotationTransportOptions } from "./annotations.js";
 import { runComments } from "./comments.js";
@@ -145,7 +147,6 @@ import {
   type ContextResult,
 } from "./query/context.js";
 import { runNext, type NextOptions, type NextResult } from "./query/next.js";
-import { runClose } from "./lifecycle/close.js";
 import { runCopy, type CopyResult } from "./lifecycle/copy.js";
 import { runDelete, type DeleteResult } from "./lifecycle/delete.js";
 import { runRestore, type RestoreResult } from "./lifecycle/restore.js";
@@ -284,7 +285,6 @@ import {
 import { runTelemetry } from "./telemetry.js";
 import { runTest } from "./test/execution.js";
 import { runTestAll } from "./test/batch.js";
-import { resolveStartTaskInProgressStatus } from "./start-task-status.js";
 import type { CommentsCommandOptions, CommentsResult } from "./comments.js";
 import type { ConfigCommandOptions, ConfigResult } from "./config.js";
 import type { DepsCommandOptions, DepsResult } from "./dependencies.js";
@@ -1418,11 +1418,11 @@ export class PmClient {
   }
 
   /** Close an item using the same mutation path as `pm close`. Options are contract-typed (pm-x29o); the close reason is the positional parameter, so the option bag omits `reason`/`text`. */
-  close(
+  close<Compose extends boolean = false>(
     id: string,
     reason: string,
-    options: PmClientCloseActionOptions = {},
-  ): Promise<CloseResult> {
+    options: PmClientCloseActionOptions & { releaseAssignment?: Compose } = {},
+  ): Promise<Compose extends true ? CloseTaskResult : CloseResult> {
     return this.runTyped("close", {
       id,
       reason,
@@ -1431,10 +1431,10 @@ export class PmClient {
   }
 
   /** Claim an item using the same mutation path as `pm claim`. */
-  claim(
+  claim<Compose extends boolean = false>(
     id: string,
-    options: PmClientFullMutationOptions = {},
-  ): Promise<ClaimResult> {
+    options: PmClientFullMutationOptions & { start?: Compose } = {},
+  ): Promise<Compose extends true ? StartTaskResult : ClaimResult> {
     return this.runTyped("claim", {
       id,
       ...splitFullClientMutationOptions(options),
@@ -1450,10 +1450,10 @@ export class PmClient {
   }
 
   /** Release an item's active claim using the same mutation path as `pm release`. */
-  release(
+  release<Compose extends boolean = false>(
     id: string,
-    options: PmClientFullMutationOptions = {},
-  ): Promise<ReleaseResult> {
+    options: PmClientFullMutationOptions & { pause?: Compose } = {},
+  ): Promise<Compose extends true ? PauseTaskResult : ReleaseResult> {
     return this.runTyped("release", {
       id,
       ...splitFullClientMutationOptions(options),
@@ -2199,21 +2199,21 @@ export function reopen(
 }
 
 /** Close an item without constructing a reusable client. */
-export function close(
+export function close<Compose extends boolean = false>(
   id: string,
   reason: string,
-  options: PmClientCloseActionOptions = {},
+  options: PmClientCloseActionOptions & { releaseAssignment?: Compose } = {},
   clientOptions: PmClientOptions = {},
-): Promise<CloseResult> {
+): Promise<Compose extends true ? CloseTaskResult : CloseResult> {
   return new PmClient(clientOptions).close(id, reason, options);
 }
 
 /** Claim an item without constructing a reusable client. */
-export function claim(
+export function claim<Compose extends boolean = false>(
   id: string,
-  options: PmClientFullMutationOptions = {},
+  options: PmClientFullMutationOptions & { start?: Compose } = {},
   clientOptions: PmClientOptions = {},
-): Promise<ClaimResult> {
+): Promise<Compose extends true ? StartTaskResult : ClaimResult> {
   return new PmClient(clientOptions).claim(id, options);
 }
 
@@ -2226,11 +2226,11 @@ export function claimNext(
 }
 
 /** Release an item's active claim without constructing a reusable client. */
-export function release(
+export function release<Compose extends boolean = false>(
   id: string,
-  options: PmClientFullMutationOptions = {},
+  options: PmClientFullMutationOptions & { pause?: Compose } = {},
   clientOptions: PmClientOptions = {},
-): Promise<ReleaseResult> {
+): Promise<Compose extends true ? PauseTaskResult : ReleaseResult> {
   return new PmClient(clientOptions).release(id, options);
 }
 
@@ -3548,56 +3548,10 @@ async function runMcpRestoreAction(
   );
 }
 
-async function runMcpStartTaskAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> {
-  const pmRoot = resolvePmRoot(process.cwd(), ctx.global.path);
-  const settings = await readSettings(pmRoot);
-  const inProgressStatus = resolveStartTaskInProgressStatus(
-    resolveRuntimeStatusRegistry(settings.schema),
-  );
-  const id = requireMcpItemId(ctx);
-  const claimResult = await runClaim(id, ctx.force, ctx.global, ctx.options);
-  const updateResult = await runUpdate(
-    id,
-    mutationOptionsWithOverrides(
-      ctx.options,
-      { status: inProgressStatus, force: ctx.force },
-      ["assignee"],
-    ),
-    ctx.global,
-  );
-  return { id, action: "start_task", claim: claimResult, update: updateResult };
-}
-
 async function runMcpPauseTaskAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
-  const pmRoot = resolvePmRoot(process.cwd(), ctx.global.path);
-  const settings = await readSettings(pmRoot);
-  const id = requireMcpItemId(ctx);
-  const openStatus = resolveRuntimeStatusRegistry(settings.schema).open_status;
-  const updateResult = await runUpdate(
-    id,
-    mutationOptionsWithOverrides(
-      ctx.options,
-      { status: openStatus, force: ctx.force },
-      ["assignee"],
-    ),
-    ctx.global,
-  );
-  const releaseResult = await runRelease(
-    id,
-    ctx.force,
-    ctx.global,
-    ctx.options,
-  );
-  return {
-    id,
-    action: "pause_task",
-    update: updateResult,
-    release: releaseResult,
-  };
+  return runPauseTask(requireMcpItemId(ctx), mutationOptionsWithOverrides(ctx.options, { force: ctx.force }), ctx.global);
 }
 
 async function runMcpCloseTaskAction(
@@ -3609,24 +3563,7 @@ async function runMcpCloseTaskAction(
     readString(ctx.args, "text") ??
     readString(ctx.options, "reason") ??
     readString(ctx.options, "text");
-  const closeResult = await runClose(
-    id,
-    closeReason,
-    { ...ctx.options, force: ctx.force },
-    ctx.global,
-  );
-  const releaseResult = await runRelease(
-    id,
-    ctx.force,
-    ctx.global,
-    ctx.options,
-  );
-  return {
-    id,
-    action: "close_task",
-    close: closeResult,
-    release: releaseResult,
-  };
+  return runCloseTask(id, closeReason, mutationOptionsWithOverrides(ctx.options, { force: ctx.force }), ctx.global);
 }
 
 /** Dispatch the graph action merging flat MCP parameters onto runner options. */
@@ -3713,9 +3650,10 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   "item-reopen": runMcpReopenAction,
   restore: runMcpRestoreAction,
   claim: runMcpClaimAction,
-  release: (ctx) =>
-    runRelease(requireMcpItemId(ctx), ctx.force, ctx.global, ctx.options),
-  "start-task": runMcpStartTaskAction,
+  release: (ctx) => ctx.options.pause === true
+    ? runMcpPauseTaskAction(ctx)
+    : runRelease(requireMcpItemId(ctx), ctx.force, ctx.global, ctx.options),
+  "start-task": (ctx) => runStartTask(requireMcpItemId(ctx), mutationOptionsWithOverrides(ctx.options, { force: ctx.force }), ctx.global),
   "pause-task": runMcpPauseTaskAction,
   "close-task": runMcpCloseTaskAction,
   close: runMcpCloseAction,

@@ -3,7 +3,7 @@
  * @module cli/main
  */
 import { Command, CommanderError } from "commander";
-import { PM_CONTEXT_OPS_COMMAND_ALIASES, resolvePmCommandOperation } from "../sdk/cli-contracts/command-aliases.js";
+import { PM_RELOCATED_COMMAND_ALIASES, resolvePmCommandOperation } from "../sdk/cli-contracts/command-aliases.js";
 import {
   activateExtensions,
   clearActiveExtensionHooks,
@@ -2369,7 +2369,7 @@ function resolveCoreCommandRegistrationSelection(invocationArgv: string[]): Core
   const normalizedCommand = commandName.trim().toLowerCase();
   const commandTokens = stripGlobalBootstrapTokens(invocationArgv);
   const semanticCommand = resolvePmCommandOperation(commandTokens.slice(0, 2).join(" "));
-  if (PM_CONTEXT_OPS_COMMAND_ALIASES.some((alias) => alias.alias === semanticCommand)) {
+  if (PM_RELOCATED_COMMAND_ALIASES.some((alias) => alias.alias === semanticCommand)) {
     return { ...REGISTER_ALL_CORE_COMMAND_FAMILIES, targetCommandName: semanticCommand };
   }
   if (SETUP_COMMAND_NAMES.has(normalizedCommand)) {
@@ -2953,7 +2953,7 @@ async function handleRunPmCliError(params: { error: unknown; invocationArgv: str
 /** Offer a suppressible canonical spelling without altering machine-readable command results. */
 function printNamespaceAliasHint(invocation: ReturnType<typeof normalizeBootstrapInvocation>, enabled: boolean, global: BootstrapGlobalOptions): void {
   if (!enabled || global.json || global.quiet) return;
-  const usedAlias = invocation.trace.find((event) => event.reason === "command_alias" && PM_CONTEXT_OPS_COMMAND_ALIASES.some((alias) => alias.alias === event.from));
+  const usedAlias = invocation.trace.find((event) => event.reason === "command_alias" && PM_RELOCATED_COMMAND_ALIASES.some((alias) => alias.alias === event.from));
   if (usedAlias) printError(`Command \`${usedAlias.from}\` is an alias; use \`pm ${usedAlias.to.join(" ")}\`.`);
 }
 

@@ -10,7 +10,8 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { runClose } from "./close.js";
 import { runReopen } from "./reopen.js";
 import { runClaim, runClaimNext } from "./claim.js";
-import { readRuntimeString, withMutationCompaction } from "../runtime-input.js";
+import { runStartTask, runCloseTask } from "./task-composition.js";
+import { readRuntimeString, withMutationCompaction, mutationOptionsWithOverrides } from "../runtime-input.js";
 
 /** Minimal generic dispatch context consumed by lifecycle mutation adapters. */
 export interface LifecycleMutationActionContext {
@@ -31,6 +32,9 @@ export async function runMcpClaimAction(context: LifecycleMutationActionContext)
   const { changedFields, idOnly, runnerOptions } = withMutationCompaction(context.args, context.options);
   const force = context.force === true || runnerOptions.force === true;
   const selectionOptions = { ...context.args, ...runnerOptions };
+  if (selectionOptions.start === true) {
+    return runStartTask(requireLifecycleItemId(context, runnerOptions), mutationOptionsWithOverrides(runnerOptions, { force }), context.global);
+  }
   const result = context.args.next === true || runnerOptions.next === true
     ? await runClaimNext(force, context.global, selectionOptions, selectionOptions)
     : await runClaim(requireLifecycleItemId(context, runnerOptions), force, context.global, selectionOptions);
@@ -72,6 +76,11 @@ export async function runMcpCloseAction(
     context.args,
     context.options,
   );
+  if (runnerOptions.releaseAssignment === true) {
+    return runCloseTask(requireLifecycleItemId(context, runnerOptions), readLifecycleReason(context, runnerOptions), mutationOptionsWithOverrides(runnerOptions, {
+      force: context.force === true || runnerOptions.force === true,
+    }), context.global);
+  }
   return projectMutationResult(
     await runClose(
       requireLifecycleItemId(context, runnerOptions),

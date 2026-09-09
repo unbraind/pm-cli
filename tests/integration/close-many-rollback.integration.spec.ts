@@ -26,7 +26,7 @@ interface CloseManyRollbackResult {
  * cycle against a sandboxed PM_PATH.
  */
 describe("close-many rollback", () => {
-  it("restores bulk-closed items to their pre-close state from the checkpoint", async () => {
+  it.each([["close-many"], ["close", "many"]])("restores bulk-closed items through %s from the checkpoint", async (...command) => {
     await withTempPmPath(async (context) => {
       const createIds = ["Alpha", "Bravo"].map((title) => {
         const created = context.runCli(["create", "Task", title, "--tags", "batch", "--json"], { expectJson: true });
@@ -41,7 +41,7 @@ describe("close-many rollback", () => {
       expect(untouched.code).toBe(0);
       const untouchedId = (untouched.json as { item: { id: string } }).item.id;
 
-      const apply = context.runCli(["close-many", "--filter-tag", "batch", "--reason", "batch done", "--json"], {
+      const apply = context.runCli([...command, "--filter-tag", "batch", "--reason", "batch done", "--json"], {
         expectJson: true,
       });
       expect(apply.code).toBe(0);
@@ -58,7 +58,7 @@ describe("close-many rollback", () => {
         expect((closed.json as { item: { status: string } }).item.status).toBe("closed");
       }
 
-      const rollback = context.runCli(["close-many", "--rollback", checkpointId, "--json"], { expectJson: true });
+      const rollback = context.runCli([...command, "--rollback", checkpointId, "--json"], { expectJson: true });
       expect(rollback.code).toBe(0);
       const rollbackResult = rollback.json as CloseManyRollbackResult;
       expect(rollbackResult).toMatchObject({

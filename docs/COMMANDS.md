@@ -54,8 +54,8 @@ JSON ceiling; TOON uses the smaller default agent ceiling.
 | Family       | Commands                                                                                                                                      | Purpose                                                                                                                                                                                                                                                |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Bootstrap    | `init`, `config`, `health`, `telemetry`                                                                                                       | create and inspect tracker setup                                                                                                                                                                                                                       |
-| Lifecycle    | `create`, `copy`, `focus`, `claim`, `update`, `item reopen`, `append`, `close`, `release`, `delete`, `start-task`, `pause-task`, `close-task` | mutate item state, including terminal-work recurrence without duplicate creation                                                                                                                                                                       |
-| Bulk         | `item mutate`, `item complete`, `update-many`, `close-many`                                                                                   | atomically commit heterogeneous SDK mutation batches or evidence-backed completion, or apply one change across a matched, dry-run-previewed set with a rollback checkpoint                                                                             |
+| Lifecycle    | `create`, `copy`, `focus`, `claim`, `update`, `item reopen`, `append`, `close`, `release`, `close delete` | mutate item state, including terminal-work recurrence without duplicate creation                                                                                                                                                                       |
+| Bulk         | `item mutate`, `item complete`, `update many`, `close many`                                                                                   | atomically commit heterogeneous SDK mutation batches or evidence-backed completion, or apply one change across a matched, dry-run-previewed set with a rollback checkpoint                                                                             |
 | Scheduling   | `meet`, `event`, `remind`                                                                                                                     | low-friction Meeting/Event/Reminder creation                                                                                                                                                                                                           |
 | Planning     | `plan create`, `plan add-step`, `plan update-step`, `plan complete-step`, `plan link`, `plan approve`, `plan materialize`                     | agent-optimized living plans with ordered steps, evidence, decisions, validation, and materialization                                                                                                                                                  |
 | Links        | `files`, `docs`, `test`, `deps`                                                                                                               | connect items to artifacts, tests, and relationships                                                                                                                                                                                                   |
@@ -404,28 +404,28 @@ pm list --status open --has-tests --no-files --json
 
 ## Bulk Operations
 
-`update-many` and `close-many` apply one change across a matched set with a dry-run preview and a rollback checkpoint. Both share the `--filter-*` scoping family (`--filter-status/-type/-tag/-priority/-sprint/-release/-parent/-assignee/-deadline-before|after/-updated-after|before/-created-after|before`) plus `--ids` for an explicit comma-separated allowlist intersected with the other filters. `update-many` additionally accepts the missing-metadata selectors `--filter-ac-missing`/`--filter-estimates-missing`/`--filter-resolution-missing`/`--filter-metadata-missing` for bulk metadata backfill.
+`update many` and `close many` apply one change across a matched set with a dry-run preview and a rollback checkpoint. Both share the `--filter-*` scoping family (`--filter-status/-type/-tag/-priority/-sprint/-release/-parent/-assignee/-deadline-before|after/-updated-after|before/-created-after|before`) plus `--ids` for an explicit comma-separated allowlist intersected with the other filters. `update many` additionally accepts the missing-metadata selectors `--filter-ac-missing`/`--filter-estimates-missing`/`--filter-resolution-missing`/`--filter-metadata-missing` for bulk metadata backfill.
 
-Both `update-many` and `close-many` also accept the governance-field selectors `--filter-reviewer-missing`/`--filter-risk-missing`/`--filter-confidence-missing`/`--filter-sprint-missing`/`--filter-release-missing` and the content-field presence selectors under the `--filter-` prefix: `--filter-has-notes`/`--filter-no-notes`, `--filter-has-learnings`/`--filter-no-learnings`, `--filter-has-files`/`--filter-no-files`, `--filter-has-docs`/`--filter-no-docs`, `--filter-has-tests`/`--filter-no-tests`, `--filter-has-comments`/`--filter-no-comments`, `--filter-has-deps`/`--filter-no-deps`, `--filter-has-body`/`--filter-empty-body`, and `--filter-has-linked-command`/`--filter-no-linked-command`. These mirror the list/search presence filters and intersect with the rest of the scoping family, so you can bulk-select (for example) closed Tasks with no documented learnings before applying a change.
+Both `update many` and `close many` also accept the governance-field selectors `--filter-reviewer-missing`/`--filter-risk-missing`/`--filter-confidence-missing`/`--filter-sprint-missing`/`--filter-release-missing` and the content-field presence selectors under the `--filter-` prefix: `--filter-has-notes`/`--filter-no-notes`, `--filter-has-learnings`/`--filter-no-learnings`, `--filter-has-files`/`--filter-no-files`, `--filter-has-docs`/`--filter-no-docs`, `--filter-has-tests`/`--filter-no-tests`, `--filter-has-comments`/`--filter-no-comments`, `--filter-has-deps`/`--filter-no-deps`, `--filter-has-body`/`--filter-empty-body`, and `--filter-has-linked-command`/`--filter-no-linked-command`. These mirror the list/search presence filters and intersect with the rest of the scoping family, so you can bulk-select (for example) closed Tasks with no documented learnings before applying a change.
 
 ```bash
 # Bulk metadata update by explicit id allowlist (compose with search --json | jq)
-pm update-many --ids pm-a,pm-b,pm-c --priority 1 --dry-run
-pm update-many --filter-tag wave:7 --reviewer maintainer-review
+pm update many --ids pm-a,pm-b,pm-c --priority 1 --dry-run
+pm update many --filter-tag wave:7 --reviewer maintainer-review
 
 # Bulk-backfill a placeholder estimate onto open Tasks that have none
-pm update-many --filter-status open --filter-type Task --filter-estimates-missing --estimate 60 --dry-run
+pm update many --filter-status open --filter-type Task --filter-estimates-missing --estimate 60 --dry-run
 
 # Audited bulk close: routes EACH match through full `pm close` semantics
 # (close validation, active-child orphan checks, blocked-edge cleanup) — unlike
 # `update-many --status closed`, which bypasses them. A shared --reason is required
 # and at least one filter is required so it never matches every item.
-pm close-many --filter-sprint S-12 --reason "Sprint S-12 acceptance criteria met" --dry-run
-pm close-many --filter-sprint S-12 --reason "Sprint S-12 acceptance criteria met"
-pm close-many --rollback close-many-20260604-abc123   # restore the batch
+pm close many --filter-sprint S-12 --reason "Sprint S-12 acceptance criteria met" --dry-run
+pm close many --filter-sprint S-12 --reason "Sprint S-12 acceptance criteria met"
+pm close many --rollback close-many-20260604-abc123   # restore the batch
 ```
 
-`close-many` skips already-terminal matches by default (pass `--force` to re-close), accepts `--completed-at <timestamp>` to preserve one shared actual-completion time across the batch, reports a per-item plan (`close`/`skip`, plus `active_child_ids` for parents that would be orphaned) under `--dry-run`, and writes a checkpoint by default (`--no-checkpoint` to disable). Checkpoints for both commands live under `.agents/pm/checkpoints/<command>/` and are restored with `--rollback <checkpoint-id>`.
+`close many` skips already-terminal matches by default (pass `--force` to re-close), accepts `--completed-at <timestamp>` to preserve one shared actual-completion time across the batch, reports a per-item plan (`close`/`skip`, plus `active_child_ids` for parents that would be orphaned) under `--dry-run`, and writes a checkpoint by default (`--no-checkpoint` to disable). Checkpoints for both commands live under `.agents/pm/checkpoints/<command>/` and are restored with `--rollback <checkpoint-id>`.
 
 When a flag is rejected with `Unknown option`, the error guidance now suggests the nearest supported flag (including abbreviations like `--desc` → `--description`) and notes when the flag is valid on a different command (for example `--type` on `test-all` points to `create`/`list`). Unknown-command guidance ranks agent verb synonyms first, bounded edit distance second, and substring matches last; `pm log` therefore points to `history`, `comments`, and `notes`, never a `catalog` command.
 
@@ -511,10 +511,10 @@ did-you-mean diagnostic instead of becoming an accidental custom field.
 
 Repeated singular/plural list flags now accumulate, so `--tag a --tag b` is equivalent to `--tags a,b` (the same holds for `--status`, `--ids`, and `--fields` on read commands). Earlier versions silently kept only the last value. `list`/`search` also accept `--tags` as a never-block alias for the canonical read filter `--tag`.
 
-`--tags` REPLACES the whole tag list. To edit tags without restating the full set, use the additive/subtractive flags on `create`/`update`/`update-many`:
+`--tags` REPLACES the whole tag list. To edit tags without restating the full set, use the additive/subtractive flags on `create`/`update`/`update many`:
 
 - `--add-tags <value>` adds tags to the existing list without replacing it (repeatable; CSV or JSON-array values accepted).
-- `--remove-tags <value>` prunes the given tags from the existing list (repeatable; CSV or JSON-array). Available on `update`/`update-many` only — `create` has no prior tags to remove.
+- `--remove-tags <value>` prunes the given tags from the existing list (repeatable; CSV or JSON-array). Available on `update`/`update many` only — `create` has no prior tags to remove.
 
 ```bash
 pm update pm-abc1 --add-tags urgent,backend     # keeps existing tags, adds two
@@ -522,7 +522,7 @@ pm update pm-abc1 --remove-tags stale            # drops "stale", keeps the rest
 pm create "New backend task" --add-tags backend,p1
 ```
 
-Acceptance criteria get the same additive treatment on `update`/`update-many`: `--acceptance-criteria`/`--ac` explicitly REPLACES the whole value and returns an `acceptance_criteria_replaced:<before-count>:<after-count>` warning when it changes existing criteria. `--add-ac <text>` appends one criterion (repeatable; deduped on exact text), while `--remove-ac <text>` removes one criterion by exact text match. Every requested removal must match: otherwise the mutation fails atomically with `acceptance_criteria_remove_unmatched` and reports the unmatched selectors, without applying valid removals or additions. Whole-value replacement cannot be combined with additive flags in one mutation. Criteria are stored with semicolon-space separators, so one criterion cannot contain a semicolon. Disjoint `--add-ac` edits from concurrent agents/branches merge cleanly instead of clobbering each other.
+Acceptance criteria get the same additive treatment on `update`/`update many`: `--acceptance-criteria`/`--ac` explicitly REPLACES the whole value and returns an `acceptance_criteria_replaced:<before-count>:<after-count>` warning when it changes existing criteria. `--add-ac <text>` appends one criterion (repeatable; deduped on exact text), while `--remove-ac <text>` removes one criterion by exact text match. Every requested removal must match: otherwise the mutation fails atomically with `acceptance_criteria_remove_unmatched` and reports the unmatched selectors, without applying valid removals or additions. Whole-value replacement cannot be combined with additive flags in one mutation. Criteria are stored with semicolon-space separators, so one criterion cannot contain a semicolon. Disjoint `--add-ac` edits from concurrent agents/branches merge cleanly instead of clobbering each other.
 
 ```bash
 pm update pm-abc1 --add-ac "error path covered by a regression test"
@@ -555,7 +555,7 @@ pm update <id> \
   --message "Append audit evidence"
 ```
 
-`--expected` and `--actual` are short aliases for `--expected-result` and `--actual-result` on `create`/`update`/`update-many`, matching the aliases `pm close` already accepts:
+`--expected` and `--actual` are short aliases for `--expected-result` and `--actual-result` on `create`/`update`/`update many`, matching the aliases `pm close` already accepts:
 
 ```bash
 pm update <id> --expected "Retry succeeds after backoff" --actual "Retry threw on first attempt"
@@ -702,12 +702,12 @@ Use `pm close <id> "<reason>"` instead of `pm update --status closed`.
 
 ## Lifecycle Aliases
 
-Lifecycle aliases combine claim, status, and close operations into a single command:
+Lifecycle composition flags combine claim, status, and close operations:
 
 ```bash
-pm start-task <id>             # claim + move to in_progress
-pm pause-task <id>             # move to open + release claim
-pm close-task <id> "<reason>"  # close + release assignment
+pm claim <id> --start                       # claim + move to the configured in-progress status
+pm release <id> --pause                     # move to the configured open status + release claim
+pm close <id> "<reason>" --release-assignment # close with evidence + release assignment
 ```
 
 For lifecycle ownership commands, `--assignee <agent>` is accepted as an alias
@@ -715,9 +715,11 @@ for `--author <agent>` on `claim`, `release`, `start-task`, `pause-task`, and
 `close-task`. Use `pm update --assignee <person>` when changing item metadata
 rather than active work ownership.
 
-Tracker references: [pm-qfte](../.agents/pm/tasks/pm-qfte.toon), [pm-98cz](../.agents/pm/features/pm-98cz.toon).
+The old task spellings remain hidden compatibility aliases. See [Lifecycle Commands and Ownership](LIFECYCLE_COMMANDS.md) for migration, typed SDK receipts, MCP controls, and partial-failure semantics.
 
-After `pm create` of a workable item type, the result includes a non-binding `next_transition` hint (`pm start-task <id>` → `in_progress`) when the workflow defines a distinct in-progress status. This nudges agents to move work through `in_progress` instead of jumping straight from `open` to `closed`. Scheduling/reference types (Event, Meeting, Reminder, Milestone, Decision) never receive the hint. (GH-216)
+Tracker references: [pm-eq4x](../.agents/pm/tasks/pm-eq4x.toon), [pm-ik19](../.agents/pm/tasks/pm-ik19.toon), [pm-qfte](../.agents/pm/tasks/pm-qfte.toon), [pm-98cz](../.agents/pm/features/pm-98cz.toon).
+
+After `pm create` of a workable item type, the result includes a non-binding `next_transition` hint (`pm claim <id> --start` → `in_progress`) when the workflow defines a distinct in-progress status. This nudges agents to move work through `in_progress` instead of jumping straight from `open` to `closed`. Scheduling/reference types (Event, Meeting, Reminder, Milestone, Decision) never receive the hint. (GH-216)
 
 ## Scheduling Shortcuts
 
@@ -908,7 +910,7 @@ Use dry-run modes before broad lifecycle or cleanup changes.
 - `embeddings` removes keyword/semantic artifacts (`search/embeddings.jsonl`, `search/vectorization-status.json`, `search/lancedb/`) plus `search/pending-refresh.json` and its gate, preventing a background worker from rebuilding a partial index against an empty ledger. Rebuild with keyword reindex and semantic reindex when enabled.
 - `locks` removes only provably expired locks, using embedded `created_at + ttl_seconds`. Active, unreadable, or unparseable locks remain. The result reports `scanned`, `removed`, and `retained` counts.
 
-The `checkpoints` scope prunes bulk-mutation rollback checkpoints under `checkpoints/` (written by `pm update-many`/`pm close-many`) that are older than `checkpoints.retention_days` (default 14; set via `pm config <scope> set checkpoints_retention_days <n>`). Checkpoints whose `created_at` cannot be parsed are retained (safety-first, like the locks sweep), and the result includes a `checkpoints` summary (`scanned`/`removed`/`retained`/`retention_days`). Removing aged checkpoints permanently closes their `--rollback` window.
+The `checkpoints` scope prunes bulk-mutation rollback checkpoints under `checkpoints/` (written by `pm update many`/`pm close many`) that are older than `checkpoints.retention_days` (default 14; set via `pm config <scope> set checkpoints_retention_days <n>`). Checkpoints whose `created_at` cannot be parsed are retained (safety-first, like the locks sweep), and the result includes a `checkpoints` summary (`scanned`/`removed`/`retained`/`retention_days`). Removing aged checkpoints permanently closes their `--rollback` window.
 
 `--fix-hints` is a read-only flag: each failing check gains `details.fix_hints`, an array of `pm` command templates derived from the warning codes it raised (for example `pm history-repair <id>` for history drift, or `pm update <id> --reviewer "<name>"` for a missing reviewer). Generic hints may contain `<id>`/`<field>`/`<path>` placeholders the agent substitutes from the check's detail rows; the resolution check aliases concrete per-row commands and marks `fix_hints_truncated` when the list is summarized. It never mutates items. The mapping comes from the shared remediation registry that also backs `pm health --json` (see Self-Repair Remediation below), so agents gating on `pm validate` can auto-repair findings without hardcoding warning-code-to-command lookups.
 
@@ -916,7 +918,7 @@ The `checkpoints` scope prunes bulk-mutation rollback checkpoints under `checkpo
 
 `--counts` keeps the validation envelope, check statuses, warning codes, scalar counts/totals, nested count maps, and fix summary totals while recursively omitting diagnostic and fix row arrays. False `*_truncated` markers are omitted; true markers, other false values, and zero counts remain. It is the preferred agent projection when deciding whether drift exists; remove it only when the affected ids or remediation rows are needed. The public SDK `projectValidateCounts` helper applies the identical projection to an already-computed `ValidateResult`.
 
-By default the human view caps each diagnostic `*_item_ids` list at 5 entries and sets the matching `*_truncated` flag. `--json` **never** truncates those lists (machine consumers always receive the complete arrays), and `--all-affected-ids` (equivalent to `--verbose-diagnostics`) emits the full lists in human mode too — so bulk remediation can pipe every affected id straight into `pm update-many`:
+By default the human view caps each diagnostic `*_item_ids` list at 5 entries and sets the matching `*_truncated` flag. `--json` **never** truncates those lists (machine consumers always receive the complete arrays), and `--all-affected-ids` (equivalent to `--verbose-diagnostics`) emits the full lists in human mode too — so bulk remediation can pipe every affected id straight into `pm update many`:
 
 ```bash
 pm validate --check-metadata --all-affected-ids
@@ -1238,7 +1240,7 @@ Invariants:
 - Promoting a step link preserves its semantic kind. `depends_on` normalizes to the canonical top-level `blocked_by`; `implements` and `verifies` remain first-class directed dependency kinds available to SDK relationship registries and graph consumers.
 - Search keyword corpus includes plan_scope, step titles/bodies, decisions, discoveries, validation, and step linked items.
 
-`pm delete <id> --json` reports an explicit `outcome` (`deleted` or `would_delete`), `deleted` boolean, and `previous_status`. Compact and `--id-only` output use the mutation outcome as `status`, so agents never mistake the deleted item's former lifecycle state for the delete result.
+`pm close delete <id> --json` reports an explicit `outcome` (`deleted` or `would_delete`), `deleted` boolean, and `previous_status`. Compact and `--id-only` output use the mutation outcome as `status`, so agents never mistake the deleted item's former lifecycle state for the delete result.
 
 ## Machine Contracts
 

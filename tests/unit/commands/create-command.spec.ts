@@ -256,7 +256,7 @@ describe("runCreate", () => {
         { path: context.pmPath },
       );
       expect(task.next_transition).toEqual({
-        command: `pm start-task ${task.item.id}`,
+        command: `pm claim ${task.item.id} --start`,
         to_status: "in_progress",
       });
 

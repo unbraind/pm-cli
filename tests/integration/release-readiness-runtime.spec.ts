@@ -1170,7 +1170,7 @@ describe("release readiness runtime coverage", () => {
       const closeHelp = context.runCli(["close", "--help"]);
       expect(closeHelp.code).toBe(0);
       expect(closeHelp.stdout).toContain(
-        "Usage: pm close [options] <id> [text]",
+        "Usage: pm close [options] [command] <id> [text]",
       );
       expect(closeHelp.stdout).toContain(
         "Close an item. Close reason requirement follows governance.require_close_reason.",
@@ -1182,7 +1182,7 @@ describe("release readiness runtime coverage", () => {
 
       const deleteHelp = context.runCli(["delete", "--help"]);
       expect(deleteHelp.code).toBe(0);
-      expect(deleteHelp.stdout).toContain("Usage: pm delete [options] <id>");
+      expect(deleteHelp.stdout).toContain("Usage: pm close delete [options] <id>");
       expect(deleteHelp.stdout).toContain(
         "Delete an item and record the change in history.",
       );

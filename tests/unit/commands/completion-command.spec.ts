@@ -247,7 +247,7 @@ describe("generateBashScript", () => {
     );
 
     const fishScript = generateFishScript();
-    expect(fishScript).toContain("__fish_seen_subcommand_from update-many");
+    expect(fishScript).toContain("__pm_history_operation update-many");
     expect(fishScript).toContain("-l replace-tests");
     expect(fishScript).toContain("-l clear-docs");
     expect(fishScript).toContain("-l reminder");
@@ -488,7 +488,7 @@ describe("generateBashScript", () => {
     );
 
     const fishScript = generateFishScript();
-    expect(fishScript).toContain("__fish_seen_subcommand_from delete");
+    expect(fishScript).toContain("__pm_history_operation delete");
     expect(fishScript).toContain("-l dry-run");
   });
 
@@ -779,13 +779,13 @@ describe("generateZshScript", () => {
     expect(script).toContain(
       "contracts:Show machine-readable command and schema contracts",
     );
-    expect(script).toContain(
+    expect(script).not.toContain(
       "start-task:Lifecycle alias to claim and set in_progress",
     );
-    expect(script).toContain(
+    expect(script).not.toContain(
       "pause-task:Lifecycle alias to reopen and release claim",
     );
-    expect(script).toContain(
+    expect(script).not.toContain(
       "close-task:Lifecycle alias to close and release claim",
     );
     expect(script).toContain(
@@ -1222,7 +1222,7 @@ describe("generateFishScript", () => {
 
   it("includes update-specific flag completions", () => {
     const script = generateFishScript();
-    expect(script).toContain("__fish_seen_subcommand_from update");
+    expect(script).toContain("__pm_history_operation update");
     expect(script).toContain("-l body");
     expect(script).toContain("-l close-reason");
     expect(script).toContain("-l force");

@@ -2279,11 +2279,16 @@ describe("contracts command runtime", () => {
     );
     expect(availabilityOnly.selected.flags_only).toBe(false);
     expect(availabilityOnly.selected.availability_only).toBe(true);
-    expect(availabilityOnly.actions).toEqual(["update"]);
+    expect(availabilityOnly.actions).toEqual(["update", "update-many"]);
     expect(availabilityOnly.action_availability).toEqual([
       expect.objectContaining({
         action: "update",
         command_path: "update",
+        cli_exposed: true,
+      }),
+      expect.objectContaining({
+        action: "update-many",
+        command_path: "update many|update-many",
         cli_exposed: true,
       }),
     ]);

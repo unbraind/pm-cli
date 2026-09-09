@@ -12,9 +12,9 @@ function buildRegistry(openStatus: string, aliases: Record<string, string>): Run
 const REGISTRY_WITH_IN_PROGRESS = buildRegistry("open", { in_progress: "in_progress" });
 
 describe("suggestNextLifecycleTransition", () => {
-  it("suggests start-task for a workable item in the open status", () => {
+  it("suggests claim --start for a workable item in the open status", () => {
     expect(suggestNextLifecycleTransition("pm-a1b2", "Task", "open", REGISTRY_WITH_IN_PROGRESS)).toEqual({
-      command: "pm start-task pm-a1b2",
+      command: "pm claim pm-a1b2 --start",
       to_status: "in_progress",
     });
   });

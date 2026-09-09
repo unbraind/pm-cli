@@ -61,10 +61,31 @@ export const PM_CONTEXT_OPS_COMMAND_ALIASES: readonly PmCommandAliasContract[] =
   registration: "bootstrap",
 }));
 
+/** Bulk lifecycle operations retain their published SDK identities under canonical verbs. */
+export const PM_BULK_LIFECYCLE_COMMAND_ALIASES: readonly PmCommandAliasContract[] = [
+  ["update-many", "update many"],
+  ["close-many", "close many"],
+  ["delete", "close delete"],
+].map(([alias, canonical]) => ({
+  alias,
+  canonical,
+  canonical_argv: canonical.split(" "),
+  lifecycle: "permanent",
+  hidden: true,
+  registration: "bootstrap",
+  owner: "pm-ik19",
+}));
+
+/** Native handlers relocated into parent commands after core and package registration. */
+export const PM_RELOCATED_COMMAND_ALIASES: readonly PmCommandAliasContract[] = [
+  ...PM_CONTEXT_OPS_COMMAND_ALIASES,
+  ...PM_BULK_LIFECYCLE_COMMAND_ALIASES,
+];
+
 /** Native noun-verb paths whose stable operation identities survive grammar consolidation. */
 export const PM_NAMESPACED_COMMAND_ALIASES: readonly PmCommandAliasContract[] = [
   ...PM_HISTORY_COMMAND_ALIASES,
-  ...PM_CONTEXT_OPS_COMMAND_ALIASES,
+  ...PM_RELOCATED_COMMAND_ALIASES,
 ];
 
 /** Resolve a native command leaf to its stable SDK operation without changing unknown paths. */
@@ -84,6 +105,19 @@ export function resolvePmHistoryOperation(command: string): string {
  */
 export const PM_COMMAND_ALIAS_CONTRACTS: readonly PmCommandAliasContract[] = [
   ...PM_NAMESPACED_COMMAND_ALIASES,
+  ...[
+    ["start-task", "claim", "--start"],
+    ["pause-task", "release", "--pause"],
+    ["close-task", "close", "--release-assignment"],
+  ].map(([alias, canonical, flag]): PmCommandAliasContract => ({
+    alias,
+    canonical,
+    canonical_argv: [canonical, flag],
+    lifecycle: "deprecated",
+    hidden: true,
+    registration: "commander",
+    owner: "pm-eq4x",
+  })),
   {
     alias: "tests",
     canonical: "test",

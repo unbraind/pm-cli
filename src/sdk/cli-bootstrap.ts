@@ -26,7 +26,7 @@ export {
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
-import { resolvePmHistoryOperation } from "./cli-contracts/command-aliases.js";
+import { resolvePmCommandOperation } from "./cli-contracts/command-aliases.js";
 import { normalizeItemAddressInvocation } from "./agent/item-addressing.js";
 import {
   BOOTSTRAP_BOOLEAN_FLAGS,
@@ -1157,8 +1157,8 @@ function parseBootstrapCommandPathName(argv: string[]): string | undefined {
   const stripped = stripGlobalBootstrapTokens(argv);
   const first = stripped[0]?.trim().toLowerCase();
   const second = stripped[1]?.trim().toLowerCase();
-  const historyPath = `${first} ${second}`;
-  if (resolvePmHistoryOperation(historyPath) !== historyPath) return historyPath;
+  const commandPath = `${first} ${second}`;
+  if (resolvePmCommandOperation(commandPath) !== commandPath) return commandPath;
   if (
     (first === "extension" || first === "package" || first === "packages") &&
     typeof second === "string" &&
