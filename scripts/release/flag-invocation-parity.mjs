@@ -8,6 +8,7 @@
  * command. This prevents spelling heuristics from silently teaching agents an
  * invocation grammar the executable rejects.
  */
+import { installCommandNamespaces } from "../../dist/cli/command-namespaces.js";
 import { pathToFileURL } from "node:url";
 
 import { registerListQueryCommands } from "../../dist/cli/register-list-query.js";
@@ -35,12 +36,13 @@ const COMMAND_SCOPED_OPTION_OVERRIDES = new Set([
 ]);
 
 /** Build the complete core Commander tree without loading project extensions. */
-export function buildCoreCommandProgram() {
+export function buildCoreCommandProgram({ namespaced = false } = {}) {
   const program = createPmCliProgram("contract-parity");
   registerSetupCommands(program);
   registerListQueryCommands(program);
   registerMutationCommands(program);
   registerOperationCommands(program);
+  if (namespaced) installCommandNamespaces(program);
   return program;
 }
 
@@ -56,8 +58,7 @@ export function observeCommanderOption(command, option) {
 }
 
 /** Collect every root-global and command-local option by canonical long spelling. */
-export function observeCommandOptions(program, command) {
-  const commandPath = command.name();
+export function observeCommandOptions(program, command, commandPath = command.name()) {
   return [...program.options, ...command.options]
     .filter((option) => typeof option.long === "string")
     .map((option) => observeCommanderOption(commandPath, option))
@@ -68,11 +69,16 @@ export function observeCommandOptions(program, command) {
 export function verifyCoreFlagInvocationParity({
   injectMismatch = false,
   program = buildCoreCommandProgram(),
+  nativeProgram = buildCoreCommandProgram({ namespaced: true }),
 } = {}) {
   const commandReports = [];
   const missingCommands = [];
-  for (const command of program.commands) {
-    const commandPath = command.name();
+  const commandEntries = program.commands.map((command) => ({ command, commandPath: command.name(), root: program }));
+  for (const parent of nativeProgram.commands) {
+    if (!["context", "ops", "history"].includes(parent.name())) continue;
+    for (const command of parent.commands) commandEntries.push({ command, commandPath: `${parent.name()} ${command.name()}`, root: nativeProgram });
+  }
+  for (const { command, commandPath, root } of commandEntries) {
     if (!hasSubcommandFlagContractsForCommand(commandPath)) {
       missingCommands.push({
         code: "missing_command_contract",
@@ -91,7 +97,7 @@ export function verifyCoreFlagInvocationParity({
       declarations.map((declaration) => [declaration.flag, declaration]),
     );
     const observedSignatures = new Set();
-    const observations = observeCommandOptions(program, command)
+    const observations = observeCommandOptions(root, command, commandPath)
       .map((observation) => ({
         ...observation,
         // Commander exposes variadic argv syntax, not accumulation through an

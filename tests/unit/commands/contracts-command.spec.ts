@@ -1155,7 +1155,7 @@ describe("contracts command runtime", () => {
           default_max_estimated_tokens: 4000,
         }),
         expect.objectContaining({
-          command: "next",
+          command: "context next",
           flags: [
             "--limit",
             "--blocked-limit",

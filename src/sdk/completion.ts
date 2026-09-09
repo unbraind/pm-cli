@@ -35,6 +35,7 @@ import {
   NEXT_FLAG_CONTRACTS,
   PM_COMMAND_ALIAS_CONTRACTS,
   PM_HISTORY_COMMAND_ALIASES,
+  PM_NAMESPACED_COMMAND_ALIASES,
   resolveSubcommandFlagContractsForCommand,
   PACKAGE_FLAG_CONTRACTS,
   PLAN_FLAG_CONTRACTS,
@@ -93,7 +94,7 @@ const HIDDEN_COMMAND_ALIASES = new Set(
   ),
 );
 const ALL_COMMANDS = listPmCommandsForTier("full").filter(
-  (command) => !HIDDEN_COMMAND_ALIASES.has(command),
+  (command) => !command.includes(" ") && !HIDDEN_COMMAND_ALIASES.has(command),
 );
 const LIST_FLAGS = toCompletionFlagString(LIST_FILTER_FLAG_CONTRACTS);
 const AGGREGATE_FLAGS = toCompletionFlagString(AGGREGATE_FLAG_CONTRACTS);
@@ -111,7 +112,8 @@ const GET_FLAGS = toCompletionFlagString(GET_FLAG_CONTRACTS);
 const UPDATE_FLAGS = toCompletionFlagString(UPDATE_FLAG_CONTRACTS);
 const UPDATE_MANY_FLAGS = toCompletionFlagString(UPDATE_MANY_FLAG_CONTRACTS);
 const CLOSE_MANY_FLAGS = toCompletionFlagString(CLOSE_MANY_FLAG_CONTRACTS);
-const HISTORY_LEAVES = PM_HISTORY_COMMAND_ALIASES.map((entry) => entry.canonical_argv[1]).join(" ");
+const NAMESPACE_LEAVES = Object.fromEntries(["history", "context", "ops"].map((noun) => [noun, PM_NAMESPACED_COMMAND_ALIASES.filter((entry) => entry.canonical_argv[0] === noun).map((entry) => entry.canonical_argv[1]).join(" ")]));
+const HISTORY_LEAVES = NAMESPACE_LEAVES.history;
 const HISTORY_OPERATION_FLAGS = PM_HISTORY_COMMAND_ALIASES.map((entry) => ({
   ...entry,
   flags: toCompletionFlagString(resolveSubcommandFlagContractsForCommand(entry.alias)),
@@ -365,14 +367,14 @@ function renderZshArgumentSpecs(
 
 /** Render root Zsh descriptions while keeping executable compatibility aliases out of default suggestions. */
 function renderZshCommandDescriptions(): string {
-  return COMMAND_COMPLETION_DESCRIPTIONS.filter(([command]) => !HIDDEN_COMMAND_ALIASES.has(command)).map(
+  return [...COMMAND_COMPLETION_DESCRIPTIONS, ["ops", "Workspace maintenance and diagnostics"] as const].filter(([command]) => !HIDDEN_COMMAND_ALIASES.has(command)).map(
     ([command, description]) => `    '${command}:${description}'`,
   ).join("\n");
 }
 
 /** Render visible Fish root commands with shell-specific descriptions and hidden-alias filtering. */
 function renderFishCommandDescriptions(): string {
-  return COMMAND_COMPLETION_DESCRIPTIONS.filter(
+  return [...COMMAND_COMPLETION_DESCRIPTIONS, ["ops", "Workspace maintenance and diagnostics"] as const].filter(
     ([command]) => command !== "help" && !HIDDEN_COMMAND_ALIASES.has(command),
   )
     .map(([command, description]) => {
@@ -778,10 +780,11 @@ export function generateBashScript(
     "    esac",
     '    if [[ -z "$cmd" ]]; then',
     '      cmd="$word"',
-    '      [[ "$cmd" == "history" ]] || break',
+    '      [[ "$cmd" == "ctx" ]] && cmd="context"',
+    '      [[ "$cmd" == "history" || "$cmd" == "context" || "$cmd" == "ops" ]] || break',
     "    else",
-    '      case "$word" in',
-    ...PM_HISTORY_COMMAND_ALIASES.map((entry) => `        ${entry.canonical_argv[1]}) cmd="${entry.alias}" ;;`),
+    '      case "$cmd $word" in',
+    ...PM_NAMESPACED_COMMAND_ALIASES.map((entry) => `        "${entry.canonical}") cmd="${entry.alias}" ;;`),
     "      esac",
     "      break",
     "    fi",
@@ -823,6 +826,12 @@ export function generateBashScript(
     "      ;;",
     "    context|ctx)",
     `      COMPREPLY=(${compgen(contextFlags)})`,
+    '      if [[ $word_index -eq $cword ]]; then',
+    `        COMPREPLY+=(${compgen(NAMESPACE_LEAVES.context)})`,
+    "      fi",
+    "      ;;",
+    "    ops)",
+    `      COMPREPLY=(${compgen(`${GLOBAL_FLAGS} ${NAMESPACE_LEAVES.ops}`)})`,
     "      ;;",
     "    next)",
     `      COMPREPLY=(${compgen(NEXT_FLAGS)})`,
@@ -1049,7 +1058,7 @@ _pm() {
   local context state line
   local -a words=("$words[@]")
   local CURRENT=$CURRENT
-  local word_index=2 history_seen=0 operation_index=0 word
+  local word_index=2 namespace_noun="" operation_index=0 word
   while (( word_index < CURRENT )); do
     word="$words[word_index]"
     case "\${word//_/-}" in
@@ -1057,24 +1066,27 @@ _pm() {
       ${GLOBAL_COMPLETION_INLINE_PATTERNS}|${GLOBAL_COMPLETION_SWITCH_PATTERNS}) (( word_index++ )); continue ;;
       --) break ;;
     esac
-    if (( history_seen == 0 )); then
-      [[ "$word" == "history" ]] || break
-      history_seen=1
+    if [[ -z "$namespace_noun" ]]; then
+      [[ "$word" == "ctx" ]] && word="context"
+      [[ "$word" == "history" || "$word" == "context" || "$word" == "ops" ]] || break
+      namespace_noun="$word"
     else
       operation_index=$word_index
       break
     fi
     (( word_index++ ))
   done
-  if (( history_seen && word_index == CURRENT )) && [[ "$words[CURRENT]" != -* ]]; then
+  if [[ -n "$namespace_noun" ]] && (( word_index == CURRENT )) && [[ "$words[CURRENT]" != -* ]]; then
     local -a history_commands
-    history_commands=(${HISTORY_LEAVES})
+    case "$namespace_noun" in
+${Object.entries(NAMESPACE_LEAVES).map(([noun, leaves]) => `      ${noun}) history_commands=(${leaves}) ;;`).join("\n")}
+    esac
     _describe 'history operation' history_commands
     return
   fi
   if (( operation_index > 0 )); then
-    case "$words[operation_index]" in
-${PM_HISTORY_COMMAND_ALIASES.map((entry) => `      ${entry.canonical_argv[1]}) words=("$words[1]" "${entry.alias}" "\${words[@]:$operation_index}"); (( CURRENT -= operation_index - 2 )) ;;`).join("\n")}
+    case "$namespace_noun $words[operation_index]" in
+${PM_NAMESPACED_COMMAND_ALIASES.map((entry) => `      "${entry.canonical}") words=("$words[1]" "${entry.alias}" "\${words[@]:$operation_index}"); (( CURRENT -= operation_index - 2 )) ;;`).join("\n")}
     esac
   fi
   _arguments -C \\
@@ -2328,7 +2340,7 @@ complete -c pm -n '__fish_seen_subcommand_from copy' -l message -d 'History mess
 complete -c pm -n '__fish_seen_subcommand_from copy' -l force   -d 'Force ownership override'
 
 # focus flags
-complete -c pm -n '__fish_seen_subcommand_from focus' -l clear -d 'Clear the focused item'
+complete -c pm -n '__pm_history_operation focus' -l clear -d 'Clear the focused item'
 
 # update flags
 complete -c pm -n '__fish_seen_subcommand_from update' -s t -l title              -d 'Item title' -r
@@ -2587,36 +2599,36 @@ complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l format    -d 'Ou
 ${fishCalendarRuntimeFieldFlags}
 
 # context flags
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l date      -d 'Anchor date/time (ISO/date string or relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l from      -d 'Agenda lower bound (ISO/date string or relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l to        -d 'Agenda upper bound (ISO/date string or relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l past      -d 'Include past entries in bounded windows'
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l type      -d 'Filter by type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l tag       -d 'Filter by tag' -r -a ${fishTagChoices}
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l priority  -d 'Filter by priority' -r -a '0 1 2 3 4'
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l assignee  -d 'Filter by assignee' -r
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l sprint    -d 'Filter by sprint' -r
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l release   -d 'Filter by release' -r
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l parent    -d 'Scope snapshot to one item subtree' -r
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l limit     -d 'Limit focus and agenda rows per section' -r
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l depth     -d 'Context depth' -r -a 'brief standard deep full'
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l format    -d 'Output override' -r -a 'markdown toon json'
+complete -c pm -n '__pm_history_operation context' -l date      -d 'Anchor date/time (ISO/date string or relative)' -r
+complete -c pm -n '__pm_history_operation context' -l from      -d 'Agenda lower bound (ISO/date string or relative)' -r
+complete -c pm -n '__pm_history_operation context' -l to        -d 'Agenda upper bound (ISO/date string or relative)' -r
+complete -c pm -n '__pm_history_operation context' -l past      -d 'Include past entries in bounded windows'
+complete -c pm -n '__pm_history_operation context' -l type      -d 'Filter by type' -r -a '${typeChoices}'
+complete -c pm -n '__pm_history_operation context' -l tag       -d 'Filter by tag' -r -a ${fishTagChoices}
+complete -c pm -n '__pm_history_operation context' -l priority  -d 'Filter by priority' -r -a '0 1 2 3 4'
+complete -c pm -n '__pm_history_operation context' -l assignee  -d 'Filter by assignee' -r
+complete -c pm -n '__pm_history_operation context' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
+complete -c pm -n '__pm_history_operation context' -l sprint    -d 'Filter by sprint' -r
+complete -c pm -n '__pm_history_operation context' -l release   -d 'Filter by release' -r
+complete -c pm -n '__pm_history_operation context' -l parent    -d 'Scope snapshot to one item subtree' -r
+complete -c pm -n '__pm_history_operation context' -l limit     -d 'Limit focus and agenda rows per section' -r
+complete -c pm -n '__pm_history_operation context' -l depth     -d 'Context depth' -r -a 'brief standard deep full'
+complete -c pm -n '__pm_history_operation context' -l format    -d 'Output override' -r -a 'markdown toon json'
 ${fishContextRuntimeFieldFlags}
 
 # next flags
-complete -c pm -n '__fish_seen_subcommand_from next' -l type           -d 'Filter candidates by type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from next' -l tag            -d 'Filter candidates by tag' -r -a ${fishTagChoices}
-complete -c pm -n '__fish_seen_subcommand_from next' -l priority       -d 'Filter candidates by priority' -r -a '0 1 2 3 4'
-complete -c pm -n '__fish_seen_subcommand_from next' -l assignee       -d 'Filter candidates by assignee' -r
-complete -c pm -n '__fish_seen_subcommand_from next' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
-complete -c pm -n '__fish_seen_subcommand_from next' -l sprint         -d 'Filter candidates by sprint' -r
-complete -c pm -n '__fish_seen_subcommand_from next' -l release        -d 'Filter candidates by release' -r
-complete -c pm -n '__fish_seen_subcommand_from next' -l parent         -d 'Scope to one item subtree' -r
-complete -c pm -n '__fish_seen_subcommand_from next' -l limit          -d 'Limit ready rows' -r
-complete -c pm -n '__fish_seen_subcommand_from next' -l blocked-limit  -d 'Limit blocked rows' -r
-complete -c pm -n '__fish_seen_subcommand_from next' -l ready-only     -d 'Omit the blocked companion list'
-complete -c pm -n '__fish_seen_subcommand_from next' -l format         -d 'Output override' -r -a 'markdown toon json'
+complete -c pm -n '__pm_history_operation next' -l type           -d 'Filter candidates by type' -r -a '${typeChoices}'
+complete -c pm -n '__pm_history_operation next' -l tag            -d 'Filter candidates by tag' -r -a ${fishTagChoices}
+complete -c pm -n '__pm_history_operation next' -l priority       -d 'Filter candidates by priority' -r -a '0 1 2 3 4'
+complete -c pm -n '__pm_history_operation next' -l assignee       -d 'Filter candidates by assignee' -r
+complete -c pm -n '__pm_history_operation next' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
+complete -c pm -n '__pm_history_operation next' -l sprint         -d 'Filter candidates by sprint' -r
+complete -c pm -n '__pm_history_operation next' -l release        -d 'Filter candidates by release' -r
+complete -c pm -n '__pm_history_operation next' -l parent         -d 'Scope to one item subtree' -r
+complete -c pm -n '__pm_history_operation next' -l limit          -d 'Limit ready rows' -r
+complete -c pm -n '__pm_history_operation next' -l blocked-limit  -d 'Limit blocked rows' -r
+complete -c pm -n '__pm_history_operation next' -l ready-only     -d 'Omit the blocked companion list'
+complete -c pm -n '__pm_history_operation next' -l format         -d 'Output override' -r -a 'markdown toon json'
 
 # guide flags
 complete -c pm -n '__fish_seen_subcommand_from guide' -l list      -d 'Show guide topic index'
@@ -2625,8 +2637,8 @@ complete -c pm -n '__fish_seen_subcommand_from guide' -l depth     -d 'Guide det
 complete -c pm -n '__fish_seen_subcommand_from guide' -a '${guideTopicChoices}' -d 'Guide topic'
 
 # reindex flags
-complete -c pm -n '__fish_seen_subcommand_from reindex' -l mode -d 'Reindex mode' -r -a 'keyword semantic hybrid'
-complete -c pm -n '__fish_seen_subcommand_from reindex' -l progress -d 'Emit progress updates to stderr'
+complete -c pm -n '__pm_history_operation reindex' -l mode -d 'Reindex mode' -r -a 'keyword semantic hybrid'
+complete -c pm -n '__pm_history_operation reindex' -l progress -d 'Emit progress updates to stderr'
 
 # get flags
 complete -c pm -n '__fish_seen_subcommand_from get' -l depth -d 'Detail depth' -r -a 'brief standard deep full'
@@ -2655,9 +2667,12 @@ function __pm_history_tokens
         printf '%s\\n' --
         return
     end
+    if test $positions -eq 0; and test "$token" = ctx
+      set token context
+    end
     printf '%s\\n' "$token"
     set positions (math $positions + 1)
-    if test $positions -eq 2; or test "$token" != history
+    if test $positions -eq 2; or not contains -- "$token" history context ops
       return
     end
   end
@@ -2669,13 +2684,12 @@ end
 # Match only the command positions, keeping item history separate from maintenance.
 function __pm_history_operation
   set -l tokens (__pm_history_tokens)
-  if test "$tokens[1]" = history; and contains -- "$tokens[2]" ${HISTORY_LEAVES}
-    test "$tokens[2]" = "$argv[2]"
-  else
-    test "$tokens[1]" = "$argv[1]"
+  switch "$tokens[1] $tokens[2]"
+${PM_NAMESPACED_COMMAND_ALIASES.map((entry) => `    case '${entry.canonical}'\n      test "$argv[1]" = '${entry.alias}'\n      return`).join("\n")}
   end
+  test "$tokens[1]" = "$argv[1]"
 end
-complete -c pm -n 'test (count (__pm_history_tokens)) -eq 1; and __pm_history_operation history' -a '${HISTORY_LEAVES}' -d 'History operation'
+${Object.entries(NAMESPACE_LEAVES).map(([noun, leaves]) => `complete -c pm -n 'test (count (__pm_history_tokens)) -eq 1; and __pm_history_operation ${noun}' -a '${leaves}' -d '${noun} operation'`).join("\n")}
 ${RESTORE_INVOCATIONS.map((flag) => `complete -c pm -n '__pm_history_operation restore restore' -l ${flag.flag.slice(2)}${flag.takes_value ? " -r" : ""}`).join("\n")}
 
 # history / activity flags
@@ -2690,19 +2704,19 @@ complete -c pm -n '__pm_history_operation history'  -l provenance-filter -d 'Fil
 complete -c pm -n '__pm_history_operation history'  -l diff -d 'Include per-entry field-level before/after value diffs'
 complete -c pm -n '__pm_history_operation history'  -l field -d 'With --diff, show only entries that changed this field' -r
 complete -c pm -n '__pm_history_operation history'  -l verify -d 'Verify history hash chain and replay integrity'
-complete -c pm -n '__fish_seen_subcommand_from events' -l since -d 'Resume after a cursor or from an ISO timestamp' -r
-complete -c pm -n '__fish_seen_subcommand_from events' -l type -d 'Filter by mutation operation' -r
-complete -c pm -n '__fish_seen_subcommand_from events' -l author -d 'Filter by mutation author' -r
-complete -c pm -n '__fish_seen_subcommand_from events' -l item -d 'Filter by item or workspace stream' -r
-complete -c pm -n '__fish_seen_subcommand_from events' -l limit -d 'Maximum events, up to 1000' -r
-complete -c pm -n '__fish_seen_subcommand_from events' -l full -d 'Include complete authoritative history entries'
-complete -c pm -n '__fish_seen_subcommand_from events' -l provenance -d 'Include patch-free identity and agent provenance'
-complete -c pm -n '__fish_seen_subcommand_from events' -l provenance-summary -d 'Include bounded provenance completeness counts'
-complete -c pm -n '__fish_seen_subcommand_from events' -l harness -d 'Filter by recorded or vocabulary-resolved harness' -r
-complete -c pm -n '__fish_seen_subcommand_from events' -l agent-instance -d 'Filter by privacy-safe agent instance' -r
-complete -c pm -n '__fish_seen_subcommand_from events' -l provenance-filter -d 'Filter by exact declared provenance value' -r
-complete -c pm -n '__fish_seen_subcommand_from events' -l follow -d 'Continue emitting committed events'
-complete -c pm -n '__fish_seen_subcommand_from events' -l interval-ms -d 'Empty-read delay while following' -r
+complete -c pm -n '__pm_history_operation events' -l since -d 'Resume after a cursor or from an ISO timestamp' -r
+complete -c pm -n '__pm_history_operation events' -l type -d 'Filter by mutation operation' -r
+complete -c pm -n '__pm_history_operation events' -l author -d 'Filter by mutation author' -r
+complete -c pm -n '__pm_history_operation events' -l item -d 'Filter by item or workspace stream' -r
+complete -c pm -n '__pm_history_operation events' -l limit -d 'Maximum events, up to 1000' -r
+complete -c pm -n '__pm_history_operation events' -l full -d 'Include complete authoritative history entries'
+complete -c pm -n '__pm_history_operation events' -l provenance -d 'Include patch-free identity and agent provenance'
+complete -c pm -n '__pm_history_operation events' -l provenance-summary -d 'Include bounded provenance completeness counts'
+complete -c pm -n '__pm_history_operation events' -l harness -d 'Filter by recorded or vocabulary-resolved harness' -r
+complete -c pm -n '__pm_history_operation events' -l agent-instance -d 'Filter by privacy-safe agent instance' -r
+complete -c pm -n '__pm_history_operation events' -l provenance-filter -d 'Filter by exact declared provenance value' -r
+complete -c pm -n '__pm_history_operation events' -l follow -d 'Continue emitting committed events'
+complete -c pm -n '__pm_history_operation events' -l interval-ms -d 'Empty-read delay while following' -r
 complete -c pm -n '__pm_history_operation history-compact compact' -l before -d 'Compact entries strictly before this version number or ISO timestamp' -r
 complete -c pm -n '__pm_history_operation history-compact compact' -l id -d 'Item ID (alternative to positional ID)' -r
 complete -c pm -n '__pm_history_operation history-compact compact' -l ids -d 'Bulk: compact an explicit comma-separated list of item ids' -r
@@ -2889,23 +2903,23 @@ complete -c pm -n '__fish_seen_subcommand_from test' -l message -d 'History mess
 complete -c pm -n '__fish_seen_subcommand_from test' -l force -d 'Force override'
 
 # test-all flags
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l status  -d 'Filter by status' -r -a 'open in_progress'
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l limit -d 'Limit matching items before running linked tests' -r
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l offset -d 'Skip matching items before running linked tests' -r
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l background -d 'Run linked tests in managed background mode'
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l timeout -d 'Default timeout seconds' -r
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l progress -d 'Emit linked-test progress to stderr'
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l env-set -d 'Set linked-test runtime environment values' -r
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l env-clear -d 'Clear linked-test runtime environment values' -r
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l shared-host-safe -d 'Apply shared-host-safe runtime defaults'
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l pm-context -d 'PM linked-test context mode' -r -a 'schema tracker auto'
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l override-linked-pm-context -d 'Force run-level --pm-context over per-linked-test metadata'
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l fail-on-context-mismatch -d 'Fail when context item counts mismatch'
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l fail-on-skipped -d 'Treat skipped linked tests as dependency failures'
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l fail-on-empty-test-run -d 'Treat empty linked-test selections as failures'
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l require-assertions-for-pm -d 'Require assertions for linked PM command tests'
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l check-context -d 'Preflight linked PM command context diagnostics before execution'
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l auto-pm-context -d 'Auto-remediate tracker-read context mismatches using tracker context'
+complete -c pm -n '__pm_history_operation test-all' -l status  -d 'Filter by status' -r -a 'open in_progress'
+complete -c pm -n '__pm_history_operation test-all' -l limit -d 'Limit matching items before running linked tests' -r
+complete -c pm -n '__pm_history_operation test-all' -l offset -d 'Skip matching items before running linked tests' -r
+complete -c pm -n '__pm_history_operation test-all' -l background -d 'Run linked tests in managed background mode'
+complete -c pm -n '__pm_history_operation test-all' -l timeout -d 'Default timeout seconds' -r
+complete -c pm -n '__pm_history_operation test-all' -l progress -d 'Emit linked-test progress to stderr'
+complete -c pm -n '__pm_history_operation test-all' -l env-set -d 'Set linked-test runtime environment values' -r
+complete -c pm -n '__pm_history_operation test-all' -l env-clear -d 'Clear linked-test runtime environment values' -r
+complete -c pm -n '__pm_history_operation test-all' -l shared-host-safe -d 'Apply shared-host-safe runtime defaults'
+complete -c pm -n '__pm_history_operation test-all' -l pm-context -d 'PM linked-test context mode' -r -a 'schema tracker auto'
+complete -c pm -n '__pm_history_operation test-all' -l override-linked-pm-context -d 'Force run-level --pm-context over per-linked-test metadata'
+complete -c pm -n '__pm_history_operation test-all' -l fail-on-context-mismatch -d 'Fail when context item counts mismatch'
+complete -c pm -n '__pm_history_operation test-all' -l fail-on-skipped -d 'Treat skipped linked tests as dependency failures'
+complete -c pm -n '__pm_history_operation test-all' -l fail-on-empty-test-run -d 'Treat empty linked-test selections as failures'
+complete -c pm -n '__pm_history_operation test-all' -l require-assertions-for-pm -d 'Require assertions for linked PM command tests'
+complete -c pm -n '__pm_history_operation test-all' -l check-context -d 'Preflight linked PM command context diagnostics before execution'
+complete -c pm -n '__pm_history_operation test-all' -l auto-pm-context -d 'Auto-remediate tracker-read context mismatches using tracker context'
 
 # test-runs flags
 complete -c pm -n '__fish_seen_subcommand_from test-runs' -a 'list status logs stop resume' -d 'test-runs subcommand'
@@ -2917,19 +2931,19 @@ complete -c pm -n '__fish_seen_subcommand_from test-runs' -l force -d 'Force-sto
 complete -c pm -n '__fish_seen_subcommand_from test-runs' -l author -d 'Resume author' -r
 
 # gc flags
-complete -c pm -n '__fish_seen_subcommand_from gc' -l dry-run -d 'Preview cleanup targets without deleting files'
-complete -c pm -n '__fish_seen_subcommand_from gc' -l scope -d 'Limit cleanup to index/embeddings/runtime/locks scopes' -r
+complete -c pm -n '__pm_history_operation gc' -l dry-run -d 'Preview cleanup targets without deleting files'
+complete -c pm -n '__pm_history_operation gc' -l scope -d 'Limit cleanup to index/embeddings/runtime/locks scopes' -r
 
 # stats flags
-complete -c pm -n '__fish_seen_subcommand_from stats' -l include-empty -d 'Include registered zero-count type and status buckets'
-complete -c pm -n '__fish_seen_subcommand_from stats' -l storage -d 'Include aggregate history-stream storage metrics'
-complete -c pm -n '__fish_seen_subcommand_from stats' -l metadata-coverage -d 'Include metadata coverage percentages overall and by type'
-complete -c pm -n '__fish_seen_subcommand_from stats' -l field-utilization -d 'Include content-field utilization rates across all items'
-complete -c pm -n '__fish_seen_subcommand_from stats' -l by-assignee -d 'Lifecycle-bucketed breakdown grouped by assignee'
-complete -c pm -n '__fish_seen_subcommand_from stats' -l by-tag -d 'Lifecycle-bucketed breakdown grouped by tag'
-complete -c pm -n '__fish_seen_subcommand_from stats' -l by-priority -d 'Lifecycle-bucketed breakdown grouped by priority'
-complete -c pm -n '__fish_seen_subcommand_from stats' -l tag-prefix -d 'With --by-tag: only count tags with this prefix' -r
-complete -c pm -n '__fish_seen_subcommand_from stats' -l analytics -d 'Improvement ledger/history analytics JSON' -r
+complete -c pm -n '__pm_history_operation stats' -l include-empty -d 'Include registered zero-count type and status buckets'
+complete -c pm -n '__pm_history_operation stats' -l storage -d 'Include aggregate history-stream storage metrics'
+complete -c pm -n '__pm_history_operation stats' -l metadata-coverage -d 'Include metadata coverage percentages overall and by type'
+complete -c pm -n '__pm_history_operation stats' -l field-utilization -d 'Include content-field utilization rates across all items'
+complete -c pm -n '__pm_history_operation stats' -l by-assignee -d 'Lifecycle-bucketed breakdown grouped by assignee'
+complete -c pm -n '__pm_history_operation stats' -l by-tag -d 'Lifecycle-bucketed breakdown grouped by tag'
+complete -c pm -n '__pm_history_operation stats' -l by-priority -d 'Lifecycle-bucketed breakdown grouped by priority'
+complete -c pm -n '__pm_history_operation stats' -l tag-prefix -d 'With --by-tag: only count tags with this prefix' -r
+complete -c pm -n '__pm_history_operation stats' -l analytics -d 'Improvement ledger/history analytics JSON' -r
 
 # append flags
 complete -c pm -n '__fish_seen_subcommand_from append' -s b -l body -d 'Item body' -r
@@ -3030,29 +3044,29 @@ complete -c pm -n '__fish_seen_subcommand_from close-many' -l rollback          
 complete -c pm -n '__fish_seen_subcommand_from close-many' -l no-checkpoint          -d 'Disable checkpoint creation during apply mode'
 
 # validate flags
-complete -c pm -n '__fish_seen_subcommand_from validate' -l check-completeness -d 'Check declarative required fields'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l check-metadata -d 'Run metadata completeness checks'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l metadata-profile -d 'Select metadata validation profile for --check-metadata' -r -a 'core strict custom'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l check-resolution -d 'Run closed-item resolution metadata checks'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l check-lifecycle -d 'Run active-item lifecycle governance drift checks'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l check-stale-blockers -d 'Include stale blocker-pattern diagnostics in lifecycle checks'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l dependency-cycle-severity -d 'Set dependency-cycle warning policy for lifecycle checks' -r -a 'off warn error'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l parent-cycle-severity -d 'Set parent-hierarchy cycle warning policy for lifecycle checks' -r -a 'off warn error'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l check-files -d 'Run linked-file and orphaned-file checks'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l scan-mode -d 'Select file candidate scan mode for --check-files' -r -a 'default tracked-all tracked-all-strict'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l include-pm-internals -d 'Include PM storage internals in tracked-all candidate scans'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l verbose-file-lists -d 'Include full file-path lists for validate --check-files details'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l verbose-diagnostics -d 'Include full validate diagnostic ID lists instead of compact summaries'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l all-affected-ids -d 'Emit complete missing_* affected-ID lists with no truncation (implied by --json)'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l strict-exit -d 'Return non-zero exit when validation warnings are present'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l fail-on-warn -d 'Alias for --strict-exit'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l fix-hints -d 'Add a machine-executable fix_hints[] of pm commands to each failing check'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l auto-fix -d 'Apply the safe, deterministic subset of fix-hint remediations automatically'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l dry-run -d 'Preview planned --auto-fix/--prune-missing fixes without applying them'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l fix-scope -d 'Grant --auto-fix scopes (estimates/lifecycle must be named explicitly)' -r -a 'metadata resolution estimates lifecycle'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l prune-missing -d 'Remove stale linked-file/doc links classified as deleted'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l check-history-drift -d 'Run item/history hash drift checks'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l check-command-references -d 'Run linked-command PM-ID reference checks'
+complete -c pm -n '__pm_history_operation validate' -l check-completeness -d 'Check declarative required fields'
+complete -c pm -n '__pm_history_operation validate' -l check-metadata -d 'Run metadata completeness checks'
+complete -c pm -n '__pm_history_operation validate' -l metadata-profile -d 'Select metadata validation profile for --check-metadata' -r -a 'core strict custom'
+complete -c pm -n '__pm_history_operation validate' -l check-resolution -d 'Run closed-item resolution metadata checks'
+complete -c pm -n '__pm_history_operation validate' -l check-lifecycle -d 'Run active-item lifecycle governance drift checks'
+complete -c pm -n '__pm_history_operation validate' -l check-stale-blockers -d 'Include stale blocker-pattern diagnostics in lifecycle checks'
+complete -c pm -n '__pm_history_operation validate' -l dependency-cycle-severity -d 'Set dependency-cycle warning policy for lifecycle checks' -r -a 'off warn error'
+complete -c pm -n '__pm_history_operation validate' -l parent-cycle-severity -d 'Set parent-hierarchy cycle warning policy for lifecycle checks' -r -a 'off warn error'
+complete -c pm -n '__pm_history_operation validate' -l check-files -d 'Run linked-file and orphaned-file checks'
+complete -c pm -n '__pm_history_operation validate' -l scan-mode -d 'Select file candidate scan mode for --check-files' -r -a 'default tracked-all tracked-all-strict'
+complete -c pm -n '__pm_history_operation validate' -l include-pm-internals -d 'Include PM storage internals in tracked-all candidate scans'
+complete -c pm -n '__pm_history_operation validate' -l verbose-file-lists -d 'Include full file-path lists for validate --check-files details'
+complete -c pm -n '__pm_history_operation validate' -l verbose-diagnostics -d 'Include full validate diagnostic ID lists instead of compact summaries'
+complete -c pm -n '__pm_history_operation validate' -l all-affected-ids -d 'Emit complete missing_* affected-ID lists with no truncation (implied by --json)'
+complete -c pm -n '__pm_history_operation validate' -l strict-exit -d 'Return non-zero exit when validation warnings are present'
+complete -c pm -n '__pm_history_operation validate' -l fail-on-warn -d 'Alias for --strict-exit'
+complete -c pm -n '__pm_history_operation validate' -l fix-hints -d 'Add a machine-executable fix_hints[] of pm commands to each failing check'
+complete -c pm -n '__pm_history_operation validate' -l auto-fix -d 'Apply the safe, deterministic subset of fix-hint remediations automatically'
+complete -c pm -n '__pm_history_operation validate' -l dry-run -d 'Preview planned --auto-fix/--prune-missing fixes without applying them'
+complete -c pm -n '__pm_history_operation validate' -l fix-scope -d 'Grant --auto-fix scopes (estimates/lifecycle must be named explicitly)' -r -a 'metadata resolution estimates lifecycle'
+complete -c pm -n '__pm_history_operation validate' -l prune-missing -d 'Remove stale linked-file/doc links classified as deleted'
+complete -c pm -n '__pm_history_operation validate' -l check-history-drift -d 'Run item/history hash drift checks'
+complete -c pm -n '__pm_history_operation validate' -l check-command-references -d 'Run linked-command PM-ID reference checks'
 complete -c pm -n '__fish_seen_subcommand_from init' -l preset -d 'Governance preset for new setups' -r -a 'minimal default strict'
 complete -c pm -n '__fish_seen_subcommand_from init' -l id-prefix -d 'Set the item ID prefix' -r
 complete -c pm -n '__fish_seen_subcommand_from init' -l prefix -d 'Alias for --id-prefix' -r
@@ -3067,16 +3081,16 @@ complete -c pm -n '__fish_seen_subcommand_from config' -l criterion -d 'Criteria
 complete -c pm -n '__fish_seen_subcommand_from config' -l clear-criteria -d 'Clear config criteria-list key values'
 complete -c pm -n '__fish_seen_subcommand_from config' -l format -d 'Item format for item-format key' -r -a 'toon'
 complete -c pm -n '__fish_seen_subcommand_from config' -l policy -d 'Policy value for supported policy keys' -r
-complete -c pm -n '__fish_seen_subcommand_from health' -l strict-directories -d 'Treat optional item-type directories as required failures'
-complete -c pm -n '__fish_seen_subcommand_from health' -l check-only -d 'Run read-only health diagnostics without refreshing vectors'
-complete -c pm -n '__fish_seen_subcommand_from health' -l no-refresh -d 'Disable automatic vector refresh attempts during health checks'
-complete -c pm -n '__fish_seen_subcommand_from health' -l refresh-vectors -d 'Explicitly enable vector refresh attempts during health checks'
-complete -c pm -n '__fish_seen_subcommand_from health' -l verbose-stale-items -d 'Include full stale vectorization ID lists in health output'
-complete -c pm -n '__fish_seen_subcommand_from health' -l verbose-author-events -d 'Include complete actionable unknown-author coordinates'
-complete -c pm -n '__fish_seen_subcommand_from health' -l brief -d 'Emit compact health details for low-token agent checks'
-complete -c pm -n '__fish_seen_subcommand_from health' -l summary -d 'Emit one-line-style health status with check names and warning count'
-complete -c pm -n '__fish_seen_subcommand_from health' -l strict-exit -d 'Return non-zero exit when health warnings are present'
-complete -c pm -n '__fish_seen_subcommand_from health' -l fail-on-warn -d 'Alias for --strict-exit'
+complete -c pm -n '__pm_history_operation health' -l strict-directories -d 'Treat optional item-type directories as required failures'
+complete -c pm -n '__pm_history_operation health' -l check-only -d 'Run read-only health diagnostics without refreshing vectors'
+complete -c pm -n '__pm_history_operation health' -l no-refresh -d 'Disable automatic vector refresh attempts during health checks'
+complete -c pm -n '__pm_history_operation health' -l refresh-vectors -d 'Explicitly enable vector refresh attempts during health checks'
+complete -c pm -n '__pm_history_operation health' -l verbose-stale-items -d 'Include full stale vectorization ID lists in health output'
+complete -c pm -n '__pm_history_operation health' -l verbose-author-events -d 'Include complete actionable unknown-author coordinates'
+complete -c pm -n '__pm_history_operation health' -l brief -d 'Emit compact health details for low-token agent checks'
+complete -c pm -n '__pm_history_operation health' -l summary -d 'Emit one-line-style health status with check names and warning count'
+complete -c pm -n '__pm_history_operation health' -l strict-exit -d 'Return non-zero exit when health warnings are present'
+complete -c pm -n '__pm_history_operation health' -l fail-on-warn -d 'Alias for --strict-exit'
 
 # completion shell argument
 complete -c pm -n '__fish_seen_subcommand_from completion' -l eager-tags -d 'Embed current tracker tags directly in script output'

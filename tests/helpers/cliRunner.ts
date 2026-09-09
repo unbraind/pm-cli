@@ -116,18 +116,25 @@ async function withInProcessCliLock<T>(operation: () => Promise<T>): Promise<T> 
 export async function runInProcessDistCli(
   args: string[],
   options: DirectCliRunOptions = {},
+  sourceRunner?: (argv: string[]) => Promise<void>,
 ): Promise<DirectCliRunResult> {
   if (options.input !== undefined || options.stdin !== undefined) {
     throw new Error("runInProcessDistCli does not support stdin input.");
   }
   return withInProcessCliLock(async () => {
-    const mainModuleUrl = pathToFileURL(path.resolve(process.cwd(), "dist/cli/main.js"));
-    const cacheBustedUrl = `${mainModuleUrl.href}?inprocess=${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const loaded = (await import(cacheBustedUrl)) as {
-      runPmCli?: (argv: string[]) => Promise<void>;
-    };
-    if (typeof loaded.runPmCli !== "function") {
-      throw new Error(`dist main module does not export runPmCli: ${cacheBustedUrl}`);
+    // Share transport capture for packed runtime tests and instrumented source
+    // tests without replacing handlers, storage, or command behavior.
+    let runCli = sourceRunner;
+    if (runCli === undefined) {
+      const mainModuleUrl = pathToFileURL(path.resolve(process.cwd(), "dist/cli/main.js"));
+      const cacheBustedUrl = `${mainModuleUrl.href}?inprocess=${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const loaded = (await import(cacheBustedUrl)) as {
+        runPmCli?: (argv: string[]) => Promise<void>;
+      };
+      if (typeof loaded.runPmCli !== "function") {
+        throw new Error(`dist main module does not export runPmCli: ${cacheBustedUrl}`);
+      }
+      runCli = loaded.runPmCli;
     }
 
     let stdout = "";
@@ -170,7 +177,7 @@ export async function runInProcessDistCli(
         return true;
       }) as typeof process.stderr.write;
 
-      await loaded.runPmCli(args);
+      await runCli(args);
       status = process.exitCode ?? 0;
     } catch (error: unknown) {
       capturedError = error instanceof Error ? error : new Error(String(error));

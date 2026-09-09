@@ -545,7 +545,7 @@ describe("generateBashScript", () => {
     for (const command of ["history", "activity", "events"]) {
       expect(bash).toContain(`    ${command})`);
       expect(zsh).toContain(`        ${command})`);
-      expect(fish).toContain(command === "activity" ? "__pm_history_operation activity activity" : `__fish_seen_subcommand_from ${command}`);
+      expect(fish).toContain(command === "activity" ? "__pm_history_operation activity activity" : `__pm_history_operation ${command}`);
     }
     for (const flag of flags) {
       expect(bash).toContain(`--${flag}`);
@@ -798,12 +798,12 @@ describe("generateZshScript", () => {
     expect(script).toContain("ctx:Alias for context");
     expect(script).not.toContain("history-compact:Compact");
     expect(script).not.toContain("history-redact:Redact");
-    expect(script).toContain("history_commands=(redact repair compact activity restore)");
+    expect(script).toContain("history_commands=(redact repair compact activity restore events)");
     expect(script).toContain("plan:Agent-optimized Plan item workflow");
     expect(script).toContain("notes:List or add notes for an item");
     expect(script).toContain("learnings:List or add learnings for an item");
     expect(script).toContain("deps:Show dependency relationships for an item");
-    expect(script).toContain("validate:Run standalone validation checks");
+    expect(script).toContain('"ops validate")');
   });
 
   it("includes type completions for relevant flags", () => {
@@ -1058,8 +1058,7 @@ describe("generateFishScript", () => {
       ["completion", "Generate shell completion"],
       ["guide", "progressive-disclosure guides"],
       ["contracts", "machine-readable command and schema contracts"],
-      ["health", "project tracker health"],
-      ["stats", "project tracker statistics"],
+      ["ops", "Workspace maintenance and diagnostics"],
       ["history", "Show item history entries"],
       ["plan", "Agent-optimized Plan workflow"],
     ] as [string, string][]) {
@@ -1176,12 +1175,12 @@ describe("generateFishScript", () => {
 
   it("includes strict health flags in fish completion", () => {
     const script = generateFishScript();
-    expect(script).toContain("__fish_seen_subcommand_from health");
+    expect(script).toContain("__pm_history_operation health");
     expect(script).toContain("-l strict-directories");
     expect(script).toContain("-l verbose-stale-items");
     expect(script).toContain("-l brief");
     expect(script).toContain(
-      "complete -c pm -n '__fish_seen_subcommand_from health' -l summary -d 'Emit one-line-style health status with check names and warning count'",
+      "complete -c pm -n '__pm_history_operation health' -l summary -d 'Emit one-line-style health status with check names and warning count'",
     );
     expect(script).toContain("-l strict-exit");
     expect(script).toContain("-l fail-on-warn");
@@ -1192,12 +1191,12 @@ describe("generateFishScript", () => {
     expect(script).toContain("__fish_seen_subcommand_from test");
     expect(script).toContain("-l override-linked-pm-context");
     expect(script).toContain("-l fail-on-empty-test-run");
-    expect(script).toContain("__fish_seen_subcommand_from test-all");
+    expect(script).toContain("__pm_history_operation test-all");
   });
 
   it("includes test-all pagination flags in fish completion", () => {
     const script = generateFishScript();
-    expect(script).toContain("__fish_seen_subcommand_from test-all");
+    expect(script).toContain("__pm_history_operation test-all");
     expect(script).toContain(
       "-l limit -d 'Limit matching items before running linked tests'",
     );
@@ -1246,7 +1245,7 @@ describe("generateFishScript", () => {
 
   it("includes fish context completions", () => {
     const script = generateFishScript();
-    expect(script).toContain("__fish_seen_subcommand_from context ctx");
+    expect(script).toContain("__pm_history_operation context");
     expect(script).toContain("-l from");
     expect(script).toContain("-l to");
     expect(script).toContain("-l past");

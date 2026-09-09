@@ -6,6 +6,7 @@
  */
 import { PM_CORE_COMMAND_NAMES } from "./cli-contracts/enum-contracts.js";
 import type { ExtensionCommandCapabilityFamily } from "../core/extensions/command-metadata-contract.js";
+import { PM_CONTEXT_OPS_COMMAND_ALIASES, resolvePmCommandOperation } from "./cli-contracts/command-aliases.js";
 
 /** Visibility tiers shared by CLI help, completions, docs, extensions, and MCP. */
 export type PmCommandVisibilityTier = "core" | "standard" | "full" | "internal";
@@ -160,7 +161,8 @@ const EXTENSION_COMMANDS = new Set([
 export function resolvePmCommandCapabilityFamily(
   command: string,
 ): PmCommandCapabilityFamily {
-  const normalized = command.trim().toLowerCase();
+  const normalized = resolvePmCommandOperation(command.trim().toLowerCase());
+  if (normalized === "ops") return "quality";
   for (const [family, commands] of Object.entries(COMMANDS_BY_FAMILY)) {
     if (commands.has(normalized)) return family as PmCommandCapabilityFamily;
   }
@@ -177,16 +179,17 @@ export function resolvePmCommandCapabilityFamily(
 export const PM_COMMAND_CAPABILITY_CONTRACTS: readonly PmCommandCapabilityContract[] =
   Object.freeze([
     ...PM_CORE_COMMAND_NAMES.flatMap((command) =>
-      command === "item" ? ["item-reopen"] : [command],
+      command === "item" ? ["item-reopen"] : [command, ...PM_CONTEXT_OPS_COMMAND_ALIASES.filter((alias) => alias.alias === command).map((alias) => alias.canonical)],
     ).map((command) => ({
       command,
-      tier: CORE_COMMANDS.has(command)
+      tier: CORE_COMMANDS.has(resolvePmCommandOperation(command))
         ? ("core" as const)
-        : STANDARD_COMMANDS.has(command)
+        : STANDARD_COMMANDS.has(resolvePmCommandOperation(command))
           ? ("standard" as const)
           : ("full" as const),
       family: resolvePmCommandCapabilityFamily(command),
     })),
+    { command: "ops", tier: "core", family: "quality" },
     {
       command: "completion-statuses",
       tier: "internal" as const,
@@ -330,6 +333,7 @@ const CAPABILITY_FAMILY_ORDER: readonly PmCommandCapabilityFamily[] = [
 ];
 
 const CAPABILITY_ROUTING_EXCLUDED_ALIASES = new Set([
+  ...PM_CONTEXT_OPS_COMMAND_ALIASES.map((alias) => alias.alias),
   "ctx",
   "extension",
   "install",

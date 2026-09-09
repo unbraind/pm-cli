@@ -129,7 +129,7 @@ export {
   type WorkspaceSnapshotRestorePlan,
 } from "./workspace-snapshot.js";
 export { flushTelemetryQueue } from "./telemetry-flush.js";
-export { PM_HISTORY_COMMAND_ALIASES, resolvePmHistoryOperation } from "./cli-contracts.js";
+export { PM_HISTORY_COMMAND_ALIASES, PM_CONTEXT_OPS_COMMAND_ALIASES, PM_NAMESPACED_COMMAND_ALIASES, resolvePmCommandOperation, resolvePmHistoryOperation } from "./cli-contracts.js";
 export {
   EXECUTABLE_COMMAND_ALIASES,
   PM_COMMAND_ALIAS_CONTRACTS,

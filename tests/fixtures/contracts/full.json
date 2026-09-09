@@ -194,7 +194,7 @@
       "action": "eval",
       "available": true,
       "cli_exposed": true,
-      "command_path": "eval",
+      "command_path": "ops eval|eval",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -214,7 +214,7 @@
       "action": "events",
       "available": true,
       "cli_exposed": true,
-      "command_path": "events",
+      "command_path": "history events|events",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -364,7 +364,7 @@
       "action": "focus",
       "available": true,
       "cli_exposed": true,
-      "command_path": "focus",
+      "command_path": "context focus|focus",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -374,7 +374,7 @@
       "action": "gc",
       "available": true,
       "cli_exposed": true,
-      "command_path": "gc",
+      "command_path": "ops gc|gc",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -404,7 +404,7 @@
       "action": "health",
       "available": true,
       "cli_exposed": true,
-      "command_path": "health",
+      "command_path": "ops health|health",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -524,7 +524,7 @@
       "action": "next",
       "available": true,
       "cli_exposed": true,
-      "command_path": "next",
+      "command_path": "context next|next",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -784,7 +784,7 @@
       "action": "stats",
       "available": true,
       "cli_exposed": true,
-      "command_path": "stats",
+      "command_path": "ops stats|stats",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -794,7 +794,7 @@
       "action": "telemetry",
       "available": true,
       "cli_exposed": true,
-      "command_path": "telemetry",
+      "command_path": "ops telemetry|telemetry",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -814,7 +814,7 @@
       "action": "test-all",
       "available": true,
       "cli_exposed": true,
-      "command_path": "test-all",
+      "command_path": "ops test-all|test-all",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -844,7 +844,7 @@
       "action": "validate",
       "available": true,
       "cli_exposed": true,
-      "command_path": "validate",
+      "command_path": "ops validate|validate",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -1002,6 +1002,46 @@
     },
     {
       "aliases": [
+        "focus"
+      ],
+      "canonical": "context focus",
+      "contracts": [
+        {
+          "alias": "focus",
+          "canonical": "context focus",
+          "canonical_argv": [
+            "context",
+            "focus"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-kcs4",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "next"
+      ],
+      "canonical": "context next",
+      "contracts": [
+        {
+          "alias": "next",
+          "canonical": "context next",
+          "canonical_argv": [
+            "context",
+            "next"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-kcs4",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
         "fetch",
         "read",
         "show",
@@ -1092,6 +1132,26 @@
           "lifecycle": "permanent",
           "owner": "pm-tqel",
           "registration": "commander"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "events"
+      ],
+      "canonical": "history events",
+      "contracts": [
+        {
+          "alias": "events",
+          "canonical": "history events",
+          "canonical_argv": [
+            "history",
+            "events"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-3i9q8g",
+          "registration": "bootstrap"
         }
       ]
     },
@@ -1299,6 +1359,146 @@
     },
     {
       "aliases": [
+        "eval"
+      ],
+      "canonical": "ops eval",
+      "contracts": [
+        {
+          "alias": "eval",
+          "canonical": "ops eval",
+          "canonical_argv": [
+            "ops",
+            "eval"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-6apl",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "gc"
+      ],
+      "canonical": "ops gc",
+      "contracts": [
+        {
+          "alias": "gc",
+          "canonical": "ops gc",
+          "canonical_argv": [
+            "ops",
+            "gc"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-6apl",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "health"
+      ],
+      "canonical": "ops health",
+      "contracts": [
+        {
+          "alias": "health",
+          "canonical": "ops health",
+          "canonical_argv": [
+            "ops",
+            "health"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-6apl",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "stats"
+      ],
+      "canonical": "ops stats",
+      "contracts": [
+        {
+          "alias": "stats",
+          "canonical": "ops stats",
+          "canonical_argv": [
+            "ops",
+            "stats"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-6apl",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "telemetry"
+      ],
+      "canonical": "ops telemetry",
+      "contracts": [
+        {
+          "alias": "telemetry",
+          "canonical": "ops telemetry",
+          "canonical_argv": [
+            "ops",
+            "telemetry"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-6apl",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "test-all"
+      ],
+      "canonical": "ops test-all",
+      "contracts": [
+        {
+          "alias": "test-all",
+          "canonical": "ops test-all",
+          "canonical_argv": [
+            "ops",
+            "test-all"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-6apl",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "validate"
+      ],
+      "canonical": "ops validate",
+      "contracts": [
+        {
+          "alias": "validate",
+          "canonical": "ops validate",
+          "canonical_argv": [
+            "ops",
+            "validate"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-6apl",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
         "extension",
         "packages"
       ],
@@ -1403,6 +1603,8 @@
           "comments",
           "config",
           "context",
+          "context focus",
+          "context next",
           "contracts",
           "copy",
           "create",
@@ -1438,6 +1640,7 @@
           "history",
           "history activity",
           "history compact",
+          "history events",
           "history redact",
           "history repair",
           "history restore",
@@ -1456,6 +1659,14 @@
           "merge",
           "next",
           "notes",
+          "ops",
+          "ops eval",
+          "ops gc",
+          "ops health",
+          "ops stats",
+          "ops telemetry",
+          "ops test-all",
+          "ops validate",
           "package",
           "package activate",
           "package adopt",
@@ -2536,6 +2747,95 @@
       "provider": "core"
     },
     {
+      "command": "context focus",
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "flag": "--clear"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "context next",
+      "flags": [
+        {
+          "flag": "--include-decisions"
+        },
+        {
+          "flag": "--include-gates"
+        },
+        {
+          "flag": "--include-containers"
+        },
+        {
+          "flag": "--for",
+          "value_name": "intent"
+        },
+        {
+          "flag": "--type"
+        },
+        {
+          "flag": "--tag"
+        },
+        {
+          "flag": "--priority"
+        },
+        {
+          "flag": "--assignee"
+        },
+        {
+          "aliases": [
+            "--assignee_filter"
+          ],
+          "flag": "--assignee-filter"
+        },
+        {
+          "flag": "--sprint"
+        },
+        {
+          "flag": "--release"
+        },
+        {
+          "flag": "--parent"
+        },
+        {
+          "flag": "--limit"
+        },
+        {
+          "aliases": [
+            "--blocked_limit"
+          ],
+          "flag": "--blocked-limit"
+        },
+        {
+          "aliases": [
+            "--ready_only"
+          ],
+          "flag": "--ready-only"
+        },
+        {
+          "flag": "--format"
+        },
+        {
+          "aliases": [
+            "--explain_ranking"
+          ],
+          "flag": "--explain-ranking"
+        },
+        {
+          "aliases": [
+            "--token_budget"
+          ],
+          "flag": "--token-budget"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "contracts",
       "flags": [
         {
@@ -3179,8 +3479,60 @@
     },
     {
       "command": "events",
-      "flags": [],
-      "provider": "extension"
+      "flags": [
+        {
+          "flag": "--since"
+        },
+        {
+          "flag": "--type",
+          "repeatable": true
+        },
+        {
+          "flag": "--author",
+          "repeatable": true
+        },
+        {
+          "flag": "--item",
+          "repeatable": true
+        },
+        {
+          "flag": "--limit",
+          "value_type": "number"
+        },
+        {
+          "flag": "--cursor-mode",
+          "value_name": "batch|row"
+        },
+        {
+          "flag": "--full"
+        },
+        {
+          "flag": "--provenance"
+        },
+        {
+          "flag": "--provenance-summary"
+        },
+        {
+          "flag": "--harness",
+          "repeatable": true
+        },
+        {
+          "flag": "--agent-instance",
+          "repeatable": true
+        },
+        {
+          "flag": "--provenance-filter",
+          "repeatable": true
+        },
+        {
+          "flag": "--follow"
+        },
+        {
+          "flag": "--interval-ms",
+          "value_type": "number"
+        }
+      ],
+      "provider": "core"
     },
     {
       "command": "extension activate",
@@ -3861,6 +4213,63 @@
         },
         {
           "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "history events",
+      "flags": [
+        {
+          "flag": "--since"
+        },
+        {
+          "flag": "--type",
+          "repeatable": true
+        },
+        {
+          "flag": "--author",
+          "repeatable": true
+        },
+        {
+          "flag": "--item",
+          "repeatable": true
+        },
+        {
+          "flag": "--limit",
+          "value_type": "number"
+        },
+        {
+          "flag": "--cursor-mode",
+          "value_name": "batch|row"
+        },
+        {
+          "flag": "--full"
+        },
+        {
+          "flag": "--provenance"
+        },
+        {
+          "flag": "--provenance-summary"
+        },
+        {
+          "flag": "--harness",
+          "repeatable": true
+        },
+        {
+          "flag": "--agent-instance",
+          "repeatable": true
+        },
+        {
+          "flag": "--provenance-filter",
+          "repeatable": true
+        },
+        {
+          "flag": "--follow"
+        },
+        {
+          "flag": "--interval-ms",
+          "value_type": "number"
         }
       ],
       "provider": "core"
@@ -4736,6 +5145,291 @@
         },
         {
           "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "ops",
+      "flags": [],
+      "provider": "core"
+    },
+    {
+      "command": "ops eval",
+      "flags": [
+        {
+          "flag": "--mode"
+        },
+        {
+          "flag": "--k"
+        },
+        {
+          "flag": "--fail-under"
+        },
+        {
+          "flag": "--queries"
+        },
+        {
+          "flag": "--format"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "ops gc",
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--scope"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "ops health",
+      "flags": [
+        {
+          "flag": "--strict-directories"
+        },
+        {
+          "flag": "--require-merge-drivers"
+        },
+        {
+          "flag": "--strict-exit"
+        },
+        {
+          "flag": "--fail-on-warn"
+        },
+        {
+          "flag": "--check-only"
+        },
+        {
+          "flag": "--check-telemetry"
+        },
+        {
+          "flag": "--no-refresh"
+        },
+        {
+          "flag": "--refresh-vectors"
+        },
+        {
+          "flag": "--verbose-stale-items"
+        },
+        {
+          "flag": "--verbose-author-events"
+        },
+        {
+          "flag": "--brief"
+        },
+        {
+          "flag": "--summary"
+        },
+        {
+          "flag": "--skip-vectors"
+        },
+        {
+          "flag": "--skip-integrity"
+        },
+        {
+          "flag": "--skip-drift"
+        },
+        {
+          "flag": "--full"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "ops stats",
+      "flags": [
+        {
+          "flag": "--include-empty"
+        },
+        {
+          "flag": "--storage"
+        },
+        {
+          "flag": "--metadata-coverage"
+        },
+        {
+          "flag": "--field-utilization"
+        },
+        {
+          "flag": "--by-assignee"
+        },
+        {
+          "flag": "--by-tag"
+        },
+        {
+          "flag": "--by-priority"
+        },
+        {
+          "flag": "--tag-prefix"
+        },
+        {
+          "flag": "--analytics"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "ops telemetry",
+      "flags": [
+        {
+          "flag": "--limit"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "ops test-all",
+      "flags": [
+        {
+          "flag": "--status"
+        },
+        {
+          "flag": "--limit"
+        },
+        {
+          "flag": "--offset"
+        },
+        {
+          "flag": "--background"
+        },
+        {
+          "flag": "--timeout"
+        },
+        {
+          "flag": "--progress"
+        },
+        {
+          "flag": "--env-set"
+        },
+        {
+          "flag": "--env-clear"
+        },
+        {
+          "flag": "--shared-host-safe"
+        },
+        {
+          "flag": "--pm-context"
+        },
+        {
+          "flag": "--override-linked-pm-context"
+        },
+        {
+          "flag": "--workspace-context"
+        },
+        {
+          "flag": "--override-linked-workspace-context"
+        },
+        {
+          "flag": "--allow-untrusted-linked-tests"
+        },
+        {
+          "flag": "--fail-on-context-mismatch"
+        },
+        {
+          "flag": "--fail-on-skipped"
+        },
+        {
+          "flag": "--fail-on-empty-test-run"
+        },
+        {
+          "flag": "--require-assertions-for-pm"
+        },
+        {
+          "flag": "--check-context"
+        },
+        {
+          "flag": "--auto-pm-context"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "ops validate",
+      "flags": [
+        {
+          "flag": "--check-completeness",
+          "value_type": "boolean"
+        },
+        {
+          "flag": "--check-metadata"
+        },
+        {
+          "flag": "--metadata-profile"
+        },
+        {
+          "flag": "--check-resolution"
+        },
+        {
+          "flag": "--check-lifecycle"
+        },
+        {
+          "flag": "--check-stale-blockers"
+        },
+        {
+          "flag": "--dependency-cycle-severity"
+        },
+        {
+          "flag": "--parent-cycle-severity"
+        },
+        {
+          "flag": "--check-files"
+        },
+        {
+          "flag": "--scan-mode"
+        },
+        {
+          "flag": "--include-pm-internals"
+        },
+        {
+          "flag": "--verbose-file-lists"
+        },
+        {
+          "flag": "--verbose-diagnostics"
+        },
+        {
+          "flag": "--all-affected-ids"
+        },
+        {
+          "flag": "--strict-exit"
+        },
+        {
+          "flag": "--fail-on-warn"
+        },
+        {
+          "flag": "--fix-hints"
+        },
+        {
+          "flag": "--auto-fix"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--fix-scope"
+        },
+        {
+          "flag": "--prune-missing"
+        },
+        {
+          "flag": "--check-history-drift"
+        },
+        {
+          "flag": "--check-command-references"
+        },
+        {
+          "flag": "--check-storage-integrity"
+        },
+        {
+          "flag": "--counts"
+        },
+        {
+          "flag": "--full"
         }
       ],
       "provider": "core"
@@ -9391,6 +10085,60 @@
     {
       "budget": {
         "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "context focus",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "context focus",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "context next",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "context next",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
         "budget_class": "discovery",
         "command": "contracts",
         "default_max_estimated_tokens": 3000,
@@ -10336,6 +11084,33 @@
     {
       "budget": {
         "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "history events",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "history events",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "items"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
         "budget_class": "mutation",
         "command": "history redact",
         "default_max_estimated_tokens": 2000,
@@ -10817,6 +11592,222 @@
         "format_flag": "--json",
         "kind": "collection",
         "wrapper_key": "items"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "ops",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "ops",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "ops eval",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "ops eval",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "governance",
+        "command": "ops gc",
+        "default_max_estimated_tokens": 6000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 9000,
+          "toon": 6000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "ops gc",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "governance",
+        "command": "ops health",
+        "default_max_estimated_tokens": 6000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 9000,
+          "toon": 6000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "ops health",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "governance",
+        "command": "ops stats",
+        "default_max_estimated_tokens": 6000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 9000,
+          "toon": 6000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "ops stats",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "governance",
+        "command": "ops telemetry",
+        "default_max_estimated_tokens": 6000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 9000,
+          "toon": 6000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "ops telemetry",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "governance",
+        "command": "ops test-all",
+        "default_max_estimated_tokens": 6000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 9000,
+          "toon": 6000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "ops test-all",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "governance",
+        "command": "ops validate",
+        "default_max_estimated_tokens": 6000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 9000,
+          "toon": 6000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "ops validate",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
       }
     },
     {
@@ -13045,6 +14036,34 @@
       "intent_source": "command"
     },
     {
+      "command": "context focus",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Manage focus.",
+      "intent_source": "command"
+    },
+    {
+      "command": "context next",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "flags": [
+        "--limit",
+        "--blocked-limit",
+        "--ready-only",
+        "--token-budget",
+        "--explain-ranking",
+        "--format"
+      ],
+      "intent": "Pick next work.",
+      "intent_source": "command"
+    },
+    {
       "command": "contracts",
       "default_max_estimated_tokens": 3000,
       "default_max_estimated_tokens_by_format": {
@@ -13188,6 +14207,11 @@
         "json": 6000,
         "toon": 4000
       },
+      "flags": [
+        "--limit",
+        "--full",
+        "--since"
+      ],
       "intent": "Read events.",
       "intent_source": "command"
     },
@@ -13472,6 +14496,21 @@
       "intent_source": "command"
     },
     {
+      "command": "history events",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "flags": [
+        "--limit",
+        "--full",
+        "--since"
+      ],
+      "intent": "Read events.",
+      "intent_source": "command"
+    },
+    {
       "command": "history redact",
       "default_max_estimated_tokens": 2000,
       "default_max_estimated_tokens_by_format": {
@@ -13675,6 +14714,112 @@
         "--since"
       ],
       "intent": "Manage notes.",
+      "intent_source": "command"
+    },
+    {
+      "command": "ops",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run operations.",
+      "intent_source": "command"
+    },
+    {
+      "command": "ops eval",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "flags": [
+        "--format"
+      ],
+      "intent": "Run evaluations.",
+      "intent_source": "command"
+    },
+    {
+      "command": "ops gc",
+      "default_max_estimated_tokens": 6000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 9000,
+        "toon": 6000
+      },
+      "intent": "Clean caches.",
+      "intent_source": "command"
+    },
+    {
+      "command": "ops health",
+      "default_max_estimated_tokens": 6000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 9000,
+        "toon": 6000
+      },
+      "flags": [
+        "--check-only",
+        "--summary",
+        "--brief",
+        "--check-telemetry",
+        "--strict-exit",
+        "--full"
+      ],
+      "intent": "Check health.",
+      "intent_source": "command"
+    },
+    {
+      "command": "ops stats",
+      "default_max_estimated_tokens": 6000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 9000,
+        "toon": 6000
+      },
+      "intent": "Show stats.",
+      "intent_source": "command"
+    },
+    {
+      "command": "ops telemetry",
+      "default_max_estimated_tokens": 6000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 9000,
+        "toon": 6000
+      },
+      "flags": [
+        "--limit"
+      ],
+      "intent": "Manage telemetry.",
+      "intent_source": "command"
+    },
+    {
+      "command": "ops test-all",
+      "default_max_estimated_tokens": 6000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 9000,
+        "toon": 6000
+      },
+      "flags": [
+        "--limit",
+        "--offset"
+      ],
+      "intent": "Run all linked tests.",
+      "intent_source": "command"
+    },
+    {
+      "command": "ops validate",
+      "default_max_estimated_tokens": 6000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 9000,
+        "toon": 6000
+      },
+      "flags": [
+        "--check-resolution",
+        "--check-history-drift",
+        "--check-storage-integrity",
+        "--counts",
+        "--strict-exit",
+        "--fix-hints"
+      ],
+      "intent": "Validate data.",
       "intent_source": "command"
     },
     {
@@ -15852,6 +16997,8 @@
     "comments",
     "config",
     "context",
+    "context focus",
+    "context next",
     "contracts",
     "copy",
     "create",
@@ -15887,6 +17034,7 @@
     "history",
     "history activity",
     "history compact",
+    "history events",
     "history redact",
     "history repair",
     "history restore",
@@ -15905,6 +17053,14 @@
     "merge",
     "next",
     "notes",
+    "ops",
+    "ops eval",
+    "ops gc",
+    "ops health",
+    "ops stats",
+    "ops telemetry",
+    "ops test-all",
+    "ops validate",
     "package",
     "package activate",
     "package adopt",
@@ -22976,14 +24132,42 @@
         "disposition": "consolidation",
         "noun": "context",
         "owner": "pm-kcs4",
-        "target": "context"
+        "target": "context focus"
+      },
+      {
+        "command": "context focus",
+        "disposition": "target_noun",
+        "noun": "context",
+        "owner": "pm-kcs4",
+        "target": "context focus"
       },
       {
         "command": "next",
         "disposition": "consolidation",
         "noun": "context",
         "owner": "pm-kcs4",
-        "target": "context"
+        "target": "context next"
+      },
+      {
+        "command": "context next",
+        "disposition": "target_noun",
+        "noun": "context",
+        "owner": "pm-kcs4",
+        "target": "context next"
+      },
+      {
+        "command": "ctx next",
+        "disposition": "consolidation",
+        "noun": "context",
+        "owner": "pm-kcs4",
+        "target": "context next"
+      },
+      {
+        "command": "ctx focus",
+        "disposition": "consolidation",
+        "noun": "context",
+        "owner": "pm-kcs4",
+        "target": "context focus"
       },
       {
         "command": "search",
@@ -22995,9 +24179,16 @@
       {
         "command": "reindex",
         "disposition": "package_owned",
-        "noun": "search",
-        "owner": "package:search-advanced",
-        "target": "search"
+        "noun": "ops",
+        "owner": "pm-3i9q8g",
+        "target": "ops reindex"
+      },
+      {
+        "command": "ops reindex",
+        "disposition": "package_owned",
+        "noun": "ops",
+        "owner": "pm-3i9q8g",
+        "target": "ops reindex"
       },
       {
         "command": "search-advanced",
@@ -23108,8 +24299,15 @@
         "command": "events",
         "disposition": "consolidation",
         "noun": "history",
-        "owner": "pm-tqel",
-        "target": "history"
+        "owner": "pm-3i9q8g",
+        "target": "history events"
+      },
+      {
+        "command": "history events",
+        "disposition": "target_noun",
+        "noun": "history",
+        "owner": "pm-3i9q8g",
+        "target": "history events"
       },
       {
         "command": "history-author-acknowledge",
@@ -23630,6 +24828,27 @@
         "target": "package calendar"
       },
       {
+        "command": "ops",
+        "disposition": "target_noun",
+        "noun": "ops",
+        "owner": "pm-6apl",
+        "target": "ops"
+      },
+      {
+        "command": "normalize",
+        "disposition": "package_owned",
+        "noun": "ops",
+        "owner": "pm-3i9q8g",
+        "target": "ops normalize"
+      },
+      {
+        "command": "ops normalize",
+        "disposition": "package_owned",
+        "noun": "ops",
+        "owner": "pm-3i9q8g",
+        "target": "ops normalize"
+      },
+      {
         "command": "assurance",
         "disposition": "consolidation",
         "noun": "ops",
@@ -23648,21 +24867,42 @@
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-6apl",
-        "target": "ops"
+        "target": "ops eval"
+      },
+      {
+        "command": "ops eval",
+        "disposition": "target_noun",
+        "noun": "ops",
+        "owner": "pm-6apl",
+        "target": "ops eval"
       },
       {
         "command": "gc",
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-6apl",
-        "target": "ops"
+        "target": "ops gc"
+      },
+      {
+        "command": "ops gc",
+        "disposition": "target_noun",
+        "noun": "ops",
+        "owner": "pm-6apl",
+        "target": "ops gc"
       },
       {
         "command": "health",
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-6apl",
-        "target": "ops"
+        "target": "ops health"
+      },
+      {
+        "command": "ops health",
+        "disposition": "target_noun",
+        "noun": "ops",
+        "owner": "pm-6apl",
+        "target": "ops health"
       },
       {
         "command": "profile",
@@ -23683,28 +24923,56 @@
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-6apl",
-        "target": "ops"
+        "target": "ops stats"
+      },
+      {
+        "command": "ops stats",
+        "disposition": "target_noun",
+        "noun": "ops",
+        "owner": "pm-6apl",
+        "target": "ops stats"
       },
       {
         "command": "telemetry",
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-6apl",
-        "target": "ops"
+        "target": "ops telemetry"
+      },
+      {
+        "command": "ops telemetry",
+        "disposition": "target_noun",
+        "noun": "ops",
+        "owner": "pm-6apl",
+        "target": "ops telemetry"
       },
       {
         "command": "test-all",
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-6apl",
-        "target": "ops"
+        "target": "ops test-all"
+      },
+      {
+        "command": "ops test-all",
+        "disposition": "target_noun",
+        "noun": "ops",
+        "owner": "pm-6apl",
+        "target": "ops test-all"
       },
       {
         "command": "validate",
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-6apl",
-        "target": "ops"
+        "target": "ops validate"
+      },
+      {
+        "command": "ops validate",
+        "disposition": "target_noun",
+        "noun": "ops",
+        "owner": "pm-6apl",
+        "target": "ops validate"
       },
       {
         "command": "assurance list",
@@ -24355,8 +25623,40 @@
         ]
       },
       {
+        "command": "context focus",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
         "command": "next",
         "slots": []
+      },
+      {
+        "command": "context next",
+        "slots": []
+      },
+      {
+        "command": "ctx next",
+        "slots": []
+      },
+      {
+        "command": "ctx focus",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "search",
@@ -24372,6 +25672,10 @@
       },
       {
         "command": "reindex",
+        "slots": []
+      },
+      {
+        "command": "ops reindex",
         "slots": []
       },
       {
@@ -24560,6 +25864,10 @@
       },
       {
         "command": "events",
+        "slots": []
+      },
+      {
+        "command": "history events",
         "slots": []
       },
       {
@@ -25254,6 +26562,18 @@
         ]
       },
       {
+        "command": "ops",
+        "slots": []
+      },
+      {
+        "command": "normalize",
+        "slots": []
+      },
+      {
+        "command": "ops normalize",
+        "slots": []
+      },
+      {
         "command": "assurance",
         "slots": [
           {
@@ -25317,11 +26637,23 @@
         "slots": []
       },
       {
+        "command": "ops eval",
+        "slots": []
+      },
+      {
         "command": "gc",
         "slots": []
       },
       {
+        "command": "ops gc",
+        "slots": []
+      },
+      {
         "command": "health",
+        "slots": []
+      },
+      {
+        "command": "ops health",
         "slots": []
       },
       {
@@ -25367,7 +26699,30 @@
         "slots": []
       },
       {
+        "command": "ops stats",
+        "slots": []
+      },
+      {
         "command": "telemetry",
+        "slots": [
+          {
+            "name": "namespace-or-subcommand",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "subcommand",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "action",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "ops telemetry",
         "slots": [
           {
             "name": "namespace-or-subcommand",
@@ -25390,7 +26745,15 @@
         "slots": []
       },
       {
+        "command": "ops test-all",
+        "slots": []
+      },
+      {
         "command": "validate",
+        "slots": []
+      },
+      {
+        "command": "ops validate",
         "slots": []
       },
       {
@@ -35846,6 +37209,10 @@
         "modes": []
       },
       {
+        "command": "context next",
+        "modes": []
+      },
+      {
         "command": "contracts",
         "modes": [
           "full",
@@ -35917,6 +37284,12 @@
         ]
       },
       {
+        "command": "history events",
+        "modes": [
+          "full"
+        ]
+      },
+      {
         "command": "list",
         "modes": [
           "brief",
@@ -35931,6 +37304,25 @@
       {
         "command": "notes",
         "modes": []
+      },
+      {
+        "command": "ops health",
+        "modes": [
+          "brief",
+          "full",
+          "summary"
+        ]
+      },
+      {
+        "command": "ops stats",
+        "modes": []
+      },
+      {
+        "command": "ops validate",
+        "modes": [
+          "counts",
+          "full"
+        ]
       },
       {
         "command": "package catalog",

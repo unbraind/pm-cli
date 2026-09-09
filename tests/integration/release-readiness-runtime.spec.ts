@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PM_COMMAND_ALIAS_CONTRACTS } from "../../src/sdk/cli-contracts/command-aliases.js";
 import { listPmCommandsForTier } from "../../src/sdk/agent-capability-contracts.js";
 import {
   expectJsonErrorEnvelope,
@@ -110,7 +111,11 @@ function isValidCalendarDate(
   );
 }
 
-const CORE_COMMANDS = listPmCommandsForTier("core");
+const CORE_COMMANDS = listPmCommandsForTier("core").filter(
+  (command) => !command.includes(" ") && !PM_COMMAND_ALIAS_CONTRACTS.some(
+    (alias) => alias.alias === command && alias.hidden,
+  ),
+);
 
 const REQUIRED_CREATE_FLAGS = [
   "--title",
@@ -681,10 +686,10 @@ describe("release readiness runtime coverage", () => {
       ]);
       expect(validateHelpInProcess.code).toBe(validateHelpSubprocess.code);
       expect(validateHelpInProcess.stdout).toContain(
-        "Usage: pm validate [options]",
+        "Usage: pm ops validate [options]",
       );
       expect(validateHelpSubprocess.stdout).toContain(
-        "Usage: pm validate [options]",
+        "Usage: pm ops validate [options]",
       );
     });
   });
@@ -1232,7 +1237,7 @@ describe("release readiness runtime coverage", () => {
 
       const validateHelp = context.runCli(["validate", "--help"]);
       expect(validateHelp.code).toBe(0);
-      expect(validateHelp.stdout).toContain("Usage: pm validate [options]");
+      expect(validateHelp.stdout).toContain("Usage: pm ops validate [options]");
       expect(validateHelp.stdout).toContain(
         "Validate metadata, lifecycle policies, files, command references, and history.",
       );
@@ -1242,7 +1247,7 @@ describe("release readiness runtime coverage", () => {
 
       const healthHelp = context.runCli(["health", "--help"]);
       expect(healthHelp.code).toBe(0);
-      expect(healthHelp.stdout).toContain("Usage: pm health [options]");
+      expect(healthHelp.stdout).toContain("Usage: pm ops health [options]");
       for (const flag of REQUIRED_HEALTH_FLAGS) {
         expect(healthHelp.stdout).toContain(flag);
       }

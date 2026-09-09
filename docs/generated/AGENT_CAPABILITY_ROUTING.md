@@ -6,12 +6,12 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 
 | Capability family | Commands |
 | --- | --- |
-| workspace | `init`, `config`, `merge`, `schema`, `profile`, `telemetry`, `health`, `gc`, `workspace` |
-| intake | `create`, `copy`, `focus`, `restore` |
-| context | `list`, `aggregate`, `context`, `get`, `search`, `duplicates`, `eval`, `next`, `activity`, `stats`, `help` |
+| workspace | `init`, `config`, `merge`, `schema`, `profile`, `ops telemetry`, `ops health`, `ops gc`, `workspace` |
+| intake | `create`, `copy`, `context focus`, `restore` |
+| context | `list`, `aggregate`, `context`, `get`, `search`, `duplicates`, `ops eval`, `context next`, `activity`, `ops stats`, `help` |
 | lifecycle | `update`, `update-many`, `close`, `close-many`, `delete`, `claim`, `release`, `start-task`, `pause-task`, `close-task` |
-| evidence | `history`, `events`, `history-redact`, `history-repair`, `history-compact`, `history-author-acknowledge`, `append`, `comments`, `notes`, `learnings`, `files`, `docs` |
+| evidence | `history`, `history events`, `history-redact`, `history-repair`, `history-compact`, `history-author-acknowledge`, `append`, `comments`, `notes`, `learnings`, `files`, `docs` |
 | graph | `graph`, `deps`, `plan` |
-| quality | `test`, `test-all`, `validate`, `assurance`, `contracts` |
+| quality | `test`, `ops test-all`, `ops validate`, `assurance`, `contracts`, `ops` |
 | automation | `meet`, `event`, `remind` |
 | extensions | `package` |

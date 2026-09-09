@@ -47,10 +47,35 @@ export const PM_HISTORY_COMMAND_ALIASES: readonly PmCommandAliasContract[] = ([
   owner: "pm-tqel",
 }));
 
-/** Resolve a native history leaf to its stable SDK operation; other paths retain their identity. */
-export function resolvePmHistoryOperation(command: string): string {
+/** Navigation, maintenance, and event aliases share native handlers and stable SDK identities. */
+export const PM_CONTEXT_OPS_COMMAND_ALIASES: readonly PmCommandAliasContract[] = [
+  ...["next", "focus"].map((alias) => ({ alias, canonical: `context ${alias}`, owner: "pm-kcs4" })),
+  ...["stats", "health", "validate", "gc", "telemetry", "eval", "test-all"].map((alias) => ({ alias, canonical: `ops ${alias}`, owner: "pm-6apl" })),
+  ...["normalize", "reindex"].map((alias) => ({ alias, canonical: `ops ${alias}`, owner: "pm-3i9q8g" })),
+  { alias: "events", canonical: "history events", owner: "pm-3i9q8g" },
+].map((entry) => ({
+  ...entry,
+  canonical_argv: entry.canonical.split(" "),
+  lifecycle: "permanent",
+  hidden: true,
+  registration: "bootstrap",
+}));
+
+/** Native noun-verb paths whose stable operation identities survive grammar consolidation. */
+export const PM_NAMESPACED_COMMAND_ALIASES: readonly PmCommandAliasContract[] = [
+  ...PM_HISTORY_COMMAND_ALIASES,
+  ...PM_CONTEXT_OPS_COMMAND_ALIASES,
+];
+
+/** Resolve a native command leaf to its stable SDK operation without changing unknown paths. */
+export function resolvePmCommandOperation(command: string): string {
   const normalized = command.trim().replace(/\s+/gu, " ");
-  return PM_HISTORY_COMMAND_ALIASES.find((alias) => alias.canonical === normalized)?.alias ?? normalized;
+  return PM_NAMESPACED_COMMAND_ALIASES.find((alias) => alias.canonical === normalized.replace(/^ctx /u, "context "))?.alias ?? normalized;
+}
+
+/** Compatibility entrypoint for hosts that adopted namespace resolution with history. */
+export function resolvePmHistoryOperation(command: string): string {
+  return resolvePmCommandOperation(command);
 }
 
 /**
@@ -58,7 +83,7 @@ export function resolvePmHistoryOperation(command: string): string {
  * are intentionally absent from default help and completion discovery.
  */
 export const PM_COMMAND_ALIAS_CONTRACTS: readonly PmCommandAliasContract[] = [
-  ...PM_HISTORY_COMMAND_ALIASES,
+  ...PM_NAMESPACED_COMMAND_ALIASES,
   {
     alias: "tests",
     canonical: "test",

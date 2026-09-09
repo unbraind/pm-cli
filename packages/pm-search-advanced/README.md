@@ -13,7 +13,7 @@ First-party package that restores optional advanced search surfaces in bare-core
   - `--type`, `--tag`, `--priority`
   - `--deadline-before`, `--deadline-after`
   - `--limit`, `--fields`, `--compact`, `--full`
-- Adds `pm reindex` with:
+- Adds `pm ops reindex` with:
   - `--mode keyword|semantic|hybrid`
   - `--progress`
   - `--eval`
@@ -31,8 +31,8 @@ pm install search-advanced --project
 pm search-advanced "vector cache" --mode hybrid --limit 5 --json
 pm search-advanced --hybrid "vector cache" --limit 5 --json
 pm search-advanced "calendar package" --mode keyword --fields id,title,score --compact --json
-pm reindex --mode hybrid --progress --json
-pm reindex --mode keyword --eval --eval-fixtures tests/search-eval/golden-queries.json --json
+pm ops reindex --mode hybrid --progress --json
+pm ops reindex --mode keyword --eval --eval-fixtures tests/search-eval/golden-queries.json --json
 ```
 
 Without `--mode`, `--semantic`, or `--hybrid`, `search-advanced` stays keyword-first for fast agent reads.
@@ -44,7 +44,7 @@ lockstep with the core CLI without a copied flag table.
 
 ## Reindex eval harness
 
-`pm reindex --eval` runs a golden-query relevance harness after the reindex pass and appends a deterministic `eval` object to JSON output:
+`pm ops reindex --eval` runs a golden-query relevance harness after the reindex pass and appends a deterministic `eval` object to JSON output:
 
 - per-fixture pass/fail verdicts
 - `ndcg_at_5` score for each fixture
@@ -76,3 +76,5 @@ Rules:
 - `mode` is optional (`keyword`, `semantic`, `hybrid`), default `keyword`.
 - `expected_top_ids` is required and defines the ideal ranking for nDCG@5.
 - `min_ndcg_at_5` is optional (`0..1`), default `0.7`.
+
+`pm reindex` remains a compatibility alias for `pm ops reindex`.
