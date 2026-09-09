@@ -157,10 +157,11 @@ describe("GitHub workflow contract", () => {
       };
     };
     const benchmarkJob = parsedWorkflow.jobs?.benchmarks;
-    const setupNodeStep = benchmarkJob?.steps?.find(
+    const steps = benchmarkJob?.steps ?? [];
+    const setupNodeStep = steps.find(
       (step) => step.name === "Setup Node.js",
     );
-    const codSpeedStep = benchmarkJob?.steps?.find(
+    const codSpeedStep = steps.find(
       (step) =>
         typeof step.uses === "string" &&
         step.uses.startsWith("CodSpeedHQ/action@"),
@@ -182,17 +183,18 @@ describe("GitHub workflow contract", () => {
     });
     expect(codSpeedOptions?.mode).not.toBe("walltime");
 
-    const steps = benchmarkJob?.steps ?? [];
     const chromeStepIndex = steps.findIndex(
       (step) => step.name === "Disable unused Chrome APT sources",
     );
     expect(chromeStepIndex).toBeGreaterThanOrEqual(0);
     expect(chromeStepIndex).toBeLessThan(steps.indexOf(codSpeedStep!));
     const chromeScript = steps[chromeStepIndex]?.run;
-    expect(chromeScript).toBeTypeOf("string");
+    if (typeof chromeScript !== "string") {
+      throw new Error("Chrome APT isolation step must provide a shell script");
+    }
 
     // Run the real workflow body with relative fixture paths and no privilege escalation.
-    const isolatedScript = `sudo() { "$@"; }\n${(chromeScript as string).replaceAll("/etc/apt/sources.list.d", "sources.list.d")}`;
+    const isolatedScript = `sudo() { "$@"; }\n${chromeScript.replaceAll("/etc/apt/sources.list.d", "sources.list.d")}`;
     for (const chromeFiles of [
       [],
       ["google-chrome.list"],
