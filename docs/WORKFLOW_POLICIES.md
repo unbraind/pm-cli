@@ -95,7 +95,14 @@ pm validate --check-completeness --strict-exit
 Presets return optional advisory declarations for familiar item types. They do
 not install policies. Author the declarations appropriate to the project's own
 types and lifecycle using `policy-put`. Completeness reports group counts by type,
-return bounded violation examples, and use only `require_fields` declarations.
+return bounded violation examples, and use only `require_fields` declarations
+without `subject.operations`. The report identifies this scope as
+`operation_independent_require_fields`. All item selectors, including status,
+still apply. `policy-check` without a proposed definition uses the same state-only
+scope. Operation-scoped rules remain enforced during matching mutations; a clean
+state report does not imply permission to perform every future operation.
+To check a lifecycle field invariant in both state reports and mutations, select
+its `statuses` without restricting `operations`.
 Default validation includes this check; projects without declarations remain
 unaffected.
 An unreadable or malformed `schema/policies.json` produces an error-level

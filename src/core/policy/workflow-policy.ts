@@ -83,7 +83,7 @@ export interface WorkflowPolicyApproval {
 
 /** Presentation-independent mutation snapshot. Body is a normal selectable field. */
 export interface WorkflowPolicyInput {
-  /** History operation being evaluated. */
+  /** History operation being evaluated; ignored by state-only completeness. */
   operation: string;
   /** Effective mutation actor; never taken from mutable item.author. */
   author: string;
@@ -93,7 +93,7 @@ export interface WorkflowPolicyInput {
   after: Readonly<Record<string, unknown>> | null;
   /** Verified approval events, omitted when no approval rule is applicable. */
   approvals?: readonly WorkflowPolicyApproval[];
-  /** Inspect present field completeness without interpreting a transition. */
+  /** Inspect present fields using only require_fields rules without operation selectors. */
   completeness_only?: boolean;
 }
 
@@ -283,7 +283,7 @@ function matchesPolicySubject(subject: WorkflowPolicySubject, record: Readonly<R
 
 /** Match both sides so removing a tag or changing type cannot evade a rule. */
 export function workflowPolicyApplies(policy: WorkflowPolicy, input: WorkflowPolicyInput): boolean {
-  if (input.completeness_only && policy.rule.kind !== "require_fields") return false;
+  if (input.completeness_only && (policy.rule.kind !== "require_fields" || policy.subject?.operations !== undefined)) return false;
   if (policy.rule.kind === "approval" && input.before === null) return false;
   const subject = policy.subject ?? {};
   // Status selectors describe the destination; other scope changes check both sides.

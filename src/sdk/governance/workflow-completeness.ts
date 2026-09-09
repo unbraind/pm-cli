@@ -53,7 +53,7 @@ export function buildWorkflowCompletenessCheck(
   const evaluate = createWorkflowPolicyEvaluator(document);
   for (const item of items) {
     const evaluation = evaluate({
-      operation: "update", author: "", before: item, after: item, completeness_only: true,
+      operation: "", author: "", before: item, after: item, completeness_only: true,
     });
     const missing = evaluation.decisions.filter((decision) => !decision.satisfied);
     if (missing.length === 0) continue;
@@ -72,6 +72,7 @@ export function buildWorkflowCompletenessCheck(
   const status = sourceIncomplete || refused > 0 ? "error" : violationCount > 0 ? "warn" : "ok";
   return {
     check: { name: "completeness", status, ok: status === "ok", details: {
+      scope: "operation_independent_require_fields",
       checked_items: items.length, incomplete_items: incompleteItems, violation_count: violationCount,
       refused_violations: refused, missing_by_type: Object.fromEntries(byType),
       violations, violations_truncated: violations.length < violationCount,

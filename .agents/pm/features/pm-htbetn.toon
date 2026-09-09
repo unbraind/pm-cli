@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[6]: context-management,data-quality,governance,schema,standards,validation
 created_at: "2026-07-26T10:01:01.886Z"
-updated_at: "2026-09-08T22:55:33.308Z"
-closed_at: "2026-09-08T22:55:32.737Z"
-completed_at: "2026-09-08T22:55:32.737Z"
+updated_at: "2026-09-09T01:11:19.233Z"
+closed_at: "2026-09-09T01:11:18.564Z"
+completed_at: "2026-09-09T01:11:18.564Z"
 author: "harness:opencode"
 estimated_minutes: 600
 acceptance_criteria: Contract declared as schema data with built-in defaults per type; pm validate reports per-type completeness violations; warn/require follows governance policy; custom types extend via schema; negative-control fixture in CI proves a malformed item fails
@@ -19,9 +19,9 @@ why_now: "2026-07-26 review found close-time completeness (pm-wenq) tracked but 
 parent: pm-33cw
 risk: low
 confidence: high
-resolution: "Delivered customizable per-type lifecycle completeness rules, optional built-in presets and counts-first validation. Corpus scans reuse private policy snapshots and isolate unrelated history advice. Unreadable policy registries now produce a failed completeness check with a repair hint while preserving independent validation diagnostics."
-expected_result: Schema-defined lifecycle requirements support custom types and statuses with bounded diagnostics; corrupt or unreadable policies cannot appear valid or prevent other requested checks from reporting.
-actual_result: "All 8623 tests in 653 files pass with exact 100/100/100/100 coverage and zero uncovered counts. Real malformed JSON, invalid declarations, invalid UTF-8 and filesystem faults produce completeness errors while preserving metadata diagnostics, policy bytes and item history. Independent temporary strict CLI acceptance retains all ten checks and returns to success after registry repair. Typecheck, structural/docstring gate, focused ESLint, linked tests, docs, snapshots and all three duplicate profiles pass. Final exact-head hosted checks, full platform validation, preflight and review govern merge."
+resolution: "Delivered customizable per-type lifecycle completeness, optional presets and counts-first validation using private policy snapshots. Registry failures produce a completeness error without hiding independent diagnostics. State completeness explicitly includes only operation-independent require_fields declarations; actual mutation evaluation retains exact operation selectors."
+expected_result: "Custom type and status invariants are reported with bounded diagnostics; state scans must not invent a mutation operation, and a clean state report must not bypass operation-specific mutation requirements."
+actual_result: "Full 8625-test coverage in 653 files passes at exact 100/100/100/100 with zero uncovered counts: 63729 statements, 48462 branches, 13216 functions and 61134 lines. All four TypeScript projects, direct structural/docstring assurance, focused ESLint, public SDK and command snapshots, graph composition and both linked test commands pass. Independent temporary CLI acceptance reports one state requirement, repairs to success, then correctly refuses an operation-specific close while preserving item history. The preceding bdcd47a full preflight and complete Nightly matrix passed, including the unchanged Windows failed-job retry. New pushed-head CI, full review, platform checks and preflight remain required before merge."
 dependencies[9]:
   - id: pm-4k6b
     kind: related
@@ -53,7 +53,7 @@ dependencies[9]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[9]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-09-08T15:40:12.258Z","harness:codex","Verification evidence: custom-type completeness aggregation, bounded diagnostic examples, counts-only projection, CLI strict-exit negative control and remediation pass. The report and lifecycle write enforcement share the same require_fields evaluator. Public documentation now has a reachable index entry. Related implementation dependency is recorded on pm-mj42og."
   "2026-09-08T16:24:43.390Z","harness:codex","Verification: the linked sandboxed completeness checks pass, including custom types, bounded examples, counts-only projection, explicit refusal under strict-exit, and remediation to a clean result. The shared policy suite also passes and default validate includes completeness. No default policies are installed into existing trackers."
   "2026-09-08T16:50:58.717Z","harness:codex","Final implementation evidence: Linked completeness tests pass for custom types, counts-only output, refusal and remediation. The full 8615-test run passes with exact 100/100/100/100 source coverage; manual strict completeness validation passes."
@@ -63,16 +63,22 @@ comments[9]{created_at,author,text}:
   "2026-09-08T21:35:01.279Z","harness:codex","Sixth-round correction: completeness creates one private policy evaluator for the whole corpus, avoiding repeated declaration serialization and SHA-256 work. The snapshot regression fails before the new API and passes afterward, including caller mutation and fresh evaluator behavior."
   "2026-09-08T21:57:57.834Z","harness:codex","Sixth-round verification: all 8622 tests in 653 files pass with exact 100/100/100/100 coverage and zero uncovered statements, branches, functions and lines. All four TypeScript projects, the full quality:static gate, serialized docs/skills checks, and every linked test command pass. Both original clone profiles remain unchanged; the supplementary historical-table profile also passes. Final pushed-head CI, full platform matrix, review and preflight remain required before merge."
   "2026-09-08T22:55:32.129Z","harness:codex","Seventh-round TDD: malformed policy JSON first aborted default validate with workflow_policy_registry_invalid. The completeness module now contains only policy-read failures in an error check with a relative registry path and repair hint; independent diagnostics continue. Real SDK/CLI regressions cover malformed JSON, invalid declarations, invalid UTF-8 and a directory storage fault without changing policy bytes or item history. A separate temporary CLI run preserves all ten default validation checks, exits 1 on corruption and exits 0 after repair. Final 8623 tests in 653 files pass at exact 100/100/100/100 with zero uncovered counts (63729 statements, 48461 branches, 13216 functions, 61134 lines). All four TypeScript projects, direct structural/docstring gate, focused ESLint, linked tests, docs gate, public SDK/contracts snapshots and all three clone profiles pass. The helper stays in the existing completeness module to retain unchanged file-length and complexity ceilings. The preceding bfb737b4b full preflight and Nightly attempt 2 passed; the initial macOS kill EPERM did not reproduce on the unchanged failed-job retry. Final pushed-head CI, full platform validation and review remain merge requirements."
-files[6]{path,scope,note}:
+  "2026-09-09T00:59:23.869Z","harness:codex","Full review of bdcd47a found that state completeness arbitrarily supplies update and therefore treats update-only requirements differently from close/import-only requirements. The correction explicitly excludes all operation-scoped declarations from state completeness, preserves exact mutation matching and reports the state-only scope. The preceding full preflight passed; Nightly 34294922496 passed after an unchanged Windows failed-job retry of an intermittent nested HTTP startup timeout. No timeout or source suppression was applied."
+  "2026-09-09T01:03:04.077Z","harness:codex","TDD evidence: both new regressions failed against bdcd47a; the state report included update-evidence and reported two violations instead of one. With the shared evaluator excluding operation-scoped policies, focused unit and SDK/CLI regressions pass. Exact operation matching still refuses a real close after state evidence is supplied. The scan advertises operation_independent_require_fields and the public docs describe that scope. All four TypeScript projects pass; full coverage and static verification are running."
+  "2026-09-09T01:11:16.373Z","harness:codex","Final operation-scope correction evidence: Full 8625-test coverage in 653 files passes at exact 100/100/100/100 with zero uncovered counts: 63729 statements, 48462 branches, 13216 functions and 61134 lines. All four TypeScript projects, direct structural/docstring assurance, focused ESLint, public SDK and command snapshots, graph composition and both linked test commands pass. Independent temporary CLI acceptance reports one state requirement, repairs to success, then correctly refuses an operation-specific close while preserving item history."
+files[8]{path,scope,note}:
   src/cli/register-operations.ts,project,Completeness-flag-adapter
+  src/core/policy/workflow-policy.ts,project,Exclude operation-scoped requirements from state-only evaluation
   src/sdk/governance/validate.ts,project,Counts-first-validation-integration
   src/sdk/governance/workflow-completeness.ts,project,Shared-completeness-evaluation
   tests/unit/commands/validate-command.spec.ts,project,Default validation includes declarative completeness checks
   tests/unit/sdk/author-attribution.spec.ts,project,History warnings must not invalidate the item completeness scan
   tests/unit/sdk/policy/workflow-completeness.spec.ts,project,Completeness-negative-control
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  tests/unit/sdk/policy/workflow-policy.spec.ts,project,State scans and real mutations retain distinct operation semantics
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/sdk/policy/workflow-completeness.spec.ts,project,240,"harness:codex","2026-09-08T18:20:13.583Z",local_mutation,feat/declarative-workflow-policies
-test_runs[5]:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/policy/workflow-policy.spec.ts,project,240,"harness:codex","2026-09-09T00:59:23.231Z",local_mutation,feat/declarative-workflow-policies
+test_runs[6]:
   - run_id: test-local-mtsvei3o-4n4i9x
     kind: test
     status: passed
@@ -128,7 +134,19 @@ test_runs[5]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/sdk/policy/workflow-completeness.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mttejxe6-optxhg
+    kind: test
+    status: passed
+    started_at: "2026-09-09T01:10:41.352Z"
+    finished_at: "2026-09-09T01:11:01.326Z"
+    recorded_at: "2026-09-09T01:11:01.326Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/sdk/policy/workflow-completeness.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/policy/workflow-policy.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/WORKFLOW_POLICIES.md,project,Completeness-policy-configuration
-close_reason: Lifecycle completeness and registry-failure containment verified with real SDK and CLI evidence.
+close_reason: Lifecycle completeness scope and real mutation enforcement verified.
 body: ""

@@ -16,6 +16,19 @@ function evaluate(policy: WorkflowPolicy, change: WorkflowPolicyInput = input) {
 }
 
 describe("declarative workflow policies", () => {
+  it("separates state completeness from exact mutation operation selectors", () => {
+    for (const operation of ["update", "close", "import"]) {
+      const scoped: WorkflowPolicy = { ...requirement, subject: { ...requirement.subject, operations: [operation] } };
+      expect(evaluate(scoped, { ...input, operation }).allowed).toBe(false);
+      expect(evaluate(scoped, { ...input, operation: "unrelated" }).decisions).toEqual([]);
+      for (const inspectedOperation of ["update", "close", "import", ""]) {
+        expect(evaluate(scoped, { ...input, operation: inspectedOperation, completeness_only: true }).decisions).toEqual([]);
+        expect(evaluate(requirement, { ...input, operation: inspectedOperation, completeness_only: true }).allowed).toBe(false);
+        expect(evaluate({ ...requirement, subject: undefined }, { ...input, operation: inspectedOperation, completeness_only: true }).allowed).toBe(false);
+      }
+    }
+  });
+
   it("reuses a private policy snapshot without retaining mutable caller declarations", () => {
     const document = parseWorkflowPolicyDocument({ version: 1, policies: [requirement] });
     const snapshot = createWorkflowPolicyEvaluator(document);

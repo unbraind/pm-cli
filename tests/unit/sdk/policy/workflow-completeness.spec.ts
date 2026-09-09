@@ -12,6 +12,39 @@ const declaration = {
 };
 
 describe("lifecycle completeness", () => {
+  it("reports state-only requirements consistently without predicting operation permission", async () => {
+    await withTempPmPath(async ({ pmPath, runCli }) => {
+      const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
+      const created = await client.create({ title: "Operation-specific evidence" });
+      const policies = [
+        { ...declaration, subject: undefined },
+        ...["update", "close", "import"].map((operation) => ({
+          id: `${operation}-evidence`, effect: "refuse", subject: { operations: [operation] },
+          rule: { kind: "require_fields", fields: ["custom.operation_evidence"] },
+        })),
+      ];
+      for (const policy of policies) await client.workflowPolicy("policy-put", policy.id, { definition: policy });
+      await client.workflowPolicy("policy-mode", "refuse");
+      const historyPath = path.join(pmPath, "history", `${created.item.id}.jsonl`);
+      const history = await readFile(historyPath, "utf8");
+      const report = await client.validate({ checkCompleteness: true });
+      expect(report.checks[0]).toMatchObject({ name: "completeness", status: "error", details: {
+        scope: "operation_independent_require_fields", violation_count: 1,
+        violations: [{ decision: { policy_id: declaration.id, missing_fields: ["body"] } }],
+      } });
+      const scan = runCli(["validate", "--check-completeness", "--strict-exit", "--json", "--output-budget", "unbounded"]);
+      expect(scan.status).toBe(1);
+      expect(JSON.parse(scan.stdout).checks[0]).toEqual(report.checks[0]);
+      const inspection = runCli(["schema", "policy-check", created.item.id, "--json"]);
+      expect(inspection.status, inspection.stderr).toBe(0);
+      expect(JSON.parse(inspection.stdout).result.decisions.map((decision: { policy_id: string }) => decision.policy_id)).toEqual([declaration.id]);
+      expect(await readFile(historyPath, "utf8")).toBe(history);
+      await client.update(created.item.id, { body: "State evidence" });
+      expect(await client.validate({ checkCompleteness: true })).toMatchObject({ ok: true });
+      await expect(client.close(created.item.id, "Attempt closure")).rejects.toMatchObject({ code: "workflow_policy_refused" });
+    });
+  });
+
   it("reports invalid policy storage without hiding other validation diagnostics or rewriting evidence", async () => {
     await withTempPmPath(async ({ pmPath, runCli }) => {
       const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
