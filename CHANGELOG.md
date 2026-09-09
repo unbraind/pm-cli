@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Isolate CodSpeed dependency setup from unrelated Chrome APT index failures ([pm-zvy31w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zvy31w.toon))
+
 ### Other
 
 - Native pm ops stats, health, validate, gc, telemetry, eval and test-all with compatible root commands ([pm-6apl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-6apl.toon))
