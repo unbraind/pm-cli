@@ -54,9 +54,10 @@ describe("native context and operations namespaces", () => {
       expect(context.runCli(["context", "focus", "--clear", "--json"]).code).toBe(0);
       const globals = context.runCli(["--json", "ops", "--quiet", "stats"]);
       expect(globals.code, globals.stderr).toBe(0);
-      for (const noun of ["context", "ops", "history"]) {
+      for (const [noun, leaves] of [["context", ["focus", "next"]], ["ops", ["gc", "health", "stats", "validate", "telemetry", "eval", "test-all"]], ["history", ["events"]]] as const) {
         const help = context.runCli([noun, "--help"]);
         expect(help.code, help.stderr).toBe(0);
+        for (const leaf of leaves) expect(help.stdout).toMatch(new RegExp(`^  ${leaf}(?:\\s|\\[|\\()`, "m"));
       }
     });
   });
@@ -70,6 +71,7 @@ describe("native context and operations namespaces", () => {
       } };`);
       const missing = context.runCli(["contracts", "--command", "ops reindex", "--availability-only", "--json"], { expectJson: true });
       expect(missing.code, missing.stderr).toBe(0);
+      expect(missing.json).toMatchObject({ action_availability: [expect.objectContaining({ action: "reindex", available: false, disabled_reason: expect.stringContaining("optional") })] });
       for (const [command, packageName] of [["normalize", "audit"], ["reindex", "search-advanced"]]) {
         const missingHelp = await runInProcessDistCli(["ops", command, "--help", "--json"], { env: context.env }, runPmCli);
         expect(missingHelp.code).toBe(2);
@@ -90,6 +92,7 @@ describe("native context and operations namespaces", () => {
         }
         const contracts = context.runCli(["contracts", "--command", `ops ${command}`, "--availability-only", "--json"], { expectJson: true });
         expect(contracts.code, contracts.stderr).toBe(0);
+        expect(contracts.json).toMatchObject({ action_availability: [expect.objectContaining({ action: command, available: true })] });
         const fullContracts = context.runCli(["contracts", "--command", `ops ${command}`, "--full", "--json"], { expectJson: true });
         expect(fullContracts.code, fullContracts.stderr).toBe(0);
         expect(fullContracts.json).toMatchObject({ extension_commands: [expect.objectContaining({ command })] });

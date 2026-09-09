@@ -113,6 +113,7 @@ async function withInProcessCliLock<T>(operation: () => Promise<T>): Promise<T> 
   }
 }
 
+/** Serialize real CLI execution with captured output and restored process state; accept an instrumented source runner without replacing command behavior. */
 export async function runInProcessDistCli(
   args: string[],
   options: DirectCliRunOptions = {},

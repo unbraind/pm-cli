@@ -88,8 +88,11 @@ describe("namespace contracts and shell routing", () => {
       { words: ["pm", "--pm-path", verb, noun, "--json", verb, "--"], flag },
     ]);
     const commands = cases.map(({ words }) => `COMP_WORDS=(${words.map((word) => `'${word}'`).join(" ")}); COMP_CWORD=${words.length - 1}; _pm_completion; printf '%s ' "\${COMPREPLY[@]}"; printf '\\n'`);
-    const rows = execFileSync("bash", ["-s"], { input: `${generateBashScript()}\n${commands.join("\n")}`, encoding: "utf8" }).trim().split("\n");
-    for (const [index, entry] of cases.entries()) expect(rows[index].split(/\s+/), entry.words.join(" ")).toContain(entry.flag);
+    const stdout = execFileSync("bash", ["-s"], { input: `${generateBashScript()}\n${commands.join("\n")}`, encoding: "utf8" });
+    const rows = stdout.split("\n");
+    expect(rows.pop()).toBe("");
+    expect(rows).toHaveLength(cases.length);
+    for (const [index, entry] of cases.entries()) expect(rows[index].trim().split(/\s+/), entry.words.join(" ")).toContain(entry.flag);
     for (const script of [generateZshScript(), generateFishScript()]) {
       for (const { canonical } of PM_CONTEXT_OPS_COMMAND_ALIASES) expect(script).toContain(canonical);
     }

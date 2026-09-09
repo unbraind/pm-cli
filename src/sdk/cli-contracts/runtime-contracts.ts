@@ -1668,6 +1668,7 @@ interface ActionContractDescriptor {
   command_path: string | null;
 }
 
+/** Merge stable core and package action identities with canonical command paths for contract discovery. */
 function collectActionContractDescriptors(
   extensionContracts: ExtensionCommandContract[],
   options: { includePackageOwnedActions?: boolean } = {},
@@ -1717,6 +1718,7 @@ function collectActionContractDescriptors(
   /* c8 ignore stop */
 }
 
+/** Derive invocability from active handlers and policy, preserving installation hints for unavailable optional operations. */
 function resolveActionAvailability(
   descriptor: ActionContractDescriptor,
   runtimeProbe: RuntimeExtensionActionProbe,
@@ -1775,6 +1777,7 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   );
 }
 
+/** Recognize core flag contracts while keeping package-owned operations outside the core provider surface. */
 function isCoreCommandPath(command: string): boolean {
   if (PACKAGE_OWNED_COMMANDS.has(resolvePmCommandOperation(command))) {
     return false;
@@ -1898,6 +1901,7 @@ function mergeFlagContracts(
   /* c8 ignore stop */
 }
 
+/** Merge core, runtime field, and extension flags for each public command path with optional semantic metadata. */
 function buildCommandFlagSurface(
   commands: string[],
   extensionFlagMap: ReturnType<typeof collectExtensionFlagContractsByCommand>,
@@ -2276,6 +2280,7 @@ async function resolveContractsRuntimeContext(
   };
 }
 
+/** Include absent optional actions only when explicitly requested through availability discovery. */
 function shouldIncludePackageOwnedActions(
   selection: ContractsSelection,
 ): boolean {
@@ -2288,6 +2293,7 @@ function shouldIncludePackageOwnedActions(
   );
 }
 
+/** Scope action discovery and synthesize optional package descriptors needed to explain unavailable command selections. */
 function collectContractsActionDescriptors(
   selection: ContractsSelection,
   mergedExtensionContracts: ExtensionCommandContract[],
@@ -2338,6 +2344,7 @@ function assertKnownContractsAction(
   }
 }
 
+/** Collect sorted core and active package command paths, retaining native namespace paths and compatibility aliases. */
 function buildContractsCommandCatalog(
   actionDescriptors: ActionContractDescriptor[],
   mergedExtensionContracts: ExtensionCommandContract[],
@@ -2454,6 +2461,7 @@ function buildUnknownCommandError(command: string): PmCliError {
   });
 }
 
+/** Validate a selected command and distinguish namespace, missing package, and unknown command recovery. */
 function assertKnownContractsCommand(
   selection: ContractsSelection,
   commandCatalog: string[],
@@ -2483,6 +2491,7 @@ function assertKnownContractsCommand(
   throw buildUnknownCommandError(selection.selectedCommand);
 }
 
+/** Validate command and action selection together, then derive scoped descriptors and runtime availability. */
 function resolveContractsActionContext(
   selection: ContractsSelection,
   runtime: ContractsRuntimeContext,
@@ -2874,6 +2883,7 @@ function buildCommandExitContractGroups(
   return [...groups.values()];
 }
 
+/** Select provider contracts by semantic operation or action scope, preserving equivalent public command paths. */
 function resolveExtensionCommandContracts(
   selection: ContractsSelection,
   runtime: ContractsRuntimeContext,

@@ -2758,6 +2758,7 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
   return true;
 }
 
+/** Classify failed help requests by semantic operation so optional package recovery and error telemetry retain the attempted command. */
 async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code: string | undefined): Promise<void> {
   const unknownToken = resolvePmCommandOperation(parseBootstrapHelpRequest(context.invocationArgv).commandPathTokens.join(" ")) || resolveUnknownCommanderToken(context.invocationArgv);
   const unknownMessage = `unknown command '${unknownToken}'`;

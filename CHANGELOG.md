@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Other
+
+- Native pm ops normalize, pm ops reindex and pm history events with compatibility aliases ([pm-3i9q8g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3i9q8g.toon))
+- Native pm ops stats, health, validate, gc, telemetry, eval and test-all with compatible root commands ([pm-6apl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-6apl.toon))
+- Native pm context next and pm context focus with permanent navigation aliases ([pm-kcs4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kcs4.toon))
+
+## 2026.9.9 - 2026-09-09
+
 ### Added
 
 - Lifecycle field-completeness contract: each item type declares the fields required at each status transition, machine-checked by pm validate ([pm-htbetn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-htbetn.toon))
@@ -18,12 +26,6 @@
 - GHSA-crvj-82cr-hjcx: Hono: Query parser reads parameters after the URL fragment, causing cache-key and proxy interpretation differentials ([pm-vnv467](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vnv467.toon))
 - GHSA-g6gw-c38x-mqfc: Hono: Unbounded dot-notation nesting in `parseBody()` can cause memory exhaustion ([pm-gxt0mx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gxt0mx.toon))
 - GHSA-gqvv-2mrq-wpjv: Hono: Incomplete fix for CVE-2026-39408: `toSSG()` still writes files outside the output directory ([pm-rc8708](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rc8708.toon))
-
-### Other
-
-- normalize, reindex and events are maintenance and read surfaces with no declared noun, so three agent-facing commands sit outside the grammar the freeze will lock ([pm-3i9q8g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3i9q8g.toon))
-- Group diagnostics/maintenance under pm ops: stats, health, validate, gc, telemetry, eval ([pm-6apl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-6apl.toon))
-- Consolidate the navigation trio under the context noun: next and focus become context verbs (context/next/focus = one noun) ([pm-kcs4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kcs4.toon))
 
 ## 2026.9.8 - 2026-09-08
 

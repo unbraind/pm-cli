@@ -1,23 +1,23 @@
 id: pm-kcs4
-title: "Consolidate the navigation trio under the context noun: next and focus become context verbs (context/next/focus = one noun)"
+title: Native pm context next and pm context focus with permanent navigation aliases
 description: "The pm-n7rr target surface names 'context (next/focus)' as one noun. Today next and focus are separate top-level commands. Fold them as verbs of context (pm context next, pm context focus) while keeping pm next and pm focus working forever as hidden aliases — these are the highest-frequency agent commands, so migration hints must respect the ux.deprecation_hints suppression config from pm-0z7n. pm next actionability semantics (core/item/actionability.ts, PR#357) and pm focus session context (runtime/session.json, PR#257) are unchanged — grammar only. Duplicate check: pm-72xf (closed focus inheritance feature); no open overlap."
 type: Task
 status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",simplification
 created_at: "2026-07-05T05:08:52.089Z"
-updated_at: "2026-09-09T05:29:22.434Z"
-closed_at: "2026-09-09T05:29:21.810Z"
-completed_at: "2026-09-09T05:29:21.810Z"
+updated_at: "2026-09-09T16:51:30.605Z"
+closed_at: "2026-09-09T16:51:29.972Z"
+completed_at: "2026-09-09T16:51:29.972Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "context noun exposes next and focus verbs with payloads identical to the standalone commands; pm next / pm focus keep working as aliases with suppressible hints; spelling-parity spec green; contracts, completions, docs, and MCP names regenerated; top-level help shows a single navigation noun."
 parent: pm-n7rr
 risk: low
 confidence: high
-resolution: Delivered native context next and context focus with permanent compatibility aliases and unchanged SDK semantics.
-expected_result: Native context navigation and legacy aliases preserve payloads and focus persistence with bounded discovery.
-actual_result: All namespace acceptance checks passed; 8639 tests and exact 100/100/100/100 coverage; full static and distribution gates passed.
+resolution: "Native context next and context focus reuse existing SDK behavior with permanent root aliases, complete help/contracts/completion discovery, and explicit namespace help assertions."
+expected_result: "Native and compatibility navigation calls retain selection, focus persistence, flags and machine-readable outputs."
+actual_result: "Full static gates, typecheck, 8639 tests and exact 100/100/100/100 coverage passed; linked acceptance, package behavior and token budget checks passed."
 dependencies[6]:
   - id: pm-0z7n
     kind: blocked_by
@@ -40,12 +40,13 @@ dependencies[6]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-09T04:24:15.265Z","harness:codex","Implementation evidence: native command node placement preserves existing SDK handlers; bootstrap aliases, runtime contracts, capability routing, package availability, positional addressing, and three shell completions share declared mappings. TDD reproduced missing namespace support, then verified native/legacy argv and real isolated tracker reads. Broader quality gates and package acceptance are in progress."
   "2026-09-09T04:42:05.181Z","harness:codex","Verification update: focused native/legacy and help/contract suite exercised 271 cases; 270 passed and one obsolete package-hint expectation was corrected. Native JSON help now retains optional-package installation recovery. GitHub live inventory found no open issues or PRs and no open Dependabot/code-scanning/secret-scanning alerts. Full coverage and static gates must finish before closure."
   "2026-09-09T04:56:37.103Z","harness:codex","Coverage checkpoint: all 8,637 tests passed; exact global coverage reported 99.99 statements, 99.98 branches, 99.98 functions, 99.99 lines. Added behavioral cases for the remaining eight branches, two functions and one line without exclusions or threshold changes; 26 focused tests now pass. Compact summary now suppresses duplicate root aliases only in unscoped summary mode, retaining full and explicit alias contracts; the unchanged completed-task token gate passes."
   "2026-09-09T05:15:20.146Z","harness:codex","Verification: linked sandbox-safe suite passed 42 tests across 8 files. Final typecheck passed across source, SDK type tests, packages, and examples. Compact contracts summary measured 4075 tokens versus the unchanged 4111-token ceiling; composite task measured 12631 versus 12667. Native context defaults and focus persistence passed real temporary-workspace and independent npm/Bun package acceptance."
   "2026-09-09T05:29:21.198Z","harness:codex","Final verification: 8639 tests in 655 files passed; exact coverage 100/100/100/100 with zero uncovered counts (63818 statements, 48528 branches, 13248 functions, 61196 lines). Full static gates and source documentation requirements passed without relaxed thresholds. Linked suites, typecheck, secret scan, native/legacy temporary-workspace acceptance, real package installation, independent npm/Bun SDK consumers, and npx/bunx packed smoke with 13 packages passed. GitHub issue/PR and security alert inventories were clear before opening this delivery PR."
+  "2026-09-09T16:51:27.523Z","harness:codex","Review verification: 8639 tests across 655 files passed, exact coverage 100/100/100/100 with zero uncovered counts (63823 statements, 48528 branches, 13252 functions, 61201 lines). Full static quality, typecheck and the 57-surface token gate passed without relaxed existing ceilings. Each canonical linked namespace suite passed 42 tests; the new token-measurement link passed 12 tests. CodeRabbit accepted the three strengthened test assertions. The latest pm-changelog 2026.9.9 is installed; outcome titles feed package-generated release notes. PR 1225 requires a fresh hosted review on the forthcoming push."
 learnings[1]{created_at,author,text}:
   "2026-09-09T05:19:57.338Z","harness:codex","Keep command spelling normalization separate from SDK operation identity: namespace discovery can change without changing context selection, focus persistence, extension hooks, or MCP actions."
 files[27]{path,scope,note}:
@@ -78,13 +79,24 @@ files[27]{path,scope,note}:
   tests/unit/sdk/contracts-full-projection.spec.ts,project,Namespace discovery compatibility and release verification
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/cli/command-namespaces.spec.ts tests/unit/sdk/cli-contracts tests/integration/context-ops-namespace.integration.spec.ts,project,240,"harness:codex","2026-09-09T04:24:14.680Z",local_mutation,feat/context-ops-command-namespaces
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mttn7b8b-r62xzt
     kind: test
     status: passed
     started_at: "2026-09-09T05:12:46.368Z"
     finished_at: "2026-09-09T05:13:09.274Z"
     recorded_at: "2026-09-09T05:13:09.274Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/command-namespaces.spec.ts tests/unit/sdk/cli-contracts tests/integration/context-ops-namespace.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtubz69r-4doqoh
+    kind: test
+    status: passed
+    started_at: "2026-09-09T16:46:16.728Z"
+    finished_at: "2026-09-09T16:46:39.999Z"
+    recorded_at: "2026-09-09T16:46:39.999Z"
     passed: 1
     failed: 0
     skipped: 0
@@ -99,5 +111,5 @@ docs[8]{path,scope,note}:
   docs/README.md,project,Namespace discovery compatibility and release verification
   packages/pm-governance-audit/README.md,project,Namespace discovery compatibility and release verification
   packages/pm-search-advanced/README.md,project,Namespace discovery compatibility and release verification
-close_reason: Implementation and verification complete; closure and changelog are included in the reviewed delivery.
+close_reason: Implementation and review corrections verified locally; hosted rereview and merge remain separate delivery evidence.
 body: ""

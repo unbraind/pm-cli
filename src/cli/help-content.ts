@@ -580,7 +580,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
   },
   next: {
-    why: "Answers 'what should I work on now?' in one read: the single highest-priority ready item with rationale, plus the ranked ready and blocked queues (project management = context management).",
+    why: "Answers 'what should I work on now?' with the highest-priority ready item, rationale, and ranked ready and blocked queues.",
     examples: [
       "pm next",
       "pm next --json",

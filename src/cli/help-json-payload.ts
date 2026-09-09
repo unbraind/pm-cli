@@ -108,6 +108,7 @@ const EXTENSION_TIER_ORDER = {
   internal: 3,
 } as const;
 
+/** Resolve semantic package metadata, or fold descendant tiers and families for a namespace. */
 function resolveExtensionCommandSurface(
   commandPath: string,
   descriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
@@ -134,6 +135,7 @@ function resolveExtensionCommandSurface(
   };
 }
 
+/** Find a registered command or known positional parent; reject missing namespace leaves instead of returning root help. */
 function resolveCommandFromPathTokens(
   root: Command,
   pathTokens: string[],
@@ -368,6 +370,7 @@ function buildHelpArgumentSummaries(command: Command): HelpArgumentSummary[] {
   });
 }
 
+/** Describe discoverable children with semantic tiers and package metadata, retaining hidden public commands for full discovery. */
 function buildHelpSubcommandSummaries(
   command: Command,
   extensionDescriptors: ReadonlyMap<
@@ -585,6 +588,7 @@ function buildPositionalActionHelpProjection(
   };
 }
 
+/** Build structured help for the requested command path, including canonical metadata, flags, aliases, and examples. */
 function buildJsonHelpPayload(
   rootProgram: Command,
   targetCommand: Command,

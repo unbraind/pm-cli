@@ -25,9 +25,11 @@ const LS_HELP =
   "Usage: pm ls [options] — a deliberately longer help payload for sorting";
 const GET_HELP_STDOUT = "GET HELP VIA STDOUT";
 const ACTION_HELP = "POSITIONAL ACTION HELP";
-const ACTION_COMMAND_NAMES = PM_POSITIONAL_ACTION_CONTRACTS.map(
-  ({ command }) => command,
-);
+const SCOPED_COMMAND_NAMES = [
+  ...PM_POSITIONAL_ACTION_CONTRACTS.map(({ command }) => command),
+  "context next",
+  "ops validate",
+];
 const CONTRACTS = {
   summary_toon: "SUMMARY-TOON",
   summary_json: "SUMMARY-JSON-PAYLOAD",
@@ -60,7 +62,7 @@ function createExecFileSync(overrides: ExecOverrides = {}) {
       throw Object.assign(new Error("exit 2"), { stdout: GET_HELP_STDOUT });
     }
     if (
-      ACTION_COMMAND_NAMES.some(
+      SCOPED_COMMAND_NAMES.some(
         (command) => key === `${command} --help --no-pager`,
       )
     ) {
@@ -138,9 +140,9 @@ function permissiveBaseline(overrides: Record<string, unknown> = {}): string {
         bounded_full: 1_000_000,
       },
       commands: Object.fromEntries(
-        ["ls", "get", ...ACTION_COMMAND_NAMES].map((name) => [name, 1_000_000]),
+        ["ls", "get", ...SCOPED_COMMAND_NAMES].map((name) => [name, 1_000_000]),
       ),
-      required_commands: ["get", "ls", ...ACTION_COMMAND_NAMES].sort(
+      required_commands: ["get", "ls", ...SCOPED_COMMAND_NAMES].sort(
         (left, right) => left.localeCompare(right),
       ),
     },
@@ -236,12 +238,12 @@ describe("measure-agent-token-surface", () => {
     });
     // "help" is filtered, the alias line contributes only its primary name, and
     // the deeper-indented continuation line is skipped without ending the scan.
-    expect(report.command_count).toBe(2 + ACTION_COMMAND_NAMES.length);
+    expect(report.command_count).toBe(2 + SCOPED_COMMAND_NAMES.length);
     expect(report.commands.map((entry) => entry.name)).toEqual(
-      expect.arrayContaining(["ls", "get"]),
+      expect.arrayContaining(["ls", "get", "context next", "ops validate"]),
     );
     expect(report.commands.map((entry) => entry.name)).toEqual(
-      expect.arrayContaining(ACTION_COMMAND_NAMES),
+      expect.arrayContaining(SCOPED_COMMAND_NAMES),
     );
     expect(report.commands.find(({ name }) => name === "get")?.bytes).toBe(
       Buffer.byteLength(GET_HELP_STDOUT),
@@ -249,7 +251,7 @@ describe("measure-agent-token-surface", () => {
     const perCommand =
       Buffer.byteLength(LS_HELP) +
       Buffer.byteLength(GET_HELP_STDOUT) +
-      ACTION_COMMAND_NAMES.length * Buffer.byteLength(ACTION_HELP);
+      SCOPED_COMMAND_NAMES.length * Buffer.byteLength(ACTION_HELP);
     expect(report.per_command_total.bytes).toBe(perCommand);
     expect(report.full_help_surface).toEqual({
       bytes: rootBytes + perCommand,
@@ -322,7 +324,7 @@ describe("measure-agent-token-surface", () => {
       1,
     );
     expect(coreBaseline.surfaces.required_commands).toEqual(
-      ["get", "list", ...ACTION_COMMAND_NAMES].sort((left, right) =>
+      ["get", "list", ...SCOPED_COMMAND_NAMES].sort((left, right) =>
         left.localeCompare(right),
       ),
     );
@@ -373,7 +375,7 @@ describe("measure-agent-token-surface", () => {
       report,
       incompleteBaseline,
     );
-    expect(incompleteViolations).toHaveLength(6 + ACTION_COMMAND_NAMES.length);
+    expect(incompleteViolations).toHaveLength(6 + SCOPED_COMMAND_NAMES.length);
     expect(incompleteViolations).toEqual(
       expect.arrayContaining([
         "contracts.summary_toon: missing baseline",
@@ -385,7 +387,7 @@ describe("measure-agent-token-surface", () => {
       surfaces: undefined,
     } as unknown as TokenSurfaceBaseline);
     expect(missingSurfaceViolations).toHaveLength(
-      10 + ACTION_COMMAND_NAMES.length,
+      10 + SCOPED_COMMAND_NAMES.length,
     );
     expect(missingSurfaceViolations).toContain(
       "commands.get: missing baseline",
@@ -449,7 +451,7 @@ describe("measure-agent-token-surface", () => {
         "utf8",
       );
       expect(stdoutWrite).toHaveBeenCalledWith(
-        `Agent token-surface gate passed (${11 + ACTION_COMMAND_NAMES.length} surfaces).\n`,
+        `Agent token-surface gate passed (${11 + SCOPED_COMMAND_NAMES.length} surfaces).\n`,
       );
     } finally {
       stdoutWrite.mockRestore();
