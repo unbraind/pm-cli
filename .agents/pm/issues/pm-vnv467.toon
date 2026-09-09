@@ -1,0 +1,61 @@
+id: pm-vnv467
+title: "GHSA-crvj-82cr-hjcx: Hono: Query parser reads parameters after the URL fragment, causing cache-key and proxy interpretation differentials"
+description: "### Summary\n\nHono's query parsing does not stop at the URL fragment: a `?` appearing after a `#` is treated as the start of a query string. As a result, the application can read request parameters that no other component involved in handling the request can see.\n\n### Details\n\nA fragment is never part of the query, and every standard URL consumer — browsers, `new URL()`, reverse proxies — ignores everything from the first `#` onward. Hono's routing followed that rule; its query helpers did not.\n\nFor one and the same request, this produces an interpretation differential:\n\n- A component in front of the application that inspects the query string — filtering rules, parameter allow/deny lists, access logging — observes no parameters, while the application reads and acts on them.\n- The cache middleware removed the fragment when building its cache key, so a response influenced by parameters carried inside the fragment could be stored under a key that did not reflect them and later returned to other users.\n\nThe same divergence reaches request validation and any middleware that reads query parameters.\n\nThis requires a request target containing a literal `#` to reach the application. Deployments on runtimes that normalise such a target — including Cloudflare Workers — are not affected, and neither are those behind an intermediary that strips the fragment.\n\n### Impact\n\nAn attacker can cause the application to act on parameters that components in front of it never observe.\n\nThis may lead to:\n\n- filtering rules, allow/deny lists, and audit logging being blind to parameters the application still processes\n- a cached response being stored under a key that does not reflect the parameters used to produce it, and served to other users\n- stored cross-site scripting, where such a parameter is reflected into a cached HTML response without escaping\n\nThis issue affects applications that read query parameters and run on a runtime that passes a literal `#` through to the request URL.\n\nSource: https://github.com/advisories/GHSA-crvj-82cr-hjcx\nObserved by pnpm audit on the transitive development graph @modelcontextprotocol/ext-apps -> @modelcontextprotocol/sdk -> hono 4.13.4. The upstream patched floor is 4.13.5; maintained 4.13.7 supports Node >=16.9 and predates the release-age window. No direct pm source import of Hono, toSSG, or parseBody was found; this is dependency remediation, not a claim of a demonstrated pm exploit."
+type: Issue
+status: closed
+priority: 1
+tags[4]: dependencies,dev-dependency,mcp,security
+created_at: "2026-09-09T00:11:40.512Z"
+updated_at: "2026-09-09T00:22:26.763Z"
+closed_at: "2026-09-09T00:22:26.115Z"
+completed_at: "2026-09-09T00:22:26.115Z"
+author: "harness:codex"
+acceptance_criteria: The shared override excludes vulnerable Hono versions; the lockfile resolves patched Hono; audit reports zero advisories; frozen installation and MCP consumers pass.
+parent: pm-abvpgh
+reporter: npm audit and GitHub Advisory Database
+severity: medium
+environment: pnpm workspace dependency graph on PR 1224
+repro_steps: Run pnpm audit --json on the pre-override lockfile and observe GHSA-crvj-82cr-hjcx.
+resolution: "Enforced Hono >=4.13.5 <5.0.0 and regenerated the lockfile at 4.13.7, removing the three reported Hono advisories while retaining runtime support and release-age policy."
+expected_result: "The vulnerable Hono versions are excluded; dependency audit is clean, frozen installation is reproducible and MCP consumers and repository verification pass."
+actual_result: "Patched graph verification: all 8623 tests in 653 files pass at exact 100/100/100/100 coverage with zero uncovered counts: 63729 statements, 48461 branches, 13216 functions and 61134 lines. All four TypeScript projects and every linked audit, frozen-install and real MCP workflow/HTTP/Apps/transport check pass. pnpm audit reports zero advisories and pnpm why resolves only Hono 4.13.7. Documentation, structural/docstring, graph-composition and record-integrity gates pass. Final pushed-head hosted checks, full platform matrix, preflight and full review govern merge."
+affected_version: hono@4.13.4
+fixed_version: hono@4.13.7
+component: MCP Apps transitive development dependency graph
+customer_impact: A known moderate upstream vulnerability remains in the dependency graph until the patched Hono resolution is enforced.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6ixn,implements,"2026-09-09T00:11:40.512Z","harness:codex","cli:create:dep",detected
+  pm-mlpn91,discovered_from,"2026-09-09T00:11:40.512Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-09T00:11:40.512Z","harness:codex","Duplicate check: live full all-status inventory contains 2723 items with complete metadata and no omissions; exact Hono/GHSA literal inspection found no matching item. Targeted keyword/advisory searches and open/in-progress inventories were inspected. The existing qs remediation pm-mlpn91 governs the dependency-floor pattern but is not a duplicate of these newly published Hono findings."
+  "2026-09-09T00:14:22.864Z","harness:codex","Red/green dependency evidence: the final pre-patch npm audit returned three moderate Hono advisories on 4.13.4, published at 2026-09-08 21:22-21:23 UTC. A shared >=4.13.5 <5.0.0 override now resolves every Hono edge to 4.13.7. The maintained patch was published September 4 and supports Node >=16.9; no release-age exception or runtime-floor change is used. All linked audit and frozen-install commands pass, and real MCP workflow, streamable HTTP, Apps and transport checks pass. Fresh pnpm audit reports zero advisories across 436 dependencies. Full coverage and typecheck are running before reviewed closure."
+  "2026-09-09T00:22:25.152Z","harness:codex","Patched graph verification: all 8623 tests in 653 files pass at exact 100/100/100/100 coverage with zero uncovered counts: 63729 statements, 48461 branches, 13216 functions and 61134 lines. All four TypeScript projects and every linked audit, frozen-install and real MCP workflow/HTTP/Apps/transport check pass. pnpm audit reports zero advisories and pnpm why resolves only Hono 4.13.7. Documentation, structural/docstring, graph-composition and record-integrity gates pass. Final pushed-head hosted checks, full platform matrix, preflight and full review govern merge."
+files[2]{path,scope,note}:
+  pnpm-lock.yaml,project,Resolve all Hono edges to the maintained compatible patch
+  pnpm-workspace.yaml,project,Enforce the patched Hono 4.x security floor
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  pnpm audit --audit-level low,project,240,"harness:codex","2026-09-09T00:12:22.921Z",local_mutation,feat/declarative-workflow-policies
+test_runs[1]:
+  - run_id: test-local-mttchbpn-6c5t52
+    kind: test
+    status: passed
+    started_at: "2026-09-09T00:12:59.524Z"
+    finished_at: "2026-09-09T00:13:00.683Z"
+    recorded_at: "2026-09-09T00:13:00.683Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm audit --audit-level low,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated security remediation entry
+close_reason: Patched the Hono dependency graph and verified scanner and consumer acceptance.
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: transitive-hono-security-floor
+  negative_control: "Before the override, pnpm audit --json returned GHSA-crvj-82cr-hjcx on hono 4.13.4."
+  local_checks[3]: pnpm audit --audit-level low,pnpm install --frozen-lockfile,node scripts/run-tests.mjs test -- tests/integration/workflow-policy-mcp.spec.ts
+  hosted_checks[3]: Security and Script Quality,CI / Gates (coverage),Nightly
+  owner: pm-abvpgh
+body: ""

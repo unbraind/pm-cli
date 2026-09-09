@@ -1,0 +1,77 @@
+id: pm-abvpgh
+title: Patch transitive Hono advisories in the MCP Apps dependency graph
+description: "Remediate three individually tracked Hono advisories newly returned by the final registry audit. Keep the supported Node floor and release-age policy, update the shared Hono 4.x dependency floor, and verify the real MCP consumers and release gates."
+type: Task
+status: closed
+priority: 1
+tags[4]: changelog-exclude,dependencies,mcp,security
+created_at: "2026-09-09T00:11:32.913Z"
+updated_at: "2026-09-09T00:24:02.745Z"
+closed_at: "2026-09-09T00:24:02.110Z"
+completed_at: "2026-09-09T00:24:02.110Z"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: Each advisory has an individually triageable child with source and severity; all Hono resolutions are patched; audit and frozen install pass; MCP and full release verification pass.
+parent: pm-qwoy
+resolution: "Enforced Hono >=4.13.5 <5.0.0 and regenerated the lockfile at 4.13.7, removing the three reported Hono advisories while retaining runtime support and release-age policy."
+expected_result: "The vulnerable Hono versions are excluded; dependency audit is clean, frozen installation is reproducible and MCP consumers and repository verification pass."
+actual_result: "Patched graph verification: all 8623 tests in 653 files pass at exact 100/100/100/100 coverage with zero uncovered counts: 63729 statements, 48461 branches, 13216 functions and 61134 lines. All four TypeScript projects and every linked audit, frozen-install and real MCP workflow/HTTP/Apps/transport check pass. pnpm audit reports zero advisories and pnpm why resolves only Hono 4.13.7. Documentation, structural/docstring, graph-composition and record-integrity gates pass. Final pushed-head hosted checks, full platform matrix, preflight and full review govern merge."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6ixn,implements,"2026-09-09T00:11:32.913Z","harness:codex","cli:create:dep",detected
+  pm-mlpn91,discovered_from,"2026-09-09T00:11:32.913Z","harness:codex","cli:create:dep",detected
+  pm-gxt0mx,blocked_by,"2026-09-09T00:14:15.414Z","harness:codex","cli:update:dep",detected
+  pm-rc8708,blocked_by,"2026-09-09T00:14:15.414Z","harness:codex","cli:update:dep",detected
+  pm-vnv467,blocked_by,"2026-09-09T00:14:15.414Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-09T00:11:32.913Z","harness:codex","Duplicate check: live full all-status inventory contains 2723 items with complete metadata and no omissions; exact Hono/GHSA literal inspection found no matching item. Targeted keyword/advisory searches and open/in-progress inventories were inspected. The existing qs remediation pm-mlpn91 governs the dependency-floor pattern but is not a duplicate of these newly published Hono findings."
+  "2026-09-09T00:14:18.016Z","harness:codex","Red/green dependency evidence: the final pre-patch npm audit returned three moderate Hono advisories on 4.13.4, published at 2026-09-08 21:22-21:23 UTC. A shared >=4.13.5 <5.0.0 override now resolves every Hono edge to 4.13.7. The maintained patch was published September 4 and supports Node >=16.9; no release-age exception or runtime-floor change is used. All linked audit and frozen-install commands pass, and real MCP workflow, streamable HTTP, Apps and transport checks pass. Fresh pnpm audit reports zero advisories across 436 dependencies. Full coverage and typecheck are running before reviewed closure."
+  "2026-09-09T00:22:27.446Z","harness:codex","Patched graph verification: all 8623 tests in 653 files pass at exact 100/100/100/100 coverage with zero uncovered counts: 63729 statements, 48461 branches, 13216 functions and 61134 lines. All four TypeScript projects and every linked audit, frozen-install and real MCP workflow/HTTP/Apps/transport check pass. pnpm audit reports zero advisories and pnpm why resolves only Hono 4.13.7. Documentation, structural/docstring, graph-composition and record-integrity gates pass. Final pushed-head hosted checks, full platform matrix, preflight and full review govern merge."
+  "2026-09-09T00:23:59.930Z","harness:codex","The terminal defect gate also classifies the security coordination task, independent of its Task type. Added scanner_finding and the same executable Hono floor evidence to the batch; no dependency or source behavior changed. Child findings retain their individual classifications and immutable close evidence."
+files[2]{path,scope,note}:
+  pnpm-lock.yaml,project,Resolve all Hono edges to the maintained compatible patch
+  pnpm-workspace.yaml,project,Enforce the patched Hono 4.x security floor
+tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  pnpm audit --audit-level low,project,240,"harness:codex","2026-09-09T00:12:14.313Z",local_mutation,feat/declarative-workflow-policies
+  node scripts/run-tests.mjs test -- tests/integration/workflow-policy-mcp.spec.ts,project,240,"harness:codex","2026-09-09T00:12:15.064Z",local_mutation,feat/declarative-workflow-policies
+  pnpm install --frozen-lockfile,project,240,"harness:codex","2026-09-09T00:12:15.826Z",local_mutation,feat/declarative-workflow-policies
+  node scripts/run-tests.mjs test -- tests/integration/mcp-streamable-http.spec.ts tests/unit/sdk/mcp/apps.spec.ts tests/unit/sdk/mcp/transport.spec.ts,project,240,"harness:codex","2026-09-09T00:13:09.198Z",local_mutation,feat/declarative-workflow-policies
+test_runs[2]:
+  - run_id: test-local-mttch7t4-2za0l0
+    kind: test
+    status: passed
+    started_at: "2026-09-09T00:12:40.929Z"
+    finished_at: "2026-09-09T00:12:55.623Z"
+    recorded_at: "2026-09-09T00:12:55.623Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm audit --audit-level low,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/workflow-policy-mcp.spec.ts,schema,schema,source,local_source_ref
+      pnpm install --frozen-lockfile,schema,schema,source,local_source_ref
+  - run_id: test-local-mttci4sb-8bg3k6
+    kind: test
+    status: passed
+    started_at: "2026-09-09T00:13:09.791Z"
+    finished_at: "2026-09-09T00:13:38.363Z"
+    recorded_at: "2026-09-09T00:13:38.363Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm audit --audit-level low,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/workflow-policy-mcp.spec.ts,schema,schema,source,local_source_ref
+      pnpm install --frozen-lockfile,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/mcp-streamable-http.spec.ts tests/unit/sdk/mcp/apps.spec.ts tests/unit/sdk/mcp/transport.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated security remediation entry
+close_reason: Patched the Hono dependency graph and verified scanner and consumer acceptance.
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: transitive-hono-security-floor
+  negative_control: "pnpm audit --json before the override reported GHSA-gqvv-2mrq-wpjv, GHSA-g6gw-c38x-mqfc and GHSA-crvj-82cr-hjcx on Hono 4.13.4."
+  local_checks[4]: pnpm audit --audit-level low,pnpm install --frozen-lockfile,node scripts/run-tests.mjs coverage,node scripts/run-tests.mjs test -- tests/integration/mcp-streamable-http.spec.ts tests/unit/sdk/mcp/apps.spec.ts tests/unit/sdk/mcp/transport.spec.ts
+  hosted_checks[3]: Security and Script Quality,CI / Gates (coverage),Nightly
+  owner: pm-abvpgh
+body: ""

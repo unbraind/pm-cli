@@ -13,6 +13,12 @@
 - Preserve dependency kind constraints in rendered enum errors ([pm-lk0qhn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lk0qhn.toon))
 - pm search defaults to keyword on a workspace whose vector index is complete, so the shipped Ollama semantic default never reaches the default query path ([pm-n8a6e7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-n8a6e7.toon))
 
+### Security
+
+- GHSA-crvj-82cr-hjcx: Hono: Query parser reads parameters after the URL fragment, causing cache-key and proxy interpretation differentials ([pm-vnv467](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vnv467.toon))
+- GHSA-g6gw-c38x-mqfc: Hono: Unbounded dot-notation nesting in `parseBody()` can cause memory exhaustion ([pm-gxt0mx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gxt0mx.toon))
+- GHSA-gqvv-2mrq-wpjv: Hono: Incomplete fix for CVE-2026-39408: `toSSG()` still writes files outside the output directory ([pm-rc8708](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rc8708.toon))
+
 ## 2026.9.8 - 2026-09-08
 
 ### Added
