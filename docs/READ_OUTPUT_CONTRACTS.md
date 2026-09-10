@@ -157,6 +157,10 @@ The estimate is `ceil(utf8_bytes / 4)` for the complete envelope. The CLI uses
 its selected built-in JSON or TOON representation, including indentation and
 the final newline. SDK calls that select `outputFormat` use that representation;
 structured SDK calls without a renderer retain compact JSON measurement.
+Those unformatted calls keep the conservative workload-class ceiling
+(`default_max_estimated_tokens`, also used as the generated TOON ceiling).
+Selecting JSON explicitly opts into its larger declared rendering allowance;
+serializing an SDK object for measurement does not implicitly select that policy.
 Per-call and session receipts include their own cost and continuation disclosure.
 Compaction reserves room for that disclosure before returning a useful page, so
 an envelope cannot claim to fit merely because its rows fit before receipts were

@@ -863,6 +863,7 @@ function collectCommandInvocationOptions(command: Command): Record<string, unkno
   return allOptions;
 }
 
+/** Separate handler options from global controls, then validate and coerce contributed flags against the command's declared schema. */
 function extractCommandScopedOptions(command: Command, commandArgs: string[], extensionFlagDefinitions: LooseCommandFlagDefinition[] = []): Record<string, unknown> {
   const allOptions = collectCommandInvocationOptions(command);
   const scoped: Record<string, unknown> = { ...allOptions };
@@ -915,6 +916,7 @@ function extractCommandScopedOptions(command: Command, commandArgs: string[], ex
 }
 /* c8 ignore stop */
 
+/** Join contributed flags by stable operation identity so canonical and compatibility command paths share the same schema. */
 function collectExtensionFlagDefinitionsForCommand(registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry>, commandPath: string): FlagDefinition[] {
   const normalizedCommandPath = normalizeExtensionCommandPath(commandPath);
   if (normalizedCommandPath.length === 0) {
@@ -1409,6 +1411,7 @@ function extensionNeedsActivationForProbe(extension: ExtensionDiscoveryResult["e
   return false;
 }
 
+/** Decide whether installed providers must activate for a targeted invocation or complete command discovery. */
 function discoveryNeedsActivationForProbe(discovery: ExtensionDiscoveryResult, probe: RuntimeExtensionActivationProbe): boolean {
   if (discovery.effective.length === 0) {
     return false;
@@ -1428,6 +1431,7 @@ function discoveryNeedsActivationForProbe(discovery: ExtensionDiscoveryResult, p
   return discovery.effective.some((extension) => extensionNeedsActivationForProbe(extension, probe));
 }
 
+/** Build a deterministic activation scope; completion and unconstrained discovery include every installed command provider. */
 function buildRuntimeExtensionActivationScope(probe: RuntimeExtensionActivationProbe): string {
   // Completion discovers every installed command, including commands owned by
   // packages other than the package providing the completion renderer.

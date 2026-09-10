@@ -82,7 +82,7 @@ export function resolveReadOutputRecoveryBudget(
   };
 }
 
-/** Estimate the conservative token cost of a JSON-shaped result. */
+/** Estimate UTF-8 token cost using the selected JSON/TOON renderer, or compact JSON for structured SDK calls without a renderer. */
 export function estimateReadOutputTokens(result: unknown, format?: "json" | "toon"): number {
   const rendered = format === undefined ? JSON.stringify(result) : formatBuiltInOutput(result, format);
   return Math.ceil(Buffer.byteLength(rendered, "utf8") / 4);

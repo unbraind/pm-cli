@@ -155,6 +155,7 @@ const reindexFlags = [
   },
 ] as const;
 
+/** Declare the required query tokens for the search facet while preserving the package's stable dispatch action. */
 function searchAdvancedCommand(): CommandDefinition {
   return {
     name: "search advanced",

@@ -206,6 +206,7 @@ export function listPmRequiredArgumentRefusalContracts(
     .sort((left, right) => left.probe_id.localeCompare(right.probe_id));
 }
 
+/** Resolve authoritative action choices through namespace aliases and reject grammar families without a declared value domain. */
 function positionalActionValues(command: string): readonly string[] {
   switch (resolvePmCommandOperation(command)) {
     case "assurance":

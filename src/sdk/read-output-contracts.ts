@@ -1860,6 +1860,7 @@ function captureReadOutputContinuationState(
   };
 }
 
+/** Recompact the rendered envelope after attaching disclosure, cursor, and session metadata while retaining nonpassing assurance rows. */
 function compactReadOutputProjection(
   projected: Record<string, unknown>,
   resolved: PmResolvedReadOutputDimensions,
