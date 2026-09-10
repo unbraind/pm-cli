@@ -2,19 +2,23 @@ id: pm-ik19
 title: "Fold bulk and destructive lifecycle variants into their base nouns: update-many into update, close-many into close, delete/restore placement per ADR"
 description: "update-many and close-many duplicate their base commands as separate top-level entries; delete and restore float top-level. The pm-n7rr target surface maps update (update-many) and close (close-many/delete/restore). NOTE a mapping conflict recorded on ADR pm-pbyu: pm-tqel's history cluster also claims restore (under pm history) — the accepted ADR fixes the single placement and this task implements it. All old spellings remain as hidden aliases via the pm-0z7n shim. Zero feature loss, including update-many dry-run parity (PR#257) and close-many shared-reason/validate-close semantics (pm-i17g). Duplicate check: pm-i17g/pm-wbak/pm-j2ig are closed feature history for the bulk commands themselves; no open consolidation overlap."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli","area:lifecycle",simplification
 created_at: "2026-07-05T05:08:46.683Z"
-updated_at: "2026-09-08T13:32:54.483Z"
+updated_at: "2026-09-10T00:06:42.315Z"
+closed_at: "2026-09-10T00:06:42.173Z"
+completed_at: "2026-09-10T00:06:42.173Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "update-many and close-many are reachable as facets of update/close with identical semantics including dry-run parity and validate-close; delete and restore live under exactly one noun per the accepted ADR; old spellings alias-dispatch with hints; spelling-parity spec green; contracts, completions, docs, and MCP names regenerated."
 parent: pm-n7rr
 risk: medium
 confidence: medium
-expected_result: "update-many and close-many are facets of update and close, delete and restore have one home, and old spellings alias-dispatch with hints."
-dependencies[6]:
+resolution: "Canonical update many, close many and close delete share SDK behavior and contracts while preserving hidden aliases and legacy-specific completion flags."
+expected_result: "Canonical and legacy invocations preserve dry-run, rollback, addressing, closure validation, history restore and discovery semantics."
+actual_result: "8656 tests passed with exact 100/100/100/100 coverage; full static and grammar gates, both linked checks, npm/Bun acceptance and executable Bash regression passed."
+dependencies[8]:
   - id: pm-0z7n
     kind: blocked_by
     created_at: "2026-07-05T05:08:46.683Z"
@@ -39,6 +43,94 @@ dependencies[6]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[1]{created_at,author,text}:
+  - id: pm-7p4w
+    kind: verifies
+    created_at: "2026-09-09T22:08:16.596Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-i17g
+    kind: verifies
+    created_at: "2026-09-09T22:08:16.596Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[11]{created_at,author,text}:
   "2026-07-06T21:57:53.338Z",maintainer-agent,"Audit #15 scope note: test-all is also a bulk variant of a base noun and belongs in this fold (pm test --all, mirroring update-many->update --many). Include it in the mapping + alias shim so no bulk spelling stays top-level."
+  "2026-09-09T21:40:15.686Z","harness:codex","Selection evidence 2026-09-09: strict all-status CLI read returned all 2728 items with complete status, no omissions, no truncation, and no unreadable items. Reusing pm-ik19 and pm-eq4x, with accepted grammar and alias lineage pm-pbyu, pm-0z7n and pm-hb7ug8. GitHub CLI inventory found zero open PRs, issues, Dependabot alerts, code-scanning alerts and secret-scanning alerts. Existing history restore and ops test-all placements will be verified as part of lifecycle parity."
+  "2026-09-09T21:58:48.339Z","harness:codex","Implementation evidence: canonical paths are update many, close many and close delete. Existing history restore and ops test-all placements retain accepted ADR ownership. SDK alias metadata drives native operation resolution, flags, capability routing and completions. Sandbox regression verifies native/legacy dry-run equality followed by actual update, close, delete, restore and strict history verification."
+  "2026-09-09T22:09:57.410Z","harness:codex","Graph evidence: native close many regression reuses the existing rollback suite from pm-7p4w and verifies the per-item close contract introduced by pm-i17g. Added verifies edges preserve their historical completion and make the delivered behavior discoverable from the current grammar implementation. Capability routing now advertises canonical history paths while hiding compatibility aliases."
+  "2026-09-09T22:19:41.169Z","harness:codex","Verification evidence: packaged CLI installed and passed isolated create, claim --start, release --pause, update many, close --release-assignment, close delete dry-run and strict history verification with npm and Bun. Docs/skills full gate and unchanged flag/help-token budget gate now pass. Full-suite run exposed stale test expectations and concurrent-build imports; those are being resolved before a stable full coverage rerun."
+  "2026-09-09T22:45:52.553Z","harness:codex","Verification update: both linked test commands passed. Live grammar census, positional signatures, flag invocation parity, flag/help budgets, recovery replay, MCP deprecations, graph-composition and record-integrity assurances passed. The latest GitHub inventory remains empty for PRs, issues, Dependabot, code scanning and secret scanning. Final exact coverage and quiet import-cost verification are pending before reviewed closure."
+  "2026-09-09T23:01:35.068Z","harness:codex","Final local verification: the full 657-file, 8656-test suite passed with exact 100/100/100/100 all-source coverage and zero uncovered counts. Native/legacy bulk parity, actual mutation and restore, rollback checkpoints, named item ids, four-shell completion routing, contracts and the independent hidden-alias grammar census passed. All linked tests, docs/static/type checks, package consumers and unchanged discovery/performance budgets passed. Implementation is ready for reviewed delivery; hosted review and merge remain pending."
+  "2026-09-09T23:02:54.166Z","harness:codex","Reviewed closeout evidence: pm close --release-assignment closed and released both lifecycle items with resolution/expected/actual fields in the immutable close events. Live history verification passed 38 and 36 events respectively; the complete in-progress list is empty. Latest managed pm-changelog 2026.9.9 generated exactly the two new lifecycle entries under Unreleased, preserving older sections; immediate --check returned unchanged."
+  "2026-09-09T23:34:09.566Z","harness:codex","PR https://github.com/unbraind/pm-cli/pull/1227 CodeRabbit finding 3973926748 is confirmed: Bash shares canonical close flags with close-task, advertising unsupported --release-assignment. Reopened for the fix and executable regression. Finding 3973926722 is false: positional contracts already resolve close delete to the existing delete ITEM_ID signature; live contracts and strict grammar gate agree. Both findings have reactions and direct inline replies, and the false thread is resolved."
+  "2026-09-09T23:40:32.251Z","harness:codex","PR 1227 CodeRabbit completion finding reproduced with an executed Bash regression, then fixed by resolving close-task flags independently from canonical close. Bash and SDK focused tests pass. The separate positional close delete finding was rejected with live contract evidence and an inline reply; no redundant grammar entry was added. Added meaningful documentation to touched internal adapters and schema resolvers."
+  "2026-09-10T00:06:40.661Z","harness:codex","Final review-fix verification: Bash completion regression passes with close-task contract-specific flags, while canonical close still offers release-assignment. All 8656 tests across 657 files and exact 100/100/100/100 all-source coverage passed; all static, grammar, flag, recovery, documentation and unchanged performance gates passed. Both linked test commands passed again. The valid review finding is fixed; the false positional signature finding was explained and resolved on its original thread. PR 1227 awaits new-head hosted verification."
+notes[1]{created_at,author,text}:
+  "2026-09-09T22:43:38.132Z","harness:codex","Accepted placement: update many, close many and close delete are the canonical executable leaves; history restore and ops test-all retain the previously delivered ADR destinations. Shared alias metadata drives canonical operation identity, item addressing, bootstrap flags, completions, contracts and capabilities. Bulk aliases remain permanent and hidden; task aliases are deprecated. No gate budget or coverage threshold was relaxed."
+learnings[1]{created_at,author,text}:
+  "2026-09-09T22:38:30.051Z","harness:codex","When moving executable leaves under parent verbs, normalize namespace-aware item addressing and bootstrap option ownership together with registration. Completion predicates must distinguish the parent mutation from its bulk child across every supported shell."
+files[23]{path,scope,note}:
+  src/cli/command-namespaces.ts,project,Lifecycle canonical command implementation and verification
+  src/cli/help-content.ts,project,Lifecycle canonical command implementation and verification
+  src/cli/main.ts,project,Lifecycle canonical command implementation and verification
+  src/sdk/agent-capability-contracts.ts,project,Lifecycle canonical command implementation and verification
+  src/sdk/agent/item-addressing.ts,project,Preserve named item ids across lifecycle namespaces
+  src/sdk/cli-bootstrap.ts,project,Normalize canonical leaf flags with the correct operation contract
+  src/sdk/cli-contracts.ts,project,Lifecycle canonical command implementation and verification
+  src/sdk/cli-contracts/command-aliases.ts,project,Lifecycle canonical command implementation and verification
+  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project,Lifecycle canonical command implementation and verification
+  src/sdk/cli-contracts/grammar-contracts.ts,project,Lifecycle canonical command implementation and verification
+  src/sdk/completion.ts,project,Lifecycle canonical command implementation and verification
+  src/sdk/index.ts,project,Lifecycle canonical command implementation and verification
+  tests/fixtures/contracts/full.json,project,Contract and lifecycle regression evidence
+  tests/integration/close-many-rollback.integration.spec.ts,project,Contract and lifecycle regression evidence
+  tests/integration/lifecycle-bulk-namespace.integration.spec.ts,project,Lifecycle canonical command implementation and verification
+  tests/integration/release-readiness-runtime.spec.ts,project,Canonical lifecycle contract and regression evidence
+  tests/unit/cli/command-namespaces.spec.ts,project,Contract and lifecycle regression evidence
+  tests/unit/commands/completion-command.spec.ts,project,Contract and lifecycle regression evidence
+  tests/unit/commands/contracts-command.spec.ts,project,Canonical lifecycle contract and regression evidence
+  tests/unit/scripts/refusal-closure-gate.spec.ts,project,Canonical lifecycle contract and regression evidence
+  tests/unit/sdk/agent/agent-capability-contracts.spec.ts,project,Canonical lifecycle contract and regression evidence
+  tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,Contract and lifecycle regression evidence
+  tests/unit/sdk/contracts-full-projection.spec.ts,project,Canonical lifecycle contract and regression evidence
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/lifecycle-bulk-namespace.integration.spec.ts,project,300,"harness:codex","2026-09-09T21:42:43.705Z",local_mutation,feat/lifecycle-bulk-and-ownership
+  node scripts/run-tests.mjs test -- tests/integration/close-many-rollback.integration.spec.ts tests/unit/cli/command-namespaces.spec.ts,project,300,"harness:codex","2026-09-09T22:04:51.170Z",local_mutation,feat/lifecycle-bulk-and-ownership
+test_runs[2]:
+  - run_id: test-local-mtuopjb3-c2kuxv
+    kind: test
+    status: passed
+    started_at: "2026-09-09T22:42:46.353Z"
+    finished_at: "2026-09-09T22:43:05.343Z"
+    recorded_at: "2026-09-09T22:43:05.343Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/lifecycle-bulk-namespace.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/close-many-rollback.integration.spec.ts tests/unit/cli/command-namespaces.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mturn5g5-rc3cfa
+    kind: test
+    status: passed
+    started_at: "2026-09-10T00:04:49.805Z"
+    finished_at: "2026-09-10T00:05:12.917Z"
+    recorded_at: "2026-09-10T00:05:12.917Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/lifecycle-bulk-namespace.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/close-many-rollback.integration.spec.ts tests/unit/cli/command-namespaces.spec.ts,schema,schema,source,local_source_ref
+docs[8]{path,scope,note}:
+  CHANGELOG.md,project,Latest managed pm-changelog generates both lifecycle entries with immutable historical release attribution
+  docs/COMMANDS.md,project,Canonical lifecycle contract and regression evidence
+  docs/generated/AGENT_CAPABILITY_ROUTING.md,project,Generated canonical capability routing
+  docs/generated/AGENT_COMMAND_SURFACE.md,project,Generated namespace visibility inventory
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project,Canonical lifecycle contract and regression evidence
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Canonical lifecycle contract and regression evidence
+  docs/LIFECYCLE_COMMANDS.md,project,Canonical lifecycle migration and SDK composition semantics
+  docs/README.md,project,Discoverable lifecycle documentation
+close_reason: Implemented and verified canonical bulk lifecycle grammar with alias and completion parity.
 body: ""

@@ -21,6 +21,13 @@ import {
 const invalidateSearchCachesForMutation = vi.hoisted(() =>
   vi.fn(async () => {}),
 );
+const lifecyclePrimitives = vi.hoisted(() => ({
+  runClaim: vi.fn(),
+  runClaimNext: vi.fn(),
+  runRelease: vi.fn(),
+  runUpdate: vi.fn(),
+  runClose: vi.fn(),
+}));
 
 vi.mock("../../../src/cli/registration-helpers.js", async (importOriginal) => {
   const actual =
@@ -75,11 +82,7 @@ vi.mock("../../../src/cli/commands/merge.js", () => ({
 vi.mock("../../../src/cli/commands/contracts.js", () => ({
   runContracts: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/claim.js", () => ({
-  runClaim: vi.fn(),
-  runClaimNext: vi.fn(),
-  runRelease: vi.fn(),
-}));
+vi.mock("../../../src/cli/commands/claim.js", () => lifecyclePrimitives);
 vi.mock("../../../src/cli/commands/create.js", () => ({ runCreate: vi.fn() }));
 vi.mock("../../../src/cli/commands/copy.js", () => ({ runCopy: vi.fn() }));
 vi.mock("../../../src/cli/commands/focus.js", () => ({ runFocus: vi.fn() }));
@@ -88,11 +91,16 @@ vi.mock("../../../src/cli/commands/scheduling-shortcuts.js", () => ({
   runEvent: vi.fn(),
   runRemind: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/update.js", () => ({ runUpdate: vi.fn() }));
+vi.mock("../../../src/cli/commands/update.js", () => lifecyclePrimitives);
 vi.mock("../../../src/cli/commands/update-many.js", () => ({
   runUpdateMany: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/close.js", () => ({ runClose: vi.fn() }));
+vi.mock("../../../src/cli/commands/close.js", () => lifecyclePrimitives);
+// Lifecycle composition now lives in the SDK; share the primitive spies so
+// registration tests continue checking normalized options and operation order.
+vi.mock("../../../src/sdk/lifecycle/claim.js", () => lifecyclePrimitives);
+vi.mock("../../../src/sdk/lifecycle/update.js", () => lifecyclePrimitives);
+vi.mock("../../../src/sdk/lifecycle/close.js", () => lifecyclePrimitives);
 vi.mock("../../../src/cli/commands/close-many.js", () => ({
   runCloseMany: vi.fn(),
 }));

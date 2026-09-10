@@ -39,19 +39,27 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `events` | standard | evidence |
 | `history events` | standard | evidence |
 | `history-redact` | full | evidence |
+| `history redact` | full | evidence |
 | `history-repair` | full | evidence |
+| `history repair` | full | evidence |
 | `history-compact` | full | evidence |
+| `history compact` | full | evidence |
 | `history-author-acknowledge` | full | evidence |
 | `merge` | full | workspace |
 | `schema` | standard | workspace |
 | `profile` | standard | workspace |
 | `activity` | full | context |
+| `history activity` | full | context |
 | `restore` | full | intake |
+| `history restore` | full | intake |
 | `update` | core | lifecycle |
 | `update-many` | full | lifecycle |
+| `update many` | full | lifecycle |
 | `close` | core | lifecycle |
 | `close-many` | full | lifecycle |
+| `close many` | full | lifecycle |
 | `delete` | full | lifecycle |
+| `close delete` | full | lifecycle |
 | `append` | standard | evidence |
 | `comments` | standard | evidence |
 | `notes` | standard | evidence |

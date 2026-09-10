@@ -839,6 +839,7 @@ export const REINDEX_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for close flag contracts, shared by SDK and presentation-layer consumers. */
 export const CLOSE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--release-assignment", value_type: "boolean" },
   { flag: "--id", value_name: "item-id" },
   { flag: "--reason", value_name: "value" },
   { flag: "--close-reason", value_name: "value" },
@@ -916,6 +917,7 @@ export const APPEND_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for claim flag contracts, shared by SDK and presentation-layer consumers. */
 export const CLAIM_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--start", value_type: "boolean" },
   { flag: "--id", value_name: "item-id" },
   { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },
@@ -956,6 +958,7 @@ export const DELETE_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for release flag contracts, shared by SDK and presentation-layer consumers. */
 export const RELEASE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--pause", value_type: "boolean" },
   { flag: "--id", value_name: "item-id" },
   { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },

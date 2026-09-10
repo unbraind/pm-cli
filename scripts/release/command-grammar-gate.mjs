@@ -480,11 +480,16 @@ const packageOwnedCommandSet = new Set(
 );
 const hasCommandSummaries = Array.isArray(contracts.command_summaries);
 const registeredCommandSeeds = hasCommandSummaries
-  ? contracts.command_summaries.flatMap((summary) =>
+  ? [...contracts.command_summaries.flatMap((summary) =>
       Object(summary) === summary && typeof summary.command === "string"
         ? [summary.command]
         : [],
-    )
+    ),
+    // Deprecated aliases are intentionally omitted from discovery; independently
+    // load their help before counting them as executable census destinations.
+    ...PM_COMMAND_ALIAS_CONTRACTS.filter(({ alias, hidden }) =>
+      hidden && PM_COMMAND_DESTINATION_CONTRACTS.some(({ command }) => command === alias),
+    ).map(({ alias }) => alias)]
   : [];
 const activePackageCommands = hasCommandSummaries
   ? contracts.command_summaries.flatMap((summary) =>

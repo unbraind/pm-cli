@@ -9,7 +9,7 @@
 import {
   resolvePmCommandAlias,
   PM_HISTORY_COMMAND_ALIASES,
-  PM_CONTEXT_OPS_COMMAND_ALIASES,
+  PM_RELOCATED_COMMAND_ALIASES,
   resolvePmHistoryOperation,
   type PmCommandAliasContract,
 } from "./command-aliases.js";
@@ -957,9 +957,9 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       ],
     ),
   ].flatMap((entry): PmCommandDestinationContract[] => {
-    const alias = PM_CONTEXT_OPS_COMMAND_ALIASES.find((candidate) => candidate.alias === entry.command);
+    const alias = PM_RELOCATED_COMMAND_ALIASES.find((candidate) => candidate.alias === entry.command);
     if (!alias) return [entry];
-    const noun = alias.canonical_argv[0] as PmCommandDestinationContract["noun"];
+    const noun = PM_CLI_GRAMMAR_NOUNS.find((candidate) => candidate === alias.canonical_argv[0]) ?? entry.noun;
     return [
       { ...entry, noun, target: alias.canonical, owner: alias.owner },
       { ...entry, command: alias.canonical, noun, target: alias.canonical, owner: alias.owner, disposition: entry.disposition === "package_owned" ? "package_owned" : "target_noun" },

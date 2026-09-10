@@ -252,6 +252,22 @@ describe("command grammar gate", () => {
     );
   });
 
+  it("observes hidden aliases independently of discovery", async () => {
+    const summaries = liveCommandSummaries.filter(({ command }) => !HIDDEN_TOP_LEVEL_ALIASES.has(command));
+    const valid = await runGrammarGate(summaries);
+    expect(valid.report.ok).toBe(true);
+    expect(valid.report.command_count).toBe(PM_COMMAND_DESTINATION_CONTRACTS.length);
+  });
+
+  it("rejects missing hidden alias registrations independently of discovery", async () => {
+    const summaries = liveCommandSummaries.filter(({ command }) => !HIDDEN_TOP_LEVEL_ALIASES.has(command));
+    const missing = await runGrammarGate(summaries, {
+      runtimeCommands: PM_COMMAND_DESTINATION_CONTRACTS.map(({ command }) => command).filter((command) => command !== "start-task"),
+    });
+    expect(missing.report.ok).toBe(false);
+    expect(missing.report.findings).toContainEqual(expect.objectContaining({ code: "stale_destination", spelling: "start-task" }));
+  });
+
   it("loads positional help for an active package command absent from root help", async () => {
     const { module } = await runGrammarGate(liveCommandSummaries);
     const loadHelp = vi.fn((commandPath: string[] = []) =>

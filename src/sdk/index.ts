@@ -129,7 +129,7 @@ export {
   type WorkspaceSnapshotRestorePlan,
 } from "./workspace-snapshot.js";
 export { flushTelemetryQueue } from "./telemetry-flush.js";
-export { PM_HISTORY_COMMAND_ALIASES, PM_CONTEXT_OPS_COMMAND_ALIASES, PM_NAMESPACED_COMMAND_ALIASES, resolvePmCommandOperation, resolvePmHistoryOperation } from "./cli-contracts.js";
+export { PM_HISTORY_COMMAND_ALIASES, PM_CONTEXT_OPS_COMMAND_ALIASES, PM_BULK_LIFECYCLE_COMMAND_ALIASES, PM_RELOCATED_COMMAND_ALIASES, PM_NAMESPACED_COMMAND_ALIASES, resolvePmCommandOperation, resolvePmHistoryOperation } from "./cli-contracts.js";
 export {
   EXECUTABLE_COMMAND_ALIASES,
   PM_COMMAND_ALIAS_CONTRACTS,
@@ -759,6 +759,7 @@ export {
   runClaimNext,
   runRelease,
 } from "./lifecycle/claim.js";
+export { runStartTask, runPauseTask, runCloseTask, type TaskCompositionOptions } from "./lifecycle/task-composition.js";
 export { runCloseMany } from "./lifecycle/close-many.js";
 export { runUpdateMany } from "./lifecycle/update-many.js";
 export { runComments } from "./comments.js";

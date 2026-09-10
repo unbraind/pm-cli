@@ -6,7 +6,7 @@
  */
 import { PM_CORE_COMMAND_NAMES } from "./cli-contracts/enum-contracts.js";
 import type { ExtensionCommandCapabilityFamily } from "../core/extensions/command-metadata-contract.js";
-import { PM_CONTEXT_OPS_COMMAND_ALIASES, resolvePmCommandOperation } from "./cli-contracts/command-aliases.js";
+import { PM_COMMAND_ALIAS_CONTRACTS, PM_NAMESPACED_COMMAND_ALIASES, resolvePmCommandOperation } from "./cli-contracts/command-aliases.js";
 
 /** Visibility tiers shared by CLI help, completions, docs, extensions, and MCP. */
 export type PmCommandVisibilityTier = "core" | "standard" | "full" | "internal";
@@ -179,7 +179,7 @@ export function resolvePmCommandCapabilityFamily(
 export const PM_COMMAND_CAPABILITY_CONTRACTS: readonly PmCommandCapabilityContract[] =
   Object.freeze([
     ...PM_CORE_COMMAND_NAMES.flatMap((command) =>
-      command === "item" ? ["item-reopen"] : [command, ...PM_CONTEXT_OPS_COMMAND_ALIASES.filter((alias) => alias.alias === command).map((alias) => alias.canonical)],
+      command === "item" ? ["item-reopen"] : [command, ...PM_NAMESPACED_COMMAND_ALIASES.filter((alias) => alias.alias === command).map((alias) => alias.canonical)],
     ).map((command) => ({
       command,
       tier: CORE_COMMANDS.has(resolvePmCommandOperation(command))
@@ -333,7 +333,7 @@ const CAPABILITY_FAMILY_ORDER: readonly PmCommandCapabilityFamily[] = [
 ];
 
 const CAPABILITY_ROUTING_EXCLUDED_ALIASES = new Set([
-  ...PM_CONTEXT_OPS_COMMAND_ALIASES.map((alias) => alias.alias),
+  ...PM_COMMAND_ALIAS_CONTRACTS.filter((alias) => alias.hidden).map((alias) => alias.alias),
   "ctx",
   "extension",
   "install",

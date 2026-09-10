@@ -21,8 +21,8 @@ import {
   TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS,
 } from "./tool-option-contracts.js";
 import {
-  PM_TOOL_PARAMETER_PROPERTIES,
-  PM_TOOL_PARAMETER_METADATA,
+  PM_TOOL_PARAMETER_PROPERTIES as BASE_TOOL_PARAMETER_PROPERTIES,
+  PM_TOOL_PARAMETER_METADATA as BASE_TOOL_PARAMETER_METADATA,
   PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES,
   PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA,
   PLAN_ACTION_PARAMETER_PROPERTIES,
@@ -33,6 +33,20 @@ import {
   withFlagAliasMetadata,
 } from "./flag-contracts.js";
 import { resolveReadOutputSurface } from "../read-output-contracts.js";
+
+/** Additive lifecycle controls; action-scoped start retains the scheduling spelling. */
+const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
+  ...BASE_TOOL_PARAMETER_PROPERTIES,
+  pause: { type: "boolean" },
+  releaseAssignment: { type: "boolean" },
+};
+
+/** Descriptions shared by strict and provider lifecycle controls. */
+const PM_TOOL_PARAMETER_METADATA: typeof BASE_TOOL_PARAMETER_METADATA = {
+  ...BASE_TOOL_PARAMETER_METADATA,
+  pause: { description: "Return work to its configured open status before releasing ownership." },
+  releaseAssignment: { description: "Release assignment after recording closure evidence." },
+};
 
 const PM_TOOL_GLOBAL_PARAMETER_KEYS = [
   "json",
@@ -401,6 +415,7 @@ const AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "message", "force"];
 
 /** Close-action option keys shared by the strict tool schema and the typed SDK close input (pm-x29o); the author/message/force triple is appended separately by the schema contract. */
 export const CLOSE_ACTION_OPTION_KEYS = [
+  "releaseAssignment",
   "text",
   "reason",
   "closeReason",
@@ -1375,6 +1390,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     completion: { required: ["shell"], optional: ["eagerTags"] },
     claim: {
       optional: [
+        "start",
         "id",
         "next",
         "ifAvailable",
@@ -1384,10 +1400,14 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         ...LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
       oneOfRequired: [["id"], ["next"]],
+      mutuallyExclusiveWhen: [
+        [{ property: "start", schema: { const: true } }, { property: "next", schema: { const: true } }],
+        [{ property: "start", schema: { const: true } }, { property: "ifAvailable", schema: { const: true } }],
+      ],
     },
     release: {
       required: ["id"],
-      optional: LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
+      optional: ["pause", ...LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
     },
     "start-task": {
       required: ["id"],
@@ -1448,10 +1468,12 @@ function decorateToolParameterDefinition(
   };
 }
 
+/** Resolve action-specific descriptions before shared metadata for overloaded parameter names. */
 function actionScopedToolParameterMetadata(
   action: PmToolAction,
   key: string,
 ): { description: string; examples?: unknown[] } | undefined {
+  if (action === "claim" && key === "start") return { description: "Claim an explicit item and move it to its configured in-progress status." };
   if ((action === "list" || action.startsWith("list-")) && key === "all") {
     return {
       description:
@@ -1491,10 +1513,12 @@ function decorateActionScopedToolParameterDefinition(
   };
 }
 
+/** Resolve action-specific parameter types, including lifecycle boolean composition flags. */
 function actionScopedToolParameterDefinition(
   action: PmToolAction,
   key: string,
 ): unknown {
+  if (action === "claim" && key === "start") return { type: "boolean" };
   const actionProperties = PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES[action];
   if (
     actionProperties &&
@@ -1514,7 +1538,9 @@ function actionScopedToolParameterDefinition(
   ) {
     return { type: "string", enum: ["json", "toon"] };
   }
-  return PM_TOOL_PARAMETER_PROPERTIES[key];
+  return key === "pause" || key === "releaseAssignment"
+    ? PM_TOOL_PARAMETER_PROPERTIES[key]
+    : BASE_TOOL_PARAMETER_PROPERTIES[key];
 }
 
 /** Build the `properties` map for one action-scoped schema: the fixed `action` literal followed by every allowed parameter that resolves to a concrete definition, each decorated with its action-scoped description and examples. */
@@ -1805,7 +1831,7 @@ function createLazyContractSchema(
 }
 
 /** Canonical version of the action-scoped strict MCP tool-parameters schema (`PM_TOOL_PARAMETERS_SCHEMA`). Exported as the single source of truth so the MCP server, the `pm contracts` command, SDK consumers, and contract tests bind to one version constant. Bump the patch/minor for additive, backward-compatible schema changes; bump the MAJOR for breaking changes — the major also drives the `$id` `tool-parameters-v{major}` slug, so the two never drift. */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.16.0" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.17.0" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the
@@ -1815,7 +1841,7 @@ export const PM_TOOL_PARAMETERS_SCHEMA_MAJOR =
   PM_TOOL_PARAMETERS_SCHEMA_VERSION.split(".")[0];
 
 /** Version of the provider-compatible flat tool-parameters schema (`PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`). Tracked separately from the strict schema because the flat projection evolves independently. */
-export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION = "1.7.0" as const;
+export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION = "1.8.0" as const;
 
 /** Public contract for pm tool parameters schema, shared by SDK and presentation-layer consumers. */
 export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> =

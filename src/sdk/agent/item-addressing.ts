@@ -86,9 +86,9 @@ export function supportsItemIdAlias(
   );
 }
 
-/** Keep namespace verbs separate from default history item addresses and unaddressed context reads. */
+/** Keep namespace verbs separate from default item addresses and unaddressed context reads. */
 function resolveNamespacedItemAddressIndex(argv: string[], commandIndex: number, commandName: string): number | undefined {
-  const fallback = commandName === "history" ? commandIndex + 1 : undefined;
+  const fallback = ITEM_ID_ALIAS_COMMANDS.has(commandName) ? commandIndex + 1 : undefined;
   const leafOffset = findBootstrapCommandTokenIndex(argv.slice(commandIndex + 1));
   if (leafOffset === undefined) return fallback;
   const leafIndex = commandIndex + 1 + leafOffset;
@@ -104,7 +104,7 @@ function resolveItemAddressIndex(
   commandIndex: number,
   commandName: string,
 ): number | undefined {
-  if (commandName === "history" || commandName === "context" || commandName === "ctx") {
+  if (["history", "context", "ctx", "update", "close"].includes(commandName)) {
     return resolveNamespacedItemAddressIndex(argv, commandIndex, commandName);
   }
   const declaredSubcommand = ITEM_ID_ALIAS_SUBCOMMANDS.get(commandName);

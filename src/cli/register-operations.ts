@@ -3,9 +3,9 @@
  *
  * Provides CLI runtime support for Register Operations.
  */
+import { resolvePmCommandAlias, renderPmCommandAliasMigrationHint } from "../sdk/cli-contracts/command-aliases.js";
 import type { Command } from "commander";
 import {
-  resolveRuntimeStatusRegistry,
   setActiveCommandResult,
   EXIT_CODE,
   PmCliError,
@@ -14,7 +14,7 @@ import {
   resolvePmRoot,
   readSettings,
 } from "../sdk/runtime-primitives.js";
-import { resolveStartTaskInProgressStatus } from "../sdk/start-task-status.js";
+import { runStartTask, runPauseTask, runCloseTask } from "../sdk/lifecycle/task-composition.js";
 import { parseStatsAnalyticsJson } from "./stats-analytics-json.js";
 import {
   createWorkspaceSnapshot,
@@ -27,7 +27,6 @@ import {
 } from "../sdk/workspace-snapshot.js";
 import { readWorkspacePosition } from "../sdk/governance/workspace-position.js";
 import { runClaim, runClaimNext, runRelease } from "./commands/claim.js";
-import { runClose } from "./commands/close.js";
 import { runContracts } from "./commands/contracts.js";
 import { runDuplicates } from "./commands/duplicates.js";
 import { runGc } from "./commands/gc.js";
@@ -45,7 +44,6 @@ import {
   runStartBackgroundRun,
   runTestRunsWorker,
 } from "./commands/test-runs.js";
-import { runUpdate } from "./commands/update.js";
 import { runValidate } from "./commands/validate.js";
 import {
   buildBackgroundTestAllCommandArgs,
@@ -296,6 +294,7 @@ async function runTestCommandAction(
   }
 }
 
+/** Resolve legacy assignee and author aliases to one actor, rejecting conflicting ownership. */
 function buildLifecycleMutationOptions(options: Record<string, unknown>): {
   author: string | undefined;
   message: string | undefined;
@@ -310,7 +309,7 @@ function buildLifecycleMutationOptions(options: Record<string, unknown>): {
         code: "conflicting_lifecycle_owner",
         examples: [
           "pm claim pm-123",
-          "pm start-task pm-123",
+          "pm claim pm-123 --start",
           "pm release pm-123",
         ],
       },
@@ -692,11 +691,17 @@ async function runContractsAction(
   }
 }
 
+/** Route explicit start composition or ordinary and ranked claims through SDK operations. */
 async function runClaimAction(
   id: string | undefined,
   options: Record<string, unknown>,
   command: Command,
 ): Promise<void> {
+  if (options.start === true) {
+    requireClaimTarget(id, false);
+    await runStartTaskAction(id as string, options, command);
+    return;
+  }
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   const lifecycleOptions = {
@@ -764,11 +769,16 @@ export function requireClaimTarget(
     );
 }
 
+/** Route pause composition or ordinary release and invalidate affected search caches. */
 async function runReleaseAction(
   id: string,
   options: Record<string, unknown>,
   command: Command,
 ): Promise<void> {
+  if (options.pause === true) {
+    await runPauseTaskAction(id, options, command);
+    return;
+  }
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   const result = await runRelease(id, Boolean(options.force), globalOptions, {
@@ -791,102 +801,66 @@ async function runReleaseAction(
   }
 }
 
+/** Emit the declared migration hint only for legacy lifecycle invocations. */
+async function printLifecycleAliasHint(command: Command): Promise<void> {
+  const global = getGlobalOptions(command);
+  const alias = resolvePmCommandAlias(command.name());
+  if (!alias || global.json || global.quiet) return;
+  const settings = await readSettings(resolvePmRoot(process.cwd(), global.path));
+  if (settings.ux?.deprecation_hints) printError(renderPmCommandAliasMigrationHint(alias));
+}
+
+/** Adapt canonical and legacy start invocations to the shared lifecycle composition. */
 async function runStartTaskAction(
   id: string,
   options: Record<string, unknown>,
   command: Command,
 ): Promise<void> {
+  await printLifecycleAliasHint(command);
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
-  const settings = await readSettings(pmRoot);
-  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const inProgressStatus = resolveStartTaskInProgressStatus(statusRegistry);
-  const force = Boolean(options.force);
-  const mutationOptions = buildLifecycleMutationOptions(options);
-  const claimResult = await runClaim(id, force, globalOptions, mutationOptions);
-  await invalidateSearchCachesForMutation(globalOptions, claimResult);
-  const updateResult = await runUpdate(
-    id,
-    { ...mutationOptions, status: inProgressStatus, force },
-    globalOptions,
-  );
-  await invalidateSearchCachesForMutation(globalOptions, updateResult);
-  printResult(
-    { id, action: "start_task", claim: claimResult, update: updateResult },
-    globalOptions,
-  );
+  const result = await runStartTask(id, { ...buildLifecycleMutationOptions(options), force: Boolean(options.force), next: options.next === true, ifAvailable: options.ifAvailable === true }, globalOptions);
+  await invalidateSearchCachesForMutation(globalOptions, result.update);
+  printResult(result, globalOptions);
   if (globalOptions.profile) {
     printError(`profile:command=start-task took_ms=${Date.now() - startedAt}`);
   }
 }
 
+/** Adapt pause invocations and invalidate caches after the ownership transition. */
 async function runPauseTaskAction(
   id: string,
   options: Record<string, unknown>,
   command: Command,
 ): Promise<void> {
+  await printLifecycleAliasHint(command);
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
-  const settings = await readSettings(pmRoot);
-  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const force = Boolean(options.force);
-  const mutationOptions = buildLifecycleMutationOptions(options);
-  const updateResult = await runUpdate(
-    id,
-    { ...mutationOptions, status: statusRegistry.open_status, force },
-    globalOptions,
-  );
-  await invalidateSearchCachesForMutation(globalOptions, updateResult);
-  const releaseResult = await runRelease(
-    id,
-    force,
-    globalOptions,
-    mutationOptions,
-  );
-  await invalidateSearchCachesForMutation(globalOptions, releaseResult);
-  printResult(
-    { id, action: "pause_task", update: updateResult, release: releaseResult },
-    globalOptions,
-  );
+  const result = await runPauseTask(id, { ...buildLifecycleMutationOptions(options), force: Boolean(options.force) }, globalOptions);
+  await invalidateSearchCachesForMutation(globalOptions, result.release);
+  printResult(result, globalOptions);
   if (globalOptions.profile) {
     printError(`profile:command=pause-task took_ms=${Date.now() - startedAt}`);
   }
 }
 
+/** Adapt legacy closure arguments to the shared close-and-release composition. */
 async function runCloseTaskAction(
   id: string,
   reason: string | undefined,
   options: Record<string, unknown>,
   command: Command,
 ): Promise<void> {
+  await printLifecycleAliasHint(command);
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const force = Boolean(options.force);
-  const mutationOptions = buildLifecycleMutationOptions(options);
-  const closeResult = await runClose(
-    id,
-    reason,
-    {
-      ...mutationOptions,
-      validateClose: readOptionString(options, "validateClose"),
-      force,
-    },
-    globalOptions,
-  );
-  await invalidateSearchCachesForMutation(globalOptions, closeResult);
-  const releaseResult = await runRelease(
-    id,
-    force,
-    globalOptions,
-    mutationOptions,
-  );
-  await invalidateSearchCachesForMutation(globalOptions, releaseResult);
-  printResult(
-    { id, action: "close_task", close: closeResult, release: releaseResult },
-    globalOptions,
-  );
+  const result = await runCloseTask(id, reason, {
+    ...buildLifecycleMutationOptions(options),
+    validateClose: readOptionString(options, "validateClose"),
+    force: Boolean(options.force),
+  }, globalOptions);
+  await invalidateSearchCachesForMutation(globalOptions, result.release);
+  printResult(result, globalOptions);
   if (globalOptions.profile) {
     printError(`profile:command=close-task took_ms=${Date.now() - startedAt}`);
   }
@@ -1331,13 +1305,14 @@ export function registerOperationCommands(program: Command): void {
 
   const claimCommand = program
     .command("claim")
+    .option("--start", "Claim and start an explicit item")
     .argument("[id]", "Item id (omit with --next)")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
     .option("--force", "Force claim override")
     .option(
       "--if-available",
-      "Skip silently when the item is already claimed by another author (returns skipped=true)",
+      "Skip another author's claim (skipped=true)",
     )
     .option(
       "--next",
@@ -1391,11 +1366,12 @@ export function registerOperationCommands(program: Command): void {
 
   const releaseCommand = program
     .command("release")
+    .option("--pause", "Use open status")
     .argument("<id>", "Item id")
-    .option("--author <value>", "Mutation author")
-    .option("--message <value>", "History message")
-    .option("--force", "Force release override")
-    .description("Release an item's active claim.")
+    .option("--author <value>", "Author")
+    .option("--message <value>", "Message")
+    .option("--force", "Override ownership")
+    .description("Release ownership.")
     .action(runReleaseAction);
   addHiddenOption(
     releaseCommand,
@@ -1404,7 +1380,7 @@ export function registerOperationCommands(program: Command): void {
   );
 
   const startTaskCommand = program
-    .command("start-task")
+    .command("start-task", { hidden: true })
     .argument("<id>", "Item id")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
@@ -1418,7 +1394,7 @@ export function registerOperationCommands(program: Command): void {
   );
 
   const pauseTaskCommand = program
-    .command("pause-task")
+    .command("pause-task", { hidden: true })
     .argument("<id>", "Item id")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
@@ -1432,7 +1408,7 @@ export function registerOperationCommands(program: Command): void {
   );
 
   const closeTaskCommand = program
-    .command("close-task")
+    .command("close-task", { hidden: true })
     .argument("<id>", "Item id")
     .argument("[reason]", "Close reason text")
     .option("--author <value>", "Mutation author")

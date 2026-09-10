@@ -12,7 +12,7 @@ import {
   PM_COMMAND_CAPABILITY_CONTRACTS,
   type PmCommandCapabilityFamily,
 } from "../agent-capability-contracts.js";
-import { PM_CONTEXT_OPS_COMMAND_ALIASES, resolvePmCommandOperation } from "./command-aliases.js";
+import { PM_NAMESPACED_COMMAND_ALIASES, resolvePmCommandOperation } from "./command-aliases.js";
 import { enrichCliFlagInvocationContracts } from "../flag-invocation-contracts.js";
 
 /** Stable value kinds used by the public flag lexicon. */
@@ -135,7 +135,7 @@ export function resolvePmFlagSemanticConcept(
     return concept;
   }
   if (flag !== "--file") return flag.slice(2);
-  if (["create", "update", "update-many"].includes(command))
+  if (["create", "update", "update-many"].includes(resolvePmCommandOperation(command)))
     return "linked-file-path";
   if (["comments", "notes", "learnings"].includes(command))
     return "entry-file-input";
@@ -262,7 +262,7 @@ const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   restore: 23,
   update: 105,
   "update-many": 146,
-  close: 31,
+  close: 32,
   "close-many": 72,
   delete: 24,
   append: 25,
@@ -284,8 +284,8 @@ const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   gc: 22,
   workspace: 23,
   contracts: 29,
-  claim: 38,
-  release: 23,
+  claim: 39,
+  release: 24,
   "start-task": 23,
   "pause-task": 23,
   "close-task": 24,
@@ -298,7 +298,7 @@ const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
 /** Native paths inherit the identical flag ceiling of their compatibility operation. */
 const PM_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   ...LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS,
-  ...Object.fromEntries(PM_CONTEXT_OPS_COMMAND_ALIASES.flatMap(({ alias, canonical }) => {
+  ...Object.fromEntries(PM_NAMESPACED_COMMAND_ALIASES.flatMap(({ alias, canonical }) => {
     const maximum = (LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS as Readonly<Record<string, number>>)[alias];
     return maximum === undefined ? [] : [[canonical, maximum]];
   })),

@@ -428,7 +428,7 @@ export async function runRelease(
     forced: force,
     ...(stillInProgress ? {
       warnings: ["released_unclaimed_in_progress"],
-      suggestions: [`${result.item.id} remains ${result.item.status} and unclaimed. If work is paused, run pm pause-task ${result.item.id} to move it to ${statusRegistry.open_status}.`],
+      suggestions: [`${result.item.id} remains ${result.item.status} and unclaimed. If work is paused, run pm release ${result.item.id} --pause to move it to ${statusRegistry.open_status}.`],
     } : {}),
   };
 }

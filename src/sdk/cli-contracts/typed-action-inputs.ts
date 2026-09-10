@@ -68,6 +68,8 @@ export type PmUpdateActionOptions = Omit<
 
 /** Typed input for the SDK `close` action, derived from the executable close-command option contract plus the positional reason aliases used by generic action dispatch. */
 export type PmCloseActionOptions = DeclaredProperties<CloseCommandOptions> & {
+  /** Release assignment after recording closure evidence. */
+  releaseAssignment?: boolean;
   /** Generic action-dispatch spelling for the positional close reason. */
   reason?: string;
   /** MCP-compatible alias for the positional close reason. */

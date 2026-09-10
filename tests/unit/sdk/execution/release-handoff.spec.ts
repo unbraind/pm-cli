@@ -38,7 +38,7 @@ describe("release handoff guidance", () => {
       expect(context.runCli(["claim", id]).code).toBe(0);
       const released = context.runCli(["release", id, "--json"], { expectJson: true });
       expect(released.code).toBe(0);
-      expect(released.json).toMatchObject({ item: { status: "in_progress" }, warnings: ["released_unclaimed_in_progress"], suggestions: [expect.stringContaining(`pm pause-task ${id}`)] });
+      expect(released.json).toMatchObject({ item: { status: "in_progress" }, warnings: ["released_unclaimed_in_progress"], suggestions: [expect.stringContaining(`pm release ${id} --pause`)] });
     });
   });
 });

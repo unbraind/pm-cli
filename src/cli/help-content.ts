@@ -19,7 +19,7 @@ import {
 } from "../sdk/agent-capability-contracts.js";
 import {
   PM_COMMAND_ALIAS_CONTRACTS,
-  PM_CONTEXT_OPS_COMMAND_ALIASES,
+  PM_RELOCATED_COMMAND_ALIASES,
   renderPmCommandAliasMigrationHint,
 } from "../sdk/cli-contracts.js";
 
@@ -686,7 +686,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   close: {
     why: "Transitions work to terminal closed state with explicit rationale.",
     examples: [
-      'pm close pm-a1b2 "All acceptance criteria met" --message "Close after verification"',
+      'pm close pm-a1b2 "Done" --release-assignment --validate-close warn',
       'pm close pm-a1b2 "Done" --validate-close',
       'pm close pm-a1b2 "Done" --validate-close off',
       'pm close pm-a1b2 "Done" --validate-close strict',
@@ -838,7 +838,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   claim: {
     why: "Claims an item to signal active ownership and reduce conflicts.",
     examples: [
-      'pm claim pm-a1b2 --message "Claim for implementation"',
+      'pm claim pm-a1b2 --start',
       'pm claim pm-a1b2 --force --message "Take over terminal item"',
       'pm claim pm-a1b2 --author "release-service" --message "Explicit non-agent identity override"',
     ],
@@ -849,7 +849,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   release: {
     why: "Releases an active claim when paused, handed off, or completed.",
-    examples: ['pm release pm-a1b2 --message "Release after closure"'],
+    examples: ['pm release pm-a1b2 --pause'],
   },
   "start-task": {
     why: "Lifecycle alias that claims an item and sets status to in_progress.",
@@ -927,7 +927,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
 };
 
-for (const { alias, canonical } of PM_CONTEXT_OPS_COMMAND_ALIASES) {
+for (const { alias, canonical } of PM_RELOCATED_COMMAND_ALIASES) {
   const bundle = HELP_BY_COMMAND_PATH[alias];
   if (bundle) {
     HELP_BY_COMMAND_PATH[canonical] = {

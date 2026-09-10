@@ -2,19 +2,23 @@ id: pm-eq4x
 title: Fold lifecycle sugar start-task/pause-task/close-task into claim/release/close flags (hidden aliases)
 description: "start-task = pm claim --start (claim + in_progress), pause-task = pm release --pause (open + release claim), close-task = pm close --release-assignment; the three -task commands become alias-table entries. Duplicate check: pm-114v (claim --next) and pm-8t5x (claim atomicity) are claim semantics, not surface; no overlap."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli","area:lifecycle",simplification
 created_at: "2026-07-05T04:53:33.295Z"
-updated_at: "2026-09-08T13:32:53.708Z"
+updated_at: "2026-09-10T00:06:41.536Z"
+closed_at: "2026-09-10T00:06:41.311Z"
+completed_at: "2026-09-10T00:06:41.311Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: claim/release/close gain the equivalent flags; start-task/pause-task/close-task alias-shimmed with identical output incl. status transitions and claim records; contracts/MCP/completions/docs regenerated; lifecycle-transition specs pass via aliases
 parent: pm-n7rr
 risk: low
 confidence: high
-expected_result: "start-task, pause-task and close-task become flags on claim, release and close, with the old spellings alias-shimmed to identical output and transitions."
-dependencies[6]:
+resolution: Shared SDK start/pause/close-release operations back canonical CLI and MCP paths; flag-driven overloads preserve truthful base and compound receipts.
+expected_result: "Canonical and legacy lifecycle invocations preserve workflow, ownership, closure evidence, literal inputs and typed result contracts."
+actual_result: 8656 tests passed with exact 100/100/100/100 coverage; full static quality and four linked checks passed; npm/Bun package acceptance and physical telemetry delivery verified.
+dependencies[7]:
   - id: pm-0z7n
     kind: blocked_by
     created_at: "2026-07-05T04:55:00.982Z"
@@ -36,4 +40,89 @@ dependencies[6]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
+  - id: pm-pbyu
+    kind: implements
+    created_at: "2026-09-09T22:08:20.161Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[12]{created_at,author,text}:
+  "2026-09-09T21:40:16.394Z","harness:codex","Implement alongside pm-ik19 in one reviewed lifecycle tranche. Preserve historical SDK action identities and output envelopes while making canonical claim/release/close compositions directly discoverable. Start with failing sandbox parity tests, then shared SDK behavior and CLI/MCP contracts."
+  "2026-09-09T21:58:48.944Z","harness:codex","Implementation evidence: shared SDK lifecycle compositions now own claim/start, open/release and close/release sequences. CLI handlers and MCP dispatch call the same functions. Public convenience methods infer compound return envelopes for literal composition flags and preserve base result types otherwise. Focused SDK/CLI suites passed seven tests including flat transport controls, real stored closure evidence and rejected incompatible selection. Broader gates remain pending."
+  "2026-09-09T22:04:53.495Z","harness:codex","Verification: typecheck passed. Focused lifecycle, bulk rollback, Bash completion, grammar and completion suites passed 138 tests. SDK snapshot reviewed: additive opt-in conditional return signatures preserve base receipts without composition flags; schema literal versions advance for the new boolean controls. Full coverage and static gates are still running."
+  "2026-09-09T22:19:40.547Z","harness:codex","Verification evidence: packaged CLI installed and passed isolated create, claim --start, release --pause, update many, close --release-assignment, close delete dry-run and strict history verification with npm and Bun. Docs/skills full gate and unchanged flag/help-token budget gate now pass. Full-suite run exposed stale test expectations and concurrent-build imports; those are being resolved before a stable full coverage rerun."
+  "2026-09-09T22:23:51.080Z","harness:codex","Regression evidence: shared composition retains MCP literal-input provenance through every option copy. The canonical literal-dash test and existing open-stdin MCP handshake regression now pass; focused final run passed all 66 tests across MCP, SDK composition, item addressing and namespace completion."
+  "2026-09-09T22:32:10.352Z","harness:codex","Validation evidence: packed npx and bunx smoke passed version 2026.9.9 with all 13 packages and a plain TypeScript SDK consumer. Typechecks passed. Static assurance retains 100 percent docstrings. Grammar gate exposed omitted deprecated task aliases in discovery; fixing the gate to independently load their live help, with positive and missing-registration tests, preserving compact discovery and fail-closed behavior. Full coverage remains running."
+  "2026-09-09T22:45:51.649Z","harness:codex","Verification update: all three linked test commands passed. The full 657-file run reached 8653 passes and one stale next-step assertion; that assertion now expects canonical claim --start and full coverage is rerunning with failure reports enabled. ESLint, duplicate checks, static assurance, 57-surface byte ratchet, context evaluation, compatibility against published 2026.9.9, 88-command package dogfood, and required Sentry/telemetry aggregate health passed. Isolated import-cost verification and final exact coverage remain pending."
+  "2026-09-09T23:01:34.459Z","harness:codex","Final local verification: 657 test files and all 8656 tests passed. Exact all-source coverage is statements 63848/63848, branches 48570/48570, functions 13265/13265, lines 61217/61217: 100/100/100/100 with no exclusions or lowered thresholds introduced. Source CLI integration now executes real canonical and alias handlers under coverage while packed npm/Bun acceptance remains independent. Quiet SDK import-cost gate passed 10 entrypoints and CLI transport-floor gate passed 6 operations. All previously recorded local quality gates and 100 percent docstrings remain passing. Implementation is ready for reviewed delivery; hosted PR and merge evidence is still pending."
+  "2026-09-09T23:34:09.056Z","harness:codex","PR https://github.com/unbraind/pm-cli/pull/1227 head 1425bb1ea passed all GitHub checks and exact CodeFactor/DeepScan provenance. CodeRabbit completed a full review; source typing probe compiled client.claim<true>(id), release<true>(id) and close<true>(id,reason) without flags, proving a return-type hole. Reopening this canonical item for overload-based contracts and touched-internal docstrings. Greptile local review explicitly reports exhausted free quota; Sourcery declined the large diff. Neither skip is approval. Isolated real telemetry probe matched all 23 captured physical queue events in production, with successful lifecycle start/finish pairs and final empty queue."
+  "2026-09-09T23:40:31.609Z","harness:codex","Review refinement: confirmed a compile-time defect with six expected-error checks that failed because explicit <true> generics accepted omitted runtime flags. Replaced unreleased generics with overloads keyed to start/pause/releaseAssignment; all base, false, true, dynamic-boolean, and convenience-client options compile correctly. Full pnpm typecheck and focused real lifecycle SDK tests passed. Public snapshot acknowledgement explains the unreleased signature correction; published base calls remain compatible."
+  "2026-09-09T23:44:25.146Z","harness:codex","Strict gate follow-up: overload declarations crossed the existing runtime module size bound, so live workspace contract loading, cache-key construction, activation, and cleanup moved intact into workspace-contracts-runtime.ts. The public runtime re-export and SDK snapshot remain identical (0 classified changes); full typechecking passed. The runtime now has 3329 implementation lines under the unchanged 3400-line bound. Existing sdk-index workspace scenarios cover cache/settings/cwd/cleanup behavior; full coverage rerun follows."
+  "2026-09-10T00:06:40.131Z","harness:codex","Final review-fix verification: all 8656 tests across 657 files passed again. Exact coverage is statements 63849/63849, branches 48570/48570, functions 13265/13265, lines 61218/61218, with zero uncovered counts. Full static quality passed unchanged file/directory bounds and 100 percent docstrings; all four linked checks, including complete typechecking, passed. Workspace contract query extraction is finally located at src/sdk/query/workspace-contracts.ts; AST comparison confirms all four function bodies are unchanged and the public snapshot has zero extraction-related signature changes. PR 1227 awaits the new-head review round."
+notes[1]{created_at,author,text}:
+  "2026-09-09T22:43:37.133Z","harness:codex","Architecture: sdk/lifecycle/task-composition owns start, pause and close/release sequencing. CLI and MCP dispatch share those functions; PmClient and convenience functions infer full compound receipt types for literal true controls. These are ordered compositions, not cross-operation transactions; partial success remains inspectable through constituent history. Broad MCP start remains scheduling text, while action-specific claim discovery types start as boolean and options carries it through broad tools."
+learnings[1]{created_at,author,text}:
+  "2026-09-09T22:38:28.893Z","harness:codex","Preserve mutation transport provenance when composing SDK operations: use mutationOptionsWithOverrides so MCP literal dashes do not become stdin reads. Keep exhaustive live grammar verification independent of compact discovery by probing hidden aliases through registered help."
+files[24]{path,scope,note}:
+  scripts/release/command-grammar-gate.mjs,project,Independently probe hidden legacy task aliases through live help for the exhaustive grammar census
+  sdk/public-surface.json,project,Contract and lifecycle regression evidence
+  src/cli/register-mutation.ts,project,Lifecycle canonical command implementation and verification
+  src/cli/register-operations.ts,project,Lifecycle canonical command implementation and verification
+  src/sdk/cli-contracts/flag-contracts.ts,project,Lifecycle canonical command implementation and verification
+  src/sdk/cli-contracts/tool-schema.ts,project,Lifecycle canonical command implementation and verification
+  src/sdk/cli-contracts/typed-action-inputs.ts,project,Lifecycle canonical command implementation and verification
+  src/sdk/lifecycle/claim.ts,project,Canonical lifecycle contract and regression evidence
+  src/sdk/lifecycle/lifecycle-transitions.ts,project,Canonical lifecycle contract and regression evidence
+  src/sdk/lifecycle/mcp-actions.ts,project,Lifecycle canonical command implementation and verification
+  src/sdk/lifecycle/task-composition.ts,project,Lifecycle canonical command implementation and verification
+  src/sdk/query/workspace-contracts.ts,project,Live workspace schema queries and cached extension loading belong with SDK query modules; public runtime export is preserved
+  src/sdk/runtime-input.ts,project,Lifecycle canonical command implementation and verification
+  src/sdk/runtime.ts,project,Lifecycle canonical command implementation and verification
+  tests/integration/lifecycle-composition-sdk.spec.ts,project,Lifecycle canonical command implementation and verification
+  tests/integration/task-lifecycle-aliases.spec.ts,project,Lifecycle canonical command implementation and verification
+  tests/types/lifecycle-composition.test-d.ts,project,Compile-time regression for actual composition flags and base versus composed receipt overloads
+  tests/unit/commands/create-command.spec.ts,project,Canonical lifecycle contract and regression evidence
+  tests/unit/commands/lifecycle-transitions.spec.ts,project,Canonical claim --start next-step suggestion regression
+  tests/unit/commands/register-commands.spec.ts,project,Canonical lifecycle contract and regression evidence
+  tests/unit/scripts/release/command-grammar-gate.spec.ts,project,Positive and missing-registration checks for hidden alias census
+  tests/unit/sdk/action-schema-parity.spec.ts,project,Canonical lifecycle contract and regression evidence
+  tests/unit/sdk/execution/release-handoff.spec.ts,project,Canonical lifecycle contract and regression evidence
+  tests/unit/sdk/sdk-index.spec.ts,project,"Existing live workspace contract tests verify cache reuse, invalidation, per-cwd settings and cleanup after module extraction"
+tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/task-lifecycle-aliases.spec.ts,project,300,"harness:codex","2026-09-09T21:42:44.209Z",local_mutation,feat/lifecycle-bulk-and-ownership
+  node scripts/run-tests.mjs test -- tests/integration/lifecycle-composition-sdk.spec.ts,project,300,"harness:codex","2026-09-09T21:58:47.761Z",local_mutation,feat/lifecycle-bulk-and-ownership
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/command-grammar-gate.spec.ts,project,240,"harness:codex","2026-09-09T22:38:28.144Z",local_mutation,feat/lifecycle-bulk-and-ownership
+  pnpm typecheck,project,300,"harness:codex","2026-09-09T23:44:23.660Z",local_mutation,feat/lifecycle-bulk-and-ownership
+test_runs[2]:
+  - run_id: test-local-mtuop3vo-a8mri1
+    kind: test
+    status: passed
+    started_at: "2026-09-09T22:42:01.813Z"
+    finished_at: "2026-09-09T22:42:45.348Z"
+    recorded_at: "2026-09-09T22:42:45.348Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/task-lifecycle-aliases.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/lifecycle-composition-sdk.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/command-grammar-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mturmn8p-alyjl9
+    kind: test
+    status: passed
+    started_at: "2026-09-10T00:03:29.255Z"
+    finished_at: "2026-09-10T00:04:49.321Z"
+    recorded_at: "2026-09-10T00:04:49.321Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/task-lifecycle-aliases.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/lifecycle-composition-sdk.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/command-grammar-gate.spec.ts,schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/LIFECYCLE_COMMANDS.md,project,Canonical lifecycle migration and SDK composition semantics
+  docs/README.md,project,Discoverable lifecycle documentation
+close_reason: "Implemented and verified shared lifecycle ownership compositions, including premerge typing refinement."
 body: ""

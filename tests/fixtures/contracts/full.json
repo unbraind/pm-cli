@@ -64,17 +64,7 @@
       "action": "close-many",
       "available": true,
       "cli_exposed": true,
-      "command_path": "close-many",
-      "disabled_reason": null,
-      "invocable": true,
-      "provider": "core",
-      "requires_extension": false
-    },
-    {
-      "action": "close-task",
-      "available": true,
-      "cli_exposed": true,
-      "command_path": "close-task",
+      "command_path": "close many|close-many",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -154,7 +144,7 @@
       "action": "delete",
       "available": true,
       "cli_exposed": true,
-      "command_path": "delete",
+      "command_path": "close delete|delete",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -691,16 +681,6 @@
       "requires_extension": false
     },
     {
-      "action": "pause-task",
-      "available": true,
-      "cli_exposed": true,
-      "command_path": "pause-task",
-      "disabled_reason": null,
-      "invocable": true,
-      "provider": "core",
-      "requires_extension": false
-    },
-    {
       "action": "plan",
       "available": true,
       "cli_exposed": true,
@@ -771,16 +751,6 @@
       "requires_extension": false
     },
     {
-      "action": "start-task",
-      "available": true,
-      "cli_exposed": true,
-      "command_path": "start-task",
-      "disabled_reason": null,
-      "invocable": true,
-      "provider": "core",
-      "requires_extension": false
-    },
-    {
       "action": "stats",
       "available": true,
       "cli_exposed": true,
@@ -834,7 +804,7 @@
       "action": "update-many",
       "available": true,
       "cli_exposed": true,
-      "command_path": "update-many",
+      "command_path": "update many|update-many",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -869,7 +839,6 @@
     "claim",
     "close",
     "close-many",
-    "close-task",
     "comments",
     "config",
     "context",
@@ -931,7 +900,6 @@
     "package-reload",
     "package-uninstall",
     "package-upgrade",
-    "pause-task",
     "plan",
     "profile",
     "release",
@@ -939,7 +907,6 @@
     "restore",
     "schema",
     "search",
-    "start-task",
     "stats",
     "telemetry",
     "test",
@@ -975,6 +942,86 @@
     ]
   },
   "command_aliases": [
+    {
+      "aliases": [
+        "start-task"
+      ],
+      "canonical": "claim",
+      "contracts": [
+        {
+          "alias": "start-task",
+          "canonical": "claim",
+          "canonical_argv": [
+            "claim",
+            "--start"
+          ],
+          "hidden": true,
+          "lifecycle": "deprecated",
+          "owner": "pm-eq4x",
+          "registration": "commander"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "close-task"
+      ],
+      "canonical": "close",
+      "contracts": [
+        {
+          "alias": "close-task",
+          "canonical": "close",
+          "canonical_argv": [
+            "close",
+            "--release-assignment"
+          ],
+          "hidden": true,
+          "lifecycle": "deprecated",
+          "owner": "pm-eq4x",
+          "registration": "commander"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "delete"
+      ],
+      "canonical": "close delete",
+      "contracts": [
+        {
+          "alias": "delete",
+          "canonical": "close delete",
+          "canonical_argv": [
+            "close",
+            "delete"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-ik19",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "close-many"
+      ],
+      "canonical": "close many",
+      "contracts": [
+        {
+          "alias": "close-many",
+          "canonical": "close many",
+          "canonical_argv": [
+            "close",
+            "many"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-ik19",
+          "registration": "bootstrap"
+        }
+      ]
+    },
     {
       "aliases": [
         "comment"
@@ -1559,6 +1606,26 @@
     },
     {
       "aliases": [
+        "pause-task"
+      ],
+      "canonical": "release",
+      "contracts": [
+        {
+          "alias": "pause-task",
+          "canonical": "release",
+          "canonical_argv": [
+            "release",
+            "--pause"
+          ],
+          "hidden": true,
+          "lifecycle": "deprecated",
+          "owner": "pm-eq4x",
+          "registration": "commander"
+        }
+      ]
+    },
+    {
+      "aliases": [
         "tests"
       ],
       "canonical": "test",
@@ -1572,6 +1639,26 @@
           "hidden": false,
           "lifecycle": "permanent",
           "owner": "pm-u4t9gp",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "update-many"
+      ],
+      "canonical": "update many",
+      "contracts": [
+        {
+          "alias": "update-many",
+          "canonical": "update many",
+          "canonical_argv": [
+            "update",
+            "many"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-ik19",
           "registration": "bootstrap"
         }
       ]
@@ -1599,7 +1686,8 @@
           "assurance verdicts",
           "claim",
           "close",
-          "close-task",
+          "close delete",
+          "close many",
           "comments",
           "config",
           "context",
@@ -1699,7 +1787,6 @@
           "packages reload",
           "packages uninstall",
           "packages upgrade",
-          "pause-task",
           "plan",
           "plan add-step",
           "plan approve",
@@ -1723,12 +1810,12 @@
           "restore",
           "schema",
           "search",
-          "start-task",
           "stats",
           "telemetry",
           "test",
           "test-all",
           "update",
+          "update many",
           "validate",
           "workspace",
           "workspace position",
@@ -2202,6 +2289,10 @@
       "command": "claim",
       "flags": [
         {
+          "flag": "--start",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--id",
           "value_name": "item-id"
         },
@@ -2275,6 +2366,10 @@
       "command": "close",
       "flags": [
         {
+          "flag": "--release-assignment",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--id",
           "value_name": "item-id"
         },
@@ -2329,6 +2424,206 @@
         {
           "flag": "--force",
           "value_type": "boolean"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "close delete",
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "close many",
+      "flags": [
+        {
+          "flag": "--filter-status",
+          "list": true
+        },
+        {
+          "flag": "--filter-type"
+        },
+        {
+          "flag": "--filter-tag"
+        },
+        {
+          "flag": "--filter-priority"
+        },
+        {
+          "flag": "--filter-deadline-before"
+        },
+        {
+          "flag": "--filter-deadline-after"
+        },
+        {
+          "flag": "--filter-updated-after"
+        },
+        {
+          "flag": "--filter-updated-before"
+        },
+        {
+          "flag": "--filter-created-after"
+        },
+        {
+          "flag": "--filter-created-before"
+        },
+        {
+          "flag": "--filter-assignee"
+        },
+        {
+          "aliases": [
+            "--filter-assignee_filter"
+          ],
+          "flag": "--filter-assignee-filter"
+        },
+        {
+          "flag": "--filter-parent"
+        },
+        {
+          "flag": "--filter-sprint"
+        },
+        {
+          "flag": "--filter-release"
+        },
+        {
+          "flag": "--filter-reviewer-missing"
+        },
+        {
+          "flag": "--filter-risk-missing"
+        },
+        {
+          "flag": "--filter-confidence-missing"
+        },
+        {
+          "flag": "--filter-sprint-missing"
+        },
+        {
+          "flag": "--filter-release-missing"
+        },
+        {
+          "flag": "--filter-has-notes"
+        },
+        {
+          "flag": "--filter-no-notes"
+        },
+        {
+          "flag": "--filter-has-learnings"
+        },
+        {
+          "flag": "--filter-no-learnings"
+        },
+        {
+          "flag": "--filter-has-files"
+        },
+        {
+          "flag": "--filter-no-files"
+        },
+        {
+          "flag": "--filter-has-docs"
+        },
+        {
+          "flag": "--filter-no-docs"
+        },
+        {
+          "flag": "--filter-has-tests"
+        },
+        {
+          "flag": "--filter-no-tests"
+        },
+        {
+          "flag": "--filter-has-comments"
+        },
+        {
+          "flag": "--filter-no-comments"
+        },
+        {
+          "flag": "--filter-has-deps"
+        },
+        {
+          "flag": "--filter-no-deps"
+        },
+        {
+          "flag": "--filter-has-body"
+        },
+        {
+          "flag": "--filter-empty-body"
+        },
+        {
+          "flag": "--filter-has-linked-command"
+        },
+        {
+          "flag": "--filter-no-linked-command"
+        },
+        {
+          "flag": "--ids",
+          "list": true
+        },
+        {
+          "flag": "--limit"
+        },
+        {
+          "flag": "--offset"
+        },
+        {
+          "flag": "--reason"
+        },
+        {
+          "flag": "--completed-at"
+        },
+        {
+          "flag": "--resolution"
+        },
+        {
+          "aliases": [
+            "--expected_result",
+            "--expected"
+          ],
+          "flag": "--expected-result"
+        },
+        {
+          "aliases": [
+            "--actual_result",
+            "--actual"
+          ],
+          "flag": "--actual-result"
+        },
+        {
+          "flag": "--validate-close"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--rollback"
+        },
+        {
+          "flag": "--no-checkpoint"
         }
       ],
       "provider": "core"
@@ -2507,32 +2802,6 @@
         },
         {
           "flag": "--no-checkpoint"
-        }
-      ],
-      "provider": "core"
-    },
-    {
-      "command": "close-task",
-      "flags": [
-        {
-          "flag": "--id",
-          "value_name": "item-id"
-        },
-        {
-          "aliases": [
-            "--assignee"
-          ],
-          "flag": "--author"
-        },
-        {
-          "flag": "--message"
-        },
-        {
-          "flag": "--validate-close",
-          "value_name": "off|warn|strict"
-        },
-        {
-          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -6283,28 +6552,6 @@
       "provider": "core"
     },
     {
-      "command": "pause-task",
-      "flags": [
-        {
-          "flag": "--id",
-          "value_name": "item-id"
-        },
-        {
-          "aliases": [
-            "--assignee"
-          ],
-          "flag": "--author"
-        },
-        {
-          "flag": "--message"
-        },
-        {
-          "flag": "--force"
-        }
-      ],
-      "provider": "core"
-    },
-    {
       "command": "plan",
       "flags": [
         {
@@ -7914,6 +8161,10 @@
       "command": "release",
       "flags": [
         {
+          "flag": "--pause",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--id",
           "value_name": "item-id"
         },
@@ -8243,28 +8494,6 @@
         },
         {
           "flag": "--no-linked-command"
-        }
-      ],
-      "provider": "core"
-    },
-    {
-      "command": "start-task",
-      "flags": [
-        {
-          "flag": "--id",
-          "value_name": "item-id"
-        },
-        {
-          "aliases": [
-            "--assignee"
-          ],
-          "flag": "--author"
-        },
-        {
-          "flag": "--message"
-        },
-        {
-          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -8821,6 +9050,473 @@
         },
         {
           "flag": "--clear-type-options"
+        },
+        {
+          "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "update many",
+      "flags": [
+        {
+          "flag": "--status",
+          "short": "-s"
+        },
+        {
+          "flag": "--assignee"
+        },
+        {
+          "flag": "--parent"
+        },
+        {
+          "aliases": [
+            "--blocked_by"
+          ],
+          "flag": "--blocked-by"
+        },
+        {
+          "aliases": [
+            "--blocked_reason"
+          ],
+          "flag": "--blocked-reason"
+        },
+        {
+          "aliases": [
+            "--unblock_note"
+          ],
+          "flag": "--unblock-note"
+        },
+        {
+          "flag": "--filter-status",
+          "list": true
+        },
+        {
+          "flag": "--filter-type",
+          "list": true
+        },
+        {
+          "flag": "--filter-tag",
+          "list": true
+        },
+        {
+          "flag": "--filter-priority",
+          "list": true
+        },
+        {
+          "flag": "--filter-deadline-before"
+        },
+        {
+          "flag": "--filter-deadline-after"
+        },
+        {
+          "flag": "--filter-updated-after"
+        },
+        {
+          "flag": "--filter-updated-before"
+        },
+        {
+          "flag": "--filter-created-after"
+        },
+        {
+          "flag": "--filter-created-before"
+        },
+        {
+          "flag": "--filter-assignee",
+          "list": true
+        },
+        {
+          "aliases": [
+            "--filter-assignee_filter"
+          ],
+          "flag": "--filter-assignee-filter"
+        },
+        {
+          "flag": "--filter-parent"
+        },
+        {
+          "flag": "--filter-sprint",
+          "list": true
+        },
+        {
+          "flag": "--filter-release",
+          "list": true
+        },
+        {
+          "flag": "--filter-ac-missing"
+        },
+        {
+          "aliases": [
+            "--filter-estimate-missing"
+          ],
+          "flag": "--filter-estimates-missing"
+        },
+        {
+          "flag": "--filter-resolution-missing"
+        },
+        {
+          "flag": "--filter-metadata-missing"
+        },
+        {
+          "flag": "--filter-reviewer-missing"
+        },
+        {
+          "flag": "--filter-risk-missing"
+        },
+        {
+          "flag": "--filter-confidence-missing"
+        },
+        {
+          "flag": "--filter-sprint-missing"
+        },
+        {
+          "flag": "--filter-release-missing"
+        },
+        {
+          "flag": "--filter-has-notes"
+        },
+        {
+          "flag": "--filter-no-notes"
+        },
+        {
+          "flag": "--filter-has-learnings"
+        },
+        {
+          "flag": "--filter-no-learnings"
+        },
+        {
+          "flag": "--filter-has-files"
+        },
+        {
+          "flag": "--filter-no-files"
+        },
+        {
+          "flag": "--filter-has-docs"
+        },
+        {
+          "flag": "--filter-no-docs"
+        },
+        {
+          "flag": "--filter-has-tests"
+        },
+        {
+          "flag": "--filter-no-tests"
+        },
+        {
+          "flag": "--filter-has-comments"
+        },
+        {
+          "flag": "--filter-no-comments"
+        },
+        {
+          "flag": "--filter-has-deps"
+        },
+        {
+          "flag": "--filter-no-deps"
+        },
+        {
+          "flag": "--filter-has-body"
+        },
+        {
+          "flag": "--filter-empty-body"
+        },
+        {
+          "flag": "--filter-has-linked-command"
+        },
+        {
+          "flag": "--filter-no-linked-command"
+        },
+        {
+          "flag": "--ids",
+          "list": true
+        },
+        {
+          "flag": "--limit"
+        },
+        {
+          "flag": "--offset"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--rollback"
+        },
+        {
+          "flag": "--no-checkpoint"
+        },
+        {
+          "flag": "--title",
+          "short": "-t"
+        },
+        {
+          "flag": "--description",
+          "short": "-d"
+        },
+        {
+          "flag": "--body",
+          "short": "-b"
+        },
+        {
+          "flag": "--priority",
+          "short": "-p"
+        },
+        {
+          "flag": "--type"
+        },
+        {
+          "aliases": [
+            "--tag"
+          ],
+          "flag": "--tags",
+          "list": true
+        },
+        {
+          "aliases": [
+            "--add_tags"
+          ],
+          "flag": "--add-tags"
+        },
+        {
+          "aliases": [
+            "--remove_tags"
+          ],
+          "flag": "--remove-tags"
+        },
+        {
+          "flag": "--deadline"
+        },
+        {
+          "flag": "--estimate"
+        },
+        {
+          "aliases": [
+            "--estimated_minutes"
+          ],
+          "flag": "--estimated-minutes"
+        },
+        {
+          "aliases": [
+            "--acceptance_criteria"
+          ],
+          "flag": "--acceptance-criteria"
+        },
+        {
+          "flag": "--ac"
+        },
+        {
+          "aliases": [
+            "--add_ac"
+          ],
+          "flag": "--add-ac"
+        },
+        {
+          "aliases": [
+            "--remove_ac"
+          ],
+          "flag": "--remove-ac"
+        },
+        {
+          "aliases": [
+            "--definition_of_ready"
+          ],
+          "flag": "--definition-of-ready"
+        },
+        {
+          "flag": "--order"
+        },
+        {
+          "flag": "--rank"
+        },
+        {
+          "flag": "--goal"
+        },
+        {
+          "flag": "--objective"
+        },
+        {
+          "flag": "--value"
+        },
+        {
+          "flag": "--impact"
+        },
+        {
+          "flag": "--outcome"
+        },
+        {
+          "aliases": [
+            "--why_now"
+          ],
+          "flag": "--why-now"
+        },
+        {
+          "flag": "--reviewer"
+        },
+        {
+          "flag": "--risk"
+        },
+        {
+          "flag": "--confidence"
+        },
+        {
+          "flag": "--sprint"
+        },
+        {
+          "flag": "--release"
+        },
+        {
+          "flag": "--reporter"
+        },
+        {
+          "flag": "--severity"
+        },
+        {
+          "flag": "--environment"
+        },
+        {
+          "aliases": [
+            "--repro_steps"
+          ],
+          "flag": "--repro-steps"
+        },
+        {
+          "flag": "--resolution"
+        },
+        {
+          "aliases": [
+            "--expected_result"
+          ],
+          "flag": "--expected-result"
+        },
+        {
+          "flag": "--expected"
+        },
+        {
+          "aliases": [
+            "--actual_result"
+          ],
+          "flag": "--actual-result"
+        },
+        {
+          "flag": "--actual"
+        },
+        {
+          "aliases": [
+            "--affected_version"
+          ],
+          "flag": "--affected-version"
+        },
+        {
+          "aliases": [
+            "--fixed_version"
+          ],
+          "flag": "--fixed-version"
+        },
+        {
+          "flag": "--component"
+        },
+        {
+          "flag": "--regression"
+        },
+        {
+          "aliases": [
+            "--customer_impact"
+          ],
+          "flag": "--customer-impact"
+        },
+        {
+          "flag": "--allow-unresolved-deps"
+        },
+        {
+          "flag": "--dep"
+        },
+        {
+          "aliases": [
+            "--dep_remove"
+          ],
+          "flag": "--dep-remove"
+        },
+        {
+          "flag": "--replace-deps"
+        },
+        {
+          "flag": "--replace-tests"
+        },
+        {
+          "flag": "--replace-files"
+        },
+        {
+          "flag": "--replace-docs"
+        },
+        {
+          "flag": "--comment"
+        },
+        {
+          "flag": "--note"
+        },
+        {
+          "flag": "--learning"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--test"
+        },
+        {
+          "flag": "--doc"
+        },
+        {
+          "flag": "--reminder"
+        },
+        {
+          "flag": "--event"
+        },
+        {
+          "aliases": [
+            "--type_option"
+          ],
+          "flag": "--type-option"
+        },
+        {
+          "flag": "--unset"
+        },
+        {
+          "flag": "--clear-deps"
+        },
+        {
+          "flag": "--clear-comments"
+        },
+        {
+          "flag": "--clear-notes"
+        },
+        {
+          "flag": "--clear-learnings"
+        },
+        {
+          "flag": "--clear-files"
+        },
+        {
+          "flag": "--clear-tests"
+        },
+        {
+          "flag": "--clear-docs"
+        },
+        {
+          "flag": "--clear-reminders"
+        },
+        {
+          "flag": "--clear-events"
+        },
+        {
+          "flag": "--clear-type-options"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
         },
         {
           "flag": "--force"
@@ -9951,6 +10647,60 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "mutation",
+        "command": "close delete",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "close delete",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "close many",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "close many",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "rows"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
         "command": "close-many",
         "default_max_estimated_tokens": 2000,
         "default_max_estimated_tokens_by_format": {
@@ -9972,33 +10722,6 @@
         "format_flag": "--json",
         "kind": "collection",
         "wrapper_key": "rows"
-      }
-    },
-    {
-      "budget": {
-        "allows_unbounded_opt_out": true,
-        "budget_class": "mutation",
-        "command": "close-task",
-        "default_max_estimated_tokens": 2000,
-        "default_max_estimated_tokens_by_format": {
-          "json": 3000,
-          "toon": 2000
-        },
-        "degradation_ladder": [
-          "full",
-          "compact",
-          "brief",
-          "summary",
-          "counts"
-        ],
-        "token_estimate": "ceil(utf8_bytes / 4)"
-      },
-      "envelope": {
-        "cardinality": "one",
-        "command": "close-task",
-        "format_flag": "--json",
-        "kind": "mutation_receipt",
-        "wrapper_key": null
       }
     },
     {
@@ -12677,33 +13400,6 @@
     {
       "budget": {
         "allows_unbounded_opt_out": true,
-        "budget_class": "mutation",
-        "command": "pause-task",
-        "default_max_estimated_tokens": 2000,
-        "default_max_estimated_tokens_by_format": {
-          "json": 3000,
-          "toon": 2000
-        },
-        "degradation_ladder": [
-          "full",
-          "compact",
-          "brief",
-          "summary",
-          "counts"
-        ],
-        "token_estimate": "ceil(utf8_bytes / 4)"
-      },
-      "envelope": {
-        "cardinality": "one",
-        "command": "pause-task",
-        "format_flag": "--json",
-        "kind": "mutation_receipt",
-        "wrapper_key": null
-      }
-    },
-    {
-      "budget": {
-        "allows_unbounded_opt_out": true,
         "budget_class": "read",
         "command": "plan",
         "default_max_estimated_tokens": 4000,
@@ -13325,33 +14021,6 @@
     {
       "budget": {
         "allows_unbounded_opt_out": true,
-        "budget_class": "mutation",
-        "command": "start-task",
-        "default_max_estimated_tokens": 2000,
-        "default_max_estimated_tokens_by_format": {
-          "json": 3000,
-          "toon": 2000
-        },
-        "degradation_ladder": [
-          "full",
-          "compact",
-          "brief",
-          "summary",
-          "counts"
-        ],
-        "token_estimate": "ceil(utf8_bytes / 4)"
-      },
-      "envelope": {
-        "cardinality": "one",
-        "command": "start-task",
-        "format_flag": "--json",
-        "kind": "mutation_receipt",
-        "wrapper_key": null
-      }
-    },
-    {
-      "budget": {
-        "allows_unbounded_opt_out": true,
         "budget_class": "governance",
         "command": "stats",
         "default_max_estimated_tokens": 6000,
@@ -13482,6 +14151,33 @@
         "format_flag": "--json",
         "kind": "mutation_receipt",
         "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "update many",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "update many",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "rows"
       }
     },
     {
@@ -13968,6 +14664,37 @@
       "intent_source": "command"
     },
     {
+      "command": "close delete",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "flags": [
+        "--message"
+      ],
+      "intent": "Delete work.",
+      "intent_source": "command"
+    },
+    {
+      "command": "close many",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "flags": [
+        "--reason",
+        "--validate-close",
+        "--resolution",
+        "--expected-result",
+        "--actual-result",
+        "--message"
+      ],
+      "intent": "Close matching work.",
+      "intent_source": "command"
+    },
+    {
       "command": "close-many",
       "default_max_estimated_tokens": 2000,
       "default_max_estimated_tokens_by_format": {
@@ -13979,16 +14706,6 @@
         "--offset"
       ],
       "intent": "Close matching work.",
-      "intent_source": "command"
-    },
-    {
-      "command": "close-task",
-      "default_max_estimated_tokens": 2000,
-      "default_max_estimated_tokens_by_format": {
-        "json": 3000,
-        "toon": 2000
-      },
-      "intent": "Close task work.",
       "intent_source": "command"
     },
     {
@@ -15149,16 +15866,6 @@
       "intent_source": "generated"
     },
     {
-      "command": "pause-task",
-      "default_max_estimated_tokens": 2000,
-      "default_max_estimated_tokens_by_format": {
-        "json": 3000,
-        "toon": 2000
-      },
-      "intent": "Pause task work.",
-      "intent_source": "command"
-    },
-    {
       "command": "plan",
       "default_max_estimated_tokens": 4000,
       "default_max_estimated_tokens_by_format": {
@@ -15403,16 +16110,6 @@
       "intent_source": "command"
     },
     {
-      "command": "start-task",
-      "default_max_estimated_tokens": 2000,
-      "default_max_estimated_tokens_by_format": {
-        "json": 3000,
-        "toon": 2000
-      },
-      "intent": "Start task work.",
-      "intent_source": "command"
-    },
-    {
       "command": "stats",
       "default_max_estimated_tokens": 6000,
       "default_max_estimated_tokens_by_format": {
@@ -15475,6 +16172,24 @@
         "--test"
       ],
       "intent": "Update work.",
+      "intent_source": "command"
+    },
+    {
+      "command": "update many",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "flags": [
+        "--status",
+        "--message",
+        "--dep",
+        "--comment",
+        "--file",
+        "--test"
+      ],
+      "intent": "Update matching work.",
       "intent_source": "command"
     },
     {
@@ -16992,8 +17707,9 @@
     "assurance verdicts",
     "claim",
     "close",
+    "close delete",
+    "close many",
     "close-many",
-    "close-task",
     "comments",
     "config",
     "context",
@@ -17093,7 +17809,6 @@
     "packages reload",
     "packages uninstall",
     "packages upgrade",
-    "pause-task",
     "plan",
     "plan add-step",
     "plan approve",
@@ -17117,12 +17832,12 @@
     "restore",
     "schema",
     "search",
-    "start-task",
     "stats",
     "telemetry",
     "test",
     "test-all",
     "update",
+    "update many",
     "update-many",
     "validate",
     "workspace",
@@ -23970,8 +24685,15 @@
         "command": "close-many",
         "disposition": "consolidation",
         "noun": "item",
-        "owner": "pm-yql1",
-        "target": "item"
+        "owner": "pm-ik19",
+        "target": "close many"
+      },
+      {
+        "command": "close many",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-ik19",
+        "target": "close many"
       },
       {
         "command": "close-task",
@@ -24005,8 +24727,15 @@
         "command": "delete",
         "disposition": "consolidation",
         "noun": "item",
-        "owner": "pm-yql1",
-        "target": "item"
+        "owner": "pm-ik19",
+        "target": "close delete"
+      },
+      {
+        "command": "close delete",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-ik19",
+        "target": "close delete"
       },
       {
         "command": "docs",
@@ -24082,8 +24811,15 @@
         "command": "update-many",
         "disposition": "consolidation",
         "noun": "item",
-        "owner": "pm-yql1",
-        "target": "item"
+        "owner": "pm-ik19",
+        "target": "update many"
+      },
+      {
+        "command": "update many",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-ik19",
+        "target": "update many"
       },
       {
         "command": "files discover",
@@ -25352,6 +26088,10 @@
         "slots": []
       },
       {
+        "command": "close many",
+        "slots": []
+      },
+      {
         "command": "close-task",
         "slots": [
           {
@@ -25422,6 +26162,18 @@
       },
       {
         "command": "delete",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "close delete",
         "slots": [
           {
             "name": "id",
@@ -25568,6 +26320,10 @@
       },
       {
         "command": "update-many",
+        "slots": []
+      },
+      {
+        "command": "update many",
         "slots": []
       },
       {
@@ -27380,6 +28136,60 @@
       "description": "Claim a pm item.",
       "input_schema": {
         "additionalProperties": true,
+        "allOf": [
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "start": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "start"
+                  ]
+                },
+                {
+                  "properties": {
+                    "next": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "next"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "start": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "start"
+                  ]
+                },
+                {
+                  "properties": {
+                    "ifAvailable": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "ifAvailable"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "oneOf": [
           {
             "not": {
@@ -27601,6 +28411,10 @@
             "description": "Sprint.",
             "type": "string"
           },
+          "start": {
+            "description": "Claim an explicit item and move it to its configured in-progress status.",
+            "type": "boolean"
+          },
           "tag": {
             "description": "When claiming the next item, only consider work carrying this exact tag.",
             "examples": [
@@ -27744,6 +28558,10 @@
           "reason": {
             "description": "Close reason text when provided or required by governance settings.",
             "type": "string"
+          },
+          "releaseAssignment": {
+            "description": "Release assignment after recording closure evidence.",
+            "type": "boolean"
           },
           "resolution": {
             "description": "Resolution.",
@@ -34432,6 +35250,10 @@
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
             "type": "string"
           },
+          "pause": {
+            "description": "Return work to its configured open status before releasing ownership.",
+            "type": "boolean"
+          },
           "pmExecutable": {
             "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
             "examples": [
@@ -34476,7 +35298,7 @@
         "additionalProperties": true,
         "properties": {
           "action": {
-            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package-upgrade, package, create, item-reopen, copy, focus, list, aggregate, context, ctx, get, graph, search, duplicates, eval, next, history, events, history-redact, history-repair, history-compact, history-author-acknowledge, merge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, notes, learnings, files, docs, deps, plan, test, test-all, telemetry, stats, health, validate, assurance, gc, workspace, contracts, claim, release, start-task, pause-task, close-task, meet, event, remind. Package-owned actions are available dynamically when their provider package is installed.",
+            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package-upgrade, package, create, item-reopen, copy, focus, list, aggregate, context, ctx, get, graph, search, duplicates, eval, next, history, events, history-redact, history-repair, history-compact, history-author-acknowledge, merge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, notes, learnings, files, docs, deps, plan, test, test-all, telemetry, stats, health, validate, assurance, gc, workspace, contracts, claim, release, meet, event, remind. Package-owned actions are available dynamically when their provider package is installed.",
             "enum": [
               "init",
               "config",
@@ -34558,9 +35380,6 @@
               "contracts",
               "claim",
               "release",
-              "start-task",
-              "pause-task",
-              "close-task",
               "meet",
               "event",
               "remind"
@@ -51354,6 +52173,10 @@
             "description": "Reason.",
             "type": "string"
           },
+          "releaseAssignment": {
+            "description": "Release assignment after recording closure evidence.",
+            "type": "boolean"
+          },
           "resolution": {
             "description": "Resolution.",
             "type": "string"
@@ -58147,6 +58970,60 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "start": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "start"
+                  ]
+                },
+                {
+                  "properties": {
+                    "next": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "next"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "start": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "start"
+                  ]
+                },
+                {
+                  "properties": {
+                    "ifAvailable": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "ifAvailable"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "oneOf": [
           {
             "not": {
@@ -58372,6 +59249,10 @@
             "description": "Sprint.",
             "type": "string"
           },
+          "start": {
+            "description": "Claim an explicit item and move it to its configured in-progress status.",
+            "type": "boolean"
+          },
           "tag": {
             "description": "When claiming the next item, only consider work carrying this exact tag.",
             "examples": [
@@ -58472,6 +59353,10 @@
             ],
             "type": "string"
           },
+          "pause": {
+            "description": "Return work to its configured open status before releasing ownership.",
+            "type": "boolean"
+          },
           "pmExecutable": {
             "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
             "examples": [
@@ -58505,279 +59390,6 @@
           "id"
         ],
         "title": "pm action \"release\" parameters",
-        "type": "object"
-      },
-      {
-        "additionalProperties": false,
-        "properties": {
-          "action": {
-            "const": "start-task",
-            "description": "Tool action to execute."
-          },
-          "assignee": {
-            "description": "Assignee identity.",
-            "type": "string"
-          },
-          "author": {
-            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
-            "type": "string"
-          },
-          "force": {
-            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
-            "type": "boolean"
-          },
-          "id": {
-            "description": "Item identifier for read or mutation actions.",
-            "examples": [
-              "pm-a1b2"
-            ],
-            "type": "string"
-          },
-          "json": {
-            "default": true,
-            "description": "Emit machine-readable JSON output.",
-            "type": "boolean"
-          },
-          "message": {
-            "description": "History message for mutation audit trail.",
-            "type": "string"
-          },
-          "noExtensions": {
-            "description": "Disable extension loading for this invocation.",
-            "type": "boolean"
-          },
-          "noPager": {
-            "description": "Disable pager integration for help and long output.",
-            "type": "boolean"
-          },
-          "path": {
-            "description": "Optional PM data root override for this invocation.",
-            "examples": [
-              ".agents/pm"
-            ],
-            "type": "string"
-          },
-          "pmExecutable": {
-            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
-            "examples": [
-              "pm",
-              "node dist/cli.js"
-            ],
-            "type": "string"
-          },
-          "profile": {
-            "description": "Emit deterministic timing diagnostics to stderr.",
-            "type": "boolean"
-          },
-          "quiet": {
-            "description": "Suppress stdout payload output.",
-            "type": "boolean"
-          },
-          "timeoutMs": {
-            "description": "Tool execution timeout in milliseconds.",
-            "examples": [
-              120000
-            ],
-            "type": "number"
-          },
-          "tokenAccounting": {
-            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "action",
-          "id"
-        ],
-        "title": "pm action \"start-task\" parameters",
-        "type": "object"
-      },
-      {
-        "additionalProperties": false,
-        "properties": {
-          "action": {
-            "const": "pause-task",
-            "description": "Tool action to execute."
-          },
-          "assignee": {
-            "description": "Assignee identity.",
-            "type": "string"
-          },
-          "author": {
-            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
-            "type": "string"
-          },
-          "force": {
-            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
-            "type": "boolean"
-          },
-          "id": {
-            "description": "Item identifier for read or mutation actions.",
-            "examples": [
-              "pm-a1b2"
-            ],
-            "type": "string"
-          },
-          "json": {
-            "default": true,
-            "description": "Emit machine-readable JSON output.",
-            "type": "boolean"
-          },
-          "message": {
-            "description": "History message for mutation audit trail.",
-            "type": "string"
-          },
-          "noExtensions": {
-            "description": "Disable extension loading for this invocation.",
-            "type": "boolean"
-          },
-          "noPager": {
-            "description": "Disable pager integration for help and long output.",
-            "type": "boolean"
-          },
-          "path": {
-            "description": "Optional PM data root override for this invocation.",
-            "examples": [
-              ".agents/pm"
-            ],
-            "type": "string"
-          },
-          "pmExecutable": {
-            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
-            "examples": [
-              "pm",
-              "node dist/cli.js"
-            ],
-            "type": "string"
-          },
-          "profile": {
-            "description": "Emit deterministic timing diagnostics to stderr.",
-            "type": "boolean"
-          },
-          "quiet": {
-            "description": "Suppress stdout payload output.",
-            "type": "boolean"
-          },
-          "timeoutMs": {
-            "description": "Tool execution timeout in milliseconds.",
-            "examples": [
-              120000
-            ],
-            "type": "number"
-          },
-          "tokenAccounting": {
-            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "action",
-          "id"
-        ],
-        "title": "pm action \"pause-task\" parameters",
-        "type": "object"
-      },
-      {
-        "additionalProperties": false,
-        "properties": {
-          "action": {
-            "const": "close-task",
-            "description": "Tool action to execute."
-          },
-          "assignee": {
-            "description": "Assignee identity.",
-            "type": "string"
-          },
-          "author": {
-            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
-            "type": "string"
-          },
-          "force": {
-            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
-            "type": "boolean"
-          },
-          "id": {
-            "description": "Item identifier for read or mutation actions.",
-            "examples": [
-              "pm-a1b2"
-            ],
-            "type": "string"
-          },
-          "json": {
-            "default": true,
-            "description": "Emit machine-readable JSON output.",
-            "type": "boolean"
-          },
-          "message": {
-            "description": "History message for mutation audit trail.",
-            "type": "string"
-          },
-          "noExtensions": {
-            "description": "Disable extension loading for this invocation.",
-            "type": "boolean"
-          },
-          "noPager": {
-            "description": "Disable pager integration for help and long output.",
-            "type": "boolean"
-          },
-          "path": {
-            "description": "Optional PM data root override for this invocation.",
-            "examples": [
-              ".agents/pm"
-            ],
-            "type": "string"
-          },
-          "pmExecutable": {
-            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
-            "examples": [
-              "pm",
-              "node dist/cli.js"
-            ],
-            "type": "string"
-          },
-          "profile": {
-            "description": "Emit deterministic timing diagnostics to stderr.",
-            "type": "boolean"
-          },
-          "quiet": {
-            "description": "Suppress stdout payload output.",
-            "type": "boolean"
-          },
-          "text": {
-            "description": "Close reason used before releasing the item's active assignment.",
-            "type": "string"
-          },
-          "timeoutMs": {
-            "description": "Tool execution timeout in milliseconds.",
-            "examples": [
-              120000
-            ],
-            "type": "number"
-          },
-          "tokenAccounting": {
-            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
-            "type": "boolean"
-          },
-          "validateClose": {
-            "description": "Close-time metadata validation mode (\"off\", \"warn\", or \"strict\").",
-            "enum": [
-              "off",
-              "warn",
-              "strict"
-            ],
-            "examples": [
-              "off",
-              "warn",
-              "strict"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "action",
-          "id"
-        ],
-        "title": "pm action \"close-task\" parameters",
         "type": "object"
       },
       {
@@ -59192,10 +59804,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.16.0"
+    "x-schema-version": "4.17.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.16.0",
+  "schema_version": "4.17.0",
   "selected": {
     "action": null,
     "availability_only": false,

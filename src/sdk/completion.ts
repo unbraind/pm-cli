@@ -112,7 +112,8 @@ const GET_FLAGS = toCompletionFlagString(GET_FLAG_CONTRACTS);
 const UPDATE_FLAGS = toCompletionFlagString(UPDATE_FLAG_CONTRACTS);
 const UPDATE_MANY_FLAGS = toCompletionFlagString(UPDATE_MANY_FLAG_CONTRACTS);
 const CLOSE_MANY_FLAGS = toCompletionFlagString(CLOSE_MANY_FLAG_CONTRACTS);
-const NAMESPACE_LEAVES = Object.fromEntries(["history", "context", "ops"].map((noun) => [noun, PM_NAMESPACED_COMMAND_ALIASES.filter((entry) => entry.canonical_argv[0] === noun).map((entry) => entry.canonical_argv[1]).join(" ")]));
+const NAMESPACE_NOUNS = [...new Set(PM_NAMESPACED_COMMAND_ALIASES.map((entry) => entry.canonical_argv[0]))];
+const NAMESPACE_LEAVES = Object.fromEntries(NAMESPACE_NOUNS.map((noun) => [noun, PM_NAMESPACED_COMMAND_ALIASES.filter((entry) => entry.canonical_argv[0] === noun).map((entry) => entry.canonical_argv[1]).join(" ")]));
 const HISTORY_LEAVES = NAMESPACE_LEAVES.history;
 const HISTORY_OPERATION_FLAGS = PM_HISTORY_COMMAND_ALIASES.map((entry) => ({
   ...entry,
@@ -156,10 +157,10 @@ const MUTATION_FLAGS =
   "--author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
 const DELETE_MUTATION_FLAGS =
   "--dry-run --author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
-const CLOSE_MUTATION_FLAGS =
-  "--author --message --validate-close --duplicate-of --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
-const RELEASE_MUTATION_FLAGS =
-  "--author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
+const CLOSE_MUTATION_FLAGS = toCompletionFlagString(resolveSubcommandFlagContractsForCommand("close"));
+const CLOSE_TASK_MUTATION_FLAGS = toCompletionFlagString(resolveSubcommandFlagContractsForCommand("close-task"));
+const RELEASE_MUTATION_FLAGS = toCompletionFlagString(resolveSubcommandFlagContractsForCommand("release"));
+const CLAIM_MUTATION_FLAGS = toCompletionFlagString(resolveSubcommandFlagContractsForCommand("claim"));
 
 const COMMAND_COMPLETION_DESCRIPTIONS = [
   ["init", "Initialize pm storage for the current workspace"],
@@ -549,7 +550,7 @@ function renderFishRuntimeFieldFlagSpecs(
   }
   const lines: string[] = [];
   for (const command of commands) {
-    const predicate = command === "context"
+    const predicate = NAMESPACE_NOUNS.includes(command) || PM_NAMESPACED_COMMAND_ALIASES.some((entry) => entry.alias === command)
       ? "__pm_history_operation"
       : "__fish_seen_subcommand_from";
     for (const flag of normalizedFlags) {
@@ -785,7 +786,7 @@ export function generateBashScript(
     '    if [[ -z "$cmd" ]]; then',
     '      cmd="$word"',
     '      [[ "$cmd" == "ctx" ]] && cmd="context"',
-    '      [[ "$cmd" == "history" || "$cmd" == "context" || "$cmd" == "ops" ]] || break',
+    `      case "$cmd" in ${NAMESPACE_NOUNS.join("|")}) ;; *) break ;; esac`,
     "    else",
     '      case "$cmd $word" in',
     ...PM_NAMESPACED_COMMAND_ALIASES.map((entry) => `        "${entry.canonical}") cmd="${entry.alias}" ;;`),
@@ -821,6 +822,9 @@ export function generateBashScript(
     "      ;;",
     "    update)",
     `      COMPREPLY=(${compgen(updateFlags)})`,
+    '      if [[ $word_index -eq $cword ]]; then',
+    `        COMPREPLY+=(${compgen(NAMESPACE_LEAVES.update)})`,
+    "      fi",
     "      ;;",
     "    update-many)",
     `      COMPREPLY=(${compgen(updateManyFlags)})`,
@@ -938,8 +942,14 @@ export function generateBashScript(
     "    stats)",
     `      COMPREPLY=(${compgen(STATS_FLAGS)})`,
     "      ;;",
-    "    close|close-task)",
+    "    close-task)",
+    `      COMPREPLY=(${compgen(CLOSE_TASK_MUTATION_FLAGS)})`,
+    "      ;;",
+    "    close)",
     `      COMPREPLY=(${compgen(CLOSE_MUTATION_FLAGS)})`,
+    '      if [[ "$cmd" == "close" && $word_index -eq $cword ]]; then',
+    `        COMPREPLY+=(${compgen(NAMESPACE_LEAVES.close)})`,
+    "      fi",
     "      ;;",
     "    close-many)",
     `      COMPREPLY=(${compgen(CLOSE_MANY_FLAGS)})`,
@@ -950,7 +960,10 @@ export function generateBashScript(
     "    delete)",
     `      COMPREPLY=(${compgen(DELETE_MUTATION_FLAGS)})`,
     "      ;;",
-    "    claim|start-task|pause-task)",
+    "    claim)",
+    `      COMPREPLY=(${compgen(CLAIM_MUTATION_FLAGS)})`,
+    "      ;;",
+    "    start-task|pause-task)",
     `      COMPREPLY=(${compgen(MUTATION_FLAGS)})`,
     "      ;;",
     "    meet|event)",
@@ -1072,7 +1085,7 @@ _pm() {
     esac
     if [[ -z "$namespace_noun" ]]; then
       [[ "$word" == "ctx" ]] && word="context"
-      [[ "$word" == "history" || "$word" == "context" || "$word" == "ops" ]] || break
+      case "$word" in ${NAMESPACE_NOUNS.join("|")}) ;; *) break ;; esac
       namespace_noun="$word"
     else
       operation_index=$word_index
@@ -1890,6 +1903,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         close)
           _arguments \\
+            '--release-assignment[Close and release assignment]' \\
             '--reason[Closure reason]:reason' \\
             '--close-reason[Alias for --reason]:close_reason' \\
             '--author[Mutation author]:author' \\
@@ -1906,6 +1920,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         claim)
           _arguments \\
+            '--start[Claim and start work]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -1927,6 +1942,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         release)
           _arguments \\
+            '--pause[Return to open and release ownership]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -2347,167 +2363,167 @@ complete -c pm -n '__fish_seen_subcommand_from copy' -l force   -d 'Force owners
 complete -c pm -n '__pm_history_operation focus' -l clear -d 'Clear the focused item'
 
 # update flags
-complete -c pm -n '__fish_seen_subcommand_from update' -s t -l title              -d 'Item title' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -s d -l description        -d 'Item description' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -s b -l body               -d 'Item body' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l body-file               -d 'Load the item body from a file' -r -F
-complete -c pm -n '__fish_seen_subcommand_from update' -s s -l status             -d 'Item status' -r -a '${statusChoices}'
-complete -c pm -n '__fish_seen_subcommand_from update' -l close-reason            -d 'Set close reason' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
-complete -c pm -n '__fish_seen_subcommand_from update' -l type                    -d 'Item type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from update' -l add-tags                -d 'Add tags additively without replacing existing' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l remove-tags             -d 'Remove tags from the existing list' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l add-ac                  -d 'Add one acceptance criterion without replacing existing' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l remove-ac               -d 'Remove one acceptance criterion by exact text' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l expected                -d 'Short alias for --expected-result' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l actual                  -d 'Short alias for --actual-result' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l comment                 -d 'Comment seed author=<value>,created_at=<iso|now>,text=<value>' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l note                    -d 'Note seed author=<value>,created_at=<iso|now>,text=<value>' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l learning                -d 'Learning seed author=<value>,created_at=<iso|now>,text=<value>' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l file                    -d 'Linked file path=<value>,scope=<project|global>,note=<text>' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l test                    -d 'Linked test command=<value>,path=<value>,scope=<project|global>' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l doc                     -d 'Linked doc path=<value>,scope=<project|global>,note=<text>' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l reminder                -d 'Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_*' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l type-option             -d 'Type option key=value or key=<name>,value=<value>' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l unset                   -d 'Clear scalar metadata field by name' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l replace-deps            -d 'Atomically replace dependencies with provided --dep values'
-complete -c pm -n '__fish_seen_subcommand_from update' -l replace-tests           -d 'Atomically replace linked tests with provided --test values'
-complete -c pm -n '__fish_seen_subcommand_from update' -l replace-files           -d 'Atomically replace linked files with provided --file values'
-complete -c pm -n '__fish_seen_subcommand_from update' -l replace-docs            -d 'Atomically replace linked docs with provided --doc values'
-complete -c pm -n '__fish_seen_subcommand_from update' -l clear-deps              -d 'Clear dependency entries'
-complete -c pm -n '__fish_seen_subcommand_from update' -l clear-comments          -d 'Clear comments'
-complete -c pm -n '__fish_seen_subcommand_from update' -l clear-notes             -d 'Clear notes'
-complete -c pm -n '__fish_seen_subcommand_from update' -l clear-learnings         -d 'Clear learnings'
-complete -c pm -n '__fish_seen_subcommand_from update' -l clear-files             -d 'Clear linked files'
-complete -c pm -n '__fish_seen_subcommand_from update' -l clear-tests             -d 'Clear linked tests'
-complete -c pm -n '__fish_seen_subcommand_from update' -l clear-docs              -d 'Clear linked docs'
-complete -c pm -n '__fish_seen_subcommand_from update' -l clear-reminders         -d 'Clear reminders'
-complete -c pm -n '__fish_seen_subcommand_from update' -l clear-events            -d 'Clear events'
-complete -c pm -n '__fish_seen_subcommand_from update' -l clear-type-options      -d 'Clear type options'
-complete -c pm -n '__fish_seen_subcommand_from update' -l author                  -d 'Mutation author' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l message                 -d 'History message' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l force                   -d 'Force override'
+complete -c pm -n '__pm_history_operation update' -s t -l title              -d 'Item title' -r
+complete -c pm -n '__pm_history_operation update' -s d -l description        -d 'Item description' -r
+complete -c pm -n '__pm_history_operation update' -s b -l body               -d 'Item body' -r
+complete -c pm -n '__pm_history_operation update' -l body-file               -d 'Load the item body from a file' -r -F
+complete -c pm -n '__pm_history_operation update' -s s -l status             -d 'Item status' -r -a '${statusChoices}'
+complete -c pm -n '__pm_history_operation update' -l close-reason            -d 'Set close reason' -r
+complete -c pm -n '__pm_history_operation update' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
+complete -c pm -n '__pm_history_operation update' -l type                    -d 'Item type' -r -a '${typeChoices}'
+complete -c pm -n '__pm_history_operation update' -l add-tags                -d 'Add tags additively without replacing existing' -r
+complete -c pm -n '__pm_history_operation update' -l remove-tags             -d 'Remove tags from the existing list' -r
+complete -c pm -n '__pm_history_operation update' -l add-ac                  -d 'Add one acceptance criterion without replacing existing' -r
+complete -c pm -n '__pm_history_operation update' -l remove-ac               -d 'Remove one acceptance criterion by exact text' -r
+complete -c pm -n '__pm_history_operation update' -l expected                -d 'Short alias for --expected-result' -r
+complete -c pm -n '__pm_history_operation update' -l actual                  -d 'Short alias for --actual-result' -r
+complete -c pm -n '__pm_history_operation update' -l comment                 -d 'Comment seed author=<value>,created_at=<iso|now>,text=<value>' -r
+complete -c pm -n '__pm_history_operation update' -l note                    -d 'Note seed author=<value>,created_at=<iso|now>,text=<value>' -r
+complete -c pm -n '__pm_history_operation update' -l learning                -d 'Learning seed author=<value>,created_at=<iso|now>,text=<value>' -r
+complete -c pm -n '__pm_history_operation update' -l file                    -d 'Linked file path=<value>,scope=<project|global>,note=<text>' -r
+complete -c pm -n '__pm_history_operation update' -l test                    -d 'Linked test command=<value>,path=<value>,scope=<project|global>' -r
+complete -c pm -n '__pm_history_operation update' -l doc                     -d 'Linked doc path=<value>,scope=<project|global>,note=<text>' -r
+complete -c pm -n '__pm_history_operation update' -l reminder                -d 'Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>' -r
+complete -c pm -n '__pm_history_operation update' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_*' -r
+complete -c pm -n '__pm_history_operation update' -l type-option             -d 'Type option key=value or key=<name>,value=<value>' -r
+complete -c pm -n '__pm_history_operation update' -l unset                   -d 'Clear scalar metadata field by name' -r
+complete -c pm -n '__pm_history_operation update' -l replace-deps            -d 'Atomically replace dependencies with provided --dep values'
+complete -c pm -n '__pm_history_operation update' -l replace-tests           -d 'Atomically replace linked tests with provided --test values'
+complete -c pm -n '__pm_history_operation update' -l replace-files           -d 'Atomically replace linked files with provided --file values'
+complete -c pm -n '__pm_history_operation update' -l replace-docs            -d 'Atomically replace linked docs with provided --doc values'
+complete -c pm -n '__pm_history_operation update' -l clear-deps              -d 'Clear dependency entries'
+complete -c pm -n '__pm_history_operation update' -l clear-comments          -d 'Clear comments'
+complete -c pm -n '__pm_history_operation update' -l clear-notes             -d 'Clear notes'
+complete -c pm -n '__pm_history_operation update' -l clear-learnings         -d 'Clear learnings'
+complete -c pm -n '__pm_history_operation update' -l clear-files             -d 'Clear linked files'
+complete -c pm -n '__pm_history_operation update' -l clear-tests             -d 'Clear linked tests'
+complete -c pm -n '__pm_history_operation update' -l clear-docs              -d 'Clear linked docs'
+complete -c pm -n '__pm_history_operation update' -l clear-reminders         -d 'Clear reminders'
+complete -c pm -n '__pm_history_operation update' -l clear-events            -d 'Clear events'
+complete -c pm -n '__pm_history_operation update' -l clear-type-options      -d 'Clear type options'
+complete -c pm -n '__pm_history_operation update' -l author                  -d 'Mutation author' -r
+complete -c pm -n '__pm_history_operation update' -l message                 -d 'History message' -r
+complete -c pm -n '__pm_history_operation update' -l force                   -d 'Force override'
 ${fishUpdateRuntimeFieldFlags}
 
 # update-many flags
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-status           -d 'Filter by status before applying updates' -r -a '${statusChoices}'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-type             -d 'Filter by type before applying updates' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-tag              -d 'Filter by tag before applying updates' -r -a ${fishTagChoices}
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-priority         -d 'Filter by priority before applying updates' -r -a '0 1 2 3 4'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-deadline-before  -d 'Filter by deadline upper bound' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-deadline-after   -d 'Filter by deadline lower bound' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-updated-after    -d 'Filter by updated_at lower bound (ISO/relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-updated-before   -d 'Filter by updated_at upper bound (ISO/relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-created-after    -d 'Filter by created_at lower bound (ISO/relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-created-before   -d 'Filter by created_at upper bound (ISO/relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-assignee         -d 'Filter by assignee before applying updates' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-assignee-filter  -d 'Filter assignee presence' -r -a 'assigned unassigned'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-parent           -d 'Filter by parent item ID' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-sprint           -d 'Filter by sprint before applying updates' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-release          -d 'Filter by release before applying updates' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-ac-missing       -d 'Select only items missing acceptance_criteria'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-estimates-missing -d 'Select only items missing estimated_minutes'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-resolution-missing -d 'Select only terminal items missing resolution'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-metadata-missing  -d 'Select only items missing any tracked metadata'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-reviewer-missing   -d 'Select only items missing reviewer'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-risk-missing       -d 'Select only items missing risk'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-confidence-missing -d 'Select only items missing confidence'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-sprint-missing     -d 'Select only items missing sprint'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-release-missing    -d 'Select only items missing release'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-notes          -d 'Select only items that have notes'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-no-notes           -d 'Select only items with no notes'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-learnings      -d 'Select only items that have learnings'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-no-learnings       -d 'Select only items with no learnings'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-files          -d 'Select only items that have linked files'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-no-files           -d 'Select only items with no linked files'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-docs           -d 'Select only items that have linked docs'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-no-docs            -d 'Select only items with no linked docs'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-tests          -d 'Select only items that have linked tests'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-no-tests           -d 'Select only items with no linked tests'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-comments       -d 'Select only items that have comments'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-no-comments        -d 'Select only items with no comments'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-deps           -d 'Select only items that have dependencies'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-no-deps            -d 'Select only items with no dependencies'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-body           -d 'Select only items with non-empty body'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-empty-body         -d 'Select only items with empty body'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-has-linked-command -d 'Select only items that have a linked command'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-no-linked-command  -d 'Select only items with no linked command'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l ids                     -d 'Explicit comma-separated ID allowlist' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l limit                   -d 'Limit matched item count' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l offset                  -d 'Skip first n matched rows' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l dry-run                 -d 'Preview updates without mutating'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l rollback                -d 'Rollback checkpoint ID' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l no-checkpoint           -d 'Disable checkpoint creation during apply mode'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -s t -l title              -d 'Item title' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -s d -l description        -d 'Item description' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -s b -l body               -d 'Item body' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l type                    -d 'Item type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l tags                    -d 'Comma-separated tags' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l add-tags                -d 'Add tags additively without replacing existing' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l remove-tags             -d 'Remove tags from the existing list' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l deadline                -d 'Deadline (ISO/date string or relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l estimate                -d 'Estimated minutes' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l acceptance-criteria     -d 'Acceptance criteria' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l add-ac                  -d 'Add one acceptance criterion without replacing existing' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l remove-ac               -d 'Remove one acceptance criterion by exact text' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l definition-of-ready     -d 'Definition of ready' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l order                   -d 'Planning order/rank' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l goal                    -d 'Goal identifier' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l objective               -d 'Objective identifier' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l value                   -d 'Business value summary' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l impact                  -d 'Business impact summary' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l outcome                 -d 'Expected outcome summary' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l why-now                 -d 'Why-now rationale' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l reviewer                -d 'Reviewer' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l risk                    -d 'Risk level' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l confidence              -d 'Confidence level' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l sprint                  -d 'Sprint identifier' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l release                 -d 'Release identifier' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l reporter                -d 'Issue reporter' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l severity                -d 'Issue severity' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l environment             -d 'Issue environment context' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l repro-steps             -d 'Issue reproduction steps' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l resolution              -d 'Issue resolution summary' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l expected-result         -d 'Issue expected behavior' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l actual-result           -d 'Issue observed behavior' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l expected                 -d 'Short alias for --expected-result' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l actual                   -d 'Short alias for --actual-result' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l affected-version        -d 'Affected version identifier' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l fixed-version           -d 'Fixed version identifier' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l component               -d 'Issue component ownership' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l regression              -d 'Regression marker true|false|1|0' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l customer-impact         -d 'Customer impact summary' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l dep                     -d 'Dependency seed id=<id>,kind=<kind>,author=<author>,created_at=<timestamp>' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l dep-remove              -d 'Dependency removal selector id=<id>,kind=<kind>,author=<author>,created_at=<timestamp>' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l replace-deps            -d 'Atomically replace dependencies with provided --dep values'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l replace-tests           -d 'Atomically replace linked tests with provided --test values'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l replace-files           -d 'Atomically replace linked files with provided --file values'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l replace-docs            -d 'Atomically replace linked docs with provided --doc values'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l comment                 -d 'Comment seed author=<value>,created_at=<iso|now>,text=<value>' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l note                    -d 'Note seed author=<value>,created_at=<iso|now>,text=<value>' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l learning                -d 'Learning seed author=<value>,created_at=<iso|now>,text=<value>' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l file                    -d 'Linked file path=<value>,scope=<project|global>,note=<text>' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l test                    -d 'Linked test command=<value>,path=<value>,scope=<project|global>' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l doc                     -d 'Linked doc path=<value>,scope=<project|global>,note=<text>' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l reminder                -d 'Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_*' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l type-option             -d 'Type option key=value or key=<name>,value=<value>' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l unset                   -d 'Clear scalar metadata field by name' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-deps              -d 'Clear dependency entries'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-comments          -d 'Clear comments'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-notes             -d 'Clear notes'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-learnings         -d 'Clear learnings'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-files             -d 'Clear linked files'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-tests             -d 'Clear linked tests'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-docs              -d 'Clear linked docs'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-reminders         -d 'Clear reminders'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-events            -d 'Clear events'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-type-options      -d 'Clear type options'
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l author                  -d 'Mutation author' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l message                 -d 'History message' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l force                   -d 'Force override'
+complete -c pm -n '__pm_history_operation update-many' -l filter-status           -d 'Filter by status before applying updates' -r -a '${statusChoices}'
+complete -c pm -n '__pm_history_operation update-many' -l filter-type             -d 'Filter by type before applying updates' -r -a '${typeChoices}'
+complete -c pm -n '__pm_history_operation update-many' -l filter-tag              -d 'Filter by tag before applying updates' -r -a ${fishTagChoices}
+complete -c pm -n '__pm_history_operation update-many' -l filter-priority         -d 'Filter by priority before applying updates' -r -a '0 1 2 3 4'
+complete -c pm -n '__pm_history_operation update-many' -l filter-deadline-before  -d 'Filter by deadline upper bound' -r
+complete -c pm -n '__pm_history_operation update-many' -l filter-deadline-after   -d 'Filter by deadline lower bound' -r
+complete -c pm -n '__pm_history_operation update-many' -l filter-updated-after    -d 'Filter by updated_at lower bound (ISO/relative)' -r
+complete -c pm -n '__pm_history_operation update-many' -l filter-updated-before   -d 'Filter by updated_at upper bound (ISO/relative)' -r
+complete -c pm -n '__pm_history_operation update-many' -l filter-created-after    -d 'Filter by created_at lower bound (ISO/relative)' -r
+complete -c pm -n '__pm_history_operation update-many' -l filter-created-before   -d 'Filter by created_at upper bound (ISO/relative)' -r
+complete -c pm -n '__pm_history_operation update-many' -l filter-assignee         -d 'Filter by assignee before applying updates' -r
+complete -c pm -n '__pm_history_operation update-many' -l filter-assignee-filter  -d 'Filter assignee presence' -r -a 'assigned unassigned'
+complete -c pm -n '__pm_history_operation update-many' -l filter-parent           -d 'Filter by parent item ID' -r
+complete -c pm -n '__pm_history_operation update-many' -l filter-sprint           -d 'Filter by sprint before applying updates' -r
+complete -c pm -n '__pm_history_operation update-many' -l filter-release          -d 'Filter by release before applying updates' -r
+complete -c pm -n '__pm_history_operation update-many' -l filter-ac-missing       -d 'Select only items missing acceptance_criteria'
+complete -c pm -n '__pm_history_operation update-many' -l filter-estimates-missing -d 'Select only items missing estimated_minutes'
+complete -c pm -n '__pm_history_operation update-many' -l filter-resolution-missing -d 'Select only terminal items missing resolution'
+complete -c pm -n '__pm_history_operation update-many' -l filter-metadata-missing  -d 'Select only items missing any tracked metadata'
+complete -c pm -n '__pm_history_operation update-many' -l filter-reviewer-missing   -d 'Select only items missing reviewer'
+complete -c pm -n '__pm_history_operation update-many' -l filter-risk-missing       -d 'Select only items missing risk'
+complete -c pm -n '__pm_history_operation update-many' -l filter-confidence-missing -d 'Select only items missing confidence'
+complete -c pm -n '__pm_history_operation update-many' -l filter-sprint-missing     -d 'Select only items missing sprint'
+complete -c pm -n '__pm_history_operation update-many' -l filter-release-missing    -d 'Select only items missing release'
+complete -c pm -n '__pm_history_operation update-many' -l filter-has-notes          -d 'Select only items that have notes'
+complete -c pm -n '__pm_history_operation update-many' -l filter-no-notes           -d 'Select only items with no notes'
+complete -c pm -n '__pm_history_operation update-many' -l filter-has-learnings      -d 'Select only items that have learnings'
+complete -c pm -n '__pm_history_operation update-many' -l filter-no-learnings       -d 'Select only items with no learnings'
+complete -c pm -n '__pm_history_operation update-many' -l filter-has-files          -d 'Select only items that have linked files'
+complete -c pm -n '__pm_history_operation update-many' -l filter-no-files           -d 'Select only items with no linked files'
+complete -c pm -n '__pm_history_operation update-many' -l filter-has-docs           -d 'Select only items that have linked docs'
+complete -c pm -n '__pm_history_operation update-many' -l filter-no-docs            -d 'Select only items with no linked docs'
+complete -c pm -n '__pm_history_operation update-many' -l filter-has-tests          -d 'Select only items that have linked tests'
+complete -c pm -n '__pm_history_operation update-many' -l filter-no-tests           -d 'Select only items with no linked tests'
+complete -c pm -n '__pm_history_operation update-many' -l filter-has-comments       -d 'Select only items that have comments'
+complete -c pm -n '__pm_history_operation update-many' -l filter-no-comments        -d 'Select only items with no comments'
+complete -c pm -n '__pm_history_operation update-many' -l filter-has-deps           -d 'Select only items that have dependencies'
+complete -c pm -n '__pm_history_operation update-many' -l filter-no-deps            -d 'Select only items with no dependencies'
+complete -c pm -n '__pm_history_operation update-many' -l filter-has-body           -d 'Select only items with non-empty body'
+complete -c pm -n '__pm_history_operation update-many' -l filter-empty-body         -d 'Select only items with empty body'
+complete -c pm -n '__pm_history_operation update-many' -l filter-has-linked-command -d 'Select only items that have a linked command'
+complete -c pm -n '__pm_history_operation update-many' -l filter-no-linked-command  -d 'Select only items with no linked command'
+complete -c pm -n '__pm_history_operation update-many' -l ids                     -d 'Explicit comma-separated ID allowlist' -r
+complete -c pm -n '__pm_history_operation update-many' -l limit                   -d 'Limit matched item count' -r
+complete -c pm -n '__pm_history_operation update-many' -l offset                  -d 'Skip first n matched rows' -r
+complete -c pm -n '__pm_history_operation update-many' -l dry-run                 -d 'Preview updates without mutating'
+complete -c pm -n '__pm_history_operation update-many' -l rollback                -d 'Rollback checkpoint ID' -r
+complete -c pm -n '__pm_history_operation update-many' -l no-checkpoint           -d 'Disable checkpoint creation during apply mode'
+complete -c pm -n '__pm_history_operation update-many' -s t -l title              -d 'Item title' -r
+complete -c pm -n '__pm_history_operation update-many' -s d -l description        -d 'Item description' -r
+complete -c pm -n '__pm_history_operation update-many' -s b -l body               -d 'Item body' -r
+complete -c pm -n '__pm_history_operation update-many' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
+complete -c pm -n '__pm_history_operation update-many' -l type                    -d 'Item type' -r -a '${typeChoices}'
+complete -c pm -n '__pm_history_operation update-many' -l tags                    -d 'Comma-separated tags' -r
+complete -c pm -n '__pm_history_operation update-many' -l add-tags                -d 'Add tags additively without replacing existing' -r
+complete -c pm -n '__pm_history_operation update-many' -l remove-tags             -d 'Remove tags from the existing list' -r
+complete -c pm -n '__pm_history_operation update-many' -l deadline                -d 'Deadline (ISO/date string or relative)' -r
+complete -c pm -n '__pm_history_operation update-many' -l estimate                -d 'Estimated minutes' -r
+complete -c pm -n '__pm_history_operation update-many' -l acceptance-criteria     -d 'Acceptance criteria' -r
+complete -c pm -n '__pm_history_operation update-many' -l add-ac                  -d 'Add one acceptance criterion without replacing existing' -r
+complete -c pm -n '__pm_history_operation update-many' -l remove-ac               -d 'Remove one acceptance criterion by exact text' -r
+complete -c pm -n '__pm_history_operation update-many' -l definition-of-ready     -d 'Definition of ready' -r
+complete -c pm -n '__pm_history_operation update-many' -l order                   -d 'Planning order/rank' -r
+complete -c pm -n '__pm_history_operation update-many' -l goal                    -d 'Goal identifier' -r
+complete -c pm -n '__pm_history_operation update-many' -l objective               -d 'Objective identifier' -r
+complete -c pm -n '__pm_history_operation update-many' -l value                   -d 'Business value summary' -r
+complete -c pm -n '__pm_history_operation update-many' -l impact                  -d 'Business impact summary' -r
+complete -c pm -n '__pm_history_operation update-many' -l outcome                 -d 'Expected outcome summary' -r
+complete -c pm -n '__pm_history_operation update-many' -l why-now                 -d 'Why-now rationale' -r
+complete -c pm -n '__pm_history_operation update-many' -l reviewer                -d 'Reviewer' -r
+complete -c pm -n '__pm_history_operation update-many' -l risk                    -d 'Risk level' -r
+complete -c pm -n '__pm_history_operation update-many' -l confidence              -d 'Confidence level' -r
+complete -c pm -n '__pm_history_operation update-many' -l sprint                  -d 'Sprint identifier' -r
+complete -c pm -n '__pm_history_operation update-many' -l release                 -d 'Release identifier' -r
+complete -c pm -n '__pm_history_operation update-many' -l reporter                -d 'Issue reporter' -r
+complete -c pm -n '__pm_history_operation update-many' -l severity                -d 'Issue severity' -r
+complete -c pm -n '__pm_history_operation update-many' -l environment             -d 'Issue environment context' -r
+complete -c pm -n '__pm_history_operation update-many' -l repro-steps             -d 'Issue reproduction steps' -r
+complete -c pm -n '__pm_history_operation update-many' -l resolution              -d 'Issue resolution summary' -r
+complete -c pm -n '__pm_history_operation update-many' -l expected-result         -d 'Issue expected behavior' -r
+complete -c pm -n '__pm_history_operation update-many' -l actual-result           -d 'Issue observed behavior' -r
+complete -c pm -n '__pm_history_operation update-many' -l expected                 -d 'Short alias for --expected-result' -r
+complete -c pm -n '__pm_history_operation update-many' -l actual                   -d 'Short alias for --actual-result' -r
+complete -c pm -n '__pm_history_operation update-many' -l affected-version        -d 'Affected version identifier' -r
+complete -c pm -n '__pm_history_operation update-many' -l fixed-version           -d 'Fixed version identifier' -r
+complete -c pm -n '__pm_history_operation update-many' -l component               -d 'Issue component ownership' -r
+complete -c pm -n '__pm_history_operation update-many' -l regression              -d 'Regression marker true|false|1|0' -r
+complete -c pm -n '__pm_history_operation update-many' -l customer-impact         -d 'Customer impact summary' -r
+complete -c pm -n '__pm_history_operation update-many' -l dep                     -d 'Dependency seed id=<id>,kind=<kind>,author=<author>,created_at=<timestamp>' -r
+complete -c pm -n '__pm_history_operation update-many' -l dep-remove              -d 'Dependency removal selector id=<id>,kind=<kind>,author=<author>,created_at=<timestamp>' -r
+complete -c pm -n '__pm_history_operation update-many' -l replace-deps            -d 'Atomically replace dependencies with provided --dep values'
+complete -c pm -n '__pm_history_operation update-many' -l replace-tests           -d 'Atomically replace linked tests with provided --test values'
+complete -c pm -n '__pm_history_operation update-many' -l replace-files           -d 'Atomically replace linked files with provided --file values'
+complete -c pm -n '__pm_history_operation update-many' -l replace-docs            -d 'Atomically replace linked docs with provided --doc values'
+complete -c pm -n '__pm_history_operation update-many' -l comment                 -d 'Comment seed author=<value>,created_at=<iso|now>,text=<value>' -r
+complete -c pm -n '__pm_history_operation update-many' -l note                    -d 'Note seed author=<value>,created_at=<iso|now>,text=<value>' -r
+complete -c pm -n '__pm_history_operation update-many' -l learning                -d 'Learning seed author=<value>,created_at=<iso|now>,text=<value>' -r
+complete -c pm -n '__pm_history_operation update-many' -l file                    -d 'Linked file path=<value>,scope=<project|global>,note=<text>' -r
+complete -c pm -n '__pm_history_operation update-many' -l test                    -d 'Linked test command=<value>,path=<value>,scope=<project|global>' -r
+complete -c pm -n '__pm_history_operation update-many' -l doc                     -d 'Linked doc path=<value>,scope=<project|global>,note=<text>' -r
+complete -c pm -n '__pm_history_operation update-many' -l reminder                -d 'Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>' -r
+complete -c pm -n '__pm_history_operation update-many' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_*' -r
+complete -c pm -n '__pm_history_operation update-many' -l type-option             -d 'Type option key=value or key=<name>,value=<value>' -r
+complete -c pm -n '__pm_history_operation update-many' -l unset                   -d 'Clear scalar metadata field by name' -r
+complete -c pm -n '__pm_history_operation update-many' -l clear-deps              -d 'Clear dependency entries'
+complete -c pm -n '__pm_history_operation update-many' -l clear-comments          -d 'Clear comments'
+complete -c pm -n '__pm_history_operation update-many' -l clear-notes             -d 'Clear notes'
+complete -c pm -n '__pm_history_operation update-many' -l clear-learnings         -d 'Clear learnings'
+complete -c pm -n '__pm_history_operation update-many' -l clear-files             -d 'Clear linked files'
+complete -c pm -n '__pm_history_operation update-many' -l clear-tests             -d 'Clear linked tests'
+complete -c pm -n '__pm_history_operation update-many' -l clear-docs              -d 'Clear linked docs'
+complete -c pm -n '__pm_history_operation update-many' -l clear-reminders         -d 'Clear reminders'
+complete -c pm -n '__pm_history_operation update-many' -l clear-events            -d 'Clear events'
+complete -c pm -n '__pm_history_operation update-many' -l clear-type-options      -d 'Clear type options'
+complete -c pm -n '__pm_history_operation update-many' -l author                  -d 'Mutation author' -r
+complete -c pm -n '__pm_history_operation update-many' -l message                 -d 'History message' -r
+complete -c pm -n '__pm_history_operation update-many' -l force                   -d 'Force override'
 ${fishUpdateManyRuntimeFieldFlags}
 
 # files flags
@@ -2676,7 +2692,7 @@ function __pm_history_tokens
     end
     printf '%s\\n' "$token"
     set positions (math $positions + 1)
-    if test $positions -eq 2; or not contains -- "$token" history context ops
+    if test $positions -eq 2; or not contains -- "$token" ${NAMESPACE_NOUNS.join(" ")}
       return
     end
   end
@@ -2689,9 +2705,9 @@ end
 function __pm_history_operation
   set -l tokens (__pm_history_tokens)
   switch "$tokens[1] $tokens[2]"
-${PM_NAMESPACED_COMMAND_ALIASES.map((entry) => `    case '${entry.canonical}'\n      test "$argv[1]" = '${entry.alias}'\n      return`).join("\n")}
+${PM_NAMESPACED_COMMAND_ALIASES.map((entry) => `    case '${entry.canonical}'\n      contains -- '${entry.alias}' $argv\n      return`).join("\n")}
   end
-  test "$tokens[1]" = "$argv[1]"
+  contains -- "$tokens[1]" $argv
 end
 ${Object.entries(NAMESPACE_LEAVES).map(([noun, leaves]) => `complete -c pm -n 'test (count (__pm_history_tokens)) -eq 1; and __pm_history_operation ${noun}' -a '${leaves}' -d '${noun} operation'`).join("\n")}
 ${RESTORE_INVOCATIONS.map((flag) => `complete -c pm -n '__pm_history_operation restore restore' -l ${flag.flag.slice(2)}${flag.takes_value ? " -r" : ""}`).join("\n")}
@@ -2956,22 +2972,25 @@ complete -c pm -n '__fish_seen_subcommand_from append' -l message -d 'History me
 complete -c pm -n '__fish_seen_subcommand_from append' -l force -d 'Force override'
 
 # close flags
-complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task delete' -l author -d 'Mutation author' -r
-complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task delete' -l message -d 'History message' -r
-complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task delete' -l force -d 'Force override'
+complete -c pm -n '__pm_history_operation close' -l release-assignment -d 'Close and release assignment'
+complete -c pm -n '__pm_history_operation release' -l pause -d 'Return to open and release ownership'
+complete -c pm -n '__pm_history_operation claim' -l start -d 'Claim and start work'
+complete -c pm -n '__pm_history_operation claim release start-task pause-task close close-task delete' -l author -d 'Mutation author' -r
+complete -c pm -n '__pm_history_operation claim release start-task pause-task close close-task delete' -l message -d 'History message' -r
+complete -c pm -n '__pm_history_operation claim release start-task pause-task close close-task delete' -l force -d 'Force override'
 complete -c pm -n '__fish_seen_subcommand_from claim' -l if-available -d 'Skip work held by another author'
 complete -c pm -n '__fish_seen_subcommand_from claim' -l next -d 'Atomically claim the next actionable item'
 complete -c pm -n '__fish_seen_subcommand_from claim' -l token-budget -d 'Bound ranked candidate tokens' -r
 complete -c pm -n '__fish_seen_subcommand_from claim' -l explain-ranking -d 'Include ranking provenance'
-complete -c pm -n '__fish_seen_subcommand_from close close-task' -l validate-close -d 'Validate closure metadata mode' -r -a 'off warn strict'
-complete -c pm -n '__fish_seen_subcommand_from close' -l reason -d 'Closure reason' -r
-complete -c pm -n '__fish_seen_subcommand_from close' -l close-reason -d 'Alias for --reason' -r
-complete -c pm -n '__fish_seen_subcommand_from close' -l resolution -d 'Closure resolution summary' -r
-complete -c pm -n '__fish_seen_subcommand_from close' -l expected-result -d 'Expected behavior note' -r
-complete -c pm -n '__fish_seen_subcommand_from close' -l actual-result -d 'Observed behavior note' -r
-complete -c pm -n '__fish_seen_subcommand_from close' -l expected -d 'Short alias for --expected-result' -r
-complete -c pm -n '__fish_seen_subcommand_from close' -l actual -d 'Short alias for --actual-result' -r
-complete -c pm -n '__fish_seen_subcommand_from delete' -l dry-run -d 'Preview the item file that would be deleted without mutating'
+complete -c pm -n '__pm_history_operation close close-task' -l validate-close -d 'Validate closure metadata mode' -r -a 'off warn strict'
+complete -c pm -n '__pm_history_operation close' -l reason -d 'Closure reason' -r
+complete -c pm -n '__pm_history_operation close' -l close-reason -d 'Alias for --reason' -r
+complete -c pm -n '__pm_history_operation close' -l resolution -d 'Closure resolution summary' -r
+complete -c pm -n '__pm_history_operation close' -l expected-result -d 'Expected behavior note' -r
+complete -c pm -n '__pm_history_operation close' -l actual-result -d 'Observed behavior note' -r
+complete -c pm -n '__pm_history_operation close' -l expected -d 'Short alias for --expected-result' -r
+complete -c pm -n '__pm_history_operation close' -l actual -d 'Short alias for --actual-result' -r
+complete -c pm -n '__pm_history_operation delete' -l dry-run -d 'Preview the item file that would be deleted without mutating'
 
 # scheduling shortcut flags (meet/event/remind)
 complete -c pm -n '__fish_seen_subcommand_from meet event' -l start -d 'Start time (ISO, now, or relative)' -r
@@ -2992,60 +3011,60 @@ complete -c pm -n '__fish_seen_subcommand_from meet event remind' -l author -d '
 complete -c pm -n '__fish_seen_subcommand_from meet event remind' -l message -d 'History message' -r
 
 # close-many flags
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-status          -d 'Filter by status before closing' -r -a '${statusChoices}'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-type            -d 'Filter by type before closing' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-tag             -d 'Filter by tag before closing' -r -a ${fishTagChoices}
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-priority        -d 'Filter by priority before closing' -r -a '0 1 2 3 4'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-deadline-before -d 'Filter by deadline upper bound' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-deadline-after  -d 'Filter by deadline lower bound' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-updated-after   -d 'Filter by updated_at lower bound (ISO/relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-updated-before  -d 'Filter by updated_at upper bound (ISO/relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-created-after   -d 'Filter by created_at lower bound (ISO/relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-created-before  -d 'Filter by created_at upper bound (ISO/relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-assignee        -d 'Filter by assignee before closing' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-parent          -d 'Filter by parent item ID' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-sprint          -d 'Filter by sprint before closing' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-release         -d 'Filter by release before closing' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-reviewer-missing   -d 'Select only items missing reviewer'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-risk-missing       -d 'Select only items missing risk'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-confidence-missing -d 'Select only items missing confidence'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-sprint-missing     -d 'Select only items missing sprint'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-release-missing    -d 'Select only items missing release'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-notes          -d 'Select only items that have notes'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-no-notes           -d 'Select only items with no notes'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-learnings      -d 'Select only items that have learnings'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-no-learnings       -d 'Select only items with no learnings'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-files          -d 'Select only items that have linked files'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-no-files           -d 'Select only items with no linked files'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-docs           -d 'Select only items that have linked docs'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-no-docs            -d 'Select only items with no linked docs'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-tests          -d 'Select only items that have linked tests'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-no-tests           -d 'Select only items with no linked tests'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-comments       -d 'Select only items that have comments'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-no-comments        -d 'Select only items with no comments'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-deps           -d 'Select only items that have dependencies'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-no-deps            -d 'Select only items with no dependencies'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-body           -d 'Select only items with non-empty body'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-empty-body         -d 'Select only items with empty body'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-has-linked-command -d 'Select only items that have a linked command'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-no-linked-command  -d 'Select only items with no linked command'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l ids                    -d 'Explicit comma-separated ID allowlist' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l limit                  -d 'Limit matched item count' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l offset                 -d 'Skip first n matched rows' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l reason                 -d 'Optional shared close reason applied to every matched item' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l resolution             -d 'Shared closure resolution' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l expected-result        -d 'Shared expected-result note' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l actual-result          -d 'Shared actual-result note' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l expected               -d 'Short alias for --expected-result' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l actual                 -d 'Short alias for --actual-result' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l validate-close         -d 'Validate closure metadata per item' -r -a 'off warn strict'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l author                 -d 'Mutation author' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l message                -d 'History message' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l force                  -d 'Re-close terminal matches and override ownership'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l dry-run                -d 'Preview matched items without mutating'
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l rollback               -d 'Rollback checkpoint ID' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l no-checkpoint          -d 'Disable checkpoint creation during apply mode'
+complete -c pm -n '__pm_history_operation close-many' -l filter-status          -d 'Filter by status before closing' -r -a '${statusChoices}'
+complete -c pm -n '__pm_history_operation close-many' -l filter-type            -d 'Filter by type before closing' -r -a '${typeChoices}'
+complete -c pm -n '__pm_history_operation close-many' -l filter-tag             -d 'Filter by tag before closing' -r -a ${fishTagChoices}
+complete -c pm -n '__pm_history_operation close-many' -l filter-priority        -d 'Filter by priority before closing' -r -a '0 1 2 3 4'
+complete -c pm -n '__pm_history_operation close-many' -l filter-deadline-before -d 'Filter by deadline upper bound' -r
+complete -c pm -n '__pm_history_operation close-many' -l filter-deadline-after  -d 'Filter by deadline lower bound' -r
+complete -c pm -n '__pm_history_operation close-many' -l filter-updated-after   -d 'Filter by updated_at lower bound (ISO/relative)' -r
+complete -c pm -n '__pm_history_operation close-many' -l filter-updated-before  -d 'Filter by updated_at upper bound (ISO/relative)' -r
+complete -c pm -n '__pm_history_operation close-many' -l filter-created-after   -d 'Filter by created_at lower bound (ISO/relative)' -r
+complete -c pm -n '__pm_history_operation close-many' -l filter-created-before  -d 'Filter by created_at upper bound (ISO/relative)' -r
+complete -c pm -n '__pm_history_operation close-many' -l filter-assignee        -d 'Filter by assignee before closing' -r
+complete -c pm -n '__pm_history_operation close-many' -l filter-assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
+complete -c pm -n '__pm_history_operation close-many' -l filter-parent          -d 'Filter by parent item ID' -r
+complete -c pm -n '__pm_history_operation close-many' -l filter-sprint          -d 'Filter by sprint before closing' -r
+complete -c pm -n '__pm_history_operation close-many' -l filter-release         -d 'Filter by release before closing' -r
+complete -c pm -n '__pm_history_operation close-many' -l filter-reviewer-missing   -d 'Select only items missing reviewer'
+complete -c pm -n '__pm_history_operation close-many' -l filter-risk-missing       -d 'Select only items missing risk'
+complete -c pm -n '__pm_history_operation close-many' -l filter-confidence-missing -d 'Select only items missing confidence'
+complete -c pm -n '__pm_history_operation close-many' -l filter-sprint-missing     -d 'Select only items missing sprint'
+complete -c pm -n '__pm_history_operation close-many' -l filter-release-missing    -d 'Select only items missing release'
+complete -c pm -n '__pm_history_operation close-many' -l filter-has-notes          -d 'Select only items that have notes'
+complete -c pm -n '__pm_history_operation close-many' -l filter-no-notes           -d 'Select only items with no notes'
+complete -c pm -n '__pm_history_operation close-many' -l filter-has-learnings      -d 'Select only items that have learnings'
+complete -c pm -n '__pm_history_operation close-many' -l filter-no-learnings       -d 'Select only items with no learnings'
+complete -c pm -n '__pm_history_operation close-many' -l filter-has-files          -d 'Select only items that have linked files'
+complete -c pm -n '__pm_history_operation close-many' -l filter-no-files           -d 'Select only items with no linked files'
+complete -c pm -n '__pm_history_operation close-many' -l filter-has-docs           -d 'Select only items that have linked docs'
+complete -c pm -n '__pm_history_operation close-many' -l filter-no-docs            -d 'Select only items with no linked docs'
+complete -c pm -n '__pm_history_operation close-many' -l filter-has-tests          -d 'Select only items that have linked tests'
+complete -c pm -n '__pm_history_operation close-many' -l filter-no-tests           -d 'Select only items with no linked tests'
+complete -c pm -n '__pm_history_operation close-many' -l filter-has-comments       -d 'Select only items that have comments'
+complete -c pm -n '__pm_history_operation close-many' -l filter-no-comments        -d 'Select only items with no comments'
+complete -c pm -n '__pm_history_operation close-many' -l filter-has-deps           -d 'Select only items that have dependencies'
+complete -c pm -n '__pm_history_operation close-many' -l filter-no-deps            -d 'Select only items with no dependencies'
+complete -c pm -n '__pm_history_operation close-many' -l filter-has-body           -d 'Select only items with non-empty body'
+complete -c pm -n '__pm_history_operation close-many' -l filter-empty-body         -d 'Select only items with empty body'
+complete -c pm -n '__pm_history_operation close-many' -l filter-has-linked-command -d 'Select only items that have a linked command'
+complete -c pm -n '__pm_history_operation close-many' -l filter-no-linked-command  -d 'Select only items with no linked command'
+complete -c pm -n '__pm_history_operation close-many' -l ids                    -d 'Explicit comma-separated ID allowlist' -r
+complete -c pm -n '__pm_history_operation close-many' -l limit                  -d 'Limit matched item count' -r
+complete -c pm -n '__pm_history_operation close-many' -l offset                 -d 'Skip first n matched rows' -r
+complete -c pm -n '__pm_history_operation close-many' -l reason                 -d 'Optional shared close reason applied to every matched item' -r
+complete -c pm -n '__pm_history_operation close-many' -l resolution             -d 'Shared closure resolution' -r
+complete -c pm -n '__pm_history_operation close-many' -l expected-result        -d 'Shared expected-result note' -r
+complete -c pm -n '__pm_history_operation close-many' -l actual-result          -d 'Shared actual-result note' -r
+complete -c pm -n '__pm_history_operation close-many' -l expected               -d 'Short alias for --expected-result' -r
+complete -c pm -n '__pm_history_operation close-many' -l actual                 -d 'Short alias for --actual-result' -r
+complete -c pm -n '__pm_history_operation close-many' -l validate-close         -d 'Validate closure metadata per item' -r -a 'off warn strict'
+complete -c pm -n '__pm_history_operation close-many' -l author                 -d 'Mutation author' -r
+complete -c pm -n '__pm_history_operation close-many' -l message                -d 'History message' -r
+complete -c pm -n '__pm_history_operation close-many' -l force                  -d 'Re-close terminal matches and override ownership'
+complete -c pm -n '__pm_history_operation close-many' -l dry-run                -d 'Preview matched items without mutating'
+complete -c pm -n '__pm_history_operation close-many' -l rollback               -d 'Rollback checkpoint ID' -r
+complete -c pm -n '__pm_history_operation close-many' -l no-checkpoint          -d 'Disable checkpoint creation during apply mode'
 
 # validate flags
 complete -c pm -n '__pm_history_operation validate' -l check-completeness -d 'Check declarative required fields'
