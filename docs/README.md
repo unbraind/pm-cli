@@ -62,6 +62,7 @@ pm guide release --json
 - [Generated Refusal Closure Census](generated/REFUSAL_CLOSURE_CENSUS.md) - complete error-catalog join to executable refusal evidence and explicit uncovered obligations.
 - [Universal Read Output Contracts](READ_OUTPUT_CONTRACTS.md) - cross-command include, amount, cost, and encoding controls for CLI, SDK, MCP, and packages.
 - [Diagnostic Output Contracts](DIAGNOSTIC_OUTPUT_CONTRACTS.md) - action-first error budgets, deterministic degradation, SDK projection, and executable refusal assurance.
+- [History Algorithms and Detached Attestations](HISTORY_ATTESTATION.md) - named record digests, portable exact-byte proofs, and read-only verification.
 - [History Maintenance and Recovery](HISTORY_MAINTENANCE.md) - native history commands, permanent aliases, shared SDK transforms, and transactional recovery.
 - [Declarative Workflow Policies](WORKFLOW_POLICIES.md) - portable lifecycle requirements, independent approvals, and completeness reports.
 - [Mutation Integrity](MUTATION_INTEGRITY.md) - shared CLI/SDK/MCP author, secret, append-only disposition, and stale-work guardrails.

@@ -36,7 +36,6 @@ import {
   NEXT_FLAG_CONTRACTS,
   PM_COMMAND_ALIAS_CONTRACTS,
   resolvePmCommandOperation,
-  PM_HISTORY_COMMAND_ALIASES,
   PM_NAMESPACED_COMMAND_ALIASES,
   resolveSubcommandFlagContractsForCommand,
   PACKAGE_FLAG_CONTRACTS,
@@ -108,6 +107,10 @@ const RESTORE_INVOCATIONS = enrichCliFlagInvocationContracts(
   "restore",
   resolveSubcommandFlagContractsForCommand("restore"),
 );
+const ATTEST_INVOCATIONS = enrichCliFlagInvocationContracts(
+  "history-attest",
+  resolveSubcommandFlagContractsForCommand("history-attest"),
+);
 const FOCUS_FLAGS = toCompletionFlagString(FOCUS_FLAG_CONTRACTS);
 const MEET_FLAGS = toCompletionFlagString(MEET_FLAG_CONTRACTS);
 const REMIND_FLAGS = toCompletionFlagString(REMIND_FLAG_CONTRACTS);
@@ -119,7 +122,8 @@ const CLOSE_MANY_FLAGS = toCompletionFlagString(CLOSE_MANY_FLAG_CONTRACTS);
 const NAMESPACE_NOUNS = [...new Set(PM_NAMESPACED_COMMAND_ALIASES.map((entry) => entry.canonical_argv[0]))];
 const NAMESPACE_PREFIXES = [...new Set(PM_NAMESPACED_COMMAND_ALIASES.flatMap((entry) => entry.canonical_argv.slice(0, -1).map((_, index) => entry.canonical_argv.slice(0, index + 1).join(" "))))];
 const PACKAGE_NAMESPACE_OPERATIONS = new Set(PM_COMMAND_DESTINATION_CONTRACTS.filter((entry) => entry.disposition === "package_owned").map((entry) => resolvePmCommandOperation(entry.command)));
-const HISTORY_LEAVES = PM_HISTORY_COMMAND_ALIASES.map((entry) => entry.canonical_argv[1]).join(" ");
+const HISTORY_COMPLETION_ALIASES = PM_NAMESPACED_COMMAND_ALIASES.filter((entry) => entry.canonical_argv[0] === "history");
+const HISTORY_LEAVES = HISTORY_COMPLETION_ALIASES.map((entry) => entry.canonical_argv[1]).join(" ");
 
 /** Advertise core namespace leaves plus facets supplied by the active package registry. */
 function completionNamespaceLeaves(runtime: CompletionRuntimeConfig): Record<string, string> {
@@ -128,7 +132,7 @@ function completionNamespaceLeaves(runtime: CompletionRuntimeConfig): Record<str
   return Object.fromEntries(NAMESPACE_PREFIXES.map((prefix) => [prefix, [...new Set(aliases.filter((entry) => entry.canonical.startsWith(`${prefix} `)).map((entry) => entry.canonical_argv[prefix.split(" ").length]))].join(" ")]));
 }
 
-const HISTORY_OPERATION_FLAGS = PM_HISTORY_COMMAND_ALIASES.map((entry) => ({
+const HISTORY_OPERATION_FLAGS = HISTORY_COMPLETION_ALIASES.map((entry) => ({
   ...entry,
   flags: toCompletionFlagString(resolveSubcommandFlagContractsForCommand(entry.alias)),
 }));
@@ -1533,6 +1537,10 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
+        history-attest)
+          _arguments \\
+${renderZshArgumentSpecs(ATTEST_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.description}]${flag.takes_value ? ":value" : ""}'`), { trailingContinuation: false })}
+          ;;
         history-compact)
           _arguments \\
             '--id[Item ID (alternative to positional ID)]:id' \\
@@ -2740,6 +2748,8 @@ ${[...PM_NAMESPACED_COMMAND_ALIASES].sort((left, right) => right.canonical_argv.
 end
 ${Object.entries(namespaceLeaves).map(([noun, leaves]) => `complete -c pm -n 'test (string join " " -- (__pm_history_tokens)) = "${noun}"' -a '${leaves}' -d '${noun} operation'`).join("\n")}
 ${RESTORE_INVOCATIONS.map((flag) => `complete -c pm -n '__pm_history_operation restore restore' -l ${flag.flag.slice(2)}${flag.takes_value ? " -r" : ""}`).join("\n")}
+
+${ATTEST_INVOCATIONS.map((flag) => `complete -c pm -n '__pm_history_operation history-attest' -l ${flag.flag.slice(2)}${flag.takes_value ? " -r" : ""}`).join("\n")}
 
 # history / activity flags
 complete -c pm -n '__pm_history_operation history'  -l limit -d 'Max history entries' -r

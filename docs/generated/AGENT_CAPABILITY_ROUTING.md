@@ -10,7 +10,7 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | intake | `create`, `item copy`, `context focus`, `history restore` |
 | context | `list`, `aggregate`, `context`, `get`, `search`, `item duplicates`, `ops eval`, `context next`, `history activity`, `ops stats`, `help` |
 | lifecycle | `update`, `update many`, `close`, `close many`, `close delete`, `claim`, `release` |
-| evidence | `history`, `history events`, `history redact`, `history repair`, `history compact`, `history-author-acknowledge`, `append`, `comments`, `notes`, `learnings`, `files`, `docs` |
+| evidence | `history`, `history events`, `history redact`, `history repair`, `history compact`, `history attest`, `history-author-acknowledge`, `append`, `comments`, `notes`, `learnings`, `files`, `docs` |
 | graph | `graph`, `deps`, `plan` |
 | quality | `test`, `ops test-all`, `ops validate`, `assurance`, `contracts`, `ops` |
 | automation | `meet`, `event`, `remind` |

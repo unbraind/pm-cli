@@ -6,6 +6,7 @@
  * building block for provenance browsers, immutable records, and VCS-like
  * systems without acquiring locks or appending history.
  */
+import { resolveHistoryHashAlgorithm } from "../core/history/digest.js";
 import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
 import {
@@ -110,6 +111,7 @@ export function verifyHistoryEntries(
       : hashDocumentVerificationCandidates(
           currentDocument,
           verification.item_hash_version,
+          resolveHistoryHashAlgorithm(history.at(-1)?.hash_algorithm),
         );
   const currentItemHash =
     currentDocument === undefined

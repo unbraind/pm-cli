@@ -798,6 +798,8 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
     ...destinationRows("history", "history", "target_noun", "pm-pbyu", [
       "history",
     ]),
+    ...destinationRows("history", "history attest", "target_noun", "pm-3z0k", ["history attest"]),
+    ...destinationRows("history", "history attest", "consolidation", "pm-3z0k", ["history-attest"]),
     ...PM_HISTORY_COMMAND_ALIASES.flatMap(({ alias, canonical }) => [
       ...destinationRows("history", canonical, "target_noun", "pm-tqel", [canonical]),
       ...destinationRows("history", canonical, "consolidation", "pm-tqel", [alias]),

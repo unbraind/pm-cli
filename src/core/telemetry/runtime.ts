@@ -1190,6 +1190,7 @@ function buildOtelSpanRequest(
   return { endpoint: activeCommand.otel_traces_endpoint, payload };
 }
 
+/** Build a bounded, capture-level-sanitized result preview. Omit undefined object values as JSON does so optional fields cannot prevent completion telemetry. */
 function summarizeResult(
   result: unknown,
   captureLevel: Exclude<TelemetryCaptureLevel, "minimal"> = "redacted",
@@ -1221,6 +1222,9 @@ function summarizeResult(
     let previewBytes = 0;
     for (const key of keys.slice(0, 25)) {
       const sanitizedValue = sanitizeValue(record[key], key, captureLevel);
+      // JSON omits absent object values; measuring them would throw before
+      // the completion event and its OTLP span can be persisted.
+      if (sanitizedValue === undefined) continue;
       const entrySize = JSON.stringify(sanitizedValue).length;
       if (previewBytes + entrySize > TELEMETRY_RESULT_PREVIEW_MAX_BYTES) {
         sanitized[key] = "[preview_truncated]";

@@ -7,6 +7,7 @@ import {
   salvageHistoryTail,
   type HistorySalvageReceipt,
 } from "./history/salvage.js";
+import { resolveHistoryHashAlgorithm } from "../core/history/digest.js";
 import { realpath } from "node:fs/promises";
 import path from "node:path";
 import jsonPatch from "fast-json-patch";
@@ -658,6 +659,7 @@ function describeHistoryRepairItemReplay(
     matchedChainBefore: replayHashVerificationCandidates(
       currentItemReplay,
       itemHashVersion,
+      resolveHistoryHashAlgorithm(historyEntries.at(-1)?.hash_algorithm),
     ).includes(lastOriginalAfterHash),
     currentItemRawBeforeLock: loadedItem.raw,
     loadedItem,
@@ -686,6 +688,7 @@ function buildHistoryRepairMessage(params: {
   /* v8 ignore stop */
 }
 
+/** Append a sealed maintenance event only when repair changed history, preserving the tail algorithm and matching item-hash semantics for optional state reconciliation. */
 function buildHistoryRepairEntries(params: {
   reanchorEntries: HistoryEntry[];
   changed: boolean;
@@ -707,9 +710,11 @@ function buildHistoryRepairEntries(params: {
     params.reconcileNeeded && params.currentItemReplay
       ? params.currentItemReplay
       : params.finalReplay;
+  const algorithm = resolveHistoryHashAlgorithm(params.reanchorEntries.at(-1)?.hash_algorithm);
   const beforeHashes = replayHashVerificationCandidates(
     params.finalReplay,
     params.itemHashVersion,
+    algorithm,
   );
   const previousAfterHash =
     params.reanchorEntries[params.reanchorEntries.length - 1]!.after_hash;
@@ -717,8 +722,10 @@ function buildHistoryRepairEntries(params: {
   const afterHashes = replayHashVerificationCandidates(
     afterReplay,
     params.itemHashVersion,
+    algorithm,
   );
   const auditEntry: HistoryEntry = {
+    hash_algorithm: algorithm,
     ts: nowIso(),
     author: params.author,
     op: params.auditOperation,

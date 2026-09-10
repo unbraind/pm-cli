@@ -2,8 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- Portable integrity attestation: compare recorded history with independently retained proof bundles ([pm-3z0k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3z0k.toon))
+
 ### Fixed
 
+- The history integrity chain hard-codes SHA-256 with no algorithm identifier, so the proof it produces has no migration path across the decades it claims to cover ([pm-bbk8we](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bbk8we.toon))
+- Optional undefined result fields silently drop telemetry completion events ([pm-rqaqfp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rqaqfp.toon))
 - GH-1229: preserve bounded HTTP process-tree cleanup when POSIX liveness returns EPERM ([pm-qn9zxu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qn9zxu.toon))
 
 ### Other
@@ -12,6 +18,7 @@
 - Register advanced retrieval as a search facet ([pm-wfskfn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wfskfn.toon))
 - Consolidate duplicate governance under item operations ([pm-fmy9ih](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fmy9ih.toon))
 - Declare item copy and workspace merge command destinations ([pm-m6g87m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-m6g87m.toon))
+- Refresh Sentry 10.74 with history attestation consumer verification ([pm-2us1yv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2us1yv.toon))
 
 ## 2026.9.10 - 2026-09-10
 

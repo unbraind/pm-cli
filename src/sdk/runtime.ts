@@ -113,6 +113,7 @@ import { runCloseMany } from "./lifecycle/close-many.js";
 import { normalizeAnnotationTransportOptions } from "./annotations.js";
 import { runComments } from "./comments.js";
 import { runHistory } from "./query/history.js";
+import { runHistoryAttest, type HistoryAttestCommandOptions } from "./history/attestation-command.js";
 import { runLearnings } from "./learnings.js";
 import { runNotes } from "./notes.js";
 import { runUpdateMany } from "./lifecycle/update-many.js";
@@ -1194,6 +1195,11 @@ export class PmClient {
     return this.runTyped("history-repair", {
       options: { ...options, all: true },
     });
+  }
+
+  /** Export or verify a detached history proof without activating workspace extensions. */
+  historyAttest(options: HistoryAttestCommandOptions = {}): ReturnType<typeof runHistoryAttest> {
+    return this.runTyped("history-attest", { options });
   }
 
   /** Compact one history stream into a verified checkpoint and retained tail. */
@@ -2876,6 +2882,9 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
     global.path = resolvePmRoot(resolutionCwd, global.path);
   }
   try {
+    if (resolved.action === "history-attest") {
+      return await dispatchAction(resolved.action, resolved.args, global, null);
+    }
     if (
       (args as PmActionInput & { [ACTIVE_EXTENSION_HOST_CONTEXT]?: true })[
         ACTIVE_EXTENSION_HOST_CONTEXT
@@ -3723,6 +3732,7 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
     runHistoryRedact(requireMcpItemId(ctx), ctx.options, ctx.global),
   "history-repair": runMcpHistoryRepairAction,
   "history-compact": runMcpHistoryCompactAction,
+  "history-attest": (ctx) => runHistoryAttest(ctx.options, ctx.global),
   "history-author-acknowledge": runMcpHistoryAuthorAcknowledgeAction,
   plan: runMcpPlanAction,
   schema: runMcpSchemaAction,
@@ -3769,6 +3779,7 @@ export function analyzeSdkActionCoverage(
   });
 }
 
+/** Normalize transport options, dispatch the SDK or extension action, and finalize read projections. Detached attestations return complete proof data without lossy projection. */
 async function dispatchAction(
   action: string,
   args: Record<string, unknown>,
@@ -3797,10 +3808,14 @@ async function dispatchAction(
         global,
         activeExtensions,
       );
-  options.resolvedOutputFormat = "json";
-  const projected = attachReadOutputContracts(action, options, result);
-  await finalizeContextUsageEgress(resolvePmRoot(process.cwd(), global.path), projected);
-  return projected;
+  if (action === "history-attest") {
+    return result;
+  } else {
+    options.resolvedOutputFormat = "json";
+    const projected = attachReadOutputContracts(action, options, result);
+    await finalizeContextUsageEgress(resolvePmRoot(process.cwd(), global.path), projected);
+    return projected;
+  }
 }
 
 const actionRunnerTestHooks = {

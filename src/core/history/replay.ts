@@ -4,13 +4,13 @@
  * Implements append-only history and replay behavior for Replay.
  */
 import jsonPatch from "fast-json-patch";
+import { historyDigest, resolveHistoryHashAlgorithm, type HistoryHashAlgorithm } from "./digest.js";
 import { findHistoryIdentityDiscontinuities } from "./identity.js";
 import { ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { canonicalDocument } from "../item/item-format.js";
 import { toItemRecord } from "../item/item-record.js";
 import {
   orderObject,
-  sha256Hex,
   stableStringify,
 } from "../shared/serialization.js";
 import {
@@ -60,8 +60,9 @@ export function cloneEmptyReplayDocument(): ReplayDocument {
 export function replayHash(
   document: ReplayDocument,
   version: HistoryItemHashVersion = CURRENT_HISTORY_ITEM_HASH_VERSION,
+  algorithm?: HistoryHashAlgorithm,
 ): string {
-  return replayHashVerificationCandidates(document, version)[0];
+  return replayHashVerificationCandidates(document, version, algorithm)[0];
 }
 
 /**
@@ -72,6 +73,7 @@ export function replayHash(
 export function replayHashVerificationCandidates(
   document: ReplayDocument,
   version: HistoryItemHashVersion,
+  algorithm?: HistoryHashAlgorithm,
 ): [string, ...string[]] {
   if (
     Object.keys(document.metadata).length === 0 ||
@@ -81,17 +83,19 @@ export function replayHashVerificationCandidates(
       return hashDocumentVerificationCandidates(
         replayToItemDocument(document),
         version,
+        algorithm,
       );
     } catch {
       // Fall through when another malformed legacy field cannot be canonicalized.
     }
   }
-  const fallback = sha256Hex(
+  const fallback = historyDigest(
     stableStringify({
       replay_fallback: true,
       metadata: document.metadata,
       body: document.body,
     }),
+    algorithm,
   );
   return version === 2 ? [fallback, fallback] : [fallback];
 }
@@ -111,8 +115,9 @@ function matchReplayHashCandidates(
   version: HistoryItemHashVersion,
   entry: HistoryEntry,
 ): ReplayHashCandidateMatch {
-  const beforeHashes = replayHashVerificationCandidates(before, version);
-  const afterHashes = replayHashVerificationCandidates(after, version);
+  const algorithm = resolveHistoryHashAlgorithm(entry.hash_algorithm);
+  const beforeHashes = replayHashVerificationCandidates(before, version, algorithm);
+  const afterHashes = replayHashVerificationCandidates(after, version, algorithm);
   return {
     beforeHashes,
     afterHashes,

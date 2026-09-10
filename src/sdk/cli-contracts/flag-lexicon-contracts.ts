@@ -246,6 +246,8 @@ const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   next: 38,
   history: 35,
   events: 33,
+  // pm-3z0k: three proof options plus the shared global surface; no spare allowance.
+  "history-attest": 23,
   "history-redact": 27,
   // One explicit destructive-recovery mode; never overload ordinary reanchoring.
   "history-repair": 27,

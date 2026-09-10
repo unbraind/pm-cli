@@ -411,6 +411,16 @@
       "requires_extension": false
     },
     {
+      "action": "history-attest",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "history attest|history-attest",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "history-author-acknowledge",
       "available": true,
       "cli_exposed": true,
@@ -873,6 +883,7 @@
     "graph",
     "health",
     "history",
+    "history-attest",
     "history-author-acknowledge",
     "history-compact",
     "history-redact",
@@ -1158,6 +1169,26 @@
           "hidden": true,
           "lifecycle": "permanent",
           "owner": "pm-tqel",
+          "registration": "commander"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "history-attest"
+      ],
+      "canonical": "history attest",
+      "contracts": [
+        {
+          "alias": "history-attest",
+          "canonical": "history attest",
+          "canonical_argv": [
+            "history",
+            "attest"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-3z0k",
           "registration": "commander"
         }
       ]
@@ -1787,11 +1818,13 @@
           "help",
           "history",
           "history activity",
+          "history attest",
           "history compact",
           "history events",
           "history redact",
           "history repair",
           "history restore",
+          "history-attest",
           "history-author-acknowledge",
           "history-compact",
           "history-redact",
@@ -4507,6 +4540,27 @@
       "provider": "core"
     },
     {
+      "command": "history attest",
+      "flags": [
+        {
+          "flag": "--verify",
+          "value_name": "file",
+          "value_type": "string"
+        },
+        {
+          "flag": "--output",
+          "value_name": "file",
+          "value_type": "string"
+        },
+        {
+          "flag": "--hash-algorithm",
+          "value_name": "name",
+          "value_type": "string"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "history compact",
       "flags": [
         {
@@ -4684,6 +4738,27 @@
         },
         {
           "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "history-attest",
+      "flags": [
+        {
+          "flag": "--verify",
+          "value_name": "file",
+          "value_type": "string"
+        },
+        {
+          "flag": "--output",
+          "value_name": "file",
+          "value_type": "string"
+        },
+        {
+          "flag": "--hash-algorithm",
+          "value_name": "name",
+          "value_type": "string"
         }
       ],
       "provider": "core"
@@ -11920,6 +11995,33 @@
     {
       "budget": {
         "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "history attest",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "history attest",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
         "budget_class": "mutation",
         "command": "history compact",
         "default_max_estimated_tokens": 2000,
@@ -12049,6 +12151,33 @@
         "command": "history restore",
         "format_flag": "--json",
         "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "history-attest",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "history-attest",
+        "format_flag": "--json",
+        "kind": "diagnostic",
         "wrapper_key": null
       }
     },
@@ -15424,6 +15553,16 @@
       "intent_source": "command"
     },
     {
+      "command": "history attest",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Export or verify detached history proof.",
+      "intent_source": "command"
+    },
+    {
       "command": "history compact",
       "default_max_estimated_tokens": 2000,
       "default_max_estimated_tokens_by_format": {
@@ -15476,6 +15615,16 @@
         "toon": 2000
       },
       "intent": "Restore history.",
+      "intent_source": "command"
+    },
+    {
+      "command": "history-attest",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Export or verify detached history proof.",
       "intent_source": "command"
     },
     {
@@ -18004,11 +18153,13 @@
     "help",
     "history",
     "history activity",
+    "history attest",
     "history compact",
     "history events",
     "history redact",
     "history repair",
     "history restore",
+    "history-attest",
     "history-author-acknowledge",
     "history-compact",
     "history-redact",
@@ -25283,6 +25434,20 @@
         "target": "history"
       },
       {
+        "command": "history attest",
+        "disposition": "target_noun",
+        "noun": "history",
+        "owner": "pm-3z0k",
+        "target": "history attest"
+      },
+      {
+        "command": "history-attest",
+        "disposition": "consolidation",
+        "noun": "history",
+        "owner": "pm-3z0k",
+        "target": "history attest"
+      },
+      {
         "command": "history redact",
         "disposition": "target_noun",
         "noun": "history",
@@ -26879,6 +27044,14 @@
             "variadic": false
           }
         ]
+      },
+      {
+        "command": "history attest",
+        "slots": []
+      },
+      {
+        "command": "history-attest",
+        "slots": []
       },
       {
         "command": "history redact",
@@ -35718,7 +35891,7 @@
         "additionalProperties": true,
         "properties": {
           "action": {
-            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package-upgrade, package, create, item-reopen, copy, focus, list, aggregate, context, ctx, get, graph, search, duplicates, eval, next, history, events, history-redact, history-repair, history-compact, history-author-acknowledge, merge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, notes, learnings, files, docs, deps, plan, test, test-all, telemetry, stats, health, validate, assurance, gc, workspace, contracts, claim, release, meet, event, remind. Package-owned actions are available dynamically when their provider package is installed.",
+            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package-upgrade, package, create, item-reopen, copy, focus, list, aggregate, context, ctx, get, graph, search, duplicates, eval, next, history, events, history-redact, history-repair, history-compact, history-attest, history-author-acknowledge, merge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, notes, learnings, files, docs, deps, plan, test, test-all, telemetry, stats, health, validate, assurance, gc, workspace, contracts, claim, release, meet, event, remind. Package-owned actions are available dynamically when their provider package is installed.",
             "enum": [
               "init",
               "config",
@@ -35769,6 +35942,7 @@
               "history-redact",
               "history-repair",
               "history-compact",
+              "history-attest",
               "history-author-acknowledge",
               "merge",
               "schema",
@@ -49605,6 +49779,94 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "verify",
+                "hashAlgorithm"
+              ]
+            }
+          }
+        ],
+        "properties": {
+          "action": {
+            "const": "history-attest",
+            "description": "Tool action to execute."
+          },
+          "hashAlgorithm": {
+            "description": "Digest for detached history bundles; defaults to sha256.",
+            "enum": [
+              "sha256",
+              "sha512"
+            ],
+            "type": "string"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "output": {
+            "description": "Local CLI/SDK only. MCP rejects this field; save the returned JSON bundle on the client.",
+            "not": {}
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
+          "verify": {
+            "additionalProperties": true,
+            "description": "Compare all retained history streams with a detached JSON proof object. Server-local proof paths are not accepted over MCP.",
+            "type": "object"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "pm action \"history-attest\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
         "oneOf": [
           {
             "not": {
@@ -60228,10 +60490,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.17.0"
+    "x-schema-version": "4.18.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.17.0",
+  "schema_version": "4.18.0",
   "selected": {
     "action": null,
     "availability_only": false,

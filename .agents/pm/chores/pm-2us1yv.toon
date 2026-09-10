@@ -1,0 +1,53 @@
+id: pm-2us1yv
+title: Refresh Sentry 10.74 with history attestation consumer verification
+description: Adopt the compatible Sentry 10.74.0 runtime release after its release-age window; verify observability and packed consumers alongside the history algorithm and detached proof delivery. Preserve existing major toolchain compatibility constraints.
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-09-10T18:21:28.536Z"
+updated_at: "2026-09-10T19:31:53.521Z"
+closed_at: "2026-09-10T19:09:59.278Z"
+completed_at: "2026-09-10T19:09:59.278Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Sentry 10.74.0 is locked; typecheck and focused Sentry tests pass; exact coverage and static quality pass; npm and Bun packed consumers work; vulnerability audit remains empty.
+parent: pm-u9d0
+risk: low
+confidence: high
+resolution: Pinned Sentry 10.74.0 and refreshed its locked dependency graph after the existing package ratchet failed against 10.73.0.
+expected_result: Current compatible Sentry release works without peer or age overrides under supported CLI and SDK consumers and introduces no audit findings or coverage regressions.
+actual_result: Registered manifest/instrument/telemetry tests and final typecheck passed; packed npm and Bun consumers passed; 8697 tests passed at exact 100/100/100/100 coverage; npm audit found zero vulnerabilities across 373 dependencies; a real scrubbed runtime event reached Sentry.
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3z0k,verifies,"2026-09-10T18:21:28.536Z","harness:codex","cli:create:dep",detected
+  pm-92tp12,recurs_from,"2026-09-10T18:21:28.536Z","harness:codex","cli:create:dep",detected
+  pm-do5b,verifies,"2026-09-10T18:21:28.536Z","harness:codex","cli:create:dep",detected
+  pm-fokyhh,verifies,"2026-09-10T18:21:28.536Z","harness:codex","cli:create:dep",detected
+  pm-ksr40d,verifies,"2026-09-10T18:21:28.536Z","harness:codex","cli:create:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-09-10T18:21:28.536Z","harness:codex","Duplicate check: all-status keyword search for 10.74 returned zero items; Sentry and dependency searches identified closed prior owner pm-92tp12 and existing major-migration owners pm-fokyhh pm-do5b pm-ksr40d. Open and in-progress inventories were checked. Registry 10.74.0 supports Node >=18 and was published 2026-09-09T15:54:26.289Z so the 24-hour release-age window has elapsed. Dependency installation waits until the current coverage run finishes."
+  "2026-09-10T18:26:33.573Z","harness:codex","TDD evidence: the existing Sentry package compatibility ratchet failed at 10.73.0 when advanced to 10.74.0 before installation. pnpm then installed the exact 10.74.0 pin and updated five Sentry packages without release-age or peer overrides. Typecheck and packed TypeScript consumer validation remain required before closure."
+  "2026-09-10T18:52:02.165Z","harness:codex","Verification evidence: typecheck and packed TypeScript consumers passed after the 10.74.0 pin; npm audit reports zero info/low/moderate/high/critical findings across 373 dependencies. Published 2026.9.10 npm+npx+Bun+bunx acceptance remains green independently of this unreleased change. A real missing-proof negative control confirmed Sentry receives scrubbed runtime events; its attestation UX correction is tracked by pm-3z0k. No forced peer or release-age overrides were used."
+  "2026-09-10T19:07:48.638Z","harness:codex","Final complete coverage run after the Sentry refresh passed 8697 tests in 665 files at exact 100 percent for statements, branches, functions and lines, with zero uncovered counts. Sentry 10.74.0 ran the live scrubbed missing-proof diagnostic successfully. npm audit remains zero findings; final sequential linked tests and review are the remaining delivery checks."
+  "2026-09-10T19:09:34.157Z","harness:codex","Final registered linked command passed package manifest, Sentry instrument and Sentry telemetry gate tests in the PM schema sandbox. Final core/public-type/package/example typecheck passed. Complete suite and packed npm/Bun consumer evidence are already recorded above."
+  "2026-09-10T19:31:53.521Z","harness:codex","Fresh live observability after the updated SDK: the Sentry and telemetry release gate passed with zero critical/high unresolved issues and zero failures missing error classification; finish error rate was 1.98 percent. The intentional one-event local proof-file probe was resolved only after regression and handled-usage verification. Both packed npm and Bun consumers passed again."
+files[3]{path,scope,note}:
+  package.json,project,Compatible Sentry runtime pin
+  pnpm-lock.yaml,project,Resolved Sentry 10.74 dependency graph
+  tests/unit/packages/package-manifest.spec.ts,project,Packed-consumer-safe Sentry release ratchet
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/package-manifest.spec.ts tests/unit/core/sentry/instrument.spec.ts tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,360,"harness:codex","2026-09-10T18:26:32.665Z",local_mutation,feat/history-algorithm-attestation
+test_runs[1]:
+  - run_id: test-local-mtvwgncf-c4s1dy
+    kind: test
+    status: passed
+    started_at: "2026-09-10T19:07:41.982Z"
+    finished_at: "2026-09-10T19:07:53.775Z"
+    recorded_at: "2026-09-10T19:07:53.775Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/packages/package-manifest.spec.ts tests/unit/core/sentry/instrument.spec.ts tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,schema,schema,source,local_source_ref
+close_reason: Updated the compatible Sentry runtime to 10.74.0 with complete consumer and observability evidence.
+body: ""

@@ -554,6 +554,17 @@ describe("generateBashScript", () => {
     }
   });
 
+  it("offers detached proof flags in all shells", () => {
+    const bash = generateBashScript().match(/history-attest\)[\s\S]*?;;/u)?.[0];
+    const zsh = generateZshScript().match(/history-attest\)[\s\S]*?;;/u)?.[0];
+    const fish = generateFishScript();
+    for (const flag of ["verify", "output", "hash-algorithm"]) {
+      expect(bash).toContain(`--${flag}`);
+      expect(zsh).toContain(`--${flag}[`);
+      expect(fish).toContain(`__pm_history_operation history-attest' -l ${flag} -r`);
+    }
+  });
+
   it("includes history-compact flags across completion scripts", () => {
     const bashScript = generateBashScript();
     expect(bashScript).toContain("history-compact)");
@@ -798,7 +809,7 @@ describe("generateZshScript", () => {
     expect(script).toContain("ctx:Alias for context");
     expect(script).not.toContain("history-compact:Compact");
     expect(script).not.toContain("history-redact:Redact");
-    expect(script).toContain("history_commands=(redact repair compact activity restore events)");
+    expect(script).toContain("history_commands=(attest redact repair compact activity restore events)");
     expect(script).toContain("plan:Agent-optimized Plan item workflow");
     expect(script).toContain("notes:List or add notes for an item");
     expect(script).toContain("learnings:List or add learnings for an item");

@@ -40,3 +40,6 @@ export * from "./mutation-guard.js";
 export * from "./governance/provenance-health.js";
 export * from "./similarity.js";
 export * from "./history/maintenance.js";
+export * from "./history/attestation.js";
+export * from "./history/attestation-command.js";
+export * from "../core/history/digest.js";
