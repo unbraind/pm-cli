@@ -59,8 +59,17 @@ The same APIs are available from the SDK root. `generatedAt` optionally accepts
 an RFC 3339 timestamp with millisecond precision for reproducible exports.
 Equal stream bytes, options, and timestamps yield identical bundle digests.
 `PmClient.historyAttest` and `runAction({ action: "history-attest", ... })` expose
-the filesystem adapter used by CLI and MCP. Direct export and verify functions
+the adapter used by CLI and MCP. Local CLI and SDK callers may use proof paths;
+SDK callers may also pass a typed bundle as `verify`. Direct export and verify functions
 accept and return typed bundles without requiring a proof file.
+
+## MCP
+
+Call `pm_run` with `action: "history-attest"` to receive the complete JSON bundle.
+Retain it on the client and pass that object as `verify` to compare the tracker.
+Both flat arguments and nested `options` use this data-only proof transport.
+MCP refuses `output` and string `verify` values before accessing proof files;
+server-local proof paths are available only to local CLI and SDK callers.
 
 ## Version 1 wire format
 

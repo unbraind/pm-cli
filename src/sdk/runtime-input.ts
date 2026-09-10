@@ -431,6 +431,14 @@ export function optionsWithAuthor(
     { ...hoistedTopLevel, ...baseOptions },
     action,
   );
+  if (action === "history-attest" && isMcpMutationTransportInput(args)) {
+    if (options.output !== undefined || typeof options.verify === "string") {
+      throw new PmCliError(
+        "MCP history attest does not accept server-local proof paths. Export the returned JSON bundle and pass that JSON object as verify.",
+        EXIT_CODE.USAGE,
+      );
+    }
+  }
   const stdinPolicySource = isMcpMutationTransportInput(args)
     ? args
     : (sourceOptions ?? args);

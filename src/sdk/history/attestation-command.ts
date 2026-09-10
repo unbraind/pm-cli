@@ -9,10 +9,10 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { exportAttestation, verifyAttestation } from "./attestation.js";
 import type { HistoryAttestation, HistoryAttestationVerification } from "./attestation-contract.js";
 
-/** Filesystem transport options; SDK consumers may instead pass bundles directly. */
+/** Proof transport options; local CLI/SDK callers may also use filesystem paths. */
 export interface HistoryAttestCommandOptions {
-  /** Read an independently retained JSON proof and compare the current streams. */
-  verify?: string;
+  /** Compare current streams with a retained bundle, or a local CLI/SDK proof path. */
+  verify?: string | HistoryAttestation;
   /** Create a new proof file exclusively; existing files are never overwritten. */
   output?: string;
   /** Digest used for new bundles, independently from record algorithms. */
@@ -33,6 +33,7 @@ export interface HistoryAttestationExportReceipt {
 export async function runHistoryAttest(options: HistoryAttestCommandOptions, global: GlobalOptions): Promise<HistoryAttestation | HistoryAttestationVerification | HistoryAttestationExportReceipt> {
   for (const key of ["verify", "output", "hashAlgorithm"] as const) {
     const value = options[key];
+    if (key === "verify" && typeof value === "object" && value !== null) continue;
     if (value !== undefined && (typeof value !== "string" || value.trim().length === 0)) {
       throw new PmCliError(`history attest ${key} requires a nonempty string.`, EXIT_CODE.USAGE);
     }
@@ -41,7 +42,9 @@ export async function runHistoryAttest(options: HistoryAttestCommandOptions, glo
     if (options.output !== undefined || options.hashAlgorithm !== undefined) throw new PmCliError("history attest --verify cannot be combined with --output or --hash-algorithm", EXIT_CODE.USAGE);
     let proof: unknown;
     try {
-      proof = JSON.parse(await fs.readFile(options.verify, "utf8"));
+      proof = typeof options.verify === "string"
+        ? JSON.parse(await fs.readFile(options.verify, "utf8"))
+        : options.verify;
     } catch {
       throw new PmCliError("Cannot read history attestation proof. Provide --verify with a readable JSON proof file.", EXIT_CODE.USAGE);
     }

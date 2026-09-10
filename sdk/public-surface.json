@@ -1931,6 +1931,14 @@
       ],
       "package_version": "2026.9.10",
       "reason": "Additive history algorithm arguments, attestation APIs and PmClient method; command schema versions and record verification error union explicitly advance."
+    },
+    {
+      "changes": [
+        "signature ./sdk:HistoryAttestCommandOptions",
+        "signature ./sdk/governance:HistoryAttestCommandOptions"
+      ],
+      "package_version": "2026.9.10",
+      "reason": "pm-3z0k: unreleased attestation verify input widens from a local filename to filename or typed proof bundle; MCP uses proof data only while local SDK filename compatibility is preserved."
     }
   ],
   "entrypoints": {
@@ -8631,7 +8639,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryAttestCommandOptions",
-          "signature": "export interface HistoryAttestCommandOptions { verify?: string; output?: string; hashAlgorithm?: string; }"
+          "signature": "export interface HistoryAttestCommandOptions { verify?: string | HistoryAttestation; output?: string; hashAlgorithm?: string; }"
         },
         {
           "classification": "supported",
@@ -26457,7 +26465,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryAttestCommandOptions",
-          "signature": "export interface HistoryAttestCommandOptions { verify?: string; output?: string; hashAlgorithm?: string; }"
+          "signature": "export interface HistoryAttestCommandOptions { verify?: string | HistoryAttestation; output?: string; hashAlgorithm?: string; }"
         },
         {
           "classification": "supported",

@@ -1190,6 +1190,7 @@ function buildOtelSpanRequest(
   return { endpoint: activeCommand.otel_traces_endpoint, payload };
 }
 
+/** Build a bounded, capture-level-sanitized result preview. Omit undefined object values as JSON does so optional fields cannot prevent completion telemetry. */
 function summarizeResult(
   result: unknown,
   captureLevel: Exclude<TelemetryCaptureLevel, "minimal"> = "redacted",

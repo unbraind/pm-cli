@@ -2,11 +2,44 @@
 import { cp, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { handleRequest } from "../../src/mcp/server.js";
+import { buildPmActionToolInputSchema } from "../../src/sdk/cli-contracts/tool-schema.js";
 import { parseHistoryAttestation } from "../../src/sdk/history/attestation.js";
 import { PmClient, runAction } from "../../src/sdk/runtime.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("detached history proof transports", () => {
+  it("exchanges MCP proof data and refuses server-local proof paths in flat and nested arguments", async () => {
+    expect(buildPmActionToolInputSchema("history-attest")).toMatchObject({ properties: {
+      verify: { type: "object" }, output: { not: {} },
+    } });
+    await withTempPmPath(async (context) => {
+      const itemsBefore = await runAction({ action: "list", path: context.pmPath });
+      const proof = parseHistoryAttestation(await new PmClient({ pmRoot: context.pmPath }).historyAttest());
+      const retained = path.join(context.tempRoot, "retained.json");
+      await writeFile(retained, JSON.stringify(proof));
+      for (const nested of [false, true]) {
+        for (const options of [{ verify: retained }, { output: path.join(context.tempRoot, `forbidden-${nested}.json`) }]) {
+          await expect(handleRequest({ jsonrpc: "2.0", id: 1, method: "tools/call", params: {
+            name: "pm_run", arguments: { action: "history-attest", path: context.pmPath, ...(nested ? { options } : options) },
+          } })).rejects.toMatchObject({ exitCode: 2, message: expect.stringContaining("MCP history attest") });
+        }
+        expect(await readdir(context.tempRoot)).not.toContain(`forbidden-${nested}.json`);
+        const verified = await handleRequest({ jsonrpc: "2.0", id: 2, method: "tools/call", params: {
+          name: "pm_run", arguments: { action: "history-attest", path: context.pmPath, ...(nested ? { options: { verify: proof } } : { verify: proof }) },
+        } });
+        expect(verified).toMatchObject({ structuredContent: { result: { ok: true } } });
+      }
+      const exported = await handleRequest({ jsonrpc: "2.0", id: 3, method: "tools/call", params: {
+        name: "pm_run", arguments: { action: "history-attest", path: context.pmPath },
+      } });
+      expect(exported).toMatchObject({ structuredContent: { result: { format: "pm-history-attestation", streams: [] } } });
+      expect(await new PmClient({ pmRoot: context.pmPath }).historyAttest({ verify: retained })).toMatchObject({ ok: true });
+      expect(await readFile(retained, "utf8")).toBe(JSON.stringify(proof));
+      expect(await runAction({ action: "list", path: context.pmPath })).toEqual(itemsBefore);
+    });
+  });
+
   it("exports complete evidence, verifies with CLI and SDK, and refuses overwritten output", async () => {
     await withTempPmPath(async (context) => {
       context.runCli(["create", "--title", "portable proof", "--json"], { expectJson: true });
@@ -27,7 +60,7 @@ describe("detached history proof transports", () => {
       expect(await new PmClient({ pmRoot: context.pmPath }).historyAttest({ verify: output })).toMatchObject({ ok: true });
       expect(await runAction({ action: "history-attest", path: context.pmPath, options: { verify: output } })).toMatchObject({ ok: true });
       expect(await runAction({ action: "history-attest", path: context.pmPath, verify: output })).toMatchObject({ ok: true });
-      for (const verify of [true, "", 42]) {
+      for (const verify of [true, "", 42, null]) {
         await expect(runAction({ action: "history-attest", path: context.pmPath, options: { verify } })).rejects.toThrow("nonempty string");
       }
       const copiedTracker = path.join(context.tempRoot, "bare-tracker");

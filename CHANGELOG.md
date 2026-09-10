@@ -4,7 +4,7 @@
 
 ### Added
 
-- Portable integrity attestation: export a detached hash-chain proof bundle and verify it standalone, so third parties can confirm the recorded history was never altered ([pm-3z0k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3z0k.toon))
+- Portable integrity attestation: compare recorded history with independently retained proof bundles ([pm-3z0k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3z0k.toon))
 
 ### Fixed
 

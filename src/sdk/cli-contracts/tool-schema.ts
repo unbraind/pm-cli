@@ -23,7 +23,7 @@ import {
 import {
   PM_TOOL_PARAMETER_PROPERTIES as BASE_TOOL_PARAMETER_PROPERTIES,
   PM_TOOL_PARAMETER_METADATA as BASE_TOOL_PARAMETER_METADATA,
-  PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES,
+  PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES as BASE_ACTION_SCOPED_PARAMETER_PROPERTIES,
   PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA,
   PLAN_ACTION_PARAMETER_PROPERTIES,
   PLAN_ACTION_PARAMETER_METADATA,
@@ -33,6 +33,15 @@ import {
   withFlagAliasMetadata,
 } from "./flag-contracts.js";
 import { resolveReadOutputSurface } from "../read-output-contracts.js";
+
+/** MCP proof transport carries JSON data and explicitly forbids local output paths. */
+const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: typeof BASE_ACTION_SCOPED_PARAMETER_PROPERTIES = {
+  ...BASE_ACTION_SCOPED_PARAMETER_PROPERTIES,
+  "history-attest": {
+    verify: { type: "object", additionalProperties: true },
+    output: { not: {} },
+  },
+};
 
 /** Additive lifecycle controls; action-scoped start retains the scheduling spelling. */
 const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
@@ -763,7 +772,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     },
     "history-attest": {
       optional: ["verify", "output", "hashAlgorithm"],
-      mutuallyExclusive: [["verify", "output"], ["verify", "hashAlgorithm"]],
+      mutuallyExclusive: [["verify", "hashAlgorithm"]],
     },
     "history-redact": {
       required: ["id"],
@@ -1479,7 +1488,8 @@ function actionScopedToolParameterMetadata(
   action: PmToolAction,
   key: string,
 ): { description: string; examples?: unknown[] } | undefined {
-  if (action === "history-attest" && key === "verify") return { description: "Read a detached JSON proof file and compare all retained history streams." };
+  if (action === "history-attest" && key === "verify") return { description: "Compare all retained history streams with a detached JSON proof object. Server-local proof paths are not accepted over MCP." };
+  if (action === "history-attest" && key === "output") return { description: "Local CLI/SDK only. MCP rejects this field; save the returned JSON bundle on the client." };
   if (action === "claim" && key === "start") return { description: "Claim an explicit item and move it to its configured in-progress status." };
   if ((action === "list" || action.startsWith("list-")) && key === "all") {
     return {
@@ -1526,7 +1536,6 @@ function actionScopedToolParameterDefinition(
   key: string,
 ): unknown {
   if (action === "claim" && key === "start") return { type: "boolean" };
-  if (action === "history-attest" && key === "verify") return { type: "string", minLength: 1 };
   const actionProperties = PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES[action];
   if (
     actionProperties &&

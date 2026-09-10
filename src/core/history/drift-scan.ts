@@ -162,6 +162,7 @@ interface DriftScanCacheState {
   verifyCacheHitByContent: boolean;
 }
 
+/** Verify the optional workspace stream, record its declared digest algorithm in the cache, and accumulate integrity failures. Returns whether cached evidence changed. */
 async function scanWorkspaceHistory(
   pmRoot: string,
   previousEntries: Record<string, DriftCacheEntry>,

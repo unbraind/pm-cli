@@ -396,6 +396,7 @@ function redactHistoryPatch(
   return { patch: redactedPatch, replacements };
 }
 
+/** Replay the original stream using each record's declared algorithm and count state-anchor mismatches before attempting redaction. */
 function inspectHistoryIntegrity(
   entries: HistoryEntry[],
 ): HistoryIntegritySnapshot {
@@ -497,6 +498,7 @@ function redactHistoryEntry(
   };
 }
 
+/** Redact verified records, rebuild state anchors with their original algorithms, and retain eligible prior-record commitments while resealing the rewritten chain. */
 function rewriteHistoryEntries(
   entries: HistoryEntry[],
   rules: RedactionRule[],

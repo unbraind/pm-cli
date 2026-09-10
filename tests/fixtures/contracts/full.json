@@ -49784,14 +49784,6 @@
             "not": {
               "required": [
                 "verify",
-                "output"
-              ]
-            }
-          },
-          {
-            "not": {
-              "required": [
-                "verify",
                 "hashAlgorithm"
               ]
             }
@@ -49824,12 +49816,8 @@
             "type": "boolean"
           },
           "output": {
-            "description": "File path for commands that write generated output, such as package/extension describe Markdown references.",
-            "examples": [
-              "docs/pm-package-reference.md"
-            ],
-            "minLength": 1,
-            "type": "string"
+            "description": "Local CLI/SDK only. MCP rejects this field; save the returned JSON bundle on the client.",
+            "not": {}
           },
           "path": {
             "description": "Optional PM data root override for this invocation.",
@@ -49866,9 +49854,9 @@
             "type": "boolean"
           },
           "verify": {
-            "description": "Read a detached JSON proof file and compare all retained history streams.",
-            "minLength": 1,
-            "type": "string"
+            "additionalProperties": true,
+            "description": "Compare all retained history streams with a detached JSON proof object. Server-local proof paths are not accepted over MCP.",
+            "type": "object"
           }
         },
         "required": [

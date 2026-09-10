@@ -3779,6 +3779,7 @@ export function analyzeSdkActionCoverage(
   });
 }
 
+/** Normalize transport options, dispatch the SDK or extension action, and finalize read projections. Detached attestations return complete proof data without lossy projection. */
 async function dispatchAction(
   action: string,
   args: Record<string, unknown>,
@@ -3807,11 +3808,14 @@ async function dispatchAction(
         global,
         activeExtensions,
       );
-  if (action === "history-attest") return result;
-  options.resolvedOutputFormat = "json";
-  const projected = attachReadOutputContracts(action, options, result);
-  await finalizeContextUsageEgress(resolvePmRoot(process.cwd(), global.path), projected);
-  return projected;
+  if (action === "history-attest") {
+    return result;
+  } else {
+    options.resolvedOutputFormat = "json";
+    const projected = attachReadOutputContracts(action, options, result);
+    await finalizeContextUsageEgress(resolvePmRoot(process.cwd(), global.path), projected);
+    return projected;
+  }
 }
 
 const actionRunnerTestHooks = {

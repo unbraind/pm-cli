@@ -688,6 +688,7 @@ function buildHistoryRepairMessage(params: {
   /* v8 ignore stop */
 }
 
+/** Append a sealed maintenance event only when repair changed history, preserving the tail algorithm and matching item-hash semantics for optional state reconciliation. */
 function buildHistoryRepairEntries(params: {
   reanchorEntries: HistoryEntry[];
   changed: boolean;
