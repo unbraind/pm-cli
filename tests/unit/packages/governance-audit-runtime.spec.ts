@@ -356,10 +356,10 @@ describe("packages/pm-governance-audit runtime", () => {
         { path: "docs/z.md", linked_by_count: 0, linked_item_ids: [] },
       ]);
       await expect(
-        byName.get("dedupe-audit")?.run?.({ options: {}, global } as never),
+        byName.get("item duplicates audit")?.run?.({ options: {}, global } as never),
       ).resolves.toHaveProperty("clusters");
       await expect(
-        byName.get("comments-audit")?.run?.({ options: {}, global } as never),
+        byName.get("item audit-comments")?.run?.({ options: {}, global } as never),
       ).resolves.toHaveProperty("items");
       await expect(
         byName
@@ -368,7 +368,7 @@ describe("packages/pm-governance-audit runtime", () => {
       ).resolves.toHaveProperty("dry_run");
       await expect(
         byName
-          .get("dedupe-merge")
+          .get("item duplicates merge")
           ?.run?.({
             options: { keep: "pm-missing", close: "pm-other" },
             global,

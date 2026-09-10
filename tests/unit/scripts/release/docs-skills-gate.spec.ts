@@ -974,6 +974,7 @@ describe("docs-skills-gate", () => {
   });
 
   describe("fs-backed full + links-only flows (real temp fixtures)", () => {
+    /** Write a minimal linked documentation tree to exercise the full gate against real files. */
     async function seedDocsSkillsFixture(root: string): Promise<void> {
       const docsContent = [
         "# Docs",
@@ -1040,6 +1041,7 @@ describe("docs-skills-gate", () => {
       }
     }
 
+    /** Run the gate against the fixture repository with deterministic command receipts. */
     function mockUtilsWithRepo(repoRoot: string, runCommand: ReturnType<typeof vi.fn>): void {
       vi.doMock("../../../../scripts/release/utils.mjs", async () => {
         const actual = await vi.importActual<typeof ReleaseUtils>(
@@ -1065,7 +1067,7 @@ describe("docs-skills-gate", () => {
         if (joined.includes("contracts --runtime-only --availability-only --json")) {
           return { status: 0, stdout: JSON.stringify({ commands: ["guide", "contracts"] }), stderr: "" };
         }
-        if (joined.includes("contracts --flags-only --json")) {
+        if (joined.includes("contracts --flags-only --full --json")) {
           return {
             status: 0,
             stdout: JSON.stringify({

@@ -114,7 +114,7 @@
       "action": "copy",
       "available": true,
       "cli_exposed": true,
-      "command_path": "copy",
+      "command_path": "item copy|copy",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -174,7 +174,7 @@
       "action": "duplicates",
       "available": true,
       "cli_exposed": true,
-      "command_path": "duplicates",
+      "command_path": "item duplicates|duplicates",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -504,7 +504,7 @@
       "action": "merge",
       "available": true,
       "cli_exposed": true,
-      "command_path": "merge",
+      "command_path": "workspace merge|merge",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -1264,6 +1264,46 @@
     },
     {
       "aliases": [
+        "copy"
+      ],
+      "canonical": "item copy",
+      "contracts": [
+        {
+          "alias": "copy",
+          "canonical": "item copy",
+          "canonical_argv": [
+            "item",
+            "copy"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-m6g87m",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "duplicates"
+      ],
+      "canonical": "item duplicates",
+      "contracts": [
+        {
+          "alias": "duplicates",
+          "canonical": "item duplicates",
+          "canonical_argv": [
+            "item",
+            "duplicates"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-fmy9ih",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
         "learning"
       ],
       "canonical": "learnings",
@@ -1662,6 +1702,26 @@
           "registration": "bootstrap"
         }
       ]
+    },
+    {
+      "aliases": [
+        "merge"
+      ],
+      "canonical": "workspace merge",
+      "contracts": [
+        {
+          "alias": "merge",
+          "canonical": "workspace merge",
+          "canonical_argv": [
+            "workspace",
+            "merge"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-m6g87m",
+          "registration": "bootstrap"
+        }
+      ]
     }
   ],
   "command_exit_contracts": {
@@ -1739,6 +1799,8 @@
           "init",
           "item",
           "item complete",
+          "item copy",
+          "item duplicates",
           "item mutate",
           "item reopen",
           "learnings",
@@ -1818,6 +1880,7 @@
           "update many",
           "validate",
           "workspace",
+          "workspace merge",
           "workspace position",
           "workspace snapshot",
           "workspace snapshot create",
@@ -4900,6 +4963,56 @@
         {
           "flag": "--author",
           "value_name": "value"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "item copy",
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "flag": "--title",
+          "value_name": "value"
+        },
+        {
+          "flag": "--author",
+          "value_name": "value"
+        },
+        {
+          "flag": "--message",
+          "value_name": "value"
+        },
+        {
+          "flag": "--allow-duplicate",
+          "value_type": "boolean"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "item duplicates",
+      "flags": [
+        {
+          "flag": "--exhaustive",
+          "value_type": "boolean"
+        },
+        {
+          "flag": "--status",
+          "list": true,
+          "repeatable": true
+        },
+        {
+          "flag": "--since"
+        },
+        {
+          "flag": "--threshold"
+        },
+        {
+          "flag": "--limit"
         }
       ],
       "provider": "core"
@@ -10095,6 +10208,33 @@
       "provider": "core"
     },
     {
+      "command": "workspace merge",
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--include-reconciled"
+        },
+        {
+          "flag": "--output"
+        },
+        {
+          "flag": "--item-path"
+        },
+        {
+          "flag": "--prefer"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "workspace position",
       "flags": [],
       "provider": "core"
@@ -12105,6 +12245,60 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "mutation",
+        "command": "item copy",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "item copy",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "item duplicates",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "item duplicates",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
         "command": "item mutate",
         "default_max_estimated_tokens": 2000,
         "default_max_estimated_tokens_by_format": {
@@ -14256,6 +14450,33 @@
       "envelope": {
         "cardinality": "none",
         "command": "workspace",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "governance",
+        "command": "workspace merge",
+        "default_max_estimated_tokens": 6000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 9000,
+          "toon": 6000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "workspace merge",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -15331,6 +15552,30 @@
       "intent_source": "generated"
     },
     {
+      "command": "item copy",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Copy work.",
+      "intent_source": "command"
+    },
+    {
+      "command": "item duplicates",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "flags": [
+        "--limit",
+        "--since"
+      ],
+      "intent": "Find duplicate clusters.",
+      "intent_source": "command"
+    },
+    {
       "command": "item mutate",
       "default_max_estimated_tokens": 2000,
       "default_max_estimated_tokens_by_format": {
@@ -16232,6 +16477,16 @@
         "toon": 4000
       },
       "intent": "Manage workspaces.",
+      "intent_source": "command"
+    },
+    {
+      "command": "workspace merge",
+      "default_max_estimated_tokens": 6000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 9000,
+        "toon": 6000
+      },
+      "intent": "Manage tracker merges.",
       "intent_source": "command"
     },
     {
@@ -17761,6 +18016,8 @@
     "init",
     "item",
     "item complete",
+    "item copy",
+    "item duplicates",
     "item mutate",
     "item reopen",
     "learnings",
@@ -17841,6 +18098,7 @@
     "update-many",
     "validate",
     "workspace",
+    "workspace merge",
     "workspace position",
     "workspace snapshot",
     "workspace snapshot create",
@@ -24713,8 +24971,15 @@
         "command": "copy",
         "disposition": "consolidation",
         "noun": "item",
-        "owner": "pm-yql1",
-        "target": "item"
+        "owner": "pm-m6g87m",
+        "target": "item copy"
+      },
+      {
+        "command": "item copy",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-m6g87m",
+        "target": "item copy"
       },
       {
         "command": "create",
@@ -24930,15 +25195,71 @@
         "command": "search-advanced",
         "disposition": "package_owned",
         "noun": "search",
-        "owner": "package:search-advanced",
-        "target": "search"
+        "owner": "pm-wfskfn",
+        "target": "search advanced"
+      },
+      {
+        "command": "search advanced",
+        "disposition": "package_owned",
+        "noun": "search",
+        "owner": "pm-wfskfn",
+        "target": "search advanced"
       },
       {
         "command": "duplicates",
         "disposition": "consolidation",
-        "noun": "search",
-        "owner": "pm-3i9q8g",
-        "target": "search duplicates"
+        "noun": "item",
+        "owner": "pm-fmy9ih",
+        "target": "item duplicates"
+      },
+      {
+        "command": "item duplicates",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-fmy9ih",
+        "target": "item duplicates"
+      },
+      {
+        "command": "dedupe-audit",
+        "disposition": "package_owned",
+        "noun": "item",
+        "owner": "pm-fmy9ih",
+        "target": "item duplicates audit"
+      },
+      {
+        "command": "item duplicates audit",
+        "disposition": "package_owned",
+        "noun": "item",
+        "owner": "pm-fmy9ih",
+        "target": "item duplicates audit"
+      },
+      {
+        "command": "dedupe-merge",
+        "disposition": "package_owned",
+        "noun": "item",
+        "owner": "pm-fmy9ih",
+        "target": "item duplicates merge"
+      },
+      {
+        "command": "item duplicates merge",
+        "disposition": "package_owned",
+        "noun": "item",
+        "owner": "pm-fmy9ih",
+        "target": "item duplicates merge"
+      },
+      {
+        "command": "comments-audit",
+        "disposition": "package_owned",
+        "noun": "item",
+        "owner": "pm-fmy9ih",
+        "target": "item audit-comments"
+      },
+      {
+        "command": "item audit-comments",
+        "disposition": "package_owned",
+        "noun": "item",
+        "owner": "pm-fmy9ih",
+        "target": "item audit-comments"
       },
       {
         "command": "graph",
@@ -25055,9 +25376,16 @@
       {
         "command": "merge",
         "disposition": "consolidation",
-        "noun": "history",
-        "owner": "pm-tqel",
-        "target": "history"
+        "noun": "workspace",
+        "owner": "pm-m6g87m",
+        "target": "workspace merge"
+      },
+      {
+        "command": "workspace merge",
+        "disposition": "target_noun",
+        "noun": "workspace",
+        "owner": "pm-m6g87m",
+        "target": "workspace merge"
       },
       {
         "command": "vcs abandon",
@@ -26142,6 +26470,18 @@
         ]
       },
       {
+        "command": "item copy",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
         "command": "create",
         "slots": [
           {
@@ -26447,7 +26787,47 @@
         ]
       },
       {
+        "command": "search advanced",
+        "slots": [
+          {
+            "name": "keywords",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": true
+          }
+        ]
+      },
+      {
         "command": "duplicates",
+        "slots": []
+      },
+      {
+        "command": "item duplicates",
+        "slots": []
+      },
+      {
+        "command": "dedupe-audit",
+        "slots": []
+      },
+      {
+        "command": "item duplicates audit",
+        "slots": []
+      },
+      {
+        "command": "dedupe-merge",
+        "slots": []
+      },
+      {
+        "command": "item duplicates merge",
+        "slots": []
+      },
+      {
+        "command": "comments-audit",
+        "slots": []
+      },
+      {
+        "command": "item audit-comments",
         "slots": []
       },
       {
@@ -26632,6 +27012,46 @@
       },
       {
         "command": "merge",
+        "slots": [
+          {
+            "name": "subcommand",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "artifact",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "base",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "ours",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "theirs",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "workspace merge",
         "slots": [
           {
             "name": "subcommand",
@@ -38107,6 +38527,10 @@
         "modes": [
           "full"
         ]
+      },
+      {
+        "command": "item duplicates",
+        "modes": []
       },
       {
         "command": "list",

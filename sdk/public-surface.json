@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1928,
+    "covered_symbols": 1929,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1929
+    "required_symbols": 1930
   },
   "breaking_acknowledgements": [
     {
@@ -1904,6 +1904,14 @@
       ],
       "package_version": "2026.9.9",
       "reason": "PR 1227 replaces its unreleased caller-selected lifecycle generics with flag-driven overloads; published base calls and literal or dynamic composition options remain supported."
+    },
+    {
+      "changes": [
+        "signature ./sdk:attachReadOutputSessionReceipt",
+        "signature ./sdk/core:attachReadOutputSessionReceipt"
+      ],
+      "package_version": "2026.9.9",
+      "reason": "Optional renderer argument extends session receipt accounting; existing two-argument calls retain compact JSON behavior."
     }
   ],
   "entrypoints": {
@@ -3366,7 +3374,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "attachReadOutputSessionReceipt",
-          "signature": "(result: Record<string, unknown>, state: PmReadOutputSessionState) => Record<string, unknown> | calls: (result: Record<string, unknown>, state: PmReadOutputSessionState) => Record<string, unknown>"
+          "signature": "(result: Record<string, unknown>, state: PmReadOutputSessionState, format?: \"json\" | \"toon\") => Record<string, unknown> | calls: (result: Record<string, unknown>, state: PmReadOutputSessionState, format?: \"json\" | \"toon\") => Record<string, unknown>"
         },
         {
           "classification": "supported",
@@ -4555,6 +4563,12 @@
           "kind": "interface",
           "name": "CompletionResult",
           "signature": "export interface CompletionResult { shell: CompletionShell; script: string; setup_hint: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "CompletionRuntimeConfig",
+          "signature": "export interface CompletionRuntimeConfig { namespace_commands?: readonly string[]; item_types?: string[]; statuses?: string[]; command_flags?: Partial<Record<CompletionFlagCommand, string[]>>; }"
         },
         {
           "classification": "advanced_export",
@@ -7585,6 +7599,12 @@
           "kind": "function",
           "name": "findPmMcpAppByUri",
           "signature": "(uri: string) => PmMcpAppContract | undefined | calls: (uri: string) => PmMcpAppContract | undefined"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "findPmNamespacedCommand",
+          "signature": "(tokens: readonly string[]) => PmCommandAliasContract | undefined | calls: (tokens: readonly string[]) => PmCommandAliasContract | undefined"
         },
         {
           "classification": "supported",
@@ -22138,6 +22158,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "function",
+          "name": "findPmNamespacedCommand",
+          "signature": "(tokens: readonly string[]) => PmCommandAliasContract | undefined | calls: (tokens: readonly string[]) => PmCommandAliasContract | undefined"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "FOCUS_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
@@ -24192,7 +24218,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "attachReadOutputSessionReceipt",
-          "signature": "(result: Record<string, unknown>, state: PmReadOutputSessionState) => Record<string, unknown> | calls: (result: Record<string, unknown>, state: PmReadOutputSessionState) => Record<string, unknown>"
+          "signature": "(result: Record<string, unknown>, state: PmReadOutputSessionState, format?: \"json\" | \"toon\") => Record<string, unknown> | calls: (result: Record<string, unknown>, state: PmReadOutputSessionState, format?: \"json\" | \"toon\") => Record<string, unknown>"
         },
         {
           "classification": "supported",

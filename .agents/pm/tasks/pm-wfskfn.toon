@@ -1,20 +1,24 @@
 id: pm-wfskfn
-title: "search and search-advanced are two top-level spellings of one noun, which the grammar charter forbids: advanced retrieval must be a facet of search, not a sibling command"
+title: Register advanced retrieval as a search facet
 description: "Make advanced retrieval a facet of the search noun rather than a second top-level command. The extension must register into the shared search contract, preserve search-advanced as a hidden alias, and emit one bounded migration hint with capability parity proof."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[3]: cli-grammar,consolidation,search
 created_at: "2026-08-05T18:07:35.264Z"
-updated_at: "2026-09-08T13:32:40.501Z"
+updated_at: "2026-09-10T06:18:01.673Z"
+closed_at: "2026-09-10T06:18:00.931Z"
+completed_at: "2026-09-10T06:18:00.931Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: Advanced retrieval is reachable as a facet or subcommand of the search noun with identical capability; search-advanced keeps working as a hidden alias with a one-line migration hint; The package that provides advanced search registers into the search noun rather than claiming a second top-level name
 parent: pm-n7rr
 risk: low
 confidence: high
-expected_result: "Advanced retrieval is a facet of the search noun registered by its package, and search-advanced keeps working as a hidden alias with a migration hint."
-dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
+resolution: The package registers search advanced with its stable SDK action and hidden legacy alias; shell completion discovers installed contributions and omits unavailable facets.
+expected_result: "Advanced retrieval becomes a search facet while literal queries, package activation, flags, and legacy invocation remain supported."
+actual_result: "Installed and absent-package completion, literal query escape, actual Bash/Fish/Zsh checks, npm/Bun consumers, and canonical/legacy contract regressions passed."
+dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-0z7n,blocked_by,"2026-08-05T18:08:40.980Z","harness:claude-code","cli:update:dep",detected
   pm-j82fd3,implements,"2026-08-05T18:08:40.980Z","harness:claude-code","cli:update:dep",detected
   pm-pbyu,related,"2026-08-05T18:08:40.980Z","harness:claude-code","cli:update:dep",detected
@@ -24,4 +28,46 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-2rj1,related,"2026-08-05T18:08:44.639Z","harness:claude-code","cli:update:dep",detected
   pm-bqpg,related,"2026-08-05T18:08:44.639Z","harness:claude-code","cli:update:dep",detected
   pm-ydp6,related,"2026-08-05T18:08:44.639Z","harness:claude-code","cli:update:dep",detected
+  pm-m6g87m,verifies,"2026-09-10T05:52:17.362Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-09-10T04:18:53.170Z","harness:codex","Design: package registers search advanced while retaining the search-advanced action identity and hidden compatibility spelling. Reuse the public namespace contracts and preserve core search queries, positional tokens, flags, and package activation rather than introducing a second search implementation."
+  "2026-09-10T04:37:53.427Z","harness:codex","Integration evidence: installed bundled search and governance packages in an isolated tracker. New tests exposed namespace-parent registration ordering and negative-filter defaults entering package command validation. Canonical and legacy paths now share flag lookup; fixing these parser boundaries before acceptance. The focused namespace and history completion suite passed 35 tests; final acceptance and full gates remain pending."
+  "2026-09-10T05:06:07.775Z","harness:codex","Manual shell verification found Fish quoting in nested suggestions and confirmed a discovery boundary to preserve: package facets must be suggested only when the package is active. Extending the public completion runtime configuration with installed namespace paths and wiring guide-shell registrations through it; retain static core aliases and shared SDK operation identities."
+  "2026-09-10T05:37:55.715Z","harness:codex","Completion acceptance uses the real packaged CLI because the in-process test bridge can import a separate SDK registry instance. Production completion loads all installed command contributions and passes their canonical paths through public CompletionRuntimeConfig; package-absent leaves stay hidden. Bash completion acceptance passes absent and installed cases. Real Fish and Zsh syntax/runtime checks passed. Physical telemetry observation captured command_start and command_finish for canonical search advanced, preserving stable search-advanced operation identity."
+  "2026-09-10T05:52:17.362Z","harness:codex","Verification relationship: installed search and guide-shell acceptance exercises the shared item/workspace namespace resolver, runtime package discovery, legacy command identity, and nested completion availability used by the sibling grammar delivery."
+  "2026-09-10T06:18:00.173Z","harness:codex","Final verification: 660 test files and 8680 tests pass. Exact coverage is statements 63924/63924, branches 48623/48623, functions 13290/13290, lines 61268/61268. Source/export/member docstrings are 100 percent. TypeScript, ESLint, zero-clone jscpd, static structure, SDK/command/flag parity, refusal recovery, token budgets, graph composition, record integrity, credential scan, and linked tests passed. Manual temporary-project acceptance and packed npm/Bun/npx/bunx consumers passed. The independent public verifier confirms published 2026.9.9; this implementation is pending PR review and merge. GitHub currently has zero open PRs/issues and zero open dependency/code/secret alerts."
+learnings[1]{created_at,author,text}:
+  "2026-09-10T06:06:47.259Z","harness:codex",Shell completion must discover installed command contributions beyond the completion provider itself. Test the actual CLI package boundary as well as the in-process SDK because separate module instances can carry separate registries. Preserve search -- advanced as a literal-query escape.
+files[11]{path,scope,note}:
+  packages/pm-guide-shell/extensions/guide-shell/runtime.ts,project,Supply active package paths through the public completion runtime contract
+  packages/pm-search-advanced/extensions/search-advanced/index.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/cli/extension-command-help.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/cli/main.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/sdk/cli-bootstrap.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/sdk/cli-contracts.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/sdk/cli-contracts/command-aliases.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/sdk/completion.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  tests/unit/core/search/search-advanced-runtime.spec.ts,project,Reviewed namespace delivery implementation and verification
+  tests/unit/packages/guide-shell-runtime.spec.ts,project,Completion registry and configured workflow acceptance
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/item-search-namespaces.spec.ts,project,240,"harness:codex","2026-09-10T04:23:28.711Z",local_mutation,feat/typed-search-and-item-command-namespaces
+  node scripts/run-tests.mjs test -- tests/integration/item-search-namespaces.integration.spec.ts,project,240,"harness:codex","2026-09-10T04:44:13.732Z",local_mutation,feat/typed-search-and-item-command-namespaces
+test_runs[1]:
+  - run_id: test-local-mtv4d9ym-bg1qk2
+    kind: test
+    status: passed
+    started_at: "2026-09-10T06:00:04.144Z"
+    finished_at: "2026-09-10T06:01:27.214Z"
+    recorded_at: "2026-09-10T06:01:27.214Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/item-search-namespaces.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/item-search-namespaces.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/CLI_GRAMMAR.md,project,Canonical item and search command contracts with compatibility and parser parity
+  packages/pm-search-advanced/README.md,project,Canonical item and search command contracts with compatibility and parser parity
+close_reason: "Implemented and verified through SDK, CLI, package, and repository gates."
 body: ""

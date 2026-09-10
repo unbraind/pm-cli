@@ -1975,6 +1975,7 @@ describe("release readiness runtime coverage", () => {
         "filters",
         "projection",
         "now",
+        "omission_receipt",
       ]);
       expect((searchAdvancedResult.json as { query?: string }).query).toBe(
         "runtime",
@@ -2184,7 +2185,7 @@ describe("release readiness runtime coverage", () => {
         "generated_at",
       ]);
 
-      const healthResult = context.runCli(["health", "--json"], {
+      const healthResult = context.runCli(["health", "--json", "--output-budget", "unbounded"], {
         expectJson: true,
       });
       expect(healthResult.code).toBe(0);

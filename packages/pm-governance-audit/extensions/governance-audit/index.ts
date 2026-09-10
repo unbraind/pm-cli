@@ -321,9 +321,10 @@ const allowAuditCommentFlags = [
   },
 ];
 
+/** Expose duplicate discovery under the item namespace while retaining its stable action and read-only handler. */
 function dedupeAuditCommand(): CommandDefinition {
   return {
-    name: "dedupe-audit",
+    name: "item duplicates audit",
     action: "dedupe-audit",
     description:
       "Audit likely duplicate items by title and parent scope heuristics.",
@@ -334,9 +335,10 @@ function dedupeAuditCommand(): CommandDefinition {
   };
 }
 
+/** Declare duplicate consolidation flags and route preview or apply requests to the existing package handler. */
 function dedupeMergeCommand(): CommandDefinition {
   return {
-    name: "dedupe-merge",
+    name: "item duplicates merge",
     action: "dedupe-merge",
     description:
       "Consolidate duplicates into a canonical item: re-parent active children and close duplicates with duplicate_of.",
@@ -347,9 +349,10 @@ function dedupeMergeCommand(): CommandDefinition {
   };
 }
 
+/** Register bounded comment-coverage inspection under the item namespace with the existing action identity. */
 function commentsAuditCommand(): CommandDefinition {
   return {
-    name: "comments-audit",
+    name: "item audit-comments",
     action: "comments-audit",
     description: "Audit item comment coverage and export comment history rows.",
     intent: "Audit comment coverage and read bounded comment-history evidence.",

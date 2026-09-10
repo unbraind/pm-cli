@@ -1,0 +1,59 @@
+id: pm-qn9zxu
+title: "GH-1229: preserve bounded HTTP process-tree cleanup when POSIX liveness returns EPERM"
+description: macOS Node 24 nightly run 34457166668 throws kill EPERM in childTreeIsAlive while waiting for a nested HTTP server to exit. Zero-signal permission refusal is evidence of an existing process group; throwing immediately masks the expected discovery diagnostic and interrupts governed cleanup.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-10T10:21:49.623Z"
+updated_at: "2026-09-10T11:05:19.540Z"
+closed_at: "2026-09-10T10:35:37.937Z"
+completed_at: "2026-09-10T10:35:37.937Z"
+author: "harness:codex"
+acceptance_criteria: Real nested-server EPERM regression passes with original bounded cleanup and invalid-discovery diagnostics; port reuse remains required; unknown errors remain failures; exact coverage and hosted gates pass.
+parent: pm-euqm7x
+severity: medium
+environment: macOS Node 24 and POSIX process groups
+resolution: Zero-signal EPERM conservatively retains process-group liveness so the existing bounded shutdown continues; real nested-server fault injection verifies the diagnostic and port release.
+expected_result: A transient liveness permission error cannot preempt governed shutdown or replace the discovery failure; existing readiness and shutdown bounds remain unchanged.
+actual_result: 32 focused tests and 8682 tests in 660 files pass; exact statements/branches/functions/lines are 100 percent. The EPERM variant failed before the fix and passed with real signal delivery and port reuse after it. Hosted verification and the final non-overlapping static run remain subsequent delivery evidence.
+regression: true
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-euqm7x,recurs_from,"2026-09-10T10:21:49.623Z","harness:codex","cli:create:dep",detected
+  pm-ygli86,verifies,"2026-09-10T10:21:49.623Z","harness:codex","cli:create:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-09-10T10:21:49.623Z","harness:codex","Duplicate check: complete all-status searches for childTreeIsAlive EPERM and verify-published-release plus live open/in-progress lists found the completed timeout owner pm-euqm7x but no owner for this distinct liveness error. Reuse its lineage. Evidence https://github.com/unbraind/pm-cli/issues/1229 and run 34457166668 at 0a5e84b7bbf6fbe7ff22c12013f9f761d761a30c."
+  "2026-09-10T10:25:24.341Z","harness:codex","TDD evidence: the new parameterized nested-server fixture failed before the repair with injected kill EPERM masking Published HTTP discovery response was invalid (31 passed / 1 failed). Returning conservative liveness for zero-signal EPERM makes all 32 focused tests pass while retaining actual HTTP exchange, TERM/KILL delivery, bounded waits, and port reuse. The injected error is verified in stderr and does not replace actual process management. Test-only fallback cleanup occurs after assertions and only on failure. Unchanged-source nightly attempt 2 also passed, which demonstrates intermittency rather than constituting the repair."
+  "2026-09-10T10:30:45.857Z","harness:codex","Verification note: the first overlapping static/coverage attempt passed correctness gates but SDK cold-import performance samples exceeded unchanged ceilings under concurrent full coverage. The source change only affects the release verifier; repeat performance-sensitive static checks after coverage finishes instead of weakening ceilings. Focused ESLint passes after preserving the original test failure through best-effort fallback cleanup."
+  "2026-09-10T10:35:17.146Z","harness:codex","Full verification evidence: the isolated coverage command passed 660 test files and 8682 tests. Exact coverage remains statements 63924/63924; branches 48623/48623; functions 13290/13290; lines 61268/61268. The PM-linked focused command passes all 32 tests, and focused ESLint passes. No source coverage exclusions, timeout changes, or gate relaxations were introduced. The actual syscall-fault negative control failed before the conservative EPERM liveness repair and passed afterward; a final static run will execute without concurrent coverage load before push."
+  "2026-09-10T10:44:18.532Z","harness:codex","Terminal local delivery evidence: the final non-overlapping pnpm quality:static run passed in full, including unchanged SDK cold-import and CLI transport ceilings, source/export/member docstrings, zero clones, contracts and generated surfaces, SDK/package/flag parity, refusal and token gates, tracker context, graph composition, and record integrity. Complete coverage passed 8682 tests at exact 100/100/100/100; final focused verifier rerun passed 32/32. No thresholds or assertions were relaxed. PR 1228 will carry this source and all closure evidence through exact-head hosted CI and review."
+  "2026-09-10T11:05:19.540Z","harness:codex","Hosted delivery evidence: manual Nightly Validation run 34467694125 at exact PR head 4b35b1376934511ac56368139a4be8077504f74b passed all five jobs: Linux Node 22/24/25, macOS Node 24, and Windows Node 24. macOS build, typecheck, and actual tests passed, including native and injected-EPERM nested-server cleanup. All PR checks on that head also settled green. The full review identified a separate legacy-renderer correction under pm-5t33or; its new push will receive fresh PR checks. The nightly source fix itself is unchanged."
+files[2]{path,scope,note}:
+  scripts/release/verify-published-release.mjs,project,Preserve bounded shutdown on zero-signal permission errors
+  tests/unit/scripts/release/verify-published-release.spec.ts,project,Real nested server with deterministic liveness fault and port reuse
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts,project,240,"harness:codex","2026-09-10T10:22:19.916Z",local_mutation,feat/typed-search-and-item-command-namespaces
+test_runs[1]:
+  - run_id: test-local-mtvdt46s-9gd7e9
+    kind: test
+    status: passed
+    started_at: "2026-09-10T10:25:25.078Z"
+    finished_at: "2026-09-10T10:25:42.772Z"
+    recorded_at: "2026-09-10T10:25:42.772Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated release verifier correction
+close_reason: POSIX verifier liveness regression reproduced and repaired; local exact coverage passes
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-qn9zxu
+  gate_id: published-http-process-group-liveness
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),Nightly Validation / macOS Node 24
+body: ""

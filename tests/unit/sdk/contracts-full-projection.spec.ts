@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+import { writeTestExtension } from "../../helpers/extensions.js";
 import {
   _testOnlyContractsCommand,
   runContracts,
@@ -12,6 +14,26 @@ const GLOBAL = {
 } as Parameters<typeof runContracts>[1];
 
 describe("full contracts projection monotonicity", () => {
+  it.each(["search advanced", "search-advanced"])("shares installed %s flags between canonical and compatibility paths", async (registeredCommand) => {
+    await withTempPmPath(async (context) => {
+      await writeTestExtension({
+        root: context.pmPath,
+        placement: "projectRoot",
+        directory: "search-facet-contract",
+        manifestOverrides: { capabilities: ["commands", "schema"] },
+        entryFilename: "index.mjs",
+        entrySource: `export default { activate(api) {
+          api.registerCommand({ name: ${JSON.stringify(registeredCommand)}, action: 'search-advanced',
+            flags: [{ long: '--facet-probe', value_name: 'value', value_type: 'string' }],
+            run: () => ({ ok: true }) });
+        } };`,
+      });
+      const result = await runContracts({ full: true, flagsOnly: true }, { ...GLOBAL, path: context.pmPath, noExtensions: false });
+      for (const command of ["search advanced", "search-advanced"]) {
+        expect(result.command_flags?.find((entry) => entry.command === command)?.flags.some((flag) => flag.flag === "--facet-probe"), command).toBe(true);
+      }
+    });
+  });
   it("identifies native and legacy history flags with one canonical command", async () => {
     const native = await runContracts({ command: "history repair", flagsOnly: true }, GLOBAL);
     const legacy = await runContracts({ command: "history-repair", flagsOnly: true }, GLOBAL);
@@ -34,7 +56,7 @@ describe("full contracts projection monotonicity", () => {
     );
     const compactCommands = new Set(summary.command_summaries?.map((entry) => entry.command));
     expect(full.command_summaries?.filter((entry) => !compactCommands.has(entry.command)).map((entry) => entry.command)).toEqual([
-      "activity", "close-many", "ctx", "delete", "eval", "events", "focus", "gc", "health", "history-compact", "history-redact", "history-repair", "next", "packages", "restore", "stats", "telemetry", "test-all", "update-many", "validate",
+      "activity", "close-many", "copy", "ctx", "delete", "duplicates", "eval", "events", "focus", "gc", "health", "history-compact", "history-redact", "history-repair", "merge", "next", "packages", "restore", "stats", "telemetry", "test-all", "update-many", "validate",
     ]);
     expect(summary.command_summaries).toEqual(
       expect.arrayContaining([

@@ -1,19 +1,23 @@
 id: pm-m6g87m
-title: "copy, merge and item have no declared home, and merge additionally collides with the git merge-driver namespace it already owns"
+title: Declare item copy and workspace merge command destinations
 description: "Disposition copy, merge, and item within the target noun grammar without feature loss, while separating item-level merge from the Git merge-driver namespace. Preserve every current spelling as an alias and record each destination in the generated command census."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[4]: cli-grammar,consolidation,item-lifecycle,namespace
 created_at: "2026-08-05T18:07:48.835Z"
-updated_at: "2026-09-08T13:32:41.897Z"
+updated_at: "2026-09-10T06:21:47.018Z"
+closed_at: "2026-09-10T06:17:54.416Z"
+completed_at: "2026-09-10T06:17:54.416Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "copy and item are placed under a declared noun with their capability unchanged; The merge name resolves its double duty explicitly: git integration versus item-level merge is disambiguated in the grammar and in the ADR, or one of the two is renamed with an alias; The disposition of each is recorded in the destination table from the census task"
 parent: pm-n7rr
 risk: medium
 confidence: medium
-expected_result: "copy, merge and item each have a recorded home in the grammar, item-level merge is disambiguated from the git merge driver, and no spelling stops working."
+resolution: "Item copy and Git merge-driver operations have declared SDK-owned destinations, permanent compatibility aliases, longest-prefix parsing, and preserved handler semantics."
+expected_result: Copy and Git merge-driver operations retain all capabilities under unambiguous command paths.
+actual_result: "Temporary-project copy, duplicate child reparenting, strict history verification, Git driver installation/report, package consumers, and full regression gates passed."
 dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-0z7n,blocked_by,"2026-08-05T18:08:41.881Z","harness:claude-code","cli:update:dep",detected
   pm-j82fd3,implements,"2026-08-05T18:08:41.881Z","harness:claude-code","cli:update:dep",detected
@@ -24,4 +28,59 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-dlx7v7,related,"2026-08-05T18:08:46.039Z","harness:claude-code","cli:update:dep",detected
   pm-ik19,related,"2026-08-05T18:08:46.039Z","harness:claude-code","cli:update:dep",detected
   pm-lwmstb,related,"2026-08-05T18:08:46.039Z","harness:claude-code","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-10T04:18:53.738Z","harness:codex","Design: item is already the accepted noun for structured mutation and completion/reopen. Relocate copy to item copy and Git merge-driver operations to workspace merge. Item duplicate reconciliation is explicitly item duplicates merge, separating item semantics from Git driver install/status/driver/reconcile behavior. Keep all published spellings as hidden aliases. No new tracker items were created."
+  "2026-09-10T05:13:40.465Z","harness:codex","Verification: real isolated tracker copy, duplicate preview and apply, child reparenting, terminal duplicate state, strict history verification, literal search escape, and workspace merge driver installation/report all passed. Real Fish execution caught and fixed nested suggestion quoting. The static gate preserves its existing ceilings and currently identifies a contract-discovery token overrun for investigation."
+  "2026-09-10T05:37:54.656Z","harness:codex","Candidate acceptance: a packed build installs in isolated npm and Bun consumers; both exercise create, item copy, installed item duplicates merge discovery, and search advanced keyword queries successfully. npx and bunx execute the same candidate tarball successfully. Earlier temporary-workspace acceptance verified duplicate consolidation re-parenting and closure, strict hash chains, literal search operands, and workspace merge driver installation. No production tracker was used by acceptance tests."
+  "2026-09-10T06:17:53.732Z","harness:codex","Final verification: 660 test files and 8680 tests pass. Exact coverage is statements 63924/63924, branches 48623/48623, functions 13290/13290, lines 61268/61268. Source/export/member docstrings are 100 percent. TypeScript, ESLint, zero-clone jscpd, static structure, SDK/command/flag parity, refusal recovery, token budgets, graph composition, record integrity, credential scan, and linked tests passed. Manual temporary-project acceptance and packed npm/Bun/npx/bunx consumers passed. The independent public verifier confirms published 2026.9.9; this implementation is pending PR review and merge. GitHub currently has zero open PRs/issues and zero open dependency/code/secret alerts."
+learnings[1]{created_at,author,text}:
+  "2026-09-10T06:06:46.184Z","harness:codex","Namespace registration is two-phase: relocate core parents before installing package facets, then relocate remaining leaves after registration. Preserve the Commander handler object and resolve the longest declared SDK prefix so three-token commands retain their flags and stable operation identities."
+files[23]{path,scope,note}:
+  scripts/release/docs-skills-gate.mjs,project,Full alias flags and multi-depth documentation validation
+  sdk/public-surface.json,project,Publish shared longest-prefix resolver through SDK barrels
+  src/cli/command-namespaces.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/cli/extension-command-help.ts,project,Reviewed namespace delivery implementation and verification
+  src/cli/main.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/sdk/agent/item-addressing.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/sdk/agent/refusal-corpus-contracts.ts,project,Canonical Git merge refusal action domain
+  src/sdk/cli-bootstrap.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/sdk/cli-contracts.ts,project,Reviewed namespace delivery implementation and verification
+  src/sdk/cli-contracts/command-aliases.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/sdk/cli-contracts/grammar-contracts.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Reviewed namespace delivery implementation and verification
+  src/sdk/completion.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/sdk/index.ts,project,Aggregate SDK command path resolver
+  tests/fixtures/contracts/full.json,project,Reviewed namespace delivery implementation and verification
+  tests/integration/item-search-namespaces.integration.spec.ts,project,Reviewed namespace delivery implementation and verification
+  tests/integration/release-readiness-runtime.spec.ts,project,Reviewed namespace delivery implementation and verification
+  tests/unit/cli/item-search-namespaces.spec.ts,project,Reviewed namespace delivery implementation and verification
+  tests/unit/commands/contracts-command.spec.ts,project,Reviewed namespace delivery implementation and verification
+  tests/unit/scripts/refusal-closure-gate.spec.ts,project,Reviewed namespace delivery implementation and verification
+  tests/unit/scripts/release/docs-skills-gate.spec.ts,project,Reviewed namespace delivery implementation and verification
+  tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,Reviewed namespace delivery implementation and verification
+  tests/unit/sdk/contracts-full-projection.spec.ts,project,Reviewed namespace delivery implementation and verification
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/item-search-namespaces.spec.ts,project,240,"harness:codex","2026-09-10T04:23:29.337Z",local_mutation,feat/typed-search-and-item-command-namespaces
+  node scripts/run-tests.mjs test -- tests/integration/item-search-namespaces.integration.spec.ts,project,240,"harness:codex","2026-09-10T04:44:27.219Z",local_mutation,feat/typed-search-and-item-command-namespaces
+test_runs[1]:
+  - run_id: test-local-mtv4bgu2-8lzo32
+    kind: test
+    status: passed
+    started_at: "2026-09-10T05:58:47.265Z"
+    finished_at: "2026-09-10T06:00:02.810Z"
+    recorded_at: "2026-09-10T06:00:02.810Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/item-search-namespaces.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/item-search-namespaces.integration.spec.ts,schema,schema,source,local_source_ref
+docs[6]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated record of the reviewed command destination delivery
+  docs/CLI_GRAMMAR.md,project,Canonical item and search command contracts with compatibility and parser parity
+  docs/generated/AGENT_CAPABILITY_ROUTING.md,project,Reviewed namespace delivery implementation and verification
+  docs/generated/AGENT_COMMAND_SURFACE.md,project,Reviewed namespace delivery implementation and verification
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project,Reviewed namespace delivery implementation and verification
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Reviewed namespace delivery implementation and verification
+close_reason: "Implemented and verified through SDK, CLI, package, and repository gates."
 body: ""

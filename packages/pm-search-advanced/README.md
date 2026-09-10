@@ -1,10 +1,12 @@
 # pm-search-advanced
 
+Tracker: [pm-wfskfn](../../.agents/pm/tasks/pm-wfskfn.toon).
+
 First-party package that restores optional advanced search surfaces in bare-core `pm`.
 
 ## Commands and behavior
 
-- Adds `pm search-advanced` with:
+- Adds `pm search advanced` with:
   - `--mode keyword|semantic|hybrid`
   - `--semantic`, `--hybrid`
   - `--include-linked`
@@ -28,14 +30,14 @@ pm install search-advanced --project
 ## Verify
 
 ```bash
-pm search-advanced "vector cache" --mode hybrid --limit 5 --json
-pm search-advanced --hybrid "vector cache" --limit 5 --json
-pm search-advanced "calendar package" --mode keyword --fields id,title,score --compact --json
+pm search advanced "vector cache" --mode hybrid --limit 5 --json
+pm search advanced --hybrid "vector cache" --limit 5 --json
+pm search advanced "calendar package" --mode keyword --fields id,title,score --compact --json
 pm ops reindex --mode hybrid --progress --json
 pm ops reindex --mode keyword --eval --eval-fixtures tests/search-eval/golden-queries.json --json
 ```
 
-Without `--mode`, `--semantic`, or `--hybrid`, `search-advanced` stays keyword-first for fast agent reads.
+Without `--mode`, `--semantic`, or `--hybrid`, `search advanced` stays keyword-first for fast agent reads.
 
 The command registers its shared search options from
 `SEARCH_EXTENSION_FLAG_DEFINITIONS`, the public SDK authoring adapter over pm's
@@ -78,3 +80,5 @@ Rules:
 - `min_ndcg_at_5` is optional (`0..1`), default `0.7`.
 
 `pm reindex` remains a compatibility alias for `pm ops reindex`.
+
+`pm search-advanced` remains a hidden compatibility alias with the stable `search-advanced` SDK action. Use `pm search -- advanced` to search for the literal word `advanced`; place query options before `--`. The search provider remains configurable independently of the command facet.

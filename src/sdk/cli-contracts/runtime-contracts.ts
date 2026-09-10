@@ -618,6 +618,10 @@ const PACKAGE_OWNED_ACTIONS = new Set<string>([
 ]);
 
 const PACKAGE_OWNED_COMMANDS = new Set<string>([
+  "search-advanced",
+  "dedupe-audit",
+  "dedupe-merge",
+  "comments-audit",
   "cal",
   "calendar",
   "completion",
@@ -640,6 +644,10 @@ const PACKAGE_OWNED_COMMANDS = new Set<string>([
 ]);
 
 const PACKAGE_OWNED_COMMAND_INSTALL_HINTS = new Map<string, string>([
+  ["search-advanced", "search-advanced"],
+  ["dedupe-audit", "governance-audit"],
+  ["dedupe-merge", "governance-audit"],
+  ["comments-audit", "governance-audit"],
   ["cal", "calendar"],
   ["calendar", "calendar"],
   ["completion", "guide-shell"],
@@ -991,7 +999,7 @@ function actionDescriptorMatchesSelectedCommand(
   selectedCommand: string,
 ): boolean {
   const historyOperation = resolvePmCommandOperation(selectedCommand);
-  if (historyOperation !== selectedCommand) return descriptor.action === historyOperation;
+  if (historyOperation !== selectedCommand || PM_NAMESPACED_COMMAND_ALIASES.some((entry) => entry.alias === selectedCommand)) return descriptor.action === historyOperation;
   if (descriptor.command_path === null) {
     return false;
   }
@@ -1741,7 +1749,7 @@ function resolveActionAvailability(
     ? splitCommandPathAliases(descriptor.command_path)
     : [];
   const extensionCommandAvailable = commandPaths.some((commandPath) =>
-    runtimeProbe.handlers.has(resolvePmCommandOperation(commandPath)),
+    runtimeProbe.handlers.has(commandPath) || runtimeProbe.handlers.has(resolvePmCommandOperation(commandPath)),
   );
   const optionalPackageHint = commandPaths
     .map((commandPath) => PACKAGE_OWNED_COMMAND_INSTALL_HINTS.get(resolvePmCommandOperation(commandPath)))
@@ -1908,6 +1916,14 @@ function buildCommandFlagSurface(
   runtimeFieldFlagMap: Map<string, CliFlagContract[]>,
   includeSemanticMetadata: boolean,
 ): CommandFlagSurface[] {
+  const flagsByPath = new Map(extensionFlagMap);
+  for (const { alias, canonical } of PM_NAMESPACED_COMMAND_ALIASES) {
+    const flags = extensionFlagMap.get(canonical) ?? extensionFlagMap.get(alias);
+    if (flags) {
+      flagsByPath.set(alias, flags);
+      flagsByPath.set(canonical, flags);
+    }
+  }
   return commands
     .map((command) => {
       const isCoreCommand = isCoreCommandPath(command);
@@ -1916,7 +1932,7 @@ function buildCommandFlagSurface(
         runtimeFieldFlagMap.get(
           normalizeCommandForRuntimeFieldFlags(command),
         ) ?? [];
-      const extensionFlags = extensionFlagMap.get(resolvePmCommandOperation(command));
+      const extensionFlags = flagsByPath.get(command);
       const coreWithRuntime = mergeFlagContracts(coreFlags, runtimeFlags);
       const flags = mergeFlagContracts(
         coreWithRuntime,
@@ -2362,8 +2378,8 @@ function buildContractsCommandCatalog(
         entry.command_path ? splitCommandPathAliases(entry.command_path) : [],
       ),
       ...mergedExtensionContracts.flatMap((entry) => entry.command.split("|").flatMap((command) => {
-        const canonical = PM_NAMESPACED_COMMAND_ALIASES.find((alias) => alias.alias === command)?.canonical;
-        return canonical === undefined ? [command] : [command, canonical];
+        const alias = PM_NAMESPACED_COMMAND_ALIASES.find((entry) => entry.alias === command || entry.canonical === command);
+        return alias === undefined ? [command] : [alias.alias, alias.canonical];
       })),
     ]),
   ]
@@ -2751,7 +2767,7 @@ function summarizeCommandIntent(
     return { intent: declared, intent_source: "command" };
   }
   const extensionContract = extensionContracts.find((contract) =>
-    splitCommandPathAliases(contract.command).includes(resolvePmCommandOperation(command)),
+    splitCommandPathAliases(contract.command).some((path) => resolvePmCommandOperation(path) === resolvePmCommandOperation(command)),
   );
   if (
     extensionContract?.intent !== null &&
@@ -2813,7 +2829,7 @@ function buildCommandSummarySurface(
         ...resolveCoreCommandFlags(command).map((contract) => contract.flag),
         ...extensionContracts
           .filter((contract) =>
-            splitCommandPathAliases(contract.command).includes(resolvePmCommandOperation(command)),
+            splitCommandPathAliases(contract.command).some((path) => resolvePmCommandOperation(path) === resolvePmCommandOperation(command)),
           )
           .flatMap((contract) => contract.flags.map((flag) => flag.flag)),
       ]);
@@ -2891,9 +2907,7 @@ function resolveExtensionCommandContracts(
 ): ExtensionCommandContract[] {
   if (selection.selectedCommand) {
     return runtime.extensionContracts.filter((entry) =>
-      splitCommandPathAliases(entry.command).includes(
-        resolvePmCommandOperation(selection.selectedCommand as string),
-      ),
+      splitCommandPathAliases(entry.command).some((path) => resolvePmCommandOperation(path) === resolvePmCommandOperation(selection.selectedCommand as string)),
     );
   }
   if (selection.selectedAction) {

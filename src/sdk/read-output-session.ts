@@ -4,6 +4,7 @@
  * Implements a stateless, caller-carried session ledger for cross-call output
  * budgets and resolvable references to item facts served by earlier reads.
  */
+import { estimateReadOutputTokens } from "./read-output-budget.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import {
@@ -227,6 +228,7 @@ export function applyReadOutputSessionReferences(
 export function attachReadOutputSessionReceipt(
   result: Record<string, unknown>,
   state: PmReadOutputSessionState,
+  format?: "json" | "toon",
 ): Record<string, unknown> {
   const { deliveredIds, suppressedRepeatCount } =
     summarizeReadOutputSessionRows(result);
@@ -291,9 +293,7 @@ export function attachReadOutputSessionReceipt(
   let highestMeasuredEstimate = 0;
   for (let iteration = 0; iteration < 8; iteration += 1) {
     applyEstimate(estimate);
-    const measured = Math.ceil(
-      Buffer.byteLength(JSON.stringify(withReceipt), "utf8") / 4,
-    );
+    const measured = estimateReadOutputTokens(withReceipt, format);
     if (measured === estimate) return withReceipt;
     highestMeasuredEstimate = Math.max(highestMeasuredEstimate, measured);
     estimate = measured;

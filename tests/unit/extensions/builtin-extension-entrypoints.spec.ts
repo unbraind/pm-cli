@@ -737,10 +737,13 @@ describe("built-in extension entrypoints", () => {
     try {
       activateGovernance(api);
       expect(commands.map((command) => command.name)).toEqual([
-        "dedupe-audit",
-        "dedupe-merge",
-        "comments-audit",
+        "item duplicates audit",
+        "item duplicates merge",
+        "item audit-comments",
         "normalize",
+      ]);
+      expect(commands.map((command) => command.action)).toEqual([
+        "dedupe-audit", "dedupe-merge", "comments-audit", "normalize",
       ]);
       expect(flags.map((entry) => entry.command)).toEqual([
         "files",

@@ -11,7 +11,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 - Uncovered error codes: 352
 - Coverage fraction: 0.051213
 - Closed-domain probes: 19
-- Grammar probes: 98
+- Grammar probes: 101
 
 | Error code | Canonical code | Disposition | Evidence kinds | Probe count |
 | --- | --- | --- | --- | --- |
@@ -211,7 +211,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `missing_parameter_alias` | `missing_parameter_alias` | uncovered | none | 0 |
 | `missing_positive_execution_receipt` | `missing_positive_execution_receipt` | uncovered | none | 0 |
 | `missing_probe` | `missing_probe` | uncovered | none | 0 |
-| `missing_required_argument` | `missing_required_argument` | executable | grammar | 61 |
+| `missing_required_argument` | `missing_required_argument` | executable | grammar | 63 |
 | `missing_required_option` | `missing_required_option` | uncovered | none | 0 |
 | `missing_suggested_retry` | `missing_suggested_retry` | uncovered | none | 0 |
 | `missing_suggested_retry_args` | `missing_suggested_retry_args` | uncovered | none | 0 |
@@ -313,13 +313,13 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `unknown_field` | `unknown_field` | uncovered | none | 0 |
 | `unknown_field_projection` | `unknown_field_projection` | executable | closed_domain | 10 |
 | `unknown_item_type` | `unknown_item_type` | uncovered | none | 0 |
-| `unknown_lifecycle_action` | `unknown_subcommand` | executable | grammar, owned_state | 11 |
+| `unknown_lifecycle_action` | `unknown_subcommand` | executable | grammar, owned_state | 12 |
 | `unknown_noun` | `unknown_noun` | uncovered | none | 0 |
 | `unknown_option` | `unknown_option` | executable | owned_state | 1 |
 | `unknown_plan_template` | `unknown_plan_template` | uncovered | none | 0 |
 | `unknown_provenance_dimension` | `unknown_provenance_dimension` | uncovered | none | 0 |
 | `unknown_status` | `unknown_status` | uncovered | none | 0 |
-| `unknown_subcommand` | `unknown_subcommand` | executable | grammar, owned_state | 11 |
+| `unknown_subcommand` | `unknown_subcommand` | executable | grammar, owned_state | 12 |
 | `unsafe_init_recovery` | `unsafe_init_recovery` | uncovered | none | 0 |
 | `unsupported_update_option` | `unsupported_update_option` | uncovered | none | 0 |
 | `validate_command_references_stale_pm_ids` | `validate_command_references_stale_pm_ids` | uncovered | none | 0 |

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-04T11:51:40.569Z"
-updated_at: "2026-09-09T16:56:39.327Z"
+updated_at: "2026-09-10T10:15:14.772Z"
 closed_at: "2026-09-05T05:47:57.720Z"
 completed_at: "2026-09-05T05:47:57.720Z"
 author: "harness:codex"
@@ -29,7 +29,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-ygli86,verifies,"2026-09-04T11:51:40.569Z","harness:codex","cli:create:dep",detected
   pm-7zs0,verifies,"2026-09-04T12:18:17.141Z","harness:codex","cli:update:dep",detected
   pm-j668gl,recurs_from,"2026-09-04T12:18:17.141Z","harness:codex","cli:update:dep",detected
-comments[14]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-09-04T11:51:40.569Z","harness:codex","Duplicate sweep 2026-09-04: live all-status searches for 'Windows release verifier surviving server intermediate runner stderr' and 'verify-published-release Windows' found the historical portability owners pm-j668gl and pm-07pt16 but no item for this inverted test/evaluator timeout contract. Evidence: main CI run 33867283305 failed with empty stderr at the invalid-discovery assertion; an exact failed-job rerun passed on merge SHA 980dce4e25e2dfdec797d45364a8f0369cfb5adf."
   "2026-09-04T11:52:09.579Z","harness:codex","Root cause: the surviving-server regression inherited the evaluator's 15000 ms default readiness allowance but spawnSync enforced 10000 ms. The evaluator also reserves 2000 ms for governed cleanup, so the harness could terminate 7000 ms before the product contract completed and return empty stderr. The exact-SHA rerun passed, confirming timing sensitivity. Repair will inject a test readiness bound and explicitly assert readiness plus shutdown headroom below the outer deadline while preserving invalid-discovery and port-reuse assertions."
   "2026-09-04T12:02:13.039Z","harness:codex","Verification evidence: the PM-linked focused verifier suite passed 31/31 tests. Repo-wide coverage passed 603 files and 8,356 tests at exact 100/100/100/100. The first PM-linked static run reached the repository assurance stage and correctly refused because schema-isolated linked execution cannot see the source tracker item that owns the working-tree defect; the standalone defect-evidence gate passes against the live tracker. The static link was removed to preserve sandbox isolation, and the final static gate will run directly after terminal evidence and changelog generation."
@@ -44,6 +44,7 @@ comments[14]{created_at,author,text}:
   "2026-09-05T05:55:15.735Z","harness:codex","Final consolidated rereview correction passed pnpm quality:static after all item closures, full typecheck, 8422 tests / 608 files at exact 100/100/100/100, and the real 8-task transcript corpus. Latest pm-changelog regenerated the reviewed changelog; no active item ownership remains. The fresh canonical verifier/coverage test run has passed=2, failed=0. New hosted review and publication remain separate subsequent evidence."
   "2026-09-09T16:41:17.901Z","harness:codex","GH-1226 recurrence evidence: scheduled Nightly Validation run 34331273789 at 9181e96779f7b1eba6f71aaa51a54c821c43c745 failed only the nested HTTP server invalid-discovery assertion on Windows Node 24. The evaluator returned its explicit readiness-timeout diagnostic; unlike the repaired historical empty-stderr case, the outer harness did not preempt cleanup. Requested an unchanged-source failed-job rerun to distinguish transient startup pressure from a reproducible defect. No thresholds or timeout contracts were changed."
   "2026-09-09T16:56:39.326Z","harness:codex","GH-1226 final discriminator: failed-job rerun attempt 2 of Nightly Validation 34331273789 passed on unchanged source 9181e96779f7b1eba6f71aaa51a54c821c43c745. Windows Node 24 and every retained matrix leg are green. This establishes an intermittent readiness-timeout occurrence, not a source repair; the original failing attempt and strict invalid-discovery assertion remain preserved. No timeout, assertion or gate was relaxed. The public 2026.9.9 package independently passed all npx/bunx CLI and MCP entrypoints."
+  "2026-09-10T10:15:14.772Z","harness:codex","GH-1229 recurrence on macOS Node 24: Nightly Validation 34457166668 at unchanged release base 0a5e84b7bbf6fbe7ff22c12013f9f761d761a30c failed only the nested-server invalid-discovery regression. Unlike the historical Windows readiness timeout, process.kill(-child.pid, 0) threw EPERM from childTreeIsAlive during waitForChildTreeExit, masking the expected discovery diagnostic. Requested an unchanged-source failed-job rerun as a discriminator. No source, test assertion, readiness deadline, or cleanup gate has been relaxed; this observation is not a claim that the earlier timeout-ordering fix is outstanding."
 files[2]{path,scope,note}:
   scripts/release/verify-published-release.mjs,project,Authoritative evaluator readiness and shutdown bounds inspected in full
   tests/unit/scripts/release/verify-published-release.spec.ts,project,Deterministic evaluator and harness timeout ordering regression

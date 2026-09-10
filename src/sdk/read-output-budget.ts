@@ -4,6 +4,7 @@
  * Implements deterministic, bounded result compaction for the universal
  * read-output contract without expanding its public declaration module.
  */
+import { formatBuiltInOutput } from "../core/output/output.js";
 import type { PmReadOutputReceipt } from "./read-output-contracts.js";
 import {
   countReadOutputRows,
@@ -81,9 +82,10 @@ export function resolveReadOutputRecoveryBudget(
   };
 }
 
-/** Estimate the conservative token cost of a JSON-shaped result. */
-export function estimateReadOutputTokens(result: unknown): number {
-  return Math.ceil(Buffer.byteLength(JSON.stringify(result), "utf8") / 4);
+/** Estimate UTF-8 token cost using the selected JSON/TOON renderer, or compact JSON for structured SDK calls without a renderer. */
+export function estimateReadOutputTokens(result: unknown, format?: "json" | "toon"): number {
+  const rendered = format === undefined ? JSON.stringify(result) : formatBuiltInOutput(result, format);
+  return Math.ceil(Buffer.byteLength(rendered, "utf8") / 4);
 }
 
 /** Return whether a value is a non-array object record. */
@@ -114,11 +116,12 @@ function compactStrings(value: unknown, state: StringCompactionState): unknown {
 export function updateReadOutputReceiptEstimate(
   result: Record<string, unknown>,
   receipt: PmReadOutputReceipt,
+  format?: "json" | "toon",
 ): void {
   let estimate = receipt.estimated_tokens;
   for (let iteration = 0; iteration < MAX_ESTIMATE_ITERATIONS; iteration += 1) {
     receipt.estimated_tokens = estimate;
-    const measured = estimateReadOutputTokens(result);
+    const measured = estimateReadOutputTokens(result, format);
     if (measured === estimate) return;
     estimate = measured;
   }
@@ -131,13 +134,14 @@ function compactRowsToBudget(
   receipt: PmReadOutputReceipt,
   budget: number,
   minimumRowsByPath: ReadonlyMap<string, number>,
+  format?: "json" | "toon",
 ): void {
   for (
     let iteration = 0;
     iteration < MAX_COMPACTION_ITERATIONS;
     iteration += 1
   ) {
-    updateReadOutputReceiptEstimate(result, receipt);
+    updateReadOutputReceiptEstimate(result, receipt, format);
     if (receipt.estimated_tokens <= budget) return;
     const candidate = readOutputBudgetCollections(result)
       .filter((collection) => {
@@ -197,6 +201,7 @@ export function compactReadOutputToBudget(
   receipt: PmReadOutputReceipt,
   budget: number,
   minimumRowsByPath: ReadonlyMap<string, number> = new Map(),
+  format?: "json" | "toon",
 ): Record<string, unknown> {
   const stringCompactionState: StringCompactionState = { compacted: false };
   const compacted = compactStrings(result, stringCompactionState) as Record<
@@ -205,7 +210,7 @@ export function compactReadOutputToBudget(
   >;
   receipt.strings_compacted = stringCompactionState.compacted;
   compacted.read_output = receipt;
-  compactRowsToBudget(compacted, receipt, budget, minimumRowsByPath);
-  updateReadOutputReceiptEstimate(compacted, receipt);
+  compactRowsToBudget(compacted, receipt, budget, minimumRowsByPath, format);
+  updateReadOutputReceiptEstimate(compacted, receipt, format);
   return compacted;
 }

@@ -718,7 +718,8 @@ describe("search-advanced package runtime", () => {
         registerSearchProvider() {},
       };
       (mod.activate as (api: unknown) => void)(api);
-      expect(commands.map((c) => c.name)).toEqual(["search-advanced", "reindex"]);
+      expect(commands.map((c) => c.name)).toEqual(["search advanced", "reindex"]);
+      expect(commands.map((c) => c.action)).toEqual(["search-advanced", "reindex"]);
 
       const runtimeGlobal = { json: true, quiet: false, path: context.pmPath };
       const searchResult = await commands[0]!.run({

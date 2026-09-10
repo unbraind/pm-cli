@@ -4,6 +4,7 @@
  * Provides CLI runtime support for Extension Command Help.
  */
 import { Command, Option } from "commander";
+import { PM_RELOCATED_COMMAND_ALIASES } from "../sdk/cli-contracts/command-aliases.js";
 import {
   type FlagDefinition,
   type RegisteredExtensionCommandDefinition,
@@ -627,12 +628,17 @@ export function applyDynamicExtensionFlagOptions(
       continue;
     }
     const description = formatDynamicExtensionOptionDescription(definition);
+    const option = new Option(flags, description);
+    // Extension contracts declare their exact keys (for example noNotes).
+    // Treat an absence filter as that declared switch, rather than inventing
+    // a positive notes=true default when the caller supplied no filter.
+    option.negate = false;
     if (definition.list !== true) {
-      command.option(flags, description);
+      command.addOption(option);
       continue;
     }
     command.addOption(
-      new Option(flags, description).argParser(
+      option.argParser(
         (value: string, previous: string | string[] = []) => [
           ...(Array.isArray(previous) ? previous : [previous]),
           value,
@@ -837,6 +843,7 @@ export function ensureCommandPath(
   let current: Command = root;
   for (let index = 0; index < pathParts.length; index += 1) {
     const part = pathParts[index];
+    if (index > 0 && PM_RELOCATED_COMMAND_ALIASES.some((entry) => entry.canonical === pathParts.join(" "))) current.enablePositionalOptions();
     const existing = findDirectChildCommand(current, part);
     if (existing) {
       current = existing;
@@ -897,13 +904,15 @@ export function buildExtensionCommandCollisionWarning(
 ): string | null {
   const pathParts = commandPath.split(" ").filter((part) => part.length > 0);
   const collision = findExtensionCommandPathCollision(root, pathParts);
+  const declaredFacet = PM_RELOCATED_COMMAND_ALIASES.some((alias) => alias.canonical === commandPath && alias.alias === descriptor?.action);
   // Direct canonical paths intentionally augment core help with extension flags
   // and metadata while registerCommandPath preserves the core action handler.
   // Canonical aliases and nested grafts cannot make that ownership distinction,
   // so those paths are rejected instead.
   if (
     !collision ||
-    (collision.core_path === commandPath && !aliases.has(commandPath))
+    (collision.core_path === commandPath && !aliases.has(commandPath)) ||
+    (declaredFacet && !aliases.has(commandPath))
   ) {
     return null;
   }

@@ -1,0 +1,48 @@
+id: pm-qs5iiq
+title: Refresh jscpd 5.2 and MCP Apps 2 development contracts
+description: "Adopt current compatible duplicate-scanner and official MCP Apps type-contract dependencies, verify strict zero-clone and MCP conformance gates, and reconcile remaining incompatible majors against their canonical owners."
+type: Chore
+status: closed
+priority: 2
+tags[3]: dependencies,quality,sdk
+created_at: "2026-09-10T04:44:03.610Z"
+updated_at: "2026-09-10T06:18:04.928Z"
+closed_at: "2026-09-10T06:18:04.169Z"
+completed_at: "2026-09-10T06:18:04.169Z"
+author: "harness:codex"
+acceptance_criteria: "Latest compatible jscpd and MCP Apps versions resolve reproducibly; zero-clone, typecheck, MCP tests, full coverage and supply-chain audit pass; remaining incompatible majors retain canonical live evidence."
+parent: pm-u9d0
+resolution: Updated jscpd to 5.2.0 and MCP Apps development contracts to 2.0.0 with a reproducible lockfile; incompatible major upgrades retain canonical compatibility evidence.
+expected_result: "Current compatible development dependencies preserve supported runtime floors, MCP contracts, and strict quality gates."
+actual_result: "Typecheck, all three zero-clone configurations, linked MCP tests, full exact coverage, pnpm audit, Trivy vulnerability/secret scan, and GitHub alert inventory passed."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gredf1,recurs_from,"2026-09-10T04:44:03.610Z","harness:codex","cli:create:dep",detected
+  pm-pznhee,verifies,"2026-09-10T04:44:03.610Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-10T04:44:03.610Z","harness:codex","Duplicate-check evidence: all-status keyword searches for jscpd 5.2.0 and MCP Apps 2.0.0 returned zero matches; ext-apps history identified completed MCP Apps implementation pm-pznhee and resolved Hono/qs advisory owners. Live open and in-progress inventories checked; only the three active namespace tasks are claimed. Registry engines allow the supported Node floor: jscpd >=18 and ext-apps >=20. ext-apps is consumed only through type imports in src/sdk/mcp/apps.ts; official v2 peer changes require type and MCP runtime conformance checks before adoption."
+  "2026-09-10T04:56:41.235Z","harness:codex","Dependency evidence: jscpd 5.2.0 and MCP Apps 2.0.0 installed reproducibly. Full four-project TypeScript checking passed; all three duplicate-scanner configurations passed with zero clones. MCP Apps v2 replaces the development-only SDK v1 peer tree with client/core v2 and removes 68 old package installations. Runtime protocol behavior remains subject to the linked MCP and full-suite gates."
+  "2026-09-10T05:37:57.973Z","harness:codex","Live reliability and acceptance evidence: required Sentry/telemetry gate passes with zero critical/high/current Sentry issues, 1.96 percent telemetry finish error rate, and zero failures missing error codes. npm latest remains 2026.9.9; the latest completed scheduled auto-release succeeded. Current workflow schedules 02:35 UTC, serializes auto-release runs, and reuses an existing same-day UTC tag for automatic recovery. Candidate tarball installs and runs successfully via npm/Bun and npx/bunx."
+  "2026-09-10T06:18:03.362Z","harness:codex","Final verification: 660 test files and 8680 tests pass. Exact coverage is statements 63924/63924, branches 48623/48623, functions 13290/13290, lines 61268/61268. Source/export/member docstrings are 100 percent. TypeScript, ESLint, zero-clone jscpd, static structure, SDK/command/flag parity, refusal recovery, token budgets, graph composition, record integrity, credential scan, and linked tests passed. Manual temporary-project acceptance and packed npm/Bun/npx/bunx consumers passed. The independent public verifier confirms published 2026.9.9; this implementation is pending PR review and merge. GitHub currently has zero open PRs/issues and zero open dependency/code/secret alerts."
+files[2]{path,scope,note}:
+  package.json,project,Current compatible development contracts
+  pnpm-lock.yaml,project,Reproducible refreshed dependency graph
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  pnpm typecheck,project,240,"harness:codex","2026-09-10T04:56:59.210Z",local_mutation,feat/typed-search-and-item-command-namespaces
+  "pnpm lint:duplicates",project,240,"harness:codex","2026-09-10T04:56:59.210Z",local_mutation,feat/typed-search-and-item-command-namespaces
+  node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/apps.spec.ts,project,240,"harness:codex","2026-09-10T04:56:59.210Z",local_mutation,feat/typed-search-and-item-command-namespaces
+test_runs[1]:
+  - run_id: test-local-mtv4gj26-mgd185
+    kind: test
+    status: passed
+    started_at: "2026-09-10T06:02:34.072Z"
+    finished_at: "2026-09-10T06:03:58.974Z"
+    recorded_at: "2026-09-10T06:03:58.974Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck,schema,schema,source,local_source_ref
+      "pnpm lint:duplicates",schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/apps.spec.ts,schema,schema,source,local_source_ref
+close_reason: "Implemented and verified through SDK, CLI, package, and repository gates."
+body: ""

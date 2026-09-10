@@ -7,16 +7,22 @@
 import type { Command } from "commander";
 import { PM_RELOCATED_COMMAND_ALIASES } from "../sdk/cli-contracts/command-aliases.js";
 
-/** Install available namespace leaves after core and package command registration. */
-export function installCommandNamespaces(program: Command): void {
+/** Relocate existing handlers; the early pass moves only parents needed by package facets. */
+export function installCommandNamespaces(program: Command, parentsOnly = false): void {
   if (!program.commands.some((command) => command.name() === "ops")) program.command("ops").description("Discover workspace diagnostics and maintenance operations.");
-  for (const { alias, canonical_argv: [noun, verb] } of PM_RELOCATED_COMMAND_ALIASES) {
+  for (const { alias, canonical, canonical_argv: tokens } of PM_RELOCATED_COMMAND_ALIASES) {
+    if (parentsOnly && !PM_RELOCATED_COMMAND_ALIASES.some((entry) => entry.canonical.startsWith(`${canonical} `))) continue;
     const sourceIndex = program.commands.findIndex((command) => command.name() === alias);
     if (sourceIndex < 0) continue;
     const source = program.commands[sourceIndex];
-    const parent = program.commands.find((command) => command.name() === noun) ?? program.command(noun).description(`Discover ${noun} operations.`);
+    let parent = program;
+    for (const noun of tokens.slice(0, -1)) {
+      if (parent !== program) parent.enablePositionalOptions();
+      parent = parent.commands.find((command) => command.name() === noun) ?? parent.command(noun).description(`Discover ${noun} operations.`);
+    }
+    const verb = tokens[tokens.length - 1];
     if (parent.commands.some((command) => command.name() === verb)) {
-      throw new Error(`Cannot install canonical command ${noun} ${verb}: destination already exists.`);
+      throw new Error(`Cannot install canonical command ${canonical}: destination already exists.`);
     }
     // Commander exposes this mutable registration array as readonly in its
     // public types and has no removeCommand API. Keep the cast at this boundary.

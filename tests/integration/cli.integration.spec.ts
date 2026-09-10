@@ -177,7 +177,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         },
       });
 
-      const manage = context.runCli(["package", "manage", "--json"], { expectJson: true });
+      const manage = context.runCli(["package", "manage", "--json", "--output-budget", "unbounded"], { expectJson: true });
       expect(manage.code).toBe(0);
       const managed = ((manage.json as { details: { extensions?: Array<Record<string, unknown>> } }).details.extensions ?? []);
       expect(managed).toEqual(

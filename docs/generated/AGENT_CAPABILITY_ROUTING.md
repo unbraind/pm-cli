@@ -6,9 +6,9 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 
 | Capability family | Commands |
 | --- | --- |
-| workspace | `init`, `config`, `merge`, `schema`, `profile`, `ops telemetry`, `ops health`, `ops gc`, `workspace` |
-| intake | `create`, `copy`, `context focus`, `history restore` |
-| context | `list`, `aggregate`, `context`, `get`, `search`, `duplicates`, `ops eval`, `context next`, `history activity`, `ops stats`, `help` |
+| workspace | `init`, `config`, `workspace merge`, `schema`, `profile`, `ops telemetry`, `ops health`, `ops gc`, `workspace` |
+| intake | `create`, `item copy`, `context focus`, `history restore` |
+| context | `list`, `aggregate`, `context`, `get`, `search`, `item duplicates`, `ops eval`, `context next`, `history activity`, `ops stats`, `help` |
 | lifecycle | `update`, `update many`, `close`, `close many`, `close delete`, `claim`, `release` |
 | evidence | `history`, `history events`, `history redact`, `history repair`, `history compact`, `history-author-acknowledge`, `append`, `comments`, `notes`, `learnings`, `files`, `docs` |
 | graph | `graph`, `deps`, `plan` |

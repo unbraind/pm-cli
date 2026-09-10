@@ -780,12 +780,17 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       ["reindex", "search-advanced"],
     ),
     ...destinationRows(
-      "search",
-      "search duplicates",
+      "item",
+      "item duplicates",
       "consolidation",
-      "pm-3i9q8g",
+      "pm-fmy9ih",
       ["duplicates"],
     ),
+    ...destinationRows("item", "item duplicates", "package_owned", "pm-fmy9ih", [
+      "dedupe-audit",
+      "dedupe-merge",
+      "comments-audit",
+    ]),
     ...destinationRows("graph", "graph", "target_noun", "pm-pbyu", ["graph"]),
     ...destinationRows("graph", "graph show", "consolidation", "pm-yql1", [
       "deps",

@@ -22,6 +22,7 @@ export {
   PM_BULK_LIFECYCLE_COMMAND_ALIASES,
   PM_RELOCATED_COMMAND_ALIASES,
   PM_NAMESPACED_COMMAND_ALIASES,
+  findPmNamespacedCommand,
   resolvePmCommandOperation,
   resolvePmHistoryOperation,
   renderPmCommandAliasMigrationHint,

@@ -5,7 +5,7 @@ describe("package catalog cardinality", () => {
   it("returns one row per package while preserving every resolvable alias", async () => {
     await withTempPmPath(async (context) => {
       const result = context.runCli(
-        ["package", "list", "--project", "--json"],
+        ["package", "list", "--project", "--json", "--output-budget", "unbounded"],
         { expectJson: true },
       );
       expect(result.code).toBe(0);

@@ -899,6 +899,7 @@ export async function loadCommandFlagTable() {
       "dist/cli.js",
       "contracts",
       "--flags-only",
+      "--full",
       "--json",
       "--output-budget",
       "unbounded",
@@ -908,7 +909,7 @@ export async function loadCommandFlagTable() {
   return mapCommandFlagTable(
     parseJson(
       result.stdout,
-      "pm contracts --flags-only --json --output-budget unbounded",
+      "pm contracts --flags-only --full --json --output-budget unbounded",
     ),
     globalFlags,
   );
@@ -948,18 +949,14 @@ export async function collectPackageDeclaredFlags(
   return flags;
 }
 
-/** Resolve the contract command path (`package doctor` before `package`) a fenced invocation targets. */
+/** Resolve the longest declared command path before validating a fenced invocation's flags. */
 export function resolveFlagContractCommand(text, table) {
   const tokens = text.replace(/^\s*(?:\$\s*)?pm\s+/u, "").split(/\s+/u);
-  const [first, second] = tokens;
-  if (
-    typeof second === "string" &&
-    /^[a-z][a-z0-9-]*$/u.test(second) &&
-    table.has(`${first} ${second}`)
-  ) {
-    return `${first} ${second}`;
+  for (let length = tokens.length; length > 0; length -= 1) {
+    const candidate = tokens.slice(0, length).join(" ");
+    if (table.has(candidate)) return candidate;
   }
-  return table.has(first) ? first : null;
+  return null;
 }
 
 /** Push one failure per fenced flag that neither the command contract nor a package declares. */

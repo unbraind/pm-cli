@@ -1,4 +1,5 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -18,6 +19,22 @@ afterEach(async () => {
 });
 
 describe("CLI runtime compatibility boundary", () => {
+  it("prints the built version without installed runtime dependencies", async () => {
+    const projectRoot = await mkdtemp(path.join(tmpdir(), "pm-dist-version-"));
+    roots.push(projectRoot);
+    await cp(path.resolve("dist"), path.join(projectRoot, "dist"), { recursive: true });
+    const manifest = await readFile(path.resolve("package.json"), "utf8");
+    await writeFile(path.join(projectRoot, "package.json"), manifest);
+    const result = spawnSync(process.execPath, ["dist/cli.js", "--version"], {
+      cwd: projectRoot,
+      encoding: "utf8",
+      env: { ...process.env, PM_PATH: path.join(projectRoot, ".agents", "pm"), PM_GLOBAL_PATH: path.join(projectRoot, "global") },
+    });
+    expect(result.stderr).toBe("");
+    expect(result.status).toBe(0);
+    expect(result.stdout.trim()).toBe(JSON.parse(manifest).version);
+  });
+
   it.each([
     [["--json", "context"], true],
     [["--output-format", "json", "health", "--check-only"], true],
