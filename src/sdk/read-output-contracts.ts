@@ -1378,20 +1378,27 @@ function requestedDimensions(
   );
 }
 
+/** Resolve the built-in representation selected by the host or caller. */
+function readOutputMeasurementFormat(options: Record<string, unknown>): "json" | "toon" | undefined {
+  const format = options.resolvedOutputFormat ?? options.outputFormat ?? options.output_format;
+  return format === "json" || format === "toon" ? format : undefined;
+}
+
 /** Stabilize the per-call and cross-call receipts in one complete envelope. */
 function attachReadOutputSessionContracts(
   result: Record<string, unknown>,
   state: PmReadOutputSessionState,
   receipt: PmReadOutputReceipt,
+  format?: "json" | "toon",
 ): Record<string, unknown> {
-  let withSession = attachReadOutputSessionReceipt(result, state);
+  let withSession = attachReadOutputSessionReceipt(result, state, format);
   for (let iteration = 0; iteration < 8; iteration += 1) {
     const previousReadEstimate = receipt.estimated_tokens;
     const previousSessionEstimate = (
       withSession.read_session as PmReadOutputSessionReceipt
     ).spent_this_call_tokens;
-    updateReadOutputReceiptEstimate(withSession, receipt);
-    withSession = attachReadOutputSessionReceipt(withSession, state);
+    updateReadOutputReceiptEstimate(withSession, receipt, format);
+    withSession = attachReadOutputSessionReceipt(withSession, state, format);
     const sessionEstimate = (
       withSession.read_session as PmReadOutputSessionReceipt
     ).spent_this_call_tokens;
@@ -1411,15 +1418,16 @@ export function stabilizeReadOutputReceiptEstimates(
   options: Record<string, unknown>,
 ): Record<string, unknown> {
   if (!isRecord(result.read_output)) return result;
+  const format = readOutputMeasurementFormat(options);
   const receipt = result.read_output as unknown as PmReadOutputReceipt;
   const session = parseReadOutputSession(
     options.outputSession ?? options.output_session,
   );
   if (session === undefined) {
-    updateReadOutputReceiptEstimate(result, receipt);
+    updateReadOutputReceiptEstimate(result, receipt, format);
     return result;
   }
-  return attachReadOutputSessionContracts(result, session, receipt);
+  return attachReadOutputSessionContracts(result, session, receipt, format);
 }
 
 /** Declare independently resumable validate diagnostic arrays on rich results. */
@@ -1568,6 +1576,7 @@ function omitReadOutputForBudget(
     tokens: number;
   },
   omittedResultEstimatedTokens: number,
+  format?: "json" | "toon",
 ): Record<string, unknown> {
   const minimalReceipt: PmReadOutputReceipt = {
     contract_version: 1,
@@ -1608,9 +1617,10 @@ function omitReadOutputForBudget(
           omitted as unknown as Record<string, unknown>,
           session,
           minimalReceipt,
+          format,
         );
   if (session === undefined) {
-    updateReadOutputReceiptEstimate(boundedOmission, minimalReceipt);
+    updateReadOutputReceiptEstimate(boundedOmission, minimalReceipt, format);
   }
   if (
     session !== undefined &&
@@ -1629,6 +1639,7 @@ function canReturnReadOutputUnchanged(
   resolved: PmResolvedReadOutputDimensions,
   session: PmReadOutputSessionState | undefined,
   result: Record<string, unknown>,
+  format?: "json" | "toon",
 ): boolean {
   if (session !== undefined) return false;
   const canonicalRequestedCount = resolved.canonical_options_used!.length;
@@ -1643,7 +1654,7 @@ function canReturnReadOutputUnchanged(
   return (
     canonicalRequestedCount === 0 &&
     (resolved.cost === undefined ||
-      estimateReadOutputTokens(result) <= resolved.cost.value)
+      estimateReadOutputTokens(result, format) <= resolved.cost.value)
   );
 }
 
@@ -1860,6 +1871,7 @@ function compactReadOutputProjection(
   session: PmReadOutputSessionState | undefined,
   continuationState: ReadOutputContinuationState,
   measuredResultTokens: number,
+  format?: "json" | "toon",
 ): Record<string, unknown> {
   const assuranceMinimumRows =
     resolved.command === "assurance" && Array.isArray(projected.assertions)
@@ -1867,31 +1879,40 @@ function compactReadOutputProjection(
           (row) => isRecord(row) && row.verdict !== "pass",
         ).length
       : 0;
-  let compacted = compactReadOutputToBudget(
-    projected,
-    receipt,
-    bindingBudget.tokens,
-    assuranceMinimumRows > 0
-      ? new Map([["assertions", assuranceMinimumRows]])
-      : new Map(),
-  );
-  const continuationCursorRebased = rebaseBudgetCompactedCursor(
-    compacted,
-    continuationState.originalItemCount,
-    continuationState.cursorSource,
-    continuationState.cursorContinuesExistingPage,
-  );
-  attachReadOutputTruncationDisclosure(
-    compacted,
-    resolved,
-    receipt,
-    bindingBudget,
-    continuationCursorRebased,
-    measuredResultTokens,
-    continuationState.collectionsBeforeBudget,
-  );
-  if (session !== undefined) {
-    compacted = attachReadOutputSessionContracts(compacted, session, receipt);
+  let targetBudget = bindingBudget.tokens;
+  let compacted = projected;
+  for (let iteration = 0; iteration < 8; iteration += 1) {
+    compacted = compactReadOutputToBudget(
+      projected,
+      receipt,
+      targetBudget,
+      assuranceMinimumRows > 0
+        ? new Map([["assertions", assuranceMinimumRows]])
+        : new Map(),
+      format,
+    );
+    const continuationCursorRebased = rebaseBudgetCompactedCursor(
+      compacted,
+      continuationState.originalItemCount,
+      continuationState.cursorSource,
+      continuationState.cursorContinuesExistingPage,
+    );
+    attachReadOutputTruncationDisclosure(
+      compacted,
+      resolved,
+      receipt,
+      bindingBudget,
+      continuationCursorRebased,
+      measuredResultTokens,
+      continuationState.collectionsBeforeBudget,
+    );
+    if (session !== undefined) {
+      compacted = attachReadOutputSessionContracts(compacted, session, receipt, format);
+    }
+    updateReadOutputReceiptEstimate(compacted, receipt, format);
+    const overrun = receipt.estimated_tokens - bindingBudget.tokens;
+    if (overrun <= 0 || targetBudget <= 0) return compacted;
+    targetBudget = Math.max(0, targetBudget - overrun);
   }
   return compacted;
 }
@@ -1906,6 +1927,7 @@ export function applyReadOutputDimensions<
 ): PmReadOutputResult<Result> {
   const resolved = resolveReadOutputDimensions(command, options);
   if (!resolved) return result;
+  const format = readOutputMeasurementFormat(options);
   const session = parseReadOutputSession(
     options.outputSession ?? options.output_session,
   );
@@ -1917,7 +1939,7 @@ export function applyReadOutputDimensions<
   const requested = requestedDimensions(resolved);
   if (
     cursor === undefined &&
-    canReturnReadOutputUnchanged(resolved, session, result)
+    canReturnReadOutputUnchanged(resolved, session, result, format)
   ) {
     return result;
   }
@@ -1962,8 +1984,8 @@ export function applyReadOutputDimensions<
   projected =
     session === undefined
       ? projected
-      : attachReadOutputSessionContracts(projected, session, receipt);
-  updateReadOutputReceiptEstimate(projected, receipt);
+      : attachReadOutputSessionContracts(projected, session, receipt, format);
+  updateReadOutputReceiptEstimate(projected, receipt, format);
   if (
     bindingBudget !== undefined &&
     receipt.estimated_tokens > bindingBudget.tokens
@@ -1977,6 +1999,7 @@ export function applyReadOutputDimensions<
       session,
       continuationState,
       measuredResultTokens,
+      format,
     );
   }
   if (
@@ -1989,6 +2012,7 @@ export function applyReadOutputDimensions<
       session,
       bindingBudget,
       receipt.estimated_tokens,
+      format,
     ) as PmReadOutputResult<Result>;
   }
   return projected as Result & {

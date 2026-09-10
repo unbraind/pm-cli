@@ -1,6 +1,6 @@
 # pm-governance-audit
 
-Trackers: [pm-vjk3](../../.agents/pm/features/pm-vjk3.toon), [pm-mp49](../../.agents/pm/issues/pm-mp49.toon), [pm-v657](../../.agents/pm/issues/pm-v657.toon)
+Trackers: [pm-fmy9ih](../../.agents/pm/tasks/pm-fmy9ih.toon), [pm-vjk3](../../.agents/pm/features/pm-vjk3.toon), [pm-mp49](../../.agents/pm/issues/pm-mp49.toon), [pm-v657](../../.agents/pm/issues/pm-v657.toon)
 
 First-party package that restores optional governance audit surfaces in bare-core `pm`.
 
@@ -20,9 +20,9 @@ bodies and full before/after snapshots.
 
 ## Commands
 
-- `pm dedupe-audit`
-- `pm dedupe-merge`
-- `pm comments-audit`
+- `pm item duplicates audit`
+- `pm item duplicates merge`
+- `pm item audit-comments`
 - `pm ops normalize`
 
 The package also augments existing commands with audit-only flags:
@@ -60,9 +60,9 @@ pm install audit --project
 ## Verify
 
 ```bash
-pm dedupe-audit --mode parent_scope --status all --limit 20 --json
-pm dedupe-merge --keep pm-canonical --close pm-duplicate --dry-run --json
-pm comments-audit --latest 3 --limit-items 20 --limit-rows 50 --json
+pm item duplicates audit --mode parent_scope --status all --limit 20 --json
+pm item duplicates merge --keep pm-canonical --close pm-duplicate --dry-run --json
+pm item audit-comments --latest 3 --limit-items 20 --limit-rows 50 --json
 pm ops normalize --dry-run --json
 ```
 
@@ -82,3 +82,5 @@ result. The older `--limit` spelling remains a deprecated alias for
 `--limit-rows`; do not combine the two row-limit spellings.
 
 `pm normalize` remains a compatibility alias for `pm ops normalize`.
+
+`dedupe-audit`, `dedupe-merge`, and `comments-audit` remain hidden compatibility aliases. Core `pm item duplicates` discovers bounded candidate clusters; this package adds detailed audit and explicit reconciliation. Comment coverage is an independent item audit, not a duplicate detector. SDK action names remain unchanged.

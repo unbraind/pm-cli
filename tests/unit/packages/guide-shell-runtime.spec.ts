@@ -63,7 +63,7 @@ describe("guide-shell static SDK runtime", () => {
       ["Task", "Issue"],
       ["one", "two"],
       true,
-      {},
+      { namespace_commands: [] },
     );
     await runCompletionPackage(
       [],
@@ -75,10 +75,10 @@ describe("guide-shell static SDK runtime", () => {
       ["Feature"],
       [],
       false,
-      {},
+      { namespace_commands: [] },
     );
     await runCompletionPackage([], {}, {});
-    expect(completion).toHaveBeenLastCalledWith("bash", [], [], false, {});
+    expect(completion).toHaveBeenLastCalledWith("bash", [], [], false, { namespace_commands: [] });
   });
 
   it("builds completion registries and list helpers across schema shapes", async () => {
@@ -88,7 +88,7 @@ describe("guide-shell static SDK runtime", () => {
       schema: {},
     } as never);
     vi.spyOn(sdk, "getActiveExtensionRegistrations").mockReturnValue(
-      [] as never,
+      { commands: [{ command: "search advanced" }] } as never,
     );
     const typeRegistry = vi
       .spyOn(sdk, "resolveItemTypeRegistry")
@@ -120,6 +120,7 @@ describe("guide-shell static SDK runtime", () => {
 
     await runCompletionPackage(["bash"], {}, { path: "/tmp/pm" });
     expect(completion).toHaveBeenCalledWith("bash", [], [], false, {
+      namespace_commands: ["search advanced"],
       item_types: ["Task"],
       statuses: ["closed", "open"],
       command_flags: {
@@ -180,6 +181,7 @@ describe("guide-shell static SDK runtime", () => {
     } as never);
     await runCompletionPackage([], {}, { path: "/tmp/pm" });
     expect(completion).toHaveBeenLastCalledWith("bash", [], [], false, {
+      namespace_commands: ["search advanced"],
       item_types: undefined,
       statuses: undefined,
       command_flags: undefined,

@@ -80,6 +80,23 @@ export const PM_BULK_LIFECYCLE_COMMAND_ALIASES: readonly PmCommandAliasContract[
 export const PM_RELOCATED_COMMAND_ALIASES: readonly PmCommandAliasContract[] = [
   ...PM_CONTEXT_OPS_COMMAND_ALIASES,
   ...PM_BULK_LIFECYCLE_COMMAND_ALIASES,
+  ...[
+    ["copy", "item copy", "pm-m6g87m"],
+    ["merge", "workspace merge", "pm-m6g87m"],
+    ["duplicates", "item duplicates", "pm-fmy9ih"],
+    ["dedupe-audit", "item duplicates audit", "pm-fmy9ih"],
+    ["dedupe-merge", "item duplicates merge", "pm-fmy9ih"],
+    ["comments-audit", "item audit-comments", "pm-fmy9ih"],
+    ["search-advanced", "search advanced", "pm-wfskfn"],
+  ].map(([alias, canonical, owner]): PmCommandAliasContract => ({
+    alias,
+    canonical,
+    canonical_argv: canonical.split(" "),
+    lifecycle: "permanent",
+    hidden: true,
+    registration: "bootstrap",
+    owner,
+  })),
 ];
 
 /** Native noun-verb paths whose stable operation identities survive grammar consolidation. */
@@ -87,6 +104,16 @@ export const PM_NAMESPACED_COMMAND_ALIASES: readonly PmCommandAliasContract[] = 
   ...PM_HISTORY_COMMAND_ALIASES,
   ...PM_RELOCATED_COMMAND_ALIASES,
 ];
+
+/** Find the longest declared command prefix without consuming flags or positional operands. */
+export function findPmNamespacedCommand(tokens: readonly string[]): PmCommandAliasContract | undefined {
+  let matched: PmCommandAliasContract | undefined;
+  for (const alias of PM_NAMESPACED_COMMAND_ALIASES) {
+    if (alias.canonical_argv.length <= (matched?.canonical_argv.length ?? 0)) continue;
+    if (alias.canonical_argv.every((token, index) => token === (index === 0 && tokens[index] === "ctx" ? "context" : tokens[index]))) matched = alias;
+  }
+  return matched;
+}
 
 /** Resolve a native command leaf to its stable SDK operation without changing unknown paths. */
 export function resolvePmCommandOperation(command: string): string {

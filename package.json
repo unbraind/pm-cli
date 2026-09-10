@@ -218,7 +218,7 @@
   "devDependencies": {
     "@codspeed/vitest-plugin": "^5.7.1",
     "@eslint/js": "^10.0.1",
-    "@modelcontextprotocol/ext-apps": "1.7.5",
+    "@modelcontextprotocol/ext-apps": "2.0.0",
     "@sentry/cli": "^3.7.0",
     "@types/node": "^26.5.0",
     "@types/npm-package-arg": "^6.1.4",
@@ -230,7 +230,7 @@
     "fast-check": "^4.9.0",
     "github-slugger": "2.0.0",
     "greptile": "^3.5.2",
-    "jscpd": "^5.1.2",
+    "jscpd": "^5.2.0",
     "marked": "18.0.12",
     "parse5": "8.0.1",
     "tsx": "^4.23.13",

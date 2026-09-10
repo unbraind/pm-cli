@@ -1331,7 +1331,7 @@ describe("read output contracts", () => {
 
     const inferredRows = applyReadOutputDimensions(
       "list",
-      { outputBudget: 350 },
+      { outputBudget: 650 },
       { items: makeRows("item"), related: makeRows("related") },
     );
     expect(inferredRows).toMatchObject({
@@ -1353,7 +1353,7 @@ describe("read output contracts", () => {
     };
     const objectRows = applyReadOutputDimensions(
       "graph",
-      { outputBudget: 400 },
+      { outputBudget: 650 },
       structuredClone(objectRowsInput),
     );
     expect(objectRows).toMatchObject({
@@ -1366,7 +1366,7 @@ describe("read output contracts", () => {
     }
     const continuedObjectRows = applyReadOutputDimensions(
       "graph",
-      { outputBudget: 400, outputCursor: String(objectRows.next_cursor) },
+      { outputBudget: 650, outputCursor: String(objectRows.next_cursor) },
       structuredClone(objectRowsInput),
     );
     const firstObjectKeys = Object.keys(objectRows.graph.nodes);
@@ -1380,7 +1380,7 @@ describe("read output contracts", () => {
 
     const mixedRows = applyReadOutputDimensions(
       "graph",
-      { outputBudget: 500 },
+      { outputBudget: 800 },
       {
         graph: {
           nodes: Object.fromEntries(

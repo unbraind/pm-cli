@@ -110,3 +110,26 @@ This setting changes presentation only. It does not disable aliases or change co
 - New commands require an explicit architectural home and PM owner.
 - The compatibility table is long-lived public API and must be reviewed like any other SDK contract.
 - Consolidation proceeds incrementally: current legacy commands may remain only with a named disposition until their owning PM item lands.
+
+## Item operations and package facets
+
+Tracked by [pm-m6g87m](../.agents/pm/tasks/pm-m6g87m.toon), [pm-fmy9ih](../.agents/pm/tasks/pm-fmy9ih.toon), and [pm-wfskfn](../.agents/pm/tasks/pm-wfskfn.toon).
+
+| Canonical command | Compatibility alias | Responsibility |
+| --- | --- | --- |
+| `item copy` | `copy` | Copy one item to a new ID |
+| `workspace merge` | `merge` | Install, inspect, or run Git tracker merge drivers |
+| `item duplicates` | `duplicates` | Discover bounded duplicate clusters in core |
+| `item duplicates audit` | `dedupe-audit` | Package-provided duplicate analysis |
+| `item duplicates merge` | `dedupe-merge` | Package-provided explicit item reconciliation |
+| `item audit-comments` | `comments-audit` | Package-provided comment coverage audit |
+| `search advanced` | `search-advanced` | Package-provided keyword, semantic, or hybrid retrieval |
+
+These placements distinguish copying, reconciling duplicate items, and merging
+Git tracker changes without adding a root noun. Comment coverage keeps its own
+facet because it measures annotation quality independently of duplicate work.
+Packages register canonical command paths with their existing SDK action names;
+shared compatibility contracts carry the parser and discovery mapping.
+Existing aliases retain their flags, arguments, and results and are hidden from
+default discovery. `search -- advanced` preserves the literal query that would
+otherwise collide with the package facet; options belong before the separator.

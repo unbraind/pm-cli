@@ -21,6 +21,7 @@ import {
   type PmCommandPositionalSlotContract,
 } from "../cli-contracts/grammar-contracts.js";
 import { resolveSubcommandFlagContractsForCommand } from "../cli-contracts/flag-contracts.js";
+import { resolvePmCommandOperation } from "../cli-contracts/command-aliases.js";
 
 /** Shared executable shape for a refusal that must not mutate tracker state. */
 export interface PmGrammarRefusalContract {
@@ -206,7 +207,7 @@ export function listPmRequiredArgumentRefusalContracts(
 }
 
 function positionalActionValues(command: string): readonly string[] {
-  switch (command) {
+  switch (resolvePmCommandOperation(command)) {
     case "assurance":
     case "workspace snapshot":
       return PM_POSITIONAL_ACTION_CONTRACTS.filter(

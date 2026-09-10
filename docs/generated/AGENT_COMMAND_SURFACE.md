@@ -14,6 +14,7 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `create` | core | intake |
 | `item-reopen` | full | lifecycle |
 | `copy` | full | intake |
+| `item copy` | full | intake |
 | `focus` | standard | intake |
 | `context focus` | standard | intake |
 | `list` | core | context |
@@ -31,6 +32,7 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `graph` | standard | graph |
 | `search` | core | context |
 | `duplicates` | full | context |
+| `item duplicates` | full | context |
 | `eval` | full | context |
 | `ops eval` | full | context |
 | `next` | core | context |
@@ -46,6 +48,7 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `history compact` | full | evidence |
 | `history-author-acknowledge` | full | evidence |
 | `merge` | full | workspace |
+| `workspace merge` | full | workspace |
 | `schema` | standard | workspace |
 | `profile` | standard | workspace |
 | `activity` | full | context |

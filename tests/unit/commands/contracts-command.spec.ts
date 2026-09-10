@@ -224,7 +224,7 @@ describe("contracts command helper coverage", () => {
     ).toBe("templates show");
     expect(
       _testOnlyContractsCommand.resolveActionCommandPath("duplicates"),
-    ).toBe("duplicates");
+    ).toBe("item duplicates|duplicates");
     expect(
       _testOnlyContractsCommand.resolveActionCommandPath("not-real-action"),
     ).toBeNull();

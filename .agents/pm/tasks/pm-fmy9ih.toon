@@ -1,19 +1,23 @@
 id: pm-fmy9ih
-title: "Four top-level commands implement one concept: dedupe-audit, dedupe-merge, duplicates and comments-audit are separate nouns for finding and reconciling duplicate content"
+title: Consolidate duplicate governance under item operations
 description: "Consolidate dedupe-audit, dedupe-merge, duplicates, and comments-audit into one duplicate-governance noun with explicit discovery and reconciliation verbs. Preserve all legacy spellings as hidden aliases and prove the consolidated contract retains every detection, annotation, and merge capability."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[3]: cli-grammar,consolidation,dedupe
 created_at: "2026-08-05T18:07:22.401Z"
-updated_at: "2026-09-08T13:32:39.797Z"
+updated_at: "2026-09-10T06:17:58.217Z"
+closed_at: "2026-09-10T06:17:57.502Z"
+completed_at: "2026-09-10T06:17:57.502Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Duplicate discovery and reconciliation present as one noun with verbs, with every current spelling preserved as a hidden alias that prints one migration hint; comments-audit is resolved either into the same noun or into the item annotation facet surface, with the choice recorded; No detection, merge, or audit capability is removed; contract coverage before and after is proven equal"
 parent: pm-n7rr
 risk: low
 confidence: high
-expected_result: "Duplicate discovery and reconciliation present as one noun with verbs, every current spelling survives as a hidden alias, and no detection or merge capability is removed."
+resolution: "Duplicate discovery, audit, and reconciliation share item duplicates; annotation coverage uses item audit-comments. All previous spellings and stable SDK actions remain available."
+expected_result: "One coherent duplicate-governance surface preserves detection, reconciliation, and annotation capabilities."
+actual_result: Canonical and legacy parser/flag contracts passed; real preview/apply preserved child lineage and closed the duplicate; generated census and package acceptance passed.
 dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-0z7n,blocked_by,"2026-08-05T18:08:40.315Z","harness:claude-code","cli:update:dep",detected
   pm-j82fd3,implements,"2026-08-05T18:08:40.315Z","harness:claude-code","cli:update:dep",detected
@@ -23,4 +27,41 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-yy8rmx,discovered_from,"2026-08-05T18:08:40.315Z","harness:claude-code","cli:update:dep",detected
   pm-flnefm,related,"2026-08-05T18:08:43.861Z","harness:claude-code","cli:update:dep",detected
   pm-jmld,supersedes,"2026-08-05T18:08:43.861Z","harness:claude-code","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-10T04:18:52.614Z","harness:codex","Design and duplicate check: reviewed all 262 open titles, all-status search, full sibling metadata, and closed alias/census foundations pm-0z7n and pm-yy8rmx. Group discovery and reconciliation under item duplicates (existing detector), item duplicates audit, and item duplicates merge. Place comment coverage under item audit-comments because it measures annotations rather than duplicate work. Extend the shared namespace mechanism to preserve complete nested handlers, SDK identities, flags, cursors, and compatibility hints. GitHub intake currently has zero open PRs/issues and zero open Dependabot/code-scanning alerts."
+  "2026-09-10T04:25:10.842Z","harness:codex","TDD red: the new sandboxed namespace suite failed all 11 cases before implementation, covering seven legacy mappings, nested handler identity, copy addressing, direct package registration, and rejection of undeclared package grafts. The implementation now generalizes relocation to declared nested paths and keeps the existing handlers."
+  "2026-09-10T06:17:56.786Z","harness:codex","Final verification: 660 test files and 8680 tests pass. Exact coverage is statements 63924/63924, branches 48623/48623, functions 13290/13290, lines 61268/61268. Source/export/member docstrings are 100 percent. TypeScript, ESLint, zero-clone jscpd, static structure, SDK/command/flag parity, refusal recovery, token budgets, graph composition, record integrity, credential scan, and linked tests passed. Manual temporary-project acceptance and packed npm/Bun/npx/bunx consumers passed. The independent public verifier confirms published 2026.9.9; this implementation is pending PR review and merge. GitHub currently has zero open PRs/issues and zero open dependency/code/secret alerts."
+notes[1]{created_at,author,text}:
+  "2026-09-10T06:06:48.274Z","harness:codex","Annotation coverage and duplicate reconciliation share the item noun but answer different questions. item audit-comments owns annotation completeness; item duplicates, item duplicates audit, and item duplicates merge own discovery and reconciliation. Existing root spellings remain permanent hidden aliases with bounded migration guidance."
+files[10]{path,scope,note}:
+  packages/pm-governance-audit/extensions/governance-audit/index.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/cli/command-namespaces.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/cli/extension-command-help.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/cli/main.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/sdk/cli-contracts/command-aliases.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/sdk/cli-contracts/grammar-contracts.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Canonical item and search command contracts with compatibility and parser parity
+  src/sdk/completion.ts,project,Shared namespace traversal for nested duplicate command completion
+  tests/unit/extensions/builtin-extension-entrypoints.spec.ts,project,Reviewed namespace delivery implementation and verification
+  tests/unit/packages/governance-audit-runtime.spec.ts,project,Reviewed namespace delivery implementation and verification
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/item-search-namespaces.spec.ts,project,240,"harness:codex","2026-09-10T04:23:28.142Z",local_mutation,feat/typed-search-and-item-command-namespaces
+  node scripts/run-tests.mjs test -- tests/integration/item-search-namespaces.integration.spec.ts,project,240,"harness:codex","2026-09-10T04:43:57.840Z",local_mutation,feat/typed-search-and-item-command-namespaces
+test_runs[1]:
+  - run_id: test-local-mtv4eoo8-rslbsc
+    kind: test
+    status: passed
+    started_at: "2026-09-10T06:01:28.515Z"
+    finished_at: "2026-09-10T06:02:32.935Z"
+    recorded_at: "2026-09-10T06:02:32.935Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/item-search-namespaces.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/item-search-namespaces.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/CLI_GRAMMAR.md,project,Canonical item and search command contracts with compatibility and parser parity
+  packages/pm-governance-audit/README.md,project,Canonical item and search command contracts with compatibility and parser parity
+close_reason: "Implemented and verified through SDK, CLI, package, and repository gates."
 body: ""

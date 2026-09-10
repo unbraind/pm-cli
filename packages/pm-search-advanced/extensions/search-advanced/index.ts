@@ -157,7 +157,7 @@ const reindexFlags = [
 
 function searchAdvancedCommand(): CommandDefinition {
   return {
-    name: "search-advanced",
+    name: "search advanced",
     action: "search-advanced",
     description:
       "Enable optional semantic and hybrid search modes via package runtime.",
@@ -190,7 +190,7 @@ function reindexCommand(): CommandDefinition {
 
 /** Registers this package's commands, actions, and runtime hooks with the host. */
 export function activate(api: ExtensionApi): void {
-  api.registerFlags("search-advanced", [
+  api.registerFlags("search advanced", [
     ...SEARCH_EXTENSION_FLAG_DEFINITIONS,
   ]);
   api.registerCommand(searchAdvancedCommand());

@@ -94,7 +94,7 @@ function resolveNamespacedItemAddressIndex(argv: string[], commandIndex: number,
   const leafIndex = commandIndex + 1 + leafOffset;
   const candidate = `${commandName} ${argv[leafIndex]}`;
   const operation = resolvePmCommandOperation(candidate);
-  if (operation === candidate) return fallback;
+  if (operation === candidate) return commandName === "item" && argv[leafIndex] === "complete" ? leafIndex + 1 : fallback;
   return supportsItemIdAlias(operation) ? leafIndex + 1 : undefined;
 }
 
@@ -104,16 +104,13 @@ function resolveItemAddressIndex(
   commandIndex: number,
   commandName: string,
 ): number | undefined {
-  if (["history", "context", "ctx", "update", "close"].includes(commandName)) {
+  if (["history", "context", "ctx", "update", "close", "item"].includes(commandName)) {
     return resolveNamespacedItemAddressIndex(argv, commandIndex, commandName);
   }
   const declaredSubcommand = ITEM_ID_ALIAS_SUBCOMMANDS.get(commandName);
   if (declaredSubcommand === undefined) return commandIndex + 1;
   const usesDeclaredSubcommand =
     argv[commandIndex + 1]?.toLowerCase() === declaredSubcommand;
-  if (!usesDeclaredSubcommand && !ITEM_ID_ALIAS_COMMANDS.has(commandName)) {
-    return undefined;
-  }
   return commandIndex + (usesDeclaredSubcommand ? 2 : 1);
 }
 

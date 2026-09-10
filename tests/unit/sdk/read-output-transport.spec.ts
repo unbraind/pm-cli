@@ -217,17 +217,17 @@ describe("universal read-output transport contracts", () => {
           [
             "list-closed",
             "--full",
-            "--output-budget=700",
+            "--output-budget=1800",
             ...(outputCursor ? ["--output-cursor", outputCursor] : []),
             "--json",
             "--no-extensions",
           ],
           { expectJson: true },
         );
-        expect(result.code).toBe(0);
+        expect(result.code, result.stderr).toBe(0);
         peakResponseBytes = Math.max(
           peakResponseBytes,
-          Buffer.byteLength(JSON.stringify(result.json), "utf8"),
+          Buffer.byteLength(result.stdout, "utf8"),
         );
         const envelope = result.json as {
           items: Array<{ id: string }>;
@@ -260,7 +260,7 @@ describe("universal read-output transport contracts", () => {
 
       expect(pagedIds).toEqual(completeIds);
       expect(new Set(pagedIds).size).toBe(completeIds.length);
-      expect(peakResponseBytes).toBeLessThan(12_000);
+      expect(peakResponseBytes).toBeLessThanOrEqual(7_200);
     });
   });
 

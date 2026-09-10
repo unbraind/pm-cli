@@ -20,6 +20,7 @@ import {
   resolveRuntimeStatusRegistry,
   runCompletion,
   runGuide,
+  type CompletionRuntimeConfig,
   type GlobalOptions,
   type GuideResult,
   type ItemMetadata,
@@ -93,29 +94,15 @@ function collectStatusNames(
     .sort((left, right) => left.localeCompare(right));
 }
 
-async function buildCompletionRuntimeConfig(global: GlobalOptions): Promise<{
-  item_types?: string[];
-  statuses?: string[];
-  command_flags?: Partial<
-    Record<
-      | "list"
-      | "create"
-      | "update"
-      | "update-many"
-      | "close-many"
-      | "search"
-      | "calendar"
-      | "context",
-      string[]
-    >
-  >;
-}> {
+/** Resolve configured workflow values and active package paths for completion discovery. */
+async function buildCompletionRuntimeConfig(global: GlobalOptions): Promise<CompletionRuntimeConfig> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const registrations = getActiveExtensionRegistrations();
+  const namespaceCommands = registrations?.commands.map((entry) => entry.command) ?? [];
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    return {};
+    return { namespace_commands: namespaceCommands };
   }
   const settings = await readSettings(pmRoot);
-  const registrations = getActiveExtensionRegistrations();
   const typeRegistry = resolveItemTypeRegistry(settings, registrations);
   const itemTypes = collectTypeNames(typeRegistry);
   const statuses = collectStatusNames(
@@ -161,6 +148,7 @@ async function buildCompletionRuntimeConfig(global: GlobalOptions): Promise<{
     }
   }
   return {
+    namespace_commands: namespaceCommands,
     item_types: itemTypes.length > 0 ? itemTypes : undefined,
     statuses: statuses.length > 0 ? statuses : undefined,
     command_flags:

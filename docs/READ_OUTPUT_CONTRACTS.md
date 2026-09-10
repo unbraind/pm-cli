@@ -153,6 +153,15 @@ pm contracts --full --json
 
 Every projected result carries a `read_output` receipt with the requested dimensions, precedence, observed option provenance, deterministic estimated token count, string/row compaction signals, and budget outcome. When canonical controls are present, `canonical_options_used` records spellings such as `--output-include`; the optional field is omitted when no canonical control was supplied so minimum-budget session receipts remain compact. `legacy_aliases_used` and `migration_hints` record only compatibility flags the caller actually supplied. A command-local flag synthesized internally to execute a canonical projection mode is therefore never misreported as deprecated syntax. When both spellings are supplied, both provenance arrays report that mixed invocation. Budget degradation discovers nested arrays as well as declared result rows, so validation diagnostics and other governance payloads compact their inner findings before the useful result is omitted. `compacted_row_paths` names every reduced collection without redefining those nested arrays as ordinary pagination rows.
 
+The estimate is `ceil(utf8_bytes / 4)` for the complete envelope. The CLI uses
+its selected built-in JSON or TOON representation, including indentation and
+the final newline. SDK calls that select `outputFormat` use that representation;
+structured SDK calls without a renderer retain compact JSON measurement.
+Per-call and session receipts include their own cost and continuation disclosure.
+Compaction reserves room for that disclosure before returning a useful page, so
+an envelope cannot claim to fit merely because its rows fit before receipts were
+added. An infeasible ceiling returns the explicit omission result.
+
 For `context` and `next`, that final projection is also the usage-feedback
 delivery boundary. The SDK carries a JSON-invisible serve receipt through
 intent and universal output projection, then appends the final omitted decision

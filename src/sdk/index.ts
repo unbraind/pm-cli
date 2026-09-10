@@ -3,6 +3,7 @@
  *
  * Defines public SDK APIs and package-author helpers for Index.
  */
+export type { CompletionRuntimeConfig } from "./completion.js";
 export {
   PM_COMMAND_CAPABILITY_CONTRACTS,
   PM_COMMAND_VISIBILITY_CONTRACTS,
@@ -129,7 +130,7 @@ export {
   type WorkspaceSnapshotRestorePlan,
 } from "./workspace-snapshot.js";
 export { flushTelemetryQueue } from "./telemetry-flush.js";
-export { PM_HISTORY_COMMAND_ALIASES, PM_CONTEXT_OPS_COMMAND_ALIASES, PM_BULK_LIFECYCLE_COMMAND_ALIASES, PM_RELOCATED_COMMAND_ALIASES, PM_NAMESPACED_COMMAND_ALIASES, resolvePmCommandOperation, resolvePmHistoryOperation } from "./cli-contracts.js";
+export { PM_HISTORY_COMMAND_ALIASES, PM_CONTEXT_OPS_COMMAND_ALIASES, PM_BULK_LIFECYCLE_COMMAND_ALIASES, PM_RELOCATED_COMMAND_ALIASES, PM_NAMESPACED_COMMAND_ALIASES, findPmNamespacedCommand, resolvePmCommandOperation, resolvePmHistoryOperation } from "./cli-contracts.js";
 export {
   EXECUTABLE_COMMAND_ALIASES,
   PM_COMMAND_ALIAS_CONTRACTS,

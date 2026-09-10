@@ -12,6 +12,10 @@
 
 ### Other
 
+- Refresh jscpd 5.2 and MCP Apps 2 development contracts ([pm-qs5iiq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-qs5iiq.toon))
+- Register advanced retrieval as a search facet ([pm-wfskfn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wfskfn.toon))
+- Consolidate duplicate governance under item operations ([pm-fmy9ih](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fmy9ih.toon))
+- Declare item copy and workspace merge command destinations ([pm-m6g87m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-m6g87m.toon))
 - Fold lifecycle sugar start-task/pause-task/close-task into claim/release/close flags (hidden aliases) ([pm-eq4x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-eq4x.toon))
 - Native pm ops stats, health, validate, gc, telemetry, eval and test-all with compatible root commands ([pm-6apl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-6apl.toon))
 - Native pm context next and pm context focus with permanent navigation aliases ([pm-kcs4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kcs4.toon))

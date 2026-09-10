@@ -3,6 +3,7 @@
  *
  * Implements the pm completion command surface and its agent-facing runtime behavior.
  */
+import { PM_COMMAND_DESTINATION_CONTRACTS } from "./cli-contracts/grammar-contracts.js";
 import { WORKFLOW_POLICY_ACTIONS } from "./cli-contracts/enum-contracts.js";
 import { EXIT_CODE, PmCliError } from "./runtime-primitives.js";
 import { listPmCommandsForTier } from "./agent-capability-contracts.js";
@@ -34,6 +35,7 @@ import {
   LIST_FILTER_FLAG_CONTRACTS,
   NEXT_FLAG_CONTRACTS,
   PM_COMMAND_ALIAS_CONTRACTS,
+  resolvePmCommandOperation,
   PM_HISTORY_COMMAND_ALIASES,
   PM_NAMESPACED_COMMAND_ALIASES,
   resolveSubcommandFlagContractsForCommand,
@@ -80,6 +82,8 @@ type CompletionFlagCommand =
 
 /** Documents the completion runtime config payload exchanged by command, SDK, and package integrations. */
 export interface CompletionRuntimeConfig {
+  /** Active package command paths whose namespace facets may be advertised. Legacy aliases are accepted. */
+  namespace_commands?: readonly string[];
   /** Value that configures or reports item types for this contract. */
   item_types?: string[];
   /** Value that configures or reports statuses for this contract. */
@@ -113,8 +117,17 @@ const UPDATE_FLAGS = toCompletionFlagString(UPDATE_FLAG_CONTRACTS);
 const UPDATE_MANY_FLAGS = toCompletionFlagString(UPDATE_MANY_FLAG_CONTRACTS);
 const CLOSE_MANY_FLAGS = toCompletionFlagString(CLOSE_MANY_FLAG_CONTRACTS);
 const NAMESPACE_NOUNS = [...new Set(PM_NAMESPACED_COMMAND_ALIASES.map((entry) => entry.canonical_argv[0]))];
-const NAMESPACE_LEAVES = Object.fromEntries(NAMESPACE_NOUNS.map((noun) => [noun, PM_NAMESPACED_COMMAND_ALIASES.filter((entry) => entry.canonical_argv[0] === noun).map((entry) => entry.canonical_argv[1]).join(" ")]));
-const HISTORY_LEAVES = NAMESPACE_LEAVES.history;
+const NAMESPACE_PREFIXES = [...new Set(PM_NAMESPACED_COMMAND_ALIASES.flatMap((entry) => entry.canonical_argv.slice(0, -1).map((_, index) => entry.canonical_argv.slice(0, index + 1).join(" "))))];
+const PACKAGE_NAMESPACE_OPERATIONS = new Set(PM_COMMAND_DESTINATION_CONTRACTS.filter((entry) => entry.disposition === "package_owned").map((entry) => resolvePmCommandOperation(entry.command)));
+const HISTORY_LEAVES = PM_HISTORY_COMMAND_ALIASES.map((entry) => entry.canonical_argv[1]).join(" ");
+
+/** Advertise core namespace leaves plus facets supplied by the active package registry. */
+function completionNamespaceLeaves(runtime: CompletionRuntimeConfig): Record<string, string> {
+  const available = new Set((runtime.namespace_commands ?? []).map(resolvePmCommandOperation));
+  const aliases = PM_NAMESPACED_COMMAND_ALIASES.filter((entry) => !PACKAGE_NAMESPACE_OPERATIONS.has(entry.alias) || available.has(entry.alias));
+  return Object.fromEntries(NAMESPACE_PREFIXES.map((prefix) => [prefix, [...new Set(aliases.filter((entry) => entry.canonical.startsWith(`${prefix} `)).map((entry) => entry.canonical_argv[prefix.split(" ").length]))].join(" ")]));
+}
+
 const HISTORY_OPERATION_FLAGS = PM_HISTORY_COMMAND_ALIASES.map((entry) => ({
   ...entry,
   flags: toCompletionFlagString(resolveSubcommandFlagContractsForCommand(entry.alias)),
@@ -666,6 +679,7 @@ export function generateBashScript(
   eagerTagExpansion = false,
   runtime: CompletionRuntimeConfig = {},
 ): string {
+  const namespaceLeaves = completionNamespaceLeaves(runtime);
   const cmds = ALL_COMMANDS.join(" ");
   const useDynamicTypeExpansion = itemTypes.length === 0;
   const typeValues = completionTypeValues(itemTypes, runtime);
@@ -775,7 +789,7 @@ export function generateBashScript(
     "    return 0",
     "  fi",
     "",
-    '  local cmd="" word_index=1 word',
+    '  local cmd="" command_path="" word_index=1 word',
     "  while (( word_index < cword )); do",
     '    word="${COMP_WORDS[word_index]}"',
     '    case "${word//_/-}" in',
@@ -786,12 +800,14 @@ export function generateBashScript(
     '    if [[ -z "$cmd" ]]; then',
     '      cmd="$word"',
     '      [[ "$cmd" == "ctx" ]] && cmd="context"',
+    '      command_path="$cmd"',
     `      case "$cmd" in ${NAMESPACE_NOUNS.join("|")}) ;; *) break ;; esac`,
     "    else",
-    '      case "$cmd $word" in',
-    ...PM_NAMESPACED_COMMAND_ALIASES.map((entry) => `        "${entry.canonical}") cmd="${entry.alias}" ;;`),
+    '      case "$command_path $word" in',
+    ...PM_NAMESPACED_COMMAND_ALIASES.map((entry) => `        "${entry.canonical}") cmd="${entry.alias}"; command_path="${entry.canonical}" ;;`),
+    '        *) break ;;',
     "      esac",
-    "      break",
+    `      case "$command_path" in ${NAMESPACE_PREFIXES.map((prefix) => `"${prefix}"`).join("|")}) ;; *) (( word_index++ )); break ;; esac`,
     "    fi",
     "    (( word_index++ ))",
     "  done",
@@ -823,7 +839,7 @@ export function generateBashScript(
     "    update)",
     `      COMPREPLY=(${compgen(updateFlags)})`,
     '      if [[ $word_index -eq $cword ]]; then',
-    `        COMPREPLY+=(${compgen(NAMESPACE_LEAVES.update)})`,
+    `        COMPREPLY+=(${compgen(namespaceLeaves.update)})`,
     "      fi",
     "      ;;",
     "    update-many)",
@@ -835,11 +851,11 @@ export function generateBashScript(
     "    context|ctx)",
     `      COMPREPLY=(${compgen(contextFlags)})`,
     '      if [[ $word_index -eq $cword ]]; then',
-    `        COMPREPLY+=(${compgen(NAMESPACE_LEAVES.context)})`,
+    `        COMPREPLY+=(${compgen(namespaceLeaves.context)})`,
     "      fi",
     "      ;;",
     "    ops)",
-    `      COMPREPLY=(${compgen(`${GLOBAL_FLAGS} ${NAMESPACE_LEAVES.ops}`)})`,
+    `      COMPREPLY=(${compgen(`${GLOBAL_FLAGS} ${namespaceLeaves.ops}`)})`,
     "      ;;",
     "    next)",
     `      COMPREPLY=(${compgen(NEXT_FLAGS)})`,
@@ -948,7 +964,7 @@ export function generateBashScript(
     "    close)",
     `      COMPREPLY=(${compgen(CLOSE_MUTATION_FLAGS)})`,
     '      if [[ "$cmd" == "close" && $word_index -eq $cword ]]; then',
-    `        COMPREPLY+=(${compgen(NAMESPACE_LEAVES.close)})`,
+    `        COMPREPLY+=(${compgen(namespaceLeaves.close)})`,
     "      fi",
     "      ;;",
     "    close-many)",
@@ -982,6 +998,11 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(GLOBAL_FLAGS)})`,
     "      ;;",
     "  esac",
+    '  if [[ $word_index -eq $cword ]]; then',
+    '    case "$command_path" in',
+    ...Object.entries(namespaceLeaves).filter(([prefix]) => ["item", "workspace", "search"].includes(prefix.split(" ")[0])).map(([prefix, leaves]) => `      "${prefix}") COMPREPLY+=(${compgen(leaves)}) ;;`),
+    '    esac',
+    '  fi',
     '  if [[ "$cmd" == "comments" || "$cmd" == "notes" || "$cmd" == "learnings" ]]; then',
     `    COMPREPLY+=(${compgen("--text")})`,
     "  fi",
@@ -999,6 +1020,7 @@ export function generateZshScript(
   eagerTagExpansion = false,
   runtime: CompletionRuntimeConfig = {},
 ): string {
+  const namespaceLeaves = completionNamespaceLeaves(runtime);
   const useDynamicTypeExpansion = itemTypes.length === 0;
   const typeFallbackChoices = completionTypeValues(itemTypes, runtime);
   const statusFallbackChoices = completionStatusValues(runtime);
@@ -1075,7 +1097,7 @@ _pm() {
   local context state line
   local -a words=("$words[@]")
   local CURRENT=$CURRENT
-  local word_index=2 namespace_noun="" operation_index=0 word
+  local word_index=2 namespace_noun="" operation_path="" operation_index=0 word
   while (( word_index < CURRENT )); do
     word="$words[word_index]"
     case "\${word//_/-}" in
@@ -1088,21 +1110,25 @@ _pm() {
       case "$word" in ${NAMESPACE_NOUNS.join("|")}) ;; *) break ;; esac
       namespace_noun="$word"
     else
-      operation_index=$word_index
-      break
+      case "$namespace_noun $word" in
+${PM_NAMESPACED_COMMAND_ALIASES.map((entry) => `        "${entry.canonical}") namespace_noun="${entry.canonical}"; operation_path="$namespace_noun"; operation_index=$word_index ;;`).join("\n")}
+        *) break ;;
+      esac
     fi
     (( word_index++ ))
   done
   if [[ -n "$namespace_noun" ]] && (( word_index == CURRENT )) && [[ "$words[CURRENT]" != -* ]]; then
     local -a history_commands
     case "$namespace_noun" in
-${Object.entries(NAMESPACE_LEAVES).map(([noun, leaves]) => `      ${noun}) history_commands=(${leaves}) ;;`).join("\n")}
+${Object.entries(namespaceLeaves).map(([noun, leaves]) => `      "${noun}") history_commands=(${leaves}) ;;`).join("\n")}
     esac
-    _describe 'history operation' history_commands
-    return
+    if (( \${#history_commands} > 0 )); then
+      _describe 'command operation' history_commands
+      return
+    fi
   fi
   if (( operation_index > 0 )); then
-    case "$namespace_noun $words[operation_index]" in
+    case "$operation_path" in
 ${PM_NAMESPACED_COMMAND_ALIASES.map((entry) => `      "${entry.canonical}") words=("$words[1]" "${entry.alias}" "\${words[@]:$operation_index}"); (( CURRENT -= operation_index - 2 )) ;;`).join("\n")}
     esac
   fi
@@ -2132,6 +2158,7 @@ export function generateFishScript(
   eagerTagExpansion = false,
   runtime: CompletionRuntimeConfig = {},
 ): string {
+  const namespaceLeaves = completionNamespaceLeaves(runtime);
   const listCommandNames = ALL_COMMANDS.filter(
     (command) => command === "list" || command.startsWith("list-"),
   );
@@ -2672,6 +2699,7 @@ function __pm_history_tokens
   set -l tokens (commandline -opc)
   set -l skip_value 0
   set -l positions 0
+  set -l command_path
   for token in $tokens[2..-1]
     if test $skip_value -eq 1
       set skip_value 0
@@ -2692,7 +2720,8 @@ function __pm_history_tokens
     end
     printf '%s\\n' "$token"
     set positions (math $positions + 1)
-    if test $positions -eq 2; or not contains -- "$token" ${NAMESPACE_NOUNS.join(" ")}
+    set -a command_path "$token"
+    if not contains -- (string join ' ' -- $command_path) ${NAMESPACE_PREFIXES.map((prefix) => `'${prefix}'`).join(" ")}
       return
     end
   end
@@ -2704,12 +2733,12 @@ end
 # Match only the command positions, keeping item history separate from maintenance.
 function __pm_history_operation
   set -l tokens (__pm_history_tokens)
-  switch "$tokens[1] $tokens[2]"
-${PM_NAMESPACED_COMMAND_ALIASES.map((entry) => `    case '${entry.canonical}'\n      contains -- '${entry.alias}' $argv\n      return`).join("\n")}
+  switch (string join ' ' -- $tokens)
+${[...PM_NAMESPACED_COMMAND_ALIASES].sort((left, right) => right.canonical_argv.length - left.canonical_argv.length).map((entry) => `    case '${entry.canonical}' '${entry.canonical} *'\n      contains -- '${entry.alias}' $argv\n      return`).join("\n")}
   end
   contains -- "$tokens[1]" $argv
 end
-${Object.entries(NAMESPACE_LEAVES).map(([noun, leaves]) => `complete -c pm -n 'test (count (__pm_history_tokens)) -eq 1; and __pm_history_operation ${noun}' -a '${leaves}' -d '${noun} operation'`).join("\n")}
+${Object.entries(namespaceLeaves).map(([noun, leaves]) => `complete -c pm -n 'test (string join " " -- (__pm_history_tokens)) = "${noun}"' -a '${leaves}' -d '${noun} operation'`).join("\n")}
 ${RESTORE_INVOCATIONS.map((flag) => `complete -c pm -n '__pm_history_operation restore restore' -l ${flag.flag.slice(2)}${flag.takes_value ? " -r" : ""}`).join("\n")}
 
 # history / activity flags

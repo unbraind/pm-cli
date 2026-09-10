@@ -323,7 +323,7 @@ const allowAuditCommentFlags = [
 
 function dedupeAuditCommand(): CommandDefinition {
   return {
-    name: "dedupe-audit",
+    name: "item duplicates audit",
     action: "dedupe-audit",
     description:
       "Audit likely duplicate items by title and parent scope heuristics.",
@@ -336,7 +336,7 @@ function dedupeAuditCommand(): CommandDefinition {
 
 function dedupeMergeCommand(): CommandDefinition {
   return {
-    name: "dedupe-merge",
+    name: "item duplicates merge",
     action: "dedupe-merge",
     description:
       "Consolidate duplicates into a canonical item: re-parent active children and close duplicates with duplicate_of.",
@@ -349,7 +349,7 @@ function dedupeMergeCommand(): CommandDefinition {
 
 function commentsAuditCommand(): CommandDefinition {
   return {
-    name: "comments-audit",
+    name: "item audit-comments",
     action: "comments-audit",
     description: "Audit item comment coverage and export comment history rows.",
     intent: "Audit comment coverage and read bounded comment-history evidence.",

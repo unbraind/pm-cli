@@ -3,7 +3,7 @@
  * @module cli/main
  */
 import { Command, CommanderError } from "commander";
-import { PM_RELOCATED_COMMAND_ALIASES, resolvePmCommandOperation } from "../sdk/cli-contracts/command-aliases.js";
+import { PM_RELOCATED_COMMAND_ALIASES, findPmNamespacedCommand, resolvePmCommandOperation } from "../sdk/cli-contracts/command-aliases.js";
 import {
   activateExtensions,
   clearActiveExtensionHooks,
@@ -849,8 +849,22 @@ function forwardReadOutputIncludeModes(actionCommand: Command, commandPath: stri
   setResolvedGlobalOptions(actionCommand, globalOptions);
 }
 
-function extractCommandScopedOptions(command: Command, commandArgs: string[], extensionFlagDefinitions: LooseCommandFlagDefinition[] = []): Record<string, unknown> {
+/** Collect inherited options without leaking namespace-parent defaults into relocated leaves. */
+function collectCommandInvocationOptions(command: Command): Record<string, unknown> {
   const allOptions = command.optsWithGlobals() as Record<string, unknown>;
+  const commandPath = getCommandPath(command);
+  if (resolvePmCommandOperation(commandPath) === commandPath) return allOptions;
+  const ownOptions = command.opts() as Record<string, unknown>;
+  for (let parent = command.parent; parent?.parent; parent = parent.parent) {
+    for (const key of Object.keys(parent.opts())) {
+      if (!(key in ownOptions) && parent.getOptionValueSource(key) === "default") delete allOptions[key];
+    }
+  }
+  return allOptions;
+}
+
+function extractCommandScopedOptions(command: Command, commandArgs: string[], extensionFlagDefinitions: LooseCommandFlagDefinition[] = []): Record<string, unknown> {
+  const allOptions = collectCommandInvocationOptions(command);
   const scoped: Record<string, unknown> = { ...allOptions };
   copyReadOutputInvocationProvenance(command, scoped);
   delete scoped.json;
@@ -906,7 +920,7 @@ function collectExtensionFlagDefinitionsForCommand(registrations: ReturnType<typ
   if (normalizedCommandPath.length === 0) {
     return [];
   }
-  return registrations.flags.filter((entry) => normalizeExtensionCommandPath(entry.target_command) === normalizedCommandPath).flatMap((entry) => entry.flags);
+  return registrations.flags.filter((entry) => resolvePmCommandOperation(normalizeExtensionCommandPath(entry.target_command)) === resolvePmCommandOperation(normalizedCommandPath)).flatMap((entry) => entry.flags);
 }
 
 function collectExtensionFlagDefinitionsForInvocation(
@@ -1399,7 +1413,7 @@ function discoveryNeedsActivationForProbe(discovery: ExtensionDiscoveryResult, p
   if (discovery.effective.length === 0) {
     return false;
   }
-  const hasCommandProbe = normalizeExtensionCommandPath(probe.commandPath ?? "").length > 0;
+  const hasCommandProbe = buildRuntimeExtensionActivationScope(probe) !== "all";
   if (!hasCommandProbe) {
     return discovery.effective.some((extension) => {
       const capabilities = extensionCapabilities(extension);
@@ -1415,6 +1429,11 @@ function discoveryNeedsActivationForProbe(discovery: ExtensionDiscoveryResult, p
 }
 
 function buildRuntimeExtensionActivationScope(probe: RuntimeExtensionActivationProbe): string {
+  // Completion discovers every installed command, including commands owned by
+  // packages other than the package providing the completion renderer.
+  if (normalizeExtensionCommandPath(probe.commandPath ?? "").split(" ")[0] === "completion") {
+    return "all";
+  }
   const commandPath =
     collectActivationCommandCandidates(probe)
       .filter((candidate) => candidate.split(" ").every((part) => !part.startsWith("-")))
@@ -2368,7 +2387,7 @@ function resolveCoreCommandRegistrationSelection(invocationArgv: string[]): Core
   }
   const normalizedCommand = commandName.trim().toLowerCase();
   const commandTokens = stripGlobalBootstrapTokens(invocationArgv);
-  const semanticCommand = resolvePmCommandOperation(commandTokens.slice(0, 2).join(" "));
+  const semanticCommand = findPmNamespacedCommand(commandTokens)?.alias;
   if (PM_RELOCATED_COMMAND_ALIASES.some((alias) => alias.alias === semanticCommand)) {
     return { ...REGISTER_ALL_CORE_COMMAND_FAMILIES, targetCommandName: semanticCommand };
   }
@@ -2957,6 +2976,15 @@ function printNamespaceAliasHint(invocation: ReturnType<typeof normalizeBootstra
   if (usedAlias) printError(`Command \`${usedAlias.from}\` is an alias; use \`pm ${usedAlias.to.join(" ")}\`.`);
 }
 
+/** Reject unavailable package namespaces before variadic parents consume their names as operands. */
+function assertRequestedNamespaceAvailable(program: Command, invocationArgv: string[], helpRequest: ReturnType<typeof parseBootstrapHelpRequest>): void {
+  const tokens = helpRequest.requested ? helpRequest.commandPathTokens : stripGlobalBootstrapTokens(invocationArgv);
+  const requestedNamespace = findPmNamespacedCommand(tokens);
+  if (requestedNamespace && !findCommandByPath(program, [...requestedNamespace.canonical_argv])) {
+    throw new CommanderError(EXIT_CODE.USAGE, "commander.unknownCommand", `unknown command '${requestedNamespace.alias}'`);
+  }
+}
+
 /** Dispatch one fresh CLI invocation with deterministic process state and tracker-scoped attribution. */
 async function runPmCliInReproducibleContext(rawArgv: string[]): Promise<void> {
   program = createPmCliProgram(CLI_VERSION);
@@ -2990,6 +3018,7 @@ async function runPmCliInReproducibleContext(rawArgv: string[]): Promise<void> {
     restorePagerPolicy = applyBootstrapPagerPolicy(invocationArgv);
     const registrationSelection = resolveCoreCommandRegistrationSelection(invocationArgv);
     await registerCoreCommandFamilies(program, registrationSelection);
+    installCommandNamespaces(program, true);
     const registerDynamicCommands = shouldRegisterDynamicExtensionPaths(program, invocationArgv);
     if (registerDynamicCommands) {
       await registerDynamicExtensionCommandPaths(program, invocationArgv);
@@ -3001,6 +3030,8 @@ async function runPmCliInReproducibleContext(rawArgv: string[]): Promise<void> {
       await registerRuntimeSchemaFieldFlags(program, invocationArgv);
     }
     installCommandNamespaces(program);
+    const helpRequest = parseBootstrapHelpRequest(invocationArgv);
+    assertRequestedNamespaceAvailable(program, invocationArgv, helpRequest);
     if (shouldAttachRichHelpTextForInvocation(invocationArgv)) {
       attachRichHelpText(program, invocationArgv);
     }
@@ -3009,7 +3040,6 @@ async function runPmCliInReproducibleContext(rawArgv: string[]): Promise<void> {
     if (renderedBootstrapJsonHelp) {
       return;
     }
-    const helpRequest = parseBootstrapHelpRequest(invocationArgv);
     if (helpRequest.requested && !isKnownHelpCommandPath(program, helpRequest.commandPathTokens)) {
       throw new CommanderError(EXIT_CODE.USAGE, "commander.helpDisplayed", "(outputHelp)");
     }
