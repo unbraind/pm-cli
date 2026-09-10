@@ -276,6 +276,19 @@ function isHistoryReanchorEvidence(
   );
 }
 
+/** Validate all retained metadata before a reduced-coverage proof can return early. */
+function isHistoryRewriteEvidenceList(evidenceEntries: readonly unknown[]): boolean {
+  try {
+    for (const evidence of evidenceEntries) {
+      if (!isHistoryReanchorEvidence(evidence)) return false;
+      resolveHistoryHashAlgorithm(evidence.hash_algorithm);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Return whether a retained exact record agrees with its summary coordinates. */
 function matchesRetainedHistoryRecord(
   evidence: HistoryReanchorEvidence,
@@ -358,16 +371,13 @@ export function verifyHistoryRewriteEvidence(entry: HistoryEntry):
     } {
   const evidenceEntries = entry.reanchor_evidence;
   if (evidenceEntries === undefined) return { ok: true, coverage: "none" };
-  if (!Array.isArray(evidenceEntries)) {
+  if (!Array.isArray(evidenceEntries) || !isHistoryRewriteEvidenceList(evidenceEntries)) {
     return { ok: false, error: "rewrite_evidence_invalid" };
   }
   if (evidenceEntries.length === 0) return { ok: true, coverage: "none" };
   let reconstructed = entry;
   for (let index = evidenceEntries.length - 1; index >= 0; index -= 1) {
     const evidence = evidenceEntries[index]!;
-    if (!(index in evidenceEntries) || !isHistoryReanchorEvidence(evidence)) {
-      return { ok: false, error: "rewrite_evidence_invalid" };
-    }
     const prior = reconstructPriorHistoryRecord(
       reconstructed,
       evidence,
