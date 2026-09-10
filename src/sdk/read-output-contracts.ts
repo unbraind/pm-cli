@@ -1378,9 +1378,9 @@ function requestedDimensions(
   );
 }
 
-/** Resolve the built-in representation selected by the host or caller. */
+/** Resolve host, canonical, then legacy renderer selection for consistent per-call and session measurement. */
 function readOutputMeasurementFormat(options: Record<string, unknown>): "json" | "toon" | undefined {
-  const format = options.resolvedOutputFormat ?? options.outputFormat ?? options.output_format;
+  const format = options.resolvedOutputFormat ?? options.outputFormat ?? options.output_format ?? options.format;
   return format === "json" || format === "toon" ? format : undefined;
 }
 
