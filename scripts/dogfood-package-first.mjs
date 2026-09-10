@@ -384,7 +384,7 @@ try {
   run("package install npm local package root", ["install", `npm:${path.join(repoRoot, "packages", "pm-beads")}`, "--project"]);
   const installAll = run("package install all", ["install", "all", "--project"]);
   assert(installAll?.details?.installed_all === true, "install all did not report installed_all=true");
-  const packageCatalog = run("package catalog", ["package", "catalog", "--project"]);
+  const packageCatalog = run("package catalog", ["package", "catalog", "--project", "--output-budget", "unbounded"]);
   assert(packageCatalog?.details?.total >= 8, "package catalog did not list all bundled first-party packages");
   const packageAliases = new Set(
     (packageCatalog?.details?.packages ?? []).flatMap((entry) => entry.aliases ?? [entry.alias]),

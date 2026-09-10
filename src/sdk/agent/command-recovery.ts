@@ -6,7 +6,7 @@
  * supplied arguments are preserved byte-for-token.
  */
 import { renderPmCommand } from "../command-line.js";
-import { resolveSubcommandFlagContractsForCommand } from "../cli-contracts.js";
+import { resolveSubcommandFlagContractsForCommand } from "../cli-contracts/flag-contracts.js";
 import { parseBootstrapCommandName } from "../cli-contracts/bootstrap-command-scanner.js";
 
 function normalizeMissingFlag(label: string): string | undefined {

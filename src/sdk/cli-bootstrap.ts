@@ -8,12 +8,14 @@ import {
   PM_COMMAND_ALIAS_CONTRACTS,
   renderPmCommandAliasMigrationHint,
   resolvePmCommandAlias,
-  resolveSubcommandFlagContractsForCommand,
-  type CliFlagContract,
   type PmCommandAliasContract,
   type PmCommandAliasLifecycle,
   type PmCommandAliasRegistration,
-} from "./cli-contracts.js";
+} from "./cli-contracts/command-aliases.js";
+import {
+  resolveSubcommandFlagContractsForCommand,
+  type CliFlagContract,
+} from "./cli-contracts/flag-contracts.js";
 export {
   EXECUTABLE_COMMAND_ALIASES,
   PM_COMMAND_ALIAS_CONTRACTS,

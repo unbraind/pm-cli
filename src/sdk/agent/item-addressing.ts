@@ -10,7 +10,7 @@ import { resolvePmCommandOperation } from "../cli-contracts/command-aliases.js";
 import {
   type CliFlagContract,
   resolveSubcommandFlagContractsForCommand,
-} from "../cli-contracts.js";
+} from "../cli-contracts/flag-contracts.js";
 
 const ITEM_ID_ALIAS_COMMANDS = new Set([
   "append",

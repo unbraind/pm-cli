@@ -208,7 +208,7 @@ export interface PmReadOutputReceipt {
   legacy_aliases_used: string[];
   /** One-line migration instructions for compatibility options. */
   migration_hints: string[];
-  /** Exact deterministic estimate of the JSON-shaped result carrying this receipt. */
+  /** Deterministic UTF-8 byte token estimate of the result and receipt in the selected JSON or TOON rendering; SDK calls without a format use compact JSON. */
   estimated_tokens: number;
   /** Whether the final result fits the requested cost ceiling. */
   within_budget: boolean;
