@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1229: preserve bounded HTTP process-tree cleanup when POSIX liveness returns EPERM ([pm-qn9zxu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qn9zxu.toon))
+
+### Other
+
+- Refresh jscpd 5.2 and MCP Apps 2 development contracts ([pm-qs5iiq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-qs5iiq.toon))
+- Register advanced retrieval as a search facet ([pm-wfskfn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wfskfn.toon))
+- Consolidate duplicate governance under item operations ([pm-fmy9ih](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fmy9ih.toon))
+- Declare item copy and workspace merge command destinations ([pm-m6g87m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-m6g87m.toon))
+
 ## 2026.9.10 - 2026-09-10
 
 ### Changed
@@ -12,10 +25,6 @@
 
 ### Other
 
-- Refresh jscpd 5.2 and MCP Apps 2 development contracts ([pm-qs5iiq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-qs5iiq.toon))
-- Register advanced retrieval as a search facet ([pm-wfskfn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wfskfn.toon))
-- Consolidate duplicate governance under item operations ([pm-fmy9ih](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fmy9ih.toon))
-- Declare item copy and workspace merge command destinations ([pm-m6g87m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-m6g87m.toon))
 - Fold lifecycle sugar start-task/pause-task/close-task into claim/release/close flags (hidden aliases) ([pm-eq4x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-eq4x.toon))
 - Native pm ops stats, health, validate, gc, telemetry, eval and test-all with compatible root commands ([pm-6apl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-6apl.toon))
 - Native pm context next and pm context focus with permanent navigation aliases ([pm-kcs4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kcs4.toon))
@@ -164,28 +173,28 @@
 
 ### Fixed
 
+- A read whose result was omitted for budget still records those items as served and included, so the usage-affinity signal learns from context the agent never received ([pm-wv47pf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wv47pf.toon))
+- Shape-qualified scale baselines drifted from current CLI/SDK output contracts and supported runtime ([pm-r8yytk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r8yytk.toon))
 - Context recency is computed from updated_at, so every governance write the project mandates erases the freshness signal it ranks on ([pm-07pt16](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-07pt16.toon))
 
 ### Security
 
 - OSSF Scorecard alert \#29: qs denial-of-service advisories in the MCP Apps development dependency tree ([pm-mlpn91](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mlpn91.toon))
 
+### Other
+
+- Refresh compatible 2026-09-01 jscpd 5.1.1 tooling ([pm-ur4swu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ur4swu.toon))
+- Refresh Sentry 10.73 and TypeScript-ESLint 8.69 with exact coverage ([pm-92tp12](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-92tp12.toon))
+
 ## 2026.9.2 - 2026-09-02
 
 ### Fixed
 
-- A read whose result was omitted for budget still records those items as served and included, so the usage-affinity signal learns from context the agent never received ([pm-wv47pf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wv47pf.toon))
-- Shape-qualified scale baselines drifted from current CLI/SDK output contracts and supported runtime ([pm-r8yytk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r8yytk.toon))
 - GH-1174: Windows Node 24 receipt traversal negative control must fail closed portably ([pm-r97901](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r97901.toon))
 
 ### Security
 
 - GH-1173: make merge-receipt evidence diagnostics source-stable and record-addressable ([pm-dn8rwl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dn8rwl.toon))
-
-### Other
-
-- Refresh compatible 2026-09-01 jscpd 5.1.1 tooling ([pm-ur4swu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ur4swu.toon))
-- Refresh Sentry 10.73 and TypeScript-ESLint 8.69 with exact coverage ([pm-92tp12](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-92tp12.toon))
 
 ## 2026.9.1 - 2026-09-01
 
@@ -200,6 +209,10 @@
 - GH-1166: root help hides the --all discovery option that reveals the full command surface ([pm-7f9zkh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7f9zkh.toon))
 - GH-1104: health must not certify pending lossless merge receipts as reconciled ([pm-baksix](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-baksix.toon))
 - GH-1135: item_hash_version 2 still masks writer hash divergence as corruption ([pm-2qahia](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2qahia.toon))
+
+### Security
+
+- Refresh compatible GitHub Actions and tsx tooling dependencies ([pm-k47gdd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-k47gdd.toon))
 
 ### Other
 
@@ -219,10 +232,6 @@
 - GH-1154: linked-test sandbox guard is command-shape inconsistent and undocumented ([pm-s8cth5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s8cth5.toon))
 - The local preflight token-budget gate is red on a workstation and green in hosted CI for the same commit again, because the earlier remediation closed the one ambient channel that had bitten instead of closing the fixture's environment ([pm-4o7tlx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4o7tlx.toon))
 - The bounded legacy MCP compatibility set stops one revision short of the spec's own legacy boundary, so every current host is refused at initialize and the dual-era guarantee is unmet ([pm-edywqn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-edywqn.toon))
-
-### Security
-
-- Refresh compatible GitHub Actions and tsx tooling dependencies ([pm-k47gdd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-k47gdd.toon))
 
 ### Deprecated
 

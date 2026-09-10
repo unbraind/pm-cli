@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import {
   mkdtempSync as makeRealTempDirectory,
+  readFileSync as readRealFile,
   rmSync as removeRealDirectory,
   writeFileSync as writeRealFile,
 } from "node:fs";
@@ -1163,7 +1164,7 @@ describe("scripts/release/verify-published-release: executor failures", () => {
     }
   }, 10_000);
 
-  it("kills a nested server after invalid discovery within the production readiness budget", async () => {
+  it.each(process.platform === "win32" ? ["native"] : ["native", "eperm"])("kills a nested server after invalid discovery within the production readiness budget (%s)", async (probeMode) => {
     const evaluatorScript = await getMcpHttpEvaluatorScript();
     const readinessMatch = evaluatorScript.match(/configuredReadyTimeout <= (\d+)/u);
     expect(readinessMatch).not.toBeNull();
@@ -1182,6 +1183,7 @@ describe("scripts/release/verify-published-release: executor failures", () => {
     );
     const serverScript = path.join(tempRoot, "surviving-server.mjs");
     const runnerScript = path.join(tempRoot, "exiting-runner.mjs");
+    const runnerPidFile = path.join(tempRoot, "runner.pid");
     const port = await reserveLoopbackPort();
     writeRealFile(
       serverScript,
@@ -1206,6 +1208,8 @@ describe("scripts/release/verify-published-release: executor failures", () => {
       runnerScript,
       [
         'import { spawn } from "node:child_process";',
+        'import { writeFileSync } from "node:fs";',
+        `writeFileSync(${JSON.stringify(runnerPidFile)}, String(process.pid));`,
         `spawn(process.execPath, [${JSON.stringify(serverScript)}], {`,
         "  env: process.env,",
         '  stdio: "ignore",',
@@ -1214,10 +1218,28 @@ describe("scripts/release/verify-published-release: executor failures", () => {
       "utf8",
     );
 
+    let cleanupVerified = false;
     try {
+      // Inject one real syscall boundary failure after TERM, while preserving
+      // actual spawning, HTTP discovery, signal delivery, and port ownership.
+      const livenessFault = probeMode === "eperm" ? String.raw`
+const nativeKill = process.kill.bind(process);
+let termSent = false;
+let faultInjected = false;
+process.kill = (pid, signal) => {
+  if (pid < 0 && signal === 0 && termSent && !faultInjected) {
+    faultInjected = true;
+    process.stderr.write("Injected EPERM liveness probe\n");
+    throw Object.assign(new Error("kill EPERM"), { code: "EPERM" });
+  }
+  const result = nativeKill(pid, signal);
+  if (signal === "SIGTERM") termSent = true;
+  return result;
+};
+` : "";
       const result = spawnSync(
         process.execPath,
-        ["--input-type=module", "--eval", String(evaluatorScript)],
+        ["--input-type=module", "--eval", livenessFault + evaluatorScript],
         {
           encoding: "utf8",
           timeout: harnessTimeoutMs,
@@ -1233,12 +1255,30 @@ describe("scripts/release/verify-published-release: executor failures", () => {
         },
       );
       expect(result.error).toBeUndefined();
+      if (probeMode === "eperm") {
+        expect(result.stderr).toContain("Injected EPERM liveness probe");
+      }
       expect(result.status).not.toBe(0);
       expect(result.stderr).toContain(
         "Published HTTP discovery response was invalid",
       );
       await assertLoopbackPortIsReusable(port);
+      cleanupVerified = true;
     } finally {
+      // Cleanup after assertions also governs the deliberately failing TDD
+      // variant; it cannot make the earlier port-reuse assertion pass.
+      if (!cleanupVerified && process.platform !== "win32") {
+        try {
+          const runnerPid = Number(readRealFile(runnerPidFile, "utf8"));
+          if (Number.isSafeInteger(runnerPid) && runnerPid > 1) {
+            process.kill(-runnerPid, "SIGKILL");
+          }
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== "ESRCH") {
+            console.error("Nested-runner fallback cleanup failed", error);
+          }
+        }
+      }
       removeRealDirectory(tempRoot, { recursive: true, force: true });
     }
   }, 30_000);

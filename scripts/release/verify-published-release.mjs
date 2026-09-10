@@ -152,6 +152,9 @@ const childTreeIsAlive = () => {
     return true;
   } catch (error) {
     if (error?.code === "ESRCH") return false;
+    // A permission refusal still denotes an existing group. Keep the bounded
+    // shutdown wait active; later signal failures must still propagate.
+    if (error?.code === "EPERM") return true;
     throw error;
   }
 };
