@@ -1041,6 +1041,7 @@ async function runUpdateManyAction(
   }
 }
 
+/** Dispatch ordinary or composed closure and render the selected SDK receipt. */
 async function runCloseAction(
   id: string,
   text: string | undefined,

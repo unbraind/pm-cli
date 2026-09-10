@@ -14,7 +14,6 @@ export { SEARCH_EXTENSION_FLAG_DEFINITIONS } from "./extension-contracts.js";
 export type { FlagDefinition } from "../core/extensions/loader.js";
 export * from "./cli-contracts/agent-output-contracts.js";
 import { AsyncLocalStorage } from "node:async_hooks";
-import path from "node:path";
 import {
   createEmptyExtensionCommandRegistry,
   createEmptyExtensionHookRegistry,
@@ -37,10 +36,8 @@ import {
   setActiveExtensionRegistrations,
   setActiveExtensionRenderers,
   setActiveExtensionServices,
-  type ExtensionRegistrationRegistry,
 } from "../core/extensions/index.js";
 import { pathExists } from "../core/fs/fs-utils.js";
-import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { projectMutationResult } from "../core/output/mutation-projection.js";
 import { withQuerySummary } from "../core/output/query-summary.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
@@ -48,20 +45,13 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { asRecordClone } from "../core/shared/primitives.js";
 import { createAsyncReadWriteGate } from "../core/shared/serial-queue.js";
-import {
-  resolveRuntimeFieldRegistry,
-  resolveRuntimeStatusRegistry,
-} from "../core/schema/runtime-schema.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import type { ItemMetadata } from "../types/index.js";
 import { listClientItemMetadataLight } from "./query/light-metadata.js";
 import { certifyCompleteListResult, createCompleteListOptions, type PmCompleteListOptions, type PmCompleteListResult } from "./query/complete-list.js";
 export { PmCompleteListValidationError, assertCompleteListResult, certifyCompleteListResult, createCompleteListOptions, inspectCompleteListResult, type PmCompleteListCertificate, type PmCompleteListFailureReceipt, type PmCompleteListFinding, type PmCompleteListFindingCode, type PmCompleteListInspection, type PmCompleteListOptions, type PmCompleteListResult } from "./query/complete-list.js";
-import {
-  buildWorkspaceExtensionCommandContracts,
-  buildWorkspaceFieldContracts,
-} from "./workspace-contracts.js";
+export { getWorkspaceContracts } from "./query/workspace-contracts.js";
 export type {
   WorkspaceExtensionCommandContract,
   WorkspaceFieldContract,
@@ -69,7 +59,6 @@ export type {
 import { PM_TOOL_ACTIONS } from "./cli-contracts/enum-contracts.js";
 import {
   clearWorkspaceContractsCache,
-  memoizeWorkspaceExtensionRegistrations,
 } from "./workspace-contracts-cache.js";
 import { SDK_ACTION_ALIASES } from "./runtime-action-aliases.js";
 import { createExtensionCommandSdk } from "./extension-command-context.js";
@@ -671,8 +660,6 @@ import type {
   PmClientRunArgs,
   SchemaResult,
   StartTaskResult,
-  WorkspaceContracts,
-  WorkspaceContractsOptions,
 } from "./runtime-public-contracts.js";
 export type {
   ClaimNextOptions,
@@ -1418,11 +1405,29 @@ export class PmClient {
   }
 
   /** Close an item using the same mutation path as `pm close`. Options are contract-typed (pm-x29o); the close reason is the positional parameter, so the option bag omits `reason`/`text`. */
-  close<Compose extends boolean = false>(
+  close(
     id: string,
     reason: string,
-    options: PmClientCloseActionOptions & { releaseAssignment?: Compose } = {},
-  ): Promise<Compose extends true ? CloseTaskResult : CloseResult> {
+    options: PmClientCloseActionOptions & { releaseAssignment: true },
+  ): Promise<CloseTaskResult>;
+  /** Return the base receipt when composition is disabled or omitted. */
+  close(
+    id: string,
+    reason: string,
+    options?: PmClientCloseActionOptions & { releaseAssignment?: false },
+  ): Promise<CloseResult>;
+  /** Preserve both receipt shapes when the composition flag is dynamic. */
+  close(
+    id: string,
+    reason: string,
+    options?: PmClientCloseActionOptions & { releaseAssignment?: boolean },
+  ): Promise<CloseResult | CloseTaskResult>;
+  /** Dispatch lifecycle mutation options through the shared SDK runtime. */
+  close(
+    id: string,
+    reason: string,
+    options: PmClientCloseActionOptions & { releaseAssignment?: boolean } = {},
+  ): Promise<CloseResult | CloseTaskResult> {
     return this.runTyped("close", {
       id,
       reason,
@@ -1431,10 +1436,25 @@ export class PmClient {
   }
 
   /** Claim an item using the same mutation path as `pm claim`. */
-  claim<Compose extends boolean = false>(
+  claim(
     id: string,
-    options: PmClientFullMutationOptions & { start?: Compose } = {},
-  ): Promise<Compose extends true ? StartTaskResult : ClaimResult> {
+    options: PmClientFullMutationOptions & { start: true },
+  ): Promise<StartTaskResult>;
+  /** Return the base receipt when composition is disabled or omitted. */
+  claim(
+    id: string,
+    options?: PmClientFullMutationOptions & { start?: false },
+  ): Promise<ClaimResult>;
+  /** Preserve both receipt shapes when the composition flag is dynamic. */
+  claim(
+    id: string,
+    options?: PmClientFullMutationOptions & { start?: boolean },
+  ): Promise<ClaimResult | StartTaskResult>;
+  /** Dispatch lifecycle mutation options through the shared SDK runtime. */
+  claim(
+    id: string,
+    options: PmClientFullMutationOptions & { start?: boolean } = {},
+  ): Promise<ClaimResult | StartTaskResult> {
     return this.runTyped("claim", {
       id,
       ...splitFullClientMutationOptions(options),
@@ -1450,10 +1470,25 @@ export class PmClient {
   }
 
   /** Release an item's active claim using the same mutation path as `pm release`. */
-  release<Compose extends boolean = false>(
+  release(
     id: string,
-    options: PmClientFullMutationOptions & { pause?: Compose } = {},
-  ): Promise<Compose extends true ? PauseTaskResult : ReleaseResult> {
+    options: PmClientFullMutationOptions & { pause: true },
+  ): Promise<PauseTaskResult>;
+  /** Return the base receipt when composition is disabled or omitted. */
+  release(
+    id: string,
+    options?: PmClientFullMutationOptions & { pause?: false },
+  ): Promise<ReleaseResult>;
+  /** Preserve both receipt shapes when the composition flag is dynamic. */
+  release(
+    id: string,
+    options?: PmClientFullMutationOptions & { pause?: boolean },
+  ): Promise<ReleaseResult | PauseTaskResult>;
+  /** Dispatch lifecycle mutation options through the shared SDK runtime. */
+  release(
+    id: string,
+    options: PmClientFullMutationOptions & { pause?: boolean } = {},
+  ): Promise<ReleaseResult | PauseTaskResult> {
     return this.runTyped("release", {
       id,
       ...splitFullClientMutationOptions(options),
@@ -2199,21 +2234,60 @@ export function reopen(
 }
 
 /** Close an item without constructing a reusable client. */
-export function close<Compose extends boolean = false>(
+export function close(
   id: string,
   reason: string,
-  options: PmClientCloseActionOptions & { releaseAssignment?: Compose } = {},
+  options: PmClientCloseActionOptions & { releaseAssignment: true },
+  clientOptions?: PmClientOptions,
+): Promise<CloseTaskResult>;
+/** Return the base receipt when composition is disabled or omitted. */
+export function close(
+  id: string,
+  reason: string,
+  options?: PmClientCloseActionOptions & { releaseAssignment?: false },
+  clientOptions?: PmClientOptions,
+): Promise<CloseResult>;
+/** Preserve both receipt shapes when the composition flag is dynamic. */
+export function close(
+  id: string,
+  reason: string,
+  options?: PmClientCloseActionOptions & { releaseAssignment?: boolean },
+  clientOptions?: PmClientOptions,
+): Promise<CloseResult | CloseTaskResult>;
+/** Dispatch lifecycle mutation options through the shared SDK runtime. */
+export function close(
+  id: string,
+  reason: string,
+  options: PmClientCloseActionOptions & { releaseAssignment?: boolean } = {},
   clientOptions: PmClientOptions = {},
-): Promise<Compose extends true ? CloseTaskResult : CloseResult> {
+): Promise<CloseResult | CloseTaskResult> {
   return new PmClient(clientOptions).close(id, reason, options);
 }
 
 /** Claim an item without constructing a reusable client. */
-export function claim<Compose extends boolean = false>(
+export function claim(
   id: string,
-  options: PmClientFullMutationOptions & { start?: Compose } = {},
+  options: PmClientFullMutationOptions & { start: true },
+  clientOptions?: PmClientOptions,
+): Promise<StartTaskResult>;
+/** Return the base receipt when composition is disabled or omitted. */
+export function claim(
+  id: string,
+  options?: PmClientFullMutationOptions & { start?: false },
+  clientOptions?: PmClientOptions,
+): Promise<ClaimResult>;
+/** Preserve both receipt shapes when the composition flag is dynamic. */
+export function claim(
+  id: string,
+  options?: PmClientFullMutationOptions & { start?: boolean },
+  clientOptions?: PmClientOptions,
+): Promise<ClaimResult | StartTaskResult>;
+/** Dispatch lifecycle mutation options through the shared SDK runtime. */
+export function claim(
+  id: string,
+  options: PmClientFullMutationOptions & { start?: boolean } = {},
   clientOptions: PmClientOptions = {},
-): Promise<Compose extends true ? StartTaskResult : ClaimResult> {
+): Promise<ClaimResult | StartTaskResult> {
   return new PmClient(clientOptions).claim(id, options);
 }
 
@@ -2226,11 +2300,29 @@ export function claimNext(
 }
 
 /** Release an item's active claim without constructing a reusable client. */
-export function release<Compose extends boolean = false>(
+export function release(
   id: string,
-  options: PmClientFullMutationOptions & { pause?: Compose } = {},
+  options: PmClientFullMutationOptions & { pause: true },
+  clientOptions?: PmClientOptions,
+): Promise<PauseTaskResult>;
+/** Return the base receipt when composition is disabled or omitted. */
+export function release(
+  id: string,
+  options?: PmClientFullMutationOptions & { pause?: false },
+  clientOptions?: PmClientOptions,
+): Promise<ReleaseResult>;
+/** Preserve both receipt shapes when the composition flag is dynamic. */
+export function release(
+  id: string,
+  options?: PmClientFullMutationOptions & { pause?: boolean },
+  clientOptions?: PmClientOptions,
+): Promise<ReleaseResult | PauseTaskResult>;
+/** Dispatch lifecycle mutation options through the shared SDK runtime. */
+export function release(
+  id: string,
+  options: PmClientFullMutationOptions & { pause?: boolean } = {},
   clientOptions: PmClientOptions = {},
-): Promise<Compose extends true ? PauseTaskResult : ReleaseResult> {
+): Promise<ReleaseResult | PauseTaskResult> {
   return new PmClient(clientOptions).release(id, options);
 }
 
@@ -2431,84 +2523,6 @@ export function upgrade(
   clientOptions: PmClientOptions = {},
 ): Promise<UpgradeResult> {
   return new PmClient(clientOptions).upgrade(target, options);
-}
-
-/**
- * Process-lifetime memo of activated extension registrations, keyed by resolved
- * pm root + cwd + extension settings. `getWorkspaceContracts` is frequently
- * called by importers and package runtimes that cannot thread a registry
- * through; without the memo each call re-discovers, re-imports, and re-activates
- * every extension.
- *
- * Invalidation story: entries are size-bounded and otherwise live until cleared.
- * One-shot CLI processes are trivially correct. Long-lived hosts (e.g. the MCP
- * server) must either pass `options.extensionRegistrations` (which bypasses the
- * memo) or call {@link clearWorkspaceContractsCache} after installing/removing/
- * toggling extensions or editing settings. Settings themselves are re-read on
- * every call — only the extension load+activate step is memoized.
- */
-function buildWorkspaceExtensionRegistrationsCacheKey(
-  pmRoot: string,
-  settings: Awaited<ReturnType<typeof readSettings>>,
-  cwd?: string,
-): string {
-  return JSON.stringify([
-    path.resolve(pmRoot),
-    path.resolve(cwd ?? process.cwd()),
-    settings.extensions.enabled,
-    settings.extensions.disabled,
-    settings.extensions.policy,
-  ]);
-}
-
-async function resolveWorkspaceExtensionRegistrations(
-  pmRoot: string,
-  settings: Awaited<ReturnType<typeof readSettings>>,
-  cwd?: string,
-): Promise<ExtensionRegistrationRegistry | null> {
-  const cacheKey = buildWorkspaceExtensionRegistrationsCacheKey(
-    pmRoot,
-    settings,
-    cwd,
-  );
-  return memoizeWorkspaceExtensionRegistrations(cacheKey, () =>
-    loadWorkspaceExtensionRegistrations(pmRoot, settings, cwd),
-  );
-}
-
-/** Implements get workspace contracts for the public runtime surface of this module. */
-export async function getWorkspaceContracts(
-  pmRoot: string,
-  options: WorkspaceContractsOptions = {},
-): Promise<WorkspaceContracts> {
-  const settings = await readSettings(pmRoot);
-  const extensionRegistrations =
-    options.extensionRegistrations ??
-    (options.noExtensions === true
-      ? null
-      : await resolveWorkspaceExtensionRegistrations(
-          pmRoot,
-          settings,
-          options.cwd,
-        ));
-  const typeRegistry = resolveItemTypeRegistry(
-    settings,
-    extensionRegistrations,
-  );
-  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const fieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
-
-  return {
-    types: [...typeRegistry.types],
-    statuses: statusRegistry.definitions.map((definition) => definition.id),
-    openStatus: statusRegistry.open_status,
-    closeStatus: statusRegistry.close_status,
-    canceledStatus: statusRegistry.canceled_status,
-    fields: buildWorkspaceFieldContracts(fieldRegistry.definitions),
-    extensionCommands: buildWorkspaceExtensionCommandContracts(
-      extensionRegistrations?.commands ?? [],
-    ),
-  };
 }
 
 /** Implements get contracts for the public runtime surface of this module. */
@@ -3548,12 +3562,14 @@ async function runMcpRestoreAction(
   );
 }
 
+/** Dispatch MCP pause through the shared lifecycle runner with explicit force semantics. */
 async function runMcpPauseTaskAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
   return runPauseTask(requireMcpItemId(ctx), mutationOptionsWithOverrides(ctx.options, { force: ctx.force }), ctx.global);
 }
 
+/** Resolve MCP closure reason aliases and dispatch the shared close-and-release runner. */
 async function runMcpCloseTaskAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
@@ -3817,29 +3833,6 @@ if (
   process.env.VITEST_WORKER_ID !== undefined
 ) {
   globalThis.__pmCliActionRunnerTestHooks = actionRunnerTestHooks;
-}
-
-async function loadWorkspaceExtensionRegistrations(
-  pmRoot: string,
-  settings: Awaited<ReturnType<typeof readSettings>>,
-  cwd?: string,
-): Promise<ExtensionRegistrationRegistry | null> {
-  const loadResult = await loadExtensions({
-    pmRoot,
-    settings,
-    cwd: cwd ?? process.cwd(),
-    noExtensions: false,
-  });
-  const activationResult = await activateExtensions(loadResult);
-  try {
-    return activationResult.registrations;
-  } finally {
-    try {
-      await deactivateExtensions(loadResult, activationResult);
-    } catch {
-      // Workspace contract reads should stay best-effort even if teardown itself fails.
-    }
-  }
 }
 
 export type { ContractsCommandOptions, ContractsResult };

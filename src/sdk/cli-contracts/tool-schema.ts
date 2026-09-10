@@ -1468,6 +1468,7 @@ function decorateToolParameterDefinition(
   };
 }
 
+/** Resolve action-specific descriptions before shared metadata for overloaded parameter names. */
 function actionScopedToolParameterMetadata(
   action: PmToolAction,
   key: string,
@@ -1512,6 +1513,7 @@ function decorateActionScopedToolParameterDefinition(
   };
 }
 
+/** Resolve action-specific parameter types, including lifecycle boolean composition flags. */
 function actionScopedToolParameterDefinition(
   action: PmToolAction,
   key: string,

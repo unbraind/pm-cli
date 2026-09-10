@@ -158,6 +158,7 @@ const MUTATION_FLAGS =
 const DELETE_MUTATION_FLAGS =
   "--dry-run --author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
 const CLOSE_MUTATION_FLAGS = toCompletionFlagString(resolveSubcommandFlagContractsForCommand("close"));
+const CLOSE_TASK_MUTATION_FLAGS = toCompletionFlagString(resolveSubcommandFlagContractsForCommand("close-task"));
 const RELEASE_MUTATION_FLAGS = toCompletionFlagString(resolveSubcommandFlagContractsForCommand("release"));
 const CLAIM_MUTATION_FLAGS = toCompletionFlagString(resolveSubcommandFlagContractsForCommand("claim"));
 
@@ -941,7 +942,10 @@ export function generateBashScript(
     "    stats)",
     `      COMPREPLY=(${compgen(STATS_FLAGS)})`,
     "      ;;",
-    "    close|close-task)",
+    "    close-task)",
+    `      COMPREPLY=(${compgen(CLOSE_TASK_MUTATION_FLAGS)})`,
+    "      ;;",
+    "    close)",
     `      COMPREPLY=(${compgen(CLOSE_MUTATION_FLAGS)})`,
     '      if [[ "$cmd" == "close" && $word_index -eq $cword ]]; then',
     `        COMPREPLY+=(${compgen(NAMESPACE_LEAVES.close)})`,

@@ -294,6 +294,7 @@ async function runTestCommandAction(
   }
 }
 
+/** Resolve legacy assignee and author aliases to one actor, rejecting conflicting ownership. */
 function buildLifecycleMutationOptions(options: Record<string, unknown>): {
   author: string | undefined;
   message: string | undefined;
@@ -690,6 +691,7 @@ async function runContractsAction(
   }
 }
 
+/** Route explicit start composition or ordinary and ranked claims through SDK operations. */
 async function runClaimAction(
   id: string | undefined,
   options: Record<string, unknown>,
@@ -767,6 +769,7 @@ export function requireClaimTarget(
     );
 }
 
+/** Route pause composition or ordinary release and invalidate affected search caches. */
 async function runReleaseAction(
   id: string,
   options: Record<string, unknown>,
@@ -807,6 +810,7 @@ async function printLifecycleAliasHint(command: Command): Promise<void> {
   if (settings.ux?.deprecation_hints) printError(renderPmCommandAliasMigrationHint(alias));
 }
 
+/** Adapt canonical and legacy start invocations to the shared lifecycle composition. */
 async function runStartTaskAction(
   id: string,
   options: Record<string, unknown>,
@@ -823,6 +827,7 @@ async function runStartTaskAction(
   }
 }
 
+/** Adapt pause invocations and invalidate caches after the ownership transition. */
 async function runPauseTaskAction(
   id: string,
   options: Record<string, unknown>,
@@ -839,6 +844,7 @@ async function runPauseTaskAction(
   }
 }
 
+/** Adapt legacy closure arguments to the shared close-and-release composition. */
 async function runCloseTaskAction(
   id: string,
   reason: string | undefined,

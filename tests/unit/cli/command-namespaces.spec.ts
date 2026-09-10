@@ -105,6 +105,7 @@ describe("namespace contracts and shell routing", () => {
       { words: ["pm", "update", "many", "--"], flag: "--filter-status" },
       { words: ["pm", "close", "many", "--"], flag: "--reason" },
       { words: ["pm", "--json", "close", "delete", "--"], flag: "--dry-run" },
+      { words: ["pm", "close-task", "pm-example", "--"], flag: "--validate-close" },
       { words: ["pm", "claim", "--"], flag: "--start" },
       { words: ["pm", "release", "--"], flag: "--pause" },
       { words: ["pm", "close", "pm-example", "--"], flag: "--release-assignment" },
@@ -117,6 +118,8 @@ describe("namespace contracts and shell routing", () => {
     expect(rows.pop()).toBe("");
     expect(rows).toHaveLength(cases.length);
     for (const [index, entry] of cases.entries()) expect(rows[index].trim().split(/\s+/), entry.words.join(" ")).toContain(entry.flag);
+    const legacyIndex = cases.findIndex(({ words }) => words[1] === "close-task");
+    expect(rows[legacyIndex].trim().split(/\s+/)).not.toContain("--release-assignment");
     for (const script of [generateZshScript(), generateFishScript()]) {
       for (const { canonical } of PM_CONTEXT_OPS_COMMAND_ALIASES) expect(script).toContain(canonical);
     }
