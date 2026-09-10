@@ -1523,12 +1523,12 @@ export function registerListQueryCommands(
       .option("--limit <n>", "Latest n entries")
       .option(
         "--compact",
-        "Show index, timestamp, op, author, patch count, and fields",
+        "Index, time, op, author, patch count, fields",
       )
       .option("--full", "Full entries with JSON Patches")
       .option(
         "--provenance",
-        "Show authors and provenance without patches",
+        "Authors and provenance; no patches",
       )
       .option(
         "--provenance-summary",
@@ -1536,22 +1536,22 @@ export function registerListQueryCommands(
       )
       .option(
         "--harness <value>",
-        "Filter by recorded/resolved harness (repeatable)",
+        "Recorded/resolved harness (repeatable)",
         collect,
       )
       .option(
         "--agent-instance <value>",
-        "Filter agent instance (repeatable)",
+        "Agent instance (repeatable)",
         collect,
       )
       .option(
         "--provenance-filter <dimension=value>",
-        "Filter by an exact declared provenance value (repeatable)",
+        "Exact provenance match (repeatable)",
         collect,
       )
       .option(
         "--diff",
-        "Replay per-entry before/after field diffs",
+        "Before/after field diffs",
       )
       .option(
         "--field <name>",
@@ -1559,7 +1559,7 @@ export function registerListQueryCommands(
       )
       .option(
         "--verify",
-        "Verify the full hash chain and replay",
+        "Verify full chain and replay",
       )
       .option(
         "--strict-exit",

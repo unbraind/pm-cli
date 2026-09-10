@@ -101,6 +101,7 @@ export const PM_RELOCATED_COMMAND_ALIASES: readonly PmCommandAliasContract[] = [
 
 /** Native noun-verb paths whose stable operation identities survive grammar consolidation. */
 export const PM_NAMESPACED_COMMAND_ALIASES: readonly PmCommandAliasContract[] = [
+  { alias: "history-attest", canonical: "history attest", canonical_argv: ["history", "attest"], lifecycle: "permanent", hidden: true, registration: "commander", owner: "pm-3z0k" },
   ...PM_HISTORY_COMMAND_ALIASES,
   ...PM_RELOCATED_COMMAND_ALIASES,
 ];

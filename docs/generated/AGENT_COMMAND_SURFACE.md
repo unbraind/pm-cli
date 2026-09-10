@@ -46,6 +46,8 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `history repair` | full | evidence |
 | `history-compact` | full | evidence |
 | `history compact` | full | evidence |
+| `history-attest` | full | evidence |
+| `history attest` | full | evidence |
 | `history-author-acknowledge` | full | evidence |
 | `merge` | full | workspace |
 | `workspace merge` | full | workspace |

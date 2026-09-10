@@ -13,6 +13,7 @@ export {
   type HistorySubject,
 } from "./history/subject.js";
 import fs from "node:fs/promises";
+import { resolveHistoryHashAlgorithm } from "../core/history/digest.js";
 import { writeFileAtomic } from "../core/fs/fs-utils.js";
 import {
   createHistoryEntry,
@@ -403,12 +404,12 @@ function inspectHistoryIntegrity(
   let hashMismatchesAfter = 0;
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
-    if (replayHash(replay) !== entry.before_hash) {
+    if (replayHash(replay, undefined, resolveHistoryHashAlgorithm(entry.hash_algorithm)) !== entry.before_hash) {
       hashMismatchesBefore += 1;
     }
     replay = applyHistoryPatch(replay, entry.patch, index + 1, entry.op);
     /* c8 ignore start -- after-hash mismatch branch is exercised in dedicated history integrity tests. */
-    if (replayHash(replay) !== entry.after_hash) {
+    if (replayHash(replay, undefined, resolveHistoryHashAlgorithm(entry.hash_algorithm)) !== entry.after_hash) {
       hashMismatchesAfter += 1;
     }
     /* c8 ignore stop */
@@ -520,14 +521,14 @@ function rewriteHistoryEntries(
     if (redacted.changed) {
       entriesChanged += 1;
     }
-    const beforeHash = replayHash(replay);
+    const beforeHash = replayHash(replay, undefined, resolveHistoryHashAlgorithm(original.hash_algorithm));
     replay = applyHistoryPatch(
       replay,
       redacted.entry.patch,
       index + 1,
       redacted.entry.op,
     );
-    const afterHash = replayHash(replay);
+    const afterHash = replayHash(replay, undefined, resolveHistoryHashAlgorithm(original.hash_algorithm));
     rewrittenEntries.push(
       resealHistoryRewrite(
         original,

@@ -41,6 +41,7 @@ const WORKSPACE_CONTRACTS_CACHE_PRESERVING_ACTIONS = new Set([
   "graph",
   "health",
   "history",
+  "history-attest",
   "list",
   "next",
   "search",
@@ -285,6 +286,7 @@ const LIFECYCLE_AUTHOR_ALIAS_ACTIONS = new Set([
 
 const HOISTED_ACTION_OPTION_KEYS: Readonly<Record<string, readonly string[]>> =
   {
+    "history-attest": ["verify", "output", "hashAlgorithm"],
     list: ["status", "type", "tag", "priority", "limit", "offset"],
     search: ["mode", "status", "type", "tag", "priority", "limit"],
     create: [

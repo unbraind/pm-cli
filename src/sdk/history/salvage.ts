@@ -3,6 +3,7 @@
  * Recover an invalid JSONL suffix while preserving every verified prefix byte.
  */
 import { isUtf8 } from "node:buffer";
+import { resolveHistoryHashAlgorithm } from "../../core/history/digest.js";
 import { readFile } from "node:fs/promises";
 import {
   isFileMissingError,
@@ -304,6 +305,7 @@ export async function salvageHistoryTail(params: {
       }
       const audit = sealHistoryRecord({
         ...createHistoryEntry({
+          hashAlgorithm: resolveHistoryHashAlgorithm(selected.entries.at(-1)!.hash_algorithm),
           nowIso: nowIso(),
           author,
           op: "history_salvage",

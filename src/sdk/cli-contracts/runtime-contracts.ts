@@ -143,7 +143,7 @@ import {
   type PmCommandAliasContract,
 } from "../cli-contracts.js";
 import { PM_NAMESPACED_COMMAND_ALIASES, resolvePmCommandOperation } from "./command-aliases.js";
-import { PM_POSITIONAL_ACTION_FLAG_CONTRACTS } from "./flag-contracts.js";
+import { HISTORY_ATTEST_FLAG_CONTRACTS, PM_POSITIONAL_ACTION_FLAG_CONTRACTS } from "./flag-contracts.js";
 import {
   GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES,
   GOVERNANCE_CREATE_MODE_DEFAULT_VALUES,
@@ -803,6 +803,7 @@ const COMMAND_INTENTS = new Map<string, string>([
   ["workspace", "Manage workspaces."],
   ["history-author-acknowledge", "Acknowledge reviewed history authors."],
   ["history-compact", "Compact history."],
+  ["history-attest", "Export or verify detached history proof."],
   ["history-redact", "Redact sensitive history values."],
   ["history-repair", "Repair history integrity."],
 ]);
@@ -889,6 +890,7 @@ const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<
   ["reindex", REINDEX_FLAG_CONTRACTS],
   ["history", HISTORY_FLAG_CONTRACTS],
   ["history-compact", HISTORY_COMPACT_FLAG_CONTRACTS],
+  ["history-attest", HISTORY_ATTEST_FLAG_CONTRACTS],
   ["history-redact", HISTORY_REDACT_FLAG_CONTRACTS],
   ["history-repair", HISTORY_REPAIR_FLAG_CONTRACTS],
   ["history-author-acknowledge", HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS],

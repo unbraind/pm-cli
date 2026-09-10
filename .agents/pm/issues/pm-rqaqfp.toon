@@ -1,0 +1,60 @@
+id: pm-rqaqfp
+title: Optional undefined result fields silently drop telemetry completion events
+description: "Observed live files, docs, context and test starts without matching completion events. summarizeResult calls JSON.stringify on an optional undefined value and then reads length; the resulting TypeError is swallowed by finishTelemetryCommand before enqueue and OTLP export. Preserve bounded redacted previews while omitting JSON-absent values so successful operations retain their outcome evidence."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-10T19:23:32.361Z"
+updated_at: "2026-09-10T19:35:21.239Z"
+closed_at: "2026-09-10T19:35:20.472Z"
+completed_at: "2026-09-10T19:35:20.472Z"
+author: "harness:codex"
+acceptance_criteria: Undefined optional result fields cannot discard command_finish or OTLP spans; explicit null and redacted sensitive fields retain their meaning; real filesystem and HTTP regression fails before the fix; live command actions regain paired telemetry events.
+goal: project management = context management
+parent: pm-5oj5
+risk: low
+confidence: 100
+resolution: Skip JSON-absent undefined preview values before measuring their size so completion events and OTLP spans are persisted; preserve null and sensitive-key redaction.
+expected_result: Successful commands with optional undefined fields record matching completion events and OTLP spans at redacted and max capture levels without changing command results.
+actual_result: The failing real HTTP negative control now passes both capture levels with matching start/finish events and empty event/span queues; fresh live context/docs/files/stats actions are paired; all 8699 tests and exact 100/100/100/100 coverage pass.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3z0k,discovered_from,"2026-09-10T19:23:32.361Z","harness:codex","cli:create:dep",detected
+  pm-ntr0,discovered_from,"2026-09-10T19:23:32.361Z","harness:codex","cli:create:dep",detected
+  pm-q9yt,implements,"2026-09-10T19:23:32.361Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-10T19:23:32.361Z","harness:codex","Duplicate check searched all statuses for summarizeResult (3 hits) and command_finish (14 hits) and telemetry undefined (33 complete keyword hits). Read pm-ntr0 and pm-q9yt in full: they concern completed payload bounding work rather than absent-value event loss. Reuse pm-5oj5 parent and those design relationships. Live observed docs 5 starts with no finishes and files 10 starts with 1 finish before this repair; no private payloads or identifiers recorded."
+  "2026-09-10T19:24:57.737Z","harness:codex","TDD negative control: both redacted and max capture tests received only command_start over real local HTTP before the fix. The runtime now omits undefined sanitized object values before byte measurement while retaining explicit null and sensitive-key redaction. The regression checks matching process events, successful outcome, one real OTLP request and empty physical queues; no network or runtime functions are mocked."
+  "2026-09-10T19:27:52.251Z","harness:codex","Live verification after rebuilding: backend query found matching completion events in the same process session for all four fresh starts (context, docs, files and stats). Linked suite passed 46 tests, including two real network regressions. Earlier missing events cannot be reconstructed and are not being backfilled; this verifies newly executed actions only."
+  "2026-09-10T19:35:19.761Z","harness:codex","Final verification: all 8699 tests in 666 files passed. Exact coverage is Statements 64137/64137, Branches 48840/48840, Functions 13331/13331 and Lines 61452/61452. All typecheck projects and focused ESLint passed; staged secret scan passed. Manual packed npm/npx and Bun/bunx consumers passed. Live Sentry/telemetry release gate passed with zero critical/high issues and zero missing error classification. Logical post-fix events were paired for all fresh observed action sessions."
+learnings[1]{created_at,author,text}:
+  "2026-09-10T19:27:53.751Z","harness:codex",Completion transport can silently fail despite successful command output when diagnostic serialization throws inside a best-effort catch. Verify paired logical events and physical queues with real transport; count start and finish by process identity because command namespaces may normalize during dispatch.
+files[2]{path,scope,note}:
+  src/core/telemetry/runtime.ts,project,Keep completion capture when optional preview values are absent
+  tests/unit/core/telemetry/telemetry-optional-result.spec.ts,project,Real disk and local HTTP event plus OTLP regression
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-optional-result.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts,project,240,"harness:codex","2026-09-10T19:24:37.670Z",local_mutation,feat/history-algorithm-attestation
+test_runs[1]:
+  - run_id: test-local-mtvx2tlp-3bwava
+    kind: test
+    status: passed
+    started_at: "2026-09-10T19:24:56.493Z"
+    finished_at: "2026-09-10T19:25:08.317Z"
+    recorded_at: "2026-09-10T19:25:08.317Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-optional-result.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated record of restored completion telemetry
+close_reason: Restore completion telemetry for optional result fields with real transport regression evidence.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-rqaqfp
+  gate_id: test-coverage
+  negative_control: The real HTTP and filesystem regression receives only command_start before the fix at both redacted and max capture; it requires a matching command_finish and OTLP span plus empty physical queues afterward.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-optional-result.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
+body: ""

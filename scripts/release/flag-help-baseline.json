@@ -420,6 +420,12 @@
       "help_bytes": 175,
       "estimated_tokens": 44,
       "maximum_tokens": 44
+    },
+    {
+      "command": "history-attest",
+      "help_bytes": 437,
+      "estimated_tokens": 110,
+      "maximum_tokens": 110
     }
   ]
 }

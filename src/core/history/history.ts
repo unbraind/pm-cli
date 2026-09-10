@@ -4,6 +4,7 @@
  * Implements append-only history and replay behavior for History.
  */
 import jsonPatch from "fast-json-patch";
+import { CURRENT_HISTORY_HASH_ALGORITHM, historyDigest, resolveHistoryHashAlgorithm, type HistoryHashAlgorithm } from "./digest.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
@@ -65,7 +66,7 @@ export type HistoryRecordHashVersion =
 export function hashHistoryRecord(
   entry: Omit<HistoryEntry, "record_hash">,
 ): string {
-  return sha256Hex(stableStringify(entry));
+  return historyDigest(stableStringify(entry), entry.hash_algorithm);
 }
 
 /** Hash one patch representation without retaining its potentially sensitive values. */
@@ -96,8 +97,14 @@ export function verifyHistoryRecordHash(entry: HistoryEntry):
       error:
         | "incomplete_record_hash_envelope"
         | "record_hash_mismatch"
-        | "unsupported_record_hash_version";
+        | "unsupported_record_hash_version"
+        | "unsupported_history_hash_algorithm";
     } {
+  try {
+    resolveHistoryHashAlgorithm(entry.hash_algorithm);
+  } catch {
+    return { ok: false, error: "unsupported_history_hash_algorithm" };
+  }
   if (
     entry.record_hash_version === undefined &&
     entry.record_hash === undefined
@@ -136,6 +143,7 @@ function createHistoryRewriteEvidence(
     after_hash: original.after_hash,
     patch_hash: hashHistoryPatch(original.patch),
   };
+  if (original.hash_algorithm !== undefined) evidence.hash_algorithm = original.hash_algorithm;
   if (original.item_hash_version !== undefined) {
     evidence.item_hash_version = original.item_hash_version;
   }
@@ -174,6 +182,7 @@ export function resealHistoryRewrite(
     original.before_hash !== rewritten.before_hash ||
     original.after_hash !== rewritten.after_hash ||
     original.item_hash_version !== rewritten.item_hash_version ||
+    original.hash_algorithm !== rewritten.hash_algorithm ||
     originalPatchHash !== hashHistoryPatch(rewritten.patch);
   const sealed = sealHistoryRecord({
     ...rewritten,
@@ -257,7 +266,7 @@ function isHistoryReanchorEvidence(
       typeof evidence.record_hash_version !== "number") ||
     (evidence.record_hash !== undefined &&
       (typeof evidence.record_hash !== "string" ||
-        !/^[a-f0-9]{64}$/u.test(evidence.record_hash)))
+        !/^(?:[a-f0-9]{64}|[a-f0-9]{128})$/u.test(evidence.record_hash)))
   ) {
     return false;
   }
@@ -277,6 +286,7 @@ function matchesRetainedHistoryRecord(
     record.before_hash === evidence.before_hash &&
     record.after_hash === evidence.after_hash &&
     record.item_hash_version === evidence.item_hash_version &&
+    record.hash_algorithm === evidence.hash_algorithm &&
     record.record_hash_version === evidence.record_hash_version &&
     record.record_hash === evidence.record_hash &&
     hashHistoryPatch(record.patch) === evidence.patch_hash
@@ -310,6 +320,7 @@ function reconstructPriorHistoryRecord(
     before_hash: evidence.before_hash,
     after_hash: evidence.after_hash,
     patch: priorPatch,
+    hash_algorithm: evidence.hash_algorithm,
     ...(evidence.item_hash_version === undefined
       ? {}
       : { item_hash_version: evidence.item_hash_version }),
@@ -321,6 +332,7 @@ function reconstructPriorHistoryRecord(
       : { record_hash: evidence.record_hash }),
     ...(priorEvidence.length === 0 ? {} : { reanchor_evidence: priorEvidence }),
   };
+  if (evidence.hash_algorithm === undefined) delete priorRecord.hash_algorithm;
   if (priorEvidence.length === 0) delete priorRecord.reanchor_evidence;
   if (evidence.item_hash_version === undefined) {
     delete priorRecord.item_hash_version;
@@ -612,6 +624,7 @@ export function hashDocument(document: ItemDocument): string {
 export function hashDocumentForVersion(
   document: ItemDocument,
   version: HistoryItemHashVersion,
+  algorithm?: HistoryHashAlgorithm,
 ): string {
   if (
     !SUPPORTED_HISTORY_ITEM_HASH_VERSIONS.some(
@@ -620,7 +633,7 @@ export function hashDocumentForVersion(
   ) {
     throw new TypeError(`unsupported_item_hash_version:${String(version)}`);
   }
-  return sha256Hex(stableStringify(canonicalHashDocument(document, version)));
+  return historyDigest(stableStringify(canonicalHashDocument(document, version)), algorithm);
 }
 
 /**
@@ -631,13 +644,15 @@ export function hashDocumentForVersion(
 export function hashDocumentVerificationCandidates(
   document: ItemDocument,
   version: HistoryItemHashVersion,
+  algorithm?: HistoryHashAlgorithm,
 ): [string, ...string[]] {
-  const canonicalHash = hashDocumentForVersion(document, version);
+  const canonicalHash = hashDocumentForVersion(document, version, algorithm);
   return version === 2
     ? [
         canonicalHash,
-        sha256Hex(
+        historyDigest(
           stableStringify(canonicalHashDocument(document, version, true)),
+          algorithm,
         ),
       ]
     : [canonicalHash];
@@ -658,6 +673,7 @@ export function createHistoryEntry(params: {
   after: ItemDocument;
   message?: string;
   context?: Record<string, unknown>;
+  hashAlgorithm?: HistoryHashAlgorithm;
 }): HistoryEntry {
   const beforeHashCanonical = canonicalHashDocument(
     params.before,
@@ -692,7 +708,9 @@ export function createHistoryEntry(params: {
           agent_provenance_outcomes: provenanceOutcomes,
         };
 
+  const algorithm = params.hashAlgorithm ?? CURRENT_HISTORY_HASH_ALGORITHM;
   const entry: HistoryEntry = {
+    hash_algorithm: algorithm,
     ts: params.nowIso,
     author: params.author,
     author_source:
@@ -711,8 +729,8 @@ export function createHistoryEntry(params: {
     ...(agentIdentity.episode ? { agent_episode: agentIdentity.episode } : {}),
     op: params.op,
     patch,
-    before_hash: sha256Hex(stableStringify(beforeHashCanonical)),
-    after_hash: sha256Hex(stableStringify(afterHashCanonical)),
+    before_hash: historyDigest(stableStringify(beforeHashCanonical), algorithm),
+    after_hash: historyDigest(stableStringify(afterHashCanonical), algorithm),
     item_hash_version: CURRENT_HISTORY_ITEM_HASH_VERSION,
     message: params.message === undefined ? undefined : params.message,
     ...(context === undefined ? {} : { context }),
@@ -870,6 +888,7 @@ export async function appendHistoryEntry(
       : { ...entry, ts: fallbackHistoryTimestamp(entry) };
   const normalizedEntry = sealHistoryRecord({
     ...timestampedEntry,
+    hash_algorithm: resolveHistoryHashAlgorithm(timestampedEntry.hash_algorithm),
     event_class: classifyHistoryEvent(timestampedEntry),
   });
   await appendHistoryEntryWithEventIndex(

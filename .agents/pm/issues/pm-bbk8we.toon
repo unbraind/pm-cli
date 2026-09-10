@@ -2,11 +2,13 @@ id: pm-bbk8we
 title: "The history integrity chain hard-codes SHA-256 with no algorithm identifier, so the proof it produces has no migration path across the decades it claims to cover"
 description: "before_hash and after_hash are bare hexadecimal digests produced by a literal createHash(\"sha256\") call, and the recorded entry carries no field naming the algorithm that produced them. Verification therefore assumes SHA-256 forever. The workspace format already declares a format_version for the item encoding, and the roadmap already commits to multi-decade readability and to a portable attestation bundle a third party can verify independently — both of which inherit this assumption. If the digest ever has to change, every historical entry becomes unverifiable at once, because nothing in the recorded data says which function to apply, and re-hashing the archive to a new algorithm is precisely the rewrite the immutability guarantee exists to forbid. The gap is cheap to close now and structurally expensive later: an algorithm label on each entry, plus a verification rule that selects the function per entry, lets the chain migrate forward while every historical link stays checkable under the function that created it."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[6]: cryptography,durability,history,long-term,provenance,storage
 created_at: "2026-07-26T10:46:36.121Z"
-updated_at: "2026-09-08T13:32:35.783Z"
+updated_at: "2026-09-10T19:38:09.117Z"
+closed_at: "2026-09-10T19:09:56.489Z"
+completed_at: "2026-09-10T19:09:56.489Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Each recorded entry names the digest algorithm that produced its hashes, and verification selects the function per entry rather than assuming one globally; Legacy entries with no label are verified under a declared default, and that default is stated in the format specification rather than implied by code; A second algorithm is exercised end to end in tests — written, chained, merged, verified, and replayed — proving the mechanism works before it is needed; Migration guidance states what changes and what does not when the default algorithm advances, including the effect on the portable attestation bundle and on any already-exported proof; The change states its format_version implications and leaves already-written streams verifiable without modification"
@@ -19,8 +21,10 @@ why_now: "Every entry written before the label exists becomes a legacy case that
 parent: pm-o2kc
 risk: medium
 confidence: 75
-expected_result: "Every history entry names its digest algorithm, verification selects the function per entry, and a second algorithm is proven end to end so the chain can migrate across decades."
-dependencies[11]:
+resolution: "New records name SHA256 or SHA512; replay, drift verification, rewrite evidence and maintenance select each recorded algorithm while unlabeled history permanently retains SHA256 semantics."
+expected_result: "Every new history record names its digest; old records remain byte-preserved and verifiable; a second algorithm works through write, merge, replay, repair, redaction and compaction."
+actual_result: Linked mixed-algorithm and old-epoch tests passed; all 8697 tests passed at exact 100/100/100/100 coverage; live validation found zero drift across 2731 items and retained the documented 170 historical outcome-field warnings.
+dependencies[15]:
   - id: pm-10l1vm
     kind: related
     created_at: "2026-07-26T10:46:36.121Z"
@@ -57,4 +61,78 @@ dependencies[11]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
+  - id: pm-aka8m7
+    kind: verifies
+    created_at: "2026-09-10T17:37:15.281Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-javbsq
+    kind: discovered_from
+    created_at: "2026-09-10T17:37:15.281Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-e9zh
+    kind: verifies
+    created_at: "2026-09-10T19:09:32.026Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-klo8
+    kind: verifies
+    created_at: "2026-09-10T19:37:40.708Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[7]{created_at,author,text}:
+  "2026-09-10T17:31:48.709Z","harness:codex","Implementation scope: named digest algorithms with legacy SHA-256 fallback, mixed-algorithm replay and maintenance compatibility, followed by detached attestation in pm-3z0k in the same reviewed delivery. Read canonical items and closed pm-hg0k, pm-klo8, pm-javbsq, pm-aka8m7; all-status search found existing owners so no duplicate created. Initial GitHub inventory: no open PRs, issues, Dependabot alerts or code-scanning alerts; scheduled auto-release run 34450158392 succeeded. Only actively edited work is started."
+  "2026-09-10T18:52:00.335Z","harness:codex","Verification evidence: named SHA256/SHA512 history tests and linked tests pass, including mixed-algorithm merge, cached drift scans, repair, redaction, compaction, old-epoch compaction and replay. Physical archive proof export covered 2746 retained streams without changing tracker data. The new blocking relationship cites this item as evidence. Full coverage and final review remain pending."
+  "2026-09-10T19:07:46.977Z","harness:codex","Final full-suite evidence: 665/665 files and 8697/8697 tests passed in 631.21 seconds. Exact integer coverage is statements 64135/64135, branches 48838/48838, functions 13331/13331, lines 61451/61451; zero uncovered counts. No thresholds or ignore directives were relaxed. Repository static-quality provider passed all six assertions; command grammar, lint and duplication gates passed against the stable build. Live workspace resolution and history-drift validation exited successfully."
+  "2026-09-10T19:09:08.216Z","harness:codex","Validation qualification: the full live report is ok=true with zero drift and zero identity discontinuities across 2731 items. Its resolution check is advisory warn: 170 historical closed items lack one or more structured outcome fields. This is not a claim of zero legacy metadata warnings, and no historical outcomes were fabricated. The three current delivery items will receive complete immutable close evidence."
+  "2026-09-10T19:09:32.869Z","harness:codex","Read the full live metadata, comments and close history for pm-e9zh: its completed recovery explicitly preserved 170 records with unrecoverable fields. Current validation exactly matches that recorded residual, so this is preserved historical evidence rather than newly outstanding backfill work. Linked algorithm tests passed and current closure includes all structured outcomes."
+  "2026-09-10T19:36:24.563Z","harness:codex","Final gate qualification: tracker-context-quality passed all 41 assertions after removal of the redundant reciprocal blocks edge. Full suite including the telemetry fix passed 8699 tests and exact 100/100/100/100 coverage. The static pipeline timing stage exceeded narrow limits under concurrent coverage load; isolated rerun of all six CLI transport operations passed unchanged. Remaining graph-composition and record-integrity stages are being completed on the closed tracker state."
+  "2026-09-10T19:38:09.117Z","harness:codex","Final remaining static stages passed: isolated CLI transport floor verified all six operations; graph-composition passed all 10 assertions with prose-only gaps held at the unchanged 1343 baseline after formalizing the workspace-stream verification link; record-integrity passed with 62255 append-only history events. All static pipeline stages now have passing evidence without weakening thresholds. The initial whole-pipeline run was qualified only by the concurrent-load timing failure described above."
+learnings[1]{created_at,author,text}:
+  "2026-09-10T18:52:02.925Z","harness:codex","Persist digest algorithm per record, keep absent labels permanently SHA256, and preserve each retained checkpoint hash epoch during compaction. Exported proof digests commit to exact stream bytes, so maintenance requires a new independently retained proof."
+files[14]{path,scope,note}:
+  src/core/history/digest.ts,project,Named digest algorithms with permanent legacy default
+  src/core/history/drift-scan.ts,project,Algorithm-aware drift verification and cache epoch
+  src/core/history/history.ts,project,Algorithm-labelled anchors and record seals
+  src/core/history/replay.ts,project,Per-entry replay and rewrite algorithm selection
+  src/sdk/history-compact.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  src/sdk/history-read.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  src/sdk/history-redact.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  src/sdk/history-repair.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  src/sdk/history/salvage.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  src/types.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  tests/integration/history-algorithm.integration.spec.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  tests/unit/core/history/drift-scan.spec.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  tests/unit/core/history/history-algorithm.spec.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  tests/unit/sdk/agent-runtime-primitives.spec.ts,project,New mutation history names its SHA256 algorithm
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/history/history-algorithm.spec.ts tests/integration/history-algorithm.integration.spec.ts,project,240,"harness:codex","2026-09-10T17:50:55.447Z",local_mutation,feat/history-algorithm-attestation
+test_runs[1]:
+  - run_id: test-local-mtvvp5z8-94mgxw
+    kind: test
+    status: passed
+    started_at: "2026-09-10T18:46:06.552Z"
+    finished_at: "2026-09-10T18:46:31.556Z"
+    recorded_at: "2026-09-10T18:46:31.556Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/history-algorithm.spec.ts tests/integration/history-algorithm.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/HISTORY_ATTESTATION.md,project,Legacy algorithm and canonicalization migration contract
+close_reason: Implemented named per-record history algorithms with immutable legacy compatibility and verified mixed-algorithm maintenance.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-bbk8we
+  gate_id: test-coverage
+  negative_control: "The TDD history-algorithm test fails against unlabeled SHA256-only writers; mixed SHA512 creation, merge, repair, redaction, compaction and replay must verify without rewriting earlier records, while an unknown algorithm must fail verification."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/history/history-algorithm.spec.ts tests/integration/history-algorithm.integration.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

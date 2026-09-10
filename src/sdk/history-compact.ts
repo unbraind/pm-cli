@@ -4,6 +4,7 @@
  * Implements the pm history compact command surface and its agent-facing runtime behavior.
  */
 import fs from "node:fs/promises";
+import { resolveHistoryHashAlgorithm } from "../core/history/digest.js";
 import path from "node:path";
 import {
   createHistoryEntry,
@@ -241,6 +242,7 @@ function describeHistoryCompactCurrentItem(
         replayHashVerificationCandidates(
           toReplayDocument(loadedItem.document),
           version,
+          resolveHistoryHashAlgorithm(lastEntry.hash_algorithm),
         ).includes(lastEntry.after_hash),
     ),
   };
@@ -307,7 +309,9 @@ function buildHistoryCompactEntries(params: {
     params.boundary.compactCount,
   );
   const offset = historyVersionOffset(params.historyEntries, true);
+  const checkpointEntry = params.historyEntries[params.boundary.compactCount - 1]!;
   const baselineEntry = createHistoryEntry({
+    hashAlgorithm: resolveHistoryHashAlgorithm(checkpointEntry.hash_algorithm),
     nowIso: params.historyEntries[params.boundary.compactCount - 1]!.ts,
     author: params.author,
     op: "history_compact_baseline",
@@ -332,14 +336,16 @@ function buildHistoryCompactEntries(params: {
       },
     },
   });
-  const checkpointEntry =
-    params.historyEntries[params.boundary.compactCount - 1]!;
   // Preserve the checkpoint's epoch and semantic hash variant. Do not introduce
   // an explicit epoch into an unversioned stream: it would pin later legacy reads.
   const rewrittenEntries = [
     sealHistoryRecord({
       ...baselineEntry,
-      before_hash: params.historyEntries[0]!.before_hash,
+      before_hash: replayHashVerificationCandidates(
+        cloneEmptyReplayDocument(),
+        checkpointEntry.item_hash_version as 1 | 2 | 3 ?? 1,
+        resolveHistoryHashAlgorithm(checkpointEntry.hash_algorithm),
+      )[0],
       after_hash: checkpointEntry.after_hash,
       item_hash_version: checkpointEntry.item_hash_version,
     }),

@@ -39,6 +39,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   ...BASE_TOOL_PARAMETER_PROPERTIES,
   pause: { type: "boolean" },
   releaseAssignment: { type: "boolean" },
+  hashAlgorithm: { type: "string", enum: ["sha256", "sha512"] },
 };
 
 /** Descriptions shared by strict and provider lifecycle controls. */
@@ -46,6 +47,7 @@ const PM_TOOL_PARAMETER_METADATA: typeof BASE_TOOL_PARAMETER_METADATA = {
   ...BASE_TOOL_PARAMETER_METADATA,
   pause: { description: "Return work to its configured open status before releasing ownership." },
   releaseAssignment: { description: "Release assignment after recording closure evidence." },
+  hashAlgorithm: { description: "Digest for detached history bundles; defaults to sha256." },
 };
 
 const PM_TOOL_GLOBAL_PARAMETER_KEYS = [
@@ -758,6 +760,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "failOnWarn",
         "format",
       ],
+    },
+    "history-attest": {
+      optional: ["verify", "output", "hashAlgorithm"],
+      mutuallyExclusive: [["verify", "output"], ["verify", "hashAlgorithm"]],
     },
     "history-redact": {
       required: ["id"],
@@ -1473,6 +1479,7 @@ function actionScopedToolParameterMetadata(
   action: PmToolAction,
   key: string,
 ): { description: string; examples?: unknown[] } | undefined {
+  if (action === "history-attest" && key === "verify") return { description: "Read a detached JSON proof file and compare all retained history streams." };
   if (action === "claim" && key === "start") return { description: "Claim an explicit item and move it to its configured in-progress status." };
   if ((action === "list" || action.startsWith("list-")) && key === "all") {
     return {
@@ -1519,6 +1526,7 @@ function actionScopedToolParameterDefinition(
   key: string,
 ): unknown {
   if (action === "claim" && key === "start") return { type: "boolean" };
+  if (action === "history-attest" && key === "verify") return { type: "string", minLength: 1 };
   const actionProperties = PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES[action];
   if (
     actionProperties &&
@@ -1538,7 +1546,7 @@ function actionScopedToolParameterDefinition(
   ) {
     return { type: "string", enum: ["json", "toon"] };
   }
-  return key === "pause" || key === "releaseAssignment"
+  return key === "pause" || key === "releaseAssignment" || key === "hashAlgorithm"
     ? PM_TOOL_PARAMETER_PROPERTIES[key]
     : BASE_TOOL_PARAMETER_PROPERTIES[key];
 }
@@ -1831,7 +1839,7 @@ function createLazyContractSchema(
 }
 
 /** Canonical version of the action-scoped strict MCP tool-parameters schema (`PM_TOOL_PARAMETERS_SCHEMA`). Exported as the single source of truth so the MCP server, the `pm contracts` command, SDK consumers, and contract tests bind to one version constant. Bump the patch/minor for additive, backward-compatible schema changes; bump the MAJOR for breaking changes — the major also drives the `$id` `tool-parameters-v{major}` slug, so the two never drift. */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.17.0" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.18.0" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the
@@ -1841,7 +1849,7 @@ export const PM_TOOL_PARAMETERS_SCHEMA_MAJOR =
   PM_TOOL_PARAMETERS_SCHEMA_VERSION.split(".")[0];
 
 /** Version of the provider-compatible flat tool-parameters schema (`PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`). Tracked separately from the strict schema because the flat projection evolves independently. */
-export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION = "1.8.0" as const;
+export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION = "1.9.0" as const;
 
 /** Public contract for pm tool parameters schema, shared by SDK and presentation-layer consumers. */
 export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> =

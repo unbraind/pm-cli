@@ -97,6 +97,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "history-redact",
   "history-repair",
   "history-compact",
+  "history-attest",
   "history-author-acknowledge",
   "merge",
   "schema",

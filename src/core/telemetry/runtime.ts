@@ -1221,6 +1221,9 @@ function summarizeResult(
     let previewBytes = 0;
     for (const key of keys.slice(0, 25)) {
       const sanitizedValue = sanitizeValue(record[key], key, captureLevel);
+      // JSON omits absent object values; measuring them would throw before
+      // the completion event and its OTLP span can be persisted.
+      if (sanitizedValue === undefined) continue;
       const entrySize = JSON.stringify(sanitizedValue).length;
       if (previewBytes + entrySize > TELEMETRY_RESULT_PREVIEW_MAX_BYTES) {
         sanitized[key] = "[preview_truncated]";

@@ -2,18 +2,22 @@ id: pm-3z0k
 title: "Portable integrity attestation: export a detached hash-chain proof bundle and verify it standalone, so third parties can confirm the recorded history was never altered"
 description: Export and independently verify detached hash-chain proof bundles so third parties can attest tracker history integrity without the original workspace.
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[3]: governance,history,immutable-record
 created_at: "2026-07-06T23:19:12.124Z"
-updated_at: "2026-09-08T13:33:23.699Z"
+updated_at: "2026-09-10T19:29:42.668Z"
+closed_at: "2026-09-10T19:09:57.765Z"
+completed_at: "2026-09-10T19:09:57.765Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "attest export produces a documented, versioned bundle covering all item and workspace history streams with a workspace rollup digest; verify against a bundle detects any post-export stream rewrite and names the diverged streams; verify runs read-only with no locks and works on a bare clone; compact/redact/repair produce lineage-visible digest transitions (tested); SDK exposes export/verify primitives with reference docs; bundle stays small (KBs, independent of workspace size beyond stream count)"
 parent: pm-o2kc
 risk: low
 confidence: medium
-expected_result: "A detached proof bundle exports for every history stream and verifies standalone on a bare clone, naming any stream rewritten after export."
+resolution: "Added versioned exact-byte per-stream commitments and deterministic workspace rollups, strict proof parsing, complete stream comparison and maintenance transitions; thin history attest transport exports exclusive proof files or complete stdout artifacts."
+expected_result: "Export every retained item/workspace stream, verify bare history copies without writes or hooks, identify all divergences and intentional maintenance, and expose documented extensible SDK primitives."
+actual_result: Packed npm/npx and Bun/bunx manual acceptance passed; SDK and real Commander linked tests passed; a 2746-stream repository proof matched successful backend telemetry; all 8697 tests passed with zero uncovered source counts; missing or malformed proof files and existing outputs now yield actionable usage errors.
 dependencies[10]:
   - id: pm-9yfo
     kind: related
@@ -51,4 +55,84 @@ dependencies[10]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
+comments[9]{created_at,author,text}:
+  "2026-09-10T17:37:14.535Z","harness:codex","Implementation begins alongside pm-bbk8we: SDK exportAttestation and verifyAttestation, versioned detached per-stream digests plus deterministic workspace rollup, read-only bare-clone verification, explicit maintenance transition evidence, and thin native history attest command. Existing all-status lineage reused; no duplicate. The trust boundary is an independently retained bundle: local hashes alone cannot authenticate authors or resist replacement of both data and proof."
+  "2026-09-10T17:50:14.841Z","harness:codex","Implementation evidence: SDK exact-byte bundle export and standalone verification pass initial bare-history tests; maintenance integration verifies repair/redaction/compaction transitions. Strict parser rejects malformed summaries even with recomputed rollups. CLI acceptance exposed a parent history --verify boolean collision with child --verify <file>; enabling Commander positional options isolates child flags. Full gates and review are pending."
+  "2026-09-10T17:58:44.722Z","harness:codex","Implementation evidence: CLI export and nested SDK verification passed. Regression test exposed missing hoisting for top-level runAction verify; added action-specific hoisting and rejection of malformed verification arguments. Earlier Commander positional-option hypothesis was disproved; binding the child verify value during bootstrap fixes ancestor boolean parsing without changing global flag behavior. Full coverage and repository ESLint are running."
+  "2026-09-10T18:16:57.894Z","harness:codex","Verification progress: 184 focused tests passed, followed by a passing CLI regression that exports all 65 retained streams without default projection, rejects explicit universal output controls, verifies a bare history copy without writes, exercises nested and flat SDK transport arguments, and refuses overwriting an existing proof. Typecheck passed. Initial full coverage run had 8675 passing tests and 16 failures (contract expectations, generated drift and three timeouts); these are being corrected and rerun before closure. No coverage or shipping claim yet."
+  "2026-09-10T18:48:20.869Z","harness:codex","Live negative-control finding: a missing attestation proof surfaced as unknown_error/exit 1 instead of an actionable input refusal; Sentry received scrubbed PM-CLI-3B. Existing canonical attestation ownership covers the correction, so no duplicate item is created. TDD reproduction also confirms an existing output file leaks raw EEXIST instead of usage guidance. Add bounded file-input/output diagnostics while preserving exclusive-create semantics and non-overwrite evidence."
+  "2026-09-10T18:52:01.137Z","harness:codex","Acceptance evidence: packed artifacts installed and ran under npm/npx and Bun/bunx in separate temporary workspaces; export, changed-history refusal, SHA512 re-export, bare-history-copy verification, legacy CLI alias and public governance SDK all passed. Real repository export covered 2746 streams; backend telemetry recorded matching command_start and successful command_finish with 162709ms duration, and broker ready/unacknowledged queues were zero when checked. Context and 57-surface token budgets, package-first authoring dogfood, packed artifact bound and published-release compatibility passed. Full exact coverage and review still pending."
+  "2026-09-10T19:07:47.850Z","harness:codex","Final full-suite evidence: 8697 tests across 665 files passed with exact 100/100/100/100 coverage (64135 statements, 48838 branches, 13331 functions, 61451 lines). Real missing/malformed proof and existing-output cases now return usage exit 2 with actionable guidance, while output remains exclusive and unchanged after refusal. Sentry negative-control PM-CLI-3B confirmed scrubbed error delivery and the live missing-file retry confirms the correction. The stable source-quality provider, grammar, lint, duplication, context budgets and published/packed acceptance gates passed."
+  "2026-09-10T19:09:33.480Z","harness:codex","Final sequential linked verification passed both registered commands after removing overlapping builds: SDK/bare-copy/maintenance/CLI acceptance and real Commander operand/output/error boundaries. Final typecheck passed across core, public type tests, packages and examples. Full static pipeline and package-owned changelog are the final pre-PR delivery steps."
+  "2026-09-10T19:29:42.668Z","harness:codex","Observability negative control PM-CLI-3B was generated only by this unreleased local proof-file test. The same missing-proof invocation now returns usage exit 2 and a fresh warning log; real regression and full coverage include the fix. The one-event local probe is being resolved in Sentry as repaired test evidence, not as a claim that the new command is already published. Packed npm/npx and Bun/bunx acceptance was repeated successfully after the file UX and telemetry fixes."
+learnings[1]{created_at,author,text}:
+  "2026-09-10T18:52:01.765Z","harness:codex","Bind child --verify file operands before Commander parses the history ancestor boolean; preserve global option values and -- terminators. Detached artifacts require complete output and exclusive file creation, while routine proof-file failures should return actionable usage diagnostics."
+files[31]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Install latest published pm-changelog for package-owned reviewed delivery output
+  scripts/release/flag-help-baseline.json,project,Initial attestation help ceiling without raising existing budgets
+  sdk/public-surface.json,project,Reviewed additive SDK export and signature surface
+  src/cli/register-history-maintenance.ts,project,Native history attest command
+  src/cli/register-list-query.ts,project,Preserve history help token ceiling
+  src/sdk/agent-capability-contracts.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  src/sdk/cli-bootstrap.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  src/sdk/cli-contracts/command-aliases.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  src/sdk/cli-contracts/enum-contracts.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  src/sdk/cli-contracts/flag-contracts.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project,Bounded additive command vocabulary
+  src/sdk/cli-contracts/grammar-contracts.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  src/sdk/cli-contracts/tool-schema.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  src/sdk/completion.ts,project,Contract-derived attest completion in all shells
+  src/sdk/contracts.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  src/sdk/governance.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  src/sdk/history/attestation-command.ts,project,Shared CLI and MCP transport adapter
+  src/sdk/history/attestation-contract.ts,project,Portable proof trust boundary and types
+  src/sdk/history/attestation-scan.ts,project,Read-only complete retained-stream inventory
+  src/sdk/history/attestation.ts,project,Detached exact-byte proof export and verification
+  src/sdk/runtime-input.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  src/sdk/runtime.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  tests/fixtures/contracts/full.json,project,Implementation and regression evidence for named history digests and detached proofs
+  tests/integration/history-attestation-cli.integration.spec.ts,project,Implementation and regression evidence for named history digests and detached proofs
+  tests/unit/cli/history-attestation.spec.ts,project,Real Commander proof output quiet receipts failed verification and bootstrap operand boundaries
+  tests/unit/commands/completion-command.spec.ts,project,All shell attestation discovery regression
+  tests/unit/sdk/action-schema-parity.spec.ts,project,Additive schema version expectation
+  tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,Hidden alias inventory
+  tests/unit/sdk/contracts-full-projection.spec.ts,project,Attestation legacy alias projection
+  tests/unit/sdk/history/attestation.spec.ts,project,Implementation and regression evidence for named history digests and detached proofs
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/history/attestation.spec.ts tests/integration/history-attestation-cli.integration.spec.ts tests/integration/history-algorithm.integration.spec.ts,project,240,"harness:codex","2026-09-10T18:11:54.519Z",local_mutation,feat/history-algorithm-attestation
+  node scripts/run-tests.mjs test -- tests/unit/cli/history-attestation.spec.ts,project,240,"harness:codex","2026-09-10T18:44:15.441Z",local_mutation,feat/history-algorithm-attestation
+test_runs[2]:
+  - run_id: test-local-mtvvpz9z-5cdbdb
+    kind: test
+    status: failed
+    started_at: "2026-09-10T18:46:32.556Z"
+    finished_at: "2026-09-10T18:47:09.526Z"
+    recorded_at: "2026-09-10T18:47:09.526Z"
+    passed: 1
+    failed: 1
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/history/attestation.spec.ts tests/integration/history-attestation-cli.integration.spec.ts tests/integration/history-algorithm.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/history-attestation.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtvwgdvi-f1m5nj
+    kind: test
+    status: passed
+    started_at: "2026-09-10T19:07:19.389Z"
+    finished_at: "2026-09-10T19:07:41.502Z"
+    recorded_at: "2026-09-10T19:07:41.502Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/history/attestation.spec.ts tests/integration/history-attestation-cli.integration.spec.ts tests/integration/history-algorithm.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/history-attestation.spec.ts,schema,schema,source,local_source_ref
+docs[6]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned release record generated after closing verified implementation
+  docs/generated/AGENT_CAPABILITY_ROUTING.md,project,Generated attestation capability discovery
+  docs/generated/AGENT_COMMAND_SURFACE.md,project,Generated command surface
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project,Measured attestation flag budget
+  docs/HISTORY_ATTESTATION.md,project,Portable format SDK CLI trust and consistency reference
+  docs/README.md,project,History proof documentation discovery
+close_reason: "Implemented portable detached history attestations across the public SDK, CLI and runtime action transports with read-only verification."
 body: "The append-only hash-chained JSONL streams already make tampering detectable from inside the workspace (pm validate checks hash and chain continuity). But the proof is only as trustworthy as the machine running pm: an actor who rewrites a stream can recompute the whole chain, and there is no way to hand an auditor, a counterparty, or a future maintainer a compact artifact proving the record as of a moment in time.\n\nProposal: detached, portable integrity attestation built on the existing chains:\n- pm history attest (grammar per ADR pm-pbyu noun-verb placement) exports a small proof bundle: per-stream chain heads (item + workspace streams), entry counts, checkpoint digests from history-compact, a workspace-level rollup digest, and the generation timestamp.\n- pm history attest --verify <bundle> recomputes chains and reports exactly which streams diverged from a previously exported bundle — standalone, requiring only read access.\n- Rollup digest is stable and documented, so external anchoring (committing the digest to another git repo, a transparency log, or a timestamping service) is possible without pm prescribing any specific service.\n- SDK-first: exportAttestation/verifyAttestation are SDK primitives; the CLI verbs are thin wrappers, and packages can build custom anchoring policies on top (e.g. business-workflow deployments anchoring per release).\n- Interop with maintenance flows: history-compact checkpoints and history-redact/repair audited rewrites must roll forward into new attestations with an explicit lineage note, never silently.\n\nTogether with the mutation-completeness gate (pm-9yfo) and the workspace-scoped stream (pm-klo8), this completes the guarantee: every mutation is recorded, and anyone can independently prove the record was never altered."

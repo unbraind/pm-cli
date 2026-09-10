@@ -3,6 +3,11 @@
  *
  * Implements append-only history and replay behavior for Drift Scan.
  */
+import {
+  HISTORY_HASH_ALGORITHMS,
+  resolveHistoryHashAlgorithm,
+  type HistoryHashAlgorithm,
+} from "./digest.js";
 import type { Stats } from "node:fs";
 import fs from "node:fs/promises";
 import { createHash } from "node:crypto";
@@ -53,7 +58,8 @@ export interface DriftScanResult {
   workspaceStateUnreadable: string[];
 }
 
-const DRIFT_CACHE_VERSION = 10;
+const READABLE_HISTORY_HASH_ALGORITHMS = new Set<string | undefined>([undefined, ...HISTORY_HASH_ALGORITHMS]);
+const DRIFT_CACHE_VERSION = 11;
 const DRIFT_CACHE_FILENAME = "history-drift-cache.json";
 
 /** Controls how cached history stream verification is trusted when the file stat tuple still matches a previous scan. */
@@ -75,6 +81,7 @@ interface DriftCacheEntry {
   version_skew?: boolean;
   latest_hash_comparable: boolean;
   item_hash_version: HistoryItemHashVersion;
+  hash_algorithm?: HistoryHashAlgorithm;
 }
 
 interface DriftCacheEnvelope {
@@ -103,6 +110,7 @@ async function loadDriftCache(
         (entry) =>
           typeof entry.chain_ok !== "boolean" ||
           typeof entry.latest_hash_comparable !== "boolean" ||
+          !READABLE_HISTORY_HASH_ALGORITHMS.has(entry.hash_algorithm) ||
           (!(
             SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]
           ).includes(entry.item_hash_version) &&
@@ -131,6 +139,7 @@ interface StreamVerification {
   latestHashComparable: boolean;
   contentHash: string;
   itemHashVersion: HistoryItemHashVersion;
+  hashAlgorithm?: HistoryHashAlgorithm;
 }
 
 interface DriftScanAccumulator {
@@ -198,12 +207,20 @@ async function scanWorkspaceHistory(
     version_skew: resolved.verification.versionSkew,
     latest_hash_comparable: resolved.verification.latestHashComparable,
     item_hash_version: resolved.verification.itemHashVersion,
+    hash_algorithm: resolved.verification.hashAlgorithm,
   };
   return resolved.cacheDirty;
 }
 
 function hashContent(raw: string): string {
   return createHash("sha256").update(raw).digest("hex");
+}
+
+/** Detect unsupported digest labels or canonicalization epochs before comparing anchors. */
+function hasUnsupportedHistoryCapability(entry: HistoryEntry): boolean {
+  return !READABLE_HISTORY_HASH_ALGORITHMS.has(entry.hash_algorithm) ||
+    (entry.item_hash_version !== undefined &&
+      !(SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(entry.item_hash_version));
 }
 
 /** Read and fully verify one history stream's hash chain. Returns null for an empty/missing stream (caller records it as a missing stream). */
@@ -238,14 +255,9 @@ async function verifyHistoryStream(
   }
   /* c8 ignore stop */
   const verification = verifyHistoryChainWithVersion(entries);
-  const versionSkew = entries.some(
-    (entry) =>
-      entry.item_hash_version !== undefined &&
-      !(SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(
-        entry.item_hash_version,
-      ),
-  );
+  const versionSkew = entries.some(hasUnsupportedHistoryCapability);
   const latestEntry = entries[entries.length - 1];
+  const algorithmSupported = READABLE_HISTORY_HASH_ALGORITHMS.has(latestEntry.hash_algorithm);
   const latestExplicitVersion = latestEntry.item_hash_version;
   const latestExplicitVersionSupported =
     latestExplicitVersion !== undefined &&
@@ -257,10 +269,14 @@ async function verifyHistoryStream(
     : verification.item_hash_version;
   return {
     latestAfterHash,
+    hashAlgorithm: algorithmSupported
+      ? resolveHistoryHashAlgorithm(latestEntry.hash_algorithm)
+      : undefined,
     identityDiscontinuities: findHistoryIdentityDiscontinuities(entries),
     chainOk: verification.ok,
     versionSkew,
     latestHashComparable:
+      algorithmSupported &&
       latestHashVersion !== undefined &&
       (!versionSkew ||
         latestExplicitVersionSupported ||
@@ -300,6 +316,21 @@ async function loadFreshStreamVerification(
   }
 }
 
+/** Compare all verification semantics before reusing a persisted cache receipt. */
+function matchesCachedVerification(
+  verification: StreamVerification | null,
+  cached: DriftCacheEntry,
+): boolean {
+  return verification !== null &&
+    verification.contentHash === cached.content_hash &&
+    verification.latestAfterHash === cached.latest_after_hash &&
+    verification.chainOk === cached.chain_ok &&
+    verification.versionSkew === (cached.version_skew === true) &&
+    verification.latestHashComparable === cached.latest_hash_comparable &&
+    verification.itemHashVersion === cached.item_hash_version &&
+    verification.hashAlgorithm === cached.hash_algorithm;
+}
+
 /** Reverify invalid streams and content-sensitive cache hits; reuse only compatible healthy evidence. */
 async function resolveStreamVerification(params: {
   itemId: string;
@@ -335,15 +366,7 @@ async function resolveStreamVerification(params: {
     );
     return {
       verification,
-      cacheDirty:
-        verification === null ||
-        verification.contentHash !== cachedContentHash ||
-        verification.latestAfterHash !== params.cached.latest_after_hash ||
-        verification.chainOk !== params.cached.chain_ok ||
-        verification.versionSkew !== (params.cached.version_skew === true) ||
-        verification.latestHashComparable !==
-          params.cached.latest_hash_comparable ||
-        verification.itemHashVersion !== params.cached.item_hash_version,
+      cacheDirty: !matchesCachedVerification(verification, params.cached),
     };
   }
   return {
@@ -359,6 +382,7 @@ async function resolveStreamVerification(params: {
         ),
       contentHash: cachedContentHash,
       itemHashVersion: params.cached.item_hash_version,
+      hashAlgorithm: params.cached.hash_algorithm,
     },
     cacheDirty: false,
   };
@@ -416,12 +440,14 @@ async function scanItemHistory(
     version_skew: resolved.verification.versionSkew,
     latest_hash_comparable: resolved.verification.latestHashComparable,
     item_hash_version: resolved.verification.itemHashVersion,
+    hash_algorithm: resolved.verification.hashAlgorithm,
   };
   const { body, ...itemMetadata } = item;
   if (!resolved.verification.latestHashComparable) return resolved.cacheDirty;
   const currentHashes = hashDocumentVerificationCandidates(
     { metadata: itemMetadata as ItemMetadata, body },
     resolved.verification.itemHashVersion,
+    resolved.verification.hashAlgorithm,
   );
   if (!currentHashes.includes(resolved.verification.latestAfterHash))
     accumulator.hashMismatches.push(item.id);

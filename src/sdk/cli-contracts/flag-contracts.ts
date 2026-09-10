@@ -470,6 +470,13 @@ export const HISTORY_COMPACT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--force" },
 ];
 
+/** Detached proof export and read-only comparison options. */
+export const HISTORY_ATTEST_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--verify", value_name: "file", value_type: "string" },
+  { flag: "--output", value_name: "file", value_type: "string" },
+  { flag: "--hash-algorithm", value_name: "name", value_type: "string" },
+];
+
 /** Public contract for schema flag contracts, shared by SDK and presentation-layer consumers. */
 export const SCHEMA_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--definition", value_name: "json" },
@@ -2014,6 +2021,7 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["history-repair", HISTORY_REPAIR_FLAG_CONTRACTS],
     ["history-author-acknowledge", HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS],
     ["history-compact", HISTORY_COMPACT_FLAG_CONTRACTS],
+    ["history-attest", HISTORY_ATTEST_FLAG_CONTRACTS],
     ["merge", MERGE_FLAG_CONTRACTS],
     ["schema", SCHEMA_FLAG_CONTRACTS],
     ["profile", PROFILE_FLAG_CONTRACTS],

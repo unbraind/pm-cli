@@ -15,6 +15,7 @@ export * from "./output-token-accounting.js";
 export * from "./output-contracts.js";
 export * from "./agent/task-transcript-contracts.js";
 export * from "./read-output-contracts.js";
+export * from "./history/attestation-contract.js";
 export * from "./agent/refusal-closure.js";
 export * from "./agent/closed-domain-contracts.js";
 export * from "./agent/tracker-preflight-contracts.js";

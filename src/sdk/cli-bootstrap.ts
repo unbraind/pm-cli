@@ -143,7 +143,11 @@ export function parseBootstrapGlobalOptions(
   }
   return {
     path: state.pathValues.get("--pm-path") ?? state.pathValues.get("--path"),
-    noExtensions: state.booleanFlags.has("--no-extensions"),
+    noExtensions:
+      state.booleanFlags.has("--no-extensions") ||
+      ["history attest", "history-attest"].includes(
+        parseBootstrapCommandPathName(argv) ?? "",
+      ),
     noPager: state.booleanFlags.has("--no-pager"),
     json: state.booleanFlags.has("--json"),
     quiet: state.booleanFlags.has("--quiet"),
@@ -448,7 +452,11 @@ function rewriteCommandAlias(
     return argv;
   }
   const canonicalTokens = canonical.split(" ");
-  const rewritten = [...argv.slice(0, index), ...canonicalTokens, ...argv.slice(index + 1)];
+  const rewritten = [
+    ...argv.slice(0, index),
+    ...canonicalTokens,
+    ...argv.slice(index + 1),
+  ];
   trace.push({
     from: token,
     to: canonicalTokens,
@@ -1087,6 +1095,31 @@ function normalizeBootstrapTokens(
   return normalizedArgv;
 }
 
+/** Bind child verification values before Commander classifies ancestor options. */
+function bindAttestationVerification(argv: string[]): void {
+  // Commander parses ancestor options before handing down already classified
+  // operands. Bind the child value so history's boolean --verify cannot eat it.
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = argv[index];
+    if (token === "--") break;
+    if (token === "--verify") {
+      const value = argv[index + 1];
+      if (value === undefined || value === "--")
+        throw new PmCliError(
+          "history attest --verify requires a bundle file.",
+          EXIT_CODE.USAGE,
+        );
+      argv.splice(index, 2, `--verify=${value}`);
+    } else if (
+      GLOBAL_VALUE_CONSUMING_FLAGS.has(token) ||
+      token === "--output" ||
+      token === "--hash-algorithm"
+    ) {
+      index += 1;
+    }
+  }
+}
+
 /** Implements normalize bootstrap invocation for the public runtime surface of this module. */
 export function normalizeBootstrapInvocation(
   argv: string[],
@@ -1147,6 +1180,8 @@ export function normalizeBootstrapInvocation(
   for (const event of coalesced.events) {
     trace.push(event);
   }
+  if (commandPathName === "history attest")
+    bindAttestationVerification(coalesced.argv);
   return {
     argv: coalesced.argv,
     commandName,

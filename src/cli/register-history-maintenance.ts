@@ -5,6 +5,7 @@
  * the same option and action definitions; all behavior remains SDK-owned.
  */
 import type { Command } from "commander";
+import { runHistoryAttest } from "../sdk/history/attestation-command.js";
 import {
   EXIT_CODE,
   PmCliError,
@@ -30,6 +31,8 @@ import {
   printError,
   printResult,
   readOptionString,
+  setActiveCommandResult,
+  writeStdout,
 } from "./registration-helpers.js";
 
 /** Validate bulk numeric selectors without accepting signed or partial numeric input. */
@@ -159,11 +162,41 @@ async function runRestoreAction(
   }
 }
 
+/** Preserve proof artifacts while rendering compact verification and export receipts. */
+async function runHistoryAttestAction(
+  options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const global = getGlobalOptions(command);
+  const result = await runHistoryAttest({
+    verify: readOptionString(options, "verify"),
+    output: readOptionString(options, "output"),
+    hashAlgorithm: readOptionString(options, "hashAlgorithm"),
+  }, global);
+  if ("format" in result) {
+    // A proof is an artifact: projection or compaction would invalidate its digest.
+    setActiveCommandResult(result);
+    if (!global.quiet) writeStdout(`${JSON.stringify(result, null, 2)}\n`);
+  } else {
+    printResult(result, global);
+  }
+  if ("ok" in result && !result.ok) process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+}
+
 /** Install identical maintenance actions at the history namespace or legacy root. */
 export function registerHistoryMaintenanceCommands(
   parent: Command,
   native: boolean,
 ): void {
+  parent
+    .command(native ? "attest" : "history-attest", { hidden: !native })
+    .summary("Export or verify history proof.")
+    .option("--verify <file>", "Compare retained streams with a detached JSON proof")
+    .option("--output <file>", "Create a proof file and return a compact receipt")
+    .option("--hash-algorithm <name>", "Bundle digest algorithm: sha256 (default) or sha512")
+    .description("Export exact-byte history commitments, or verify an independently retained proof without tracker writes.")
+    .action(runHistoryAttestAction);
+
   parent
     .command("restore", { hidden: !native })
     .summary("Restore a version.")

@@ -23,6 +23,7 @@ interface DriftCacheFixtureEntry {
   latest_hash_comparable: boolean;
   item_hash_version: number;
   version_skew?: boolean;
+  hash_algorithm?: string;
 }
 
 interface DriftCacheFixture {
@@ -63,7 +64,7 @@ async function seedStaleMetadataMatchedCache(
   await mutateStream(historyPath);
   const mutatedStat = await fs.stat(historyPath);
   const forgedCache: DriftCacheFixture = {
-    version: 10,
+    version: 11,
     history_item_hash_version: 3,
     entries: {
       [created.id]: {
@@ -93,6 +94,29 @@ async function writeInvalidChainStream(historyPath: string): Promise<void> {
 }
 
 describe("core/history/drift-scan", () => {
+  it("rejects unknown stream algorithms and refreshes stale algorithm cache labels", async () => {
+    await withTempPmPath(async (context) => {
+      const created = createTestItem(context, { title: "Algorithm cache capability" });
+      const items = await listAllItemMetadataWithBody(context.pmPath);
+      await scanHistoryDrift(context.pmPath, items);
+      const cachePath = path.join(context.pmPath, DRIFT_CACHE_RELATIVE);
+      for (const algorithm of ["unknown", "sha512"]) {
+        const cache = await readDriftCache(context.pmPath);
+        cache.entries[created.id]!.hash_algorithm = algorithm;
+        await fs.writeFile(cachePath, JSON.stringify(cache));
+        expect((await scanHistoryDrift(context.pmPath, items)).driftedItems).toEqual([]);
+        expect((await readDriftCache(context.pmPath)).entries[created.id]?.hash_algorithm).toBe("sha256");
+      }
+      const filename = getHistoryPath(context.pmPath, created.id);
+      const entries = (await fs.readFile(filename, "utf8")).trim().split("\n").map((line) => JSON.parse(line) as Record<string, unknown>);
+      entries.at(-1)!.hash_algorithm = "unknown";
+      await fs.writeFile(filename, entries.map((entry) => JSON.stringify(entry)).join("\n") + "\n");
+      expect(await scanHistoryDrift(context.pmPath, items)).toMatchObject({
+        versionSkews: [created.id], chainMismatches: [created.id], hashMismatches: [], unreadableStreams: [],
+      });
+    });
+  });
+
   it("classifies an inaccessible workspace history path as unreadable", async () => {
     await withTempPmPath(async (context) => {
       const inaccessible = Object.assign(new Error("access denied"), {
@@ -119,7 +143,7 @@ describe("core/history/drift-scan", () => {
       expect(first.driftedItems).toEqual([]);
 
       const cache = await readDriftCache(context.pmPath);
-      expect(cache.version).toBe(10);
+      expect(cache.version).toBe(11);
       expect(cache.history_item_hash_version).toBe(3);
       expect(Object.keys(cache.entries)).toHaveLength(items.length);
       const firstEntry = Object.values(cache.entries)[0];
@@ -515,24 +539,24 @@ describe("core/history/drift-scan", () => {
           history_item_hash_version: 3,
           entries: {},
         }),
-        JSON.stringify({ version: 10, entries: {} }),
+        JSON.stringify({ version: 11, entries: {} }),
         JSON.stringify({
-          version: 10,
+          version: 11,
           history_item_hash_version: 99,
           entries: {},
         }),
         JSON.stringify({
-          version: 10,
+          version: 11,
           history_item_hash_version: 3,
           entries: null,
         }),
         JSON.stringify({
-          version: 10,
+          version: 11,
           history_item_hash_version: 3,
           entries: "not-an-object",
         }),
         JSON.stringify({
-          version: 10,
+          version: 11,
           history_item_hash_version: 3,
           entries: {
             malformed: {

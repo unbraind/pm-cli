@@ -1033,9 +1033,9 @@ describe("agent runtime SDK primitives", () => {
             },
         )
         .filter((entry) => entry.op === "update" || entry.op === "close");
-      expect(history).toEqual([
+      expect(history).toEqual(["update", "close"].map((op) => (
         {
-          op: "update",
+          op,
           event_class: "substantive",
           author: "harness:codex",
           author_source: "detected",
@@ -1055,36 +1055,12 @@ describe("agent runtime SDK primitives", () => {
           patch: expect.any(Array),
           before_hash: expect.any(String),
           after_hash: expect.any(String),
+          hash_algorithm: "sha256",
           item_hash_version: CURRENT_HISTORY_ITEM_HASH_VERSION,
           record_hash_version: CURRENT_HISTORY_RECORD_HASH_VERSION,
           record_hash: expect.any(String),
-        },
-        {
-          op: "close",
-          event_class: "substantive",
-          author: "harness:codex",
-          author_source: "detected",
-          agent_harness: "codex",
-          agent_instance: expect.any(String),
-          agent_provenance: {
-            effort: null,
-            model: null,
-            role: null,
-            topic: null,
-          },
-          context: {
-            agent_provenance_outcomes:
-              CODEX_MISSING_SESSION_PROVENANCE_OUTCOMES,
-          },
-          ts: expect.any(String),
-          patch: expect.any(Array),
-          before_hash: expect.any(String),
-          after_hash: expect.any(String),
-          item_hash_version: CURRENT_HISTORY_ITEM_HASH_VERSION,
-          record_hash_version: CURRENT_HISTORY_RECORD_HASH_VERSION,
-          record_hash: expect.any(String),
-        },
-      ]);
+        }
+      )));
     });
   });
 

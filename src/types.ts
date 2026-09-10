@@ -1026,6 +1026,8 @@ export interface HistoryPatchOp {
 
 /** Immutable evidence retained whenever history maintenance replaces anchors or patch operations. */
 export interface HistoryReanchorEvidence {
+  /** Algorithm of the retained item and record anchors; absent means SHA-256. */
+  hash_algorithm?: string;
   /** Before-state anchor present on the record before re-anchoring. */
   before_hash: string;
   /** After-state anchor present on the record before re-anchoring. */
@@ -1046,6 +1048,8 @@ export interface HistoryReanchorEvidence {
 
 /** Documents the history entry payload exchanged by command, SDK, and package integrations. */
 export interface HistoryEntry {
+  /** Algorithm for before_hash, after_hash and record_hash; absent means legacy SHA-256. */
+  hash_algorithm?: string;
   /** Value that configures or reports ts for this contract. */
   ts: string;
   /** Value that configures or reports author for this contract. */
@@ -1117,7 +1121,7 @@ export interface HistoryEntry {
   item_hash_version?: number;
   /** Version of the canonical immutable-record envelope. Absent on legacy entries whose coverage is item-state-only. */
   record_hash_version?: number;
-  /** SHA-256 hash covering this event's immutable metadata, patch, and item anchors. */
+  /** Digest covering immutable metadata, patch and anchors under hash_algorithm. */
   record_hash?: string;
   /** Append-only evidence for every prior anchor or patch representation replaced by maintenance. */
   reanchor_evidence?: HistoryReanchorEvidence[];
