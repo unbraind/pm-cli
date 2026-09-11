@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[4]: concurrency,identity,merge,storage-integrity
 created_at: "2026-08-02T21:07:10.619Z"
-updated_at: "2026-09-11T14:44:12.035Z"
-closed_at: "2026-09-11T14:44:11.436Z"
-completed_at: "2026-09-11T14:44:11.436Z"
+updated_at: "2026-09-11T15:45:12.800Z"
+closed_at: "2026-09-11T15:45:12.158Z"
+completed_at: "2026-09-11T15:45:12.158Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "An item merge in which the base side is absent and both sides carry their own create entry is reported as a duplicate-identity conflict distinct from a field conflict, and is not silently resolved toward the preferred side; pm validate --check-storage-integrity reports a history stream containing more than one create entry as an error in the same-type case, not only the cross-type multi-file case; pm get on an id that resolves to more than one document refuses or reports the ambiguity instead of silently returning one; The default ids.token_length and the escalation rule are derived from a stated concurrency and corpus-size regime, and the guidance names the width required for a workspace of a given size and agent count"
@@ -22,16 +22,16 @@ confidence: high
 severity: high
 environment: git merge via pm merge drivers; pm 2026.8.2; ids.token_length default 4
 repro_steps: "pm init sandbox; commit; branch A and B; on A run pm create --id dupe --title 'Alpha work' --type Task and pm create --id dupex --title 'Alpha' --type Task; on B run pm create --id dupe --title 'Beta work' --type Task and pm create --id dupex --title 'Beta' --type Issue; commit both; clone, checkout A, merge origin/B; inspect the documents, the history stream, and pm validate --check-storage-integrity."
-resolution: Reject independent or unproven item identities and ambiguous physical reads
-expected_result: Item and history merges refuse independent creation without changing receiving files; ambiguous lookup names conflicting paths
-actual_result: "SDK and real driver regressions pass including identical empty-ancestor creates, both one-sided history fast-forwards and valid shared creation ancestry; full 8724-test exact coverage and static quality pass"
+resolution: Require creation ancestry before combining two-sided creates and refuse ambiguous item identities
+expected_result: Unproven two-sided creation histories and add/add JSON or TOON documents refuse without modifying receiving files
+actual_result: "Nonempty update-only ancestor negative control reproduced then fixed; JSON/TOON and real driver regressions pass; 8725 tests, exact 100/100/100/100 source coverage, complete static quality and packed/manual acceptance pass"
 component: "core/item/id, sdk/merge"
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-10l1vm,related,"2026-08-02T21:10:21.705Z","harness:claude-code","cli:update:dep",detected
   pm-dlx7v7,discovered_from,"2026-08-02T21:10:21.705Z","harness:claude-code","cli:update:dep",detected
   pm-e3gn0z,related,"2026-08-02T21:10:21.705Z","harness:claude-code","cli:update:dep",detected
   pm-o87av6,implements,"2026-08-02T21:10:21.705Z","harness:claude-code","cli:update:dep",detected
-comments[9]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-09-11T13:01:57.263Z","harness:codex","TDD evidence: five new isolated identity-boundary regressions failed against the baseline and now pass after SDK add/add refusal, multiple-create rejection, and ambiguity detection. GitHub inventory: zero open PRs/issues and zero open Dependabot/code-scanning/secret-scanning alerts. All-status duplicate inventory read all 2736 items without truncation; canonical lineage reused."
   "2026-09-11T13:12:55.187Z","harness:codex","Manual acceptance passed in a disposable Git repository using the built CLI: two independently created same-id branches failed to merge with item_identity_conflict; the receiving item bytes and single-create history remained intact; no receipt was created. Adding a second physical type-path then made CLI get return item_identity_ambiguous with exit 4. The temporary workspace was removed. Dependency audit returned zero known vulnerabilities; required Sentry/telemetry reliability gate passed with zero recent blocking Sentry issues and zero uncoded telemetry failures."
   "2026-09-11T13:26:18.355Z","harness:codex",User-approved cleanup removed exactly the two synthetic pm-collision receipts from the initial failing driver fixture. Hash comparison verified every other receipt file remained unchanged. No real item document or history stream was edited. Driver regression now isolates cwd as well as tracker roots.
@@ -41,8 +41,11 @@ comments[9]{created_at,author,text}:
   "2026-09-11T14:24:30.328Z","harness:codex","Focused review verification passed 32 tests across identity, whole-document conformance and merge safety. Additional positive boundaries preserve one-sided history creation in both fast-forward directions. The complete static and exact coverage gates are rerunning before the next PR push."
   "2026-09-11T14:43:46.398Z","harness:codex","Review round verification passed: complete pnpm quality:static; all 673 files and 8724 tests; exact coverage statements 64264/64264, branches 48937/48937, functions 13349/13349, lines 61565/61565. Refreshed PM-linked tests and disposable real Git/CLI acceptance passed. SDK and history-driver empty-ancestor identity regressions now reject identical creates; independent N-branch document oracle detects a real deterministic description-loss source mutant. Awaiting pushed-head CI and fresh bot review."
   "2026-09-11T14:44:10.270Z","harness:codex","Hosted initial head 813d1fc passed all CI checks and exact DeepScan/CodeFactor analysis with zero new issues. CodeRabbit provided two valid findings, now fixed and verified locally. Sourcery reported exhausted weekly free review capacity; local Greptile reported free_reviews_limit_reached and hosted Greptile has not replied. Quota or silence is not approval. Every available bot artifact is being acknowledged on its actual review surface and edited revisions are checked again."
-learnings[1]{created_at,author,text}:
+  "2026-09-11T15:29:35.897Z","harness:codex","Full review at 559cf370d found a further valid ancestry boundary: a nonempty base can contain no create. A new update-only ancestor regression failed against the previous source; the guard now tests actual base creation presence. The existing add/add identity test is parameterized over JSON and TOON with structured error-code assertions. Managed-extension direct-edit allegation is false: pnpm changelog:pm ran its supported install workflow and generated the lifecycle timestamp; no tracker file was edited directly."
+  "2026-09-11T15:45:11.090Z","harness:codex","Final ancestry review verification passed: complete static quality; 673 files and 8725 tests; exact statements 64264/64264, branches 48937/48937, functions 13349/13349 and lines 61565/61565. Refreshed PM-linked tests, real disposable Git identity preservation and packed npm/npx/Bun/bunx smoke passed. The nonempty update-only ancestor regression failed before the guard change and passes after; JSON and TOON both return item_identity_conflict. Managed-extension state remains generated by the supported package installer, not directly edited."
+learnings[2]{created_at,author,text}:
   "2026-09-11T13:41:56.381Z","harness:codex","Identity must be validated before scalar preference, history fast-forward, or reanchoring. A valid hash chain cannot establish that independently created documents represent one item. Configured entropy limits likelihood; refusal and storage validation preserve identity when collisions still occur."
+  "2026-09-11T15:45:11.584Z","harness:codex",A nonempty history stream is not evidence of common creation ancestry. Inspect retained create events before fast-forward or identity comparison; keep one-sided creation and verified common ancestry as distinct positive cases.
 files[13]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,CLI refresh of latest pm-changelog managed activation metadata
   sdk/public-surface.json,project,Generated optional SDK error paths contract
@@ -59,7 +62,7 @@ files[13]{path,scope,note}:
   tests/unit/sdk/merge/item-identity.spec.ts,project,Identity boundary regression tests
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/merge/item-identity.spec.ts tests/unit/sdk/storage-integrity.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/core/store/item-store.spec.ts,project,240,"harness:codex","2026-09-11T13:07:02.986Z",local_mutation,fix/item-identity-and-merge-conformance
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mtx0453r-chfw6m
     kind: test
     status: passed
@@ -82,11 +85,22 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/merge/item-identity.spec.ts tests/unit/sdk/storage-integrity.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/core/store/item-store.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtx4mcuk-4402f6
+    kind: test
+    status: passed
+    started_at: "2026-09-11T15:43:53.041Z"
+    finished_at: "2026-09-11T15:44:03.211Z"
+    recorded_at: "2026-09-11T15:44:03.211Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/item-identity.spec.ts tests/unit/sdk/storage-integrity.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/core/store/item-store.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,Package-generated release history for identity guard changes
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Regenerated refusal producer coordinates
   docs/MERGE_SAFETY.md,project,Identity refusal and collision entropy contract
-close_reason: Review findings implemented and locally verified; pending hosted review and merge in PR 1237
+close_reason: All accepted identity review findings implemented and locally verified for PR 1237
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

@@ -260,9 +260,9 @@ The SDK item merge refuses an empty common ancestor with
 cannot prove a common creation. It leaves the driver output untouched instead
 of combining two identities through scalar preference. The history merge also
 refuses different create events across its inputs, multiple creates in either
-input, or creations on both sides of an empty ancestor even when their bytes
-match, before fast-forwarding or reanchoring. A common ancestor containing the
-shared create event remains valid.
+input, or creations on both sides when the ancestor lacks a create event even
+when their bytes match, before fast-forwarding or reanchoring. A common ancestor
+containing the shared create event remains valid.
 
 `storage_integrity` detects multiple physical documents and a second create event
 within one history stream, reporting its line in `history_unparseable_streams`

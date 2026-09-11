@@ -188,7 +188,7 @@ export function mergeHistoryStreams(
     entries.filter((entry) => entry.op === "create"),
   );
   if (
-    (base.length === 0 && creates.slice(1).every((entries) => entries.length > 0)) ||
+    (creates[0].length === 0 && creates.slice(1).every((entries) => entries.length > 0)) ||
     creates.some((entries) => entries.length > 1) ||
     new Set(creates.flat().map(historyEntryIdentity)).size > 1
   ) {

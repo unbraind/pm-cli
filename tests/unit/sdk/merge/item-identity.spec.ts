@@ -2,6 +2,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { parseItemDocument, serializeItemDocument } from "../../../../src/core/item/item-format.js";
 import { locateItem } from "../../../../src/core/store/item-store.js";
 import { scanStorageIntegrity } from "../../../../src/sdk/governance/storage-integrity.js";
 import { runMergeDriver } from "../../../../src/sdk/merge/driver.js";
@@ -15,10 +16,11 @@ const document = JSON.stringify({
 });
 
 describe("duplicate item identity boundaries", () => {
-  it("refuses add/add documents even when their content is identical", () => {
-    for (const theirs of [document, document.replace("Independent", "Other")]) {
-      expect(() => mergeItemDocuments("", document, theirs, { format: "json" }))
-        .toThrow(/duplicate.*identity/i);
+  it.each(["json", "toon"] as const)("refuses %s add/add documents even when their content is identical", (format) => {
+    const content = serializeItemDocument(parseItemDocument(document, { format: "json" }), { format });
+    for (const theirs of [content, content.replace("Independent", "Other")]) {
+      expect(() => mergeItemDocuments("", content, theirs, { format }))
+        .toThrow(expect.objectContaining({ context: expect.objectContaining({ code: "item_identity_conflict" }) }));
     }
   });
 
@@ -65,6 +67,8 @@ describe("duplicate item identity boundaries", () => {
     expect(mergeHistoryStreams("", first, "").strategy).toBe("fast_forward_ours");
     expect(mergeHistoryStreams("", "", first).strategy).toBe("fast_forward_theirs");
     expect(() => mergeHistoryStreams(first + second, first, first)).toThrow(/duplicate.*identity/i);
+    expect(() => mergeHistoryStreams(first.replace('"create"', '"update"'), first, first))
+      .toThrow(expect.objectContaining({ context: { code: "item_identity_conflict" } }));
   });
 
   it("reports multiple creates in a single physical item history", async () => {
