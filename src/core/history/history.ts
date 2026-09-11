@@ -4,6 +4,7 @@
  * Implements append-only history and replay behavior for History.
  */
 import jsonPatch from "fast-json-patch";
+import { normalizeHistoryOperationForWrite } from "./operation-contract.js";
 import { CURRENT_HISTORY_HASH_ALGORITHM, historyDigest, resolveHistoryHashAlgorithm, type HistoryHashAlgorithm } from "./digest.js";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -685,6 +686,7 @@ export function createHistoryEntry(params: {
   context?: Record<string, unknown>;
   hashAlgorithm?: HistoryHashAlgorithm;
 }): HistoryEntry {
+  const operation = normalizeHistoryOperationForWrite(params.op);
   const beforeHashCanonical = canonicalHashDocument(
     params.before,
     CURRENT_HISTORY_ITEM_HASH_VERSION,
@@ -737,7 +739,7 @@ export function createHistoryEntry(params: {
       ? { agent_provenance: agentIdentity.provenance }
       : {}),
     ...(agentIdentity.episode ? { agent_episode: agentIdentity.episode } : {}),
-    op: params.op,
+    op: operation,
     patch,
     before_hash: historyDigest(stableStringify(beforeHashCanonical), algorithm),
     after_hash: historyDigest(stableStringify(afterHashCanonical), algorithm),

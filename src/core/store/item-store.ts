@@ -4,6 +4,8 @@
  * Reads and writes tracker storage with format-aware helpers for Item Store.
  */
 import fs from "node:fs/promises";
+import { buildDeletedItemError } from "../history/tombstone.js";
+import { normalizeHistoryOperationForWrite } from "../history/operation-contract.js";
 import { enforceWorkflowMutation } from "../policy/workflow-policy-store.js";
 import { recordItemMetadataEnumeration } from "./item-metadata-read-work.js";
 import path from "node:path";
@@ -403,6 +405,8 @@ export async function buildItemNotFoundError(
   idPrefix: string,
   typeToFolder: Record<string, string>,
 ): Promise<PmCliError> {
+  const deleted = await buildDeletedItemError(pmRoot, badId, idPrefix);
+  if (deleted) return deleted;
   const suggestions = await buildDidYouMeanSuggestions(
     pmRoot,
     badId,
@@ -626,6 +630,7 @@ type DeferredItemMutationParams = Omit<ItemMutationParams, "historyContext"> & {
 async function mutateItemWithDeferredHistoryContext(
   params: DeferredItemMutationParams,
 ): Promise<ItemMutationResult> {
+  normalizeHistoryOperationForWrite(params.op);
   const prepared = await prepareLockedItem({
     pmRoot: params.pmRoot,
     settings: params.settings,

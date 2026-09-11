@@ -3,8 +3,9 @@
 Tracked by [pm-96fsma](../.agents/pm/issues/pm-96fsma.toon),
 [pm-m0yjtg](../.agents/pm/issues/pm-m0yjtg.toon),
 [pm-qw1uw6](../.agents/pm/issues/pm-qw1uw6.toon),
-[pm-e3gn0z](../.agents/pm/issues/pm-e3gn0z.toon), and
-[pm-wlqxg3](../.agents/pm/tasks/pm-wlqxg3.toon).
+[pm-e3gn0z](../.agents/pm/issues/pm-e3gn0z.toon),
+[pm-wlqxg3](../.agents/pm/tasks/pm-wlqxg3.toon), and
+[pm-nb4zwz](../.agents/pm/issues/pm-nb4zwz.toon).
 
 Project management depends on trustworthy context. History is not just an
 activity feed: it is the reconstructable source for prior item states, including
@@ -103,6 +104,30 @@ The CLI and MCP expose this SDK-owned contract; package authors do not need a
 separate recovery implementation.
 
 ## Permanent item identities
+
+Reading a deleted ID returns `item_deleted`, distinct from an unknown ID.
+The SDK error context and JSON diagnostic include `item_id` and a bounded
+`tombstone` with deletion time, recoverability, and the last materialized durable
+version. Human output supplies the same recovery commands:
+
+```bash
+pm get <id> --at <last-materialized-version>
+pm restore <id> <last-materialized-version>
+```
+
+The not-found exit code remains `3`. Hosts that branch on diagnostic codes
+should handle `item_deleted` alongside other not-found cases; the new context
+fields are optional on general SDK errors. No existing required SDK input changes.
+
+The diagnostic verifies retained history before claiming deletion. A missing
+file whose history ends in a live state is not called deleted. A corrupt stream
+retains its integrity refusal. For legacy compacted streams, a timestamp is
+suggested only if it selects exactly the last materialized state; ambiguous
+timestamps or a pruned materialized state report `recoverable: false` and direct
+the caller to retained history and version control. The suggested read is
+available as `recovery.suggested_retry_args` for execution without shell parsing.
+
+Immutable event naming is documented in [History operations](HISTORY_OPERATIONS.md).
 
 Deleting an item retains its identity reservation through its history file.
 Generated IDs skip those reservations, even under reproducible execution.

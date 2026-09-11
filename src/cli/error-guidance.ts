@@ -19,6 +19,8 @@ import { discoverNearbyPmRoot } from "../sdk/tracker-root-discovery.js";
 import { stripGlobalBootstrapTokens } from "../sdk/cli-bootstrap.js";
 
 interface GuidanceMessage {
+  itemId?: string;
+  tombstone?: PmCliErrorContext["tombstone"];
   code: string;
   type: string;
   title: string;
@@ -51,6 +53,10 @@ export interface PmRefusalEnvelope {
 
 /** Documents the json error envelope payload exchanged by command, SDK, and package integrations. */
 export interface JsonErrorEnvelope {
+  /** Exact item identity attached to a storage diagnostic. */
+  item_id?: string;
+  /** Verified retained deletion and its recoverable version. */
+  tombstone?: PmCliErrorContext["tombstone"];
   /** Schema type that determines the shape and validation rules for this value. */
   type: string;
   /** Value that configures or reports code for this contract. */
@@ -103,6 +109,10 @@ export function projectLeanErrorEnvelope(
 
 /** Documents the error classification payload exchanged by command, SDK, and package integrations. */
 export interface ErrorClassification {
+  /** Exact item identity attached to a storage diagnostic. */
+  item_id?: string;
+  /** Verified retained deletion and its recoverable version. */
+  tombstone?: PmCliErrorContext["tombstone"];
   /** Schema type that determines the shape and validation rules for this value. */
   type: string;
   /** Value that configures or reports code for this contract. */
@@ -603,6 +613,10 @@ export function renderGuidanceMessage(message: GuidanceMessage): string {
 function attachStructuredGuidanceDetails<
   Payload extends JsonErrorEnvelope | ErrorClassification,
 >(payload: Payload, message: GuidanceMessage): Payload {
+  if (message.tombstone !== undefined) {
+    payload.tombstone = message.tombstone;
+    payload.item_id = message.itemId;
+  }
   if (includeWhyInStructuredGuidance(message)) {
     payload.why = message.why;
   }
@@ -906,6 +920,8 @@ function applyPmCliErrorContext(
     flag: context.flag,
     value: context.value,
     unmatchedSelectors: context.unmatched_selectors,
+    itemId: context.item_id,
+    tombstone: context.tombstone,
     availableDependencies: context.available_dependencies,
     recovery,
   };

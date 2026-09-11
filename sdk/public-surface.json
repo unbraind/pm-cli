@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1948,
+    "covered_symbols": 1956,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1949
+    "required_symbols": 1957
   },
   "breaking_acknowledgements": [
     {
@@ -1947,6 +1947,25 @@
       ],
       "package_version": "2026.9.10",
       "reason": "Schema version literal advances from 4.18 to 4.19 for backward-compatible optional policy id operand; all prior authoring inputs remain supported."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ContractsResult",
+        "signature ./sdk:PmCliErrorContext",
+        "signature ./sdk/runtime:ContractsResult"
+      ],
+      "package_version": "2026.9.11",
+      "reason": "Add optional history_operations contract and optional tombstone recovery context fields; existing signatures and required inputs remain supported."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_HISTORY_OPERATION_CONTRACT",
+        "signature ./sdk:PM_HISTORY_OPERATION_PATTERNS",
+        "signature ./sdk/contracts:PM_HISTORY_OPERATION_CONTRACT",
+        "signature ./sdk/contracts:PM_HISTORY_OPERATION_PATTERNS"
+      ],
+      "package_version": "2026.9.11",
+      "reason": "Complete the new history operation contract with the existing schema remap-status and compensation identities; no existing operation is removed."
     }
   ],
   "entrypoints": {
@@ -5107,7 +5126,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ContractsResult",
-          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; command_alias_contracts_omitted_reason?: string; grammar_contracts?: { nouns: readonly string[]; shared_verbs: readonly string[]; scope_before_verb: boolean; visible_top_level_ceiling: number; ceiling_raise_requires_pm_item: boolean; positional_shape_budget: number; positional_shape_count: number; positional_action_count: number; positional_action_parents: readonly string[]; positional_signatures?: readonly PmCommandPositionalContract[]; destinations?: readonly PmCommandDestinationContract[]; }; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; output_projection_contracts?: { global_ladder_field: \"output_policy.degradation_ladder\"; global_ladder_scope: \"union_not_per_command\"; discovery: \"pm contracts --command <command> --summary\"; commands?: Array<{ command: string; modes: string[]; }>; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; relationship_kind_contracts?: Array<{ canonical: string; aliases: string[]; inverse?: string; ordering: boolean; hierarchy: boolean; }>; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; assurance_contracts?: { measurement_source_kinds: readonly string[]; gate_triggers: readonly string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; read_output_dimensions?: readonly PmReadOutputSurfaceContract[]; error_codes?: readonly PmErrorCodeContract[]; command_output_contracts?: Array<{ budget: PmCommandOutputBudgetContract; envelope: PmCommandOutputEnvelopeContract; }>; diagnostic_output_contracts?: readonly PmDiagnosticOutputBudgetContract[]; command_exit_contracts?: { vocabulary: readonly PmCommandExitOutcomeContract[]; command_sets: Array<{ commands: string[]; exit_codes: PmCommandExitContract[\"exit_codes\"]; }>; }; }"
+          "signature": "export interface ContractsResult { history_operations?: typeof PM_HISTORY_OPERATION_CONTRACT; schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; command_alias_contracts_omitted_reason?: string; grammar_contracts?: { nouns: readonly string[]; shared_verbs: readonly string[]; scope_before_verb: boolean; visible_top_level_ceiling: number; ceiling_raise_requires_pm_item: boolean; positional_shape_budget: number; positional_shape_count: number; positional_action_count: number; positional_action_parents: readonly string[]; positional_signatures?: readonly PmCommandPositionalContract[]; destinations?: readonly PmCommandDestinationContract[]; }; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; output_projection_contracts?: { global_ladder_field: \"output_policy.degradation_ladder\"; global_ladder_scope: \"union_not_per_command\"; discovery: \"pm contracts --command <command> --summary\"; commands?: Array<{ command: string; modes: string[]; }>; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; relationship_kind_contracts?: Array<{ canonical: string; aliases: string[]; inverse?: string; ordering: boolean; hierarchy: boolean; }>; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; assurance_contracts?: { measurement_source_kinds: readonly string[]; gate_triggers: readonly string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; read_output_dimensions?: readonly PmReadOutputSurfaceContract[]; error_codes?: readonly PmErrorCodeContract[]; command_output_contracts?: Array<{ budget: PmCommandOutputBudgetContract; envelope: PmCommandOutputEnvelopeContract; }>; diagnostic_output_contracts?: readonly PmDiagnosticOutputBudgetContract[]; command_exit_contracts?: { vocabulary: readonly PmCommandExitOutcomeContract[]; command_sets: Array<{ commands: string[]; exit_codes: PmCommandExitContract[\"exit_codes\"]; }>; }; }"
         },
         {
           "classification": "supported",
@@ -10708,6 +10727,12 @@
           "signature": "(value: unknown) => ExtensionContributionInventory | null | undefined | calls: (value: unknown) => ExtensionContributionInventory | null | undefined"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "normalizeHistoryOperationForWrite",
+          "signature": "(operation: string) => string | calls: (operation: string) => string"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "normalizeInvalidHistoryProvenance",
@@ -12042,8 +12067,32 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_HISTORY_OPERATION_ALIASES",
+          "signature": "Readonly<Record<string, string>>"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_HISTORY_OPERATION_CONTRACT",
+          "signature": "{ readonly version: 1; readonly item: readonly [\"append\", \"cancel\", \"claim\", \"close\", \"comment_add\", \"comment_edit\", \"comment_delete\", \"create\", \"delete\", \"docs_add\", \"docs_remove\", \"files_add\", \"files_remove\", \"files_discover\", \"history_author_acknowledge\", \"history_compact\", \"history_compact_baseline\", \"history_redact\", \"history_repair\", \"history_salvage\", \"import\", \"improvement_observe\", \"learning_add\", \"learning_edit\", \"learning_delete\", \"normalize\", \"note_add\", \"note_edit\", \"note_delete\", \"plan_create_metadata\", \"plan_create_initial_step\", \"plan_add_step\", \"plan_reorder_step\", \"plan_remove_step\", \"plan_link_step\", \"plan_unlink_step\", \"plan_append_decision\", \"plan_append_discovery\", \"plan_append_validation\", \"plan_resume\", \"plan_approve\", \"plan_materialize\", \"plan_update_step\", \"plan_complete_step\", \"plan_block_step\", \"policy_approve\", \"policy_refused\", \"release\", \"reopen\", \"restore\", \"schema_migration\", \"schema_migration_reference\", \"test_run_track\", \"tests_add\", \"tests_remove\", \"tests_update\", \"update\", \"update_audit\", \"update_ownership_bypass\", \"workspace_snapshot_restore\", \"extension_migrations_apply\", \"merge_reconcile\"]; readonly workspace: readonly [\"history:author-acknowledge\", \"settings:write\", \"init:type_preset\", \"templates:save\", \"profile:apply-types\", \"profile:apply-statuses\", \"profile:apply-fields\", \"profile:apply-config\", \"schema:add-type\", \"schema:remove-type\", \"schema:add-status\", \"schema:remove-status\", \"schema:add-field\", \"schema:remove-field\", \"schema:apply-preset\", \"schema:infer-types\", \"schema:policy-put\", \"schema:policy-remove\", \"schema:policy-mode\", \"assurance:bundle:apply\", \"assurance:gate:verdict\", \"telemetry:install_id\", \"telemetry:first_run_prompt\", \"telemetry:clear\", \"item_format:auto_select_default\"]; readonly aliases: Readonly<Record<string, string>>; readonly patterns: readonly [\"^config:(?:set|unset):[a-z][a-z0-9_.:-]*$\", \"^assurance:(?:measurement|invariant|gate):(?:put|remove)$\", \"^schema_(?:rename_type|rename_status|remap_status|rename_field|remove_type|remove_status|remove_field)(?:_compensate)?$\", \"^extension:[a-z][a-z0-9_-]*:[a-z][a-z0-9_]*$\"]; readonly read_policy: \"preserve_original_operation\"; readonly custom_operation_grammar: \"extension:<package_name>:<snake_case_operation>\"; readonly legacy_custom_operation_grammar: \"lowercase segments separated by underscore, hyphen, colon, or dot; optional opaque colon-suffixed retry key\"; readonly excluded_surfaces: readonly [\"json_patch\", \"on_write_hook\", \"telemetry_span\"]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_HISTORY_OPERATION_PATTERNS",
+          "signature": "readonly [\"^config:(?:set|unset):[a-z][a-z0-9_.:-]*$\", \"^assurance:(?:measurement|invariant|gate):(?:put|remove)$\", \"^schema_(?:rename_type|rename_status|remap_status|rename_field|remove_type|remove_status|remove_field)(?:_compensate)?$\", \"^extension:[a-z][a-z0-9_-]*:[a-z][a-z0-9_]*$\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_ITEM_ACTION_SUBCOMMANDS",
           "signature": "readonly [\"reopen\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_ITEM_HISTORY_OPERATIONS",
+          "signature": "readonly [\"append\", \"cancel\", \"claim\", \"close\", \"comment_add\", \"comment_edit\", \"comment_delete\", \"create\", \"delete\", \"docs_add\", \"docs_remove\", \"files_add\", \"files_remove\", \"files_discover\", \"history_author_acknowledge\", \"history_compact\", \"history_compact_baseline\", \"history_redact\", \"history_repair\", \"history_salvage\", \"import\", \"improvement_observe\", \"learning_add\", \"learning_edit\", \"learning_delete\", \"normalize\", \"note_add\", \"note_edit\", \"note_delete\", \"plan_create_metadata\", \"plan_create_initial_step\", \"plan_add_step\", \"plan_reorder_step\", \"plan_remove_step\", \"plan_link_step\", \"plan_unlink_step\", \"plan_append_decision\", \"plan_append_discovery\", \"plan_append_validation\", \"plan_resume\", \"plan_approve\", \"plan_materialize\", \"plan_update_step\", \"plan_complete_step\", \"plan_block_step\", \"policy_approve\", \"policy_refused\", \"release\", \"reopen\", \"restore\", \"schema_migration\", \"schema_migration_reference\", \"test_run_track\", \"tests_add\", \"tests_remove\", \"tests_update\", \"update\", \"update_audit\", \"update_ownership_bypass\", \"workspace_snapshot_restore\", \"extension_migrations_apply\", \"merge_reconcile\"]"
         },
         {
           "classification": "advanced_export",
@@ -12436,6 +12485,12 @@
           "signature": "\"pm.agent-verdict/v1\""
         },
         {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_WORKSPACE_HISTORY_OPERATIONS",
+          "signature": "readonly [\"history:author-acknowledge\", \"settings:write\", \"init:type_preset\", \"templates:save\", \"profile:apply-types\", \"profile:apply-statuses\", \"profile:apply-fields\", \"profile:apply-config\", \"schema:add-type\", \"schema:remove-type\", \"schema:add-status\", \"schema:remove-status\", \"schema:add-field\", \"schema:remove-field\", \"schema:apply-preset\", \"schema:infer-types\", \"schema:policy-put\", \"schema:policy-remove\", \"schema:policy-mode\", \"assurance:bundle:apply\", \"assurance:gate:verdict\", \"telemetry:install_id\", \"telemetry:first_run_prompt\", \"telemetry:clear\", \"item_format:auto_select_default\"]"
+        },
+        {
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_WORKSPACE_RECIPE_SCHEMA",
@@ -12571,7 +12626,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { code?: string; item_id?: string; item_path?: string; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { code?: string; item_id?: string; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; item_path?: string; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -15832,6 +15887,12 @@
           "signature": "export type ReproducibleProcessRunner = ReproducibleExecutionRunner;"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "requireHistoryOperation",
+          "signature": "(operation: string) => string | calls: (operation: string) => string"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "requireTerminalReason",
@@ -16094,6 +16155,12 @@
           "kind": "function",
           "name": "resolveHistoryHashAlgorithm",
           "signature": "(value?: string) => HistoryHashAlgorithm | calls: (value?: string) => HistoryHashAlgorithm"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolveHistoryOperation",
+          "signature": "(operation: string) => string | calls: (operation: string) => string"
         },
         {
           "classification": "advanced_export",
@@ -22614,6 +22681,12 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "normalizeHistoryOperationForWrite",
+          "signature": "(operation: string) => string | calls: (operation: string) => string"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "normalizeReadOutputIncludeModeOptions",
           "signature": "(command: string, options: Record<string, unknown>) => void | calls: (command: string, options: Record<string, unknown>) => void"
         },
@@ -22872,8 +22945,32 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_HISTORY_OPERATION_ALIASES",
+          "signature": "Readonly<Record<string, string>>"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_HISTORY_OPERATION_CONTRACT",
+          "signature": "{ readonly version: 1; readonly item: readonly [\"append\", \"cancel\", \"claim\", \"close\", \"comment_add\", \"comment_edit\", \"comment_delete\", \"create\", \"delete\", \"docs_add\", \"docs_remove\", \"files_add\", \"files_remove\", \"files_discover\", \"history_author_acknowledge\", \"history_compact\", \"history_compact_baseline\", \"history_redact\", \"history_repair\", \"history_salvage\", \"import\", \"improvement_observe\", \"learning_add\", \"learning_edit\", \"learning_delete\", \"normalize\", \"note_add\", \"note_edit\", \"note_delete\", \"plan_create_metadata\", \"plan_create_initial_step\", \"plan_add_step\", \"plan_reorder_step\", \"plan_remove_step\", \"plan_link_step\", \"plan_unlink_step\", \"plan_append_decision\", \"plan_append_discovery\", \"plan_append_validation\", \"plan_resume\", \"plan_approve\", \"plan_materialize\", \"plan_update_step\", \"plan_complete_step\", \"plan_block_step\", \"policy_approve\", \"policy_refused\", \"release\", \"reopen\", \"restore\", \"schema_migration\", \"schema_migration_reference\", \"test_run_track\", \"tests_add\", \"tests_remove\", \"tests_update\", \"update\", \"update_audit\", \"update_ownership_bypass\", \"workspace_snapshot_restore\", \"extension_migrations_apply\", \"merge_reconcile\"]; readonly workspace: readonly [\"history:author-acknowledge\", \"settings:write\", \"init:type_preset\", \"templates:save\", \"profile:apply-types\", \"profile:apply-statuses\", \"profile:apply-fields\", \"profile:apply-config\", \"schema:add-type\", \"schema:remove-type\", \"schema:add-status\", \"schema:remove-status\", \"schema:add-field\", \"schema:remove-field\", \"schema:apply-preset\", \"schema:infer-types\", \"schema:policy-put\", \"schema:policy-remove\", \"schema:policy-mode\", \"assurance:bundle:apply\", \"assurance:gate:verdict\", \"telemetry:install_id\", \"telemetry:first_run_prompt\", \"telemetry:clear\", \"item_format:auto_select_default\"]; readonly aliases: Readonly<Record<string, string>>; readonly patterns: readonly [\"^config:(?:set|unset):[a-z][a-z0-9_.:-]*$\", \"^assurance:(?:measurement|invariant|gate):(?:put|remove)$\", \"^schema_(?:rename_type|rename_status|remap_status|rename_field|remove_type|remove_status|remove_field)(?:_compensate)?$\", \"^extension:[a-z][a-z0-9_-]*:[a-z][a-z0-9_]*$\"]; readonly read_policy: \"preserve_original_operation\"; readonly custom_operation_grammar: \"extension:<package_name>:<snake_case_operation>\"; readonly legacy_custom_operation_grammar: \"lowercase segments separated by underscore, hyphen, colon, or dot; optional opaque colon-suffixed retry key\"; readonly excluded_surfaces: readonly [\"json_patch\", \"on_write_hook\", \"telemetry_span\"]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_HISTORY_OPERATION_PATTERNS",
+          "signature": "readonly [\"^config:(?:set|unset):[a-z][a-z0-9_.:-]*$\", \"^assurance:(?:measurement|invariant|gate):(?:put|remove)$\", \"^schema_(?:rename_type|rename_status|remap_status|rename_field|remove_type|remove_status|remove_field)(?:_compensate)?$\", \"^extension:[a-z][a-z0-9_-]*:[a-z][a-z0-9_]*$\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_ITEM_ACTION_SUBCOMMANDS",
           "signature": "readonly [\"reopen\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_ITEM_HISTORY_OPERATIONS",
+          "signature": "readonly [\"append\", \"cancel\", \"claim\", \"close\", \"comment_add\", \"comment_edit\", \"comment_delete\", \"create\", \"delete\", \"docs_add\", \"docs_remove\", \"files_add\", \"files_remove\", \"files_discover\", \"history_author_acknowledge\", \"history_compact\", \"history_compact_baseline\", \"history_redact\", \"history_repair\", \"history_salvage\", \"import\", \"improvement_observe\", \"learning_add\", \"learning_edit\", \"learning_delete\", \"normalize\", \"note_add\", \"note_edit\", \"note_delete\", \"plan_create_metadata\", \"plan_create_initial_step\", \"plan_add_step\", \"plan_reorder_step\", \"plan_remove_step\", \"plan_link_step\", \"plan_unlink_step\", \"plan_append_decision\", \"plan_append_discovery\", \"plan_append_validation\", \"plan_resume\", \"plan_approve\", \"plan_materialize\", \"plan_update_step\", \"plan_complete_step\", \"plan_block_step\", \"policy_approve\", \"policy_refused\", \"release\", \"reopen\", \"restore\", \"schema_migration\", \"schema_migration_reference\", \"test_run_track\", \"tests_add\", \"tests_remove\", \"tests_update\", \"update\", \"update_audit\", \"update_ownership_bypass\", \"workspace_snapshot_restore\", \"extension_migrations_apply\", \"merge_reconcile\"]"
         },
         {
           "classification": "contract_data",
@@ -23006,6 +23103,12 @@
           "kind": "value",
           "name": "PM_TOOL_RESERVED_CUSTOM_FIELD_PROPERTIES",
           "signature": "ReadonlySet<string>"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_WORKSPACE_HISTORY_OPERATIONS",
+          "signature": "readonly [\"history:author-acknowledge\", \"settings:write\", \"init:type_preset\", \"templates:save\", \"profile:apply-types\", \"profile:apply-statuses\", \"profile:apply-fields\", \"profile:apply-config\", \"schema:add-type\", \"schema:remove-type\", \"schema:add-status\", \"schema:remove-status\", \"schema:add-field\", \"schema:remove-field\", \"schema:apply-preset\", \"schema:infer-types\", \"schema:policy-put\", \"schema:policy-remove\", \"schema:policy-mode\", \"assurance:bundle:apply\", \"assurance:gate:verdict\", \"telemetry:install_id\", \"telemetry:first_run_prompt\", \"telemetry:clear\", \"item_format:auto_select_default\"]"
         },
         {
           "classification": "contract_data",
@@ -23766,6 +23869,12 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "requireHistoryOperation",
+          "signature": "(operation: string) => string | calls: (operation: string) => string"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "resolveCanonicalPmErrorCodeContract",
           "signature": "(code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract | calls: (code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract"
         },
@@ -23774,6 +23883,12 @@
           "kind": "function",
           "name": "resolveContextIntentContract",
           "signature": "(command: string, intent: string, contracts?: readonly PmContextIntentContract[], positionalArguments?: readonly string[]) => PmContextIntentContract | undefined | calls: (command: string, intent: string, contracts?: readonly PmContextIntentContract[], positionalArguments?: readonly string[]) => PmContextIntentContract | undefined"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolveHistoryOperation",
+          "signature": "(operation: string) => string | calls: (operation: string) => string"
         },
         {
           "classification": "contract_data",
@@ -31375,7 +31490,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ContractsResult",
-          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; command_alias_contracts_omitted_reason?: string; grammar_contracts?: { nouns: readonly string[]; shared_verbs: readonly string[]; scope_before_verb: boolean; visible_top_level_ceiling: number; ceiling_raise_requires_pm_item: boolean; positional_shape_budget: number; positional_shape_count: number; positional_action_count: number; positional_action_parents: readonly string[]; positional_signatures?: readonly PmCommandPositionalContract[]; destinations?: readonly PmCommandDestinationContract[]; }; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; output_projection_contracts?: { global_ladder_field: \"output_policy.degradation_ladder\"; global_ladder_scope: \"union_not_per_command\"; discovery: \"pm contracts --command <command> --summary\"; commands?: Array<{ command: string; modes: string[]; }>; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; relationship_kind_contracts?: Array<{ canonical: string; aliases: string[]; inverse?: string; ordering: boolean; hierarchy: boolean; }>; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; assurance_contracts?: { measurement_source_kinds: readonly string[]; gate_triggers: readonly string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; read_output_dimensions?: readonly PmReadOutputSurfaceContract[]; error_codes?: readonly PmErrorCodeContract[]; command_output_contracts?: Array<{ budget: PmCommandOutputBudgetContract; envelope: PmCommandOutputEnvelopeContract; }>; diagnostic_output_contracts?: readonly PmDiagnosticOutputBudgetContract[]; command_exit_contracts?: { vocabulary: readonly PmCommandExitOutcomeContract[]; command_sets: Array<{ commands: string[]; exit_codes: PmCommandExitContract[\"exit_codes\"]; }>; }; }"
+          "signature": "export interface ContractsResult { history_operations?: typeof PM_HISTORY_OPERATION_CONTRACT; schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; command_alias_contracts_omitted_reason?: string; grammar_contracts?: { nouns: readonly string[]; shared_verbs: readonly string[]; scope_before_verb: boolean; visible_top_level_ceiling: number; ceiling_raise_requires_pm_item: boolean; positional_shape_budget: number; positional_shape_count: number; positional_action_count: number; positional_action_parents: readonly string[]; positional_signatures?: readonly PmCommandPositionalContract[]; destinations?: readonly PmCommandDestinationContract[]; }; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; output_projection_contracts?: { global_ladder_field: \"output_policy.degradation_ladder\"; global_ladder_scope: \"union_not_per_command\"; discovery: \"pm contracts --command <command> --summary\"; commands?: Array<{ command: string; modes: string[]; }>; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; relationship_kind_contracts?: Array<{ canonical: string; aliases: string[]; inverse?: string; ordering: boolean; hierarchy: boolean; }>; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; assurance_contracts?: { measurement_source_kinds: readonly string[]; gate_triggers: readonly string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; read_output_dimensions?: readonly PmReadOutputSurfaceContract[]; error_codes?: readonly PmErrorCodeContract[]; command_output_contracts?: Array<{ budget: PmCommandOutputBudgetContract; envelope: PmCommandOutputEnvelopeContract; }>; diagnostic_output_contracts?: readonly PmDiagnosticOutputBudgetContract[]; command_exit_contracts?: { vocabulary: readonly PmCommandExitOutcomeContract[]; command_sets: Array<{ commands: string[]; exit_codes: PmCommandExitContract[\"exit_codes\"]; }>; }; }"
         },
         {
           "classification": "supported",
@@ -34830,6 +34945,7 @@
     "invalid_reproducible_process_environment",
     "invalid_workspace_snapshot_target",
     "item_already_active",
+    "item_deleted",
     "item_document_encoding_invalid",
     "item_document_invalid",
     "item_document_roundtrip_failed",

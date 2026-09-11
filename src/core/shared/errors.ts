@@ -53,6 +53,17 @@ export interface PmCliErrorContext {
   code?: string;
   /** Item whose document could not be decoded or parsed. */
   item_id?: string;
+  /** Verified retained deletion and the latest recoverable durable address. */
+  tombstone?: {
+    /** The retained stream proves the item is currently deleted. */
+    deleted: true;
+    /** Timestamp of the most recent recorded deletion. */
+    deleted_at: string;
+    /** Whether a retained materialized state has an unambiguous recovery address. */
+    recoverable: boolean;
+    /** Durable version before deletion, or null when compaction lost the mapping. */
+    last_materialized_version: number | null;
+  };
   /** Exact filesystem path of the unreadable item document. */
   item_path?: string;
   /** Original document size before decoding or parsing. */
