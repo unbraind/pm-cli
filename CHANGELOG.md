@@ -8,6 +8,9 @@
 
 ### Fixed
 
+- GH-1233: Make strict ownership recovery executable for annotation writes ([pm-nrkjik](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nrkjik.toon))
+- GH-1232: Normalize policy authoring ids with actionable mismatch recovery ([pm-ycv2cz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ycv2cz.toon))
+- GH-1231: Expose non-vacuous lifecycle completeness evidence ([pm-khd2fd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-khd2fd.toon))
 - The history integrity chain hard-codes SHA-256 with no algorithm identifier, so the proof it produces has no migration path across the decades it claims to cover ([pm-bbk8we](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bbk8we.toon))
 - Optional undefined result fields silently drop telemetry completion events ([pm-rqaqfp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rqaqfp.toon))
 - GH-1229: preserve bounded HTTP process-tree cleanup when POSIX liveness returns EPERM ([pm-qn9zxu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qn9zxu.toon))

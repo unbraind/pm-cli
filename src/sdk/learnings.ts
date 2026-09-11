@@ -88,13 +88,13 @@ export async function runLearnings(
     ),
     conflictGuidance: {
       required:
-        "For an approved append-only handoff on another owner's item, use the package-provided ownership bypass before considering --force.",
+        "Strict ownership also protects annotations. Ask the current owner to run pm release <id>, then run pm claim <id>; use --force only for an explicitly approved override.",
       examples: [
-        'pm learnings pm-a1b2 --add "review learning" --author "reviewer" --force',
+        'pm claim <id>',
       ],
       nextSteps: [
-        "Use an installed package's narrow append-only ownership bypass when available.",
-        "Use --force only when an ownership override is explicitly approved.",
+        "For an approved append without reassignment: pm package install governance-audit --project; then pm learnings --help lists the package-owned append bypass. Edit/delete still require ownership.",
+        "For a non-terminal handoff, the current owner runs pm release <id>; then you run pm claim <id> before retrying. Claim refuses work still held by another owner; --force requires an explicitly approved override.",
       ],
     },
   });

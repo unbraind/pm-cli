@@ -4,6 +4,28 @@ Trackers: [pm-fmy9ih](../../.agents/pm/tasks/pm-fmy9ih.toon), [pm-vjk3](../../.a
 
 First-party package that restores optional governance audit surfaces in bare-core `pm`.
 
+## Concurrent annotations under strict ownership
+
+Tracked by [pm-nrkjik](../../.agents/pm/issues/pm-nrkjik.toon).
+
+Merge-safe notes preserve independent entries during merging. Strict ownership
+still applies to writes. For an approved append across owners, install this
+package and use its narrow flag:
+
+```bash
+pm package install governance-audit --project
+pm notes pm-example "Review observation" --allow-audit-comment
+```
+
+The same flag works for `comments` and `learnings`. It permits additions only:
+edit and delete still require ownership, and the existing assignee is preserved.
+For a non-terminal handoff, the current owner runs `pm release <id>`, then the
+new owner runs `pm claim <id>`; claim refuses work still held by another owner.
+This changes the assignee;
+it is a different operation from appending an observation. Bare `--force` remains
+an explicit override requiring approval. Body `append` is not merge-safe and has
+no annotation bypass; use a note when the information is an independent event.
+
 ## Hooks
 
 The package also registers default-inert `onRead` and `onWrite` hooks as the

@@ -38,6 +38,14 @@ export async function readWorkflowCompletenessCheck(
   return buildWorkflowCompletenessCheck(document, items, rowLimit, sourceIncomplete);
 }
 
+/** Classify contract applicability separately from evidence compliance. */
+function completenessContractStatus(requirements: number, items: number, governed: number): string {
+  if (requirements === 0) return "undeclared";
+  if (items === 0) return "empty";
+  if (governed === 0) return "inapplicable";
+  return governed === items ? "covered" : "partial";
+}
+
 /** Evaluate every supplied item while bounding the diagnostic rows independently. */
 export function buildWorkflowCompletenessCheck(
   document: WorkflowPolicyDocument,
@@ -47,6 +55,11 @@ export function buildWorkflowCompletenessCheck(
 ): { check: ValidateCheck; warnings: string[] } {
   const violations: WorkflowCompletenessViolation[] = [];
   const byType = new Map<string, { items: number; violations: number; missing_fields: number }>();
+  const requirements = document.policies.filter((policy) => policy.rule.kind === "require_fields");
+  const stateRequirements = requirements.filter((policy) => policy.subject?.operations === undefined);
+  const appliedPolicyIds = new Set<string>();
+  let governedItems = 0;
+  let requirementApplications = 0;
   let violationCount = 0;
   let incompleteItems = 0;
   let refused = 0;
@@ -55,6 +68,9 @@ export function buildWorkflowCompletenessCheck(
     const evaluation = evaluate({
       operation: "", author: "", before: item, after: item, completeness_only: true,
     });
+    governedItems += Number(evaluation.decisions.length > 0);
+    requirementApplications += evaluation.decisions.length;
+    evaluation.decisions.forEach((decision) => appliedPolicyIds.add(decision.policy_id));
     const missing = evaluation.decisions.filter((decision) => !decision.satisfied);
     if (missing.length === 0) continue;
     incompleteItems += 1;
@@ -73,6 +89,14 @@ export function buildWorkflowCompletenessCheck(
   return {
     check: { name: "completeness", status, ok: status === "ok", details: {
       scope: "operation_independent_require_fields",
+      declared_requirement_count: requirements.length,
+      state_requirement_count: stateRequirements.length,
+      applicable_requirement_count: appliedPolicyIds.size,
+      requirement_application_count: requirementApplications,
+      governed_items: governedItems, ungoverned_items: items.length - governedItems,
+      contract_status: completenessContractStatus(requirements.length, items.length, governedItems),
+      applied_policy_ids: [...appliedPolicyIds].sort().slice(0, Math.max(0, rowLimit)),
+      applied_policy_ids_truncated: appliedPolicyIds.size > Math.max(0, rowLimit),
       checked_items: items.length, incomplete_items: incompleteItems, violation_count: violationCount,
       refused_violations: refused, missing_by_type: Object.fromEntries(byType),
       violations, violations_truncated: violations.length < violationCount,

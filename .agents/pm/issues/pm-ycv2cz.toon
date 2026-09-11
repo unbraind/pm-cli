@@ -1,0 +1,66 @@
+id: pm-ycv2cz
+title: "GH-1232: Normalize policy authoring ids with actionable mismatch recovery"
+description: A positional policy id must populate an omitted definition.id; a self-contained definition must work without a second id; conflicting ids must fail before durable writes with actionable guidance.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-11T06:19:08.219Z"
+updated_at: "2026-09-11T06:58:59.061Z"
+closed_at: "2026-09-11T06:58:58.400Z"
+completed_at: "2026-09-11T06:58:58.400Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: SDK CLI and MCP support either id source and identical ids; mismatch and malformed id fail atomically; a refusal gives enough information to repair the invocation.
+goal: project management = context management
+objective: Make governance contracts independently understandable and executable across all transports
+value: Reduce agent retry cost while preserving declared workspace guarantees
+parent: pm-f05lsg
+repro_steps: "https://github.com/unbraind/pm-cli/issues/1232"
+resolution: "Normalize policy ids once in the SDK from either operand or definition, preserve atomic mismatch rejection and align CLI/MCP schema 4.19."
+expected_result: Either single id source succeeds; conflicting ids refuse without registry or history writes.
+actual_result: "Real SDK/CLI/MCP tests pass for both sources, normalized idempotence and immutable mismatch refusal; generated contracts and SDK surface agree."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-mj42og,discovered_from,"2026-09-11T06:19:08.219Z","harness:codex","cli:create:dep",detected
+  pm-mj42og,verifies,"2026-09-11T06:19:08.219Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-11T06:19:08.219Z","harness:codex","Duplicate check: complete live all-status PM inventory has 2732 items with complete source receipts and no omissions; keyword searches for issue numbers and policy authoring/completeness/ownership concepts found no dedicated issue. Existing delivered feature and recovery lineage retained. GitHub has no open PRs or Dependabot/code-scanning alerts; three open reports already have canonical PM link comments."
+  "2026-09-11T06:25:44.961Z","harness:codex","TDD and integration evidence: the initial new completeness and policy-id regressions both failed before implementation. All 53 focused tests now pass, including real CLI and MCP policy-id normalization, an assurance floor that fails with no policy, passes with an applicable policy and fails after deletion, and installed governance-audit append flags preserving assignment while edits/deletes refuse. Complete-population duplicate check and the delivered historical foundations are recorded. Full repository coverage, static gates, temporary manual acceptance and hosted review remain required."
+  "2026-09-11T06:58:23.256Z","harness:codex","Verification progress: final typecheck, SDK snapshot check, generated CLI contract check, repository static quality and docs/skills checks passed. Linked regression suite passed 53 tests. Direct manual temporary CLI acceptance passed operand-only policy creation plus fail/pass evidence validation. Bare-core package-boundary rules and complexity limits remain unchanged."
+  "2026-09-11T06:58:57.659Z","harness:codex","Local implementation verification complete: 8706 tests across 667 files passed; exact coverage 64172/64172 statements, 48869/48869 branches, 13337/13337 functions and 61480/61480 lines. Static quality, typecheck, generated contracts, SDK snapshot, package boundary, docs and exact 100 percent source/export/member docstrings passed. Manual temporary acceptance and linked tests passed. Hosted PR review, analyzer checks and merge remain delivery gates; this closure records implemented behavior, not publication."
+notes[1]{created_at,author,text}:
+  "2026-09-11T06:51:41.165Z","harness:codex","Public authoring compatibility: normalize the single authored id before entering the audited registry transaction; preserve invalid definition rejection, immutable mismatch refusal, no-op idempotence, dry-run semantics, and the callers object. CLI/MCP schema now requires definition only. The 4.19 schema constant intentionally changes its literal type; the SDK snapshot records the additive contract evolution."
+files[7]{path,scope,note}:
+  sdk/public-surface.json,project,Reviewed additive schema version and normalized policy authoring contract snapshot
+  src/sdk/cli-contracts/tool-schema.ts,project,Governance contract implementation and regression proof
+  src/sdk/governance/workflow-policy.ts,project,Governance contract implementation and regression proof
+  tests/fixtures/contracts/full.json,project,Generated CLI contract parity snapshot for optional policy operand
+  tests/integration/workflow-governance-recovery.spec.ts,project,Governance contract implementation and regression proof
+  tests/unit/sdk/action-schema-parity.spec.ts,project,Governance contract implementation and regression proof
+  tests/unit/sdk/policy/workflow-policy-runtime.spec.ts,project,Governance contract implementation and regression proof
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/workflow-governance-recovery.spec.ts tests/unit/sdk/policy tests/unit/sdk/action-schema-parity.spec.ts,project,240,"harness:codex","2026-09-11T06:25:43.921Z",local_mutation,fix/workflow-contract-evidence-recovery
+test_runs[1]:
+  - run_id: test-local-mtwl9j0r-72xe31
+    kind: test
+    status: passed
+    started_at: "2026-09-11T06:41:38.885Z"
+    finished_at: "2026-09-11T06:42:11.979Z"
+    recorded_at: "2026-09-11T06:42:11.979Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workflow-governance-recovery.spec.ts tests/unit/sdk/policy tests/unit/sdk/action-schema-parity.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/WORKFLOW_POLICIES.md,project,Executable authoring and governance recovery
+close_reason: Implemented and locally verified; include this evidence in the reviewed delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/workflow-governance-recovery.spec.ts tests/unit/sdk/policy tests/unit/sdk/action-schema-parity.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/workflow-governance-recovery.spec.ts tests/unit/sdk/policy tests/unit/sdk/action-schema-parity.spec.ts
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-ycv2cz
+body: ""
