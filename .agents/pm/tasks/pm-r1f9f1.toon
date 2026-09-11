@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-11T14:43:44.220Z"
-updated_at: "2026-09-11T17:16:08.581Z"
+updated_at: "2026-09-11T17:36:01.251Z"
 closed_at: "2026-09-11T17:15:30.629Z"
 completed_at: "2026-09-11T17:15:30.629Z"
 author: "harness:codex"
@@ -26,7 +26,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-eqdo85,verifies,"2026-09-11T14:43:44.220Z","harness:codex","cli:create:dep",detected
   pm-mpbb,implements,"2026-09-11T14:43:44.220Z","harness:codex","cli:create:dep",detected
   pm-eq4x,verifies,"2026-09-11T16:30:47.558Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-09-11T14:43:44.220Z","harness:codex","Duplicate check: complete all-status searches for claim start receipt (70 hits) and start compact (112 hits), refreshed open and in_progress inventories, and full metadata of pm-eqdo85 and pm-eq4x. Plain claim compact receipts and lifecycle aliases are shipped; compound envelopes were intentionally preserved for compatibility. This is a distinct presentation enhancement, not a reopened historical defect. Measured in a disposable tracker with telemetry disabled; no repository items were used as test fixtures."
   "2026-09-11T16:29:31.560Z","harness:codex","large-metadata compound receipt test failed on the baseline. Shared projection now preserves complete typed SDK results and bounds CLI/MCP canonical and alias receipts. Real failed-update acceptance verifies persisted ownership and explicit no-rollback recovery. Twelve focused tests passed across lifecycle compositions, projection integrity, and UX. Full coverage and static checks are running. Only pm-r1f9f1 and pm-gdi7 are active in this implementation worktree."
   "2026-09-11T16:30:51.143Z","harness:codex","Live operational inventory: no open GitHub issues and only existing PR 1237; open Dependabot, code-scanning, and secret-scanning alert APIs each returned empty arrays. Credential scan passed and pnpm audit reported no known vulnerabilities. Outdated inventory contains only out-of-range major upgrades (Vitest 5, TypeScript 7, npm-package-arg 14), not compatible-range patches. PR 1237 latest release-note review is corrected through its canonical item and package generation on its existing branch."
@@ -35,7 +35,9 @@ comments[8]{created_at,author,text}:
   "2026-09-11T16:48:52.564Z","harness:codex","Packed-artifact acceptance passed under Node and Bun, including a real stateless MCP start-task request with a 1079-byte receipt for 31000-byte item metadata. Canonical CLI and legacy full-output paths retain custom values. Published 2026.9.11 independently passed npm/Bun 11-step agent sessions and npx/bunx CLI/MCP discovery and negative controls. Required observability gate passed with zero recent blocking Sentry issues, 2.15% telemetry finish error rate, no missing error codes, matching recent start/finish counts and an empty physical delivery queue. PR 1237 is merged after exact-head checks and inline verification; quota-blocked full review reruns may be skipped per user instruction."
   "2026-09-11T17:08:35.676Z","harness:codex","Final static pipeline passed, including strict documentation coverage, zero duplication, SDK boundary and surface checks, token budgets, graph composition and record integrity. Integration of reviewed main preserved the exact-prefix lifecycle history and reconciled the generated merge receipt through pm. The full live integrity pass checked 2738 items with zero drift, identity discontinuities, pending merge decisions or invalid receipt evidence. Final coverage is running without a concurrent static build."
   "2026-09-11T17:15:14.627Z","harness:codex","Final integrated-branch validation passed: 677 test files and 8732 tests, exact 100/100/100/100 coverage (64302 statements, 48982 branches, 13360 functions, 61592 lines; zero uncovered). Sequential coverage confirmed the earlier subprocess-output failure was not reproduced. Full static gates, linked tests, docs links and credential scan passed. Final packed Node/Bun CLI and real MCP acceptance passed with the documented 31KB customized project. No exclusions, thresholds or peer contracts were weakened."
-files[15]{path,scope,note}:
+  "2026-09-11T17:36:01.251Z","harness:codex","PR 1238 CI found a packaging omission: the merge reconciliation history referenced a pm-generated durable receipt omitted by a clone-local exclude. Commit the existing privacy-safe sidecar (no payload values) so a fresh checkout has the same evidence as the development clone. CodeRabbit full review of 26ae420 reported no actionable findings. No product source or gate threshold changed."
+files[16]{path,scope,note}:
+  .agents/pm/merge-receipts/9c9246d9-2411-4a7c-8303-8e887f310dcf.json,project,Portable privacy-safe evidence required by the integrated main history reference
   sdk/public-surface.json,project,Reviewed additive release result and schema signatures
   src/core/output/mutation-projection.ts,project,Shared compound receipt projection
   src/sdk/cli-contracts/tool-schema.ts,project,Declared projection controls
