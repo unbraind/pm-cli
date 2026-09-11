@@ -21909,6 +21909,7 @@
         "cli/error-guidance.ts",
         "cli/main.ts",
         "cli/register-mutation.ts",
+        "cli/schema/registration.ts",
         "core/telemetry/observability.ts",
         "sdk/governance/assurance-action.ts",
         "sdk/history-redact.ts",
@@ -35978,9 +35979,17 @@
           "force": {
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "pm item id, for example pm-abc1.",
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -60169,12 +60178,20 @@
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -60651,10 +60668,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.19.0"
+    "x-schema-version": "4.20.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.19.0",
+  "schema_version": "4.20.0",
   "selected": {
     "action": null,
     "availability_only": false,

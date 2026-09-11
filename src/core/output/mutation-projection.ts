@@ -11,6 +11,7 @@
  * Compaction is deliberately scoped to the mutation envelope only:
  *   - the envelope's own top-level `changed_fields` (create/update/close/append), and
  *   - `rows[*].changed_fields` (update-many reports its delta per row).
+ *   - recognized start/pause/close composition steps sharing the root item id.
  * It does NOT recurse into arbitrary nested objects, so unrelated payloads that
  * legitimately carry `changed_fields` (for example `pm history --diff` entries, or a
  * custom runtime metadata field) are left untouched.
@@ -38,6 +39,33 @@ const ROWS_KEY = "rows";
 const UPDATE_MANY_MUTATION_MODES = new Set(["apply", "rollback"]);
 const DELETE_OUTCOMES = new Set(["deleted", "would_delete"]);
 const COMPACT_RECURRENCE_TEXT_LIMIT = 256;
+const COMPOUND_MUTATION_STEPS: Readonly<Record<string, readonly string[]>> = {
+  start_task: ["claim", "update"],
+  pause_task: ["update", "release"],
+  close_task: ["close", "release"],
+};
+
+/** Project only recognized lifecycle steps, retaining their order and final persisted status. */
+function projectCompoundMutation(result: unknown, options: MutationProjectionOptions): unknown | null {
+  if (!isPlainObject(result) || typeof result.action !== "string" || typeof result.id !== "string" || result.id.length === 0) return null;
+  const steps = Object.hasOwn(COMPOUND_MUTATION_STEPS, result.action) ? COMPOUND_MUTATION_STEPS[result.action] : undefined;
+  if (!steps || !steps.every((step) => {
+    const value = result[step];
+    return isPlainObject(value) && isPlainObject(value.item) && value.item.id === result.id && Array.isArray(value.changed_fields) && value.changed_fields.every((field) => typeof field === "string");
+  })) return null;
+  const final = result[steps.at(-1)!];
+  const identity = projectIdOnlyResult(final);
+  if (options.idOnly) return identity;
+  if (!options.compactEnvelope && options.changedFields !== "compact") return null;
+  return {
+    ...result,
+    ...(options.compactEnvelope ? {
+      ...identity as Record<string, unknown>,
+      changed_field_count: new Set(steps.flatMap((step) => (result[step] as Record<string, unknown>).changed_fields as string[])).size,
+    } : {}),
+    ...Object.fromEntries(steps.map((step) => [step, projectMutationResult(result[step], options)])),
+  };
+}
 
 function truncateCompactRecurrenceText(value: unknown): unknown {
   if (
@@ -188,8 +216,8 @@ function appendCompactMutationEvidence(result: Record<string, unknown>, item: Re
   if (Array.isArray(result.warnings) && result.warnings.length > 0)
     compact.warnings = result.warnings;
   if (isPlainObject(result.recovery)) compact.recovery = result.recovery;
-  if (typeof result.claimed_by === "string") {
-    for (const key of ["claimed_by", "previous_assignee", "forced", "skipped", "available", "attempts"]) {
+  if (typeof result.claimed_by === "string" || typeof result.released_by === "string") {
+    for (const key of ["claimed_by", "released_by", "previous_assignee", "forced", "skipped", "available", "attempts", "suggestions"]) {
       if (Object.hasOwn(result, key)) compact[key] = result[key];
     }
   }
@@ -227,6 +255,8 @@ export function projectMutationResult(
   result: unknown,
   options: MutationProjectionOptions = {},
 ): unknown {
+  const compound = projectCompoundMutation(result, options);
+  if (compound !== null) return compound;
   if (options.idOnly === true) {
     const idOnly = projectIdOnlyResult(result);
     if (idOnly !== null) {

@@ -17,6 +17,11 @@
 - GH-1232: Normalize policy authoring ids with actionable mismatch recovery ([pm-ycv2cz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ycv2cz.toon))
 - GH-1233: Make strict ownership recovery executable for annotation writes ([pm-nrkjik](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nrkjik.toon))
 
+### Other
+
+- Streamline agent triage and schema command discovery ([pm-gdi7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-gdi7.toon))
+- Compact compound lifecycle receipts without losing SDK results ([pm-r1f9f1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-r1f9f1.toon))
+
 ## 2026.9.11 - 2026-09-11
 
 ### Added

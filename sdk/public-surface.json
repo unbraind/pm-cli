@@ -1973,6 +1973,19 @@
       ],
       "package_version": "2026.9.11",
       "reason": "PmCliErrorContext adds only optional paths string array for typed ambiguity diagnostics; existing callers remain compatible."
+    },
+    {
+      "changes": [
+        "signature ./sdk:LIST_COMMAND_DEFAULT_PROJECTIONS",
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk:ReleaseResult",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/core:ReleaseResult",
+        "signature ./sdk/query:LIST_COMMAND_DEFAULT_PROJECTIONS",
+        "signature ./sdk/runtime:ReleaseResult"
+      ],
+      "package_version": "2026.9.11",
+      "reason": "Intentional compact closed-list default with explicit full restoration; additive optional release changed_fields and additive MCP projection controls with schema minor version 4.20.0. Typed lifecycle SDK results remain complete."
     }
   ],
   "entrypoints": {
@@ -9855,7 +9868,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "LIST_COMMAND_DEFAULT_PROJECTIONS",
-          "signature": "{ readonly list: \"brief\"; readonly \"list-all\": \"full\"; readonly \"list-draft\": \"full\"; readonly \"list-open\": \"brief\"; readonly \"list-in-progress\": \"brief\"; readonly \"list-blocked\": \"brief\"; readonly \"list-closed\": \"full\"; readonly \"list-canceled\": \"full\"; }"
+          "signature": "{ readonly list: \"brief\"; readonly \"list-all\": \"full\"; readonly \"list-draft\": \"full\"; readonly \"list-open\": \"brief\"; readonly \"list-in-progress\": \"brief\"; readonly \"list-blocked\": \"brief\"; readonly \"list-closed\": \"brief\"; readonly \"list-canceled\": \"full\"; }"
         },
         {
           "classification": "contract_data",
@@ -12477,7 +12490,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.19.0\""
+          "signature": "\"4.20.0\""
         },
         {
           "classification": "contract_data",
@@ -15687,7 +15700,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ReleaseResult",
-          "signature": "export interface ReleaseResult { item: Record<string, unknown>; released_by: string; previous_assignee: string | null; forced: boolean; warnings?: string[]; suggestions?: string[]; }"
+          "signature": "export interface ReleaseResult { item: Record<string, unknown>; changed_fields?: string[]; released_by: string; previous_assignee: string | null; forced: boolean; warnings?: string[]; suggestions?: string[]; }"
         },
         {
           "classification": "contract_data",
@@ -23103,7 +23116,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.19.0\""
+          "signature": "\"4.20.0\""
         },
         {
           "classification": "contract_data",
@@ -25353,7 +25366,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ReleaseResult",
-          "signature": "export interface ReleaseResult { item: Record<string, unknown>; released_by: string; previous_assignee: string | null; forced: boolean; warnings?: string[]; suggestions?: string[]; }"
+          "signature": "export interface ReleaseResult { item: Record<string, unknown>; changed_fields?: string[]; released_by: string; previous_assignee: string | null; forced: boolean; warnings?: string[]; suggestions?: string[]; }"
         },
         {
           "classification": "supported",
@@ -30219,7 +30232,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "LIST_COMMAND_DEFAULT_PROJECTIONS",
-          "signature": "{ readonly list: \"brief\"; readonly \"list-all\": \"full\"; readonly \"list-draft\": \"full\"; readonly \"list-open\": \"brief\"; readonly \"list-in-progress\": \"brief\"; readonly \"list-blocked\": \"brief\"; readonly \"list-closed\": \"full\"; readonly \"list-canceled\": \"full\"; }"
+          "signature": "{ readonly list: \"brief\"; readonly \"list-all\": \"full\"; readonly \"list-draft\": \"full\"; readonly \"list-open\": \"brief\"; readonly \"list-in-progress\": \"brief\"; readonly \"list-blocked\": \"brief\"; readonly \"list-closed\": \"brief\"; readonly \"list-canceled\": \"full\"; }"
         },
         {
           "classification": "supported",
@@ -33027,7 +33040,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ReleaseResult",
-          "signature": "export interface ReleaseResult { item: Record<string, unknown>; released_by: string; previous_assignee: string | null; forced: boolean; warnings?: string[]; suggestions?: string[]; }"
+          "signature": "export interface ReleaseResult { item: Record<string, unknown>; changed_fields?: string[]; released_by: string; previous_assignee: string | null; forced: boolean; warnings?: string[]; suggestions?: string[]; }"
         },
         {
           "classification": "advanced_export",

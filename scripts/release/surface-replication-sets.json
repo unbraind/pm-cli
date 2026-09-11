@@ -504,6 +504,14 @@
   ],
   "cli_refusal_dispositions": [
     {
+      "path": "src/cli/schema/registration.ts",
+      "expected_count": 1,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-gdi7",
+      "disposition": "transport_validation",
+      "reason": "The existing missing schema action argument check moved from register-mutation into the focused schema registration module; SDK validation remains unchanged."
+    },
+    {
       "path": "src/cli/register-history-maintenance.ts",
       "expected_count": 4,
       "rule_ownership": "all_occurrences",
@@ -521,7 +529,7 @@
     },
     {
       "path": "src/cli/register-mutation.ts",
-      "expected_count": 14,
+      "expected_count": 13,
       "rule_ownership": "all_occurrences",
       "owner": "pm-185870",
       "disposition": "transport_validation",

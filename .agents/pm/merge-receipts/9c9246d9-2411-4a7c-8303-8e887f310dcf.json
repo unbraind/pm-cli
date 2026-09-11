@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "id": "9c9246d9-2411-4a7c-8303-8e887f310dcf",
+  "item_path": ".agents/pm/tasks/pm-1tns7o.toon",
+  "item_id": "pm-1tns7o",
+  "requested_preference": "ours",
+  "requested_preference_applied": false,
+  "conflict_resolution": "latest_document_update",
+  "fields_from_theirs": [
+    "title"
+  ],
+  "union_fields": [
+    "comments"
+  ],
+  "merged_field_hashes": {
+    "title": "5b11561521f6bab4391b4d9e447d2e1bd4179c76ee0f58ae287853b9e16f27e5",
+    "comments": "560c56506be8cc1f9619a4eb5923e8454ed54d909b6f6c9764f74be7f5c7d9a4"
+  },
+  "decisions": [],
+  "state": "reconciled",
+  "created_at": "2026-09-11T17:03:14.158Z",
+  "value_availability": "hash_only",
+  "value_policy": "bounded_non_sensitive_scalars_v1",
+  "reconciled_at": "2026-09-11T17:05:40.976Z"
+}

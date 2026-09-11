@@ -1591,6 +1591,7 @@ describe("release readiness runtime coverage", () => {
       expectTopLevelKeyOrder(releaseResult.json, [
         "item",
         "released_by",
+        "changed_fields",
         "previous_assignee",
         "forced",
         "warnings",

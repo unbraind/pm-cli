@@ -106,8 +106,6 @@ import {
   type AggregateResult,
 } from "./query/aggregate.js";
 import { runAppend } from "./lifecycle/append.js";
-import { runRelease } from "./lifecycle/claim.js";
-import { runStartTask, runPauseTask, runCloseTask } from "./lifecycle/task-composition.js";
 export { runStartTask, runPauseTask, runCloseTask, type TaskCompositionOptions } from "./lifecycle/task-composition.js";
 import { runCloseMany } from "./lifecycle/close-many.js";
 import { normalizeAnnotationTransportOptions } from "./annotations.js";
@@ -204,7 +202,7 @@ import {
   runMcpHistoryCompactAction,
   runMcpHistoryRepairAction,
 } from "./history-mcp.js";
-import { runMcpClaimAction, runMcpCloseAction, runMcpReopenAction } from "./lifecycle/mcp-actions.js";
+import { runMcpClaimAction, runMcpCloseAction, runMcpReopenAction, runMcpReleaseAction, runMcpTaskCompositionAction } from "./lifecycle/mcp-actions.js";
 import {
   actionGlobalOptions as globalOptions,
   closeManyOptionsFromFlat,
@@ -3571,26 +3569,6 @@ async function runMcpRestoreAction(
   );
 }
 
-/** Dispatch MCP pause through the shared lifecycle runner with explicit force semantics. */
-async function runMcpPauseTaskAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> {
-  return runPauseTask(requireMcpItemId(ctx), mutationOptionsWithOverrides(ctx.options, { force: ctx.force }), ctx.global);
-}
-
-/** Resolve MCP closure reason aliases and dispatch the shared close-and-release runner. */
-async function runMcpCloseTaskAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> {
-  const id = requireMcpItemId(ctx);
-  const closeReason =
-    readString(ctx.args, "reason") ??
-    readString(ctx.args, "text") ??
-    readString(ctx.options, "reason") ??
-    readString(ctx.options, "text");
-  return runCloseTask(id, closeReason, mutationOptionsWithOverrides(ctx.options, { force: ctx.force }), ctx.global);
-}
-
 /** Dispatch the graph action merging flat MCP parameters onto runner options. */
 function runMcpGraphAction(ctx: McpActionDispatchContext): Promise<unknown> {
   const merged = { ...ctx.args, ...ctx.options };
@@ -3675,12 +3653,10 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   "item-reopen": runMcpReopenAction,
   restore: runMcpRestoreAction,
   claim: runMcpClaimAction,
-  release: (ctx) => ctx.options.pause === true
-    ? runMcpPauseTaskAction(ctx)
-    : runRelease(requireMcpItemId(ctx), ctx.force, ctx.global, ctx.options),
-  "start-task": (ctx) => runStartTask(requireMcpItemId(ctx), mutationOptionsWithOverrides(ctx.options, { force: ctx.force }), ctx.global),
-  "pause-task": runMcpPauseTaskAction,
-  "close-task": runMcpCloseTaskAction,
+  release: runMcpReleaseAction,
+  "start-task": (ctx) => runMcpTaskCompositionAction(ctx, "start_task"),
+  "pause-task": (ctx) => runMcpTaskCompositionAction(ctx, "pause_task"),
+  "close-task": (ctx) => runMcpTaskCompositionAction(ctx, "close_task"),
   close: runMcpCloseAction,
   comments: runMcpCommentsAction,
   notes: (ctx) =>

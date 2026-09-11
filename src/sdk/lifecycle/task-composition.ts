@@ -26,6 +26,27 @@ export interface TaskCompositionOptions extends ClaimMutationOptions {
   next?: boolean;
 }
 
+/** Preserve a failed step's diagnostics while reporting the earlier durable mutation, without implying rollback. */
+export async function finishComposition<T>(id: string, completed: "claim" | "update" | "close", operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    const context = error instanceof PmCliError ? error.context : {};
+    const failure = new PmCliError(
+      error instanceof Error ? error.message : String(error),
+      error instanceof PmCliError ? error.exitCode : EXIT_CODE.GENERIC_FAILURE,
+      {
+        ...context,
+        item_id: id,
+        why: `${completed} completed for ${id} before the following step failed. No rollback was performed.${context.why ? ` ${context.why}` : ""}`,
+        nextSteps: [`Inspect the persisted state with pm get ${id} and pm history ${id} before retrying the failed step.`, ...(context.nextSteps ?? [])],
+      },
+    );
+    failure.cause = error;
+    throw failure;
+  }
+}
+
 /** Claim explicit work and advance it through the workspace's configured workflow. */
 export async function runStartTask(id: string, options: TaskCompositionOptions, global: GlobalOptions): Promise<StartTaskResult> {
   if (options.next === true || options.ifAvailable === true) {
@@ -34,7 +55,7 @@ export async function runStartTask(id: string, options: TaskCompositionOptions, 
   const settings = await readSettings(resolvePmRoot(process.cwd(), global.path));
   const status = resolveStartTaskInProgressStatus(resolveRuntimeStatusRegistry(settings.schema));
   const claim = await runClaim(id, options.force === true, global, options);
-  const update = await runUpdate(id, mutationOptionsWithOverrides(options, { status }, ["assignee", "start", "next", "ifAvailable", "maxAttempts"]) as UpdateCommandOptions, global);
+  const update = await finishComposition(id, "claim", () => runUpdate(id, mutationOptionsWithOverrides(options, { status }, ["assignee", "start", "next", "ifAvailable", "maxAttempts"]) as UpdateCommandOptions, global));
   return { id, action: "start_task", claim, update };
 }
 
@@ -43,13 +64,13 @@ export async function runPauseTask(id: string, options: TaskCompositionOptions, 
   const settings = await readSettings(resolvePmRoot(process.cwd(), global.path));
   const status = resolveRuntimeStatusRegistry(settings.schema).open_status;
   const update = await runUpdate(id, mutationOptionsWithOverrides(options, { status }, ["assignee", "pause"]) as UpdateCommandOptions, global);
-  const release = await runRelease(id, options.force === true, global, options);
+  const release = await finishComposition(id, "update", () => runRelease(id, options.force === true, global, options));
   return { id, action: "pause_task", update, release };
 }
 
 /** Record all close evidence before releasing assignment metadata. */
 export async function runCloseTask(id: string, reason: string | undefined, options: CloseCommandOptions, global: GlobalOptions): Promise<CloseTaskResult> {
   const close = await runClose(id, reason, options, global);
-  const release = await runRelease(id, options.force === true, global, options);
+  const release = await finishComposition(id, "close", () => runRelease(id, options.force === true, global, options));
   return { id, action: "close_task", close, release };
 }
