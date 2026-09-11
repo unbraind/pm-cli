@@ -188,11 +188,12 @@ export function mergeHistoryStreams(
     entries.filter((entry) => entry.op === "create"),
   );
   if (
+    (base.length === 0 && creates.slice(1).every((entries) => entries.length > 0)) ||
     creates.some((entries) => entries.length > 1) ||
     new Set(creates.flat().map(historyEntryIdentity)).size > 1
   ) {
     throw new PmCliError(
-      "Duplicate item identity: history contains independent create events. Preserve both branches and assign distinct item ids before merging.",
+      "Duplicate item identity: history contains independent or unproven create events. Preserve both branches and assign distinct item ids before merging.",
       EXIT_CODE.CONFLICT,
       { code: "item_identity_conflict" },
     );

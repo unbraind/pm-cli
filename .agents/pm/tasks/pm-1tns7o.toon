@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: convergence,gate,improve,merge,property-testing
 created_at: "2026-08-02T21:05:06.550Z"
-updated_at: "2026-09-11T13:47:01.579Z"
-closed_at: "2026-09-11T13:45:55.273Z"
-completed_at: "2026-09-11T13:45:55.273Z"
+updated_at: "2026-09-11T14:44:13.242Z"
+closed_at: "2026-09-11T14:44:12.658Z"
+completed_at: "2026-09-11T14:44:12.658Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "The convergence property varies at least one scalar metadata field and the body in addition to union collections, and compares the whole merged document rather than a single field; The property asserts both application-order independence and merge-direction independence, exercising each branch pair as ours and as theirs; A deliberate regression that makes any union field direction-dependent, and a deliberate regression in the scalar path, each fail the suite; Every field class the merge distinguishes — union collection, latest-timestamp, scalar three-way — is named in the property and covered by at least one generated case, and adding a new field class without extending the property fails a conformance check"
@@ -18,9 +18,9 @@ why_now: The ADR that must choose the convergence model is blocked on evidence t
 parent: pm-33cw
 risk: high
 confidence: high
-resolution: Replace tag-only convergence evidence with complete-document generated conformance
-expected_result: Fixed branch permutations and both directions preserve documented scalar body and collection outcomes
-actual_result: Seeded generated whole-document comparisons and both real source mutation controls pass; exact repository coverage 100/100/100/100 and linked tests passed.
+resolution: Replace tag-only convergence with independent whole-document conformance
+expected_result: "Generated branch permutations and both directions preserve the independently specified scalar, body, union and timestamp outcomes"
+actual_result: "Independent N-branch oracle passes; real union-loss, forced-direction and deterministic-description-loss source mutants fail; full 8724-test exact coverage and static quality pass"
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-76dnfg,discovered_from,"2026-08-02T21:10:19.903Z","harness:claude-code","cli:update:dep",detected
   pm-9c7h9x,related,"2026-08-02T21:10:19.903Z","harness:claude-code","cli:update:dep",detected
@@ -29,11 +29,14 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-ei6x66,related,"2026-08-02T21:10:19.903Z","harness:claude-code","cli:update:dep",detected
   pm-o87av6,implements,"2026-08-02T21:10:19.903Z","harness:claude-code","cli:update:dep",detected
   pm-wlqxg3,verifies,"2026-09-08T05:57:31.345Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-09-11T13:08:39.685Z","harness:codex","Conformance evidence: replaced the tag-only property with whole serialized document comparisons over fixed branch snapshots, original/reversed/rotated fold orders and swapped merge directions. Independent scalar/body oracles cover preferred-side, stable-value, and latest-document policies. Two actual temporary source mutations (dropping other-side union contributions and forcing preferred-side scalar selection) both failed the new suite; original source restored. Field-class inventories and typed policy map require explicit conformance updates. Additional generated disjoint edits and optional-field deletion preserve full expected documents."
   "2026-09-11T13:39:19.383Z","harness:codex","Complete-document conformance and project-boundary linked tests passed through pm test. The generated cases preserve fixed branch snapshots across permutations, test both merge directions, use independent retained-value oracles, and cover scalar deletion and disjoint body edits. Source mutation controls dropping incoming union entries or forcing preferred-side scalars both fail the conformance suite. Arbitrary per-field causality is explicitly outside the existing timestamp policy contract."
   "2026-09-11T13:45:15.235Z","harness:codex","Integrated verification: all 673 test files and 8723 tests pass. Exact source coverage is statements 64265/64265, branches 48935/48935, functions 13350/13350, lines 61566/61566 (100/100/100/100, zero uncovered). ESLint and all three duplicate scans passed; repository static assurance, generated contracts, package boundaries, command grammar, refusal closure, token budgets, tracker-context measurements and gate registry passed. All ten SDK import-cost and six CLI transport-floor checks pass after coverage load settled. Temporary real Git identity acceptance, package-first dogfood, packed npm/npx/Bun/bunx and installed published 2026.9.11 npm/Bun sessions passed. The initial npm tarball install timed out; the normal smoke retried with cache preference and passed. Credential scan and dependency advisory census found zero secrets/vulnerabilities. Hosted review and merge remain pending."
   "2026-09-11T13:45:54.659Z","harness:codex","Final local closeout: graph-composition and record-integrity assurance passed; final TypeScript and focused ESLint passed. Structured closure records implemented and locally verified behavior for review, not a claim of merge or publication."
+  "2026-09-11T14:22:30.489Z","harness:codex","PR 1237 CodeRabbit finding accepted: the N-branch expected document previously reused the fold, so deterministic retention loss could remain invisible. The oracle now constructs every generated scalar, body, tag union and maximum timestamp directly from input values and policy. A source mutation control will verify deterministic description loss is detected."
+  "2026-09-11T14:24:29.892Z","harness:codex","Independent-oracle negative control passed: temporarily replacing merged.description with the ancestor description made the N-branch property fail immediately. The source was restored exactly afterward. Shared-ancestor history fuzz fixtures now provide their actual first creation event instead of an empty ancestor."
+  "2026-09-11T14:43:46.856Z","harness:codex","Review round verification passed: complete pnpm quality:static; all 673 files and 8724 tests; exact coverage statements 64264/64264, branches 48937/48937, functions 13349/13349, lines 61565/61565. Refreshed PM-linked tests and disposable real Git/CLI acceptance passed. SDK and history-driver empty-ancestor identity regressions now reject identical creates; independent N-branch document oracle detects a real deterministic description-loss source mutant. Awaiting pushed-head CI and fresh bot review."
 learnings[1]{created_at,author,text}:
   "2026-09-11T13:41:57.241Z","harness:codex","Convergence tests must keep each branch snapshot fixed across permutations. Reassigning timestamps by fold position compares different histories and can hide directional behavior. Compare complete serialized documents and verify retained values with an independent oracle, not only sorted tags."
 files[2]{path,scope,note}:
@@ -41,7 +44,7 @@ files[2]{path,scope,note}:
   tests/fuzz/project-boundaries.fuzz.spec.ts,project,Remove the superseded tag-only property
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/fuzz/item-merge-conformance.fuzz.spec.ts tests/fuzz/project-boundaries.fuzz.spec.ts,project,240,"harness:codex","2026-09-11T13:07:04.126Z",local_mutation,fix/item-identity-and-merge-conformance
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mtx04cfj-cx92bz
     kind: test
     status: passed
@@ -53,8 +56,19 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/fuzz/item-merge-conformance.fuzz.spec.ts tests/fuzz/project-boundaries.fuzz.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtx2g5ru-xml3pd
+    kind: test
+    status: passed
+    started_at: "2026-09-11T14:43:10.643Z"
+    finished_at: "2026-09-11T14:43:14.874Z"
+    recorded_at: "2026-09-11T14:43:14.874Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/fuzz/item-merge-conformance.fuzz.spec.ts tests/fuzz/project-boundaries.fuzz.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Package-generated release history for merge conformance
   docs/MERGE_SAFETY.md,project,Exact generated conformance scope and policy boundaries
-close_reason: Implementation and regression evidence complete; included in the reviewed branch delivery.
+close_reason: Review findings implemented and locally verified; pending hosted review and merge in PR 1237
 body: ""

@@ -259,8 +259,10 @@ The SDK item merge refuses an empty common ancestor with
 `item_identity_conflict`, even for equal item content: document equality alone
 cannot prove a common creation. It leaves the driver output untouched instead
 of combining two identities through scalar preference. The history merge also
-refuses different create events across its inputs, or multiple creates in either
-input, before fast-forwarding or reanchoring. A shared create event remains valid.
+refuses different create events across its inputs, multiple creates in either
+input, or creations on both sides of an empty ancestor even when their bytes
+match, before fast-forwarding or reanchoring. A common ancestor containing the
+shared create event remains valid.
 
 `storage_integrity` detects multiple physical documents and a second create event
 within one history stream, reporting its line in `history_unparseable_streams`
@@ -288,7 +290,8 @@ with generated complete-document comparisons. Fixed branch snapshots are folded
 in original, reversed, and rotated order, with both ours/theirs directions.
 Cases cover conflicting scalar writes and bodies, collection additions, distinct
 and equal timestamps, disjoint edits, and optional-field deletion. Independent
-expected documents check retained values and preserved context. A policy table
+expected documents are constructed directly for every N-branch case to check
+retained values and preserved context. A policy table
 also asserts that the compatibility `preferred_side` option is directional.
 The field-class inventories are pinned so changes require an explicit test update.
 

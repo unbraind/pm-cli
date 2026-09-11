@@ -57,7 +57,18 @@ describe("whole-document item merge conformance", () => {
               { conflictResolution }).merged,
             baseRaw,
           );
-          const expected = fold(branches, false);
+          const retained = conflictResolution === "latest_document_update" && !equalTimestamps
+            ? values.at(-1)!
+            : [...values].sort((left, right) => left.localeCompare(right))[0];
+          const expectedDocument = structuredClone(base);
+          expectedDocument.metadata.title = retained;
+          expectedDocument.metadata.description = `Description ${retained}`;
+          expectedDocument.metadata.assignee = retained;
+          expectedDocument.metadata.tags = values;
+          expectedDocument.metadata.updated_at = new Date(Date.UTC(2026, 8, 11, 0, 0,
+            equalTimestamps ? 1 : values.length)).toISOString();
+          expectedDocument.body = `Body ${retained}`;
+          const expected = serializeItemDocument(expectedDocument);
           for (const order of [branches, [...branches].reverse(), [...branches.slice(1), branches[0]]]) {
             expect(fold(order, false)).toBe(expected);
             expect(fold(order, true)).toBe(expected);

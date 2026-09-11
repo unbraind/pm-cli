@@ -171,7 +171,7 @@ describe("project boundary property fuzzing", () => {
           );
           const anchored = reanchorHistoryEntries(entries).entries;
           const raw = historyEntriesToRaw(anchored);
-          const merged = mergeHistoryStreams("", raw, raw);
+          const merged = mergeHistoryStreams(historyEntriesToRaw(anchored.slice(0, 1)), raw, raw);
           const parsed = merged.merged
             .trim()
             .split("\n")

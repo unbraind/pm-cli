@@ -30,35 +30,40 @@ describe("duplicate item identity boundaries", () => {
     }
   });
 
-  it("leaves driver side files untouched when identity cannot be proven", async () => {
+  it.each(["item", "history"] as const)("leaves %s driver side files untouched when identity cannot be proven", async (artifact) => {
     await withTempPmPath(async ({ tempRoot, pmPath }) => {
+      const content = artifact === "item" ? document
+        : '{"op":"create","ts":"2026-09-11T00:00:00Z","author":"a","patch":[]}\n';
       const basePath = path.join(tempRoot, "base");
       const oursPath = path.join(tempRoot, "ours");
       const theirsPath = path.join(tempRoot, "theirs");
       await Promise.all([
-        writeFile(basePath, ""), writeFile(oursPath, document),
-        writeFile(theirsPath, document.replace("Independent", "Other")),
+        writeFile(basePath, ""), writeFile(oursPath, content),
+        writeFile(theirsPath, content.replace("Independent", "Other")),
       ]);
       const previousCwd = process.cwd();
       try {
         process.chdir(tempRoot);
-        await expect(runMergeDriver({ artifact: "item", basePath, oursPath, theirsPath,
-          itemPath: ".agents/pm/tasks/pm-collision.md" }, { path: pmPath }))
+        await expect(runMergeDriver({ artifact, basePath, oursPath, theirsPath,
+          itemPath: artifact === "item" ? ".agents/pm/tasks/pm-collision.md"
+            : ".agents/pm/history/pm-collision.jsonl" }, { path: pmPath }))
           .rejects.toMatchObject({ context: { code: "item_identity_conflict" } });
       } finally {
         process.chdir(previousCwd);
       }
-      expect(await readFile(oursPath, "utf8")).toBe(document);
+      expect(await readFile(oursPath, "utf8")).toBe(content);
     });
   });
 
   it("rejects two independent create events before reanchoring or fast-forwarding", () => {
     const first = JSON.stringify({ op: "create", ts: "2026-09-11T00:00:00Z", author: "a", patch: [] }) + "\n";
     const second = JSON.stringify({ op: "create", ts: "2026-09-11T00:00:01Z", author: "b", patch: [] }) + "\n";
-    for (const [ours, theirs] of [[first, second], [first + second, first], [first + second, first + second]]) {
+    for (const [ours, theirs] of [[first, first], [first, second], [first + second, first], [first + second, first + second]]) {
       expect(() => mergeHistoryStreams("", ours, theirs)).toThrow(/duplicate.*identity/i);
     }
-    expect(mergeHistoryStreams("", first, first).strategy).toBe("identical");
+    expect(mergeHistoryStreams(first, first, first).strategy).toBe("identical");
+    expect(mergeHistoryStreams("", first, "").strategy).toBe("fast_forward_ours");
+    expect(mergeHistoryStreams("", "", first).strategy).toBe("fast_forward_theirs");
     expect(() => mergeHistoryStreams(first + second, first, first)).toThrow(/duplicate.*identity/i);
   });
 
