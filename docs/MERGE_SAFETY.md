@@ -235,17 +235,75 @@ Deleting or ignoring them would lose the evidence needed by other clones.
 
 ## Cross-branch id collision safety
 
-Item ids are `<prefix>` plus random base36 characters, and uniqueness is only probed against the local working tree — two agents branching from the same commit can mint the same id for different items (GH-600 / pm-pibw). Two controls bound that risk:
+Tracked by [pm-qx95lz](../.agents/pm/issues/pm-qx95lz.toon).
 
-- **Entropy budget** — `ids.token_length` in `settings.json` (default 4, accepted range 4–12) sets the random token length for newly minted ids. Approximate 1%-birthday-collision workloads per length: 4 chars ≈ 1.68M ids (~184 concurrent unsynced creations), 6 chars ≈ 2.18B (~6.6k), 8 chars ≈ 2.8T (~238k). Multi-agent repositories that fan out many branches between merges should raise it, e.g. `pm config project set ids_token_length 6`.
-- **Post-merge detection** — the `storage_integrity` validate check reports `validate_storage_duplicate_item_ids` whenever one id is claimed by multiple item documents (across type folders or format variants), which is how a same-id/different-item merge materializes. Remediation: keep one document, recreate the other item under a fresh id (`pm copy` then delete the colliding file), and re-point any dependencies.
+Item ids are `<prefix>` plus random base36 characters. Local allocation reserves
+both live documents and retained history, but cannot see independent creations
+on another branch. The four-character default is a small, synchronized-workspace
+setting; it is not a fleet uniqueness guarantee. `ids.token_length` accepts 4–12.
+The allocator increases width after 32 local collisions to escape local density;
+this does not measure concurrent branch activity.
+
+For a shared base containing `n` reserved ids and `m` unsynchronized creations,
+choose width `L` so `m*(m-1)/(2*(36^L-n))` stays below the desired per-sync
+collision probability. This birthday union bound assumes independent uniform
+allocation and all branches know the same reserved ids. At one million reserved
+ids, eight characters keep 1,000 concurrent creations below one in a million;
+nine characters do so for 10,000 creations. Configure the width before branching:
+
+```bash
+pm config project set ids_token_length 8
+```
+
+The SDK item merge refuses an empty common ancestor with
+`item_identity_conflict`, even for equal item content: document equality alone
+cannot prove a common creation. It leaves the driver output untouched instead
+of combining two identities through scalar preference. The history merge also
+refuses different create events across its inputs, or multiple creates in either
+input, before fast-forwarding or reanchoring. A shared create event remains valid.
+
+`storage_integrity` detects multiple physical documents and a second create event
+within one history stream, reporting its line in `history_unparseable_streams`
+as an invalid lifecycle. This check also protects merges Git resolves without
+invoking a content driver. `pm get` and SDK item lookup refuse multiple physical
+matches with `item_identity_ambiguous`; the message lists tracker-relative paths
+and SDK error context exposes a typed `paths` array. Format preference cannot
+select a winner. Only candidate paths are probed, so lookup
+does not enumerate every item in the workspace.
+
+Preserve both branches when a collision is reported. Recover each item from its
+unambiguous source branch, create the second under a fresh id, and update its
+references before retrying the merge. Do not repair a fused stream merely to
+make its hashes pass: a new hash chain does not recover a lost identity.
 
 Within one working tree, create and copy serialize on the candidate id and
 recheck every built-in and extension-defined type folder before the
 authoritative write. A raced collision fails with `item_id_collision` instead
 of replacing the existing document.
 
+### Executable convergence evidence
+
+[pm-1tns7o](../.agents/pm/tasks/pm-1tns7o.toon) replaces the tag-only property
+with generated complete-document comparisons. Fixed branch snapshots are folded
+in original, reversed, and rotated order, with both ours/theirs directions.
+Cases cover conflicting scalar writes and bodies, collection additions, distinct
+and equal timestamps, disjoint edits, and optional-field deletion. Independent
+expected documents check retained values and preserved context. A policy table
+also asserts that the compatibility `preferred_side` option is directional.
+The field-class inventories are pinned so changes require an explicit test update.
+
+These properties exercise the declared three-way policies; they do not turn the
+document-level timestamp into per-field causal provenance. In particular, the
+N-branch conflict fixture compares competing writes to the same scalar set.
+Arbitrary histories, ordered executable test definitions with receiving-clone
+trust, and relationship-event ordering retain their separate conformance contracts.
+
 ## Required post-merge gate
+
+Reconciliation resolves receipt discovery and settlement from the requested
+tracker. An explicit tracker outside Git does not consume clone-local receipts
+from an unrelated invocation directory; see
+[pm-q5grv5](../.agents/pm/issues/pm-q5grv5.toon).
 
 After every branch merge that touches `.agents/pm`, run:
 

@@ -120,7 +120,11 @@ function resolveItemFormatSearchOrder(
   return ["toon", "json_markdown"];
 }
 
-/** Implements locate item for the public runtime surface of this module. */
+/**
+ * Resolve exact then normalized identifiers across registered type folders.
+ * Refuse multiple physical documents for the selected identifier; format
+ * preference orders probes but cannot choose between conflicting identities.
+ */
 export async function locateItem(
   pmRoot: string,
   rawId: string,
@@ -143,6 +147,7 @@ export async function locateItem(
   const entries = Object.entries(typeToFolder) as Array<[ItemType, string]>;
   const searchOrder = resolveItemFormatSearchOrder(preferredFormat);
   for (const candidateId of candidateIds) {
+    const matches = new Map<string, LocatedItem>();
     for (const [type] of entries) {
       for (const itemFormat of searchOrder) {
         const itemPath = getItemPath(
@@ -153,15 +158,26 @@ export async function locateItem(
           typeToFolder,
         );
         if (await fileExists(itemPath)) {
-          return {
+          matches.set(itemPath, matches.get(itemPath) ?? {
             id: candidateId,
             type,
             itemPath,
             item_format: itemFormat,
-          };
+          });
         }
       }
     }
+    if (matches.size > 1) {
+      const paths = [...matches.keys()].map((itemPath) =>
+        path.relative(pmRoot, itemPath).split(path.sep).join("/"),
+      ).sort();
+      throw new PmCliError(
+        `Item ${candidateId} has ambiguous identity across ${paths.join(", ")}. Preserve both documents and inspect pm ops validate --check-storage-integrity before resolving the collision.`,
+        EXIT_CODE.CONFLICT,
+        { code: "item_identity_ambiguous", item_id: candidateId, paths },
+      );
+    }
+    for (const match of matches.values()) return match;
   }
   return null;
 }

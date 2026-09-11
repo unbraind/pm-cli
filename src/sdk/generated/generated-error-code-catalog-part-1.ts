@@ -2094,6 +2094,32 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "item_identity_ambiguous",
+    meaning: "Item identity ambiguous condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/store/item-store.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "item_identity_ambiguous",
+    aliases: [],
+  },
+  {
+    code: "item_identity_conflict",
+    meaning: "Item identity conflict condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/merge/three-way.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "item_identity_conflict",
+    aliases: [],
+  },
+  {
     code: "item_identity_reserved",
     meaning: "Item identity reserved condition.",
     stability: "provisional",
@@ -2432,19 +2458,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["sdk/merge/install.ts"],
     emitting_commands: ["*"],
     canonical_code: "merge_root_not_found",
-    aliases: [],
-  },
-  {
-    code: "missing_allowed_values",
-    meaning: "Missing allowed values condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/agent/refusal-closure.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "missing_allowed_values",
     aliases: [],
   },
 ];

@@ -181,9 +181,22 @@ export function mergeHistoryStreams(
   oursRaw: string,
   theirsRaw: string,
 ): HistoryMergeResult {
-  parseHistoryJsonl(baseRaw, "base");
+  const base = parseHistoryJsonl(baseRaw, "base");
   const ours = parseHistoryJsonl(oursRaw, "ours");
   const theirs = parseHistoryJsonl(theirsRaw, "theirs");
+  const creates = [base, ours, theirs].map((entries) =>
+    entries.filter((entry) => entry.op === "create"),
+  );
+  if (
+    creates.some((entries) => entries.length > 1) ||
+    new Set(creates.flat().map(historyEntryIdentity)).size > 1
+  ) {
+    throw new PmCliError(
+      "Duplicate item identity: history contains independent create events. Preserve both branches and assign distinct item ids before merging.",
+      EXIT_CODE.CONFLICT,
+      { code: "item_identity_conflict" },
+    );
+  }
   const shared = commonHistoryPrefixLength(ours, theirs);
 
   if (shared === ours.length && shared === theirs.length) {
@@ -910,17 +923,25 @@ export function mergeItemDocuments(
 ): ItemDocumentMergeResult {
   const preferred: MergePreferredSide = options.preferred ?? "ours";
   const conflictResolution = options.conflictResolution ?? "preferred_side";
-  // An empty base means both branches created the file independently
-  // (add/add); three-way falls back to treating every differing field as an
-  // ours/theirs decision, which the scalar resolver already models.
-  const hasBase = baseRaw.trim().length > 0;
   const ours = parseItemMergeSide(oursRaw, "ours", options);
   const theirs = parseItemMergeSide(theirsRaw, "theirs", options);
-  const base = hasBase ? parseItemMergeSide(baseRaw, "base", options) : ours;
+  if (baseRaw.trim().length === 0) {
+    throw new PmCliError(
+      "Duplicate item identity: add/add item documents have no common ancestor. Preserve both branches and assign distinct item ids before merging.",
+      EXIT_CODE.CONFLICT,
+      { code: "item_identity_conflict", item_id: ours.metadata.id },
+    );
+  }
+  const base = parseItemMergeSide(baseRaw, "base", options);
+  if (base.metadata.id !== ours.metadata.id || base.metadata.id !== theirs.metadata.id) {
+    throw new PmCliError(
+      "Duplicate or mismatched item identity: all merge sides must address the common ancestor's item id.",
+      EXIT_CODE.CONFLICT,
+      { code: "item_identity_conflict", item_id: base.metadata.id },
+    );
+  }
 
-  const baseRecord = hasBase
-    ? toMetadataRecord(base)
-    : ({} as Record<string, unknown>);
+  const baseRecord = toMetadataRecord(base);
   const oursRecord = toMetadataRecord(ours);
   const theirsRecord = toMetadataRecord(theirs);
   const {
@@ -940,7 +961,7 @@ export function mergeItemDocuments(
   );
 
   const bodyOutcome = mergeItemScalarThreeWay(
-    hasBase ? base.body : "",
+    base.body,
     ours.body,
     theirs.body,
     preferred,
@@ -952,7 +973,7 @@ export function mergeItemDocuments(
     conflictFields.push("body");
     conflictDecisions.push({
       field: "body",
-      base: encodeItemScalarDecisionValue(hasBase ? base.body : ""),
+      base: encodeItemScalarDecisionValue(base.body),
       ours: encodeItemScalarDecisionValue(ours.body),
       theirs: encodeItemScalarDecisionValue(theirs.body),
       retained: encodeItemScalarDecisionValue(bodyOutcome.value),

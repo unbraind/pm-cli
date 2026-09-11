@@ -21200,6 +21200,40 @@
     },
     {
       "aliases": [],
+      "canonical_code": "item_identity_ambiguous",
+      "class": "conflict",
+      "code": "item_identity_ambiguous",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Item identity ambiguous condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/item-store.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "item_identity_conflict",
+      "class": "conflict",
+      "code": "item_identity_conflict",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Item identity conflict condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/merge/three-way.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "item_identity_reserved",
       "class": "conflict",
       "code": "item_identity_reserved",

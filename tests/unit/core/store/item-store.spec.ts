@@ -185,24 +185,6 @@ describe("core/store/item-store", () => {
     });
   });
 
-  it("prefers configured format when both markdown and toon files exist", async () => {
-    await withTempPmPath(async ({ pmPath }) => {
-      const id = "pm-format-preference";
-      await writeTaskItem(pmPath, id, { description: "markdown-description" }, "json_markdown");
-      await writeTaskItem(pmPath, id, { description: "toon-description" }, "toon");
-
-      const locatedToon = await locateItem(pmPath, id, "pm-", "toon");
-      expect(locatedToon?.item_format).toBe("toon");
-      const loadedToon = await readLocatedItem(locatedToon as NonNullable<typeof locatedToon>);
-      expect(loadedToon.document.metadata.description).toBe("toon-description");
-
-      const locatedMarkdown = await locateItem(pmPath, id, "pm-", "json_markdown");
-      expect(locatedMarkdown?.item_format).toBe("json_markdown");
-      const loadedMarkdown = await readLocatedItem(locatedMarkdown as NonNullable<typeof locatedMarkdown>);
-      expect(loadedMarkdown.document.metadata.description).toBe("markdown-description");
-    });
-  });
-
   it("deduplicates listAllItemMetadata results by preferred item format", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-list-format-preference";

@@ -111,33 +111,6 @@ describe("public merge-safety SDK primitives", () => {
     expect(merged.merged).toContain("notes[1]");
   });
 
-  it("reports add/add body divergence and honors the preferred side", () => {
-    const ours = item("ours", "2026-07-19T00:01:00.000Z");
-    ours.body = "ours body";
-    const theirs = item("theirs", "2026-07-19T00:02:00.000Z");
-    theirs.body = "theirs body";
-    const merged = mergeItemDocuments(
-      "",
-      serializeItemDocument(ours, { format: "toon" }),
-      serializeItemDocument(theirs, { format: "toon" }),
-      { format: "toon", preferred: "ours" },
-    );
-
-    expect(merged.conflict_fields).toContain("body");
-    expect(parseItemDocument(merged.merged, { format: "toon" }).body).toBe(
-      "ours body",
-    );
-
-    ours.body = "";
-    const oneSidedBody = mergeItemDocuments(
-      "",
-      serializeItemDocument(ours, { format: "toon" }),
-      serializeItemDocument(theirs, { format: "toon" }),
-      { format: "toon" },
-    );
-    expect(oneSidedBody.fields_from_theirs).toContain("body");
-  });
-
   it("preserves both divergent history suffixes and emits a valid chain", () => {
     const empty: ItemDocument = {
       metadata: {} as ItemDocument["metadata"],
@@ -369,7 +342,7 @@ describe("public merge-safety SDK primitives", () => {
     expect(JSON.parse(conflict.merged)).toEqual({ value: 2 });
   });
 
-  it("covers item conflicts, add/add documents, and JSON add/delete semantics", () => {
+  it("covers item conflicts, malformed documents, and JSON add/delete semantics", () => {
     const base = item("base", "2026-07-19T00:00:00.000Z");
     const ours = item("ours", "2026-07-19T00:01:00.000Z");
     ours.body = "ours body";
@@ -386,13 +359,6 @@ describe("public merge-safety SDK primitives", () => {
       parseItemDocument(merged.merged, { format: "toon" }).metadata.title,
     ).toBe("theirs");
 
-    const addAdd = mergeItemDocuments(
-      "",
-      serializeItemDocument(ours, { format: "toon" }),
-      serializeItemDocument(theirs, { format: "toon" }),
-      { format: "toon" },
-    );
-    expect(addAdd.conflict_fields).toContain("title");
     expect(() =>
       mergeItemDocuments(
         "",

@@ -66,6 +66,8 @@ export interface PmCliErrorContext {
   };
   /** Exact filesystem path of the unreadable item document. */
   item_path?: string;
+  /** Tracker-relative documents claiming the same item identity. */
+  paths?: string[];
   /** Original document size before decoding or parsing. */
   byte_length?: number;
   /** Whether the original item document contained no bytes. */
