@@ -239,9 +239,9 @@ jobs:
       - name: Run tracker assurance gates
         if: matrix.gate == 'static'
         run: |
-          node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json
-          node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json
-          node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json
+          node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded
+          node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded
+          node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded
 
       - name: Run compatibility migration gate
         if: matrix.gate == 'compat'

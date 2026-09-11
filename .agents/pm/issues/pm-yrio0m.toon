@@ -1,0 +1,52 @@
+id: pm-yrio0m
+title: CI assurance receipts must explicitly request complete evidence beyond interactive output ceilings
+description: The pull-request assurance step exits 2 when its truthful bounded receipt exceeds the interactive default. CI must request unbounded audit evidence explicitly while retaining normal agent ceilings and all assertion verdicts.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-11T07:23:13.430Z"
+updated_at: "2026-09-11T08:16:14.725Z"
+closed_at: "2026-09-11T07:26:44.241Z"
+completed_at: "2026-09-11T07:55:05.664Z"
+author: "harness:codex"
+acceptance_criteria: "All three actual CI assurance invocations request complete JSON evidence, retain trigger ci and dry-run, and block on failing assertion verdicts. Contract regression rejects restoring an interactive ceiling."
+parent: pm-u9d0
+repro_steps: "PR 1234 run 34573336591 Gates (static): Run tracker assurance gates emitted requested_budget_infeasible at 6001 estimated tokens against the 6000 default and exited 2."
+resolution: Add explicit unbounded JSON output to the three CI assurance invocations and enforce their complete fail-closed workflow contract.
+expected_result: CI assurance retains every assertion verdict without failing because an interactive diagnostic ceiling is exceeded.
+actual_result: The previous workflow fails the new regression; fixed workflow passes 14 tests and all 52 real assurance assertions with complete JSON output.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fhifkc,discovered_from,"2026-09-11T07:23:13.430Z","harness:codex","cli:create:dep",detected
+  pm-fhifkc,verifies,"2026-09-11T07:23:13.430Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-11T07:23:13.430Z","harness:codex","Duplicate check: complete current all-status inventory inspected 2735 items without omissions; title and full keyword searches found no dedicated CI assurance output-budget issue. Delivered pm-fhifkc owns the original wiring; reuse its typed lineage. Open and in-progress inventories checked; no active claims."
+  "2026-09-11T07:26:43.665Z","harness:codex","the parsed actual CI-step contract failed before adding the output-budget flag and then all 14 workflow-contract tests passed. The three exact revised invocations were executed locally against the complete frozen repository tracker: tracker-context-quality passed all 41 assertions, graph-composition passed all 10 and record-integrity passed its assertion. No assertion bounds, enforcement, process exit handling or interactive output defaults changed. Linked test and focused ESLint passed."
+  "2026-09-11T07:57:48.644Z","harness:codex","Reviewed delivery evidence on PR 1234 head a0227fc83: all hosted checks passed and exact-head DeepScan/CodeFactor reported zero issues. Full local release preflight passed, including 8706 tests across 667 files, exact 100/100/100/100 with zero uncovered counts, static quality and docstrings, 88 package-first dogfood commands, packed npm/npx and Bun/bunx consumers, compatibility, and Sentry/telemetry gates. Platform matrix passed Linux Node 22/24/25, macOS and Windows on the identical runtime source. CodeRabbit completed the prior implementation review without actionable code findings; final CI-only follow-up review is awaiting its included-quota reset. Sourcery and Greptile are quota-limited, not approved. This evidence is pre-merge; publication remains independent."
+files[2]{path,scope,note}:
+  .github/workflows/ci.yml,project,Explicit complete evidence for all CI assurance gates
+  tests/integration/ci-workflow-contract.spec.ts,project,Actual parsed workflow command and fail-closed contract
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,240,"harness:codex","2026-09-11T07:24:23.085Z",local_mutation,fix/workflow-contract-evidence-recovery
+test_runs[1]:
+  - run_id: test-local-mtwmuoze-vhyd14
+    kind: test
+    status: passed
+    started_at: "2026-09-11T07:26:30.027Z"
+    finished_at: "2026-09-11T07:26:39.098Z"
+    recorded_at: "2026-09-11T07:26:39.098Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+close_reason: CI requests complete assurance evidence explicitly; real gate invocations and workflow regression passed.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: static-quality
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts
+  hosted_checks[1]: Gates (static)
+  owner: pm-yrio0m
+body: ""

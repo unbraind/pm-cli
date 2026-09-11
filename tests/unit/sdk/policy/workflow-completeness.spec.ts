@@ -96,6 +96,29 @@ describe("lifecycle completeness", () => {
     expect(buildWorkflowCompletenessCheck(document, items.map((item) => ({ ...item, body: "Evidence" })))).toMatchObject({ check: { status: "ok", ok: true }, warnings: [] });
   });
 
+  it("distinguishes absent, inapplicable, partial and complete contracts independently of violations", () => {
+    const item = { id: "pm-fixture", type: "Task", status: "open", body: "Evidence" };
+    const empty = parseWorkflowPolicyDocument({ version: 1, policies: [] });
+    expect(buildWorkflowCompletenessCheck(empty, [item]).check.details).toMatchObject({
+      declared_requirement_count: 0, applicable_requirement_count: 0, governed_items: 0, ungoverned_items: 1, contract_status: "undeclared",
+    });
+    const document = parseWorkflowPolicyDocument({ version: 1, policies: [declaration,
+      { ...declaration, id: "operation", subject: { operations: ["close"] } },
+    ] });
+    expect(buildWorkflowCompletenessCheck(document, [item]).check.details).toMatchObject({
+      declared_requirement_count: 2, state_requirement_count: 1, applicable_requirement_count: 0, contract_status: "inapplicable",
+    });
+    const matched = { ...item, id: "pm-closed", status: "closed" };
+    expect(buildWorkflowCompletenessCheck(document, [item, matched], 0).check.details).toMatchObject({
+      contract_status: "partial", governed_items: 1, ungoverned_items: 1, applicable_requirement_count: 1,
+      requirement_application_count: 1, applied_policy_ids: [], applied_policy_ids_truncated: true,
+    });
+    expect(buildWorkflowCompletenessCheck(document, [matched]).check.details).toMatchObject({
+      contract_status: "covered", governed_items: 1, ungoverned_items: 0, applied_policy_ids: [declaration.id],
+    });
+    expect(buildWorkflowCompletenessCheck(document, []).check.details).toMatchObject({ contract_status: "empty" });
+  });
+
   it("shares SDK and CLI validation, preserves counts and fails the strict negative control", async () => {
     await withTempPmPath(async ({ pmPath, runCli }) => {
       const client = new PmClient({ pmRoot: pmPath, noExtensions: true });

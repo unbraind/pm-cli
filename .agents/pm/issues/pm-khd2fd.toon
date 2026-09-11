@@ -1,0 +1,68 @@
+id: pm-khd2fd
+title: "GH-1231: Expose non-vacuous lifecycle completeness evidence"
+description: "Completeness receipts must distinguish absent declarations, state-eligible declarations, applicable policies and governed items. Provide an explicit strict gate option without changing advisory defaults."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-11T06:19:06.152Z"
+updated_at: "2026-09-11T08:17:19.499Z"
+closed_at: "2026-09-11T06:58:56.267Z"
+completed_at: "2026-09-11T07:55:05.664Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Real SDK CLI and MCP receipts distinguish absent, inapplicable and compliant contracts; opt-in contract requirement fails after policy removal; bounded counts retain coverage evidence."
+goal: project management = context management
+objective: Make governance contracts independently understandable and executable across all transports
+value: Reduce agent retry cost while preserving declared workspace guarantees
+parent: pm-33cw
+repro_steps: "https://github.com/unbraind/pm-cli/issues/1231"
+resolution: "Expose declared, state-eligible and applicable requirements plus governed-item counts; compose strict contract presence through existing assurance primitives."
+expected_result: "Absent, inapplicable, partial and covered contracts are distinguishable without changing advisory defaults."
+actual_result: SDK/CLI/MCP integration proves assurance fail/pass/fail across policy creation/removal and preserves bounded counters.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-htbetn,discovered_from,"2026-09-11T06:19:06.152Z","harness:codex","cli:create:dep",detected
+  pm-htbetn,verifies,"2026-09-11T06:19:06.152Z","harness:codex","cli:create:dep",detected
+  pm-e9zh,verifies,"2026-09-11T07:12:18.799Z","harness:codex","cli:update:dep",detected
+comments[8]{created_at,author,text}:
+  "2026-09-11T06:19:06.152Z","harness:codex","Duplicate check: complete live all-status PM inventory has 2732 items with complete source receipts and no omissions; keyword searches for issue numbers and policy authoring/completeness/ownership concepts found no dedicated issue. Existing delivered feature and recovery lineage retained. GitHub has no open PRs or Dependabot/code-scanning alerts; three open reports already have canonical PM link comments."
+  "2026-09-11T06:25:40.361Z","harness:codex","TDD and integration evidence: the initial new completeness and policy-id regressions both failed before implementation. All 53 focused tests now pass, including real CLI and MCP policy-id normalization, an assurance floor that fails with no policy, passes with an applicable policy and fails after deletion, and installed governance-audit append flags preserving assignment while edits/deletes refuse. Complete-population duplicate check and the delivered historical foundations are recorded. Full repository coverage, static gates, temporary manual acceptance and hosted review remain required."
+  "2026-09-11T06:30:52.462Z","harness:codex","Design decision: compose the existing assurance validate source with a floor on applicable_requirement_count instead of adding a one-off CLI-only strictness flag. The real integration test proves fail/pass/fail across policy creation and deletion, and documentation states that applicability and compliance require independent assertions. Optional state_requirement_count and ungoverned_items bounds support future-state and all-item domain contracts."
+  "2026-09-11T06:51:40.284Z","harness:codex","Repository validation evidence: all 2735 current history streams are checked without drift; resolution diagnostics retain the same 170 historical unknowns explicitly documented in the closed pm-e9zh recovery outcome. No placeholder backfill or duplicate cleanup item is appropriate. Complete graph audit has 13636 edges, zero missing targets, zero isolated nodes, zero outcome-unreachable items and an acyclic ordering graph; seven legacy hierarchy exceptions remain advisory. This tranche retains parent, discovered_from and verifies lineage and does not fabricate deep edges."
+  "2026-09-11T06:52:11.136Z","harness:codex","Correction to preceding validation summary: the full scan overlapped active linked-test and gate-evidence mutations, so its captured receipt contains three document-hash mismatches on this tranches three actively changing items, not zero drift. All three have now independently passed history --verify --strict-exit with matching current hashes. No chain mismatch or missing stream was observed. A frozen full corpus scan is required after final PM writes; the earlier statement must not be treated as that proof."
+  "2026-09-11T06:58:55.634Z","harness:codex","Local implementation verification complete: 8706 tests across 667 files passed; exact coverage 64172/64172 statements, 48869/48869 branches, 13337/13337 functions and 61480/61480 lines. Static quality, typecheck, generated contracts, SDK snapshot, package boundary, docs and exact 100 percent source/export/member docstrings passed. Manual temporary acceptance and linked tests passed. Hosted PR review, analyzer checks and merge remain delivery gates; this closure records implemented behavior, not publication."
+  "2026-09-11T07:57:47.286Z","harness:codex","Reviewed delivery evidence on PR 1234 head a0227fc83: all hosted checks passed and exact-head DeepScan/CodeFactor reported zero issues. Full local release preflight passed, including 8706 tests across 667 files, exact 100/100/100/100 with zero uncovered counts, static quality and docstrings, 88 package-first dogfood commands, packed npm/npx and Bun/bunx consumers, compatibility, and Sentry/telemetry gates. Platform matrix passed Linux Node 22/24/25, macOS and Windows on the identical runtime source. CodeRabbit completed the prior implementation review without actionable code findings; final CI-only follow-up review is awaiting its included-quota reset. Sourcery and Greptile are quota-limited, not approved. This evidence is pre-merge; publication remains independent."
+  "2026-09-11T08:17:19.499Z","harness:codex","Release synchronization: incorporated the immutable v2026.9.11 main release commit. Latest published pm-changelog 2026.9.11 generated and checked CHANGELOG.md; all four branch fixes remain Unreleased, while the published release retains only its actual prior-main changes. Actual final acceptance completion is recorded separately from the earlier tracker close time. No changelog implementation workaround or manual generated-file editing was used."
+learnings[1]{created_at,author,text}:
+  "2026-09-11T06:45:38.009Z","harness:codex",A clean validation result can be vacuous. Keep applicability counts independent of violation counts and compose numeric assurance assertions rather than introducing transport-specific strict flags.
+files[4]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Refresh package-managed pm-changelog to latest published 2026.9.11 for release-synchronized generation.
+  src/sdk/governance/workflow-completeness.ts,project,Governance contract implementation and regression proof
+  tests/integration/workflow-governance-recovery.spec.ts,project,Governance contract implementation and regression proof
+  tests/unit/sdk/policy/workflow-completeness.spec.ts,project,Governance contract implementation and regression proof
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/workflow-governance-recovery.spec.ts tests/unit/sdk/policy tests/unit/sdk/action-schema-parity.spec.ts,project,240,"harness:codex","2026-09-11T06:25:39.371Z",local_mutation,fix/workflow-contract-evidence-recovery
+test_runs[1]:
+  - run_id: test-local-mtwl7irl-evltaq
+    kind: test
+    status: passed
+    started_at: "2026-09-11T06:40:04.401Z"
+    finished_at: "2026-09-11T06:40:38.337Z"
+    recorded_at: "2026-09-11T06:40:38.337Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workflow-governance-recovery.spec.ts tests/unit/sdk/policy tests/unit/sdk/action-schema-parity.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/WORKFLOW_POLICIES.md,project,Executable authoring and governance recovery
+close_reason: Implemented and locally verified; include this evidence in the reviewed delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/workflow-governance-recovery.spec.ts tests/unit/sdk/policy tests/unit/sdk/action-schema-parity.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/workflow-governance-recovery.spec.ts tests/unit/sdk/policy tests/unit/sdk/action-schema-parity.spec.ts
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-khd2fd
+body: ""

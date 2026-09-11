@@ -1,0 +1,66 @@
+id: pm-nrkjik
+title: "GH-1233: Make strict ownership recovery executable for annotation writes"
+description: Keep ownership semantics explicit across append notes comments and learnings; remove unavailable package suggestions and prove the supported claim then append recovery preserves evidence. Document merge safety separately from ownership authorization.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-11T06:19:11.614Z"
+updated_at: "2026-09-11T08:16:13.891Z"
+closed_at: "2026-09-11T06:59:00.510Z"
+completed_at: "2026-09-11T07:55:05.664Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "All annotation refusal hints name executable recovery; real strict-ownership SDK CLI and MCP scenarios preserve owner data and history, and reject unapproved overrides."
+goal: project management = context management
+objective: Make governance contracts independently understandable and executable across all transports
+value: Reduce agent retry cost while preserving declared workspace guarantees
+parent: pm-f05lsg
+repro_steps: "https://github.com/unbraind/pm-cli/issues/1233"
+resolution: Provide installable package discovery and truthful owner-release/claim guidance for strict annotation refusal.
+expected_result: Approved package appends preserve ownership; edits and deletes refuse; ordinary handoff requires current owner release before claim.
+actual_result: Installed-package acceptance passed all three annotation collections and six edit/delete refusals; real manual handoff and verified history succeeded.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8sgf,discovered_from,"2026-09-11T06:19:11.614Z","harness:codex","cli:create:dep",detected
+  pm-8sgf,verifies,"2026-09-11T06:19:11.614Z","harness:codex","cli:create:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-09-11T06:19:11.614Z","harness:codex","Duplicate check: complete live all-status PM inventory has 2732 items with complete source receipts and no omissions; keyword searches for issue numbers and policy authoring/completeness/ownership concepts found no dedicated issue. Existing delivered feature and recovery lineage retained. GitHub has no open PRs or Dependabot/code-scanning alerts; three open reports already have canonical PM link comments."
+  "2026-09-11T06:25:49.176Z","harness:codex","TDD and integration evidence: the initial new completeness and policy-id regressions both failed before implementation. All 53 focused tests now pass, including real CLI and MCP policy-id normalization, an assurance floor that fails with no policy, passes with an applicable policy and fails after deletion, and installed governance-audit append flags preserving assignment while edits/deletes refuse. Complete-population duplicate check and the delivered historical foundations are recorded. Full repository coverage, static gates, temporary manual acceptance and hosted review remain required."
+  "2026-09-11T06:30:53.449Z","harness:codex","Verified package implementation: governance-audit already registers --allow-audit-comment for notes/comments/learnings and maps it to the narrow SDK append bypass. The refusal now names both installation and retry flag. Strict defaults and assignment remain unchanged; real installed-package tests reject edit/delete with the append flag. Independent temporary compiled-CLI acceptance passed."
+  "2026-09-11T06:39:32.418Z","harness:codex","Recovery acceptance correction: claim is atomic test-and-set, not an implicit takeover. The strict-ownership integration negative control proved that a reader claim fails while writer owns the item. Guidance now requires current-owner release followed by new-owner claim. Package installation plus command help discovers the optional append bypass without leaking package-owned flags into bare-core contracts; edits/deletes remain protected. The package-boundary gate remains unchanged."
+  "2026-09-11T06:58:22.791Z","harness:codex","Final manual acceptance in an independent disposable project passed: strict cross-owner annotation refused; held-item claim refused; current-owner release followed by new-owner claim succeeded; append succeeded after handoff; operand-only policy detected missing body, then validation passed after body restoration; history verification passed. Full static quality passed, final ownership ESLint and package-boundary checks passed, and structural docstrings remain exactly 100 percent for source/exported/member contracts. Coverage is being rerun without concurrent builds after an overlapping-build fixture copy race."
+  "2026-09-11T06:58:59.751Z","harness:codex","Local implementation verification complete: 8706 tests across 667 files passed; exact coverage 64172/64172 statements, 48869/48869 branches, 13337/13337 functions and 61480/61480 lines. Static quality, typecheck, generated contracts, SDK snapshot, package boundary, docs and exact 100 percent source/export/member docstrings passed. Manual temporary acceptance and linked tests passed. Hosted PR review, analyzer checks and merge remain delivery gates; this closure records implemented behavior, not publication."
+  "2026-09-11T07:57:48.207Z","harness:codex","Reviewed delivery evidence on PR 1234 head a0227fc83: all hosted checks passed and exact-head DeepScan/CodeFactor reported zero issues. Full local release preflight passed, including 8706 tests across 667 files, exact 100/100/100/100 with zero uncovered counts, static quality and docstrings, 88 package-first dogfood commands, packed npm/npx and Bun/bunx consumers, compatibility, and Sentry/telemetry gates. Platform matrix passed Linux Node 22/24/25, macOS and Windows on the identical runtime source. CodeRabbit completed the prior implementation review without actionable code findings; final CI-only follow-up review is awaiting its included-quota reset. Sourcery and Greptile are quota-limited, not approved. This evidence is pre-merge; publication remains independent."
+learnings[1]{created_at,author,text}:
+  "2026-09-11T06:45:36.501Z","harness:codex","Merge-safe annotations and ownership are independent guarantees: concurrent appends can use the installed governance-audit package without ownership transfer; a real handoff requires current-owner release before atomic claim. Execute every advertised recovery path as an integration test."
+files[4]{path,scope,note}:
+  src/sdk/comments.ts,project,Governance contract implementation and regression proof
+  src/sdk/learnings.ts,project,Governance contract implementation and regression proof
+  src/sdk/notes.ts,project,Governance contract implementation and regression proof
+  tests/integration/workflow-governance-recovery.spec.ts,project,Governance contract implementation and regression proof
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/workflow-governance-recovery.spec.ts tests/unit/sdk/policy tests/unit/sdk/action-schema-parity.spec.ts,project,240,"harness:codex","2026-09-11T06:25:48.064Z",local_mutation,fix/workflow-contract-evidence-recovery
+test_runs[1]:
+  - run_id: test-local-mtwla81x-bo5pah
+    kind: test
+    status: passed
+    started_at: "2026-09-11T06:42:12.988Z"
+    finished_at: "2026-09-11T06:42:44.421Z"
+    recorded_at: "2026-09-11T06:42:44.421Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workflow-governance-recovery.spec.ts tests/unit/sdk/policy tests/unit/sdk/action-schema-parity.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  packages/pm-governance-audit/README.md,project,Executable authoring and governance recovery
+close_reason: Implemented and locally verified; include this evidence in the reviewed delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/workflow-governance-recovery.spec.ts tests/unit/sdk/policy tests/unit/sdk/action-schema-parity.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/workflow-governance-recovery.spec.ts tests/unit/sdk/policy tests/unit/sdk/action-schema-parity.spec.ts
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-nrkjik
+body: ""

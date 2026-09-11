@@ -1939,6 +1939,14 @@
       ],
       "package_version": "2026.9.10",
       "reason": "pm-3z0k: unreleased attestation verify input widens from a local filename to filename or typed proof bundle; MCP uses proof data only while local SDK filename compatibility is preserved."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION"
+      ],
+      "package_version": "2026.9.10",
+      "reason": "Schema version literal advances from 4.18 to 4.19 for backward-compatible optional policy id operand; all prior authoring inputs remain supported."
     }
   ],
   "entrypoints": {
@@ -12413,7 +12421,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.18.0\""
+          "signature": "\"4.19.0\""
         },
         {
           "classification": "contract_data",
@@ -22991,7 +22999,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.18.0\""
+          "signature": "\"4.19.0\""
         },
         {
           "classification": "contract_data",

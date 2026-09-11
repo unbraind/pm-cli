@@ -1,6 +1,6 @@
 # Declarative workflow policies
 
-Tracker: [pm-mj42og](../.agents/pm/features/pm-mj42og.toon) and [pm-htbetn](../.agents/pm/features/pm-htbetn.toon).
+Tracker: [pm-mj42og](../.agents/pm/features/pm-mj42og.toon) [pm-htbetn](../.agents/pm/features/pm-htbetn.toon), [pm-khd2fd](../.agents/pm/issues/pm-khd2fd.toon), and [pm-ycv2cz](../.agents/pm/issues/pm-ycv2cz.toon).
 
 Projects can describe their lifecycle requirements as versioned data. The SDK
 uses the same evaluator for item mutations, policy previews, and completeness
@@ -10,7 +10,7 @@ warn, or refuse; refusal also requires an explicit workspace opt-in.
 ## Configure a requirement
 
 ```bash
-pm schema policy-put close-evidence --definition '{"id":"close-evidence","effect":"refuse","subject":{"statuses":["closed"]},"rule":{"kind":"require_fields","fields":["resolution","actual_result"]}}'
+pm schema policy-put close-evidence --definition '{"effect":"refuse","subject":{"statuses":["closed"]},"rule":{"kind":"require_fields","fields":["resolution","actual_result"]}}'
 pm schema policies
 pm schema policy-check pm-example --definition '{"status":"closed"}'
 pm schema policy-mode refuse
@@ -21,6 +21,10 @@ body. Custom fields can use dotted paths with at most eight segments. Empty
 strings, arrays, objects, null, and absent values do not satisfy required fields;
 zero and false are meaningful values.
 
+`policy-put` accepts the id once: pass it as the operand, or omit the operand
+and include `id` in the definition. When both are supplied their normalized ids
+must agree; a mismatch refuses without changing the registry or history.
+The same normalization applies to JSON strings, objects, previews, SDK, and MCP.
 `policy-put` replaces a declaration with the same id. `policy-remove <id>` removes
 one declaration. `policy-mode advise` disables refusal while retaining diagnostics.
 Registry writes are locked and recorded in workspace history. `--dry-run` previews
@@ -122,8 +126,48 @@ declaration once. Later edits to the supplied document do not change that
 snapshot; create another evaluator to adopt them. Completeness validation uses
 one such snapshot for the whole supplied corpus.
 
-The schema contract version is 4.16. Existing schema operations remain available;
+The schema contract version is 4.19; `policy-put` requires `definition` but
+no longer requires a separate `name`. Existing schema operations remain available;
 `SchemaResult` now also includes `WorkflowPolicyActionResult`. Consumers that
 exhaustively narrow schema results should handle the `policy_result: true`
 discriminant. Validation options include `checkCompleteness`, and validation
 results can contain a `completeness` check.
+
+## Require a meaningful completeness contract
+
+A successful completeness check means no applicable field requirement was
+violated. It does not establish that a project declared any requirements.
+The receipt exposes these independent measurements even in counts mode:
+
+| Field | Meaning |
+| --- | --- |
+| `declared_requirement_count` | Number of `require_fields` declarations, including operation-specific ones |
+| `state_requirement_count` | Number eligible for a state scan, without operation selectors |
+| `applicable_requirement_count` | Distinct requirements that matched at least one supplied item |
+| `requirement_application_count` | Item/requirement pairs actually evaluated |
+| `governed_items`, `ungoverned_items` | Items with and without a matching state requirement |
+| `contract_status` | `undeclared`, `empty`, `inapplicable`, `partial`, or `covered` |
+
+`applied_policy_ids` is bounded by the diagnostic row limit; its truncation flag
+and `applicable_requirement_count` retain the complete total. `covered` describes
+applicability, not compliance: violations are reported independently. Unreadable
+source data still fails the check, regardless of the coverage of readable items.
+
+Projects can require a nonempty applied contract with the existing assurance
+primitives. Replace `pm-example` with the accountable item in your workspace:
+
+```bash
+pm assurance put measurement completeness-contract --definition '{"id":"completeness-contract","source":{"kind":"validate","check":"completeness","field":"applicable_requirement_count"}}'
+pm assurance put assertion completeness-contract-required --definition '{"id":"completeness-contract-required","measurement_id":"completeness-contract","owner_item_id":"pm-example","scope":{"kind":"all"},"floor":1,"lifetime":"hold","enforcement":"block","negative_control":{"cases":[{"observed":0,"expected":"fail"},{"observed":1,"expected":"pass"}]}}'
+pm assurance put gate completeness-contract --definition '{"id":"completeness-contract","assertion_ids":["completeness-contract-required"],"triggers":["ci"]}'
+pm assurance run completeness-contract --trigger ci --dry-run
+pm ops validate --check-completeness --strict-exit
+```
+
+Run both checks: the gate requires applicability and validation checks compliance.
+Deleting the last applicable policy fails the gate. For an empty workspace, or a
+contract intended only for a future lifecycle state, measure
+`state_requirement_count` instead. To require coverage of every current item,
+also enforce a zero bound on `ungoverned_items`. Higher per-project floors can
+protect against partial policy deletion; a floor of one only proves at least
+one requirement applies.

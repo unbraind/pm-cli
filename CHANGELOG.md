@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- CI assurance receipts must explicitly request complete evidence beyond interactive output ceilings ([pm-yrio0m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yrio0m.toon))
+- GH-1231: Expose non-vacuous lifecycle completeness evidence ([pm-khd2fd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-khd2fd.toon))
+- GH-1232: Normalize policy authoring ids with actionable mismatch recovery ([pm-ycv2cz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ycv2cz.toon))
+- GH-1233: Make strict ownership recovery executable for annotation writes ([pm-nrkjik](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nrkjik.toon))
+
 ## 2026.9.11 - 2026-09-11
 
 ### Added

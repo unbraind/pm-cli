@@ -87,9 +87,26 @@ describe("workspace workflow policy enforcement", () => {
         await expect(runWorkflowPolicyAction("policy-put", "required", { definition: invalid }, global)).rejects.toThrow();
       }
       await expect(runWorkflowPolicyAction("policy-mode", "invalid", {}, global)).rejects.toThrow();
-      await expect(runWorkflowPolicyAction("policy-put", undefined, {}, global)).rejects.toThrow("operand");
+      await expect(runWorkflowPolicyAction("policy-put", undefined, {}, global)).rejects.toThrow("object");
+      await expect(runWorkflowPolicyAction("policy-remove", undefined, {}, global)).rejects.toThrow("operand");
       expect(await runWorkflowPolicyAction("policy-remove", "required", {}, global)).toMatchObject({ changed: true, result: { policies: [] } });
       expect(await runWorkflowPolicyAction("policy-presets", undefined)).toMatchObject({ changed: false, result: { enforcement: "advise" } });
+    });
+  });
+
+  it("normalizes either policy id source and rejects mismatches without changing registry history", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
+      const definition = { rule: { kind: "require_fields", fields: ["body"] } };
+      await expect(client.workflowPolicy("policy-put", "evidence", { definition })).resolves.toMatchObject({ changed: true });
+      await expect(client.workflowPolicy("policy-put", undefined, { definition: { ...definition, id: "evidence" } })).resolves.toMatchObject({ changed: false });
+      await expect(client.workflowPolicy("policy-put", " evidence ", { definition: { ...definition, id: " evidence " } })).resolves.toMatchObject({ changed: false });
+      const historyPath = path.join(pmPath, "history", "_workspace.jsonl");
+      const before = await readFile(historyPath, "utf8");
+      await expect(client.workflowPolicy("policy-put", "other", { definition: { ...definition, id: "evidence" } })).rejects.toMatchObject({
+        context: { required: expect.stringContaining("definition.id"), nextSteps: expect.arrayContaining([expect.stringContaining("Omit")]) },
+      });
+      expect(await readFile(historyPath, "utf8")).toBe(before);
     });
   });
 

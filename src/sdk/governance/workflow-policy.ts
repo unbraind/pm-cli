@@ -119,8 +119,7 @@ function changedPolicyDocument(action: WorkflowPolicyAction, name: string, befor
   if (action === "policy-mode") return parseWorkflowPolicyDocument({ ...before, enforcement: name });
   const remaining = before.policies.filter((policy) => policy.id !== name);
   if (action === "policy-remove") return { ...before, policies: remaining };
-  const policy = parseWorkflowPolicy(policyInputObject(options.definition));
-  if (policy.id !== name) throw new PmCliError("Policy definition id must match its operand.", EXIT_CODE.USAGE);
+  const policy = parseWorkflowPolicy(options.definition);
   const next = parseWorkflowPolicyDocument({ ...before, policies: [...remaining, policy].sort((left, right) => left.id.localeCompare(right.id)) });
   if (Buffer.byteLength(`${JSON.stringify(next, null, 2)}\n`) > MAX_WORKFLOW_POLICY_BYTES)
     throw new PmCliError("Policy registry exceeds its byte ceiling.", EXIT_CODE.USAGE);
@@ -164,14 +163,30 @@ async function approvePolicy(name: string, options: WorkflowPolicyActionOptions,
   return { policy_result: true, action: "policy-approve", changed: true, result: { id: mutation.item.id, ...evidence!, warnings: mutation.warnings } };
 }
 
+/** Normalize either authoring id source without mutating the caller's definition. */
+function resolveAuthoredPolicy(name: string | undefined, value: unknown): WorkflowPolicy {
+  const definition = policyInputObject(value);
+  const policy = parseWorkflowPolicy({ ...definition, id: definition.id === undefined ? name : definition.id });
+  if (name !== undefined && name.trim() !== policy.id) throw new PmCliError(
+    "Policy id operand does not match definition.id.", EXIT_CODE.USAGE, {
+      required: "Use the same policy id operand and definition.id, or supply only one of them.",
+      nextSteps: ["Omit the policy id operand to use definition.id, or omit definition.id to use the operand."],
+    });
+  return policy;
+}
+
 /** Execute policy operations on every transport; policy-mode uses name as advise|refuse, validated by the registry parser. */
 export async function runWorkflowPolicyAction(action: WorkflowPolicyAction, name: string | undefined, options: WorkflowPolicyActionOptions = {}, global: Pick<GlobalOptions, "path"> = {}): Promise<WorkflowPolicyActionResult> {
   if (!WORKFLOW_POLICY_ACTIONS.includes(action)) throw new PmCliError("Unknown workflow policy action.", EXIT_CODE.USAGE);
   if (action === "policy-presets") return { policy_result: true, action, changed: false, result: createLifecycleCompletenessPolicies() };
   const context = await policyContext(global, options.author);
   if (action === "policies") return { policy_result: true, action, changed: false, result: await readWorkflowPolicies(context.pmRoot) };
+  if (action === "policy-put") {
+    const policy = resolveAuthoredPolicy(name, options.definition);
+    return mutatePolicyRegistry(action, policy.id, { ...options, definition: policy }, context);
+  }
   if (!name?.trim()) throw new PmCliError(`schema ${action} requires an operand.`, EXIT_CODE.USAGE);
-  if (["policy-put", "policy-remove", "policy-mode"].includes(action)) return mutatePolicyRegistry(action, name, options, context);
+  if (["policy-remove", "policy-mode"].includes(action)) return mutatePolicyRegistry(action, name, options, context);
   if (action === "policy-approve") {
     if (options.dryRun) throw new PmCliError("Use policy-check to preview; policy-approve records an approval.", EXIT_CODE.USAGE);
     return approvePolicy(name, options, context);
