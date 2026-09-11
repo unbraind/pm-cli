@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-11T06:19:06.152Z"
-updated_at: "2026-09-11T06:58:56.987Z"
+updated_at: "2026-09-11T07:12:19.084Z"
 closed_at: "2026-09-11T06:58:56.267Z"
 completed_at: "2026-09-11T06:58:56.267Z"
 author: "harness:codex"
@@ -20,9 +20,10 @@ repro_steps: "https://github.com/unbraind/pm-cli/issues/1231"
 resolution: "Expose declared, state-eligible and applicable requirements plus governed-item counts; compose strict contract presence through existing assurance primitives."
 expected_result: "Absent, inapplicable, partial and covered contracts are distinguishable without changing advisory defaults."
 actual_result: SDK/CLI/MCP integration proves assurance fail/pass/fail across policy creation/removal and preserves bounded counters.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-htbetn,discovered_from,"2026-09-11T06:19:06.152Z","harness:codex","cli:create:dep",detected
   pm-htbetn,verifies,"2026-09-11T06:19:06.152Z","harness:codex","cli:create:dep",detected
+  pm-e9zh,verifies,"2026-09-11T07:12:18.799Z","harness:codex","cli:update:dep",detected
 comments[6]{created_at,author,text}:
   "2026-09-11T06:19:06.152Z","harness:codex","Duplicate check: complete live all-status PM inventory has 2732 items with complete source receipts and no omissions; keyword searches for issue numbers and policy authoring/completeness/ownership concepts found no dedicated issue. Existing delivered feature and recovery lineage retained. GitHub has no open PRs or Dependabot/code-scanning alerts; three open reports already have canonical PM link comments."
   "2026-09-11T06:25:40.361Z","harness:codex","TDD and integration evidence: the initial new completeness and policy-id regressions both failed before implementation. All 53 focused tests now pass, including real CLI and MCP policy-id normalization, an assurance floor that fails with no policy, passes with an applicable policy and fails after deletion, and installed governance-audit append flags preserving assignment while edits/deletes refuse. Complete-population duplicate check and the delivered historical foundations are recorded. Full repository coverage, static gates, temporary manual acceptance and hosted review remain required."
