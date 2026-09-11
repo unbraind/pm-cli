@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-11T06:19:08.219Z"
-updated_at: "2026-09-11T07:57:47.712Z"
+updated_at: "2026-09-11T08:16:12.911Z"
 closed_at: "2026-09-11T06:58:58.400Z"
-completed_at: "2026-09-11T06:58:58.400Z"
+completed_at: "2026-09-11T07:55:05.664Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: SDK CLI and MCP support either id source and identical ids; mismatch and malformed id fail atomically; a refusal gives enough information to repair the invocation.

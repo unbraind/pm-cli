@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-11T06:19:11.614Z"
-updated_at: "2026-09-11T07:57:48.207Z"
+updated_at: "2026-09-11T08:16:13.891Z"
 closed_at: "2026-09-11T06:59:00.510Z"
-completed_at: "2026-09-11T06:59:00.510Z"
+completed_at: "2026-09-11T07:55:05.664Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "All annotation refusal hints name executable recovery; real strict-ownership SDK CLI and MCP scenarios preserve owner data and history, and reject unapproved overrides."

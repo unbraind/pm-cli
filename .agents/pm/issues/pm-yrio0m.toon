@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-11T07:23:13.430Z"
-updated_at: "2026-09-11T07:57:48.644Z"
+updated_at: "2026-09-11T08:16:14.725Z"
 closed_at: "2026-09-11T07:26:44.241Z"
-completed_at: "2026-09-11T07:26:44.241Z"
+completed_at: "2026-09-11T07:55:05.664Z"
 author: "harness:codex"
 acceptance_criteria: "All three actual CI assurance invocations request complete JSON evidence, retain trigger ci and dry-run, and block on failing assertion verdicts. Contract regression rejects restoring an interactive ceiling."
 parent: pm-u9d0
