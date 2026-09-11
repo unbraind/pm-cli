@@ -429,6 +429,19 @@ describe("GitHub workflow contract", () => {
       "name: Run Windows history durability and recovery regressions",
       "run: node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts",
     ]);
+    const assuranceWorkflow = parse(ciWorkflow) as {
+      jobs: { gates: { steps: Array<{ name?: string; run?: string; if?: string; "continue-on-error"?: boolean }> } };
+    };
+    const assuranceStep = assuranceWorkflow.jobs.gates.steps.find(
+      (step) => step.name === "Run tracker assurance gates",
+    );
+    expect(assuranceStep?.if).toBe("matrix.gate == 'static'");
+    expect(assuranceStep?.["continue-on-error"]).toBeUndefined();
+    expect(assuranceStep?.run?.trim().split("\n")).toEqual(
+      ["tracker-context-quality", "graph-composition", "record-integrity"].map(
+        (gate) => `node dist/cli.js assurance run ${gate} --trigger ci --dry-run --json --output-budget unbounded`,
+      ),
+    );
     expectExactValidationCacheSteps(ciWorkflow, 3);
     expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(6);
     expect(ciWorkflow).not.toMatch(/^\s*run: pnpm test\s*$/m);
