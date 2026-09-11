@@ -1,0 +1,67 @@
+id: pm-q5grv5
+title: Isolate merge reconciliation receipt discovery from unrelated invocation workspaces
+description: "An explicit non-Git tracker currently reads clone-local receipts from process.cwd when no Git root is found, causing foreign item repair attempts and failed reconciliation. Match health and validation by anchoring receipt lookup to the requested tracker, with an isolated two-workspace regression."
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-09-11T13:20:57.763Z"
+updated_at: "2026-09-11T13:45:57.583Z"
+closed_at: "2026-09-11T13:45:57.028Z"
+completed_at: "2026-09-11T13:45:57.028Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Explicit non-Git tracker dry-run and apply ignore foreign invocation-repository receipts; Foreign receipts remain pending and unchanged; Existing exact-proof reconciliation and legacy disposition tests pass
+value: Keep SDK workspace identity explicit and prevent unrelated project context leakage
+outcome: Reconciliation reads and settles evidence in the requested tracker workspace
+why_now: Whole-suite verification found reproducible foreign receipt repair attempts
+parent: pm-dj98
+risk: medium
+confidence: high
+severity: high
+resolution: Anchor receipt discovery and settlement to the explicit tracker workspace
+expected_result: A non-Git tracker never consumes receipts from an unrelated invocation repository
+actual_result: Real two-workspace preview/apply regression and existing legacy and receipt-proof integrations pass; exact repository coverage 100/100/100/100 and linked tests passed.
+component: sdk/merge
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ao0bu9,verifies,"2026-09-11T13:20:57.763Z","harness:codex","cli:create:dep",detected
+  pm-qx95lz,discovered_from,"2026-09-11T13:20:57.763Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-09-11T13:20:57.763Z","harness:codex","Duplicate-check evidence: complete all-status inventory of 2736 items and refreshed open/in_progress inventories; keyword receipt cwd returned 22 items across all statuses. Full live pm-ao0bu9 metadata describes completed exact-proof parity, a distinct boundary. Full coverage exposed ambient foreign-receipt leakage in three existing reconciliation tests. No canonical item covers explicit non-Git tracker receipt isolation."
+  "2026-09-11T13:22:39.640Z","harness:codex","isolated temporary foreign Git repository with one pending receipt caused explicit non-Git tracker reconciliation to attempt pm-foreign and fail before the fix. Reconciliation now derives one receiptWorkspaceRoot from the requested tracker and uses it for discovery and settlement. All 16 identity, isolation, command reconciliation and legacy compatibility tests pass; no real receipts were removed or changed."
+  "2026-09-11T13:39:20.178Z","harness:codex","Full-suite follow-up corrected the old unit test that explicitly required process.cwd fallback. The strengthened test now verifies discovery and settlement both receive the exact explicit tracker path. All 14 focused reconciliation/isolation tests pass, alongside the linked real legacy and command integrations. Full exact coverage rerun is underway."
+  "2026-09-11T13:45:15.787Z","harness:codex","Integrated verification: all 673 test files and 8723 tests pass. Exact source coverage is statements 64265/64265, branches 48935/48935, functions 13350/13350, lines 61566/61566 (100/100/100/100, zero uncovered). ESLint and all three duplicate scans passed; repository static assurance, generated contracts, package boundaries, command grammar, refusal closure, token budgets, tracker-context measurements and gate registry passed. All ten SDK import-cost and six CLI transport-floor checks pass after coverage load settled. Temporary real Git identity acceptance, package-first dogfood, packed npm/npx/Bun/bunx and installed published 2026.9.11 npm/Bun sessions passed. The initial npm tarball install timed out; the normal smoke retried with cache preference and passed. Credential scan and dependency advisory census found zero secrets/vulnerabilities. Hosted review and merge remain pending."
+  "2026-09-11T13:45:56.346Z","harness:codex","Final local closeout: graph-composition and record-integrity assurance passed; final TypeScript and focused ESLint passed. Structured closure records implemented and locally verified behavior for review, not a claim of merge or publication."
+learnings[1]{created_at,author,text}:
+  "2026-09-11T13:41:58.151Z","harness:codex",SDK entrypoints with an explicit tracker must derive evidence discovery and settlement from that tracker. Falling back to process.cwd when the tracker has no Git root can import another project into recovery. Test both roots in separate real temporary workspaces.
+files[3]{path,scope,note}:
+  src/sdk/merge/reconcile.ts,project,Anchor receipt evidence to requested tracker
+  tests/unit/sdk/merge-reconcile.spec.ts,project,Require tracker-root discovery and settlement instead of obsolete cwd fallback
+  tests/unit/sdk/merge/reconcile-workspace-isolation.spec.ts,project,Real two-workspace regression
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge/reconcile-workspace-isolation.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts tests/integration/legacy-merge-receipt-history.integration.spec.ts,project,240,"harness:codex","2026-09-11T13:21:16.245Z",local_mutation,fix/item-identity-and-merge-conformance
+test_runs[1]:
+  - run_id: test-local-mtx04osk-17b6sl
+    kind: test
+    status: passed
+    started_at: "2026-09-11T13:38:05.170Z"
+    finished_at: "2026-09-11T13:38:20.420Z"
+    recorded_at: "2026-09-11T13:38:20.420Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/reconcile-workspace-isolation.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts tests/integration/legacy-merge-receipt-history.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated release history for explicit tracker isolation
+  docs/MERGE_SAFETY.md,project,Explicit tracker reconciliation workspace boundary
+close_reason: Implementation and regression evidence complete; included in the reviewed branch delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-q5grv5
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/merge/reconcile-workspace-isolation.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/merge/reconcile-workspace-isolation.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
+body: ""

@@ -2,8 +2,14 @@
 
 ## Unreleased
 
+### Changed
+
+- Verify complete merge documents across branch permutations and merge directions ([pm-1tns7o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-1tns7o.toon))
+
 ### Fixed
 
+- Two items created independently on two branches with the same id merge into one document carrying two create entries, and storage integrity only notices when the types differ ([pm-qx95lz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qx95lz.toon))
+- Isolate merge reconciliation receipt discovery from unrelated invocation workspaces ([pm-q5grv5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q5grv5.toon))
 - The immutable history op vocabulary is ungoverned: 71 op literals across five naming conventions, with the same operation spelled two ways in one file, are written permanently with no enum, no contract, and no gate ([pm-0elqjj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0elqjj.toon))
 - Read surfaces give no tombstone signal for a deleted id: pm get returns a bare not-found, so an agent cannot tell never-existed from deleted-and-recoverable ([pm-nb4zwz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nb4zwz.toon))
 - CI assurance receipts must explicitly request complete evidence beyond interactive output ceilings ([pm-yrio0m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yrio0m.toon))

@@ -316,7 +316,7 @@ async function settleProvenReceipts(params: {
     ReturnType<typeof inspectMergeReceiptEvidence>
   >["receipts"];
   repair: HistoryRepairAllResult;
-  gitWorkspaceRoot: string | null;
+  receiptWorkspaceRoot: string;
 }): Promise<number> {
   if (params.dryRun || params.repair.totals.failed > 0) return 0;
   const trustedReceiptIds = new Set(
@@ -332,7 +332,7 @@ async function settleProvenReceipts(params: {
   await Promise.all(
     receiptsToSettle.map((receipt) =>
       markMergeReceiptReconciled(
-        params.gitWorkspaceRoot ?? process.cwd(),
+        params.receiptWorkspaceRoot,
         receipt,
         { requireExisting: true },
       ),
@@ -365,8 +365,9 @@ export async function runMergeReconcile(
     missingBefore.coordinates,
   );
   const gitWorkspaceRoot = await findGitWorkspaceRoot(pmRoot);
+  const receiptWorkspaceRoot = gitWorkspaceRoot ?? pmRoot;
   const receiptEvidence = await inspectMergeReceiptEvidence(
-    gitWorkspaceRoot ?? process.cwd(),
+    receiptWorkspaceRoot,
     {
       includeLossless: true,
       pmRoot,
@@ -459,7 +460,7 @@ export async function runMergeReconcile(
     dryRun,
     pendingReceipts,
     repair,
-    gitWorkspaceRoot,
+    receiptWorkspaceRoot,
   });
   const validation = await runValidate(
     { checkHistoryDrift: true, checkStorageIntegrity: true },

@@ -163,7 +163,8 @@ describe("merge reconciliation SDK", () => {
     ]);
   });
 
-  it("uses the process workspace fallback only when Git discovery is unavailable", async () => {
+  it("uses the explicit tracker for discovery and settlement when Git is unavailable", async () => {
+    const pmRoot = path.join(os.tmpdir(), "pm-explicit-reconcile-tracker");
     const receipt = { id: "receipt-fallback", item_id: "pm-fallback" };
     mocks.findGitWorkspaceRoot.mockResolvedValue(null);
     mocks.listMergeReceipts.mockResolvedValue([receipt]);
@@ -190,14 +191,14 @@ describe("merge reconciliation SDK", () => {
       generated_at: "2026-07-21T00:02:30.000Z",
     });
 
-    await runMergeReconcile({}, globalOptions);
+    await runMergeReconcile({}, { ...globalOptions, path: pmRoot });
 
-    expect(mocks.listMergeReceipts).toHaveBeenCalledWith(process.cwd(), {
+    expect(mocks.listMergeReceipts).toHaveBeenCalledWith(pmRoot, {
       includeLossless: true,
-      pmRoot: expect.any(String),
+      pmRoot,
     });
     expect(mocks.markMergeReceiptReconciled).toHaveBeenCalledWith(
-      process.cwd(),
+      pmRoot,
       receipt,
       { requireExisting: true },
     );

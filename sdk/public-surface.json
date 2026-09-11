@@ -1966,6 +1966,13 @@
       ],
       "package_version": "2026.9.11",
       "reason": "Complete the new history operation contract with the existing schema remap-status and compensation identities; no existing operation is removed."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCliErrorContext"
+      ],
+      "package_version": "2026.9.11",
+      "reason": "PmCliErrorContext adds only optional paths string array for typed ambiguity diagnostics; existing callers remain compatible."
     }
   ],
   "entrypoints": {
@@ -12626,7 +12633,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { code?: string; item_id?: string; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; item_path?: string; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { code?: string; item_id?: string; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -34950,6 +34957,8 @@
     "item_document_invalid",
     "item_document_roundtrip_failed",
     "item_id_collision",
+    "item_identity_ambiguous",
+    "item_identity_conflict",
     "item_identity_reserved",
     "item_not_found",
     "likely_duplicate",

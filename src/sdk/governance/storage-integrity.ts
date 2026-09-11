@@ -161,7 +161,35 @@ function scanHistoryStreamContent(
     });
     return;
   }
+  const latestEntry = scanHistoryEntries(accumulator, raw);
+  if (latestEntry === null) {
+    return;
+  }
+  if (latestEntry.op === "delete" && liveItemIds.has(id)) {
+    out.resurrected.push({
+      id,
+      deleted_at: typeof latestEntry.ts === "string" ? latestEntry.ts : "",
+      deleted_by:
+        typeof latestEntry.author === "string" ? latestEntry.author : "",
+    });
+  }
+  if (
+    latestEntry.op === "history_repair" &&
+    Array.isArray(latestEntry.patch) &&
+    latestEntry.patch.length > 0
+  ) {
+    out.repairReconciliations += 1;
+  }
+}
+
+/** Parse every history line and refuse a second creation before returning the tail. */
+function scanHistoryEntries(
+  accumulator: HistoryStreamAccumulatorInput,
+  raw: string,
+): HistoryEntry | null {
+  const { id, relativePath, out } = accumulator;
   let latestEntry: HistoryEntry | null = null;
+  let createSeen = false;
   const lines = raw
     .split(/\r?\n/)
     .map((line, index) => ({ content: line.trim(), number: index + 1 }))
@@ -184,27 +212,22 @@ function scanHistoryStreamContent(
         line: line.number,
         detail: "history line is not a valid JSON object",
       });
-      return;
+      return null;
+    }
+    if (latestEntry.op === "create") {
+      if (createSeen) {
+        out.unparseable.push({
+          id,
+          path: relativePath,
+          line: line.number,
+          detail: "duplicate item identity: more than one create event in one history stream",
+        });
+        return null;
+      }
+      createSeen = true;
     }
   }
-  if (latestEntry === null) {
-    return;
-  }
-  if (latestEntry.op === "delete" && liveItemIds.has(id)) {
-    out.resurrected.push({
-      id,
-      deleted_at: typeof latestEntry.ts === "string" ? latestEntry.ts : "",
-      deleted_by:
-        typeof latestEntry.author === "string" ? latestEntry.author : "",
-    });
-  }
-  if (
-    latestEntry.op === "history_repair" &&
-    Array.isArray(latestEntry.patch) &&
-    latestEntry.patch.length > 0
-  ) {
-    out.repairReconciliations += 1;
-  }
+  return latestEntry;
 }
 
 interface HistoryStreamAccumulatorInput {

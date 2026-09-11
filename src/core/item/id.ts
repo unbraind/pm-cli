@@ -1,7 +1,8 @@
 /**
  * @module core/item/id
  *
- * Defines item parsing, formatting, and lifecycle helpers for Id.
+ * Normalizes item identifiers and allocates random or reproducible tokens while
+ * reserving live documents and retained history within the local workspace.
  */
 import crypto from "node:crypto";
 import path from "node:path";
@@ -9,7 +10,7 @@ import { TYPE_TO_FOLDER } from "../shared/constants.js";
 import { pathExists } from "../fs/fs-utils.js";
 import { nextReproducibleToken } from "../reproducibility/context.js";
 
-/** Implements normalize prefix for the public runtime surface of this module. */
+/** Normalize a prefix to lowercase ASCII segments followed by one hyphen. */
 export function normalizePrefix(input: string | undefined): string {
   const normalized: string[] = [];
   let separatorPending = false;
@@ -33,7 +34,7 @@ export function normalizePrefix(input: string | undefined): string {
   return `${normalized.join("")}-`;
 }
 
-/** Implements normalize raw item id for the public runtime surface of this module. */
+/** Remove surrounding whitespace and optional hash shorthand, then lowercase an id. */
 export function normalizeRawItemId(input: string): string {
   let normalized = input.trim().toLowerCase();
   if (normalized.startsWith("#")) {
@@ -42,7 +43,7 @@ export function normalizeRawItemId(input: string): string {
   return normalized;
 }
 
-/** Implements normalize item id for the public runtime surface of this module. */
+/** Apply the normalized workspace prefix unless the supplied id already carries it. */
 export function normalizeItemId(input: string, prefix: string): string {
   const canonicalPrefix = normalizePrefix(prefix);
   const normalized = normalizeRawItemId(input);
@@ -98,13 +99,14 @@ export function clampIdTokenLength(value: number | undefined): number {
 
 /**
  * Mint a new item id as `<prefix><random base36 token>`. The starting token
- * length comes from the workspace `ids.token_length` setting (default 4) and
- * escalates automatically when the local uniqueness probe keeps colliding.
+ * length comes from the workspace `ids.token_length` setting (default 4 for
+ * small synchronized workspaces) and increases after 32 local collisions.
  * Uniqueness is only verifiable against the local working tree: concurrent
  * branches can still mint the same id independently, which is why longer
  * configured tokens matter for multi-agent workflows and why
- * `pm validate --check-storage-integrity` detects post-merge duplicate-id
- * collisions (GH-600).
+ * the identity-refusing merge and storage-integrity boundaries remain necessary.
+ * For n reserved ids and m unsynchronized creations, choose width L with
+ * m*(m-1)/(2*(36^L-n)) below the tolerated per-sync collision probability.
  */
 export async function generateItemId(
   pmRoot: string,
