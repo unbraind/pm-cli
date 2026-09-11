@@ -33,6 +33,10 @@ before new record construction. The native inventory
 gate is stricter than this compatibility grammar: a typo in product code cannot
 silently become a custom operation.
 
+Validation separates the prefix from its opaque suffix at the first colon.
+Both checks run in linear time, including long invalid inputs; no arbitrary
+length cap truncates or rejects otherwise valid SDK identities.
+
 `requireHistoryOperation` validates a native identity or a declared parameterized
 family. `normalizeHistoryOperationForWrite` applies the compatible SDK writer
 grammar. Existing append/rewrite primitives retain their responsibility to

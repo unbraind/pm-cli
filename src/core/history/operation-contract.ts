@@ -156,7 +156,16 @@ export function requireHistoryOperation(operation: string): string {
 /** Canonicalize native aliases while retaining well-formed custom SDK operation identities. */
 export function normalizeHistoryOperationForWrite(operation: string): string {
   const canonical = resolveHistoryOperation(operation);
-  if (/^[a-z][a-z0-9]*(?:[_.:-][a-z0-9]+)*(?::[^\s\p{C}]+)?$/u.test(canonical)) return canonical;
+  // The first colon always admits the opaque suffix. Splitting there removes
+  // competing interpretations of later colons and keeps validation linear.
+  const colon = canonical.indexOf(":");
+  const prefix = colon < 0 ? canonical : canonical.slice(0, colon);
+  const validSuffix =
+    colon < 0 ||
+    (colon < canonical.length - 1 &&
+      !/[\s\p{C}]/u.test(canonical.slice(colon + 1)));
+  if (/^[a-z][a-z0-9]*(?:[_.-][a-z0-9]+)*$/u.test(prefix) && validSuffix)
+    return canonical;
   throw new TypeError(
     "History operation must use lowercase alphanumeric segments with an optional non-whitespace colon-suffixed retry key.",
   );

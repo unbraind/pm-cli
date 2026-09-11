@@ -12,6 +12,7 @@ const nonHistoryCalls = new Set([
   "Sentry.startInactiveSpan",
 ]);
 
+/** Exclude structurally identified hook, remediation, span and JSON Patch vocabularies. */
 function isNonHistoryField(
   node: ts.PropertyAssignment,
   source: ts.SourceFile,
@@ -45,6 +46,7 @@ function isNonHistoryField(
   );
 }
 
+/** Locate native operation operands in property assignments and settings writes. */
 function operationExpressions(
   node: ts.Node,
   source: ts.SourceFile,
@@ -67,6 +69,7 @@ function operationExpressions(
   return [node.initializer];
 }
 
+/** Unwrap literal branches and TypeScript wrappers without guessing dynamic values. */
 function operationLiterals(expression: ts.Expression): string[] {
   if (
     ts.isStringLiteral(expression) ||
@@ -87,9 +90,11 @@ function operationLiterals(expression: ts.Expression): string[] {
   return [];
 }
 
+/** Report source positions whose native operation literals lack a declared identity. */
 function undeclaredOperations(text: string, file: string): string[] {
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
   const errors: string[] = [];
+  /** Traverse each syntax node and validate only identified operation operands. */
   function visit(node: ts.Node): void {
     for (const expression of operationExpressions(node, source, file)) {
       for (const value of operationLiterals(expression)) {

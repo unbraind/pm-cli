@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { spawnSync } from "node:child_process";
 import {
   createHistoryEntry,
   verifyHistoryRecordHash,
 } from "../../../../src/core/history/history.js";
 import {
   PM_HISTORY_OPERATION_CONTRACT,
+  normalizeHistoryOperationForWrite,
   requireHistoryOperation,
   resolveHistoryOperation,
 } from "../../../../src/core/history/operation-contract.js";
@@ -14,6 +16,19 @@ import { HISTORY_SCHEMA_MIGRATION_OPERATIONS } from "../../../types/history-oper
 import type { ItemDocument } from "../../../../src/types/index.js";
 
 describe("immutable operation contract", () => {
+  it("bounds hostile custom-operation validation without limiting valid identity length", () => {
+    const result = spawnSync(process.execPath, [
+      "--import", "tsx", "--input-type=module", "--eval",
+      `import assert from "node:assert/strict";
+       import { normalizeHistoryOperationForWrite } from "./src/core/history/operation-contract.ts";
+       const valid = "a" + ":0".repeat(250_000);
+       assert.equal(normalizeHistoryOperationForWrite(valid), valid);
+       assert.throws(() => normalizeHistoryOperationForWrite(valid + "\\u0000"), TypeError);`,
+    ], { timeout: 3000, encoding: "utf8" });
+    expect(result.error).toBeUndefined();
+    expect(result.status, result.stderr).toBe(0);
+  });
+
   it("enumerates core identities and rejects misspellings while supporting package namespaces", () => {
     for (const operation of Object.values(
       HISTORY_SCHEMA_MIGRATION_OPERATIONS,
@@ -76,6 +91,10 @@ describe("immutable operation contract", () => {
   });
 
   it("canonicalizes aliases before sealing and preserves valid custom SDK operations", () => {
+    for (const operation of ["a.b-c_d", "a:x/y:✓", "a:b:"])
+      expect(normalizeHistoryOperationForWrite(operation)).toBe(operation);
+    for (const operation of ["", "a:", "a..b", "a:\n", "a:\u200d"])
+      expect(() => normalizeHistoryOperationForWrite(operation)).toThrow(TypeError);
     const empty = { metadata: {}, body: "" } as ItemDocument;
     const input = {
       nowIso: "2026-01-01T00:00:00.000Z",
