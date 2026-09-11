@@ -31,7 +31,7 @@ export const LIST_COMMAND_DEFAULT_PROJECTIONS = {
   "list-open": "brief",
   "list-in-progress": "brief",
   "list-blocked": "brief",
-  "list-closed": "full",
+  "list-closed": "brief",
   "list-canceled": "full",
 } as const satisfies Record<string, Exclude<ListProjectionMode, "fields">>;
 

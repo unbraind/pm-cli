@@ -9,8 +9,8 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { runClose } from "./close.js";
 import { runReopen } from "./reopen.js";
-import { runClaim, runClaimNext } from "./claim.js";
-import { runStartTask, runCloseTask } from "./task-composition.js";
+import { runClaim, runClaimNext, runRelease } from "./claim.js";
+import { runStartTask, runPauseTask, runCloseTask } from "./task-composition.js";
 import { readRuntimeString, withMutationCompaction, mutationOptionsWithOverrides } from "../runtime-input.js";
 
 /** Minimal generic dispatch context consumed by lifecycle mutation adapters. */
@@ -33,7 +33,7 @@ export async function runMcpClaimAction(context: LifecycleMutationActionContext)
   const force = context.force === true || runnerOptions.force === true;
   const selectionOptions = { ...context.args, ...runnerOptions };
   if (selectionOptions.start === true) {
-    return runStartTask(requireLifecycleItemId(context, runnerOptions), mutationOptionsWithOverrides(runnerOptions, { force }), context.global);
+    return runMcpTaskCompositionAction(context, "start_task");
   }
   const result = context.args.next === true || runnerOptions.next === true
     ? await runClaimNext(force, context.global, selectionOptions, selectionOptions)
@@ -45,6 +45,7 @@ export async function runMcpClaimAction(context: LifecycleMutationActionContext)
   });
 }
 
+/** Require the explicit identity shared by each step of a lifecycle mutation. */
 function requireLifecycleItemId(
   context: LifecycleMutationActionContext,
   options: Record<string, unknown>,
@@ -56,6 +57,7 @@ function requireLifecycleItemId(
   return id;
 }
 
+/** Preserve flat and nested close-reason aliases at the transport boundary. */
 function readLifecycleReason(
   context: LifecycleMutationActionContext,
   options: Record<string, unknown>,
@@ -77,9 +79,7 @@ export async function runMcpCloseAction(
     context.options,
   );
   if (runnerOptions.releaseAssignment === true) {
-    return runCloseTask(requireLifecycleItemId(context, runnerOptions), readLifecycleReason(context, runnerOptions), mutationOptionsWithOverrides(runnerOptions, {
-      force: context.force === true || runnerOptions.force === true,
-    }), context.global);
+    return runMcpTaskCompositionAction(context, "close_task");
   }
   return projectMutationResult(
     await runClose(
@@ -97,6 +97,30 @@ export async function runMcpCloseAction(
       idOnly,
     },
   );
+}
+
+/** Apply one shared transport projection to canonical and legacy lifecycle compositions. */
+export async function runMcpTaskCompositionAction(
+  context: LifecycleMutationActionContext,
+  action: "start_task" | "pause_task" | "close_task",
+): Promise<unknown> {
+  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(context.args, context.options);
+  const id = requireLifecycleItemId(context, runnerOptions);
+  const options = mutationOptionsWithOverrides(runnerOptions, { force: context.force === true || runnerOptions.force === true });
+  const result = action === "start_task"
+    ? await runStartTask(id, options, context.global)
+    : action === "pause_task"
+      ? await runPauseTask(id, options, context.global)
+      : await runCloseTask(id, readLifecycleReason(context, runnerOptions), options, context.global);
+  return projectMutationResult(result, { changedFields, idOnly, compactEnvelope: changedFields === "compact" && !idOnly });
+}
+
+/** Release ownership with the same compact/full controls used by claiming and pausing. */
+export async function runMcpReleaseAction(context: LifecycleMutationActionContext): Promise<unknown> {
+  if (context.options.pause === true) return runMcpTaskCompositionAction(context, "pause_task");
+  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(context.args, context.options);
+  const result = await runRelease(requireLifecycleItemId(context, runnerOptions), context.force === true, context.global, runnerOptions);
+  return projectMutationResult(result, { changedFields, idOnly, compactEnvelope: changedFields === "compact" && !idOnly });
 }
 
 /** Dispatch recurrence through the shared MCP mutation compaction contract. */

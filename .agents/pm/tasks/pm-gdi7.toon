@@ -1,12 +1,14 @@
 id: pm-gdi7
-title: "Agent-UX output polish: unknown-option errors should suggest valid flags; list-closed projection too verbose; schema add-field help discoverability"
+title: Streamline agent triage and schema command discovery
 description: "From 2026-07-02 review (Lane A, pm-kes3): (1) unknown-option errors do not list valid flags or a nearest-match suggestion, forcing an extra contracts round-trip (agents should never be blocked by wrong flags); (2) pm list-closed defaults to the full projection (verbose for agents; closed queries are usually triage scans); (3) pm schema add-field help is buried in the shared option list, hard to discover the field-definition flags."
 type: Task
-status: open
+status: in_progress
 priority: 2
 tags[3]: agent-ux,audit-followup,cli
 created_at: "2026-07-02T21:55:37.614Z"
-updated_at: "2026-09-08T13:32:20.945Z"
+updated_at: "2026-09-11T17:01:19.263Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#dda31a0f9a000eeb4731c29d"
 author: claude-code-agent
 estimated_minutes: 120
 acceptance_criteria: Unknown-option errors suggest valid flags via did-you-mean; list-closed projection is compact by default; schema add-field is discoverable from pm schema help output.
@@ -14,7 +16,7 @@ parent: pm-mpbb
 risk: low
 confidence: high
 expected_result: "Unknown-option errors suggest the nearest valid flag, list-closed is compact by default, and schema add-field is discoverable from schema help."
-dependencies[3]:
+dependencies[4]:
   - id: pm-fpod
     kind: related
     created_at: "2026-07-02T21:55:55.076Z"
@@ -27,13 +29,46 @@ dependencies[3]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[2]{created_at,author,text}:
+  - id: pm-r1f9f1
+    kind: verifies
+    created_at: "2026-09-11T16:30:49.147Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[4]{created_at,author,text}:
   "2026-07-07T14:19:22.611Z",maintainer-agent,"Fresh first-hand repro 2026-07-07 for defect 1: pm update <id> --expected-result ... -m 'msg' fails exit 2 'Unknown option -m' with zero suggestions, even though (a) --message exists on update and (b) -m is the close alias for the same concept — the cross-command hint layer shipped in pm-8nyc does not cover single-char short flags. Same alias-parity class as closed pm-1lws (--expected/--actual). Scope: did-you-mean must include short-flag aliases and cross-command parity for -m/--message on update. Note the failure is invisible under output truncation (| tail) — a second reason the structured error payload matters."
   "2026-07-07T14:45:57.827Z",maintainer-agent,"2026-07-07 verified defect in the shipped flag suggester, same fix locus: the unknown-option error's cross-command hint list is INCOMPLETE and therefore misleading. Repro: 'pm notes pm-vvib --format json' errors with '--format is a valid option on: config, list, list-all' — but get, search (and more) also accept --format (verified exit 0 same session). Wrong information is worse than none: an agent following the hint abandons valid commands. Fix: derive the valid-on list from the same contracts source used by completion/SCHEMA_CONTRACTS instead of a partial index; add a contract test asserting every command accepting --format appears in the hint."
-notes[5]{created_at,author,text}:
+  "2026-09-11T16:29:32.975Z","harness:codex","Confirmed full-metadata closed-list defaults and undifferentiated schema field help, with failing acceptance tests before implementation. Brief closed triage retains explicit full/fields restoration. Extracted schema parsing and presentation into a focused module; underlying SDK operations remain shared. Contract-derived unknown-option recovery already works and is protected by acceptance tests. Focused checks passed; broader gates remain pending."
+  "2026-09-11T17:01:19.262Z","harness:codex","All 8732 tests passed before the final parser consolidation; exact coverage correctly identified one unexecuted branch in the duplicated file-command parser. Schema and file commands now share the existing scalar/array semantics in one option-values module. The unchanged replication threshold passes at 0.4, with the same total CLI refusal count relocated to the schema module. A later concurrent coverage run encountered a subprocess JSON parse failure in refusal closure; standalone execution passed all 124 probes. Validation is being completed sequentially without weakening any test or gate."
+notes[6]{created_at,author,text}:
   "2026-07-04T07:10:33.290Z",maintainer-agent,"2026-07-04 sandbox repro: pm extension scaffold <name> --capability commands --directory <path> fails with unknown_option and next_steps offer NO nearest-flag suggestion (scaffold has no --directory; scaffolds into <cwd>/<name>). Guidance should either suggest closest supported flags for the subcommand or state the target-directory behavior."
   "2026-07-04T08:51:43.525Z",maintainer-agent,"2026-07-04 sandbox audit adds two output-verbosity nits to this polish bundle: pm init prints all 21 created dirs as full absolute paths (relative paths + count would do); pm extension --list/--doctor repeat long absolute roots and managed-source blocks per extension. Core toon outputs (list/get/context) measured compact (~89 chars/item)."
   "2026-07-04T10:38:35.252Z",maintainer-agent,"2026-07-04 partial progress landed in working tree and verified from fresh tarball pack: (1) pm context <id> now returns dedicated guidance (context_takes_no_item_argument) pointing to pm get <id> / pm context --parent <id>; (2) known-package command hints expanded 4→16 aliases (shell/completion*, comments-audit, dedupe-audit/merge, normalize, reindex, search-advanced, test-runs) with duplicate next-step dedup; (3) extension describe not-found error now lists loaded extension names. STILL OPEN from this bundle: nearest-flag suggestion for unknown_option (scaffold --directory repro still generic), pm init 21-absolute-path verbosity, extension --list/--doctor root repetition."
   "2026-07-15T19:27:29.552Z",maintainer-agent,"Observation 2026-07-15 (review pass #89): near-miss flag typos hit a \"Refusing to auto-correct option --statuss to --status. Retry with the canonical flag\" error — the CLI has already computed the unique intended flag with high confidence, then spends the certainty on a refusal, guaranteeing agents one wasted roundtrip. Disposition option for this item (or fold into pm-0z7n alias-shim policy): config-gated auto-accept for SINGLE-candidate high-confidence flag corrections (accept + prominent corrected-from warning in the envelope; default remains refuse for ambiguous or multi-candidate cases). The maintainer never-block-agents directive (recurring; re-stated 2026-07-15) is the motivation; countervailing explicitness policy should be dispositioned against it in one place rather than left implicit."
   "2026-07-17T21:40:24.664Z",maintainer-agent,"New evidence for the incomplete flag-hint list defect (2026-07-17): `pm graph audit --format json` exits 2 with hint \"--format is a valid option on: config, list, list-all\" — omitting search (--format json|toon) and deps (--format context). Same defect, new surface; suggester's flag-holder enumeration is stale/partial. pm graph itself uses --json (correct per convention); only the hint text is wrong."
+  "2026-09-11T16:30:52.134Z","harness:codex","Live full-population graph audit covers 2738 recorded nodes and 13651 edges, no missing or isolated nodes, and acyclic ordering. Semantic-edge coverage is incomplete: 1514 nodes lack semantic edges (1404 terminal and 110 active); two informational legacy hierarchy findings affect seven subjects each. These are recorded limitations, not a claim of complete historical graph enrichment. New links in this batch name actual implementation and verification evidence, not arbitrary depth or edge counts."
+files[6]{path,scope,note}:
+  scripts/release/surface-replication-sets.json,project,Relocate the existing schema refusal disposition without relaxing gates
+  src/cli/option-values.ts,project,One shared repeatable-value parser preserves legacy scalars without duplicated rule bodies
+  src/cli/register-mutation.ts,project,Delegate schema registration
+  src/cli/schema/registration.ts,project,Focused schema command module and grouped field help
+  src/sdk/query/projection-contracts.ts,project,Compact closed triage default
+  tests/integration/agent-output-polish.spec.ts,project,Projection and discoverability acceptance
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/agent-output-polish.spec.ts,project,240,"harness:codex","2026-09-11T16:27:24.913Z",local_mutation,feat/compact-lifecycle-and-schema-command-modules
+test_runs[1]:
+  - run_id: test-local-mtx6wxxt-fdizqc
+    kind: test
+    status: passed
+    started_at: "2026-09-11T16:47:53.372Z"
+    finished_at: "2026-09-11T16:48:16.337Z"
+    recorded_at: "2026-09-11T16:48:16.337Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/agent-output-polish.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/AGENT_UX_CONTRACTS.md,project,Closed triage and schema help discovery
+  docs/ARCHITECTURE.md,project,Schema family parsing and presentation boundary
 body: "## Context\nFrom the 2026-07-02 review (Lane A, pm-kes3): three agent-UX output paper-cuts, batched as one polish pass over the shared arg-parse/render layers:\n\n1. Unknown-option errors don't list valid flags or a nearest-match suggestion — agents pay an extra contracts round-trip. Reuse the OSA Damerau suggester (2026-05-28 agent-UX pass) at the flag level; include the command's valid flags in the structured error payload.\n2. pm list-closed defaults to the full projection — closed queries are triage scans; default to the compact projection (id/status/type/title/closed_at) with --full opt-out, consistent with list --format defaults.\n3. pm schema add-field's field-definition flags are buried in the shared option list — group them under a dedicated help section (help renderer already supports sections).\n\n## Definition of done\nUnknown-flag error carries suggested_flags in the structured payload + human did-you-mean; list-closed compact by default with spec; schema add-field help shows a grouped section; contracts:update run for any flag-surface change."

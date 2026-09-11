@@ -1751,6 +1751,7 @@ console.log(JSON.stringify(payload));`,
 
       const closed = (await runAction({
         action: "close-task",
+        fullChangedFields: true,
         id: itemId,
         reason: "SDK lifecycle close",
         path: pmPath,
@@ -1790,6 +1791,7 @@ console.log(JSON.stringify(payload));`,
 
       const closed = (await runAction({
         action: "close-task",
+        fullChangedFields: true,
         id: itemId,
         path: pmPath,
         cwd: path.dirname(pmPath),

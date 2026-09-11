@@ -113,6 +113,8 @@ type ClaimRunner = (
 export interface ReleaseResult {
   /** Value that configures or reports item for this contract. */
   item: Record<string, unknown>;
+  /** Ownership fields actually removed, or an empty list for an unclaimed item. */
+  changed_fields?: string[];
   /** Value that configures or reports released by for this contract. */
   released_by: string;
   /** Value that configures or reports previous assignee for this contract. */
@@ -424,6 +426,7 @@ export async function runRelease(
   return {
     item: toItemRecord(result.item),
     released_by: author,
+    changed_fields: result.changedFields,
     previous_assignee: previousAssignee,
     forced: force,
     ...(stillInProgress ? {

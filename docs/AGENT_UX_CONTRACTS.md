@@ -4,6 +4,14 @@ Tracker references: [pm-v1yo](../.agents/pm/issues/pm-v1yo.toon), [pm-i6pi](../.
 
 These contracts keep common agent loops deterministic, token-efficient, and recoverable. Runtime contracts and `--help --json` remain the exact source for available flags.
 
+Closed-item triage and schema authoring are also tracked by
+[pm-gdi7](../.agents/pm/tasks/pm-gdi7.toon). `pm list --status closed` and the
+compatibility `pm list-closed` default to brief rows. Use `--full` for complete
+metadata or `--fields` for a precise projection. `pm schema --help` groups
+`add-field` options separately from type inference and migration controls.
+Unknown-option recovery derives valid flags and accepting command paths from
+the active contracts; it refuses an unrecognized flag before execution.
+
 ## Relationship mutations
 
 `pm create`, `pm update`, and `pm update-many` preserve existing relationship data, including legacy cycles. When a mutation introduces a new cycle through an ordering relationship such as `blocked_by`, the result includes an `ordering_cycle_created:` warning with a concrete cycle path and a `pm graph audit` recovery pointer.

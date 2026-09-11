@@ -36,6 +36,8 @@ src/
     register-mutation.ts
     register-operations.ts
     registration-helpers.ts
+    schema/
+      registration.ts
     commands/
     help-content.ts
     error-guidance.ts
@@ -289,6 +291,11 @@ allowance file:
 
 Do not add new CLI/MCP behavior by deep-importing `src/core`. Add or extend an
 SDK primitive first, then consume that SDK surface from the presentation layer.
+
+Schema command registration and rendering live in `src/cli/schema/registration.ts`,
+with field, workflow, and migration behavior delegated to the SDK-backed schema
+adapter. This keeps the general mutation registrar focused on family wiring
+([pm-gdi7](../.agents/pm/tasks/pm-gdi7.toon)).
 
 Progressive tool discovery follows this boundary directly: `src/sdk/mcp/discovery.ts` owns ranking, authorization filtering, budgets, cursors, omissions, cache identity, and the canonical result contract. `src/mcp/server.ts` only negotiates the extension, selects the entry catalog, and adapts compatibility text. See [Progressive Tool Discovery](PROGRESSIVE_TOOL_DISCOVERY.md).
 

@@ -175,6 +175,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
       "cli/error-guidance.ts",
       "cli/main.ts",
       "cli/register-mutation.ts",
+      "cli/schema/registration.ts",
       "core/telemetry/observability.ts",
       "sdk/governance/assurance-action.ts",
       "sdk/history-redact.ts",

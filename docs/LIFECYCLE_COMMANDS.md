@@ -1,7 +1,8 @@
 # Lifecycle Commands and Ownership
 
 Tracked by [pm-ik19](../.agents/pm/tasks/pm-ik19.toon) and
-[pm-eq4x](../.agents/pm/tasks/pm-eq4x.toon).
+[pm-eq4x](../.agents/pm/tasks/pm-eq4x.toon) and
+[pm-r1f9f1](../.agents/pm/tasks/pm-r1f9f1.toon).
 
 Bulk mutations and ownership compositions share SDK implementations with their
 compatibility spellings. Runtime help and contracts describe the active surface:
@@ -41,7 +42,23 @@ close and its inline evidence, then releases ownership.
 Each constituent operation enforces its own policy and writes its own history.
 Compositions do not provide rollback across operations: for example, if the
 status transition fails after a successful claim, the claim remains. Inspect the
-item before retrying after an error.
+item before retrying after an error. A second-step failure retains the original
+error code and adds recovery guidance naming the completed operation. Its SDK
+error `cause` retains the underlying failure.
+
+## Compact transport receipts
+
+CLI and MCP compositions default to an `id`, final `status`, `action`, and
+`changed_field_count`, plus compact receipts for each constituent step. The root
+count is the number of distinct fields touched across the steps, not their sum.
+Step receipts retain ownership, close reason, warnings, and recovery evidence.
+Item descriptions, bodies, and annotation histories are not echoed by default.
+
+Use CLI `--full-changed-fields` or MCP `fullChangedFields: true` for complete
+constituent results; `--id-only` or `idOnly: true` returns only the final identity
+and status. CLI `--no-changed-fields` preserves item snapshots while replacing
+field arrays with counts. Plain release supports the same output controls.
+Typed `PmClient` methods and the direct SDK primitives retain full results.
 
 ## SDK and MCP
 

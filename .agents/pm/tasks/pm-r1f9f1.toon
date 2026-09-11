@@ -2,11 +2,13 @@ id: pm-r1f9f1
 title: Compact compound lifecycle receipts without losing SDK results
 description: "Temporary acceptance with an 18000-byte description measured plain claim JSON at 160 bytes and claim --start at 37193 bytes, including two full item snapshots. Add explicit compact CLI/MCP presentation for compound lifecycle operations while retaining full public SDK results, full-output access and documented compatibility behavior."
 type: Task
-status: open
+status: in_progress
 priority: 2
 tags: []
 created_at: "2026-09-11T14:43:44.220Z"
-updated_at: "2026-09-11T14:43:44.220Z"
+updated_at: "2026-09-11T16:48:52.564Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#dda31a0f9a000eeb4731c29d"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Cover claim --start, release --pause and close --release-assignment through shared presentation contracts; preserve complete typed SDK results and explicit full output; compact receipts report truthful ownership, lifecycle state and partial success; verify installed large-metadata CLI/MCP sessions and legacy alias compatibility"
@@ -16,10 +18,50 @@ why_now: Real acceptance during PR 1237 review closeout exposed a 232-fold respo
 parent: pm-mpbb
 risk: medium
 confidence: high
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-eq4x,discovered_from,"2026-09-11T14:43:44.220Z","harness:codex","cli:create:dep",detected
   pm-eqdo85,verifies,"2026-09-11T14:43:44.220Z","harness:codex","cli:create:dep",detected
   pm-mpbb,implements,"2026-09-11T14:43:44.220Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-eq4x,verifies,"2026-09-11T16:30:47.558Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
   "2026-09-11T14:43:44.220Z","harness:codex","Duplicate check: complete all-status searches for claim start receipt (70 hits) and start compact (112 hits), refreshed open and in_progress inventories, and full metadata of pm-eqdo85 and pm-eq4x. Plain claim compact receipts and lifecycle aliases are shipped; compound envelopes were intentionally preserved for compatibility. This is a distinct presentation enhancement, not a reopened historical defect. Measured in a disposable tracker with telemetry disabled; no repository items were used as test fixtures."
+  "2026-09-11T16:29:31.560Z","harness:codex","large-metadata compound receipt test failed on the baseline. Shared projection now preserves complete typed SDK results and bounds CLI/MCP canonical and alias receipts. Real failed-update acceptance verifies persisted ownership and explicit no-rollback recovery. Twelve focused tests passed across lifecycle compositions, projection integrity, and UX. Full coverage and static checks are running. Only pm-r1f9f1 and pm-gdi7 are active in this implementation worktree."
+  "2026-09-11T16:30:51.143Z","harness:codex","Live operational inventory: no open GitHub issues and only existing PR 1237; open Dependabot, code-scanning, and secret-scanning alert APIs each returned empty arrays. Credential scan passed and pnpm audit reported no known vulnerabilities. Outdated inventory contains only out-of-range major upgrades (Vitest 5, TypeScript 7, npm-package-arg 14), not compatible-range patches. PR 1237 latest release-note review is corrected through its canonical item and package generation on its existing branch."
+  "2026-09-11T16:33:35.028Z","harness:codex","Live release evidence: successful Auto Release recovery run 34582052985 verified the existing successful Release workflow 34576128355 for immutable v2026.9.11. The latest scheduled run initially failed, so this is a successful recovery receipt rather than a claim that the schedule never fails. Public npm and pm-changelog latest versions are both 2026.9.11. No second automatic tag or same-day publication was requested."
+  "2026-09-11T16:35:29.081Z","harness:codex","Manual temporary-project acceptance passed with Experiment custom type, numeric sample_count field, and 31000-byte description. Built CLI emitted start=378 bytes, pause=378 bytes, close=458 bytes and closed-list=865 bytes. Explicit full alias output and full get retained description and custom value; closure released assignment; strict history and resolution/drift validation passed. Temporary data was removed."
+  "2026-09-11T16:48:52.564Z","harness:codex","Packed-artifact acceptance passed under Node and Bun, including a real stateless MCP start-task request with a 1079-byte receipt for 31000-byte item metadata. Canonical CLI and legacy full-output paths retain custom values. Published 2026.9.11 independently passed npm/Bun 11-step agent sessions and npx/bunx CLI/MCP discovery and negative controls. Required observability gate passed with zero recent blocking Sentry issues, 2.15% telemetry finish error rate, no missing error codes, matching recent start/finish counts and an empty physical delivery queue. PR 1237 is merged after exact-head checks and inline verification; quota-blocked full review reruns may be skipped per user instruction."
+files[15]{path,scope,note}:
+  sdk/public-surface.json,project,Reviewed additive release result and schema signatures
+  src/core/output/mutation-projection.ts,project,Shared compound receipt projection
+  src/sdk/cli-contracts/tool-schema.ts,project,Declared projection controls
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Regenerated lifecycle error site catalog
+  src/sdk/lifecycle/claim.ts,project,Release mutation evidence
+  src/sdk/lifecycle/mcp-actions.ts,project,Canonical and legacy transport parity
+  src/sdk/lifecycle/task-composition.ts,project,Truthful recovery after a committed first step
+  src/sdk/runtime.ts,project,Thin shared lifecycle dispatch
+  tests/fixtures/contracts/full.json,project,Generated action projection discovery
+  tests/integration/lifecycle-receipts.spec.ts,project,Large real metadata and partial completion acceptance
+  tests/integration/release-readiness-runtime.spec.ts,project,Deterministic full release payload includes additive changed_fields
+  tests/unit/core/output/compound-mutation-projection.spec.ts,project,Projection integrity boundaries
+  tests/unit/sdk/action-schema-parity.spec.ts,project,Projection controls advertise schema minor version 4.20
+  tests/unit/sdk/lifecycle/lifecycle-completion-errors.spec.ts,project,Partial lifecycle failures retain cause and recovery in a focused lifecycle test directory
+  tests/unit/sdk/sdk-index.spec.ts,project,Explicit full compound receipts preserve existing SDK action assertions
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/lifecycle-receipts.spec.ts tests/integration/lifecycle-composition-sdk.spec.ts tests/unit/core/output/compound-mutation-projection.spec.ts,project,240,"harness:codex","2026-09-11T16:27:24.331Z",local_mutation,feat/compact-lifecycle-and-schema-command-modules
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/lifecycle-completion-errors.spec.ts,project,240,"harness:codex","2026-09-11T16:40:03.810Z",local_mutation,feat/compact-lifecycle-and-schema-command-modules
+test_runs[1]:
+  - run_id: test-local-mtx6wflj-nsokw6
+    kind: test
+    status: passed
+    started_at: "2026-09-11T16:47:02.838Z"
+    finished_at: "2026-09-11T16:47:52.567Z"
+    recorded_at: "2026-09-11T16:47:52.567Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/lifecycle-receipts.spec.ts tests/integration/lifecycle-composition-sdk.spec.ts tests/unit/core/output/compound-mutation-projection.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/lifecycle-completion-errors.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/LIFECYCLE_COMMANDS.md,project,Compound receipts full restoration and partial completion
 body: ""
