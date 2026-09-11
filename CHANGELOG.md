@@ -4,7 +4,7 @@
 
 ### Changed
 
-- The N-branch convergence property is proven only over the field class that cannot diverge: the randomized suite varies one union collection and compares it sorted ([pm-1tns7o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-1tns7o.toon))
+- Verify complete merge documents across branch permutations and merge directions ([pm-1tns7o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-1tns7o.toon))
 
 ### Fixed
 
