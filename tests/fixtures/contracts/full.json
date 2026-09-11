@@ -20275,7 +20275,8 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "core/history/projection.ts"
+        "core/history/projection.ts",
+        "core/history/tombstone.ts"
       ],
       "stability": "provisional"
     },
@@ -21109,6 +21110,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/lifecycle/update.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "item_deleted",
+      "class": "not_found",
+      "code": "item_deleted",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 3,
+      "meaning": "Item deleted condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/history/tombstone.ts"
       ],
       "stability": "provisional"
     },
@@ -28610,6 +28628,117 @@
       "verify"
     ],
     "visible_top_level_ceiling": 69
+  },
+  "history_operations": {
+    "aliases": {
+      "init:type-preset": "init:type_preset"
+    },
+    "custom_operation_grammar": "extension:<package_name>:<snake_case_operation>",
+    "excluded_surfaces": [
+      "json_patch",
+      "on_write_hook",
+      "telemetry_span"
+    ],
+    "item": [
+      "append",
+      "cancel",
+      "claim",
+      "close",
+      "comment_add",
+      "comment_edit",
+      "comment_delete",
+      "create",
+      "delete",
+      "docs_add",
+      "docs_remove",
+      "files_add",
+      "files_remove",
+      "files_discover",
+      "history_author_acknowledge",
+      "history_compact",
+      "history_compact_baseline",
+      "history_redact",
+      "history_repair",
+      "history_salvage",
+      "import",
+      "improvement_observe",
+      "learning_add",
+      "learning_edit",
+      "learning_delete",
+      "normalize",
+      "note_add",
+      "note_edit",
+      "note_delete",
+      "plan_create_metadata",
+      "plan_create_initial_step",
+      "plan_add_step",
+      "plan_reorder_step",
+      "plan_remove_step",
+      "plan_link_step",
+      "plan_unlink_step",
+      "plan_append_decision",
+      "plan_append_discovery",
+      "plan_append_validation",
+      "plan_resume",
+      "plan_approve",
+      "plan_materialize",
+      "plan_update_step",
+      "plan_complete_step",
+      "plan_block_step",
+      "policy_approve",
+      "policy_refused",
+      "release",
+      "reopen",
+      "restore",
+      "schema_migration",
+      "schema_migration_reference",
+      "test_run_track",
+      "tests_add",
+      "tests_remove",
+      "tests_update",
+      "update",
+      "update_audit",
+      "update_ownership_bypass",
+      "workspace_snapshot_restore",
+      "extension_migrations_apply",
+      "merge_reconcile"
+    ],
+    "legacy_custom_operation_grammar": "lowercase segments separated by underscore, hyphen, colon, or dot; optional opaque colon-suffixed retry key",
+    "patterns": [
+      "^config:(?:set|unset):[a-z][a-z0-9_.:-]*$",
+      "^assurance:(?:measurement|invariant|gate):(?:put|remove)$",
+      "^schema_(?:rename_type|rename_status|remap_status|rename_field|remove_type|remove_status|remove_field)(?:_compensate)?$",
+      "^extension:[a-z][a-z0-9_-]*:[a-z][a-z0-9_]*$"
+    ],
+    "read_policy": "preserve_original_operation",
+    "version": 1,
+    "workspace": [
+      "history:author-acknowledge",
+      "settings:write",
+      "init:type_preset",
+      "templates:save",
+      "profile:apply-types",
+      "profile:apply-statuses",
+      "profile:apply-fields",
+      "profile:apply-config",
+      "schema:add-type",
+      "schema:remove-type",
+      "schema:add-status",
+      "schema:remove-status",
+      "schema:add-field",
+      "schema:remove-field",
+      "schema:apply-preset",
+      "schema:infer-types",
+      "schema:policy-put",
+      "schema:policy-remove",
+      "schema:policy-mode",
+      "assurance:bundle:apply",
+      "assurance:gate:verdict",
+      "telemetry:install_id",
+      "telemetry:first_run_prompt",
+      "telemetry:clear",
+      "item_format:auto_select_default"
+    ]
   },
   "list_projections": [
     {

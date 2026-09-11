@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- The immutable history op vocabulary is ungoverned: 71 op literals across five naming conventions, with the same operation spelled two ways in one file, are written permanently with no enum, no contract, and no gate ([pm-0elqjj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0elqjj.toon))
+- Read surfaces give no tombstone signal for a deleted id: pm get returns a bare not-found, so an agent cannot tell never-existed from deleted-and-recoverable ([pm-nb4zwz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nb4zwz.toon))
 - CI assurance receipts must explicitly request complete evidence beyond interactive output ceilings ([pm-yrio0m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yrio0m.toon))
 - GH-1231: Expose non-vacuous lifecycle completeness evidence ([pm-khd2fd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-khd2fd.toon))
 - GH-1232: Normalize policy authoring ids with actionable mismatch recovery ([pm-ycv2cz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ycv2cz.toon))

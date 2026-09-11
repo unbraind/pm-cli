@@ -650,6 +650,7 @@ export * from "./duplicates.js";
 export * from "./lifecycle/reopen.js";
 export * from "./history-compact.js";
 export * from "./history-read.js";
+export * from "../core/history/operation-contract.js";
 export * from "./history/maintenance.js";
 export { readHistorySnapshot, type HistoryStreamSnapshot } from "../core/history/read.js";
 export * from "./history-provenance.js";

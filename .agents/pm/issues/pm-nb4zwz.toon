@@ -2,19 +2,23 @@ id: pm-nb4zwz
 title: "Read surfaces give no tombstone signal for a deleted id: pm get returns a bare not-found, so an agent cannot tell never-existed from deleted-and-recoverable"
 description: "pm delete retains the history stream and the item is fully recoverable, but no read surface says so, and the error an agent actually hits names no recovery path.\n\nLive behaviour on 2026.7.25 in an isolated sandbox:\n\n  pm delete <id> --message \"...\"  -> status deleted, deleted true, previous_status open\n  ls .agents/pm/history/           -> <id>.jsonl retained\n  pm get <id>                      -> Error: Item ID not found / \"Item <id> not found\"\n  pm get <id> --at 1               -> full point-in-time item, unchanged\n  pm restore <id> 1                -> item fully resurrected, 10 fields restored\n\nSo the recovery works and the proof is intact. The read path simply does not disclose it. An agent that hits the not-found error has no way to distinguish an id that never existed, an id from another workspace, and an id whose complete history is one command away, and the error names neither pm get --at nor pm restore.\n\npm-wdrkfr closed the discoverability halves it scoped: mutation output states retention, pm health reports history streams without live item files, and the gc policy cannot silently drop append-only proof. The read-surface half was outside it. This is the same shape as the capability-aware hint family that pm-ulqu, pm-qljv, and pm-tmhs belong to under pm-mpbb: the corrective action must come from declared state rather than from the operator already knowing.\n\nThe fleet case sharpens it. With many agents on one workspace, one agent deleting an item makes every other agent's next read of that id fail with an error that reads like a typo, and the tombstone is the only thing that would tell them what happened."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[5]: "area:cli","area:sdk",history,recovery,tombstone
 created_at: "2026-07-25T20:41:21.338Z"
-updated_at: "2026-09-08T13:33:27.313Z"
+updated_at: "2026-09-11T11:02:18.444Z"
+closed_at: "2026-09-11T10:53:04.841Z"
+completed_at: "2026-09-11T10:53:04.841Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "A read of a tombstoned id reports the tombstone as structured state - that the id existed, that it was deleted, and when - rather than an undifferentiated not-found, in both human and JSON output; The error names the recovery path with a runnable command, at minimum pm get --at and pm restore for the highest recorded version, following the recovery-bundle contract already used elsewhere; A not-found for an id with no history stream stays distinct from a tombstone hit, so the two cases are never conflated; The distinction is available through the SDK read primitives, not only rendered in the CLI, so MCP and other hosts inherit it; Disclosure respects the diagnostic output budget and adds no cost to the common not-found path where no stream exists"
 parent: pm-mpbb
 risk: low
 confidence: 90
-expected_result: A read of a deleted id reports a structured tombstone with deletion time and a runnable recovery command instead of a bare not-found.
-dependencies[8]:
+resolution: "SDK missing-item reads verify retained history and expose typed deletion time plus executable historical-read and restore guidance. Recovery respects durable version offsets, legacy ambiguity, subject identity and record integrity; CLI projections preserve the NOT_FOUND exit code and diagnostic budgets."
+expected_result: Deleted IDs are distinguishable from unknown IDs and agents can execute verified recovery commands through SDK and CLI surfaces.
+actual_result: "8713 tests passed with exact 100/100/100/100 coverage; both linked recovery and Beads commands passed. Temporary-project acceptance executed deletion, the suggested historical read and restore with hierarchy and annotations intact."
+dependencies[9]:
   - id: pm-9j2r3b
     kind: related
     created_at: "2026-07-25T20:41:21.338Z"
@@ -36,10 +40,77 @@ dependencies[8]:
   - id: pm-szv11n
     kind: implements
     created_at: "2026-07-25T20:50:36.028Z"
-  - id: pm-e3gn0z
-    kind: related
-    created_at: "2026-07-28T22:39:25.902Z"
-    author: "harness:claude-code"
+  - id: pm-bbk8we
+    kind: verifies
+    created_at: "2026-09-11T10:18:38.870Z"
+    author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
+  - id: pm-e3gn0z
+    kind: verifies
+    created_at: "2026-09-11T11:02:18.160Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[7]{created_at,author,text}:
+  "2026-09-11T09:58:08.752Z","harness:codex","TDD evidence: the new sandbox lifecycle regression fails on baseline because a deleted item returns the undifferentiated not-found error. Implementation verifies the retained stream before disclosing deletion and selects the latest materialized version, with explicit legacy compaction handling. Reusing canonical predecessor pm-wdrkfr; no duplicate item created."
+  "2026-09-11T10:19:12.053Z","harness:codex","Recovery integration evidence: verified whole-record replay is required before claiming deletion; compacted streams retain durable version offsets and use timestamps only when unambiguous. Missing, restored, unrecoverable and corrupt streams have distinct tested behavior. SDK and human/JSON CLI recovery execute successfully in sandboxed temporary trackers."
+  "2026-09-11T10:22:00.914Z","harness:codex","Manual acceptance passed in an unrelated temporary project: init, history contracts, parent/child creation, claim, comments/notes/learnings, linked file, deletion, JSON tombstone, exact suggested historical-read execution, restore, and verified history. Six retained materialized versions were recovered with hierarchy and annotations intact. SDK recovery command rendering reuses the same shell-quoting implementation as existing SDK callers."
+  "2026-09-11T10:23:18.110Z","harness:codex","Manual-acceptance precision: the successful replay and restore targeted durable version 6 (the latest materialized version), rather than separately restoring all six prior versions. Hierarchy, annotations and linked artifacts survived that exact recovery."
+  "2026-09-11T10:28:06.853Z","harness:codex","Full-suite regression found and fixed: a failed Beads import can reserve a history path as a directory while rolling back the item. Tombstone discovery now probes regular stream files only, preserving the existing NOT_FOUND exit for that rollback boundary. All 33 focused tests passed, including the existing Beads regression. Additional negative cases reject deletion claims for a create-only retained stream or an unmaterializable checkpoint."
+  "2026-09-11T10:44:17.586Z","harness:codex","Additional TDD integrity boundary: copying a valid history stream under a different item ID incorrectly produced a deleted-item claim before the correction. Recovery now rejects any retained materialized identity that disagrees with the requested subject using history_replay_invalid. The new regression failed before the guard and passes afterward. Direct structured-formatter assertions verify tombstone propagation alongside the real CLI acceptance; all five focused history-contract/recovery tests pass."
+  "2026-09-11T10:53:03.043Z","harness:codex","Implementation verification: the final full suite passed all 8713 tests with exact 100/100/100/100 coverage and zero uncovered counts. All four TypeScript projects and both linked recovery/Beads commands passed. The earlier linked failure was a malformed legacy fixture incorrectly passed through the normalizing writer; direct sealed historical data now exercises that boundary faithfully. Subject mismatch, corrupt proof, ambiguous checkpoints, directory stream paths, JSON/human diagnostics and executable recovery are covered. Final static and hosted review gates remain required before merge."
+learnings[1]{created_at,author,text}:
+  "2026-09-11T10:29:43.036Z","harness:codex","A deleted-item diagnosis needs verified retained history and a replayable address. A missing file alone, a restored stream, a directory occupying the stream path, or an ambiguous legacy checkpoint timestamp must not imply recoverable deletion."
+files[10]{path,scope,note}:
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated census includes the new tombstone recovery producer
+  src/cli/error-guidance.ts,project,Bounded typed tombstone diagnostic projection
+  src/core/history/tombstone.ts,project,Verified retained deletion and recovery address diagnostics
+  src/core/shared/command-line.ts,project,Shared shell-safe command rendering without core-to-SDK imports
+  src/core/shared/errors.ts,project,Typed tombstone context for SDK hosts
+  src/core/store/item-store.ts,project,Shared SDK missing-item boundary
+  src/sdk/command-line.ts,project,Preserve SDK exports while core recovery reuses platform quoting
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated item_deleted refusal contract
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated error catalogue partition rebalance
+  tests/unit/sdk/query/deleted-item-recovery.spec.ts,project,Real deletion replay compaction corruption and restore regressions
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/query/deleted-item-recovery.spec.ts,project,240,"harness:codex","2026-09-11T09:58:08.200Z",local_mutation,feat/history-operation-contracts-deleted-item-recovery
+  node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts,project,240,"harness:codex","2026-09-11T10:27:12.015Z",local_mutation,feat/history-operation-contracts-deleted-item-recovery
+test_runs[2]:
+  - run_id: test-local-mtwto4qw-20lipn
+    kind: test
+    status: failed
+    started_at: "2026-09-11T10:36:31.908Z"
+    finished_at: "2026-09-11T10:37:30.248Z"
+    recorded_at: "2026-09-11T10:37:30.248Z"
+    passed: 1
+    failed: 1
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/query/deleted-item-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtwu7h1g-13x1vo
+    kind: test
+    status: passed
+    started_at: "2026-09-11T10:52:07.429Z"
+    finished_at: "2026-09-11T10:52:32.644Z"
+    recorded_at: "2026-09-11T10:52:32.644Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/query/deleted-item-recovery.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated declaration census for item_deleted recovery
+  docs/HISTORY_RECOVERY.md,project,Structured deleted-item recovery and compacted history boundaries
+close_reason: Implemented and locally verified deleted-item recovery context; delivery awaits final static and hosted review gates on the same reviewed branch.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-nb4zwz
+  gate_id: test-coverage
+  negative_control: "Real create/delete/get returns generic not-found before the fix. Regression requires typed deletion, executable read and restore, and refuses corrupt or ambiguous recovery."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/query/deleted-item-recovery.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

@@ -2,25 +2,109 @@ id: pm-0elqjj
 title: "The immutable history op vocabulary is ungoverned: 71 op literals across five naming conventions, with the same operation spelled two ways in one file, are written permanently with no enum, no contract, and no gate"
 description: "Every mutating action writes an entry whose op field names the operation. That name is the primary key analytics, replay, redaction, compaction and any external verifier read to understand what happened. It is written into an append-only stream that the project promises never to alter. Nothing declares what those names may be.\n\nCensus measured on this repository at 2026.7.28:\n\n- 71 distinct op string literals exist in src. There is no enum, no union type, no constant table, and no contract entry for any of them. The only central reference is a projection format string.\n- 37 distinct op values are already permanently recorded across 40,343 entries in 2,155 streams.\n- At least five naming conventions are in simultaneous use: bare verbs (create, close, claim, release, append, delete, import, investigate); snake_case compounds (comment_add, files_add, docs_add, note_add, learning_add, history_compact, history_compact_baseline, plan_add_step, files_discover); a colon-namespaced snake form (gc:lock_remove, gc:checkpoint_remove, gc:transaction_journal_remove, init:ensure_dir, init:runtime_schema_file, reindex:embeddings, lock:release); a colon-namespaced kebab form (history:author-acknowledge, profile:apply-fields, profile:apply-statuses, profile:apply-types, schema:add-field, schema:add-status, schema:add-type, schema:apply-preset); a colon SUFFIX namespace (create:history, delete:history, import:history, restore:history, history_redact:history, history_repair:history); and one dotted form (pm.command).\n- Number agreement is inconsistent within one family: files_add, docs_add and tests_add are plural while note_add, comment_add and learning_add are singular, for the same add-an-annotation shape.\n- Proof that this is drift and not design: src/sdk/init.ts writes op \"init:type-preset\" at line 565 and op \"init:type_preset\" at line 1029. The same operation is spelled two ways in the same file. Whichever path runs, the spelling is immutable from that moment.\n- history:author-acknowledge is the only recorded op using the colon-kebab form, and 9 entries already carry it permanently.\n\nConsequence: any consumer of the immutable record - a replay tool, an external auditor, a metrics job, a future format reader across the decades the format claims to cover - must special-case an open-ended vocabulary that no gate constrains. A new op name cannot be reviewed against a rule because no rule is written down. The record is immutable, so every drifted name is permanent and the cost of the gap only accumulates.\n\nThis is the same class as the dependency-kind lexicon and the flag lexicon and the error-code catalog, one layer deeper: those govern surfaces a caller can re-read, this governs a record nobody can ever rewrite. Scope is the op vocabulary only. Entry presence is a different concern and stays with the history-completeness gate. Entry ordering identity stays with its own owner."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: core,governance,history
 created_at: "2026-07-28T02:52:26.634Z"
-updated_at: "2026-09-08T13:32:06.844Z"
+updated_at: "2026-09-11T11:35:48.493Z"
+closed_at: "2026-09-11T11:35:47.919Z"
+completed_at: "2026-09-11T11:35:47.919Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A single declared source enumerates every permitted history op name, and every write site derives its op from that source rather than a literal; A naming grammar for op names is written down and machine-checked, so a non-conforming op cannot reach a stream; The init type-preset duplicate spelling is resolved to one name and the historical entries carrying the retired spelling are documented as a known legacy alias rather than rewritten; The declared vocabulary is published through the runtime contract surface so an external replay or verification tool can enumerate it without reading source; A gate fails when a new op literal appears that is absent from the declared vocabulary"
 parent: pm-o2kc
 risk: medium
 confidence: 88
-expected_result: "Every history op name derives from one declared enumeration under a machine-checked grammar, so no non-conforming op can reach a stream."
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Publish native operation identities and aliases through SDK/runtime contracts, normalize new writes before sealing, preserve historical bytes and custom SDK grammar, and enforce native source/migration vocabulary gates. Validate custom operations in linear time using an unambiguous first-colon split, with a bounded hostile-input regression."
+expected_result: "Native vocabulary drift fails mandatory tests, consumers discover stable identities, and untrusted custom operation strings cannot trigger polynomial validation cost."
+actual_result: "8714 tests passed with exact 100/100/100/100 coverage, all TypeScript projects and linked tests passed, and repository documentation/contract checks passed. The 500001-character hostile-input control timed out before the fix and passes afterward; 10000 deterministic comparisons preserved the previous grammar."
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-4020c5,related,"2026-07-28T02:52:26.634Z","harness:claude-code","cli:create:dep",detected
   pm-9yfo,related,"2026-07-28T02:52:26.634Z","harness:claude-code","cli:create:dep",detected
   pm-fs8q9x,related,"2026-07-28T02:52:26.634Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-07-28T02:52:26.634Z","harness:claude-code","cli:create:dep",detected
   pm-x4nn3z,related,"2026-07-28T02:52:26.634Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+  pm-bbk8we,verifies,"2026-09-11T10:18:40.237Z","harness:codex","cli:update:dep",detected
+  pm-nb4zwz,related,"2026-09-11T11:01:36.861Z","harness:codex","cli:update:dep",detected
+comments[16]{created_at,author,text}:
   "2026-07-29T04:41:47.927Z","harness:claude-code","Sibling class measured 2026-07-29 in the same record this item censuses: the author field of the same 41,021 entries holds 477 distinct spellings with no enumeration, no contract entry and no gate, and four of its six most frequent values are two harnesses written two ways. It is the same ungoverned-value-domain shape as the 71 op literals, one layer harder for the same reason - the stream is append-only, so neither vocabulary can be fixed by migration and both need read-time canonicalization against declared data. Owner for the author half is pm-3yxwv5; keep the two separate because the op vocabulary is written only by the product while the author vocabulary is also written by callers through --author and PM_AUTHOR."
   "2026-08-01T09:52:05.174Z","harness:claude-code","Live op census, 2026-08-01, over all 2,258 history streams and 42,771 entries. 37 distinct op literals are actually written: update 10,931, comment_add 8,010, files_add 6,592, tests_add 3,086, claim 2,745, release 2,281, create 2,215, close 2,202, docs_add 1,431, test_run_track 913, note_add 725, learning_add 636, update_audit 309, update_ownership_bypass 120, append 115, plan_complete_step 85, plan_add_step 71, plan_update_step 44, history_repair 42, history_compact_baseline 41, history_compact 41, history_redact 23, plan_create_metadata 19, history:author-acknowledge 9, plan_create_initial_step 12, plan_append_discovery 12, delete 12, plan_append_validation 9, plan_append_decision 7, plan_approve 6, plan_link_step 4, comment_edit 4, comment_delete 3, plan_unlink_step 1, plan_reorder_step 1, note_delete 1. The naming-convention finding is confirmed and is now a single outlier: history:author-acknowledge is the one colon-namespaced literal in the entire immutable record; every other op is snake_case, and the plan_* family is the one that uses a namespace prefix without a separator. That makes the canonicalization tractable -- one recorded spelling has to move, not a class of them. The gap between 37 written and ~71 declared is also the measurement pm-pww8ax needs: half the declared vocabulary has never been exercised on a real workspace."
+  "2026-09-11T10:04:52.063Z","harness:codex","TDD evidence: writer regression fails on baseline because init:type-preset is sealed unchanged. The new public operation contract separates item events, singleton events, parameterized families, explicit legacy aliases, and package-qualified custom operations. Raw historical reads remain byte-preserving. Original census also included JSON Patch verbs, onWrite hook labels, and telemetry spans; those are separate contracts and must not be renamed as history operations."
+  "2026-09-11T10:10:19.682Z","harness:codex","Compatibility finding: public workspace-history APIs and package consumers already provide custom operation identities, including unqualified snake_case names. Rejecting every name outside the native inventory would break supported SDK customization. New record construction therefore validates the declared compatibility grammar and canonicalizes known aliases; a separate exhaustive source test rejects undeclared native literals. This preserves universal SDK authoring while preventing native vocabulary drift."
+  "2026-09-11T10:19:10.877Z","harness:codex","Integration evidence: 47 focused tests pass across native operation grammar/runtime projections, source inventory, deleted-item recovery, schema migration retries, and author attribution. Existing author acknowledgment identities remain stable. Core shell-safe command rendering is shared with SDK exports to avoid an inverted dependency. Full exact coverage is running; no acceptance thresholds or exclusions changed."
+  "2026-09-11T10:22:01.812Z","harness:codex","Current external inventory: no open GitHub PRs or issues at inspection; all three security-alert inventories were empty, and pnpm audit reports zero vulnerabilities. pm-changelog latest is 2026.9.11. Current Sentry/telemetry required-mode threshold gate passed with zero critical/high issues in the 14-day window; physical queue delivery is verified separately at closeout."
+  "2026-09-11T10:23:29.673Z","harness:codex","Complete graph inspection covered all 2736 recorded items and 13642 directed edges across every lifecycle state. No missing references, ordering cycles, ordering contradictions, isolated nodes, or degree-one nodes were reported; all non-outcome nodes reached declared outcomes. Seven historical nodes retain informational hierarchy-cardinality/direction findings. The delivery adds evidence-backed verifies links to completed pm-bbk8we, rather than synthetic edges to increase depth. Only pm-0elqjj and pm-nb4zwz are in progress."
+  "2026-09-11T10:32:41.299Z","harness:codex","Dynamic-family TDD found a catalogue omission: the schema migration request union includes remap-status, whose immutable writer identity is schema_remap_status. A type-exhaustive Record over that public union failed before adding this identity and its compensation family. The contract snapshot now declares the actual writer vocabulary; no historical records were rewritten."
+  "2026-09-11T10:35:03.723Z","harness:codex","Security and packaging verification: all GitHub Dependabot/code-scanning/secret-scanning open inventories are empty; local Trivy HIGH/CRITICAL vulnerability, secret and misconfiguration scan completed with zero findings; tracked-file credential scan and all tracked ShellCheck scripts passed. Typecheck passed all four projects. Packed npm/npx/Bun/bunx smoke passed with six package workflows and a compiled public SDK consumer."
+  "2026-09-11T10:53:02.557Z","harness:codex","Implementation verification: all 8713 tests across 670 files passed. Exact coverage: 64236/64236 statements, 48920/48920 branches, 13345/13345 functions, 61538/61538 lines. All four TypeScript projects passed. Both linked operation tests passed in the final recorded run. Default-budget history contracts include vocabulary version 1. Native literal validation and typed migration-family checks govern writers while the public SDK retains well-formed custom identities. Final static and hosted review gates remain required before merge."
+  "2026-09-11T11:01:37.569Z","harness:codex","Final static verification passed ESLint, zero-duplicate checks, generated contracts, repository static/documentation assurance, package boundaries, grammar/token/refusal contracts, all tracker-context assertions, SDK surface and isolated import/transport cost budgets. Graph composition found a new prose-to-edge gap between the two jointly delivered history items; added the truthful related edge, retaining their existing typed causal and verification lineage. Complete live validation found zero history drift or identity discontinuities across 2736 items; 170 pre-existing historical outcome-field gaps remain explicitly unfilled."
+  "2026-09-11T11:03:26.332Z","harness:codex","Final local delivery gates passed: the static pipeline through import/transport budgets plus corrected graph-composition and record-integrity assertions are green without threshold changes. The graph correction preserves a truthful joint-delivery association and refines an existing permanent-identity association to verifies using the new wrong-subject regression. Final temporary-project acceptance and packed npm/npx/Bun/bunx SDK-consumer smoke passed; generated changelog consistency passed. Hosted review/checks and exact merged-main proof remain separate."
+  "2026-09-11T11:24:12.321Z","harness:codex","Accepted PR review finding: CodeQL alert 39 and the CodeRabbit security thread identify polynomial backtracking in the custom-operation regex. Replace the ambiguous prefix/suffix split with linear validation, preserving accepted identities rather than imposing an arbitrary new length limit. Add a bounded child-process negative control so hostile inputs cannot hang the test runner. Only this item is actively reopened."
+  "2026-09-11T11:26:43.771Z","harness:codex","PR 1236 security TDD: the bounded subprocess regression failed against the original validator with ETIMEDOUT at 3 seconds. The corrected first-colon split accepts the 500001-character valid identity and rejects its control-character suffix; all six focused operation/source tests pass, along with ESLint, all TypeScript projects and build. Added explicit AST-helper docstrings. Exact full coverage is running; no limits or grammar compatibility were weakened."
+  "2026-09-11T11:27:23.282Z","harness:codex","Additional review evidence: 10000 deterministic short-input comparisons matched the prior accepted grammar after the linear-time correction. Greptile CLI returned an explicit free-review-quota-exhausted receipt; Sourcery also reported its seven-day review quota exhausted. Neither limitation is counted as approval. CodeQL and CodeRabbit security findings are accepted and being resolved on this canonical item."
+  "2026-09-11T11:35:45.968Z","harness:codex","Review-fix verification completed: 8714 tests passed with exact coverage 64239/64239 statements, 48927/48927 branches, 13345/13345 functions and 61542/61542 lines. Both linked commands, focused ESLint, all TypeScript projects, build, repository static/documentation assurance and contract/public-surface snapshots passed. CodeQL and renewed hosted review must verify the pushed head before merge. Every settled-round bot comment/review was reacted to and acknowledged, including real inline security replies."
+learnings[1]{created_at,author,text}:
+  "2026-09-11T10:29:42.526Z","harness:codex","Operation contracts must distinguish native event identities from custom SDK names, workspace retry suffixes, JSON Patch verbs, hooks and spans. A literal source census is complemented by type-exhaustive dynamic-family checks; schema remap-status produces schema_remap_status, not schema_rename_status."
+files[10]{path,scope,note}:
+  sdk/public-surface.json,project,Reviewed additive operation exports and optional result fields
+  src/core/history/history.ts,project,Resolve declared operation before sealing new history entries
+  src/core/history/operation-contract.ts,project,Public canonical operation names and explicit legacy aliases
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Targeted history operation discoverability
+  src/sdk/contracts.ts,project,Narrow SDK authoring contract exports
+  src/sdk/index.ts,project,Aggregate SDK operation-contract exports
+  tests/fixtures/contracts/full.json,project,Generated runtime-contract snapshot
+  tests/types/history-operation-families.test-d.ts,project,Compile-checked exhaustive migration operation fixture shared by runtime tests
+  tests/unit/core/history/operation-contract.spec.ts,project,Grammar alias integrity and runtime projections
+  tests/unit/core/history/operation-source-contract.spec.ts,project,Native literal inventory gate
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/history/operation-contract.spec.ts,project,240,"harness:codex","2026-09-11T10:04:53.717Z",local_mutation,feat/history-operation-contracts-deleted-item-recovery
+  node scripts/run-tests.mjs test -- tests/unit/core/history/operation-source-contract.spec.ts,project,240,"harness:codex","2026-09-11T10:27:11.359Z",local_mutation,feat/history-operation-contracts-deleted-item-recovery
+test_runs[3]:
+  - run_id: test-local-mtwtmuqe-pdhs02
+    kind: test
+    status: passed
+    started_at: "2026-09-11T10:35:51.398Z"
+    finished_at: "2026-09-11T10:36:30.614Z"
+    recorded_at: "2026-09-11T10:36:30.614Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/operation-contract.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/operation-source-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtwu6x9e-wzoydj
+    kind: test
+    status: passed
+    started_at: "2026-09-11T10:51:50.529Z"
+    finished_at: "2026-09-11T10:52:07.010Z"
+    recorded_at: "2026-09-11T10:52:07.010Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/operation-contract.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/operation-source-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtwvolg1-74p562
+    kind: test
+    status: passed
+    started_at: "2026-09-11T11:33:34.755Z"
+    finished_at: "2026-09-11T11:33:51.121Z"
+    recorded_at: "2026-09-11T11:33:51.121Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/operation-contract.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/operation-source-contract.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/HISTORY_OPERATIONS.md,project,Native inventory and custom SDK compatibility
+close_reason: Operation governance and the reviewed polynomial-regex fix are implemented and locally verified; exact-head hosted checks remain required before merge.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-0elqjj
+  gate_id: test-coverage
+  negative_control: New-record alias regression fails before canonicalization; an undeclared native updaet literal fails the source census. Custom SDK names and schema retry paths remain supported.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/history/operation-contract.spec.ts tests/unit/core/history/operation-source-contract.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

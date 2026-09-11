@@ -1389,7 +1389,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["core/history/projection.ts"],
+    sources: ["core/history/projection.ts", "core/history/tombstone.ts"],
     emitting_commands: ["*"],
     canonical_code: "history_replay_invalid",
     aliases: [],
@@ -2029,6 +2029,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "item_deleted",
+    meaning: "Item deleted condition.",
+    stability: "provisional",
+    exit_code: 3,
+    class: "not_found",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/history/tombstone.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "item_deleted",
+    aliases: [],
+  },
+  {
     code: "item_document_encoding_invalid",
     meaning: "Item document encoding invalid condition.",
     stability: "provisional",
@@ -2432,19 +2445,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["sdk/agent/refusal-closure.ts"],
     emitting_commands: ["*"],
     canonical_code: "missing_allowed_values",
-    aliases: [],
-  },
-  {
-    code: "missing_budget",
-    meaning: "Missing budget condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "missing_budget",
     aliases: [],
   },
 ];

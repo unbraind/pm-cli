@@ -26,6 +26,7 @@ import {
   resolvePmRoot,
   readSettings,
 } from "../runtime-primitives.js";
+import { PM_HISTORY_OPERATION_CONTRACT } from "../../core/history/operation-contract.js";
 import {
   buildMcpToolContracts,
   type McpToolContract,
@@ -257,6 +258,8 @@ interface ListCommandProjectionSurface {
 
 /** Documents the contracts result payload exchanged by command, SDK, and package integrations. */
 export interface ContractsResult {
+  /** Immutable event names, historical aliases, and package operation grammar. */
+  history_operations?: typeof PM_HISTORY_OPERATION_CONTRACT;
   /** Value that configures or reports schema version for this contract. */
   schema_version: string | null;
   /** Value that configures or reports schema id for this contract. */
@@ -2965,6 +2968,9 @@ function attachRuntimeContractsResult(
   runtime: ContractsRuntimeContext,
   selection: ContractsSelection,
 ): void {
+  if ((selection.selectedCommand === "history" || selection.fullOutput) && !selection.flagsOnly && !selection.schemaOnly && !selection.availabilityOnly) {
+    result.history_operations = PM_HISTORY_OPERATION_CONTRACT;
+  }
   const selectedCommand = selection.selectedCommand;
   result.runtime_schema = {
     statuses: runtime.statusRegistry.definitions.map(
