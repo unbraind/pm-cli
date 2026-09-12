@@ -426,6 +426,12 @@
       "help_bytes": 437,
       "estimated_tokens": 110,
       "maximum_tokens": 110
+    },
+    {
+      "command": "item",
+      "help_bytes": 483,
+      "estimated_tokens": 121,
+      "maximum_tokens": 121
     }
   ]
 }

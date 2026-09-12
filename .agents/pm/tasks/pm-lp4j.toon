@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[4]: agent-ux,"area:cli",internal-command,simplification
 created_at: "2026-07-06T22:23:03.453Z"
-updated_at: "2026-09-12T07:57:26.645Z"
+updated_at: "2026-09-12T08:22:04.497Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#5fc3f61915d1b750011309ba"
 author: codex
@@ -46,13 +46,16 @@ comments[4]{created_at,author,text}:
   "2026-09-12T07:07:34.409Z","harness:codex","Live source already hides the legacy worker. Complete the explicit plumbing route as item test worker, preserve the orchestration alias, and prove internal tier propagation prevents discovery under the public item test parent."
   "2026-09-12T07:52:25.363Z","harness:codex","Acceptance evidence: item test worker is hidden beneath its public parent even with --all, remains explicitly inspectable with its required runId and no local flags, and retains test-runs-worker compatibility. Runtime discovery excludes internal commands by default but restores them through --full or exact command selection; 134 executable refusal probes passed including independent worker paths."
   "2026-09-12T07:57:25.680Z","harness:codex","TDD finding and fix: a new SDK assertion reproduced five unsupported worker flags (--status/--limit/--stream/--tail/--force) inherited from the public test-runs table. The worker now exposes inherited globals only in the shared flag contract, matching its real Commander and runtime-contract surface. Static quality caught runContracts complexity 18 over ceiling 16; shared visibility selection now uses a reusable predicate and the unchanged CodeFactor-parity ceiling passes."
-files[6]{path,scope,note}:
+files[9]{path,scope,note}:
   scripts/release/command-grammar-gate.mjs,project,Independent canonical and compatibility help census
+  scripts/release/flag-spelling-baseline.json,project,Remove five phantom worker options never registered by the executable worker
   src/cli/command-namespaces.ts,project,Apply internal tier when moving worker node
   src/sdk/agent-capability-contracts.ts,project,Resolve internal visibility through stable SDK operation identities
   src/sdk/cli-contracts/flag-contracts.ts,project,Worker SDK flags match actual internal handler
   src/sdk/cli-contracts/grammar-contracts.ts,project,Worker runId positional and destination contracts
   src/sdk/cli-contracts/runtime-contracts.ts,project,Default internal visibility and explicit worker flag discovery
+  tests/unit/scripts/flag-lexicon-gate.spec.ts,project,Pin corrected executable compatibility census while preserving negative controls
+  tests/unit/sdk/sdk-index.spec.ts,project,Assert worker exposes only shared global flags through public SDK
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/cli/item-facet-namespaces.spec.ts tests/integration/item-facets.integration.spec.ts,project,240,"harness:codex","2026-09-12T07:30:04.813Z",local_mutation,feat/item-facets-and-internal-command-routing
 docs[1]{path,scope,note}:

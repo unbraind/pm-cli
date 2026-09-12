@@ -299,10 +299,6 @@ function toComparableFlag(flag: string): string {
   return normalizeLongFlag(flag).slice(2).replace(/-/g, "");
 }
 
-function renderAttemptedCommand(argv: string[]): string {
-  return renderPmCommand(argv);
-}
-
 function resolveOptionalPackageInstallHint(commandPath: string): string | null {
   const topLevel = commandPath.split(" ")[0]?.trim().toLowerCase();
   if (!topLevel) {
@@ -965,7 +961,7 @@ export async function resolveCommanderUsageContext(
   const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
   const commandIndex = findBootstrapCommandTokenIndex(invocationArgv);
   const commandName = findPmNamespacedCommand(invocationArgv.slice(commandIndex))?.alias ?? parseBootstrapCommandName(invocationArgv);
-  const attemptedCommand = renderAttemptedCommand(invocationArgv);
+  const attemptedCommand = renderPmCommand(invocationArgv);
   const providedOptionFlags = extractProvidedOptionFlags(invocationArgv);
   const workspaceUsage = await resolveWorkspaceUsageContext(
     bootstrapGlobal,

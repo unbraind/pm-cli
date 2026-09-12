@@ -755,6 +755,8 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
     ...destinationRows("item", "item files", "consolidation", "pm-ya7x55", [
       "files discover",
       "files lookup",
+      "item files discover",
+      "item files lookup",
     ]),
     ...destinationRows("item", "item test worker", "consolidation", "pm-lp4j", ["test-runs-worker"]),
     ...destinationRows("list", "list", "target_noun", "pm-pfqi", ["list"]),

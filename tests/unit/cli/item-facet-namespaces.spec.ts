@@ -5,9 +5,19 @@ import { generateBashScript } from "../../../src/sdk/completion.js";
 import { normalizeBootstrapInvocation } from "../../../src/sdk/cli-bootstrap.js";
 import { resolvePmCommandOperation } from "../../../src/sdk/cli-contracts/command-aliases.js";
 import { resolveSubcommandFlagContractsForCommand } from "../../../src/sdk/cli-contracts/flag-contracts.js";
+import { resolvePmFlagSemanticConcept } from "../../../src/sdk/cli-contracts/flag-lexicon-contracts.js";
 import { resolvePmCommandVisibilityTier } from "../../../src/sdk/agent-capability-contracts.js";
+import { PM_COMMAND_DESTINATION_CONTRACTS, PM_COMMAND_POSITIONAL_CONTRACTS } from "../../../src/sdk/cli-contracts/grammar-contracts.js";
 
 describe("item facet namespace contracts", () => {
+  it.each(["discover", "lookup"])("preserves nested files %s contracts", (action) => {
+    const canonical = `item files ${action}`;
+    const legacy = `files ${action}`;
+    expect(resolvePmCommandOperation(canonical)).toBe(legacy);
+    expect(PM_COMMAND_DESTINATION_CONTRACTS.some(({ command }) => command === canonical)).toBe(true);
+    expect(PM_COMMAND_POSITIONAL_CONTRACTS.find(({ command }) => command === canonical)?.slots).toEqual(PM_COMMAND_POSITIONAL_CONTRACTS.find(({ command }) => command === legacy)?.slots);
+  });
+
   it("completes evidence flags and omits internal workers beneath the test facet", () => {
     const cases = [
       { words: ["pm", ""], includes: "item", excludes: "test-runs-worker" },
@@ -29,6 +39,7 @@ describe("item facet namespace contracts", () => {
     const canonical = `item ${facet}`;
     expect(resolvePmCommandOperation(canonical)).toBe(facet);
     expect(resolveSubcommandFlagContractsForCommand(canonical)).toEqual(resolveSubcommandFlagContractsForCommand(facet));
+    expect(resolvePmFlagSemanticConcept(canonical, "--file")).toBe(resolvePmFlagSemanticConcept(facet, "--file"));
     expect(normalizeBootstrapInvocation([facet, "--id", "pm-a"]).argv).toEqual(["item", facet, "pm-a"]);
     expect(normalizeBootstrapInvocation(["help", facet]).argv).toEqual(["help", "item", facet]);
   });

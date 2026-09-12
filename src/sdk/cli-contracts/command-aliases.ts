@@ -122,7 +122,9 @@ export function findPmNamespacedCommand(tokens: readonly string[]): PmCommandAli
 /** Resolve a native command leaf to its stable SDK operation without changing unknown paths. */
 export function resolvePmCommandOperation(command: string): string {
   const normalized = command.trim().replace(/\s+/gu, " ");
-  return PM_NAMESPACED_COMMAND_ALIASES.find((alias) => alias.canonical === normalized.replace(/^ctx /u, "context "))?.alias ?? normalized;
+  const tokens = normalized.split(" ");
+  const alias = findPmNamespacedCommand(tokens);
+  return alias ? [alias.alias, ...tokens.slice(alias.canonical_argv.length)].join(" ") : normalized;
 }
 
 /** Compatibility entrypoint for hosts that adopted namespace resolution with history. */

@@ -889,7 +889,7 @@ describe("public sdk entrypoint", () => {
     expect(flagsFor("normalize")).toEqual(expect.arrayContaining(["--json", "--pm-path"]));
     expect(flagsFor("cal")).toEqual(expect.arrayContaining(["--from", "--to"]));
     expect(flagsFor("ctx")).toEqual(expect.arrayContaining(["--depth"]));
-    expect(flagsFor("test-runs-worker")).toEqual(expect.arrayContaining(["--status", "--tail"]));
+    expect(flagsFor("test-runs-worker")).toEqual(flagsFor(undefined));
     expect(flagsFor("extension init")).toEqual(expect.arrayContaining(["--project", "--global", "--capability"]));
     expect(flagsFor("package init")).toEqual(
       expect.arrayContaining(["--project", "--global", "--capability", "--declarative"]),
