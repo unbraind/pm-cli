@@ -29,7 +29,7 @@ describe("CLI noun-verb grammar contracts", () => {
       ok: true,
       command_count: commands.length,
       destination_count: commands.length,
-      hidden_alias_count: 53,
+      hidden_alias_count: 55,
       visible_top_level_count: 27,
       visible_top_level_ceiling:
         PM_CLI_GRAMMAR_CONTRACT.visible_top_level_ceiling,

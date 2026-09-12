@@ -23,6 +23,7 @@ describe("item facet namespace contracts", () => {
       { words: ["pm", ""], includes: "item", excludes: "test-runs-worker" },
       { words: ["pm", "item", ""], includes: "comments", excludes: "worker" },
       { words: ["pm", "item", "comments", "--"], includes: "--text", excludes: "worker" },
+      { words: ["pm", "item", "files", ""], includes: "discover", excludes: "worker" },
       { words: ["pm", "item", "test", ""], includes: "--run", excludes: "worker" },
       { words: ["pm", "completion", ""], includes: "bash", excludes: "statuses" },
     ];

@@ -107,6 +107,15 @@ export const PM_NAMESPACED_COMMAND_ALIASES: readonly PmCommandAliasContract[] = 
   { alias: "history-attest", canonical: "history attest", canonical_argv: ["history", "attest"], lifecycle: "permanent", hidden: true, registration: "commander", owner: "pm-3z0k" },
   ...PM_HISTORY_COMMAND_ALIASES,
   ...PM_RELOCATED_COMMAND_ALIASES,
+  ...["discover", "lookup"].map((action): PmCommandAliasContract => ({
+    alias: `files ${action}`,
+    canonical: `item files ${action}`,
+    canonical_argv: ["item", "files", action],
+    lifecycle: "permanent",
+    hidden: true,
+    registration: "bootstrap",
+    owner: "pm-yql1",
+  })),
 ];
 
 /** Find the longest declared command prefix without consuming flags or positional operands. */
@@ -122,9 +131,7 @@ export function findPmNamespacedCommand(tokens: readonly string[]): PmCommandAli
 /** Resolve a native command leaf to its stable SDK operation without changing unknown paths. */
 export function resolvePmCommandOperation(command: string): string {
   const normalized = command.trim().replace(/\s+/gu, " ");
-  const tokens = normalized.split(" ");
-  const alias = findPmNamespacedCommand(tokens);
-  return alias ? [alias.alias, ...tokens.slice(alias.canonical_argv.length)].join(" ") : normalized;
+  return PM_NAMESPACED_COMMAND_ALIASES.find((alias) => alias.canonical === normalized.replace(/^ctx /u, "context "))?.alias ?? normalized;
 }
 
 /** Compatibility entrypoint for hosts that adopted namespace resolution with history. */

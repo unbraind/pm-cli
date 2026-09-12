@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: agent-ux,"area:cli",simplification
 created_at: "2026-07-05T05:08:35.381Z"
-updated_at: "2026-09-12T08:26:26.650Z"
+updated_at: "2026-09-12T08:32:50.339Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#5fc3f61915d1b750011309ba"
 author: maintainer-agent
@@ -41,7 +41,7 @@ dependencies[6]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[19]{created_at,author,text}:
+comments[20]{created_at,author,text}:
   "2026-08-26T21:27:34.572Z","harness:codex","GitHub intake: GH-1126 https://github.com/unbraind/pm-cli/issues/1126. Reused the canonical annotation-facet grammar task. Red reproduction: comments/learnings reject --text even though notes/remind and collection concepts use text; human recovery can truncate before suggested_retry."
   "2026-08-26T21:34:26.811Z","harness:codex","TDD red: shared registration spec proves comments, notes, and learnings all reject the convergent --text alias before reaching their SDK adapters."
   "2026-08-26T22:51:39.094Z","harness:codex","Evidence for the implemented slice: comments, notes, and learnings now accept the convergent --text alias and reject conflicting positional/text payloads through one typed resolver; recovery bundles put suggested_retry first. Fresh-directory acceptance persisted and projected one entry from each collection. The linked sandbox-safe suite passed 134/134, while repository gates passed pnpm build, pnpm lint, 584 files and 8025 tests with exact 100/100/100/100 coverage, pnpm audit clean, and Trivy HIGH/CRITICAL vuln+secret+misconfig clean. This closes only the GitHub #1126 alias slice; the broader convergent grammar programme remains open for its other command families."
@@ -61,6 +61,7 @@ comments[19]{created_at,author,text}:
   "2026-09-12T08:20:23.617Z","harness:codex","Final census found nested item files discover/lookup absent from destination and positional inventories. Red tests reproduced both; longest declared canonical-prefix operation resolution now preserves nested operation suffixes, and canonical census entries retain exact legacy positional slots. Added a no-growth 20-global-flag item budget and measured only its newly visible help baseline. Removed five phantom test-runs-worker flags from the historical inventory because executable worker registration never accepted them; no executable compatibility flag was removed. Focused descendant and full agent-task token regression suite now passes after settled rebuild; the earlier diagnostic mismatch does not reproduce."
   "2026-09-12T08:22:05.726Z","harness:codex","Manual semantic-contract review found canonical annotation --file flags classified as plan input rather than evidence-file input. Added canonical-versus-legacy concept assertions first, observed three failures, and resolved classification through stable operation identity. Corrected fixed compatibility census count from 3084 to 3079 after removing only the five non-executable worker declarations; seeded compatibility-removal and budget-growth controls remain mandatory."
   "2026-09-12T08:26:26.650Z","harness:codex","Final source review also inlined the one-use renderAttemptedCommand wrapper as required by repository quality guidance. The executable grammar census is now complete at 217 declared and 217 observed command paths, with 20 positional shapes within the unchanged budget of 21; no positional or destination findings remain."
+  "2026-09-12T08:32:50.339Z","harness:codex","Correction to final-review notes: generic descendant-prefix resolution misclassified positional IDs during structured help. Replaced it with two explicit permanent SDK aliases for files discover/lookup, retaining exact-match semantics and automatic nested completion. The refusal census now includes both paths: 136 probes, 113 grammar contracts, 105 required-argument contracts. Also restored the command-rendering helper after the compiler identified its three call sites; it was not a single-use helper. These corrections supersede the earlier implementation notes."
 learnings[2]{created_at,author,text}:
   "2026-08-26T22:51:39.542Z","harness:codex","Convergent mutation grammar should resolve positional and named text at a shared registration boundary, with a typed conflict refusal before any SDK mutation adapter runs."
   "2026-09-12T07:30:08.390Z","harness:codex",Namespace normalization must use the stable operation identity for payload-sensitive preprocessing. Root noun tests alone miss linked-test environment assignments and nested internal visibility.
