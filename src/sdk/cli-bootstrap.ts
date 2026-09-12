@@ -28,7 +28,7 @@ export {
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
-import { findPmNamespacedCommand } from "./cli-contracts/command-aliases.js";
+import { findPmNamespacedCommand, resolvePmCommandOperation } from "./cli-contracts/command-aliases.js";
 import { normalizeItemAddressInvocation } from "./agent/item-addressing.js";
 import {
   BOOTSTRAP_BOOLEAN_FLAGS,
@@ -1159,16 +1159,17 @@ export function normalizeBootstrapInvocation(
   }
   const commandName = parseBootstrapCommandName(itemAddress.argv);
   const commandPathName = parseBootstrapCommandPathName(itemAddress.argv);
+  const operationName = resolvePmCommandOperation(commandPathName ?? commandName ?? "");
   const lookup = buildFlagLookup(commandPathName ?? commandName);
   const normalizedArgv = normalizeBootstrapTokens(
     itemAddress.argv,
     lookup,
-    commandName,
+    operationName,
     trace,
   );
   const linkedTestNormalized = mergeLinkedTestTwoTokenEntries(
     normalizedArgv,
-    commandName,
+    operationName,
     trace,
   );
   const coalesced = coalesceRepeatedListFlags(

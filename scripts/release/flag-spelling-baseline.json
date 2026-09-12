@@ -21824,41 +21824,6 @@
       "accepted_spellings": [
         "--author"
       ]
-    },
-    {
-      "command": "test-runs-worker",
-      "canonical_flag": "--status",
-      "accepted_spellings": [
-        "--status"
-      ]
-    },
-    {
-      "command": "test-runs-worker",
-      "canonical_flag": "--limit",
-      "accepted_spellings": [
-        "--limit"
-      ]
-    },
-    {
-      "command": "test-runs-worker",
-      "canonical_flag": "--stream",
-      "accepted_spellings": [
-        "--stream"
-      ]
-    },
-    {
-      "command": "test-runs-worker",
-      "canonical_flag": "--tail",
-      "accepted_spellings": [
-        "--tail"
-      ]
-    },
-    {
-      "command": "test-runs-worker",
-      "canonical_flag": "--force",
-      "accepted_spellings": [
-        "--force"
-      ]
     }
   ]
 }

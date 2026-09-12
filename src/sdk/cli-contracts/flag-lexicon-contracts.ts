@@ -137,7 +137,7 @@ export function resolvePmFlagSemanticConcept(
   if (flag !== "--file") return flag.slice(2);
   if (["create", "update", "update-many"].includes(resolvePmCommandOperation(command)))
     return "linked-file-path";
-  if (["comments", "notes", "learnings"].includes(command))
+  if (["comments", "notes", "learnings"].includes(resolvePmCommandOperation(command)))
     return "entry-file-input";
   return "plan-definition-file";
 }
@@ -215,6 +215,8 @@ export function listPmFlagSpellingInventory(): readonly PmFlagSpellingInventoryE
 // pm-5bsofk adds one install planning opt-in to each executable install surface.
 const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   init: 30,
+  // pm-yql1: the item namespace exposes only the twenty shared global flags.
+  item: 20,
   config: 36,
   extension: 54,
   package: 55,
@@ -294,7 +296,7 @@ const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   meet: 33,
   event: 33,
   remind: 29,
-  "test-runs-worker": 25,
+  "test-runs-worker": 20,
 } satisfies Readonly<Record<string, number>>);
 
 /** Native paths inherit the identical flag ceiling of their compatibility operation. */

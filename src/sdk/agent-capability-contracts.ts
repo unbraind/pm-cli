@@ -185,7 +185,7 @@ export const PM_COMMAND_CAPABILITY_CONTRACTS: readonly PmCommandCapabilityContra
   Object.freeze([
     ...PM_CORE_COMMAND_NAMES.flatMap((command) =>
       command === "item"
-        ? ["item-reopen"]
+        ? ["item", "item-reopen"]
         : [
             command,
             ...PM_NAMESPACED_COMMAND_ALIASES.filter(
@@ -219,6 +219,11 @@ export const PM_COMMAND_CAPABILITY_CONTRACTS: readonly PmCommandCapabilityContra
     },
     {
       command: "test-runs-worker",
+      tier: "internal" as const,
+      family: "internal" as const,
+    },
+    {
+      command: "item test worker",
       tier: "internal" as const,
       family: "internal" as const,
     },
@@ -284,7 +289,8 @@ export function resolvePmCommandVisibilityTier(
   extensionTier: PmCommandVisibilityTier = "standard",
 ): PmCommandVisibilityTier {
   return (
-    COMMAND_TIER_BY_NAME.get(command.trim().toLowerCase()) ?? extensionTier
+    COMMAND_TIER_BY_NAME.get(command.trim().toLowerCase()) ??
+    COMMAND_TIER_BY_NAME.get(resolvePmCommandOperation(command.trim().toLowerCase())) ?? extensionTier
   );
 }
 

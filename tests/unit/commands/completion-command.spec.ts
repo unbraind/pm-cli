@@ -811,9 +811,10 @@ describe("generateZshScript", () => {
     expect(script).not.toContain("history-redact:Redact");
     expect(script).toContain("history_commands=(attest redact repair compact activity restore events)");
     expect(script).toContain("plan:Agent-optimized Plan item workflow");
-    expect(script).toContain("notes:List or add notes for an item");
-    expect(script).toContain("learnings:List or add learnings for an item");
-    expect(script).toContain("deps:Show dependency relationships for an item");
+    expect(script).toContain("item:");
+    expect(script).not.toContain("notes:List or add notes for an item");
+    expect(script).not.toContain("learnings:List or add learnings for an item");
+    expect(script).not.toContain("deps:Show dependency relationships for an item");
     expect(script).toContain('"ops validate")');
   });
 
@@ -1062,8 +1063,7 @@ describe("generateFishScript", () => {
       ["create", "Create"],
       ["calendar", "deadline/reminder calendar views"],
       ["context", "project context snapshot"],
-      ["notes", "List or add notes for an item"],
-      ["learnings", "List or add learnings for an item"],
+      ["item", "Manage item evidence, links, tests, and duplication"],
       ["get", "Show item details"],
       ["search", "Search items"],
       ["completion", "Generate shell completion"],

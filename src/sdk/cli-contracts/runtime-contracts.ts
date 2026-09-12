@@ -917,6 +917,7 @@ const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<
   ["files", FILES_FLAG_CONTRACTS],
   ["docs", DOCS_FLAG_CONTRACTS],
   ["test", TEST_FLAG_CONTRACTS],
+  ["test-runs-worker", []],
   ["test-all", TEST_ALL_FLAG_CONTRACTS],
   ["telemetry", TELEMETRY_FLAG_CONTRACTS],
   ["test-runs", TEST_RUNS_FLAG_CONTRACTS],
@@ -2331,7 +2332,8 @@ function collectContractsActionDescriptors(
   ) {
     const deprecatedActions = new Set<string>(PM_DEPRECATED_TOOL_ACTIONS);
     return actionDescriptors.filter(
-      (descriptor) => !deprecatedActions.has(descriptor.action),
+      (descriptor) => !deprecatedActions.has(descriptor.action) &&
+        (selection.fullOutput || resolvePmCommandVisibilityTier(descriptor.action) !== "internal"),
     );
   }
   if (
@@ -2694,7 +2696,13 @@ function resolveContractsCommands(
   return actionContext.commandCatalog;
 }
 
-/** Hide compatibility aliases only in unscoped compact discovery while preserving explicit and full selections. */
+/** Include internal commands only when the caller requests full or scoped inspection. */
+function isCommandDiscoverable(selection: ContractsSelection, command: string): boolean {
+  return selection.fullOutput || selection.selectedCommand !== undefined ||
+    selection.selectedAction !== undefined || resolvePmCommandVisibilityTier(command) !== "internal";
+}
+
+/** Hide internal plumbing and compatibility aliases in default discovery while preserving explicit inspection. */
 function resolveOutputCommands(
   selection: ContractsSelection,
   commands: string[],
@@ -2713,7 +2721,7 @@ function resolveOutputCommands(
   if (selection.summary && !selection.fullOutput) {
     for (const alias of COMMAND_ALIAS_TO_CANONICAL.keys()) hiddenAliases.add(alias);
   }
-  return commands.filter((command) => !hiddenAliases.has(command));
+  return commands.filter((command) => !hiddenAliases.has(command) && isCommandDiscoverable(selection, command));
 }
 
 /** Resolve a command's summary identity through explicit namespace aliases and established root aliases. */
@@ -2923,7 +2931,7 @@ function resolveExtensionCommandContracts(
       ),
     );
   }
-  return runtime.extensionContracts;
+  return runtime.extensionContracts.filter((entry) => isCommandDiscoverable(selection, entry.command));
 }
 
 function createContractsResult(
@@ -3236,7 +3244,7 @@ export async function runContracts(
   if (selection.summary) {
     return result;
   }
-  const commandAliases = buildCommandAliasSurface(actionContext.commandCatalog);
+  const commandAliases = buildCommandAliasSurface(actionContext.commandCatalog.filter((command) => isCommandDiscoverable(selection, command)));
   if (!(selection.flagsOnly && !selection.fullOutput)) {
     attachRuntimeContractsResult(result, runtime, selection);
   }

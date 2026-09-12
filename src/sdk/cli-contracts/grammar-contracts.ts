@@ -623,6 +623,7 @@ const EXPLICIT_POSITIONAL_SLOTS = new Map<
     ],
   ],
   ["test", [ITEM_ID]],
+  ["test-runs-worker", [positionalSlot("runId", "string", true)]],
   ["update", [ITEM_ID]],
   [
     "workspace snapshot",
@@ -739,6 +740,7 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "copy",
       "create",
       "delete",
+      "deps",
       "docs",
       "files",
       "get",
@@ -754,7 +756,10 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
     ...destinationRows("item", "item files", "consolidation", "pm-ya7x55", [
       "files discover",
       "files lookup",
+      "item files discover",
+      "item files lookup",
     ]),
+    ...destinationRows("item", "item test worker", "consolidation", "pm-lp4j", ["test-runs-worker"]),
     ...destinationRows("list", "list", "target_noun", "pm-pfqi", ["list"]),
     ...destinationRows("list", "list --group-by", "consolidation", "pm-xkgq", [
       "aggregate",
@@ -792,9 +797,6 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "comments-audit",
     ]),
     ...destinationRows("graph", "graph", "target_noun", "pm-pbyu", ["graph"]),
-    ...destinationRows("graph", "graph show", "consolidation", "pm-yql1", [
-      "deps",
-    ]),
     ...destinationRows("history", "history", "target_noun", "pm-pbyu", [
       "history",
     ]),

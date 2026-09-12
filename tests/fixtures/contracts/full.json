@@ -24,7 +24,7 @@
       "action": "append",
       "available": true,
       "cli_exposed": true,
-      "command_path": "append",
+      "command_path": "item append|append",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -74,7 +74,7 @@
       "action": "comments",
       "available": true,
       "cli_exposed": true,
-      "command_path": "comments",
+      "command_path": "item comments|comments",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -154,7 +154,7 @@
       "action": "deps",
       "available": true,
       "cli_exposed": true,
-      "command_path": "deps",
+      "command_path": "item deps|deps",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -164,7 +164,7 @@
       "action": "docs",
       "available": true,
       "cli_exposed": true,
-      "command_path": "docs",
+      "command_path": "item docs|docs",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -344,7 +344,7 @@
       "action": "files",
       "available": true,
       "cli_exposed": true,
-      "command_path": "files",
+      "command_path": "item files|files",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -484,7 +484,7 @@
       "action": "learnings",
       "available": true,
       "cli_exposed": true,
-      "command_path": "learnings",
+      "command_path": "item learnings|learnings",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -534,7 +534,7 @@
       "action": "notes",
       "available": true,
       "cli_exposed": true,
-      "command_path": "notes",
+      "command_path": "item notes|notes",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -784,7 +784,7 @@
       "action": "test",
       "available": true,
       "cli_exposed": true,
-      "command_path": "test",
+      "command_path": "item test|test",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -1035,25 +1035,6 @@
     },
     {
       "aliases": [
-        "comment"
-      ],
-      "canonical": "comments",
-      "contracts": [
-        {
-          "alias": "comment",
-          "canonical": "comments",
-          "canonical_argv": [
-            "comments"
-          ],
-          "hidden": false,
-          "lifecycle": "permanent",
-          "owner": "pm-pbyu",
-          "registration": "bootstrap"
-        }
-      ]
-    },
-    {
-      "aliases": [
         "ctx"
       ],
       "canonical": "context"
@@ -1295,6 +1276,59 @@
     },
     {
       "aliases": [
+        "append"
+      ],
+      "canonical": "item append",
+      "contracts": [
+        {
+          "alias": "append",
+          "canonical": "item append",
+          "canonical_argv": [
+            "item",
+            "append"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-yql1",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "comments",
+        "comment"
+      ],
+      "canonical": "item comments",
+      "contracts": [
+        {
+          "alias": "comments",
+          "canonical": "item comments",
+          "canonical_argv": [
+            "item",
+            "comments"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-yql1",
+          "registration": "bootstrap"
+        },
+        {
+          "alias": "comment",
+          "canonical": "item comments",
+          "canonical_argv": [
+            "item",
+            "comments"
+          ],
+          "hidden": false,
+          "lifecycle": "permanent",
+          "owner": "pm-pbyu",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
         "copy"
       ],
       "canonical": "item copy",
@@ -1309,6 +1343,46 @@
           "hidden": true,
           "lifecycle": "permanent",
           "owner": "pm-m6g87m",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "deps"
+      ],
+      "canonical": "item deps",
+      "contracts": [
+        {
+          "alias": "deps",
+          "canonical": "item deps",
+          "canonical_argv": [
+            "item",
+            "deps"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-yql1",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "docs"
+      ],
+      "canonical": "item docs",
+      "contracts": [
+        {
+          "alias": "docs",
+          "canonical": "item docs",
+          "canonical_argv": [
+            "item",
+            "docs"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-yql1",
           "registration": "bootstrap"
         }
       ]
@@ -1335,19 +1409,140 @@
     },
     {
       "aliases": [
-        "learning"
+        "files"
       ],
-      "canonical": "learnings",
+      "canonical": "item files",
       "contracts": [
         {
-          "alias": "learning",
-          "canonical": "learnings",
+          "alias": "files",
+          "canonical": "item files",
           "canonical_argv": [
+            "item",
+            "files"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-yql1",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "learnings",
+        "learning"
+      ],
+      "canonical": "item learnings",
+      "contracts": [
+        {
+          "alias": "learnings",
+          "canonical": "item learnings",
+          "canonical_argv": [
+            "item",
+            "learnings"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-yql1",
+          "registration": "bootstrap"
+        },
+        {
+          "alias": "learning",
+          "canonical": "item learnings",
+          "canonical_argv": [
+            "item",
             "learnings"
           ],
           "hidden": false,
           "lifecycle": "permanent",
           "owner": "pm-pbyu",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "notes",
+        "note"
+      ],
+      "canonical": "item notes",
+      "contracts": [
+        {
+          "alias": "notes",
+          "canonical": "item notes",
+          "canonical_argv": [
+            "item",
+            "notes"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-yql1",
+          "registration": "bootstrap"
+        },
+        {
+          "alias": "note",
+          "canonical": "item notes",
+          "canonical_argv": [
+            "item",
+            "notes"
+          ],
+          "hidden": false,
+          "lifecycle": "permanent",
+          "owner": "pm-pbyu",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "test",
+        "tests"
+      ],
+      "canonical": "item test",
+      "contracts": [
+        {
+          "alias": "test",
+          "canonical": "item test",
+          "canonical_argv": [
+            "item",
+            "test"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-yql1",
+          "registration": "bootstrap"
+        },
+        {
+          "alias": "tests",
+          "canonical": "item test",
+          "canonical_argv": [
+            "item",
+            "test"
+          ],
+          "hidden": false,
+          "lifecycle": "permanent",
+          "owner": "pm-u4t9gp",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "test-runs-worker"
+      ],
+      "canonical": "item test worker",
+      "contracts": [
+        {
+          "alias": "test-runs-worker",
+          "canonical": "item test worker",
+          "canonical_argv": [
+            "item",
+            "test",
+            "worker"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-lp4j",
           "registration": "bootstrap"
         }
       ]
@@ -1453,25 +1648,6 @@
           "lifecycle": "deprecated",
           "owner": "pm-pfqi",
           "registration": "commander"
-        }
-      ]
-    },
-    {
-      "aliases": [
-        "note"
-      ],
-      "canonical": "notes",
-      "contracts": [
-        {
-          "alias": "note",
-          "canonical": "notes",
-          "canonical_argv": [
-            "notes"
-          ],
-          "hidden": false,
-          "lifecycle": "permanent",
-          "owner": "pm-pbyu",
-          "registration": "bootstrap"
         }
       ]
     },
@@ -1697,25 +1873,6 @@
     },
     {
       "aliases": [
-        "tests"
-      ],
-      "canonical": "test",
-      "contracts": [
-        {
-          "alias": "tests",
-          "canonical": "test",
-          "canonical_argv": [
-            "test"
-          ],
-          "hidden": false,
-          "lifecycle": "permanent",
-          "owner": "pm-u4t9gp",
-          "registration": "bootstrap"
-        }
-      ]
-    },
-    {
-      "aliases": [
         "update-many"
       ],
       "canonical": "update many",
@@ -1831,11 +1988,20 @@
           "history-repair",
           "init",
           "item",
+          "item append",
+          "item comments",
           "item complete",
           "item copy",
+          "item deps",
+          "item docs",
           "item duplicates",
+          "item files",
+          "item learnings",
           "item mutate",
+          "item notes",
           "item reopen",
+          "item test",
+          "item test worker",
           "learnings",
           "list",
           "meet",
@@ -1909,6 +2075,7 @@
           "telemetry",
           "test",
           "test-all",
+          "test-runs-worker",
           "update",
           "update many",
           "validate",
@@ -4956,6 +5123,81 @@
       "provider": "extension"
     },
     {
+      "command": "item append",
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "flag": "--body",
+          "short": "-b"
+        },
+        {
+          "flag": "--text"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "item comments",
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "aliases": [
+            "--comment",
+            "--body",
+            "--text"
+          ],
+          "flag": "--add"
+        },
+        {
+          "flag": "--stdin"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--edit"
+        },
+        {
+          "flag": "--delete"
+        },
+        {
+          "flag": "--limit"
+        },
+        {
+          "flag": "--full-history"
+        },
+        {
+          "flag": "--if-absent",
+          "value_type": "boolean"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "item complete",
       "flags": [
         {
@@ -5069,6 +5311,90 @@
       "provider": "core"
     },
     {
+      "command": "item deps",
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "flag": "--format"
+        },
+        {
+          "flag": "--max-depth"
+        },
+        {
+          "flag": "--collapse"
+        },
+        {
+          "flag": "--summary"
+        },
+        {
+          "flag": "--full"
+        },
+        {
+          "flag": "--node-limit"
+        },
+        {
+          "flag": "--edge-limit"
+        },
+        {
+          "flag": "--token-budget"
+        },
+        {
+          "flag": "--cursor"
+        },
+        {
+          "flag": "--direction"
+        },
+        {
+          "flag": "--kind",
+          "list": true
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "item docs",
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "flag": "--add"
+        },
+        {
+          "flag": "--add-glob"
+        },
+        {
+          "flag": "--remove"
+        },
+        {
+          "flag": "--migrate"
+        },
+        {
+          "flag": "--note"
+        },
+        {
+          "flag": "--list"
+        },
+        {
+          "flag": "--validate-paths"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "item duplicates",
       "flags": [
         {
@@ -5088,6 +5414,124 @@
         },
         {
           "flag": "--limit"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "item files",
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "flag": "--add"
+        },
+        {
+          "flag": "--add-glob"
+        },
+        {
+          "flag": "--remove"
+        },
+        {
+          "flag": "--migrate"
+        },
+        {
+          "flag": "--note"
+        },
+        {
+          "flag": "--list"
+        },
+        {
+          "flag": "--append-stable"
+        },
+        {
+          "flag": "--validate-paths"
+        },
+        {
+          "flag": "--scope"
+        },
+        {
+          "flag": "--limit"
+        },
+        {
+          "flag": "--offset"
+        },
+        {
+          "flag": "--no-truncate"
+        },
+        {
+          "flag": "--strict-read"
+        },
+        {
+          "flag": "--explain"
+        },
+        {
+          "flag": "--lines",
+          "value_name": "start:end"
+        },
+        {
+          "flag": "--decision-depth",
+          "value_name": "n",
+          "value_type": "number"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "item learnings",
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "aliases": [
+            "--learning",
+            "--text"
+          ],
+          "flag": "--add"
+        },
+        {
+          "flag": "--stdin"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--edit"
+        },
+        {
+          "flag": "--delete"
+        },
+        {
+          "flag": "--limit"
+        },
+        {
+          "flag": "--full-history"
+        },
+        {
+          "flag": "--if-absent",
+          "value_type": "boolean"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -5125,6 +5569,66 @@
       "provider": "core"
     },
     {
+      "command": "item notes",
+      "flags": [
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "aliases": [
+            "--note",
+            "--text"
+          ],
+          "flag": "--add"
+        },
+        {
+          "flag": "--add-json"
+        },
+        {
+          "flag": "--stdin"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--edit"
+        },
+        {
+          "flag": "--delete"
+        },
+        {
+          "flag": "--limit"
+        },
+        {
+          "flag": "--since"
+        },
+        {
+          "flag": "--event-type"
+        },
+        {
+          "flag": "--include-meta"
+        },
+        {
+          "flag": "--full-history"
+        },
+        {
+          "flag": "--if-absent",
+          "value_type": "boolean"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "item reopen",
       "flags": [
         {
@@ -5147,6 +5651,122 @@
           "value_name": "value"
         }
       ],
+      "provider": "core"
+    },
+    {
+      "command": "item test",
+      "flags": [
+        {
+          "flag": "--list"
+        },
+        {
+          "flag": "--id",
+          "value_name": "item-id"
+        },
+        {
+          "flag": "--add"
+        },
+        {
+          "flag": "--add-json"
+        },
+        {
+          "flag": "--remove"
+        },
+        {
+          "flag": "--remove-index",
+          "repeatable": true
+        },
+        {
+          "flag": "--run"
+        },
+        {
+          "flag": "--match"
+        },
+        {
+          "flag": "--only-index"
+        },
+        {
+          "flag": "--only-last"
+        },
+        {
+          "flag": "--background"
+        },
+        {
+          "flag": "--timeout"
+        },
+        {
+          "flag": "--progress"
+        },
+        {
+          "flag": "--env-set"
+        },
+        {
+          "flag": "--env-clear"
+        },
+        {
+          "flag": "--shared-host-safe"
+        },
+        {
+          "flag": "--pm-context"
+        },
+        {
+          "flag": "--override-linked-pm-context"
+        },
+        {
+          "flag": "--workspace-context"
+        },
+        {
+          "flag": "--override-linked-workspace-context"
+        },
+        {
+          "flag": "--allow-untrusted-linked-tests"
+        },
+        {
+          "flag": "--acknowledge-linked-tests"
+        },
+        {
+          "flag": "--fail-on-context-mismatch"
+        },
+        {
+          "flag": "--fail-on-skipped"
+        },
+        {
+          "flag": "--fail-on-empty-test-run"
+        },
+        {
+          "flag": "--require-assertions-for-pm"
+        },
+        {
+          "flag": "--check-context"
+        },
+        {
+          "flag": "--auto-pm-context"
+        },
+        {
+          "flag": "--measure",
+          "list": true
+        },
+        {
+          "flag": "--metric-below"
+        },
+        {
+          "flag": "--metric-diff"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "item test worker",
+      "flags": [],
       "provider": "core"
     },
     {
@@ -8906,6 +9526,11 @@
       "provider": "core"
     },
     {
+      "command": "test-runs-worker",
+      "flags": [],
+      "provider": "core"
+    },
+    {
       "command": "update",
       "flags": [
         {
@@ -12347,6 +12972,60 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "mutation",
+        "command": "item append",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "one",
+        "command": "item append",
+        "format_flag": "--json",
+        "kind": "mutation_receipt",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "item comments",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "item comments",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "items"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
         "command": "item complete",
         "default_max_estimated_tokens": 2000,
         "default_max_estimated_tokens_by_format": {
@@ -12401,6 +13080,60 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "read",
+        "command": "item deps",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "item deps",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "item docs",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "item docs",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
         "command": "item duplicates",
         "default_max_estimated_tokens": 4000,
         "default_max_estimated_tokens_by_format": {
@@ -12428,6 +13161,60 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "mutation",
+        "command": "item files",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "item files",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "item learnings",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "item learnings",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "items"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
         "command": "item mutate",
         "default_max_estimated_tokens": 2000,
         "default_max_estimated_tokens_by_format": {
@@ -12455,6 +13242,33 @@
       "budget": {
         "allows_unbounded_opt_out": true,
         "budget_class": "mutation",
+        "command": "item notes",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "many",
+        "command": "item notes",
+        "format_flag": "--json",
+        "kind": "collection",
+        "wrapper_key": "items"
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
         "command": "item reopen",
         "default_max_estimated_tokens": 2000,
         "default_max_estimated_tokens_by_format": {
@@ -12473,6 +13287,60 @@
       "envelope": {
         "cardinality": "none",
         "command": "item reopen",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "governance",
+        "command": "item test",
+        "default_max_estimated_tokens": 6000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 9000,
+          "toon": 6000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "item test",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "item test worker",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "item test worker",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -14444,6 +15312,33 @@
       "envelope": {
         "cardinality": "none",
         "command": "test-all",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "read",
+        "command": "test-runs-worker",
+        "default_max_estimated_tokens": 4000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 6000,
+          "toon": 4000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "test-runs-worker",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -15691,6 +16586,29 @@
       "intent_source": "command"
     },
     {
+      "command": "item append",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Append body.",
+      "intent_source": "command"
+    },
+    {
+      "command": "item comments",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "flags": [
+        "--limit"
+      ],
+      "intent": "Manage comments.",
+      "intent_source": "command"
+    },
+    {
       "command": "item complete",
       "default_max_estimated_tokens": 2000,
       "default_max_estimated_tokens_by_format": {
@@ -15711,6 +16629,32 @@
       "intent_source": "command"
     },
     {
+      "command": "item deps",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "flags": [
+        "--token-budget",
+        "--summary",
+        "--full",
+        "--format"
+      ],
+      "intent": "Manage deps.",
+      "intent_source": "command"
+    },
+    {
+      "command": "item docs",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Link docs.",
+      "intent_source": "command"
+    },
+    {
       "command": "item duplicates",
       "default_max_estimated_tokens": 4000,
       "default_max_estimated_tokens_by_format": {
@@ -15725,6 +16669,33 @@
       "intent_source": "command"
     },
     {
+      "command": "item files",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "flags": [
+        "--limit",
+        "--offset"
+      ],
+      "intent": "Link files.",
+      "intent_source": "command"
+    },
+    {
+      "command": "item learnings",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "flags": [
+        "--limit"
+      ],
+      "intent": "Manage learnings.",
+      "intent_source": "command"
+    },
+    {
       "command": "item mutate",
       "default_max_estimated_tokens": 2000,
       "default_max_estimated_tokens_by_format": {
@@ -15735,6 +16706,20 @@
       "intent_source": "generated"
     },
     {
+      "command": "item notes",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "flags": [
+        "--limit",
+        "--since"
+      ],
+      "intent": "Manage notes.",
+      "intent_source": "command"
+    },
+    {
       "command": "item reopen",
       "default_max_estimated_tokens": 2000,
       "default_max_estimated_tokens_by_format": {
@@ -15742,6 +16727,26 @@
         "toon": 2000
       },
       "intent": "Run item reopen.",
+      "intent_source": "generated"
+    },
+    {
+      "command": "item test",
+      "default_max_estimated_tokens": 6000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 9000,
+        "toon": 6000
+      },
+      "intent": "Run linked tests.",
+      "intent_source": "command"
+    },
+    {
+      "command": "item test worker",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run item test worker.",
       "intent_source": "generated"
     },
     {
@@ -16549,6 +17554,16 @@
       ],
       "intent": "Run all linked tests.",
       "intent_source": "command"
+    },
+    {
+      "command": "test-runs-worker",
+      "default_max_estimated_tokens": 4000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 6000,
+        "toon": 4000
+      },
+      "intent": "Run test-runs-worker.",
+      "intent_source": "generated"
     },
     {
       "command": "update",
@@ -18166,11 +19181,20 @@
     "history-repair",
     "init",
     "item",
+    "item append",
+    "item comments",
     "item complete",
     "item copy",
+    "item deps",
+    "item docs",
     "item duplicates",
+    "item files",
+    "item learnings",
     "item mutate",
+    "item notes",
     "item reopen",
+    "item test",
+    "item test worker",
     "learnings",
     "list",
     "meet",
@@ -18244,6 +19268,7 @@
     "telemetry",
     "test",
     "test-all",
+    "test-runs-worker",
     "update",
     "update many",
     "update-many",
@@ -25127,7 +26152,14 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
-        "target": "item"
+        "target": "item append"
+      },
+      {
+        "command": "item append",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-yql1",
+        "target": "item append"
       },
       {
         "command": "claim",
@@ -25169,7 +26201,14 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
-        "target": "item"
+        "target": "item comments"
+      },
+      {
+        "command": "item comments",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-yql1",
+        "target": "item comments"
       },
       {
         "command": "copy",
@@ -25207,18 +26246,46 @@
         "target": "close delete"
       },
       {
+        "command": "deps",
+        "disposition": "consolidation",
+        "noun": "item",
+        "owner": "pm-yql1",
+        "target": "item deps"
+      },
+      {
+        "command": "item deps",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-yql1",
+        "target": "item deps"
+      },
+      {
         "command": "docs",
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
-        "target": "item"
+        "target": "item docs"
+      },
+      {
+        "command": "item docs",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-yql1",
+        "target": "item docs"
       },
       {
         "command": "files",
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
-        "target": "item"
+        "target": "item files"
+      },
+      {
+        "command": "item files",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-yql1",
+        "target": "item files"
       },
       {
         "command": "get",
@@ -25232,14 +26299,28 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
-        "target": "item"
+        "target": "item learnings"
+      },
+      {
+        "command": "item learnings",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-yql1",
+        "target": "item learnings"
       },
       {
         "command": "notes",
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
-        "target": "item"
+        "target": "item notes"
+      },
+      {
+        "command": "item notes",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-yql1",
+        "target": "item notes"
       },
       {
         "command": "pause-task",
@@ -25267,7 +26348,14 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
-        "target": "item"
+        "target": "item test"
+      },
+      {
+        "command": "item test",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-yql1",
+        "target": "item test"
       },
       {
         "command": "update",
@@ -25303,6 +26391,34 @@
         "noun": "item",
         "owner": "pm-ya7x55",
         "target": "item files"
+      },
+      {
+        "command": "item files discover",
+        "disposition": "consolidation",
+        "noun": "item",
+        "owner": "pm-ya7x55",
+        "target": "item files"
+      },
+      {
+        "command": "item files lookup",
+        "disposition": "consolidation",
+        "noun": "item",
+        "owner": "pm-ya7x55",
+        "target": "item files"
+      },
+      {
+        "command": "test-runs-worker",
+        "disposition": "consolidation",
+        "noun": "item",
+        "owner": "pm-lp4j",
+        "target": "item test worker"
+      },
+      {
+        "command": "item test worker",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-lp4j",
+        "target": "item test worker"
       },
       {
         "command": "list",
@@ -25471,13 +26587,6 @@
         "noun": "graph",
         "owner": "pm-pbyu",
         "target": "graph"
-      },
-      {
-        "command": "deps",
-        "disposition": "consolidation",
-        "noun": "graph",
-        "owner": "pm-yql1",
-        "target": "graph show"
       },
       {
         "command": "history",
@@ -26484,22 +27593,43 @@
         "command": "completion-statuses",
         "disposition": "package_owned",
         "noun": "help",
-        "owner": "package:builtin-guide-shell",
-        "target": "help"
+        "owner": "pm-szdc",
+        "target": "completion statuses"
+      },
+      {
+        "command": "completion statuses",
+        "disposition": "package_owned",
+        "noun": "help",
+        "owner": "pm-szdc",
+        "target": "completion statuses"
       },
       {
         "command": "completion-tags",
         "disposition": "package_owned",
         "noun": "help",
-        "owner": "package:builtin-guide-shell",
-        "target": "help"
+        "owner": "pm-szdc",
+        "target": "completion tags"
+      },
+      {
+        "command": "completion tags",
+        "disposition": "package_owned",
+        "noun": "help",
+        "owner": "pm-szdc",
+        "target": "completion tags"
       },
       {
         "command": "completion-types",
         "disposition": "package_owned",
         "noun": "help",
-        "owner": "package:builtin-guide-shell",
-        "target": "help"
+        "owner": "pm-szdc",
+        "target": "completion types"
+      },
+      {
+        "command": "completion types",
+        "disposition": "package_owned",
+        "noun": "help",
+        "owner": "pm-szdc",
+        "target": "completion types"
       },
       {
         "command": "guide",
@@ -26599,6 +27729,25 @@
         ]
       },
       {
+        "command": "item append",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "text",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
         "command": "claim",
         "slots": [
           {
@@ -26658,6 +27807,25 @@
       },
       {
         "command": "comments",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "text",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "item comments",
         "slots": [
           {
             "name": "id",
@@ -26743,6 +27911,30 @@
         ]
       },
       {
+        "command": "deps",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "item deps",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
         "command": "docs",
         "slots": [
           {
@@ -26755,7 +27947,31 @@
         ]
       },
       {
+        "command": "item docs",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
         "command": "files",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "item files",
         "slots": [
           {
             "name": "id",
@@ -26798,7 +28014,45 @@
         ]
       },
       {
+        "command": "item learnings",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "text",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
         "command": "notes",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "text",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "item notes",
         "slots": [
           {
             "name": "id",
@@ -26865,6 +28119,18 @@
         ]
       },
       {
+        "command": "item test",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
         "command": "update",
         "slots": [
           {
@@ -26905,6 +28171,54 @@
             "required": true,
             "value_kind": "string",
             "variadic": true
+          }
+        ]
+      },
+      {
+        "command": "item files discover",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "item files lookup",
+        "slots": [
+          {
+            "name": "paths",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": true
+          }
+        ]
+      },
+      {
+        "command": "test-runs-worker",
+        "slots": [
+          {
+            "name": "runId",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "item test worker",
+        "slots": [
+          {
+            "name": "runId",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
           }
         ]
       },
@@ -27069,18 +28383,6 @@
             "name": "target",
             "polymorphic": false,
             "required": false,
-            "value_kind": "item_id",
-            "variadic": false
-          }
-        ]
-      },
-      {
-        "command": "deps",
-        "slots": [
-          {
-            "name": "id",
-            "polymorphic": false,
-            "required": true,
             "value_kind": "item_id",
             "variadic": false
           }
@@ -28605,11 +29907,23 @@
         "slots": []
       },
       {
+        "command": "completion statuses",
+        "slots": []
+      },
+      {
         "command": "completion-tags",
         "slots": []
       },
       {
+        "command": "completion tags",
+        "slots": []
+      },
+      {
         "command": "completion-types",
+        "slots": []
+      },
+      {
+        "command": "completion types",
         "slots": []
       },
       {
@@ -38874,7 +40188,30 @@
         ]
       },
       {
+        "command": "item comments",
+        "modes": []
+      },
+      {
+        "command": "item deps",
+        "modes": [
+          "full",
+          "summary"
+        ]
+      },
+      {
+        "command": "item docs",
+        "modes": []
+      },
+      {
         "command": "item duplicates",
+        "modes": []
+      },
+      {
+        "command": "item files",
+        "modes": []
+      },
+      {
+        "command": "item notes",
         "modes": []
       },
       {

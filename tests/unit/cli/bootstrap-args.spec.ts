@@ -487,8 +487,8 @@ describe("normalizeBootstrapInvocation", () => {
       "--comment",
       "hello",
     ]);
-    expect(normalized.argv).toEqual(["comments", "pm-a1b2", "--add", "hello"]);
-    expect(normalized.commandName).toBe("comments");
+    expect(normalized.argv).toEqual(["item", "comments", "pm-a1b2", "--add", "hello"]);
+    expect(normalized.commandName).toBe("item");
   });
 
   it("rewrites a command alias even after global flags", () => {
@@ -727,12 +727,13 @@ describe("normalizeBootstrapInvocation", () => {
       "text=should stay literal",
     ]);
     expect(normalized.argv).toEqual([
+      "item",
       "comments",
       "pm-a1b2",
       "--add",
       "text=should stay literal",
     ]);
-    expect(normalized.trace).toHaveLength(0);
+    expect(normalized.trace).toEqual([expect.objectContaining({ reason: "command_alias", from: "comments", to: ["item", "comments"] })]);
   });
 
   it("accumulates repeated singular --tag alias occurrences into one --tags token (pm-cf1u)", () => {
@@ -1293,12 +1294,13 @@ describe("normalizeBootstrapInvocation linked-test two-token form (GH-191)", () 
       "npm test -- parser",
     ]);
     expect(normalized.argv).toEqual([
+      "item",
       "test",
       "pm-a1b2",
       "--add",
       "command=npm test -- parser",
     ]);
-    expect(normalized.commandName).toBe("test");
+    expect(normalized.commandName).toBe("item");
     expect(normalized.trace).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -1322,6 +1324,7 @@ describe("normalizeBootstrapInvocation linked-test two-token form (GH-191)", () 
       "parser",
     ]);
     expect(normalized.argv).toEqual([
+      "item",
       "test",
       "pm-a1b2",
       "--add",
@@ -1344,6 +1347,7 @@ describe("normalizeBootstrapInvocation linked-test two-token form (GH-191)", () 
       value,
     ]);
     expect(normalized.argv).toEqual([
+      "item",
       "test",
       "pm-a1b2",
       "--add",
@@ -1364,6 +1368,7 @@ describe("normalizeBootstrapInvocation linked-test two-token form (GH-191)", () 
       "match=parser",
     ]);
     expect(normalized.argv).toEqual([
+      "item",
       "test",
       "pm-a1b2",
       "--add",

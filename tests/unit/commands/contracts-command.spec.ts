@@ -2329,9 +2329,9 @@ describe("contracts command runtime", () => {
       { action: "comments", flagsOnly: true },
       GLOBAL_OPTIONS,
     );
-    expect(commentsAction.commands).toEqual(["comments"]);
+    expect(commentsAction.commands).toEqual(["comments", "item comments"]);
     expect(commentsAction.command_flags?.map((entry) => entry.command)).toEqual(
-      ["comments"],
+      ["comments", "item comments"],
     );
     expect(commentsAction.command_flags?.[0]?.flags).toEqual(
       expect.arrayContaining([

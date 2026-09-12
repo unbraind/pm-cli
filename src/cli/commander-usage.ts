@@ -48,6 +48,7 @@ import { normalizeExtensionNameForMatch } from "./commands/extension/shared.js";
 import { rankCommandPaths } from "../sdk/agent/command-suggestions.js";
 import { renderMissingOptionRetry } from "../sdk/agent/command-recovery.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
+import { findPmNamespacedCommand, resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
 
 /** Supported values accepted by the builtin type help contract. */
 export const BUILTIN_TYPE_HELP_VALUES = BUILTIN_ITEM_TYPE_VALUES.join("|");
@@ -480,6 +481,7 @@ function getCrossCommandFlagIndex(): Map<string, string[]> {
   return crossCommandFlagIndexCache;
 }
 
+/** Rank accepting commands by shared flags, then deduplicate their canonical alias targets. */
 function findOtherCommandsForFlag(
   unknownOption: string,
   currentCommand: string | undefined,
@@ -495,7 +497,7 @@ function findOtherCommandsForFlag(
   }
   const normalizedCurrent = currentCommand?.trim().toLowerCase();
   const currentFlags = new Set(collectKnownLongFlags(normalizedCurrent));
-  return commands
+  return [...new Set(commands
     .filter((command) => command !== normalizedCurrent)
     .map((command) => ({
       command,
@@ -508,7 +510,7 @@ function findOtherCommandsForFlag(
         ? right.sharedFlagCount - left.sharedFlagCount
         : left.command.localeCompare(right.command),
     )
-    .map(({ command }) => command);
+    .map(({ command }) => resolvePmCommandAlias(command)?.canonical ?? command))];
 }
 
 function rewriteUnknownOptionArgv(
@@ -536,12 +538,14 @@ function rewriteUnknownOptionArgv(
   return undefined;
 }
 
+/** Score runtime paths and compatibility aliases together, retaining each available target's best match. */
 function scoreRuntimeCommandCandidates(params: {
   commandPaths: string[];
   normalizedUnknown: string;
   primaryToken: string;
 }): string[] {
   const commandPathSet = new Set(params.commandPaths);
+  /** Compare the full attempted path and its first token using the same bounded spelling score. */
   const scoreAgainstUnknown = (candidatePath: string): number =>
     Math.min(
       scoreCommandPathMatch(candidatePath, params.normalizedUnknown),
@@ -550,6 +554,7 @@ function scoreRuntimeCommandCandidates(params: {
         : Number.POSITIVE_INFINITY,
     );
   const scoresByCommandPath = new Map<string, number>();
+  /** Keep only finite matches for installed command paths and preserve the strongest alias score. */
   const recordCandidateScore = (commandPath: string, score: number): void => {
     if (!Number.isFinite(score) || !commandPathSet.has(commandPath)) {
       return;
@@ -579,12 +584,14 @@ function scoreRuntimeCommandCandidates(params: {
     .map(([commandPath]) => commandPath);
 }
 
+/** Prefer an exact declared alias when its target exists, then combine semantic, spelling and package hints. */
 function resolveUnknownCommandCandidates(params: {
   commandPaths: string[];
   normalizedUnknown: string;
   primaryToken: string;
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>;
 }): string[] {
+  const exactAlias = resolvePmCommandAlias(params.normalizedUnknown)?.canonical;
   const semanticCandidates = rankCommandPaths(
     params.commandPaths,
     params.primaryToken,
@@ -595,6 +602,7 @@ function resolveUnknownCommandCandidates(params: {
     params.extensionDescriptors,
   ).filter((commandPath) => params.commandPaths.includes(commandPath));
   return dedupeStrings([
+    ...(exactAlias && params.commandPaths.includes(exactAlias) ? [exactAlias] : []),
     ...semanticCandidates,
     ...rankedCandidates,
     ...installedPackageCandidates,
@@ -962,7 +970,8 @@ export async function resolveCommanderUsageContext(
     process.argv.slice(2),
   ).argv;
   const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
-  const commandName = parseBootstrapCommandName(invocationArgv);
+  const commandIndex = findBootstrapCommandTokenIndex(invocationArgv);
+  const commandName = findPmNamespacedCommand(invocationArgv.slice(commandIndex))?.alias ?? parseBootstrapCommandName(invocationArgv);
   const attemptedCommand = renderAttemptedCommand(invocationArgv);
   const providedOptionFlags = extractProvidedOptionFlags(invocationArgv);
   const workspaceUsage = await resolveWorkspaceUsageContext(

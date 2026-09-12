@@ -295,7 +295,7 @@
     },
     {
       "id": "declared-set-versus-hand-maintained-list",
-      "version": 2,
+      "version": 3,
       "title": "A checker or adapter enumerates its own hand-maintained list instead of iterating the artifact the outside world resolves",
       "owner_item_id": "pm-suhxny",
       "escape_class": "production_defect",
@@ -357,7 +357,8 @@
         "pm-suhxny",
         "pm-edywqn",
         "pm-4957pz",
-        "pm-2bqgs7"
+        "pm-2bqgs7",
+        "pm-kxci8x"
       ],
       "budget": {
         "max_escape_rate": 0,

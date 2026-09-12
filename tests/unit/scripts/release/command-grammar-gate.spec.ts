@@ -382,7 +382,7 @@ describe("command grammar gate", () => {
     expect(result.report.command_count).toBe(
       PM_COMMAND_DESTINATION_CONTRACTS.filter(
         ({ command }) =>
-          !HIDDEN_TOP_LEVEL_ALIASES.has(command.split(" ")[0] ?? ""),
+          !HIDDEN_TOP_LEVEL_ALIASES.has(command.split(" ")[0] ?? "") && command !== "completion",
       ).length,
     );
     expect(result.report.findings).toContainEqual(

@@ -6,6 +6,8 @@
  */
 import type { Command } from "commander";
 import { PM_RELOCATED_COMMAND_ALIASES } from "../sdk/cli-contracts/command-aliases.js";
+import { resolvePmCommandVisibilityTier } from "../sdk/agent-capability-contracts.js";
+import { setPmCommandHelpVisibilityTier } from "./help-content.js";
 
 /** Relocate existing handlers; the early pass moves only parents needed by package facets. */
 export function installCommandNamespaces(program: Command, parentsOnly = false): void {
@@ -28,6 +30,7 @@ export function installCommandNamespaces(program: Command, parentsOnly = false):
     // public types and has no removeCommand API. Keep the cast at this boundary.
     (program.commands as Command[]).splice(sourceIndex, 1);
     source.name(verb);
+    setPmCommandHelpVisibilityTier(source, resolvePmCommandVisibilityTier(canonical));
     // Parent mutation flags must not consume identically named bulk flags
     // after the leaf token; the leaf owns its complete parser and defaults.
     parent.enablePositionalOptions();

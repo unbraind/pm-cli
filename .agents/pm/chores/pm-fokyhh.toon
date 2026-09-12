@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: codspeed,dependencies,peer-contract,testing
 created_at: "2026-09-04T16:26:03.878Z"
-updated_at: "2026-09-11T10:21:12.176Z"
+updated_at: "2026-09-12T09:04:33.957Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "A current @codspeed/vitest-plugin release accepts Vitest 5; Vitest and coverage-v8 are upgraded as an exact compatible pair; CodSpeed, full exact coverage, cross-platform CI, typecheck, static quality, packed consumers, and vulnerability gates pass."
@@ -17,7 +17,7 @@ expected_result: "Vitest 5 and coverage-v8 5 are adopted as a pair once CodSpeed
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-n5ysuk,recurs_from,"2026-09-04T16:26:03.878Z","harness:codex","cli:create:dep",detected
   pm-yh6t,discovered_from,"2026-09-04T16:26:03.878Z","harness:codex","cli:create:dep",detected
-comments[10]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-09-04T16:26:03.878Z","harness:codex","Duplicate-check evidence: complete all-status PM searches for Vitest 5, Vitest major, and CodSpeed peer compatibility found the closed compatible Vitest 4.1.11 refresh pm-n5ysuk and CodSpeed adoption pm-yh6t, but no owner for the 5.0.0 major. Live registry evidence on 2026-09-04: vitest 5.0.0 supports Node ^22.12 || ^24 || >=26, but mandatory @codspeed/vitest-plugin 5.7.1 declares peer vitest ^3.2 || ^4. This item remains open and unclaimed until that external peer contract is compatible."
   "2026-09-05T03:52:26.679Z","harness:codex","Live 2026-09-05 registry verification: latest CodSpeed plugin still accepts Vitest ^3.2 || ^4, excluding available Vitest and coverage-v8 5.0.0. No compatible wanted update exists. Keep the canonical migration open and unclaimed; do not bypass the mandatory performance gate peer contract."
   "2026-09-06T05:33:02.832Z","harness:codex","2026-09-06 registry check: latest @codspeed/vitest-plugin 5.7.1 still requires Vitest ^3.2 or ^4, excluding 5.0.0. Vitest and coverage-v8 major migration remains open and unclaimed."
@@ -28,4 +28,6 @@ comments[10]{created_at,author,text}:
   "2026-09-10T18:23:47.301Z","harness:codex","Live 2026-09-10 evening registry check: @codspeed/vitest-plugin 5.7.1 still declares Vitest ^3.2 || ^4. The Vitest 5 and coverage-v8 5 pair remains outside the mandatory performance harness peer range. Retain this canonical unclaimed migration; no peer override added."
   "2026-09-11T06:30:50.428Z","harness:codex","2026-09-11 live dependency check: Vitest and coverage-v8 current/wanted remain 4.1.11; latest is 5.0.0. Registry-current @codspeed/vitest-plugin 5.7.1 requires Vitest ^3.2 || ^4. Preserve the performance integration and this canonical unclaimed migration. Audit reports zero known vulnerabilities."
   "2026-09-11T10:21:12.176Z","harness:codex","Fresh registry verification 2026-09-11: @codspeed/vitest-plugin 5.7.1 still declares Vitest ^3.2 || ^4. Full dependency audit returned zero vulnerabilities across 373 dependencies. Keep the existing major migration open and unclaimed; no peer override or duplicate item."
+  "2026-09-12T07:25:58.759Z","harness:codex","2026-09-12 live registry check: latest CodSpeed plugin requires vitest ^3.2 || ^4. Preserve the mandatory performance integration; available Vitest/coverage-v8 5.0.0 remains outside its peer range. pnpm audit reports no known vulnerabilities."
+  "2026-09-12T09:04:33.957Z","harness:codex","Fresh registry verification: CodSpeed vitest-plugin latest still supports Vitest ^3.2 or ^4, while registry Vitest and coverage-v8 latest are 5.0.0. pnpm reports current and wanted 4.1.11. Preserve the working performance-test integration and leave this migration open and unclaimed."
 body: ""

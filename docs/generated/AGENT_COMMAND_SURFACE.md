@@ -12,6 +12,7 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `install` | full | extensions |
 | `upgrade` | full | extensions |
 | `create` | core | intake |
+| `item` | full | intake |
 | `item-reopen` | full | lifecycle |
 | `copy` | full | intake |
 | `item copy` | full | intake |
@@ -66,14 +67,22 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `delete` | full | lifecycle |
 | `close delete` | full | lifecycle |
 | `append` | standard | evidence |
+| `item append` | standard | evidence |
 | `comments` | standard | evidence |
+| `item comments` | standard | evidence |
 | `notes` | standard | evidence |
+| `item notes` | standard | evidence |
 | `learnings` | standard | evidence |
+| `item learnings` | standard | evidence |
 | `files` | standard | evidence |
+| `item files` | standard | evidence |
 | `docs` | standard | evidence |
+| `item docs` | standard | evidence |
 | `deps` | standard | graph |
+| `item deps` | standard | graph |
 | `plan` | core | graph |
 | `test` | standard | quality |
+| `item test` | standard | quality |
 | `test-all` | full | quality |
 | `ops test-all` | full | quality |
 | `telemetry` | full | workspace |
@@ -103,3 +112,4 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `completion-tags` | internal | internal |
 | `completion-types` | internal | internal |
 | `test-runs-worker` | internal | internal |
+| `item test worker` | internal | internal |

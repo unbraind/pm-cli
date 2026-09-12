@@ -6,6 +6,7 @@
  * last so `log` never prefers `catalog` over item history commands.
  */
 import { levenshteinDistanceWithinLimit } from "../../core/shared/levenshtein.js";
+import { resolvePmCommandOperation } from "../cli-contracts/command-aliases.js";
 
 const COMMAND_SYNONYMS: Readonly<Record<string, readonly string[]>> = {
   add: ["create", "append"],
@@ -30,7 +31,7 @@ export function scoreCommandPathMatch(
   if (normalizedToken.length === 0) return Number.POSITIVE_INFINITY;
   const segments = normalizedPath.split(" ");
   const semanticIndex =
-    COMMAND_SYNONYMS[normalizedToken]?.indexOf(normalizedPath);
+    COMMAND_SYNONYMS[normalizedToken]?.indexOf(resolvePmCommandOperation(normalizedPath));
   if (semanticIndex !== undefined && semanticIndex >= 0) return semanticIndex;
   if (normalizedPath === normalizedToken) return 10;
   if (segments.includes(normalizedToken)) return 11;

@@ -391,12 +391,12 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       const envelope = parseJsonErrorEnvelope(result.stderr);
       expect(envelope.recovery).toMatchObject({
         candidate_commands: [
-          "comments",
-          "docs",
-          "files",
-          "learnings",
-          "notes",
-          "test",
+          "item comments",
+          "item docs",
+          "item files",
+          "item learnings",
+          "item notes",
+          "item test",
         ],
         candidate_commands_total: 6,
       });

@@ -81,6 +81,9 @@ export const PM_RELOCATED_COMMAND_ALIASES: readonly PmCommandAliasContract[] = [
   ...PM_CONTEXT_OPS_COMMAND_ALIASES,
   ...PM_BULK_LIFECYCLE_COMMAND_ALIASES,
   ...[
+    ...["comments", "notes", "learnings", "files", "docs", "deps", "append", "test"].map((facet) => [facet, `item ${facet}`, "pm-yql1"]),
+    ["test-runs-worker", "item test worker", "pm-lp4j"],
+    ...["statuses", "tags", "types"].map((facet) => [`completion-${facet}`, `completion ${facet}`, "pm-szdc"]),
     ["copy", "item copy", "pm-m6g87m"],
     ["merge", "workspace merge", "pm-m6g87m"],
     ["duplicates", "item duplicates", "pm-fmy9ih"],
@@ -104,6 +107,15 @@ export const PM_NAMESPACED_COMMAND_ALIASES: readonly PmCommandAliasContract[] = 
   { alias: "history-attest", canonical: "history attest", canonical_argv: ["history", "attest"], lifecycle: "permanent", hidden: true, registration: "commander", owner: "pm-3z0k" },
   ...PM_HISTORY_COMMAND_ALIASES,
   ...PM_RELOCATED_COMMAND_ALIASES,
+  ...["discover", "lookup"].map((action): PmCommandAliasContract => ({
+    alias: `files ${action}`,
+    canonical: `item files ${action}`,
+    canonical_argv: ["item", "files", action],
+    lifecycle: "permanent",
+    hidden: true,
+    registration: "bootstrap",
+    owner: "pm-yql1",
+  })),
 ];
 
 /** Find the longest declared command prefix without consuming flags or positional operands. */
@@ -148,8 +160,8 @@ export const PM_COMMAND_ALIAS_CONTRACTS: readonly PmCommandAliasContract[] = [
   })),
   {
     alias: "tests",
-    canonical: "test",
-    canonical_argv: ["test"],
+    canonical: "item test",
+    canonical_argv: ["item", "test"],
     lifecycle: "permanent",
     hidden: false,
     registration: "bootstrap",
@@ -167,8 +179,8 @@ export const PM_COMMAND_ALIAS_CONTRACTS: readonly PmCommandAliasContract[] = [
     ] as const
   ).map(([alias, canonical]) => ({
     alias,
-    canonical,
-    canonical_argv: [canonical] as const,
+    canonical: ["comments", "notes", "learnings"].includes(canonical) ? `item ${canonical}` : canonical,
+    canonical_argv: ["comments", "notes", "learnings"].includes(canonical) ? ["item", canonical] : [canonical],
     lifecycle: "permanent" as const,
     hidden: false,
     registration: "bootstrap" as const,

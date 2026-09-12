@@ -95,7 +95,7 @@ describe("runtime MCP capabilities", () => {
     expect(resolvePmCommandCapabilityFamily("extension-owned")).toBe(
       "internal",
     );
-    expect(listPmCommandsForFamily("graph")).toEqual(["graph", "deps", "plan"]);
+    expect(listPmCommandsForFamily("graph")).toEqual(["graph", "deps", "item deps", "plan"]);
     expect(renderPmCommandVisibilityMarkdown()).toContain(
       "| `context` | core | context |",
     );

@@ -1984,7 +1984,7 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["templates", CREATE_FLAG_CONTRACTS],
     ["cal", CALENDAR_FLAG_CONTRACTS],
     ["ctx", CONTEXT_FLAG_CONTRACTS],
-    ["test-runs-worker", TEST_RUNS_FLAG_CONTRACTS],
+    ["test-runs-worker", []],
     ["init", INIT_FLAG_CONTRACTS],
     ["config", CONFIG_FLAG_CONTRACTS],
     ["extension", EXTENSION_FLAG_CONTRACTS],

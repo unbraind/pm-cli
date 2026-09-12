@@ -45,7 +45,7 @@ describe("item and search package namespaces", () => {
         expect(suggestions.includes("merge")).toBe(packageActive);
       }
       const boundedFlags = context.runCli(["contracts", "--flags-only", "--json"], { expectJson: true });
-      expect(boundedFlags.code, boundedFlags.stderr).toBe(0);
+      expect(boundedFlags.code, boundedFlags.stderr + boundedFlags.stdout).toBe(0);
       const boundedReceipt = (boundedFlags.json as { read_output: { budget_tokens: number; estimated_tokens: number } }).read_output;
       const emittedTokens = Math.ceil(Buffer.byteLength(boundedFlags.stdout, "utf8") / 4);
       expect(emittedTokens).toBeLessThanOrEqual(boundedReceipt.budget_tokens);
