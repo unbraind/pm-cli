@@ -1,0 +1,23 @@
+id: pm-bw8lsb
+title: Explain rejected telemetry source-context overrides without leaking raw values
+description: "GitHub source https://github.com/unbraind/pm-cli/issues/1253. GitHub reports that unrecognized PM_TELEMETRY_SOURCE_CONTEXT values silently fall back to inferred automation and contaminate attribution. Existing accepted contexts and hard opt-outs must remain stable; rejected values may contain private data and must not be copied verbatim into events."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-09-12T22:29:57.940Z"
+updated_at: "2026-09-12T22:29:57.940Z"
+author: "harness:codex"
+acceptance_criteria: Accepted absent and rejected overrides have distinct tested behavior; rejection produces a bounded diagnostic naming accepted values; emitted attribution exposes rejection through a fixed marker without raw custom values; hard opt-outs still suppress all capture.
+goal: project management = context management
+objective: Explain rejected telemetry source-context overrides without leaking raw values
+value: Lower agent recovery cost and preserve safe customizable SDK composition
+parent: pm-5oj5
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5oj5,implements,"2026-09-12T22:29:57.940Z","harness:codex","cli:create:dep",detected
+  pm-r7md,discovered_from,"2026-09-12T22:29:57.940Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-12T22:29:57.940Z","harness:codex","Duplicate check: live full all-status export contained 2751 items with no omitted rows. Request-specific CLI searches and full historical metadata distinguished the existing shipped predecessor from this new report. Reuse its typed lineage; leave this intake open and unclaimed because implementation is not active."
+files[1]{path,scope,note}:
+  src/core/telemetry/runtime.ts,project,Reported boundary to reproduce before implementation
+body: ""
