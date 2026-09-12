@@ -67,6 +67,8 @@ const MCP_DISCOVER_TIMEOUT_MS = 60_000;
 const MCP_HTTP_READY_TIMEOUT_MS = 15_000;
 const MCP_HTTP_EXECUTOR_TIMEOUT_MS = 20_000;
 const MCP_HTTP_EXECUTOR_MAX_ATTEMPTS = 2;
+/** Default npm metadata polls at 15s each: about fifteen minutes of propagation budget. */
+const DEFAULT_NPM_ATTEMPTS = 60;
 const MCP_HTTP_SHUTDOWN_GRACE_MS = 2_000;
 const MCP_HTTP_EXECUTOR_SCRIPT = String.raw`
 import { spawn } from "node:child_process";
@@ -319,7 +321,7 @@ function usage() {
   node scripts/release/verify-published-release.mjs --version <YYYY.M.D[-N]> [--json]
     [--skip-package]
     [--skip-github-release]
-    [--npm-attempts 20]
+    [--npm-attempts 60]
     [--executor-attempts 10]
 
 Verifies the public release surfaces after publish:
@@ -334,7 +336,7 @@ Verifies the public release surfaces after publish:
 function sleep(milliseconds) {
   // Test seam: PM_VERIFY_SLEEP_MS lets the unit suite cap the synchronous
   // retry backoff so it can exercise the multi-attempt path without blocking
-  // the worker thread for the production 10–15s propagation delays.
+  // the worker thread for the production 10–15s retry delays.
   const override = Number(process.env.PM_VERIFY_SLEEP_MS);
   /* c8 ignore next -- the fallback uses the real 10-15s production backoff; the unit suite always sets PM_VERIFY_SLEEP_MS so exercising it would block the worker thread */
   const effective =
@@ -922,7 +924,11 @@ function main() {
   const outputJson = flagBool(flags, "json", false);
   const skipPackage = flagBool(flags, "skip-package", false);
   const skipGithubRelease = flagBool(flags, "skip-github-release", false);
-  const npmAttempts = parsePositiveInteger(flags, "npm-attempts", 20);
+  // npm registry metadata for a freshly published version became visible
+  // 8m14s (2026.9.11) and 6m10s (2026.9.12) after `npm publish` returned; the
+  // previous 20x15s (5 min) ceiling recorded both correct publications as
+  // failed releases (pm-wzmbvn). 60x15s waits about fifteen minutes.
+  const npmAttempts = parsePositiveInteger(flags, "npm-attempts", DEFAULT_NPM_ATTEMPTS);
   const executorAttempts = parsePositiveInteger(flags, "executor-attempts", 10);
   const version = parseVersionFromFlags(flags);
 

@@ -40,10 +40,13 @@ pm contracts --command "ops stats" --flags-only
 ```
 
 Help, contracts, and shell completion expose native paths. Compatibility aliases
-remain declared in the SDK alias table. Alias guidance uses the existing
-`ux.deprecation_hints` setting. Human-readable calls emit it on stderr; JSON and
-quiet calls suppress it. Compact contract summaries omit duplicate root alias
-rows; full and explicitly selected contracts retain them. Optional commands appear only when their providing package is active;
+remain declared in the SDK alias table with a `lifecycle` field. The root
+spellings in the table above are `permanent` aliases: they are ergonomic API and
+emit nothing on stderr. Only `deprecated` spellings (for example `list-open` or
+`start-task`) emit the one-line migration hint, which the existing
+`ux.deprecation_hints` setting suppresses and which JSON and quiet calls never
+print. Compact contract summaries omit duplicate root alias rows; full and
+explicitly selected contracts retain them. Optional commands appear only when their providing package is active;
 namespace placement does not promote package behavior into core.
 
 ## SDK and package integration

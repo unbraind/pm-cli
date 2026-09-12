@@ -631,6 +631,33 @@ describe("scripts/release/verify-published-release: npm metadata retries", () =>
     );
   });
 
+  it("waits about fifteen minutes of npm metadata propagation by default (60 polls)", async () => {
+    let npmViews = 0;
+    const { json, errors } = await runVerify({
+      argv: ["--version", "2026.9.12", "--json", "--skip-github-release", "--executor-attempts", "1"],
+      sleepMs: "0",
+      runCommand: (command, args) => {
+        if (command === "npm" && args[0] === "view") {
+          npmViews += 1;
+          // Registry metadata became visible 6-8 minutes after publish on
+          // 2026-09-11/12; the default must outlast that, so only the 60th poll succeeds.
+          return npmViews < 60
+            ? { status: 1, stdout: "", stderr: "npm error code E404" }
+            : npmViewResult("2026.9.12");
+        }
+        if (command === "npx" || command === "bunx" || command === "node") {
+          return successfulPublishedVerifierResult(command, args);
+        }
+        return { status: 0, stdout: "", stderr: "" };
+      },
+    });
+    expect(json.ok).toBe(true);
+    expect(json.package.npm.attempts).toBe(60);
+    expect(errors.join("\n")).toContain(
+      "Waiting for npm metadata propagation (attempt 59/60)",
+    );
+  });
+
   it("fails npm metadata after exhausting attempts", async () => {
     const { failure } = await runVerify({
       argv: [

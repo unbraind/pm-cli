@@ -1065,6 +1065,42 @@
           {
             "holder_id": "pm-2ksptv",
             "reason": "The duplicate-check comment inventories the closed analyzer-gate lineage the semantic search returned; naming a search result is a measurement statement, not a pairwise relationship, and the items that are related carry typed edges."
+          },
+          {
+            "holder_id": "pm-wzmbvn",
+            "reason": "The create-time duplicate-check and non-goal statements mandated by the pm-user skill name the nearest existing owners as inventory, not as pairwise relationships; the item's asserted relationships are its typed edges (same shape as the release-health check exemption)."
+          },
+          {
+            "holder_id": "pm-crd6bf",
+            "reason": "The create-time duplicate-check and non-goal statements mandated by the pm-user skill name the nearest existing owners as inventory, not as pairwise relationships; the item's asserted relationships are its typed edges (same shape as the release-health check exemption)."
+          },
+          {
+            "holder_id": "pm-3ig9b6",
+            "reason": "The create-time duplicate-check and non-goal statements mandated by the pm-user skill name the nearest existing owners as inventory, not as pairwise relationships; the item's asserted relationships are its typed edges (same shape as the release-health check exemption)."
+          },
+          {
+            "holder_id": "pm-djyvbk",
+            "reason": "The create-time duplicate-check and non-goal statements mandated by the pm-user skill name the nearest existing owners as inventory, not as pairwise relationships; the item's asserted relationships are its typed edges (same shape as the release-health check exemption)."
+          },
+          {
+            "holder_id": "pm-8eclqf",
+            "reason": "The create-time duplicate-check and non-goal statements mandated by the pm-user skill name the nearest existing owners as inventory, not as pairwise relationships; the item's asserted relationships are its typed edges (same shape as the release-health check exemption)."
+          },
+          {
+            "holder_id": "pm-42wr6g",
+            "reason": "The create-time duplicate-check and non-goal statements mandated by the pm-user skill name the nearest existing owners as inventory, not as pairwise relationships; the item's asserted relationships are its typed edges (same shape as the release-health check exemption)."
+          },
+          {
+            "holder_id": "pm-pbyu",
+            "reason": "The grammar ruling ledger names the items each ruling was forced by as an inventory of evidence; the rulings themselves are recorded as implements edges from the items that apply them, so the ledger asserts no pairwise relationship of its own (same shape as the roadmap ledger)."
+          },
+          {
+            "holder_id": "pm-n7rr",
+            "reason": "The consolidation epic's status notes inventory its children and the surface items each pass measured; children are already joined by parent edges and delivery by implements edges, so the notes assert no additional pairwise relationship (same shape as the roadmap ledger)."
+          },
+          {
+            "holder_id": "pm-4k6b",
+            "reason": "The context-algorithm catalog notes name the substrate, evaluation and owner items each entry composes with as an inventory; ownership of entries is recorded on pm-g8t7b9 and delivery by implements or verifies edges, so the catalog asserts no pairwise relationship of its own (same shape as the roadmap ledger)."
           }
         ]
       },
@@ -2334,16 +2370,16 @@
       "negative_control": {
         "cases": [
           {
-            "observed": 1343,
+            "observed": 1236,
             "expected": "pass"
           },
           {
-            "observed": 1344,
+            "observed": 1237,
             "expected": "fail"
           }
         ]
       },
-      "ceiling": 1343
+      "ceiling": 1236
     },
     {
       "id": "blocks-total-ceiling",

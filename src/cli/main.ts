@@ -151,7 +151,6 @@ import {
   normalizeBootstrapInvocation,
   stripGlobalBootstrapTokens,
 } from "./bootstrap-args.js";
-import type { BootstrapGlobalOptions } from "../sdk/cli-bootstrap.js";
 import { applyInvocationAuthorOverride } from "../sdk/invocation-author.js";
 import { createPmCliProgram } from "../sdk/cli-program.js";
 import {
@@ -2973,13 +2972,6 @@ async function handleRunPmCliError(params: { error: unknown; invocationArgv: str
   });
 }
 
-/** Offer a suppressible canonical spelling without altering machine-readable command results. */
-function printNamespaceAliasHint(invocation: ReturnType<typeof normalizeBootstrapInvocation>, enabled: boolean, global: BootstrapGlobalOptions): void {
-  if (!enabled || global.json || global.quiet) return;
-  const usedAlias = invocation.trace.find((event) => event.reason === "command_alias" && PM_RELOCATED_COMMAND_ALIASES.some((alias) => alias.alias === event.from));
-  if (usedAlias) printError(`Command \`${usedAlias.from}\` is an alias; use \`pm ${usedAlias.to.join(" ")}\`.`);
-}
-
 /** Reject unavailable package namespaces before variadic parents consume their names as operands. */
 function assertRequestedNamespaceAvailable(program: Command, invocationArgv: string[], helpRequest: ReturnType<typeof parseBootstrapHelpRequest>): void {
   const tokens = helpRequest.requested ? helpRequest.commandPathTokens : stripGlobalBootstrapTokens(invocationArgv);
@@ -3057,7 +3049,6 @@ async function runPmCliInReproducibleContext(rawArgv: string[]): Promise<void> {
     }
     const invocationPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
     const invocationSettings = await readSettings(invocationPmRoot);
-    printNamespaceAliasHint(bootstrapInvocation, invocationSettings.ux!.deprecation_hints!, bootstrapGlobal);
     const intentSnapshot = await loadContextIntentSnapshotForInvocation(
       invocationArgv,
       invocationPmRoot,

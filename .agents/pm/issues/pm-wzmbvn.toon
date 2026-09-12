@@ -1,0 +1,42 @@
+id: pm-wzmbvn
+title: "Published-package verification gives up before npm metadata propagates: two consecutive scheduled cuts were recorded as failed and re-run by hand while the artifact was already live"
+description: "## Observed\nOn 2026-09-11 (Release run 34576128355) and 2026-09-12 (Release run 34681372798) the tag-push Release workflow published the package successfully, then failed its own \"Verify published package on npm, npx, and bunx\" step on the first attempt. scripts/release/verify-published-release.mjs polls npm view for the exact version with a default of 20 attempts 15 seconds apart (about 5 minutes) and gave up with npm error code E404 \"No match found for version\". The npm registry's own time stamp for the version shows the metadata became visible 8 min 14 s (2026.9.11) and 6 min 10 s (2026.9.12) after the publish step finished. Both days the maintainer re-ran the failed job by hand about ten minutes later; attempt 2 passed on its first poll and the blocker issue (#1235, #1239) was closed.\n\n## Why it matters\nThe scheduled auto-release run watches the Release workflow and records release-workflow as its failing stage, so two correct, on-time publications count as scheduled failures in the rolling rate pm-e70zh5 measures, a blocker issue is opened for each, and a human must intervene to finish a release that already succeeded. The verifier's ceiling is a constant fitted to an earlier registry latency; nothing compares it with the lag the registry actually exhibits.\n\n## Non-goals\nNot a retry of npm publish (publication was correct both days). Not the direct-main analyzer refusal (pm-2ksptv). Not the same-day second-release policy (pm-uenmu9)."
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:scripts",auto-release,ci,npm,release,reliability
+created_at: "2026-09-12T19:57:45.186Z"
+updated_at: "2026-09-12T20:21:44.734Z"
+closed_at: "2026-09-12T20:04:22.591Z"
+completed_at: "2026-09-12T20:04:22.591Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "The default npm metadata wait in verify-published-release.mjs is at least fifteen minutes, above the six-to-eight-minute lag measured on 2026-09-11 and 2026-09-12, and the usage text states the default; The release.yml verify step and job timeouts accommodate the longer wait and the ci-workflow contract spec pins the new job budget with the auto-release budget still at least thirty minutes larger; A unit spec proves the default attempt count without passing --npm-attempts; The next scheduled cut after the change passes attempt 1 or fails for a cause other than npm metadata propagation, recorded on pm-e70zh5"
+parent: pm-u9d0
+risk: low
+confidence: high
+severity: high
+resolution: verify-published-release.mjs defaults to 60 npm metadata polls at 15 seconds (about fifteen minutes) instead of 20; release.yml verify step timeout 20 minutes and job timeout 60 minutes; ci-workflow-contract spec pins 60; a unit spec proves the default without passing --npm-attempts
+expected_result: A scheduled cut whose publish-to-visible lag stays under fifteen minutes passes the Release workflow on attempt 1 with no manual re-run
+actual_result: "Two consecutive scheduled cuts (2026-09-11, 2026-09-12) failed attempt 1 at E404 after five minutes while npm made the version visible after 8m14s and 6m10s; both were re-run by hand"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-e70zh5,discovered_from,"2026-09-12T19:57:45.186Z","harness:claude-code","cli:create:dep",detected
+  pm-zzylb9,implements,"2026-09-12T19:57:45.186Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-12T19:57:47.260Z","harness:claude-code","Duplicate check: hybrid search for npm metadata propagation published package verification wait returned only closed release-hardening items (pm-mwap, pm-1hm2) and pm-8eebb6 (closed, npx smoke ETIMEDOUT, a different stage). pm-e70zh5 owns the rolling rate and names no propagation owner; pm-ygli86 owns installed-artifact acceptance, not registry visibility. No existing owner."
+  "2026-09-12T20:04:21.951Z","harness:claude-code","Evidence: verify-published-release.spec.ts gained a default-attempts test (only the 60th npm view poll succeeds, no --npm-attempts passed) and ci-workflow-contract.spec.ts pins release job timeout 60 with auto-release 90 still at least 30 larger. Focused run: 4 files, 58 tests passed on 2026-09-12. Stage series extended on pm-e70zh5 (twenty scheduled runs); root cause and expectation recorded on pm-7zs0. The fourth criterion (next scheduled cut passes attempt 1 or fails elsewhere) is verified by the next run, recorded on pm-e70zh5."
+files[2]{path,scope,note}:
+  .github/workflows/release.yml,project,Verify step timeout 8 to 20 minutes and release job timeout 45 to 60 minutes
+  scripts/release/verify-published-release.mjs,project,Default npm metadata polls raised from 20 to 60 (about fifteen minutes) with the measured registry lag recorded beside the constant
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,300,"harness:claude-code","2026-09-12T20:04:21.251Z",local_mutation,main
+close_reason: Verifier propagation budget raised above the measured npm registry lag; timeouts and contract spec updated with a default-attempts unit test
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-wzmbvn
+  gate_id: verify-published-release
+  negative_control: "tests/unit/scripts/release/verify-published-release.spec.ts: fails npm metadata after exhausting attempts (E404 on every poll) and the default-attempts test succeeds only on the 60th poll"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts tests/integration/ci-workflow-contract.spec.ts
+  hosted_checks[2]: "Release workflow step Verify published package on npm, npx, and bunx (attempt 1 of the next scheduled cut)",Auto Release scheduled run stage release-workflow
+body: ""

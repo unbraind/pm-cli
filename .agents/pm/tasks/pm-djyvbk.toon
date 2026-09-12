@@ -1,0 +1,25 @@
+id: pm-djyvbk
+title: "Give assurance a declared noun placement and history-author-acknowledge a history leaf: the two live commands whose consolidation owners closed without moving them"
+description: "## Scope\nTwo live top-level commands lost their consolidation owner when the owning items closed without moving them.\n\n1. assurance is an SDK-owned governance surface (measurements, assertions, gates) with no noun in the twelve-noun grammar. Decide its placement with a recorded pbyu ruling: an ops assurance leaf (diagnostics family, where the census currently points), or a keep-as-is exception because it is a first-class data noun like plan. Whichever is chosen, the destination row flips from consolidation to target_noun or keep_as_is.\n2. history-author-acknowledge is the only history-* spelling still registered at the root. Give it a canonical leaf under the history noun (history acknowledge, matching the shared verb vocabulary) with the root spelling kept as a hidden permanent alias, and carry the relocation through contracts, completions, MCP action parity and docs.\n\n## Constraints\nZero feature loss; the help-token budget for the affected commands has zero headroom, so the new leaf's help must not exceed the text it replaces. Positional shape count stays within its budget."
+type: Task
+status: open
+priority: 2
+tags[6]: "area:cli",assurance,cli,consolidation,grammar,history
+created_at: "2026-09-12T19:57:54.945Z"
+updated_at: "2026-09-12T20:13:24.550Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "A pbyu ruling records where assurance lives in the noun grammar and the destination row flips from consolidation to target_noun or keep_as_is; pm history acknowledge (or the shared-verb spelling the ruling picks) is the canonical leaf; history-author-acknowledge remains executable as a hidden permanent alias with identical arguments, results and exit codes; Contracts, shell completions, MCP action parity and docs reflect the relocation and the command-grammar gate passes with no positional-shape or help-token budget growth"
+parent: pm-n7rr
+risk: low
+confidence: medium
+expected_result: assurance has a recorded noun disposition and history-author-acknowledge resolves to a canonical history leaf with its root spelling as a hidden permanent alias.
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3ig9b6,discovered_from,"2026-09-12T19:57:54.945Z","harness:claude-code","cli:create:dep",detected
+  pm-j82fd3,implements,"2026-09-12T19:57:54.945Z","harness:claude-code","cli:create:dep",detected
+  pm-tqel,supersedes,"2026-09-12T19:57:54.945Z","harness:claude-code","cli:create:dep",detected
+  pm-6apl,discovered_from,"2026-09-12T20:13:24.258Z","harness:claude-code","cli:update:dep",detected
+  pm-pbyu,implements,"2026-09-12T20:13:24.258Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-12T19:57:58.527Z","harness:claude-code","Duplicate check: pm-tqel (closed) consolidated history-redact/repair/compact/activity/restore and explicitly left history-author-acknowledge at the root; pm-6apl (closed) delivered the ops namespace without assurance. pm-npr3 covers init/config/schema/profile only. This task is the open owner the census rows for assurance and history-author-acknowledge now name."
+body: ""

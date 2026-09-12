@@ -1,0 +1,45 @@
+id: pm-crd6bf
+title: "Permanent hot-path aliases print the migration hint reserved for deprecated spellings on every human-readable call, so the project's own skills cost an extra stderr line per invocation"
+description: "## Observed\nEvery alias in PM_RELOCATED_COMMAND_ALIASES (next, focus, comments, notes, learnings, files, docs, deps, append, test, stats, health, validate, events, activity, restore, copy, merge and the duplicate facets) is declared lifecycle permanent in the alias contract, yet printNamespaceAliasHint in src/cli/main.ts prints \"Command X is an alias; use pm Y\" on stderr for every human-readable invocation of any of them. The function checks membership in the relocated table and never reads the lifecycle field. Measured live on 2026-09-12: pm next, pm comments, pm notes, pm files and pm stats each add one stderr line (about 12 tokens) per call.\n\n## Why it matters\nADR pm-pbyu rule 6 reserves the one-line migration hint for deprecated spellings and rule 7 states permanent hot-path aliases are ergonomic API, distinct from compatibility state. The shipped skills and AGENTS.md instruct exactly these permanent spellings (pm next, pm comments, pm stats), so every agent following the project's own instructions pays the hint on every hot-path call and is told to type more tokens than the contract requires. The token-efficiency mandate and the grammar contract both say the opposite of what the CLI does.\n\n## Non-goals\nDeprecated aliases (list-open, start-task, install, upgrade, extension) keep their hint and the ux.deprecation_hints switch. Alias usage counters remain pm-0mox."
+type: Issue
+status: closed
+priority: 1
+tags[6]: agent-ux,alias,"area:cli",cli,grammar,token-efficiency
+created_at: "2026-09-12T19:57:47.717Z"
+updated_at: "2026-09-12T20:21:45.334Z"
+closed_at: "2026-09-12T20:04:27.327Z"
+completed_at: "2026-09-12T20:04:27.327Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "Invoking any alias whose contract lifecycle is permanent writes nothing to stderr in human-readable, JSON and quiet modes; A deprecated alias still emits exactly one migration hint and ux.deprecation_hints false still suppresses it, proven as the negative control in the same spec; docs/COMMAND_NAMESPACES.md states that permanent aliases carry no hint and names the deprecated lifecycle as the only hinted state"
+parent: pm-n7rr
+risk: low
+confidence: high
+severity: medium
+resolution: "Removed printNamespaceAliasHint from src/cli/main.ts so no permanent-lifecycle alias prints guidance; deprecated spellings still emit one hint under ux.deprecation_hints; namespace spec asserts silence for next, stats, comments, focus, fetch, --json and --quiet and asserts the list-open hint as the negative control; docs/COMMAND_NAMESPACES.md states the contract"
+expected_result: Permanent aliases emit nothing on stderr; only deprecated spellings emit the one-line hint governed by ux.deprecation_hints
+actual_result: "Before the fix every relocated permanent alias (next, comments, notes, files, stats and the rest) printed Command X is an alias; use pm Y on every human-readable call"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-j82fd3,implements,"2026-09-12T19:57:47.717Z","harness:claude-code","cli:create:dep",detected
+  pm-kcs4,discovered_from,"2026-09-12T19:57:47.717Z","harness:claude-code","cli:create:dep",detected
+  pm-pbyu,implements,"2026-09-12T20:13:22.507Z","harness:claude-code","cli:update:dep",detected
+  pm-q2n4vd,discovered_from,"2026-09-12T20:13:22.507Z","harness:claude-code","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-12T19:57:51.693Z","harness:claude-code","Duplicate check: searched permanent alias migration hint stderr noise; nearest are pm-0z7n (closed, the alias shim that introduced hints for deprecated spellings), pm-8kzfc4 (closed, read-output flag alias hints) and pm-q2n4vd (closed, docs instructing deprecated spellings). None covers a hint printed for a permanent-lifecycle alias. pm-0mox (alias counters) is orthogonal and unaffected."
+  "2026-09-12T20:04:26.554Z","harness:claude-code","Evidence: rebuilt dist; pm next, pm stats, pm comments print nothing on stderr; pm list-open still prints exactly one Deprecated command hint and ux.deprecation_hints false suppresses it. context-ops-namespace.integration.spec.ts rewritten with the deprecated negative control; 3 tests pass. docs-skills, flag-lexicon and command-grammar gates green on the rebuilt tree. Measured saving: about twelve stderr tokens per hot-path alias call across the 18 permanent relocated spellings the skills instruct."
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,"printNamespaceAliasHint removed: it hinted on relocated-table membership and never read the alias lifecycle field"
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/context-ops-namespace.integration.spec.ts,project,300,"harness:claude-code","2026-09-12T20:04:25.771Z",local_mutation,main
+docs[1]{path,scope,note}:
+  docs/COMMAND_NAMESPACES.md,project,States that permanent aliases carry no hint and only deprecated spellings emit the suppressible migration hint
+close_reason: "Permanent aliases are silent; deprecated spellings keep their single suppressible hint, proven with a negative control"
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-crd6bf
+  gate_id: context-ops-namespace-integration
+  negative_control: "tests/integration/context-ops-namespace.integration.spec.ts: list-open still emits exactly one Deprecated command hint and ux.deprecation_hints false suppresses it, while next, stats, comments, focus, fetch, --json and --quiet emit nothing"
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/context-ops-namespace.integration.spec.ts,node scripts/release/docs-skills-gate.mjs
+  hosted_checks[2]: "CI Gates (static): docs-skills and command-grammar gates","CI test shards: context-ops-namespace integration spec"
+body: ""

@@ -26694,13 +26694,6 @@
         "target": "history events"
       },
       {
-        "command": "history-author-acknowledge",
-        "disposition": "consolidation",
-        "noun": "history",
-        "owner": "pm-tqel",
-        "target": "history"
-      },
-      {
         "command": "merge",
         "disposition": "consolidation",
         "noun": "workspace",
@@ -26713,6 +26706,13 @@
         "noun": "workspace",
         "owner": "pm-m6g87m",
         "target": "workspace merge"
+      },
+      {
+        "command": "history-author-acknowledge",
+        "disposition": "consolidation",
+        "noun": "history",
+        "owner": "pm-djyvbk",
+        "target": "history acknowledge"
       },
       {
         "command": "vcs abandon",
@@ -26823,7 +26823,7 @@
         "command": "init",
         "disposition": "consolidation",
         "noun": "workspace",
-        "owner": "pm-n7rr",
+        "owner": "pm-npr3",
         "target": "workspace init"
       },
       {
@@ -27240,20 +27240,6 @@
         "target": "ops normalize"
       },
       {
-        "command": "assurance",
-        "disposition": "consolidation",
-        "noun": "ops",
-        "owner": "pm-6apl",
-        "target": "ops"
-      },
-      {
-        "command": "config",
-        "disposition": "consolidation",
-        "noun": "ops",
-        "owner": "pm-6apl",
-        "target": "ops"
-      },
-      {
         "command": "eval",
         "disposition": "consolidation",
         "noun": "ops",
@@ -27294,20 +27280,6 @@
         "noun": "ops",
         "owner": "pm-6apl",
         "target": "ops health"
-      },
-      {
-        "command": "profile",
-        "disposition": "consolidation",
-        "noun": "ops",
-        "owner": "pm-6apl",
-        "target": "ops"
-      },
-      {
-        "command": "schema",
-        "disposition": "consolidation",
-        "noun": "ops",
-        "owner": "pm-6apl",
-        "target": "ops"
       },
       {
         "command": "stats",
@@ -27364,6 +27336,34 @@
         "noun": "ops",
         "owner": "pm-6apl",
         "target": "ops validate"
+      },
+      {
+        "command": "config",
+        "disposition": "consolidation",
+        "noun": "ops",
+        "owner": "pm-npr3",
+        "target": "ops"
+      },
+      {
+        "command": "profile",
+        "disposition": "consolidation",
+        "noun": "ops",
+        "owner": "pm-npr3",
+        "target": "ops"
+      },
+      {
+        "command": "schema",
+        "disposition": "consolidation",
+        "noun": "ops",
+        "owner": "pm-npr3",
+        "target": "ops"
+      },
+      {
+        "command": "assurance",
+        "disposition": "consolidation",
+        "noun": "ops",
+        "owner": "pm-djyvbk",
+        "target": "ops assurance"
       },
       {
         "command": "assurance list",
@@ -28535,10 +28535,6 @@
         "slots": []
       },
       {
-        "command": "history-author-acknowledge",
-        "slots": []
-      },
-      {
         "command": "merge",
         "slots": [
           {
@@ -28617,6 +28613,10 @@
             "variadic": false
           }
         ]
+      },
+      {
+        "command": "history-author-acknowledge",
+        "slots": []
       },
       {
         "command": "vcs abandon",
@@ -29278,65 +29278,6 @@
         "slots": []
       },
       {
-        "command": "assurance",
-        "slots": [
-          {
-            "name": "action",
-            "polymorphic": false,
-            "required": true,
-            "value_kind": "action",
-            "variadic": false
-          },
-          {
-            "name": "kind",
-            "polymorphic": false,
-            "required": false,
-            "value_kind": "string",
-            "variadic": false
-          },
-          {
-            "name": "id",
-            "polymorphic": false,
-            "required": false,
-            "value_kind": "string",
-            "variadic": false
-          }
-        ]
-      },
-      {
-        "command": "config",
-        "slots": [
-          {
-            "name": "scope",
-            "polymorphic": true,
-            "required": false,
-            "value_kind": "string",
-            "variadic": false
-          },
-          {
-            "name": "action",
-            "polymorphic": false,
-            "required": false,
-            "value_kind": "action",
-            "variadic": false
-          },
-          {
-            "name": "key",
-            "polymorphic": false,
-            "required": false,
-            "value_kind": "string",
-            "variadic": false
-          },
-          {
-            "name": "value",
-            "polymorphic": true,
-            "required": false,
-            "value_kind": "string",
-            "variadic": false
-          }
-        ]
-      },
-      {
         "command": "eval",
         "slots": []
       },
@@ -29359,44 +29300,6 @@
       {
         "command": "ops health",
         "slots": []
-      },
-      {
-        "command": "profile",
-        "slots": [
-          {
-            "name": "subcommand",
-            "polymorphic": false,
-            "required": true,
-            "value_kind": "action",
-            "variadic": false
-          },
-          {
-            "name": "name",
-            "polymorphic": false,
-            "required": false,
-            "value_kind": "string",
-            "variadic": false
-          }
-        ]
-      },
-      {
-        "command": "schema",
-        "slots": [
-          {
-            "name": "subcommand",
-            "polymorphic": false,
-            "required": true,
-            "value_kind": "action",
-            "variadic": false
-          },
-          {
-            "name": "name",
-            "polymorphic": false,
-            "required": false,
-            "value_kind": "string",
-            "variadic": false
-          }
-        ]
       },
       {
         "command": "stats",
@@ -29459,6 +29362,103 @@
       {
         "command": "ops validate",
         "slots": []
+      },
+      {
+        "command": "config",
+        "slots": [
+          {
+            "name": "scope",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "action",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "key",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "value",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "profile",
+        "slots": [
+          {
+            "name": "subcommand",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "schema",
+        "slots": [
+          {
+            "name": "subcommand",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "assurance",
+        "slots": [
+          {
+            "name": "action",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "kind",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "assurance list",

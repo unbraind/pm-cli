@@ -8,25 +8,26 @@ import { runPmCli } from "../../src/cli/main.js";
 import { runInProcessDistCli } from "../helpers/cliRunner.js";
 
 describe("native context and operations namespaces", () => {
-  it("suppresses alias guidance for native, machine-readable, quiet, and configured invocations", async () => {
+  it("keeps permanent aliases silent while deprecated spellings still carry one suppressible hint", async () => {
     await withTempPmPath(async (context) => {
       createTaskFixture(context, "pm-hint-target", "Alias hint target");
-      for (const command of ["next", "stats"]) {
-        const hinted = await runInProcessDistCli([command], { env: context.env }, runPmCli);
-        expect(hinted.code, hinted.stderr).toBe(0);
-        expect(hinted.stderr).toContain(`Command \`${command}\` is an alias`);
-      }
-      for (const args of [["context", "focus", "--id", "pm-hint-target"], ["fetch", "pm-hint-target"], ["next", "--json"], ["next", "--quiet"]]) {
+      // Permanent hot-path aliases are ergonomic API (ADR pm-pbyu rule 7): no stderr guidance in any mode.
+      for (const args of [["next"], ["stats"], ["comments", "pm-hint-target"], ["context", "focus", "--id", "pm-hint-target"], ["fetch", "pm-hint-target"], ["next", "--json"], ["next", "--quiet"]]) {
         const result = await runInProcessDistCli(args, { env: context.env }, runPmCli);
         expect(result.code, result.stderr).toBe(0);
         expect(result.stderr).not.toContain("is an alias");
+        expect(result.stderr).not.toContain("Deprecated command");
       }
+      // Negative control: a deprecated spelling still emits exactly one migration hint.
+      const deprecated = await runInProcessDistCli(["list-open", "--limit", "1"], { env: context.env }, runPmCli);
+      expect(deprecated.code, deprecated.stderr).toBe(0);
+      expect(deprecated.stderr.match(/Deprecated command `list-open`/gu)?.length).toBe(1);
       const settings = await readSettings(context.pmPath);
       settings.ux = { ...settings.ux, deprecation_hints: false };
       await writeSettings(context.pmPath, settings);
-      const suppressed = await runInProcessDistCli(["next"], { env: context.env }, runPmCli);
+      const suppressed = await runInProcessDistCli(["list-open", "--limit", "1"], { env: context.env }, runPmCli);
       expect(suppressed.code, suppressed.stderr).toBe(0);
-      expect(suppressed.stderr).not.toContain("is an alias");
+      expect(suppressed.stderr).not.toContain("Deprecated command");
     });
   });
   it("preserves real read results, focus persistence, history events, and default context", async () => {

@@ -808,8 +808,10 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
     ]),
     ...destinationRows("history", "history", "consolidation", "pm-tqel", [
       "events",
-      "history-author-acknowledge",
       "merge",
+    ]),
+    ...destinationRows("history", "history acknowledge", "consolidation", "pm-djyvbk", [
+      "history-author-acknowledge",
     ]),
     ...destinationRows(
       "history",
@@ -840,7 +842,7 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "workspace",
       "workspace init",
       "consolidation",
-      "pm-n7rr",
+      "pm-npr3",
       ["init"],
     ),
     ...destinationRows("package", "package", "target_noun", "pm-pbyu", [
@@ -917,17 +919,21 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
     ...destinationRows("ops", "ops", "target_noun", "pm-6apl", ["ops"]),
     ...destinationRows("ops", "ops normalize", "package_owned", "package:pm-governance-audit", ["normalize"]),
     ...destinationRows("ops", "ops", "consolidation", "pm-6apl", [
-      "assurance",
-      "config",
       "eval",
       "gc",
       "health",
-      "profile",
-      "schema",
       "stats",
       "telemetry",
       "test-all",
       "validate",
+    ]),
+    ...destinationRows("ops", "ops", "consolidation", "pm-npr3", [
+      "config",
+      "profile",
+      "schema",
+    ]),
+    ...destinationRows("ops", "ops assurance", "consolidation", "pm-djyvbk", [
+      "assurance",
     ]),
     ...destinationRows(
       "ops",

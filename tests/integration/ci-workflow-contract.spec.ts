@@ -860,7 +860,7 @@ describe("GitHub workflow contract", () => {
     const autoReleaseTimeout =
       autoReleaseWorkflow.jobs?.["auto-release"]?.["timeout-minutes"];
 
-    expect(releaseTimeout).toBe(45);
+    expect(releaseTimeout).toBe(60);
     expect(autoReleaseTimeout).toBe(90);
     expect(autoReleaseTimeout).toBeGreaterThanOrEqual(
       (releaseTimeout as number) + 30,

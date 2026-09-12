@@ -1,0 +1,25 @@
+id: pm-42wr6g
+title: "Merged linked tests are untrusted on every clone by design and 379 of them warn with no tracked settlement, so validate's command-references check cannot reach ok through any recorded action"
+description: "## Observed\npm validate reports validate_linked_test_trust_unacknowledged 379 on main (check command_references, status warn). Every row has the shape item:branch->main:command; the 379 rows span 195 items and come from merged pull-request lanes (40 from feat/agent-transcript-recovery-contracts, 24 from feat/sdk-context-integrity-recovery, 21 from feat/substantive-context-signals-delivery-receipts and so on). pm-ed28wi shipped this by design: linked commands that arrive by merge are executable data and fail closed until a receiving clone acknowledges them with pm test <id> --acknowledge-linked-tests, and acknowledgements live in the clone-local ignored runtime directory.\n\n## Why it matters\nBecause the acknowledgement is clone-local, no recorded action can ever clear the warning for another clone or for CI; the count only grows with every merged lane, and the command_references check is permanently warn on a fresh clone of main. A warning that the routine delivery path produces and nothing tracked can settle is noise by construction, and it hides any new untrusted command inside 379 known ones. The security boundary is right; the settlement path and the population accounting are missing.\n\n## Non-goals\nNot weakening fail-closed execution. Not executing any of the 379 commands to acknowledge them."
+type: Issue
+status: open
+priority: 2
+tags[6]: "area:sdk",governance,linked-tests,merge-safety,trust,validate
+created_at: "2026-09-12T19:58:01.870Z"
+updated_at: "2026-09-12T20:05:09.796Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "Either a recorded, author-attributed acknowledgement (history entry carrying the exact fingerprint and reviewer) that a receiving clone may honour under project policy, or an explicit decision that trust is clone-local and the warning is partitioned out of workspace validation into a clone diagnostic; The 195-item backlog receives a disposition under the chosen model and validate command_references reaches ok on a fresh clone of main; A negative control proves a newly merged unreviewed linked command still warns and still fails closed on execution; The untrusted count is declared as an assurance measurement with a ceiling so growth is visible rather than absorbed"
+parent: pm-33cw
+risk: medium
+confidence: high
+severity: medium
+expected_result: "A fresh clone of main reports command_references ok, a newly merged unreviewed command still warns, and the untrusted count is a declared measurement with a ceiling."
+actual_result: 379 untrusted rows across 195 items on main; acknowledgements are clone-local so no recorded action clears them for CI or another clone; the count grows with every merged lane.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ed28wi,discovered_from,"2026-09-12T19:58:01.870Z","harness:claude-code","cli:create:dep",detected
+  pm-w7ccmv,implements,"2026-09-12T19:58:01.870Z","harness:claude-code","cli:create:dep",detected
+  pm-zw9188,discovered_from,"2026-09-12T20:05:09.461Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-12T19:58:05.326Z","harness:claude-code","Duplicate check: pm-ed28wi (closed) introduced clone-local trust and fail-closed execution; pm-44iu and pm-mf5z (closed) enforce runnable linked tests; pm-zw9188 (closed) partitioned the linked-file staleness check by holder lifecycle, the closest shape. No open item owns settlement or accounting of the untrusted population; validate-warning ownership requires one."
+body: ""

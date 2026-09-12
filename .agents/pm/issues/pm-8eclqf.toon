@@ -1,0 +1,25 @@
+id: pm-8eclqf
+title: "pm get --json omits the whole item as budget-infeasible when its standard projection exceeds the default ceiling although the contract's own brief depth fits, so one active item is unreadable by default"
+description: "## Observed\npm get pm-5t33or --json exits 2 with output_budget_exceeded.reason requested_budget_infeasible and omits the whole item, while pm get pm-5t33or (TOON), --depth brief and --depth deep all succeed, and --output-budget 20000 succeeds. The item's full JSON is 31,218 bytes (about 7.8k estimated tokens) against the default 6,000-token ceiling; it has 26 dependencies, a 2,725-character description and a 1,111-character body, no notes and no comments. The refusal receipt reports estimated_tokens 177 and within_budget false, so the number shown is the receipt's own size rather than the omitted result's.\n\n## Population\nProbed every active item on 2026-09-12: 308 of 309 open and draft items read at the default budget; pm-5t33or is the only refusal. The shape is rare today and structural: any single-entity read whose standard projection exceeds the ceiling has no degradation step between full standard and omit everything, although the contract declares brief as a cheaper amount dimension for the same command.\n\n## Why it matters\npm get is the command an agent uses to rebuild an item; a default read that refuses outright is the one outcome the output-budget feature pm-5t33or exists to prevent (degrade deterministically instead of emitting unbounded output). pm-3crymx closed the same receipt defect for context; this is its shape on get.\n\n## Non-goals\nNot a change to the default ceiling. Not linked files/tests/docs projection (pm-tld20c, closed)."
+type: Issue
+status: open
+priority: 2
+tags[6]: agent-ux,"area:sdk",get,output-budget,read-output,token-efficiency
+created_at: "2026-09-12T19:57:58.972Z"
+updated_at: "2026-09-12T20:05:08.554Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "The single-entity degradation ladder steps standard to brief before omission and the receipt records the applied depth and the reason; The refusal receipt reports the omitted result's estimated tokens, never the receipt's own size; A probe over every active item returns exit 0 at the default budget, with a negative control for an item whose brief projection also exceeds the ceiling; A spec reproduces pm-5t33or's shape: 26 dependencies and a 2,700-character description under the default budget"
+parent: pm-5t33or
+risk: medium
+confidence: high
+severity: high
+expected_result: A single-entity read whose standard projection exceeds the ceiling degrades to the declared brief projection and reports the applied depth; the receipt's estimated_tokens names the omitted result's size.
+actual_result: "pm get pm-5t33or --json exits 2 requested_budget_infeasible with estimated_tokens 177 while --depth brief, --depth deep, TOON and --output-budget 20000 all succeed."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3crymx,discovered_from,"2026-09-12T19:57:58.972Z","harness:claude-code","cli:create:dep",detected
+  pm-j82fd3,implements,"2026-09-12T19:57:58.972Z","harness:claude-code","cli:create:dep",detected
+  pm-cxr0jb,discovered_from,"2026-09-12T20:05:08.133Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-12T19:58:01.447Z","harness:claude-code","Duplicate check: pm-3crymx (closed) fixed the context receipt and budget-derived projection; pm-tld20c (closed) fixed get's withheld link sections; pm-hid9g1 (closed) added output sessions. Searched requested_budget_infeasible default budget get refuses: no open owner for get's single-entity degradation ladder. Probe evidence: 308 of 309 active items read; pm-5t33or is the sole refusal on 2026-09-12."
+body: ""

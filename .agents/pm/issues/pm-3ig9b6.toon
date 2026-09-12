@@ -1,0 +1,33 @@
+id: pm-3ig9b6
+title: "Destination census rows cite terminal consolidation owners for five live commands, so the grammar gate certifies consolidations no open item will deliver"
+description: "## Observed\nPM_COMMAND_DESTINATION_CONTRACTS in src/sdk/cli-contracts/grammar-contracts.ts carries consolidation rows whose named owner is a terminal item: assurance, config, profile and schema name pm-6apl (closed; it delivered the ops namespace and never touched these four), and history-author-acknowledge names pm-tqel (closed; it consolidated the history-* spellings and left this one at the root). init names the epic pm-n7rr rather than pm-npr3, the open item whose acceptance criteria decide the customization family. verifyPmCliGrammar and the command-grammar gate check that every live command has a destination row and that stale rows are removed; neither reads the owner's status, so a consolidation whose owner closed without delivering it is certified indefinitely.\n\n## Why it matters\nADR pm-pbyu rule 8 allows a live command to remain only under a target noun, a tracked consolidation owner, a package owner, or a reasoned keep-as-is exception. A closed owner is none of those. The census is the artifact agents and the surface ceiling rely on to know what still moves; five commands currently read as in-flight consolidations that no open item will deliver.\n\n## Non-goals\nDeciding where assurance and history-author-acknowledge land is the delivery task filed beside this issue; deciding init/config/schema/profile stays pm-npr3."
+type: Issue
+status: open
+priority: 2
+tags[6]: "area:sdk",cli,contracts,gate,governance,grammar
+created_at: "2026-09-12T19:57:52.201Z"
+updated_at: "2026-09-12T20:13:23.617Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "verifyPmCliGrammar or the command-grammar gate reports a terminal_consolidation_owner finding when a consolidation row's owner is closed, canceled or missing and the command is not carried by the alias relocation table, with a negative-control fixture; config, profile, schema and init rows name pm-npr3; assurance and history-author-acknowledge rows name the open delivery task filed beside this issue; the contracts fixture is regenerated; The gate's negative control proves a stale-owner row fails upward in CI"
+parent: pm-n7rr
+risk: medium
+confidence: high
+severity: medium
+expected_result: Every consolidation row names an open owner or is reclassified; the grammar verification reports a finding when a consolidation owner is terminal or unknown.
+actual_result: "assurance, config, profile, schema name closed pm-6apl; history-author-acknowledge names closed pm-tqel; init names the epic instead of pm-npr3; no check reads owner status."
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+  pm-j82fd3,implements,"2026-09-12T19:57:52.201Z","harness:claude-code","cli:create:dep",detected
+  pm-wt43zj,discovered_from,"2026-09-12T19:57:52.201Z","harness:claude-code","cli:create:dep",detected
+  pm-yy8rmx,discovered_from,"2026-09-12T19:57:52.201Z","harness:claude-code","cli:create:dep",detected
+  pm-npr3,blocked_by,"2026-09-12T20:05:10.526Z","harness:claude-code","cli:update:dep",detected
+  pm-6apl,discovered_from,"2026-09-12T20:13:23.331Z","harness:claude-code","cli:update:dep",detected
+  pm-pbyu,implements,"2026-09-12T20:13:23.331Z","harness:claude-code","cli:update:dep",detected
+  pm-tqel,discovered_from,"2026-09-12T20:13:23.331Z","harness:claude-code","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-12T19:57:54.472Z","harness:claude-code","Duplicate check: pm-yy8rmx (closed) filed the census and pm-wt43zj (closed) made it a gate; both check row existence and staleness, not owner liveness. pm-npr3 (open) owns the customization-family decision but the rows do not name it. No open item covers owner liveness of destination rows."
+  "2026-09-12T20:04:30.266Z","harness:claude-code","Progress 2026-09-12: the second criterion is shipped (five rows repointed, fixture regenerated, contracts-snapshot --check and command-grammar gate green, destination_count unchanged at the same row count). The first and third criteria, the owner-liveness finding with its negative control, remain open and are this item's residual scope."
+files[2]{path,scope,note}:
+  src/sdk/cli-contracts/grammar-contracts.ts,project,"config, profile, schema, init rows now name pm-npr3; assurance and history-author-acknowledge rows name pm-djyvbk; targets unchanged pending the placement decisions"
+  tests/fixtures/contracts/full.json,project,Regenerated contracts snapshot carrying the repointed owners
+body: ""

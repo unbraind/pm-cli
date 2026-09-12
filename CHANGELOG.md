@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Fixed
+
+- Published-package verification gives up before npm metadata propagates: two consecutive scheduled cuts were recorded as failed and re-run by hand while the artifact was already live ([pm-wzmbvn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wzmbvn.toon))
+
+### Deprecated
+
+- Permanent hot-path aliases print the migration hint reserved for deprecated spellings on every human-readable call, so the project's own skills cost an extra stderr line per invocation ([pm-crd6bf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-crd6bf.toon))
+
 ### Other
 
 - Consolidate item annotation facets: comments/notes/learnings/files/docs/deps/append/test become one facet grammar (old spellings aliased) ([pm-yql1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yql1.toon))
