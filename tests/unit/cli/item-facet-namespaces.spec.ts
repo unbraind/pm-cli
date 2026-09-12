@@ -52,6 +52,11 @@ describe("item facet namespace contracts", () => {
   it.each(["comments", "notes", "learnings", "files", "docs", "deps", "append", "test"])("preserves %s flags and addressing", (facet) => {
     const canonical = `item ${facet}`;
     expect(resolvePmCommandOperation(canonical)).toBe(facet);
+    for (const spelling of [facet, canonical]) {
+      const destinations = PM_COMMAND_DESTINATION_CONTRACTS.filter(({ command }) => command === spelling);
+      expect(destinations).toHaveLength(1);
+      expect(destinations[0]).toMatchObject({ noun: "item", target: canonical, owner: "pm-yql1" });
+    }
     expect(resolveSubcommandFlagContractsForCommand(canonical)).toEqual(resolveSubcommandFlagContractsForCommand(facet));
     expect(resolvePmFlagSemanticConcept(canonical, "--file")).toBe(resolvePmFlagSemanticConcept(facet, "--file"));
     expect(normalizeBootstrapInvocation([facet, "--id", "pm-a"]).argv).toEqual(["item", facet, "pm-a"]);

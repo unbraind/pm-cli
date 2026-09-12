@@ -26246,6 +26246,20 @@
         "target": "close delete"
       },
       {
+        "command": "deps",
+        "disposition": "consolidation",
+        "noun": "item",
+        "owner": "pm-yql1",
+        "target": "item deps"
+      },
+      {
+        "command": "item deps",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-yql1",
+        "target": "item deps"
+      },
+      {
         "command": "docs",
         "disposition": "consolidation",
         "noun": "item",
@@ -26573,20 +26587,6 @@
         "noun": "graph",
         "owner": "pm-pbyu",
         "target": "graph"
-      },
-      {
-        "command": "deps",
-        "disposition": "consolidation",
-        "noun": "item",
-        "owner": "pm-yql1",
-        "target": "item deps"
-      },
-      {
-        "command": "item deps",
-        "disposition": "target_noun",
-        "noun": "item",
-        "owner": "pm-yql1",
-        "target": "item deps"
       },
       {
         "command": "history",
@@ -27911,6 +27911,30 @@
         ]
       },
       {
+        "command": "deps",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "item deps",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
         "command": "docs",
         "slots": [
           {
@@ -28359,30 +28383,6 @@
             "name": "target",
             "polymorphic": false,
             "required": false,
-            "value_kind": "item_id",
-            "variadic": false
-          }
-        ]
-      },
-      {
-        "command": "deps",
-        "slots": [
-          {
-            "name": "id",
-            "polymorphic": false,
-            "required": true,
-            "value_kind": "item_id",
-            "variadic": false
-          }
-        ]
-      },
-      {
-        "command": "item deps",
-        "slots": [
-          {
-            "name": "id",
-            "polymorphic": false,
-            "required": true,
             "value_kind": "item_id",
             "variadic": false
           }

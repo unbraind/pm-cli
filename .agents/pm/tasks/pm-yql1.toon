@@ -6,18 +6,18 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",simplification
 created_at: "2026-07-05T05:08:35.381Z"
-updated_at: "2026-09-12T09:18:45.689Z"
-closed_at: "2026-09-12T09:18:45.077Z"
-completed_at: "2026-09-12T09:18:45.077Z"
+updated_at: "2026-09-12T09:57:00.398Z"
+closed_at: "2026-09-12T09:56:59.800Z"
+completed_at: "2026-09-12T09:56:59.800Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "One facet grammar covers all 8 annotation surfaces with identical flags and payloads; every old spelling dispatches through the alias shim with a migration hint; spelling-parity spec proves identical output old vs new; contracts, completions (bash/zsh/fish), docs, and MCP names regenerate from the contract table; top-level help lists item facets under a single noun entry."
 parent: pm-n7rr
 risk: medium
 confidence: medium
-resolution: "Unified all eight item evidence facets under SDK-declared command paths with preserved aliases, flags, payloads and SDK/MCP identities"
-expected_result: One item evidence grammar preserves every published operation and provides canonical discovery and recovery
-actual_result: "All 8752 tests passed with exact 100/100/100/100 coverage; real temporary lifecycle, shell, linked-test and packed npx/bunx acceptance passed"
+resolution: "Unified eight evidence facets, preserved aliases and public identities, aligned the deps source census and documented private recovery helpers"
+expected_result: Canonical evidence routing and destination declarations agree without changing published operation behavior
+actual_result: "8752 full-suite tests passed at the substantive implementation head with exact 100/100/100/100; subsequent source-seed and JSDoc clarification passed 31 focused tests, build, contracts, lint, documentation and token gates"
 dependencies[7]:
   - id: pm-0z7n
     kind: blocked_by
@@ -49,7 +49,7 @@ dependencies[7]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[27]{created_at,author,text}:
+comments[29]{created_at,author,text}:
   "2026-08-26T21:27:34.572Z","harness:codex","GitHub intake: GH-1126 https://github.com/unbraind/pm-cli/issues/1126. Reused the canonical annotation-facet grammar task. Red reproduction: comments/learnings reject --text even though notes/remind and collection concepts use text; human recovery can truncate before suggested_retry."
   "2026-08-26T21:34:26.811Z","harness:codex","TDD red: shared registration spec proves comments, notes, and learnings all reject the convergent --text alias before reaching their SDK adapters."
   "2026-08-26T22:51:39.094Z","harness:codex","Evidence for the implemented slice: comments, notes, and learnings now accept the convergent --text alias and reject conflicting positional/text payloads through one typed resolver; recovery bundles put suggested_retry first. Fresh-directory acceptance persisted and projected one entry from each collection. The linked sandbox-safe suite passed 134/134, while repository gates passed pnpm build, pnpm lint, 584 files and 8025 tests with exact 100/100/100/100 coverage, pnpm audit clean, and Trivy HIGH/CRITICAL vuln+secret+misconfig clean. This closes only the GitHub #1126 alias slice; the broader convergent grammar programme remains open for its other command families."
@@ -77,6 +77,8 @@ comments[27]{created_at,author,text}:
   "2026-09-12T09:07:46.060Z","harness:codex","Exact coverage evidence: all 8751 tests passed in 679 files after serialized verification. Coverage remains correctly red at 49004/49006 branches: the best-score replacement paths for canonical command suggestions lack namespace-specific assertions. Adding real Commander item-facet ranking cases to the existing facet contract suite, without mocks, threshold changes or production-code changes."
   "2026-09-12T09:09:12.376Z","harness:codex","TDD ranking finding: a real Commander fixture with item comments and commentary shows exact compatibility spelling comment ranked below the longer commentary prefix. The new namespace test fails on that ordering. Preserve SDK-declared exact aliases before fuzzy or semantic candidates, while requiring the canonical target to exist in the active runtime; typo and absent-target behavior remain covered."
   "2026-09-12T09:18:27.558Z","harness:codex","Final source verification: 679 files and all 8752 tests passed. Exact coverage is statements 64309/64309, branches 49010/49010, functions 13363/13363 and lines 61597/61597, with zero uncovered counts. Canonical exact-alias recovery now wins over longer fuzzy prefixes in an active Commander tree. Typecheck, focused lint, SDK compatibility, token budgets, isolated manual lifecycle, packed npx/bunx smoke, 88-command package-first dogfood, linked PM acceptance, dependency audit and tracked-secret scan passed. The earlier concurrent-build and uncovered-branch runs are superseded by this settled complete result."
+  "2026-09-12T09:54:23.131Z","harness:codex","Review correction: exported SDK destination rows for deps and item deps already both have noun item, target item deps and owner pm-yql1, because the terminal flatMap derives alias metadata. The raw graph show seed is misleading source text, not a runtime defect. Align that seed and document private recovery helpers touched by this PR; public and runtime contracts must stay unchanged."
+  "2026-09-12T09:56:59.243Z","harness:codex","Review follow-up verified: all 31 focused facet/grammar/recovery tests pass; build, generated contract checks, ESLint, static documentation gate and token-surface gate pass. Exported destination identities are unchanged; the snapshot changes only the deps rows ordering after moving its raw seed. Added JSDoc to the six private recovery/scoring declarations and named callbacks changed by this work. Existing eight-facet tests now assert unique destination rows and canonical noun/target/owner. Full hosted coverage will rerun on the new commit."
 learnings[2]{created_at,author,text}:
   "2026-08-26T22:51:39.542Z","harness:codex","Convergent mutation grammar should resolve positional and named text at a shared registration boundary, with a typed conflict refusal before any SDK mutation adapter runs."
   "2026-09-12T07:30:08.390Z","harness:codex",Namespace normalization must use the stable operation identity for payload-sensitive preprocessing. Root noun tests alone miss linked-test environment assignments and nested internal visibility.
@@ -176,5 +178,5 @@ docs[6]{path,scope,note}:
   docs/generated/AGENT_COMMAND_SURFACE.md,project,Generated SDK command visibility and stable operation mapping
   docs/generated/FLAG_LEXICON_BUDGETS.md,project,SDK-generated canonical command budgets
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Executable refusal census includes canonical facet and worker paths
-close_reason: Canonical evidence facets and recovery verified with full exact coverage and installed acceptance
+close_reason: Complete facet grammar and review source-clarity follow-up with preserved exported contracts
 body: ""

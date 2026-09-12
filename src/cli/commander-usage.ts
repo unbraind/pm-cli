@@ -481,6 +481,7 @@ function getCrossCommandFlagIndex(): Map<string, string[]> {
   return crossCommandFlagIndexCache;
 }
 
+/** Rank accepting commands by shared flags, then deduplicate their canonical alias targets. */
 function findOtherCommandsForFlag(
   unknownOption: string,
   currentCommand: string | undefined,
@@ -537,12 +538,14 @@ function rewriteUnknownOptionArgv(
   return undefined;
 }
 
+/** Score runtime paths and compatibility aliases together, retaining each available target's best match. */
 function scoreRuntimeCommandCandidates(params: {
   commandPaths: string[];
   normalizedUnknown: string;
   primaryToken: string;
 }): string[] {
   const commandPathSet = new Set(params.commandPaths);
+  /** Compare the full attempted path and its first token using the same bounded spelling score. */
   const scoreAgainstUnknown = (candidatePath: string): number =>
     Math.min(
       scoreCommandPathMatch(candidatePath, params.normalizedUnknown),
@@ -551,6 +554,7 @@ function scoreRuntimeCommandCandidates(params: {
         : Number.POSITIVE_INFINITY,
     );
   const scoresByCommandPath = new Map<string, number>();
+  /** Keep only finite matches for installed command paths and preserve the strongest alias score. */
   const recordCandidateScore = (commandPath: string, score: number): void => {
     if (!Number.isFinite(score) || !commandPathSet.has(commandPath)) {
       return;
@@ -580,6 +584,7 @@ function scoreRuntimeCommandCandidates(params: {
     .map(([commandPath]) => commandPath);
 }
 
+/** Prefer an exact declared alias when its target exists, then combine semantic, spelling and package hints. */
 function resolveUnknownCommandCandidates(params: {
   commandPaths: string[];
   normalizedUnknown: string;

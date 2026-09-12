@@ -1601,6 +1601,7 @@ function resolveUnknownOptionRetry(
   };
 }
 
+/** Build an option refusal with canonical help, declared alternatives and an unambiguous retry when available. */
 function buildUnknownOptionGuidance(
   message: string,
   commandName: string | undefined,

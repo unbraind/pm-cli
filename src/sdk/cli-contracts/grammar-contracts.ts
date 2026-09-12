@@ -740,6 +740,7 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "copy",
       "create",
       "delete",
+      "deps",
       "docs",
       "files",
       "get",
@@ -796,9 +797,6 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "comments-audit",
     ]),
     ...destinationRows("graph", "graph", "target_noun", "pm-pbyu", ["graph"]),
-    ...destinationRows("graph", "graph show", "consolidation", "pm-yql1", [
-      "deps",
-    ]),
     ...destinationRows("history", "history", "target_noun", "pm-pbyu", [
       "history",
     ]),
