@@ -34,6 +34,8 @@ it.each(["redacted", "max"] as const)(
     const endpoint = `http://127.0.0.1:${address.port}`;
     try {
       await withTempGlobalRoot("pm-telemetry-optional-result-", async (globalRoot) => {
+        vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+        vi.stubEnv("DO_NOT_TRACK", "0");
         vi.stubEnv("PM_GLOBAL_PATH", globalRoot);
         vi.stubEnv("PM_TELEMETRY_DISABLED", "0");
         vi.stubEnv("PM_NO_TELEMETRY", "0");

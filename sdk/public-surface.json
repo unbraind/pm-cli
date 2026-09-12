@@ -1986,6 +1986,14 @@
       ],
       "package_version": "2026.9.11",
       "reason": "Intentional compact closed-list default with explicit full restoration; additive optional release changed_fields and additive MCP projection controls with schema minor version 4.20.0. Typed lifecycle SDK results remain complete."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ActiveTelemetryCommand",
+        "signature ./sdk:TelemetryStatusSummary"
+      ],
+      "package_version": "2026.9.12",
+      "reason": "Telemetry runtime adds an optional read inclusion probability and status exposes persisted consent plus process overrides; enabled now reports effective delivery consent so SDK diagnostics agree with capture and flush."
     }
   ],
   "entrypoints": {
@@ -2206,7 +2214,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ActiveTelemetryCommand",
-          "signature": "export interface ActiveTelemetryCommand { started_at: string; started_at_ms: number; command: string; command_taxonomy: TelemetryCommandTaxonomy; pm_version: string; source_context: TelemetrySourceContext; source_context_source: TelemetrySourceContextSource; installation_id: string; pm_root_hash: string; cwd_hash: string; endpoint: string; retention_days: number; global_pm_root: string; capture_level: TelemetryCaptureLevel; otel_traces_endpoint?: string; otel_trace_id?: string; otel_span_id?: string; }"
+          "signature": "export interface ActiveTelemetryCommand { sample_rate?: number; started_at: string; started_at_ms: number; command: string; command_taxonomy: TelemetryCommandTaxonomy; pm_version: string; source_context: TelemetrySourceContext; source_context_source: TelemetrySourceContextSource; installation_id: string; pm_root_hash: string; cwd_hash: string; endpoint: string; retention_days: number; global_pm_root: string; capture_level: TelemetryCaptureLevel; otel_traces_endpoint?: string; otel_trace_id?: string; otel_span_id?: string; }"
         },
         {
           "classification": "contract_data",
@@ -19000,7 +19008,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "TelemetryStatusSummary",
-          "signature": "export interface TelemetryStatusSummary { enabled: boolean; endpoint: string; queue_path: string; state_path: string; queue_rows_total: number; queue_entries: number; queue_invalid_rows: number; queue_size_bytes: number; last_attempted_flush_at: string | null; last_successful_flush_at: string | null; last_failed_flush_at: string | null; last_failed_flush_error: string | null; }"
+          "signature": "export interface TelemetryStatusSummary { enabled: boolean; configured_enabled: boolean; env_overrides: ReturnType<typeof resolveTelemetryEnvironmentPolicy>; endpoint: string; queue_path: string; state_path: string; queue_rows_total: number; queue_entries: number; queue_invalid_rows: number; queue_size_bytes: number; last_attempted_flush_at: string | null; last_successful_flush_at: string | null; last_failed_flush_at: string | null; last_failed_flush_error: string | null; }"
         },
         {
           "classification": "advanced_export",

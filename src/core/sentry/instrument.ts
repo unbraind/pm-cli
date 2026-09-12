@@ -6,9 +6,11 @@
 import { createRequire } from "node:module";
 import type * as SentryModuleTypes from "@sentry/node";
 import { resolvePmCliVersion } from "../packages/root.js";
+import { resolveTelemetryEnvironmentPolicy } from "../telemetry/policy.js";
 
 const OPT_OUT_VALUES = new Set(["1", "true", "yes", "on"]);
 
+/** Keep hard consent opt-outs and Vitest isolation ahead of loading the Sentry SDK. */
 function isSentryDisabled(): boolean {
   if (
     OPT_OUT_VALUES.has(
@@ -16,13 +18,11 @@ function isSentryDisabled(): boolean {
     )
   )
     return true;
+  if (resolveTelemetryEnvironmentPolicy().telemetry_disabled) return true;
   if (
-    OPT_OUT_VALUES.has(
-      (process.env.PM_TELEMETRY_DISABLED ?? "").trim().toLowerCase(),
-    )
-  )
-    return true;
-  if (process.env.VITEST || process.env.VITEST_WORKER_ID) return true;
+    typeof process.env.VITEST === "string" ||
+    typeof process.env.VITEST_WORKER_ID === "string"
+  ) return true;
   return false;
 }
 

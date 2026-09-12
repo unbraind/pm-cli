@@ -1,0 +1,24 @@
+id: pm-zsic8h
+title: Resolve deprecated unknown-command suggestions to canonical replacements
+description: "GitHub source https://github.com/unbraind/pm-cli/issues/1252. GitHub reports that guessed pm start suggests deprecated start-task before the supported claim --start composition. Historical synonym ranking and lifecycle composition are shipped; candidate replacement awareness remains the distinct reported gap."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-09-12T22:29:52.916Z"
+updated_at: "2026-09-12T22:29:52.916Z"
+author: "harness:codex"
+acceptance_criteria: Unknown-command guidance leads directly to the canonical replacement and never offers a deprecated candidate without it; start resolves or suggests claim --start; unrelated weak matches do not displace actionable recovery.
+goal: project management = context management
+objective: Resolve deprecated unknown-command suggestions to canonical replacements
+value: Lower agent recovery cost and preserve safe customizable SDK composition
+parent: pm-mpbb
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-eq4x,discovered_from,"2026-09-12T22:29:52.916Z","harness:codex","cli:create:dep",detected
+  pm-g543,discovered_from,"2026-09-12T22:29:52.916Z","harness:codex","cli:create:dep",detected
+  pm-mpbb,implements,"2026-09-12T22:29:52.916Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-12T22:29:52.916Z","harness:codex","Duplicate check: live full all-status export contained 2751 items with no omitted rows. Request-specific CLI searches and full historical metadata distinguished the existing shipped predecessor from this new report. Reuse its typed lineage; leave this intake open and unclaimed because implementation is not active."
+files[1]{path,scope,note}:
+  src/sdk/agent/command-suggestions.ts,project,Reported boundary to reproduce before implementation
+body: ""

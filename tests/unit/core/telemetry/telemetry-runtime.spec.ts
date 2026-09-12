@@ -91,12 +91,20 @@ function telemetryQueuePath(globalRoot: string): string {
   return path.join(globalRoot, "runtime", "telemetry", "events.jsonl");
 }
 
+/** Isolate runtime queue tests and restore host consent after intentional fixture delivery. */
 async function withTempGlobalRoot(run: (globalRoot: string) => Promise<void>): Promise<void> {
   await withTempGlobalRootHelper("pm-cli-telemetry-runtime-test-", async (globalRoot) => {
     process.env.PM_GLOBAL_PATH = globalRoot;
     delete process.env.PM_TELEMETRY_DISABLED;
     delete process.env.PM_NO_TELEMETRY;
-    await run(globalRoot);
+    const restorePolicy = snapshotEnv(["PM_TELEMETRY_SEND_TEST_EVENTS", "DO_NOT_TRACK"]);
+    process.env.PM_TELEMETRY_SEND_TEST_EVENTS = "1";
+    delete process.env.DO_NOT_TRACK;
+    try {
+      await run(globalRoot);
+    } finally {
+      restorePolicy();
+    }
   });
 }
 
@@ -246,7 +254,7 @@ describe("core/telemetry/runtime", () => {
       delete process.env.PM_AGENT_MODEL;
       expect(
         _testOnly.buildAuthorContextPayloadFields("redacted", "install-a"),
-      ).toEqual({});
+      ).toEqual({ agent_harness: "none", ci: false });
     } finally {
       process.argv = originalArgv;
       for (const [key, value] of [

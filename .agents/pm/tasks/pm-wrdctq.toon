@@ -1,0 +1,50 @@
+id: pm-wrdctq
+title: Expose explicit paired sampling for core-only telemetry reads
+description: Deliver the reusable explicit sampling primitive underneath the automatic-volume issue. A configured inclusion probability and no-extensions boundary retain or drop successful lifecycle pairs together; errors remain probability one. This task does not claim automatic default-loop suppression.
+type: Task
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-12T22:13:12.976Z"
+updated_at: "2026-09-12T22:24:55.158Z"
+closed_at: "2026-09-12T22:24:27.336Z"
+completed_at: "2026-09-12T22:24:27.336Z"
+author: "harness:codex"
+acceptance_criteria: Configured core-only reads retain or drop full successful pairs with an inclusion probability; mutations and failures remain unsampled; invalid probabilities are refused by fallback to full retention; documentation states default and interruption limitations.
+goal: project management = context management
+objective: Make read telemetry volume explicitly controllable with unbiased pair weights
+value: Reusable safe telemetry primitive for core-only agents and SDK consumers
+parent: pm-um3teu
+resolution: PM_TELEMETRY_READ_SAMPLE_RATE selects complete successful lifecycle pairs only with the no-extensions boundary; retained pairs carry their inclusion probability and failures retain probability one.
+expected_result: A reusable explicit control safely reduces configured core-only reads without sampling writes or losing failure pairs.
+actual_result: Probability validation and retained dropped failure pair tests pass in the linked run and 8789-test full-source suite with exact 100/100/100/100 coverage. Defaults remain unsampled and interruption limits are documented.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-745epp,discovered_from,"2026-09-12T22:13:12.976Z","harness:codex","cli:create:dep",detected
+  pm-um3teu,implements,"2026-09-12T22:13:12.976Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-12T22:13:12.976Z","harness:codex","Duplicate check: live full all-status export contained 2750 items with no omitted rows on 2026-09-12. Sampling search and title-description census found the canonical automatic-volume issue but no separate explicit-primitive task. Preserve that open parent and record this completed prerequisite separately so changelog generation does not falsely close the remaining default-loop behavior."
+  "2026-09-12T22:24:26.436Z","harness:codex","Completed prerequisite evidence: the linked paired-sampling suite passed; the complete source suite passes 8789 tests with exact 100/100/100/100 coverage. Retained dropped and failed outcomes are directly asserted. The open parent retains the unimplemented automatic-default-loop requirement."
+  "2026-09-12T22:24:55.158Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1250 includes the implementation, linked test evidence and generated changelog. First-head hosted checks and exact CodeFactor/DeepScan analyzers passed. The follow-up corrects inherited host test consent and accurately leaves automatic default-loop suppression outside the completed prerequisite. Merge and publication are not claimed by this local closure."
+files[3]{path,scope,note}:
+  src/core/telemetry/policy.ts,project,Explicit safe sampling eligibility
+  src/core/telemetry/runtime.ts,project,Paired lifecycle retention and inclusion weights
+  tests/unit/core/telemetry/telemetry-policy.spec.ts,project,Retained dropped and failed read assertions
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts,project,240,"harness:codex","2026-09-12T22:13:12.976Z",local_mutation,fix/telemetry-consent-agent-signal
+test_runs[1]:
+  - run_id: test-local-mtyxzukf-p23xmx
+    kind: test
+    status: passed
+    started_at: "2026-09-12T22:13:39.397Z"
+    finished_at: "2026-09-12T22:14:07.743Z"
+    recorded_at: "2026-09-12T22:14:07.743Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated note for the completed explicit sampling prerequisite
+  docs/CONFIGURATION.md,project,Explicit control and limits
+close_reason: Explicit core-only sampling primitive implemented and verified independently of automatic default-loop control.
+body: ""

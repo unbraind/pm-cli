@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { createServer as createTcpServer } from "node:net";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { _testOnly } from "../../../../src/core/telemetry/runtime.js";
@@ -105,6 +106,29 @@ describe("telemetry HTTP timeout resolution", () => {
       ).resolves.toBe(202);
       expect(receivedBody).toBe('{"event":"ok"}');
       expect(receivedLength).toBe("14");
+    } finally {
+      await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      );
+    }
+  });
+
+  it("rejects a native HTTPS connection when the peer closes before TLS negotiation", async () => {
+    const server = createTcpServer((socket) => socket.destroy());
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    if (address === null || typeof address === "string") {
+      server.close();
+      throw new Error("Expected a TCP test server address");
+    }
+    try {
+      await expect(
+        _testOnly.postTelemetryJson(
+          `https://127.0.0.1:${address.port}/events`,
+          { "content-type": "application/json" },
+          "{}",
+        ),
+      ).rejects.toMatchObject({ code: "ECONNRESET" });
     } finally {
       await new Promise<void>((resolve, reject) =>
         server.close((error) => (error ? reject(error) : resolve())),

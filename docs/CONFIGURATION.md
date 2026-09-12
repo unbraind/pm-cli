@@ -150,11 +150,14 @@ Tests should set both `PM_PATH` and `PM_GLOBAL_PATH` to temporary directories. T
 
 ### Telemetry environment variables
 
-Telemetry is opt-in via `pm config set telemetry-tracking on` (see [Common Settings](#common-settings)). When enabled, these environment variables tune runtime behaviour. All boolean knobs accept `1`, `true`, `yes`, or `on` (case-insensitive); any other value leaves the knob off.
+Telemetry is enabled by default. Use `pm config set telemetry-tracking off` to opt out persistently (see [Common Settings](#common-settings)). When enabled, these environment variables tune runtime behaviour. All boolean knobs accept `1`, `true`, `yes`, or `on` (case-insensitive); any other value leaves the knob off.
 
 | Variable                             | Values                                        | Use                                                                                                                                             |
 | ------------------------------------ | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PM_TELEMETRY_DISABLED`              | boolean                                       | Hard-disable all telemetry for this process, ignoring settings.                                                                                 |
+| `DO_NOT_TRACK` | boolean | Hard-disable event capture, identity creation, flush workers, endpoint probes, and Sentry, regardless of persisted preferences. |
+| `PM_TELEMETRY_SEND_TEST_EVENTS` | boolean | Explicitly allow inferred test events. Hard opt-outs still take precedence. |
+| `PM_TELEMETRY_READ_SAMPLE_RATE` | number greater than `0` and at most `1` | Opt-in inclusion probability for successful core-only reads; omitted or invalid values retain every invocation. |
 | `PM_NO_TELEMETRY`                    | boolean                                       | Alias for `PM_TELEMETRY_DISABLED` (honoured by the same checks).                                                                                |
 | `PM_TELEMETRY_OTEL_DISABLED`         | boolean                                       | Disable only OTLP trace-span export; the event queue still flushes.                                                                             |
 | `PM_TELEMETRY_INLINE_FLUSH`          | boolean                                       | Flush the queue and OTLP spans inline instead of dispatching the detached worker. Mainly for tests; normal use relies on the background worker. |
@@ -167,11 +170,19 @@ Telemetry is opt-in via `pm config set telemetry-tracking on` (see [Common Setti
 
 Interaction rules:
 
-- `PM_TELEMETRY_DISABLED` / `PM_NO_TELEMETRY` short-circuit everything, including OTLP export, regardless of the other knobs.
+- `DO_NOT_TRACK` / `PM_TELEMETRY_DISABLED` / `PM_NO_TELEMETRY` short-circuit everything, including OTLP export, regardless of the other knobs.
 - `PM_TELEMETRY_HTTP_TIMEOUT_MS` applies only to the detached flush worker in normal use. It covers DNS, each IPv4/IPv6 connection attempt, TLS, and response completion. The upper bound preserves the 60-second worker-lock safety margin across the sequential event and OTLP phases; it does not make foreground commands wait for the network.
 - OTLP span export only happens when telemetry is enabled, `PM_TELEMETRY_OTEL_DISABLED` is off, and a traces endpoint is configured. By default spans are persisted to a bounded queue and exported by the detached, unref'd flush worker so commands exit promptly even when the traces endpoint is unreachable. `PM_TELEMETRY_INLINE_FLUSH=1` is the explicit test-oriented exception that performs the flush inline.
 - `pm health --check-telemetry --json` surfaces flush and OTLP export diagnostics (`pending_otel_spans`, `last_otel_attempt_at`, `last_otel_success_at`, `last_otel_failure_at`, `last_otel_failure_error`) and the active `env_overrides` (including `telemetry_inline_flush` and `telemetry_source_context`) so agents can self-diagnose a stalled endpoint.
 - An explicit `PM_AUTHOR` override adds a privacy-preserving agent-identity dimension to `command_start`/`command_finish` events so overridden invocations can be segmented in dashboards without leaking the raw author string. At `redacted`/`max` capture the events carry `author_context_hash` — the same installation-id-keyed one-way SHA-256 used for `pm_root_hash`/`cwd_hash`, so the same author hashes consistently within an installation but differently across installations. At `minimal` capture only a boolean `has_author_context` is emitted. The raw `PM_AUTHOR` value is never exported.
+
+Test environments inferred from `VITEST`, `VITEST_WORKER_ID`, or `NODE_ENV=test` suppress telemetry before identity creation. A valid explicit `PM_TELEMETRY_SOURCE_CONTEXT` or `PM_TELEMETRY_SEND_TEST_EVENTS=1` permits intentional test delivery. Point such tests at a local collector. Neither setting overrides a hard opt-out. `pm telemetry status` exposes effective `enabled`, persisted `configured_enabled`, and `env_overrides` so an empty queue is distinguishable from disabled delivery.
+
+SDK consumers that previously used `TelemetryStatusSummary.enabled` to display the saved preference should read `configured_enabled` instead. Use `enabled` to determine whether this process permits delivery.
+
+At `redacted` and `max` capture, events include a bounded `agent_harness` dimension (`claude-code`, `codex`, `pi`, `opencode`, `cursor`, `aider`, `gemini-cli`, `ci`, `other`, or `none`) and a boolean `ci`. Installation-keyed hashes remain available; raw author and model names remain private. Minimal capture omits both new dimensions.
+
+For repeated read loops, set `PM_TELEMETRY_READ_SAMPLE_RATE=0.1` and use `--no-extensions`. Sampling applies only to `stats`, `ops stats`, `list`, `get`, `next`, `context`, `activity`, and `aggregate`. Mutations, unknown commands, extension-enabled invocations, and failures are retained. Successful sampled reads defer their start until completion so both lifecycle events are retained or dropped together; abruptly terminated sampled reads have no event pair. Retained pairs carry numeric `sample_rate`, and OTLP spans carry `pm.sample_rate`; estimate population totals with weight `1 / sample_rate`. Failed sampled reads carry probability `1`. Local queue statistics describe retained observations, not weighted population estimates.
 
 `pm telemetry stats` reads the local queue and reports, per command bucket, latency percentiles (`duration_p50_ms`/`duration_p95_ms`/`duration_max_ms`, nearest-rank over `command_finish` `duration_ms`), outcome rates (`ok_count`/`error_count`/`error_rate`; a finish event whose `ok` is missing or not strictly `true` is counted conservatively as an error), and `command_resolution_counts`. These are an always-available, zero-network performance and reliability signal for the most recent queued window.
 

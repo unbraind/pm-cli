@@ -146,6 +146,7 @@ describe("runHealth", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     clearActiveExtensionHooks();
     if (initialDisableAutoDefaults === undefined) {
       delete process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
@@ -1173,6 +1174,9 @@ describe("runHealth", () => {
       );
       globalThis.fetch = fetchMock as unknown as typeof fetch;
       try {
+        vi.stubEnv("PM_TELEMETRY_DISABLED", "0");
+        vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+        vi.stubEnv("DO_NOT_TRACK", "0");
         const health = await runHealth(
           { path: context.pmPath },
           { checkTelemetry: true },
@@ -1225,6 +1229,9 @@ describe("runHealth", () => {
       );
       globalThis.fetch = fetchMock as unknown as typeof fetch;
       try {
+        vi.stubEnv("PM_TELEMETRY_DISABLED", "0");
+        vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+        vi.stubEnv("DO_NOT_TRACK", "0");
         const health = await runHealth(
           { path: context.pmPath },
           { checkTelemetry: true },
@@ -1269,6 +1276,9 @@ describe("runHealth", () => {
       );
       globalThis.fetch = fetchMock as unknown as typeof fetch;
       try {
+        vi.stubEnv("PM_TELEMETRY_DISABLED", "0");
+        vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+        vi.stubEnv("DO_NOT_TRACK", "0");
         const health = await runHealth(
           { path: context.pmPath },
           { checkTelemetry: true },
@@ -1293,6 +1303,9 @@ describe("runHealth", () => {
       const fetchMock = vi.fn(async () => new Response("ok", { status: 200 }));
       globalThis.fetch = fetchMock as unknown as typeof fetch;
       try {
+        vi.stubEnv("PM_TELEMETRY_DISABLED", "0");
+        vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+        vi.stubEnv("DO_NOT_TRACK", "0");
         const health = await runHealth(
           { path: context.pmPath },
           { checkTelemetry: true },
@@ -1320,6 +1333,9 @@ describe("runHealth", () => {
         throw new Error("network unavailable");
       }) as unknown as typeof fetch;
       try {
+        vi.stubEnv("PM_TELEMETRY_DISABLED", "0");
+        vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+        vi.stubEnv("DO_NOT_TRACK", "0");
         const health = await runHealth(
           { path: context.pmPath },
           { checkTelemetry: true },
@@ -3664,5 +3680,26 @@ describe("runHealth", () => {
       expect(summaryLocks?.status).toBe("warn");
       expect(summaryLocks?.details).toEqual({});
     });
+  });
+});
+
+
+it("does not probe telemetry endpoints when DO_NOT_TRACK is active", async () => {
+  await withTempPmPath(async (context) => {
+    vi.stubEnv("DO_NOT_TRACK", "1");
+    const originalFetch = globalThis.fetch;
+    const fetchMock = vi.fn(async () => new Response("ok"));
+    globalThis.fetch = fetchMock;
+    try {
+      const result = await runHealth({ path: context.pmPath }, { checkTelemetry: true, skipVectors: true });
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(result.checks.find((check) => check.name === "telemetry")?.details).toMatchObject({
+        env_overrides: { do_not_track: true, telemetry_disabled: true },
+        endpoint_probe: { attempted: false },
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+      vi.unstubAllEnvs();
+    }
   });
 });

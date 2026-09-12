@@ -5,6 +5,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
+import { resolveTelemetryEnvironmentPolicy } from "../../core/telemetry/policy.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { isTerminalStatus } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -1997,12 +1998,14 @@ function parseTelemetryRuntimeState(stateRaw: string | null): {
   }
 }
 
+/** Probe only when explicitly requested and both persisted and process consent permit network diagnostics. */
 async function maybeProbeTelemetryEndpoint(
   settings: PmSettings,
   checkTelemetry: boolean,
 ): Promise<TelemetryEndpointProbeSummary | undefined> {
   const endpoint = settings.telemetry.endpoint.trim();
-  if (!checkTelemetry || !settings.telemetry.enabled || endpoint.length === 0) {
+  if (!checkTelemetry || !settings.telemetry.enabled || endpoint.length === 0 ||
+    resolveTelemetryEnvironmentPolicy().telemetry_disabled) {
     return undefined;
   }
   const probe = await probeTelemetryEndpointHealth(endpoint);
@@ -2092,11 +2095,10 @@ function collectTelemetryOtelWarnings(
     : [];
 }
 
+/** Explain process-level capture and OTLP overrides without changing the installation preference. */
 function buildTelemetryEnvOverrideDetails(): Record<string, unknown> {
   return {
-    telemetry_disabled:
-      telemetryEnvFlagEnabled("PM_TELEMETRY_DISABLED") ||
-      telemetryEnvFlagEnabled("PM_NO_TELEMETRY"),
+    ...resolveTelemetryEnvironmentPolicy(),
     pm_no_telemetry: telemetryEnvFlagEnabled("PM_NO_TELEMETRY"),
     telemetry_otel_disabled: telemetryEnvFlagEnabled(
       "PM_TELEMETRY_OTEL_DISABLED",

@@ -1,0 +1,23 @@
+id: pm-bwkmp4
+title: Allow non-colliding extension leaves beneath core command groups
+description: "GitHub source https://github.com/unbraind/pm-cli/issues/1249. A published pm-ops installation reportedly loses all ops leaves when core owns the group. Reproduce group versus leaf ownership through the published package; preserve same-leaf core ownership and remove contradictory self-suggestions. The older alias-collision work intentionally rejected nested grafts; this report requires a finer safe composition contract."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-09-12T22:29:48.459Z"
+updated_at: "2026-09-12T22:29:48.459Z"
+author: "harness:codex"
+acceptance_criteria: An extension-only ops leaf dispatches beside core ops; a true same-path collision remains refused with both owners; recovery never suggests the exact refused path.
+goal: project management = context management
+objective: Allow non-colliding extension leaves beneath core command groups
+value: Lower agent recovery cost and preserve safe customizable SDK composition
+parent: pm-n7rr
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-n7rr,implements,"2026-09-12T22:29:48.459Z","harness:codex","cli:create:dep",detected
+  pm-v1yo,discovered_from,"2026-09-12T22:29:48.459Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-12T22:29:48.459Z","harness:codex","Duplicate check: live full all-status export contained 2751 items with no omitted rows. Request-specific CLI searches and full historical metadata distinguished the existing shipped predecessor from this new report. Reuse its typed lineage; leave this intake open and unclaimed because implementation is not active."
+files[1]{path,scope,note}:
+  src/cli/extension-command-help.ts,project,Reported boundary to reproduce before implementation
+body: ""

@@ -8,6 +8,7 @@ import { stdin as input, stdout as output } from "node:process";
 import type { GlobalOptions } from "../shared/command-types.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
 import { readSettings, writeSettings } from "../store/settings.js";
+import { resolveTelemetryEnvironmentPolicy } from "./policy.js";
 
 const TELEMETRY_PROMPT_DISABLE_ENV = "PM_TELEMETRY_PROMPT";
 const TELEMETRY_PROMPT_DISABLE_VALUES = new Set(["0", "false", "no", "off"]);
@@ -94,12 +95,13 @@ async function promptTelemetryConsent(
   }
 }
 
-/** Implements maybe run first use telemetry prompt for the public runtime surface of this module. */
+/** Prompt eligible interactive users once, persisting their choice without interrupting commands on failure. */
 export async function maybeRunFirstUseTelemetryPrompt(
   commandPath: string,
   globalOptions: GlobalOptions,
 ): Promise<void> {
-  if (shouldSkipTelemetryPrompt(commandPath, globalOptions)) {
+  if (resolveTelemetryEnvironmentPolicy().telemetry_disabled ||
+    shouldSkipTelemetryPrompt(commandPath, globalOptions)) {
     return;
   }
   try {

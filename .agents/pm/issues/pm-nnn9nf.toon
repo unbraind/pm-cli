@@ -1,0 +1,48 @@
+id: pm-nnn9nf
+title: Expose privacy-bounded agent harness and CI telemetry dimensions
+description: "GitHub report https://github.com/unbraind/pm-cli/issues/1242. Known harnesses appear as a fixed allowlist and unknown values become other; raw custom harness and model strings never escape; minimal capture omits harness and CI dimensions; start finish and error payloads agree."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-12T21:08:22.851Z"
+updated_at: "2026-09-12T22:24:54.443Z"
+closed_at: "2026-09-12T21:56:01.191Z"
+completed_at: "2026-09-12T21:56:01.191Z"
+author: "harness:codex"
+acceptance_criteria: Known harnesses appear as a fixed allowlist and unknown values become other; raw custom harness and model strings never escape; minimal capture omits harness and CI dimensions; start finish and error payloads agree.
+goal: project management = context management
+objective: Expose privacy-bounded agent harness and CI telemetry dimensions
+value: Reliable privacy-preserving operational context for agents and package consumers
+parent: pm-5oj5
+resolution: Allowlisted harness and CI dimensions complement existing installation-keyed hashes; custom names map to other and minimal capture omits both.
+expected_result: Known harness usage must be countable without leaking custom identifiers.
+actual_result: "Enum, custom harness and minimal omission tests pass; live checkout start and finish events both delivered codex and ci=false."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5oj5,implements,"2026-09-12T21:08:22.851Z","harness:codex","cli:create:dep",detected
+  pm-fbyu,discovered_from,"2026-09-12T21:08:22.851Z","harness:codex","cli:create:dep",detected
+  pm-ikgitf,blocked_by,"2026-09-12T21:22:47.290Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-09-12T21:08:22.851Z","harness:codex","Duplicate check: complete CLI full all-status export on 2026-09-12 contained 2745 items with no omissions. Request-specific telemetry and onboarding searches plus exact GitHub URL and title/description matching found no owner for this distinct report. Existing parent and closed implementation lineage reused."
+  "2026-09-12T21:08:46.152Z","harness:codex","GitHub report: https://github.com/unbraind/pm-cli/issues/1242. Canonical tracking reused after complete all-status duplicate check."
+  "2026-09-12T21:28:56.103Z","harness:codex","Verification: bounded enum and minimal-capture omission tests pass; custom workspace harness names map to other while their installation-keyed hash remains available. The existing historical PM_AUTHOR contract from pm-fbyu is preserved. Current live Sentry/telemetry reliability gate passes: no critical/high issues, finish error rate 2.26 percent, zero failed completion rows without error codes. This is aggregate service health, not exact-head deployment correlation."
+  "2026-09-12T21:47:42.447Z","harness:codex","Live checkout delivery evidence: a real core-only context command with explicit dogfood source reached the telemetry database at 2026-09-12T21:39Z with one command_start and one command_finish; both reported agent_harness=codex and ci=false. The physical event queue reported zero ready and unacknowledged messages. This verifies the current checkout fields, not a new registry release."
+  "2026-09-12T21:55:17.058Z","harness:codex","Final source verification: 680 test files and 8789 tests passed. Exact coverage is statements 64330/64330, branches 49047/49047, functions 13363/13363, lines 61618/61618: 100/100/100/100 with zero uncovered counts. ESLint and zero-clone duplication gates pass; graph composition and record integrity pass. Real loopback HTTPS peer rejection, noninteractive prompt suppression, and Sentry test isolation are directly exercised. SDK import budgets passed; final CLI timing verification remains pending before PR submission."
+  "2026-09-12T21:56:00.601Z","harness:codex",Final CLI transport-floor budget gate passed after other verification jobs settled; SDK entrypoint costs also pass. No timing baseline or coverage threshold was relaxed. Implementation is locally verified and ready for hosted review; closure does not assert a new package publication.
+  "2026-09-12T22:24:54.443Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1250 includes the implementation, linked test evidence and generated changelog. First-head hosted checks and exact CodeFactor/DeepScan analyzers passed. The follow-up corrects inherited host test consent and accurately leaves automatic default-loop suppression outside the completed prerequisite. Merge and publication are not claimed by this local closure."
+files[1]{path,scope,note}:
+  src/core/telemetry/runtime.ts,project,Bounded harness enum and CI attribution
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts,project,240,"harness:codex","2026-09-12T21:28:53.987Z",local_mutation,fix/telemetry-consent-agent-signal
+docs[1]{path,scope,note}:
+  docs/CONFIGURATION.md,project,Allowlisted harness dimensions
+close_reason: Implemented and locally verified with 8789 tests and exact 100/100/100/100 coverage; temporary Node/Bun and packed npm/npx/bunx acceptance passed.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-nnn9nf
+body: ""
