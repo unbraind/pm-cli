@@ -586,6 +586,7 @@ function resolveUnknownCommandCandidates(params: {
   primaryToken: string;
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>;
 }): string[] {
+  const exactAlias = resolvePmCommandAlias(params.normalizedUnknown)?.canonical;
   const semanticCandidates = rankCommandPaths(
     params.commandPaths,
     params.primaryToken,
@@ -596,6 +597,7 @@ function resolveUnknownCommandCandidates(params: {
     params.extensionDescriptors,
   ).filter((commandPath) => params.commandPaths.includes(commandPath));
   return dedupeStrings([
+    ...(exactAlias && params.commandPaths.includes(exactAlias) ? [exactAlias] : []),
     ...semanticCandidates,
     ...rankedCandidates,
     ...installedPackageCandidates,

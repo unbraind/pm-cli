@@ -2,21 +2,23 @@ id: pm-yql1
 title: "Consolidate item annotation facets: comments/notes/learnings/files/docs/deps/append/test become one facet grammar (old spellings aliased)"
 description: "Eight top-level commands (comments, notes, learnings, files, docs, deps, append, test) are all per-item annotation/link facets with near-identical shape (<id> plus --add/--remove/list). The pm-n7rr target surface names 'item facets' as ONE noun group of the ~15; this task implements it per the grammar ADR pm-pbyu — one shared facet implementation, each facet a verb of a single noun (exact spelling fixed at ADR acceptance), current spellings kept as hidden aliases via the pm-0z7n shim with one-line migration hints. Zero feature loss. Duplicate check: pm-9y8q (closed, internal dedup of the comments/notes/learnings stacks) and pm-zwpp (SDK promotion of the same primitives — complementary: that item is API layering, this one is CLI grammar only); no open overlap."
 type: Task
-status: in_progress
+status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",simplification
 created_at: "2026-07-05T05:08:35.381Z"
-updated_at: "2026-09-12T08:32:50.339Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#5fc3f61915d1b750011309ba"
+updated_at: "2026-09-12T09:18:45.689Z"
+closed_at: "2026-09-12T09:18:45.077Z"
+completed_at: "2026-09-12T09:18:45.077Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "One facet grammar covers all 8 annotation surfaces with identical flags and payloads; every old spelling dispatches through the alias shim with a migration hint; spelling-parity spec proves identical output old vs new; contracts, completions (bash/zsh/fish), docs, and MCP names regenerate from the contract table; top-level help lists item facets under a single noun entry."
 parent: pm-n7rr
 risk: medium
 confidence: medium
-expected_result: "The eight annotation surfaces are one facet grammar with identical flags and payloads, and every old spelling dispatches through an alias with a migration hint."
-dependencies[6]:
+resolution: "Unified all eight item evidence facets under SDK-declared command paths with preserved aliases, flags, payloads and SDK/MCP identities"
+expected_result: One item evidence grammar preserves every published operation and provides canonical discovery and recovery
+actual_result: "All 8752 tests passed with exact 100/100/100/100 coverage; real temporary lifecycle, shell, linked-test and packed npx/bunx acceptance passed"
+dependencies[7]:
   - id: pm-0z7n
     kind: blocked_by
     created_at: "2026-07-05T05:08:35.381Z"
@@ -41,7 +43,13 @@ dependencies[6]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[20]{created_at,author,text}:
+  - id: pm-zwpp
+    kind: verifies
+    created_at: "2026-09-12T08:42:41.107Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[27]{created_at,author,text}:
   "2026-08-26T21:27:34.572Z","harness:codex","GitHub intake: GH-1126 https://github.com/unbraind/pm-cli/issues/1126. Reused the canonical annotation-facet grammar task. Red reproduction: comments/learnings reject --text even though notes/remind and collection concepts use text; human recovery can truncate before suggested_retry."
   "2026-08-26T21:34:26.811Z","harness:codex","TDD red: shared registration spec proves comments, notes, and learnings all reject the convergent --text alias before reaching their SDK adapters."
   "2026-08-26T22:51:39.094Z","harness:codex","Evidence for the implemented slice: comments, notes, and learnings now accept the convergent --text alias and reject conflicting positional/text payloads through one typed resolver; recovery bundles put suggested_retry first. Fresh-directory acceptance persisted and projected one entry from each collection. The linked sandbox-safe suite passed 134/134, while repository gates passed pnpm build, pnpm lint, 584 files and 8025 tests with exact 100/100/100/100 coverage, pnpm audit clean, and Trivy HIGH/CRITICAL vuln+secret+misconfig clean. This closes only the GitHub #1126 alias slice; the broader convergent grammar programme remains open for its other command families."
@@ -62,6 +70,13 @@ comments[20]{created_at,author,text}:
   "2026-09-12T08:22:05.726Z","harness:codex","Manual semantic-contract review found canonical annotation --file flags classified as plan input rather than evidence-file input. Added canonical-versus-legacy concept assertions first, observed three failures, and resolved classification through stable operation identity. Corrected fixed compatibility census count from 3084 to 3079 after removing only the five non-executable worker declarations; seeded compatibility-removal and budget-growth controls remain mandatory."
   "2026-09-12T08:26:26.650Z","harness:codex","Final source review also inlined the one-use renderAttemptedCommand wrapper as required by repository quality guidance. The executable grammar census is now complete at 217 declared and 217 observed command paths, with 20 positional shapes within the unchanged budget of 21; no positional or destination findings remain."
   "2026-09-12T08:32:50.339Z","harness:codex","Correction to final-review notes: generic descendant-prefix resolution misclassified positional IDs during structured help. Replaced it with two explicit permanent SDK aliases for files discover/lookup, retaining exact-match semantics and automatic nested completion. The refusal census now includes both paths: 136 probes, 113 grammar contracts, 105 required-argument contracts. Also restored the command-rendering helper after the compiler identified its three call sites; it was not a single-use helper. These corrections supersede the earlier implementation notes."
+  "2026-09-12T08:39:40.685Z","harness:codex","Continuation evidence: refreshed strict-read all-status corpus has 2738 items, complete with no omissions. Only this item, pm-lp4j and pm-szdc are in progress and under active delivery. GitHub open PRs and Dependabot/code-scanning/secret-scanning alerts are empty; release incident GH-1239 recovered through the existing exact-tag job and canonical pm-7zs0. Full static and coverage gates are running on the current implementation."
+  "2026-09-12T08:42:43.614Z","harness:codex","Live graph evidence: 2738 nodes, 13655 deduplicated directed edges, one connected component, zero missing targets, zero ordering cycles and complete typed outcome reachability. Seven preserved historical hierarchy conflicts remain informational, and 1512 nodes have no semantic edge under the graph classifier. Canonical facet acceptance now verifies the completed pm-zwpp SDK primitive lineage; no artificial dependency chains or duplicate items were introduced."
+  "2026-09-12T08:44:46.608Z","harness:codex","Fresh continuation acceptance passed in a newly initialized temporary workspace: claim/start, seven writable facets, seven canonical/legacy read comparisons, linked node version test, structured close/release, history verification and resolution/history-drift validation. Packed npx and bunx smoke passed for 2026.9.12 across six package fixtures. Required reliability gate passed: zero Sentry issues in the 14-day window, telemetry finish error rate 2.17 percent and zero failures missing error codes. Backend recent-event query confirmed current command ingestion and the physical broker queue was empty."
+  "2026-09-12T08:48:20.054Z","harness:codex","Continuation verification correction: concurrent broad verification and a linked-test rebuild overlapped writes to dist. Static subprocess output contains a transient module-export error and full coverage currently reports command-gate failures plus a timeout. These runs are not accepted as green evidence. Finish them, inspect exact failures, then serialize build-changing verification and rerun affected/full gates against settled output."
+  "2026-09-12T09:07:46.060Z","harness:codex","Exact coverage evidence: all 8751 tests passed in 679 files after serialized verification. Coverage remains correctly red at 49004/49006 branches: the best-score replacement paths for canonical command suggestions lack namespace-specific assertions. Adding real Commander item-facet ranking cases to the existing facet contract suite, without mocks, threshold changes or production-code changes."
+  "2026-09-12T09:09:12.376Z","harness:codex","TDD ranking finding: a real Commander fixture with item comments and commentary shows exact compatibility spelling comment ranked below the longer commentary prefix. The new namespace test fails on that ordering. Preserve SDK-declared exact aliases before fuzzy or semantic candidates, while requiring the canonical target to exist in the active runtime; typo and absent-target behavior remain covered."
+  "2026-09-12T09:18:27.558Z","harness:codex","Final source verification: 679 files and all 8752 tests passed. Exact coverage is statements 64309/64309, branches 49010/49010, functions 13363/13363 and lines 61597/61597, with zero uncovered counts. Canonical exact-alias recovery now wins over longer fuzzy prefixes in an active Commander tree. Typecheck, focused lint, SDK compatibility, token budgets, isolated manual lifecycle, packed npx/bunx smoke, 88-command package-first dogfood, linked PM acceptance, dependency audit and tracked-secret scan passed. The earlier concurrent-build and uncovered-branch runs are superseded by this settled complete result."
 learnings[2]{created_at,author,text}:
   "2026-08-26T22:51:39.542Z","harness:codex","Convergent mutation grammar should resolve positional and named text at a shared registration boundary, with a typed conflict refusal before any SDK mutation adapter runs."
   "2026-09-12T07:30:08.390Z","harness:codex",Namespace normalization must use the stable operation identity for payload-sensitive preprocessing. Root noun tests alone miss linked-test environment assignments and nested internal visibility.
@@ -108,7 +123,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/sdk/cli-contracts/flag-contracts.spec.ts,project,240,"harness:codex","2026-08-26T22:49:46.113Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
   node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts,project,240,"harness:codex","2026-08-27T04:08:43.424Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
   node scripts/run-tests.mjs test -- tests/unit/cli/item-facet-namespaces.spec.ts tests/integration/item-facets.integration.spec.ts,project,240,"harness:codex","2026-09-12T07:23:46.877Z",local_mutation,feat/item-facets-and-internal-command-routing
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mtaotyfb-zypfbs
     kind: test
     status: passed
@@ -143,6 +158,17 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/cli/item-facet-namespaces.spec.ts tests/integration/item-facets.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mty56eed-ba7ir7
+    kind: test
+    status: passed
+    started_at: "2026-09-12T08:46:35.425Z"
+    finished_at: "2026-09-12T08:47:24.516Z"
+    recorded_at: "2026-09-12T08:47:24.516Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/item-facet-namespaces.spec.ts tests/integration/item-facets.integration.spec.ts,schema,schema,source,local_source_ref
 docs[6]{path,scope,note}:
   docs/CLI_GRAMMAR.md,project,Documents canonical and alias flag behavior
   docs/COMMANDS.md,project,Documents the convergent annotation grammar
@@ -150,4 +176,5 @@ docs[6]{path,scope,note}:
   docs/generated/AGENT_COMMAND_SURFACE.md,project,Generated SDK command visibility and stable operation mapping
   docs/generated/FLAG_LEXICON_BUDGETS.md,project,SDK-generated canonical command budgets
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Executable refusal census includes canonical facet and worker paths
+close_reason: Canonical evidence facets and recovery verified with full exact coverage and installed acceptance
 body: ""

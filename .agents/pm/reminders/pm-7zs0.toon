@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-09-12T08:18:37.147Z"
+updated_at: "2026-09-12T08:59:49.993Z"
 reminders[1]{at,text}:
   "2026-08-30T06:00:00.000Z",Verify the next eligible daily cut contains main 57d4a074 or a descendant and advances tag GitHub Release npm npx bunx analyzers Sentry telemetry and queue evidence then rearm
 author: maintainer-agent
@@ -16,7 +16,7 @@ parent: pm-u9d0
 risk: low
 confidence: high
 expected_result: "After each merge to main the next daily release tags a new date version and advances npm latest, and any discrepancy is triaged the same day."
-dependencies[10]:
+dependencies[11]:
   - id: pm-7n5a
     kind: related
     created_at: "2026-07-15T18:17:35.524Z"
@@ -65,7 +65,13 @@ dependencies[10]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[179]{created_at,author,text}:
+  - id: pm-yql1
+    kind: verifies
+    created_at: "2026-09-12T08:59:46.125Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[180]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -245,6 +251,7 @@ comments[179]{created_at,author,text}:
   "2026-09-11T13:12:20.337Z","harness:codex","Live release-health verification 2026-09-11: exact-tag Release run 34576128355 attempt 2 is successful at 27da934b39bef54a7a6dc245cba2fa6da8e63ac3 and GitHub release v2026.9.11 is published. GH-1235 is closed with canonical PM links and records npm automated-validation propagation recovery without a replacement tag. The scheduled attempt remains historically failed; the existing immutable artifact recovered successfully. This standing reminder remains open and unclaimed."
   "2026-09-11T14:44:10.851Z","harness:codex","September 11 bounded closeout evidence for PR 1237: immutable 2026.9.11 Release workflow recovered successfully; published npm/Bun sessions passed. Required Sentry gate found zero recent blocking issues. The local installation had 198/198 command sessions since 13:00 UTC with matching backend finish events, verified by session identity; a broader multi-installation query is not evidence about this installation. Settled local SDK telemetry flush reported empty queue and the physical broker had zero ready/unacknowledged messages. Post-merge evidence remains separate; no second automatic publication was triggered."
   "2026-09-12T08:18:37.147Z","harness:codex","Release-health incident GH-1239: scheduled Auto Release 34680405829 cut v2026.9.12; downstream Release 34681372798 passed publication but exhausted npm metadata verification at 08:09:47 UTC with E404. Exact-version npm is now public at 2026.9.12 while GitHub Release is absent. Reusing this canonical recurring lineage, preserving the immutable version, and rerunning the failed exact-tag job to finish verified distribution. No new automatic version or tag is authorized or needed."
+  "2026-09-12T08:39:38.710Z","harness:codex","Recovery verified live: exact-tag Release run 34681372798 attempt 2 succeeded; npm latest equals 2026.9.12; GitHub Release v2026.9.12 was published at 08:32:58 UTC. GH-1239 closed with canonical PM link. The original scheduled attempt remains historically failed. Existing immutable version preserved; standing release-health reminder remains open and unclaimed."
 notes[9]{created_at,author,text}:
   "2026-07-02T06:41:55.766Z",claude-code-agent,"2026-07-02: Auto Release run 28569991109 success; tag v2026.7.2 created and npm dist-tags.latest=2026.7.2 verified live via npm view. Release-commit CI/Release/CodeQL/Docs all green. Release health verified."
   "2026-07-04T06:16:41.031Z",maintainer-agent,"2026-07-04: Release v2026.7.4 verified — Release workflow 28697208639 succeeded, npm @unbrained/pm-cli@2026.7.4 live, GH release published 06:16Z (not draft). Auto-release healthy."

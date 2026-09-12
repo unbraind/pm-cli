@@ -1,6 +1,8 @@
 /** @module tests/unit/cli/item-facet-namespaces Preserves facet payloads and hides nested runtime plumbing. */
 import { describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
+import { Command } from "commander";
+import { buildUnknownCommandGuidanceFromRuntime } from "../../../src/cli/commander-usage.js";
 import { generateBashScript } from "../../../src/sdk/completion.js";
 import { normalizeBootstrapInvocation } from "../../../src/sdk/cli-bootstrap.js";
 import { resolvePmCommandOperation } from "../../../src/sdk/cli-contracts/command-aliases.js";
@@ -10,6 +12,17 @@ import { resolvePmCommandVisibilityTier } from "../../../src/sdk/agent-capabilit
 import { PM_COMMAND_DESTINATION_CONTRACTS, PM_COMMAND_POSITIONAL_CONTRACTS } from "../../../src/sdk/cli-contracts/grammar-contracts.js";
 
 describe("item facet namespace contracts", () => {
+  it("ranks canonical evidence paths using the best matching compatibility spelling", () => {
+    const program = new Command("pm");
+    program.command("item").command("comments");
+    program.command("commentary");
+    for (const token of ["comment", "comments", "comemnt"]) {
+      const guidance = buildUnknownCommandGuidanceFromRuntime(`unknown command '${token}'`, program, new Map());
+      expect(guidance?.unknownCommandExamples?.[0], token).toBe("pm item comments --help");
+      expect(guidance?.unknownCommandExamples).not.toContain("pm comments --help");
+    }
+  });
+
   it.each(["discover", "lookup"])("preserves nested files %s contracts", (action) => {
     const canonical = `item files ${action}`;
     const legacy = `files ${action}`;

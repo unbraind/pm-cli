@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Other
+
+- Hide runtime completion helper entrypoints from the default agent-facing command surface ([pm-szdc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-szdc.toon))
+- Hide internal test-runs-worker from default help/contracts and route it under the test execution plumbing ([pm-lp4j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lp4j.toon))
+- Consolidate item annotation facets: comments/notes/learnings/files/docs/deps/append/test become one facet grammar (old spellings aliased) ([pm-yql1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yql1.toon))
+
 ## 2026.9.12 - 2026-09-12
 
 ### Changed

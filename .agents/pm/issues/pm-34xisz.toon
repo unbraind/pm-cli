@@ -1,0 +1,29 @@
+id: pm-34xisz
+title: Package-declared internal commands leak into default runtime contracts
+description: "An isolated package registering an arbitrary command with tier internal and family internal is omitted from public help but remains in default contracts --flags-only. collectExtensionCommandContracts drops registration tier metadata and default filtering consults only core command identities. Preserve dynamic package tier metadata through SDK contract assembly, command/action discovery and explicit full/scoped inspection."
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:contracts","area:sdk",extensions,token-efficiency
+created_at: "2026-09-12T08:56:50.560Z"
+updated_at: "2026-09-12T09:22:46.527Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: An arbitrary installed package internal command is absent from default command and action discovery; full and explicit scoped contracts retain the command and its declared tier; standard package commands remain discoverable; real temporary-package tests cover both visibility classes
+parent: pm-n7rr
+expected_result: Package authors control internal discovery through their declared SDK tier without adding names to the core table
+actual_result: Temporary package internal-probe secret-worker appears in default and full contracts commands and command_flags while public help hides it
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-kxci8x,recurs_from,"2026-09-12T08:56:50.560Z","harness:codex","cli:create:dep",detected
+  pm-n7rr,implements,"2026-09-12T08:56:50.560Z","harness:codex","cli:create:dep",detected
+  pm-szdc,discovered_from,"2026-09-12T08:56:50.560Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-12T08:56:50.560Z","harness:codex","Duplicate check: complete strict-read 2738-item all-status snapshot and keyword AND search package internal tier discovery found completed general tiering pm-kxci8x and active builtin helper routing pm-szdc but no focused arbitrary-package runtime-contract omission owner. This residual has a distinct dynamic registration boundary and remains open and unclaimed."
+  "2026-09-12T09:22:42.310Z","harness:codex","Governance evidence: the mandatory defect gate rejected this newly recorded recurrence because its two-item lineage had no family seed. Register the completed surface-tier predecessor in declared-set-versus-hand-maintained-list: the reproduced failure consults a core-only identity list instead of the registered package contract. This selects existing static and smoke gates for both lineage members; registration does not claim the pending product fix is implemented."
+files[3]{path,scope,note}:
+  config/defect-recurrence-policy.json,project,Register the dynamic command tier recurrence under declared-set versus hand-maintained-list governance
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Registration tier is dropped during dynamic contract assembly
+  tests/unit/sdk/contracts-full-projection.spec.ts,project,Extend real package projection tests with arbitrary internal and standard tiers
+docs[1]{path,scope,note}:
+  docs/CLI_GRAMMAR.md,project,Document default versus explicit package discovery semantics
+body: ""
