@@ -2,11 +2,13 @@ id: pm-yql1
 title: "Consolidate item annotation facets: comments/notes/learnings/files/docs/deps/append/test become one facet grammar (old spellings aliased)"
 description: "Eight top-level commands (comments, notes, learnings, files, docs, deps, append, test) are all per-item annotation/link facets with near-identical shape (<id> plus --add/--remove/list). The pm-n7rr target surface names 'item facets' as ONE noun group of the ~15; this task implements it per the grammar ADR pm-pbyu — one shared facet implementation, each facet a verb of a single noun (exact spelling fixed at ADR acceptance), current spellings kept as hidden aliases via the pm-0z7n shim with one-line migration hints. Zero feature loss. Duplicate check: pm-9y8q (closed, internal dedup of the comments/notes/learnings stacks) and pm-zwpp (SDK promotion of the same primitives — complementary: that item is API layering, this one is CLI grammar only); no open overlap."
 type: Task
-status: open
+status: in_progress
 priority: 2
 tags[3]: agent-ux,"area:cli",simplification
 created_at: "2026-07-05T05:08:35.381Z"
-updated_at: "2026-09-08T13:32:32.850Z"
+updated_at: "2026-09-12T08:03:58.139Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#5fc3f61915d1b750011309ba"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "One facet grammar covers all 8 annotation surfaces with identical flags and payloads; every old spelling dispatches through the alias shim with a migration hint; spelling-parity spec proves identical output old vs new; contracts, completions (bash/zsh/fish), docs, and MCP names regenerate from the contract table; top-level help lists item facets under a single noun entry."
@@ -39,7 +41,7 @@ dependencies[6]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[7]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-08-26T21:27:34.572Z","harness:codex","GitHub intake: GH-1126 https://github.com/unbraind/pm-cli/issues/1126. Reused the canonical annotation-facet grammar task. Red reproduction: comments/learnings reject --text even though notes/remind and collection concepts use text; human recovery can truncate before suggested_retry."
   "2026-08-26T21:34:26.811Z","harness:codex","TDD red: shared registration spec proves comments, notes, and learnings all reject the convergent --text alias before reaching their SDK adapters."
   "2026-08-26T22:51:39.094Z","harness:codex","Evidence for the implemented slice: comments, notes, and learnings now accept the convergent --text alias and reject conflicting positional/text payloads through one typed resolver; recovery bundles put suggested_retry first. Fresh-directory acceptance persisted and projected one entry from each collection. The linked sandbox-safe suite passed 134/134, while repository gates passed pnpm build, pnpm lint, 584 files and 8025 tests with exact 100/100/100/100 coverage, pnpm audit clean, and Trivy HIGH/CRITICAL vuln+secret+misconfig clean. This closes only the GitHub #1126 alias slice; the broader convergent grammar programme remains open for its other command families."
@@ -47,20 +49,59 @@ comments[7]{created_at,author,text}:
   "2026-08-27T04:01:43.379Z","harness:codex","Review TDD red: CodeRabbit exact-head review 5037100816 reports the public --text contracts for comments, notes, and learnings are absent from generated Bash, Zsh, and Fish completion surfaces."
   "2026-08-27T04:07:19.515Z","harness:codex","TDD red (CodeRabbit exact-head follow-up): annotation completion regression fails because comments/notes/learnings command blocks omit the convergent public --text alias in Bash, Zsh, and Fish. Command: node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts."
   "2026-08-27T04:43:00.240Z","harness:codex","Review completion-slice evidence: generated Bash, Zsh, and Fish completion surfaces now expose the public --text alias for comments, notes, and learnings, with one shared Bash branch to avoid duplicated command blocks. Focused completion and surface-replication plans pass 122/122 with zero active semantic replication sets; linked annotation plans pass 134/134 plus completion 104/104. Full repository coverage remains exact 100/100/100/100. This completes the review-requested alias slice; the broader facet convergence programme remains unfinished."
-learnings[1]{created_at,author,text}:
+  "2026-09-12T07:07:33.940Z","harness:codex","Implementation scope: reuse the complete all-status inventory (2738 items; strict-read complete; no omissions) and existing alias/visibility lineage. Consolidate comments, notes, learnings, files, docs, deps, append and test under item using native handlers and public SDK operation identities. Preserve payloads, flags, SDK/MCP compatibility and literal text. Add parser, contract, shell and isolated-workspace acceptance proof."
+  "2026-09-12T07:22:56.028Z","harness:codex","Continuation verification: complete strict-read inventory contains 2738 items with no omissions; current GitHub open PRs, issues, Dependabot alerts and code-scanning alerts are empty. Existing focused facet and internal-routing suite passes 16 tests in two files. Reclaim was refused because an existing claim is held; no override performed."
+  "2026-09-12T07:27:20.444Z","harness:codex","Live graph evidence: all 2738 recorded nodes are connected with degree greater than one; 13653 edges, zero missing targets, and both ordering graphs acyclic. Semantic incidence is incomplete (1224/2738 overall; 201/311 active). Preserve meaningful chronology and use existing graph-governance lineage for historical enrichment; do not fabricate dependencies to achieve arbitrary depth. Ownership was renewed with ordinary release/claim, forced=false."
+  "2026-09-12T07:29:00.755Z","harness:codex",Added real Bash execution coverage for item evidence flag suggestions and absence of internal worker/completion leaves. This extends acceptance beyond string snapshots; SDK/MCP operation names remain stable.
+  "2026-09-12T07:39:50.675Z","harness:codex","Regression evidence: full suite initially found 36 failures. Fixed nested files discover --id, semantic command suggestions, and canonical internal-worker census. Preserving the 4500-token contracts budget; installed package catalog currently exceeds the minimal projected receipt by 33 tokens and is being corrected without raising the budget."
+  "2026-09-12T07:50:25.702Z","harness:codex","Regression evidence: canonical facet addressing, semantic suggestions, error recovery, all shell completion generators, SDK action-scoped contracts, package helper registration, MCP graph family, grammar parity and release readiness tests passed in the focused batch. Default contract discovery now omits internal worker/completion plumbing at its source, preserving the existing 4500-token JSON budget; the earlier 33-token minimal-projection symptom did not require raising or changing budget enforcement. Full and explicitly scoped contracts retain internal paths. Generated contract and capability surfaces refreshed from SDK contracts."
+  "2026-09-12T07:59:25.150Z","harness:codex","TDD completion finding: executing the generated Bash script for pm <TAB> failed to suggest item because the SDK capability census retained only item-reopen for the item entry. The census now retains both the actual item namespace and the compatibility operation, restoring root discoverability and Fish root-command detection. The same regression test exercises root and nested completion without mocks."
+  "2026-09-12T08:02:02.647Z","harness:codex","Manual acceptance passed again in a fresh temporary workspace: init/create/claim/start, all seven writable facets, seven canonical versus legacy read comparisons, linked command execution, structured close/release, and history plus resolution/drift validation. Packed npm/npx smoke, package-first dogfood and migration/read/write compatibility with published 2026.9.11 passed. Required Sentry/telemetry threshold gate passed with zero recent Sentry issues, 2.17 percent finish error rate and zero failures missing error codes. The broad suite exposed two remaining recovery expectation migrations and a duplicate list candidate after canonical alias projection; candidates are now deduplicated without changing their ranking."
+learnings[2]{created_at,author,text}:
   "2026-08-26T22:51:39.542Z","harness:codex","Convergent mutation grammar should resolve positional and named text at a shared registration boundary, with a typed conflict refusal before any SDK mutation adapter runs."
-files[7]{path,scope,note}:
+  "2026-09-12T07:30:08.390Z","harness:codex",Namespace normalization must use the stable operation identity for payload-sensitive preprocessing. Root noun tests alone miss linked-test environment assignments and nested internal visibility.
+files[36]{path,scope,note}:
+  packages/pm-guide-shell/extensions/guide-shell/index.ts,project,Canonical facet routing and compatibility regression evidence
+  scripts/release/command-grammar-gate.mjs,project,Canonical facet routing and compatibility regression evidence
+  src/cli/command-namespaces.ts,project,Relocate native handlers without changing SDK adapters
+  src/cli/commander-usage.ts,project,Canonical facet routing and compatibility regression evidence
   src/cli/error-guidance.ts,project,Prioritizes the immediately executable retry in recovery bundles
   src/cli/register-annotations.ts,project,Adds the convergent --text alias and conflict validation for all annotation commands
+  src/sdk/agent-capability-contracts.ts,project,Canonical facet routing and compatibility regression evidence
+  src/sdk/agent/command-suggestions.ts,project,Canonical facet routing and compatibility regression evidence
+  src/sdk/agent/item-addressing.ts,project,Nested namespace item addressing
+  src/sdk/cli-bootstrap.ts,project,Preserve linked-test literal values through noun normalization
+  src/sdk/cli-contracts/command-aliases.ts,project,Shared canonical facet mappings and stable operation identities
   src/sdk/cli-contracts/flag-contracts.ts,project,Declares annotation alias grammar in the public SDK contracts
+  src/sdk/cli-contracts/grammar-contracts.ts,project,Canonical facet routing and compatibility regression evidence
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Canonical facet routing and compatibility regression evidence
   src/sdk/completion.ts,project,Annotation alias shell completion surface
+  tests/fixtures/contracts/full.json,project,Canonical facet routing and compatibility regression evidence
+  tests/integration/agent-output-polish.spec.ts,project,Unique canonical cross-command recovery candidates
+  tests/integration/help-runtime.spec.ts,project,Canonical facet recovery paths
+  tests/integration/item-facets.integration.spec.ts,project,Real isolated CLI facet and internal route acceptance
+  tests/integration/item-search-namespaces.integration.spec.ts,project,Canonical facet routing and compatibility regression evidence
+  tests/integration/release-readiness-runtime.spec.ts,project,Canonical facet routing and compatibility regression evidence
+  tests/integration/sdk-agent-command-contracts.integration.spec.ts,project,Canonical facet routing and compatibility regression evidence
+  tests/unit/cli/bootstrap-args.spec.ts,project,Canonical facet routing and compatibility regression evidence
+  tests/unit/cli/cli-main-errors.spec.ts,project,Canonical facet routing and compatibility regression evidence
   tests/unit/cli/error-guidance.spec.ts,project,Proves recovery bundle ordering
+  tests/unit/cli/item-facet-namespaces.spec.ts,project,Alias addressing and nested internal tier regressions
+  tests/unit/cli/unknown-command-help-runtime.spec.ts,project,Canonical facet routing and compatibility regression evidence
   tests/unit/commands/completion-command.spec.ts,project,Cross-shell annotation alias regression
+  tests/unit/commands/contracts-command.spec.ts,project,Canonical facet routing and compatibility regression evidence
   tests/unit/commands/register-commands.spec.ts,project,"Proves comments,notes,and learnings accept --text and reject conflicts"
-tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  tests/unit/extensions/builtin-extension-entrypoints.spec.ts,project,Canonical facet routing and compatibility regression evidence
+  tests/unit/mcp/runtime-capabilities.spec.ts,project,Canonical facet routing and compatibility regression evidence
+  tests/unit/scripts/refusal-closure-gate.spec.ts,project,Canonical facet routing and compatibility regression evidence
+  tests/unit/scripts/release/command-grammar-gate.spec.ts,project,Canonical facet routing and compatibility regression evidence
+  tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,Canonical facet routing and compatibility regression evidence
+  tests/unit/sdk/contracts-full-projection.spec.ts,project,Canonical facet routing and compatibility regression evidence
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/sdk/cli-contracts/flag-contracts.spec.ts,project,240,"harness:codex","2026-08-26T22:49:46.113Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
   node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts,project,240,"harness:codex","2026-08-27T04:08:43.424Z",local_mutation,feat/package-lifecycle-and-lossless-beads-migration
-test_runs[2]:
+  node scripts/run-tests.mjs test -- tests/unit/cli/item-facet-namespaces.spec.ts tests/integration/item-facets.integration.spec.ts,project,240,"harness:codex","2026-09-12T07:23:46.877Z",local_mutation,feat/item-facets-and-internal-command-routing
+test_runs[3]:
   - run_id: test-local-mtaotyfb-zypfbs
     kind: test
     status: passed
@@ -84,7 +125,22 @@ test_runs[2]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/sdk/cli-contracts/flag-contracts.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts,schema,schema,source,local_source_ref
-docs[2]{path,scope,note}:
+  - run_id: test-local-mty3mja9-2t7jfa
+    kind: test
+    status: passed
+    started_at: "2026-09-12T08:03:00.210Z"
+    finished_at: "2026-09-12T08:03:58.113Z"
+    recorded_at: "2026-09-12T08:03:58.113Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/item-facet-namespaces.spec.ts tests/integration/item-facets.integration.spec.ts,schema,schema,source,local_source_ref
+docs[6]{path,scope,note}:
   docs/CLI_GRAMMAR.md,project,Documents canonical and alias flag behavior
   docs/COMMANDS.md,project,Documents the convergent annotation grammar
+  docs/generated/AGENT_CAPABILITY_ROUTING.md,project,SDK-generated capability routing
+  docs/generated/AGENT_COMMAND_SURFACE.md,project,Generated SDK command visibility and stable operation mapping
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project,SDK-generated canonical command budgets
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Executable refusal census includes canonical facet and worker paths
 body: ""

@@ -95,7 +95,9 @@ function resolveNamespacedItemAddressIndex(argv: string[], commandIndex: number,
   const candidate = `${commandName} ${argv[leafIndex]}`;
   const operation = resolvePmCommandOperation(candidate);
   if (operation === candidate) return commandName === "item" && argv[leafIndex] === "complete" ? leafIndex + 1 : fallback;
-  return supportsItemIdAlias(operation) ? leafIndex + 1 : undefined;
+  return supportsItemIdAlias(operation)
+    ? resolveItemAddressIndex(argv, leafIndex, operation)
+    : undefined;
 }
 
 /** Resolve the positional-id slot for direct and declared nested commands. */
@@ -231,7 +233,7 @@ export function normalizeItemAddressInvocation(
   }
   const commandPath =
     addressIndex > commandIndex! + 1
-      ? `${commandName} ${argv[addressIndex - 1]}`
+      ? `${resolvePmCommandOperation(argv.slice(commandIndex!, addressIndex - 1).join(" "))} ${argv[addressIndex - 1]}`
       : commandName!;
   const contractsByFlag = buildFlagContractMap(commandPath);
   const namedIds = collectNamedItemIds(argv);

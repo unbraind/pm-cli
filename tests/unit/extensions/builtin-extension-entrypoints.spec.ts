@@ -1437,9 +1437,9 @@ describe("built-in extension entrypoints", () => {
         expect(commands.map((command) => command.name)).toEqual([
           "guide",
           "completion",
-          "completion-tags",
-          "completion-statuses",
-          "completion-types",
+          "completion tags",
+          "completion statuses",
+          "completion types",
         ]);
 
         const runtimeGlobal = { ...globalFlags, path: context.pmPath };

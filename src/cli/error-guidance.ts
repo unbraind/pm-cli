@@ -17,6 +17,7 @@ import {
 import { renderPmCommand } from "./argv-utils.js";
 import { discoverNearbyPmRoot } from "../sdk/tracker-root-discovery.js";
 import { stripGlobalBootstrapTokens } from "../sdk/cli-bootstrap.js";
+import { resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
 
 interface GuidanceMessage {
   itemId?: string;
@@ -1638,7 +1639,7 @@ function buildUnknownOptionGuidance(
   );
   const examples = [
     retryCommand,
-    `pm ${commandName ?? "<command>"} --help`,
+    `pm ${commandName ? resolvePmCommandAlias(commandName)?.canonical ?? commandName : "<command>"} --help`,
   ].filter((entry): entry is string => typeof entry === "string");
   return makeGuidanceMessage({
     code: "unknown_option",

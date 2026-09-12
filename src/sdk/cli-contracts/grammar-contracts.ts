@@ -623,6 +623,7 @@ const EXPLICIT_POSITIONAL_SLOTS = new Map<
     ],
   ],
   ["test", [ITEM_ID]],
+  ["test-runs-worker", [positionalSlot("runId", "string", true)]],
   ["update", [ITEM_ID]],
   [
     "workspace snapshot",
@@ -755,6 +756,7 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "files discover",
       "files lookup",
     ]),
+    ...destinationRows("item", "item test worker", "consolidation", "pm-lp4j", ["test-runs-worker"]),
     ...destinationRows("list", "list", "target_noun", "pm-pfqi", ["list"]),
     ...destinationRows("list", "list --group-by", "consolidation", "pm-xkgq", [
       "aggregate",

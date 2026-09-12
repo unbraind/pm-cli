@@ -133,3 +133,34 @@ shared compatibility contracts carry the parser and discovery mapping.
 Existing aliases retain their flags, arguments, and results and are hidden from
 default discovery. `search -- advanced` preserves the literal query that would
 otherwise collide with the package facet; options belong before the separator.
+
+## Item evidence facets and internal routing
+
+Tracked by [pm-yql1](../.agents/pm/tasks/pm-yql1.toon),
+[pm-lp4j](../.agents/pm/tasks/pm-lp4j.toon), and
+[pm-szdc](../.agents/pm/tasks/pm-szdc.toon).
+
+`item comments`, `item notes`, `item learnings`, `item files`, `item docs`,
+`item deps`, `item append`, and `item test` share the item noun. Each retains
+its existing arguments, flags, output, and SDK operation identity. For example:
+
+```bash
+pm item comments pm-a1b2 --add "Verified the acceptance criteria."
+pm item files pm-a1b2 --add path=src/example.ts,scope=project
+pm item test pm-a1b2 --add 'command=node --test,scope=project'
+pm item test pm-a1b2 --run --progress
+```
+
+The old root spellings remain executable compatibility aliases. Singular
+`comment`, `note`, `learning`, and plural `tests` resolve directly to the same
+canonical leaves. SDK and MCP clients continue using their published operation
+names; command relocation does not rename those APIs.
+
+`item test worker` is internal orchestration plumbing. With `guide-shell`
+installed, `completion statuses`, `completion tags`, and `completion types`
+provide runtime shell values. These internal leaves remain directly invocable
+but are excluded from public help and completion suggestions, including beneath
+public parents. Existing worker and completion-helper spellings remain valid.
+Default contract discovery also omits internal paths; use `contracts --full` or
+an exact `contracts --command "item test worker" --flags-only` selection to
+inspect their contracts without expanding ordinary agent context.

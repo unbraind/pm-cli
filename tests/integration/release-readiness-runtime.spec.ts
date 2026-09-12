@@ -1098,7 +1098,7 @@ describe("release readiness runtime coverage", () => {
         expect(commentsHelp.stdout).toContain(flag);
       }
       expect(commentsHelp.stdout).toContain(
-        "Usage: pm comments [options] <id> [text]",
+        "Usage: pm item comments [options] <id> [text]",
       );
       expect(commentsHelp.stdout).not.toContain(
         "Add one comment entry (default: [])",
@@ -1129,7 +1129,7 @@ describe("release readiness runtime coverage", () => {
         expect(notesHelp.stdout).toContain(flag);
       }
       expect(notesHelp.stdout).toContain(
-        "Usage: pm notes [options] <id> [text]",
+        "Usage: pm item notes [options] <id> [text]",
       );
       expect(notesHelp.stdout).not.toContain(
         "Add one note entry (default: [])",
@@ -1141,7 +1141,7 @@ describe("release readiness runtime coverage", () => {
         expect(learningsHelp.stdout).toContain(flag);
       }
       expect(learningsHelp.stdout).toContain(
-        "Usage: pm learnings [options] <id> [text]",
+        "Usage: pm item learnings [options] <id> [text]",
       );
       expect(learningsHelp.stdout).not.toContain(
         "Add one learning entry (default: [])",
@@ -1192,7 +1192,7 @@ describe("release readiness runtime coverage", () => {
 
       const appendHelp = context.runCli(["append", "--help"]);
       expect(appendHelp.code).toBe(0);
-      expect(appendHelp.stdout).toContain("Usage: pm append [options] <id>");
+      expect(appendHelp.stdout).toContain("Usage: pm item append [options] <id>");
       expect(appendHelp.stdout).toContain("Append text to an item's body.");
       for (const flag of REQUIRED_APPEND_FLAGS) {
         expect(appendHelp.stdout).toContain(flag);

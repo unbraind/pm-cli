@@ -48,6 +48,7 @@ import { normalizeExtensionNameForMatch } from "./commands/extension/shared.js";
 import { rankCommandPaths } from "../sdk/agent/command-suggestions.js";
 import { renderMissingOptionRetry } from "../sdk/agent/command-recovery.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
+import { findPmNamespacedCommand, resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
 
 /** Supported values accepted by the builtin type help contract. */
 export const BUILTIN_TYPE_HELP_VALUES = BUILTIN_ITEM_TYPE_VALUES.join("|");
@@ -495,7 +496,7 @@ function findOtherCommandsForFlag(
   }
   const normalizedCurrent = currentCommand?.trim().toLowerCase();
   const currentFlags = new Set(collectKnownLongFlags(normalizedCurrent));
-  return commands
+  return [...new Set(commands
     .filter((command) => command !== normalizedCurrent)
     .map((command) => ({
       command,
@@ -508,7 +509,7 @@ function findOtherCommandsForFlag(
         ? right.sharedFlagCount - left.sharedFlagCount
         : left.command.localeCompare(right.command),
     )
-    .map(({ command }) => command);
+    .map(({ command }) => resolvePmCommandAlias(command)?.canonical ?? command))];
 }
 
 function rewriteUnknownOptionArgv(
@@ -962,7 +963,8 @@ export async function resolveCommanderUsageContext(
     process.argv.slice(2),
   ).argv;
   const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
-  const commandName = parseBootstrapCommandName(invocationArgv);
+  const commandIndex = findBootstrapCommandTokenIndex(invocationArgv);
+  const commandName = findPmNamespacedCommand(invocationArgv.slice(commandIndex))?.alias ?? parseBootstrapCommandName(invocationArgv);
   const attemptedCommand = renderAttemptedCommand(invocationArgv);
   const providedOptionFlags = extractProvidedOptionFlags(invocationArgv);
   const workspaceUsage = await resolveWorkspaceUsageContext(

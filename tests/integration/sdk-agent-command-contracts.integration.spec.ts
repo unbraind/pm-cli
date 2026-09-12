@@ -345,7 +345,7 @@ describe("SDK-first agent command contracts", () => {
     await withTempPmPath(async (context) => {
       const result = context.runCli(["log", "pm-example"]);
       expect(result.code).toBe(2);
-      expect(result.stderr).toContain("Did you mean: history, comments, notes");
+      expect(result.stderr).toContain("Did you mean: history, item comments, item notes");
       expect(result.stderr).not.toContain("Did you mean: extension catalog");
     });
   });

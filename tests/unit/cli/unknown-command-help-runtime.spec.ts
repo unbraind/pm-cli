@@ -97,7 +97,7 @@ describe("unknown command help routing", () => {
         expect(result.stdout).toContain("--help");
         const structured = context.runCli([command, "pm-example", "--help", "--json"], { expectJson: true });
         expect(structured.code).toBe(0);
-        expect(structured.json).toMatchObject({ resolved_path: command === "tests" ? "test" : command });
+        expect(structured.json).toMatchObject({ resolved_path: `item ${command === "tests" ? "test" : command}` });
       }
       const unknown = context.runCli(["tesst"]);
       expect(unknown.code).toBe(EXIT_CODE.USAGE);

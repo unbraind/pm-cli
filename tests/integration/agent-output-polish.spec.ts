@@ -31,7 +31,7 @@ describe("agent output polish", () => {
       expect(typo.stderr).toContain("--limit");
       const unknown = context.runCli(["search", "probe", "--brief", "--json"], { expectJson: true });
       expect(unknown.code).toBe(2);
-      expect(JSON.parse(unknown.stderr)).toMatchObject({ recovery: { candidate_commands: expect.arrayContaining(["list", "health"]) } });
+      expect(JSON.parse(unknown.stderr)).toMatchObject({ recovery: { candidate_commands: ["list", "ops health"] } });
     });
   });
 });

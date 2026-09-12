@@ -4055,7 +4055,7 @@ describe("CLI bootstrap argument helpers", () => {
     expect(createNormalized.trace.map((entry) => entry.reason)).toEqual(expect.arrayContaining(["bare_key_value", "list_merge"]));
 
     expect(normalizeBootstrapInvocation(["test", "pm-1", "--add", "command", "PM_PATH=/tmp/x"])).toMatchObject({
-      argv: ["test", "pm-1", "--add", "command=PM_PATH=/tmp/x"],
+      argv: ["item", "test", "pm-1", "--add", "command=PM_PATH=/tmp/x"],
     });
     expect(normalizeBootstrapInvocation(["extension", "install", "guide-shell"]).trace).toEqual([
       {
@@ -4634,7 +4634,7 @@ describe("CLI Commander usage recovery helpers", () => {
       const unknown = await resolveCommanderUsageContext({ message: "error: unknown option '--boddy'" }, program, new Map());
       expect(unknown.commandName).toBe("comments");
       expect(unknown.unknownOptionSuggestions).toContain("--body");
-      expect(unknown.suggestedRetryCommand).toBe("pm comments pm-123 --body=done");
+      expect(unknown.suggestedRetryCommand).toBe("pm item comments pm-123 --body=done");
 
       process.argv = ["node", "pm", "test-all", "--type", "Task"];
       const otherCommand = await resolveCommanderUsageContext({ message: "error: unknown option '--type'" }, program, new Map());
@@ -4658,7 +4658,7 @@ describe("CLI Commander usage recovery helpers", () => {
 
       process.argv = ["node", "pm", "comments", "pm-123"];
       const missing = await resolveCommanderUsageContext({ message: "error: required option '--add <text>,;' not specified" }, program, new Map());
-      expect(missing.suggestedRetryCommand).toBe('pm comments pm-123 --add "<value>"');
+      expect(missing.suggestedRetryCommand).toBe('pm item comments pm-123 --add "<value>"');
 
       process.argv = ["node", "pm", "comments", "pm-123", "--add", "done"];
       const alreadyProvided = await resolveCommanderUsageContext({ message: "error: required option '--add <text>,' not specified" }, program, new Map());
@@ -4676,7 +4676,7 @@ describe("CLI Commander usage recovery helpers", () => {
 
       process.argv = ["node", "pm", "comments", "pm-123"];
       const compactMissing = await resolveCommanderUsageContext({ message: "error: required option '--add,;' not specified" }, program, new Map());
-      expect(compactMissing.suggestedRetryCommand).toBe('pm comments pm-123 --add "<value>"');
+      expect(compactMissing.suggestedRetryCommand).toBe('pm item comments pm-123 --add "<value>"');
 
       process.argv = ["node", "pm", "comments", "pm-123", "--boddy=done"];
       const json = JSON.parse(await formatCommanderUsageJson({ message: "error: unknown option '--boddy'" }, program, new Map()));

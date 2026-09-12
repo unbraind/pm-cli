@@ -489,7 +489,7 @@ const registeredCommandSeeds = hasCommandSummaries
     // load their help before counting them as executable census destinations.
     ...PM_COMMAND_ALIAS_CONTRACTS.filter(({ alias, hidden }) =>
       hidden && PM_COMMAND_DESTINATION_CONTRACTS.some(({ command }) => command === alias),
-    ).map(({ alias }) => alias)]
+    ).flatMap(({ alias, canonical }) => [alias, canonical])]
   : [];
 const activePackageCommands = hasCommandSummaries
   ? contracts.command_summaries.flatMap((summary) =>

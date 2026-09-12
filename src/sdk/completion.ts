@@ -6,7 +6,7 @@
 import { PM_COMMAND_DESTINATION_CONTRACTS } from "./cli-contracts/grammar-contracts.js";
 import { WORKFLOW_POLICY_ACTIONS } from "./cli-contracts/enum-contracts.js";
 import { EXIT_CODE, PmCliError } from "./runtime-primitives.js";
-import { listPmCommandsForTier } from "./agent-capability-contracts.js";
+import { listPmCommandsForTier, resolvePmCommandVisibilityTier } from "./agent-capability-contracts.js";
 import { SCAFFOLD_CAPABILITIES } from "./extension/scaffold.js";
 import {
   AGGREGATE_FLAG_CONTRACTS,
@@ -128,7 +128,7 @@ const HISTORY_LEAVES = HISTORY_COMPLETION_ALIASES.map((entry) => entry.canonical
 /** Advertise core namespace leaves plus facets supplied by the active package registry. */
 function completionNamespaceLeaves(runtime: CompletionRuntimeConfig): Record<string, string> {
   const available = new Set((runtime.namespace_commands ?? []).map(resolvePmCommandOperation));
-  const aliases = PM_NAMESPACED_COMMAND_ALIASES.filter((entry) => !PACKAGE_NAMESPACE_OPERATIONS.has(entry.alias) || available.has(entry.alias));
+  const aliases = PM_NAMESPACED_COMMAND_ALIASES.filter((entry) => resolvePmCommandVisibilityTier(entry.canonical) !== "internal" && (!PACKAGE_NAMESPACE_OPERATIONS.has(entry.alias) || available.has(entry.alias)));
   return Object.fromEntries(NAMESPACE_PREFIXES.map((prefix) => [prefix, [...new Set(aliases.filter((entry) => entry.canonical.startsWith(`${prefix} `)).map((entry) => entry.canonical_argv[prefix.split(" ").length]))].join(" ")]));
 }
 
@@ -185,6 +185,7 @@ const COMMAND_COMPLETION_DESCRIPTIONS = [
   ["package", "Manage package lifecycle operations"],
   ["packages", "Alias for package"],
   ["create", "Create a new project management item"],
+  ["item", "Manage item evidence, links, tests, and duplication"],
   ["copy", "Copy an existing item to a new ID"],
   ["focus", "Set/clear/show the session focused parent for new items"],
   ["list", "List active items with optional filters"],

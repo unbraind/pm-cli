@@ -126,50 +126,37 @@ function completionCommand(): CommandDefinition {
       runCompletionPackage(context.args, context.options, context.global),
   };
 }
-
-function completionTagsCommand(): CommandDefinition {
-  return {
-    name: "completion-tags",
+/** Registers this package's commands, actions, and runtime hooks with the host. */
+export function activate(api: ExtensionApi): void {
+  api.registerCommand(guideCommand());
+  api.registerCommand(completionCommand());
+  api.registerCommand({
+    name: "completion tags",
     action: "completion-tags",
     tier: "internal",
     family: "internal",
     description: "Print known tags for completion filters.",
     intent: "List tag values for lazy shell completion.",
     run: async (context) => runCompletionTagsPackage(context.global),
-  };
-}
-
-function completionStatusesCommand(): CommandDefinition {
-  return {
-    name: "completion-statuses",
+  });
+  api.registerCommand({
+    name: "completion statuses",
     action: "completion-statuses",
     tier: "internal",
     family: "internal",
     description: "Print runtime status IDs for completion filters.",
     intent: "List runtime status values for shell completion.",
     run: async (context) => runCompletionStatusesPackage(context.global),
-  };
-}
-
-function completionTypesCommand(): CommandDefinition {
-  return {
-    name: "completion-types",
+  });
+  api.registerCommand({
+    name: "completion types",
     action: "completion-types",
     tier: "internal",
     family: "internal",
     description: "Print runtime item type IDs for completion filters.",
     intent: "List runtime item types for shell completion.",
     run: async (context) => runCompletionTypesPackage(context.global),
-  };
-}
-
-/** Registers this package's commands, actions, and runtime hooks with the host. */
-export function activate(api: ExtensionApi): void {
-  api.registerCommand(guideCommand());
-  api.registerCommand(completionCommand());
-  api.registerCommand(completionTagsCommand());
-  api.registerCommand(completionStatusesCommand());
-  api.registerCommand(completionTypesCommand());
+  });
   api.registerService("output_format", (context) => {
     const rendered = renderGuideShellPackageOutput(
       context as ServiceOverrideContext,

@@ -97,13 +97,13 @@ describe("executable refusal closure gate", () => {
       const result = verifyExecutableRefusalClosure();
       expect(result).toMatchObject({
         ok: true,
-        probe_count: 124,
-        closed_probe_count: 124,
+        probe_count: 134,
+        closed_probe_count: 134,
         closure_fraction: 1,
-        contract_count: 124,
+        contract_count: 134,
         closed_domain_contract_count: 19,
-        grammar_refusal_contract_count: 101,
-        required_argument_contract_count: 93,
+        grammar_refusal_contract_count: 111,
+        required_argument_contract_count: 103,
         subcommand_contract_count: 8,
         tracker_preflight_contract_count: 4,
         baseline_version: 2,
