@@ -12,6 +12,7 @@ import { PmCliError } from "../core/shared/errors.js";
 import { nowIso } from "../core/shared/time.js";
 import { resolveGlobalPmRoot } from "../core/store/paths.js";
 import { readSettings, writeSettings } from "../core/store/settings.js";
+import { resolveTelemetryEnvironmentPolicy } from "../core/telemetry/policy.js";
 import { flushTelemetryQueueNow } from "../core/telemetry/runtime.js";
 import { createUnknownSubcommandError } from "./agent/subcommand-recovery.js";
 
@@ -70,6 +71,10 @@ interface ParsedTelemetryQueue {
 export interface TelemetryStatusSummary {
   /** Whether telemetry delivery is enabled. */
   enabled: boolean;
+  /** Persisted preference before process consent overrides. */
+  configured_enabled: boolean;
+  /** Process opt-outs, resolved without changing persisted preferences. */
+  env_overrides: ReturnType<typeof resolveTelemetryEnvironmentPolicy>;
   /** Configured delivery endpoint. */
   endpoint: string;
   /** Local event queue path. */
@@ -513,8 +518,11 @@ const buildTelemetryStatusSummary = async (
   const queueRaw = await readFileIfExists(queuePath);
   const queue = parseTelemetryQueue(queueRaw);
   const runtimeState = await readTelemetryRuntimeState(statePath);
+  const environmentPolicy = resolveTelemetryEnvironmentPolicy();
   return {
-    enabled: settings.telemetry.enabled,
+    enabled: settings.telemetry.enabled && !environmentPolicy.telemetry_disabled,
+    configured_enabled: settings.telemetry.enabled,
+    env_overrides: environmentPolicy,
     endpoint: settings.telemetry.endpoint,
     queue_path: queuePath,
     state_path: statePath,

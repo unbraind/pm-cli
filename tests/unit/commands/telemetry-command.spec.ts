@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runTelemetry } from "../../../src/cli/commands/telemetry.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
@@ -27,7 +27,9 @@ async function writeQueue(globalRoot: string, lines: string[]): Promise<void> {
 }
 
 describe("runTelemetry", () => {
+  beforeEach(() => vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1"));
   afterEach(() => {
+    vi.unstubAllEnvs();
     if (originalGlobalPath === undefined) {
       delete process.env.PM_GLOBAL_PATH;
     } else {
@@ -509,5 +511,20 @@ describe("runTelemetry", () => {
     await import("../../../src/cli/telemetry-flush.js?telemetry-flush-entrypoint");
 
     expect(flushSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+
+it("reports effective opt-out without changing persisted consent", async () => {
+  await withTempGlobalRoot("pm-telemetry-effective-consent-", async (globalRoot) => {
+    vi.stubEnv("PM_GLOBAL_PATH", globalRoot);
+    vi.stubEnv("DO_NOT_TRACK", "1");
+    try {
+      const result = await runTelemetry({ subcommand: "status" }, {});
+      expect(result.status).toMatchObject({ enabled: false, configured_enabled: true, env_overrides: { do_not_track: true } });
+      expect((await readSettings(globalRoot)).telemetry.enabled).toBe(true);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });

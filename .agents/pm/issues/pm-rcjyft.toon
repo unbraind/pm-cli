@@ -1,0 +1,22 @@
+id: pm-rcjyft
+title: Keep merge driver launchers usable after runtime upgrades
+description: "GitHub report https://github.com/unbraind/pm-cli/issues/1248. Installed drivers use a stable runtime launcher when available; missing executables report an actionable pm merge install recovery; real branch merge remains intact after runtime upgrade simulation."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-09-12T21:08:33.294Z"
+updated_at: "2026-09-12T21:08:52.640Z"
+author: "harness:codex"
+acceptance_criteria: Installed drivers use a stable runtime launcher when available; missing executables report an actionable pm merge install recovery; real branch merge remains intact after runtime upgrade simulation.
+goal: project management = context management
+objective: Keep merge driver launchers usable after runtime upgrades
+value: Reliable privacy-preserving operational context for agents and package consumers
+parent: pm-o2kc
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-o2kc,implements,"2026-09-12T21:08:33.294Z","harness:codex","cli:create:dep",detected
+  pm-w91mvg,discovered_from,"2026-09-12T21:08:33.294Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-12T21:08:33.294Z","harness:codex","Duplicate check: complete CLI full all-status export on 2026-09-12 contained 2745 items with no omissions. Request-specific telemetry and onboarding searches plus exact GitHub URL and title/description matching found no owner for this distinct report. Existing parent and closed implementation lineage reused."
+  "2026-09-12T21:08:52.640Z","harness:codex","GitHub report: https://github.com/unbraind/pm-cli/issues/1248. Canonical tracking reused after complete all-status duplicate check."
+body: ""

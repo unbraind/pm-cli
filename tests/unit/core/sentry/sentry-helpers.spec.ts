@@ -559,6 +559,7 @@ describe("ensureSentryInit", () => {
     sentryNodeMock.init.mockClear();
     delete process.env.CI;
     process.env.NODE_ENV = "test";
+    process.env.PM_TELEMETRY_SEND_TEST_EVENTS = "1";
     await ensureSentryInit();
     options = sentryNodeMock.init.mock.calls[0]?.[0] as { environment: string };
     expect(options.environment).toBe("test");

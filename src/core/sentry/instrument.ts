@@ -6,6 +6,7 @@
 import { createRequire } from "node:module";
 import type * as SentryModuleTypes from "@sentry/node";
 import { resolvePmCliVersion } from "../packages/root.js";
+import { resolveTelemetryEnvironmentPolicy } from "../telemetry/policy.js";
 
 const OPT_OUT_VALUES = new Set(["1", "true", "yes", "on"]);
 
@@ -16,12 +17,7 @@ function isSentryDisabled(): boolean {
     )
   )
     return true;
-  if (
-    OPT_OUT_VALUES.has(
-      (process.env.PM_TELEMETRY_DISABLED ?? "").trim().toLowerCase(),
-    )
-  )
-    return true;
+  if (resolveTelemetryEnvironmentPolicy().telemetry_disabled) return true;
   if (process.env.VITEST || process.env.VITEST_WORKER_ID) return true;
   return false;
 }

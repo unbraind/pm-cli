@@ -63,8 +63,8 @@ describe("instrument residual branches", () => {
     setSentryLoaderForTests();
   });
 
-  it("treats PM_TELEMETRY_DISABLED as an opt-out without importing Sentry", async () => {
-    process.env.PM_TELEMETRY_DISABLED = "On";
+  it.each(["PM_TELEMETRY_DISABLED", "PM_NO_TELEMETRY", "DO_NOT_TRACK"])("treats %s as an opt-out without importing Sentry", async (key) => {
+    process.env[key] = "On";
 
     await expect(ensureSentryInit()).resolves.toBeUndefined();
     expect(sentryNodeMock.init).not.toHaveBeenCalled();
@@ -76,10 +76,9 @@ describe("instrument residual branches", () => {
     expect(loaded).toMatchObject({ init: expect.any(Function), flush: expect.any(Function) });
   });
 
-  it("treats a worker id alone (no VITEST flag) as disabled", async () => {
-    // Covers the second operand of the VITEST short-circuit in isSentryDisabled:
-    // VITEST is absent but VITEST_WORKER_ID is set.
-    process.env.VITEST_WORKER_ID = "7";
+  it.each(["VITEST", "VITEST_WORKER_ID"])("keeps Sentry disabled under %s even when telemetry test events are allowed", async (key) => {
+    process.env.PM_TELEMETRY_SEND_TEST_EVENTS = "1";
+    process.env[key] = "7";
 
     await expect(ensureSentryInit()).resolves.toBeUndefined();
     expect(sentryNodeMock.init).not.toHaveBeenCalled();

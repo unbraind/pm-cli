@@ -1,0 +1,75 @@
+id: pm-ikgitf
+title: Honor DO_NOT_TRACK across telemetry capture flush and diagnostics
+description: "GitHub report https://github.com/unbraind/pm-cli/issues/1245. Truthy DO_NOT_TRACK disables capture flush OTLP and consent prompts; health reports the effective override; temporary-project regression proves no network delivery."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-12T21:08:30.124Z"
+updated_at: "2026-09-12T21:56:32.350Z"
+closed_at: "2026-09-12T21:55:57.778Z"
+completed_at: "2026-09-12T21:55:57.778Z"
+author: "harness:codex"
+acceptance_criteria: Truthy DO_NOT_TRACK disables capture flush OTLP and consent prompts; health reports the effective override; temporary-project regression proves no network delivery.
+goal: project management = context management
+objective: Honor DO_NOT_TRACK across telemetry capture flush and diagnostics
+value: Reliable privacy-preserving operational context for agents and package consumers
+parent: pm-5oj5
+resolution: "Shared process consent blocks capture, flush, OTLP, Sentry initialization and prompts; SDK status distinguishes configured from effective enablement."
+expected_result: DO_NOT_TRACK must prevent identity and delivery while preserving saved preferences.
+actual_result: Truthy opt-outs pass regression and real temporary Node/Bun acceptance; effective status and no-probe checks pass.
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5oj5,implements,"2026-09-12T21:08:30.124Z","harness:codex","cli:create:dep",detected
+  pm-r7md,discovered_from,"2026-09-12T21:08:30.124Z","harness:codex","cli:create:dep",detected
+  pm-do5b,verifies,"2026-09-12T21:49:00.165Z","harness:codex","cli:update:dep",detected
+  pm-fokyhh,verifies,"2026-09-12T21:49:00.165Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,verifies,"2026-09-12T21:49:00.165Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-09-12T21:08:30.124Z","harness:codex","Duplicate check: complete CLI full all-status export on 2026-09-12 contained 2745 items with no omissions. Request-specific telemetry and onboarding searches plus exact GitHub URL and title/description matching found no owner for this distinct report. Existing parent and closed implementation lineage reused."
+  "2026-09-12T21:08:50.612Z","harness:codex","GitHub report: https://github.com/unbraind/pm-cli/issues/1245. Canonical tracking reused after complete all-status duplicate check."
+  "2026-09-12T21:19:46.687Z","harness:codex","TDD evidence: initial negative-control telemetry-policy run failed all six consent and bounded-dimension assertions before implementation. Shared runtime policy now passes 28 targeted cases; existing telemetry suite passes 73 cases with scoped explicit test-delivery opt-ins. Full-source coverage is running. No closure or hosted-delivery claim yet."
+  "2026-09-12T21:26:55.139Z","harness:codex","Manual temporary-workspace acceptance passed 12 real commands across Node and Bun: init, create, get, update, context, telemetry status. With DO_NOT_TRACK=1 no installation identity or event queue was created. Packed-package smoke also passed npm installation plus npx and bunx launchers with six installed packages at 2026.9.12. Dependency audit reports zero vulnerabilities; tracked-file secret scan and documentation-link check pass. Consumer suite passes 233 cases. Full-source coverage and repository static gates remain pending."
+  "2026-09-12T21:34:54.289Z","harness:codex","Dependency compatibility check: pnpm outdated reports current=wanted for every dependency. Newer majors remain in existing owners pm-do5b (typescript-eslint requires TypeScript <6.1), pm-fokyhh (CodSpeed accepts Vitest 3/4), and pm-ksr40d (npm-package-arg 14 requires a higher Node 22 floor than the published >=22.18 contract). No peer override or runtime-floor narrowing was introduced. yaml 2.9.1 and fast-check 4.10.0 are registry candidates while pnpm currently resolves wanted to installed versions; current vulnerability audit is clean."
+  "2026-09-12T21:55:16.008Z","harness:codex","Final source verification: 680 test files and 8789 tests passed. Exact coverage is statements 64330/64330, branches 49047/49047, functions 13363/13363, lines 61618/61618: 100/100/100/100 with zero uncovered counts. ESLint and zero-clone duplication gates pass; graph composition and record integrity pass. Real loopback HTTPS peer rejection, noninteractive prompt suppression, and Sentry test isolation are directly exercised. SDK import budgets passed; final CLI timing verification remains pending before PR submission."
+  "2026-09-12T21:55:57.183Z","harness:codex",Final CLI transport-floor budget gate passed after other verification jobs settled; SDK entrypoint costs also pass. No timing baseline or coverage threshold was relaxed. Implementation is locally verified and ready for hosted review; closure does not assert a new package publication.
+files[13]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Managed changelog extension refresh receipt
+  sdk/public-surface.json,project,Typed effective consent status contract
+  src/core/sentry/instrument.ts,project,Honor telemetry opt-outs before Sentry initialization
+  src/core/telemetry/consent.ts,project,Suppress prompts under opt-out
+  src/core/telemetry/policy.ts,project,Shared process consent policy
+  src/core/telemetry/runtime.ts,project,Capture and flush honor consent
+  src/sdk/governance/health.ts,project,Respect consent during endpoint diagnostics
+  src/sdk/telemetry.ts,project,Expose effective and configured enablement
+  tests/unit/commands/health-command.spec.ts,project,Probe consent regressions
+  tests/unit/commands/telemetry-command.spec.ts,project,Effective enablement regression
+  tests/unit/core/sentry/instrument.spec.ts,project,No Sentry import under opt-out
+  tests/unit/core/sentry/sentry-helpers.spec.ts,project,Explicit test-environment capture fixture
+  tests/unit/core/telemetry/telemetry-runtime-timeout.spec.ts,project,Exercise native HTTPS peer failure without external network and retain consent guard coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/telemetry,project,240,"harness:codex","2026-09-12T21:20:01.193Z",local_mutation,fix/telemetry-consent-agent-signal
+test_runs[1]:
+  - run_id: test-local-mtywhjyb-dmtqow
+    kind: test
+    status: passed
+    started_at: "2026-09-12T21:31:27.864Z"
+    finished_at: "2026-09-12T21:31:54.563Z"
+    recorded_at: "2026-09-12T21:31:54.563Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated delivery notes from the four closed telemetry issues using the latest managed pm-changelog package
+  docs/CONFIGURATION.md,project,Document process consent and effective diagnostics
+close_reason: Implemented and locally verified with 8789 tests and exact 100/100/100/100 coverage; temporary Node/Bun and packed npm/npx/bunx acceptance passed.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-ikgitf
+body: ""
