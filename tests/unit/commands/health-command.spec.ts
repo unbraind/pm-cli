@@ -1176,6 +1176,7 @@ describe("runHealth", () => {
       try {
         vi.stubEnv("PM_TELEMETRY_DISABLED", "0");
         vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+        vi.stubEnv("DO_NOT_TRACK", "0");
         const health = await runHealth(
           { path: context.pmPath },
           { checkTelemetry: true },
@@ -1230,6 +1231,7 @@ describe("runHealth", () => {
       try {
         vi.stubEnv("PM_TELEMETRY_DISABLED", "0");
         vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+        vi.stubEnv("DO_NOT_TRACK", "0");
         const health = await runHealth(
           { path: context.pmPath },
           { checkTelemetry: true },
@@ -1276,6 +1278,7 @@ describe("runHealth", () => {
       try {
         vi.stubEnv("PM_TELEMETRY_DISABLED", "0");
         vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+        vi.stubEnv("DO_NOT_TRACK", "0");
         const health = await runHealth(
           { path: context.pmPath },
           { checkTelemetry: true },
@@ -1302,6 +1305,7 @@ describe("runHealth", () => {
       try {
         vi.stubEnv("PM_TELEMETRY_DISABLED", "0");
         vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+        vi.stubEnv("DO_NOT_TRACK", "0");
         const health = await runHealth(
           { path: context.pmPath },
           { checkTelemetry: true },
@@ -1331,6 +1335,7 @@ describe("runHealth", () => {
       try {
         vi.stubEnv("PM_TELEMETRY_DISABLED", "0");
         vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+        vi.stubEnv("DO_NOT_TRACK", "0");
         const health = await runHealth(
           { path: context.pmPath },
           { checkTelemetry: true },

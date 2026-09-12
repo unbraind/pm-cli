@@ -10,6 +10,7 @@ import { resolveTelemetryEnvironmentPolicy } from "../telemetry/policy.js";
 
 const OPT_OUT_VALUES = new Set(["1", "true", "yes", "on"]);
 
+/** Keep hard consent opt-outs and Vitest isolation ahead of loading the Sentry SDK. */
 function isSentryDisabled(): boolean {
   if (
     OPT_OUT_VALUES.has(

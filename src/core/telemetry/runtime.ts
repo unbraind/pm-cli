@@ -2497,7 +2497,7 @@ function scheduleTelemetryFlush(
   }
 }
 
-/** Implements flush telemetry queue now for the public runtime surface of this module. */
+/** Best-effort drain of event and span queues when both process consent and persisted settings permit delivery. */
 export async function flushTelemetryQueueNow(
   globalPmRoot = resolveGlobalPmRoot(process.cwd()),
 ): Promise<void> {
@@ -2517,7 +2517,7 @@ export async function flushTelemetryQueueNow(
   }
 }
 
-/** Implements start telemetry command for the public runtime surface of this module. */
+/** Begin a consent-permitted invocation, deferring sampled core reads until their outcome determines pair retention. */
 export async function startTelemetryCommand(
   context: TelemetryCommandContext,
 ): Promise<ActiveTelemetryCommand | null> {
@@ -2606,7 +2606,7 @@ export async function startTelemetryCommand(
   }
 }
 
-/** Implements finish telemetry command for the public runtime surface of this module. */
+/** Complete an invocation after rechecking consent, retaining every failed read and weighting selected successful pairs. */
 export async function finishTelemetryCommand(
   activeCommand: ActiveTelemetryCommand | null,
   outcome: TelemetryCommandOutcome,
@@ -2710,7 +2710,7 @@ export async function finishTelemetryCommand(
   }
 }
 
-/** Implements emit telemetry error event for the public runtime surface of this module. */
+/** Record an unsampled, sanitized command error without creating identity or queue state when process consent forbids capture. */
 export async function emitTelemetryErrorEvent(
   context: TelemetryErrorEventContext,
 ): Promise<void> {

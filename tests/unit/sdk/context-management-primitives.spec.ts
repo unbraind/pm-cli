@@ -794,6 +794,7 @@ describe("context-management SDK primitives", () => {
 
   it("distinguishes partial queue progress from complete telemetry draining", async () => {
     vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+    vi.stubEnv("DO_NOT_TRACK", "0");
     await withTempGlobalRoot(
       "pm-cli-telemetry-partial-drain-",
       async (globalRoot) => {

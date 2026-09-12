@@ -95,7 +95,7 @@ async function promptTelemetryConsent(
   }
 }
 
-/** Implements maybe run first use telemetry prompt for the public runtime surface of this module. */
+/** Prompt eligible interactive users once, persisting their choice without interrupting commands on failure. */
 export async function maybeRunFirstUseTelemetryPrompt(
   commandPath: string,
   globalOptions: GlobalOptions,

@@ -509,6 +509,7 @@ const nullableTelemetryStateValue = (
   value: string | undefined,
 ): string | null => value ?? null;
 
+/** Combine local queue health with saved preferences and effective process consent for SDK diagnostics. */
 const buildTelemetryStatusSummary = async (
   globalPmRoot: string,
 ): Promise<TelemetryStatusSummary> => {

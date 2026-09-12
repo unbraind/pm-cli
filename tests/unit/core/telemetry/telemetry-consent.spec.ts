@@ -49,17 +49,25 @@ function restoreTty(): void {
   }
 }
 
+/** Isolate deliberate prompt tests from host consent and restore all environment and TTY overrides. */
 async function withInteractiveEnv(run: () => Promise<void>): Promise<void> {
   const originalCi = process.env.CI;
   const originalPrompt = process.env.PM_TELEMETRY_PROMPT;
   const originalTestEvents = process.env.PM_TELEMETRY_SEND_TEST_EVENTS;
+  const originalDoNotTrack = process.env.DO_NOT_TRACK;
   process.env.PM_TELEMETRY_SEND_TEST_EVENTS = "1";
+  process.env.DO_NOT_TRACK = "0";
   setTty(true);
   delete process.env.CI;
   delete process.env.PM_TELEMETRY_PROMPT;
   try {
     await run();
   } finally {
+    if (originalDoNotTrack === undefined) {
+      delete process.env.DO_NOT_TRACK;
+    } else {
+      process.env.DO_NOT_TRACK = originalDoNotTrack;
+    }
     if (originalTestEvents === undefined) {
       delete process.env.PM_TELEMETRY_SEND_TEST_EVENTS;
     } else {

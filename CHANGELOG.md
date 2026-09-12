@@ -4,10 +4,9 @@
 
 ### Fixed
 
-- Bound read-only telemetry volume with paired weighted sampling ([pm-um3teu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-um3teu.toon))
+- Honor DO_NOT_TRACK across telemetry capture flush and diagnostics ([pm-ikgitf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ikgitf.toon))
 - Expose privacy-bounded agent harness and CI telemetry dimensions ([pm-nnn9nf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nnn9nf.toon))
 - Suppress inferred test telemetry before identity creation and export ([pm-745epp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-745epp.toon))
-- Honor DO_NOT_TRACK across telemetry capture flush and diagnostics ([pm-ikgitf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ikgitf.toon))
 - Published-package verification gives up before npm metadata propagates: two consecutive scheduled cuts were recorded as failed and re-run by hand while the artifact was already live ([pm-wzmbvn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wzmbvn.toon))
 
 ### Deprecated
@@ -16,6 +15,7 @@
 
 ### Other
 
+- Expose explicit paired sampling for core-only telemetry reads ([pm-wrdctq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wrdctq.toon))
 - Consolidate item annotation facets: comments/notes/learnings/files/docs/deps/append/test become one facet grammar (old spellings aliased) ([pm-yql1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yql1.toon))
 - Hide runtime completion helper entrypoints from the default agent-facing command surface ([pm-szdc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-szdc.toon))
 - Hide internal test-runs-worker from default help/contracts and route it under the test execution plumbing ([pm-lp4j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lp4j.toon))

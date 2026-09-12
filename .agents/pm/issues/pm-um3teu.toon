@@ -1,33 +1,29 @@
 id: pm-um3teu
-title: Bound read-only telemetry volume with paired weighted sampling
+title: Automatically bound high-frequency read-only telemetry volume
 description: "GitHub report https://github.com/unbraind/pm-cli/issues/1241. Read-only commands support bounded sampling with explicit inclusion probability on both lifecycle events; mutating commands and errors remain unsampled; controls are documented and tested through the SDK."
 type: Issue
-status: closed
+status: open
 priority: 1
 tags: []
 created_at: "2026-09-12T21:08:21.753Z"
-updated_at: "2026-09-12T21:56:03.390Z"
-closed_at: "2026-09-12T21:56:02.852Z"
-completed_at: "2026-09-12T21:56:02.852Z"
+updated_at: "2026-09-12T22:13:11.256Z"
 author: "harness:codex"
-acceptance_criteria: Read-only commands support bounded sampling with explicit inclusion probability on both lifecycle events; mutating commands and errors remain unsampled; controls are documented and tested through the SDK.
+acceptance_criteria: Default repeated core read invocations are automatically bounded without requiring users to discover an opt-in variable; eligibility proves read ownership rather than assuming a command name; failures and writes remain fully retained; weighting and bounded cross-process state are validated.
 goal: project management = context management
 objective: Bound read-only telemetry volume with paired weighted sampling
 value: Reliable privacy-preserving operational context for agents and package consumers
 parent: pm-5oj5
-resolution: Explicit core-only read sampling retains or drops complete successful lifecycle pairs and includes effective inclusion probability; failed reads and writes remain unsampled.
-expected_result: Repeated core-only reads must support bounded volume with weightable pairs and complete failure evidence.
-actual_result: "Deterministic retained, dropped and failure pairs pass; invalid rates, mutations and extension-enabled invocations remain unsampled. Sampling is opt-in and interrupted sampled reads have no pair as documented."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-5oj5,implements,"2026-09-12T21:08:21.753Z","harness:codex","cli:create:dep",detected
   pm-sgko,discovered_from,"2026-09-12T21:08:21.753Z","harness:codex","cli:create:dep",detected
   pm-745epp,blocked_by,"2026-09-12T21:22:42.943Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-12T21:08:21.753Z","harness:codex","Duplicate check: complete CLI full all-status export on 2026-09-12 contained 2745 items with no omissions. Request-specific telemetry and onboarding searches plus exact GitHub URL and title/description matching found no owner for this distinct report. Existing parent and closed implementation lineage reused."
   "2026-09-12T21:08:44.057Z","harness:codex","GitHub report: https://github.com/unbraind/pm-cli/issues/1241. Canonical tracking reused after complete all-status duplicate check."
   "2026-09-12T21:22:51.179Z","harness:codex","Implementation decision: read sampling is explicit via PM_TELEMETRY_READ_SAMPLE_RATE and requires --no-extensions so custom write-capable command overrides cannot be sampled accidentally. Both lifecycle events are deferred together until completion; errors have inclusion probability 1. Event pairs and OTLP spans carry the effective probability. Abruptly terminated sampled reads have no pair; local stats remain observed queue statistics, documented separately from population estimates."
   "2026-09-12T21:55:17.619Z","harness:codex","Final source verification: 680 test files and 8789 tests passed. Exact coverage is statements 64330/64330, branches 49047/49047, functions 13363/13363, lines 61618/61618: 100/100/100/100 with zero uncovered counts. ESLint and zero-clone duplication gates pass; graph composition and record integrity pass. Real loopback HTTPS peer rejection, noninteractive prompt suppression, and Sentry test isolation are directly exercised. SDK import budgets passed; final CLI timing verification remains pending before PR submission."
   "2026-09-12T21:56:02.265Z","harness:codex",Final CLI transport-floor budget gate passed after other verification jobs settled; SDK entrypoint costs also pass. No timing baseline or coverage threshold was relaxed. Implementation is locally verified and ready for hosted review; closure does not assert a new package publication.
+  "2026-09-12T22:10:24.223Z","harness:codex","Review correction: remove the GitHub #1241 automatic-close claim. Explicit sampling, paired weights, and failure retention are implemented; automatic high-frequency suppression is not. A safe completion must prove resolved core read ownership even with extensions, preserve every write/failure, and bound per-installation state. No duplicate follow-up item is needed."
 learnings[1]{created_at,author,text}:
   "2026-09-12T21:30:11.152Z","harness:codex","Command names alone cannot certify read-only behavior in an extensible CLI. Sampling requires the explicit no-extensions boundary, and selection occurs at completion so failed invocations retain both start and finish evidence."
 files[3]{path,scope,note}:
@@ -38,7 +34,6 @@ tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts,project,240,"harness:codex","2026-09-12T21:28:55.113Z",local_mutation,fix/telemetry-consent-agent-signal
 docs[1]{path,scope,note}:
   docs/CONFIGURATION.md,project,Sampling eligibility weighting and crash behavior
-close_reason: Implemented and locally verified with 8789 tests and exact 100/100/100/100 coverage; temporary Node/Bun and packed npm/npx/bunx acceptance passed.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

@@ -27,7 +27,10 @@ async function writeQueue(globalRoot: string, lines: string[]): Promise<void> {
 }
 
 describe("runTelemetry", () => {
-  beforeEach(() => vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1"));
+  beforeEach(() => {
+    vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+    vi.stubEnv("DO_NOT_TRACK", "0");
+  });
   afterEach(() => {
     vi.unstubAllEnvs();
     if (originalGlobalPath === undefined) {

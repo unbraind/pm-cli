@@ -357,6 +357,7 @@ describe("ensureSentryInit", () => {
     process.env = { ...originalEnv };
     delete process.env.PM_SENTRY_DISABLED;
     delete process.env.PM_TELEMETRY_DISABLED;
+    delete process.env.DO_NOT_TRACK;
     delete process.env.SENTRY_DSN;
     delete process.env.SENTRY_ENVIRONMENT;
     delete process.env.SENTRY_TRACES_SAMPLE_RATE;

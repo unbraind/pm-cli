@@ -1998,6 +1998,7 @@ function parseTelemetryRuntimeState(stateRaw: string | null): {
   }
 }
 
+/** Probe only when explicitly requested and both persisted and process consent permit network diagnostics. */
 async function maybeProbeTelemetryEndpoint(
   settings: PmSettings,
   checkTelemetry: boolean,
@@ -2094,6 +2095,7 @@ function collectTelemetryOtelWarnings(
     : [];
 }
 
+/** Explain process-level capture and OTLP overrides without changing the installation preference. */
 function buildTelemetryEnvOverrideDetails(): Record<string, unknown> {
   return {
     ...resolveTelemetryEnvironmentPolicy(),

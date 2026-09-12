@@ -91,6 +91,7 @@ function telemetryQueuePath(globalRoot: string): string {
   return path.join(globalRoot, "runtime", "telemetry", "events.jsonl");
 }
 
+/** Isolate runtime queue tests and restore host consent after intentional fixture delivery. */
 async function withTempGlobalRoot(run: (globalRoot: string) => Promise<void>): Promise<void> {
   await withTempGlobalRootHelper("pm-cli-telemetry-runtime-test-", async (globalRoot) => {
     process.env.PM_GLOBAL_PATH = globalRoot;
