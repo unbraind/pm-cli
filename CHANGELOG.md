@@ -4,9 +4,9 @@
 
 ### Fixed
 
+- Suppress inferred test telemetry before identity creation and export ([pm-745epp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-745epp.toon))
 - Honor DO_NOT_TRACK across telemetry capture flush and diagnostics ([pm-ikgitf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ikgitf.toon))
 - Expose privacy-bounded agent harness and CI telemetry dimensions ([pm-nnn9nf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nnn9nf.toon))
-- Suppress inferred test telemetry before identity creation and export ([pm-745epp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-745epp.toon))
 - Published-package verification gives up before npm metadata propagates: two consecutive scheduled cuts were recorded as failed and re-run by hand while the artifact was already live ([pm-wzmbvn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wzmbvn.toon))
 
 ### Deprecated

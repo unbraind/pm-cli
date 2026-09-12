@@ -6,43 +6,63 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-12T21:08:25.575Z"
-updated_at: "2026-09-12T22:24:53.751Z"
-closed_at: "2026-09-12T21:55:59.484Z"
-completed_at: "2026-09-12T21:55:59.484Z"
+updated_at: "2026-09-12T23:48:09.532Z"
+closed_at: "2026-09-12T23:48:09.004Z"
+completed_at: "2026-09-12T23:48:09.004Z"
 author: "harness:codex"
 acceptance_criteria: Inferred test execution does not mint an installation identity queue events spawn workers or export OTLP unless explicitly opted in; explicit source context remains deliberate; disabled telemetry always wins.
 goal: project management = context management
 objective: Suppress inferred test telemetry before identity creation and export
 value: Reliable privacy-preserving operational context for agents and package consumers
 parent: pm-5oj5
-resolution: Inferred tests are suppressed before identity creation; explicit local test delivery remains available without overriding hard opt-outs.
-expected_result: Inferred tests must not mint installation identities or deliver telemetry by default.
-actual_result: "Policy matrix, no-identity controls, SDK consumer and loopback delivery fixtures pass without a global runner bypass."
+resolution: Shared test consent policy suppresses inferred traffic before identity creation; Sentry remains disabled for present Vitest flags including empty values even when test telemetry is explicit.
+expected_result: Inferred tests remain silent by default and intentional telemetry cannot bypass Vitest Sentry isolation.
+actual_result: Two empty-flag cases failed before correction and pass afterward; 86 focused tests and all 8791 tests pass with exact 100/100/100/100 coverage.
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-5oj5,implements,"2026-09-12T21:08:25.575Z","harness:codex","cli:create:dep",detected
   pm-5ug5xq,discovered_from,"2026-09-12T21:08:25.575Z","harness:codex","cli:create:dep",detected
   pm-ikgitf,blocked_by,"2026-09-12T21:22:45.076Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-09-12T21:08:25.575Z","harness:codex","Duplicate check: complete CLI full all-status export on 2026-09-12 contained 2745 items with no omissions. Request-specific telemetry and onboarding searches plus exact GitHub URL and title/description matching found no owner for this distinct report. Existing parent and closed implementation lineage reused."
   "2026-09-12T21:08:48.094Z","harness:codex","GitHub report: https://github.com/unbraind/pm-cli/issues/1243. Canonical tracking reused after complete all-status duplicate check."
   "2026-09-12T21:31:27.251Z","harness:codex","Full run diagnostic: 8779/8784 tests passed. Five failures were expected downstream effects of the new safety policy: three health collector fixtures needed explicit opt-in, one SDK partial-drain fixture needed explicit opt-in, and the public SDK snapshot needed explicit classification of the changed status contract. Targeted repaired suites pass 233 plus 41 cases. Snapshot now records the reviewed contract changes without weakening any threshold. A complete coverage rerun is in progress."
   "2026-09-12T21:55:16.521Z","harness:codex","Final source verification: 680 test files and 8789 tests passed. Exact coverage is statements 64330/64330, branches 49047/49047, functions 13363/13363, lines 61618/61618: 100/100/100/100 with zero uncovered counts. ESLint and zero-clone duplication gates pass; graph composition and record integrity pass. Real loopback HTTPS peer rejection, noninteractive prompt suppression, and Sentry test isolation are directly exercised. SDK import budgets passed; final CLI timing verification remains pending before PR submission."
   "2026-09-12T21:55:58.878Z","harness:codex",Final CLI transport-floor budget gate passed after other verification jobs settled; SDK entrypoint costs also pass. No timing baseline or coverage threshold was relaxed. Implementation is locally verified and ready for hosted review; closure does not assert a new package publication.
   "2026-09-12T22:24:53.750Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1250 includes the implementation, linked test evidence and generated changelog. First-head hosted checks and exact CodeFactor/DeepScan analyzers passed. The follow-up corrects inherited host test consent and accurately leaves automatic default-loop suppression outside the completed prerequisite. Merge and publication are not claimed by this local closure."
+  "2026-09-12T23:13:59.173Z","harness:codex","Final formal review finding https://github.com/unbraind/pm-cli/pull/1250#discussion_r3997937354 confirmed: VITEST or VITEST_WORKER_ID present with empty value bypassed the Sentry-specific truthy guard when intentional telemetry was enabled. Negative control: exactly both new empty-value cases failed, 11 existing tests passed. Changed only the Sentry guard to presence checks consistent with shared environment policy; unset-variable behavior is preserved. Full verification follows."
+  "2026-09-12T23:27:10.536Z","harness:codex","Correction verification: focused Sentry and policy suites pass 86 tests and both linked test commands pass. ESLint and repository-static-quality pass. Concurrent full coverage run passed 8790 tests but one unrelated executable refusal closure test exceeded its unchanged 240-second timeout; no coverage artifact was emitted, so that run is a failed check, not coverage proof. Retrying the full run without competing static workloads; no timeout, assertion or coverage threshold is changed."
+  "2026-09-12T23:39:01.673Z","harness:codex","The second full run again passed 8790 tests but timed out in the same unrelated 240-second executable refusal probe. The complete refusal-closure suite passes in isolation without changes. Host reports 8 available CPUs and recent load averages above 12 during the full run. Running all coverage with four workers to reduce contention; tests, timeout and exact coverage thresholds remain unchanged."
+  "2026-09-12T23:48:08.417Z","harness:codex","Final correction proof: complete 680-file suite passes all 8791 tests with four workers; the previously timing-out real refusal probe passes in 110 seconds against its unchanged 240-second timeout. Exact full-source coverage passes 100/100/100/100, with no exclusions or threshold changes. Focused 86 Sentry/policy cases, linked PM tests, build, ESLint and repository static providers also pass. Both empty flag regressions failed before the presence-check fix and now pass. Review and hosted checks will be retriggered on the corrected commit."
 notes[1]{created_at,author,text}:
   "2026-09-12T21:30:10.399Z","harness:codex","Safety boundary: production telemetry is disabled for inferred test environments before settings or identity initialization. Existing telemetry tests explicitly opt into delivery inside their own isolated fixtures; no global test-runner bypass was added. Genuine collector tests remain loopback-only, while existing fetch-mocked tests exercise runtime queue behavior."
-files[6]{path,scope,note}:
+files[8]{path,scope,note}:
+  src/core/sentry/instrument.ts,project,Preserve Vitest isolation even for empty environment flags
   src/core/telemetry/policy.ts,project,Infer tests before any identity or network work
+  tests/unit/core/sentry/instrument.spec.ts,project,Red-green presence-based Sentry loader regression
   tests/unit/core/telemetry/telemetry-consent.spec.ts,project,Scoped test consent fixture
   tests/unit/core/telemetry/telemetry-optional-result.spec.ts,project,Loopback collector opt-in
   tests/unit/core/telemetry/telemetry-policy.spec.ts,project,Negative controls and policy matrix
   tests/unit/core/telemetry/telemetry-runtime.spec.ts,project,Scoped runtime test opt-in
   tests/unit/sdk/context-management-primitives.spec.ts,project,Explicit opt-in for SDK flush acceptance
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts,project,240,"harness:codex","2026-09-12T21:28:52.222Z",local_mutation,fix/telemetry-consent-agent-signal
+  node scripts/run-tests.mjs test -- tests/unit/core/sentry/instrument.spec.ts tests/unit/core/sentry/sentry-helpers.spec.ts tests/unit/core/telemetry/telemetry-policy.spec.ts,project,240,"harness:codex","2026-09-12T23:13:58.111Z",local_mutation,fix/telemetry-consent-agent-signal
+test_runs[1]:
+  - run_id: test-local-mtz0lm7l-0tzp4s
+    kind: test
+    status: passed
+    started_at: "2026-09-12T23:26:31.940Z"
+    finished_at: "2026-09-12T23:27:02.577Z"
+    recorded_at: "2026-09-12T23:27:02.577Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/sentry/instrument.spec.ts tests/unit/core/sentry/sentry-helpers.spec.ts tests/unit/core/telemetry/telemetry-policy.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/CONFIGURATION.md,project,Explicit test delivery rules
-close_reason: Implemented and locally verified with 8789 tests and exact 100/100/100/100 coverage; temporary Node/Bun and packed npm/npx/bunx acceptance passed.
+close_reason: Implemented inferred test suppression including review-confirmed empty Vitest flag isolation; 8791 tests and exact full coverage pass
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

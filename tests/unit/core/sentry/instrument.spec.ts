@@ -77,9 +77,14 @@ describe("instrument residual branches", () => {
     expect(loaded).toMatchObject({ init: expect.any(Function), flush: expect.any(Function) });
   });
 
-  it.each(["VITEST", "VITEST_WORKER_ID"])("keeps Sentry disabled under %s even when telemetry test events are allowed", async (key) => {
+  it.each([
+    ["VITEST", "7"],
+    ["VITEST_WORKER_ID", "7"],
+    ["VITEST", ""],
+    ["VITEST_WORKER_ID", ""],
+  ])("keeps Sentry disabled under %s=%j even when telemetry test events are allowed", async (key, value) => {
     process.env.PM_TELEMETRY_SEND_TEST_EVENTS = "1";
-    process.env[key] = "7";
+    process.env[key] = value;
 
     await expect(ensureSentryInit()).resolves.toBeUndefined();
     expect(sentryNodeMock.init).not.toHaveBeenCalled();

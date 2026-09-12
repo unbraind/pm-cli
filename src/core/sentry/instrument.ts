@@ -19,7 +19,10 @@ function isSentryDisabled(): boolean {
   )
     return true;
   if (resolveTelemetryEnvironmentPolicy().telemetry_disabled) return true;
-  if (process.env.VITEST || process.env.VITEST_WORKER_ID) return true;
+  if (
+    typeof process.env.VITEST === "string" ||
+    typeof process.env.VITEST_WORKER_ID === "string"
+  ) return true;
   return false;
 }
 
