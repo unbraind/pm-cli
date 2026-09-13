@@ -2,22 +2,72 @@ id: pm-bwkmp4
 title: Allow non-colliding extension leaves beneath core command groups
 description: "GitHub source https://github.com/unbraind/pm-cli/issues/1249. A published pm-ops installation reportedly loses all ops leaves when core owns the group. Reproduce group versus leaf ownership through the published package; preserve same-leaf core ownership and remove contradictory self-suggestions. The older alias-collision work intentionally rejected nested grafts; this report requires a finer safe composition contract."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-09-12T22:29:48.459Z"
-updated_at: "2026-09-12T22:29:48.459Z"
+updated_at: "2026-09-13T10:53:07.323Z"
+closed_at: "2026-09-13T10:53:06.797Z"
+completed_at: "2026-09-13T10:53:06.797Z"
 author: "harness:codex"
 acceptance_criteria: An extension-only ops leaf dispatches beside core ops; a true same-path collision remains refused with both owners; recovery never suggests the exact refused path.
 goal: project management = context management
 objective: Allow non-colliding extension leaves beneath core command groups
 value: Lower agent recovery cost and preserve safe customizable SDK composition
 parent: pm-n7rr
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+resolution: Unique extension leaves compose beneath core groups while reserved core source and destination handlers retain ownership; existing core metadata augmentation and package-owned relocated facets remain supported
+expected_result: Published pm-ops works beside core commands and neither matching action metadata nor an absent metadata target can preempt namespace relocation
+actual_result: "24 focused regression assertions and the full 8809-test suite pass with exact 100 percent coverage in all four dimensions; npm, Bun, npx, bunx, published-package manual acceptance, static/type/contracts, and token gates pass. Hosted delivery evidence is retained on PR 1254."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,implements,"2026-09-12T22:29:48.459Z","harness:codex","cli:create:dep",detected
   pm-v1yo,discovered_from,"2026-09-12T22:29:48.459Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-v1yo,supersedes,"2026-09-13T09:19:30.277Z","harness:codex","cli:update:dep",detected
+  pm-4f86c4,verifies,"2026-09-13T09:38:31.929Z","harness:codex","cli:update:dep",detected
+  pm-zsic8h,verifies,"2026-09-13T09:38:31.929Z","harness:codex","cli:update:dep",detected
+comments[10]{created_at,author,text}:
   "2026-09-12T22:29:48.459Z","harness:codex","Duplicate check: live full all-status export contained 2751 items with no omitted rows. Request-specific CLI searches and full historical metadata distinguished the existing shipped predecessor from this new report. Reuse its typed lineage; leave this intake open and unclaimed because implementation is not active."
-files[1]{path,scope,note}:
+  "2026-09-13T09:09:32.115Z","harness:codex","Implementation context: complete live all-status export contained 2755 items, no unreadable rows or omissions. Existing predecessor pm-v1yo deliberately rejected core-prefix grafts; this item refines that policy for unique leaves under existing groups while preserving core leaf ownership. GitHub has no open PRs or security alerts; all nine open issues already have canonical tracker links. Connected tranche also includes pm-zsic8h and pm-4f86c4."
+  "2026-09-13T09:21:02.137Z","harness:codex","TDD and acceptance evidence: the initial regression run failed the expected new assertions before implementation. Connected focused suite now passes 144 tests. A temporary initialized workspace installed the published pm-ops package and executed ops metrics beside core ops health; three-item default list is six lines and start guidance retains claim --start. Full coverage and hosted validation remain pending. Live Sentry 14-day threshold read is accessible with zero blocking issues; required telemetry gate passes with 2.21 percent finish error rate and no missing error-code rows. This aggregate gate is not per-action correlation proof."
+  "2026-09-13T09:27:45.200Z","harness:codex","Initial full suite: 8807 passing tests and one obsolete blanket namespace refusal assertion. Updated that existing contract to allow unique sibling leaves while explicitly retaining the reserved-facet handler collision assertion. No coverage result was produced by the failed suite; complete coverage remains pending."
+  "2026-09-13T09:45:59.321Z","harness:codex","Final source verification: all 683 test files and 8808 tests passed. Exact all-source coverage is 100/100/100/100: statements 64355/64355, branches 49089/49089, functions 13372/13372, lines 61640/61640. No thresholds or exclusions were weakened. Static code, documentation, duplicate, contract, SDK surface, and performance checks passed; the initial graph prose-reference failure was corrected with typed relationships, then graph and record-integrity assurance passed. Packed consumer and hosted review evidence remain pending."
+  "2026-09-13T09:49:46.608Z","harness:codex","Final local acceptance passed: context evaluation and 57 token surfaces; npx/bunx packed package smoke; separate npm and Bun tarball consumers exercising SDK canonicalization, initialization, mutations, six-line TOON, and full JSON; package-first authoring dogfood; compatibility migration with health and validation true. Reviewed delivery closure captures implementation and local verification; GitHub checks, bot review, merge, and publication are separate pending claims."
+  "2026-09-13T10:10:30.965Z","harness:codex","Sourcery guide on PR https://github.com/unbraind/pm-cli/pull/1254 requested clearer package migration guidance. Documented that existing pm-ops installations keep their namespace and commands after the core update; true conflicting leaves are renamed individually. Existing published-package and handler-ownership acceptance remains applicable."
+  "2026-09-13T10:29:54.257Z","harness:codex","Corrected delivery verification: 683 files and 8809 tests pass with exact 100/100/100/100 coverage (64360 statements, 49095 branches, 13372 functions, 61645 lines; zero uncovered). Static quality, type checks, SDK snapshot, docs links, refusal and agent-task token gates, npx/bunx smoke, independent npm/Bun packed SDK consumers, and published pm-ops manual acceptance all pass. First-head GitHub checks and hosted analyzers passed; all available first-round reports were acknowledged. Live review and merge evidence is maintained on https://github.com/unbraind/pm-cli/pull/1254."
+  "2026-09-13T10:42:24.125Z","harness:codex","TDD negative control: strengthening the real-host fixture with action=health made startup fail with Cannot install canonical command ops health: destination already exists. A reserved-but-absent metadata-only target also incorrectly returned no collision. Narrowed facet exceptions to source/destination ownership and metadata augmentation to existing nodes; package-owned search advanced remains supported."
+  "2026-09-13T10:53:06.180Z","harness:codex","Final ownership correction verified: 683 test files and 8809 tests; exact coverage statements 64361/64361, branches 49099/49099, functions 13372/13372, lines 61647/61647. No thresholds or exclusions changed. Static docstring coverage 100 percent, type checks, SDK surface, docs links, refusal closure, agent token gate, npx/bunx smoke, independent npm/Bun packed SDK consumers, and published pm-ops temporary-workspace acceptance all pass. Tracked-file secret scan found no credential-like secrets. Sentry has zero blocking critical/high issues; telemetry error rate 2.20 percent with no missing error-code rows. Completeness remains separately tracked in pm-utxk3h."
+notes[1]{created_at,author,text}:
+  "2026-09-13T09:23:15.633Z","harness:codex","Namespace ownership must account for lazy registration: the early ops group has no children yet. Reserve declared core leaves before package registration, allow unique sibling leaves, and preserve intentional metadata augmentation on an already registered core node. The manual published pm-ops reproduction exposed this boundary after the first unit test passed."
+files[4]{path,scope,note}:
   src/cli/extension-command-help.ts,project,Reported boundary to reproduce before implementation
+  tests/integration/extension-leaf-composition.spec.ts,project,Real-host namespace dispatch and core ownership regression
+  tests/unit/cli/extension-command-help.spec.ts,project,Connected agent command composition and recovery implementation
+  tests/unit/cli/item-search-namespaces.spec.ts,project,Preserve reserved facet handler assertions under unique sibling policy
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/extension-command-help.spec.ts,project,300,"harness:codex","2026-09-13T09:14:16.309Z",local_mutation,feat/extension-leaves-and-agent-recovery
+  node scripts/run-tests.mjs test -- tests/integration/extension-leaf-composition.spec.ts,project,300,"harness:codex","2026-09-13T09:19:29.134Z",local_mutation,feat/extension-leaves-and-agent-recovery
+test_runs[1]:
+  - run_id: test-local-mtzm53a0-9nwa3r
+    kind: test
+    status: passed
+    started_at: "2026-09-13T09:29:35.402Z"
+    finished_at: "2026-09-13T09:30:03.096Z"
+    recorded_at: "2026-09-13T09:30:03.096Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/extension-command-help.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/extension-leaf-composition.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned generated release entry for verified implementation
+  docs/AGENT_UX_CONTRACTS.md,project,Shared namespace ownership and package compatibility
+close_reason: Implemented safe extension composition and verified matching-action ownership regression through the real host
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/extension-command-help.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/cli/extension-command-help.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-bwkmp4
 body: ""

@@ -2,22 +2,75 @@ id: pm-4f86c4
 title: Compact default list receipts and avoid repeated recovery argument echoes
 description: "GitHub source https://github.com/unbraind/pm-cli/issues/1251. GitHub reports 31 output lines for a complete three-item default list and repeated long argument values in missing-id recovery. Historical explicit compact-mode trimming is already shipped; this report concerns default rendering and conditional receipt retention."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-09-12T22:29:49.674Z"
-updated_at: "2026-09-12T22:29:49.674Z"
+updated_at: "2026-09-13T10:29:58.734Z"
+closed_at: "2026-09-13T10:29:58.196Z"
+completed_at: "2026-09-13T10:29:58.196Z"
 author: "harness:codex"
 acceptance_criteria: A complete default three-item list uses approximately six lines; incomplete and truncated reads preserve actionable receipts; structured full output remains available; missing-id recovery does not repeat long argument values.
 goal: project management = context management
 objective: Compact default list receipts and avoid repeated recovery argument echoes
 value: Lower agent recovery cost and preserve safe customizable SDK composition
 parent: pm-mpbb
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Complete brief lists are compact while producer-owned diagnostics, incomplete receipts, and full JSON remain intact."
+expected_result: "Complete brief lists are compact while producer-owned diagnostics, incomplete receipts, and full JSON remain intact."
+actual_result: "All 8809 tests and exact 100/100/100/100 coverage pass, together with relevant static, type, SDK, recovery, token, packed npm/Bun, and manual package acceptance. See PR #1254 for the immutable hosted-review and merge evidence."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-mpbb,implements,"2026-09-12T22:29:49.674Z","harness:codex","cli:create:dep",detected
   pm-vhx6,discovered_from,"2026-09-12T22:29:49.674Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-vhx6,verifies,"2026-09-13T09:19:34.073Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
   "2026-09-12T22:29:49.674Z","harness:codex","Duplicate check: live full all-status export contained 2751 items with no omitted rows. Request-specific CLI searches and full historical metadata distinguished the existing shipped predecessor from this new report. Reuse its typed lineage; leave this intake open and unclaimed because implementation is not active."
-files[1]{path,scope,note}:
+  "2026-09-13T09:21:04.529Z","harness:codex","TDD and acceptance evidence: the initial regression run failed the expected new assertions before implementation. Connected focused suite now passes 144 tests. A temporary initialized workspace installed the published pm-ops package and executed ops metrics beside core ops health; three-item default list is six lines and start guidance retains claim --start. Full coverage and hosted validation remain pending. Live Sentry 14-day threshold read is accessible with zero blocking issues; required telemetry gate passes with 2.21 percent finish error rate and no missing error-code rows. This aggregate gate is not per-action correlation proof."
+  "2026-09-13T09:46:00.390Z","harness:codex","Final source verification: all 683 test files and 8808 tests passed. Exact all-source coverage is 100/100/100/100: statements 64355/64355, branches 49089/49089, functions 13372/13372, lines 61640/61640. No thresholds or exclusions were weakened. Static code, documentation, duplicate, contract, SDK surface, and performance checks passed; the initial graph prose-reference failure was corrected with typed relationships, then graph and record-integrity assurance passed. Packed consumer and hosted review evidence remain pending."
+  "2026-09-13T09:49:51.095Z","harness:codex","Final local acceptance passed: context evaluation and 57 token surfaces; npx/bunx packed package smoke; separate npm and Bun tarball consumers exercising SDK canonicalization, initialization, mutations, six-line TOON, and full JSON; package-first authoring dogfood; compatibility migration with health and validation true. Reviewed delivery closure captures implementation and local verification; GitHub checks, bot review, merge, and publication are separate pending claims."
+  "2026-09-13T10:03:50.414Z","harness:codex","Local review negative control: adding producer-owned details to a real complete list lost that diagnostic in TOON. A new regression failed before the fix (11 passed, 1 failed). Compact projection now leaves producer-owned details and its envelope intact; strict JSON is unchanged. Reopened only this item while actively implementing the correction, to batch it with the first GitHub feedback round."
+  "2026-09-13T10:29:57.594Z","harness:codex","Corrected delivery verification: 683 files and 8809 tests pass with exact 100/100/100/100 coverage (64360 statements, 49095 branches, 13372 functions, 61645 lines; zero uncovered). Static quality, type checks, SDK snapshot, docs links, refusal and agent-task token gates, npx/bunx smoke, independent npm/Bun packed SDK consumers, and published pm-ops manual acceptance all pass. First-head GitHub checks and hosted analyzers passed; all available first-round reports were acknowledged. Live review and merge evidence is maintained on https://github.com/unbraind/pm-cli/pull/1254."
+learnings[1]{created_at,author,text}:
+  "2026-09-13T10:14:05.879Z","harness:codex",A formatter accepting extensible producer objects must preserve producer-owned metadata keys. A compact recovery pointer may only use an unoccupied field; verify this with real list envelopes carrying custom diagnostics.
+files[4]{path,scope,note}:
   src/cli/commands/list.ts,project,Reported boundary to reproduce before implementation
+  src/cli/error-guidance.ts,project,Connected agent command composition and recovery implementation
+  src/core/output/output.ts,project,Connected agent command composition and recovery implementation
+  tests/unit/cli/compact-agent-output.spec.ts,project,Connected agent command composition and recovery implementation
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/compact-agent-output.spec.ts,project,300,"harness:codex","2026-09-13T09:14:23.675Z",local_mutation,feat/extension-leaves-and-agent-recovery
+test_runs[2]:
+  - run_id: test-local-mtzm5j2t-1nlhqi
+    kind: test
+    status: passed
+    started_at: "2026-09-13T09:30:15.000Z"
+    finished_at: "2026-09-13T09:30:23.573Z"
+    recorded_at: "2026-09-13T09:30:23.573Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/compact-agent-output.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mtzncpjb-2eb0io
+    kind: test
+    status: passed
+    started_at: "2026-09-13T10:03:50.898Z"
+    finished_at: "2026-09-13T10:03:58.151Z"
+    recorded_at: "2026-09-13T10:03:58.151Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/compact-agent-output.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned generated release entry for verified implementation
+  docs/AGENT_UX_CONTRACTS.md,project,Compact human output and preserved structured receipts
+close_reason: Implemented and verified the connected delivery and review corrections.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/compact-agent-output.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/cli/compact-agent-output.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-4f86c4
 body: ""

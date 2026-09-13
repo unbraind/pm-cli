@@ -124,15 +124,17 @@ describe("item and search namespace compatibility", () => {
     ]));
   });
 
-  it("allows only explicitly contracted package facets beneath core nouns", () => {
+  it("preserves reserved facet handlers while allowing unique leaves beneath core nouns", () => {
     const program = new Command();
     program.command("search");
     const descriptor = {
       command: "search advanced", action: "search-advanced", examples: [], failure_hints: [], arguments: [], flags: [],
       tier: "standard" as const, family: "extensions" as const,
     };
-    expect(buildExtensionCommandCollisionWarning(program, "search advanced", new Map(), descriptor)).toBeNull();
-    expect(buildExtensionCommandCollisionWarning(program, "search advanced", new Map(), { ...descriptor, action: "other" })).toContain("extension_command_collision");
-    expect(buildExtensionCommandCollisionWarning(program, "search surprise", new Map(), descriptor)).toContain("extension_command_collision");
+    expect(buildExtensionCommandCollisionWarning(program, "search advanced", new Map(), descriptor, true)).toBeNull();
+    expect(buildExtensionCommandCollisionWarning(program, "search advanced", new Map(), { ...descriptor, action: "other" }, true)).toContain("extension_command_collision");
+    expect(buildExtensionCommandCollisionWarning(program, "search surprise", new Map(), descriptor, true)).toBeNull();
+    ensureCommandPath(program, ["search", "advanced"]);
+    expect(buildExtensionCommandCollisionWarning(program, "search advanced", new Map(), descriptor, true)).toBeNull();
   });
 });

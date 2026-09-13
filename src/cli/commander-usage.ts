@@ -45,7 +45,7 @@ import {
 } from "./argv-utils.js";
 import type { ExtensionCommandHelpDescriptor } from "./extension-command-help.js";
 import { normalizeExtensionNameForMatch } from "./commands/extension/shared.js";
-import { rankCommandPaths } from "../sdk/agent/command-suggestions.js";
+import { canonicalizeCommandSuggestions, rankCommandPaths } from "../sdk/agent/command-suggestions.js";
 import { renderMissingOptionRetry } from "../sdk/agent/command-recovery.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import { findPmNamespacedCommand, resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
@@ -591,7 +591,7 @@ function resolveUnknownCommandCandidates(params: {
   primaryToken: string;
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>;
 }): string[] {
-  const exactAlias = resolvePmCommandAlias(params.normalizedUnknown)?.canonical;
+  const exactAlias = resolvePmCommandAlias(params.normalizedUnknown);
   const semanticCandidates = rankCommandPaths(
     params.commandPaths,
     params.primaryToken,
@@ -601,12 +601,12 @@ function resolveUnknownCommandCandidates(params: {
     params.primaryToken,
     params.extensionDescriptors,
   ).filter((commandPath) => params.commandPaths.includes(commandPath));
-  return dedupeStrings([
-    ...(exactAlias && params.commandPaths.includes(exactAlias) ? [exactAlias] : []),
+  return canonicalizeCommandSuggestions([
+    ...(exactAlias && params.commandPaths.includes(exactAlias.canonical) ? [exactAlias.canonical_argv.join(" ")] : []),
     ...semanticCandidates,
     ...rankedCandidates,
     ...installedPackageCandidates,
-  ]);
+  ], params.commandPaths, params.primaryToken).filter((path) => !params.normalizedUnknown.includes(" ") || path !== params.normalizedUnknown);
 }
 
 function resolveUnknownCommandFallbacks(commandPaths: string[]): string[] {
@@ -661,7 +661,7 @@ export function buildUnknownCommandGuidanceFromRuntime(
   });
   const fallbackTopLevel = resolveUnknownCommandFallbacks(commandPaths);
   const suggestedPaths = (
-    combinedCandidates.length > 0 ? combinedCandidates : fallbackTopLevel
+    combinedCandidates.length > 0 ? combinedCandidates : canonicalizeCommandSuggestions(fallbackTopLevel, commandPaths)
   ).slice(0, 3);
   const examples = buildUnknownCommandExamples(
     suggestedPaths,

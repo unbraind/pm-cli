@@ -871,11 +871,15 @@ export function ensureCommandPath(
   return current;
 }
 
-/** Describe the first core-owned command prefix that an extension path would shadow or graft beneath. */
+/** Locate core leaves that a path would replace or extend; existing groups can host unique extension leaves. */
 export function findExtensionCommandPathCollision(
   root: Command,
   pathParts: string[],
 ): { core_path: string; extension_path: string } | null {
+  const extensionPath = pathParts.join(" ");
+  const reservedLeaf = PM_RELOCATED_COMMAND_ALIASES.find((entry) =>
+    extensionPath === entry.canonical || extensionPath.startsWith(`${entry.canonical} `));
+  if (reservedLeaf) return { core_path: reservedLeaf.canonical, extension_path: extensionPath };
   let current = root;
   const traversed: string[] = [];
   for (const part of pathParts) {
@@ -884,7 +888,10 @@ export function findExtensionCommandPathCollision(
       return null;
     }
     traversed.push(part);
-    if (!extensionCreatedCommands.has(existing)) {
+    const isGroup = existing.commands.length > 0 || PM_RELOCATED_COMMAND_ALIASES.some((entry) =>
+      entry.canonical.startsWith(`${traversed.join(" ")} `));
+    if (!extensionCreatedCommands.has(existing) &&
+      (traversed.length === pathParts.length || !isGroup)) {
       return {
         core_path: traversed.join(" "),
         extension_path: pathParts.join(" "),
@@ -901,17 +908,23 @@ export function buildExtensionCommandCollisionWarning(
   commandPath: string,
   aliases: ReadonlyMap<string, string>,
   descriptor: ExtensionCommandHelpDescriptor | undefined,
+  hasHandler = false,
 ): string | null {
   const pathParts = commandPath.split(" ").filter((part) => part.length > 0);
   const collision = findExtensionCommandPathCollision(root, pathParts);
-  const declaredFacet = PM_RELOCATED_COMMAND_ALIASES.some((alias) => alias.canonical === commandPath && alias.alias === descriptor?.action);
+  const existingCommand = findCommandByPath(root, pathParts);
+  const declaredFacet = PM_RELOCATED_COMMAND_ALIASES.some((alias) =>
+    alias.canonical === commandPath && alias.alias === descriptor?.action &&
+    !root.commands.some((command) => command.name() === alias.alias) &&
+    (existingCommand === null || extensionCreatedCommands.has(existingCommand)));
   // Direct canonical paths intentionally augment core help with extension flags
   // and metadata while registerCommandPath preserves the core action handler.
-  // Canonical aliases and nested grafts cannot make that ownership distinction,
-  // so those paths are rejected instead.
+  // Handler collisions remain refused; declared relocated facets retain their
+  // existing registration contract only when core does not own their source or
+  // destination. Metadata can augment an existing node, never preempt its creation.
   if (
     !collision ||
-    (collision.core_path === commandPath && !aliases.has(commandPath)) ||
+    (collision.core_path === commandPath && existingCommand !== null && !aliases.has(commandPath) && !hasHandler) ||
     (declaredFacet && !aliases.has(commandPath))
   ) {
     return null;
@@ -945,10 +958,12 @@ export function collectSafeExtensionCommandPaths(
         commandPath,
         aliases,
         descriptors.get(commandPath),
+        commandHandlers.includes(commandPath),
       );
       if (!warning) return true;
       onCollision(warning);
-      return false;
+      // Existing nodes receive help metadata only; registration never replaces their action.
+      return !aliases.has(commandPath) && findCommandByPath(root, commandPath.split(" ")) !== null;
     });
 }
 

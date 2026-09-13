@@ -1,6 +1,6 @@
 # Agent UX Contracts
 
-Tracker references: [pm-v1yo](../.agents/pm/issues/pm-v1yo.toon), [pm-i6pi](../.agents/pm/issues/pm-i6pi.toon), [pm-um4g](../.agents/pm/issues/pm-um4g.toon), [pm-tmhs](../.agents/pm/issues/pm-tmhs.toon), [pm-6m1i](../.agents/pm/issues/pm-6m1i.toon), [pm-cj9v](../.agents/pm/issues/pm-cj9v.toon), [pm-yp56](../.agents/pm/issues/pm-yp56.toon), [pm-gos426](../.agents/pm/issues/pm-gos426.toon), [pm-flnefm](../.agents/pm/issues/pm-flnefm.toon), [pm-rggtvd](../.agents/pm/issues/pm-rggtvd.toon), and [pm-vk7zek](../.agents/pm/issues/pm-vk7zek.toon).
+Tracker references: [pm-bwkmp4](../.agents/pm/issues/pm-bwkmp4.toon), [pm-zsic8h](../.agents/pm/issues/pm-zsic8h.toon), [pm-4f86c4](../.agents/pm/issues/pm-4f86c4.toon), [pm-v1yo](../.agents/pm/issues/pm-v1yo.toon), [pm-i6pi](../.agents/pm/issues/pm-i6pi.toon), [pm-um4g](../.agents/pm/issues/pm-um4g.toon), [pm-tmhs](../.agents/pm/issues/pm-tmhs.toon), [pm-6m1i](../.agents/pm/issues/pm-6m1i.toon), [pm-cj9v](../.agents/pm/issues/pm-cj9v.toon), [pm-yp56](../.agents/pm/issues/pm-yp56.toon), [pm-gos426](../.agents/pm/issues/pm-gos426.toon), [pm-flnefm](../.agents/pm/issues/pm-flnefm.toon), [pm-rggtvd](../.agents/pm/issues/pm-rggtvd.toon), and [pm-vk7zek](../.agents/pm/issues/pm-vk7zek.toon).
 
 These contracts keep common agent loops deterministic, token-efficient, and recoverable. Runtime contracts and `--help --json` remain the exact source for available flags.
 
@@ -50,7 +50,15 @@ Compatibility note: before the 2026.7.19 release, `findings_by_code` incorrectly
 
 ## Extension command ownership
 
-Extension handler aliases may create their own command groups, but they may not replace a core command or graft a handler beneath a core-owned command prefix. Collisions preserve the core command and emit `extension_command_collision:` with the core and extension owners. Package authors should rename or namespace the alias.
+Extensions may add unique leaves beneath core groups: `ops metrics` can coexist with core `ops health`. Core leaf paths, including declared leaves awaiting lazy registration, remain reserved. A same-path handler collision emits `extension_command_collision:` with both owners and preserves core execution. Metadata-only registrations can augment an already registered core command; matching a core action name does not grant ownership of its path. Declared package-backed relocated facets retain their existing registration contract. Packages should rename a conflicting leaf instead of abandoning the shared namespace.
+
+Existing `pm-ops` installations keep their `ops` namespace and command paths. Upgrading to the leaf-composition implementation restores commands such as `ops metrics` without reinstalling or renaming the package. For a true collision such as `ops health`, the warning identifies both owners; rename that extension leaf while keeping its non-conflicting siblings.
+
+## Command recovery and compact reads
+
+Unknown-command suggestions resolve deprecated spellings to their available canonical replacement, including required flags. For example, `pm start` suggests `pm claim --start`, and a misspelled `list-open` points to `pm list --status open`. The SDK exports `canonicalizeCommandSuggestions` alongside its ranking primitives so package hosts can apply the same alias policy. Its optional query token prefers available semantic matches, so `start` does not also suggest unrelated statistics commands. Unavailable replacements are omitted.
+
+Default TOON lists with complete brief rows show the rows, count, and `details: "--full"` recovery pointer. Active filters, warnings, and additional diagnostics remain visible. A producer-owned `details` field preserves the detailed envelope instead of being replaced. Partial or truncated reads retain their detailed completeness and continuation receipts. `--full` restores item metadata; JSON retains the complete structured list envelope. Human recovery bundles echo an attempted command once; JSON retains the separate normalized argument vector for programmatic recovery.
 
 ## Context and work selection
 

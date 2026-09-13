@@ -1,0 +1,56 @@
+id: pm-7ej0mh
+title: "Refresh Node types 26.5.1, YAML 2.9.1, and fast-check 4.10.0"
+description: "Adopt the compatible registry releases without changing the supported Node floor or bypassing the existing major-migration items. Validate typed SDK consumers, YAML storage compatibility, property-based tests, exact source coverage, and packed npm/Bun acceptance."
+type: Chore
+status: closed
+priority: 2
+tags[2]: dependencies,updated
+created_at: "2026-09-13T09:19:45.661Z"
+updated_at: "2026-09-13T10:14:07.540Z"
+closed_at: "2026-09-13T09:49:54.366Z"
+completed_at: "2026-09-13T09:49:54.366Z"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: All three compatible versions are installed without runtime-floor or peer overrides; full coverage and static gates pass; packed npm and Bun consumers remain compatible
+goal: project management = context management
+objective: Keep the public SDK and parser test substrate current on compatible dependencies
+value: Current types and parsing behavior with unchanged supported runtimes
+parent: pm-u9d0
+resolution: "Compatible YAML, fast-check, and development Node types are refreshed without changing supported runtime or public type ranges."
+expected_result: "Compatible YAML, fast-check, and development Node types are refreshed without changing supported runtime or public type ranges."
+actual_result: "All 8808 tests passed with exact 100/100/100/100 coverage; linked tests, static/graph/record assurance, temporary published-package acceptance, npm/Bun packed SDK consumers, and compatibility checks passed. Hosted review and merge remain pending."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-92if,implements,"2026-09-13T09:19:45.661Z","harness:codex","cli:create:dep",detected
+  pm-qs5iiq,discovered_from,"2026-09-13T09:19:45.661Z","harness:codex","cli:create:dep",detected
+  pm-do5b,discovered_from,"2026-09-13T09:38:33.154Z","harness:codex","cli:update:dep",detected
+  pm-fokyhh,discovered_from,"2026-09-13T09:38:33.154Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,discovered_from,"2026-09-13T09:38:33.154Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-09-13T09:19:45.661Z","harness:codex","Duplicate check: full 2755-item all-status export and request-specific CLI searches found historical dependency refreshes but no owner for this exact version set. Registry timestamps predate the normal release-age window. Vitest 5 and TypeScript 7 remain incompatible with current peer contracts; npm-package-arg 14 exceeds the supported Node 22 floor. These retain their canonical open owners."
+  "2026-09-13T09:31:04.575Z","harness:codex","Updated YAML to 2.9.1, fast-check to 4.10.0, and development Node declarations to 26.5.1. Reviewed generated manifest and lockfile diff; retained published @types/node >=22 and Node >=22.18.0 support. Linked typecheck passed; pnpm audit reports zero vulnerabilities across 373 resolved dependencies. Major migrations remain owned by existing compatibility items."
+  "2026-09-13T09:46:00.917Z","harness:codex","Final source verification: all 683 test files and 8808 tests passed. Exact all-source coverage is 100/100/100/100: statements 64355/64355, branches 49089/49089, functions 13372/13372, lines 61640/61640. No thresholds or exclusions were weakened. Static code, documentation, duplicate, contract, SDK surface, and performance checks passed; the initial graph prose-reference failure was corrected with typed relationships, then graph and record-integrity assurance passed. Packed consumer and hosted review evidence remain pending."
+  "2026-09-13T09:49:53.272Z","harness:codex","Final local acceptance passed: context evaluation and 57 token surfaces; npx/bunx packed package smoke; separate npm and Bun tarball consumers exercising SDK canonicalization, initialization, mutations, six-line TOON, and full JSON; package-first authoring dogfood; compatibility migration with health and validation true. Reviewed delivery closure captures implementation and local verification; GitHub checks, bot review, merge, and publication are separate pending claims."
+  "2026-09-13T10:10:31.588Z","harness:codex","First reviewed delivery head 4a3aeda1ecc039cb3b8d659b6dcb5e951d6a4df0 in https://github.com/unbraind/pm-cli/pull/1254 passed all GitHub checks. Hosted analyzer gate independently confirms DeepScan zero new issues and CodeFactor zero annotations. CodeRabbit automatic review was skipped and Sourcery code review was quota-limited; neither is approval. All five available bot comment/review surfaces were reacted to and acknowledged on their GitHub surfaces. Final corrected-head review remains pending."
+  "2026-09-13T10:14:07.540Z","harness:codex","Live main branch protection is strict and requires build/runtime matrices, exact coverage, type/static/compatibility/smoke gates, Windows regression, Docs and Skills, JavaScript CodeQL, Trivy, ShellCheck, PSScriptAnalyzer, actionlint, Codecov patch, CodeFactor, DeepScan, and conversation resolution. No gate or paid GitHub feature was added, bypassed, or weakened."
+files[3]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Consume latest published pm-changelog for package-owned generation
+  package.json,project,Compatible dependency declarations with preserved public Node type range
+  pnpm-lock.yaml,project,Resolved compatible runtime and property-test dependency versions
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  pnpm typecheck,project,240,"harness:codex","2026-09-13T09:27:44.504Z",local_mutation,feat/extension-leaves-and-agent-recovery
+test_runs[1]:
+  - run_id: test-local-mtzm57gn-vehh3k
+    kind: test
+    status: passed
+    started_at: "2026-09-13T09:29:16.800Z"
+    finished_at: "2026-09-13T09:30:08.518Z"
+    recorded_at: "2026-09-13T09:30:08.518Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned generated release entry for verified implementation
+close_reason: Implemented and locally verified in the connected extension composition and agent recovery delivery.
+body: ""

@@ -79,6 +79,31 @@ describe("dynamic extension Commander options", () => {
     expect(findExtensionCommandPathCollision(program, ["package", "probe"])).toBeNull();
   });
 
+  it("composes unique leaves beneath core groups while protecting existing leaves", async () => {
+    const program = new Command().exitOverride();
+    const ops = program.command("ops");
+    expect(findExtensionCommandPathCollision(program, ["ops", "deploy"])).toBeNull();
+    expect(findExtensionCommandPathCollision(program, ["ops", "health"])).toEqual({ core_path: "ops health", extension_path: "ops health" });
+    expect(buildExtensionCommandCollisionWarning(program, "ops health", new Map(), undefined)).toContain("extension_command_collision");
+    let dispatched = "";
+    ops.command("health").action(() => { dispatched = "core"; });
+    expect(findExtensionCommandPathCollision(program, ["ops", "deploy"])).toBeNull();
+    expect(buildExtensionCommandCollisionWarning(program, "ops health", new Map(), {
+      command: "ops health", action: "health", examples: [], failure_hints: [], arguments: [], flags: [], tier: "standard", family: "extensions",
+    }, true)).toContain("extension_command_collision");
+    const warnings: string[] = [];
+    expect(collectSafeExtensionCommandPaths(program, ["ops health", "ops deploy"], new Map(), new Map(), (warning) => warnings.push(warning))).toEqual(["ops deploy", "ops health"]);
+    expect(warnings).toEqual(["extension_command_collision:ops health:core_owner=pm-cli:ops health:extension_owner=unknown-extension"]);
+    expect(findExtensionCommandPathCollision(program, ["ops", "health"])).toEqual({
+      core_path: "ops health", extension_path: "ops health",
+    });
+    ensureCommandPath(program, ["ops", "deploy"])!.action(() => { dispatched = "extension"; });
+    await program.parseAsync(["ops", "deploy"], { from: "user" });
+    expect(dispatched).toBe("extension");
+    await program.parseAsync(["ops", "health"], { from: "user" });
+    expect(dispatched).toBe("core");
+  });
+
   it("filters colliding aliases and reports their package owner", () => {
     const program = new Command();
     program.command("get");
@@ -94,6 +119,8 @@ describe("dynamic extension Commander options", () => {
           failure_hints: [],
           arguments: [],
           flags: [],
+          tier: "standard" as const,
+          family: "extensions" as const,
           source: { layer: "project" as const, name: "example", package: "example-package" },
         },
       ],
