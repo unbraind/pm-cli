@@ -809,7 +809,7 @@ describe("generateZshScript", () => {
     expect(script).toContain("ctx:Alias for context");
     expect(script).not.toContain("history-compact:Compact");
     expect(script).not.toContain("history-redact:Redact");
-    expect(script).toContain("history_commands=(attest redact repair compact activity restore events)");
+    expect(script).toContain("history_commands=(attest redact repair compact activity restore events acknowledge)");
     expect(script).toContain("plan:Agent-optimized Plan item workflow");
     expect(script).toContain("item:");
     expect(script).not.toContain("notes:List or add notes for an item");

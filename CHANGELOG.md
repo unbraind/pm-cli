@@ -8,9 +8,15 @@
 
 ### Fixed
 
+- Destination census rows cite terminal consolidation owners for five live commands, so the grammar gate certifies consolidations no open item will deliver ([pm-3ig9b6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3ig9b6.toon))
+- Package-declared internal commands leak into default runtime contracts ([pm-34xisz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-34xisz.toon))
 - Allow non-colliding extension leaves beneath core command groups ([pm-bwkmp4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bwkmp4.toon))
 - Compact default list receipts and avoid repeated recovery argument echoes ([pm-4f86c4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4f86c4.toon))
 - Canonicalize unknown-command recovery with replacement flags ([pm-zsic8h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zsic8h.toon))
+
+### Other
+
+- Give assurance a declared noun placement and history-author-acknowledge a history leaf: the two live commands whose consolidation owners closed without moving them ([pm-djyvbk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-djyvbk.toon))
 
 ## 2026.9.13 - 2026-09-13
 

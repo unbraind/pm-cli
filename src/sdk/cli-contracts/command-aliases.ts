@@ -84,6 +84,7 @@ export const PM_RELOCATED_COMMAND_ALIASES: readonly PmCommandAliasContract[] = [
     ...["comments", "notes", "learnings", "files", "docs", "deps", "append", "test"].map((facet) => [facet, `item ${facet}`, "pm-yql1"]),
     ["test-runs-worker", "item test worker", "pm-lp4j"],
     ...["statuses", "tags", "types"].map((facet) => [`completion-${facet}`, `completion ${facet}`, "pm-szdc"]),
+    ["history-author-acknowledge", "history acknowledge", "pm-djyvbk"],
     ["copy", "item copy", "pm-m6g87m"],
     ["merge", "workspace merge", "pm-m6g87m"],
     ["duplicates", "item duplicates", "pm-fmy9ih"],
@@ -145,6 +146,10 @@ export function resolvePmHistoryOperation(command: string): string {
  */
 export const PM_COMMAND_ALIAS_CONTRACTS: readonly PmCommandAliasContract[] = [
   ...PM_NAMESPACED_COMMAND_ALIASES,
+  ...[["ctx", "context"], ["packages", "package"]].map(([alias, canonical]): PmCommandAliasContract => ({
+    alias, canonical, canonical_argv: [canonical], lifecycle: "permanent",
+    hidden: false, registration: "commander", owner: "pm-pbyu",
+  })),
   ...[
     ["start-task", "claim", "--start"],
     ["pause-task", "release", "--pause"],

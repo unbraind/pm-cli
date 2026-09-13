@@ -29,6 +29,8 @@ async function runGrammarGate(
     rootHelpRows?: readonly unknown[];
     positionalSignatures?: unknown;
     runtimeCommands?: readonly string[];
+    ownerStatus?: string;
+    ownerSnapshot?: Record<string, unknown>;
   } = {},
 ): Promise<{
   report: {
@@ -85,7 +87,11 @@ async function runGrammarGate(
   const coreRuntimeCommands = PM_COMMAND_DESTINATION_CONTRACTS.filter(
     ({ disposition }) => disposition !== "package_owned",
   ).map(({ command }) => command);
+  const ownerSnapshot = options.ownerSnapshot ?? { items: [...new Set(PM_COMMAND_DESTINATION_CONTRACTS.map(({ owner }) => owner))].filter((id) => id !== "pm-npr3" || options.ownerStatus !== "missing").map((id) => ({ id, status: id === "pm-npr3" ? options.ownerStatus ?? "open" : "open" })), completeness: { status: "complete" }, has_more: false };
   const execFileSync = vi.fn((_executable: string, args: string[]) => {
+    if (args[1] === "list") {
+      return JSON.stringify(ownerSnapshot);
+    }
     if (args.includes("contracts")) {
       return JSON.stringify({
         command_summaries: commandSummaries,
@@ -249,6 +255,23 @@ describe("command grammar gate", () => {
       PM_COMMAND_DESTINATION_CONTRACTS.map(({ command }) => command).sort(
         (left, right) => left.localeCompare(right),
       ),
+    );
+  });
+
+  it.each(["closed", "canceled", "missing"])("rejects a %s consolidation owner through the mandatory gate", async (ownerStatus) => {
+    const result = await runGrammarGate(liveCommandSummaries, { ownerStatus });
+    expect(result.exitCode).toBe(1);
+    expect(result.report.findings).toContainEqual(expect.objectContaining({ code: "terminal_consolidation_owner", spelling: "config" }));
+  });
+
+  it.each([
+    {},
+    { items: [], has_more: true, completeness: { status: "complete" } },
+    { items: [], has_more: false },
+    { items: [], has_more: false, completeness: { status: "unchecked" } },
+  ])("refuses to certify ownership from an incomplete snapshot: %j", async (ownerSnapshot) => {
+    await expect(runGrammarGate(liveCommandSummaries, { ownerSnapshot })).rejects.toThrow(
+      "Consolidation owner verification requires a complete all-status tracker snapshot.",
     );
   });
 

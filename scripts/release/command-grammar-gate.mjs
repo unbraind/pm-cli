@@ -507,6 +507,31 @@ const liveCliSurface = collectLiveCliCommandSurface(
 );
 const commands = liveCliSurface.commands;
 const grammarReport = verifyPmCliGrammar(commands, PM_COMMAND_ALIAS_CONTRACTS);
+const ownerSnapshot = JSON.parse(execFileSync(process.execPath, [
+  "dist/cli.js", "list", "--all", "--fields", "id,status", "--json", "--output-budget", "unbounded",
+], {
+  cwd: repoRoot, encoding: "utf8", maxBuffer: 64 * 1024 * 1024,
+  stdio: ["ignore", "pipe", "inherit"], timeout: 120_000,
+  env: { ...process.env, NO_COLOR: "1", PM_NO_TELEMETRY: "1" },
+}));
+if (!Array.isArray(ownerSnapshot.items) || ownerSnapshot.has_more !== false || ownerSnapshot.completeness?.status !== "complete") {
+  throw new Error("Consolidation owner verification requires a complete all-status tracker snapshot.");
+}
+const ownerStatuses = new Map(ownerSnapshot.items.map(({ id, status }) => [id, status]));
+for (const row of PM_COMMAND_DESTINATION_CONTRACTS) {
+  if (row.disposition !== "consolidation" || !commands.includes(row.command)) continue;
+  const alias = PM_COMMAND_ALIAS_CONTRACTS.find((entry) => row.command === entry.alias || row.command.startsWith(`${entry.alias} `));
+  if (alias && commands.includes(`${alias.canonical}${row.command.slice(alias.alias.length)}`)) continue;
+  const status = ownerStatuses.get(row.owner);
+  if (status !== undefined && status !== "closed" && status !== "canceled") continue;
+  grammarReport.ok = false;
+  grammarReport.findings.push({
+    code: "terminal_consolidation_owner", spelling: row.command,
+    message: `Consolidation ${row.command} names ${row.owner}, whose status is ${status ?? "missing"}.`,
+    nearest_target: `Record a live delivery owner or an explicit completed disposition for ${row.target}.`,
+  });
+}
+
 if (!hasCommandSummaries) {
   grammarReport.ok = false;
   grammarReport.findings.push({

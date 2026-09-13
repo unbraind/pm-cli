@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { encode, decode } from "@toon-format/toon";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 import { writeTestExtension } from "../../helpers/extensions.js";
 import {
@@ -14,6 +15,44 @@ const GLOBAL = {
 } as Parameters<typeof runContracts>[1];
 
 describe("full contracts projection monotonicity", () => {
+  it("respects package visibility across command and action discovery while retaining scoped inspection", async () => {
+    await withTempPmPath(async (context) => {
+      await writeTestExtension({
+        root: context.pmPath,
+        placement: "projectRoot",
+        directory: "visibility-contract",
+        manifestOverrides: { capabilities: ["commands", "schema"] },
+        entryFilename: "index.mjs",
+        entrySource: `export default { activate(api) {
+          for (const tier of ['internal', 'standard']) {
+            api.registerCommand({ name: 'probe ' + tier, action: 'probe-' + tier,
+              tier, run: () => ({ ok: true }) });
+            api.registerCommand({ name: 'shared ' + tier, action: 'shared-action', tier,
+              run: () => ({ ok: true }) });
+          }
+        } };`,
+      });
+      const global = { ...GLOBAL, path: context.pmPath, noExtensions: false };
+      for (const options of [{ flagsOnly: true }, { runtimeOnly: true }, { schemaOnly: true }, { summary: true }]) {
+        const result = await runContracts(options, global);
+        expect(JSON.stringify(result).includes('probe internal')).toBe(false);
+        expect(JSON.stringify(result).includes('probe-internal')).toBe(false);
+        expect(JSON.stringify(result).includes('shared internal')).toBe(false);
+        expect(JSON.stringify(result).includes('probe standard')).toBe(true);
+      }
+      const full = await runContracts({ full: true }, global);
+      expect(full.extension_commands).toContainEqual(expect.objectContaining({ command: 'probe internal', tier: 'internal' }));
+      expect(full.actions).toContain('probe-internal');
+      for (const options of [{ command: 'probe internal' }, { action: 'probe-internal' }]) {
+        const scoped = await runContracts(options, global);
+        expect(scoped.commands).toEqual(['probe internal']);
+        expect(scoped.actions).toEqual(['probe-internal']);
+        expect(scoped.extension_commands).toContainEqual(expect.objectContaining({ tier: 'internal' }));
+      }
+      const flags = await runContracts({ command: 'probe internal', flagsOnly: true }, global);
+      expect(flags.command_flags?.[0]?.visibility).toBe('internal');
+    });
+  });
   it.each(["search advanced", "search-advanced"])("shares installed %s flags between canonical and compatibility paths", async (registeredCommand) => {
     await withTempPmPath(async (context) => {
       await writeTestExtension({
@@ -56,7 +95,7 @@ describe("full contracts projection monotonicity", () => {
     );
     const compactCommands = new Set(summary.command_summaries?.map((entry) => entry.command));
     expect(full.command_summaries?.filter((entry) => !compactCommands.has(entry.command)).map((entry) => entry.command)).toEqual([
-      "activity", "append", "close-many", "comments", "copy", "ctx", "delete", "deps", "docs", "duplicates", "eval", "events", "files", "focus", "gc", "health", "history-attest", "history-compact", "history-redact", "history-repair", "item test worker", "learnings", "merge", "next", "notes", "packages", "restore", "stats", "telemetry", "test", "test-all", "test-runs-worker", "update-many", "validate",
+      "activity", "append", "close-many", "comments", "copy", "ctx", "delete", "deps", "docs", "duplicates", "eval", "events", "files", "focus", "gc", "health", "history-attest", "history-author-acknowledge", "history-compact", "history-redact", "history-repair", "item test worker", "learnings", "merge", "next", "notes", "packages", "restore", "stats", "telemetry", "test", "test-all", "test-runs-worker", "update-many", "validate",
     ]);
     expect(summary.command_summaries).toEqual(
       expect.arrayContaining([
@@ -84,6 +123,12 @@ describe("full contracts projection monotonicity", () => {
     expect(full.schema).toBeDefined();
     expect(full.command_flags).toBeDefined();
     expect(full.runtime_schema).toBeDefined();
+    const grammarToon = encode(full.grammar_contracts);
+    expect(grammarToon).toMatch(/destinations\[\d+\]\{command,noun,target,disposition,owner,reason\}:/u);
+    expect(decode(grammarToon)).toMatchObject({ destinations: full.grammar_contracts?.destinations });
+    expect(full.grammar_contracts?.destinations).toContainEqual(expect.objectContaining({
+      command: "assurance", disposition: "keep_as_is", reason: expect.stringContaining("durable measurement"),
+    }));
     expect(full.relationship_kind_contracts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
