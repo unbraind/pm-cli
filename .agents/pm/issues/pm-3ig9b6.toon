@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[6]: "area:sdk",cli,contracts,gate,governance,grammar
 created_at: "2026-09-12T19:57:52.201Z"
-updated_at: "2026-09-13T17:15:23.289Z"
-closed_at: "2026-09-13T17:15:22.571Z"
-completed_at: "2026-09-13T17:15:22.571Z"
+updated_at: "2026-09-13T17:45:08.718Z"
+closed_at: "2026-09-13T17:45:07.934Z"
+completed_at: "2026-09-13T17:45:07.934Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "verifyPmCliGrammar or the command-grammar gate reports a terminal_consolidation_owner finding when a consolidation row's owner is closed, canceled or missing and the command is not carried by the alias relocation table, with a negative-control fixture; config, profile, schema and init rows name pm-npr3; assurance and history-author-acknowledge rows name the open delivery task filed beside this issue; the contracts fixture is regenerated; The gate's negative control proves a stale-owner row fails upward in CI"
@@ -16,9 +16,9 @@ parent: pm-n7rr
 risk: medium
 confidence: high
 severity: medium
-resolution: "Enforced complete all-status consolidation ownership, corrected completed dispositions and alias provenance, and retained compact TOON destination tables."
+resolution: "Enforced complete all-status consolidation ownership, corrected completed dispositions and alias provenance, and retained compact TOON destination tables; documented review validation and provider limits."
 expected_result: "Missing, closed or canceled consolidation owners and incomplete tracker snapshots fail the mandatory grammar gate; valid completed paths and aliases remain certifiable."
-actual_result: "All owner-negative controls pass; the live 2757-item census passes; complete destination data round-trips through a compact table and full discovery is 1322480 bytes beneath the unchanged 1323656-byte ceiling. Full validation: 8819 tests, exact 100/100/100/100 coverage."
+actual_result: "8819 tests passed at exact 100/100/100/100 source coverage. Linked owner and grammar regressions and build passed again after the test-harness JSDoc addition; all first-head hosted checks and analyzers passed, with CodeRabbit reporting no actionable findings. Final-head revalidation is required before merge."
 dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-j82fd3,implements,"2026-09-12T19:57:52.201Z","harness:claude-code","cli:create:dep",detected
   pm-wt43zj,discovered_from,"2026-09-12T19:57:52.201Z","harness:claude-code","cli:create:dep",detected
@@ -28,7 +28,7 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-tqel,discovered_from,"2026-09-12T20:13:23.331Z","harness:claude-code","cli:update:dep",detected
   pm-34xisz,verifies,"2026-09-13T16:11:50.012Z","harness:codex","cli:update:dep",detected
   pm-djyvbk,verifies,"2026-09-13T16:11:50.012Z","harness:codex","cli:update:dep",detected
-comments[13]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-09-12T19:57:54.472Z","harness:claude-code","Duplicate check: pm-yy8rmx (closed) filed the census and pm-wt43zj (closed) made it a gate; both check row existence and staleness, not owner liveness. pm-npr3 (open) owns the customization-family decision but the rows do not name it. No open item covers owner liveness of destination rows."
   "2026-09-12T20:04:30.266Z","harness:claude-code","Progress 2026-09-12: the second criterion is shipped (five rows repointed, fixture regenerated, contracts-snapshot --check and command-grammar gate green, destination_count unchanged at the same row count). The first and third criteria, the owner-liveness finding with its negative control, remain open and are this item's residual scope."
   "2026-09-13T16:06:34.343Z","harness:codex",Live all-status snapshot covered 2757 items with complete receipt. Owner-liveness enforcement also exposed completed item-files leaves and hot-path operations still labelled consolidation; classify the leaves as delivered and the six concise item operations as explicit ADR-backed exceptions. Register existing ctx/packages Commander aliases in the shared alias contract so compatibility is proven structurally. No synthetic dependency edges or duplicate items added.
@@ -42,6 +42,8 @@ comments[13]{created_at,author,text}:
   "2026-09-13T16:53:34.787Z","harness:codex","Token-surface diagnosis compared the candidate with a separately built unchanged main against the same tracker: full TOON grew from 1316746 to 1339308 bytes although semantic JSON growth was only about 5 KB. Optional exception reasons made the entire 218-row destination census lose tabular encoding. Normalize the full-discovery reason column to an empty string for non-exceptions while retaining real exception rationale, restoring uniform scalar rows without removing any contract or increasing the 1323656-byte ceiling."
   "2026-09-13T16:56:49.837Z","harness:codex","Uniform full-discovery rows measured 1322480 bytes, below the unchanged 1323656-byte ceiling; all 57 agent token surfaces pass. Added a real TOON encode/decode round-trip assertion for the complete destination table and retained assurance rationale. The prior in-flight coverage was stopped because source representation changed; final static quality and exact coverage now run sequentially against the settled source. Installed npm/Bun acceptance is refreshed from a newly packed artifact."
   "2026-09-13T17:15:21.862Z","harness:codex","Final local validation passed 8819 tests at exact 100/100/100/100 source coverage. Repository-wide static quality, linked regressions, typecheck, 57 token-surface budgets, Trivy, ShellCheck, secret scan and documentation links passed. Newly packed npm and Bun consumers passed real extension discovery/invocation, native/legacy author preview, item creation/comments/dependencies and npx/bunx acceptance. Implementation closure is prepared for the combined reviewed PR; this does not claim publication of these candidate changes."
+  "2026-09-13T17:45:06.312Z","harness:codex","PR 1255 review evidence at 701ffaa6a6e8686d0f504d89d75925ced37d4dfe: all deterministic checks passed, including Windows after an unchanged-code rerun of an existing 30-second transport fixture timeout. DeepScan and CodeFactor report zero issues; strict branch protection was verified live. CodeRabbit completed a full review with no actionable code findings. Its separate 68.75 percent diff docstring warning names no missing functions: AST inspection confirms all ten changed named production functions have JSDoc; documented the one missing test harness and reran linked regressions plus build. All received bot artifacts and edited revisions were read, reacted to and substantively acknowledged. Greptile authenticated gate explicitly reports free review quota exhausted, and Sourcery reports weekly quota exhaustion; these are unavailable reviews, not approvals, governed by existing pm-e02lgu. The documentation/evidence follow-up will request reviewers again and wait for all final-head checks before merge."
+  "2026-09-13T17:45:06.999Z","harness:codex","Fresh operational proof at 17:18 UTC: required production observability passed with zero blocking Sentry issues over the configured 14-day window, telemetry finish error rate 2.19 percent and zero missing error codes. Real contracts and history acknowledge preview probes each have one paired start/finish in one session at current backend timestamps; history retains its stable history-author-acknowledge operation identity. Both telemetry event and span queues were physically empty after flush. These observed aggregates and paired probes do not claim universal telemetry completeness; final post-merge queue and CI evidence remain separate checks."
 notes[1]{created_at,author,text}:
   "2026-09-13T16:36:28.617Z","harness:codex","Delivery scope and graph semantics: this tranche joins package discovery, native history acknowledgment, and consolidation-owner verification under existing command grammar lineage. The complete graph remains connected and acyclic in execution order. Retained concise item operations are deliberate exceptions; alias provenance is not unfinished delivery. Broader customization placement remains pm-npr3, major dependency compatibility remains pm-fokyhh/pm-do5b/pm-ksr40d, and source docstring prose cleanup remains pm-dvwm. Historical resolution residual is explicitly documented in completed pm-e9zh. These independent areas are not claimed as delivered by this tranche."
 learnings[1]{created_at,author,text}:
@@ -68,7 +70,7 @@ files[7]:
     note: Round-trip and table-shape regression protects exception rationale without token expansion
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/command-grammar-gate.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,240,"harness:codex","2026-09-13T16:09:19.022Z",local_mutation,feat/sdk-command-discovery-governance
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mu015q91-bgxpc1
     kind: test
     status: passed
@@ -80,10 +82,21 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/command-grammar-gate.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu03t359-n1x523
+    kind: test
+    status: passed
+    started_at: "2026-09-13T17:44:15.619Z"
+    finished_at: "2026-09-13T17:44:36.141Z"
+    recorded_at: "2026-09-13T17:44:36.141Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/command-grammar-gate.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated release history for the connected command-contract fixes using current pm-changelog
   docs/CLI_GRAMMAR.md,project,Document terminal owner enforcement and explicit completed dispositions
-close_reason: Completed the connected SDK command-discovery and grammar delivery with linked local evidence.
+close_reason: Implemented and locally verified live command ownership with reviewed PR evidence and documented negative-control harness.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

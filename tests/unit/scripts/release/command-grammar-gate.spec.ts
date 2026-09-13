@@ -21,6 +21,11 @@ afterEach(() => {
   process.exitCode = initialExitCode;
 });
 
+/**
+ * Execute the real grammar gate against controlled CLI discovery and all-status
+ * ownership snapshots. Capture its report and exit status so negative controls
+ * prove that incomplete context and stale owners fail the release gate.
+ */
 async function runGrammarGate(
   commandSummaries: unknown,
   options: {
