@@ -161,12 +161,34 @@ Telemetry is enabled by default. Use `pm config set telemetry-tracking off` to o
 | `PM_NO_TELEMETRY`                    | boolean                                       | Alias for `PM_TELEMETRY_DISABLED` (honoured by the same checks).                                                                                |
 | `PM_TELEMETRY_OTEL_DISABLED`         | boolean                                       | Disable only OTLP trace-span export; the event queue still flushes.                                                                             |
 | `PM_TELEMETRY_INLINE_FLUSH`          | boolean                                       | Flush the queue and OTLP spans inline instead of dispatching the detached worker. Mainly for tests; normal use relies on the background worker. |
-| `PM_TELEMETRY_SOURCE_CONTEXT`        | `user` \| `automation` \| `test` \| `dogfood` | Override the inferred source context recorded on each event. Any other value is ignored and the context is inferred.                            |
+| `PM_TELEMETRY_SOURCE_CONTEXT`        | `user` \| `automation` \| `test` \| `dogfood` | Override the inferred source context recorded on each event. Unrecognized nonempty values use inferred context with `source_context_source=env_override_rejected`; the raw value is never emitted.                            |
 | `PM_TELEMETRY_HTTP_TIMEOUT_MS`       | integer milliseconds                          | Bound each background event or OTLP request (default `20000`, clamped to `1000`–`25000` to stay below the worker lock TTL).                     |
 | `PM_TELEMETRY_INGEST_KEY`            | string                                        | Sent as the `x-pm-telemetry-key` header on queue flushes; never logged.                                                                         |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | URL                                           | OTLP/HTTP traces endpoint for command spans. Takes precedence over the base endpoint.                                                           |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`        | URL                                           | Base OTLP endpoint; the traces endpoint is derived by appending `/v1/traces`.                                                                   |
 | `OTEL_SERVICE_NAME`                  | string                                        | `service.name` attribute on exported spans (defaults to `pm-cli`).                                                                              |
+
+Unrecognized source-context overrides produce one bounded warning per process in
+human output, naming the accepted values without echoing the rejected input.
+JSON and quiet invocations suppress that warning; events and spans still carry
+the fixed rejection marker. Empty overrides mean no override. Existing consent
+rules continue to suppress all capture when telemetry is disabled.
+
+Event and OTLP queue appends and reconciliation share an installation-level
+mutex. Successful delivery, retry updates, and retention pruning reread the
+current queue while holding that mutex, so another updated CLI process cannot
+append into a file about to be replaced. Network delivery runs outside the
+mutex. Lock waiting defaults to five seconds, follows `PM_LOCK_WAIT_MS`, and
+uses the existing 60-second stale-lock recovery policy. Telemetry remains best
+effort when storage is unavailable or contention exhausts the wait budget;
+collector success and an empty queue are separate observations, not a guarantee
+of exactly-once delivery. Upgrade concurrent CLI processes together: older
+versions do not participate in the installation mutex.
+
+Completion capture rechecks the saved telemetry preference and installation
+identity. Disabling or clearing telemetry suppresses completion capture for an
+invocation already in flight; re-enabling after a clear does not revive its old
+identity. This check cannot recall requests already dispatched to a collector.
 
 Interaction rules:
 

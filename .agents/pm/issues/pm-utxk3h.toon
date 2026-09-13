@@ -1,24 +1,77 @@
 id: pm-utxk3h
-title: Investigate missing command-start delivery during concurrent telemetry flushing
+title: Preserve telemetry events across concurrent queue rewrites
 description: "Live backend correlation for a bounded invocation window found 102 complete pairs and one comments finish without its start. Pairing used installation, process session, canonical command, and the finish started_at timestamp. The local event queue was empty and did not retain that start. Source inspection shows process-local mutation serialization around queue rewrites; cross-process append-versus-rewrite loss is a hypothesis requiring deterministic reproduction."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-09-13T09:41:11.342Z"
-updated_at: "2026-09-13T09:42:24.423Z"
+updated_at: "2026-09-13T22:39:20.205Z"
+closed_at: "2026-09-13T22:29:59.173Z"
+completed_at: "2026-09-13T22:29:59.173Z"
 author: "harness:codex"
 acceptance_criteria: "Reproduce missing lifecycle events with isolated concurrent processes and a local collector; preserve events across append, successful flush, retry, retention pruning, and span rewriting; verify paired production probes and exact coverage without weakening consent or timeout guarantees"
 goal: project management = context management
 objective: Make event delivery completeness independently verifiable under concurrent CLI use
 value: Trustworthy action histories beyond aggregate success rates
 parent: pm-5oj5
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Serialize installation identity and queue transactions across processes; reconcile current event and OTLP queues for successful delivery, retries, and retention"
+expected_result: Concurrent appends survive reconciliation and independent invocations retain lifecycle pairs
+actual_result: "Independent-process regressions and real collector pass; production probe has 4 starts, 4 finishes, 4 exact matches and empty local queue; 8832 tests pass at 100/100/100/100 coverage"
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-5oj5,implements,"2026-09-13T09:41:11.342Z","harness:codex","cli:create:dep",detected
   pm-bwkmp4,discovered_from,"2026-09-13T09:41:11.342Z","harness:codex","cli:create:dep",detected
   pm-u5c27w,discovered_from,"2026-09-13T09:41:11.342Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-745epp,verifies,"2026-09-13T21:44:45.971Z","harness:codex","cli:update:dep",detected
+  pm-do5b,verifies,"2026-09-13T22:13:45.043Z","harness:codex","cli:update:dep",detected
+  pm-fokyhh,verifies,"2026-09-13T22:13:45.043Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,verifies,"2026-09-13T22:13:45.043Z","harness:codex","cli:update:dep",detected
+comments[11]{created_at,author,text}:
   "2026-09-13T09:41:11.342Z","harness:codex","Duplicate check: complete 2756-item all-status export and request-specific telemetry queue/concurrency searches found no active owner for missing start delivery. The closed flush-receipt predecessor covers truthful drain counts, not cross-process event preservation. This intake records observed evidence without claiming an established root cause or remediation."
-files[1]{path,scope,note}:
-  src/core/telemetry/runtime.ts,project,Inspect cross-process queue append and rewrite coordination; root cause is not yet established
+  "2026-09-13T21:19:08.864Z","harness:codex","Live scope evidence: complete CLI export read all 2757 items across open draft closed and canceled statuses with zero omissions or unreadable items. Existing canonical telemetry and closed flush-receipt lineage reused. GitHub has zero open PRs and zero open Dependabot code-scanning or secret-scanning alerts; all six open issues already include canonical PM links. Source inspection identifies process-local queue serialization and two stale retention rewrites; isolated subprocess negative controls are being executed before closure."
+  "2026-09-13T21:34:53.119Z","harness:codex","Continuation authorized: user approved takeover of the prior session claim. Current bootstrap and 40 focused tests pass, including independent-process event preservation and loopback collector lifecycle pairing. Full all-status CLI export contains 2757 items with complete reads and no omissions. GitHub has no open PRs or security alerts; all six open issues have canonical PM links. Full coverage and static validation are running; no completion or publication is claimed."
+  "2026-09-13T21:40:20.269Z","harness:codex","Connected tranche now includes pm-yjq2x0: isolated SDK negative controls exposed stale completion capture after persisted consent revocation. Focused verification passes 78 tests after the guard. Dependency disposition: npm audit has zero vulnerabilities; the four outdated major entries map to pm-do5b, pm-fokyhh, and pm-ksr40d. Installed CodSpeed supports Vitest 3/4, typescript-eslint supports TypeScript below 6.1, and npm-package-arg 14 requires a higher runtime floor than the published Node 22.18 contract. No compatible wanted upgrade remains."
+  "2026-09-13T21:41:19.953Z","harness:codex","Live release and observability checks: scheduled auto-release run 34745705596 succeeded and published v2026.9.13; npm latest is 2026.9.13. Preserve the existing daily release. Sentry access and threshold checks pass with zero unresolved critical/high issues; required telemetry query reports 2.18 percent finish errors and zero failures missing error codes. These aggregate checks do not prove per-invocation completeness; final paired probes and physical queue inspection remain separate."
+  "2026-09-13T21:48:36.062Z","harness:codex","Verification checkpoint: all linked tests pass and independent packed npm/Bun CLI lifecycles plus public SDK persisted-consent acceptance pass. npx/bunx smoke passes. Static providers passed source quality and documentation checks but the token-budget subprocess hit a dist import failure while linked runners rebuilt the same output. Treat that attempt as failed proof; rerun against stable built artifacts without concurrent builds. No gate threshold or timeout was weakened."
+  "2026-09-13T21:49:08.738Z","harness:codex","Full coverage attempt failed: 685 suites and 8828 tests passed, but sdk-subpath-entrypoints could not import a removed generated bundle chunk while concurrent linked runners rebuilt dist. No coverage artifact was emitted. Re-running with stable output and no concurrent rebuilds; this is orchestration failure evidence, not a passing coverage result."
+  "2026-09-13T22:03:51.214Z","harness:codex","Graph gate identified four prose references introduced by this tranche without corresponding edges. Added associative links for the documented toolchain compatibility decisions and the paired privacy work; they are contextual relationships, not fabricated implementation dependencies. The unchanged base commit reproduces the local CLI latency failures with nearly identical timings, separating this host/base limitation from the telemetry patch."
+  "2026-09-13T22:19:17.701Z","harness:codex","Bounded production proof 2026-09-13T22:17:43.806Z through 22:17:45.188Z: four concurrent real CLI get invocations delivered four starts and four finishes, with four exact backend matches by installation, process session, canonical command, and finish started_at. The physical local events queue was zero bytes after flush. This establishes this probe window only, not historical completeness. Typecheck, graph composition, record integrity, and fresh tracked-secret scanning pass; full coverage remains running."
+  "2026-09-13T22:26:58.999Z","harness:codex","Final stable-build coverage passed: 687 test files and 8832 tests; statements 64400/64400, branches 49138/49138, functions 13385/13385, lines 61677/61677. Exact coverage gate passed 100/100/100/100. All linked concurrency tests, packed npx/bunx smoke, isolated npm/Bun CLI and SDK acceptance, typecheck, graph composition, record integrity, secret scan, dependency audit, and bounded production pair correlation pass. Hosted review and merge are still pending."
+  "2026-09-13T22:39:20.205Z","harness:codex","Final static disposition: ESLint, zero-duplication, source/documentation assurance, contracts, package boundaries, command grammar, refusal negative controls, token checks, tracker context, gate registry, and SDK public surface passed. SDK import-cost rerun passed all 10 entrypoints after a transient 230ms versus 226ms merge-import result. CLI timing still exceeds unchanged local limits for get/context/next/create; the separately built unchanged base reproduces this class of failure. No threshold or waiver changed. Hosted exact-head checks remain required before merge."
+notes[1]{created_at,author,text}:
+  "2026-09-13T21:55:43.438Z","harness:codex","Graph context check used all 2757 live exported records before new intake: every record had at least one parent or dependency connection. Typed lineage already includes implements, discovered_from, verifies, supersedes, recurs_from, blocks, blocked_by, and incident_from. Graph audit returned two informational legacy hierarchy advisories. Enrichment must express evidence-backed semantics; do not inflate edge counts or depth with invented dependencies."
+learnings[2]{created_at,author,text}:
+  "2026-09-13T21:21:42.305Z","harness:codex",Atomic rename protects readers from partial snapshots but cannot preserve an append racing between snapshot read and replacement. Appends and every reconciliation or retention rewrite must share the same cross-process transaction boundary; network I/O must remain outside that boundary.
+  "2026-09-13T21:51:32.427Z","harness:codex","Build output is shared mutable state. Do not run a build-producing linked test, package smoke, or static gate alongside coverage or import-contract checks in the same checkout: rebuilt hashed chunks can disappear beneath a running consumer. Sequence build producers, then verify stable artifacts; a missing coverage report is failed proof."
+files[3]{path,scope,note}:
+  src/core/telemetry/runtime.ts,project,Cross-process installation mutex preserves current event and span queues during reconciliation
+  tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts,project,Real loopback collector checks independent SDK lifecycle pairs and shared cold identity
+  tests/unit/core/telemetry/telemetry-queue-concurrency.spec.ts,project,Independent-process append versus reconciliation regression matrix
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-queue-concurrency.spec.ts,project,240,"harness:codex","2026-09-13T21:21:01.329Z",local_mutation,fix/telemetry-queue-integrity-and-attribution
+  node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts,project,240,"harness:codex","2026-09-13T21:39:52.290Z",local_mutation,fix/telemetry-queue-integrity-and-attribution
+test_runs[1]:
+  - run_id: test-local-mu0ch6sd-koknnw
+    kind: test
+    status: passed
+    started_at: "2026-09-13T21:46:32.366Z"
+    finished_at: "2026-09-13T21:47:17.533Z"
+    recorded_at: "2026-09-13T21:47:17.533Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-queue-concurrency.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/CONFIGURATION.md,project,Queue coordination guarantees and best-effort limits
+close_reason: Implementation and regression evidence complete; closure is submitted with this branch for hosted review and merge
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  negative_control: Independent Node appends are lost in all five reconciliation cases on the original implementation and retained after correction
+  local_checks[2]: node scripts/run-tests.mjs coverage,node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-queue-concurrency.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-utxk3h
 body: ""

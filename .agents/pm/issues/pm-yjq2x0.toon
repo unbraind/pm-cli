@@ -1,0 +1,66 @@
+id: pm-yjq2x0
+title: Stop in-flight telemetry capture after persisted consent is cleared
+description: "An invocation started while telemetry is enabled can finish after persisted telemetry is disabled or cleared. finishTelemetryCommand currently checks only process opt-outs and retains the old installation identity. Reproduce the public SDK sequence in isolated trackers, recheck persisted consent and identity before completion capture, and distinguish already-dispatched network requests from newly captured data."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-13T21:36:42.809Z"
+updated_at: "2026-09-13T22:30:06.163Z"
+closed_at: "2026-09-13T22:30:05.196Z"
+completed_at: "2026-09-13T22:30:05.196Z"
+author: "harness:codex"
+acceptance_criteria: A deferred failed read creates no completion artifacts after persisted disable; clear then reenable cannot reuse an old active installation identity; enabled unchanged installations retain lifecycle pairs; all-source coverage and public SDK regression tests pass
+goal: project management = context management
+objective: Honor persisted telemetry consent throughout an invocation lifecycle
+value: Privacy-safe operational context for long-running SDK and CLI consumers
+parent: pm-5oj5
+risk: medium
+confidence: high
+severity: medium
+resolution: Recheck saved consent and installation identity before deferred start and completion capture
+expected_result: "An invocation finishing after disable, clear, or clear then reenable does not recreate events under revoked consent or identity"
+actual_result: All three negative controls and packed npm/Bun public SDK acceptance pass; full 8832-test regression has exact 100/100/100/100 coverage
+component: telemetry completion capture
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5oj5,implements,"2026-09-13T21:36:42.809Z","harness:codex","cli:create:dep",detected
+  pm-745epp,discovered_from,"2026-09-13T21:36:42.809Z","harness:codex","cli:create:dep",detected
+  pm-utxk3h,discovered_from,"2026-09-13T21:36:42.809Z","harness:codex","cli:create:dep",detected
+  pm-745epp,verifies,"2026-09-13T21:45:12.263Z","harness:codex","cli:update:dep",detected
+  pm-bw8lsb,discovered_from,"2026-09-13T22:13:47.765Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-13T21:36:42.809Z","harness:codex","Duplicate check: complete 2757-item all-status CLI export plus telemetry-clear and consent-concurrency searches found historical consent and clear implementations but no canonical item for persisted revocation during an active invocation. This is a distinct reproduction to verify before claiming remediation."
+  "2026-09-13T21:39:30.817Z","harness:codex","TDD negative control: all three isolated SDK cases reproduce queue recreation after persisted disable, clear, and clear followed by reenable. Completion now rechecks both the saved enabled flag and installation identity before any deferred start or completion capture. Already-dispatched network requests are outside this revocation boundary."
+  "2026-09-13T21:51:33.238Z","harness:codex","Manual packed acceptance passed in separate npm and Bun consumer roots: installed CLI initialized, created, claimed, annotated, closed, released, and validated a temporary project. Public package SDK capture followed by telemetry clear and failed completion left no recreated event queue. npx/bunx packed smoke also passed. Linked consent regression is recorded as passed."
+  "2026-09-13T22:27:00.526Z","harness:codex","Full regression passed: 8832 tests across 687 files and exact 100/100/100/100 coverage. All three persisted-consent negative controls pass, as do independent npm/Bun public SDK consumers. The guard checks saved consent and installation identity at completion; requests already dispatched cannot be recalled. Hosted review and merge remain pending."
+notes[1]{created_at,author,text}:
+  "2026-09-13T21:44:39.708Z","harness:codex","Revocation is checked at completion capture. Requests already sent to a collector cannot be recalled, and storage remains best effort. Clear invalidates the previous installation identity, so enabling telemetry later cannot reactivate an old in-memory invocation. This differs from process environment opt-outs, which are still checked first."
+files[2]{path,scope,note}:
+  src/core/telemetry/runtime.ts,project,Completion consent and installation identity boundary
+  tests/unit/core/telemetry/telemetry-consent-revocation.spec.ts,project,Public SDK persisted-consent negative controls
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-consent-revocation.spec.ts,project,240,"harness:codex","2026-09-13T21:39:32.215Z",local_mutation,fix/telemetry-queue-integrity-and-attribution
+test_runs[1]:
+  - run_id: test-local-mu0cfneg-qhionv
+    kind: test
+    status: passed
+    started_at: "2026-09-13T21:45:48.542Z"
+    finished_at: "2026-09-13T21:46:05.752Z"
+    recorded_at: "2026-09-13T21:46:05.752Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-consent-revocation.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/CONFIGURATION.md,project,Completion consent boundary and already-dispatched request limitation
+close_reason: Persisted-consent completion guard and acceptance evidence complete; submitted for hosted review and merge
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  negative_control: All three persisted consent revocation scenarios recreated events before the completion guard
+  local_checks[2]: node scripts/run-tests.mjs coverage,node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-consent-revocation.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-yjq2x0
+body: ""

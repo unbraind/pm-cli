@@ -11,6 +11,8 @@ import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import os from "node:os";
 import path from "node:path";
+import { acquireLock } from "../lock/lock.js";
+import { runWithIsolatedExtensionRuntime } from "../extensions/index.js";
 import {
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
   resolveTelemetryEnvironmentPolicy,
@@ -97,6 +99,7 @@ const PM_TELEMETRY_HTTP_TIMEOUT_MS_ENV = "PM_TELEMETRY_HTTP_TIMEOUT_MS";
 const NATIVE_FETCH = globalThis.fetch;
 export { PM_TELEMETRY_SOURCE_CONTEXT_VALUES } from "./policy.js";
 
+let sourceContextWarningEmitted = false;
 let _lastFlushPromise: Promise<void> = Promise.resolve();
 let _queueMutationPromise: Promise<unknown> = Promise.resolve();
 const deferredReadStarts = new WeakMap<ActiveTelemetryCommand, TelemetryEvent>();
@@ -198,7 +201,7 @@ interface PendingOtelSpan {
 type TelemetryCaptureLevel = "minimal" | "redacted" | "max";
 type TelemetrySourceContext =
   (typeof PM_TELEMETRY_SOURCE_CONTEXT_VALUES)[number];
-type TelemetrySourceContextSource = "inferred" | "env_override";
+type TelemetrySourceContextSource = "inferred" | "env_override" | "env_override_rejected";
 
 interface ResolvedTelemetrySourceContext {
   source_context: TelemetrySourceContext;
@@ -221,7 +224,7 @@ export interface ActiveTelemetryCommand {
   pm_version: string;
   /** Value that configures or reports source context for this contract. */
   source_context: TelemetrySourceContext;
-  /** Value that configures or reports source context source for this contract. */
+  /** Whether attribution was inferred, explicitly accepted, or inferred after rejecting an override without retaining its value. */
   source_context_source: TelemetrySourceContextSource;
   /** Value that configures or reports installation id for this contract. */
   installation_id: string;
@@ -813,6 +816,7 @@ function normalizeTelemetryErrorCategory(params: {
   return "unknown";
 }
 
+/** Resolve explicit attribution and explain rejected input without retaining its value. */
 function resolveTelemetrySourceContext(
   globalOptions: GlobalOptions,
 ): ResolvedTelemetrySourceContext {
@@ -825,31 +829,38 @@ function resolveTelemetrySourceContext(
       source_context_source: "env_override",
     };
   }
+  const source = override.length > 0 ? "env_override_rejected" : "inferred";
+  if (source === "env_override_rejected" && !sourceContextWarningEmitted &&
+    !globalOptions.json && !globalOptions.quiet) {
+    sourceContextWarningEmitted = true;
+    process.stderr.write(
+      `[pm] warning: PM_TELEMETRY_SOURCE_CONTEXT is not one of ${PM_TELEMETRY_SOURCE_CONTEXT_VALUES.join("|")}; ignoring override.\n`,
+    );
+  }
+  return {
+    source_context: inferTelemetrySourceContext(globalOptions),
+    source_context_source: source,
+  };
+}
+
+/** Infer test, automated, or interactive execution from the process and output mode. */
+function inferTelemetrySourceContext(globalOptions: GlobalOptions): TelemetrySourceContext {
   const nodeEnv = (process.env.NODE_ENV ?? "").trim().toLowerCase();
   if (
     typeof process.env.VITEST === "string" ||
     typeof process.env.VITEST_WORKER_ID === "string" ||
     nodeEnv === "test"
   ) {
-    return {
-      source_context: "test",
-      source_context_source: "inferred",
-    };
+    return "test";
   }
   const nonTty = process.stdin.isTTY !== true || process.stdout.isTTY !== true;
   const ci = parseBooleanTrueLike(process.env.CI);
   const scriptLikeMode =
     globalOptions.json === true || globalOptions.quiet === true;
   if (nonTty || ci || scriptLikeMode) {
-    return {
-      source_context: "automation",
-      source_context_source: "inferred",
-    };
+    return "automation";
   }
-  return {
-    source_context: "user",
-    source_context_source: "inferred",
-  };
+  return "user";
 }
 
 function hashWithInstallationId(installationId: string, value: string): string {
@@ -1531,20 +1542,22 @@ async function ensureInstallationId(globalPmRoot: string): Promise<{
   endpoint: string;
   retentionDays: number;
 }> {
-  const settings = await readSettings(globalPmRoot);
-  let changed = false;
-  if (settings.telemetry.installation_id.trim().length === 0) {
-    settings.telemetry.installation_id = crypto.randomUUID();
-    changed = true;
-  }
-  if (changed) {
-    await writeSettings(globalPmRoot, settings, "telemetry:install_id");
-  }
-  return {
-    installationId: settings.telemetry.installation_id,
-    endpoint: settings.telemetry.endpoint,
-    retentionDays: Math.max(1, Math.trunc(settings.telemetry.retention_days)),
-  };
+  return withQueueMutation(async () => {
+    const settings = await readSettings(globalPmRoot);
+    let changed = false;
+    if (settings.telemetry.installation_id.trim().length === 0) {
+      settings.telemetry.installation_id = crypto.randomUUID();
+      changed = true;
+    }
+    if (changed) {
+      await writeSettings(globalPmRoot, settings, "telemetry:install_id");
+    }
+    return {
+      installationId: settings.telemetry.installation_id,
+      endpoint: settings.telemetry.endpoint,
+      retentionDays: Math.max(1, Math.trunc(settings.telemetry.retention_days)),
+    };
+  }, globalPmRoot);
 }
 
 async function enqueueTelemetryEvent(
@@ -1578,7 +1591,7 @@ async function enqueueTelemetryEvent(
   }
   await withQueueMutation(async () => {
     await appendLineAtomic(queuePath(globalPmRoot), serialized);
-  });
+  }, globalPmRoot);
 }
 
 function parseQueueLines(raw: string): QueuedTelemetryEvent[] {
@@ -1733,7 +1746,7 @@ async function enqueuePendingOtelSpan(
   }
   await withQueueMutation(async () => {
     await appendLineAtomic(otelSpansQueuePath(globalPmRoot), serialized);
-  });
+  }, globalPmRoot);
 }
 
 /** Derive a stable id for a legacy id-less pending span from its identity fields. Deterministic so the same on-disk line yields the same id across reads, which is what lets reconciliation remove/update it after a flush. */
@@ -1889,7 +1902,7 @@ async function reconcilePendingOtelSpansAfterFlush(
     );
     await rewritePendingOtelSpans(globalPmRoot, retained);
     return retained.length;
-  });
+  }, globalPmRoot);
 }
 
 async function flushPendingOtelSpans(
@@ -2039,13 +2052,28 @@ async function cleanupTelemetryQueueTempOrphans(
   }
 }
 
-async function withQueueMutation<T>(operation: () => Promise<T>): Promise<T> {
+/** Serialize complete queue transactions across processes; never hold the lock during network I/O. */
+async function withQueueMutation<T>(
+  operation: () => Promise<T>,
+  globalPmRoot = resolveGlobalPmRoot(process.cwd()),
+): Promise<T> {
   const run = _queueMutationPromise
     .catch(
       /* c8 ignore next */
       () => {},
     )
-    .then(operation);
+    .then(() => runWithIsolatedExtensionRuntime(async () => {
+      // Telemetry is installation-local infrastructure: project lock overrides
+      // and hooks must not intercept its coordination or recurse into capture.
+      const release = await acquireLock(
+        globalPmRoot, "telemetry-queue", 60, "telemetry", false, false, 5_000,
+      );
+      try {
+        return await operation();
+      } finally {
+        await release();
+      }
+    }));
   _queueMutationPromise = run.catch(
     /* c8 ignore next */
     () => {},
@@ -2079,7 +2107,7 @@ async function removeFlushedEntriesFromCurrentQueue(
     );
     await rewriteQueue(globalPmRoot, remaining);
     return remaining;
-  });
+  }, globalPmRoot);
 }
 
 async function markFailedEntriesInCurrentQueue(
@@ -2108,7 +2136,7 @@ async function markFailedEntriesInCurrentQueue(
     });
     await rewriteQueue(globalPmRoot, retried);
     return retried;
-  });
+  }, globalPmRoot);
 }
 
 async function flushQueue(
@@ -2142,10 +2170,10 @@ async function flushQueue(
     retentionDays,
   );
   if (retainedEntries.length === 0) {
-    await rewriteQueue(globalPmRoot, []);
+    const remaining = await removeFlushedEntriesFromCurrentQueue(globalPmRoot, new Set(), retentionDays);
     await writeRuntimeState(globalPmRoot, {
       endpoint: normalizedEndpoint,
-      queue_entries: 0,
+      queue_entries: remaining.length,
     });
     return;
   }
@@ -2153,12 +2181,12 @@ async function flushQueue(
     .filter((entry) => isDueForRetry(entry))
     .slice(0, TELEMETRY_FLUSH_BATCH_SIZE);
   if (dueEntries.length === 0) {
-    if (prunedCount > 0) {
-      await rewriteQueue(globalPmRoot, retainedEntries);
-    }
+    const remaining = prunedCount > 0
+      ? await removeFlushedEntriesFromCurrentQueue(globalPmRoot, new Set(), retentionDays)
+      : retainedEntries;
     await writeRuntimeState(globalPmRoot, {
       endpoint: normalizedEndpoint,
-      queue_entries: retainedEntries.length,
+      queue_entries: remaining.length,
     });
     return;
   }
@@ -2606,7 +2634,7 @@ export async function startTelemetryCommand(
   }
 }
 
-/** Complete an invocation after rechecking consent, retaining every failed read and weighting selected successful pairs. */
+/** Complete an invocation only while process consent, saved consent, and its installation identity still agree; retain failed reads and weight selected successful pairs. */
 export async function finishTelemetryCommand(
   activeCommand: ActiveTelemetryCommand | null,
   outcome: TelemetryCommandOutcome,
@@ -2615,6 +2643,12 @@ export async function finishTelemetryCommand(
     return;
   }
   try {
+    const settings = await readSettings(activeCommand.global_pm_root);
+    if (!settings.telemetry.enabled ||
+      settings.telemetry.installation_id !== activeCommand.installation_id) {
+      deferredReadStarts.delete(activeCommand);
+      return;
+    }
     const deferredStart = deferredReadStarts.get(activeCommand);
     const sampleRate = outcome.ok ? activeCommand.sample_rate ?? 1 : 1;
     if (deferredStart) {
