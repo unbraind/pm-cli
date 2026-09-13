@@ -1,0 +1,24 @@
+id: pm-utxk3h
+title: Investigate missing command-start delivery during concurrent telemetry flushing
+description: "Live backend correlation for a bounded invocation window found 102 complete pairs and one comments finish without its start. Pairing used installation, process session, canonical command, and the finish started_at timestamp. The local event queue was empty and did not retain that start. Source inspection shows process-local mutation serialization around queue rewrites; cross-process append-versus-rewrite loss is a hypothesis requiring deterministic reproduction."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-09-13T09:41:11.342Z"
+updated_at: "2026-09-13T09:42:24.423Z"
+author: "harness:codex"
+acceptance_criteria: "Reproduce missing lifecycle events with isolated concurrent processes and a local collector; preserve events across append, successful flush, retry, retention pruning, and span rewriting; verify paired production probes and exact coverage without weakening consent or timeout guarantees"
+goal: project management = context management
+objective: Make event delivery completeness independently verifiable under concurrent CLI use
+value: Trustworthy action histories beyond aggregate success rates
+parent: pm-5oj5
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5oj5,implements,"2026-09-13T09:41:11.342Z","harness:codex","cli:create:dep",detected
+  pm-bwkmp4,discovered_from,"2026-09-13T09:41:11.342Z","harness:codex","cli:create:dep",detected
+  pm-u5c27w,discovered_from,"2026-09-13T09:41:11.342Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-13T09:41:11.342Z","harness:codex","Duplicate check: complete 2756-item all-status export and request-specific telemetry queue/concurrency searches found no active owner for missing start delivery. The closed flush-receipt predecessor covers truthful drain counts, not cross-process event preservation. This intake records observed evidence without claiming an established root cause or remediation."
+files[1]{path,scope,note}:
+  src/core/telemetry/runtime.ts,project,Inspect cross-process queue append and rewrite coordination; root cause is not yet established
+body: ""

@@ -6,7 +6,7 @@
  * last so `log` never prefers `catalog` over item history commands.
  */
 import { levenshteinDistanceWithinLimit } from "../../core/shared/levenshtein.js";
-import { resolvePmCommandOperation } from "../cli-contracts/command-aliases.js";
+import { PM_COMMAND_ALIAS_CONTRACTS, resolvePmCommandOperation } from "../cli-contracts/command-aliases.js";
 
 const COMMAND_SYNONYMS: Readonly<Record<string, readonly string[]>> = {
   add: ["create", "append"],
@@ -19,6 +19,7 @@ const COMMAND_SYNONYMS: Readonly<Record<string, readonly string[]>> = {
   remove: ["delete"],
   rm: ["delete"],
   show: ["get"],
+  start: ["start-task"],
 };
 
 /** Score one command path for a guessed command token; lower is better. */
@@ -66,4 +67,22 @@ export function rankCommandPaths(
       return left.path < right.path ? -1 : 1;
     })
     .map((entry) => entry.path);
+}
+
+/** Replace migration-only candidate prefixes with installed canonical paths, retaining required composition flags. */
+export function canonicalizeCommandSuggestions(
+  candidates: readonly string[],
+  availablePaths: readonly string[],
+): string[] {
+  const available = new Set(availablePaths);
+  const aliases = PM_COMMAND_ALIAS_CONTRACTS
+    .filter((alias) => alias.lifecycle === "deprecated")
+    .slice().sort((left, right) => right.alias.length - left.alias.length);
+  return [...new Set(candidates.flatMap((candidate) => {
+    const alias = aliases.find((entry) => candidate === entry.alias || candidate.startsWith(`${entry.alias} `));
+    if (!alias) return [candidate];
+    const suffix = candidate.slice(alias.alias.length);
+    if (!available.has(`${alias.canonical}${suffix}`)) return [];
+    return [`${alias.canonical_argv.join(" ")}${suffix}`];
+  }))];
 }

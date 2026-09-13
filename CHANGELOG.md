@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Refresh Node types 26.5.1, YAML 2.9.1, and fast-check 4.10.0 ([pm-7ej0mh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7ej0mh.toon))
+
+### Fixed
+
+- Compact default list receipts and avoid repeated recovery argument echoes ([pm-4f86c4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4f86c4.toon))
+- Canonicalize unknown-command recovery with replacement flags ([pm-zsic8h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zsic8h.toon))
+- Allow non-colliding extension leaves beneath core command groups ([pm-bwkmp4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bwkmp4.toon))
+
 ## 2026.9.13 - 2026-09-13
 
 ### Fixed

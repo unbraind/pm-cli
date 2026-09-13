@@ -446,6 +446,29 @@ function projectLinkedTestEvidence(value: unknown, lean: boolean): unknown {
   };
 }
 
+/** Collapse only successful standard list receipts; retain warnings, custom fields, filters, and bounded-read diagnostics. */
+function projectCompleteBriefList(value: unknown): unknown {
+  if (!isPlainObject(value) || !Array.isArray(value.items) ||
+      !isPlainObject(value.projection) || value.projection.mode !== "brief" ||
+      !isPlainObject(value.completeness) || value.completeness.status !== "complete" ||
+      value.completeness.unreadable_item_count !== 0 || value.completeness.unreadable_directory_count !== 0 ||
+      [value.has_more, value.truncated].some((flag) => flag !== false) ||
+      value.count !== value.items.length || value.total !== value.count ||
+      !isPlainObject(value.omission_receipt) ||
+      JSON.stringify(value.omission_receipt.omitted_field_groups) !== JSON.stringify([{ name: "full_item_fields", restore_with: "--full" }])) {
+    return value;
+  }
+  const { total: _total, has_more: _hasMore, truncated: _truncated,
+    next_cursor: _nextCursor, completeness: _completeness,
+    projection: _projection, now: _now, omission_receipt: _omissions,
+    sorting, ...rest } = value;
+  return {
+    ...rest,
+    ...(isPlainObject(sorting) && sorting.sort === "default" ? {} : { sorting }),
+    details: "--full",
+  };
+}
+
 /**
  * Render a result with pm's built-in JSON or TOON formatter without invoking
  * extension overrides. SDK budget accounting uses this exact representation
@@ -458,7 +481,7 @@ export function formatBuiltInOutput(
   if (format === "json") {
     return `${JSON.stringify(result, null, 2)}\n`;
   }
-  const compactedToon = compactToonValue(result);
+  const compactedToon = compactToonValue(projectCompleteBriefList(result));
   return compactedToon === undefined
     ? "{}\n"
     : `${renderToonValue(compactedToon, 0)}\n`;

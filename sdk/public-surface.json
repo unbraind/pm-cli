@@ -4025,6 +4025,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "canonicalizeCommandSuggestions",
+          "signature": "(candidates: readonly string[], availablePaths: readonly string[]) => string[] | calls: (candidates: readonly string[], availablePaths: readonly string[]) => string[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "canonicalizeContextRecencyCoordinate",
           "signature": "(value: unknown) => string | null | calls: (value: unknown) => string | null"
         },

@@ -499,7 +499,7 @@ function renderRecoveryBundle(
   appendRecoveryListLine(
     lines,
     "normalized_args",
-    normalized.normalized_args,
+    normalized.attempted_command ? undefined : normalized.normalized_args,
     " ",
   );
   if (
