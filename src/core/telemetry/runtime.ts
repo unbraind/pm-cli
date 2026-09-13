@@ -831,7 +831,7 @@ function resolveTelemetrySourceContext(
   }
   const source = override.length > 0 ? "env_override_rejected" : "inferred";
   if (source === "env_override_rejected" && !sourceContextWarningEmitted &&
-    !globalOptions.json && !globalOptions.quiet) {
+    !globalOptions.quiet) {
     sourceContextWarningEmitted = true;
     process.stderr.write(
       `[pm] warning: PM_TELEMETRY_SOURCE_CONTEXT is not one of ${PM_TELEMETRY_SOURCE_CONTEXT_VALUES.join("|")}; ignoring override.\n`,
@@ -1537,6 +1537,7 @@ function buildCommandErrorPayload(params: {
   };
 }
 
+/** Reuse or initialize one installation identity under the queue mutex and return delivery settings from that same saved snapshot. */
 async function ensureInstallationId(globalPmRoot: string): Promise<{
   installationId: string;
   endpoint: string;
@@ -1560,6 +1561,7 @@ async function ensureInstallationId(globalPmRoot: string): Promise<{
   }, globalPmRoot);
 }
 
+/** Serialize a new event, shorten an oversized result summary, and append under the installation mutex so reconciliation cannot replace the append. */
 async function enqueueTelemetryEvent(
   globalPmRoot: string,
   event: TelemetryEvent,
@@ -1866,7 +1868,6 @@ async function rewritePendingOtelSpans(
   }
 }
 
-/** Drain the pending OTLP span queue and POST due spans to their traces endpoint. Runs only inside the flush worker (detached child) or the inline test path, so the foreground command never makes OTLP network calls. Failures increment per-span attempts with backoff and are retried by a later flush; runtime state records OTLP export diagnostics for `pm health` (GH-205). */
 /** Re-read the spans queue under the mutation serializer and rewrite it with the processed spans removed/updated by id, preserving any spans a concurrent foreground process appended during the (network) flush window. `succeededIds` are dropped; `failedUpdates` patch attempts/next_attempt_after by id; all other (incl. newly-appended) entries are retained, then pruned. Returns the count of spans left in the queue. Mirrors removeFlushedEntriesFromCurrentQueue. */
 async function reconcilePendingOtelSpansAfterFlush(
   globalPmRoot: string,
@@ -1905,6 +1906,7 @@ async function reconcilePendingOtelSpansAfterFlush(
   }, globalPmRoot);
 }
 
+/** POST due spans outside the mutation mutex, then reconcile successes and retry metadata against the current queue; publish export diagnostics for health inspection. */
 async function flushPendingOtelSpans(
   globalPmRoot: string,
   retentionDays: number,
@@ -2091,6 +2093,7 @@ async function readCurrentQueueEntries(
   return parseQueueLines(raw);
 }
 
+/** Remove acknowledged event IDs and expired entries from a fresh locked snapshot, returning the retained queue including intervening appends. */
 async function removeFlushedEntriesFromCurrentQueue(
   globalPmRoot: string,
   flushedIds: ReadonlySet<string>,
@@ -2110,6 +2113,7 @@ async function removeFlushedEntriesFromCurrentQueue(
   }, globalPmRoot);
 }
 
+/** Advance retry metadata only for failed IDs in a fresh locked snapshot, preserving intervening appends and pruning expired events. */
 async function markFailedEntriesInCurrentQueue(
   globalPmRoot: string,
   failedIds: ReadonlySet<string>,
@@ -2139,6 +2143,7 @@ async function markFailedEntriesInCurrentQueue(
   }, globalPmRoot);
 }
 
+/** Send one due event batch without holding the mutation mutex, then reconcile its result against the current queue and record delivery diagnostics. */
 async function flushQueue(
   globalPmRoot: string,
   endpoint: string,

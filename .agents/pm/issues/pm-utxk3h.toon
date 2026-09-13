@@ -6,18 +6,18 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-13T09:41:11.342Z"
-updated_at: "2026-09-13T22:39:20.205Z"
-closed_at: "2026-09-13T22:29:59.173Z"
-completed_at: "2026-09-13T22:29:59.173Z"
+updated_at: "2026-09-13T23:36:35.433Z"
+closed_at: "2026-09-13T23:36:34.248Z"
+completed_at: "2026-09-13T23:36:34.248Z"
 author: "harness:codex"
 acceptance_criteria: "Reproduce missing lifecycle events with isolated concurrent processes and a local collector; preserve events across append, successful flush, retry, retention pruning, and span rewriting; verify paired production probes and exact coverage without weakening consent or timeout guarantees"
 goal: project management = context management
 objective: Make event delivery completeness independently verifiable under concurrent CLI use
 value: Trustworthy action histories beyond aggregate success rates
 parent: pm-5oj5
-resolution: "Serialize installation identity and queue transactions across processes; reconcile current event and OTLP queues for successful delivery, retries, and retention"
-expected_result: Concurrent appends survive reconciliation and independent invocations retain lifecycle pairs
-actual_result: "Independent-process regressions and real collector pass; production probe has 4 starts, 4 finishes, 4 exact matches and empty local queue; 8832 tests pass at 100/100/100/100 coverage"
+resolution: Preserve concurrent event/span queue transactions and cold identity; isolate collector fixture credentials and document transaction boundaries
+expected_result: Concurrent lifecycle events survive rewrites and loopback tests cannot inherit production ingest credentials
+actual_result: "Synthetic credential regression, independent-process pairing, full 8832 tests at exact coverage, and packed npm/Bun acceptance pass; local timing limitation and reviewer quotas are explicitly recorded"
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-5oj5,implements,"2026-09-13T09:41:11.342Z","harness:codex","cli:create:dep",detected
   pm-bwkmp4,discovered_from,"2026-09-13T09:41:11.342Z","harness:codex","cli:create:dep",detected
@@ -26,7 +26,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-do5b,verifies,"2026-09-13T22:13:45.043Z","harness:codex","cli:update:dep",detected
   pm-fokyhh,verifies,"2026-09-13T22:13:45.043Z","harness:codex","cli:update:dep",detected
   pm-ksr40d,verifies,"2026-09-13T22:13:45.043Z","harness:codex","cli:update:dep",detected
-comments[11]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-09-13T09:41:11.342Z","harness:codex","Duplicate check: complete 2756-item all-status export and request-specific telemetry queue/concurrency searches found no active owner for missing start delivery. The closed flush-receipt predecessor covers truthful drain counts, not cross-process event preservation. This intake records observed evidence without claiming an established root cause or remediation."
   "2026-09-13T21:19:08.864Z","harness:codex","Live scope evidence: complete CLI export read all 2757 items across open draft closed and canceled statuses with zero omissions or unreadable items. Existing canonical telemetry and closed flush-receipt lineage reused. GitHub has zero open PRs and zero open Dependabot code-scanning or secret-scanning alerts; all six open issues already include canonical PM links. Source inspection identifies process-local queue serialization and two stale retention rewrites; isolated subprocess negative controls are being executed before closure."
   "2026-09-13T21:34:53.119Z","harness:codex","Continuation authorized: user approved takeover of the prior session claim. Current bootstrap and 40 focused tests pass, including independent-process event preservation and loopback collector lifecycle pairing. Full all-status CLI export contains 2757 items with complete reads and no omissions. GitHub has no open PRs or security alerts; all six open issues have canonical PM links. Full coverage and static validation are running; no completion or publication is claimed."
@@ -38,6 +38,11 @@ comments[11]{created_at,author,text}:
   "2026-09-13T22:19:17.701Z","harness:codex","Bounded production proof 2026-09-13T22:17:43.806Z through 22:17:45.188Z: four concurrent real CLI get invocations delivered four starts and four finishes, with four exact backend matches by installation, process session, canonical command, and finish started_at. The physical local events queue was zero bytes after flush. This establishes this probe window only, not historical completeness. Typecheck, graph composition, record integrity, and fresh tracked-secret scanning pass; full coverage remains running."
   "2026-09-13T22:26:58.999Z","harness:codex","Final stable-build coverage passed: 687 test files and 8832 tests; statements 64400/64400, branches 49138/49138, functions 13385/13385, lines 61677/61677. Exact coverage gate passed 100/100/100/100. All linked concurrency tests, packed npx/bunx smoke, isolated npm/Bun CLI and SDK acceptance, typecheck, graph composition, record integrity, secret scan, dependency audit, and bounded production pair correlation pass. Hosted review and merge are still pending."
   "2026-09-13T22:39:20.205Z","harness:codex","Final static disposition: ESLint, zero-duplication, source/documentation assurance, contracts, package boundaries, command grammar, refusal negative controls, token checks, tracker context, gate registry, and SDK public surface passed. SDK import-cost rerun passed all 10 entrypoints after a transient 230ms versus 226ms merge-import result. CLI timing still exceeds unchanged local limits for get/context/next/create; the separately built unchanged base reproduces this class of failure. No threshold or waiver changed. Hosted exact-head checks remain required before merge."
+  "2026-09-13T23:03:56.912Z","harness:codex","PR https://github.com/unbraind/pm-cli/pull/1256 first hosted head passed every required check, including static, coverage, platform smokes, CodeQL, Trivy, secret scanning, CodeFactor and DeepScan. CodeRabbit identified inherited ingest credentials in the local collector fixture; a synthetic-key negative control reproduces the header. Its scope-splitting suggestion conflicts with the requested combined PM tranche. Greptile CLI, Sourcery full review and Cubic report exhausted review quotas; these are unavailable reviews, not approvals."
+  "2026-09-13T23:06:27.186Z","harness:codex","Review correction uses a synthetic parent ingest key and records only header presence at the loopback collector. The negative control fails before child environment isolation and the implementation now clears the child key. Added docstrings for touched internal identity, event enqueue, flush and reconciliation functions, and corrected an OTLP flush docstring previously attached to reconciliation. No production credential was used for the reproduction."
+  "2026-09-13T23:21:46.393Z","harness:codex","Review correction verification passed: collector regression injects a synthetic parent credential and confirms no ingest header reaches the loopback server after child environment isolation. Full 8832-test regression across 687 files passes at exact 100/100/100/100, with strict ESLint and typecheck. Packed npm/Bun lifecycle, public SDK consent and JSON-warning acceptance pass. CodeRabbit review metadata records one included review per hour and zero remaining after the first full review; a fresh head still requires a new review request and an explicit provider outcome."
+  "2026-09-13T23:25:29.647Z","harness:codex","Fresh post-fix observability check passes: Sentry access is valid with zero unresolved critical/high issues in the configured recent window; required telemetry reports 2.18 percent finish errors and zero failures missing error codes. This aggregate check remains separate from the earlier exact four-pair production correlation and physical queue proof."
+  "2026-09-13T23:36:33.136Z","harness:codex","Final follow-up static disposition: all preceding functional/source/documentation/contract checks and all 10 SDK import-cost entrypoints pass; only the known local CLI timing gate fails (get 402/362ms, context 462/433ms, next 503/440ms, create 425/398ms, claim 438/415ms). The unchanged base already reproduced comparable failures. No timing threshold or waiver was changed; the new hosted head remains required."
 notes[1]{created_at,author,text}:
   "2026-09-13T21:55:43.438Z","harness:codex","Graph context check used all 2757 live exported records before new intake: every record had at least one parent or dependency connection. Typed lineage already includes implements, discovered_from, verifies, supersedes, recurs_from, blocks, blocked_by, and incident_from. Graph audit returned two informational legacy hierarchy advisories. Enrichment must express evidence-backed semantics; do not inflate edge counts or depth with invented dependencies."
 learnings[2]{created_at,author,text}:
@@ -65,7 +70,7 @@ test_runs[1]:
       node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/CONFIGURATION.md,project,Queue coordination guarantees and best-effort limits
-close_reason: Implementation and regression evidence complete; closure is submitted with this branch for hosted review and merge
+close_reason: Queue preservation and review corrections verified locally; submitted with refreshed evidence for hosted review
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

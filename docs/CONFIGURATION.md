@@ -168,10 +168,11 @@ Telemetry is enabled by default. Use `pm config set telemetry-tracking off` to o
 | `OTEL_EXPORTER_OTLP_ENDPOINT`        | URL                                           | Base OTLP endpoint; the traces endpoint is derived by appending `/v1/traces`.                                                                   |
 | `OTEL_SERVICE_NAME`                  | string                                        | `service.name` attribute on exported spans (defaults to `pm-cli`).                                                                              |
 
-Unrecognized source-context overrides produce one bounded warning per process in
-human output, naming the accepted values without echoing the rejected input.
-JSON and quiet invocations suppress that warning; events and spans still carry
-the fixed rejection marker. Empty overrides mean no override. Existing consent
+Unrecognized source-context overrides produce one bounded warning per process on
+stderr, naming the accepted values without echoing the rejected input. JSON
+invocations retain parseable stdout and receive the warning on stderr. Explicit
+quiet mode suppresses the warning; events and spans still carry the fixed
+rejection marker. Empty overrides mean no override. Existing consent
 rules continue to suppress all capture when telemetry is disabled.
 
 Event and OTLP queue appends and reconciliation share an installation-level

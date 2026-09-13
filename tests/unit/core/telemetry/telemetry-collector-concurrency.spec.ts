@@ -4,17 +4,21 @@ import { createServer } from "node:http";
 import path from "node:path";
 import { promisify } from "node:util";
 import { pathToFileURL } from "node:url";
-import { expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
 import { withTempGlobalRoot } from "../../../helpers/temp.js";
 
 const execFileAsync = promisify(execFile);
 const primitivesUrl = pathToFileURL(path.resolve("dist/sdk/runtime-primitives.js")).href;
 const telemetryUrl = pathToFileURL(path.resolve("dist/core/telemetry/runtime.js")).href;
+afterEach(() => { vi.unstubAllEnvs(); });
 
 it("delivers every concurrent SDK lifecycle pair with one cold-installation identity", async () => {
+  vi.stubEnv("PM_TELEMETRY_INGEST_KEY", "synthetic-parent-key");
+  let credentialHeaderSeen = false;
   const events = new Map<string, { event_type: string; installation_id: string; session_id: string; payload: Record<string, unknown> }>();
   const server = createServer(async (request, response) => {
+    credentialHeaderSeen ||= request.headers["x-pm-telemetry-key"] !== undefined;
     const chunks: Buffer[] = [];
     for await (const chunk of request) chunks.push(Buffer.from(chunk as Uint8Array));
     const body = JSON.parse(Buffer.concat(chunks).toString()) as { events: Array<{ event_id: string; event_type: string; installation_id: string; session_id: string; payload: Record<string, unknown> }> };
@@ -35,7 +39,7 @@ it("delivers every concurrent SDK lifecycle pair with one cold-installation iden
         import { startTelemetryCommand, finishTelemetryCommand } from ${JSON.stringify(primitivesUrl)};
         import { flushTelemetryQueueNow, waitForPendingFlush } from ${JSON.stringify(telemetryUrl)};
         const root = process.argv[1];
-        const active = await startTelemetryCommand({ command: "create", pm_version: "fixture", args: [], options: {}, global: { json: true }, pm_root: root });
+        const active = await startTelemetryCommand({ command: "create", pm_version: "fixture", args: [], options: {}, global: { json: true, quiet: true }, pm_root: root });
         if (!active) throw new Error("Capture unexpectedly disabled");
         await finishTelemetryCommand(active, { ok: true, result: { changed: true } });
         await waitForPendingFlush();
@@ -43,9 +47,10 @@ it("delivers every concurrent SDK lifecycle pair with one cold-installation iden
       `, root], {
         cwd: root,
         timeout: 20_000,
-        env: { ...process.env, PM_PATH: root, PM_GLOBAL_PATH: root, DO_NOT_TRACK: "0", PM_NO_TELEMETRY: "0", PM_TELEMETRY_DISABLED: "0", PM_TELEMETRY_SEND_TEST_EVENTS: "1", PM_TELEMETRY_SOURCE_CONTEXT: "private-fixture-context", PM_TELEMETRY_INLINE_FLUSH: "1", PM_TELEMETRY_OTEL_DISABLED: "1", PM_LOCK_WAIT_MS: "5000" },
+        env: { ...process.env, PM_PATH: root, PM_GLOBAL_PATH: root, DO_NOT_TRACK: "0", PM_NO_TELEMETRY: "0", PM_TELEMETRY_DISABLED: "0", PM_TELEMETRY_SEND_TEST_EVENTS: "1", PM_TELEMETRY_SOURCE_CONTEXT: "private-fixture-context", PM_TELEMETRY_INLINE_FLUSH: "1", PM_TELEMETRY_OTEL_DISABLED: "1", PM_TELEMETRY_INGEST_KEY: "", PM_LOCK_WAIT_MS: "5000" },
       })));
       expect(runs.every((run) => run.stderr === "")).toBe(true);
+      expect(credentialHeaderSeen).toBe(false);
       expect(events.size).toBe(8);
       expect(new Set([...events.values()].map((event) => event.installation_id)).size).toBe(1);
       const sessions = new Set([...events.values()].map((event) => event.session_id));
