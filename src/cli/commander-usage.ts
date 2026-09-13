@@ -606,7 +606,7 @@ function resolveUnknownCommandCandidates(params: {
     ...semanticCandidates,
     ...rankedCandidates,
     ...installedPackageCandidates,
-  ], params.commandPaths).filter((path) => !params.normalizedUnknown.includes(" ") || path !== params.normalizedUnknown);
+  ], params.commandPaths, params.primaryToken).filter((path) => !params.normalizedUnknown.includes(" ") || path !== params.normalizedUnknown);
 }
 
 function resolveUnknownCommandFallbacks(commandPaths: string[]): string[] {

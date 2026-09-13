@@ -448,10 +448,10 @@ function projectLinkedTestEvidence(value: unknown, lean: boolean): unknown {
 
 /** Collapse only successful standard list receipts; retain warnings, custom fields, filters, and bounded-read diagnostics. */
 function projectCompleteBriefList(value: unknown): unknown {
-  if (!isPlainObject(value) || !Array.isArray(value.items) ||
+  if (!isPlainObject(value) || !Array.isArray(value.items) || Object.hasOwn(value, "details") ||
       !isPlainObject(value.projection) || value.projection.mode !== "brief" ||
       !isPlainObject(value.completeness) || value.completeness.status !== "complete" ||
-      value.completeness.unreadable_item_count !== 0 || value.completeness.unreadable_directory_count !== 0 ||
+      [value.completeness.unreadable_item_count, value.completeness.unreadable_directory_count].some((count) => count !== 0) ||
       [value.has_more, value.truncated].some((flag) => flag !== false) ||
       value.count !== value.items.length || value.total !== value.count ||
       !isPlainObject(value.omission_receipt) ||

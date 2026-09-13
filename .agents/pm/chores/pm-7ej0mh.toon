@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[2]: dependencies,updated
 created_at: "2026-09-13T09:19:45.661Z"
-updated_at: "2026-09-13T09:50:48.594Z"
+updated_at: "2026-09-13T10:14:07.540Z"
 closed_at: "2026-09-13T09:49:54.366Z"
 completed_at: "2026-09-13T09:49:54.366Z"
 author: "harness:codex"
@@ -25,11 +25,13 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-do5b,discovered_from,"2026-09-13T09:38:33.154Z","harness:codex","cli:update:dep",detected
   pm-fokyhh,discovered_from,"2026-09-13T09:38:33.154Z","harness:codex","cli:update:dep",detected
   pm-ksr40d,discovered_from,"2026-09-13T09:38:33.154Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-13T09:19:45.661Z","harness:codex","Duplicate check: full 2755-item all-status export and request-specific CLI searches found historical dependency refreshes but no owner for this exact version set. Registry timestamps predate the normal release-age window. Vitest 5 and TypeScript 7 remain incompatible with current peer contracts; npm-package-arg 14 exceeds the supported Node 22 floor. These retain their canonical open owners."
   "2026-09-13T09:31:04.575Z","harness:codex","Updated YAML to 2.9.1, fast-check to 4.10.0, and development Node declarations to 26.5.1. Reviewed generated manifest and lockfile diff; retained published @types/node >=22 and Node >=22.18.0 support. Linked typecheck passed; pnpm audit reports zero vulnerabilities across 373 resolved dependencies. Major migrations remain owned by existing compatibility items."
   "2026-09-13T09:46:00.917Z","harness:codex","Final source verification: all 683 test files and 8808 tests passed. Exact all-source coverage is 100/100/100/100: statements 64355/64355, branches 49089/49089, functions 13372/13372, lines 61640/61640. No thresholds or exclusions were weakened. Static code, documentation, duplicate, contract, SDK surface, and performance checks passed; the initial graph prose-reference failure was corrected with typed relationships, then graph and record-integrity assurance passed. Packed consumer and hosted review evidence remain pending."
   "2026-09-13T09:49:53.272Z","harness:codex","Final local acceptance passed: context evaluation and 57 token surfaces; npx/bunx packed package smoke; separate npm and Bun tarball consumers exercising SDK canonicalization, initialization, mutations, six-line TOON, and full JSON; package-first authoring dogfood; compatibility migration with health and validation true. Reviewed delivery closure captures implementation and local verification; GitHub checks, bot review, merge, and publication are separate pending claims."
+  "2026-09-13T10:10:31.588Z","harness:codex","First reviewed delivery head 4a3aeda1ecc039cb3b8d659b6dcb5e951d6a4df0 in https://github.com/unbraind/pm-cli/pull/1254 passed all GitHub checks. Hosted analyzer gate independently confirms DeepScan zero new issues and CodeFactor zero annotations. CodeRabbit automatic review was skipped and Sourcery code review was quota-limited; neither is approval. All five available bot comment/review surfaces were reacted to and acknowledged on their GitHub surfaces. Final corrected-head review remains pending."
+  "2026-09-13T10:14:07.540Z","harness:codex","Live main branch protection is strict and requires build/runtime matrices, exact coverage, type/static/compatibility/smoke gates, Windows regression, Docs and Skills, JavaScript CodeQL, Trivy, ShellCheck, PSScriptAnalyzer, actionlint, Codecov patch, CodeFactor, DeepScan, and conversation resolution. No gate or paid GitHub feature was added, bypassed, or weakened."
 files[3]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Consume latest published pm-changelog for package-owned generation
   package.json,project,Compatible dependency declarations with preserved public Node type range

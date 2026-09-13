@@ -1994,6 +1994,13 @@
       ],
       "package_version": "2026.9.12",
       "reason": "Telemetry runtime adds an optional read inclusion probability and status exposes persisted consent plus process overrides; enabled now reports effective delivery consent so SDK diagnostics agree with capture and flush."
+    },
+    {
+      "changes": [
+        "signature ./sdk:canonicalizeCommandSuggestions"
+      ],
+      "package_version": "2026.9.13",
+      "reason": "This optional query parameter extends the new helper introduced only in this unmerged PR. Existing two-argument calls remain compatible; no published SDK signature is changed."
     }
   ],
   "entrypoints": {
@@ -4026,7 +4033,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "canonicalizeCommandSuggestions",
-          "signature": "(candidates: readonly string[], availablePaths: readonly string[]) => string[] | calls: (candidates: readonly string[], availablePaths: readonly string[]) => string[]"
+          "signature": "(candidates: readonly string[], availablePaths: readonly string[], queryToken?: string) => string[] | calls: (candidates: readonly string[], availablePaths: readonly string[], queryToken?: string) => string[]"
         },
         {
           "classification": "advanced_export",

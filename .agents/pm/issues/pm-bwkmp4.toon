@@ -6,31 +6,35 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-12T22:29:48.459Z"
-updated_at: "2026-09-13T09:49:48.171Z"
-closed_at: "2026-09-13T09:49:47.607Z"
-completed_at: "2026-09-13T09:49:47.607Z"
+updated_at: "2026-09-13T10:53:07.323Z"
+closed_at: "2026-09-13T10:53:06.797Z"
+completed_at: "2026-09-13T10:53:06.797Z"
 author: "harness:codex"
 acceptance_criteria: An extension-only ops leaf dispatches beside core ops; a true same-path collision remains refused with both owners; recovery never suggests the exact refused path.
 goal: project management = context management
 objective: Allow non-colliding extension leaves beneath core command groups
 value: Lower agent recovery cost and preserve safe customizable SDK composition
 parent: pm-n7rr
-resolution: Unique extension leaves dispatch beside core groups while core leaves remain reserved.
-expected_result: Unique extension leaves dispatch beside core groups while core leaves remain reserved.
-actual_result: "All 8808 tests passed with exact 100/100/100/100 coverage; linked tests, static/graph/record assurance, temporary published-package acceptance, npm/Bun packed SDK consumers, and compatibility checks passed. Hosted review and merge remain pending."
+resolution: Unique extension leaves compose beneath core groups while reserved core source and destination handlers retain ownership; existing core metadata augmentation and package-owned relocated facets remain supported
+expected_result: Published pm-ops works beside core commands and neither matching action metadata nor an absent metadata target can preempt namespace relocation
+actual_result: "24 focused regression assertions and the full 8809-test suite pass with exact 100 percent coverage in all four dimensions; npm, Bun, npx, bunx, published-package manual acceptance, static/type/contracts, and token gates pass. Hosted delivery evidence is retained on PR 1254."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-n7rr,implements,"2026-09-12T22:29:48.459Z","harness:codex","cli:create:dep",detected
   pm-v1yo,discovered_from,"2026-09-12T22:29:48.459Z","harness:codex","cli:create:dep",detected
   pm-v1yo,supersedes,"2026-09-13T09:19:30.277Z","harness:codex","cli:update:dep",detected
   pm-4f86c4,verifies,"2026-09-13T09:38:31.929Z","harness:codex","cli:update:dep",detected
   pm-zsic8h,verifies,"2026-09-13T09:38:31.929Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-09-12T22:29:48.459Z","harness:codex","Duplicate check: live full all-status export contained 2751 items with no omitted rows. Request-specific CLI searches and full historical metadata distinguished the existing shipped predecessor from this new report. Reuse its typed lineage; leave this intake open and unclaimed because implementation is not active."
   "2026-09-13T09:09:32.115Z","harness:codex","Implementation context: complete live all-status export contained 2755 items, no unreadable rows or omissions. Existing predecessor pm-v1yo deliberately rejected core-prefix grafts; this item refines that policy for unique leaves under existing groups while preserving core leaf ownership. GitHub has no open PRs or security alerts; all nine open issues already have canonical tracker links. Connected tranche also includes pm-zsic8h and pm-4f86c4."
   "2026-09-13T09:21:02.137Z","harness:codex","TDD and acceptance evidence: the initial regression run failed the expected new assertions before implementation. Connected focused suite now passes 144 tests. A temporary initialized workspace installed the published pm-ops package and executed ops metrics beside core ops health; three-item default list is six lines and start guidance retains claim --start. Full coverage and hosted validation remain pending. Live Sentry 14-day threshold read is accessible with zero blocking issues; required telemetry gate passes with 2.21 percent finish error rate and no missing error-code rows. This aggregate gate is not per-action correlation proof."
   "2026-09-13T09:27:45.200Z","harness:codex","Initial full suite: 8807 passing tests and one obsolete blanket namespace refusal assertion. Updated that existing contract to allow unique sibling leaves while explicitly retaining the reserved-facet handler collision assertion. No coverage result was produced by the failed suite; complete coverage remains pending."
   "2026-09-13T09:45:59.321Z","harness:codex","Final source verification: all 683 test files and 8808 tests passed. Exact all-source coverage is 100/100/100/100: statements 64355/64355, branches 49089/49089, functions 13372/13372, lines 61640/61640. No thresholds or exclusions were weakened. Static code, documentation, duplicate, contract, SDK surface, and performance checks passed; the initial graph prose-reference failure was corrected with typed relationships, then graph and record-integrity assurance passed. Packed consumer and hosted review evidence remain pending."
   "2026-09-13T09:49:46.608Z","harness:codex","Final local acceptance passed: context evaluation and 57 token surfaces; npx/bunx packed package smoke; separate npm and Bun tarball consumers exercising SDK canonicalization, initialization, mutations, six-line TOON, and full JSON; package-first authoring dogfood; compatibility migration with health and validation true. Reviewed delivery closure captures implementation and local verification; GitHub checks, bot review, merge, and publication are separate pending claims."
+  "2026-09-13T10:10:30.965Z","harness:codex","Sourcery guide on PR https://github.com/unbraind/pm-cli/pull/1254 requested clearer package migration guidance. Documented that existing pm-ops installations keep their namespace and commands after the core update; true conflicting leaves are renamed individually. Existing published-package and handler-ownership acceptance remains applicable."
+  "2026-09-13T10:29:54.257Z","harness:codex","Corrected delivery verification: 683 files and 8809 tests pass with exact 100/100/100/100 coverage (64360 statements, 49095 branches, 13372 functions, 61645 lines; zero uncovered). Static quality, type checks, SDK snapshot, docs links, refusal and agent-task token gates, npx/bunx smoke, independent npm/Bun packed SDK consumers, and published pm-ops manual acceptance all pass. First-head GitHub checks and hosted analyzers passed; all available first-round reports were acknowledged. Live review and merge evidence is maintained on https://github.com/unbraind/pm-cli/pull/1254."
+  "2026-09-13T10:42:24.125Z","harness:codex","TDD negative control: strengthening the real-host fixture with action=health made startup fail with Cannot install canonical command ops health: destination already exists. A reserved-but-absent metadata-only target also incorrectly returned no collision. Narrowed facet exceptions to source/destination ownership and metadata augmentation to existing nodes; package-owned search advanced remains supported."
+  "2026-09-13T10:53:06.180Z","harness:codex","Final ownership correction verified: 683 test files and 8809 tests; exact coverage statements 64361/64361, branches 49099/49099, functions 13372/13372, lines 61647/61647. No thresholds or exclusions changed. Static docstring coverage 100 percent, type checks, SDK surface, docs links, refusal closure, agent token gate, npx/bunx smoke, independent npm/Bun packed SDK consumers, and published pm-ops temporary-workspace acceptance all pass. Tracked-file secret scan found no credential-like secrets. Sentry has zero blocking critical/high issues; telemetry error rate 2.20 percent with no missing error-code rows. Completeness remains separately tracked in pm-utxk3h."
 notes[1]{created_at,author,text}:
   "2026-09-13T09:23:15.633Z","harness:codex","Namespace ownership must account for lazy registration: the early ops group has no children yet. Reserve declared core leaves before package registration, allow unique sibling leaves, and preserve intentional metadata augmentation on an already registered core node. The manual published pm-ops reproduction exposed this boundary after the first unit test passed."
 files[4]{path,scope,note}:
@@ -57,7 +61,7 @@ test_runs[1]:
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Package-owned generated release entry for verified implementation
   docs/AGENT_UX_CONTRACTS.md,project,Shared namespace ownership and package compatibility
-close_reason: Implemented and locally verified in the connected extension composition and agent recovery delivery.
+close_reason: Implemented safe extension composition and verified matching-action ownership regression through the real host
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

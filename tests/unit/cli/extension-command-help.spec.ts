@@ -84,9 +84,13 @@ describe("dynamic extension Commander options", () => {
     const ops = program.command("ops");
     expect(findExtensionCommandPathCollision(program, ["ops", "deploy"])).toBeNull();
     expect(findExtensionCommandPathCollision(program, ["ops", "health"])).toEqual({ core_path: "ops health", extension_path: "ops health" });
+    expect(buildExtensionCommandCollisionWarning(program, "ops health", new Map(), undefined)).toContain("extension_command_collision");
     let dispatched = "";
     ops.command("health").action(() => { dispatched = "core"; });
     expect(findExtensionCommandPathCollision(program, ["ops", "deploy"])).toBeNull();
+    expect(buildExtensionCommandCollisionWarning(program, "ops health", new Map(), {
+      command: "ops health", action: "health", examples: [], failure_hints: [], arguments: [], flags: [], tier: "standard", family: "extensions",
+    }, true)).toContain("extension_command_collision");
     const warnings: string[] = [];
     expect(collectSafeExtensionCommandPaths(program, ["ops health", "ops deploy"], new Map(), new Map(), (warning) => warnings.push(warning))).toEqual(["ops deploy", "ops health"]);
     expect(warnings).toEqual(["extension_command_collision:ops health:core_owner=pm-cli:ops health:extension_owner=unknown-extension"]);

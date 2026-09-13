@@ -912,14 +912,19 @@ export function buildExtensionCommandCollisionWarning(
 ): string | null {
   const pathParts = commandPath.split(" ").filter((part) => part.length > 0);
   const collision = findExtensionCommandPathCollision(root, pathParts);
-  const declaredFacet = PM_RELOCATED_COMMAND_ALIASES.some((alias) => alias.canonical === commandPath && alias.alias === descriptor?.action);
+  const existingCommand = findCommandByPath(root, pathParts);
+  const declaredFacet = PM_RELOCATED_COMMAND_ALIASES.some((alias) =>
+    alias.canonical === commandPath && alias.alias === descriptor?.action &&
+    !root.commands.some((command) => command.name() === alias.alias) &&
+    (existingCommand === null || extensionCreatedCommands.has(existingCommand)));
   // Direct canonical paths intentionally augment core help with extension flags
   // and metadata while registerCommandPath preserves the core action handler.
   // Handler collisions remain refused; declared relocated facets retain their
-  // existing registration contract and metadata-only augmentation is allowed.
+  // existing registration contract only when core does not own their source or
+  // destination. Metadata can augment an existing node, never preempt its creation.
   if (
     !collision ||
-    (collision.core_path === commandPath && !aliases.has(commandPath) && !hasHandler) ||
+    (collision.core_path === commandPath && existingCommand !== null && !aliases.has(commandPath) && !hasHandler) ||
     (declaredFacet && !aliases.has(commandPath))
   ) {
     return null;

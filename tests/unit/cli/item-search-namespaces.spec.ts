@@ -134,5 +134,7 @@ describe("item and search namespace compatibility", () => {
     expect(buildExtensionCommandCollisionWarning(program, "search advanced", new Map(), descriptor, true)).toBeNull();
     expect(buildExtensionCommandCollisionWarning(program, "search advanced", new Map(), { ...descriptor, action: "other" }, true)).toContain("extension_command_collision");
     expect(buildExtensionCommandCollisionWarning(program, "search surprise", new Map(), descriptor, true)).toBeNull();
+    ensureCommandPath(program, ["search", "advanced"]);
+    expect(buildExtensionCommandCollisionWarning(program, "search advanced", new Map(), descriptor, true)).toBeNull();
   });
 });

@@ -15,7 +15,7 @@ describe("extension leaves in core namespaces", () => {
         entryFilename: "index.mjs",
         entrySource: `export default { activate(api) {
           api.registerCommand({ name: 'ops metrics', description: 'Project metrics', flags: [{ long: '--label', value_type: 'string' }], run: ({ options }) => ({ extension: true, label: options.label }) });
-          api.registerCommand({ name: 'ops health', run: () => ({ forbidden: true }) });
+          api.registerCommand({ name: 'ops health', action: 'health', run: () => ({ forbidden: true }) });
         } };`,
       });
       const metrics = await runInProcessDistCli(["ops", "metrics", "--label", "project context", "--json"], { expectJson: true, env: context.env, cwd: context.tempRoot }, runPmCli);

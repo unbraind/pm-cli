@@ -46,6 +46,12 @@ describe("compact agent presentation", () => {
     expect(output).toContain("source warning");
   });
 
+  it("preserves producer-owned details instead of replacing them with a recovery pointer", () => {
+    const output = formatBuiltInOutput({ ...completeList, details: { provider: "extension diagnostic" } }, "toon");
+    expect(output).toContain("extension diagnostic");
+    expect(output).toContain("completeness:");
+  });
+
   it("echoes long missing-id arguments once in text while preserving structured recovery", () => {
     const value = "a long description with meaningful context";
     const context = { attemptedCommand: `pm update --description '${value}'`, normalizedInvocationArgs: ["update", "--description", value] };

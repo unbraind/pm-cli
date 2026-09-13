@@ -7,6 +7,7 @@ describe("canonical unknown-command recovery", () => {
   it("deduplicates replacements, resolves deprecated group prefixes, and excludes unavailable targets", () => {
     expect(canonicalizeCommandSuggestions(["start-task", "claim --start", "extension doctor", "list-open", "custom"], ["claim", "package doctor", "custom"])).toEqual(["claim --start", "package doctor", "custom"]);
     expect(canonicalizeCommandSuggestions([], [])).toEqual([]);
+    expect(canonicalizeCommandSuggestions(["start-task", "stats"], ["stats"], "start")).toEqual(["stats"]);
   });
 
   it("never repeats a refused nested command path in its suggestions", () => {
@@ -21,7 +22,7 @@ describe("canonical unknown-command recovery", () => {
     program.command("start-task");
     program.command("stats");
     const guidance = buildUnknownCommandGuidanceFromRuntime("unknown command 'start'", program, new Map());
-    expect(guidance?.unknownCommandExamples?.[0]).toBe("pm claim --start --help");
+    expect(guidance?.unknownCommandExamples).toEqual(["pm claim --start --help", "pm --help --all"]);
     expect(JSON.stringify(guidance)).not.toContain("start-task");
   });
 
