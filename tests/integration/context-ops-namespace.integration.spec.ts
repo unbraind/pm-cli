@@ -8,6 +8,17 @@ import { runPmCli } from "../../src/cli/main.js";
 import { runInProcessDistCli } from "../helpers/cliRunner.js";
 
 describe("native context and operations namespaces", () => {
+  it("preserves source-bound author preview results through native and legacy paths", async () => {
+    await withTempPmPath(async (context) => {
+      const results = [];
+      for (const prefix of [["history", "acknowledge"], ["history-author-acknowledge"]]) {
+        const result = await runInProcessDistCli([...prefix, "--all-actionable", "--dry-run", "--json"], { env: context.env }, runPmCli);
+        expect(result.code, result.stderr).toBe(0);
+        results.push(JSON.parse(result.stdout));
+      }
+      expect(results[0]).toEqual(results[1]);
+    });
+  });
   it("keeps permanent aliases silent while deprecated spellings still carry one suppressible hint", async () => {
     await withTempPmPath(async (context) => {
       createTaskFixture(context, "pm-hint-target", "Alias hint target");

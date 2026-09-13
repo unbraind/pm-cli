@@ -164,3 +164,31 @@ public parents. Existing worker and completion-helper spellings remain valid.
 Default contract discovery also omits internal paths; use `contracts --full` or
 an exact `contracts --command "item test worker" --flags-only` selection to
 inspect their contracts without expanding ordinary agent context.
+
+## Declared visibility and completed destinations
+
+Tracked by [pm-34xisz](../.agents/pm/issues/pm-34xisz.toon),
+[pm-3ig9b6](../.agents/pm/issues/pm-3ig9b6.toon), and
+[pm-djyvbk](../.agents/pm/tasks/pm-djyvbk.toon).
+
+A package command's declared `tier` controls SDK runtime discovery. Internal
+commands and actions are omitted from default contracts, summaries, and schemas;
+full or explicitly scoped inspection retains them and their declared tier.
+Packages need no entry in a core-only visibility list.
+
+`history acknowledge` is the canonical author-disposition command. The permanent
+`history-author-acknowledge` alias keeps the same preview/apply handshake, flags,
+results, and SDK/MCP action identity. `assurance` retains its established surface
+as a reasoned exception: measurements, assertions, gates, and verdicts are
+persistent project data, with operations beyond diagnostics.
+
+Consolidation rows are checked against a complete all-status tracker snapshot.
+A missing, closed, or canceled owner fails the grammar gate unless a declared
+alias already resolves the spelling to a live canonical command. Delivered
+leaves are classified as target paths; deliberate concise item operations carry
+explicit keep-as-is reasons. Closing an owner cannot silently certify unfinished
+command migration.
+
+Full discovery uses a uniform destination table. Its `reason` column contains
+the rationale for exceptions and an empty string where no exception applies,
+so adding a rationale does not expand every row into repeated field names.

@@ -32,6 +32,7 @@ export const PM_CLI_GRAMMAR_NOUNS = [
 
 /** Shared verbs whose meaning transfers across domain nouns. */
 export const PM_CLI_SHARED_VERBS = [
+  "acknowledge",
   "activate",
   "add",
   "adopt",
@@ -732,28 +733,26 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
     ]),
     ...destinationRows("item", "item", "consolidation", "pm-yql1", [
       "append",
-      "claim",
-      "close",
       "close-many",
       "close-task",
       "comments",
       "copy",
-      "create",
       "delete",
       "deps",
       "docs",
       "files",
-      "get",
       "learnings",
       "notes",
       "pause-task",
-      "release",
       "start-task",
       "test",
-      "update",
       "update-many",
     ]),
-    ...destinationRows("item", "item files", "consolidation", "pm-ya7x55", [
+    ...["claim", "close", "create", "get", "release", "update"].map((command): PmCommandDestinationContract => ({
+      command, noun: "item", target: command, disposition: "keep_as_is", owner: "pm-pbyu",
+      reason: "Permanent high-frequency item operations retain concise root spellings under the accepted hot-path grammar policy.",
+    })),
+    ...destinationRows("item", "item files", "target_noun", "pm-yql1", [
       "files discover",
       "files lookup",
       "item files discover",
@@ -932,18 +931,14 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "profile",
       "schema",
     ]),
-    ...destinationRows("ops", "ops assurance", "consolidation", "pm-djyvbk", [
-      "assurance",
-    ]),
-    ...destinationRows(
-      "ops",
-      "ops assurance",
-      "consolidation",
-      "pm-2tan",
-      PM_POSITIONAL_ACTION_CONTRACTS.filter(
-        ({ parent }) => parent === "assurance",
-      ).map(({ command }) => command),
-    ),
+    ...["assurance", ...PM_POSITIONAL_ACTION_CONTRACTS.filter(({ parent }) => parent === "assurance").map(({ command }) => command)].map((command): PmCommandDestinationContract => ({
+      command,
+      noun: "ops",
+      target: command,
+      disposition: "keep_as_is",
+      owner: "pm-djyvbk",
+      reason: "Assurance manages durable measurement, assertion, gate, and verdict data; retain its established domain surface independently of operational diagnostics.",
+    })),
     ...destinationRows("plan", "plan", "target_noun", "pm-pbyu", ["plan"]),
     ...destinationRows(
       "plan",

@@ -41,6 +41,7 @@ describe("canonical navigation and operations namespaces", () => {
     ["normalize", "ops", "normalize"],
     ["reindex", "ops", "reindex"],
     ["events", "history", "events"],
+    ["history-author-acknowledge", "history", "acknowledge"],
     ["update-many", "update", "many"],
     ["close-many", "close", "many"],
     ["delete", "close", "delete"],
@@ -102,6 +103,8 @@ describe("namespace contracts and shell routing", () => {
       { words: ["pm", "--pm-path", verb, noun, "--json", verb, "--"], flag },
     ]);
     cases.push(
+      { words: ["pm", "history", "acknowledge", "--"], flag: "--plan-fingerprint" },
+      { words: ["pm", "history-author-acknowledge", "--"], flag: "--plan-fingerprint" },
       { words: ["pm", "update", "many", "--"], flag: "--filter-status" },
       { words: ["pm", "close", "many", "--"], flag: "--reason" },
       { words: ["pm", "--json", "close", "delete", "--"], flag: "--dry-run" },

@@ -2,24 +2,78 @@ id: pm-djyvbk
 title: "Give assurance a declared noun placement and history-author-acknowledge a history leaf: the two live commands whose consolidation owners closed without moving them"
 description: "## Scope\nTwo live top-level commands lost their consolidation owner when the owning items closed without moving them.\n\n1. assurance is an SDK-owned governance surface (measurements, assertions, gates) with no noun in the twelve-noun grammar. Decide its placement with a recorded pbyu ruling: an ops assurance leaf (diagnostics family, where the census currently points), or a keep-as-is exception because it is a first-class data noun like plan. Whichever is chosen, the destination row flips from consolidation to target_noun or keep_as_is.\n2. history-author-acknowledge is the only history-* spelling still registered at the root. Give it a canonical leaf under the history noun (history acknowledge, matching the shared verb vocabulary) with the root spelling kept as a hidden permanent alias, and carry the relocation through contracts, completions, MCP action parity and docs.\n\n## Constraints\nZero feature loss; the help-token budget for the affected commands has zero headroom, so the new leaf's help must not exceed the text it replaces. Positional shape count stays within its budget."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[6]: "area:cli",assurance,cli,consolidation,grammar,history
 created_at: "2026-09-12T19:57:54.945Z"
-updated_at: "2026-09-12T20:13:24.550Z"
+updated_at: "2026-09-13T17:15:20.800Z"
+closed_at: "2026-09-13T17:15:20.174Z"
+completed_at: "2026-09-13T17:15:20.174Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "A pbyu ruling records where assurance lives in the noun grammar and the destination row flips from consolidation to target_noun or keep_as_is; pm history acknowledge (or the shared-verb spelling the ruling picks) is the canonical leaf; history-author-acknowledge remains executable as a hidden permanent alias with identical arguments, results and exit codes; Contracts, shell completions, MCP action parity and docs reflect the relocation and the command-grammar gate passes with no positional-shape or help-token budget growth"
 parent: pm-n7rr
 risk: low
 confidence: medium
-expected_result: assurance has a recorded noun disposition and history-author-acknowledge resolves to a canonical history leaf with its root spelling as a hidden permanent alias.
+resolution: Established history acknowledge as the canonical leaf with its permanent hidden legacy alias and retained assurance through an explicit domain-data exception.
+expected_result: "Native and legacy author-disposition paths retain arguments, fingerprints, results, action identities and completion behavior without increasing help ceilings."
+actual_result: "Native/legacy source and installed-package previews match; Bash routing and exact Zsh/Fish suites pass; contracts, SDK tuple snapshot and agent documentation reflect the shared canonical path. Full validation: 8819 tests, exact 100/100/100/100 coverage."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-3ig9b6,discovered_from,"2026-09-12T19:57:54.945Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-09-12T19:57:54.945Z","harness:claude-code","cli:create:dep",detected
   pm-tqel,supersedes,"2026-09-12T19:57:54.945Z","harness:claude-code","cli:create:dep",detected
   pm-6apl,discovered_from,"2026-09-12T20:13:24.258Z","harness:claude-code","cli:update:dep",detected
   pm-pbyu,implements,"2026-09-12T20:13:24.258Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-12T19:57:58.527Z","harness:claude-code","Duplicate check: pm-tqel (closed) consolidated history-redact/repair/compact/activity/restore and explicitly left history-author-acknowledge at the root; pm-6apl (closed) delivered the ops namespace without assurance. pm-npr3 covers init/config/schema/profile only. This task is the open owner the census rows for assurance and history-author-acknowledge now name."
+  "2026-09-13T16:06:35.066Z","harness:codex","Placement ruling: keep assurance and its declaration/verdict actions as explicit keep_as_is rows under the ops capability family because they manage persistent domain data, with no new noun or help-budget expansion. Relocate history-author-acknowledge to history acknowledge through the shared SDK alias table; retain the stable action identity and all parser options."
+  "2026-09-13T16:12:47.342Z","harness:codex","Verification: native history acknowledge and the permanent legacy spelling returned identical source-bound dry-run results through the real source CLI and separate packed npm/Bun consumers. Real Bash completion reaches the plan-fingerprint option through both spellings. Live grammar, flag invocation parity and flag lexicon gates passed; the canonical root count decreased from 27 to 26 with unchanged ceilings."
+  "2026-09-13T16:31:53.903Z","harness:codex","Full repository run exposed one stale exact Zsh subcommand-list assertion: 8814 tests passed and one expected the pre-relocation history list. Updated the existing expectation to include acknowledge; no behavior or assertion weakened. Initial run produced no coverage report and is recorded as failed proof. All three linked test runs passed independently (60 discovery, 24 native/legacy history, 26 ownership/grammar tests); the corrected shell suite and full exact coverage are rerunning."
+  "2026-09-13T16:33:04.148Z","harness:codex","Canonical grammar ruling for ADR pm-pbyu: retain assurance as keep_as_is because its measurements/assertions/gates/verdicts are durable project domain data, and place author disposition under history acknowledge using the shared acknowledge verb. Root compatibility is permanent and hidden. The gate and generated surfaces confirm no help ceiling was raised; 107 existing completion tests now pass with the canonical Zsh child included."
+  "2026-09-13T17:15:19.481Z","harness:codex","Final local validation passed 8819 tests at exact 100/100/100/100 source coverage. Repository-wide static quality, linked regressions, typecheck, 57 token-surface budgets, Trivy, ShellCheck, secret scan and documentation links passed. Newly packed npm and Bun consumers passed real extension discovery/invocation, native/legacy author preview, item creation/comments/dependencies and npx/bunx acceptance. Implementation closure is prepared for the combined reviewed PR; this does not claim publication of these candidate changes."
+learnings[1]{created_at,author,text}:
+  "2026-09-13T16:48:11.381Z","harness:codex",Namespace relocation must verify exact Zsh and Fish formatting as well as real Bash dispatch and native/legacy execution parity. Preserve stable SDK/MCP action identities and the source-bound preview fingerprint while changing the canonical command path.
+files[7]:
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/sdk/cli-contracts/command-aliases.ts
+    scope: project
+    note: Canonical history acknowledgment and permanent Commander aliases
+  - path: src/sdk/cli-contracts/grammar-contracts.ts
+    scope: project
+  - path: tests/integration/context-ops-namespace.integration.spec.ts
+    scope: project
+  - path: tests/unit/cli/command-namespaces.spec.ts
+    scope: project
+  - path: tests/unit/commands/completion-command.spec.ts
+    scope: project
+    note: Keep exact Zsh history completion expectation aligned with canonical acknowledgment
+  - path: tests/unit/sdk/history-author-completion.spec.ts
+    scope: project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/command-namespaces.spec.ts tests/integration/context-ops-namespace.integration.spec.ts tests/unit/sdk/history-author-completion.spec.ts,project,240,"harness:codex","2026-09-13T16:09:19.905Z",local_mutation,feat/sdk-command-discovery-governance
+  node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts,project,240,"harness:codex","2026-09-13T16:36:29.413Z",local_mutation,feat/sdk-command-discovery-governance
+test_runs[1]:
+  - run_id: test-local-mu0154rm-gaqks7
+    kind: test
+    status: passed
+    started_at: "2026-09-13T16:29:33.143Z"
+    finished_at: "2026-09-13T16:29:59.266Z"
+    recorded_at: "2026-09-13T16:29:59.266Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/command-namespaces.spec.ts tests/integration/context-ops-namespace.integration.spec.ts tests/unit/sdk/history-author-completion.spec.ts,schema,schema,source,local_source_ref
+docs[4]:
+  - path: docs/CLI_GRAMMAR.md
+    scope: project
+    note: Record assurance placement and history acknowledge compatibility
+  - path: docs/generated/AGENT_CAPABILITY_ROUTING.md
+    scope: project
+  - path: docs/generated/AGENT_COMMAND_SURFACE.md
+    scope: project
+  - path: docs/generated/FLAG_LEXICON_BUDGETS.md
+    scope: project
+close_reason: Completed the connected SDK command-discovery and grammar delivery with linked local evidence.
 body: ""

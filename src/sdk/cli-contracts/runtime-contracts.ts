@@ -1,7 +1,8 @@
 /**
- * @module cli/commands/contracts
+ * @module sdk/cli-contracts/runtime-contracts
  *
- * Implements the pm contracts command surface and its agent-facing runtime behavior.
+ * Assembles executable core and package contracts into bounded discovery
+ * projections shared by CLI, SDK, and MCP consumers.
  */
 import {
   EXIT_CODE,
@@ -448,6 +449,8 @@ interface RuntimeExtensionActionProbe {
 }
 
 interface ExtensionCommandContract {
+  /** Package-declared discovery tier, retained for full and scoped inspection. */
+  tier?: PmCommandVisibilityTier;
   command: string;
   action: string;
   source: {
@@ -1321,6 +1324,7 @@ function collectExtensionFlagContractsByCommand(
   return normalized;
 }
 
+/** Preserve registered package metadata and combine handler, argument, and flag contributions by command path. */
 function collectExtensionCommandContracts(
   runtimeProbe: RuntimeExtensionActionProbe,
 ): ExtensionCommandContract[] {
@@ -1362,6 +1366,7 @@ function collectExtensionCommandContracts(
           )
       : [];
     definitionsByCommand.set(command, {
+      ...(definition.tier === undefined ? {} : { tier: definition.tier }),
       command,
       action,
       source: {
@@ -1921,6 +1926,7 @@ function buildCommandFlagSurface(
   extensionFlagMap: ReturnType<typeof collectExtensionFlagContractsByCommand>,
   runtimeFieldFlagMap: Map<string, CliFlagContract[]>,
   includeSemanticMetadata: boolean,
+  extensionContracts: readonly ExtensionCommandContract[],
 ): CommandFlagSurface[] {
   const flagsByPath = new Map(extensionFlagMap);
   for (const { alias, canonical } of PM_NAMESPACED_COMMAND_ALIASES) {
@@ -1956,9 +1962,7 @@ function buildCommandFlagSurface(
         ...(includeSemanticMetadata
           ? {
               canonical_command: canonicalSummaryCommand(command),
-              visibility: resolvePmCommandVisibilityTier(
-                canonicalSummaryCommand(command),
-              ),
+              visibility: runtimeCommandVisibilityTier(command, extensionContracts),
               positionals:
                 resolvePmCommandPositionalContract(command)?.slots ?? [],
               flag_invocations: enrichCliFlagInvocationContracts(
@@ -2272,9 +2276,11 @@ async function readContractsSettings(
   }
 }
 
+/** Load the active schema and package registry, filtering discovery paths before merging equivalent actions. */
 async function resolveContractsRuntimeContext(
   global: GlobalOptions,
   pmRoot: string,
+  selection: ContractsSelection,
 ): Promise<ContractsRuntimeContext> {
   const settings = await readContractsSettings(pmRoot);
   const runtimeProbe = await resolveRuntimeExtensionActionProbe(global);
@@ -2295,7 +2301,7 @@ async function resolveContractsRuntimeContext(
       buildCreateRequiredOptionContracts(typeRegistry),
     extensionContracts,
     mergedExtensionContracts:
-      mergeExtensionContractsByAction(extensionContracts),
+      mergeExtensionContractsByAction(extensionContracts.filter((entry) => isCommandDiscoverable(selection, entry.command, extensionContracts))),
     extensionFlagMap: collectExtensionFlagContractsByCommand(
       runtimeProbe.flagRegistrations,
     ),
@@ -2333,7 +2339,7 @@ function collectContractsActionDescriptors(
     const deprecatedActions = new Set<string>(PM_DEPRECATED_TOOL_ACTIONS);
     return actionDescriptors.filter(
       (descriptor) => !deprecatedActions.has(descriptor.action) &&
-        (selection.fullOutput || resolvePmCommandVisibilityTier(descriptor.action) !== "internal"),
+        (selection.fullOutput || (mergedExtensionContracts.find((entry) => entry.action === descriptor.action)?.tier ?? resolvePmCommandVisibilityTier(descriptor.action)) !== "internal"),
     );
   }
   if (
@@ -2696,16 +2702,22 @@ function resolveContractsCommands(
   return actionContext.commandCatalog;
 }
 
+/** Resolve package-declared tiers before falling back to the built-in operation contract. */
+function runtimeCommandVisibilityTier(command: string, extensionContracts: readonly ExtensionCommandContract[]): PmCommandVisibilityTier {
+  return extensionContracts.find((entry) => resolvePmCommandOperation(entry.command) === resolvePmCommandOperation(command))?.tier ?? resolvePmCommandVisibilityTier(command);
+}
+
 /** Include internal commands only when the caller requests full or scoped inspection. */
-function isCommandDiscoverable(selection: ContractsSelection, command: string): boolean {
+function isCommandDiscoverable(selection: ContractsSelection, command: string, extensionContracts: readonly ExtensionCommandContract[]): boolean {
   return selection.fullOutput || selection.selectedCommand !== undefined ||
-    selection.selectedAction !== undefined || resolvePmCommandVisibilityTier(command) !== "internal";
+    selection.selectedAction !== undefined || runtimeCommandVisibilityTier(command, extensionContracts) !== "internal";
 }
 
 /** Hide internal plumbing and compatibility aliases in default discovery while preserving explicit inspection. */
 function resolveOutputCommands(
   selection: ContractsSelection,
   commands: string[],
+  extensionContracts: readonly ExtensionCommandContract[],
 ): string[] {
   if (
     selection.selectedCommand !== undefined ||
@@ -2721,7 +2733,7 @@ function resolveOutputCommands(
   if (selection.summary && !selection.fullOutput) {
     for (const alias of COMMAND_ALIAS_TO_CANONICAL.keys()) hiddenAliases.add(alias);
   }
-  return commands.filter((command) => !hiddenAliases.has(command) && isCommandDiscoverable(selection, command));
+  return commands.filter((command) => !hiddenAliases.has(command) && isCommandDiscoverable(selection, command, extensionContracts));
 }
 
 /** Resolve a command's summary identity through explicit namespace aliases and established root aliases. */
@@ -2931,7 +2943,7 @@ function resolveExtensionCommandContracts(
       ),
     );
   }
-  return runtime.extensionContracts.filter((entry) => isCommandDiscoverable(selection, entry.command));
+  return runtime.extensionContracts.filter((entry) => isCommandDiscoverable(selection, entry.command, runtime.extensionContracts));
 }
 
 function createContractsResult(
@@ -3082,6 +3094,7 @@ function attachFlagContractsResult(
       runtime.extensionFlagMap,
       runtime.runtimeFieldFlagMap,
       selection.selectedCommand !== undefined,
+      runtime.extensionContracts,
     );
     const commandSet = new Set(outputCommands);
     result.list_projections = (
@@ -3197,7 +3210,7 @@ function attachAgentCommandContractsResult(
   };
 }
 
-/** Implements run contracts for the public runtime surface of this module. */
+/** Assemble the requested command or action projection from the active SDK registry without exposing internal paths in default discovery. */
 export async function runContracts(
   options: ContractsCommandOptions,
   global: GlobalOptions,
@@ -3205,7 +3218,7 @@ export async function runContracts(
   const selection = resolveContractsSelection(options);
   assertSingleContractsProjection(selection);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  const runtime = await resolveContractsRuntimeContext(global, pmRoot);
+  const runtime = await resolveContractsRuntimeContext(global, pmRoot, selection);
   const actionContext = resolveContractsActionContext(selection, runtime);
   const schemaContext = resolveContractsSchemaContext(
     selection,
@@ -3213,7 +3226,7 @@ export async function runContracts(
     actionContext,
   );
   const commands = resolveContractsCommands(selection, actionContext);
-  const outputCommands = resolveOutputCommands(selection, commands);
+  const outputCommands = resolveOutputCommands(selection, commands, runtime.extensionContracts);
   const result = createContractsResult(
     selection,
     schemaContext,
@@ -3244,7 +3257,7 @@ export async function runContracts(
   if (selection.summary) {
     return result;
   }
-  const commandAliases = buildCommandAliasSurface(actionContext.commandCatalog.filter((command) => isCommandDiscoverable(selection, command)));
+  const commandAliases = buildCommandAliasSurface(actionContext.commandCatalog.filter((command) => isCommandDiscoverable(selection, command, runtime.extensionContracts)));
   if (!(selection.flagsOnly && !selection.fullOutput)) {
     attachRuntimeContractsResult(result, runtime, selection);
   }
@@ -3269,7 +3282,8 @@ export async function runContracts(
     };
   }
   if (selection.fullOutput && result.grammar_contracts) {
-    result.grammar_contracts.destinations = PM_COMMAND_DESTINATION_CONTRACTS;
+    // Uniform scalar columns preserve TOON's compact table encoding when only exceptions need a reason.
+    result.grammar_contracts.destinations = PM_COMMAND_DESTINATION_CONTRACTS.map((row) => ({ ...row, reason: row.reason ?? "" }));
   }
 
   // pm-4os2: snapshot the static MCP tool surface in the full projection so

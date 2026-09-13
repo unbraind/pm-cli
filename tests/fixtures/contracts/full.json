@@ -424,7 +424,7 @@
       "action": "history-author-acknowledge",
       "available": true,
       "cli_exposed": true,
-      "command_path": "history-author-acknowledge",
+      "command_path": "history acknowledge|history-author-acknowledge",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -1037,7 +1037,20 @@
       "aliases": [
         "ctx"
       ],
-      "canonical": "context"
+      "canonical": "context",
+      "contracts": [
+        {
+          "alias": "ctx",
+          "canonical": "context",
+          "canonical_argv": [
+            "context"
+          ],
+          "hidden": false,
+          "lifecycle": "permanent",
+          "owner": "pm-pbyu",
+          "registration": "commander"
+        }
+      ]
     },
     {
       "aliases": [
@@ -1130,6 +1143,26 @@
           "hidden": false,
           "lifecycle": "permanent",
           "owner": "pm-pbyu",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "history-author-acknowledge"
+      ],
+      "canonical": "history acknowledge",
+      "contracts": [
+        {
+          "alias": "history-author-acknowledge",
+          "canonical": "history acknowledge",
+          "canonical_argv": [
+            "history",
+            "acknowledge"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-djyvbk",
           "registration": "bootstrap"
         }
       ]
@@ -1799,6 +1832,17 @@
       "canonical": "package",
       "contracts": [
         {
+          "alias": "packages",
+          "canonical": "package",
+          "canonical_argv": [
+            "package"
+          ],
+          "hidden": false,
+          "lifecycle": "permanent",
+          "owner": "pm-pbyu",
+          "registration": "commander"
+        },
+        {
           "alias": "extension",
           "canonical": "package",
           "canonical_argv": [
@@ -1974,6 +2018,7 @@
           "health",
           "help",
           "history",
+          "history acknowledge",
           "history activity",
           "history attest",
           "history compact",
@@ -4645,6 +4690,41 @@
         },
         {
           "flag": "--format"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "history acknowledge",
+      "flags": [
+        {
+          "flag": "--event",
+          "repeatable": true
+        },
+        {
+          "flag": "--all-actionable"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--plan-fingerprint"
+        },
+        {
+          "flag": "--limit",
+          "value_type": "number"
+        },
+        {
+          "aliases": [
+            "--attributed_author"
+          ],
+          "flag": "--attributed-author"
+        },
+        {
+          "flag": "--reviewer"
+        },
+        {
+          "flag": "--reason"
         }
       ],
       "provider": "core"
@@ -12593,6 +12673,33 @@
     {
       "budget": {
         "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "history acknowledge",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "history acknowledge",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
         "budget_class": "read",
         "command": "history activity",
         "default_max_estimated_tokens": 4000,
@@ -16433,6 +16540,19 @@
       "intent_source": "command"
     },
     {
+      "command": "history acknowledge",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "flags": [
+        "--limit"
+      ],
+      "intent": "Acknowledge reviewed history authors.",
+      "intent_source": "command"
+    },
+    {
       "command": "history activity",
       "default_max_estimated_tokens": 4000,
       "default_max_estimated_tokens_by_format": {
@@ -19167,6 +19287,7 @@
     "health",
     "help",
     "history",
+    "history acknowledge",
     "history activity",
     "history attest",
     "history compact",
@@ -26124,6 +26245,7 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "item"
       },
       {
@@ -26131,6 +26253,7 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "item"
       },
       {
@@ -26138,6 +26261,7 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "item"
       },
       {
@@ -26145,6 +26269,7 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "item"
       },
       {
@@ -26152,6 +26277,7 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item append"
       },
       {
@@ -26159,27 +26285,15 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item append"
-      },
-      {
-        "command": "claim",
-        "disposition": "consolidation",
-        "noun": "item",
-        "owner": "pm-yql1",
-        "target": "item"
-      },
-      {
-        "command": "close",
-        "disposition": "consolidation",
-        "noun": "item",
-        "owner": "pm-yql1",
-        "target": "item"
       },
       {
         "command": "close-many",
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-ik19",
+        "reason": "",
         "target": "close many"
       },
       {
@@ -26187,6 +26301,7 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-ik19",
+        "reason": "",
         "target": "close many"
       },
       {
@@ -26194,6 +26309,7 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item"
       },
       {
@@ -26201,6 +26317,7 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item comments"
       },
       {
@@ -26208,6 +26325,7 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item comments"
       },
       {
@@ -26215,6 +26333,7 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-m6g87m",
+        "reason": "",
         "target": "item copy"
       },
       {
@@ -26222,20 +26341,15 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-m6g87m",
+        "reason": "",
         "target": "item copy"
-      },
-      {
-        "command": "create",
-        "disposition": "consolidation",
-        "noun": "item",
-        "owner": "pm-yql1",
-        "target": "item"
       },
       {
         "command": "delete",
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-ik19",
+        "reason": "",
         "target": "close delete"
       },
       {
@@ -26243,6 +26357,7 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-ik19",
+        "reason": "",
         "target": "close delete"
       },
       {
@@ -26250,6 +26365,7 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item deps"
       },
       {
@@ -26257,6 +26373,7 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item deps"
       },
       {
@@ -26264,6 +26381,7 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item docs"
       },
       {
@@ -26271,6 +26389,7 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item docs"
       },
       {
@@ -26278,6 +26397,7 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item files"
       },
       {
@@ -26285,20 +26405,15 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item files"
-      },
-      {
-        "command": "get",
-        "disposition": "consolidation",
-        "noun": "item",
-        "owner": "pm-yql1",
-        "target": "item"
       },
       {
         "command": "learnings",
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item learnings"
       },
       {
@@ -26306,6 +26421,7 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item learnings"
       },
       {
@@ -26313,6 +26429,7 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item notes"
       },
       {
@@ -26320,6 +26437,7 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item notes"
       },
       {
@@ -26327,13 +26445,7 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
-        "target": "item"
-      },
-      {
-        "command": "release",
-        "disposition": "consolidation",
-        "noun": "item",
-        "owner": "pm-yql1",
+        "reason": "",
         "target": "item"
       },
       {
@@ -26341,6 +26453,7 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item"
       },
       {
@@ -26348,6 +26461,7 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item test"
       },
       {
@@ -26355,20 +26469,15 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-yql1",
+        "reason": "",
         "target": "item test"
-      },
-      {
-        "command": "update",
-        "disposition": "consolidation",
-        "noun": "item",
-        "owner": "pm-yql1",
-        "target": "item"
       },
       {
         "command": "update-many",
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-ik19",
+        "reason": "",
         "target": "update many"
       },
       {
@@ -26376,34 +26485,87 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-ik19",
+        "reason": "",
         "target": "update many"
       },
       {
-        "command": "files discover",
-        "disposition": "consolidation",
+        "command": "claim",
+        "disposition": "keep_as_is",
         "noun": "item",
-        "owner": "pm-ya7x55",
+        "owner": "pm-pbyu",
+        "reason": "Permanent high-frequency item operations retain concise root spellings under the accepted hot-path grammar policy.",
+        "target": "claim"
+      },
+      {
+        "command": "close",
+        "disposition": "keep_as_is",
+        "noun": "item",
+        "owner": "pm-pbyu",
+        "reason": "Permanent high-frequency item operations retain concise root spellings under the accepted hot-path grammar policy.",
+        "target": "close"
+      },
+      {
+        "command": "create",
+        "disposition": "keep_as_is",
+        "noun": "item",
+        "owner": "pm-pbyu",
+        "reason": "Permanent high-frequency item operations retain concise root spellings under the accepted hot-path grammar policy.",
+        "target": "create"
+      },
+      {
+        "command": "get",
+        "disposition": "keep_as_is",
+        "noun": "item",
+        "owner": "pm-pbyu",
+        "reason": "Permanent high-frequency item operations retain concise root spellings under the accepted hot-path grammar policy.",
+        "target": "get"
+      },
+      {
+        "command": "release",
+        "disposition": "keep_as_is",
+        "noun": "item",
+        "owner": "pm-pbyu",
+        "reason": "Permanent high-frequency item operations retain concise root spellings under the accepted hot-path grammar policy.",
+        "target": "release"
+      },
+      {
+        "command": "update",
+        "disposition": "keep_as_is",
+        "noun": "item",
+        "owner": "pm-pbyu",
+        "reason": "Permanent high-frequency item operations retain concise root spellings under the accepted hot-path grammar policy.",
+        "target": "update"
+      },
+      {
+        "command": "files discover",
+        "disposition": "target_noun",
+        "noun": "item",
+        "owner": "pm-yql1",
+        "reason": "",
         "target": "item files"
       },
       {
         "command": "files lookup",
-        "disposition": "consolidation",
+        "disposition": "target_noun",
         "noun": "item",
-        "owner": "pm-ya7x55",
+        "owner": "pm-yql1",
+        "reason": "",
         "target": "item files"
       },
       {
         "command": "item files discover",
-        "disposition": "consolidation",
+        "disposition": "target_noun",
         "noun": "item",
-        "owner": "pm-ya7x55",
+        "owner": "pm-yql1",
+        "reason": "",
         "target": "item files"
       },
       {
         "command": "item files lookup",
-        "disposition": "consolidation",
+        "disposition": "target_noun",
         "noun": "item",
-        "owner": "pm-ya7x55",
+        "owner": "pm-yql1",
+        "reason": "",
         "target": "item files"
       },
       {
@@ -26411,6 +26573,7 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-lp4j",
+        "reason": "",
         "target": "item test worker"
       },
       {
@@ -26418,6 +26581,7 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-lp4j",
+        "reason": "",
         "target": "item test worker"
       },
       {
@@ -26425,6 +26589,7 @@
         "disposition": "target_noun",
         "noun": "list",
         "owner": "pm-pfqi",
+        "reason": "",
         "target": "list"
       },
       {
@@ -26432,6 +26597,7 @@
         "disposition": "consolidation",
         "noun": "list",
         "owner": "pm-xkgq",
+        "reason": "",
         "target": "list --group-by"
       },
       {
@@ -26439,6 +26605,7 @@
         "disposition": "target_noun",
         "noun": "context",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "context"
       },
       {
@@ -26446,6 +26613,7 @@
         "disposition": "consolidation",
         "noun": "context",
         "owner": "pm-kcs4",
+        "reason": "",
         "target": "context"
       },
       {
@@ -26453,6 +26621,7 @@
         "disposition": "consolidation",
         "noun": "context",
         "owner": "pm-kcs4",
+        "reason": "",
         "target": "context focus"
       },
       {
@@ -26460,6 +26629,7 @@
         "disposition": "target_noun",
         "noun": "context",
         "owner": "pm-kcs4",
+        "reason": "",
         "target": "context focus"
       },
       {
@@ -26467,6 +26637,7 @@
         "disposition": "consolidation",
         "noun": "context",
         "owner": "pm-kcs4",
+        "reason": "",
         "target": "context next"
       },
       {
@@ -26474,6 +26645,7 @@
         "disposition": "target_noun",
         "noun": "context",
         "owner": "pm-kcs4",
+        "reason": "",
         "target": "context next"
       },
       {
@@ -26481,6 +26653,7 @@
         "disposition": "consolidation",
         "noun": "context",
         "owner": "pm-kcs4",
+        "reason": "",
         "target": "context next"
       },
       {
@@ -26488,6 +26661,7 @@
         "disposition": "consolidation",
         "noun": "context",
         "owner": "pm-kcs4",
+        "reason": "",
         "target": "context focus"
       },
       {
@@ -26495,6 +26669,7 @@
         "disposition": "target_noun",
         "noun": "search",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "search"
       },
       {
@@ -26502,6 +26677,7 @@
         "disposition": "package_owned",
         "noun": "ops",
         "owner": "pm-3i9q8g",
+        "reason": "",
         "target": "ops reindex"
       },
       {
@@ -26509,6 +26685,7 @@
         "disposition": "package_owned",
         "noun": "ops",
         "owner": "pm-3i9q8g",
+        "reason": "",
         "target": "ops reindex"
       },
       {
@@ -26516,6 +26693,7 @@
         "disposition": "package_owned",
         "noun": "search",
         "owner": "pm-wfskfn",
+        "reason": "",
         "target": "search advanced"
       },
       {
@@ -26523,6 +26701,7 @@
         "disposition": "package_owned",
         "noun": "search",
         "owner": "pm-wfskfn",
+        "reason": "",
         "target": "search advanced"
       },
       {
@@ -26530,6 +26709,7 @@
         "disposition": "consolidation",
         "noun": "item",
         "owner": "pm-fmy9ih",
+        "reason": "",
         "target": "item duplicates"
       },
       {
@@ -26537,6 +26717,7 @@
         "disposition": "target_noun",
         "noun": "item",
         "owner": "pm-fmy9ih",
+        "reason": "",
         "target": "item duplicates"
       },
       {
@@ -26544,6 +26725,7 @@
         "disposition": "package_owned",
         "noun": "item",
         "owner": "pm-fmy9ih",
+        "reason": "",
         "target": "item duplicates audit"
       },
       {
@@ -26551,6 +26733,7 @@
         "disposition": "package_owned",
         "noun": "item",
         "owner": "pm-fmy9ih",
+        "reason": "",
         "target": "item duplicates audit"
       },
       {
@@ -26558,6 +26741,7 @@
         "disposition": "package_owned",
         "noun": "item",
         "owner": "pm-fmy9ih",
+        "reason": "",
         "target": "item duplicates merge"
       },
       {
@@ -26565,6 +26749,7 @@
         "disposition": "package_owned",
         "noun": "item",
         "owner": "pm-fmy9ih",
+        "reason": "",
         "target": "item duplicates merge"
       },
       {
@@ -26572,6 +26757,7 @@
         "disposition": "package_owned",
         "noun": "item",
         "owner": "pm-fmy9ih",
+        "reason": "",
         "target": "item audit-comments"
       },
       {
@@ -26579,6 +26765,7 @@
         "disposition": "package_owned",
         "noun": "item",
         "owner": "pm-fmy9ih",
+        "reason": "",
         "target": "item audit-comments"
       },
       {
@@ -26586,6 +26773,7 @@
         "disposition": "target_noun",
         "noun": "graph",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "graph"
       },
       {
@@ -26593,6 +26781,7 @@
         "disposition": "target_noun",
         "noun": "history",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "history"
       },
       {
@@ -26600,6 +26789,7 @@
         "disposition": "target_noun",
         "noun": "history",
         "owner": "pm-3z0k",
+        "reason": "",
         "target": "history attest"
       },
       {
@@ -26607,6 +26797,7 @@
         "disposition": "consolidation",
         "noun": "history",
         "owner": "pm-3z0k",
+        "reason": "",
         "target": "history attest"
       },
       {
@@ -26614,6 +26805,7 @@
         "disposition": "target_noun",
         "noun": "history",
         "owner": "pm-tqel",
+        "reason": "",
         "target": "history redact"
       },
       {
@@ -26621,6 +26813,7 @@
         "disposition": "consolidation",
         "noun": "history",
         "owner": "pm-tqel",
+        "reason": "",
         "target": "history redact"
       },
       {
@@ -26628,6 +26821,7 @@
         "disposition": "target_noun",
         "noun": "history",
         "owner": "pm-tqel",
+        "reason": "",
         "target": "history repair"
       },
       {
@@ -26635,6 +26829,7 @@
         "disposition": "consolidation",
         "noun": "history",
         "owner": "pm-tqel",
+        "reason": "",
         "target": "history repair"
       },
       {
@@ -26642,6 +26837,7 @@
         "disposition": "target_noun",
         "noun": "history",
         "owner": "pm-tqel",
+        "reason": "",
         "target": "history compact"
       },
       {
@@ -26649,6 +26845,7 @@
         "disposition": "consolidation",
         "noun": "history",
         "owner": "pm-tqel",
+        "reason": "",
         "target": "history compact"
       },
       {
@@ -26656,6 +26853,7 @@
         "disposition": "target_noun",
         "noun": "history",
         "owner": "pm-tqel",
+        "reason": "",
         "target": "history activity"
       },
       {
@@ -26663,6 +26861,7 @@
         "disposition": "consolidation",
         "noun": "history",
         "owner": "pm-tqel",
+        "reason": "",
         "target": "history activity"
       },
       {
@@ -26670,6 +26869,7 @@
         "disposition": "target_noun",
         "noun": "history",
         "owner": "pm-tqel",
+        "reason": "",
         "target": "history restore"
       },
       {
@@ -26677,6 +26877,7 @@
         "disposition": "consolidation",
         "noun": "history",
         "owner": "pm-tqel",
+        "reason": "",
         "target": "history restore"
       },
       {
@@ -26684,6 +26885,7 @@
         "disposition": "consolidation",
         "noun": "history",
         "owner": "pm-3i9q8g",
+        "reason": "",
         "target": "history events"
       },
       {
@@ -26691,6 +26893,7 @@
         "disposition": "target_noun",
         "noun": "history",
         "owner": "pm-3i9q8g",
+        "reason": "",
         "target": "history events"
       },
       {
@@ -26698,6 +26901,7 @@
         "disposition": "consolidation",
         "noun": "workspace",
         "owner": "pm-m6g87m",
+        "reason": "",
         "target": "workspace merge"
       },
       {
@@ -26705,6 +26909,7 @@
         "disposition": "target_noun",
         "noun": "workspace",
         "owner": "pm-m6g87m",
+        "reason": "",
         "target": "workspace merge"
       },
       {
@@ -26712,6 +26917,15 @@
         "disposition": "consolidation",
         "noun": "history",
         "owner": "pm-djyvbk",
+        "reason": "",
+        "target": "history acknowledge"
+      },
+      {
+        "command": "history acknowledge",
+        "disposition": "target_noun",
+        "noun": "history",
+        "owner": "pm-djyvbk",
+        "reason": "",
         "target": "history acknowledge"
       },
       {
@@ -26719,6 +26933,7 @@
         "disposition": "package_owned",
         "noun": "history",
         "owner": "package:builtin-vcs-exemplar",
+        "reason": "",
         "target": "history"
       },
       {
@@ -26726,6 +26941,7 @@
         "disposition": "package_owned",
         "noun": "history",
         "owner": "package:builtin-vcs-exemplar",
+        "reason": "",
         "target": "history"
       },
       {
@@ -26733,6 +26949,7 @@
         "disposition": "package_owned",
         "noun": "history",
         "owner": "package:builtin-vcs-exemplar",
+        "reason": "",
         "target": "history"
       },
       {
@@ -26740,6 +26957,7 @@
         "disposition": "package_owned",
         "noun": "history",
         "owner": "package:builtin-vcs-exemplar",
+        "reason": "",
         "target": "history"
       },
       {
@@ -26747,6 +26965,7 @@
         "disposition": "package_owned",
         "noun": "history",
         "owner": "package:builtin-vcs-exemplar",
+        "reason": "",
         "target": "history"
       },
       {
@@ -26754,6 +26973,7 @@
         "disposition": "package_owned",
         "noun": "history",
         "owner": "package:builtin-vcs-exemplar",
+        "reason": "",
         "target": "history"
       },
       {
@@ -26761,6 +26981,7 @@
         "disposition": "package_owned",
         "noun": "history",
         "owner": "package:builtin-vcs-exemplar",
+        "reason": "",
         "target": "history"
       },
       {
@@ -26768,6 +26989,7 @@
         "disposition": "target_noun",
         "noun": "workspace",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "workspace"
       },
       {
@@ -26775,6 +26997,7 @@
         "disposition": "target_noun",
         "noun": "workspace",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "workspace"
       },
       {
@@ -26782,6 +27005,7 @@
         "disposition": "target_noun",
         "noun": "workspace",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "workspace"
       },
       {
@@ -26789,6 +27013,7 @@
         "disposition": "target_noun",
         "noun": "workspace",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "workspace"
       },
       {
@@ -26796,6 +27021,7 @@
         "disposition": "target_noun",
         "noun": "workspace",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "workspace"
       },
       {
@@ -26803,6 +27029,7 @@
         "disposition": "target_noun",
         "noun": "workspace",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "workspace"
       },
       {
@@ -26810,6 +27037,7 @@
         "disposition": "target_noun",
         "noun": "workspace",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "workspace"
       },
       {
@@ -26817,6 +27045,7 @@
         "disposition": "target_noun",
         "noun": "workspace",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "workspace"
       },
       {
@@ -26824,6 +27053,7 @@
         "disposition": "consolidation",
         "noun": "workspace",
         "owner": "pm-npr3",
+        "reason": "",
         "target": "workspace init"
       },
       {
@@ -26831,6 +27061,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26838,6 +27069,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26845,6 +27077,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26852,6 +27085,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26859,6 +27093,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26866,6 +27101,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26873,6 +27109,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26880,6 +27117,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26887,6 +27125,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26894,6 +27133,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26901,6 +27141,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26908,6 +27149,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26915,6 +27157,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26922,6 +27165,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26929,6 +27173,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26936,6 +27181,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26943,6 +27189,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26950,6 +27197,7 @@
         "disposition": "target_noun",
         "noun": "package",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26957,6 +27205,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26964,6 +27213,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26971,6 +27221,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26978,6 +27229,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26985,6 +27237,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26992,6 +27245,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -26999,6 +27253,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27006,6 +27261,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27013,6 +27269,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27020,6 +27277,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27027,6 +27285,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27034,6 +27293,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27041,6 +27301,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27048,6 +27309,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27055,6 +27317,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27062,6 +27325,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27069,6 +27333,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27076,6 +27341,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27083,6 +27349,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27090,6 +27357,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27097,6 +27365,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27104,6 +27373,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27111,6 +27381,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27118,6 +27389,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27125,6 +27397,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27132,6 +27405,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27139,6 +27413,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27146,6 +27421,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27153,6 +27429,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27160,6 +27437,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27167,6 +27445,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27174,6 +27453,7 @@
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27181,6 +27461,7 @@
         "disposition": "package_owned",
         "noun": "package",
         "owner": "package:beads",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27188,6 +27469,7 @@
         "disposition": "package_owned",
         "noun": "package",
         "owner": "package:pm-changelog",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27195,6 +27477,7 @@
         "disposition": "package_owned",
         "noun": "package",
         "owner": "package:pm-changelog",
+        "reason": "",
         "target": "package"
       },
       {
@@ -27202,6 +27485,7 @@
         "disposition": "package_owned",
         "noun": "package",
         "owner": "pm-o3fh",
+        "reason": "",
         "target": "package calendar"
       },
       {
@@ -27209,6 +27493,7 @@
         "disposition": "package_owned",
         "noun": "package",
         "owner": "pm-o3fh",
+        "reason": "",
         "target": "package calendar"
       },
       {
@@ -27216,6 +27501,7 @@
         "disposition": "package_owned",
         "noun": "package",
         "owner": "pm-o3fh",
+        "reason": "",
         "target": "package calendar"
       },
       {
@@ -27223,6 +27509,7 @@
         "disposition": "target_noun",
         "noun": "ops",
         "owner": "pm-6apl",
+        "reason": "",
         "target": "ops"
       },
       {
@@ -27230,6 +27517,7 @@
         "disposition": "package_owned",
         "noun": "ops",
         "owner": "pm-3i9q8g",
+        "reason": "",
         "target": "ops normalize"
       },
       {
@@ -27237,6 +27525,7 @@
         "disposition": "package_owned",
         "noun": "ops",
         "owner": "pm-3i9q8g",
+        "reason": "",
         "target": "ops normalize"
       },
       {
@@ -27244,6 +27533,7 @@
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-6apl",
+        "reason": "",
         "target": "ops eval"
       },
       {
@@ -27251,6 +27541,7 @@
         "disposition": "target_noun",
         "noun": "ops",
         "owner": "pm-6apl",
+        "reason": "",
         "target": "ops eval"
       },
       {
@@ -27258,6 +27549,7 @@
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-6apl",
+        "reason": "",
         "target": "ops gc"
       },
       {
@@ -27265,6 +27557,7 @@
         "disposition": "target_noun",
         "noun": "ops",
         "owner": "pm-6apl",
+        "reason": "",
         "target": "ops gc"
       },
       {
@@ -27272,6 +27565,7 @@
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-6apl",
+        "reason": "",
         "target": "ops health"
       },
       {
@@ -27279,6 +27573,7 @@
         "disposition": "target_noun",
         "noun": "ops",
         "owner": "pm-6apl",
+        "reason": "",
         "target": "ops health"
       },
       {
@@ -27286,6 +27581,7 @@
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-6apl",
+        "reason": "",
         "target": "ops stats"
       },
       {
@@ -27293,6 +27589,7 @@
         "disposition": "target_noun",
         "noun": "ops",
         "owner": "pm-6apl",
+        "reason": "",
         "target": "ops stats"
       },
       {
@@ -27300,6 +27597,7 @@
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-6apl",
+        "reason": "",
         "target": "ops telemetry"
       },
       {
@@ -27307,6 +27605,7 @@
         "disposition": "target_noun",
         "noun": "ops",
         "owner": "pm-6apl",
+        "reason": "",
         "target": "ops telemetry"
       },
       {
@@ -27314,6 +27613,7 @@
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-6apl",
+        "reason": "",
         "target": "ops test-all"
       },
       {
@@ -27321,6 +27621,7 @@
         "disposition": "target_noun",
         "noun": "ops",
         "owner": "pm-6apl",
+        "reason": "",
         "target": "ops test-all"
       },
       {
@@ -27328,6 +27629,7 @@
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-6apl",
+        "reason": "",
         "target": "ops validate"
       },
       {
@@ -27335,6 +27637,7 @@
         "disposition": "target_noun",
         "noun": "ops",
         "owner": "pm-6apl",
+        "reason": "",
         "target": "ops validate"
       },
       {
@@ -27342,6 +27645,7 @@
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-npr3",
+        "reason": "",
         "target": "ops"
       },
       {
@@ -27349,6 +27653,7 @@
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-npr3",
+        "reason": "",
         "target": "ops"
       },
       {
@@ -27356,104 +27661,119 @@
         "disposition": "consolidation",
         "noun": "ops",
         "owner": "pm-npr3",
+        "reason": "",
         "target": "ops"
       },
       {
         "command": "assurance",
-        "disposition": "consolidation",
+        "disposition": "keep_as_is",
         "noun": "ops",
         "owner": "pm-djyvbk",
-        "target": "ops assurance"
+        "reason": "Assurance manages durable measurement, assertion, gate, and verdict data; retain its established domain surface independently of operational diagnostics.",
+        "target": "assurance"
       },
       {
         "command": "assurance list",
-        "disposition": "consolidation",
+        "disposition": "keep_as_is",
         "noun": "ops",
-        "owner": "pm-2tan",
-        "target": "ops assurance"
+        "owner": "pm-djyvbk",
+        "reason": "Assurance manages durable measurement, assertion, gate, and verdict data; retain its established domain surface independently of operational diagnostics.",
+        "target": "assurance list"
       },
       {
         "command": "assurance show",
-        "disposition": "consolidation",
+        "disposition": "keep_as_is",
         "noun": "ops",
-        "owner": "pm-2tan",
-        "target": "ops assurance"
+        "owner": "pm-djyvbk",
+        "reason": "Assurance manages durable measurement, assertion, gate, and verdict data; retain its established domain surface independently of operational diagnostics.",
+        "target": "assurance show"
       },
       {
         "command": "assurance put",
-        "disposition": "consolidation",
+        "disposition": "keep_as_is",
         "noun": "ops",
-        "owner": "pm-2tan",
-        "target": "ops assurance"
+        "owner": "pm-djyvbk",
+        "reason": "Assurance manages durable measurement, assertion, gate, and verdict data; retain its established domain surface independently of operational diagnostics.",
+        "target": "assurance put"
       },
       {
         "command": "assurance remove",
-        "disposition": "consolidation",
+        "disposition": "keep_as_is",
         "noun": "ops",
-        "owner": "pm-2tan",
-        "target": "ops assurance"
+        "owner": "pm-djyvbk",
+        "reason": "Assurance manages durable measurement, assertion, gate, and verdict data; retain its established domain surface independently of operational diagnostics.",
+        "target": "assurance remove"
       },
       {
         "command": "assurance run",
-        "disposition": "consolidation",
+        "disposition": "keep_as_is",
         "noun": "ops",
-        "owner": "pm-2tan",
-        "target": "ops assurance"
+        "owner": "pm-djyvbk",
+        "reason": "Assurance manages durable measurement, assertion, gate, and verdict data; retain its established domain surface independently of operational diagnostics.",
+        "target": "assurance run"
       },
       {
         "command": "assurance verdicts",
-        "disposition": "consolidation",
+        "disposition": "keep_as_is",
         "noun": "ops",
-        "owner": "pm-2tan",
-        "target": "ops assurance"
+        "owner": "pm-djyvbk",
+        "reason": "Assurance manages durable measurement, assertion, gate, and verdict data; retain its established domain surface independently of operational diagnostics.",
+        "target": "assurance verdicts"
       },
       {
         "command": "assurance presets",
-        "disposition": "consolidation",
+        "disposition": "keep_as_is",
         "noun": "ops",
-        "owner": "pm-2tan",
-        "target": "ops assurance"
+        "owner": "pm-djyvbk",
+        "reason": "Assurance manages durable measurement, assertion, gate, and verdict data; retain its established domain surface independently of operational diagnostics.",
+        "target": "assurance presets"
       },
       {
         "command": "assurance apply",
-        "disposition": "consolidation",
+        "disposition": "keep_as_is",
         "noun": "ops",
-        "owner": "pm-2tan",
-        "target": "ops assurance"
+        "owner": "pm-djyvbk",
+        "reason": "Assurance manages durable measurement, assertion, gate, and verdict data; retain its established domain surface independently of operational diagnostics.",
+        "target": "assurance apply"
       },
       {
         "command": "assurance derive",
-        "disposition": "consolidation",
+        "disposition": "keep_as_is",
         "noun": "ops",
-        "owner": "pm-2tan",
-        "target": "ops assurance"
+        "owner": "pm-djyvbk",
+        "reason": "Assurance manages durable measurement, assertion, gate, and verdict data; retain its established domain surface independently of operational diagnostics.",
+        "target": "assurance derive"
       },
       {
         "command": "assurance promote",
-        "disposition": "consolidation",
+        "disposition": "keep_as_is",
         "noun": "ops",
-        "owner": "pm-2tan",
-        "target": "ops assurance"
+        "owner": "pm-djyvbk",
+        "reason": "Assurance manages durable measurement, assertion, gate, and verdict data; retain its established domain surface independently of operational diagnostics.",
+        "target": "assurance promote"
       },
       {
         "command": "assurance risk",
-        "disposition": "consolidation",
+        "disposition": "keep_as_is",
         "noun": "ops",
-        "owner": "pm-2tan",
-        "target": "ops assurance"
+        "owner": "pm-djyvbk",
+        "reason": "Assurance manages durable measurement, assertion, gate, and verdict data; retain its established domain surface independently of operational diagnostics.",
+        "target": "assurance risk"
       },
       {
         "command": "assurance lineages",
-        "disposition": "consolidation",
+        "disposition": "keep_as_is",
         "noun": "ops",
-        "owner": "pm-2tan",
-        "target": "ops assurance"
+        "owner": "pm-djyvbk",
+        "reason": "Assurance manages durable measurement, assertion, gate, and verdict data; retain its established domain surface independently of operational diagnostics.",
+        "target": "assurance lineages"
       },
       {
         "command": "plan",
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27461,6 +27781,7 @@
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-2tan",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27468,6 +27789,7 @@
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-2tan",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27475,6 +27797,7 @@
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-2tan",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27482,6 +27805,7 @@
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-2tan",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27489,6 +27813,7 @@
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-2tan",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27496,6 +27821,7 @@
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-2tan",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27503,6 +27829,7 @@
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-2tan",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27510,6 +27837,7 @@
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-2tan",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27517,6 +27845,7 @@
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-2tan",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27524,6 +27853,7 @@
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-2tan",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27531,6 +27861,7 @@
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-2tan",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27538,6 +27869,7 @@
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-2tan",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27545,6 +27877,7 @@
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-2tan",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27552,6 +27885,7 @@
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-2tan",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27559,6 +27893,7 @@
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-2tan",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27566,6 +27901,7 @@
         "disposition": "target_noun",
         "noun": "plan",
         "owner": "pm-2tan",
+        "reason": "",
         "target": "plan"
       },
       {
@@ -27573,6 +27909,7 @@
         "disposition": "target_noun",
         "noun": "contracts",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "contracts"
       },
       {
@@ -27580,6 +27917,7 @@
         "disposition": "target_noun",
         "noun": "help",
         "owner": "pm-pbyu",
+        "reason": "",
         "target": "help"
       },
       {
@@ -27587,6 +27925,7 @@
         "disposition": "package_owned",
         "noun": "help",
         "owner": "package:builtin-guide-shell",
+        "reason": "",
         "target": "help"
       },
       {
@@ -27594,6 +27933,7 @@
         "disposition": "package_owned",
         "noun": "help",
         "owner": "pm-szdc",
+        "reason": "",
         "target": "completion statuses"
       },
       {
@@ -27601,6 +27941,7 @@
         "disposition": "package_owned",
         "noun": "help",
         "owner": "pm-szdc",
+        "reason": "",
         "target": "completion statuses"
       },
       {
@@ -27608,6 +27949,7 @@
         "disposition": "package_owned",
         "noun": "help",
         "owner": "pm-szdc",
+        "reason": "",
         "target": "completion tags"
       },
       {
@@ -27615,6 +27957,7 @@
         "disposition": "package_owned",
         "noun": "help",
         "owner": "pm-szdc",
+        "reason": "",
         "target": "completion tags"
       },
       {
@@ -27622,6 +27965,7 @@
         "disposition": "package_owned",
         "noun": "help",
         "owner": "pm-szdc",
+        "reason": "",
         "target": "completion types"
       },
       {
@@ -27629,6 +27973,7 @@
         "disposition": "package_owned",
         "noun": "help",
         "owner": "pm-szdc",
+        "reason": "",
         "target": "completion types"
       },
       {
@@ -27636,6 +27981,7 @@
         "disposition": "package_owned",
         "noun": "help",
         "owner": "package:builtin-guide-shell",
+        "reason": "",
         "target": "help"
       }
     ],
@@ -27748,37 +28094,6 @@
         ]
       },
       {
-        "command": "claim",
-        "slots": [
-          {
-            "name": "id",
-            "polymorphic": false,
-            "required": false,
-            "value_kind": "item_id",
-            "variadic": false
-          }
-        ]
-      },
-      {
-        "command": "close",
-        "slots": [
-          {
-            "name": "id",
-            "polymorphic": false,
-            "required": true,
-            "value_kind": "item_id",
-            "variadic": false
-          },
-          {
-            "name": "text",
-            "polymorphic": false,
-            "required": false,
-            "value_kind": "string",
-            "variadic": false
-          }
-        ]
-      },
-      {
         "command": "close-many",
         "slots": []
       },
@@ -27863,25 +28178,6 @@
             "polymorphic": false,
             "required": true,
             "value_kind": "item_id",
-            "variadic": false
-          }
-        ]
-      },
-      {
-        "command": "create",
-        "slots": [
-          {
-            "name": "type-or-title",
-            "polymorphic": true,
-            "required": false,
-            "value_kind": "string",
-            "variadic": false
-          },
-          {
-            "name": "title",
-            "polymorphic": false,
-            "required": false,
-            "value_kind": "string",
             "variadic": false
           }
         ]
@@ -27983,18 +28279,6 @@
         ]
       },
       {
-        "command": "get",
-        "slots": [
-          {
-            "name": "id",
-            "polymorphic": false,
-            "required": true,
-            "value_kind": "item_id",
-            "variadic": false
-          }
-        ]
-      },
-      {
         "command": "learnings",
         "slots": [
           {
@@ -28083,18 +28367,6 @@
         ]
       },
       {
-        "command": "release",
-        "slots": [
-          {
-            "name": "id",
-            "polymorphic": false,
-            "required": true,
-            "value_kind": "item_id",
-            "variadic": false
-          }
-        ]
-      },
-      {
         "command": "start-task",
         "slots": [
           {
@@ -28131,7 +28403,65 @@
         ]
       },
       {
-        "command": "update",
+        "command": "update-many",
+        "slots": []
+      },
+      {
+        "command": "update many",
+        "slots": []
+      },
+      {
+        "command": "claim",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "close",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          },
+          {
+            "name": "text",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "create",
+        "slots": [
+          {
+            "name": "type-or-title",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "title",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "get",
         "slots": [
           {
             "name": "id",
@@ -28143,12 +28473,28 @@
         ]
       },
       {
-        "command": "update-many",
-        "slots": []
+        "command": "release",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
       },
       {
-        "command": "update many",
-        "slots": []
+        "command": "update",
+        "slots": [
+          {
+            "name": "id",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "item_id",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "files discover",
@@ -28616,6 +28962,10 @@
       },
       {
         "command": "history-author-acknowledge",
+        "slots": []
+      },
+      {
+        "command": "history acknowledge",
         "slots": []
       },
       {
@@ -29941,6 +30291,7 @@
     ],
     "scope_before_verb": true,
     "shared_verbs": [
+      "acknowledge",
       "activate",
       "add",
       "adopt",

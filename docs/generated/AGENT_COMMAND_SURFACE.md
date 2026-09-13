@@ -50,6 +50,7 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `history-attest` | full | evidence |
 | `history attest` | full | evidence |
 | `history-author-acknowledge` | full | evidence |
+| `history acknowledge` | full | evidence |
 | `merge` | full | workspace |
 | `workspace merge` | full | workspace |
 | `schema` | standard | workspace |
