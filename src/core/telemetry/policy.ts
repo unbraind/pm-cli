@@ -9,7 +9,8 @@ const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 /** Supported explicit classifications for intentional telemetry delivery. */
 export const PM_TELEMETRY_SOURCE_CONTEXT_VALUES = ["user", "automation", "test", "dogfood"] as const;
 const SOURCE_CONTEXTS = new Set<string>(PM_TELEMETRY_SOURCE_CONTEXT_VALUES);
-const SAMPLEABLE_READS = new Set([
+/** Fixed core reads eligible only after runtime ownership has been established. */
+export const TELEMETRY_SAMPLEABLE_READS: ReadonlySet<string> = new Set([
   "stats", "ops stats", "list", "get", "next", "context", "activity", "aggregate",
 ]);
 
@@ -20,7 +21,7 @@ export function resolveTelemetryReadSampleRate(
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): number {
   const raw = env.PM_TELEMETRY_READ_SAMPLE_RATE?.trim();
-  if (!raw || !noExtensions || !SAMPLEABLE_READS.has(command)) return 1;
+  if (!raw || !noExtensions || !TELEMETRY_SAMPLEABLE_READS.has(command)) return 1;
   const rate = Number(raw);
   return Number.isFinite(rate) && rate > 0 && rate <= 1 ? rate : 1;
 }

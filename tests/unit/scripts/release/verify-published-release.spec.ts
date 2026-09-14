@@ -409,7 +409,7 @@ describe("scripts/release/verify-published-release: usage and validation", () =>
 });
 
 describe("scripts/release/verify-published-release: success path", () => {
-  it("verifies npm, npx, bunx, and the GitHub release and prints JSON", async () => {
+  it.each([false, true])("verifies npm, npx, bunx, and the GitHub release with array receipt=%s", async (arrayReceipt) => {
     const { json, rmSync, runCommand, writeFileSync } = await runVerify({
       argv: [
         "--version",
@@ -422,7 +422,8 @@ describe("scripts/release/verify-published-release: success path", () => {
       ],
       runCommand: (command, args) => {
         if (command === "npm" && args[0] === "view") {
-          return npmViewResult("2026.6.14");
+          const result = npmViewResult("2026.6.14");
+          return arrayReceipt ? { ...result, stdout: `[${result.stdout}]` } : result;
         }
         if (command === "npx" || command === "bunx" || command === "node") {
           return successfulPublishedVerifierResult(command, args);
@@ -696,6 +697,15 @@ describe("scripts/release/verify-published-release: npm metadata retries", () =>
           : { status: 0, stdout: "", stderr: "" },
     });
     expect(String(failure ?? "")).toContain("npm_version_mismatch:2026.6.13");
+  });
+
+  it.each(["[]", '[{"version":"2026.6.14"},{"version":"2026.6.14"}]', "null", '"scalar"', "[null]", "[[]]"])("refuses ambiguous or non-object npm metadata %s", async (stdout) => {
+    const { failure, runCommand } = await runVerify({
+      argv: ["--version", "2026.6.14", "--npm-attempts", "1", "--executor-attempts", "1"],
+      runCommand: () => ({ status: 0, stdout, stderr: "" }),
+    });
+    expect(String(failure)).toContain("npm_metadata_shape_unsupported");
+    expect(runCommand).toHaveBeenCalledTimes(1);
   });
 
   it("fails npm metadata on malformed JSON", async () => {
