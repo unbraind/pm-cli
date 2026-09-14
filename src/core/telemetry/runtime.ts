@@ -1537,28 +1537,25 @@ function buildCommandErrorPayload(params: {
   };
 }
 
-/** Reuse or initialize one installation identity under the queue mutex and return delivery settings from that same saved snapshot. */
+/** Revalidate process and persisted consent before initializing identity. The caller must hold the queue mutex through any subsequent capture writes. */
 async function ensureInstallationId(globalPmRoot: string): Promise<{
   installationId: string;
   endpoint: string;
   retentionDays: number;
-}> {
-  return withQueueMutation(async () => {
-    const settings = await readSettings(globalPmRoot);
-    let changed = false;
-    if (settings.telemetry.installation_id.trim().length === 0) {
-      settings.telemetry.installation_id = crypto.randomUUID();
-      changed = true;
-    }
-    if (changed) {
-      await writeSettings(globalPmRoot, settings, "telemetry:install_id");
-    }
-    return {
-      installationId: settings.telemetry.installation_id,
-      endpoint: settings.telemetry.endpoint,
-      retentionDays: Math.max(1, Math.trunc(settings.telemetry.retention_days)),
-    };
-  }, globalPmRoot);
+  captureLevel: TelemetryCaptureLevel;
+} | null> {
+  const settings = await readSettings(globalPmRoot);
+  if (!settings.telemetry.enabled || resolveTelemetryEnvironmentPolicy().telemetry_disabled) return null;
+  if (settings.telemetry.installation_id.trim().length === 0) {
+    settings.telemetry.installation_id = crypto.randomUUID();
+    await writeSettings(globalPmRoot, settings, "telemetry:install_id");
+  }
+  return {
+    installationId: settings.telemetry.installation_id,
+    endpoint: settings.telemetry.endpoint,
+    retentionDays: Math.max(1, Math.trunc(settings.telemetry.retention_days)),
+    captureLevel: normalizeCaptureLevel(settings.telemetry.capture_level),
+  };
 }
 
 /** Serialize a new event and shorten an oversized result summary. The caller must hold the installation queue mutex across this write. */
@@ -2550,15 +2547,15 @@ export async function flushTelemetryQueueNow(
     if (!settings.telemetry.enabled) {
       return;
     }
-    const { endpoint, retentionDays } =
-      await ensureInstallationId(globalPmRoot);
-    await flushQueueWithProcessLock(globalPmRoot, endpoint, retentionDays);
+    const installation = await withQueueMutation(() => ensureInstallationId(globalPmRoot), globalPmRoot);
+    if (!installation) return;
+    await flushQueueWithProcessLock(globalPmRoot, installation.endpoint, installation.retentionDays);
   } catch {
     // Telemetry workers are best effort and must never fail user commands.
   }
 }
 
-/** Begin a consent-permitted invocation, deferring sampled core reads until their outcome determines pair retention. */
+/** Atomically validate consent, initialize identity, and capture an invocation; defer sampled reads until their outcome determines pair retention and schedule delivery after releasing the mutex. */
 export async function startTelemetryCommand(
   context: TelemetryCommandContext,
 ): Promise<ActiveTelemetryCommand | null> {
@@ -2577,70 +2574,73 @@ export async function startTelemetryCommand(
     if (!settings.telemetry.enabled) {
       return null;
     }
-    const captureLevel = normalizeCaptureLevel(
-      settings.telemetry.capture_level,
-    );
-    const { installationId, endpoint, retentionDays } =
-      await ensureInstallationId(globalPmRoot);
-    const pmVersion = normalizePmVersion(context.pm_version);
-    const sourceContext = resolveTelemetrySourceContext(context.global);
-    const pmRootHash = hashWithInstallationId(installationId, context.pm_root);
-    const cwdHash = hashWithInstallationId(installationId, process.cwd());
-    const otelTracesEndpoint = resolveOtelTracesEndpoint();
-    const occurredAt = nowIso();
-    const event: TelemetryEvent = {
-      schema_version: TELEMETRY_SCHEMA_VERSION,
-      event_id: crypto.randomUUID(),
-      event_type: "command_start",
-      occurred_at: occurredAt,
-      installation_id: installationId,
-      session_id: PROCESS_SESSION_ID,
-      command: context.command,
-      payload: buildCommandStartPayload({
-        captureLevel,
-        context,
-        pmVersion,
-        sourceContext,
-        pmRootHash,
-        cwdHash,
-        installationId,
-      }),
-    };
-    const sampleRate = resolveTelemetryReadSampleRate(
-      context.command,
-      context.global.noExtensions === true,
-    );
-    if (sampleRate === 1) {
-      await enqueueTelemetryEvent(globalPmRoot, event);
-      scheduleTelemetryFlush(globalPmRoot, endpoint, retentionDays);
+    const activeCommand = await withQueueMutation(async () => {
+      const installation = await ensureInstallationId(globalPmRoot);
+      if (!installation) return null;
+      const { installationId, endpoint, retentionDays, captureLevel } = installation;
+      const pmVersion = normalizePmVersion(context.pm_version);
+      const sourceContext = resolveTelemetrySourceContext(context.global);
+      const pmRootHash = hashWithInstallationId(installationId, context.pm_root);
+      const cwdHash = hashWithInstallationId(installationId, process.cwd());
+      const otelTracesEndpoint = resolveOtelTracesEndpoint();
+      const occurredAt = nowIso();
+      const event: TelemetryEvent = {
+        schema_version: TELEMETRY_SCHEMA_VERSION,
+        event_id: crypto.randomUUID(),
+        event_type: "command_start",
+        occurred_at: occurredAt,
+        installation_id: installationId,
+        session_id: PROCESS_SESSION_ID,
+        command: context.command,
+        payload: buildCommandStartPayload({
+          captureLevel,
+          context,
+          pmVersion,
+          sourceContext,
+          pmRootHash,
+          cwdHash,
+          installationId,
+        }),
+      };
+      const sampleRate = resolveTelemetryReadSampleRate(
+        context.command,
+        context.global.noExtensions === true,
+      );
+      if (sampleRate === 1) {
+        await appendTelemetryEvent(globalPmRoot, event);
+      }
+      const commandTaxonomy = deriveTelemetryCommandTaxonomy(context.command);
+      const active: ActiveTelemetryCommand = {
+        ...(sampleRate < 1 ? { sample_rate: sampleRate } : {}),
+        started_at: occurredAt,
+        started_at_ms: Date.now(),
+        command: context.command,
+        command_taxonomy: commandTaxonomy,
+        pm_version: pmVersion,
+        source_context: sourceContext.source_context,
+        source_context_source: sourceContext.source_context_source,
+        installation_id: installationId,
+        pm_root_hash: pmRootHash,
+        cwd_hash: cwdHash,
+        endpoint,
+        retention_days: retentionDays,
+        global_pm_root: globalPmRoot,
+        capture_level: captureLevel,
+        otel_traces_endpoint: otelTracesEndpoint ?? undefined,
+        otel_trace_id: otelTracesEndpoint
+          ? crypto.randomBytes(16).toString("hex")
+          : undefined,
+        otel_span_id: otelTracesEndpoint
+          ? crypto.randomBytes(8).toString("hex")
+          : undefined,
+      };
+      if (sampleRate < 1) deferredReadStarts.set(active, event);
+      return active;
+    }, globalPmRoot);
+    if (activeCommand && activeCommand.sample_rate === undefined) {
+      scheduleTelemetryFlush(globalPmRoot, activeCommand.endpoint, activeCommand.retention_days);
     }
-    const commandTaxonomy = deriveTelemetryCommandTaxonomy(context.command);
-    const active: ActiveTelemetryCommand = {
-      ...(sampleRate < 1 ? { sample_rate: sampleRate } : {}),
-      started_at: occurredAt,
-      started_at_ms: Date.now(),
-      command: context.command,
-      command_taxonomy: commandTaxonomy,
-      pm_version: pmVersion,
-      source_context: sourceContext.source_context,
-      source_context_source: sourceContext.source_context_source,
-      installation_id: installationId,
-      pm_root_hash: pmRootHash,
-      cwd_hash: cwdHash,
-      endpoint,
-      retention_days: retentionDays,
-      global_pm_root: globalPmRoot,
-      capture_level: captureLevel,
-      otel_traces_endpoint: otelTracesEndpoint ?? undefined,
-      otel_trace_id: otelTracesEndpoint
-        ? crypto.randomBytes(16).toString("hex")
-        : undefined,
-      otel_span_id: otelTracesEndpoint
-        ? crypto.randomBytes(8).toString("hex")
-        : undefined,
-    };
-    if (sampleRate < 1) deferredReadStarts.set(active, event);
-    return active;
+    return activeCommand;
   } catch {
     // Telemetry must never block command execution.
     return null;
@@ -2658,7 +2658,7 @@ export async function finishTelemetryCommand(
   try {
     const captured = await withQueueMutation(async () => {
       const settings = await readSettings(activeCommand.global_pm_root);
-      if (!settings.telemetry.enabled ||
+      if (resolveTelemetryEnvironmentPolicy().telemetry_disabled || !settings.telemetry.enabled ||
         settings.telemetry.installation_id !== activeCommand.installation_id) {
         deferredReadStarts.delete(activeCommand);
         return false;
@@ -2761,7 +2761,7 @@ export async function finishTelemetryCommand(
   }
 }
 
-/** Record an unsampled, sanitized command error without creating identity or queue state when process consent forbids capture. */
+/** Atomically validate consent and append a sanitized command error with its installation identity; schedule delivery only after releasing the queue mutex. */
 export async function emitTelemetryErrorEvent(
   context: TelemetryErrorEventContext,
 ): Promise<void> {
@@ -2774,72 +2774,73 @@ export async function emitTelemetryErrorEvent(
     if (!settings.telemetry.enabled) {
       return;
     }
-    const captureLevel = normalizeCaptureLevel(
-      settings.telemetry.capture_level,
-    );
-    const { installationId, endpoint, retentionDays } =
-      await ensureInstallationId(globalPmRoot);
-    const pmVersion = normalizePmVersion(context.pm_version);
-    const sourceContext = resolveTelemetrySourceContext(context.global);
-    const pmRootHash = hashWithInstallationId(installationId, context.pm_root);
-    const cwdHash = hashWithInstallationId(installationId, process.cwd());
-    const occurredAt = nowIso();
-    const normalizedErrorCode = normalizeTelemetryErrorCode(
-      inferTelemetryErrorCode({
-        ok: false,
-        errorCode: context.error_code,
-        errorMessage: context.error_message,
-        exitCode: context.exit_code,
-      }),
-    ) as string;
-    const normalizedErrorCategory =
-      context.error_category ??
-      resolveTelemetryErrorCategory(normalizedErrorCode);
-    const normalizedExitCode = normalizeTelemetryExitCode(
-      context.exit_code,
-      false,
-    );
-    const normalizedCommand =
-      context.command.trim().length > 0 ? context.command : "<unknown>";
-    const commandTaxonomy = deriveTelemetryCommandTaxonomy(normalizedCommand);
-    const commandResolution =
-      context.command_resolution ??
-      deriveTelemetryCommandResolution({
-        ok: false,
-        errorCode: normalizedErrorCode,
-        errorCategory: normalizedErrorCategory,
-      });
-    const resolutionStage = context.resolution_stage ?? "unknown";
+    const captured = await withQueueMutation(async () => {
+      const installation = await ensureInstallationId(globalPmRoot);
+      if (!installation) return null;
+      const { installationId, captureLevel } = installation;
+      const pmVersion = normalizePmVersion(context.pm_version);
+      const sourceContext = resolveTelemetrySourceContext(context.global);
+      const pmRootHash = hashWithInstallationId(installationId, context.pm_root);
+      const cwdHash = hashWithInstallationId(installationId, process.cwd());
+      const occurredAt = nowIso();
+      const normalizedErrorCode = normalizeTelemetryErrorCode(
+        inferTelemetryErrorCode({
+          ok: false,
+          errorCode: context.error_code,
+          errorMessage: context.error_message,
+          exitCode: context.exit_code,
+        }),
+      ) as string;
+      const normalizedErrorCategory =
+        context.error_category ??
+        resolveTelemetryErrorCategory(normalizedErrorCode);
+      const normalizedExitCode = normalizeTelemetryExitCode(
+        context.exit_code,
+        false,
+      );
+      const normalizedCommand =
+        context.command.trim().length > 0 ? context.command : "<unknown>";
+      const commandTaxonomy = deriveTelemetryCommandTaxonomy(normalizedCommand);
+      const commandResolution =
+        context.command_resolution ??
+        deriveTelemetryCommandResolution({
+          ok: false,
+          errorCode: normalizedErrorCode,
+          errorCategory: normalizedErrorCategory,
+        });
+      const resolutionStage = context.resolution_stage ?? "unknown";
 
-    const event: TelemetryEvent = {
-      schema_version: TELEMETRY_SCHEMA_VERSION,
-      event_id: crypto.randomUUID(),
-      event_type: "command_error",
-      occurred_at: occurredAt,
-      installation_id: installationId,
-      session_id: PROCESS_SESSION_ID,
-      command: sanitizeString(normalizedCommand, "redacted"),
-      payload: buildCommandErrorPayload({
-        captureLevel,
-        pmVersion,
-        sourceContext,
-        command: normalizedCommand,
-        commandTaxonomy,
-        commandResolution,
-        resolutionStage,
-        args: context.args,
-        options: context.options,
-        pmRootHash,
-        cwdHash,
-        installationId,
-        errorCode: normalizedErrorCode,
-        errorCategory: normalizedErrorCategory,
-        exitCode: normalizedExitCode,
-        errorMessage: context.error_message,
-      }),
-    };
-    await enqueueTelemetryEvent(globalPmRoot, event);
-    scheduleTelemetryFlush(globalPmRoot, endpoint, retentionDays);
+      const event: TelemetryEvent = {
+        schema_version: TELEMETRY_SCHEMA_VERSION,
+        event_id: crypto.randomUUID(),
+        event_type: "command_error",
+        occurred_at: occurredAt,
+        installation_id: installationId,
+        session_id: PROCESS_SESSION_ID,
+        command: sanitizeString(normalizedCommand, "redacted"),
+        payload: buildCommandErrorPayload({
+          captureLevel,
+          pmVersion,
+          sourceContext,
+          command: normalizedCommand,
+          commandTaxonomy,
+          commandResolution,
+          resolutionStage,
+          args: context.args,
+          options: context.options,
+          pmRootHash,
+          cwdHash,
+          installationId,
+          errorCode: normalizedErrorCode,
+          errorCategory: normalizedErrorCategory,
+          exitCode: normalizedExitCode,
+          errorMessage: context.error_message,
+        }),
+      };
+      await appendTelemetryEvent(globalPmRoot, event);
+      return installation;
+    }, globalPmRoot);
+    if (captured) scheduleTelemetryFlush(globalPmRoot, captured.endpoint, captured.retentionDays);
   } catch {
     // Telemetry must never block command execution.
   }

@@ -4,12 +4,13 @@
 
 ### Changed
 
+- Update marked to 18.0.13 for documentation parser fixes ([pm-t9qgf1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-t9qgf1.toon))
 - Refresh Node types 26.5.1, YAML 2.9.1, and fast-check 4.10.0 ([pm-7ej0mh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7ej0mh.toon))
 
 ### Fixed
 
+- Honor revoked telemetry consent across capture and identity initialization ([pm-yjq2x0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yjq2x0.toon))
 - Preserve telemetry events across concurrent queue rewrites ([pm-utxk3h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-utxk3h.toon))
-- Stop in-flight telemetry capture after persisted consent is cleared ([pm-yjq2x0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yjq2x0.toon))
 - Explain rejected telemetry source-context overrides without leaking raw values ([pm-bw8lsb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bw8lsb.toon))
 - Destination census rows cite terminal consolidation owners for five live commands, so the grammar gate certifies consolidations no open item will deliver ([pm-3ig9b6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3ig9b6.toon))
 - Package-declared internal commands leak into default runtime contracts ([pm-34xisz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-34xisz.toon))

@@ -186,13 +186,17 @@ collector success and an empty queue are separate observations, not a guarantee
 of exactly-once delivery. Upgrade concurrent CLI processes together: older
 versions do not participate in the installation mutex.
 
-Completion capture rechecks the saved telemetry preference and installation
-identity under the installation mutex, retaining that mutex through deferred
-start, finish, and span writes. `telemetry clear` uses the same transaction
-boundary, so it either removes a completed capture or prevents that capture
-from appending afterward. Flush scheduling remains outside the transaction. Disabling or clearing telemetry suppresses completion capture for an
-invocation already in flight; re-enabling after a clear does not revive its old
-identity. This check cannot recall requests already dispatched to a collector.
+Start and error capture recheck process opt-outs and saved consent under the
+installation mutex before initializing identity, and retain that mutex through
+immediate event writes. Completion rechecks both consent sources and its saved
+installation identity under the same mutex through deferred start, finish,
+and span writes. `telemetry clear` uses this transaction boundary, so it either
+removes a completed capture or prevents that capture from appending afterward.
+Flush identity initialization also revalidates consent under the mutex; network
+delivery and flush scheduling remain outside it. Preference changes are
+evaluated at the capture transaction's consent check. Re-enabling after a clear
+does not revive an invocation's old identity. These checks cannot recall
+requests already dispatched to a collector.
 
 Interaction rules:
 

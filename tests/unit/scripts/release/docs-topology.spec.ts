@@ -6,6 +6,13 @@ import {
 } from "../../../../scripts/release/docs-topology.mjs";
 
 describe("documentation navigation contracts", () => {
+  it("follows Unicode case-folded reference labels when checking navigation", () => {
+    expect(inspectDocumentationGraph(new Map([
+      ["docs/README.md", "[Straße]\n\n[STRASSE]: target.md#part"],
+      ["docs/target.md", "# Part"],
+    ]))).toEqual([]);
+  });
+
   it("decodes local URLs, checks invalid escapes and validates exception reasons", () => {
     expect(
       resolveDocumentationTarget(
