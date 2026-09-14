@@ -390,6 +390,11 @@ function runWithRetries(label, attempts, delayMs, action) {
   };
 }
 
+/**
+ * Verify exact-version public registry metadata across npm object and singleton
+ * array receipts. Reject ambiguous shapes, version drift, and absent integrity
+ * within the caller's bounded retry budget before exercising package binaries.
+ */
 function verifyNpmMetadata(version, attempts, publicRegistryEnv) {
   const npm = commandFor("npm");
   return runWithRetries("npm metadata", attempts, 15000, () => {

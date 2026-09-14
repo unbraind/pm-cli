@@ -211,6 +211,11 @@ function buildLockPayload(
   };
 }
 
+/**
+ * Publish owner metadata while holding the stale-cleanup coordination gate so
+ * an empty, exclusively created file cannot be reclaimed by a competing owner.
+ * Failed initialization closes and removes only the file this call created.
+ */
 async function createLockFile(
   lockPath: string,
   id: string,
