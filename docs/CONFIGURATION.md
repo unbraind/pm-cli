@@ -187,7 +187,10 @@ of exactly-once delivery. Upgrade concurrent CLI processes together: older
 versions do not participate in the installation mutex.
 
 Completion capture rechecks the saved telemetry preference and installation
-identity. Disabling or clearing telemetry suppresses completion capture for an
+identity under the installation mutex, retaining that mutex through deferred
+start, finish, and span writes. `telemetry clear` uses the same transaction
+boundary, so it either removes a completed capture or prevents that capture
+from appending afterward. Flush scheduling remains outside the transaction. Disabling or clearing telemetry suppresses completion capture for an
 invocation already in flight; re-enabling after a clear does not revive its old
 identity. This check cannot recall requests already dispatched to a collector.
 
