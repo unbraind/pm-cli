@@ -179,8 +179,12 @@ Event and OTLP queue appends and reconciliation share an installation-level
 mutex. Successful delivery, retry updates, and retention pruning reread the
 current queue while holding that mutex, so another updated CLI process cannot
 append into a file about to be replaced. Network delivery runs outside the
-mutex. Lock waiting defaults to five seconds, follows `PM_LOCK_WAIT_MS`, and
-uses the existing 60-second stale-lock recovery policy. Telemetry remains best
+mutex. Each foreground start, finish, or error capture uses a 250 ms
+lock-acquisition budget by default; queue maintenance, clear, and flush initialization
+retain a five-second default. `PM_LOCK_WAIT_MS` explicitly overrides these
+budgets. These are per-acquisition contention budgets, not total operation
+deadlines: queued in-process transactions and filesystem work can add latency.
+The existing 60-second stale-lock recovery policy applies. Telemetry remains best
 effort when storage is unavailable or contention exhausts the wait budget;
 collector success and an empty queue are separate observations, not a guarantee
 of exactly-once delivery. Upgrade concurrent CLI processes together: older

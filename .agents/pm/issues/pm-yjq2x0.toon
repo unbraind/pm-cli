@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-13T21:36:42.809Z"
-updated_at: "2026-09-14T01:41:28.540Z"
-closed_at: "2026-09-14T01:41:27.747Z"
-completed_at: "2026-09-14T01:41:27.747Z"
+updated_at: "2026-09-14T02:37:20.186Z"
+closed_at: "2026-09-14T02:37:19.316Z"
+completed_at: "2026-09-14T02:37:19.316Z"
 author: "harness:codex"
 acceptance_criteria: "A deferred failed read creates no completion artifacts after persisted disable; clear then reenable cannot reuse an old active installation identity; enabled unchanged installations retain lifecycle pairs; all-source coverage and public SDK regression tests pass; Independent clear after start, error, or flush preflight cannot recreate installation identity or event queue; Process opt-outs changed during awaited consent reads suppress subsequent capture or identity initialization"
 goal: project management = context management
@@ -18,9 +18,9 @@ parent: pm-5oj5
 risk: medium
 confidence: high
 severity: medium
-resolution: "Revalidate process and persisted consent inside shared queue transactions for start, error, completion, and flush identity initialization; keep immediate capture writes and identity creation atomic with clear"
-expected_result: "Clear or process opt-out winning a preflight race cannot authorize later identity or event recreation, while completion and clear serialize their writes and deletion"
-actual_result: All 117 telemetry tests and 11 consent cases pass after seven new negative controls failed before correction; full 8840-test exact coverage and expanded npm/Bun public SDK acceptance pass; production probe yields four exact pairs and no raw rejected-source value
+resolution: Keep consent capture and clear atomic and synchronize the concurrent-clear regression on a real lock conflict
+expected_result: Clear cannot be followed by capture from a stale transaction; the regression reliably exposes a missing mutex
+actual_result: All 11 consent cases and 8844 total tests pass at exact coverage; deliberate mutex removal fails concurrent-clear acceptance; npm and Bun public SDK consumers confirm revoked identity and queue remain absent
 component: telemetry capture and installation initialization
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-5oj5,implements,"2026-09-13T21:36:42.809Z","harness:codex","cli:create:dep",detected
@@ -28,7 +28,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-utxk3h,discovered_from,"2026-09-13T21:36:42.809Z","harness:codex","cli:create:dep",detected
   pm-745epp,verifies,"2026-09-13T21:45:12.263Z","harness:codex","cli:update:dep",detected
   pm-bw8lsb,discovered_from,"2026-09-13T22:13:47.765Z","harness:codex","cli:update:dep",detected
-comments[12]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-09-13T21:36:42.809Z","harness:codex","Duplicate check: complete 2757-item all-status CLI export plus telemetry-clear and consent-concurrency searches found historical consent and clear implementations but no canonical item for persisted revocation during an active invocation. This is a distinct reproduction to verify before claiming remediation."
   "2026-09-13T21:39:30.817Z","harness:codex","TDD negative control: all three isolated SDK cases reproduce queue recreation after persisted disable, clear, and clear followed by reenable. Completion now rechecks both the saved enabled flag and installation identity before any deferred start or completion capture. Already-dispatched network requests are outside this revocation boundary."
   "2026-09-13T21:51:33.238Z","harness:codex","Manual packed acceptance passed in separate npm and Bun consumer roots: installed CLI initialized, created, claimed, annotated, closed, released, and validated a temporary project. Public package SDK capture followed by telemetry clear and failed completion left no recreated event queue. npx/bunx packed smoke also passed. Linked consent regression is recorded as passed."
@@ -41,6 +41,9 @@ comments[12]{created_at,author,text}:
   "2026-09-14T01:15:13.829Z","harness:codex","Full extended regression passed: 8840 tests across 687 files, with 64418/64418 statements, 49154/49154 branches, 13391/13391 functions, and 61686/61686 lines covered. Exact gate remains 100/100/100/100. All 11 consent scenarios and all 117 telemetry tests pass; typecheck, ESLint, and SDK surface parity pass without public API changes. Expanded packed npm/Bun consumers and final static validation are running before closure."
   "2026-09-14T01:31:37.367Z","harness:codex","Final verification: fresh linked consent tests pass all 11 cases. Expanded packed npm/Bun consumers exercise public start, error, finish, and flush after clear and confirm disabled consent, empty identity, and no recreated events. npx/bunx smoke and dependency audit pass. Static checks pass through all ten SDK import-cost entrypoints; local CLI timings exceed unchanged limits at get 389/362ms, list 421/419ms, context 435/433ms, next 506/440ms, create 436/398ms, claim 442/415ms. Earlier unchanged-base reproduction remains recorded; hosted checks are still required. Fresh Sentry has zero critical/high issues; telemetry error rate is 1.82 percent with no missing error codes."
   "2026-09-14T01:36:52.871Z","harness:codex","Current-checkout production probe 2026-09-14T01:31:46.437Z through 01:31:47.514Z delivered four starts and four finishes with four exact backend pairs. Two invocations used accepted attribution and two used a synthetic rejected override: all four rejected-source lifecycle events carried env_override_rejected and zero payloads retained the synthetic raw value. The physical queue was zero bytes after drain. This validates the bounded probe only and does not imply historical completeness."
+  "2026-09-14T02:10:46.769Z","harness:codex","Replaced concurrent clear test timer with an actual zero-wait SDK clear attempt: only lock_conflict releases the parent read barrier, followed by one bounded retry. Removing the mutex makes this strengthened privacy regression fail with a recreated event queue; all 11 consent scenarios pass with the transaction restored. Added precise docstrings around touched runtime behavior and documented acquisition-budget limits."
+  "2026-09-14T02:35:03.065Z","harness:codex","All 11 consent regressions pass with the observed-contention barrier, including the mutex-removal negative control. Full combined regression passes 8844 tests and exact 100/100/100/100 coverage; fresh linked tests and temporary npm/Bun installed SDK acceptance confirm no post-clear identity or event recreation. Public SDK surface and strict documentation verification remain required in the final static disposition."
+  "2026-09-14T02:36:56.389Z","harness:codex",Final SDK public-surface snapshot reports zero classified changes. Source and documentation assurance passes; all ten SDK import-cost entrypoints pass on isolated rerun. The remaining local CLI timing limitation is recorded on the linked queue item and does not replace required hosted validation.
 notes[1]{created_at,author,text}:
   "2026-09-13T21:44:39.708Z","harness:codex","Revocation is checked at completion capture. Requests already sent to a collector cannot be recalled, and storage remains best effort. Clear invalidates the previous installation identity, so enabling telemetry later cannot reactivate an old in-memory invocation. This differs from process environment opt-outs, which are still checked first."
 learnings[2]{created_at,author,text}:
@@ -52,7 +55,7 @@ files[3]{path,scope,note}:
   tests/unit/core/telemetry/telemetry-consent-revocation.spec.ts,project,Public SDK persisted-consent negative controls
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-consent-revocation.spec.ts,project,240,"harness:codex","2026-09-13T21:39:32.215Z",local_mutation,fix/telemetry-queue-integrity-and-attribution
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mu0cfneg-qhionv
     kind: test
     status: passed
@@ -86,9 +89,20 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-consent-revocation.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu0mcz83-6zpnzg
+    kind: test
+    status: passed
+    started_at: "2026-09-14T02:23:44.806Z"
+    finished_at: "2026-09-14T02:23:57.267Z"
+    recorded_at: "2026-09-14T02:23:57.267Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-consent-revocation.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/CONFIGURATION.md,project,Completion consent boundary and already-dispatched request limitation
-close_reason: All reproduced consent races are transaction-protected and verified for refreshed review
+close_reason: Observed-contention consent regression verified with full coverage and installed consumers
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

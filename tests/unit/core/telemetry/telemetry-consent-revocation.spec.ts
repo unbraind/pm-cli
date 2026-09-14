@@ -47,9 +47,14 @@ it.each(["clear", "disable", "clear-reenable", "concurrent-clear", "concurrent-o
         }
         const child = spawn(process.execPath, ["--input-type=module", "-e", `
           import { runTelemetry } from ${JSON.stringify(telemetryUrl)};
-          const timer = setTimeout(() => process.send("waiting"), 500);
-          await runTelemetry({ subcommand: "clear" }, {});
-          clearTimeout(timer);
+          process.env.PM_LOCK_WAIT_MS = "0";
+          try { await runTelemetry({ subcommand: "clear" }, {}); }
+          catch (error) {
+            if (error.code !== "lock_conflict") throw error;
+            process.send("waiting");
+            process.env.PM_LOCK_WAIT_MS = "5000";
+            await runTelemetry({ subcommand: "clear" }, {});
+          }
           process.send("cleared");
           process.disconnect();
         `], { cwd: root, stdio: ["ignore", "ignore", "pipe", "ipc"], env: { ...process.env, PM_GLOBAL_PATH: root, PM_TELEMETRY_INGEST_KEY: "" } });

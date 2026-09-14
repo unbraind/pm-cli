@@ -6,18 +6,18 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-13T09:41:11.342Z"
-updated_at: "2026-09-14T00:38:54.309Z"
-closed_at: "2026-09-14T00:37:16.653Z"
-completed_at: "2026-09-14T00:37:16.653Z"
+updated_at: "2026-09-14T02:37:18.530Z"
+closed_at: "2026-09-14T02:37:17.648Z"
+completed_at: "2026-09-14T02:37:17.648Z"
 author: "harness:codex"
 acceptance_criteria: "Reproduce missing lifecycle events with isolated concurrent processes and a local collector; preserve events across append, successful flush, retry, retention pruning, and span rewriting; verify paired production probes and exact coverage without weakening consent or timeout guarantees"
 goal: project management = context management
 objective: Make event delivery completeness independently verifiable under concurrent CLI use
 value: Trustworthy action histories beyond aggregate success rates
 parent: pm-5oj5
-resolution: Preserve concurrent queue mutations and cold identity; verify delivered-or-queued event durability before an uncontended final drain; isolate collector credentials
-expected_result: Concurrent producers preserve all lifecycle events and a final uncontended drain delivers four complete pairs with one identity and an empty queue
-actual_result: Strengthened collector and linked reconciliation regressions pass; 8833 tests reach exact coverage and packed npm/Bun plus npx/bunx acceptance pass; local timing and reviewer quota limitations remain documented
+resolution: Preserve concurrent queues with bounded foreground acquisition waits and contention-based test barriers
+expected_result: Foreground capture abandons contended acquisition promptly and completed queue transactions preserve intervening appends
+actual_result: 8844 tests pass with exact coverage; three latency negative controls and four mutex-removal failures verify the correction; packed consumers and four production lifecycle pairs pass; local timing and review quota limits remain documented
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-5oj5,implements,"2026-09-13T09:41:11.342Z","harness:codex","cli:create:dep",detected
   pm-bwkmp4,discovered_from,"2026-09-13T09:41:11.342Z","harness:codex","cli:create:dep",detected
@@ -26,7 +26,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-do5b,verifies,"2026-09-13T22:13:45.043Z","harness:codex","cli:update:dep",detected
   pm-fokyhh,verifies,"2026-09-13T22:13:45.043Z","harness:codex","cli:update:dep",detected
   pm-ksr40d,verifies,"2026-09-13T22:13:45.043Z","harness:codex","cli:update:dep",detected
-comments[20]{created_at,author,text}:
+comments[24]{created_at,author,text}:
   "2026-09-13T09:41:11.342Z","harness:codex","Duplicate check: complete 2756-item all-status export and request-specific telemetry queue/concurrency searches found no active owner for missing start delivery. The closed flush-receipt predecessor covers truthful drain counts, not cross-process event preservation. This intake records observed evidence without claiming an established root cause or remediation."
   "2026-09-13T21:19:08.864Z","harness:codex","Live scope evidence: complete CLI export read all 2757 items across open draft closed and canceled statuses with zero omissions or unreadable items. Existing canonical telemetry and closed flush-receipt lineage reused. GitHub has zero open PRs and zero open Dependabot code-scanning or secret-scanning alerts; all six open issues already include canonical PM links. Source inspection identifies process-local queue serialization and two stale retention rewrites; isolated subprocess negative controls are being executed before closure."
   "2026-09-13T21:34:53.119Z","harness:codex","Continuation authorized: user approved takeover of the prior session claim. Current bootstrap and 40 focused tests pass, including independent-process event preservation and loopback collector lifecycle pairing. Full all-status CLI export contains 2757 items with complete reads and no omissions. GitHub has no open PRs or security alerts; all six open issues have canonical PM links. Full coverage and static validation are running; no completion or publication is claimed."
@@ -47,11 +47,16 @@ comments[20]{created_at,author,text}:
   "2026-09-14T00:25:17.547Z","harness:codex","Strengthened collector acceptance passed in the full 8833-test run: every produced event is delivered or durably queued after producers exit, final uncontended drain delivers all eight events with four exact lifecycle pairs and one installation identity, and the physical queue is empty. All-source coverage remains exact 100/100/100/100. Fresh GitHub inventories report zero open security alerts and only PR 1256 open; Sentry critical/high counts are zero and recent finish errors are 1.82 percent with zero missing error codes."
   "2026-09-14T00:37:13.533Z","harness:codex","Final local validation for the atomic follow-up: linked collector and reconciliation tests pass; packed npm/Bun lifecycle and public SDK consent acceptance plus npx/bunx smoke pass. Static checks pass through source/documentation, contracts, SDK surface and all ten import-cost entrypoints; the unchanged local CLI timing limits fail at get 393/362ms, context 439/433ms, next 472/440ms, create 412/398ms. Earlier unchanged-base reproduction remains applicable; no threshold or waiver changed. New hosted head must pass before merge."
   "2026-09-14T00:38:54.309Z","harness:codex","Atomic-fix production probe 2026-09-14T00:37:51.423Z through 00:37:52.562Z: four concurrent real CLI get invocations produced four starts, four finishes, and four exact backend pairs by installation, session, command, and started_at. Physical events queue measured zero bytes after drain. Fresh dependency audit and tracked-secret scanning report zero findings. This bounded probe does not claim historical completeness or approval from quota-limited review providers."
+  "2026-09-14T02:10:45.317Z","harness:codex","Current-head full review reproduced approximately 5000 ms waits in start, finish, and error capture. Three real held-lock negative controls failed before correction; foreground acquisition now defaults to 250 ms while maintenance retains five seconds and explicit PM_LOCK_WAIT_MS overrides remain honored. All 120 telemetry tests pass. Timer-free contention handshakes catch success/retry/span loss when the mutex is deliberately removed; retention cases still preserve intervening appends through fresh reads. Full coverage is running."
+  "2026-09-14T02:35:02.397Z","harness:codex","Final corrected regression passes 8844 tests across 687 files at exact 100/100/100/100: 64419 statements, 49155 branches, 13391 functions, and 61687 lines all covered. Linked reconciliation and collector tests pass, as do temporary npm/Bun public SDK and CLI acceptance and all six packed npx/bunx package smokes. Strict ESLint, zero-duplication, typecheck and documentation gates pass. Fresh GitHub security alerts remain zero; Sentry critical/high counts are zero and recent telemetry errors are 1.82 percent with no missing error codes."
+  "2026-09-14T02:36:55.726Z","harness:codex","Final static disposition: all preceding source/documentation/contract/tracker gates and SDK surface parity pass. The initial governance import-cost measurement was 333/327ms; an isolated rerun passes all ten entrypoints. CLI timing still exceeds unchanged limits at get 373/362ms, context 444/433ms, next 449/440ms, create 418/398ms, consistent with the separately reproduced unchanged-base limitation. No threshold or waiver changed. The corrected head still requires hosted checks and fresh bot review."
+  "2026-09-14T02:37:16.834Z","harness:codex","Post-correction production probe 2026-09-14T02:36:15.142Z through 02:36:16.274Z delivered four starts, four finishes, and four exact backend pairs. Four rejected-source lifecycle events retain env_override_rejected and zero payloads retain the synthetic raw override. The physical event queue was zero bytes after drain. This proves this bounded window only; unavailable reviewer quotas are not approval."
 notes[1]{created_at,author,text}:
   "2026-09-13T21:55:43.438Z","harness:codex","Graph context check used all 2757 live exported records before new intake: every record had at least one parent or dependency connection. Typed lineage already includes implements, discovered_from, verifies, supersedes, recurs_from, blocks, blocked_by, and incident_from. Graph audit returned two informational legacy hierarchy advisories. Enrichment must express evidence-backed semantics; do not inflate edge counts or depth with invented dependencies."
-learnings[2]{created_at,author,text}:
+learnings[3]{created_at,author,text}:
   "2026-09-13T21:21:42.305Z","harness:codex",Atomic rename protects readers from partial snapshots but cannot preserve an append racing between snapshot read and replacement. Appends and every reconciliation or retention rewrite must share the same cross-process transaction boundary; network I/O must remain outside that boundary.
   "2026-09-13T21:51:32.427Z","harness:codex","Build output is shared mutable state. Do not run a build-producing linked test, package smoke, or static gate alongside coverage or import-contract checks in the same checkout: rebuilt hashed chunks can disappear beneath a running consumer. Sequence build producers, then verify stable artifacts; a missing coverage report is failed proof."
+  "2026-09-14T02:10:48.267Z","harness:codex","A concurrency test barrier must observe the contested operation, not elapsed time. A fail-fast attempt followed by a lock-conflict signal and one bounded retry preserves the intended interleaving even on a slow host. Foreground telemetry lock acquisition needs a shorter default than maintenance while keeping explicit operator overrides."
 files[3]{path,scope,note}:
   src/core/telemetry/runtime.ts,project,Cross-process installation mutex preserves current event and span queues during reconciliation
   tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts,project,Real loopback collector checks independent SDK lifecycle pairs and shared cold identity
@@ -59,7 +64,7 @@ files[3]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-queue-concurrency.spec.ts,project,240,"harness:codex","2026-09-13T21:21:01.329Z",local_mutation,fix/telemetry-queue-integrity-and-attribution
   node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts,project,240,"harness:codex","2026-09-13T21:39:52.290Z",local_mutation,fix/telemetry-queue-integrity-and-attribution
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mu0ch6sd-koknnw
     kind: test
     status: passed
@@ -84,9 +89,21 @@ test_runs[2]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-queue-concurrency.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu0mcoxz-0f1f2b
+    kind: test
+    status: passed
+    started_at: "2026-09-14T02:23:21.504Z"
+    finished_at: "2026-09-14T02:23:43.943Z"
+    recorded_at: "2026-09-14T02:23:43.943Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-queue-concurrency.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/CONFIGURATION.md,project,Queue coordination guarantees and best-effort limits
-close_reason: Queue preservation and best-effort delivery acceptance verified for refreshed review
+close_reason: Foreground contention and deterministic preservation regressions verified for refreshed review
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

@@ -5,11 +5,13 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, expect, it, vi } from "vitest";
 import * as files from "../../../../src/core/fs/fs-utils.js";
-import { _testOnly, waitForPendingFlush } from "../../../../src/core/telemetry/runtime.js";
+import { acquireLock } from "../../../../src/core/lock/lock.js";
+import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
+import { _testOnly, startTelemetryCommand, finishTelemetryCommand, emitTelemetryErrorEvent, waitForPendingFlush } from "../../../../src/core/telemetry/runtime.js";
 import { withTempGlobalRoot } from "../../../helpers/temp.js";
 
 const runtimeUrl = pathToFileURL(path.resolve("dist/core/telemetry/runtime.js")).href;
-afterEach(async () => { await waitForPendingFlush(); vi.restoreAllMocks(); });
+afterEach(async () => { await waitForPendingFlush(); vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
 it.each(["success", "retry", "expired", "deferred", "span"] as const)(
   "preserves a real process append during %s reconciliation",
@@ -42,12 +44,18 @@ it.each(["success", "retry", "expired", "deferred", "span"] as const)(
         const child = spawn(process.execPath, ["--input-type=module", "-e", `
           import { _testOnly } from ${JSON.stringify(runtimeUrl)};
           const root = process.argv[1];
-          const pending = process.argv[2] === "span"
+          /** Append through the real runtime so an unlocked negative control completes before the parent rewrite. */
+          const append = () => process.argv[2] === "span"
             ? _testOnly.enqueuePendingOtelSpan(root, { endpoint: "http://localhost/new", payload: { marker: "concurrent" } })
             : _testOnly.enqueueTelemetryEvent(root, { schema_version: 1, event_id: "concurrent", event_type: "command_start", occurred_at: new Date().toISOString(), installation_id: "fixture", session_id: "fixture", command: "list", payload: {} });
-          const timer = setTimeout(() => process.send("waiting"), 100);
-          await pending;
-          clearTimeout(timer);
+          process.env.PM_LOCK_WAIT_MS = "0";
+          try { await append(); }
+          catch (error) {
+            if (error.code !== "lock_conflict") throw error;
+            process.send("waiting");
+            process.env.PM_LOCK_WAIT_MS = "5000";
+            await append();
+          }
           process.send("written");
           process.disconnect();
         `, root, mode], { cwd: root, stdio: ["ignore", "ignore", "pipe", "ipc"], env: { ...process.env, PM_PATH: root, PM_GLOBAL_PATH: root } });
@@ -84,3 +92,33 @@ it("releases the installation mutex after a failed write", async () => {
     expect(await readFile(path.join(root, "recovered"), "utf8")).toBe("ok");
   });
 });
+
+
+it.each(["start", "finish", "error"])("bounds the default foreground %s lock wait without a late write", async (mode) => {
+  await withTempGlobalRoot("pm-telemetry-busy-", async (root) => {
+    for (const [key, value] of Object.entries({
+      PM_GLOBAL_PATH: root, PM_TELEMETRY_SEND_TEST_EVENTS: "1", DO_NOT_TRACK: "0",
+      PM_TELEMETRY_DISABLED: "0", PM_NO_TELEMETRY: "0", PM_TELEMETRY_OTEL_DISABLED: "1",
+      PM_TELEMETRY_INLINE_FLUSH: "1", PM_TELEMETRY_READ_SAMPLE_RATE: "0.1",
+    })) vi.stubEnv(key, value);
+    vi.stubEnv("PM_LOCK_WAIT_MS", undefined);
+    const settings = await readSettings(root);
+    settings.telemetry.enabled = true;
+    settings.telemetry.endpoint = "";
+    await writeSettings(root, settings, "test:local-capture");
+    const context = { command: "list", pm_version: "fixture", args: [], options: {}, global: { noExtensions: true }, pm_root: root };
+    const active = await startTelemetryCommand(context);
+    expect(active).not.toBeNull();
+    await waitForPendingFlush();
+    const release = await acquireLock(root, "telemetry-queue", 60, "contention-fixture");
+    const startedAt = performance.now();
+    try {
+      if (mode === "start") expect(await startTelemetryCommand(context)).toBeNull();
+      else if (mode === "finish") await finishTelemetryCommand(active, { ok: false, error_code: "usage_error" });
+      else await emitTelemetryErrorEvent({ ...context, error_code: "usage_error", error_message: "fixture", exit_code: 2 });
+    } finally { await release(); }
+    expect(performance.now() - startedAt).toBeLessThan(2_000);
+    await waitForPendingFlush();
+    await expect(readFile(path.join(root, "runtime", "telemetry", "events.jsonl"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+  });
+}, 15_000);

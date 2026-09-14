@@ -76,6 +76,7 @@ const TELEMETRY_RETRY_BASE_DELAY_MS = 30_000;
 const TELEMETRY_HTTP_TIMEOUT_DEFAULT_MS = 20_000;
 const TELEMETRY_HTTP_TIMEOUT_MIN_MS = 1_000;
 const TELEMETRY_HTTP_TIMEOUT_MAX_MS = 25_000;
+const TELEMETRY_FOREGROUND_LOCK_WAIT_MS = 250;
 const MILLISECONDS_PER_DAY = 86_400_000;
 const TELEMETRY_MAX_EVENT_BYTES = 65_536;
 const TELEMETRY_SANITIZE_MAX_DEPTH = 6;
@@ -793,6 +794,7 @@ function normalizeTelemetryExitCode(
   return ok ? 0 : 1;
 }
 
+/** Omit categories for successful outcomes; preserve explicit failure categories or derive them from a stable error code. */
 function normalizeTelemetryErrorCategory(params: {
   ok: boolean;
   errorCode?: string;
@@ -863,6 +865,7 @@ function inferTelemetrySourceContext(globalOptions: GlobalOptions): TelemetrySou
   return "user";
 }
 
+/** Hash a value with installation-specific salt so telemetry can correlate local context without publishing the original value. */
 function hashWithInstallationId(installationId: string, value: string): string {
   return crypto
     .createHash("sha256")
@@ -1426,6 +1429,7 @@ function buildCommandFinishPayload(params: {
   };
 }
 
+/** Build error diagnostics at the selected capture level, hashing attempted inputs and redacting error text even in minimal mode. */
 function buildCommandErrorPayload(params: {
   captureLevel: TelemetryCaptureLevel;
   pmVersion: string;
@@ -1596,6 +1600,7 @@ async function enqueueTelemetryEvent(globalPmRoot: string, event: TelemetryEvent
   await withQueueMutation(() => appendTelemetryEvent(globalPmRoot, event), globalPmRoot);
 }
 
+/** Recover well-shaped event envelopes from JSONL while discarding malformed lines so one corrupt record cannot strand delivery. */
 function parseQueueLines(raw: string): QueuedTelemetryEvent[] {
   const entries: QueuedTelemetryEvent[] = [];
   for (const line of raw.split("\n")) {
@@ -1723,6 +1728,7 @@ function isRetryableQueueRewriteError(error: unknown): boolean {
   return code === "EACCES" || code === "EBUSY" || code === "EPERM";
 }
 
+/** Yield for the requested retry delay without synchronously blocking the process. */
 function sleep(milliseconds: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, milliseconds);
@@ -1851,6 +1857,7 @@ function prunePendingOtelSpans(
   return { entries: retained, prunedCount };
 }
 
+/** Atomically replace the span snapshot, retrying transient filesystem contention; callers coordinate mutations with the queue mutex. */
 async function rewritePendingOtelSpans(
   globalPmRoot: string,
   entries: PendingOtelSpan[],
@@ -2029,6 +2036,7 @@ async function flushTelemetryArtifacts(
   }
 }
 
+/** Best-effort removal of aged atomic-write temporary files whose names match the event queue, leaving recent and unrelated files intact. */
 async function cleanupTelemetryQueueTempOrphans(
   globalPmRoot: string,
   maxAgeMs = TELEMETRY_QUEUE_TMP_ORPHAN_MAX_AGE_MS,
@@ -2059,10 +2067,11 @@ async function cleanupTelemetryQueueTempOrphans(
 
 export { withQueueMutation as withTelemetryQueueMutation };
 
-/** Serialize complete queue transactions across processes; never hold the lock during network I/O. */
+/** Serialize complete queue transactions across processes. The per-acquisition wait defaults to five seconds for maintenance; foreground capture supplies a shorter budget. PM_LOCK_WAIT_MS remains an explicit override. Never hold the lock during network I/O. */
 async function withQueueMutation<T>(
   operation: () => Promise<T>,
   globalPmRoot = resolveGlobalPmRoot(process.cwd()),
+  waitMs = 5_000,
 ): Promise<T> {
   const run = _queueMutationPromise
     .catch(
@@ -2073,7 +2082,7 @@ async function withQueueMutation<T>(
       // Telemetry is installation-local infrastructure: project lock overrides
       // and hooks must not intercept its coordination or recurse into capture.
       const release = await acquireLock(
-        globalPmRoot, "telemetry-queue", 60, "telemetry", false, false, 5_000,
+        globalPmRoot, "telemetry-queue", 60, "telemetry", false, false, waitMs,
       );
       try {
         return await operation();
@@ -2088,6 +2097,7 @@ async function withQueueMutation<T>(
   return run;
 }
 
+/** Read the current event snapshot, treating a missing or blank queue as empty and dropping malformed records through the shared parser. */
 async function readCurrentQueueEntries(
   globalPmRoot: string,
 ): Promise<QueuedTelemetryEvent[]> {
@@ -2636,7 +2646,7 @@ export async function startTelemetryCommand(
       };
       if (sampleRate < 1) deferredReadStarts.set(active, event);
       return active;
-    }, globalPmRoot);
+    }, globalPmRoot, TELEMETRY_FOREGROUND_LOCK_WAIT_MS);
     if (activeCommand && activeCommand.sample_rate === undefined) {
       scheduleTelemetryFlush(globalPmRoot, activeCommand.endpoint, activeCommand.retention_days);
     }
@@ -2749,7 +2759,7 @@ export async function finishTelemetryCommand(
         await appendPendingOtelSpan(activeCommand.global_pm_root, otelRequest);
       }
       return true;
-    }, activeCommand.global_pm_root);
+    }, activeCommand.global_pm_root, TELEMETRY_FOREGROUND_LOCK_WAIT_MS);
     if (!captured) return;
     scheduleTelemetryFlush(
       activeCommand.global_pm_root,
@@ -2839,7 +2849,7 @@ export async function emitTelemetryErrorEvent(
       };
       await appendTelemetryEvent(globalPmRoot, event);
       return installation;
-    }, globalPmRoot);
+    }, globalPmRoot, TELEMETRY_FOREGROUND_LOCK_WAIT_MS);
     if (captured) scheduleTelemetryFlush(globalPmRoot, captured.endpoint, captured.retentionDays);
   } catch {
     // Telemetry must never block command execution.
