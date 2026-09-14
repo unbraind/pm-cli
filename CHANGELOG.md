@@ -9,8 +9,8 @@
 
 ### Fixed
 
-- Honor revoked telemetry consent across capture and identity initialization ([pm-yjq2x0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yjq2x0.toon))
 - Preserve telemetry events across concurrent queue rewrites ([pm-utxk3h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-utxk3h.toon))
+- Honor revoked telemetry consent across capture and identity initialization ([pm-yjq2x0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yjq2x0.toon))
 - Explain rejected telemetry source-context overrides without leaking raw values ([pm-bw8lsb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bw8lsb.toon))
 - Destination census rows cite terminal consolidation owners for five live commands, so the grammar gate certifies consolidations no open item will deliver ([pm-3ig9b6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3ig9b6.toon))
 - Package-declared internal commands leak into default runtime contracts ([pm-34xisz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-34xisz.toon))
