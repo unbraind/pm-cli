@@ -319,6 +319,35 @@ export function getActiveCommandContext(): Omit<
     : null;
 }
 
+/**
+ * Prove that the active command has no extension execution surface. Unrelated
+ * command registrations are harmless; hooks, services, renderers, migrations,
+ * and matching handlers/parsers make ownership uncertain and fail closed.
+ * Snapshot this predicate before entering an isolated infrastructure context.
+ */
+export function isActiveCommandUnextended(command: string): boolean {
+  const state = runtimeState() ?? {
+    commandContext: activeCommandContext,
+    hooks: activeExtensionHooks,
+    commands: activeExtensionCommands,
+    parsers: activeExtensionParsers,
+    preflight: activeExtensionPreflight,
+    services: activeExtensionServices,
+    renderers: activeExtensionRenderers,
+    registrations: activeExtensionRegistrations,
+  };
+  if (state.commandContext?.command !== command) return false;
+  const broadInterceptors = [state.hooks, state.preflight, state.services, state.renderers];
+  if (broadInterceptors.some((registry) => Object.values(registry ?? {}).some((entries) => entries.length > 0))) return false;
+  const commandInterceptors = [state.commands, state.parsers];
+  if (commandInterceptors.some((registry) => Object.values(registry ?? {}).some(
+    (entries) => entries.some((entry: { command: string }) => entry.command === command),
+  ))) return false;
+  return !Object.entries(state.registrations ?? {}).some(([key, entries]) =>
+    ["migrations", "search_providers", "vector_store_adapters", "assurance_providers"].includes(key) && entries.length > 0,
+  );
+}
+
 /** Implements set active command result for the public runtime surface of this module. */
 export function setActiveCommandResult(result: unknown): void {
   const state = runtimeState();

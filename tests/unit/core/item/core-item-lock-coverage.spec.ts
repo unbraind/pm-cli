@@ -786,11 +786,17 @@ describe("core/lock/lock additional branch coverage", () => {
         lockPath,
         `${JSON.stringify({ id, pid: 1, owner: "other-owner", created_at: STALE_TS, ttl_seconds: 60 })}\n`,
       );
+      const realReadFile = fs.readFile.bind(fs);
       const readSpy = vi
         .spyOn(fs, "readFile")
-        .mockRejectedValue(
-          Object.assign(new Error("permission denied"), { code: "EACCES" }),
-        );
+        .mockImplementation(async (targetPath, options) => {
+          if (String(targetPath) === lockPath) {
+            throw Object.assign(new Error("permission denied"), {
+              code: "EACCES",
+            });
+          }
+          return await realReadFile(targetPath, options);
+        });
       try {
         await expect(
           acquireLock(pmPath, id, 60, "owner-a", false),

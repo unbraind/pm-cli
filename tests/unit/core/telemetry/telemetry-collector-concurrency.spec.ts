@@ -36,7 +36,7 @@ it("delivers every concurrent SDK lifecycle pair with one cold-installation iden
       settings.telemetry.endpoint = `http://127.0.0.1:${address.port}/events`;
       await writeSettings(root, settings, "test:collector");
       const childEnv = { ...process.env, PM_PATH: root, PM_GLOBAL_PATH: root, DO_NOT_TRACK: "0", PM_NO_TELEMETRY: "0", PM_TELEMETRY_DISABLED: "0", PM_TELEMETRY_SEND_TEST_EVENTS: "1", PM_TELEMETRY_SOURCE_CONTEXT: "private-fixture-context", PM_TELEMETRY_INLINE_FLUSH: "1", PM_TELEMETRY_OTEL_DISABLED: "1", PM_TELEMETRY_INGEST_KEY: "", PM_LOCK_WAIT_MS: "5000" };
-      const runs = await Promise.all(Array.from({ length: 4 }, () => execFileAsync(process.execPath, ["--input-type=module", "-e", `
+      const runs = await Promise.all(Array.from({ length: 4 }, () => execFileAsync(process.execPath, ["--disable-warning=ExperimentalWarning", "--input-type=module", "-e", `
         import { startTelemetryCommand, finishTelemetryCommand } from ${JSON.stringify(primitivesUrl)};
         import { flushTelemetryQueueNow, waitForPendingFlush } from ${JSON.stringify(telemetryUrl)};
         const root = process.argv[1];
@@ -56,7 +56,7 @@ it("delivers every concurrent SDK lifecycle pair with one cold-installation iden
       const queued = (await readFile(path.join(root, "runtime", "telemetry", "events.jsonl"), "utf8"))
         .split("\n").filter(Boolean).map((line) => JSON.parse(line) as { event: { event_id: string } });
       expect(new Set([...events.keys(), ...queued.map((entry) => entry.event.event_id)]).size).toBe(8);
-      const drained = await execFileAsync(process.execPath, ["--input-type=module", "-e", `
+      const drained = await execFileAsync(process.execPath, ["--disable-warning=ExperimentalWarning", "--input-type=module", "-e", `
         import { flushTelemetryQueueNow } from ${JSON.stringify(telemetryUrl)};
         await flushTelemetryQueueNow(process.argv[1]);
       `, root], { cwd: root, timeout: 20_000, env: childEnv });

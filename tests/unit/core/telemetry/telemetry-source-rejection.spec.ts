@@ -29,8 +29,8 @@ it("warns on stderr while preserving a real CLI JSON result", async () => {
     settings.telemetry.enabled = true;
     settings.telemetry.endpoint = "";
     await writeSettings(root, settings, "test:local-capture");
-    await promisify(execFile)(process.execPath, [cli, "init", "source-warning", "--yes", "--no-merge-fence", "--json", "--no-extensions"], { cwd: root, env: { ...env, PM_TELEMETRY_DISABLED: "1" } });
-    const result = await promisify(execFile)(process.execPath, [cli, "list", "--json", "--no-extensions"], { cwd: root, env: { ...env, PM_TELEMETRY_DISABLED: "0" } });
+    await promisify(execFile)(process.execPath, ["--disable-warning=ExperimentalWarning", cli, "init", "source-warning", "--yes", "--no-merge-fence", "--json", "--no-extensions"], { cwd: root, env: { ...env, PM_TELEMETRY_DISABLED: "1" } });
+    const result = await promisify(execFile)(process.execPath, ["--disable-warning=ExperimentalWarning", cli, "list", "--json", "--no-extensions"], { cwd: root, env: { ...env, PM_TELEMETRY_DISABLED: "0" } });
     expect(JSON.parse(result.stdout)).toMatchObject({ count: 0 });
     expect(result.stderr.trim().split("\n")).toEqual(["[pm] warning: PM_TELEMETRY_SOURCE_CONTEXT is not one of user|automation|test|dogfood; ignoring override."]);
     expect(result.stderr).not.toContain("private-project-value");

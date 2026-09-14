@@ -12,11 +12,11 @@ import { request as httpsRequest } from "node:https";
 import os from "node:os";
 import path from "node:path";
 import { acquireLock } from "../lock/lock.js";
-import { runWithIsolatedExtensionRuntime } from "../extensions/index.js";
+import { isActiveCommandUnextended, runWithIsolatedExtensionRuntime } from "../extensions/index.js";
+import { resolveAutomaticReadSampleRate } from "./read-sampling.js";
 import {
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
   resolveTelemetryEnvironmentPolicy,
-  resolveTelemetryReadSampleRate,
 } from "./policy.js";
 import type { GlobalOptions } from "../shared/command-types.js";
 import { resolvePmPackageRootFromModule } from "../packages/root.js";
@@ -37,6 +37,7 @@ import {
 } from "../shared/author.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
 import { readSettings, writeSettings } from "../store/settings.js";
+import { clearSettingsReadCache } from "../store/settings-read-cache.js";
 import {
   deriveTelemetryCommandResolution,
   deriveTelemetryCommandTaxonomy,
@@ -2101,6 +2102,9 @@ async function withQueueMutation<T>(
         globalPmRoot, "telemetry-queue", 60, "telemetry", false, false, waitMs,
       );
       try {
+        // Reads before lock acquisition can cache a pre-peer settings snapshot.
+        // Identity and consent must come from disk inside this transaction.
+        clearSettingsReadCache(globalPmRoot);
         return await operation();
       } finally {
         await release();
@@ -2600,6 +2604,7 @@ export async function startTelemetryCommand(
     if (!settings.telemetry.enabled) {
       return null;
     }
+    const coreReadOwned = context.global.noExtensions === true || isActiveCommandUnextended(context.command);
     const activeCommand = await withQueueMutation(async () => {
       const installation = await ensureInstallationId(globalPmRoot);
       if (!installation) return null;
@@ -2628,9 +2633,10 @@ export async function startTelemetryCommand(
           installationId,
         }),
       };
-      const sampleRate = resolveTelemetryReadSampleRate(
+      const sampleRate = await resolveAutomaticReadSampleRate(
+        globalPmRoot,
         context.command,
-        context.global.noExtensions === true,
+        coreReadOwned,
       );
       if (sampleRate === 1) {
         await appendTelemetryEvent(globalPmRoot, event);

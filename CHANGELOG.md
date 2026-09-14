@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Preserve telemetry identity and runtime acceptance across Node and npm versions ([pm-7msh7k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7msh7k.toon))
+- Automatically bound high-frequency read-only telemetry volume ([pm-um3teu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-um3teu.toon))
+- Prevent stale cleanup from reclaiming a lock during owner metadata initialization ([pm-v2pg4f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v2pg4f.toon))
+
+### Other
+
+- Adopt PR 1257 pnpm setup and CodeQL action updates ([pm-b01nb3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-b01nb3.toon))
+
 ## 2026.9.14 - 2026-09-14
 
 ### Changed

@@ -56,7 +56,9 @@ describe("package install dry run", () => {
       expect(alternative.pack.command).toBe("npm");
       const packed = spawnSync(resolveNpmCommandName(), alternative.pack.args, { cwd: alternative.cwd, encoding: "utf8", shell: shouldRunNpmCommandInShell(), env: { ...process.env, npm_config_cache: path.join(context.tempRoot, "npm-cache") } });
       expect(packed.status, packed.error?.message ?? packed.stderr).toBe(0);
-      const [{ filename }] = JSON.parse(packed.stdout) as Array<{ filename: string }>;
+      const receipts = Object.values(JSON.parse(packed.stdout) as Array<{ filename: string }> | Record<string, { filename: string }>);
+      expect(receipts).toHaveLength(1);
+      const { filename } = receipts[0];
       const archive = path.join(alternative.cwd, filename);
       const archivePlan = await client.packageInstall(archive, { project: true, dryRun: true });
       expect(archivePlan.details).toMatchObject({ installed: false, install_plan: { source_mode: "archive", archive_bytes: (await fs.stat(archive)).size } });

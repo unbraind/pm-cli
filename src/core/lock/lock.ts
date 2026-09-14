@@ -211,6 +211,11 @@ function buildLockPayload(
   };
 }
 
+/**
+ * Publish owner metadata while holding the stale-cleanup coordination gate so
+ * an empty, exclusively created file cannot be reclaimed by a competing owner.
+ * Failed initialization closes and removes only the file this call created.
+ */
 async function createLockFile(
   lockPath: string,
   id: string,
@@ -219,14 +224,29 @@ async function createLockFile(
   token: string,
 ): Promise<void> {
   await fs.mkdir(path.dirname(lockPath), { recursive: true });
-  const handle = await fs.open(lockPath, "wx");
+  // Publication of an empty file precedes its owner JSON. Fence both steps
+  // against stale cleanup so no peer can reclaim a live initializing owner.
+  const releaseCleanupGate = await acquireStaleCleanupGate(lockPath, id);
+  if (releaseCleanupGate === null) {
+    throw Object.assign(new Error("Lock initialization is contended"), { code: "EEXIST" });
+  }
   try {
-    await handle.writeFile(
-      `${JSON.stringify(buildLockPayload(id, owner, ttlSeconds, token), null, 2)}\n`,
-      "utf8",
-    );
+    const handle = await fs.open(lockPath, "wx");
+    try {
+      try {
+        await handle.writeFile(
+          `${JSON.stringify(buildLockPayload(id, owner, ttlSeconds, token), null, 2)}\n`,
+          "utf8",
+        );
+      } finally {
+        await handle.close();
+      }
+    } catch (error) {
+      await unlinkLockWithHook(lockPath, "lock:release");
+      throw error;
+    }
   } finally {
-    await handle.close();
+    await releaseCleanupGate();
   }
   await emitLockWriteHook(lockPath, "lock:create");
 }

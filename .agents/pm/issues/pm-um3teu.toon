@@ -2,39 +2,88 @@ id: pm-um3teu
 title: Automatically bound high-frequency read-only telemetry volume
 description: "GitHub report https://github.com/unbraind/pm-cli/issues/1241. Read-only commands support bounded sampling with explicit inclusion probability on both lifecycle events; mutating commands and errors remain unsampled; controls are documented and tested through the SDK."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-09-12T21:08:21.753Z"
-updated_at: "2026-09-13T21:21:41.493Z"
+updated_at: "2026-09-14T13:52:04.964Z"
+closed_at: "2026-09-14T13:52:03.804Z"
+completed_at: "2026-09-14T13:52:03.804Z"
 author: "harness:codex"
 acceptance_criteria: Default repeated core read invocations are automatically bounded without requiring users to discover an opt-in variable; eligibility proves read ownership rather than assuming a command name; failures and writes remain fully retained; weighting and bounded cross-process state are validated.
 goal: project management = context management
 objective: Bound read-only telemetry volume with paired weighted sampling
 value: Reliable privacy-preserving operational context for agents and package consumers
 parent: pm-5oj5
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+resolution: SDK-owned core-read ownership proof and bounded per-minute installation counters automatically sample successful pairs while retaining failures and mutations
+expected_result: Automatic repeated-read volume reduction with complete retained lifecycle pairs and explicit weighting
+actual_result: "Node 22 and current-runtime suites pass; real multiprocess ordinal checks, public SDK npm/Bun consumers, npx/bunx smoke and 8871 full-suite tests pass at exact 100/100/100/100 coverage"
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-5oj5,implements,"2026-09-12T21:08:21.753Z","harness:codex","cli:create:dep",detected
   pm-sgko,discovered_from,"2026-09-12T21:08:21.753Z","harness:codex","cli:create:dep",detected
   pm-745epp,blocked_by,"2026-09-12T21:22:42.943Z","harness:codex","cli:update:dep",detected
   pm-utxk3h,blocked_by,"2026-09-13T21:21:41.083Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+  pm-v2pg4f,blocked_by,"2026-09-14T13:19:35.688Z","harness:codex","cli:update:dep",detected
+comments[13]{created_at,author,text}:
   "2026-09-12T21:08:21.753Z","harness:codex","Duplicate check: complete CLI full all-status export on 2026-09-12 contained 2745 items with no omissions. Request-specific telemetry and onboarding searches plus exact GitHub URL and title/description matching found no owner for this distinct report. Existing parent and closed implementation lineage reused."
   "2026-09-12T21:08:44.057Z","harness:codex","GitHub report: https://github.com/unbraind/pm-cli/issues/1241. Canonical tracking reused after complete all-status duplicate check."
   "2026-09-12T21:22:51.179Z","harness:codex","Implementation decision: read sampling is explicit via PM_TELEMETRY_READ_SAMPLE_RATE and requires --no-extensions so custom write-capable command overrides cannot be sampled accidentally. Both lifecycle events are deferred together until completion; errors have inclusion probability 1. Event pairs and OTLP spans carry the effective probability. Abruptly terminated sampled reads have no pair; local stats remain observed queue statistics, documented separately from population estimates."
   "2026-09-12T21:55:17.619Z","harness:codex","Final source verification: 680 test files and 8789 tests passed. Exact coverage is statements 64330/64330, branches 49047/49047, functions 13363/13363, lines 61618/61618: 100/100/100/100 with zero uncovered counts. ESLint and zero-clone duplication gates pass; graph composition and record integrity pass. Real loopback HTTPS peer rejection, noninteractive prompt suppression, and Sentry test isolation are directly exercised. SDK import budgets passed; final CLI timing verification remains pending before PR submission."
   "2026-09-12T21:56:02.265Z","harness:codex",Final CLI transport-floor budget gate passed after other verification jobs settled; SDK entrypoint costs also pass. No timing baseline or coverage threshold was relaxed. Implementation is locally verified and ready for hosted review; closure does not assert a new package publication.
   "2026-09-12T22:10:24.223Z","harness:codex","Review correction: remove the GitHub #1241 automatic-close claim. Explicit sampling, paired weights, and failure retention are implemented; automatic high-frequency suppression is not. A safe completion must prove resolved core read ownership even with extensions, preserve every write/failure, and bound per-installation state. No duplicate follow-up item is needed."
-learnings[1]{created_at,author,text}:
+  "2026-09-14T12:35:02.019Z","harness:codex","Design and initial TDD evidence: automatic per-command minute counters use the existing installation queue mutex. First ten reads have probability one; later successes use min(1,(10/n)^2), with expected retained successful pairs below twenty per command-minute. This is a statistical bound, not a hard cap. Failures retain probability one. Runtime ownership excludes extension execution surfaces and unrelated command registrations remain safe. Seven state-policy and thirty existing telemetry-policy tests pass; full verification pending."
+  "2026-09-14T12:40:23.959Z","harness:codex","All-status graph baseline: 2761 live nodes and 13768 edges; no isolated nodes, missing targets, or ordering cycles. Graph audit has two informational legacy hierarchy findings. 1505 nodes lack semantic edges, including 1397 terminal nodes, so the entire historical graph is not semantically complete. Existing graph-governance lineage owns that broader work; this delivery adds evidence-backed typed links rather than fabricated depth."
+  "2026-09-14T12:47:23.556Z","harness:codex","Operational estimator integration: aggregate and command-family failure-rate denominators now use inverse inclusion probability for numeric rates in (0,1], falling back to unit weight for missing or invalid values. A read-only PostgreSQL fixture returns 14 estimated events from five retained observations, including a 0.1-probability read and invalid/zero controls. The operational query remains private and is not packaged. Fresh Sentry and required telemetry gates pass: zero critical/high issues, 1.76 percent observed-window failure estimate, zero missing error-code rows."
+  "2026-09-14T12:52:49.998Z","harness:codex","Validation: packed npm and Bun consumers passed real temporary-workspace lifecycle acceptance and public SDK sampling, including retained failure pairs and telemetry-clear state removal. Full suite failed 4 of 8859 tests and produced no coverage report: workflow contract drift, two npm pack JSON shape assumptions, and concurrent cold-installation identity split. Exact coverage remains unverified; investigating without weakening assertions."
+  "2026-09-14T13:02:19.459Z","harness:codex","Additional acceptance: current 2026.9.14 tarball passed npm/npx and bunx --bun smoke, installed bundled packages, calendar workflow, package upgrade dry run, strict external TypeScript SDK compilation, and CLI public-entrypoint verification. Typecheck, tracked-secret scan, documentation links, and git whitespace checks pass."
+  "2026-09-14T13:48:10.749Z","harness:codex","Final source verification: 692 test files and exact coverage passed at statements 64473/64473, branches 49213/49213, functions 13400/13400 and lines 61731/61731, with zero uncovered counts. All static pipeline stages pass after correcting four evidence-backed graph relationships; typecheck, SDK import costs, CLI transport budgets, version policy, defect evidence and tracked-secret scan pass. No coverage exclusions, thresholds, timing budgets or graph ceilings were relaxed."
+  "2026-09-14T13:52:00.877Z","harness:codex","Final acceptance: freshly packed npm and Bun consumers completed isolated init/create/claim/comment/close/release/get workflows and public SDK sampling with 16 complete retained failure pairs and sampling-state clearing. npx and bunx package, bin, bundled-package and SDK smokes passed. The 137-test telemetry linked suite and separately trusted 30-test policy link passed. Fresh Sentry access/14-day gate reports zero critical/high/total issues; required telemetry gate passes with 1.76 percent weighted failure estimate and zero missing error-code rows. PR-head review and merged-main proof remain independent delivery checks."
+notes[1]{created_at,author,text}:
+  "2026-09-14T13:25:16.976Z","harness:codex","Delivery architecture: the SDK telemetry runtime owns automatic policy and lifecycle semantics; CLI and MCP reuse it. Core ownership is captured before isolated infrastructure execution. An installation-level queue transaction protects bounded per-minute counters, identity and consent. Failed reads retain complete pairs at weight one; successful pairs use an explicit inclusion probability. Statistical estimates can have high variance and are not a hard delivery quota."
+learnings[2]{created_at,author,text}:
   "2026-09-12T21:30:11.152Z","harness:codex","Command names alone cannot certify read-only behavior in an extensible CLI. Sampling requires the explicit no-extensions boundary, and selection occurs at completion so failed invocations retain both start and finish evidence."
-files[3]{path,scope,note}:
+  "2026-09-14T12:47:24.410Z","harness:codex",Automatic read sampling must be paired with probability-aware population metrics. Counting retained failures against an unweighted sampled-success denominator inflates failure rates. Keep local queue statistics explicitly observational and document estimator variance.
+files[9]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog managed installation receipt for generated delivery changelog
   sdk/public-surface.json,project,Active command sampling probability contract
+  src/core/extensions/index.ts,project,Active runtime ownership proof
   src/core/telemetry/policy.ts,project,Safe core-only sampling eligibility
+  src/core/telemetry/read-sampling.ts,project,Bounded installation frequency state
   src/core/telemetry/runtime.ts,project,Deferred pair sampling retains failures
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  tests/unit/core/telemetry/automatic-read-lifecycle.spec.ts,project,Connected telemetry and runtime validation delivery
+  tests/unit/core/telemetry/automatic-read-sampling.spec.ts,project,Sampling policy negative controls
+  tests/unit/core/telemetry/read-ownership.spec.ts,project,Runtime scope and extension interception controls
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts,project,240,"harness:codex","2026-09-12T21:28:55.113Z",local_mutation,fix/telemetry-consent-agent-signal
-docs[1]{path,scope,note}:
+  node scripts/run-tests.mjs test -- tests/unit/core/telemetry/,project,300,"harness:codex","2026-09-14T12:38:21.184Z",local_mutation,feat/automatic-read-telemetry-and-runtime-validation
+test_runs[2]:
+  - run_id: test-local-mu1asqkv-zf2pij
+    kind: test
+    status: failed
+    started_at: "2026-09-14T13:47:56.770Z"
+    finished_at: "2026-09-14T13:48:03.343Z"
+    recorded_at: "2026-09-14T13:48:03.343Z"
+    passed: 1
+    failed: 1
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts,schema,schema,source,foreign_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/,schema,schema,source,local_source_ref
+  - run_id: test-local-mu1au75k-9ubh7u
+    kind: test
+    status: passed
+    started_at: "2026-09-14T13:49:08.917Z"
+    finished_at: "2026-09-14T13:49:11.480Z"
+    recorded_at: "2026-09-14T13:49:11.480Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts,schema,schema,source,acknowledged
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,pm-changelog generated delivery entries
   docs/CONFIGURATION.md,project,Sampling eligibility weighting and crash behavior
+close_reason: Implemented and locally verified automatic read telemetry sampling for reviewed delivery
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

@@ -1,0 +1,58 @@
+id: pm-v2pg4f
+title: Prevent stale cleanup from reclaiming a lock during owner metadata initialization
+description: "A lock file becomes visible at exclusive open before owner JSON is written. Concurrent automatic stale recovery classifies the empty file as stale and can unlink a live creator, granting overlapping owners and losing telemetry counter updates. Coordinate initialization with the existing stale-cleanup gate."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-14T13:17:30.265Z"
+updated_at: "2026-09-14T13:52:02.888Z"
+closed_at: "2026-09-14T13:52:01.990Z"
+completed_at: "2026-09-14T13:52:01.990Z"
+author: "harness:codex"
+acceptance_criteria: A deterministic paused owner-write interleaving never grants a second owner; failed initialization cleans its own lock safely; real multi-process telemetry retains every counter transition and one installation identity; existing stale recovery and exact coverage remain green.
+parent: pm-dj98
+risk: high
+confidence: high
+severity: high
+resolution: Fence exclusive lock creation and owner metadata publication with the existing stale-cleanup coordination gate; clean failed initialization safely
+expected_result: A concurrent stale reader cannot acquire a live initializing lock or lose serialized telemetry counter transitions
+actual_result: Deterministic pre-fix overlap now refused; failed initialization retry passes; 66 linked tests and 8871 full-suite tests pass at exact four-metric 100 percent coverage
+component: core/lock
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-um3teu,discovered_from,"2026-09-14T13:17:30.265Z","harness:codex","cli:create:dep",detected
+  pm-zwib,discovered_from,"2026-09-14T13:17:30.265Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-14T13:17:30.265Z","harness:codex","Duplicate check: complete all-status 2759-item export plus current newly created delivery items, request-specific lock initialization search, open/in-progress inventories, and full pm-zwib/pm-lvyd context inspected. pm-zwib covers two stale waiters replacing valid metadata; this distinct empty-owner initialization window is not covered. Real four-process sampler lost one ordinal under the existing mutex."
+  "2026-09-14T13:24:44.145Z","harness:codex","TDD evidence: pausing the first exclusive-open owner write deterministically granted an overlapping second owner before the fix. Lock creation now holds the same token-validated coordination gate as stale cleanup and release, including removal of its own failed initialization. The original warning-token regression still injects EACCES on lock metadata; unrelated gate-owner reads remain real. Focused validation passed 17 files / 199 tests, including real multi-process sampler counts and collector lifecycle/identity assertions."
+  "2026-09-14T13:50:37.075Z","harness:codex","Final validation: linked lock and real multiprocess telemetry selection passed 66 tests; full suite passed 8871 tests with exact statements/branches/functions/lines coverage 100/100/100/100. SDK import and CLI transport budgets pass. Source initialization safety is complete and prepared for hosted review; the separate thousand-agent throughput item remains a future workload."
+learnings[1]{created_at,author,text}:
+  "2026-09-14T13:25:16.135Z","harness:codex",Exclusive file creation alone does not publish valid owner metadata atomically. A stale reader must share the same coordination gate as initialization and release. Test the empty-file publication window with explicit synchronization rather than timing sleeps.
+files[3]{path,scope,note}:
+  src/core/lock/lock.ts,project,Coordinate lock creation and stale cleanup
+  tests/unit/core/item/core-item-lock-coverage.spec.ts,project,Preserve unreadable lock metadata warning regression while allowing independent coordination owner reads
+  tests/unit/core/item/lock-initialization-race.spec.ts,project,Real filesystem with paused owner-write interleaving
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/item/lock-initialization-race.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/telemetry/automatic-read-lifecycle.spec.ts tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts,project,300,"harness:codex","2026-09-14T13:19:35.019Z",local_mutation,feat/automatic-read-telemetry-and-runtime-validation
+test_runs[1]:
+  - run_id: test-local-mu1aubcx-1xf5m7
+    kind: test
+    status: passed
+    started_at: "2026-09-14T13:49:12.087Z"
+    finished_at: "2026-09-14T13:49:16.929Z"
+    recorded_at: "2026-09-14T13:49:16.929Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/item/lock-initialization-race.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/telemetry/automatic-read-lifecycle.spec.ts tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts,schema,schema,source,local_source_ref
+close_reason: Implemented and locally verified shared lock initialization safety for reviewed delivery
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: Paused exclusive-open owner write granted overlapping ownership before coordination fix; failed initialization cleanup and real multi-process telemetry remain asserted
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/core/item/lock-initialization-race.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/telemetry/,node scripts/run-tests.mjs coverage -- --maxWorkers=4
+  hosted_checks[2]: Gates (coverage),Telemetry regression (Node 22)
+  owner: pm-v2pg4f
+body: ""

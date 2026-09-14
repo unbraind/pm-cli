@@ -1,0 +1,76 @@
+id: pm-7msh7k
+title: Preserve telemetry identity and runtime acceptance across Node and npm versions
+description: GitHub issue #1258 reports Node 22 nightly failures in collector concurrency and rejected-source JSON acceptance. SQLite ExperimentalWarning contaminates strict stderr assertions. Preserve exact application-warning and delivery checks while controlling only the known runtime warning at subprocess launch.
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-09-14T12:29:21.921Z"
+updated_at: "2026-09-14T14:13:52.557Z"
+closed_at: "2026-09-14T14:13:51.902Z"
+completed_at: "2026-09-14T14:13:51.902Z"
+author: "harness:codex"
+acceptance_criteria: Both telemetry subprocess suites pass on Node 22 and current Node; unexpected stderr still fails; exact lifecycle pairs and rejection privacy remain verified
+parent: pm-5oj5
+resolution: Disable persisted checkout credentials throughout CI; enforce the boundary in workflow regression coverage; document lock publication and npm metadata normalization guarantees
+expected_result: "PR-controlled install scripts have no persisted checkout token, with Node 22 telemetry validation required before merge"
+actual_result: The negative control failed before the fix; 79 focused tests and ESLint pass; all first-head hosted checks and strict analyzer evidence passed; final-head review and checks remain required
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-bw8lsb,verifies,"2026-09-14T12:29:21.921Z","harness:codex","cli:create:dep",detected
+  pm-um3teu,verifies,"2026-09-14T12:29:21.921Z","harness:codex","cli:create:dep",detected
+  pm-utxk3h,discovered_from,"2026-09-14T12:29:21.921Z","harness:codex","cli:create:dep",detected
+  pm-xrjy8o,verifies,"2026-09-14T12:56:08.361Z","harness:codex","cli:update:dep",detected
+  pm-v2pg4f,blocked_by,"2026-09-14T13:19:36.861Z","harness:codex","cli:update:dep",detected
+comments[12]{created_at,author,text}:
+  "2026-09-14T12:29:21.921Z","harness:codex","Duplicate check: complete 2759-item all-status CLI export with no omissions plus exact GitHub URL and SQLite-warning matching found no canonical owner for issue 1258. Prior queue and source-attribution work is closed and reused as typed lineage."
+  "2026-09-14T12:35:01.430Z","harness:codex","TDD evidence: both failing suites reproduced under Node 22.21.1 with the exact SQLite ExperimentalWarning in stderr. Subprocess launch now disables ExperimentalWarning only; exact application stderr and no-private-value assertions remain unchanged."
+  "2026-09-14T12:52:50.639Z","harness:codex","Full-suite follow-up: Node warning suppression passes focused tests, but concurrent collector integration exposed two installation IDs across four processes under coverage load. Investigating settings snapshots across queue lock acquisition; no identity assertion will be removed."
+  "2026-09-14T12:54:24.219Z","harness:codex","Deterministic negative control reproduced identity replacement when a pre-lock settings snapshot carried post-peer signatures. Queue transactions now invalidate their installation settings cache after acquiring the mutex, so consent and identity are re-read from disk. The real four-process collector assertion remains mandatory."
+  "2026-09-14T13:00:42.306Z","harness:codex","Focused verification: all 150 telemetry/workflow tests and all 78 affected package/CLI acceptance tests pass. npm receipt parsing tests now accept either array or keyed object receipts while requiring exactly one actual archive. Prior product parser fix pm-xrjy8o remains closed and shipped. This item verifies that contract in real npm-dependent acceptance."
+  "2026-09-14T13:05:06.147Z","harness:codex","Live released-artifact verification found an additional npm 12 receipt mismatch: npm view version/dist metadata returns a singleton array, but verify-published-release expects an object and retries a package already published. Stopped unnecessary retries after directly confirming version and integrity. Extending the same runtime-compatibility delivery to normalize one metadata receipt and reject ambiguous arrays."
+  "2026-09-14T13:07:50.001Z","harness:codex","Live verification now succeeds for published 2026.9.14 with npm-attempts=1 and executor-attempts=1: npm metadata, npx/bunx CLI dispatch, MCP stdio and HTTP discovery, Skills/Apps resources, missing-bin negative controls, complete bin coverage, and public non-draft GitHub release. Regression suite passes 40 tests; pre-fix negative controls failed 7 cases."
+  "2026-09-14T13:25:17.825Z","harness:codex","Release acceptance evidence: npm 12 returns a singleton array for npm view metadata. Seven new negative/positive cases failed before normalization; all 40 release-verifier tests pass after accepting only an object or singleton object array, rejecting ambiguous shapes. Live v2026.9.14 verification now passes registry integrity, GitHub release, npx/bunx default dispatch, MCP stdio/HTTP and resource acceptance. This verifies the existing published release, not this unmerged branch."
+  "2026-09-14T13:50:36.483Z","harness:codex","Final validation: 8871 tests in 692 files passed at exact 100/100/100/100 coverage. Linked runs passed 4 telemetry subprocess tests, 78 workflow/real npm package acceptance tests and 40 published-release verifier tests. Full source/package/example/SDK typechecking passes. Final tarball passed temporary npm and Bun consumers plus npx/bunx smoke. Hosted Node 22 and security checks will be independently evaluated on the PR head before merge."
+  "2026-09-14T13:52:00.159Z","harness:codex","Direct Node 22 validation passed all 137 telemetry tests using the built artifact and Node 22 runtime. The current Node run, temporary npm/Bun consumers, exact full coverage and linked test receipts also pass. Hosted PR-head checks remain independently required before merge."
+  "2026-09-14T14:11:10.684Z","harness:codex","Review round 1: all hosted checks passed on a90298d4899cfd6a891021d3e6f82fa340506e01. CodeRabbit correctly identified persisted checkout credentials before PR-controlled install scripts. Apply the same no-persistence boundary to all CI checkout steps that do not need later Git authentication and pin it with a negative-control workflow assertion. Add explicit docstrings for the two touched functions omitted by the provider diff-docstring census. The Actions-update scope is intentional and owned by the already linked maintenance item."
+  "2026-09-14T14:13:51.126Z","harness:codex","Review fix evidence: a workflow assertion requiring credential persistence to be disabled failed before the change. All CI checkout steps now disable persistence while preserving fetch depth and pinned actions; the focused CI/release/verifier selection passes 79 tests and ESLint passes. Added documentation to lock publication and npm metadata normalization functions. The Node 22 telemetry job passed on the first head and is now required in branch protection alongside all 19 existing checks. Cubic reported monthly quota exhaustion, and Greptile has not posted a GitHub review; these are limitations, not approvals."
+files[11]{path,scope,note}:
+  .github/workflows/ci.yml,project,Connected telemetry and runtime validation delivery
+  scripts/release/gate-registry.json,project,Register Node 22 telemetry pipeline under mandatory test coverage governance
+  scripts/release/verify-published-release.mjs,project,Accept singleton npm metadata array without treating published release as missing
+  src/core/lock/lock.ts,project,Document lock publication and failed initialization guarantees identified during review
+  src/core/telemetry/runtime.ts,project,Refresh persisted identity and consent after acquiring queue mutex
+  tests/integration/cli.integration.spec.ts,project,Real npm 11 and 12 packed dependency acceptance
+  tests/integration/node22-telemetry-workflow.spec.ts,project,Hosted Node 22 test command and failure propagation contract
+  tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts,project,Connected telemetry and runtime validation delivery
+  tests/unit/core/telemetry/telemetry-source-rejection.spec.ts,project,Connected telemetry and runtime validation delivery
+  tests/unit/extensions/extension-install-dry-run.spec.ts,project,Actual recommended npm pack receipt across supported npm versions
+  tests/unit/scripts/release/verify-published-release.spec.ts,project,npm metadata singleton normalization and ambiguity refusal negative controls
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-source-rejection.spec.ts tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts,project,300,"harness:codex","2026-09-14T12:38:22.036Z",local_mutation,feat/automatic-read-telemetry-and-runtime-validation
+  node scripts/run-tests.mjs test -- tests/integration/node22-telemetry-workflow.spec.ts tests/unit/extensions/extension-install-dry-run.spec.ts tests/integration/cli.integration.spec.ts,project,300,"harness:codex","2026-09-14T12:56:41.304Z",local_mutation,feat/automatic-read-telemetry-and-runtime-validation
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts,project,240,"harness:codex","2026-09-14T13:24:46.012Z",local_mutation,feat/automatic-read-telemetry-and-runtime-validation
+test_runs[1]:
+  - run_id: test-local-mu1av4yr-egd0g2
+    kind: test
+    status: passed
+    started_at: "2026-09-14T13:49:17.487Z"
+    finished_at: "2026-09-14T13:49:55.299Z"
+    recorded_at: "2026-09-14T13:49:55.299Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-source-rejection.spec.ts tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/node22-telemetry-workflow.spec.ts tests/unit/extensions/extension-install-dry-run.spec.ts tests/integration/cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts,schema,schema,source,local_source_ref
+close_reason: Completed the verified review correction with regression coverage
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  negative_control: "Node 22 warning assertions, npm 12 pack receipt fixtures, and pre-lock identity snapshot each failed before their fixes"
+  local_checks[2]: node scripts/run-tests.mjs coverage,node scripts/run-tests.mjs test -- tests/unit/core/telemetry/
+  hosted_checks[3]: Telemetry regression (Node 22),Gates (coverage),Gates (static)
+  owner: pm-7msh7k
+body: ""

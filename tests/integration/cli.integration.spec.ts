@@ -317,8 +317,10 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         encoding: "utf8",
         shell: isWindows,
       });
-      const sdkPack = JSON.parse(sdkPackOutput) as Array<{ filename: string }>;
-      const sdkTarball = sdkPack[0]?.filename;
+      const sdkPack = JSON.parse(sdkPackOutput) as Array<{ filename: string }> | Record<string, { filename: string }>;
+      const sdkReceipts = Object.values(sdkPack);
+      expect(sdkReceipts).toHaveLength(1);
+      const sdkTarball = sdkReceipts[0]?.filename;
       expect(sdkTarball).toBeTruthy();
 
       const packageRoot = path.join(context.tempRoot, "npm-package-with-deps");

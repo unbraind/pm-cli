@@ -390,6 +390,11 @@ function runWithRetries(label, attempts, delayMs, action) {
   };
 }
 
+/**
+ * Verify exact-version public registry metadata across npm object and singleton
+ * array receipts. Reject ambiguous shapes, version drift, and absent integrity
+ * within the caller's bounded retry budget before exercising package binaries.
+ */
 function verifyNpmMetadata(version, attempts, publicRegistryEnv) {
   const npm = commandFor("npm");
   return runWithRetries("npm metadata", attempts, 15000, () => {
@@ -409,7 +414,14 @@ function verifyNpmMetadata(version, attempts, publicRegistryEnv) {
       return { ok: false, reason: result.stderr.trim() || "npm_view_failed" };
     }
     try {
-      const metadata = JSON.parse(result.stdout);
+      const decoded = JSON.parse(result.stdout);
+      if (Array.isArray(decoded) && decoded.length !== 1) {
+        return { ok: false, reason: "npm_metadata_shape_unsupported" };
+      }
+      const metadata = Array.isArray(decoded) ? decoded[0] : decoded;
+      if (typeof metadata !== "object" || metadata === null || Array.isArray(metadata)) {
+        return { ok: false, reason: "npm_metadata_shape_unsupported" };
+      }
       if (metadata.version !== version) {
         return {
           ok: false,

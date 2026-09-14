@@ -1,0 +1,53 @@
+id: pm-b01nb3
+title: Adopt PR 1257 pnpm setup and CodeQL action updates
+description: Integrate the SHA-pinned pnpm action 6.1.0 and CodeQL action 4.38.0 updates from GitHub PR 1257 into the connected telemetry validation delivery.
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-09-14T12:29:25.289Z"
+updated_at: "2026-09-14T13:52:08.780Z"
+closed_at: "2026-09-14T13:52:07.808Z"
+completed_at: "2026-09-14T13:52:07.808Z"
+author: "harness:codex"
+acceptance_criteria: All proposed action pins are adopted with workflow contracts intact and hosted security checks passing
+parent: pm-u9d0
+resolution: Adopt pnpm/action-setup 6.1.0 and CodeQL 4.38.0 immutable pins from PR 1257 across all affected workflows
+expected_result: Current action pins preserve CI and daily release contracts without bypassing compatibility or security gates
+actual_result: "All 38 linked workflow/release contract tests, static stages, exact full coverage and local security checks pass; hosted action execution will be verified on the PR head before merge"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-shpocu,discovered_from,"2026-09-14T12:29:25.289Z","harness:codex","cli:create:dep",detected
+  pm-do5b,verifies,"2026-09-14T13:36:12.634Z","harness:codex","cli:update:dep",detected
+  pm-fokyhh,verifies,"2026-09-14T13:36:12.634Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,verifies,"2026-09-14T13:36:12.634Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-09-14T12:29:25.289Z","harness:codex","Duplicate check: complete 2759-item all-status CLI export with no omissions and exact PR 1257 matching found no owner. Closed pm-shpocu covers earlier action pins and is predecessor context."
+  "2026-09-14T12:40:21.569Z","harness:codex","Live GitHub inventory: PR 1257 has green completed checks and four provider comments, all read and reacted to on their original surfaces. Greptile and CodeRabbit explicitly skipped the dependency author; those skips are not reviews. CodSpeed reports unchanged benchmarks and Codecov reports covered changes. The update patch is incorporated for fresh full review with this delivery. GitHub Dependabot, code-scanning and secret-scanning open alerts are all zero; pnpm audit reports zero vulnerabilities. Outdated majors remain subject to established compatibility constraints."
+  "2026-09-14T13:10:12.128Z","harness:codex","Tracker gate correctly rejected three new generic related edges above its ratcheted ceiling. Removed those incidental links instead of raising the bound or inventing dependency semantics. Independent major-upgrade dispositions remain documented on canonical pm-do5b, pm-fokyhh and pm-ksr40d; action-update predecessor and parent remain linked."
+  "2026-09-14T13:36:12.634Z","harness:codex","Dependency eligibility verification on 2026-09-14: npm registry metadata for typescript-eslint 8.70.0 accepts TypeScript >=4.8.4 <6.1.0; CodSpeed 5.7.1 accepts Vitest ^3.2 or ^4; npm-package-arg 14 requires Node ^22.22.2 or ^24.15.0 or >=26 while pm promises >=22.18.0. The verifies edges record this concrete compatibility review of pm-do5b, pm-fokyhh and pm-ksr40d, not implementation of their upgrades."
+  "2026-09-14T13:50:37.689Z","harness:codex","Final local validation: all 38 linked CI and release automation contract tests pass, full coverage and static pipeline stages pass, and pinned action updates preserve daily automatic-release idempotency. All six open GitHub issues have canonical PM links. Hosted action/security execution remains a separate required PR-head check before merge; PR 1257 will be closed as superseded after the combined delivery is available."
+files[8]{path,scope,note}:
+  .github/workflows/auto-release.yml,project,Connected telemetry and runtime validation delivery
+  .github/workflows/ci.yml,project,Connected telemetry and runtime validation delivery
+  .github/workflows/codeql.yml,project,Connected telemetry and runtime validation delivery
+  .github/workflows/codspeed.yml,project,Connected telemetry and runtime validation delivery
+  .github/workflows/docs.yml,project,Connected telemetry and runtime validation delivery
+  .github/workflows/nightly.yml,project,Connected telemetry and runtime validation delivery
+  .github/workflows/release.yml,project,Connected telemetry and runtime validation delivery
+  .github/workflows/scorecard.yml,project,Connected telemetry and runtime validation delivery
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,project,300,"harness:codex","2026-09-14T12:38:22.681Z",local_mutation,feat/automatic-read-telemetry-and-runtime-validation
+test_runs[1]:
+  - run_id: test-local-mu1av9ju-hkdjib
+    kind: test
+    status: passed
+    started_at: "2026-09-14T13:49:56.000Z"
+    finished_at: "2026-09-14T13:50:01.242Z"
+    recorded_at: "2026-09-14T13:50:01.242Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,local_source_ref
+close_reason: Integrated and locally verified the pinned action update set for reviewed delivery
+body: ""
