@@ -161,12 +161,46 @@ Telemetry is enabled by default. Use `pm config set telemetry-tracking off` to o
 | `PM_NO_TELEMETRY`                    | boolean                                       | Alias for `PM_TELEMETRY_DISABLED` (honoured by the same checks).                                                                                |
 | `PM_TELEMETRY_OTEL_DISABLED`         | boolean                                       | Disable only OTLP trace-span export; the event queue still flushes.                                                                             |
 | `PM_TELEMETRY_INLINE_FLUSH`          | boolean                                       | Flush the queue and OTLP spans inline instead of dispatching the detached worker. Mainly for tests; normal use relies on the background worker. |
-| `PM_TELEMETRY_SOURCE_CONTEXT`        | `user` \| `automation` \| `test` \| `dogfood` | Override the inferred source context recorded on each event. Any other value is ignored and the context is inferred.                            |
+| `PM_TELEMETRY_SOURCE_CONTEXT`        | `user` \| `automation` \| `test` \| `dogfood` | Override the inferred source context recorded on each event. Unrecognized nonempty values use inferred context with `source_context_source=env_override_rejected`; the raw value is never emitted.                            |
 | `PM_TELEMETRY_HTTP_TIMEOUT_MS`       | integer milliseconds                          | Bound each background event or OTLP request (default `20000`, clamped to `1000`–`25000` to stay below the worker lock TTL).                     |
 | `PM_TELEMETRY_INGEST_KEY`            | string                                        | Sent as the `x-pm-telemetry-key` header on queue flushes; never logged.                                                                         |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | URL                                           | OTLP/HTTP traces endpoint for command spans. Takes precedence over the base endpoint.                                                           |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`        | URL                                           | Base OTLP endpoint; the traces endpoint is derived by appending `/v1/traces`.                                                                   |
 | `OTEL_SERVICE_NAME`                  | string                                        | `service.name` attribute on exported spans (defaults to `pm-cli`).                                                                              |
+
+Unrecognized source-context overrides produce one bounded warning per process on
+stderr, naming the accepted values without echoing the rejected input. JSON
+invocations retain parseable stdout and receive the warning on stderr. Explicit
+quiet mode suppresses the warning; events and spans still carry the fixed
+rejection marker. Empty overrides mean no override. Existing consent
+rules continue to suppress all capture when telemetry is disabled.
+
+Event and OTLP queue appends and reconciliation share an installation-level
+mutex. Successful delivery, retry updates, and retention pruning reread the
+current queue while holding that mutex, so another updated CLI process cannot
+append into a file about to be replaced. Network delivery runs outside the
+mutex. Each foreground start, finish, or error capture uses a 250 ms
+lock-acquisition budget by default; queue maintenance, clear, and flush initialization
+retain a five-second default. `PM_LOCK_WAIT_MS` explicitly overrides these
+budgets. These are per-acquisition contention budgets, not total operation
+deadlines: queued in-process transactions and filesystem work can add latency.
+The existing 60-second stale-lock recovery policy applies. Telemetry remains best
+effort when storage is unavailable or contention exhausts the wait budget;
+collector success and an empty queue are separate observations, not a guarantee
+of exactly-once delivery. Upgrade concurrent CLI processes together: older
+versions do not participate in the installation mutex.
+
+Start and error capture recheck process opt-outs and saved consent under the
+installation mutex before initializing identity, and retain that mutex through
+immediate event writes. Completion rechecks both consent sources and its saved
+installation identity under the same mutex through deferred start, finish,
+and span writes. `telemetry clear` uses this transaction boundary, so it either
+removes a completed capture or prevents that capture from appending afterward.
+Flush identity initialization also revalidates consent under the mutex; network
+delivery and flush scheduling remain outside it. Preference changes are
+evaluated at the capture transaction's consent check. Re-enabling after a clear
+does not revive an invocation's old identity. These checks cannot recall
+requests already dispatched to a collector.
 
 Interaction rules:
 

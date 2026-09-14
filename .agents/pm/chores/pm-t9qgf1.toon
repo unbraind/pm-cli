@@ -1,0 +1,55 @@
+id: pm-t9qgf1
+title: Update marked to 18.0.13 for documentation parser fixes
+description: Upgrade the pinned development parser from marked 18.0.12 to the compatible 18.0.13 patch. Verify documentation topology and links after upstream reference-label case folding and reflink scanning fixes. Keep incompatible major migrations in their existing canonical items.
+type: Chore
+status: closed
+priority: 2
+tags[3]: dependencies,documentation,quality
+created_at: "2026-09-14T01:34:21.510Z"
+updated_at: "2026-09-14T01:41:26.876Z"
+closed_at: "2026-09-14T01:41:26.185Z"
+completed_at: "2026-09-14T01:41:26.185Z"
+author: "harness:codex"
+acceptance_criteria: Manifest and lock resolve marked 18.0.13; documentation parser regressions and docs gate pass; dependency audit is clean
+goal: project management = context management
+objective: Keep documentation validation accurate and dependency pins current
+value: Reliable agent documentation checks without stale compatible parser patches
+parent: pm-u9d0
+risk: low
+confidence: high
+resolution: Update pinned marked development dependency and lockfile to 18.0.13 so Unicode case-folded reference labels participate in documentation navigation
+expected_result: A reference using Straße resolves its STRASSE definition without a false unreachable-document failure
+actual_result: "Negative control fails on 18.0.12 and passes on 18.0.13; linked docs tests, full documentation gate, ESLint, duplicate scans, typecheck, and audit pass"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-esbt,verifies,"2026-09-14T01:34:21.510Z","harness:codex","cli:create:dep",detected
+  pm-gredf1,recurs_from,"2026-09-14T01:34:21.510Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-09-14T01:34:21.510Z","harness:codex","cli:create:dep",detected
+  pm-yjq2x0,discovered_from,"2026-09-14T01:34:21.510Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-14T01:34:21.510Z","harness:codex","Duplicate check: full all-status CLI export and live marked and 18.0.13 searches found no matching patch owner. Live open and in-progress inventories were checked. Reuse the dependency-refresh lineage and documentation-anchor verifier. Upstream v18.0.13 requires Node >=20 and fits the published Node >=22.18 floor. Exact pins require checking latest as well as wanted."
+  "2026-09-14T01:36:53.761Z","harness:codex","TDD evidence: the documentation graph falsely reports a reachable target as unreachable when a Unicode reference label Straße resolves through STRASSE. The new graph-level regression fails on marked 18.0.12. Upstream v18.0.13 fixes Unicode case folding and documents additional parsing and reflink scanning fixes. Updating the dependency itself without a local parser workaround."
+  "2026-09-14T01:41:25.344Z","harness:codex","marked 18.0.13 resolves the failing Unicode reference-label navigation regression. Linked documentation topology and docs-gate tests pass, the full documentation gate passes, and ESLint, zero-duplicate scans, typecheck, and audit pass. This is a development-only parser update; telemetry source and packed runtime behavior remain unchanged from the recorded 8840-test exact-coverage run. The new hosted head will run the complete 8841-test suite with the updated parser."
+learnings[1]{created_at,author,text}:
+  "2026-09-14T01:41:24.533Z","harness:codex","For exact dependency pins, wanted can equal current even when latest is a compatible patch. Compare latest explicitly, then verify engines and peer contracts. A graph-level parser regression ties a development dependency update to observable repository behavior instead of relying only on installation success."
+files[3]{path,scope,note}:
+  package.json,project,Compatible marked development dependency pin
+  pnpm-lock.yaml,project,Resolved parser artifact and integrity
+  tests/unit/scripts/release/docs-topology.spec.ts,project,Unicode reference label navigation regression
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/docs-topology.spec.ts tests/unit/scripts/release/docs-skills-gate.spec.ts,project,240,"harness:codex","2026-09-14T01:35:33.642Z",local_mutation,fix/telemetry-queue-integrity-and-attribution
+test_runs[1]:
+  - run_id: test-local-mu0kox6t-vrao0i
+    kind: test
+    status: passed
+    started_at: "2026-09-14T01:36:57.636Z"
+    finished_at: "2026-09-14T01:37:15.269Z"
+    recorded_at: "2026-09-14T01:37:15.269Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/docs-topology.spec.ts tests/unit/scripts/release/docs-skills-gate.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated dependency refresh entry
+close_reason: Compatible parser patch verified with a failing-before passing-after documentation graph regression
+body: ""

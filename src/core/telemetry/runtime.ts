@@ -11,6 +11,8 @@ import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import os from "node:os";
 import path from "node:path";
+import { acquireLock } from "../lock/lock.js";
+import { runWithIsolatedExtensionRuntime } from "../extensions/index.js";
 import {
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
   resolveTelemetryEnvironmentPolicy,
@@ -74,6 +76,7 @@ const TELEMETRY_RETRY_BASE_DELAY_MS = 30_000;
 const TELEMETRY_HTTP_TIMEOUT_DEFAULT_MS = 20_000;
 const TELEMETRY_HTTP_TIMEOUT_MIN_MS = 1_000;
 const TELEMETRY_HTTP_TIMEOUT_MAX_MS = 25_000;
+const TELEMETRY_FOREGROUND_LOCK_WAIT_MS = 250;
 const MILLISECONDS_PER_DAY = 86_400_000;
 const TELEMETRY_MAX_EVENT_BYTES = 65_536;
 const TELEMETRY_SANITIZE_MAX_DEPTH = 6;
@@ -97,6 +100,7 @@ const PM_TELEMETRY_HTTP_TIMEOUT_MS_ENV = "PM_TELEMETRY_HTTP_TIMEOUT_MS";
 const NATIVE_FETCH = globalThis.fetch;
 export { PM_TELEMETRY_SOURCE_CONTEXT_VALUES } from "./policy.js";
 
+let sourceContextWarningEmitted = false;
 let _lastFlushPromise: Promise<void> = Promise.resolve();
 let _queueMutationPromise: Promise<unknown> = Promise.resolve();
 const deferredReadStarts = new WeakMap<ActiveTelemetryCommand, TelemetryEvent>();
@@ -198,7 +202,7 @@ interface PendingOtelSpan {
 type TelemetryCaptureLevel = "minimal" | "redacted" | "max";
 type TelemetrySourceContext =
   (typeof PM_TELEMETRY_SOURCE_CONTEXT_VALUES)[number];
-type TelemetrySourceContextSource = "inferred" | "env_override";
+type TelemetrySourceContextSource = "inferred" | "env_override" | "env_override_rejected";
 
 interface ResolvedTelemetrySourceContext {
   source_context: TelemetrySourceContext;
@@ -221,7 +225,7 @@ export interface ActiveTelemetryCommand {
   pm_version: string;
   /** Value that configures or reports source context for this contract. */
   source_context: TelemetrySourceContext;
-  /** Value that configures or reports source context source for this contract. */
+  /** Whether attribution was inferred, explicitly accepted, or inferred after rejecting an override without retaining its value. */
   source_context_source: TelemetrySourceContextSource;
   /** Value that configures or reports installation id for this contract. */
   installation_id: string;
@@ -768,11 +772,13 @@ async function postTelemetryJson(
   });
 }
 
+/** Use a trimmed package version when provided, falling back to 0.0.0 for an unknown producer version. */
 function normalizePmVersion(value: string | undefined): string {
   const trimmed = typeof value === "string" ? value.trim() : "";
   return trimmed.length > 0 ? trimmed : "0.0.0";
 }
 
+/** Trim a supplied diagnostic code and omit missing or whitespace-only codes from event payloads. */
 function normalizeTelemetryErrorCode(
   value: string | undefined,
 ): string | undefined {
@@ -780,6 +786,7 @@ function normalizeTelemetryErrorCode(
   return normalized && normalized.length > 0 ? normalized : undefined;
 }
 
+/** Preserve finite non-negative integer exit codes; otherwise derive zero for success and one for failure. */
 function normalizeTelemetryExitCode(
   exitCode: number | undefined,
   ok: boolean,
@@ -790,6 +797,7 @@ function normalizeTelemetryExitCode(
   return ok ? 0 : 1;
 }
 
+/** Omit categories for successful outcomes; preserve explicit failure categories or derive them from a stable error code. */
 function normalizeTelemetryErrorCategory(params: {
   ok: boolean;
   errorCode?: string;
@@ -813,6 +821,7 @@ function normalizeTelemetryErrorCategory(params: {
   return "unknown";
 }
 
+/** Resolve explicit attribution and explain rejected input without retaining its value. */
 function resolveTelemetrySourceContext(
   globalOptions: GlobalOptions,
 ): ResolvedTelemetrySourceContext {
@@ -825,33 +834,41 @@ function resolveTelemetrySourceContext(
       source_context_source: "env_override",
     };
   }
+  const source = override.length > 0 ? "env_override_rejected" : "inferred";
+  if (source === "env_override_rejected" && !sourceContextWarningEmitted &&
+    !globalOptions.quiet) {
+    sourceContextWarningEmitted = true;
+    process.stderr.write(
+      `[pm] warning: PM_TELEMETRY_SOURCE_CONTEXT is not one of ${PM_TELEMETRY_SOURCE_CONTEXT_VALUES.join("|")}; ignoring override.\n`,
+    );
+  }
+  return {
+    source_context: inferTelemetrySourceContext(globalOptions),
+    source_context_source: source,
+  };
+}
+
+/** Infer test, automated, or interactive execution from the process and output mode. */
+function inferTelemetrySourceContext(globalOptions: GlobalOptions): TelemetrySourceContext {
   const nodeEnv = (process.env.NODE_ENV ?? "").trim().toLowerCase();
   if (
     typeof process.env.VITEST === "string" ||
     typeof process.env.VITEST_WORKER_ID === "string" ||
     nodeEnv === "test"
   ) {
-    return {
-      source_context: "test",
-      source_context_source: "inferred",
-    };
+    return "test";
   }
   const nonTty = process.stdin.isTTY !== true || process.stdout.isTTY !== true;
   const ci = parseBooleanTrueLike(process.env.CI);
   const scriptLikeMode =
     globalOptions.json === true || globalOptions.quiet === true;
   if (nonTty || ci || scriptLikeMode) {
-    return {
-      source_context: "automation",
-      source_context_source: "inferred",
-    };
+    return "automation";
   }
-  return {
-    source_context: "user",
-    source_context_source: "inferred",
-  };
+  return "user";
 }
 
+/** Hash a value with installation-specific salt so telemetry can correlate local context without publishing the original value. */
 function hashWithInstallationId(installationId: string, value: string): string {
   return crypto
     .createHash("sha256")
@@ -1240,6 +1257,7 @@ function summarizeResult(
   return { type: typeof result, value: String(result) };
 }
 
+/** Build invocation metadata for the selected capture level; minimal capture retains digests while richer levels include sanitized inputs and hashed runtime context. */
 function buildCommandStartPayload(params: {
   captureLevel: TelemetryCaptureLevel;
   context: TelemetryCommandContext;
@@ -1326,6 +1344,7 @@ function buildCommandStartPayload(params: {
   };
 }
 
+/** Build completion diagnostics with sanitized errors and failure fingerprints; minimal capture omits start timestamps and result previews. */
 function buildCommandFinishPayload(params: {
   captureLevel: TelemetryCaptureLevel;
   pmVersion: string;
@@ -1415,6 +1434,7 @@ function buildCommandFinishPayload(params: {
   };
 }
 
+/** Build error diagnostics at the selected capture level, hashing attempted inputs and redacting error text even in minimal mode. */
 function buildCommandErrorPayload(params: {
   captureLevel: TelemetryCaptureLevel;
   pmVersion: string;
@@ -1526,28 +1546,29 @@ function buildCommandErrorPayload(params: {
   };
 }
 
+/** Revalidate process and persisted consent before initializing identity. The caller must hold the queue mutex through any subsequent capture writes. */
 async function ensureInstallationId(globalPmRoot: string): Promise<{
   installationId: string;
   endpoint: string;
   retentionDays: number;
-}> {
+  captureLevel: TelemetryCaptureLevel;
+} | null> {
   const settings = await readSettings(globalPmRoot);
-  let changed = false;
+  if (!settings.telemetry.enabled || resolveTelemetryEnvironmentPolicy().telemetry_disabled) return null;
   if (settings.telemetry.installation_id.trim().length === 0) {
     settings.telemetry.installation_id = crypto.randomUUID();
-    changed = true;
-  }
-  if (changed) {
     await writeSettings(globalPmRoot, settings, "telemetry:install_id");
   }
   return {
     installationId: settings.telemetry.installation_id,
     endpoint: settings.telemetry.endpoint,
     retentionDays: Math.max(1, Math.trunc(settings.telemetry.retention_days)),
+    captureLevel: normalizeCaptureLevel(settings.telemetry.capture_level),
   };
 }
 
-async function enqueueTelemetryEvent(
+/** Serialize a new event and shorten an oversized result summary. The caller must hold the installation queue mutex across this write. */
+async function appendTelemetryEvent(
   globalPmRoot: string,
   event: TelemetryEvent,
 ): Promise<void> {
@@ -1576,11 +1597,15 @@ async function enqueueTelemetryEvent(
     };
     serialized = JSON.stringify(trimmedQueued);
   }
-  await withQueueMutation(async () => {
-    await appendLineAtomic(queuePath(globalPmRoot), serialized);
-  });
+  await appendLineAtomic(queuePath(globalPmRoot), serialized);
 }
 
+/** Append an event as an independent queue transaction; compound capture transactions use the private writer while already holding the mutex. */
+async function enqueueTelemetryEvent(globalPmRoot: string, event: TelemetryEvent): Promise<void> {
+  await withQueueMutation(() => appendTelemetryEvent(globalPmRoot, event), globalPmRoot);
+}
+
+/** Recover well-shaped event envelopes from JSONL while discarding malformed lines so one corrupt record cannot strand delivery. */
 function parseQueueLines(raw: string): QueuedTelemetryEvent[] {
   const entries: QueuedTelemetryEvent[] = [];
   for (const line of raw.split("\n")) {
@@ -1609,6 +1634,7 @@ function parseQueueLines(raw: string): QueuedTelemetryEvent[] {
   return entries;
 }
 
+/** Compute a capped exponential-backoff timestamp from the current time and the number of attempted deliveries. */
 function nextRetryIso(attempts: number): string {
   const delay = Math.min(
     TELEMETRY_RETRY_BASE_DELAY_MS * 2 ** Math.max(attempts - 1, 0),
@@ -1617,6 +1643,7 @@ function nextRetryIso(attempts: number): string {
   return new Date(Date.now() + delay).toISOString();
 }
 
+/** Allow immediate retry when scheduling metadata is absent or malformed; otherwise compare its timestamp with the current time. */
 function isDueForRetryAt(nextAttemptAfter: string | undefined): boolean {
   if (
     typeof nextAttemptAfter !== "string" ||
@@ -1631,10 +1658,12 @@ function isDueForRetryAt(nextAttemptAfter: string | undefined): boolean {
   return dueAtMs <= Date.now();
 }
 
+/** Apply the shared due-time policy to an event envelope without altering its retry metadata. */
 function isDueForRetry(entry: QueuedTelemetryEvent): boolean {
   return isDueForRetryAt(entry.next_attempt_after);
 }
 
+/** Convert a finite retention duration to a cutoff using at least one whole day; invalid durations fall back to one day. */
 function retentionCutoffMs(retentionDays: number): number {
   const normalizedDays = Number.isFinite(retentionDays)
     ? Math.max(1, Math.trunc(retentionDays))
@@ -1642,6 +1671,7 @@ function retentionCutoffMs(retentionDays: number): number {
   return Date.now() - normalizedDays * MILLISECONDS_PER_DAY;
 }
 
+/** Expire only events with a valid occurrence timestamp before the cutoff; unknown dates do not establish expiration. */
 function isExpiredQueueEntry(
   entry: QueuedTelemetryEvent,
   cutoffMs: number,
@@ -1657,6 +1687,7 @@ function isExpiredQueueEntry(
   return occurredAtMs < cutoffMs;
 }
 
+/** Preserve event order while removing oversized, expired, and attempt-exhausted envelopes; return the retained snapshot and removal count. */
 function pruneExpiredQueueEntries(
   entries: QueuedTelemetryEvent[],
   retentionDays: number,
@@ -1680,6 +1711,7 @@ function pruneExpiredQueueEntries(
   return { entries: retained, prunedCount };
 }
 
+/** Atomically replace the event snapshot with bounded retries for transient filesystem failures; mutation callers must hold the queue mutex. */
 async function rewriteQueue(
   globalPmRoot: string,
   entries: QueuedTelemetryEvent[],
@@ -1700,6 +1732,7 @@ async function rewriteQueue(
   }
 }
 
+/** Recognize only access, busy, and permission filesystem codes as transient atomic-rewrite failures. */
 function isRetryableQueueRewriteError(error: unknown): boolean {
   if (typeof error !== "object" || error === null || !("code" in error)) {
     return false;
@@ -1708,14 +1741,15 @@ function isRetryableQueueRewriteError(error: unknown): boolean {
   return code === "EACCES" || code === "EBUSY" || code === "EPERM";
 }
 
+/** Yield for the requested retry delay without synchronously blocking the process. */
 function sleep(milliseconds: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, milliseconds);
   });
 }
 
-/** Append a built OTLP span request to the bounded pending-spans queue. The detached flush worker drains and POSTs these so the foreground command never performs OTLP network I/O (GH-209). Best effort: a write failure never blocks the command, and the span is simply not exported. */
-async function enqueuePendingOtelSpan(
+/** Append a built OTLP span request while the caller holds the installation queue mutex. The detached flush worker drains and POSTs these so the foreground command never performs OTLP network I/O (GH-209). Best effort: a write failure never blocks the command, and the span is simply not exported. */
+async function appendPendingOtelSpan(
   globalPmRoot: string,
   request: { endpoint: string; payload: unknown },
 ): Promise<void> {
@@ -1731,9 +1765,12 @@ async function enqueuePendingOtelSpan(
   if (serialized.length > TELEMETRY_MAX_EVENT_BYTES) {
     return;
   }
-  await withQueueMutation(async () => {
-    await appendLineAtomic(otelSpansQueuePath(globalPmRoot), serialized);
-  });
+  await appendLineAtomic(otelSpansQueuePath(globalPmRoot), serialized);
+}
+
+/** Serialize an independent pending-span append; compound completion capture calls the private writer under its existing queue transaction. */
+async function enqueuePendingOtelSpan(globalPmRoot: string, request: { endpoint: string; payload: unknown }): Promise<void> {
+  await withQueueMutation(() => appendPendingOtelSpan(globalPmRoot, request), globalPmRoot);
 }
 
 /** Derive a stable id for a legacy id-less pending span from its identity fields. Deterministic so the same on-disk line yields the same id across reads, which is what lets reconciliation remove/update it after a flush. */
@@ -1754,6 +1791,7 @@ function backfillPendingOtelSpanId(entry: {
     .slice(0, 32);
 }
 
+/** Recover valid pending span envelopes from JSONL, skip malformed rows, and assign stable content-derived IDs to legacy entries for reconciliation. */
 function parsePendingOtelSpanLines(raw: string): PendingOtelSpan[] {
   const entries: PendingOtelSpan[] = [];
   for (const line of raw.split("\n")) {
@@ -1788,6 +1826,7 @@ function parsePendingOtelSpanLines(raw: string): PendingOtelSpan[] {
   return entries;
 }
 
+/** Compare valid enqueue timestamps with the retention cutoff; retain unknown or malformed dates rather than inventing an age. */
 function isExpiredPendingOtelSpan(
   entry: PendingOtelSpan,
   cutoffMs: number,
@@ -1805,6 +1844,7 @@ function isExpiredPendingOtelSpan(
   return enqueuedAtMs < cutoffMs;
 }
 
+/** Drop oversized, expired, and attempt-exhausted spans, then keep the newest entries within the pending-span cap and report every removal. */
 function prunePendingOtelSpans(
   entries: PendingOtelSpan[],
   retentionDays: number,
@@ -1833,6 +1873,7 @@ function prunePendingOtelSpans(
   return { entries: retained, prunedCount };
 }
 
+/** Atomically replace the span snapshot, retrying transient filesystem contention; callers coordinate mutations with the queue mutex. */
 async function rewritePendingOtelSpans(
   globalPmRoot: string,
   entries: PendingOtelSpan[],
@@ -1853,7 +1894,6 @@ async function rewritePendingOtelSpans(
   }
 }
 
-/** Drain the pending OTLP span queue and POST due spans to their traces endpoint. Runs only inside the flush worker (detached child) or the inline test path, so the foreground command never makes OTLP network calls. Failures increment per-span attempts with backoff and are retried by a later flush; runtime state records OTLP export diagnostics for `pm health` (GH-205). */
 /** Re-read the spans queue under the mutation serializer and rewrite it with the processed spans removed/updated by id, preserving any spans a concurrent foreground process appended during the (network) flush window. `succeededIds` are dropped; `failedUpdates` patch attempts/next_attempt_after by id; all other (incl. newly-appended) entries are retained, then pruned. Returns the count of spans left in the queue. Mirrors removeFlushedEntriesFromCurrentQueue. */
 async function reconcilePendingOtelSpansAfterFlush(
   globalPmRoot: string,
@@ -1889,9 +1929,10 @@ async function reconcilePendingOtelSpansAfterFlush(
     );
     await rewritePendingOtelSpans(globalPmRoot, retained);
     return retained.length;
-  });
+  }, globalPmRoot);
 }
 
+/** POST due spans outside the mutation mutex, then reconcile successes and retry metadata against the current queue; publish export diagnostics for health inspection. */
 async function flushPendingOtelSpans(
   globalPmRoot: string,
   retentionDays: number,
@@ -2011,6 +2052,7 @@ async function flushTelemetryArtifacts(
   }
 }
 
+/** Best-effort removal of aged atomic-write temporary files whose names match the event queue, leaving recent and unrelated files intact. */
 async function cleanupTelemetryQueueTempOrphans(
   globalPmRoot: string,
   maxAgeMs = TELEMETRY_QUEUE_TMP_ORPHAN_MAX_AGE_MS,
@@ -2039,13 +2081,31 @@ async function cleanupTelemetryQueueTempOrphans(
   }
 }
 
-async function withQueueMutation<T>(operation: () => Promise<T>): Promise<T> {
+export { withQueueMutation as withTelemetryQueueMutation };
+
+/** Serialize complete queue transactions across processes. The per-acquisition wait defaults to five seconds for maintenance; foreground capture supplies a shorter budget. PM_LOCK_WAIT_MS remains an explicit override. Never hold the lock during network I/O. */
+async function withQueueMutation<T>(
+  operation: () => Promise<T>,
+  globalPmRoot = resolveGlobalPmRoot(process.cwd()),
+  waitMs = 5_000,
+): Promise<T> {
   const run = _queueMutationPromise
     .catch(
       /* c8 ignore next */
       () => {},
     )
-    .then(operation);
+    .then(() => runWithIsolatedExtensionRuntime(async () => {
+      // Telemetry is installation-local infrastructure: project lock overrides
+      // and hooks must not intercept its coordination or recurse into capture.
+      const release = await acquireLock(
+        globalPmRoot, "telemetry-queue", 60, "telemetry", false, false, waitMs,
+      );
+      try {
+        return await operation();
+      } finally {
+        await release();
+      }
+    }));
   _queueMutationPromise = run.catch(
     /* c8 ignore next */
     () => {},
@@ -2053,6 +2113,7 @@ async function withQueueMutation<T>(operation: () => Promise<T>): Promise<T> {
   return run;
 }
 
+/** Read the current event snapshot, treating a missing or blank queue as empty and dropping malformed records through the shared parser. */
 async function readCurrentQueueEntries(
   globalPmRoot: string,
 ): Promise<QueuedTelemetryEvent[]> {
@@ -2063,6 +2124,7 @@ async function readCurrentQueueEntries(
   return parseQueueLines(raw);
 }
 
+/** Remove acknowledged event IDs and expired entries from a fresh locked snapshot, returning the retained queue including intervening appends. */
 async function removeFlushedEntriesFromCurrentQueue(
   globalPmRoot: string,
   flushedIds: ReadonlySet<string>,
@@ -2079,9 +2141,10 @@ async function removeFlushedEntriesFromCurrentQueue(
     );
     await rewriteQueue(globalPmRoot, remaining);
     return remaining;
-  });
+  }, globalPmRoot);
 }
 
+/** Advance retry metadata only for failed IDs in a fresh locked snapshot, preserving intervening appends and pruning expired events. */
 async function markFailedEntriesInCurrentQueue(
   globalPmRoot: string,
   failedIds: ReadonlySet<string>,
@@ -2108,9 +2171,10 @@ async function markFailedEntriesInCurrentQueue(
     });
     await rewriteQueue(globalPmRoot, retried);
     return retried;
-  });
+  }, globalPmRoot);
 }
 
+/** Send one due event batch without holding the mutation mutex, then reconcile its result against the current queue and record delivery diagnostics. */
 async function flushQueue(
   globalPmRoot: string,
   endpoint: string,
@@ -2142,10 +2206,10 @@ async function flushQueue(
     retentionDays,
   );
   if (retainedEntries.length === 0) {
-    await rewriteQueue(globalPmRoot, []);
+    const remaining = await removeFlushedEntriesFromCurrentQueue(globalPmRoot, new Set(), retentionDays);
     await writeRuntimeState(globalPmRoot, {
       endpoint: normalizedEndpoint,
-      queue_entries: 0,
+      queue_entries: remaining.length,
     });
     return;
   }
@@ -2153,12 +2217,12 @@ async function flushQueue(
     .filter((entry) => isDueForRetry(entry))
     .slice(0, TELEMETRY_FLUSH_BATCH_SIZE);
   if (dueEntries.length === 0) {
-    if (prunedCount > 0) {
-      await rewriteQueue(globalPmRoot, retainedEntries);
-    }
+    const remaining = prunedCount > 0
+      ? await removeFlushedEntriesFromCurrentQueue(globalPmRoot, new Set(), retentionDays)
+      : retainedEntries;
     await writeRuntimeState(globalPmRoot, {
       endpoint: normalizedEndpoint,
-      queue_entries: retainedEntries.length,
+      queue_entries: remaining.length,
     });
     return;
   }
@@ -2509,15 +2573,15 @@ export async function flushTelemetryQueueNow(
     if (!settings.telemetry.enabled) {
       return;
     }
-    const { endpoint, retentionDays } =
-      await ensureInstallationId(globalPmRoot);
-    await flushQueueWithProcessLock(globalPmRoot, endpoint, retentionDays);
+    const installation = await withQueueMutation(() => ensureInstallationId(globalPmRoot), globalPmRoot);
+    if (!installation) return;
+    await flushQueueWithProcessLock(globalPmRoot, installation.endpoint, installation.retentionDays);
   } catch {
     // Telemetry workers are best effort and must never fail user commands.
   }
 }
 
-/** Begin a consent-permitted invocation, deferring sampled core reads until their outcome determines pair retention. */
+/** Atomically validate consent, initialize identity, and capture an invocation; defer sampled reads until their outcome determines pair retention and schedule delivery after releasing the mutex. */
 export async function startTelemetryCommand(
   context: TelemetryCommandContext,
 ): Promise<ActiveTelemetryCommand | null> {
@@ -2536,77 +2600,80 @@ export async function startTelemetryCommand(
     if (!settings.telemetry.enabled) {
       return null;
     }
-    const captureLevel = normalizeCaptureLevel(
-      settings.telemetry.capture_level,
-    );
-    const { installationId, endpoint, retentionDays } =
-      await ensureInstallationId(globalPmRoot);
-    const pmVersion = normalizePmVersion(context.pm_version);
-    const sourceContext = resolveTelemetrySourceContext(context.global);
-    const pmRootHash = hashWithInstallationId(installationId, context.pm_root);
-    const cwdHash = hashWithInstallationId(installationId, process.cwd());
-    const otelTracesEndpoint = resolveOtelTracesEndpoint();
-    const occurredAt = nowIso();
-    const event: TelemetryEvent = {
-      schema_version: TELEMETRY_SCHEMA_VERSION,
-      event_id: crypto.randomUUID(),
-      event_type: "command_start",
-      occurred_at: occurredAt,
-      installation_id: installationId,
-      session_id: PROCESS_SESSION_ID,
-      command: context.command,
-      payload: buildCommandStartPayload({
-        captureLevel,
-        context,
-        pmVersion,
-        sourceContext,
-        pmRootHash,
-        cwdHash,
-        installationId,
-      }),
-    };
-    const sampleRate = resolveTelemetryReadSampleRate(
-      context.command,
-      context.global.noExtensions === true,
-    );
-    if (sampleRate === 1) {
-      await enqueueTelemetryEvent(globalPmRoot, event);
-      scheduleTelemetryFlush(globalPmRoot, endpoint, retentionDays);
+    const activeCommand = await withQueueMutation(async () => {
+      const installation = await ensureInstallationId(globalPmRoot);
+      if (!installation) return null;
+      const { installationId, endpoint, retentionDays, captureLevel } = installation;
+      const pmVersion = normalizePmVersion(context.pm_version);
+      const sourceContext = resolveTelemetrySourceContext(context.global);
+      const pmRootHash = hashWithInstallationId(installationId, context.pm_root);
+      const cwdHash = hashWithInstallationId(installationId, process.cwd());
+      const otelTracesEndpoint = resolveOtelTracesEndpoint();
+      const occurredAt = nowIso();
+      const event: TelemetryEvent = {
+        schema_version: TELEMETRY_SCHEMA_VERSION,
+        event_id: crypto.randomUUID(),
+        event_type: "command_start",
+        occurred_at: occurredAt,
+        installation_id: installationId,
+        session_id: PROCESS_SESSION_ID,
+        command: context.command,
+        payload: buildCommandStartPayload({
+          captureLevel,
+          context,
+          pmVersion,
+          sourceContext,
+          pmRootHash,
+          cwdHash,
+          installationId,
+        }),
+      };
+      const sampleRate = resolveTelemetryReadSampleRate(
+        context.command,
+        context.global.noExtensions === true,
+      );
+      if (sampleRate === 1) {
+        await appendTelemetryEvent(globalPmRoot, event);
+      }
+      const commandTaxonomy = deriveTelemetryCommandTaxonomy(context.command);
+      const active: ActiveTelemetryCommand = {
+        ...(sampleRate < 1 ? { sample_rate: sampleRate } : {}),
+        started_at: occurredAt,
+        started_at_ms: Date.now(),
+        command: context.command,
+        command_taxonomy: commandTaxonomy,
+        pm_version: pmVersion,
+        source_context: sourceContext.source_context,
+        source_context_source: sourceContext.source_context_source,
+        installation_id: installationId,
+        pm_root_hash: pmRootHash,
+        cwd_hash: cwdHash,
+        endpoint,
+        retention_days: retentionDays,
+        global_pm_root: globalPmRoot,
+        capture_level: captureLevel,
+        otel_traces_endpoint: otelTracesEndpoint ?? undefined,
+        otel_trace_id: otelTracesEndpoint
+          ? crypto.randomBytes(16).toString("hex")
+          : undefined,
+        otel_span_id: otelTracesEndpoint
+          ? crypto.randomBytes(8).toString("hex")
+          : undefined,
+      };
+      if (sampleRate < 1) deferredReadStarts.set(active, event);
+      return active;
+    }, globalPmRoot, TELEMETRY_FOREGROUND_LOCK_WAIT_MS);
+    if (activeCommand && activeCommand.sample_rate === undefined) {
+      scheduleTelemetryFlush(globalPmRoot, activeCommand.endpoint, activeCommand.retention_days);
     }
-    const commandTaxonomy = deriveTelemetryCommandTaxonomy(context.command);
-    const active: ActiveTelemetryCommand = {
-      ...(sampleRate < 1 ? { sample_rate: sampleRate } : {}),
-      started_at: occurredAt,
-      started_at_ms: Date.now(),
-      command: context.command,
-      command_taxonomy: commandTaxonomy,
-      pm_version: pmVersion,
-      source_context: sourceContext.source_context,
-      source_context_source: sourceContext.source_context_source,
-      installation_id: installationId,
-      pm_root_hash: pmRootHash,
-      cwd_hash: cwdHash,
-      endpoint,
-      retention_days: retentionDays,
-      global_pm_root: globalPmRoot,
-      capture_level: captureLevel,
-      otel_traces_endpoint: otelTracesEndpoint ?? undefined,
-      otel_trace_id: otelTracesEndpoint
-        ? crypto.randomBytes(16).toString("hex")
-        : undefined,
-      otel_span_id: otelTracesEndpoint
-        ? crypto.randomBytes(8).toString("hex")
-        : undefined,
-    };
-    if (sampleRate < 1) deferredReadStarts.set(active, event);
-    return active;
+    return activeCommand;
   } catch {
     // Telemetry must never block command execution.
     return null;
   }
 }
 
-/** Complete an invocation after rechecking consent, retaining every failed read and weighting selected successful pairs. */
+/** Complete an invocation only while process consent, saved consent, and its installation identity still agree; retain failed reads and weight selected successful pairs. */
 export async function finishTelemetryCommand(
   activeCommand: ActiveTelemetryCommand | null,
   outcome: TelemetryCommandOutcome,
@@ -2615,91 +2682,101 @@ export async function finishTelemetryCommand(
     return;
   }
   try {
-    const deferredStart = deferredReadStarts.get(activeCommand);
-    const sampleRate = outcome.ok ? activeCommand.sample_rate ?? 1 : 1;
-    if (deferredStart) {
-      deferredReadStarts.delete(activeCommand);
-      if (crypto.randomBytes(6).readUIntBE(0, 6) / 2 ** 48 >= sampleRate) return;
-      deferredStart.payload.sample_rate = sampleRate;
-      await enqueueTelemetryEvent(activeCommand.global_pm_root, deferredStart);
-    }
-    const finishedAt = nowIso();
-    const durationMs = Math.max(0, Date.now() - activeCommand.started_at_ms);
-    const normalizedErrorCode = normalizeTelemetryErrorCode(
-      inferTelemetryErrorCode({
-        ok: outcome.ok,
-        errorCode: outcome.error_code,
-        errorMessage: outcome.error,
-        exitCode: outcome.exit_code,
-      }),
-    );
-    const normalizedErrorCategory = normalizeTelemetryErrorCategory({
-      ok: outcome.ok,
-      errorCode: normalizedErrorCode,
-      errorCategory: outcome.error_category,
-    });
-    const normalizedExitCode = normalizeTelemetryExitCode(
-      outcome.exit_code,
-      outcome.ok,
-    );
-    const commandResolution =
-      outcome.command_resolution ??
-      deriveTelemetryCommandResolution({
-        ok: outcome.ok,
-        errorCode: normalizedErrorCode,
-        errorCategory: normalizedErrorCategory,
-      });
-    const resolutionStage = outcome.resolution_stage ?? "execute";
-    const event: TelemetryEvent = {
-      schema_version: TELEMETRY_SCHEMA_VERSION,
-      event_id: crypto.randomUUID(),
-      event_type: "command_finish",
-      occurred_at: finishedAt,
-      installation_id: activeCommand.installation_id,
-      session_id: PROCESS_SESSION_ID,
-      command: activeCommand.command,
-      payload: {
-        ...(deferredStart ? { sample_rate: sampleRate } : {}),
-        ...buildCommandFinishPayload({
-        captureLevel: activeCommand.capture_level,
-        pmVersion: activeCommand.pm_version,
-        sourceContext: {
-          source_context: activeCommand.source_context,
-          source_context_source: activeCommand.source_context_source,
-        },
-        outcome,
-        durationMs,
-        startedAt: activeCommand.started_at,
-        command: activeCommand.command,
-        installationId: activeCommand.installation_id,
-        commandTaxonomy: activeCommand.command_taxonomy,
-        exitCode: normalizedExitCode,
-        errorCode: normalizedErrorCode,
-        errorCategory: normalizedErrorCategory,
-        commandResolution,
-        resolutionStage,
+    const captured = await withQueueMutation(async () => {
+      const settings = await readSettings(activeCommand.global_pm_root);
+      if (resolveTelemetryEnvironmentPolicy().telemetry_disabled || !settings.telemetry.enabled ||
+        settings.telemetry.installation_id !== activeCommand.installation_id) {
+        deferredReadStarts.delete(activeCommand);
+        return false;
+      }
+      const deferredStart = deferredReadStarts.get(activeCommand);
+      const sampleRate = outcome.ok ? activeCommand.sample_rate ?? 1 : 1;
+      if (deferredStart) {
+        deferredReadStarts.delete(activeCommand);
+        if (crypto.randomBytes(6).readUIntBE(0, 6) / 2 ** 48 >= sampleRate) return false;
+        deferredStart.payload.sample_rate = sampleRate;
+        await appendTelemetryEvent(activeCommand.global_pm_root, deferredStart);
+      }
+      const finishedAt = nowIso();
+      const durationMs = Math.max(0, Date.now() - activeCommand.started_at_ms);
+      const normalizedErrorCode = normalizeTelemetryErrorCode(
+        inferTelemetryErrorCode({
+          ok: outcome.ok,
+          errorCode: outcome.error_code,
+          errorMessage: outcome.error,
+          exitCode: outcome.exit_code,
         }),
-      },
-    };
-    await enqueueTelemetryEvent(activeCommand.global_pm_root, event);
-    const otelRequest = buildOtelSpanRequest(
-      activeCommand,
-      {
-        ...outcome,
-        exit_code: normalizedExitCode,
-        error_code: normalizedErrorCode,
-        error_category: normalizedErrorCategory,
-      },
-      finishedAt,
-      durationMs,
-      sampleRate,
-    );
-    if (otelRequest) {
-      // Persist the span for the detached worker; never POST inline so the
-      // foreground command exits promptly even if the traces endpoint is
-      // unreachable (GH-209).
-      await enqueuePendingOtelSpan(activeCommand.global_pm_root, otelRequest);
-    }
+      );
+      const normalizedErrorCategory = normalizeTelemetryErrorCategory({
+        ok: outcome.ok,
+        errorCode: normalizedErrorCode,
+        errorCategory: outcome.error_category,
+      });
+      const normalizedExitCode = normalizeTelemetryExitCode(
+        outcome.exit_code,
+        outcome.ok,
+      );
+      const commandResolution =
+        outcome.command_resolution ??
+        deriveTelemetryCommandResolution({
+          ok: outcome.ok,
+          errorCode: normalizedErrorCode,
+          errorCategory: normalizedErrorCategory,
+        });
+      const resolutionStage = outcome.resolution_stage ?? "execute";
+      const event: TelemetryEvent = {
+        schema_version: TELEMETRY_SCHEMA_VERSION,
+        event_id: crypto.randomUUID(),
+        event_type: "command_finish",
+        occurred_at: finishedAt,
+        installation_id: activeCommand.installation_id,
+        session_id: PROCESS_SESSION_ID,
+        command: activeCommand.command,
+        payload: {
+          ...(deferredStart ? { sample_rate: sampleRate } : {}),
+          ...buildCommandFinishPayload({
+          captureLevel: activeCommand.capture_level,
+          pmVersion: activeCommand.pm_version,
+          sourceContext: {
+            source_context: activeCommand.source_context,
+            source_context_source: activeCommand.source_context_source,
+          },
+          outcome,
+          durationMs,
+          startedAt: activeCommand.started_at,
+          command: activeCommand.command,
+          installationId: activeCommand.installation_id,
+          commandTaxonomy: activeCommand.command_taxonomy,
+          exitCode: normalizedExitCode,
+          errorCode: normalizedErrorCode,
+          errorCategory: normalizedErrorCategory,
+          commandResolution,
+          resolutionStage,
+          }),
+        },
+      };
+      await appendTelemetryEvent(activeCommand.global_pm_root, event);
+      const otelRequest = buildOtelSpanRequest(
+        activeCommand,
+        {
+          ...outcome,
+          exit_code: normalizedExitCode,
+          error_code: normalizedErrorCode,
+          error_category: normalizedErrorCategory,
+        },
+        finishedAt,
+        durationMs,
+        sampleRate,
+      );
+      if (otelRequest) {
+        // Persist the span for the detached worker; never POST inline so the
+        // foreground command exits promptly even if the traces endpoint is
+        // unreachable (GH-209).
+        await appendPendingOtelSpan(activeCommand.global_pm_root, otelRequest);
+      }
+      return true;
+    }, activeCommand.global_pm_root, TELEMETRY_FOREGROUND_LOCK_WAIT_MS);
+    if (!captured) return;
     scheduleTelemetryFlush(
       activeCommand.global_pm_root,
       activeCommand.endpoint,
@@ -2710,7 +2787,7 @@ export async function finishTelemetryCommand(
   }
 }
 
-/** Record an unsampled, sanitized command error without creating identity or queue state when process consent forbids capture. */
+/** Atomically validate consent and append a sanitized command error with its installation identity; schedule delivery only after releasing the queue mutex. */
 export async function emitTelemetryErrorEvent(
   context: TelemetryErrorEventContext,
 ): Promise<void> {
@@ -2723,72 +2800,73 @@ export async function emitTelemetryErrorEvent(
     if (!settings.telemetry.enabled) {
       return;
     }
-    const captureLevel = normalizeCaptureLevel(
-      settings.telemetry.capture_level,
-    );
-    const { installationId, endpoint, retentionDays } =
-      await ensureInstallationId(globalPmRoot);
-    const pmVersion = normalizePmVersion(context.pm_version);
-    const sourceContext = resolveTelemetrySourceContext(context.global);
-    const pmRootHash = hashWithInstallationId(installationId, context.pm_root);
-    const cwdHash = hashWithInstallationId(installationId, process.cwd());
-    const occurredAt = nowIso();
-    const normalizedErrorCode = normalizeTelemetryErrorCode(
-      inferTelemetryErrorCode({
-        ok: false,
-        errorCode: context.error_code,
-        errorMessage: context.error_message,
-        exitCode: context.exit_code,
-      }),
-    ) as string;
-    const normalizedErrorCategory =
-      context.error_category ??
-      resolveTelemetryErrorCategory(normalizedErrorCode);
-    const normalizedExitCode = normalizeTelemetryExitCode(
-      context.exit_code,
-      false,
-    );
-    const normalizedCommand =
-      context.command.trim().length > 0 ? context.command : "<unknown>";
-    const commandTaxonomy = deriveTelemetryCommandTaxonomy(normalizedCommand);
-    const commandResolution =
-      context.command_resolution ??
-      deriveTelemetryCommandResolution({
-        ok: false,
-        errorCode: normalizedErrorCode,
-        errorCategory: normalizedErrorCategory,
-      });
-    const resolutionStage = context.resolution_stage ?? "unknown";
+    const captured = await withQueueMutation(async () => {
+      const installation = await ensureInstallationId(globalPmRoot);
+      if (!installation) return null;
+      const { installationId, captureLevel } = installation;
+      const pmVersion = normalizePmVersion(context.pm_version);
+      const sourceContext = resolveTelemetrySourceContext(context.global);
+      const pmRootHash = hashWithInstallationId(installationId, context.pm_root);
+      const cwdHash = hashWithInstallationId(installationId, process.cwd());
+      const occurredAt = nowIso();
+      const normalizedErrorCode = normalizeTelemetryErrorCode(
+        inferTelemetryErrorCode({
+          ok: false,
+          errorCode: context.error_code,
+          errorMessage: context.error_message,
+          exitCode: context.exit_code,
+        }),
+      ) as string;
+      const normalizedErrorCategory =
+        context.error_category ??
+        resolveTelemetryErrorCategory(normalizedErrorCode);
+      const normalizedExitCode = normalizeTelemetryExitCode(
+        context.exit_code,
+        false,
+      );
+      const normalizedCommand =
+        context.command.trim().length > 0 ? context.command : "<unknown>";
+      const commandTaxonomy = deriveTelemetryCommandTaxonomy(normalizedCommand);
+      const commandResolution =
+        context.command_resolution ??
+        deriveTelemetryCommandResolution({
+          ok: false,
+          errorCode: normalizedErrorCode,
+          errorCategory: normalizedErrorCategory,
+        });
+      const resolutionStage = context.resolution_stage ?? "unknown";
 
-    const event: TelemetryEvent = {
-      schema_version: TELEMETRY_SCHEMA_VERSION,
-      event_id: crypto.randomUUID(),
-      event_type: "command_error",
-      occurred_at: occurredAt,
-      installation_id: installationId,
-      session_id: PROCESS_SESSION_ID,
-      command: sanitizeString(normalizedCommand, "redacted"),
-      payload: buildCommandErrorPayload({
-        captureLevel,
-        pmVersion,
-        sourceContext,
-        command: normalizedCommand,
-        commandTaxonomy,
-        commandResolution,
-        resolutionStage,
-        args: context.args,
-        options: context.options,
-        pmRootHash,
-        cwdHash,
-        installationId,
-        errorCode: normalizedErrorCode,
-        errorCategory: normalizedErrorCategory,
-        exitCode: normalizedExitCode,
-        errorMessage: context.error_message,
-      }),
-    };
-    await enqueueTelemetryEvent(globalPmRoot, event);
-    scheduleTelemetryFlush(globalPmRoot, endpoint, retentionDays);
+      const event: TelemetryEvent = {
+        schema_version: TELEMETRY_SCHEMA_VERSION,
+        event_id: crypto.randomUUID(),
+        event_type: "command_error",
+        occurred_at: occurredAt,
+        installation_id: installationId,
+        session_id: PROCESS_SESSION_ID,
+        command: sanitizeString(normalizedCommand, "redacted"),
+        payload: buildCommandErrorPayload({
+          captureLevel,
+          pmVersion,
+          sourceContext,
+          command: normalizedCommand,
+          commandTaxonomy,
+          commandResolution,
+          resolutionStage,
+          args: context.args,
+          options: context.options,
+          pmRootHash,
+          cwdHash,
+          installationId,
+          errorCode: normalizedErrorCode,
+          errorCategory: normalizedErrorCategory,
+          exitCode: normalizedExitCode,
+          errorMessage: context.error_message,
+        }),
+      };
+      await appendTelemetryEvent(globalPmRoot, event);
+      return installation;
+    }, globalPmRoot, TELEMETRY_FOREGROUND_LOCK_WAIT_MS);
+    if (captured) scheduleTelemetryFlush(globalPmRoot, captured.endpoint, captured.retentionDays);
   } catch {
     // Telemetry must never block command execution.
   }

@@ -13,7 +13,7 @@ import { nowIso } from "../core/shared/time.js";
 import { resolveGlobalPmRoot } from "../core/store/paths.js";
 import { readSettings, writeSettings } from "../core/store/settings.js";
 import { resolveTelemetryEnvironmentPolicy } from "../core/telemetry/policy.js";
-import { flushTelemetryQueueNow } from "../core/telemetry/runtime.js";
+import { flushTelemetryQueueNow, withTelemetryQueueMutation } from "../core/telemetry/runtime.js";
 import { createUnknownSubcommandError } from "./agent/subcommand-recovery.js";
 
 const TELEMETRY_QUEUE_RELATIVE_PATH = path.join(
@@ -634,39 +634,41 @@ const runTelemetryStats: TelemetryCommandHandler = async (options, context) => {
   };
 };
 
-/** Clears local telemetry consent identifiers, queue data, and runtime state. */
+/** Revoke consent and remove local telemetry data under the same mutex as completion capture, so clear cannot be followed by an append from an already-validated completion. */
 const runTelemetryClear: TelemetryCommandHandler = async (
   _options,
   context,
 ) => {
-  const settings = await readSettings(context.globalPmRoot);
-  const settingsChanged = [
-    settings.telemetry.enabled !== false,
-    settings.telemetry.installation_id !== "",
-    settings.telemetry.first_run_prompt_completed !== true,
-  ].includes(true);
-  settings.telemetry.enabled = false;
-  settings.telemetry.first_run_prompt_completed = true;
-  settings.telemetry.installation_id = "";
-  if (settingsChanged) {
-    await writeSettings(context.globalPmRoot, settings, "telemetry:clear");
-  }
-  const telemetryRuntimePath = path.join(
-    context.globalPmRoot,
-    TELEMETRY_RUNTIME_RELATIVE_PATH,
-  );
-  const existed = await pathExists(telemetryRuntimePath);
-  await fs.rm(telemetryRuntimePath, { recursive: true, force: true });
-  return {
-    action: "telemetry",
-    subcommand: "clear",
-    settings_changed: settingsChanged,
-    runtime_dir_removed: existed && !(await pathExists(telemetryRuntimePath)),
-    queue_exists_after: await pathExists(context.queuePath),
-    state_exists_after: await pathExists(context.statePath),
-    status: await buildTelemetryStatusSummary(context.globalPmRoot),
-    generated_at: nowIso(),
-  };
+  return withTelemetryQueueMutation(async () => {
+    const settings = await readSettings(context.globalPmRoot);
+    const settingsChanged = [
+      settings.telemetry.enabled !== false,
+      settings.telemetry.installation_id !== "",
+      settings.telemetry.first_run_prompt_completed !== true,
+    ].includes(true);
+    settings.telemetry.enabled = false;
+    settings.telemetry.first_run_prompt_completed = true;
+    settings.telemetry.installation_id = "";
+    if (settingsChanged) {
+      await writeSettings(context.globalPmRoot, settings, "telemetry:clear");
+    }
+    const telemetryRuntimePath = path.join(
+      context.globalPmRoot,
+      TELEMETRY_RUNTIME_RELATIVE_PATH,
+    );
+    const existed = await pathExists(telemetryRuntimePath);
+    await fs.rm(telemetryRuntimePath, { recursive: true, force: true });
+    return {
+      action: "telemetry",
+      subcommand: "clear",
+      settings_changed: settingsChanged,
+      runtime_dir_removed: existed && !(await pathExists(telemetryRuntimePath)),
+      queue_exists_after: await pathExists(context.queuePath),
+      state_exists_after: await pathExists(context.statePath),
+      status: await buildTelemetryStatusSummary(context.globalPmRoot),
+      generated_at: nowIso(),
+    };
+  }, context.globalPmRoot);
 };
 
 const TELEMETRY_COMMAND_HANDLERS: Record<

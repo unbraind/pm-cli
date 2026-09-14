@@ -2,22 +2,60 @@ id: pm-bw8lsb
 title: Explain rejected telemetry source-context overrides without leaking raw values
 description: "GitHub source https://github.com/unbraind/pm-cli/issues/1253. GitHub reports that unrecognized PM_TELEMETRY_SOURCE_CONTEXT values silently fall back to inferred automation and contaminate attribution. Existing accepted contexts and hard opt-outs must remain stable; rejected values may contain private data and must not be copied verbatim into events."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-09-12T22:29:57.940Z"
-updated_at: "2026-09-12T22:29:57.940Z"
+updated_at: "2026-09-13T23:36:37.435Z"
+closed_at: "2026-09-13T23:36:36.469Z"
+completed_at: "2026-09-13T23:36:36.469Z"
 author: "harness:codex"
 acceptance_criteria: Accepted absent and rejected overrides have distinct tested behavior; rejection produces a bounded diagnostic naming accepted values; emitted attribution exposes rejection through a fixed marker without raw custom values; hard opt-outs still suppress all capture.
 goal: project management = context management
 objective: Explain rejected telemetry source-context overrides without leaking raw values
 value: Lower agent recovery cost and preserve safe customizable SDK composition
 parent: pm-5oj5
+resolution: Emit fixed rejected attribution and one bounded stderr warning for human and JSON callers; preserve quiet mode and never echo rejected values
+expected_result: Issue 1253 JSON reproduction receives a warning while stdout remains parseable and raw values remain private
+actual_result: Real CLI negative control and packed npm/Bun warning acceptance pass; all 8832 tests pass at exact 100/100/100/100 coverage
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-5oj5,implements,"2026-09-12T22:29:57.940Z","harness:codex","cli:create:dep",detected
   pm-r7md,discovered_from,"2026-09-12T22:29:57.940Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-09-12T22:29:57.940Z","harness:codex","Duplicate check: live full all-status export contained 2751 items with no omitted rows. Request-specific CLI searches and full historical metadata distinguished the existing shipped predecessor from this new report. Reuse its typed lineage; leave this intake open and unclaimed because implementation is not active."
-files[1]{path,scope,note}:
-  src/core/telemetry/runtime.ts,project,Reported boundary to reproduce before implementation
+  "2026-09-13T21:19:09.533Z","harness:codex","Regression evidence: a new negative control fails because rejected attribution currently reports inferred. The correction uses a fixed env_override_rejected marker and one bounded human diagnostic naming accepted values without echoing the supplied value. JSON and quiet callers remain clean; consent boundaries remain authoritative."
+  "2026-09-13T21:34:54.865Z","harness:codex","Continuation authorized: user approved takeover of the prior session claim. Rejected-source tests and real collector test pass with bounded fixed attribution and no raw rejected value. Complete regression and hosted review remain required before closure."
+  "2026-09-13T21:45:14.660Z","harness:codex","Relationship correction: removed the temporary verifies edge to pm-yjq2x0 because source-override diagnostics do not independently prove persisted consent revocation. Keep the shared capability and discovered-from lineage; the revocation regression verifies the prior consent boundary directly."
+  "2026-09-13T22:26:59.695Z","harness:codex","Full regression passed: 8832 tests across 687 files and exact 100/100/100/100 coverage. Source rejection tests prove one human warning, clean JSON and quiet output, fixed attribution, and no raw rejected value. Real collector regression verifies emitted attribution across concurrent lifecycles. Hosted review and merge remain pending."
+  "2026-09-13T23:03:57.571Z","harness:codex","PR 1256 Sourcery guide correctly identifies that issue 1253 expects a stderr warning for JSON-mode callers. Reopen the canonical item for this acceptance correction, preserve quiet mode and raw-value privacy, and add a real CLI regression. Existing accepted and absent override cases remain in telemetry-runtime.spec.ts rather than being duplicated."
+  "2026-09-13T23:06:26.338Z","harness:codex","TDD review correction: a real isolated CLI list --json returns valid JSON but produced no stderr warning on the prior head. The corrected runtime warns on stderr while preserving JSON stdout and explicit quiet mode. The initial fixture failed because its cwd was not created; after fixture correction, the negative control failed on the intended missing-warning assertion."
+  "2026-09-13T23:21:45.623Z","harness:codex","Review correction verification passed: real CLI JSON warning negative control, quiet output and raw-value privacy; 34 focused tests; strict ESLint; typecheck; full 8832-test regression across 687 files at exact 100/100/100/100. Independent packed npm and Bun consumers both preserve parseable JSON stdout and emit the accepted-values warning on stderr without the rejected value. Public SDK consent acceptance also passes."
+files[2]{path,scope,note}:
+  src/core/telemetry/runtime.ts,project,Fixed rejection marker and bounded privacy-safe human diagnostic
+  tests/unit/core/telemetry/telemetry-source-rejection.spec.ts,project,Rejected-value privacy and human versus machine output regression
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-source-rejection.spec.ts tests/unit/core/telemetry/telemetry-policy.spec.ts,project,240,"harness:codex","2026-09-13T21:21:02.650Z",local_mutation,fix/telemetry-queue-integrity-and-attribution
+test_runs[1]:
+  - run_id: test-local-mu0cg6l1-pvoo1k
+    kind: test
+    status: passed
+    started_at: "2026-09-13T21:46:07.209Z"
+    finished_at: "2026-09-13T21:46:30.613Z"
+    recorded_at: "2026-09-13T21:46:30.613Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-source-rejection.spec.ts tests/unit/core/telemetry/telemetry-policy.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/CONFIGURATION.md,project,Source rejection marker and bounded human warning
+close_reason: JSON-mode acceptance mismatch corrected and verified; submitted for fresh hosted review
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  negative_control: Rejected override regression expected env_override_rejected but received inferred before correction
+  local_checks[2]: node scripts/run-tests.mjs coverage,node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-source-rejection.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-bw8lsb
 body: ""
