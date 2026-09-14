@@ -772,11 +772,13 @@ async function postTelemetryJson(
   });
 }
 
+/** Use a trimmed package version when provided, falling back to 0.0.0 for an unknown producer version. */
 function normalizePmVersion(value: string | undefined): string {
   const trimmed = typeof value === "string" ? value.trim() : "";
   return trimmed.length > 0 ? trimmed : "0.0.0";
 }
 
+/** Trim a supplied diagnostic code and omit missing or whitespace-only codes from event payloads. */
 function normalizeTelemetryErrorCode(
   value: string | undefined,
 ): string | undefined {
@@ -784,6 +786,7 @@ function normalizeTelemetryErrorCode(
   return normalized && normalized.length > 0 ? normalized : undefined;
 }
 
+/** Preserve finite non-negative integer exit codes; otherwise derive zero for success and one for failure. */
 function normalizeTelemetryExitCode(
   exitCode: number | undefined,
   ok: boolean,
@@ -1254,6 +1257,7 @@ function summarizeResult(
   return { type: typeof result, value: String(result) };
 }
 
+/** Build invocation metadata for the selected capture level; minimal capture retains digests while richer levels include sanitized inputs and hashed runtime context. */
 function buildCommandStartPayload(params: {
   captureLevel: TelemetryCaptureLevel;
   context: TelemetryCommandContext;
@@ -1340,6 +1344,7 @@ function buildCommandStartPayload(params: {
   };
 }
 
+/** Build completion diagnostics with sanitized errors and failure fingerprints; minimal capture omits start timestamps and result previews. */
 function buildCommandFinishPayload(params: {
   captureLevel: TelemetryCaptureLevel;
   pmVersion: string;
@@ -1629,6 +1634,7 @@ function parseQueueLines(raw: string): QueuedTelemetryEvent[] {
   return entries;
 }
 
+/** Compute a capped exponential-backoff timestamp from the current time and the number of attempted deliveries. */
 function nextRetryIso(attempts: number): string {
   const delay = Math.min(
     TELEMETRY_RETRY_BASE_DELAY_MS * 2 ** Math.max(attempts - 1, 0),
@@ -1637,6 +1643,7 @@ function nextRetryIso(attempts: number): string {
   return new Date(Date.now() + delay).toISOString();
 }
 
+/** Allow immediate retry when scheduling metadata is absent or malformed; otherwise compare its timestamp with the current time. */
 function isDueForRetryAt(nextAttemptAfter: string | undefined): boolean {
   if (
     typeof nextAttemptAfter !== "string" ||
@@ -1651,10 +1658,12 @@ function isDueForRetryAt(nextAttemptAfter: string | undefined): boolean {
   return dueAtMs <= Date.now();
 }
 
+/** Apply the shared due-time policy to an event envelope without altering its retry metadata. */
 function isDueForRetry(entry: QueuedTelemetryEvent): boolean {
   return isDueForRetryAt(entry.next_attempt_after);
 }
 
+/** Convert a finite retention duration to a cutoff using at least one whole day; invalid durations fall back to one day. */
 function retentionCutoffMs(retentionDays: number): number {
   const normalizedDays = Number.isFinite(retentionDays)
     ? Math.max(1, Math.trunc(retentionDays))
@@ -1662,6 +1671,7 @@ function retentionCutoffMs(retentionDays: number): number {
   return Date.now() - normalizedDays * MILLISECONDS_PER_DAY;
 }
 
+/** Expire only events with a valid occurrence timestamp before the cutoff; unknown dates do not establish expiration. */
 function isExpiredQueueEntry(
   entry: QueuedTelemetryEvent,
   cutoffMs: number,
@@ -1677,6 +1687,7 @@ function isExpiredQueueEntry(
   return occurredAtMs < cutoffMs;
 }
 
+/** Preserve event order while removing oversized, expired, and attempt-exhausted envelopes; return the retained snapshot and removal count. */
 function pruneExpiredQueueEntries(
   entries: QueuedTelemetryEvent[],
   retentionDays: number,
@@ -1700,6 +1711,7 @@ function pruneExpiredQueueEntries(
   return { entries: retained, prunedCount };
 }
 
+/** Atomically replace the event snapshot with bounded retries for transient filesystem failures; mutation callers must hold the queue mutex. */
 async function rewriteQueue(
   globalPmRoot: string,
   entries: QueuedTelemetryEvent[],
@@ -1720,6 +1732,7 @@ async function rewriteQueue(
   }
 }
 
+/** Recognize only access, busy, and permission filesystem codes as transient atomic-rewrite failures. */
 function isRetryableQueueRewriteError(error: unknown): boolean {
   if (typeof error !== "object" || error === null || !("code" in error)) {
     return false;
@@ -1778,6 +1791,7 @@ function backfillPendingOtelSpanId(entry: {
     .slice(0, 32);
 }
 
+/** Recover valid pending span envelopes from JSONL, skip malformed rows, and assign stable content-derived IDs to legacy entries for reconciliation. */
 function parsePendingOtelSpanLines(raw: string): PendingOtelSpan[] {
   const entries: PendingOtelSpan[] = [];
   for (const line of raw.split("\n")) {
@@ -1812,6 +1826,7 @@ function parsePendingOtelSpanLines(raw: string): PendingOtelSpan[] {
   return entries;
 }
 
+/** Compare valid enqueue timestamps with the retention cutoff; retain unknown or malformed dates rather than inventing an age. */
 function isExpiredPendingOtelSpan(
   entry: PendingOtelSpan,
   cutoffMs: number,
@@ -1829,6 +1844,7 @@ function isExpiredPendingOtelSpan(
   return enqueuedAtMs < cutoffMs;
 }
 
+/** Drop oversized, expired, and attempt-exhausted spans, then keep the newest entries within the pending-span cap and report every removal. */
 function prunePendingOtelSpans(
   entries: PendingOtelSpan[],
   retentionDays: number,

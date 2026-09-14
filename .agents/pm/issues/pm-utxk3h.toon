@@ -6,18 +6,18 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-13T09:41:11.342Z"
-updated_at: "2026-09-14T02:37:18.530Z"
-closed_at: "2026-09-14T02:37:17.648Z"
-completed_at: "2026-09-14T02:37:17.648Z"
+updated_at: "2026-09-14T03:06:02.071Z"
+closed_at: "2026-09-14T03:06:01.229Z"
+completed_at: "2026-09-14T03:06:01.229Z"
 author: "harness:codex"
 acceptance_criteria: "Reproduce missing lifecycle events with isolated concurrent processes and a local collector; preserve events across append, successful flush, retry, retention pruning, and span rewriting; verify paired production probes and exact coverage without weakening consent or timeout guarantees"
 goal: project management = context management
 objective: Make event delivery completeness independently verifiable under concurrent CLI use
 value: Trustworthy action histories beyond aggregate success rates
 parent: pm-5oj5
-resolution: Preserve concurrent queues with bounded foreground acquisition waits and contention-based test barriers
-expected_result: Foreground capture abandons contended acquisition promptly and completed queue transactions preserve intervening appends
-actual_result: 8844 tests pass with exact coverage; three latency negative controls and four mutex-removal failures verify the correction; packed consumers and four production lifecycle pairs pass; local timing and review quota limits remain documented
+resolution: Preserve concurrent queues with bounded foreground waits and document all runtime helpers counted in the delivery diff
+expected_result: Every counted runtime function explains its behavior and limits without changing executable output
+actual_result: "45/45 diff-context named runtime functions have JSDoc; transpiled output is unchanged; build, 120 telemetry tests, strict lint and documentation gates pass; prior executable head passed 8844-test exact coverage and defect-free full review"
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-5oj5,implements,"2026-09-13T09:41:11.342Z","harness:codex","cli:create:dep",detected
   pm-bwkmp4,discovered_from,"2026-09-13T09:41:11.342Z","harness:codex","cli:create:dep",detected
@@ -26,7 +26,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-do5b,verifies,"2026-09-13T22:13:45.043Z","harness:codex","cli:update:dep",detected
   pm-fokyhh,verifies,"2026-09-13T22:13:45.043Z","harness:codex","cli:update:dep",detected
   pm-ksr40d,verifies,"2026-09-13T22:13:45.043Z","harness:codex","cli:update:dep",detected
-comments[24]{created_at,author,text}:
+comments[26]{created_at,author,text}:
   "2026-09-13T09:41:11.342Z","harness:codex","Duplicate check: complete 2756-item all-status export and request-specific telemetry queue/concurrency searches found no active owner for missing start delivery. The closed flush-receipt predecessor covers truthful drain counts, not cross-process event preservation. This intake records observed evidence without claiming an established root cause or remediation."
   "2026-09-13T21:19:08.864Z","harness:codex","Live scope evidence: complete CLI export read all 2757 items across open draft closed and canceled statuses with zero omissions or unreadable items. Existing canonical telemetry and closed flush-receipt lineage reused. GitHub has zero open PRs and zero open Dependabot code-scanning or secret-scanning alerts; all six open issues already include canonical PM links. Source inspection identifies process-local queue serialization and two stale retention rewrites; isolated subprocess negative controls are being executed before closure."
   "2026-09-13T21:34:53.119Z","harness:codex","Continuation authorized: user approved takeover of the prior session claim. Current bootstrap and 40 focused tests pass, including independent-process event preservation and loopback collector lifecycle pairing. Full all-status CLI export contains 2757 items with complete reads and no omissions. GitHub has no open PRs or security alerts; all six open issues have canonical PM links. Full coverage and static validation are running; no completion or publication is claimed."
@@ -51,6 +51,8 @@ comments[24]{created_at,author,text}:
   "2026-09-14T02:35:02.397Z","harness:codex","Final corrected regression passes 8844 tests across 687 files at exact 100/100/100/100: 64419 statements, 49155 branches, 13391 functions, and 61687 lines all covered. Linked reconciliation and collector tests pass, as do temporary npm/Bun public SDK and CLI acceptance and all six packed npx/bunx package smokes. Strict ESLint, zero-duplication, typecheck and documentation gates pass. Fresh GitHub security alerts remain zero; Sentry critical/high counts are zero and recent telemetry errors are 1.82 percent with no missing error codes."
   "2026-09-14T02:36:55.726Z","harness:codex","Final static disposition: all preceding source/documentation/contract/tracker gates and SDK surface parity pass. The initial governance import-cost measurement was 333/327ms; an isolated rerun passes all ten entrypoints. CLI timing still exceeds unchanged limits at get 373/362ms, context 444/433ms, next 449/440ms, create 418/398ms, consistent with the separately reproduced unchanged-base limitation. No threshold or waiver changed. The corrected head still requires hosted checks and fresh bot review."
   "2026-09-14T02:37:16.834Z","harness:codex","Post-correction production probe 2026-09-14T02:36:15.142Z through 02:36:16.274Z delivered four starts, four finishes, and four exact backend pairs. Four rejected-source lifecycle events retain env_override_rejected and zero payloads retain the synthetic raw override. The physical event queue was zero bytes after drain. This proves this bounded window only; unavailable reviewer quotas are not approval."
+  "2026-09-14T03:04:24.621Z","harness:codex","Current-head hosted checks and CodeRabbit full review passed with no actionable defects. Its diff-context docstring heuristic reports 26/30 rather than the requested 100 percent. AST inspection identifies undocumented neighboring helpers included by hunk context; behavioral docstrings now cover all 45 named functions intersecting the expanded diff. TypeScript output with comments removed is byte-identical to the reviewed implementation. Focused telemetry, build, lint and documentation verification are running; this follow-up changes documentation only."
+  "2026-09-14T03:06:00.453Z","harness:codex","Documentation follow-up verified: all 45 named runtime functions intersecting the current diff have behavioral JSDoc, including context-adjacent payload, normalization, retry and retention helpers. TypeScript executable output is unchanged. Build, all 120 telemetry tests, strict ESLint and documentation gates pass. The immediately preceding executable head has hosted 8844-test exact coverage and a full CodeRabbit review with no actionable defects; fresh checks and reviews will be requested for the documentation head."
 notes[1]{created_at,author,text}:
   "2026-09-13T21:55:43.438Z","harness:codex","Graph context check used all 2757 live exported records before new intake: every record had at least one parent or dependency connection. Typed lineage already includes implements, discovered_from, verifies, supersedes, recurs_from, blocks, blocked_by, and incident_from. Graph audit returned two informational legacy hierarchy advisories. Enrichment must express evidence-backed semantics; do not inflate edge counts or depth with invented dependencies."
 learnings[3]{created_at,author,text}:
@@ -103,7 +105,7 @@ test_runs[3]:
       node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/CONFIGURATION.md,project,Queue coordination guarantees and best-effort limits
-close_reason: Foreground contention and deterministic preservation regressions verified for refreshed review
+close_reason: Complete touched telemetry behavioral documentation verified
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
