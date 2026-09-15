@@ -20,9 +20,9 @@ async function createTemporaryRoot(label: string): Promise<string> {
 
 afterEach(async () => {
   await Promise.all(
-    temporaryRoots.splice(0).map((root) =>
-      fs.rm(root, { recursive: true, force: true }),
-    ),
+    temporaryRoots
+      .splice(0)
+      .map((root) => fs.rm(root, { recursive: true, force: true })),
   );
 });
 
@@ -32,7 +32,9 @@ describe("tracker preflight", () => {
 
     expect(buildTrackerInitializationRecovery(trackerRoot)).toEqual({
       suggested_retry:
-        "pm '--pm-path' '/tmp/tracker with '\"'\"'quotes'\"'\"'/$variables' 'init' '--defaults' '--agent-guidance' 'skip'",
+        process.platform === "win32"
+          ? "pm --pm-path \"/tmp/tracker with 'quotes'/$variables\" init --defaults --agent-guidance skip"
+          : "pm --pm-path \"/tmp/tracker with 'quotes'/\\$variables\" init --defaults --agent-guidance skip",
       suggested_retry_args: [
         "--pm-path",
         trackerRoot,
@@ -140,7 +142,9 @@ describe("tracker preflight", () => {
       const trackerRoot = await createTemporaryRoot("unreadable-tracker");
       await fs.chmod(trackerRoot, 0o000);
       try {
-        await expect(assertReadableTrackerRoot(trackerRoot)).rejects.toMatchObject({
+        await expect(
+          assertReadableTrackerRoot(trackerRoot),
+        ).rejects.toMatchObject({
           exitCode: EXIT_CODE.GENERIC_FAILURE,
           code: "tracker_root_unreadable",
           context: {
@@ -158,7 +162,9 @@ describe("tracker preflight", () => {
   it.runIf(process.platform !== "win32")(
     "checks initialized roots for readability before accepting their settings marker",
     async () => {
-      const trackerRoot = await createTemporaryRoot("unreadable-initialized-tracker");
+      const trackerRoot = await createTemporaryRoot(
+        "unreadable-initialized-tracker",
+      );
       await fs.writeFile(
         path.join(trackerRoot, "settings.json"),
         '{"id_prefix":"pm-"}\n',
@@ -166,7 +172,9 @@ describe("tracker preflight", () => {
       );
       await fs.chmod(trackerRoot, 0o000);
       try {
-        await expect(assertInitializedTracker(trackerRoot)).rejects.toMatchObject({
+        await expect(
+          assertInitializedTracker(trackerRoot),
+        ).rejects.toMatchObject({
           exitCode: EXIT_CODE.GENERIC_FAILURE,
           code: "tracker_root_unreadable",
         });
@@ -178,12 +186,16 @@ describe("tracker preflight", () => {
 
   it("allows readable empty roots for metadata enumeration and initialized roots for commands", async () => {
     const trackerRoot = await createTemporaryRoot("valid-tracker");
-    await expect(assertReadableTrackerRoot(trackerRoot)).resolves.toBeUndefined();
+    await expect(
+      assertReadableTrackerRoot(trackerRoot),
+    ).resolves.toBeUndefined();
     await fs.writeFile(
       path.join(trackerRoot, "settings.json"),
       '{"id_prefix":"pm-"}\n',
       "utf8",
     );
-    await expect(assertInitializedTracker(trackerRoot)).resolves.toBeUndefined();
+    await expect(
+      assertInitializedTracker(trackerRoot),
+    ).resolves.toBeUndefined();
   });
 });

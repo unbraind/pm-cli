@@ -5,6 +5,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
+import { renderPmCommand } from "../shared/command-line.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import {
   PmCliError,
@@ -35,9 +36,7 @@ export function buildTrackerInitializationRecovery(
     "skip",
   ];
   return {
-    suggested_retry: `pm ${suggestedRetryArguments
-      .map((argument) => `'${argument.replaceAll("'", `'"'"'`)}'`)
-      .join(" ")}`,
+    suggested_retry: renderPmCommand(suggestedRetryArguments),
     suggested_retry_args: suggestedRetryArguments,
   };
 }

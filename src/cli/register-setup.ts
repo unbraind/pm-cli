@@ -1116,7 +1116,7 @@ async function runInitCommandAction(
   const verbose = options.verbose === true;
   const emitFullTree = verbose || globalOptions.json === true;
   printResult(
-    emitFullTree ? result : summarizeInitResult(result),
+    emitFullTree ? result : summarizeInitResult(result, true),
     globalOptions,
   );
   if (globalOptions.profile) {

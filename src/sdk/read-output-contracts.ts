@@ -10,6 +10,7 @@ import { PmCliError } from "../core/shared/errors.js";
 import {
   compactReadOutputToBudget,
   estimateReadOutputTokens,
+  projectReadOutputItemToBrief,
   resolveReadOutputRecoveryBudget,
   updateReadOutputReceiptEstimate,
 } from "./read-output-budget.js";
@@ -222,6 +223,10 @@ export interface PmReadOutputReceipt {
   result_omitted: boolean;
   /** Estimated tokens in the useful result immediately before whole-result omission. */
   omitted_result_estimated_tokens?: number;
+  /** Detail depth selected before destructive string or row compaction. */
+  applied_depth?: "brief";
+  /** Binding constraint that selected the smaller detail projection. */
+  degradation_reason?: "output_budget_reached";
 }
 
 /** Machine-readable explanation of budget-driven row degradation. */
@@ -1955,12 +1960,6 @@ export function applyReadOutputDimensions<
     session,
     cursor,
   );
-  const continuationState = captureReadOutputContinuationState(
-    projected,
-    resolved.command,
-    cursor,
-    options,
-  );
   const receipt: PmReadOutputReceipt = {
     contract_version: 1,
     command: resolved.command,
@@ -1987,21 +1986,25 @@ export function applyReadOutputDimensions<
       ? projected
       : attachReadOutputSessionContracts(projected, session, receipt, format);
   updateReadOutputReceiptEstimate(projected, receipt, format);
-  if (
-    bindingBudget !== undefined &&
-    receipt.estimated_tokens > bindingBudget.tokens
-  ) {
-    const measuredResultTokens = receipt.estimated_tokens;
-    projected = compactReadOutputProjection(
-      projected,
-      resolved,
-      receipt,
-      bindingBudget,
-      session,
-      continuationState,
-      measuredResultTokens,
-      format,
-    );
+  if (bindingBudget !== undefined && receipt.estimated_tokens > bindingBudget.tokens) {
+    const brief = projectReadOutputItemToBrief(resolved.command, options, projected);
+    if (brief !== undefined) {
+      receipt.applied_depth = "brief";
+      receipt.degradation_reason = "output_budget_reached";
+      projected = stabilizeReadOutputReceiptEstimates(brief, options);
+    }
+    if (receipt.estimated_tokens > bindingBudget.tokens) {
+      projected = compactReadOutputProjection(
+        projected,
+        resolved,
+        receipt,
+        bindingBudget,
+        session,
+        captureReadOutputContinuationState(projected, resolved.command, cursor, options),
+        receipt.estimated_tokens,
+        format,
+      );
+    }
   }
   if (
     bindingBudget !== undefined &&

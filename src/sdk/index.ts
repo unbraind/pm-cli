@@ -359,6 +359,7 @@ export {
   _testOnly as _testOnlyInit,
   type InitAgentGuidanceResult,
   type InitConciseResult,
+  type InitDisplayResult,
   type InitInstalledPackagesSummary,
   type InitRegisteredTypePresetSummary,
   type InitTargetResolution,
