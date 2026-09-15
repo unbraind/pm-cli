@@ -739,18 +739,16 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("renders a concise pm init summary by default and the full settings tree only with --verbose/--json", async () => {
     await withTempPmPath(async (context) => {
-      // Default (toon) output is concise: drops the full settings tree but keeps
-      // path, governance preset, telemetry capture level, and warnings.
+      // Default display keeps setup status and actionable next steps bounded.
       const concise = context.runCli(["init"]);
       expect(concise.code).toBe(0);
-      expect(concise.stdout).toContain("id_prefix:");
+      expect(concise.stdout).toContain("path:");
       expect(concise.stdout).toContain("governance_preset:");
-      expect(concise.stdout).toContain("capture_level:");
+      expect(concise.stdout).toContain("telemetry:");
       expect(concise.stdout).toContain(
-        "Re-run with --verbose for the full settings tree.",
+        "for full setup details and notices",
       );
-      // already_exists warnings (init-only information) survive in the summary.
-      expect(concise.stdout).toContain("already_exists:");
+      expect(concise.stdout).not.toContain("already_exists:");
       // The verbose-only settings internals are absent.
       expect(concise.stdout).not.toContain("retention_days");
       expect(concise.stdout).not.toContain("ownership_enforcement");
@@ -759,6 +757,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(verbose.code).toBe(0);
       expect(verbose.stdout).toContain("retention_days");
       expect(verbose.stdout).toContain("ownership_enforcement");
+      expect(verbose.stdout).toContain("already_exists:");
       // Verbose tree is substantially larger than the concise default.
       expect(verbose.stdout.split("\n").length).toBeGreaterThan(
         concise.stdout.split("\n").length,

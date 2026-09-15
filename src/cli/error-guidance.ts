@@ -1974,12 +1974,23 @@ function buildCommanderErrorGuidance(
   });
 }
 
-/** Implements format pm cli error for display for the public runtime surface of this module. */
+/** Render concise initialization recovery or the bounded diagnostic for other failures. */
 export function formatPmCliErrorForDisplay(
   rawMessage: string,
   context?: PmCliErrorContext,
 ): string {
   const guidance = buildPmCliErrorGuidance(rawMessage, context);
+  if (
+    (context?.code === "tracker_root_missing" ||
+      context?.code === "tracker_not_initialized") &&
+    guidance.recovery?.suggested_retry_args
+  ) {
+    return [
+      `Error: ${guidance.title}`,
+      `Run: ${renderPmCommand(guidance.recovery.suggested_retry_args)}`,
+      "Use --json for full recovery details.",
+    ].join("\n");
+  }
   return projectPmDiagnosticText(
     renderGuidanceMessage(guidance),
     guidance.required,

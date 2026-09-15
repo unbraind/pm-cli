@@ -22,6 +22,57 @@ const RECOVERY_MARGIN_NUMERATOR = 5;
 const RECOVERY_MARGIN_DENOMINATOR = 4;
 const RECOVERY_ROUNDING_TOKENS = 100;
 
+/** Project a standard item read to brief depth, preserving metadata and disclosing every removed section. */
+export function projectReadOutputItemToBrief(
+  command: string,
+  options: Record<string, unknown>,
+  result: Record<string, unknown>,
+): Record<string, unknown> | undefined {
+  if (
+    command !== "get" ||
+    !isRecord(result.item) ||
+    [
+      "fields",
+      "outputInclude",
+      "output_include",
+      "outputCursor",
+      "output_cursor",
+    ].some((key) => options[key] !== undefined) ||
+    options.full === true ||
+    options.tree === true ||
+    (options.depth !== undefined && options.depth !== "standard")
+  )
+    return undefined;
+  const item = result.item;
+  const sections = ["linked", "claim_state", "schedule"];
+  const omitted = sections.filter((key) => Object.hasOwn(result, key));
+  const projected = Object.fromEntries(
+    Object.entries(result).filter(([key]) => !sections.includes(key)),
+  );
+  projected.item = Object.fromEntries(
+    Object.entries(item).filter(([key]) => key !== "body"),
+  );
+  if (Object.hasOwn(item, "body")) omitted.push("body");
+  const previous =
+    isRecord(result.omission_receipt) &&
+    Array.isArray(result.omission_receipt.omitted_field_groups)
+      ? result.omission_receipt.omitted_field_groups
+      : [];
+  const groups = [
+    ...previous,
+    ...omitted.map((name) => ({
+      name,
+      restore_with: `--fields ${name}`,
+    })),
+  ];
+  projected.omission_receipt = {
+    has_omissions: groups.length > 0,
+    omitted_field_group_count: groups.length,
+    omitted_field_groups: groups,
+  };
+  return projected;
+}
+
 /** Input to the deterministic finite-retry recommendation contract. */
 export interface PmReadOutputRecoveryBudgetInput {
   /** Ceiling that already bound and truncated the response. */
@@ -66,8 +117,7 @@ export function resolveReadOutputRecoveryBudget(
     (baseline * RECOVERY_MARGIN_NUMERATOR) / RECOVERY_MARGIN_DENOMINATOR,
   );
   const rounded =
-    Math.ceil(withMargin / RECOVERY_ROUNDING_TOKENS) *
-    RECOVERY_ROUNDING_TOKENS;
+    Math.ceil(withMargin / RECOVERY_ROUNDING_TOKENS) * RECOVERY_ROUNDING_TOKENS;
   if (!Number.isSafeInteger(rounded)) {
     return {
       output_budget: "unbounded",
@@ -83,8 +133,14 @@ export function resolveReadOutputRecoveryBudget(
 }
 
 /** Estimate UTF-8 token cost using the selected JSON/TOON renderer, or compact JSON for structured SDK calls without a renderer. */
-export function estimateReadOutputTokens(result: unknown, format?: "json" | "toon"): number {
-  const rendered = format === undefined ? JSON.stringify(result) : formatBuiltInOutput(result, format);
+export function estimateReadOutputTokens(
+  result: unknown,
+  format?: "json" | "toon",
+): number {
+  const rendered =
+    format === undefined
+      ? JSON.stringify(result)
+      : formatBuiltInOutput(result, format);
   return Math.ceil(Buffer.byteLength(rendered, "utf8") / 4);
 }
 

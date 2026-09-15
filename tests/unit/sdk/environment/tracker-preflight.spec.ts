@@ -31,8 +31,9 @@ describe("tracker preflight", () => {
     const trackerRoot = "/tmp/tracker with 'quotes'/$variables";
 
     expect(buildTrackerInitializationRecovery(trackerRoot)).toEqual({
-      suggested_retry:
-        "pm '--pm-path' '/tmp/tracker with '\"'\"'quotes'\"'\"'/$variables' 'init' '--defaults' '--agent-guidance' 'skip'",
+      suggested_retry: process.platform === "win32"
+        ? "pm --pm-path \"/tmp/tracker with 'quotes'/$variables\" init --defaults --agent-guidance skip"
+        : "pm --pm-path \"/tmp/tracker with 'quotes'/\\$variables\" init --defaults --agent-guidance skip",
       suggested_retry_args: [
         "--pm-path",
         trackerRoot,

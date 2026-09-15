@@ -224,7 +224,8 @@ describe("SDK read contract integrity", () => {
         budget_source: "default",
         budget_tokens: 4_000,
         within_budget: true,
-        strings_compacted: true,
+        strings_compacted: false,
+        applied_depth: "brief",
       },
     });
     expect(

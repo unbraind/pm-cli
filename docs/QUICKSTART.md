@@ -62,6 +62,22 @@ Use `pm init --type-preset agile|ops|research` when a fresh project should start
 
 ## Create Your First Item
 
+For a scratch project, minimal governance is already the initialization default
+([pm-z436](../.agents/pm/stories/pm-z436.toon)). The default init display shows
+the selected tracker, policy, telemetry setting, and three next commands;
+`--verbose` or `--json` restores the complete setup result.
+
+```bash
+pm init --yes --agent-guidance skip
+pm config set governance-metadata-validation-profile custom
+pm config set metadata-required-fields --criterion author --criterion close_reason
+pm create Task "Understand the problem"
+pm create Task "Implement the change"
+pm create Task "Verify the result"
+pm next
+pm close <item-id> "Verified" --resolution "Implemented" --expected "Works" --actual "Verified"
+```
+
 Use strict create mode when all required fields are ready. Use progressive mode for staged triage.
 
 ```bash

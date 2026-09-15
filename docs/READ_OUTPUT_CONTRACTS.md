@@ -71,6 +71,20 @@ example, `list` declares `brief`, `compact`, and `full`; `health` declares
 includes `projection_modes` for every canonical read surface, including an
 explicit empty array when a surface has no whole-result modes.
 
+## Single-item detail fallback
+
+Tracked by [pm-8eclqf](../.agents/pm/issues/pm-8eclqf.toon).
+When a standard `get` exceeds its budget, the SDK first tries the declared
+brief projection. It retains complete item metadata and dependencies while
+omitting body, linked artifacts, claim history, and schedule details. The
+receipt records `applied_depth: brief` and
+`degradation_reason: output_budget_reached`; the omission receipt names the
+removed sections and how to restore them. Explicit field selections, full/deep
+reads, trees, and continuation requests keep their selected semantics.
+If brief still exceeds the ceiling, normal compaction and eventual refusal
+apply. `estimated_tokens` measures the emitted envelope;
+`omitted_result_estimated_tokens` measures the useful result that could not fit.
+
 ## Cross-Call Context Sessions
 
 `--output-session <json>` / `outputSession` composes the four per-call

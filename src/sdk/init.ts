@@ -200,8 +200,45 @@ export interface InitConciseResult {
   hint: string;
 }
 
-/** Implements summarize init result for the public runtime surface of this module. */
-export function summarizeInitResult(result: InitResult): InitConciseResult {
+/** Minimal first-run display with actionable warnings and a full-result recovery hint. */
+export interface InitDisplayResult {
+  /** Whether initialization succeeded. */
+  ok: boolean;
+  /** Resolved tracker root, including explicitly selected or ancestor trackers. */
+  path: string;
+  /** Governance policy selected for this workspace. */
+  governance_preset: GovernancePreset;
+  /** Project telemetry consent and capture level. */
+  telemetry: string;
+  /** Number of created directories and schema files. */
+  created_count: number;
+  /** Concrete first commands, scoped to the selected tracker. */
+  next_steps: string[];
+  /** Non-routine warnings that require attention. */
+  warnings?: string;
+  /** How to retrieve the complete settings, setup details, and routine notices. */
+  details: string;
+}
+
+/** Preserve the established SDK summary unless the caller selects the first-run display. */
+export function summarizeInitResult(result: InitResult): InitConciseResult;
+/** Select a compact display without changing the full initialization result. */
+export function summarizeInitResult(result: InitResult, display: true): InitDisplayResult;
+/** Build either the compatible SDK summary or the opt-in first-run display. */
+export function summarizeInitResult(result: InitResult, display = false): InitConciseResult | InitDisplayResult {
+  if (display) {
+    const warnings = result.warnings.filter((warning) => !/^(?:already_exists:|updated:|registered_type_preset:)/u.test(warning));
+    return {
+      ok: result.ok,
+      path: result.path,
+      governance_preset: result.governance_preset,
+      telemetry: `${result.settings.telemetry.enabled ? "enabled" : "disabled"} (${result.settings.telemetry.capture_level})`,
+      created_count: result.created_dirs.length,
+      next_steps: result.next_steps.slice(0, 3),
+      ...(warnings.length > 0 ? { warnings: warnings.join("; ") } : {}),
+      details: `${renderPmCommand(["--pm-path", result.path, "init", "--verbose"])} for full setup details and notices (or --json)`,
+    };
+  }
   return {
     ok: result.ok,
     path: result.path,
