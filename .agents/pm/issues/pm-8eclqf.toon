@@ -2,33 +2,36 @@ id: pm-8eclqf
 title: "pm get --json omits the whole item as budget-infeasible when its standard projection exceeds the default ceiling although the contract's own brief depth fits, so one active item is unreadable by default"
 description: "## Observed\npm get pm-5t33or --json exits 2 with output_budget_exceeded.reason requested_budget_infeasible and omits the whole item, while pm get pm-5t33or (TOON), --depth brief and --depth deep all succeed, and --output-budget 20000 succeeds. The item's full JSON is 31,218 bytes (about 7.8k estimated tokens) against the default 6,000-token ceiling; it has 26 dependencies, a 2,725-character description and a 1,111-character body, no notes and no comments. The refusal receipt reports estimated_tokens 177 and within_budget false, so the number shown is the receipt's own size rather than the omitted result's.\n\n## Population\nProbed every active item on 2026-09-12: 308 of 309 open and draft items read at the default budget; pm-5t33or is the only refusal. The shape is rare today and structural: any single-entity read whose standard projection exceeds the ceiling has no degradation step between full standard and omit everything, although the contract declares brief as a cheaper amount dimension for the same command.\n\n## Why it matters\npm get is the command an agent uses to rebuild an item; a default read that refuses outright is the one outcome the output-budget feature pm-5t33or exists to prevent (degrade deterministically instead of emitting unbounded output). pm-3crymx closed the same receipt defect for context; this is its shape on get.\n\n## Non-goals\nNot a change to the default ceiling. Not linked files/tests/docs projection (pm-tld20c, closed)."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[6]: agent-ux,"area:sdk",get,output-budget,read-output,token-efficiency
 created_at: "2026-09-12T19:57:58.972Z"
-updated_at: "2026-09-15T09:27:40.626Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#2dce2fb86168b03f2917569f"
+updated_at: "2026-09-15T10:03:01.082Z"
+closed_at: "2026-09-15T10:03:00.397Z"
+completed_at: "2026-09-15T10:03:00.397Z"
 author: "harness:claude-code"
 estimated_minutes: 180
-acceptance_criteria: "The single-entity degradation ladder steps standard to brief before omission and the receipt records the applied depth and the reason; The refusal receipt reports the omitted result's estimated tokens, never the receipt's own size; A probe over every active item returns exit 0 at the default budget, with a negative control for an item whose brief projection also exceeds the ceiling; A spec reproduces pm-5t33or's shape: 26 dependencies and a 2,700-character description under the default budget"
+acceptance_criteria: Standard single-item reads try brief before string or row compaction and disclose the retained depth and reason; emitted estimated_tokens remains exact for rendering and session accounting while omitted_result_estimated_tokens reports the useful result size on refusal; every active item reads successfully at the default budget and a brief-too-large negative control refuses; the regression preserves a 2700-character description and 26 dependencies without mutation.
 parent: pm-5t33or
 risk: medium
 confidence: high
 severity: high
-expected_result: A single-entity read whose standard projection exceeds the ceiling degrades to the declared brief projection and reports the applied depth; the receipt's estimated_tokens names the omitted result's size.
-actual_result: "pm get pm-5t33or --json exits 2 requested_budget_infeasible with estimated_tokens 177 while --depth brief, --depth deep, TOON and --output-budget 20000 all succeed."
+resolution: Try the declared brief projection before lossy compaction; disclose applied depth and omitted sections while preserving explicit projections and exact emitted/session costs.
+expected_result: Default rich item reads retain useful complete metadata within budget; oversized brief results still refuse with a useful-result cost estimate.
+actual_result: All 311 active records return successfully; five brief fallbacks fit at at most 5959 JSON tokens. Negative controls and all 8890 tests pass with exact 100/100/100/100 coverage; linked regression passed.
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-3crymx,discovered_from,"2026-09-12T19:57:58.972Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-09-12T19:57:58.972Z","harness:claude-code","cli:create:dep",detected
   pm-cxr0jb,discovered_from,"2026-09-12T20:05:08.133Z","harness:claude-code","cli:update:dep",detected
   pm-tld20c,discovered_from,"2026-09-15T09:07:24.351Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-09-12T19:58:01.447Z","harness:claude-code","Duplicate check: pm-3crymx (closed) fixed the context receipt and budget-derived projection; pm-tld20c (closed) fixed get's withheld link sections; pm-hid9g1 (closed) added output sessions. Searched requested_budget_infeasible default budget get refuses: no open owner for get's single-entity degradation ladder. Probe evidence: 308 of 309 active items read; pm-5t33or is the sole refusal on 2026-09-12."
   "2026-09-15T09:04:11.943Z","harness:codex","reproduced default get JSON refusal on the live parent and added a failing regression proving description truncation precedes available brief projection. The SDK now tries brief depth before string or row compaction; initial focused 8-test run passed. Complete all-status export: 2762 records, no omissions or unreadable files; canonical owner reused. GitHub inventory: no open PRs or Dependabot alerts; four open issues each already has its canonical tracker-link comment. Scheduled release run 34944532936 succeeded."
   "2026-09-15T09:18:59.483Z","harness:codex","Active population proof: scanned all 311 nonterminal records with actual default get JSON subprocesses. Four rich records used brief fallback. The remaining large plan pm-a8zm exposed disclosure overhead; using canonical short field restorations retains its bounded result at 5958 tokens. Existing emitted-token accounting remains exact; omitted_result_estimated_tokens separately reports refused result size, preserving session charging compatibility."
   "2026-09-15T09:24:37.876Z","harness:codex","Repository-wide graph verification: 2762 recorded nodes and 13780 directed edges form one component with no missing endpoints, active isolates, ordering cycles, or active hierarchy violations. Seven historical cardinality/direction inconsistencies remain informational debt. This tranche adds typed provenance edges and does not fabricate relationships to increase graph density."
   "2026-09-15T09:27:40.625Z","harness:codex","Validation status: the first coverage run failed against changing build/test artifacts and stale output expectations; those expectations are corrected and the settled run is underway. Static checks passed through tracker quality, then import-time limits failed under concurrent coverage load. Limits remain unchanged; timing proof will be repeated after coverage completes. Do not interpret this checkpoint as full gate approval."
+  "2026-09-15T09:55:15.482Z","harness:codex",The complete negative-control run measured exact 100/100/100/100 coverage with zero uncovered counts while correctly failing the newly added nearby-tracker regression. That defect is fixed and the focused 27-test suite plus all typechecks pass; a final all-green coverage run remains in progress. All existing timing limits passed in the unloaded rerun.
+  "2026-09-15T10:02:19.354Z","harness:codex","Final implementation validation passed: 695 test files, 8890 tests, and exact 100/100/100/100 coverage with zero uncovered statements, branches, functions, or lines. Complete active population probe: 311 successful default JSON reads, five disclosed brief fallbacks, maximum emitted estimate 5959 tokens under the 6000-token JSON ceiling. Source quality composition and full ESLint passed; prior compatible import/transport timing checks passed without relaxed limits."
 learnings[1]{created_at,author,text}:
   "2026-09-15T09:24:16.169Z","harness:codex",Budget fallback must preserve projection semantics and measure its own recovery disclosure. Use executable field selectors for omitted groups; retrying the same standard depth alone can repeat the fallback. Keep emitted-envelope token accounting distinct from omitted-result estimates to preserve session charging.
 files[5]{path,scope,note}:
@@ -39,8 +42,22 @@ files[5]{path,scope,note}:
   tests/unit/sdk/recovery/read-output-item-depth.spec.ts,project,Depth fallback explicit projection and session budget regressions
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-item-depth.spec.ts,project,240,"harness:codex","2026-09-15T09:04:11.117Z",local_mutation,feat/bounded-item-reads-scratch-workflows
-docs[1]{path,scope,note}:
+test_runs[1]:
+  - run_id: test-local-mu2i5dh5-pk7a0f
+    kind: test
+    status: passed
+    started_at: "2026-09-15T10:01:28.567Z"
+    finished_at: "2026-09-15T10:01:36.377Z"
+    recorded_at: "2026-09-15T10:01:36.377Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-item-depth.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated record of the bounded-read fix
   docs/READ_OUTPUT_CONTRACTS.md,project,Brief fallback and separate emitted versus omitted token accounting
+close_reason: Implemented and verified bounded single-item depth fallback with explicit restoration and compatible token accounting.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

@@ -81,6 +81,16 @@ describe("single-item budget depth", () => {
         { item: { id: "pm-a" } },
       ),
     ).toMatchObject({ omission_receipt: { has_omissions: false } });
+    expect(
+      projectReadOutputItemToBrief(
+        "get",
+        {},
+        {
+          item: { id: "pm-a" },
+          omission_receipt: {},
+        },
+      ),
+    ).toMatchObject({ omission_receipt: { omitted_field_groups: [] } });
     const inherited = { name: "notes", restore_with: "--fields notes" };
     expect(
       projectReadOutputItemToBrief(

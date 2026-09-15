@@ -1983,6 +1983,7 @@ export function formatPmCliErrorForDisplay(
   if (
     (context?.code === "tracker_root_missing" ||
       context?.code === "tracker_not_initialized") &&
+    guidance.title === "Tracker is not initialized" &&
     guidance.recovery?.suggested_retry_args
   ) {
     return [

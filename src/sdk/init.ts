@@ -220,10 +220,10 @@ export interface InitDisplayResult {
   details: string;
 }
 
-/** Preserve the established SDK summary unless the caller selects the first-run display. */
-export function summarizeInitResult(result: InitResult): InitConciseResult;
 /** Select a compact display without changing the full initialization result. */
 export function summarizeInitResult(result: InitResult, display: true): InitDisplayResult;
+/** Preserve existing calls and utility-type consumers through the final compatibility overload. */
+export function summarizeInitResult(result: InitResult): InitConciseResult;
 /** Build either the compatible SDK summary or the opt-in first-run display. */
 export function summarizeInitResult(result: InitResult, display = false): InitConciseResult | InitDisplayResult {
   if (display) {

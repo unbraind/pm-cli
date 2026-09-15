@@ -2021,6 +2021,13 @@
       ],
       "package_version": "2026.9.14",
       "reason": "Add optional read depth receipt fields and a compatible opt-in init display overload; existing calls and result properties remain supported."
+    },
+    {
+      "changes": [
+        "signature ./sdk:summarizeInitResult"
+      ],
+      "package_version": "2026.9.15",
+      "reason": "Retain the original summary signature as the final overload so existing ReturnType and Parameters consumers remain compatible."
     }
   ],
   "entrypoints": {
@@ -18921,7 +18928,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "summarizeInitResult",
-          "signature": "{ (result: InitResult): InitConciseResult; (result: InitResult, display: true): InitDisplayResult; } | calls: (result: InitResult) => InitConciseResult ; (result: InitResult, display: true) => InitDisplayResult"
+          "signature": "{ (result: InitResult, display: true): InitDisplayResult; (result: InitResult): InitConciseResult; } | calls: (result: InitResult, display: true) => InitDisplayResult ; (result: InitResult) => InitConciseResult"
         },
         {
           "classification": "supported",
