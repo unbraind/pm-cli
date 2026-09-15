@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: agent-ux,"area:sdk",get,output-budget,read-output,token-efficiency
 created_at: "2026-09-12T19:57:58.972Z"
-updated_at: "2026-09-15T10:40:33.474Z"
+updated_at: "2026-09-15T11:43:51.478Z"
 closed_at: "2026-09-15T10:03:00.397Z"
 completed_at: "2026-09-15T10:03:00.397Z"
 author: "harness:claude-code"
@@ -24,7 +24,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-j82fd3,implements,"2026-09-12T19:57:58.972Z","harness:claude-code","cli:create:dep",detected
   pm-cxr0jb,discovered_from,"2026-09-12T20:05:08.133Z","harness:claude-code","cli:update:dep",detected
   pm-tld20c,discovered_from,"2026-09-15T09:07:24.351Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-09-12T19:58:01.447Z","harness:claude-code","Duplicate check: pm-3crymx (closed) fixed the context receipt and budget-derived projection; pm-tld20c (closed) fixed get's withheld link sections; pm-hid9g1 (closed) added output sessions. Searched requested_budget_infeasible default budget get refuses: no open owner for get's single-entity degradation ladder. Probe evidence: 308 of 309 active items read; pm-5t33or is the sole refusal on 2026-09-12."
   "2026-09-15T09:04:11.943Z","harness:codex","reproduced default get JSON refusal on the live parent and added a failing regression proving description truncation precedes available brief projection. The SDK now tries brief depth before string or row compaction; initial focused 8-test run passed. Complete all-status export: 2762 records, no omissions or unreadable files; canonical owner reused. GitHub inventory: no open PRs or Dependabot alerts; four open issues each already has its canonical tracker-link comment. Scheduled release run 34944532936 succeeded."
   "2026-09-15T09:18:59.483Z","harness:codex","Active population proof: scanned all 311 nonterminal records with actual default get JSON subprocesses. Four rich records used brief fallback. The remaining large plan pm-a8zm exposed disclosure overhead; using canonical short field restorations retains its bounded result at 5958 tokens. Existing emitted-token accounting remains exact; omitted_result_estimated_tokens separately reports refused result size, preserving session charging compatibility."
@@ -33,6 +33,8 @@ comments[8]{created_at,author,text}:
   "2026-09-15T09:55:15.482Z","harness:codex",The complete negative-control run measured exact 100/100/100/100 coverage with zero uncovered counts while correctly failing the newly added nearby-tracker regression. That defect is fixed and the focused 27-test suite plus all typechecks pass; a final all-green coverage run remains in progress. All existing timing limits passed in the unloaded rerun.
   "2026-09-15T10:02:19.354Z","harness:codex","Final implementation validation passed: 695 test files, 8890 tests, and exact 100/100/100/100 coverage with zero uncovered statements, branches, functions, or lines. Complete active population probe: 311 successful default JSON reads, five disclosed brief fallbacks, maximum emitted estimate 5959 tokens under the 6000-token JSON ceiling. Source quality composition and full ESLint passed; prior compatible import/transport timing checks passed without relaxed limits."
   "2026-09-15T10:40:33.474Z","harness:codex",CodeRabbit PR #1260 correctly noted the generated Fixed entry repeated the old defect. Updated this item title through pm to describe the delivered brief fallback and explicit omission receipts; the original defect description and immutable history are preserved. CHANGELOG remains package-generated.
+  "2026-09-15T11:39:04.799Z","harness:codex","Delivery dependency resolved: pm-changelog PR #200 merged as 05e7ce1193cfd3d8f078472a1875cb46ec077c6f under the explicitly approved Cubic exception. Its protected release workflow 34963268957 published pm-changelog 2026.9.15 from f7a5154a2362df516da38b496a47706e3b5ebd44. Installed latest package and normal pnpm changelog:pm:check passes unchanged. Selection now reads all 2762 records and renders 2432 completed entries; all 54 custom Story records are enumerated. Source and fresh-tracker review fixes are in pm-cli PR #1260, with current hosted coverage, compatibility, smoke, docs and security gates passing. CodeFactor and DeepScan report zero new issues on 929e9dc9552d96b649040188168645616c232e5e."
+  "2026-09-15T11:43:51.478Z","harness:codex","Review clarification for PR #1260: the final 311-item probe contains five brief fallbacks: pm-doxj (2121 tokens), pm-5t33or (4003), pm-f05lsg (4032), pm-a8zm (5959), and pm-92if (3176). pm-a8zm is the fifth fallback described separately in the earlier investigation checkpoint: its over-budget default get invokes projectReadOutputItemToBrief and canonical short-field restorations keep the emitted envelope bounded. The earlier 5958 estimate was from an intermediate probe; final maximum is 5959. Emitted estimates remain exact and separate from omitted-result estimates."
 learnings[1]{created_at,author,text}:
   "2026-09-15T09:24:16.169Z","harness:codex",Budget fallback must preserve projection semantics and measure its own recovery disclosure. Use executable field selectors for omitted groups; retrying the same standard depth alone can repeat the fallback. Keep emitted-envelope token accounting distinct from omitted-result estimates to preserve session charging.
 files[5]{path,scope,note}:
@@ -55,9 +57,10 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-item-depth.spec.ts,schema,schema,source,local_source_ref
-docs[2]{path,scope,note}:
+docs[3]{path,scope,note}:
   CHANGELOG.md,project,Package-generated record of the bounded-read fix
   docs/READ_OUTPUT_CONTRACTS.md,project,Brief fallback and separate emitted versus omitted token accounting
+  "https://github.com/unbraind/pm-cli/pull/1260",project,Implementation and review evidence
 close_reason: Implemented and verified bounded single-item depth fallback with explicit restoration and compatible token accounting.
 escape_class: production_defect
 gate_evidence:
