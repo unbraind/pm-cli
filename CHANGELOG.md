@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- pm get --json omits the whole item as budget-infeasible when its standard projection exceeds the default ceiling although the contract's own brief depth fits, so one active item is unreadable by default ([pm-8eclqf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8eclqf.toon))
+- Preserve oversized standard item reads with a brief projection and explicit omission receipts ([pm-8eclqf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8eclqf.toon))
 
 ### Other
 

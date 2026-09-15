@@ -6,18 +6,18 @@ status: closed
 priority: 2
 tags[4]: agent-ux,onboarding,small-scale,token-efficiency
 created_at: "2026-07-06T23:36:18.776Z"
-updated_at: "2026-09-15T10:03:02.723Z"
-closed_at: "2026-09-15T10:03:01.791Z"
-completed_at: "2026-09-15T10:03:01.791Z"
+updated_at: "2026-09-15T10:42:27.610Z"
+closed_at: "2026-09-15T10:42:26.887Z"
+completed_at: "2026-09-15T10:42:26.887Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "A documented scratch/minimal metadata profile lets pm create <type> <title> succeed with no further flags and zero validate warnings; the full init -> create x3 -> next -> close round trip is covered by an e2e test asserting a bounded total token footprint (measured via the pm-a22j corpus method) and bounded wall-clock latency; pm context/next on a sub-10-item workspace produce output whose token cost is proportional to the workspace, with no fixed large envelope; the quickstart doc shows the scratch flow in under ten lines; governance defaults never require ceremony the scratch profile has not opted into"
 parent: pm-mpbb
 risk: low
 confidence: high
-resolution: "Add a compatible public SDK display type and overload, concise CLI init and ordinary missing-root errors, preserve custom-root recovery, and document explicit scratch metadata governance."
-expected_result: "A scratch project can capture three tasks, obtain context and next work, close with evidence, and validate without warnings at bounded cost; existing SDK calls and utility types remain compatible."
-actual_result: "Manual workflow initializes in 11 lines and completes in 5.83 seconds at 813 estimated tokens including configuration. Real-directory recovery, linked tests, 8890 full tests, exact coverage, strict packed SDK types, npm/Bun and npx/bunx acceptance all pass."
+resolution: "Deliver concise SDK-backed initialization and recovery plus a genuinely fresh, real-process scratch lifecycle regression."
+expected_result: "Fresh initialization creates the tracker and supports three-item capture, context, next, structured closure and clean validation within the existing token and time limits."
+actual_result: "Fresh-path precondition fails before the test fix and passes afterward; all lifecycle assertions, linked tests, typecheck and focused lint pass."
 dependencies[6]:
   - id: pm-4k6b
     kind: related
@@ -40,7 +40,7 @@ dependencies[6]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[9]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-09-12T21:08:37.896Z","harness:codex","GitHub report: https://github.com/unbraind/pm-cli/issues/1244. Canonical tracking reused after complete all-status duplicate check."
   "2026-09-15T09:10:53.356Z","harness:codex","Manual acceptance uncovered a real distinction: minimal governance permits quick capture but core metadata validation still warns about missing estimates and acceptance criteria. The documented scratch profile now explicitly selects custom required fields author and close_reason; close records resolution and expected/actual evidence. The real CLI regression verifies that this configured lifecycle passes complete validation without warnings. Only actively edited items remain in progress."
   "2026-09-15T09:19:01.204Z","harness:codex",First-run refusal regression initially failed at 20 lines. Missing and uninitialized tracker displays now pass the three-line contract while preserving tokenized exact-root recovery in JSON. Packed npm/npx/bunx smoke passed for six package fixtures. Focused lifecycle validation passes without warnings under the documented custom metadata profile.
@@ -50,6 +50,8 @@ comments[9]{created_at,author,text}:
   "2026-09-15T09:45:18.400Z","harness:codex","Source review found a nearby-custom-root edge case: compressing every missing-root diagnostic could hide the instruction to select an existing tracker and instead emphasize initialization of another root. Added a real-directory regression and a missing-retry fallback case before final closeout; existing tracker selection must retain its complete diagnostic."
   "2026-09-15T09:55:14.524Z","harness:codex","Packed current-build acceptance passed in independent npm and Bun installations: public SDK initialization display, existing summary compatibility, and brief read projection execute under Node and Bun. The installed public declaration files also pass strict TypeScript consumers using both ReturnType and Parameters. npx/bunx six-package smoke passed on the final runtime build. The overload reorder preserved the emitted init.js SHA-256 exactly."
   "2026-09-15T10:02:59.695Z","harness:codex","Final validation: all linked tests passed, including SDK/CLI initialization regressions, scratch lifecycle/context validation, missing-root and nearby-root recovery, and typechecks. Full repository run passed 8890 tests with exact 100/100/100/100 coverage. Manual subprocess workflow and independent npm/Bun runtime plus public-type consumers passed; npx/bunx six-package acceptance passed. GitHub review and merge remain separate delivery evidence."
+  "2026-09-15T10:40:32.795Z","harness:codex","CodeRabbit PR #1260 identified that withTempPmPath pre-initialized the lifecycle fixture. A new precondition asserting the tracker does not exist failed against the prior test. The revised test uses withTempDir and real CLI subprocesses, asserts absence before init and settings creation afterward, and preserves the three-task/context/next/close validation and token/time limits."
+  "2026-09-15T10:42:26.202Z","harness:codex","Review fix verified: the fresh-tracker negative control failed on the original fixture; the real-process lifecycle passes in 5.14 seconds for the two-test suite, with the original 3000-token and 15-second ceilings intact. Typecheck, focused ESLint, and all linked verification commands passed. Production source is unchanged from the full 8890-test exact-coverage run; hosted coverage will revalidate the changed test head."
 notes[1]{created_at,author,text}:
   "2026-09-15T09:25:32.535Z","harness:codex","Delivery scope combines scratch initialization, compact exact-root recovery, documented configurable metadata governance, and lifecycle/context acceptance. Existing SDK summary calls and full JSON InitResult remain compatible; the compact display has its own named public type. Broader roadmap and historical graph migrations retain their canonical open owners."
 learnings[1]{created_at,author,text}:
@@ -69,7 +71,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/integration/scratch-lifecycle.integration.spec.ts tests/unit/commands/init-command.spec.ts,project,240,"harness:codex","2026-09-15T09:06:33.747Z",local_mutation,feat/bounded-item-reads-scratch-workflows
   node scripts/run-tests.mjs test -- tests/unit/cli/first-run-error-display.spec.ts tests/integration/help-runtime.spec.ts,project,240,"harness:codex","2026-09-15T09:24:15.131Z",local_mutation,feat/bounded-item-reads-scratch-workflows
   pnpm typecheck,project,240,"harness:codex","2026-09-15T09:40:00.602Z",local_mutation,feat/bounded-item-reads-scratch-workflows
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mu2i6pq6-djni2b
     kind: test
     status: passed
@@ -83,8 +85,21 @@ test_runs[1]:
       node scripts/run-tests.mjs test -- tests/integration/scratch-lifecycle.integration.spec.ts tests/unit/commands/init-command.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/cli/first-run-error-display.spec.ts tests/integration/help-runtime.spec.ts,schema,schema,source,local_source_ref
       pnpm typecheck,schema,schema,source,local_source_ref
+  - run_id: test-local-mu2jljyq-frfodp
+    kind: test
+    status: passed
+    started_at: "2026-09-15T10:41:09.191Z"
+    finished_at: "2026-09-15T10:42:10.898Z"
+    recorded_at: "2026-09-15T10:42:10.898Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/scratch-lifecycle.integration.spec.ts tests/unit/commands/init-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/first-run-error-display.spec.ts tests/integration/help-runtime.spec.ts,schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Package-generated record of scratch workflow delivery
   docs/QUICKSTART.md,project,Eight-line scratch recipe with explicit metadata policy
-close_reason: "Implemented and verified concise scratch initialization, safe recovery, and configurable low-ceremony lifecycle."
+close_reason: First-run automation now begins with an absent tracker and proves settings creation; original SDK and scratch workflow guarantees remain verified.
 body: "The scale spectrum is anchored only at the top: pm-g2zz promises a correct bounded working set at a million items, and pm-4k6b's acceptance already demands small-workspace neutrality of the relevance engine. Nothing anchors the opposite end of the product promise — a project of a few items spanning minutes, where pm is an agent's throwaway working memory for a single session.\n\nAt that scale the costs that matter are ceremony and fixed overhead, not throughput:\n- Quick capture: create with just a type and title must be a complete, valid item under a scratch/minimal metadata profile (the core profile's required author/acceptance-criteria/estimate is the right default for durable repos, but is pure friction for a 5-item scratch pad); the profile family already exists — this story makes the scratch tier a first-class, documented default option on init.\n- Fixed token envelopes: context/next/list output on a 3-item workspace should cost tokens proportional to those 3 items; any constant boilerplate (headers, hints, empty facets) dominates at this scale and is exactly what the lean-output family (pm-nilh, pm-cfed, pm-g9xk) trims — this story adds the small-end assertion to the pm-cu1i budget corpus so it cannot regress.\n- Startup cost is already solved (ADR pm-irp1, esbuild bundle pm-gt82) and stays covered by its shipped budget.\n\nTogether with pm-g2zz this completes the pair of spectrum-ends stories the roadmap optimizes between: same commands, same philosophy, from a seconds-old scratch pad to a decades-old million-item workspace."

@@ -1,10 +1,17 @@
 /** @module tests/integration/scratch-lifecycle
  * Verifies the actual minimal-project CLI lifecycle and its fixed output costs.
  */
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { PmClient } from "../../src/sdk/runtime.js";
 import { summarizeInitResult } from "../../src/sdk/init.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
+import { withTempDir } from "../helpers/temp.js";
+import {
+  runDirectDistCli,
+  type DirectCliRunOptions,
+} from "../helpers/cliRunner.js";
 
 describe("scratch project lifecycle", () => {
   it("offers a compact SDK display while preserving full results and actionable warnings", async () => {
@@ -52,14 +59,25 @@ describe("scratch project lifecycle", () => {
     });
   });
   it("initializes concisely, captures three tasks, selects work, and closes it", async () => {
-    await withTempPmPath(async (context) => {
+    await withTempDir("pm-scratch-first-run-", async (tempRoot) => {
+      const pmPath = join(tempRoot, ".agents", "pm");
+      const env = {
+        ...process.env,
+        PM_PATH: pmPath,
+        PM_GLOBAL_PATH: join(tempRoot, "global"),
+        PM_AUTHOR: "test-author",
+        DO_NOT_TRACK: "1",
+        PM_TELEMETRY_DISABLED: "1",
+      };
+      /** Execute the installed CLI in a fresh workspace without fixture initialization or output normalization. */
+      const runCli = (args: string[], options: DirectCliRunOptions = {}) =>
+        runDirectDistCli(args, { ...options, env, cwd: tempRoot });
+      expect(existsSync(pmPath)).toBe(false);
       let bytes = 0;
       const started = performance.now();
-      const init = context.runCli(
-        ["init", "--yes", "--agent-guidance", "skip"],
-        { preserveDefaultMutationOutput: true },
-      );
+      const init = runCli(["init", "--yes", "--agent-guidance", "skip"]);
       expect(init.status).toBe(0);
+      expect(existsSync(join(pmPath, "settings.json"))).toBe(true);
       expect(init.stdout.trim().split("\n").length).toBeLessThanOrEqual(12);
       bytes += Buffer.byteLength(init.stdout);
       for (const args of [
@@ -74,53 +92,49 @@ describe("scratch project lifecycle", () => {
           "close_reason",
         ],
       ]) {
-        const configured = context.runCli(args);
+        const configured = runCli(args);
         expect(configured.status).toBe(0);
         bytes += Buffer.byteLength(configured.stdout);
       }
       const ids: string[] = [];
       for (const title of ["Understand", "Implement", "Verify"]) {
-        const created = context.runCli(["create", "Task", title, "--json"], {
+        const created = runCli(["create", "Task", title, "--json"], {
           expectJson: true,
-          preserveDefaultMutationOutput: true,
         });
         expect(created.status).toBe(0);
         ids.push((created.json as { id: string }).id);
         bytes += Buffer.byteLength(created.stdout);
       }
-      const next = context.runCli(["next", "--json"], { expectJson: true });
+      const next = runCli(["next", "--json"], { expectJson: true });
       expect(next.status).toBe(0);
       expect(next.stdout).toContain(ids[0]);
       bytes += Buffer.byteLength(next.stdout);
-      const workingContext = context.runCli(["context", "--json"], {
+      const workingContext = runCli(["context", "--json"], {
         expectJson: true,
       });
       expect(workingContext.status).toBe(0);
       expect(workingContext.stdout).toContain(ids[0]);
       bytes += Buffer.byteLength(workingContext.stdout);
-      const closed = context.runCli(
-        [
-          "close",
-          ids[0],
-          "Scratch work verified",
-          "--resolution",
-          "Understood the task",
-          "--expected",
-          "Clear scope",
-          "--actual",
-          "Scope documented",
-        ],
-        { preserveDefaultMutationOutput: true },
-      );
+      const closed = runCli([
+        "close",
+        ids[0],
+        "Scratch work verified",
+        "--resolution",
+        "Understood the task",
+        "--expected",
+        "Clear scope",
+        "--actual",
+        "Scope documented",
+      ]);
       expect(closed.status).toBe(0);
       bytes += Buffer.byteLength(closed.stdout);
       expect(Math.ceil(bytes / 4)).toBeLessThanOrEqual(3000);
       expect(performance.now() - started).toBeLessThan(15000);
-      const validation = context.runCli(["validate", "--json"], {
+      const validation = runCli(["validate", "--json"], {
         expectJson: true,
       });
       expect(validation.json).toMatchObject({ ok: true, has_warnings: false });
-      const full = context.runCli(["init", "--yes", "--json"], {
+      const full = runCli(["init", "--yes", "--json"], {
         expectJson: true,
       });
       expect(full.json).toHaveProperty("created_dirs");
