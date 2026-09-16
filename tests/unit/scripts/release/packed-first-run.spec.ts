@@ -1,5 +1,12 @@
 import path from "node:path";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { tmpdir } from "node:os";
 import { promisify } from "node:util";
@@ -80,7 +87,9 @@ describe("packed first run", () => {
       .split("\n")
       .find((line) => line.startsWith("npm install "));
     expect(install).toBeDefined();
-    const root = await mkdtemp(path.join(tmpdir(), "pm-workflow-install-"));
+    const root = await realpath(
+      await mkdtemp(path.join(tmpdir(), "pm-workflow-install-")),
+    );
     try {
       for (const folder of ["fixture", "packed", "home"])
         await mkdir(path.join(root, folder));
@@ -90,22 +99,18 @@ describe("packed first run", () => {
       );
       const execute = promisify(execFile);
       const env = {
-        ...process.env,
+        // Windows keeps the first case-insensitive key; inherited NPM_CONFIG_*
+        // aliases must not override this fixture's lower-case npm settings.
+        ...Object.fromEntries(
+          Object.entries(process.env).filter(
+            ([name]) => !/^(?:npm_config_|home$|userprofile$)/iu.test(name),
+          ),
+        ),
         HOME: path.join(root, "home"),
         USERPROFILE: path.join(root, "home"),
         npm_config_prefix: path.join(root, "prefix"),
         npm_config_cache: path.join(root, "cache"),
       };
-      await execute(
-        "bash",
-        ["-c", "npm pack --ignore-scripts --pack-destination ../packed"],
-        { cwd: path.join(root, "fixture"), env, timeout: 15_000 },
-      );
-      await execute("bash", ["-c", install ?? "exit 1"], {
-        cwd: root,
-        env,
-        timeout: 15_000,
-      });
       const { stdout: modules } = await execute(
         "bash",
         ["-c", "npm root --global"],
@@ -120,7 +125,20 @@ describe("packed first run", () => {
         modules.trim(),
       );
       expect(path.isAbsolute(relativeModules)).toBe(false);
-      expect(relativeModules.split(path.sep)).not.toContain("..");
+      expect(
+        relativeModules.split(path.sep),
+        `npm root ${modules.trim()} must remain inside ${path.join(root, "prefix")}`,
+      ).not.toContain("..");
+      await execute(
+        "bash",
+        ["-c", "npm pack --ignore-scripts --pack-destination ../packed"],
+        { cwd: path.join(root, "fixture"), env, timeout: 15_000 },
+      );
+      await execute("bash", ["-c", install ?? "exit 1"], {
+        cwd: root,
+        env,
+        timeout: 15_000,
+      });
       const installed = JSON.parse(
         await readFile(
           path.join(modules.trim(), "packed-first-run-fixture", "package.json"),
