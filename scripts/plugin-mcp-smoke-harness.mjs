@@ -147,6 +147,7 @@ async function assertModernRevisionDiscoverable(
  * @param {string} options.author - PM_AUTHOR value for the sandbox
  * @param {string} options.tmpPrefix - mkdtemp prefix for the sandbox root
  * @param {number} [options.requestTimeoutMs] - per-request timeout
+ * @param {number} [options.shutdownTimeoutMs] - grace period per termination signal; cleanup fails after twice this interval
  * @param {Record<string, string>} [options.environment] - child environment overrides before sandbox paths are enforced
  * @returns {Promise<{tmpRoot: string, request: Function, callTool: Function, getStderr: Function, dispose: Function}>}
  */
@@ -155,6 +156,7 @@ export async function startPluginMcpSmoke({
   author,
   tmpPrefix,
   requestTimeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
+  shutdownTimeoutMs = 5000,
   environment = {},
 }) {
   const tmpRoot = await mkdtemp(path.join(tmpdir(), tmpPrefix));
@@ -266,15 +268,33 @@ export async function startPluginMcpSmoke({
     return stderr;
   }
 
-  /** Stop the child and wait for its handles to close before deleting its workspace. */
+  /** Bound shutdown with SIGTERM then SIGKILL; retain diagnostics if neither closes the child. */
   async function dispose() {
     child.stdin.end();
-    child.kill();
-    await closed;
-    await rm(tmpRoot, { recursive: true, force: true });
-    if (stderr.trim()) {
-      console.error(stderr.trim());
+    for (const signal of ["SIGTERM", "SIGKILL"]) {
+      child.kill(signal);
+      let timeout;
+      const exited = await Promise.race([
+        closed.then(() => true),
+        new Promise((resolve) => {
+          timeout = setTimeout(resolve, shutdownTimeoutMs, false);
+        }),
+      ]);
+      clearTimeout(timeout);
+      if (exited) {
+        await rm(tmpRoot, { recursive: true, force: true });
+        if (stderr.trim()) console.error(stderr.trim());
+        return;
+      }
     }
+    rl.close();
+    child.stdin.destroy();
+    child.stdout.destroy();
+    child.stderr.destroy();
+    child.unref();
+    throw new Error(
+      `MCP server did not close after ${2 * shutdownTimeoutMs}ms; retained workspace ${tmpRoot}. ${stderr.trim()}`,
+    );
   }
 
   return { tmpRoot, request, callTool, getStderr, dispose };

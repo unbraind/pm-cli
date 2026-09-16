@@ -1,5 +1,6 @@
 import type * as HarnessModule from "../../../scripts/plugin-mcp-smoke-harness.mjs";
 import { EventEmitter } from "node:events";
+import { access, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../helpers/scriptModule";
@@ -10,17 +11,18 @@ const SCRIPT = "scripts/plugin-mcp-smoke-harness.mjs";
 
 /** Model child stdio independently from process closure to verify cleanup ordering. */
 function mockSpawnedChild() {
-  const readlineEmitter = new EventEmitter();
+  const readlineEmitter = Object.assign(new EventEmitter(), { close: vi.fn() });
   const createInterface = vi.fn(() => readlineEmitter);
   const stdinWrite = vi.fn();
   const stdinEnd = vi.fn();
   const kill = vi.fn();
-  const stderr = new EventEmitter();
+  const stderr = Object.assign(new EventEmitter(), { destroy: vi.fn() });
   const child = Object.assign(new EventEmitter(), {
-    stdin: { write: stdinWrite, end: stdinEnd },
-    stdout: new EventEmitter(),
+    stdin: { write: stdinWrite, end: stdinEnd, destroy: vi.fn() },
+    stdout: Object.assign(new EventEmitter(), { destroy: vi.fn() }),
     stderr,
     kill,
+    unref: vi.fn(),
   });
   kill.mockImplementation(() => child.emit("close", 0, null));
   const spawn = vi.fn(() => child);
@@ -473,6 +475,76 @@ describe("plugin-mcp-smoke-harness", () => {
       recursive: true,
       force: true,
     });
+  });
+
+  it("escalates to SIGKILL when the child ignores graceful shutdown", async () => {
+    const env = mockSpawnedChild();
+    env.kill.mockImplementation((signal) => {
+      if (signal === "SIGKILL") env.child.emit("close", null, signal);
+      return true;
+    });
+    const mod = await harness.importModule<typeof HarnessModule>(SCRIPT);
+    const session = await mod.startPluginMcpSmoke({
+      serverPath: "/tmp/mock.mjs",
+      author: "harness-escalate",
+      tmpPrefix: "pm-harness-escalate-",
+      shutdownTimeoutMs: 5,
+    });
+    await session.dispose();
+    expect(env.kill.mock.calls).toEqual([["SIGTERM"], ["SIGKILL"]]);
+    expect(env.remove).toHaveBeenCalled();
+  }, 1_000);
+
+  it("fails with diagnostics and releases handles when neither signal closes the child", async () => {
+    const env = mockSpawnedChild();
+    env.kill.mockImplementation(() => false);
+    const mod = await harness.importModule<typeof HarnessModule>(SCRIPT);
+    const session = await mod.startPluginMcpSmoke({
+      serverPath: "/tmp/mock.mjs",
+      author: "harness-stuck",
+      tmpPrefix: "pm-harness-stuck-",
+      shutdownTimeoutMs: 5,
+    });
+    env.stderr.emit("data", Buffer.from("child is stuck"));
+    await expect(session.dispose()).rejects.toThrow(
+      "MCP server did not close after 10ms; retained workspace /tmp/pm-mcp-harness. child is stuck",
+    );
+    expect(env.remove).not.toHaveBeenCalled();
+    expect(env.child.unref).toHaveBeenCalled();
+    expect(env.child.stdin.destroy).toHaveBeenCalled();
+    expect(env.child.stdout.destroy).toHaveBeenCalled();
+    expect(env.child.stderr.destroy).toHaveBeenCalled();
+    expect(env.readlineEmitter.close).toHaveBeenCalled();
+  }, 1_000);
+
+  it("reaps a real child that keeps running after stdin closes", async () => {
+    const root = await harness.createTempRoot("pm-mcp-shutdown-control-");
+    const serverPath = path.join(root, "server.mjs");
+    await writeFile(
+      serverPath,
+      `
+import readline from "node:readline";
+process.on("SIGTERM", () => {});
+setInterval(() => {}, 1000);
+readline.createInterface({ input: process.stdin }).on("line", (line) => {
+  const { id } = JSON.parse(line);
+  process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id, result: { ready: true } }) + "\\n");
+});
+`,
+    );
+    const mod = await harness.importModule<typeof HarnessModule>(SCRIPT);
+    const session = await mod.startPluginMcpSmoke({
+      serverPath,
+      author: "harness-real-shutdown",
+      tmpPrefix: "pm-harness-real-shutdown-",
+      shutdownTimeoutMs: 100,
+    });
+    try {
+      await expect(session.request("ready")).resolves.toEqual({ ready: true });
+    } finally {
+      await session.dispose();
+    }
+    await expect(access(session.tmpRoot)).rejects.toThrow();
   });
 
   it("disposes silently when stderr is empty (no console.error)", async () => {

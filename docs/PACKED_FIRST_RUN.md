@@ -30,6 +30,11 @@ test-runner overrides so this exercises the real detached process. Other command
 and MCP keep telemetry disabled; the install and workspace use isolated home
 and global tracker directories.
 
+MCP cleanup waits for process closure before removing its workspace. It allows
+five seconds after SIGTERM, then sends SIGKILL and allows five more seconds. If
+the child still does not close, the harness fails with captured diagnostics and
+retains that workspace rather than attempting removal while it is in use.
+
 The separate runtime-upgrade regression installs drivers through an absolute
 runtime symlink, removes the original runtime directory, retargets the symlink,
 and performs a real Git merge. It verifies the upgrade failure from GitHub #1248
