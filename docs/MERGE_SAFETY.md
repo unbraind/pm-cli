@@ -38,8 +38,13 @@ git commit -m "chore(pm): install tracker merge drivers"
 
 `pm merge install` writes an idempotent, fenced `.gitattributes` block and repository-local `git config` entries. The attributes are committed; the driver commands are clone-local, so every collaborator and fresh CI clone that performs merges must run the install command.
 
-The clone-local driver values record the absolute Node executable and bundled
-`dist/cli.js` path resolved by the installing SDK. Git therefore does not depend
+The clone-local driver values record the absolute runtime launcher and bundled
+`dist/cli.js` path resolved by the installing SDK. The installer preserves an
+absolute PATH symlink when it resolves to the executing runtime, so a runtime
+manager can retarget that launcher during upgrades without breaking every clone.
+Relative PATH entries, inaccessible launchers, and different runtimes are ignored;
+without a matching launcher, the installer retains the executing binary path.
+Git therefore does not depend
 on a bare `pm` command or the caller's later `PATH` when it merges tracker data.
 The item-path placeholder is stored as bare `%P`: Git performs the required
 shell quoting when it expands the placeholder. Receipt ingestion also removes
@@ -53,6 +58,9 @@ also accepted when its Node and `dist/cli.js` paths exist, its manifest owns the
 copied worktrees and upgraded global installs healthy without accepting an
 arbitrary executable. A missing, malformed, or semantically stale definition is
 reported even when the committed attribute fence is correct.
+Health and validation name `pm merge install` as the repair command for missing
+or drifted drivers. This upgrade behavior is tracked by
+[pm-rcjyft](../.agents/pm/issues/pm-rcjyft.toon).
 
 The installer publishes the shared `.gitattributes` fence only after the clone-local driver commands are configured. If the repository Git config is read-only or another Git process holds its lock, the command returns the stable `merge_git_config_unwritable` error with recovery guidance and leaves an absent fence absent. Use `pm merge install --dry-run --json` to inspect the contract in intentionally read-only workspaces.
 
@@ -476,3 +484,6 @@ Only aged `committed` or `compensated` journals are removed. `applying`, `compen
 ## Temporary-clone acceptance test
 
 Before releasing merge-contract changes, validate the packed package in a temporary Git repository: initialize pm, install the merge contract, create one base item, branch twice, append disjoint metadata/history on both branches, merge, and run the strict validation commands above. Include a same-key conflict case and prove Git leaves it unresolved while the output remains parseable.
+
+The [packed first-run matrix](PACKED_FIRST_RUN.md) exercises the installed
+README workflow, a real comment/history merge, and MCP on supported platforms.

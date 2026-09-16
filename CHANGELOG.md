@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Keep merge driver launchers usable after runtime upgrades ([pm-rcjyft](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rcjyft.toon))
+
 ## 2026.9.16 - 2026-09-16
 
 ### Fixed

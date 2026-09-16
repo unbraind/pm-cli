@@ -126,6 +126,21 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   },
   // --- pm health: integrity ---
   {
+    code: "merge_driver_configuration_missing",
+    command: "pm merge install",
+    summary: "Install the clone-local Git drivers required by the tracker merge fence.",
+  },
+  {
+    code: "merge_driver_configuration_drift",
+    command: "pm merge install",
+    summary: "Reinstall clone-local Git drivers after runtime or package paths change.",
+  },
+  {
+    code: "validate_merge_driver_configuration",
+    command: "pm merge install",
+    summary: "Restore missing or drifted clone-local Git merge driver commands.",
+  },
+  {
     code: "integrity_item_unreadable",
     command: "pm validate --check-files --verbose-diagnostics",
     summary:

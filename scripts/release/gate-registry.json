@@ -651,7 +651,12 @@
     {
       "id": "package-consumer",
       "owner": "pm-k6t4yb",
-      "pipelines": ["ci.yml#build-test", "ci.yml#gates", "release.yml#release"],
+      "pipelines": [
+        "ci.yml#build-test",
+        "ci.yml#first-run",
+        "ci.yml#gates",
+        "release.yml#release"
+      ],
       "failure_taxonomy": [
         "pack_failed",
         "installed_cli_failed",

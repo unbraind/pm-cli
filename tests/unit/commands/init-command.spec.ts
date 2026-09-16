@@ -8,6 +8,9 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
+import type * as InitModule from "../../../src/cli/commands/init.js";
+import type * as GuidanceModule from "../../../src/cli/commands/init-agent-guidance.js";
+import type * as ExtensionModule from "../../../src/sdk/extension.js";
 import os from "node:os";
 import path from "node:path";
 import * as readline from "node:readline/promises";
@@ -695,8 +698,9 @@ describe("runInit", () => {
         }));
 
         try {
-          const mockedModule =
-            await import("../../../src/cli/commands/init-agent-guidance.js");
+          const mockedModule = await vi.importActual<typeof GuidanceModule>(
+            "../../../src/cli/commands/init-agent-guidance.js",
+          );
           const addResult = await mockedModule.runInitAgentGuidance({
             pm_root: pmRoot,
             cwd: projectRoot,
@@ -752,8 +756,9 @@ describe("runInit", () => {
         }));
 
         try {
-          const mockedModule =
-            await import("../../../src/cli/commands/init-agent-guidance.js");
+          const mockedModule = await vi.importActual<typeof GuidanceModule>(
+            "../../../src/cli/commands/init-agent-guidance.js",
+          );
           mockedModule._testOnly.setAgentGuidanceReadlineFactoryForTests(
             () =>
               ({
@@ -1556,9 +1561,9 @@ describe("runInit", () => {
       warnings: [],
     }));
     vi.doMock("../../../src/sdk/extension.js", async () => {
-      const actual = await vi.importActual<
-        typeof import("../../../src/sdk/extension.js")
-      >("../../../src/sdk/extension.js");
+      const actual = await vi.importActual<typeof ExtensionModule>(
+        "../../../src/sdk/extension.js",
+      );
       return {
         ...actual,
         runExtension: runExtensionMock,
@@ -1566,7 +1571,9 @@ describe("runInit", () => {
     });
 
     try {
-      const initModule = await import("../../../src/cli/commands/init.js");
+      const initModule = await vi.importActual<typeof InitModule>(
+        "../../../src/cli/commands/init.js",
+      );
       const tempRoot = await mkdtemp(
         path.join(os.tmpdir(), "pm-init-with-packages-fail-"),
       );
@@ -1822,8 +1829,9 @@ describe("runInit", () => {
       .mockImplementation(() => true);
 
     try {
-      const mockedInitModule =
-        await import("../../../src/cli/commands/init.js");
+      const mockedInitModule = await vi.importActual<typeof InitModule>(
+        "../../../src/cli/commands/init.js",
+      );
       const firstChoices = await mockedInitModule._testOnly.runInitWizard(
         "pm-",
         true,
@@ -1876,8 +1884,9 @@ describe("runInit", () => {
     );
 
     try {
-      const mockedGuidanceModule =
-        await import("../../../src/cli/commands/init-agent-guidance.js");
+      const mockedGuidanceModule = await vi.importActual<typeof GuidanceModule>(
+        "../../../src/cli/commands/init-agent-guidance.js",
+      );
       const declinedPrompt =
         await mockedGuidanceModule._testOnly.promptForGuidanceWrite(
           "AGENTS.md",
@@ -2070,9 +2079,9 @@ describe("runInit", () => {
     }));
 
     vi.doMock("../../../src/cli/commands/init-agent-guidance.js", async () => {
-      const actual = await vi.importActual<
-        typeof import("../../../src/cli/commands/init-agent-guidance.js")
-      >("../../../src/cli/commands/init-agent-guidance.js");
+      const actual = await vi.importActual<typeof GuidanceModule>(
+        "../../../src/cli/commands/init-agent-guidance.js",
+      );
       return {
         ...actual,
         runInitAgentGuidance: runInitAgentGuidanceMock,
@@ -2080,7 +2089,9 @@ describe("runInit", () => {
     });
 
     try {
-      const initModule = await import("../../../src/cli/commands/init.js");
+      const initModule = await vi.importActual<typeof InitModule>(
+        "../../../src/cli/commands/init.js",
+      );
       const tempRoot = await mkdtemp(
         path.join(os.tmpdir(), "pm-init-next-step-dedupe-"),
       );
@@ -2171,7 +2182,11 @@ describe("runInit", () => {
         ["config", "--local", "--get", "merge.pm-history.driver"],
         { cwd: workspace, encoding: "utf8" },
       );
-      expect(historyDriver).toContain(`'${process.execPath}'`);
+      const configuredRuntime = /^'([^']+)' /.exec(historyDriver)?.[1];
+      expect(configuredRuntime).toBeDefined();
+      expect(await realpath(configuredRuntime ?? "")).toBe(
+        await realpath(process.execPath),
+      );
       expect(historyDriver).toContain(
         `'${path.join(process.cwd(), "dist", "cli.js")}' merge driver history`,
       );

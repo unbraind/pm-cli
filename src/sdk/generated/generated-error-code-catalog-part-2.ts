@@ -1914,6 +1914,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "validate_merge_driver_configuration",
+    meaning: "Validate merge driver configuration condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/diagnostics/remediation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "validate_merge_driver_configuration",
+    aliases: [],
+  },
+  {
     code: "validate_merge_fence_drift",
     meaning: "Validate merge fence drift condition.",
     stability: "stable",

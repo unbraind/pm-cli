@@ -81,6 +81,8 @@ describe("health merge-driver policy", () => {
       );
       expect(result.ok).toBe(false);
       expect(result.warnings).toContain("merge_driver_configuration_drift:1");
+      expect(result.checks.find((check) => check.name === "integrity")?.details)
+        .toMatchObject({ remediation_map: { merge_driver_configuration_drift: "pm merge install" } });
     });
   });
 });

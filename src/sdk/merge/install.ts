@@ -9,7 +9,8 @@
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { isFileMissingError } from "../../core/fs/fs-utils.js";
-import { readFile, realpath, writeFile } from "node:fs/promises";
+import { access, readFile, realpath, writeFile } from "node:fs/promises";
+import { constants } from "node:fs";
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -22,7 +23,7 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { resolveAuthor } from "../../core/shared/author.js";
 import { nowIso } from "../../core/shared/time.js";
-import {resolvePmRoot } from "../../core/store/paths.js";
+import { resolvePmRoot } from "../../core/store/paths.js";
 import {
   readSettings,
   resolveGovernanceKnobs,
@@ -55,12 +56,34 @@ function quoteMergeDriverArgument(value: string): string {
   return `'${value.replaceAll("'", `'"'"'`)}'`;
 }
 
-/** Resolve the installed CLI without relying on the collaborator's PATH. */
-function resolveMergeDriverCliCommand(): string {
+/** Preserve an absolute runtime symlink across upgrades, accepting only launchers
+ * that resolve to this running executable. Relative PATH entries and unrelated
+ * runtimes cannot redirect Git; without a matching launcher, retain execPath.
+ * The installed command never depends on the future merge process's PATH.
+ */
+async function resolveMergeDriverCliCommand(): Promise<string> {
   const packageRoot = resolvePmPackageRootFromModule(import.meta.url, [
     "../../..",
   ]);
-  return `${quoteMergeDriverArgument(process.execPath)} ${quoteMergeDriverArgument(path.join(packageRoot, "dist", "cli.js"))}`;
+  let executable = process.execPath;
+  const runtimeIdentity = await realpath(process.execPath);
+  for (const directory of (process.env.PATH ?? "").split(path.delimiter)) {
+    if (!path.isAbsolute(directory)) continue;
+    const candidate = path.join(directory, path.basename(process.execPath));
+    try {
+      await access(candidate, constants.X_OK);
+      if (
+        candidate !== runtimeIdentity &&
+        (await realpath(candidate)) === runtimeIdentity
+      ) {
+        executable = candidate;
+        break;
+      }
+    } catch {
+      // Missing, inaccessible, or dangling PATH entries cannot be launchers.
+    }
+  }
+  return `${quoteMergeDriverArgument(executable)} ${quoteMergeDriverArgument(path.join(packageRoot, "dist", "cli.js"))}`;
 }
 
 const MERGE_DRIVER_DEFINITIONS = [
@@ -525,7 +548,7 @@ export async function auditMergeAttributeFence(
 export async function auditMergeDriverConfiguration(
   workspaceRoot: string,
 ): Promise<MergeDriverConfigurationAuditResult> {
-  const cliCommand = resolveMergeDriverCliCommand();
+  const cliCommand = await resolveMergeDriverCliCommand();
   const missingKeys: string[] = [];
   const driftedKeys: string[] = [];
   for (const definition of MERGE_DRIVER_DEFINITIONS) {
@@ -729,7 +752,7 @@ export async function installMergeFence(options: {
     typeFolders,
   );
   const gitConfigEntries: Array<{ key: string; value: string }> = [];
-  const cliCommand = resolveMergeDriverCliCommand();
+  const cliCommand = await resolveMergeDriverCliCommand();
   for (const definition of MERGE_DRIVER_DEFINITIONS) {
     gitConfigEntries.push({
       key: `merge.${definition.key}.name`,

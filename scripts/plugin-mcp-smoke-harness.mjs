@@ -17,21 +17,14 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import readline from "node:readline";
+import {
+  PM_MCP_LEGACY_PROTOCOL_VERSIONS,
+  PM_MCP_PROTOCOL_VERSION,
+} from "../dist/sdk/mcp/protocol.js";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 15000;
 const MCP_PROTOCOL_VERSION = "2026-07-28";
 
-/**
- * Start an MCP server child process speaking JSON-RPC over stdio and return a
- * harness with request/callTool helpers plus a dispose() for cleanup.
- *
- * @param {object} options
- * @param {string} options.serverPath - path to the launcher / server entrypoint to spawn
- * @param {string} options.author - PM_AUTHOR value for the sandbox
- * @param {string} options.tmpPrefix - mkdtemp prefix for the sandbox root
- * @param {number} [options.requestTimeoutMs] - per-request timeout
- * @returns {Promise<{tmpRoot: string, request: Function, callTool: Function, getStderr: Function, dispose: Function}>}
- */
 /**
  * Drive a real `initialize` handshake against a launcher once for EVERY protocol
  * revision the published SDK surface declares, plus a negative control.
@@ -59,14 +52,12 @@ export async function assertProtocolHandshakeMatrix({
   legacyProtocolVersions,
   modernProtocolVersion,
 }) {
-  // Read the declared revisions from the built SDK lazily: a static import would
-  // pull the whole bundle into every consumer of this module's spawn plumbing.
-  if (legacyProtocolVersions === undefined || modernProtocolVersion === undefined) {
-    const sdk = await import("../dist/cli-bundle/sdk.js");
-    legacyProtocolVersions ??= sdk.PM_MCP_LEGACY_PROTOCOL_VERSIONS;
-    modernProtocolVersion ??= sdk.PM_MCP_PROTOCOL_VERSION;
-  }
-  if (!Array.isArray(legacyProtocolVersions) || legacyProtocolVersions.length === 0) {
+  legacyProtocolVersions ??= PM_MCP_LEGACY_PROTOCOL_VERSIONS;
+  modernProtocolVersion ??= PM_MCP_PROTOCOL_VERSION;
+  if (
+    !Array.isArray(legacyProtocolVersions) ||
+    legacyProtocolVersions.length === 0
+  ) {
     throw new Error(
       "handshake matrix requires the declared legacy revision list from the built SDK",
     );
@@ -129,7 +120,10 @@ async function assertUndeclaredRevisionRefused(spawnOptions) {
 }
 
 /** Require discovery to advertise the declared canonical stateless revision. */
-async function assertModernRevisionDiscoverable(spawnOptions, modernProtocolVersion) {
+async function assertModernRevisionDiscoverable(
+  spawnOptions,
+  modernProtocolVersion,
+) {
   const smoke = await startPluginMcpSmoke(spawnOptions);
   try {
     const discovered = await smoke.request("server/discover", {});
@@ -144,11 +138,26 @@ async function assertModernRevisionDiscoverable(spawnOptions, modernProtocolVers
   }
 }
 
+/**
+ * Start an MCP server child process speaking JSON-RPC over stdio and return a
+ * harness with request/callTool helpers plus a dispose() for cleanup.
+ *
+ * @param {object} options
+ * @param {string} options.serverPath - path to the launcher / server entrypoint to spawn
+ * @param {string} options.author - PM_AUTHOR value for the sandbox
+ * @param {string} options.tmpPrefix - mkdtemp prefix for the sandbox root
+ * @param {number} [options.requestTimeoutMs] - per-request timeout
+ * @param {number} [options.shutdownTimeoutMs] - grace period per termination signal; cleanup fails after twice this interval
+ * @param {Record<string, string>} [options.environment] - child environment overrides before sandbox paths are enforced
+ * @returns {Promise<{tmpRoot: string, request: Function, callTool: Function, getStderr: Function, dispose: Function}>}
+ */
 export async function startPluginMcpSmoke({
   serverPath,
   author,
   tmpPrefix,
   requestTimeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
+  shutdownTimeoutMs = 5000,
+  environment = {},
 }) {
   const tmpRoot = await mkdtemp(path.join(tmpdir(), tmpPrefix));
 
@@ -156,6 +165,7 @@ export async function startPluginMcpSmoke({
     cwd: tmpRoot,
     env: {
       ...process.env,
+      ...environment,
       PM_AUTHOR: author,
       PM_GLOBAL_PATH: path.join(tmpRoot, ".pm-global"),
       PM_MCP_PROFILE: "full",
@@ -164,7 +174,13 @@ export async function startPluginMcpSmoke({
     stdio: ["pipe", "pipe", "pipe"],
   });
 
-  const rl = readline.createInterface({ input: child.stdout, crlfDelay: Infinity });
+  // Register immediately so disposal also handles a server that already exited.
+  const closed = new Promise((resolve) => child.once("close", resolve));
+
+  const rl = readline.createInterface({
+    input: child.stdout,
+    crlfDelay: Infinity,
+  });
   const pending = new Map();
   let nextId = 1;
   let stderr = "";
@@ -195,6 +211,7 @@ export async function startPluginMcpSmoke({
     }
   });
 
+  /** Send a JSON-RPC request with protocol metadata and a bounded response deadline. */
   function request(method, params = {}) {
     const id = nextId++;
     const requestParams =
@@ -233,25 +250,51 @@ export async function startPluginMcpSmoke({
     });
   }
 
+  /** Decode a tool result, preferring structured content and surfacing server errors. */
   async function callTool(name, args = {}) {
     const response = await request("tools/call", { name, arguments: args });
     if (response.isError) {
-      throw new Error(`${name} returned isError: ${response.content?.[0]?.text ?? "unknown"}`);
+      throw new Error(
+        `${name} returned isError: ${response.content?.[0]?.text ?? "unknown"}`,
+      );
     }
-    return response.structuredContent?.result ?? JSON.parse(response.content[0].text);
+    return (
+      response.structuredContent?.result ?? JSON.parse(response.content[0].text)
+    );
   }
 
+  /** Return captured server diagnostics without altering the transport. */
   function getStderr() {
     return stderr;
   }
 
+  /** Bound shutdown with SIGTERM then SIGKILL; retain diagnostics if neither closes the child. */
   async function dispose() {
     child.stdin.end();
-    child.kill();
-    await rm(tmpRoot, { recursive: true, force: true });
-    if (stderr.trim()) {
-      console.error(stderr.trim());
+    for (const signal of ["SIGTERM", "SIGKILL"]) {
+      child.kill(signal);
+      let timeout;
+      const exited = await Promise.race([
+        closed.then(() => true),
+        new Promise((resolve) => {
+          timeout = setTimeout(resolve, shutdownTimeoutMs, false);
+        }),
+      ]);
+      clearTimeout(timeout);
+      if (exited) {
+        await rm(tmpRoot, { recursive: true, force: true });
+        if (stderr.trim()) console.error(stderr.trim());
+        return;
+      }
     }
+    rl.close();
+    child.stdin.destroy();
+    child.stdout.destroy();
+    child.stderr.destroy();
+    child.unref();
+    throw new Error(
+      `MCP server did not close after ${2 * shutdownTimeoutMs}ms; retained workspace ${tmpRoot}. ${stderr.trim()}`,
+    );
   }
 
   return { tmpRoot, request, callTool, getStderr, dispose };
