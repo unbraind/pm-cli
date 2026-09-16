@@ -17,6 +17,10 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import readline from "node:readline";
+import {
+  PM_MCP_LEGACY_PROTOCOL_VERSIONS,
+  PM_MCP_PROTOCOL_VERSION,
+} from "../dist/sdk/mcp/protocol.js";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 15000;
 const MCP_PROTOCOL_VERSION = "2026-07-28";
@@ -59,14 +63,12 @@ export async function assertProtocolHandshakeMatrix({
   legacyProtocolVersions,
   modernProtocolVersion,
 }) {
-  // Read the declared revisions from the built SDK lazily: a static import would
-  // pull the whole bundle into every consumer of this module's spawn plumbing.
-  if (legacyProtocolVersions === undefined || modernProtocolVersion === undefined) {
-    const sdk = await import("../dist/cli-bundle/sdk.js");
-    legacyProtocolVersions ??= sdk.PM_MCP_LEGACY_PROTOCOL_VERSIONS;
-    modernProtocolVersion ??= sdk.PM_MCP_PROTOCOL_VERSION;
-  }
-  if (!Array.isArray(legacyProtocolVersions) || legacyProtocolVersions.length === 0) {
+  legacyProtocolVersions ??= PM_MCP_LEGACY_PROTOCOL_VERSIONS;
+  modernProtocolVersion ??= PM_MCP_PROTOCOL_VERSION;
+  if (
+    !Array.isArray(legacyProtocolVersions) ||
+    legacyProtocolVersions.length === 0
+  ) {
     throw new Error(
       "handshake matrix requires the declared legacy revision list from the built SDK",
     );
@@ -129,7 +131,10 @@ async function assertUndeclaredRevisionRefused(spawnOptions) {
 }
 
 /** Require discovery to advertise the declared canonical stateless revision. */
-async function assertModernRevisionDiscoverable(spawnOptions, modernProtocolVersion) {
+async function assertModernRevisionDiscoverable(
+  spawnOptions,
+  modernProtocolVersion,
+) {
   const smoke = await startPluginMcpSmoke(spawnOptions);
   try {
     const discovered = await smoke.request("server/discover", {});
@@ -149,6 +154,7 @@ export async function startPluginMcpSmoke({
   author,
   tmpPrefix,
   requestTimeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
+  environment = {},
 }) {
   const tmpRoot = await mkdtemp(path.join(tmpdir(), tmpPrefix));
 
@@ -156,6 +162,7 @@ export async function startPluginMcpSmoke({
     cwd: tmpRoot,
     env: {
       ...process.env,
+      ...environment,
       PM_AUTHOR: author,
       PM_GLOBAL_PATH: path.join(tmpRoot, ".pm-global"),
       PM_MCP_PROFILE: "full",
@@ -164,7 +171,10 @@ export async function startPluginMcpSmoke({
     stdio: ["pipe", "pipe", "pipe"],
   });
 
-  const rl = readline.createInterface({ input: child.stdout, crlfDelay: Infinity });
+  const rl = readline.createInterface({
+    input: child.stdout,
+    crlfDelay: Infinity,
+  });
   const pending = new Map();
   let nextId = 1;
   let stderr = "";
@@ -236,9 +246,13 @@ export async function startPluginMcpSmoke({
   async function callTool(name, args = {}) {
     const response = await request("tools/call", { name, arguments: args });
     if (response.isError) {
-      throw new Error(`${name} returned isError: ${response.content?.[0]?.text ?? "unknown"}`);
+      throw new Error(
+        `${name} returned isError: ${response.content?.[0]?.text ?? "unknown"}`,
+      );
     }
-    return response.structuredContent?.result ?? JSON.parse(response.content[0].text);
+    return (
+      response.structuredContent?.result ?? JSON.parse(response.content[0].text)
+    );
   }
 
   function getStderr() {

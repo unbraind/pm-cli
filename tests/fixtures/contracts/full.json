@@ -22734,6 +22734,40 @@
     },
     {
       "aliases": [],
+      "canonical_code": "merge_driver_configuration_drift",
+      "class": "generic_failure",
+      "code": "merge_driver_configuration_drift",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Merge driver configuration drift condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "merge_driver_configuration_missing",
+      "class": "generic_failure",
+      "code": "merge_driver_configuration_missing",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Merge driver configuration missing condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "merge_git_config_unwritable",
       "class": "dependency_failed",
       "code": "merge_git_config_unwritable",
@@ -25381,6 +25415,23 @@
       ],
       "exit_code": 1,
       "meaning": "Validate merge decisions unreviewed condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "validate_merge_driver_configuration",
+      "class": "generic_failure",
+      "code": "validate_merge_driver_configuration",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Validate merge driver configuration condition.",
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [

@@ -2,21 +2,81 @@ id: pm-rcjyft
 title: Keep merge driver launchers usable after runtime upgrades
 description: "GitHub report https://github.com/unbraind/pm-cli/issues/1248. Installed drivers use a stable runtime launcher when available; missing executables report an actionable pm merge install recovery; real branch merge remains intact after runtime upgrade simulation."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-09-12T21:08:33.294Z"
-updated_at: "2026-09-12T21:08:52.640Z"
+updated_at: "2026-09-16T12:25:19.564Z"
+closed_at: "2026-09-16T12:25:18.837Z"
+completed_at: "2026-09-16T12:25:18.837Z"
 author: "harness:codex"
 acceptance_criteria: Installed drivers use a stable runtime launcher when available; missing executables report an actionable pm merge install recovery; real branch merge remains intact after runtime upgrade simulation.
 goal: project management = context management
 objective: Keep merge driver launchers usable after runtime upgrades
 value: Reliable privacy-preserving operational context for agents and package consumers
 parent: pm-o2kc
+resolution: The SDK retains an absolute identity-checked runtime launcher and diagnostics recommend pm merge install when configuration is missing or drifted.
+expected_result: Git merge drivers remain usable after a versioned runtime is removed when its stable launcher remains available; otherwise diagnosis gives a concrete repair.
+actual_result: A real Git merge succeeds after old-runtime removal and launcher retargeting; focused and full 8897-test suites pass with exact 100/100/100/100 coverage.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-o2kc,implements,"2026-09-12T21:08:33.294Z","harness:codex","cli:create:dep",detected
   pm-w91mvg,discovered_from,"2026-09-12T21:08:33.294Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-09-12T21:08:33.294Z","harness:codex","Duplicate check: complete CLI full all-status export on 2026-09-12 contained 2745 items with no omissions. Request-specific telemetry and onboarding searches plus exact GitHub URL and title/description matching found no owner for this distinct report. Existing parent and closed implementation lineage reused."
   "2026-09-12T21:08:52.640Z","harness:codex","GitHub report: https://github.com/unbraind/pm-cli/issues/1248. Canonical tracking reused after complete all-status duplicate check."
+  "2026-09-16T11:43:13.523Z","harness:codex","Scope evidence: reviewed the complete 2762-item all-status inventory and canonical closed pm-w91mvg lineage. Current installer quotes process.execPath directly, which preserves versioned runtime paths. Implement an absolute PATH launcher only when its realpath matches the executing runtime; keep pinned fallback and package identity checks. Add deterministic runtime-upgrade and real Git merge regressions, plus shared health/validate recovery."
+  "2026-09-16T11:52:05.313Z","harness:codex","TDD evidence: both new tests failed before implementation (stable launcher selection and health remediation). After the fix, 12 focused tests passed; the additional real Git test passed after copying a runtime, installing through a stable symlink, deleting the old runtime directory, retargeting the symlink and merging independent JSON changes. No repository tracker data was used by these tests."
+  "2026-09-16T12:08:21.429Z","harness:codex","Full-suite integration corrections: existing init asserts runtime file identity rather than a versioned path spelling; storage validation now expects the executable merge-install recovery hint. Moved launcher regressions into the merge test domain to preserve the existing directory fanout limit. Focused 65 tests across five suites pass; no thresholds were weakened."
+  "2026-09-16T12:12:06.125Z","harness:codex","Live observability and supply-chain verification 2026-09-16: no open Dependabot/code-scanning/secret-scanning alerts; dependency audit clean. Sentry authenticated 14-day threshold query returned critical=0/high=0; telemetry aggregate error rate 1.35 percent and no failure rows missing error codes. Explicit telemetry flush drained one queued event to zero with a current successful-flush timestamp. These are separate from application correctness and do not assert every historical user event was delivered."
+  "2026-09-16T12:25:16.641Z","harness:codex","Verification: 697 files and 8897 tests passed in the complete isolated suite. Exact V8 coverage: statements 64604/64604; branches 49259/49259; functions 13416/13416; lines 61855/61855. All four metrics are 100 percent with zero uncovered counts. Typecheck, linked tests, docs links, secret scan and dependency audit pass. Real runtime removal/retargeting still permits a conflict-free merge."
+files[10]{path,scope,note}:
+  src/core/diagnostics/remediation.ts,project,Executable health and validate merge-driver recovery
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated remediation catalog
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated remediation catalog
+  src/sdk/merge/install.ts,project,Resolve identity-checked stable runtime launchers
+  tests/fixtures/contracts/full.json,project,Generated error recovery contract additions
+  tests/unit/sdk/health-merge-driver-policy.spec.ts,project,Recovery map regression
+  tests/unit/sdk/merge/runtime-launcher.spec.ts,project,Real runtime replacement and branch merge regression
+  tests/unit/commands/init-command.spec.ts,project,Verify installed runtime identity
+  tests/unit/sdk/tracked-runtime-cache.spec.ts,project,Missing driver recovery contract
+  sdk/public-surface.json,project,Generated additive error catalog surface
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge/runtime-launcher.spec.ts tests/unit/sdk/health-merge-driver-policy.spec.ts tests/unit/sdk/context-integrity-primitives.spec.ts tests/unit/commands/init-command.spec.ts tests/unit/sdk/tracked-runtime-cache.spec.ts,project,240,"harness:codex","2026-09-16T12:06:06.572Z",local_mutation,fix/portable-merge-and-packed-first-run
+test_runs[2]:
+  - run_id: test-local-mu41oybw-68plie
+    kind: test
+    status: passed
+    started_at: "2026-09-16T11:56:06.795Z"
+    finished_at: "2026-09-16T11:56:28.747Z"
+    recorded_at: "2026-09-16T11:56:28.747Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge-runtime-launcher.spec.ts tests/unit/sdk/health-merge-driver-policy.spec.ts tests/unit/sdk/context-integrity-primitives.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu429n5h-5rouln
+    kind: test
+    status: passed
+    started_at: "2026-09-16T12:12:20.238Z"
+    finished_at: "2026-09-16T12:12:34.037Z"
+    recorded_at: "2026-09-16T12:12:34.037Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/runtime-launcher.spec.ts tests/unit/sdk/health-merge-driver-policy.spec.ts tests/unit/sdk/context-integrity-primitives.spec.ts tests/unit/commands/init-command.spec.ts tests/unit/sdk/tracked-runtime-cache.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated runtime portability release entry
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated recovery vocabulary includes executable merge-driver repair
+  docs/MERGE_SAFETY.md,project,Stable runtime selection and recovery contract
+  docs/PACKED_FIRST_RUN.md,project,Cross-platform installed merge and upgrade proof
+close_reason: Implemented runtime-upgrade-safe merge launchers and executable recovery with real regression and complete coverage evidence.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: portable-merge-runtime
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/merge/runtime-launcher.spec.ts (stable-launcher identity and removed-runtime real merge failed before the fix)
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/merge/runtime-launcher.spec.ts tests/unit/sdk/health-merge-driver-policy.spec.ts,node scripts/run-tests.mjs coverage -- --maxWorkers=4
+  hosted_checks[3]: Gates (coverage),Windows regression (Node 24),"Packed first run (macos-latest, Node 24)"
+  owner: pm-rcjyft
 body: ""

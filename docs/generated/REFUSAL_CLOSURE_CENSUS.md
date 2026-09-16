@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 374
+- Catalog error codes: 377
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 355
-- Coverage fraction: 0.050802
+- Uncovered error codes: 358
+- Coverage fraction: 0.050398
 - Closed-domain probes: 19
 - Grammar probes: 113
 
@@ -196,6 +196,8 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `mcp_task_not_found_or_not_authorized` | `mcp_task_not_found_or_not_authorized` | uncovered | none | 0 |
 | `merge_conflict_markers_detected` | `merge_conflict_markers_detected` | uncovered | none | 0 |
 | `merge_decisions_unreviewed` | `merge_decisions_unreviewed` | uncovered | none | 0 |
+| `merge_driver_configuration_drift` | `merge_driver_configuration_drift` | uncovered | none | 0 |
+| `merge_driver_configuration_missing` | `merge_driver_configuration_missing` | uncovered | none | 0 |
 | `merge_git_config_unwritable` | `merge_git_config_unwritable` | uncovered | none | 0 |
 | `merge_receipt_evidence_invalid` | `merge_receipt_evidence_invalid` | uncovered | none | 0 |
 | `merge_receipt_history_reference_missing` | `merge_receipt_history_reference_missing` | uncovered | none | 0 |
@@ -345,6 +347,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `validate_lifecycle_dependency_cycles_error` | `validate_lifecycle_dependency_cycles_error` | uncovered | none | 0 |
 | `validate_lifecycle_stale_blockers` | `validate_lifecycle_stale_blockers` | uncovered | none | 0 |
 | `validate_merge_decisions_unreviewed` | `validate_merge_decisions_unreviewed` | uncovered | none | 0 |
+| `validate_merge_driver_configuration` | `validate_merge_driver_configuration` | uncovered | none | 0 |
 | `validate_merge_fence_drift` | `validate_merge_fence_drift` | uncovered | none | 0 |
 | `validate_metadata_custom_profile_missing_required_fields` | `validate_metadata_custom_profile_missing_required_fields` | uncovered | none | 0 |
 | `validate_metadata_duplicate_issue_codes` | `validate_metadata_duplicate_issue_codes` | uncovered | none | 0 |

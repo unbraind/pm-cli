@@ -167,6 +167,7 @@ describe("tracked runtime cache governance", () => {
           },
           fix_hints: [
             "git rm --cached -r -- <tracked-runtime-directories>",
+            "pm merge install",
             "pm merge reconcile --dry-run",
           ],
         },
