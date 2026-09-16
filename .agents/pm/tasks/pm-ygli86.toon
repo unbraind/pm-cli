@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: ci,install,quality,release,testing
 created_at: "2026-07-25T12:31:34.837Z"
-updated_at: "2026-09-16T12:27:55.390Z"
+updated_at: "2026-09-16T12:44:11.173Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Acceptance installs the exact published artifact from the registry into a clean environment rather than building from the repository; A scripted agent session exercises the full cold-start loop — init, orient, create, claim, annotate, link evidence, close, validate, read context — asserting outcomes and bounded output at each step; The matrix covers the supported operating systems and the supported package managers, including the global-install path that has produced field defects; A failure blocks release advertisement and produces a report identifying the failing step, not merely a failing job; The acceptance session's token cost is recorded so cold-start cost is tracked release over release; The same session runs against the previous release to prove the harness itself is not the cause when a failure appears"
@@ -95,7 +95,7 @@ dependencies[20]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[20]{created_at,author,text}:
+comments[21]{created_at,author,text}:
   "2026-07-31T21:34:36.710Z","harness:codex","Delivery evidence 2026-07-31: release automation now installs the exact registry version into unrelated npm and Bun roots, asserts executable containment, and runs a ten-step cold agent lifecycle covering init, orient, create, claim, annotate, evidence linking, close, validate, and context with per-step output bounds and aggregate token cost. Failure reports name the manager and step; unit controls cover containment and budget failures. Live 2026.7.31 acceptance passed for both managers: 10 steps each, 19,568 characters and 4,892 estimated tokens. This item remains active because the hosted OS matrix and previous-release control session are not yet implemented."
   "2026-07-31T21:51:09.098Z","harness:codex","CI portability evidence 2026-07-31: Windows exposed that the installed-agent escape negative control recognized only POSIX node_modules/.bin separators. The fixture now uses node:path separators and derives an outside path on the current drive, preserving the same containment assertion on Windows and POSIX. The focused 8-test verifier suite passes, ESLint passes, and the full 6,623-test coverage run remains exact 100/100/100/100."
   "2026-07-31T22:25:41.756Z","harness:codex","Review-loop release evidence 2026-07-31: registry installs now retry transient failures three times with bounded production backoff, Bun disables lifecycle scripts, synchronous subprocesses enforce timeout/input invariants, pm-mcp initialize has a 60-second deadline, and missing executable coverage fails before any registry execution. Negative controls and exact cross-platform tests pass; the complete 6,625-test suite is 100/100/100/100 and quality:static is green. Hosted OS-matrix and previous-release control acceptance remain open."
@@ -116,6 +116,7 @@ comments[20]{created_at,author,text}:
   "2026-09-16T12:12:05.382Z","harness:codex","Expanded GitHub #1247 acceptance: isolated HOME/USERPROFILE plus npm prefix/cache; real detached telemetry worker posts to a loopback collector and leaves an empty physical queue with successful delivery timestamp. Four harness tests pass, with malformed README negative controls and actual CLI/MCP/history/telemetry execution. The same 11-step registry agent harness passed npm and Bun for both 2026.9.16 and previous 2026.9.15, each 5290 estimated output tokens. This is live manual previous-release comparison; automated registry platform matrix remains a separate residual."
   "2026-09-16T12:19:32.774Z","harness:codex","Historical context cross-check: live pm-e9zh is closed with a completed evidence-recovery pass (622 source-grounded fields on 285 records). Its explicit unrecoverable residual is exactly the 170 records still reported by current validation; do not reopen this completed work or fabricate missing outcomes. The two active items pass independent strict history verification after the concurrent broad scan reported transient current-item mismatches."
   "2026-09-16T12:25:17.299Z","harness:codex","Verification: complete 8897-test suite passes exact 100/100/100/100. All three linked test commands pass. Fresh global tarball install reports 2026.9.16 and README output is bounded at 489/53/169 characters for init/create/list; real merged history, installed MCP, and detached telemetry each pass. Package-first dogfood and packed npx/bunx smoke pass. Latest pm-changelog 2026.9.16 installed through pm package for package-owned changelog generation."
+  "2026-09-16T12:43:58.070Z","harness:codex","PR #1261 first settled round: all existing checks passed; six new packed consumers failed because npm interpreted packed/file.tgz as GitHub shorthand. Added a real npm fixture-tarball install using the workflow command; it reproduced the failure before the fix. Changed the spec to ./packed/*.tgz. GitHub main protection now preserves all prior checks and strictness while requiring all six packed first-run contexts (26 required checks total). Sourcery reviewed without actionable findings; CodeRabbit requires an explicit trigger, which will accompany the corrective push. All bot artifacts in the settled inventory were read and rated; no inline finding existed to answer."
 notes[1]{created_at,author,text}:
   "2026-07-26T10:48:39.250Z","harness:claude-code","Measured 2026-07-26 against the published 2026.7.26: post-publish verification covers execution only. verify-published-release.mjs runs npx --yes <pkg> --version, npx --yes --package <pkg> -- pm --version, and bunx --bun <pkg> pm --version. No install path is exercised for any manager — not npm install -g, not a project install, not bun add, not pnpm add — so packaging omissions and binary-link defects reach users through a green pipeline. Confirmed working by hand and therefore available as a starting fixture: bun add @unbrained/pm-cli@2026.7.26 links pm, pm-cli, and pm-mcp, and pm init, pm create, and pm list all succeed under the Bun runtime. The third check's invocation shape is separately defective and is owned by pm-lpqln4."
 files[15]{path,scope,note}:
@@ -150,7 +151,7 @@ tests[3]:
       created_at: "2026-09-16T11:50:32.392Z"
       source_kind: local_mutation
       source_ref: fix/portable-merge-and-packed-first-run
-test_runs[3]:
+test_runs[4]:
   - run_id: test-all-local-mstsfhar-0p8wl7
     kind: test-all
     status: passed
@@ -186,6 +187,17 @@ test_runs[3]:
     executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-installed-agent-session.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,legacy
       node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/packed-first-run.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu43dpb9-jy1zdb
+    kind: test
+    status: passed
+    started_at: "2026-09-16T12:43:35.358Z"
+    finished_at: "2026-09-16T12:43:43.077Z"
+    recorded_at: "2026-09-16T12:43:43.077Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/packed-first-run.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/PACKED_FIRST_RUN.md,project,Platform artifact acceptance and evidence boundaries

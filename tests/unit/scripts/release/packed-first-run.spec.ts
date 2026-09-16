@@ -1,5 +1,8 @@
 import path from "node:path";
-import { readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { tmpdir } from "node:os";
+import { promisify } from "node:util";
 import { describe, expect, it, vi } from "vitest";
 import { parse } from "yaml";
 import { createScriptHarness } from "../../../helpers/scriptModule.js";
@@ -73,7 +76,55 @@ describe("packed first run", () => {
       'node scripts/release/packed-first-run.mjs "${package_root}"',
     );
     expect(run).toContain("pm --version");
-  });
+    const install = run
+      .split("\n")
+      .find((line) => line.startsWith("npm install "));
+    expect(install).toBeDefined();
+    const root = await mkdtemp(path.join(tmpdir(), "pm-workflow-install-"));
+    try {
+      for (const folder of ["fixture", "packed", "home"])
+        await mkdir(path.join(root, folder));
+      await writeFile(
+        path.join(root, "fixture", "package.json"),
+        JSON.stringify({ name: "packed-first-run-fixture", version: "1.0.0" }),
+      );
+      const execute = promisify(execFile);
+      const env = {
+        ...process.env,
+        HOME: path.join(root, "home"),
+        USERPROFILE: path.join(root, "home"),
+        npm_config_prefix: path.join(root, "prefix"),
+        npm_config_cache: path.join(root, "cache"),
+      };
+      await execute(
+        "bash",
+        ["-c", "npm pack --ignore-scripts --pack-destination ../packed"],
+        { cwd: path.join(root, "fixture"), env, timeout: 15_000 },
+      );
+      await execute("bash", ["-c", install ?? "exit 1"], {
+        cwd: root,
+        env,
+        timeout: 15_000,
+      });
+      const modules =
+        process.platform === "win32" ? "node_modules" : "lib/node_modules";
+      const installed = JSON.parse(
+        await readFile(
+          path.join(
+            root,
+            "prefix",
+            modules,
+            "packed-first-run-fixture",
+            "package.json",
+          ),
+          "utf8",
+        ),
+      );
+      expect(installed.version).toBe("1.0.0");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 40_000);
 
   it("runs its CLI entrypoint and refuses an unspecified installation", async () => {
     const harness = createScriptHarness([]);

@@ -147,7 +147,7 @@ jobs:
           export HOME="${RUNNER_TEMP}/pm-first-run-home"
           export USERPROFILE="${HOME}"
           mkdir -p "${HOME}"
-          npm install --global --ignore-scripts --no-audit --no-fund packed/*.tgz
+          npm install --global --ignore-scripts --no-audit --no-fund ./packed/*.tgz
           prefix_path="${npm_config_prefix}"
           if [ "${RUNNER_OS}" = "Windows" ]; then
             prefix_path="$(cygpath -u "${npm_config_prefix}")"
