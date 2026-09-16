@@ -53,6 +53,7 @@ describe("merge runtime launcher", () => {
         ...env,
         PATH: `${bin}${path.delimiter}${process.env.PATH}`,
       };
+      /** Exercise real Git operations using the upgradeable runtime environment. */
       const git = (args: string[]) =>
         execFileSync("git", args, {
           cwd: tempRoot,

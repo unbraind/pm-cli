@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: ci,install,quality,release,testing
 created_at: "2026-07-25T12:31:34.837Z"
-updated_at: "2026-09-16T12:44:11.173Z"
+updated_at: "2026-09-16T13:06:47.751Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Acceptance installs the exact published artifact from the registry into a clean environment rather than building from the repository; A scripted agent session exercises the full cold-start loop — init, orient, create, claim, annotate, link evidence, close, validate, read context — asserting outcomes and bounded output at each step; The matrix covers the supported operating systems and the supported package managers, including the global-install path that has produced field defects; A failure blocks release advertisement and produces a report identifying the failing step, not merely a failing job; The acceptance session's token cost is recorded so cold-start cost is tracked release over release; The same session runs against the previous release to prove the harness itself is not the cause when a failure appears"
@@ -95,7 +95,7 @@ dependencies[20]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[21]{created_at,author,text}:
+comments[23]{created_at,author,text}:
   "2026-07-31T21:34:36.710Z","harness:codex","Delivery evidence 2026-07-31: release automation now installs the exact registry version into unrelated npm and Bun roots, asserts executable containment, and runs a ten-step cold agent lifecycle covering init, orient, create, claim, annotate, evidence linking, close, validate, and context with per-step output bounds and aggregate token cost. Failure reports name the manager and step; unit controls cover containment and budget failures. Live 2026.7.31 acceptance passed for both managers: 10 steps each, 19,568 characters and 4,892 estimated tokens. This item remains active because the hosted OS matrix and previous-release control session are not yet implemented."
   "2026-07-31T21:51:09.098Z","harness:codex","CI portability evidence 2026-07-31: Windows exposed that the installed-agent escape negative control recognized only POSIX node_modules/.bin separators. The fixture now uses node:path separators and derives an outside path on the current drive, preserving the same containment assertion on Windows and POSIX. The focused 8-test verifier suite passes, ESLint passes, and the full 6,623-test coverage run remains exact 100/100/100/100."
   "2026-07-31T22:25:41.756Z","harness:codex","Review-loop release evidence 2026-07-31: registry installs now retry transient failures three times with bounded production backoff, Bun disables lifecycle scripts, synchronous subprocesses enforce timeout/input invariants, pm-mcp initialize has a 60-second deadline, and missing executable coverage fails before any registry execution. Negative controls and exact cross-platform tests pass; the complete 6,625-test suite is 100/100/100/100 and quality:static is green. Hosted OS-matrix and previous-release control acceptance remain open."
@@ -117,9 +117,11 @@ comments[21]{created_at,author,text}:
   "2026-09-16T12:19:32.774Z","harness:codex","Historical context cross-check: live pm-e9zh is closed with a completed evidence-recovery pass (622 source-grounded fields on 285 records). Its explicit unrecoverable residual is exactly the 170 records still reported by current validation; do not reopen this completed work or fabricate missing outcomes. The two active items pass independent strict history verification after the concurrent broad scan reported transient current-item mismatches."
   "2026-09-16T12:25:17.299Z","harness:codex","Verification: complete 8897-test suite passes exact 100/100/100/100. All three linked test commands pass. Fresh global tarball install reports 2026.9.16 and README output is bounded at 489/53/169 characters for init/create/list; real merged history, installed MCP, and detached telemetry each pass. Package-first dogfood and packed npx/bunx smoke pass. Latest pm-changelog 2026.9.16 installed through pm package for package-owned changelog generation."
   "2026-09-16T12:43:58.070Z","harness:codex","PR #1261 first settled round: all existing checks passed; six new packed consumers failed because npm interpreted packed/file.tgz as GitHub shorthand. Added a real npm fixture-tarball install using the workflow command; it reproduced the failure before the fix. Changed the spec to ./packed/*.tgz. GitHub main protection now preserves all prior checks and strictness while requiring all six packed first-run contexts (26 required checks total). Sourcery reviewed without actionable findings; CodeRabbit requires an explicit trigger, which will accompany the corrective push. All bot artifacts in the settled inventory were read and rated; no inline finding existed to answer."
+  "2026-09-16T13:02:44.810Z","harness:codex","PR #1261 second settled round: Linux and macOS packed consumers pass; Windows consumers expose MCP cleanup before child close (EBUSY). The regression test fails before the fix; cleanup now awaits process closure before deleting its cwd. The workflow fixture now queries npm root --global and asserts sandbox containment instead of guessing the install layout. CodeRabbit completed full review without inline findings, with documentation and scope notes. The build-serialization follow-up was discovered during this actual packed acceptance; managed pm-changelog 2026.9.16 is required for the requested package-owned changelog, so both records remain intentional delivery evidence."
+  "2026-09-16T13:06:46.678Z","harness:codex","Revision verification: 18 focused tests pass, including a failing-before-fix process-close ordering control and the real installed CLI/MCP/merge/telemetry session. Linked MCP tests and typecheck/ESLint pass. Full coverage is rerunning without rebuilding dist concurrently. Greptile CLI returned skipped=true with free review quota exhausted; this is unavailable review, not approval. The GitHub request remains subject to the final current-head inventory."
 notes[1]{created_at,author,text}:
   "2026-07-26T10:48:39.250Z","harness:claude-code","Measured 2026-07-26 against the published 2026.7.26: post-publish verification covers execution only. verify-published-release.mjs runs npx --yes <pkg> --version, npx --yes --package <pkg> -- pm --version, and bunx --bun <pkg> pm --version. No install path is exercised for any manager — not npm install -g, not a project install, not bun add, not pnpm add — so packaging omissions and binary-link defects reach users through a green pipeline. Confirmed working by hand and therefore available as a starting fixture: bun add @unbrained/pm-cli@2026.7.26 links pm, pm-cli, and pm-mcp, and pm init, pm create, and pm list all succeed under the Bun runtime. The third check's invocation shape is separately defective and is owned by pm-lpqln4."
-files[15]{path,scope,note}:
+files[18]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Latest published pm-changelog activation through package manager
   .github/workflows/auto-release.yml,project,serial parent timeout budget for exact-tag acceptance recovery
   .github/workflows/ci.yml,project,Packed npm global first-run matrix on Linux macOS Windows and Node floor plus LTS
@@ -132,10 +134,13 @@ files[15]{path,scope,note}:
   scripts/smoke-npx-from-pack.mjs,project,Fresh-runner dependency resolution with bounded subprocess timeout
   tests/integration/ci-workflow-contract.spec.ts,project,release job parity contract
   tests/integration/release-automation-contract.spec.ts,project,hosted workflow contract
+  tests/unit/scripts/plugin-mcp-smoke-harness.spec.ts,project,Process-close ordering regression for Windows packed acceptance
   tests/unit/scripts/release/packed-first-run.spec.ts,project,Real CLI and MCP acceptance with malformed-document negative controls
   tests/unit/scripts/release/verify-installed-agent-session.spec.ts,project,"step,containment,and budget negative controls"
   tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,Fresh-runner dependency resolution and subprocess timeout controls
-tests[3]:
+  tests/unit/sdk/merge/runtime-launcher.spec.ts,project,Document real upgrade regression used by packed acceptance
+  tests/unit/sdk/tracked-runtime-cache.spec.ts,project,Document sandbox Git helper in touched recovery regression
+tests[4]:
   - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-installed-agent-session.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts
     scope: project
     timeout_seconds: 300
@@ -151,7 +156,15 @@ tests[3]:
       created_at: "2026-09-16T11:50:32.392Z"
       source_kind: local_mutation
       source_ref: fix/portable-merge-and-packed-first-run
-test_runs[4]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/plugin-mcp-smoke-harness.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-16T13:04:16.979Z"
+      source_kind: local_mutation
+      source_ref: fix/portable-merge-and-packed-first-run
+test_runs[5]:
   - run_id: test-all-local-mstsfhar-0p8wl7
     kind: test-all
     status: passed
@@ -199,6 +212,17 @@ test_runs[4]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/packed-first-run.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu444wei-6xnqg6
+    kind: test
+    status: passed
+    started_at: "2026-09-16T13:04:50.233Z"
+    finished_at: "2026-09-16T13:04:51.978Z"
+    recorded_at: "2026-09-16T13:04:51.978Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/plugin-mcp-smoke-harness.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/PACKED_FIRST_RUN.md,project,Platform artifact acceptance and evidence boundaries
   docs/RELEASING.md,project,installed agent-session acceptance contract

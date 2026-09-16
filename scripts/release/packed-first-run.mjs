@@ -68,6 +68,7 @@ export async function runPackedFirstRun(packageRoot) {
   };
   try {
     await mkdir(env.HOME);
+    /** Run Git only inside the disposable workspace, with a bounded deadline. */
     const git = (args) =>
       execute("git", args, { cwd: workspace, env, timeout: 30_000 });
     await git(["init", "-q", "-b", "main"]);
@@ -108,6 +109,7 @@ export async function runPackedFirstRun(packageRoot) {
     );
     assert.equal(listed.items[0].title, "Fix stale lock restore failure");
     const itemId = listed.items[0].id;
+    /** Execute the installed CLI against sandbox state and decode its JSON receipt. */
     const pm = async (args) => {
       const result = await execute(
         process.execPath,

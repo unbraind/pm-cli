@@ -12,6 +12,7 @@ import {
 import { writeMergeReceipt } from "../../../src/sdk/merge/receipts.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
+/** Run Git in the sandbox and return normalized output for tracking assertions. */
 function runGit(cwd: string, args: string[]): string {
   return execFileSync("git", args, {
     cwd,

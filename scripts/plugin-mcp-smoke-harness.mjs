@@ -26,17 +26,6 @@ const DEFAULT_REQUEST_TIMEOUT_MS = 15000;
 const MCP_PROTOCOL_VERSION = "2026-07-28";
 
 /**
- * Start an MCP server child process speaking JSON-RPC over stdio and return a
- * harness with request/callTool helpers plus a dispose() for cleanup.
- *
- * @param {object} options
- * @param {string} options.serverPath - path to the launcher / server entrypoint to spawn
- * @param {string} options.author - PM_AUTHOR value for the sandbox
- * @param {string} options.tmpPrefix - mkdtemp prefix for the sandbox root
- * @param {number} [options.requestTimeoutMs] - per-request timeout
- * @returns {Promise<{tmpRoot: string, request: Function, callTool: Function, getStderr: Function, dispose: Function}>}
- */
-/**
  * Drive a real `initialize` handshake against a launcher once for EVERY protocol
  * revision the published SDK surface declares, plus a negative control.
  *
@@ -149,6 +138,18 @@ async function assertModernRevisionDiscoverable(
   }
 }
 
+/**
+ * Start an MCP server child process speaking JSON-RPC over stdio and return a
+ * harness with request/callTool helpers plus a dispose() for cleanup.
+ *
+ * @param {object} options
+ * @param {string} options.serverPath - path to the launcher / server entrypoint to spawn
+ * @param {string} options.author - PM_AUTHOR value for the sandbox
+ * @param {string} options.tmpPrefix - mkdtemp prefix for the sandbox root
+ * @param {number} [options.requestTimeoutMs] - per-request timeout
+ * @param {Record<string, string>} [options.environment] - child environment overrides before sandbox paths are enforced
+ * @returns {Promise<{tmpRoot: string, request: Function, callTool: Function, getStderr: Function, dispose: Function}>}
+ */
 export async function startPluginMcpSmoke({
   serverPath,
   author,
@@ -170,6 +171,9 @@ export async function startPluginMcpSmoke({
     },
     stdio: ["pipe", "pipe", "pipe"],
   });
+
+  // Register immediately so disposal also handles a server that already exited.
+  const closed = new Promise((resolve) => child.once("close", resolve));
 
   const rl = readline.createInterface({
     input: child.stdout,
@@ -205,6 +209,7 @@ export async function startPluginMcpSmoke({
     }
   });
 
+  /** Send a JSON-RPC request with protocol metadata and a bounded response deadline. */
   function request(method, params = {}) {
     const id = nextId++;
     const requestParams =
@@ -243,6 +248,7 @@ export async function startPluginMcpSmoke({
     });
   }
 
+  /** Decode a tool result, preferring structured content and surfacing server errors. */
   async function callTool(name, args = {}) {
     const response = await request("tools/call", { name, arguments: args });
     if (response.isError) {
@@ -255,13 +261,16 @@ export async function startPluginMcpSmoke({
     );
   }
 
+  /** Return captured server diagnostics without altering the transport. */
   function getStderr() {
     return stderr;
   }
 
+  /** Stop the child and wait for its handles to close before deleting its workspace. */
   async function dispose() {
     child.stdin.end();
     child.kill();
+    await closed;
     await rm(tmpRoot, { recursive: true, force: true });
     if (stderr.trim()) {
       console.error(stderr.trim());

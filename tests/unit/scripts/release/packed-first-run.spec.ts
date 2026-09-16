@@ -106,17 +106,24 @@ describe("packed first run", () => {
         env,
         timeout: 15_000,
       });
-      const modules =
-        process.platform === "win32" ? "node_modules" : "lib/node_modules";
+      const { stdout: modules } = await execute(
+        "bash",
+        ["-c", "npm root --global"],
+        {
+          cwd: root,
+          env,
+          timeout: 15_000,
+        },
+      );
+      const relativeModules = path.relative(
+        path.join(root, "prefix"),
+        modules.trim(),
+      );
+      expect(path.isAbsolute(relativeModules)).toBe(false);
+      expect(relativeModules.split(path.sep)).not.toContain("..");
       const installed = JSON.parse(
         await readFile(
-          path.join(
-            root,
-            "prefix",
-            modules,
-            "packed-first-run-fixture",
-            "package.json",
-          ),
+          path.join(modules.trim(), "packed-first-run-fixture", "package.json"),
           "utf8",
         ),
       );
