@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[5]: ci,install,quality,release,testing
 created_at: "2026-07-25T12:31:34.837Z"
-updated_at: "2026-09-17T04:56:25.097Z"
-closed_at: "2026-09-17T04:56:24.249Z"
-completed_at: "2026-09-17T04:56:24.249Z"
+updated_at: "2026-09-17T05:13:09.675Z"
+closed_at: "2026-09-17T05:13:08.980Z"
+completed_at: "2026-09-17T05:13:08.980Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Acceptance installs the exact published artifact from the registry into a clean environment rather than building from the repository; A scripted agent session exercises the full cold-start loop — init, orient, create, claim, annotate, link evidence, close, validate, read context — asserting outcomes and bounded output at each step; The matrix covers the supported operating systems and the supported package managers, including the global-install path that has produced field defects; A failure blocks release advertisement and produces a report identifying the failing step, not merely a failing job; The acceptance session's token cost is recorded so cold-start cost is tracked release over release; The same session runs against the previous release to prove the harness itself is not the cause when a failure appears"
@@ -20,9 +20,9 @@ outcome: Install-shaped defects are caught before publication rather than report
 parent: pm-u9d0
 risk: medium
 confidence: 70
-resolution: Gate GitHub advertisement on npm-local npm-global and Bun candidate/control sessions across Linux macOS and Windows; preserve recovery selectors and serial timeout budgets; accept unambiguous npm 11 and 12 artifact receipts
-expected_result: Every registry matrix leg validates the previous release and candidate before advertisement and records bounded lifecycle and SDK output
-actual_result: Workflow contracts and all linked tests pass; manual previous/current npm-global and Bun registry sessions and branch tarball npm/Bun/npx/bunx SDK lifecycle acceptance pass; full exact coverage passes; new hosted matrix execution remains release-time evidence
+resolution: Gate advertisement on nine npm-local npm-global and Bun candidate/control legs; preserve recovery controls and exact artifact receipts; make npm entrypoint fixtures portable
+expected_result: Registry OS matrix validates control and candidate with bounded lifecycle and SDK output before advertisement
+actual_result: Full suite passed 8928 tests at exact 100/100/100/100; manual registry and packed consumers passed; all three linked release groups passed after fixture correction; hosted revised-head Windows and release-time matrix results remain separate evidence
 dependencies[21]:
   - id: pm-8pnj
     kind: related
@@ -105,7 +105,7 @@ dependencies[21]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[39]{created_at,author,text}:
+comments[41]{created_at,author,text}:
   "2026-07-31T21:34:36.710Z","harness:codex","Delivery evidence 2026-07-31: release automation now installs the exact registry version into unrelated npm and Bun roots, asserts executable containment, and runs a ten-step cold agent lifecycle covering init, orient, create, claim, annotate, evidence linking, close, validate, and context with per-step output bounds and aggregate token cost. Failure reports name the manager and step; unit controls cover containment and budget failures. Live 2026.7.31 acceptance passed for both managers: 10 steps each, 19,568 characters and 4,892 estimated tokens. This item remains active because the hosted OS matrix and previous-release control session are not yet implemented."
   "2026-07-31T21:51:09.098Z","harness:codex","CI portability evidence 2026-07-31: Windows exposed that the installed-agent escape negative control recognized only POSIX node_modules/.bin separators. The fixture now uses node:path separators and derives an outside path on the current drive, preserving the same containment assertion on Windows and POSIX. The focused 8-test verifier suite passes, ESLint passes, and the full 6,623-test coverage run remains exact 100/100/100/100."
   "2026-07-31T22:25:41.756Z","harness:codex","Review-loop release evidence 2026-07-31: registry installs now retry transient failures three times with bounded production backoff, Bun disables lifecycle scripts, synchronous subprocesses enforce timeout/input invariants, pm-mcp initialize has a 60-second deadline, and missing executable coverage fails before any registry execution. Negative controls and exact cross-platform tests pass; the complete 6,625-test suite is 100/100/100/100 and quality:static is green. Hosted OS-matrix and previous-release control acceptance remain open."
@@ -145,6 +145,8 @@ comments[39]{created_at,author,text}:
   "2026-09-17T04:51:14.876Z","harness:codex","Manual branch-artifact acceptance: npm pack --ignore-scripts produced the current tarball; package gate passed 1531 files and 18472135 unpacked bytes under the unchanged 20000000-byte cap. Separate npm and Bun temporary installs resolved their own installed binaries; npx and bunx each passed seven lifecycle commands and complete public-SDK corpus reads. Packed-first-run additionally passed README initialization/create/list, MCP, real divergent Git merge/history verification, and detached telemetry delivery. npm 12 artifact receipt compatibility now accepts exactly one array or package-keyed report and rejects mismatched key/name identities."
   "2026-09-17T04:51:48.132Z","harness:codex","Removed the redundant reverse related row added during blocker correction: pm-q91qyd already records its association to pm-ygli86. The undirected lineage remains queryable without growing generic related-edge counts. Existing typed verifies and implements relationships carry the executable acceptance semantics. The unchanged related-edge ceiling caught this redundant metadata addition."
   "2026-09-17T04:55:59.231Z","harness:codex","Final acceptance verification: all three non-overlapping PM-linked test groups passed with zero failure categories; full repository suite and exact 100/100/100/100 coverage passed. Manual packed npm/Bun/npx/bunx and public SDK checks passed. Package-first dogfood passed when run after full coverage released the checkout lease; the earlier overlapping attempt correctly timed out waiting for that lease and is not counted as passing evidence. Hosted OS matrix execution and PR-head checks remain independent required hosted evidence."
+  "2026-09-17T05:11:42.742Z","harness:codex","PR 1262 first-head CI: Windows unit acceptance fixtures did not supply the npm_execpath prerequisite and still recognized only the POSIX npm spawn shape. Correct the fixtures while retaining the production guard. Static failure is the separately corrected structured provenance gap. GitHub AI security review failed with HTTP 400 requested model unsupported; Sourcery reported its weekly review quota exhausted. These are unavailable reviews, not approvals."
+  "2026-09-17T05:13:08.316Z","harness:codex","Windows fixture correction verified: all 13 installed-agent unit tests passed locally, including the explicit Windows npm entrypoint/refusal control; all three linked release test groups passed again. The native Windows hosted gate remains the cross-platform proof for the pushed revision. No production code or coverage thresholds changed in this follow-up."
 notes[1]{created_at,author,text}:
   "2026-07-26T10:48:39.250Z","harness:claude-code","Measured 2026-07-26 against the published 2026.7.26: post-publish verification covers execution only. verify-published-release.mjs runs npx --yes <pkg> --version, npx --yes --package <pkg> -- pm --version, and bunx --bun <pkg> pm --version. No install path is exercised for any manager — not npm install -g, not a project install, not bun add, not pnpm add — so packaging omissions and binary-link defects reach users through a green pipeline. Confirmed working by hand and therefore available as a starting fixture: bun add @unbrained/pm-cli@2026.7.26 links pm, pm-cli, and pm-mcp, and pm init, pm create, and pm list all succeed under the Bun runtime. The third check's invocation shape is separately defective and is owned by pm-lpqln4."
 files[23]{path,scope,note}:
@@ -175,7 +177,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/package-artifact-gate.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts tests/unit/scripts/release/release-control.spec.ts tests/integration/registry-acceptance-workflow.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,project,300,"harness:codex","2026-09-17T04:48:18.313Z",local_mutation,fix/serialized-builds-and-release-acceptance
   node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,300,"harness:codex","2026-09-17T04:48:18.313Z",local_mutation,fix/serialized-builds-and-release-acceptance
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/packed-first-run.spec.ts tests/unit/scripts/plugin-mcp-smoke-harness.spec.ts,project,300,"harness:codex","2026-09-17T04:48:18.313Z",local_mutation,fix/serialized-builds-and-release-acceptance
-test_runs[8]:
+test_runs[9]:
   - run_id: test-all-local-mstsfhar-0p8wl7
     kind: test-all
     status: passed
@@ -275,9 +277,22 @@ test_runs[8]:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/package-artifact-gate.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts tests/unit/scripts/release/release-control.spec.ts tests/integration/registry-acceptance-workflow.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/packed-first-run.spec.ts tests/unit/scripts/plugin-mcp-smoke-harness.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu52prt0-1u2ixv
+    kind: test
+    status: passed
+    started_at: "2026-09-17T05:12:23.468Z"
+    finished_at: "2026-09-17T05:12:52.739Z"
+    recorded_at: "2026-09-17T05:12:52.739Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/package-artifact-gate.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts tests/unit/scripts/release/release-control.spec.ts tests/integration/registry-acceptance-workflow.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/packed-first-run.spec.ts tests/unit/scripts/plugin-mcp-smoke-harness.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope,note}:
   docs/BUILD_AND_RELEASE_ACCEPTANCE.md,project,Registry matrix and control-session advertisement contract
   docs/PACKED_FIRST_RUN.md,project,Platform artifact acceptance and evidence boundaries
   docs/RELEASING.md,project,installed agent-session acceptance contract
-close_reason: Implemented the remaining registry platform and previous-release acceptance controls with local artifact proof
+close_reason: "Completed registry platform and previous-release controls, including portable Windows fixtures"
 body: ""

@@ -10,6 +10,7 @@ type CommandResult = { status: number; stdout: string; stderr: string };
 interface RunOptions {
   argv: string[];
   npmPackage?: string;
+  npmExecpath?: string | null;
   realpath?: (value: string) => string;
   runCommand?: (command: string, args: string[]) => CommandResult;
 }
@@ -20,6 +21,8 @@ async function runAcceptance(options: RunOptions) {
   vi.doUnmock("node:fs");
   vi.doUnmock(UTILS_SPECIFIER);
   process.env.PM_VERIFY_SLEEP_MS = "0";
+  if (options.npmExecpath === null) delete process.env.npm_execpath;
+  else process.env.npm_execpath = options.npmExecpath ?? "C:/node/npm-cli.js";
   if (options.npmPackage === undefined) delete process.env.NPM_PACKAGE;
   else process.env.NPM_PACKAGE = options.npmPackage;
   const fsMocks = {
@@ -79,7 +82,7 @@ async function runAcceptance(options: RunOptions) {
 
 function successfulCommand(command: string, args: string[]): CommandResult {
   if (
-    (command === "npm" && args[0] === "install") ||
+    (["npm", process.execPath].includes(command) && args.includes("install")) ||
     (command === "bun" && args[0] === "add")
   ) {
     return { status: 0, stdout: "installed", stderr: "" };
@@ -139,10 +142,8 @@ describe("verify-installed-agent-session", () => {
     const descriptor = Object.getOwnPropertyDescriptor(process, "platform");
     Object.defineProperty(process, "platform", { value: "win32", configurable: true });
     try {
-      delete process.env.npm_execpath;
-      const missing = await runAcceptance({ argv: ["--version", "2026.9.16", "--manager", "npm"] });
+      const missing = await runAcceptance({ argv: ["--version", "2026.9.16", "--manager", "npm"], npmExecpath: null });
       expect(String(missing.failure)).toContain("npm_execpath");
-      process.env.npm_execpath = "C:/node/npm-cli.js";
       const result = await runAcceptance({ argv: ["--version", "2026.9.16", "--manager", "npm", "--global", "--json"] });
       expect(result.failure).toBeNull();
       expect(result.runCommand.mock.calls[0]?.[0]).toBe(process.execPath);
@@ -301,7 +302,7 @@ describe("verify-installed-agent-session", () => {
     const installFailure = await runAcceptance({
       argv: ["--version", "2026.7.31", "--manager", "npm"],
       runCommand: (command, args) =>
-        command === "npm" && args[0] === "install"
+        ["npm", process.execPath].includes(command) && args.includes("install")
           ? { status: 1, stdout: "", stderr: "" }
           : successfulCommand(command, args),
     });
