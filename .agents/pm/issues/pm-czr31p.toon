@@ -1,0 +1,64 @@
+id: pm-czr31p
+title: Reject malformed linked-test JSON paths instead of silently normalizing assertions
+description: PR 1263 review found that skipped separators allow result..count to assert result.count. Validate the complete dotted and bracket-index grammar before tokenization; preserve valid own-data traversal. Reproduce and assess the separate TOON-row report without editing tracker storage directly; document touched scanner helper functions.
+type: Issue
+status: closed
+priority: 2
+tags[3]: correctness,review,testing
+created_at: "2026-09-17T17:43:29.009Z"
+updated_at: "2026-09-17T18:09:03.834Z"
+closed_at: "2026-09-17T18:09:03.119Z"
+completed_at: "2026-09-17T18:09:03.119Z"
+author: "harness:codex"
+parent: pm-xxrq
+resolution: Reject malformed dotted and bracket-index assertion paths before tokenization; preserve own-data traversal and document scanner contracts.
+expected_result: "Malformed assertion metadata fails instead of silently resolving a different JSON field, while valid nested and root-array assertions continue to work."
+actual_result: "Eight red-first malformed-path cases now pass; valid nested-array controls, 76 linked tests, temporary Node/Bun CLI acceptance, full static quality and 8972 tests with exact 100/100/100/100 coverage pass."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1wypwu,verifies,"2026-09-17T17:48:38.196Z","harness:codex","cli:update:dep",detected
+  pm-xxrq,implements,"2026-09-17T17:48:38.196Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-09-17T17:43:29.009Z","harness:codex","Duplicate check: all-status malformed JSON path and linked-test assertion searches found only the completed generic assertion and own-data traversal lineages; no owner for complete path-syntax validation. This follow-up comes from CodeRabbit inline review on PR 1263."
+  "2026-09-17T17:48:01.198Z","harness:codex","TDD red: 8 malformed-path cases failed against the prior parser; 5 controls passed. Strict TOON 4.1.1 decode of pm-1wypwu succeeds and flagged comment text matches immutable history with zero embedded commas: formatting finding declined inline with evidence. Implemented complete grammar validation and safe integer indexes; retained own-data traversal. Added requested scanner helper documentation."
+  "2026-09-17T17:49:57.606Z","harness:codex","Focused validation: 76 tests across parser-security and full linked-command suites pass. Temporary isolated CLI workspaces under Node and Bun each reject result..count through a real linked command while result.count passes. Typecheck and full static quality pass. Full coverage rerun is in progress. Round-one hosted checks all succeeded; Cubic explicitly exhausted its monthly free quota, and Greptile has no review despite the requested trigger. These are unavailable reviews, not approvals."
+  "2026-09-17T17:51:06.064Z","harness:codex","Verification correction: the previous static-quality completion statement read an older existing log while typecheck was still preceding the new run. Current typecheck and focused/manual proof are valid; current full static quality is still running and coverage follows it serially. Final evidence will use the completed process exit and newly generated exact coverage totals."
+  "2026-09-17T18:06:56.137Z","harness:codex","Final static run completed successfully, including repository assurance, public SDK and command snapshots, package/grammar/recovery/token gates, idle-host import and CLI transport budgets, graph composition and record integrity. Fresh dependency audit reports zero vulnerabilities across 364 dependencies; repository secret scan and all three GitHub security-alert inventories are clear. Required Sentry/telemetry gate passes with zero Sentry issues in 14 days and zero failures missing error codes."
+  "2026-09-17T18:09:02.423Z","harness:codex","Final verification completed: 8972 tests in 704 files pass. Exact coverage is 64705/64705 statements, 49355/49355 branches, 13438/13438 functions and 61939/61939 lines (100/100/100/100). The linked PM test run passes all 76 focused tests; documentation links pass. Temporary Node and Bun CLI workspaces reject malformed assertions and pass valid paths. No coverage exclusions, thresholds, or security suppressions changed."
+notes[1]{created_at,author,text}:
+  "2026-09-17T17:55:33.891Z","harness:codex","Review evidence: PR 1263 discussion_r4039793191 reproduces malformed JSON paths. discussion_r4039793155 is a disproven TOON serialization report: strict 4.1.1 decode and immutable-history comparison pass. The public inline response records the exact evidence; no direct tracker rewrite was performed."
+learnings[1]{created_at,author,text}:
+  "2026-09-17T17:55:33.247Z","harness:codex","Token extraction is not grammar validation: matchAll can skip malformed separators and turn an assertion into a different valid lookup. Validate the entire path first and test through the assertion evaluator with realistic JSON, not only the tokenizer. Verify serialization findings with the actual strict decoder and canonical history before rewriting any tracker data."
+files[6]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,CLI-managed package refresh receipt from changelog generation
+  scripts/check-secrets-lib.mjs,project,Review grammar regression and documented scanner contract
+  src/sdk/mutation-guard.ts,project,Review grammar regression and documented scanner contract
+  src/sdk/test/json-path.ts,project,Review grammar regression and documented scanner contract
+  tests/unit/commands/test-command.spec.ts,project,Review grammar regression and documented scanner contract
+  tests/unit/sdk/test/json-path-security.spec.ts,project,Review grammar regression and documented scanner contract
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/test/json-path-security.spec.ts tests/unit/commands/test-command.spec.ts,project,240,"harness:codex","2026-09-17T17:48:43.105Z",local_mutation,fix/shared-secret-policy-safe-paths
+test_runs[1]:
+  - run_id: test-local-mu5ufhlc-guwbps
+    kind: test
+    status: passed
+    started_at: "2026-09-17T18:08:18.088Z"
+    finished_at: "2026-09-17T18:08:42.192Z"
+    recorded_at: "2026-09-17T18:08:42.192Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/json-path-security.spec.ts tests/unit/commands/test-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated release note for strict assertion grammar
+  docs/MUTATION_INTEGRITY.md,project,Strict assertion path grammar
+close_reason: Validated strict JSON assertion grammar and addressed PR 1263 review evidence.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: linked-test-json-path-grammar
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/test/json-path-security.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/test/json-path-security.spec.ts tests/unit/commands/test-command.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-czr31p
+body: ""

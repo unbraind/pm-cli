@@ -1416,11 +1416,8 @@ describe("runTest", () => {
       0,
       "status",
     ]);
-    expect(testInternals.splitJsonPathSegments("items[-1]")).toEqual([
-      "items",
-      "-1",
-    ]);
-    expect(testInternals.splitJsonPathSegments("items[]")).toEqual(["items"]);
+    expect(testInternals.splitJsonPathSegments("items[-1]")).toEqual([]);
+    expect(testInternals.splitJsonPathSegments("items[]")).toEqual([]);
     expect(
       testInternals.splitJsonPathSegments(`items[${"9".repeat(500)}]`),
     ).toEqual([]);

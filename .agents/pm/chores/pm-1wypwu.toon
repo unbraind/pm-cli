@@ -1,0 +1,58 @@
+id: pm-1wypwu
+title: Refresh Sentry 10.75 and CLI 3.8 with Unicorn 75 compatibility proof
+description: Adopt registry-current compatible Sentry runtime and release tooling plus Unicorn lint rules; preserve Node 22.18 support and all mandatory gates. Broader major migrations remain with their existing canonical owners.
+type: Chore
+status: closed
+priority: 2
+tags[2]: dependencies,observability
+created_at: "2026-09-17T16:31:23.630Z"
+updated_at: "2026-09-17T17:25:39.463Z"
+closed_at: "2026-09-17T17:24:21.406Z"
+completed_at: "2026-09-17T17:24:21.406Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Sentry and Unicorn updates satisfy supported engines and peer contracts; static quality and exact coverage pass; installed npm and Bun consumers pass; dependency audit has no known vulnerabilities
+parent: pm-qwoy
+risk: low
+confidence: high
+resolution: "Updated Sentry runtime to 10.75.0, Sentry CLI to 3.8.0 and Unicorn to 75.0.0 with compatibility proof."
+expected_result: "Current compatible dependencies preserve the supported runtime, public SDK declarations and strict gates."
+actual_result: "Engine and peer checks, dependency audit, lint, typecheck, linked Sentry/telemetry/manifest tests, exact full coverage and packed npm/npx/Bun/bunx acceptance pass."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-qwoy,implements,"2026-09-17T16:34:16.767Z","harness:codex","cli:update:dep",detected
+  pm-5oj5,implements,"2026-09-17T16:35:23.263Z","harness:codex","cli:update:dep",detected
+  pm-do5b,discovered_from,"2026-09-17T17:12:38.816Z","harness:codex","cli:update:dep",detected
+  pm-fokyhh,discovered_from,"2026-09-17T17:12:38.816Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,discovered_from,"2026-09-17T17:12:38.816Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-09-17T16:31:23.630Z","harness:codex","Duplicate check: all-status exact searches for 10.75.0 and 3.8.0 returned zero; unicorn search and dependency refresh search found historical releases but no current owner. Registry publication dates are beyond the default 24-hour release-age window. Existing Vitest TypeScript and npm-package-arg major migrations are reused separately."
+  "2026-09-17T16:45:20.974Z","harness:codex","Installed Sentry runtime 10.75.0, Sentry CLI 3.8.0 and Unicorn 75.0.0 with pnpm release-age protection intact. Audit of the resulting 364-dependency graph reports zero known vulnerabilities across all severities. Canonical incompatible major migrations remain separate: pm-fokyhh for Vitest 5 with CodSpeed, pm-do5b for TypeScript 7, pm-ksr40d for npm-package-arg 14 and the published Node floor."
+  "2026-09-17T16:52:28.329Z","harness:codex","Public registry acceptance: exact release 2026.9.17 passed eleven cold-start CLI and SDK lifecycle steps each under independent npm and Bun installs. Candidate tarball smoke separately passed npm install, npx, bunx, package catalog/install-all, calendar workflow and a plain TypeScript SDK consumer. These prove distinct current-release and branch-artifact surfaces."
+  "2026-09-17T16:56:49.748Z","harness:codex",Full-suite dependency check caught the deliberately pinned Sentry assertion still expecting 10.74.0; updated it to 10.75.0 only after packed TypeScript compilation passed. All other 8960 tests passed in that run; exact coverage remains unproven until the final rerun succeeds. The explicit pin gate remains intact.
+  "2026-09-17T17:01:19.455Z","harness:codex","All linked dependency tests passed: Sentry and telemetry suites plus package-manifest contract. The package-first dogfood loop passed after sequential execution; the earlier concurrent run timed out waiting for the coverage build lease rather than executing assertions. Existing timeout limits are unchanged."
+  "2026-09-17T17:24:20.672Z","harness:codex","Final local delivery evidence: full suite 8963 tests across 704 files passed; exact coverage statements 64703/64703, branches 49357/49357, functions 13438/13438, lines 61937/61937. Linked tests, Semgrep, secret scan, dependency audit, static correctness gates, unchanged idle-host performance limits, graph and record integrity, package-first dogfood and packed consumers passed. Hosted review and CI remain the next delivery stage."
+  "2026-09-17T17:25:38.944Z","harness:codex","Classification correction: this is routine compatible dependency maintenance, not remediation of a known vulnerability. Both before and after audits report zero vulnerabilities; no advisory or escaped defect is attributed to these versions. Remove the overly broad security tag so the changelog and defect taxonomy do not falsely describe an ordinary refresh as a security fix. Exact coverage, pinned declaration acceptance and all dependency quality gates remain required and passed."
+notes[1]{created_at,author,text}:
+  "2026-09-17T16:52:29.153Z","harness:codex","Release scope: daily scheduled auto-release already succeeded for 2026.9.17. This branch does not trigger another same-day release. Compatible dependency changes will enter the next governed release after reviewed merge."
+files[3]{path,scope,note}:
+  package.json,project,Compatible runtime and quality-tool dependency versions
+  pnpm-lock.yaml,project,Resolved dependency graph with release-age policy preserved
+  tests/unit/packages/package-manifest.spec.ts,project,Advance explicit Sentry pin after successful packed TypeScript consumer verification
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/unit/core/telemetry,project,300,"harness:codex","2026-09-17T16:44:15.206Z",local_mutation,fix/shared-secret-policy-safe-paths
+  node scripts/run-tests.mjs test -- tests/unit/packages/package-manifest.spec.ts,project,300,"harness:codex","2026-09-17T16:56:33.277Z",local_mutation,fix/shared-secret-policy-safe-paths
+test_runs[1]:
+  - run_id: test-local-mu5rwmli-ksltzo
+    kind: test
+    status: passed
+    started_at: "2026-09-17T16:57:42.316Z"
+    finished_at: "2026-09-17T16:58:02.981Z"
+    recorded_at: "2026-09-17T16:58:02.981Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/unit/core/telemetry,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/packages/package-manifest.spec.ts,schema,schema,source,local_source_ref
+close_reason: Implemented and locally verified in the shared security-policy delivery; hosted review follows in the combined PR.
+body: ""

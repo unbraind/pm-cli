@@ -1,6 +1,6 @@
 # Mutation Integrity
 
-Tracker references: [pm-h90s](../.agents/pm/issues/pm-h90s.toon), [pm-pim7](../.agents/pm/features/pm-pim7.toon), [pm-w8q4](../.agents/pm/features/pm-w8q4.toon), [pm-9yfo](../.agents/pm/tasks/pm-9yfo.toon)
+Tracker references: [pm-h90s](../.agents/pm/issues/pm-h90s.toon), [pm-pim7](../.agents/pm/features/pm-pim7.toon), [pm-w8q4](../.agents/pm/features/pm-w8q4.toon), [pm-9yfo](../.agents/pm/tasks/pm-9yfo.toon), [pm-wwooxx](../.agents/pm/issues/pm-wwooxx.toon), [pm-3kk6](../.agents/pm/issues/pm-3kk6.toon)
 
 `pm` treats mutation provenance and content safety as shared SDK policy. CLI,
 MCP, and package hosts can therefore enforce the same rules without duplicating
@@ -70,8 +70,30 @@ whether a blocking policy was explicitly overridden. `scanMutationSecrets` is
 available separately for package-specific preflight UIs. Cyclic inputs are
 safe; scanner failures fail open with `secret_guard_scan_failed_open`.
 
-The fixed detector inventory covers GitHub, npm, Slack, AWS access-key, private
-key, and high-entropy assignment shapes. Findings expose only the stable rule
+The SDK guard and repository scanner consume one inventory in
+`src/core/shared/secret-rules.ts`. It covers GitHub, npm, Slack, AWS access
+keys (including temporary keys), Google, Anthropic, OpenAI, GitLab, Sentry,
+private keys, JWT-shaped tokens, npm authentication assignments, password
+assignments, inline sshpass passwords, private IPv4 addresses, private SSH
+hosts, and absolute home-directory paths. Every repository rule also runs
+against mutation string leaves in `advise` and `block` modes.
+
+Two repository fixture exemptions apply only to `tests/` and `examples/`:
+absolute home paths and user-at-private-host matches. They never exempt
+mutation content. The inventory explicitly records one mutation-only heuristic:
+high-entropy assignments. Source identifiers can resemble generic assignments,
+so that heuristic does not run over repository source text. No rule is silently
+gate-only. Repository diagnostics retain hyphenated names; SDK findings retain
+underscore names. Adding a pattern therefore changes both consumers together.
+
+A private address or host path can be legitimate project context. The default
+remains advisory; a workspace selecting `block` must replace those literals
+with references or explicitly review a force override. CLI routing paths and
+payload content are distinct: pass only content to package-owned preflight.
+
+Nested settings reads use own properties. Writes reject empty and prototype
+path segments before changing any object, create local containers for inherited
+values, and define own data properties without invoking inherited setters. Findings expose only the stable rule
 name and object path. Matched credential text is never returned, logged, or
 included in a recovery bundle.
 
@@ -87,7 +109,7 @@ list.
 import { PM_MUTATION_ACTION_CONTRACTS } from "@unbrained/pm-cli/sdk";
 
 const itemHistoryActions = PM_MUTATION_ACTION_CONTRACTS.filter(
-  (contract) => contract.historyScopes.includes("item"),
+  (contract) => contract.history_scope === "item",
 );
 ```
 
@@ -97,6 +119,16 @@ execute every classified action against a sandbox and assert the resulting
 operation and author before the repository can treat that invariant as fully
 enforced. Workspace actions remain explicitly classified while that executable
 gate is completed.
+
+## Linked-Test JSON Assertions
+
+Tracked by [pm-czr31p](../.agents/pm/issues/pm-czr31p.toon).
+
+JSON assertions accept dotted fields and non-negative safe integer indexes,
+such as `result.items[0].count` or `[0][1].count`. The whole path must match:
+empty segments, empty brackets, negative indexes, and omitted separators fail
+the assertion instead of silently selecting a different field. Traversal reads
+only own data properties and never invokes getters or follows prototypes.
 
 ## Unknown-Author Disposition
 

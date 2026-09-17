@@ -1,12 +1,14 @@
 id: pm-wwooxx
-title: "The write-time mutation guard and the CI secret gate enforce different rule sets, so content the repository forbids can be made immutable before anything objects"
+title: Share secret and private-context detection between mutation preflight and repository scanning
 description: "Two secret detectors run in this repository over the same content and enforce different rule sets. The write-time mutation guard flags credential-shaped content before it enters the immutable stream (pm-pim7, extended by pm-fhhhlk for npm and Slack prefixes and by pm-h4zb for GitHub token prefixes). The CI gate scripts/check-secrets.mjs scans tracked files and additionally enforces rules the write-time guard does not have, including absolute-home-path and, since pm-daft, private IP addresses. The consequence is a one-way trap: content the repository forbids can be written, hash-chained and committed, and is then discoverable only after the fact by a gate that runs too late to prevent it.\n\nDemonstrated accidentally on 2026-07-26. A note whose prose contained backticks was passed as a shell argument, so the shell executed the backticked fragments and their error output — carrying absolute host filesystem paths — was persisted into a note_add history entry. The write-time guard accepted it silently. The static gate rejected it on push, and recovery required pm history-redact plus a chain re-anchor, which is the correct remedy but a disproportionate one for content that should never have been accepted.\n\nThe asymmetry matters more for history than for source, because a source file can simply be edited while a history entry is immutable by design. Every rule the CI gate enforces but the write-time guard does not is therefore a rule whose violations are permanent by construction and repairable only through an audited rewrite."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[6]: "area:security",ci,governance,history,privacy,secret-guard
 created_at: "2026-07-26T17:50:28.439Z"
-updated_at: "2026-09-08T13:32:50.145Z"
+updated_at: "2026-09-17T17:24:13.820Z"
+closed_at: "2026-09-17T17:24:13.169Z"
+completed_at: "2026-09-17T17:24:13.169Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The rule inventory is a single declared source consumed by both the write-time mutation guard and the static secret gate, so neither can carry a rule the other lacks; A test fails when the two rule sets diverge, rather than the divergence being discovered by a push that trips the gate; Rules that are deliberately gate-only are declared as such with a recorded reason, so an intentional asymmetry is visible instead of accidental; The guard's advise and block modes apply the full inventory across every mutation surface, matching how the credential rules already behave; Matched values stay redacted in errors, telemetry, and recovery bundles for the newly shared rules exactly as they are for the credential rules; Documentation states which rules block a write and which only fail a build, so an author knows before writing which is which"
@@ -19,8 +21,10 @@ why_now: "The gap was exercised for real this session: a host path reached an im
 parent: pm-qwoy
 risk: medium
 confidence: high
-expected_result: "The write-time mutation guard and the CI secret gate consume one declared rule inventory, and a test fails the moment the two diverge."
-dependencies[13]:
+resolution: "One typed detector inventory now serves SDK mutation preflight and repository scanning, with redaction and explicit scope exceptions."
+expected_result: Repository-forbidden secret and private context is detected before immutable mutation under block policy.
+actual_result: Nineteen shared detectors pass parity; CLI and MCP block and redact private content; Node and Bun temporary workflows leave no refused item behind.
+dependencies[14]:
   - id: pm-34w8za
     kind: related
     created_at: "2026-07-26T17:50:28.439Z"
@@ -31,9 +35,6 @@ dependencies[13]:
     kind: related
     created_at: "2026-07-26T17:50:28.439Z"
   - id: pm-fhhhlk
-    kind: related
-    created_at: "2026-07-26T17:50:28.439Z"
-  - id: pm-h4zb
     kind: related
     created_at: "2026-07-26T17:50:28.439Z"
   - id: pm-h6wmtc
@@ -66,6 +67,85 @@ dependencies[13]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[1]{created_at,author,text}:
+  - id: pm-h4zb
+    kind: supersedes
+    created_at: "2026-09-17T16:34:15.452Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-z3ez
+    kind: related
+    created_at: "2026-09-17T17:11:42.821Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[17]{created_at,author,text}:
   "2026-08-03T06:45:30.411Z","harness:claude-code","Live reproduction, 2026-08-03, unplanned. This item predicted the failure and the failure occurred exactly as described, so recording it as evidence rather than as a new finding.\n\nSequence. I filed pm-9gvazz with a description quoting the workspace absolute path and the harness session-file path, because those two strings ARE the evidence for that defect. The write-time mutation guard accepted the create without objection and the content was hashed into pm-9gvazz's history stream. pm validate reported ok. pm health reported ok. The content was immutable and clean by every check pm itself offers.\n\nThe CI secret gate then failed the push: four hits, two in .agents/pm/history/pm-9gvazz.jsonl and two in .agents/pm/issues/pm-9gvazz.toon, all rule absolute-home-path (scripts/check-secrets-lib.mjs). So the repository forbids content that pm had already made permanent - which is the precise statement of this item.\n\nTwo details worth keeping, because they sharpen the scope:\n\nFirst, the ordering is the whole problem. Remediation required pm history-redact, an audited rewrite of an append-only stream, rather than an edit. It worked correctly - two passes, chain re-verified, hash_mismatches_after 0, audit_entry_added true, and the technical content survived - but a write-time refusal would have cost one re-word and no rewrite at all. Every history-redact invocation is a small permanent scar on the immutability claim that a matching write-time rule would have avoided entirely.\n\nSecond, the local and hosted halves are already consistent here: node scripts/check-secrets.mjs reproduced all four hits locally with identical output. So this is not a local-versus-hosted parity gap - the parity is fine, and the gap is purely that the rule set lives at commit time and not at mutation time. That distinction matters for the fix: the rules do not need to be re-derived, they need to be shared, and check-secrets-lib.mjs is already a library rather than a script.\n\nSuggested acceptance evidence when this is fixed: creating an item whose body contains an absolute home path must be refused at mutation time with the rule name, and the resulting item must not exist - proven by the secret gate finding nothing afterwards without any redaction having run."
+  "2026-09-17T16:26:23.388Z","harness:codex","TDD baseline: all 14 cross-consumer secret parity cases fail on the original SDK guard while the repository gate detects them. Unify canonical patterns, retain underscore SDK identifiers and redacted recovery, and declare the existing mutation-only entropy heuristic explicitly."
+  "2026-09-17T16:31:27.543Z","harness:codex","GitHub triage: no open PRs and zero open Dependabot code-scanning or secret-scanning alerts. Issue 1246 already carries the canonical pm-z3ez item link. Full pnpm audit reports zero known vulnerabilities across 374 dependencies. Scheduled auto-release 35197095403 succeeded and GitHub plus npm publish v2026.9.17; no second release requested."
+  "2026-09-17T16:33:28.181Z","harness:codex","Observability verification: required Sentry and telemetry gate passed; Sentry 14-day window returned zero issues with authenticated access, telemetry finish error rate 1.32 percent and zero missing error-code rows. Computer Use could not initialize because CUA_REPL_ENABLED_SURFACES is unavailable, so browser-only analyzer dashboards cannot be verified in this session."
+  "2026-09-17T16:35:59.144Z","harness:codex","Focused verification passed: 139 tests across eight suites, covering all nineteen shared detectors plus the declared entropy exception, SDK modes, CLI and MCP redaction, nested settings safety and linked-test assertions. SDK surface snapshot explicitly records the expanded finding-rule union; existing identifiers and fields remain stable."
+  "2026-09-17T16:37:00.609Z","harness:codex","Compatibility details: the shared inventory preserves temporary AWS access keys and numeric private-key header labels from the existing SDK guard. Repository-equivalent npm and Slack prefix lengths broaden SDK detection intentionally; documented placeholders should use angle-bracket references rather than token-shaped literal strings."
+  "2026-09-17T16:45:19.771Z","harness:codex","Validation update: full initial suite passed 8957 tests and exposed two regressions: the parity test pushed tests/unit/sdk above its 120-file limit, and numeric private-key labels needed the union of existing detector behavior. The test now lives under tests/unit/sdk/security; PKCS8 detection is preserved. All 37 focused security cases pass after the corrections; final full coverage is running. No coverage or directory thresholds were relaxed."
+  "2026-09-17T16:45:39.316Z","harness:codex","Manual acceptance: unrelated disposable trackers under both Node and Bun passed init, policy configuration, two private-context refusals before any item write, redacted diagnostics, safe create, claim, in-progress transition, comment, atomic close and release. The temporary workspaces and global roots were isolated from repository tracking."
+  "2026-09-17T16:46:53.742Z","harness:codex","All-status graph evidence: 2764 recorded nodes and 13799 directed typed edges; 13732 informative and 67 redundant edges. No missing targets, isolated active nodes, low-degree active nodes or ordering contradictions. Audit has only two informational legacy hierarchy findings covering seven subjects each. Existing graph kinds include implements, verifies, discovered_from, supersedes, recurs_from, incident_from and blockers. Selected security lineage now records canonical supersession and verification semantics rather than fabricated depth."
+  "2026-09-17T16:50:17.152Z","harness:codex","Linked-test orchestration note: the first recorded pm test run timed out at 300 seconds while waiting behind the active coverage build lease; it executed no assertions. The standalone focused suite passed beforehand. Rerun linked tests after coverage releases the lease; preserve the timeout record and do not weaken limits or count it as passing evidence."
+  "2026-09-17T16:52:27.476Z","harness:codex","Repository governance checks: pm validate --check-resolution --check-history-drift returned ok with historical warnings, including 170 of 2442 closed items missing some resolution fields. pm health --check-only returned authority ok and no history drift, with 14 legacy hierarchy advisories. These are existing historical metadata limitations, not newly fabricated outcomes; this tranche supplies full structured close evidence for its own items. All-status graph audit and redundancy inventory retained separately."
+  "2026-09-17T16:56:50.653Z","harness:codex","Installed candidate acceptance also passed the README init/create/list sequence, MCP startup and calls, divergent merge-history verification and detached telemetry drain from an unrelated npm tarball consumer. Output remained bounded at 489/53/169 characters for the three README commands."
+  "2026-09-17T17:06:24.799Z","harness:codex","Static validation reached and passed repository static quality, package boundaries, grammar, refusal closure, token gates, tracker-context quality, gate registry and SDK surface. The import-cost benchmark then failed while the full coverage run was consuming four workers: SDK 507 ms versus 500 ms, authoring 222 versus 164, core 447 versus 423, governance 343 versus 327 and merge 262 versus 226. Rerun performance checks sequentially on an idle host before deciding whether any code change is needed; no baseline or threshold is relaxed."
+  "2026-09-17T17:12:56.451Z","harness:codex","Idle-host performance verification passed unchanged: all ten SDK entrypoint import-cost budgets and all six CLI transport-floor operations. Full suite passed all 8961 tests but exact coverage exposed one unexercised JSON-path non-container return. Two real boundary cases now cover null and scalar traversal; focused regression passes and full exact coverage is rerunning without concurrent benchmark load."
+  "2026-09-17T17:15:49.223Z","harness:codex",Governance negative control returned the required nonzero result for invalid captured-boundary and missing terminal-defect evidence. Version policy and version synchronization passed at 2026.9.17. The original shared-rule incident is classified production_defect because live history records forbidden context entering immutable history; imported Semgrep findings retain scanner_finding.
+  "2026-09-17T17:24:01.182Z","harness:codex","Live production telemetry query at 2026-09-17T17:22:32Z covered the most recent day: 3543 finish events, 9 failures, 0.25 percent finish error rate, and zero failures without an error code. The report includes current assurance/test/get failures with explicit command_failed, dependency_failed and unknown_field_projection codes. A real local flush drained its queue to zero with no invalid rows or failed flush state. This proves fresh aggregate ingestion and queue delivery, not an exhaustive assertion about every possible user action."
+  "2026-09-17T17:24:12.548Z","harness:codex","Final local delivery evidence: full suite 8963 tests across 704 files passed; exact coverage statements 64703/64703, branches 49357/49357, functions 13438/13438, lines 61937/61937. Linked tests, Semgrep, secret scan, dependency audit, static correctness gates, unchanged idle-host performance limits, graph and record integrity, package-first dogfood and packed consumers passed. Hosted review and CI remain the next delivery stage."
+notes[1]{created_at,author,text}:
+  "2026-09-17T17:20:53.257Z","harness:codex","Delivery organization: shared detector policy remains a core primitive consumed by SDK and repository tooling; JSON-path assertion traversal is extracted from the large execution module; new parity tests live in a security subdirectory within the existing file-density limit. No quality thresholds or suppression inventories changed."
+learnings[1]{created_at,author,text}:
+  "2026-09-17T16:34:18.129Z","harness:codex","A preventive scanner and a post-commit scanner must share their detector inventory. Declare scope exceptions in that inventory and test all shared rule names plus representative values, so adding a rule cannot silently leave immutable writes unprotected."
+files[9]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,CLI-generated activation metadata from verifying latest pm-changelog before release-note generation
+  scripts/check-secrets-lib.mjs,project,Shared security policy implementation and regression evidence
+  sdk/public-surface.json,project,Shared security policy implementation and regression evidence
+  src/core/shared/secret-rules.ts,project,Shared security policy implementation and regression evidence
+  src/mcp/server.ts,project,Shared security policy implementation and regression evidence
+  src/sdk/mutation-guard.ts,project,Shared security policy implementation and regression evidence
+  tests/unit/sdk/mutation-guard-adapters.spec.ts,project,Shared security policy implementation and regression evidence
+  tests/unit/sdk/mutation-guard.spec.ts,project,Shared security policy implementation and regression evidence
+  tests/unit/sdk/security/secret-policy-parity.spec.ts,project,Detector parity in a dedicated security test folder to preserve directory density
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/security/secret-policy-parity.spec.ts tests/unit/sdk/mutation-guard.spec.ts tests/unit/sdk/mutation-guard-adapters.spec.ts tests/unit/scripts/check-secrets-lib.spec.ts,project,300,"harness:codex","2026-09-17T16:43:05.393Z",local_mutation,fix/shared-secret-policy-safe-paths
+test_runs[2]:
+  - run_id: test-local-mu5rm5cr-y2zgo0
+    kind: test
+    status: failed
+    started_at: "2026-09-17T16:44:53.622Z"
+    finished_at: "2026-09-17T16:49:54.075Z"
+    recorded_at: "2026-09-17T16:49:54.075Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/security/secret-policy-parity.spec.ts tests/unit/sdk/mutation-guard.spec.ts tests/unit/sdk/mutation-guard-adapters.spec.ts tests/unit/scripts/check-secrets-lib.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu5rv58y-wfkzlc
+    kind: test
+    status: passed
+    started_at: "2026-09-17T16:56:33.978Z"
+    finished_at: "2026-09-17T16:56:53.842Z"
+    recorded_at: "2026-09-17T16:56:53.842Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/security/secret-policy-parity.spec.ts tests/unit/sdk/mutation-guard.spec.ts tests/unit/sdk/mutation-guard-adapters.spec.ts tests/unit/scripts/check-secrets-lib.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated by the latest pm-changelog package from reviewed item closures
+  docs/MUTATION_INTEGRITY.md,project,Shared policy and own-property semantics
+close_reason: Implemented and locally verified in the shared security-policy delivery; hosted review follows in the combined PR.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: security-policy-parity
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/security/secret-policy-parity.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/security/secret-policy-parity.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-wwooxx
 body: ""

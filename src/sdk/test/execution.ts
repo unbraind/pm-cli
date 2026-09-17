@@ -3,6 +3,7 @@
  *
  * Implements the pm test command surface and its agent-facing runtime behavior.
  */
+import { readJsonPathValue, splitJsonPathSegments } from "./json-path.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { spawn, type ChildProcess } from "node:child_process";
 import {
@@ -1860,56 +1861,6 @@ export function resolveLinkedTestFailureExitCode(
     return 1;
   }
   return rawExitCode;
-}
-
-function splitJsonPathSegments(fieldPath: string): Array<string | number> {
-  const segments: Array<string | number> = [];
-  const tokens = fieldPath.match(/[^.[\]]+|\[\d+\]/g) ?? [];
-  for (const token of tokens) {
-    if (token.startsWith("[") && token.endsWith("]")) {
-      const parsedIndex = Number.parseInt(token.slice(1, -1), 10);
-      if (!Number.isInteger(parsedIndex) || parsedIndex < 0) {
-        return [];
-      }
-      segments.push(parsedIndex);
-      continue;
-    }
-    segments.push(token);
-  }
-  return segments;
-}
-
-function readJsonPathValue(
-  root: unknown,
-  fieldPath: string,
-): { found: boolean; value: unknown } {
-  const normalizedPath = fieldPath.trim();
-  if (normalizedPath.length === 0) {
-    return { found: false, value: undefined };
-  }
-  const segments = splitJsonPathSegments(normalizedPath);
-  if (segments.length === 0) {
-    return { found: false, value: undefined };
-  }
-  let current: unknown = root;
-  for (const segment of segments) {
-    if (typeof segment === "number") {
-      if (!Array.isArray(current) || segment >= current.length) {
-        return { found: false, value: undefined };
-      }
-      current = current[segment];
-      continue;
-    }
-    if (
-      typeof current !== "object" ||
-      current === null ||
-      !Object.prototype.hasOwnProperty.call(current, segment)
-    ) {
-      return { found: false, value: undefined };
-    }
-    current = (current as Record<string, unknown>)[segment];
-  }
-  return { found: true, value: current };
 }
 
 /* c8 ignore start -- assertion-literal parsing edge cases are validated by assertion integration suites */

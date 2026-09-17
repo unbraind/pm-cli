@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: code-quality,deepsource,documentation,quality
 created_at: "2026-07-14T22:42:24.715Z"
-updated_at: "2026-09-08T13:33:43.737Z"
+updated_at: "2026-09-17T18:44:29.489Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Documentation rules reconciled with the repo's own docstring gate (quality:docs-skills + docstring coverage): rules duplicating the gate's scope get suppressed with rationale; genuinely missing public-surface docs get written; category reads 0"
@@ -14,9 +14,48 @@ parent: pm-vlnc
 risk: low
 confidence: medium
 expected_result: DeepSource documentation rules are reconciled with the repository docstring gate and the category reads zero.
-dependencies[4]{id,kind,created_at}:
-  pm-87bu,blocked_by,"2026-07-14T22:42:24.715Z"
-  pm-4ak1,related,"2026-07-24T23:53:52.307Z"
-  pm-dvwm,related,"2026-07-24T23:53:52.307Z"
-  pm-vlnc,implements,"2026-07-26T05:55:13.297Z"
+dependencies[6]:
+  - id: pm-87bu
+    kind: blocked_by
+    created_at: "2026-07-14T22:42:24.715Z"
+  - id: pm-4ak1
+    kind: related
+    created_at: "2026-07-24T23:53:52.307Z"
+  - id: pm-dvwm
+    kind: related
+    created_at: "2026-07-24T23:53:52.307Z"
+  - id: pm-vlnc
+    kind: implements
+    created_at: "2026-07-26T05:55:13.297Z"
+  - id: pm-czr31p
+    kind: discovered_from
+    created_at: "2026-09-17T18:42:50.594Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-wwooxx
+    kind: verifies
+    created_at: "2026-09-17T18:42:50.594Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[2]{created_at,author,text}:
+  "2026-09-17T18:42:49.007Z","harness:codex","PR 1263 final runtime head b56131ff2 passed 37 hosted checks and full CodeRabbit review with no actionable findings. Its touched-function docstring metric is 92.31%, whereas the repository gate measures module/public API/data-contract coverage. The missing touched private function is collectMutationGuardWarnings. Current user policy requires documenting it as well; no suppression or threshold reduction will be added. This is partial progress under the existing documentation reconciliation owner, not completion of the broader DeepSource category."
+  "2026-09-17T18:44:28.161Z","harness:codex","Documented the private MCP helper with its workspace-policy, routing-path, redacted-advisory and blocking-failure contract. Build, ESLint and linked static-quality test pass. Module, exported and public-member documentation gates each report 100% with no missing entries. TypeScript transpilation with comments removed is byte-identical before and after, so runtime behavior and the verified 8972-test coverage result are unchanged. Broader private-helper documentation and DeepSource rule reconciliation remain open; this is not a claim of repo-wide private-function coverage. Final provider availability: Cubic monthly quota exhausted; Sourcery weekly quota exhausted; Greptile silent; CodeRabbit full runtime-head review completed with no actionable findings."
+files[1]{path,scope,note}:
+  src/mcp/server.ts,project,Document private MCP pre-dispatch mutation guard semantics
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/release/static-quality-gate.mts --json,project,120,"harness:codex","2026-09-17T18:43:40.934Z",local_mutation,fix/shared-secret-policy-safe-paths
+test_runs[1]:
+  - run_id: test-local-mu5votm0-uks1l8
+    kind: test
+    status: passed
+    started_at: "2026-09-17T18:43:41.544Z"
+    finished_at: "2026-09-17T18:43:57.288Z"
+    recorded_at: "2026-09-17T18:43:57.288Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/static-quality-gate.mts --json,schema,schema,source,local_source_ref
 body: ""

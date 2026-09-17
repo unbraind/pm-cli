@@ -433,6 +433,10 @@ function resolveInvokedAction(
   return NARROW_TOOL_ACTIONS[toolName];
 }
 
+/**
+ * Enforce workspace mutation policy before MCP dispatch, excluding top-level
+ * routing paths. Return redacted advisories; propagate blocking guard failures.
+ */
 async function collectMutationGuardWarnings(
   toolName: string,
   action: string | undefined,
@@ -465,7 +469,11 @@ async function collectMutationGuardWarnings(
           : undefined,
       settings.author_default,
     ),
-    payload: args,
+    // These top-level fields route the request; they are never item content.
+    // Nested paths remain scanned (for example a persisted linked file path).
+    payload: Object.fromEntries(
+      Object.entries(args).filter(([key]) => key !== "cwd" && key !== "path"),
+    ),
     settings: settings.mutation_guard,
     force: args.force === true || nestedOptions.force === true,
   });

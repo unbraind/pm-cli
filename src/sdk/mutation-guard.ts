@@ -4,6 +4,7 @@
  * Provides SDK-first pre-write provenance and secret-detection guardrails for
  * CLI, MCP, and package-owned mutation dispatchers.
  */
+import { SECRET_RULES, acceptsSecretMatch } from "../core/shared/secret-rules.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 
@@ -23,13 +24,7 @@ export interface MutationGuardSettings {
 /** One redacted credential-shaped match. Secret values are never returned. */
 export interface SecretGuardFinding {
   /** Stable detector identifier suitable for tests and telemetry. */
-  rule:
-    | "github_token"
-    | "npm_token"
-    | "slack_token"
-    | "private_key"
-    | "aws_access_key"
-    | "high_entropy_assignment";
+  rule: (typeof SECRET_RULES)[number]["mutationRule"];
   /** Object path or argument index containing the match. */
   path: string;
 }
@@ -72,16 +67,6 @@ export interface MutationActionContract {
   /** Audit stream required when the action changes durable state. */
   history_scope: MutationHistoryScope;
 }
-
-const GITHUB_TOKEN_PATTERN =
-  /\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/;
-const NPM_TOKEN_PATTERN = /\bnpm_[A-Za-z0-9]{36}\b/;
-const SLACK_TOKEN_PATTERN =
-  /\bxox[baprs]-(?=[A-Za-z0-9-]{20,80}\b)(?=[A-Za-z0-9-]*\d)[A-Za-z0-9-]{20,80}\b/;
-const PRIVATE_KEY_PATTERN = /-----BEGIN (?:[A-Z0-9]+ )?PRIVATE KEY-----/;
-const AWS_ACCESS_KEY_PATTERN = /\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/;
-const HIGH_ENTROPY_ASSIGNMENT_PATTERN =
-  /\b(?:token|secret|password|passwd|api[_-]?key)\s*[:=]\s*["']?([A-Za-z0-9+/=_-]{24,})/gi;
 
 /**
  * Canonical native mutation inventory shared by guard dispatch, history
@@ -140,19 +125,7 @@ const MUTATION_ACTION_CONTRACTS_BY_NAME: ReadonlyMap<
   ]),
 );
 
-function shannonEntropy(value: string): number {
-  const counts = new Map<string, number>();
-  for (const character of value) {
-    counts.set(character, (counts.get(character) ?? 0) + 1);
-  }
-  let entropy = 0;
-  for (const count of counts.values()) {
-    const probability = count / value.length;
-    entropy -= probability * Math.log2(probability);
-  }
-  return entropy;
-}
-
+/** Collect string leaves with payload paths while visiting each object only once. */
 function stringLeaves(
   value: unknown,
   path = "$",
@@ -182,30 +155,13 @@ function stringLeaves(
 export function scanMutationSecrets(payload: unknown): SecretGuardFinding[] {
   const findings: SecretGuardFinding[] = [];
   for (const leaf of stringLeaves(payload)) {
-    if (GITHUB_TOKEN_PATTERN.test(leaf.value)) {
-      findings.push({ rule: "github_token", path: leaf.path });
-    }
-    if (NPM_TOKEN_PATTERN.test(leaf.value)) {
-      findings.push({ rule: "npm_token", path: leaf.path });
-    }
-    if (SLACK_TOKEN_PATTERN.test(leaf.value)) {
-      findings.push({ rule: "slack_token", path: leaf.path });
-    }
-    if (PRIVATE_KEY_PATTERN.test(leaf.value)) {
-      findings.push({ rule: "private_key", path: leaf.path });
-    }
-    if (AWS_ACCESS_KEY_PATTERN.test(leaf.value)) {
-      findings.push({ rule: "aws_access_key", path: leaf.path });
-    }
-    HIGH_ENTROPY_ASSIGNMENT_PATTERN.lastIndex = 0;
-    for (const match of leaf.value.matchAll(HIGH_ENTROPY_ASSIGNMENT_PATTERN)) {
-      const candidate = match[1] as string;
-      if (shannonEntropy(candidate) >= 3.5) {
-        findings.push({
-          rule: "high_entropy_assignment",
-          path: leaf.path,
-        });
-        break;
+    for (const rule of SECRET_RULES) {
+      rule.regex.lastIndex = 0;
+      for (const match of leaf.value.matchAll(rule.regex)) {
+        if (acceptsSecretMatch(rule, match)) {
+          findings.push({ rule: rule.mutationRule, path: leaf.path });
+          break;
+        }
       }
     }
   }

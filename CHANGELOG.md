@@ -2,10 +2,22 @@
 
 ## Unreleased
 
+### Fixed
+
+- Reject malformed linked-test JSON paths instead of silently normalizing assertions ([pm-czr31p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-czr31p.toon))
+
+### Security
+
+- Reject inherited array elements in linked-test assertions ([pm-1skc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1skc.toon))
+- Read linked-test JSON assertions without invoking accessors ([pm-xxrq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xxrq.toon))
+- Prevent prototype traversal in nested settings reads and writes ([pm-3kk6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3kk6.toon))
+- Share secret and private-context detection between mutation preflight and repository scanning ([pm-wwooxx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wwooxx.toon))
+
 ### Other
 
 - Serialize the complete build pipeline so overlapping validation cannot consume partially rewritten dist artifacts ([pm-cxc4jc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cxc4jc.toon))
 - Released-artifact acceptance: the exact published tarball is installed clean and driven through a scripted agent session before the release is advertised ([pm-ygli86](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ygli86.toon))
+- Refresh Sentry 10.75 and CLI 3.8 with Unicorn 75 compatibility proof ([pm-1wypwu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-1wypwu.toon))
 
 ## 2026.9.17 - 2026-09-17
 
