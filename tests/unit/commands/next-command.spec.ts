@@ -28,6 +28,7 @@ interface CreateItemOptions {
   dep?: string;
 }
 
+/** Seed a real isolated CLI item with optional hierarchy, deadline, and blocker context. */
 function createItem(
   context: TempPmContext,
   options: CreateItemOptions,
@@ -59,9 +60,7 @@ function createItem(
   return (created.json as { item: { id: string } }).item.id;
 }
 
-// Deadlines are computed relative to the real clock with whole-day margin so the
-// floored relative-day bucket (overdue / today / in Nd) is stable regardless of
-// the time of day the test runs.
+/** Offset deadlines with whole-day margins so relative-day assertions survive clock boundaries. */
 function deadlineOffsetMs(offsetMs: number): string {
   return new Date(Date.now() + offsetMs).toISOString();
 }

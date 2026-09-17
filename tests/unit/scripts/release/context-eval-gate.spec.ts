@@ -31,6 +31,7 @@ interface EvaluationReport {
   scenarios: Array<{ id: string; metrics: Record<string, number | boolean> }>;
 }
 
+/** Load the real gate through isolated script boundaries for corpus and refusal verification. */
 async function loadGate(): Promise<ContextEvalGateModule> {
   return harness.importModule<ContextEvalGateModule>("scripts/release/context-eval-gate.mjs");
 }

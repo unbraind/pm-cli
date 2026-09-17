@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Packed telemetry acceptance must await completion across delivery batches ([pm-07m41m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-07m41m.toon))
 - GH-1264: enforce next ready-queue token budgets and disclose omitted recommendations ([pm-v53h9j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v53h9j.toon))
 - Reject malformed linked-test JSON paths instead of silently normalizing assertions ([pm-czr31p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-czr31p.toon))
 

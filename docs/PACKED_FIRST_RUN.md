@@ -1,7 +1,8 @@
 # Packed First-Run Acceptance
 
-Tracked by [pm-ygli86](../.agents/pm/tasks/pm-ygli86.toon) and
-[pm-rcjyft](../.agents/pm/issues/pm-rcjyft.toon).
+Tracked by [pm-ygli86](../.agents/pm/tasks/pm-ygli86.toon),
+[pm-rcjyft](../.agents/pm/issues/pm-rcjyft.toon), and
+[pm-07m41m](../.agents/pm/issues/pm-07m41m.toon).
 
 The `Packed first run` CI matrix installs the same tarball globally into an
 isolated npm prefix on Ubuntu, macOS, and Windows, using Node 22.18.0 and Node 24.
@@ -24,8 +25,11 @@ must preserve both comments and their history. The installed reconciliation and
 strict history verifier must succeed. The installed MCP server must complete an
 initialize round trip and advertise the installed package version. An additional
 mutation enables telemetry only against a loopback HTTP collector. The harness
-waits for the detached worker's request and then verifies the physical queue is
-empty and a successful flush is recorded. It removes inherited inline-flush and
+acknowledges detached delivery batches until it receives `command_finish`, then
+verifies the physical queue is empty and a successful flush is recorded.
+One 30-second deadline covers the entire collection, including incomplete request
+bodies; an initial `command_start` batch alone cannot satisfy acceptance.
+It removes inherited inline-flush and
 test-runner overrides so this exercises the real detached process. Other commands
 and MCP keep telemetry disabled; the install and workspace use isolated home
 and global tracker directories.

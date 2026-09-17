@@ -1,0 +1,60 @@
+id: pm-07m41m
+title: Packed telemetry acceptance must await completion across delivery batches
+description: "PR 1265 CI run 35278617240 failed installed Node 24 acceptance because the collector asserted command_finish in the first HTTP request. A detached worker may legitimately send command_start before the command finishes. Collect bounded delivery batches until completion arrives, retaining timeout and physical queue assertions, with a real split-request regression."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-17T22:03:34.213Z"
+updated_at: "2026-09-17T22:29:35.945Z"
+closed_at: "2026-09-17T22:19:52.248Z"
+completed_at: "2026-09-17T22:19:52.248Z"
+author: "harness:codex"
+acceptance_criteria: A real collector accepts command_start and command_finish in separate requests within one bounded deadline; missing completion still fails; installed artifact acceptance retains physical queue-drain proof.
+parent: pm-u9d0
+resolution: "Collect detached telemetry request batches until command_finish under one bounded abortable deadline, cleaning listeners and retaining queue-drain assertions."
+expected_result: Valid split-batch delivery passes while missing or stalled completion fails promptly.
+actual_result: "Real HTTP positive and negative controls, installed npm/Bun acceptance and 8975-test full suite pass with exact 100/100/100/100 coverage."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-v53h9j,discovered_from,"2026-09-17T22:03:34.213Z","harness:codex","cli:create:dep",detected
+  pm-ygli86,verifies,"2026-09-17T22:03:34.213Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-09-17T22:03:34.213Z","harness:codex","Duplicate check: complete live 2766-item all-status export has no omissions; request-specific packed and command_finish searches plus title/description comparison found no owner for the first-request collector assumption. Reuse the shipped acceptance lineage through verifies; original acceptance and telemetry completion fixes remain closed. Failure: https://github.com/unbraind/pm-cli/actions/runs/35278617240/job/105395397463."
+  "2026-09-17T22:06:09.137Z","harness:codex","TDD reproduced the hosted failure through two real HTTP requests: the extracted existing once-request collector rejected the first command_start batch with the same command_finish assertion. The collector now consumes bounded request events until completion, acknowledges every batch, and removes listeners on success or deadline. Physical queue and successful-flush assertions remain unchanged. Also documented the three previously undocumented named test helpers from the reviewed tranche."
+  "2026-09-17T22:07:45.742Z","harness:codex","Review disposition: CodeRabbit full review of 66af0f4ec reported minimal risk and no actionable code findings. Its baseline scope warning is declined: the first-class omission receipt requires four measured tokens in compact next output; the generated full corpus decreases six tokens overall, with unchanged enforcement and a passing seeded regression control. The new collector fix additionally aborts stalled request bodies under the same 30-second deadline and tests listener cleanup after success and timeout."
+  "2026-09-17T22:19:50.879Z","harness:codex","Verification complete: real split-request completion, absent completion, incomplete request-body timeout and listener-cleanup controls pass; linked packed acceptance passes. Full suite passes 8975 tests across 704 files with exact coverage 64768/64768 statements, 49409/49409 branches, 13443/13443 functions and 61997/61997 lines. Fresh npm/Bun installations pass SDK/CLI/MCP/npx/bunx/lifecycle and the corrected detached telemetry collector with physical queue-drain proof. Timeout, completion requirement and installed-artifact assertions were retained."
+  "2026-09-17T22:29:35.945Z","harness:codex","Final static and type gates pass after closure, including mandatory defect evidence and unchanged graph/record-integrity bounds. Live telemetry correlation for 2026-09-17 22:10-22:20 UTC matched 38 starts to exactly one finish using installation/session/command and finish.started_at versus start.occurred_at; zero missing or duplicate finishes. Broker ready and unacknowledged queues were both zero. This bounded cohort is separate from the real isolated packed collector proof and is not a claim about all historical events."
+learnings[1]{created_at,author,text}:
+  "2026-09-17T22:19:51.492Z","harness:codex","A telemetry transport request is a batch boundary, not a command-completion boundary. Acceptance must acknowledge start-only batches and await actual completion under one deadline, including request-body reads; missing completion must still fail."
+files[4]{path,scope,note}:
+  scripts/release/packed-first-run.mjs,project,Wait for actual completion across detached delivery batches
+  tests/unit/commands/next-command.spec.ts,project,Document real fixture helpers in the reviewed acceptance tranche
+  tests/unit/scripts/release/context-eval-gate.spec.ts,project,Document isolated gate-loading test seam
+  tests/unit/scripts/release/packed-first-run.spec.ts,project,Real two-request collector and missing-completion negative control
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/packed-first-run.spec.ts,project,240,"harness:codex","2026-09-17T22:03:47.715Z",local_mutation,fix/next-budget-context-quality
+test_runs[1]:
+  - run_id: test-local-mu63e143-xi3hqh
+    kind: test
+    status: passed
+    started_at: "2026-09-17T22:19:17.110Z"
+    finished_at: "2026-09-17T22:19:30.722Z"
+    recorded_at: "2026-09-17T22:19:30.722Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/packed-first-run.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated collector correction entry through latest pm-changelog
+  docs/PACKED_FIRST_RUN.md,project,Document split-batch completion and bounded request bodies
+close_reason: Fixed the reproduced first-batch acceptance race with real split-delivery and stalled-body controls.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: package-consumer
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/packed-first-run.spec.ts (split HTTP requests and missing completion)
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/packed-first-run.spec.ts
+  hosted_checks[1]: "Packed first run (ubuntu-latest, Node 24)"
+  owner: pm-07m41m
+body: ""
