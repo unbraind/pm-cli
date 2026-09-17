@@ -433,6 +433,10 @@ function resolveInvokedAction(
   return NARROW_TOOL_ACTIONS[toolName];
 }
 
+/**
+ * Enforce workspace mutation policy before MCP dispatch, excluding top-level
+ * routing paths. Return redacted advisories; propagate blocking guard failures.
+ */
 async function collectMutationGuardWarnings(
   toolName: string,
   action: string | undefined,
