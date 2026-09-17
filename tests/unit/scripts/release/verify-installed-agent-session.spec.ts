@@ -15,6 +15,7 @@ interface RunOptions {
   runCommand?: (command: string, args: string[]) => CommandResult;
 }
 
+/** Execute the real verifier with isolated installer, filesystem, and output boundaries. */
 async function runAcceptance(options: RunOptions) {
   vi.restoreAllMocks();
   vi.resetModules();
@@ -80,6 +81,7 @@ async function runAcceptance(options: RunOptions) {
   };
 }
 
+/** Return minimal valid installer and lifecycle receipts for controlled failure variations. */
 function successfulCommand(command: string, args: string[]): CommandResult {
   if (
     (["npm", process.execPath].includes(command) && args.includes("install")) ||

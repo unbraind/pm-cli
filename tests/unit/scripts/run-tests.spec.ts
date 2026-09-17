@@ -11,6 +11,7 @@ const mkdtempMock = vi.fn(async () => "/tmp/pm-run-tests-spec");
 const rmMock = vi.fn(async () => undefined);
 beforeEach(() => { mkdtempMock.mockClear(); rmMock.mockClear(); });
 
+/** Emit a deferred child close event so the runner can register its lifecycle listeners. */
 function closeChild(
   code: number | null,
   signal: NodeJS.Signals | null = null,
@@ -20,12 +21,14 @@ function closeChild(
   return child as never;
 }
 
+/** Emit an asynchronous spawn error to exercise runner failure reporting and cleanup. */
 function errorChild(error: unknown): never {
   const child = new EventEmitter();
   queueMicrotask(() => child.emit("error", error));
   return child as never;
 }
 
+/** Isolate filesystem cleanup and lease acquisition for command-dispatch unit cases. */
 function mockFsPromises() {
   vi.doMock("../../../scripts/build-lease.mjs", () => ({
     withBuildLease: async (_root: string, operation: (lease: string) => Promise<void>) => operation("test-lease"),

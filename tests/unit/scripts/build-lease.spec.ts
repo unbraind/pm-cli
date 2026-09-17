@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../helpers/scriptModule";
 
 interface LeaseModule {
+  /** Run an asynchronous operation while holding or inheriting the checkout lease. */
   withBuildLease<T>(root: string, operation: (lease: string) => Promise<T>, options?: { inherited?: string; timeoutMs?: number }): Promise<T>;
 }
 
@@ -40,21 +41,22 @@ await withBuildLease(process.cwd(), async () => {
 process.disconnect();
 `);
     const mod = await harness.importModule<LeaseModule>("scripts/build-lease.mjs");
-    const child = await mod.withBuildLease(root, async () => {
+    const { worker: child, completed, closed } = await mod.withBuildLease(root, async () => {
       await writeFile(path.join(root, "output.mjs"), "partial");
       const worker = fork(fixture, [], { cwd: root, stdio: ["ignore", "pipe", "pipe", "ipc"] });
       try {
         expect((await once(worker, "message"))[0]).toBe("blocked");
+        const completed = once(worker, "message");
+        const closed = once(worker, "close");
         await writeFile(path.join(root, "output.mjs"), "export const complete = true;");
-        return worker;
+        return { worker, completed, closed };
       } catch (error) {
         worker.kill();
         throw error;
       }
     });
     try {
-      const closed = once(child, "close");
-      expect((await once(child, "message"))[0]).toBe(true);
+      expect((await completed)[0]).toBe(true);
       expect((await closed)[0]).toBe(0);
     } finally {
       child.kill();
