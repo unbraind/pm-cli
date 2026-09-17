@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:sdk",context-management,token-efficiency
 created_at: "2026-09-17T19:26:35.525Z"
-updated_at: "2026-09-17T21:28:38.889Z"
+updated_at: "2026-09-17T21:47:15.922Z"
 closed_at: "2026-09-17T21:28:38.255Z"
 completed_at: "2026-09-17T21:28:38.255Z"
 author: "harness:codex"
@@ -21,7 +21,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-1wujzi,related,"2026-09-17T20:12:02.812Z","harness:codex","cli:update:dep",detected
   pm-atfm,implements,"2026-09-17T20:12:02.812Z","harness:codex","cli:update:dep",detected
   pm-e9zh,verifies,"2026-09-17T20:12:02.812Z","harness:codex","cli:update:dep",detected
-comments[16]:
+comments[17]:
   - created_at: "2026-09-17T19:26:35.525Z"
     author: "harness:codex"
     text: "Duplicate check: live all-status searches for 1264, token budget, and next budget; read pm-55ra, pm-5t33or, pm-lixy, pm-atfm, and pm-1wujzi. No existing issue owns GH-1264. Existing packer history is retained as completed lineage; the new regression belongs under the binding-output contract."
@@ -71,6 +71,9 @@ comments[16]:
   - created_at: "2026-09-17T21:28:37.000Z"
     author: "harness:codex"
     text: "Final pre-merge review verification: 8974 tests across 704 files pass; exact coverage 64764/64764 statements, 49406/49406 branches, 13443/13443 functions, 61994/61994 lines. Both CodeRabbit findings have failing-before/passing-after regression evidence. All static stages, typechecks, unchanged orientation calibration, refreshed composed-task ratchet plus seeded negative control pass. Fresh npm/Bun installs pass SDK/CLI/MCP, npx/bunx, lifecycle, README/Git/history and telemetry acceptance; packed strict TypeScript consumer passes. Reviewed baseline records the necessary compact omission marker and tightens composite cost."
+  - created_at: "2026-09-17T21:47:15.922Z"
+    author: "harness:codex"
+    text: "Hosted review evidence for e9018418d: all checks passed after rerunning only the failed Windows regression job in CI run 35277122035. Attempt 1 timed out starting the nested HTTP test server before its invalid-discovery assertion in unchanged verify-published-release.spec.ts; unchanged rerun passed, with no test or timeout relaxation. CodeRabbit explicitly confirmed the rendered-estimator fix and resolved the thread; its requested full rereview was rate-limited, Sourcery remained quota-limited, and Greptile supplied no review during the bounded wait. Fresh GitHub dependency/code/secret open alerts and pnpm audit all zero. Required Sentry/telemetry gate passed: zero blocking Sentry issues, telemetry error rate 1.37 percent and zero missing error-code rows. This evidence-only commit carries the settled delivery record through the same PR."
 notes[2]{created_at,author,text}:
   "2026-09-17T19:49:25.795Z","harness:codex","Implementation boundary: next owns executable selection in the SDK. The documented selection estimate is the greater of JSON and TOON UTF-8 bytes divided by four; row limits apply first. Alternatives are removed before the recommendation, and infeasible empty envelopes are disclosed honestly. The universal output budget still owns companion queues and the full response. Intent reads omit redundant selection receipts only when no omission or infeasibility needs disclosure."
   "2026-09-17T19:53:49.161Z","harness:codex","All-status tracker health: the resolution validator still flags the 170 historical records explicitly retained as unknown by the completed pm-e9zh evidence-recovery pass; its full notes enumerate the residual and prohibit placeholder backfills. Concurrent validation saw only the two actively edited records as hash mismatches; both immediately passed history --verify --strict-exit with matching current hashes. Final frozen validation will run after all PM writes. Graph redundancy exposes 67 witnessed implied ordering edges; no arbitrary relationships were added to inflate depth."
