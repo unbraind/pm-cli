@@ -32,12 +32,15 @@ function resolveMaxUnpackedSize(budget, profile) {
   return maxUnpackedSize;
 }
 
-/** Validate one npm pack report against a named committed distribution budget. */
-export function validatePackageArtifact(report, budget, profile = "base") {
-  if (!Array.isArray(report) || report.length !== 1) {
+/** Normalize npm 11/12 receipts without accepting ambiguous or misidentified artifacts. */
+function readSingleArtifact(report) {
+  const artifacts = Array.isArray(report)
+    ? report
+    : Object.values(report !== null && typeof report === "object" ? report : {});
+  if (artifacts.length !== 1) {
     throw new TypeError("npm pack must return exactly one package report");
   }
-  const artifact = report[0];
+  const artifact = artifacts[0];
   if (
     typeof artifact !== "object" ||
     artifact === null ||
@@ -46,6 +49,15 @@ export function validatePackageArtifact(report, budget, profile = "base") {
   ) {
     throw new TypeError("npm pack report is missing files or unpackedSize");
   }
+  if (!Array.isArray(report) && report[artifact.name] !== artifact) {
+    throw new TypeError("npm pack keyed report identity must match its package name");
+  }
+  return artifact;
+}
+
+/** Validate one npm pack report against a named committed distribution budget. */
+export function validatePackageArtifact(report, budget, profile = "base") {
+  const artifact = readSingleArtifact(report);
   const maxUnpackedSize = resolveMaxUnpackedSize(budget, profile);
   const paths = artifact.files
     .map((file) =>

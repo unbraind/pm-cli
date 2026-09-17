@@ -10,16 +10,20 @@ type CommandResult = { status: number; stdout: string; stderr: string };
 interface RunOptions {
   argv: string[];
   npmPackage?: string;
+  npmExecpath?: string | null;
   realpath?: (value: string) => string;
   runCommand?: (command: string, args: string[]) => CommandResult;
 }
 
+/** Execute the real verifier with isolated installer, filesystem, and output boundaries. */
 async function runAcceptance(options: RunOptions) {
   vi.restoreAllMocks();
   vi.resetModules();
   vi.doUnmock("node:fs");
   vi.doUnmock(UTILS_SPECIFIER);
   process.env.PM_VERIFY_SLEEP_MS = "0";
+  if (options.npmExecpath === null) delete process.env.npm_execpath;
+  else process.env.npm_execpath = options.npmExecpath ?? "C:/node/npm-cli.js";
   if (options.npmPackage === undefined) delete process.env.NPM_PACKAGE;
   else process.env.NPM_PACKAGE = options.npmPackage;
   const fsMocks = {
@@ -36,9 +40,7 @@ async function runAcceptance(options: RunOptions) {
   );
   vi.doMock(UTILS_SPECIFIER, async () => {
     const actual =
-      await vi.importActual<
-        typeof import("../../../../scripts/release/utils.mjs")
-      >(UTILS_SPECIFIER);
+      await vi.importActual<Record<string, unknown>>(UTILS_SPECIFIER);
     return {
       ...actual,
       commandFor: (binary: string) => binary,
@@ -79,9 +81,10 @@ async function runAcceptance(options: RunOptions) {
   };
 }
 
+/** Return minimal valid installer and lifecycle receipts for controlled failure variations. */
 function successfulCommand(command: string, args: string[]): CommandResult {
   if (
-    (command === "npm" && args[0] === "install") ||
+    (["npm", process.execPath].includes(command) && args.includes("install")) ||
     (command === "bun" && args[0] === "add")
   ) {
     return { status: 0, stdout: "installed", stderr: "" };
@@ -115,6 +118,44 @@ function successfulCommand(command: string, args: string[]): CommandResult {
 }
 
 describe("verify-installed-agent-session", () => {
+  it("runs the previous public release first in an independent global prefix", async () => {
+    const result = await runAcceptance({ argv: ["--version", "2026.9.16", "--previous-version", "2026.9.15", "--manager", "npm", "--global", "--json"] });
+    expect(result.failure).toBeNull();
+    expect(result.json.sessions.map((session: { version: string; role: string; install_mode: string }) => [session.version, session.role, session.install_mode])).toEqual([
+      ["2026.9.15", "control", "global"], ["2026.9.16", "candidate", "global"],
+    ]);
+    const installs = result.runCommand.mock.calls.filter(([, args]) => args.includes("install"));
+    expect(installs).toHaveLength(2);
+    expect(installs[0]?.[1]).toContain("--global");
+    expect(installs[0]?.[1]).not.toEqual(installs[1]?.[1]);
+  });
+
+  it.each(["latest", "2026.9.16"])("rejects invalid control %s", async (previous) => {
+    const result = await runAcceptance({ argv: ["--version", "2026.9.16", "--previous-version", previous] });
+    expect(String(result.failure)).toContain("Invalid --previous-version");
+  });
+
+  it("requires npm for global acceptance", async () => {
+    const result = await runAcceptance({ argv: ["--version", "2026.9.16", "--global"] });
+    expect(String(result.failure)).toContain("--global requires");
+  });
+
+  it("uses the actual npm JavaScript entrypoint on Windows", async () => {
+    const descriptor = Object.getOwnPropertyDescriptor(process, "platform");
+    Object.defineProperty(process, "platform", { value: "win32", configurable: true });
+    try {
+      const missing = await runAcceptance({ argv: ["--version", "2026.9.16", "--manager", "npm"], npmExecpath: null });
+      expect(String(missing.failure)).toContain("npm_execpath");
+      const result = await runAcceptance({ argv: ["--version", "2026.9.16", "--manager", "npm", "--global", "--json"] });
+      expect(result.failure).toBeNull();
+      expect(result.runCommand.mock.calls[0]?.[0]).toBe(process.execPath);
+      expect(result.runCommand.mock.calls[0]?.[1][0]).toBe("C:/node/npm-cli.js");
+      expect(result.json.sessions[0].executable).not.toContain(`${path.sep}lib${path.sep}`);
+    } finally {
+      Object.defineProperty(process, "platform", descriptor!);
+    }
+  });
+
   it("prints usage without installing", async () => {
     const result = await runAcceptance({ argv: ["--help"] });
     expect(result.logs.join("\n")).toContain(
@@ -168,7 +209,7 @@ describe("verify-installed-agent-session", () => {
     expect(
       result.runCommand.mock.calls.filter(
         ([command, args]) =>
-          ["bun", "node"].includes(command) &&
+          ["bun", process.execPath].includes(command) &&
           args.some((arg) => arg.includes("listAllComplete")),
       ),
     ).toHaveLength(2);
@@ -192,7 +233,7 @@ describe("verify-installed-agent-session", () => {
     const escaped = await runAcceptance({
       argv: ["--version", "2026.7.31", "--manager", "npm"],
       realpath: (value) =>
-        value.includes(`${path.sep}.bin${path.sep}`)
+        value.endsWith(`${path.sep}cli.js`)
           ? path.join(path.parse(value).root, "outside", "pm")
           : value,
     });
@@ -263,7 +304,7 @@ describe("verify-installed-agent-session", () => {
     const installFailure = await runAcceptance({
       argv: ["--version", "2026.7.31", "--manager", "npm"],
       runCommand: (command, args) =>
-        command === "npm" && args[0] === "install"
+        ["npm", process.execPath].includes(command) && args.includes("install")
           ? { status: 1, stdout: "", stderr: "" }
           : successfulCommand(command, args),
     });

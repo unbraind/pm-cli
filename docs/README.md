@@ -39,6 +39,7 @@ pm guide release --json
 - [CLI Scripting Contract](SCRIPTING.md) - exit codes, flat mutation receipts versus read envelopes, stdout/stderr boundaries, stable JSON fields, uniform OR filters, and shell composition recipes.
 - [Configuration](CONFIGURATION.md) - settings, storage formats, output, search, validation, and environment variables.
 - [Testing](TESTING.md) - sandbox-safe local tests and linked-test orchestration.
+- [Build and Release Acceptance](BUILD_AND_RELEASE_ACCEPTANCE.md) - complete-build leases and cross-platform registry installation controls.
 - [Security Governance](SECURITY_GOVERNANCE.md) - vulnerability reporting, review discipline, property fuzzing, and OpenSSF limitations.
 - [Architecture](ARCHITECTURE.md) - contributor internals: storage, mutation flow, search, extensions, and command contracts.
 - [Noun–Verb CLI Grammar](CLI_GRAMMAR.md) - accepted command architecture, exhaustive destination census, hidden aliases, and the surface-growth gate.

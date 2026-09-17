@@ -27,6 +27,9 @@ jobs:
     # minute 20. Leave enough time for both clean installed-agent sessions and
     # GitHub Release advertisement after the immutable npm publish succeeds.
     timeout-minutes: 60
+    outputs:
+      version: ${{ steps.control.outputs.version }}
+      previous: ${{ steps.control.outputs.previous }}
     permissions:
       contents: write
       id-token: write
@@ -37,6 +40,7 @@ jobs:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       RECOVERY_SOURCE_MODE: ${{ github.event_name == 'workflow_dispatch' && 'main' || 'tag' }}
       PACKAGE_ARTIFACT_GATE: scripts/release/package-artifact-gate.mjs
+      RELEASE_CONTROL: scripts/release/release-control.mjs
 
     steps:
       - name: Checkout
@@ -62,7 +66,9 @@ jobs:
           mkdir -p "${RELEASE_CONTROLS}"
           cp scripts/release/package-artifact-gate.mjs "${RELEASE_CONTROLS}/package-artifact-gate.mjs"
           cp scripts/release/package-artifact-budget.json "${RELEASE_CONTROLS}/package-artifact-budget.json"
+          cp scripts/release/release-control.mjs "${RELEASE_CONTROLS}/release-control.mjs"
           echo "PACKAGE_ARTIFACT_GATE=${RELEASE_CONTROLS}/package-artifact-gate.mjs" >> "${GITHUB_ENV}"
+          echo "RELEASE_CONTROL=${RELEASE_CONTROLS}/release-control.mjs" >> "${GITHUB_ENV}"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -351,6 +357,87 @@ jobs:
       - name: Accept exact installed package through npm and Bun agent sessions
         timeout-minutes: 12
         run: node scripts/release/verify-installed-agent-session.mjs --version "${RELEASE_TAG#v}" --manager both --json
+
+      - name: Select previous public release control
+        id: control
+        run: |
+          set -euo pipefail
+          NPM_PACKAGE="$(node -p 'require("./package.json").name')"
+          npm view "${NPM_PACKAGE}" versions --json > "${RUNNER_TEMP}/published-versions.json"
+          previous="$(node "${RELEASE_CONTROL}" "${RELEASE_TAG#v}" "${RUNNER_TEMP}/published-versions.json")"
+          echo "version=${RELEASE_TAG#v}" >> "${GITHUB_OUTPUT}"
+          echo "previous=${previous}" >> "${GITHUB_OUTPUT}"
+
+  installed-acceptance:
+    name: Registry acceptance (${{ matrix.os }}, ${{ matrix.install }})
+    needs: release
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        install: [npm, npm-global, bun]
+    steps:
+      - name: Checkout acceptance harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Setup Bun
+        if: matrix.install == 'bun'
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+      - name: Accept candidate and previous release
+        shell: bash
+        env:
+          CANDIDATE_VERSION: ${{ needs.release.outputs.version }}
+          CONTROL_VERSION: ${{ needs.release.outputs.previous }}
+          INSTALL_MODE: ${{ matrix.install }}
+        run: |
+          set -euo pipefail
+          manager="${INSTALL_MODE}"
+          flags=()
+          if [ "${INSTALL_MODE}" = npm-global ]; then
+            manager=npm
+            flags+=(--global)
+          fi
+          npm run --silent release:verify-installed-agent -- --version "${CANDIDATE_VERSION}" --previous-version "${CONTROL_VERSION}" --manager "${manager}" "${flags[@]}" --json > acceptance.json
+      - name: Retain acceptance cost and step evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: registry-acceptance-${{ matrix.os }}-${{ matrix.install }}
+          path: acceptance.json
+          if-no-files-found: error
+
+  advertise:
+    name: Advertise accepted release
+    needs: [release, installed-acceptance]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: v${{ needs.release.outputs.version }}
+    steps:
+      - name: Checkout verification harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Download accepted release notes
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-notes-v${{ needs.release.outputs.version }}
+          path: ${{ runner.temp }}
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3

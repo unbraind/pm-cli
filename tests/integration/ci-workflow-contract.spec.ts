@@ -791,7 +791,8 @@ describe("GitHub workflow contract", () => {
     expect(baseArtifactGateIndex).toBeLessThan(sentryInjectionIndex);
     expect(sentryInjectionIndex).toBeLessThan(injectedArtifactGateIndex);
     expect(injectedArtifactGateIndex).toBeLessThan(sentryUploadIndex);
-    expect(releaseWorkflow.match(/name: Setup Bun/g)).toHaveLength(1);
+    expect(extractWorkflowJob(releaseWorkflow, "release").match(/name: Setup Bun/g)).toHaveLength(1);
+    expect(extractWorkflowJob(releaseWorkflow, "installed-acceptance").match(/name: Setup Bun/g)).toHaveLength(1);
     expect(releaseWorkflow.indexOf("pnpm changelog:pm:check")).toBeLessThan(
       releaseWorkflow.indexOf("run: pnpm quality:static"),
     );
@@ -846,7 +847,7 @@ describe("GitHub workflow contract", () => {
         "utf8",
       ),
     ) as {
-      jobs?: { release?: { "timeout-minutes"?: unknown } };
+      jobs: Record<string, { "timeout-minutes": number }>;
     };
     const autoReleaseWorkflow = parse(
       await readFile(
@@ -856,14 +857,18 @@ describe("GitHub workflow contract", () => {
     ) as {
       jobs?: { "auto-release"?: { "timeout-minutes"?: unknown } };
     };
-    const releaseTimeout = releaseWorkflow.jobs?.release?.["timeout-minutes"];
+    const releaseTimeout = releaseWorkflow.jobs.release["timeout-minutes"];
+    const acceptanceTimeout = releaseWorkflow.jobs["installed-acceptance"]["timeout-minutes"];
+    const advertisementTimeout = releaseWorkflow.jobs.advertise["timeout-minutes"];
     const autoReleaseTimeout =
       autoReleaseWorkflow.jobs?.["auto-release"]?.["timeout-minutes"];
 
     expect(releaseTimeout).toBe(60);
-    expect(autoReleaseTimeout).toBe(90);
+    expect(acceptanceTimeout).toBe(15);
+    expect(advertisementTimeout).toBe(5);
+    expect(autoReleaseTimeout).toBe(110);
     expect(autoReleaseTimeout).toBeGreaterThanOrEqual(
-      (releaseTimeout as number) + 30,
+      releaseTimeout + acceptanceTimeout + advertisementTimeout + 30,
     );
   });
 

@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
-import { realpathSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { withBuildLease } from "./build-lease.mjs";
 
 const MODE_TO_VITEST_ARGS = {
   test: [],
@@ -82,7 +83,6 @@ async function run() {
   const tempRoot = await mkdtemp(path.join(tmpdir(), "pm-cli-tests-"));
   const pmPath = path.join(tempRoot, "project", ".agents", "pm");
   const pmGlobalPath = path.join(tempRoot, "global");
-  const pnpmCommand = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
   const vitestEntry = path.join(
     process.cwd(),
     "node_modules",
@@ -106,7 +106,7 @@ async function run() {
     delete baseEnv.PM_SOURCE_WORKSPACE_ROOT;
 
     if (!skipBuild) {
-      const buildExitCode = await runChild(pnpmCommand, ["build"], baseEnv);
+      const buildExitCode = await runChild(process.execPath, [path.join(process.cwd(), "scripts", "build.mjs")], baseEnv);
 
       if (buildExitCode !== 0) {
         process.exitCode = buildExitCode;
@@ -114,48 +114,54 @@ async function run() {
       }
     }
 
-    const vitestExitCode = await runChild(
-      process.execPath,
-      [
-        vitestEntry,
-        "run",
-        ...MODE_TO_VITEST_ARGS[resolved.mode],
-        ...normalizedVitestArgs,
-      ],
-      baseEnv,
-    );
-
-    if (resolved.mode !== "coverage") {
-      process.exitCode = vitestExitCode;
-      return;
-    }
-
-    const coverageGateExitCode = await runChild(
-      process.execPath,
-      [
-        path.join(
-          process.cwd(),
-          "scripts",
-          "release",
-          "coverage-threshold-gate.mjs",
-        ),
-      ],
-      baseEnv,
-    );
-    if (vitestExitCode !== 0 && coverageGateExitCode !== 0) {
-      console.error(
-        "Test execution and exact coverage both failed (combined verdict).",
+    await withBuildLease(process.cwd(), async (lease) => {
+      if (existsSync(path.join(process.cwd(), ".cache", "build-incomplete"))) {
+        throw new Error("Incomplete dist generation; run pnpm build before prebuilt validation.");
+      }
+      const vitestExitCode = await runChild(
+        process.execPath,
+        [
+          vitestEntry,
+          "run",
+          ...MODE_TO_VITEST_ARGS[resolved.mode],
+          ...normalizedVitestArgs,
+        ],
+        { ...baseEnv, PM_BUILD_CONSUMER_LEASE: lease },
       );
-      process.exitCode = 3;
-    } else if (vitestExitCode !== 0) {
-      console.error("Test execution failed; exact coverage still passed.");
-      process.exitCode = 1;
-    } else if (coverageGateExitCode !== 0) {
-      console.error("Tests passed; exact coverage failed.");
-      process.exitCode = 2;
-    } else {
-      process.exitCode = 0;
-    }
+
+      if (resolved.mode !== "coverage") {
+        process.exitCode = vitestExitCode;
+        return;
+      }
+
+      const coverageGateExitCode = await runChild(
+        process.execPath,
+        [
+          path.join(
+            process.cwd(),
+            "scripts",
+            "release",
+            "coverage-threshold-gate.mjs",
+          ),
+        ],
+        { ...baseEnv, PM_BUILD_CONSUMER_LEASE: lease },
+      );
+      if (vitestExitCode !== 0 && coverageGateExitCode !== 0) {
+        console.error(
+          "Test execution and exact coverage both failed (combined verdict).",
+        );
+        process.exitCode = 3;
+      } else if (vitestExitCode !== 0) {
+        console.error("Test execution failed; exact coverage still passed.");
+        process.exitCode = 1;
+      } else if (coverageGateExitCode !== 0) {
+        console.error("Tests passed; exact coverage failed.");
+        process.exitCode = 2;
+      } else {
+        process.exitCode = 0;
+      }
+    }, { inherited: process.env.PM_BUILD_CONSUMER_LEASE });
+
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`Failed to run sandboxed tests: ${message}`);

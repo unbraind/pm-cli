@@ -2636,7 +2636,7 @@ describe("release readiness runtime coverage", () => {
 
     expect(packageJson.scripts?.prepublishOnly).toBe("pnpm build");
     expect(packageJson.scripts?.build).toBe(
-      "node scripts/prepare-build-cache.mjs && tsc -p tsconfig.json && node scripts/bundle-cli.mjs && node scripts/finalize-build.mjs",
+      "node scripts/build.mjs",
     );
     expect(packageJson.scripts?.typecheck).toBe(
       "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.typetests.json && tsc -p tsconfig.packages.json && tsc -p tsconfig.examples.json",
