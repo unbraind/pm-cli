@@ -47,6 +47,26 @@ async function run(
 }
 
 describe("package artifact gate", () => {
+  it("accepts the npm 12 package-keyed projection captured from a real dry-run", async () => {
+    const result = await run({
+      "@unbrained/pm-cli": {
+        name: "@unbrained/pm-cli",
+        version: "2026.9.16",
+        unpackedSize: 90,
+        files: [{ path: "dist/cli.js" }, { path: "package.json" }],
+      },
+    });
+    expect(result.failure).toBeNull();
+    expect(result.log.mock.calls.flat().join(" ")).toContain('"ok": true');
+  });
+
+  it.each([null, "archive.tgz", {}, { first: {}, second: {} }, { wrong: { name: "other", unpackedSize: 1, files: [] } }])(
+    "rejects malformed or ambiguous keyed inventories %#",
+    async (report) => {
+      const result = await run(report);
+      expect(String(result.failure)).toMatch(/exactly one|identity/);
+    },
+  );
   it("accepts the exact npm pack projection and prints a bounded receipt", async () => {
     const result = await run([
       {

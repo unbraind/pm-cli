@@ -11,7 +11,6 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
-  commandFor,
   fail,
   flagBool,
   flagString,
@@ -25,10 +24,11 @@ const packageName =
     readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
   ).name;
 
+/** Describe the registry acceptance command and supported install modes. */
 function usage() {
   console.log(`Usage:
   node scripts/release/verify-installed-agent-session.mjs --version <YYYY.M.D[-N]>
-    [--manager npm|bun|both]
+    [--manager npm|bun|both] [--previous-version <YYYY.M.D[-N]>] [--global]
     [--json]
 
 Installs the exact public package into unrelated roots and drives the cold-start
@@ -37,6 +37,7 @@ step and the bounded output cost so install-shaped failures are actionable.
 `);
 }
 
+/** Resolve symlinks and refuse execution outside the disposable installation. */
 function assertContainedExecutable(installRoot, executable) {
   const resolvedRoot = realpathSync(installRoot);
   const resolvedExecutable = realpathSync(executable);
@@ -67,6 +68,7 @@ function assertCompleteSdkRead(manager, sdkRead) {
   }
 }
 
+/** Execute a cold SDK and CLI lifecycle with per-command output and time bounds. */
 function runAgentSession(manager, executable, installRoot, publicRegistryEnv) {
   const workspace = path.join(installRoot, "agent-workspace");
   const pmRoot = path.join(workspace, ".agents", "pm");
@@ -81,11 +83,12 @@ function runAgentSession(manager, executable, installRoot, publicRegistryEnv) {
   const steps = [];
   let outputCharacters = 0;
   const runStep = (label, args, command = executable, cwd = workspace) => {
-    const result = runCommand(command, args, {
+    const result = runCommand(command === executable ? (manager === "bun" ? "bun" : process.execPath) : command, command === executable ? [executable, ...args] : args, {
       cwd,
       capture: true,
       allowFailure: true,
       env,
+      timeout: 120_000,
     });
     if (result.status !== 0) {
       fail(
@@ -220,8 +223,8 @@ function runAgentSession(manager, executable, installRoot, publicRegistryEnv) {
     manager === "bun"
       ? ["--eval", sdkProgram]
       : ["--input-type=module", "--eval", sdkProgram],
-    commandFor(manager === "bun" ? "bun" : "node"),
-    installRoot,
+    manager === "bun" ? "bun" : process.execPath,
+    path.dirname(path.dirname(executable)),
   );
   assertCompleteSdkRead(manager, sdkRead);
 
@@ -236,7 +239,39 @@ function runAgentSession(manager, executable, installRoot, publicRegistryEnv) {
   };
 }
 
-function installAndRun(manager, packageSpec, root, publicRegistryEnv) {
+/** Execute one exact-package installation with a bounded subprocess deadline. */
+function installPackage(manager, packageSpec, installRoot, publicRegistryEnv, globalInstall) {
+  return manager === "npm"
+    ? runCommand(
+        process.platform === "win32" ? process.execPath : "npm",
+        [
+          ...(process.platform === "win32" ? [process.env.npm_execpath] : []),
+          "install",
+          ...(globalInstall ? ["--global"] : []),
+          "--prefix",
+          installRoot,
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund",
+          packageSpec,
+        ],
+        { capture: true, allowFailure: true, env: publicRegistryEnv, timeout: 120_000 },
+      )
+    : runCommand(
+        "bun",
+        ["add", "--silent", "--ignore-scripts", packageSpec],
+        {
+          cwd: installRoot,
+          capture: true,
+          allowFailure: true,
+          env: publicRegistryEnv,
+          timeout: 120_000,
+        },
+      );
+}
+
+/** Retry registry propagation, then exercise the installed package in its own workspace. */
+function installAndRun(manager, packageSpec, root, publicRegistryEnv, globalInstall) {
   const installRoot = path.join(root, `${manager}-install`);
   mkdirSync(installRoot, { recursive: true });
   if (manager === "bun") {
@@ -248,31 +283,7 @@ function installAndRun(manager, packageSpec, root, publicRegistryEnv) {
   }
   let installResult;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
-    installResult =
-      manager === "npm"
-        ? runCommand(
-            commandFor("npm"),
-            [
-              "install",
-              "--prefix",
-              installRoot,
-              "--ignore-scripts",
-              "--no-audit",
-              "--no-fund",
-              packageSpec,
-            ],
-            { capture: true, allowFailure: true, env: publicRegistryEnv },
-          )
-        : runCommand(
-            commandFor("bun"),
-            ["add", "--silent", "--ignore-scripts", packageSpec],
-            {
-              cwd: installRoot,
-              capture: true,
-              allowFailure: true,
-              env: publicRegistryEnv,
-            },
-          );
+    installResult = installPackage(manager, packageSpec, installRoot, publicRegistryEnv, globalInstall);
     if (installResult.status === 0) {
       break;
     }
@@ -292,11 +303,14 @@ function installAndRun(manager, packageSpec, root, publicRegistryEnv) {
       `${manager} exact-package installation failed: ${installResult.stderr.trim() || "installer exited non-zero"}`,
     );
   }
+  const moduleRoot = globalInstall
+    ? path.join(installRoot, ...(process.platform === "win32" ? [] : ["lib"]), "node_modules")
+    : path.join(installRoot, "node_modules");
   const executable = path.join(
-    installRoot,
-    "node_modules",
-    ".bin",
-    commandFor("pm"),
+    moduleRoot,
+    packageName,
+    "dist",
+    "cli.js",
   );
   return runAgentSession(
     manager,
@@ -306,12 +320,8 @@ function installAndRun(manager, packageSpec, root, publicRegistryEnv) {
   );
 }
 
-function main() {
-  const { flags } = parseFlags(process.argv.slice(2));
-  if (flags.get("help") || flags.get("h")) {
-    usage();
-    return;
-  }
+/** Validate exact versions and platform-specific installer requirements before any writes. */
+function acceptanceOptions(flags) {
   const version = flagString(flags, "version", null);
   if (!version || !/^\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?$/u.test(version)) {
     fail("Missing or invalid --version <YYYY.M.D[-N]>.");
@@ -320,6 +330,26 @@ function main() {
   if (!["npm", "bun", "both"].includes(manager)) {
     fail(`Invalid --manager value "${manager}"; expected npm, bun, or both.`);
   }
+  const previousVersion = flagString(flags, "previous-version", null);
+  if (previousVersion !== null && (!/^\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?$/u.test(previousVersion) || previousVersion === version)) {
+    fail("Invalid --previous-version; provide a distinct exact release version.");
+  }
+  if (process.platform === "win32" && manager !== "bun" && !process.env.npm_execpath) {
+    fail("Run this verifier through npm run release:verify-installed-agent on Windows so npm_execpath identifies the installed npm CLI.");
+  }
+  const globalInstall = flagBool(flags, "global", false);
+  if (globalInstall && manager !== "npm") fail("--global requires --manager npm.");
+  return { version, manager, previousVersion, globalInstall };
+}
+
+/** Install control and candidate into independent roots and report bounded agent sessions. */
+function main() {
+  const { flags } = parseFlags(process.argv.slice(2));
+  if (flags.get("help") || flags.get("h")) {
+    usage();
+    return;
+  }
+  const { version, manager, previousVersion, globalInstall } = acceptanceOptions(flags);
   const root = mkdtempSync(path.join(tmpdir(), "pm-cli-installed-acceptance-"));
   try {
     const npmUserConfig = path.join(root, "npmrc-public");
@@ -330,16 +360,24 @@ function main() {
       npm_config_cache: path.join(root, "npm-cache"),
       npm_config_userconfig: npmUserConfig,
       BUN_INSTALL_CACHE_DIR: path.join(root, "bun-cache"),
+      PM_TELEMETRY_DISABLED: "1",
+      PM_TELEMETRY_OTEL_DISABLED: "1",
+      PM_SENTRY_DISABLED: "1",
     };
     const managers = manager === "both" ? ["npm", "bun"] : [manager];
-    const sessions = managers.map((selected) =>
-      installAndRun(
+    const versions = previousVersion === null ? [version] : [previousVersion, version];
+    const sessions = versions.flatMap((selectedVersion) => managers.map((selected) => ({
+      version: selectedVersion,
+      role: selectedVersion === version ? "candidate" : "control",
+      install_mode: globalInstall ? "global" : "local",
+      ...installAndRun(
         selected,
-        `${packageName}@${version}`,
-        root,
+        `${packageName}@${selectedVersion}`,
+        path.join(root, selectedVersion),
         publicRegistryEnv,
+        globalInstall,
       ),
-    );
+    })));
     const result = { ok: true, version, package: packageName, sessions };
     if (flagBool(flags, "json", false)) {
       process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);

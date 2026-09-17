@@ -2,14 +2,19 @@ id: pm-cxc4jc
 title: Serialize the complete build pipeline so overlapping validation cannot consume partially rewritten dist artifacts
 description: Concurrent build producers can overlap TypeScript output rewriting and bundling. During packed first-run validation the bundler reported exported nested-settings symbols as undefined while another build was rewriting dist. Serialize the complete producer pipeline and make consumers wait for a settled artifact generation; do not rely on invocation discipline alone.
 type: Task
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-09-16T11:59:11.360Z"
-updated_at: "2026-09-16T12:27:54.536Z"
+updated_at: "2026-09-17T04:56:23.519Z"
+closed_at: "2026-09-17T04:56:22.872Z"
+completed_at: "2026-09-17T04:56:22.872Z"
 author: "harness:codex"
 acceptance_criteria: Two overlapping builds produce identical complete artifacts; concurrent test consumers cannot observe partial dist files; regression uses real overlapping processes and checks exported symbols
 parent: pm-u9d0
+resolution: "Serialize prepare, TypeScript compilation, bundling and finalization under one checkout lease; hold that lease through sandboxed tests and coverage; reject incomplete generations and reentrant producers"
+expected_result: Overlapping builds and test consumers observe complete exported artifacts and preserve failure evidence
+actual_result: Two overlapping full builds produced the same 92-file generation; an independent process imported the completed export only after publication; 8928 tests passed at exact 100/100/100/100 and linked acceptance passed
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-dj98,implements,"2026-09-16T11:59:11.360Z","harness:codex","cli:create:dep",detected
   pm-ygli86,discovered_from,"2026-09-16T11:59:11.360Z","harness:codex","cli:create:dep",detected
@@ -18,6 +23,40 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-nrkjik,discovered_from,"2026-09-16T12:27:54.271Z","harness:codex","cli:update:dep",detected
   pm-utxk3h,discovered_from,"2026-09-16T12:27:54.271Z","harness:codex","cli:update:dep",detected
   pm-xau3,discovered_from,"2026-09-16T12:27:54.271Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-16T11:59:11.360Z","harness:codex","Duplicate check: complete 2762-item full all-status export plus keyword search and exact phrase scan found historical overlapping-build observations in pm-7vr0, pm-utxk3h, pm-nrkjik, pm-xau3 and pm-998juj, but no dedicated owner for serializing the entire producer pipeline. Existing parent lineage reused. This follow-up stays open while current delivery uses serialized producers."
+  "2026-09-17T04:17:00.379Z","harness:codex","Design: one exclusive checkout lease covers prepare, TypeScript, bundles and finalization. Test consumers hold the same lease through Vitest and coverage checks. Nested read-only runners may inherit a verified lease; builds inside a consumer lease are refused. No age-based lock stealing; interrupted builds leave an incomplete marker and prebuilt consumers require a successful rebuild. Real independent-process tests will prove overlap and failure behavior."
+  "2026-09-17T04:28:38.692Z","harness:codex","Validation toolchain refresh: pnpm updated eslint-plugin-sonarjs 4.2.0 to 4.2.1, fast-check 4.10.0 to 4.10.1, and jscpd 5.2.0 to 5.2.1 under normal supply-chain age policy. Complete all-status inventory reused the existing major-migration owners pm-do5b, pm-fokyhh and pm-ksr40d; current registry peer/engine contracts still exclude their respective TypeScript 7, Vitest 5 and npm-package-arg 14 upgrades."
+  "2026-09-17T04:34:26.877Z","harness:codex",Full-suite validation exposed inherited consumer receipts crossing into isolated regression checkout copies. Clearing that receipt at the disposable-checkout boundary preserves independent ownership and lets real negative controls execute. New executable entrypoints are directly tested without adding coverage exclusions.
+  "2026-09-17T04:44:22.506Z","harness:codex","Validation update: 105 focused tests passed across build ownership, test runner, registry controls, lifecycle negative controls, docs and parsed workflow contracts. Five changed executable scripts have exact coverage: statements 234/234, branches 180/180, functions 28/28, lines 220/220, with no new coverage exclusions. Two real overlapping full builds completed after the active coverage consumer released its lease and retained identical bundle generation 34f6db38b64ff182003a011de27520097e163eb6302bc5bfcd3a84184d9764ad across 92 files. Repository-wide ESLint, zero-clone duplication, typecheck and secret scan passed; full rerun is pending."
+  "2026-09-17T04:55:58.627Z","harness:codex","Final local verification: all 8928 tests in 701 files passed; exact coverage statements 64706/64706, branches 49353/49353, functions 13434/13434, lines 61942/61942. PM-linked six-file run passed 39 tests with zero failure categories. Strengthened the real independent-process lease regression to import and assert the complete exported symbol after publication; all four lease regressions pass. Producer and consumer ownership behavior is verified without weakening coverage, output or lifecycle gates."
+files[10]{path,scope,note}:
+  package.json,project,Canonical build command and packaged helpers
+  pnpm-lock.yaml,project,"Compatible validation-tool patches: sonarjs fast-check jscpd"
+  scripts/build-lease.mjs,project,Shared producer and test-consumer lease
+  scripts/build.mjs,project,Complete serialized producer orchestration
+  scripts/release/isolated-regression-control.mjs,project,Independent temporary checkout must acquire its own build consumer lease
+  scripts/run-tests.mjs,project,Hold complete dist generation through validation
+  tests/integration/release-readiness-runtime.spec.ts,project,Serialized canonical producer contract
+  tests/unit/scripts/build-lease.spec.ts,project,Independent processes cannot consume partial generation
+  tests/unit/scripts/build.spec.ts,project,Real build stages and executable refusal coverage
+  tests/unit/scripts/run-tests.spec.ts,project,Portable producer invocation and incomplete-generation refusal
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/build.spec.ts tests/unit/scripts/build-lease.spec.ts tests/unit/scripts/run-tests.spec.ts tests/integration/run-tests-script.integration.spec.ts tests/unit/scripts/lifecycle-evidence-control.spec.ts tests/unit/scripts/package-install-plan-control.spec.ts,project,300,"harness:codex","2026-09-17T04:48:19.473Z",local_mutation,fix/serialized-builds-and-release-acceptance
+test_runs[1]:
+  - run_id: test-local-mu521d2t-eonxqt
+    kind: test
+    status: passed
+    started_at: "2026-09-17T04:50:32.695Z"
+    finished_at: "2026-09-17T04:53:53.909Z"
+    recorded_at: "2026-09-17T04:53:53.909Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/build.spec.ts tests/unit/scripts/build-lease.spec.ts tests/unit/scripts/run-tests.spec.ts tests/integration/run-tests-script.integration.spec.ts tests/unit/scripts/lifecycle-evidence-control.spec.ts tests/unit/scripts/package-install-plan-control.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/BUILD_AND_RELEASE_ACCEPTANCE.md,project,Producer and consumer protocol plus recovery boundaries
+  docs/README.md,project,Reachable build and release acceptance guide
+close_reason: Complete producer and consumer ownership verified with real overlapping builds and regression processes
 body: ""

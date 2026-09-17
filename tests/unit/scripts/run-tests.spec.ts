@@ -1,14 +1,15 @@
 import { EventEmitter } from "node:events";
 import path from "node:path";
 
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createScriptHarness } from "../../helpers/scriptModule";
 
-const harness = createScriptHarness();
+const harness = createScriptHarness(["../../../scripts/build-lease.mjs"]);
 
 const mkdtempMock = vi.fn(async () => "/tmp/pm-run-tests-spec");
 const rmMock = vi.fn(async () => undefined);
+beforeEach(() => { mkdtempMock.mockClear(); rmMock.mockClear(); });
 
 function closeChild(
   code: number | null,
@@ -26,16 +27,34 @@ function errorChild(error: unknown): never {
 }
 
 function mockFsPromises() {
+  vi.doMock("../../../scripts/build-lease.mjs", () => ({
+    withBuildLease: async (_root: string, operation: (lease: string) => Promise<void>) => operation("test-lease"),
+  }));
   vi.doMock("node:fs/promises", () => ({ mkdtemp: mkdtempMock, rm: rmMock }));
 }
 
 describe("run-tests", () => {
+  it("refuses prebuilt consumers after an incomplete generation", async () => {
+    const spawn = vi.fn(() => closeChild(0));
+    vi.doMock("node:child_process", () => ({ spawn }));
+    vi.doMock("node:fs", () => ({ existsSync: () => true, realpathSync: (value: string) => value }));
+    mockFsPromises();
+    process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
+    process.argv = ["node", "scripts/run-tests.mjs", "test"];
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    await harness.importModule("scripts/run-tests.mjs");
+    expect(process.exitCode).toBe(1);
+    expect(spawn).not.toHaveBeenCalled();
+    expect(String(errorSpy.mock.calls[0]?.[0])).toContain("Incomplete dist generation");
+  });
+
   it.each([".", "nested/scratch"])(
     "rejects a resolved workspace scratch root %s before creating fixtures",
     async (suffix) => {
       const spawn = vi.fn(() => closeChild(0));
       vi.doMock("node:child_process", () => ({ spawn }));
       vi.doMock("node:fs", () => ({
+        existsSync: () => false,
         realpathSync: vi.fn()
           .mockReturnValueOnce(process.cwd())
           .mockReturnValueOnce(path.resolve(process.cwd(), suffix)),
@@ -54,7 +73,8 @@ describe("run-tests", () => {
   it("rejects an unavailable temporary root before child execution", async () => {
     const spawn = vi.fn(() => closeChild(0));
     vi.doMock("node:child_process", () => ({ spawn }));
-    vi.doMock("node:fs", () => ({ realpathSync: () => { throw new Error("unavailable"); } }));
+    vi.doMock("node:fs", () => ({
+        existsSync: () => false, realpathSync: () => { throw new Error("unavailable"); } }));
     mockFsPromises();
     vi.spyOn(console, "error").mockImplementation(() => {});
     process.argv = ["node", "scripts/run-tests.mjs", "test"];
@@ -68,6 +88,7 @@ describe("run-tests", () => {
     const spawn = vi.fn(() => closeChild(0));
     vi.doMock("node:child_process", () => ({ spawn }));
     vi.doMock("node:fs", () => ({
+        existsSync: () => false,
       realpathSync: vi.fn()
         .mockReturnValueOnce(process.cwd())
         .mockReturnValueOnce(path.dirname(process.cwd())),
@@ -85,6 +106,7 @@ describe("run-tests", () => {
     vi.doMock("node:child_process", () => ({ spawn }));
     vi.doMock("node:path", () => ({ default: path.win32, ...path.win32 }));
     vi.doMock("node:fs", () => ({
+        existsSync: () => false,
       realpathSync: vi.fn()
         .mockReturnValueOnce("C:\\workspace")
         .mockReturnValueOnce("D:\\scratch"),
@@ -225,7 +247,7 @@ describe("run-tests", () => {
     process.argv = ["node", "scripts/run-tests.mjs", "test"];
     await harness.importModule("scripts/run-tests.mjs");
     expect(spawn).toHaveBeenCalledTimes(2);
-    expect(spawn.mock.calls[0]?.[1]).toEqual(["build"]);
+    expect(spawn.mock.calls[0]?.[1]).toEqual([path.join(process.cwd(), "scripts", "build.mjs")]);
     expect(process.exitCode).toBe(0);
   });
 
@@ -360,7 +382,7 @@ describe("run-tests", () => {
     expect(process.exitCode).toBe(1);
   });
 
-  it("uses pnpm.cmd on win32 (platform branch)", async () => {
+  it("uses the current Node executable on Windows without a shell shim", async () => {
     delete process.env.PM_RUN_TESTS_SKIP_BUILD;
     const originalPlatform = Object.getOwnPropertyDescriptor(
       process,
@@ -379,7 +401,7 @@ describe("run-tests", () => {
       mockFsPromises();
       process.argv = ["node", "scripts/run-tests.mjs", "test"];
       await harness.importModule("scripts/run-tests.mjs");
-      expect(spawn.mock.calls[0]?.[0]).toBe("pnpm.cmd");
+      expect(spawn.mock.calls[0]?.[0]).toBe(process.execPath);
     } finally {
       if (originalPlatform) {
         Object.defineProperty(process, "platform", originalPlatform);

@@ -6,6 +6,11 @@
 
 - Keep merge driver launchers usable after runtime upgrades ([pm-rcjyft](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rcjyft.toon))
 
+### Other
+
+- Released-artifact acceptance: the exact published tarball is installed clean and driven through a scripted agent session before the release is advertised ([pm-ygli86](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ygli86.toon))
+- Serialize the complete build pipeline so overlapping validation cannot consume partially rewritten dist artifacts ([pm-cxc4jc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cxc4jc.toon))
+
 ## 2026.9.16 - 2026-09-16
 
 ### Fixed

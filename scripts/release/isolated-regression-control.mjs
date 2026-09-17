@@ -27,7 +27,8 @@ export async function runIsolatedRegressionControl({ sourcePath, testPath, testN
     }
     const result = spawnSync(process.execPath, ["scripts/run-tests.mjs", "test", "--", testPath, "-t", testName, "--reporter=verbose"], {
       cwd: root,
-      env: { ...process.env, PM_RUN_TESTS_SKIP_BUILD: "1", PM_SENTRY_DISABLED: "1" },
+      // This disposable checkout owns a separate lease from the parent test run.
+      env: { ...process.env, PM_BUILD_CONSUMER_LEASE: "", PM_RUN_TESTS_SKIP_BUILD: "1", PM_SENTRY_DISABLED: "1" },
       encoding: "utf8",
       timeout: 120_000,
       maxBuffer: 4 * 1024 * 1024,

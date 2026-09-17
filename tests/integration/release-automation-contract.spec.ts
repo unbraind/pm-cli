@@ -41,7 +41,7 @@ describe("release automation contract", () => {
     };
     expect(packageJson.scripts).toBeDefined();
     expect(packageJson.scripts?.build).toBe(
-      "node scripts/prepare-build-cache.mjs && tsc -p tsconfig.json && node scripts/bundle-cli.mjs && node scripts/finalize-build.mjs",
+      "node scripts/build.mjs",
     );
     expect(packageJson.scripts?.["quality:static"]).toBe(
       EXPECTED_QUALITY_STATIC_SCRIPT,
