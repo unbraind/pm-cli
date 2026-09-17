@@ -43,6 +43,13 @@ describe("context evaluation gate", () => {
     const receipt = { budget_tokens: 32, within_budget: true };
     const valid = { recommended: null, ready: [], truncation: { ready_budget: receipt } };
     await expect(gate.verifyNextSelectionBudget({ next: async () => valid }, { tokenBudget: 32 })).resolves.toBeUndefined();
+    const selection = { recommended: { id: "pm-small", title: "Small" }, ready: [] };
+    const compactBudget = Math.ceil(Buffer.byteLength(JSON.stringify(selection), "utf8") / 4);
+    const renderedCost = Math.ceil(Buffer.byteLength(`${JSON.stringify(selection, null, 2)}\n`, "utf8") / 4);
+    expect(renderedCost).toBeGreaterThan(compactBudget);
+    await expect(gate.verifyNextSelectionBudget({ next: async () => ({
+      ...selection, truncation: { ready_budget: { budget_tokens: compactBudget, within_budget: true } },
+    }) }, { tokenBudget: compactBudget })).rejects.toThrow("EXIT:1");
     for (const result of [
       { recommended: null, ready: [] },
       { ...valid, truncation: { ready_budget: { ...receipt, budget_tokens: 33 } } },

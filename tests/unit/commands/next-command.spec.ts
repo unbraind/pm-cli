@@ -118,6 +118,9 @@ describe("runNext", () => {
       const roomy = await runNext({ tokenBudget: 5000 }, { path: context.pmPath });
       expect(roomy.recommended?.id).toBe(first);
       expect(roomy.ready).toHaveLength(2);
+      const rowLimited = await runNext({ limit: "1", tokenBudget: 5000 }, { path: context.pmPath });
+      expect(rowLimited.ready).toHaveLength(1);
+      expect(rowLimited.truncation).toMatchObject({ ready_total: 3, ready_budget: { omitted_count: 0 } });
       const intent = await runNext({ for: "execute", tokenBudget: 5000 }, { path: context.pmPath });
       expect(intent.recommended?.id).toBe(first);
       expect(intent.truncation?.ready_budget).toBeUndefined();
@@ -212,7 +215,7 @@ describe("runNext", () => {
 
       expect(result.recommended?.id).toBe(wip);
       expect(result.recommended?.reasons).toContain(
-        "in progress — resume to finish",
+        "resume work",
       );
       const readyIds = result.ready.map((entry) => entry.id);
       expect(readyIds).toContain(child);
@@ -260,8 +263,8 @@ describe("runNext", () => {
       const result = await runNext({}, { path: context.pmPath });
       expect(result.recommended?.id).toBe(focus);
       const reasons = result.recommended?.reasons ?? [];
-      expect(reasons).toContain("open and ready to start");
-      expect(reasons).toContain("priority p0 (highest)");
+      expect(reasons).toContain("ready");
+      expect(reasons).toContain("p0 (highest)");
       expect(reasons).toContain("all blockers resolved");
       expect(reasons).toContain(`advances ${epic}`);
       expect(
@@ -485,6 +488,7 @@ describe("runNext", () => {
       expect(result.summary.ready).toBe(3);
       expect(result.recommended).not.toBeNull();
       expect(result.ready).toHaveLength(1);
+      expect(result.truncation?.ready_total).toBe(3);
       expect(result.packing?.omitted_ids.length).toBeGreaterThan(0);
     });
   });

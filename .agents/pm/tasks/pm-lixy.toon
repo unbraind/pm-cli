@@ -6,18 +6,18 @@ status: closed
 priority: 2
 tags[4]: context,eval,quality-gate,relevance
 created_at: "2026-07-06T23:50:40.432Z"
-updated_at: "2026-09-17T20:33:23.939Z"
-closed_at: "2026-09-17T20:28:59.714Z"
-completed_at: "2026-09-17T20:28:59.714Z"
+updated_at: "2026-09-17T21:28:40.318Z"
+closed_at: "2026-09-17T21:28:39.629Z"
+completed_at: "2026-09-17T21:28:39.629Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "Corpus includes a tiny scratch workspace, a real-shaped medium workspace, synthetic pm-mi2x scale fixtures, and continuity cases from pm-bwyw; each scenario records focus/query/claim state, expected item grades, token budget, and rationale; corpus format is documented and reviewable; phase-1 judgments baseline current structural context behavior before pm-4k6b changes ranking."
 parent: pm-atfm
 risk: medium
 confidence: medium
-resolution: "Preserved historical judgments, added bounded medium-backlog scenarios plus measured representative 10k and scratch 100k cases with real claim history, respected scenario output budgets, and prevented baseline refresh from bypassing absolute thresholds."
-expected_result: A reviewable corpus across workspace sizes and continuity cases proves relevant work remains visible within explicit selection and response budgets.
-actual_result: "Seven standard and two large scenarios pass all accepted quality metrics at 1.0; large packets measure 1980 and 1961 tokens below 4000, independent selection checks pass, linked commands pass, and full coverage is exactly 100/100/100/100."
+resolution: "Add bounded medium scenarios and required 10k/100k quality evaluations, real claim continuity, output-budget propagation, rendered-cost negative controls and fail-closed baseline updates."
+expected_result: Context evaluation detects ignored selection budgets and preserves ranked usefulness and continuity across workspace sizes.
+actual_result: Linked small/medium and 10k/100k corpora pass; compact JSON undercount is rejected; all 8974 tests pass at exact 100/100/100/100.
 dependencies[7]:
   - id: pm-bwyw
     kind: related
@@ -49,7 +49,7 @@ dependencies[7]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[12]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-07-06T23:50:40.432Z",codex-agent,"Duplicate check: searched all statuses for context eval corpus/golden workspace/continuity judgments; only pm-atfm and closed search-eval work matched."
   "2026-07-09T19:10:24.967Z",codex-root-20260709,"Progress evidence: committed four-scenario corpus covers tiny scratch, real-shaped hierarchy, 100-item synthetic scale, and returning-agent continuity with explicit judgments, budgets, and rationales; accepted baseline is versioned."
   "2026-07-09T19:50:42.298Z",codex-root-20260709,"Verification: committed four-scenario corpus is stable through isolated SDK-backed trackers; tiny, real-shaped, synthetic scale, and returning-agent continuity scenarios all score 1.0 for NDCG, reciprocal rank, recall, continuity, and token adherence. Scale packet is 695 estimated tokens."
@@ -62,6 +62,8 @@ comments[12]{created_at,author,text}:
   "2026-09-17T20:25:36.876Z","harness:codex","Both linked commands passed serially through pm test: quality:context-eval completed in 98 seconds, and the separately bounded 10k/100k corpus command completed in 192 seconds. The small corpus contains seven graded cases and the scale corpus two; every accepted quality metric remains 1.0. Final source coverage is running after these build producers completed."
   "2026-09-17T20:28:57.396Z","harness:codex","Final source coverage passed after the last implementation change: 8974 tests in 704 files with exact 100/100/100/100 and zero uncovered counts. Both linked context commands passed, all nine graded scenarios retain their accepted metrics, large tests are mandatory in CI, and baseline refresh refuses absolute-threshold failure. Hosted review and CI will validate the committed delivery head."
   "2026-09-17T20:33:23.938Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1265 carries the completed corpus, required large-workspace CI step, SDK output-budget behavior, linked test evidence and structured closure. Implementation commit: 6a5e6826a. The PR retains exact-head hosted validation and review provenance."
+  "2026-09-17T20:54:00.650Z","harness:codex","PR 1265 review TDD: a compact-JSON boundary negative control incorrectly resolved before the correction. The gate now independently measures the returned selection using the production JSON and TOON renderers and rejects the larger rendered cost. Added useful documentation for touched internal evaluation and selection functions."
+  "2026-09-17T21:28:37.575Z","harness:codex","Final pre-merge review verification: linked context-quality and 10k representative / 100k scratch evaluations pass after switching independent selection measurement to max rendered JSON/TOON. Full suite remains exact 100/100/100/100; compact-JSON boundary negative control fails before the correction and passes after it. Touched internal functions now have purpose-specific docstrings. PR 1265 first-round hosted checks were green; CodeRabbit findings are corrected; Sourcery reported quota and Greptile supplied no review during the bounded wait."
 learnings[1]{created_at,author,text}:
   "2026-09-17T19:49:28.642Z","harness:codex",A baseline refresh must not bypass absolute quality thresholds. Pair graded ranking judgments with an independent byte measurement so a no-op token-budget flag cannot pass a generous packet ceiling; label large fixtures by measured shape as well as item count.
 files[8]{path,scope,note}:
@@ -85,7 +87,7 @@ tests[2]:
       created_at: "2026-09-17T19:40:00.358Z"
       source_kind: local_mutation
       source_ref: fix/next-budget-context-quality
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mu5z12c7-bl7ot3
     kind: test
     status: passed
@@ -98,8 +100,20 @@ test_runs[1]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "pnpm quality:context-eval",schema,schema,source,legacy
       node scripts/release/context-eval-gate.mjs --corpus tests/context-eval/scale-scenarios.json --baseline tests/context-eval/scale-baseline.json,schema,schema,source,local_source_ref
+  - run_id: test-local-mu61jqdk-hxnh1i
+    kind: test
+    status: passed
+    started_at: "2026-09-17T21:23:21.929Z"
+    finished_at: "2026-09-17T21:27:57.512Z"
+    recorded_at: "2026-09-17T21:27:57.512Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:context-eval",schema,schema,source,legacy
+      node scripts/release/context-eval-gate.mjs --corpus tests/context-eval/scale-scenarios.json --baseline tests/context-eval/scale-baseline.json,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/NEXT_SELECTION_BUDGETS.md,project,Document corpus shapes and reproducible evaluation commands
   docs/TESTING.md,project,Corpus authoring and intentional baseline update workflow
-close_reason: "Completed graded scratch, medium, scale and returning-agent context corpus with mandatory large-workspace validation."
+close_reason: "Completed graded context corpus and independent rendered-budget enforcement, including PR 1265 review corrections."
 body: ""

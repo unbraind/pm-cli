@@ -291,9 +291,7 @@ function toNextActionableItem(
   };
 }
 
-// Builds the human+agent readable rationale for the recommended item, ordering
-// clauses from most to least decisive (status, priority, deadline, blocker
-// clearance, parent advancement, downstream unblocks).
+/** Explain the recommendation concisely in status, priority, deadline, and dependency order. */
 function buildRecommendationReasons(
   entry: ActionableEntry,
   statusRegistry: RuntimeStatusRegistry,
@@ -305,14 +303,14 @@ function buildRecommendationReasons(
   const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
   reasons.push(
     normalizeStatusForRegistry(item.status, statusRegistry) === inProgressStatus
-      ? "in progress — resume to finish"
-      : "open and ready to start",
+      ? "resume work"
+      : "ready",
   );
   if (completedContainer) {
     reasons.push("completed container — governance closeout");
   }
   reasons.push(
-    `priority p${item.priority}${item.priority === 0 ? " (highest)" : ""}`,
+    `p${item.priority}${item.priority === 0 ? " (highest)" : ""}`,
   );
   if (typeof item.deadline === "string" && item.deadline.trim().length > 0) {
     reasons.push(describeDeadline(item.deadline, now));
@@ -520,9 +518,11 @@ function buildNextSuggestions(
   ];
 }
 
+/** Disclose row-capped populations, accounting for the separate highest-ranked recommendation. */
 function buildNextTruncation(
   decisionCount: number,
   heldCount: number,
+  readyCount: number,
   limit: number,
 ): NextResult["truncation"] {
   const truncation: NonNullable<NextResult["truncation"]> = {};
@@ -532,9 +532,13 @@ function buildNextTruncation(
   if (heldCount > limit) {
     truncation.held_by_others_total = heldCount;
   }
+  if (readyCount > limit + 1) {
+    truncation.ready_total = readyCount;
+  }
   return Object.keys(truncation).length > 0 ? truncation : undefined;
 }
 
+/** Record serving evidence from the emitted selection so omitted rows cannot receive delivery credit. */
 async function attachNextUsageFeedback(params: {
   result: NextResult;
   pmRoot: string;
@@ -579,6 +583,7 @@ async function attachNextUsageFeedback(params: {
   }
 }
 
+/** Enforce the selection ceiling before producing ranking explanations and durable serving evidence. */
 async function finalizeNextResult(params: {
   result: NextResult;
   recommended: NextRecommendation | null;
@@ -660,6 +665,7 @@ function filterCandidatesByParentScope(
   );
 }
 
+/** Rank structurally eligible work using workspace signals while retaining the full candidate population. */
 async function rankReadyEntriesWithRelevance(
   rankedReady: ActionableEntry[],
   childrenByParent: Map<string, ItemMetadata[]>,
@@ -837,6 +843,7 @@ export async function runNext(
   const truncation = buildNextTruncation(
     decisionRows.length,
     callerPartition.held.length,
+    readyRows.length,
     limit,
   ) ?? {};
   if (gateRows.length > limit) truncation.gate_needed_total = gateRows.length;

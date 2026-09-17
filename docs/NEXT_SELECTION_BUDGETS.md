@@ -52,7 +52,10 @@ or the selection ceiling was infeasible, avoiding redundant context overhead.
 
 The independent row cap still applies. Raising a selection budget does not
 raise `--limit`, and budget omission counts exclude rows already withheld by
-that cap. Companion decisions, gates, containers, and blockers are outside the
+that cap. `truncation.ready_total` reports the complete ready population when
+either the row cap or the selection budget removes rows, including when a
+generous budget fits every row allowed by the cap.
+Companion decisions, gates, containers, and blockers are outside the
 selection budget; their output is covered by the complete-response budget.
 Selection accounting precedes whole-response projection. If the latter removes
 more data, its outer output-budget receipt describes that additional omission.
@@ -69,8 +72,8 @@ included merely because the generic optimizer considered them affordable.
 The committed golden corpus includes scratch, hierarchy, continuity,
 served-then-used, and medium backlog cases at different selection budgets.
 The gate independently measures the selection instead of trusting its receipt.
-Negative controls reject missing receipts, ignored budgets, and false
-feasibility claims.
+Negative controls reject missing receipts, ignored budgets, false feasibility
+claims, and budgets that fit compact JSON but fail the actual rendered cost.
 
 ```bash
 node scripts/release/context-eval-gate.mjs

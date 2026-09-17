@@ -31,6 +31,7 @@ export interface NextReadyBudgetReceipt {
 /** Trim alternatives before the recommendation, retaining order and complete population counts. */
 export function applyNextReadyBudget(result: NextResult, budget: number, hasIntentBudget: boolean): void {
   const selection = { recommended: result.recommended, ready: result.ready };
+  /** Measure the mutable candidate prefix against both supported structured renderers. */
   const measure = (): number => Math.max(
     estimateReadOutputTokens(selection, "json"),
     estimateReadOutputTokens(selection, "toon"),

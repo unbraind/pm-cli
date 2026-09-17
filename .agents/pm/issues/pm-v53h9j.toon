@@ -6,22 +6,22 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:sdk",context-management,token-efficiency
 created_at: "2026-09-17T19:26:35.525Z"
-updated_at: "2026-09-17T20:33:23.330Z"
-closed_at: "2026-09-17T20:28:58.146Z"
-completed_at: "2026-09-17T20:28:58.146Z"
+updated_at: "2026-09-17T21:28:38.889Z"
+closed_at: "2026-09-17T21:28:38.255Z"
+completed_at: "2026-09-17T21:28:38.255Z"
 author: "harness:codex"
 acceptance_criteria: "Explicit budgets bound the documented ready-selection scope; omitted recommendation and rows are disclosed; selection and usage feedback agree with delivered rows; SDK, CLI and MCP preserve the contract; regressions fail before implementation and pass afterward."
 parent: pm-5t33or
-resolution: "Explicit token budgets now bound recommendation and ready alternatives using rendered byte estimates; tiny infeasible envelopes and hidden work are disclosed, unchanged intent reads avoid redundant receipts, and CLI/MCP inherit the SDK behavior."
-expected_result: "Requested selection budgets bind without losing population counts, mislabeling an omitted recommendation as no work, or attributing hidden candidates as delivered."
-actual_result: "Real SDK/CLI regression and installed npm/Bun/npx/bunx/MCP acceptance pass; strict packed TypeScript consumption, 8974 tests, exact 100/100/100/100 coverage, static contracts and graph/record gates pass."
+resolution: "Enforce ordered rendered ready-selection budgets, expose independent row-cap and token omissions, preserve emitted-row attribution, and document recovery."
+expected_result: Bounded SDK/CLI/MCP selections disclose all omissions and remain efficient under strict gates.
+actual_result: 8974 tests pass with exact 100/100/100/100 coverage; static/type/token gates and fresh npm/Bun/npx/bunx/SDK/MCP acceptance pass; both review regressions pass.
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-55ra,discovered_from,"2026-09-17T19:26:35.525Z","harness:codex","cli:create:dep",detected
   pm-g2zz,implements,"2026-09-17T19:26:35.525Z","harness:codex","cli:create:dep",detected
   pm-1wujzi,related,"2026-09-17T20:12:02.812Z","harness:codex","cli:update:dep",detected
   pm-atfm,implements,"2026-09-17T20:12:02.812Z","harness:codex","cli:update:dep",detected
   pm-e9zh,verifies,"2026-09-17T20:12:02.812Z","harness:codex","cli:update:dep",detected
-comments[11]:
+comments[16]:
   - created_at: "2026-09-17T19:26:35.525Z"
     author: "harness:codex"
     text: "Duplicate check: live all-status searches for 1264, token budget, and next budget; read pm-55ra, pm-5t33or, pm-lixy, pm-atfm, and pm-1wujzi. No existing issue owns GH-1264. Existing packer history is retained as completed lineage; the new regression belongs under the binding-output contract."
@@ -56,6 +56,21 @@ comments[11]:
   - created_at: "2026-09-17T20:33:23.330Z"
     author: "harness:codex"
     text: "Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1265 carries the implementation, SDK surface receipt, full validation evidence, structured closure and package-generated changelog. Implementation commit: 6a5e6826a. Exact-head hosted checks and bot feedback are retained on that PR; merge remains conditional on required checks and resolution of actionable findings."
+  - created_at: "2026-09-17T20:53:59.772Z"
+    author: "harness:codex"
+    text: "PR 1265 review TDD: two new row-limit assertions failed before the correction (ready_total was absent for roomy explicit budgets and advisory packing). The SDK now discloses the full ready population independently of selection-budget omissions."
+  - created_at: "2026-09-17T20:59:22.916Z"
+    author: "harness:codex"
+    text: "The row-limit receipt added 18 bytes to the 2,243-item orientation session and correctly failed its no-growth ratchet. Shortened redundant recommendation wording while retaining readiness, priority and highest-priority meaning; the calibration baseline and limits remain unchanged. Complexity remains under the existing limit by handling the count in the established truncation builder."
+  - created_at: "2026-09-17T21:06:08.760Z"
+    author: "harness:codex"
+    text: "The later composed agent-task token gate also caught four extra tokens in orientation-contracts-next. The final wording uses ready / resume work and concise pN priority labels; the item status already carries open versus in-progress. No token baselines, suppression files, or limits were changed. Earlier static stages passed; the failing composed gate and remaining stages are being rerun before closeout."
+  - created_at: "2026-09-17T21:08:07.281Z"
+    author: "harness:codex"
+    text: "Measured baseline review: the compact next projection omits prose reasons, so its necessary ready_total field costs 722 versus 718 tokens. Adopted the exact generated task baseline: contracts 4111 to 4108, orientation task 4829 to 4830, refusal 440 to 433, composite 12667 to 12661. Canonical orientation winner remains 1102. This corrects the preceding expectation that wording alone could offset the compact projection; no predicate, absolute budget, transcript, or negative control was relaxed."
+  - created_at: "2026-09-17T21:28:37.000Z"
+    author: "harness:codex"
+    text: "Final pre-merge review verification: 8974 tests across 704 files pass; exact coverage 64764/64764 statements, 49406/49406 branches, 13443/13443 functions, 61994/61994 lines. Both CodeRabbit findings have failing-before/passing-after regression evidence. All static stages, typechecks, unchanged orientation calibration, refreshed composed-task ratchet plus seeded negative control pass. Fresh npm/Bun installs pass SDK/CLI/MCP, npx/bunx, lifecycle, README/Git/history and telemetry acceptance; packed strict TypeScript consumer passes. Reviewed baseline records the necessary compact omission marker and tightens composite cost."
 notes[2]{created_at,author,text}:
   "2026-09-17T19:49:25.795Z","harness:codex","Implementation boundary: next owns executable selection in the SDK. The documented selection estimate is the greater of JSON and TOON UTF-8 bytes divided by four; row limits apply first. Alternatives are removed before the recommendation, and infeasible empty envelopes are disclosed honestly. The universal output budget still owns companion queues and the full response. Intent reads omit redundant selection receipts only when no omission or infeasibility needs disclosure."
   "2026-09-17T19:53:49.161Z","harness:codex","All-status tracker health: the resolution validator still flags the 170 historical records explicitly retained as unknown by the completed pm-e9zh evidence-recovery pass; its full notes enumerate the residual and prohibit placeholder backfills. Concurrent validation saw only the two actively edited records as hash mismatches; both immediately passed history --verify --strict-exit with matching current hashes. Final frozen validation will run after all PM writes. Graph redundancy exposes 67 witnessed implied ordering edges; no arbitrary relationships were added to inflate depth."
@@ -69,7 +84,7 @@ files[5]{path,scope,note}:
   tests/unit/commands/next-command.spec.ts,project,TDD regression with real isolated CLI and SDK reads
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts tests/unit/commands/context-relevance-command.spec.ts,project,240,"harness:codex","2026-09-17T19:39:59.584Z",local_mutation,fix/next-budget-context-quality
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mu5y5hfn-lr0o1u
     kind: test
     status: failed
@@ -92,11 +107,23 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts tests/unit/commands/context-relevance-command.spec.ts,schema,schema,source,local_source_ref
-docs[3]{path,scope,note}:
+  - run_id: test-local-mu61kk9t-zipmlx
+    kind: test
+    status: passed
+    started_at: "2026-09-17T21:28:24.196Z"
+    finished_at: "2026-09-17T21:28:36.257Z"
+    recorded_at: "2026-09-17T21:28:36.257Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts tests/unit/commands/context-relevance-command.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope,note}:
   CHANGELOG.md,project,Generated by latest pm-changelog from closed delivery items
+  docs/agent-task-token-baseline.json,project,Reviewed rendered row-omission receipt cost; composite ratchet tightened by six tokens
   docs/NEXT_SELECTION_BUDGETS.md,project,Selection versus whole-response budgets and truthful recovery
   docs/README.md,project,Make the selection-budget guide reachable from the public docs index
-close_reason: Implemented and locally verified SDK-owned next selection budgets with truthful omission receipts and delivered-row attribution.
+close_reason: "Implemented and verified SDK selection ceilings and truthful row/token omissions, including PR 1265 review corrections."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

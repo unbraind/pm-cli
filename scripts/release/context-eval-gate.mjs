@@ -16,6 +16,7 @@ import {
 } from "../../dist/cli-bundle/sdk.js";
 import { fail, parseFlags, repoRoot } from "./utils.mjs";
 import { generateSyntheticWorkspace } from "../bench/scale-workspace.mjs";
+import { estimateReadOutputTokens } from "../../dist/sdk/read-output-budget.js";
 
 const DEFAULT_CORPUS_PATH = path.join(repoRoot, "tests", "context-eval", "golden-scenarios.json");
 const DEFAULT_BASELINE_PATH = path.join(repoRoot, "tests", "context-eval", "baseline.json");
@@ -95,6 +96,7 @@ export function mapScenarioDefinition(definition, idByKey) {
   };
 }
 
+/** Materialize isolated corpus fixtures and claims without touching repository tracking data. */
 async function seedWorkspace(definition, workspaceRoot) {
   const pmRoot = path.join(workspaceRoot, ".agents", "pm");
   const client = new PmClient({ pmRoot, cwd: workspaceRoot, author: "context-eval-agent", noExtensions: true });
@@ -165,7 +167,10 @@ export async function verifyNextSelectionBudget(client, options) {
   const budget = Number(options.tokenBudget);
   const result = await client.next({ ...options, outputBudget: "unbounded", explainRanking: false });
   const selection = { recommended: result.recommended, ready: result.ready };
-  const measured = Math.ceil(Buffer.byteLength(JSON.stringify(selection), "utf8") / 4);
+  const measured = Math.max(
+    estimateReadOutputTokens(selection, "json"),
+    estimateReadOutputTokens(selection, "toon"),
+  );
   const receipt = result.truncation?.ready_budget;
   if (!receipt || receipt.budget_tokens !== budget || !receipt.within_budget || measured > budget) {
     fail(`Context evaluation next selection budget failed: ${measured} tokens against ${budget}`);
@@ -307,6 +312,7 @@ export function compareContextEvaluationBaseline(report, baseline) {
   return failures;
 }
 
+/** Evaluate each fresh workspace and always restore the caller identity and remove temporary data. */
 async function measureCorpus(corpus) {
   const reports = [];
   const originalAuthor = process.env.PM_AUTHOR;
