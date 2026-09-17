@@ -5,12 +5,15 @@
 
 /** Parse the linked-test dotted and bracket-index path grammar. */
 export function splitJsonPathSegments(fieldPath: string): Array<string | number> {
+  if (!/^(?:[^.[\]]+|\[\d+\])(?:\.[^.[\]]+|\[\d+\])*$/u.test(fieldPath)) {
+    return [];
+  }
   const segments: Array<string | number> = [];
-  const tokens = fieldPath.match(/[^.[\]]+|\[\d+\]/g) ?? [];
-  for (const token of tokens) {
+  const tokens = fieldPath.matchAll(/[^.[\]]+|\[\d+\]/g);
+  for (const [token] of tokens) {
     if (token.startsWith("[") && token.endsWith("]")) {
       const parsedIndex = Number.parseInt(token.slice(1, -1), 10);
-      if (!Number.isInteger(parsedIndex) || parsedIndex < 0) {
+      if (!Number.isSafeInteger(parsedIndex)) {
         return [];
       }
       segments.push(parsedIndex);

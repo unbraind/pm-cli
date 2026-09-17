@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Reject malformed linked-test JSON paths instead of silently normalizing assertions ([pm-czr31p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-czr31p.toon))
+
 ### Security
 
 - Reject inherited array elements in linked-test assertions ([pm-1skc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1skc.toon))

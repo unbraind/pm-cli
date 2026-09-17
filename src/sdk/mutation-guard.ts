@@ -125,6 +125,7 @@ const MUTATION_ACTION_CONTRACTS_BY_NAME: ReadonlyMap<
   ]),
 );
 
+/** Collect string leaves with payload paths while visiting each object only once. */
 function stringLeaves(
   value: unknown,
   path = "$",

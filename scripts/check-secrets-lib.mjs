@@ -4,6 +4,7 @@ import { SECRET_RULES } from "../src/core/shared/secret-rules.ts";
 export const RULES = SECRET_RULES.filter((rule) => !("mutationOnlyReason" in rule))
   .map((rule) => ({ ...rule, regex: new RegExp(rule.regex.source, rule.regex.flags) }));
 
+/** Index line starts once so multiple detectors share the same offset lookup. */
 function lineStartIndexes(content) {
   const starts = [0];
   for (let index = 0; index < content.length; index += 1) {
@@ -14,6 +15,7 @@ function lineStartIndexes(content) {
   return starts;
 }
 
+/** Convert a match offset to its one-based diagnostic line by binary search. */
 function lineNumberFromIndex(starts, index) {
   let low = 0;
   let high = starts.length - 1;
@@ -28,6 +30,7 @@ function lineNumberFromIndex(starts, index) {
   return high + 1;
 }
 
+/** Return only rule names and source locations, honoring repository-only fixture exemptions. */
 export function scanContent(file, content) {
   const findings = [];
   const lineStarts = lineStartIndexes(content);

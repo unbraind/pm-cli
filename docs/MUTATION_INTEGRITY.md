@@ -120,6 +120,16 @@ operation and author before the repository can treat that invariant as fully
 enforced. Workspace actions remain explicitly classified while that executable
 gate is completed.
 
+## Linked-Test JSON Assertions
+
+Tracked by [pm-czr31p](../.agents/pm/issues/pm-czr31p.toon).
+
+JSON assertions accept dotted fields and non-negative safe integer indexes,
+such as `result.items[0].count` or `[0][1].count`. The whole path must match:
+empty segments, empty brackets, negative indexes, and omitted separators fail
+the assertion instead of silently selecting a different field. Traversal reads
+only own data properties and never invokes getters or follows prototypes.
+
 ## Unknown-Author Disposition
 
 Use `scanHistoryAuthorAttribution` to obtain exact item and one-based line
