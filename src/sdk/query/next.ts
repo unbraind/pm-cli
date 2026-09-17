@@ -55,7 +55,7 @@ import {
   readContextUsageAffinity,
   recordContextUsageServing,
 } from "../context-usage.js";
-import type { ContextPackingReport } from "../context-packing.js";
+import { applyNextReadyBudget, type NextReadyBudgetReceipt } from "./next-ready-budget.js";
 import {
   readWorkspaceContextSignals,
   type ContextSignalStoreReadResult,
@@ -97,7 +97,7 @@ export interface NextOptions {
   format?: string;
   /** Value that configures or reports explain ranking for this contract. */
   explainRanking?: boolean;
-  /** Maximum estimated tokens spent on the ranked ready queue. */
+  /** Maximum rendered tokens for the recommendation and ready alternatives; companion queues use outputBudget. */
   tokenBudget?: string | number;
   /** Include human-gated Decision items in the claimable ready queue. */
   includeDecisions?: boolean;
@@ -206,10 +206,14 @@ export interface NextResult {
   warnings?: string[];
   /** Value that configures or reports ranking for this contract. */
   ranking?: ContextRankingSummary;
-  /** Token-budget selection and projection accounting for the ready queue. */
+  /** Advisory candidate-optimizer diagnostics; ready_budget accounts for emitted rows. */
   packing?: ContextPackingSummary;
   /** Explicit marker and complete counts for queues truncated by the shared section limit. */
   truncation?: {
+    /** Complete actionable population before row and token limits. */
+    ready_total?: number;
+    /** Explicit selection-budget accounting, including infeasible empty selections. */
+    ready_budget?: NextReadyBudgetReceipt;
     decision_needed_total?: number;
     held_by_others_total?: number;
     gate_needed_total?: number;
@@ -287,9 +291,7 @@ function toNextActionableItem(
   };
 }
 
-// Builds the human+agent readable rationale for the recommended item, ordering
-// clauses from most to least decisive (status, priority, deadline, blocker
-// clearance, parent advancement, downstream unblocks).
+/** Explain the recommendation concisely in status, priority, deadline, and dependency order. */
 function buildRecommendationReasons(
   entry: ActionableEntry,
   statusRegistry: RuntimeStatusRegistry,
@@ -301,14 +303,14 @@ function buildRecommendationReasons(
   const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
   reasons.push(
     normalizeStatusForRegistry(item.status, statusRegistry) === inProgressStatus
-      ? "in progress — resume to finish"
-      : "open and ready to start",
+      ? "resume work"
+      : "ready",
   );
   if (completedContainer) {
     reasons.push("completed container — governance closeout");
   }
   reasons.push(
-    `priority p${item.priority}${item.priority === 0 ? " (highest)" : ""}`,
+    `p${item.priority}${item.priority === 0 ? " (highest)" : ""}`,
   );
   if (typeof item.deadline === "string" && item.deadline.trim().length > 0) {
     reasons.push(describeDeadline(item.deadline, now));
@@ -516,9 +518,11 @@ function buildNextSuggestions(
   ];
 }
 
+/** Disclose row-capped populations, accounting for the separate highest-ranked recommendation. */
 function buildNextTruncation(
   decisionCount: number,
   heldCount: number,
+  readyCount: number,
   limit: number,
 ): NextResult["truncation"] {
   const truncation: NonNullable<NextResult["truncation"]> = {};
@@ -528,20 +532,26 @@ function buildNextTruncation(
   if (heldCount > limit) {
     truncation.held_by_others_total = heldCount;
   }
+  if (readyCount > limit + 1) {
+    truncation.ready_total = readyCount;
+  }
   return Object.keys(truncation).length > 0 ? truncation : undefined;
 }
 
+/** Record serving evidence from the emitted selection so omitted rows cannot receive delivery credit. */
 async function attachNextUsageFeedback(params: {
   result: NextResult;
   pmRoot: string;
   author: string;
-  packing: ContextPackingReport<ItemMetadata>;
   ranking: Awaited<
     ReturnType<typeof scoreContextCandidatesWithActiveExtensions<ItemMetadata>>
   >;
 }): Promise<void> {
   try {
-    const included = new Set(params.packing.included.map((entry) => entry.id));
+    const included = new Set([
+      ...(params.result.recommended ? [params.result.recommended.id] : []),
+      ...params.result.ready.map((entry) => entry.id),
+    ]);
     const rows = params.ranking.ranked.map((entry) => ({
       id: entry.id,
       rank: entry.rank,
@@ -561,7 +571,7 @@ async function attachNextUsageFeedback(params: {
       pmRoot: params.pmRoot,
       author: params.author,
       surface: "next",
-      profile: params.packing.profile,
+      profile: "next",
       rows,
       enabled: process.env.PM_CONTEXT_USAGE_DISABLED !== "1",
     });
@@ -573,6 +583,7 @@ async function attachNextUsageFeedback(params: {
   }
 }
 
+/** Enforce the selection ceiling before producing ranking explanations and durable serving evidence. */
 async function finalizeNextResult(params: {
   result: NextResult;
   recommended: NextRecommendation | null;
@@ -586,8 +597,10 @@ async function finalizeNextResult(params: {
   explainRanking: boolean;
   pmRoot: string;
   author: string;
-  packing: ContextPackingReport<ItemMetadata>;
+  packingBudget: number;
   featureStore: ContextSignalStoreReadResult;
+  tokenBudget?: number;
+  hasIntentBudget: boolean;
 }): Promise<NextResult> {
   const warnings = [
     ...new Set([
@@ -598,24 +611,35 @@ async function finalizeNextResult(params: {
     ]),
   ].sort((left, right) => left.localeCompare(right));
   if (warnings.length > 0) params.result.warnings = warnings;
-  if (params.explainRanking) {
-    params.result.ranking = toContextRankingSummary(
-      params.readyRanking,
-      params.featureStore,
-    );
-    params.result.packing = toContextPackingSummary(params.packing);
-  }
-
   params.result.suggestions = buildNextSuggestions(
     params.recommended,
     params.blockedRows,
     params.gateCount,
   );
+  if (params.tokenBudget !== undefined) {
+    applyNextReadyBudget(params.result, params.tokenBudget, params.hasIntentBudget);
+  }
+  if (params.explainRanking) {
+    params.result.ranking = toContextRankingSummary(
+      params.readyRanking,
+      params.featureStore,
+      new Set([
+        ...(params.result.recommended ? [params.result.recommended.id] : []),
+        ...params.result.ready.map((entry) => entry.id),
+      ]),
+    );
+    params.result.packing = toContextPackingSummary(packRankedContextItems(
+      params.readyRanking,
+      params.packingBudget,
+      new Set(),
+      "next",
+    ));
+  }
+
   await attachNextUsageFeedback({
     result: params.result,
     pmRoot: params.pmRoot,
     author: params.author,
-    packing: params.packing,
     ranking: params.readyRanking,
   });
   return params.result;
@@ -641,6 +665,7 @@ function filterCandidatesByParentScope(
   );
 }
 
+/** Rank structurally eligible work using workspace signals while retaining the full candidate population. */
 async function rankReadyEntriesWithRelevance(
   rankedReady: ActionableEntry[],
   childrenByParent: Map<string, ItemMetadata[]>,
@@ -648,7 +673,6 @@ async function rankReadyEntriesWithRelevance(
   now: string,
   callerAuthor: string,
   pmRoot: string,
-  tokenBudget: number,
   includeContainers: boolean,
 ): Promise<{
   projectedReady: ActionableEntry[];
@@ -656,7 +680,6 @@ async function rankReadyEntriesWithRelevance(
     ReturnType<typeof scoreContextCandidatesWithActiveExtensions<ItemMetadata>>
   >;
   completedContainer: boolean;
-  packing: ContextPackingReport<ItemMetadata>;
   featureStore: ContextSignalStoreReadResult;
 }> {
   const concreteReady = rankedReady.filter(
@@ -684,12 +707,6 @@ async function rankReadyEntriesWithRelevance(
     "next",
     featureStore.candidates,
   );
-  const packing = packRankedContextItems(
-    ranking,
-    tokenBudget,
-    new Set(),
-    "next",
-  );
   const readyById = new Map(
     structuralReady.map((entry) => [entry.item.id, entry]),
   );
@@ -700,7 +717,6 @@ async function rankReadyEntriesWithRelevance(
     projectedReady,
     ranking,
     completedContainer: concreteReady.length === 0 && !includeContainers,
-    packing,
     featureStore,
   };
 }
@@ -790,7 +806,6 @@ export async function runNext(
     projectedReady,
     ranking: readyRanking,
     completedContainer,
-    packing: readyPacking,
     featureStore,
   } = await rankReadyEntriesWithRelevance(
     rankedReady,
@@ -799,7 +814,6 @@ export async function runNext(
     now,
     callerAuthor,
     pmRoot,
-    tokenBudget,
     options.includeContainers === true,
   );
 
@@ -829,6 +843,7 @@ export async function runNext(
   const truncation = buildNextTruncation(
     decisionRows.length,
     callerPartition.held.length,
+    readyRows.length,
     limit,
   ) ?? {};
   if (gateRows.length > limit) truncation.gate_needed_total = gateRows.length;
@@ -886,8 +901,10 @@ export async function runNext(
     explainRanking: options.explainRanking === true,
     pmRoot,
     author: callerAuthor,
-    packing: readyPacking,
+    packingBudget: tokenBudget,
     featureStore,
+    tokenBudget: options.tokenBudget === undefined ? undefined : tokenBudget,
+    hasIntentBudget: typeof options.for === "string",
   });
 }
 
@@ -905,7 +922,9 @@ export function renderNextMarkdown(result: NextResult): string {
     ...renderNextSection(
       "Recommended",
       renderNextRecommendedRows(result.recommended),
-      "No ready work.",
+      result.truncation?.ready_budget?.recommendation_omitted
+        ? "Recommendation omitted by the selection budget; ready work still exists."
+        : "No ready work.",
     ),
   );
   lines.push(

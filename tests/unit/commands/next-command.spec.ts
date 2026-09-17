@@ -11,6 +11,7 @@ import {
 } from "../../../src/cli/commands/next.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import { formatBuiltInOutput } from "../../../src/core/output/output.js";
 import {
   withTempPmPath,
   type TempPmContext,
@@ -27,6 +28,7 @@ interface CreateItemOptions {
   dep?: string;
 }
 
+/** Seed a real isolated CLI item with optional hierarchy, deadline, and blocker context. */
 function createItem(
   context: TempPmContext,
   options: CreateItemOptions,
@@ -58,9 +60,7 @@ function createItem(
   return (created.json as { item: { id: string } }).item.id;
 }
 
-// Deadlines are computed relative to the real clock with whole-day margin so the
-// floored relative-day bucket (overdue / today / in Nd) is stable regardless of
-// the time of day the test runs.
+/** Offset deadlines with whole-day margins so relative-day assertions survive clock boundaries. */
 function deadlineOffsetMs(offsetMs: number): string {
   return new Date(Date.now() + offsetMs).toISOString();
 }
@@ -96,6 +96,59 @@ describe("resolveNextOutputFormat", () => {
 });
 
 describe("runNext", () => {
+  it("enforces an explicit ready-selection budget without confusing omission with no work", async () => {
+    await withTempPmPath(async (context) => {
+      const empty = await runNext({ tokenBudget: 32 }, { path: context.pmPath });
+      expect(empty.truncation?.ready_budget).toMatchObject({ omitted_count: 0, within_budget: true, recommendation_omitted: false });
+      const first = createItem(context, { title: "Highest priority", priority: "0" });
+      createItem(context, { title: "Second priority", priority: "1" });
+      createItem(context, { title: "Third priority", priority: "2" });
+      const tiny = await runNext({ tokenBudget: 10 }, { path: context.pmPath });
+      expect(tiny.recommended).toBeNull();
+      expect(tiny.ready).toEqual([]);
+      expect(tiny.summary.ready).toBe(3);
+      expect(tiny.truncation).toMatchObject({
+        ready_total: 3,
+        ready_budget: { budget_tokens: 10, omitted_count: 3, within_budget: false },
+      });
+      expect(tiny.suggestions?.join(" ")).toContain("--token-budget");
+      expect(tiny.suggestions?.join(" ")).not.toContain("pm create");
+      expect(renderNextMarkdown(tiny)).toContain("Recommendation omitted by the selection budget");
+      const roomy = await runNext({ tokenBudget: 5000 }, { path: context.pmPath });
+      expect(roomy.recommended?.id).toBe(first);
+      expect(roomy.ready).toHaveLength(2);
+      const rowLimited = await runNext({ limit: "1", tokenBudget: 5000 }, { path: context.pmPath });
+      expect(rowLimited.ready).toHaveLength(1);
+      expect(rowLimited.truncation).toMatchObject({ ready_total: 3, ready_budget: { omitted_count: 0 } });
+      const intent = await runNext({ for: "execute", tokenBudget: 5000 }, { path: context.pmPath });
+      expect(intent.recommended?.id).toBe(first);
+      expect(intent.truncation?.ready_budget).toBeUndefined();
+      const limitedIntent = await runNext({ for: "execute", tokenBudget: 32 }, { path: context.pmPath });
+      expect(limitedIntent.truncation?.ready_budget).toMatchObject({ omitted_count: 3, within_budget: true });
+      const recommendedOnly = { recommended: roomy.recommended, ready: [] };
+      const oneRowBudget = Math.max(...(["json", "toon"] as const).map((format) =>
+        Math.ceil(Buffer.byteLength(formatBuiltInOutput(recommendedOnly, format), "utf8") / 4),
+      ));
+      const bounded = await runNext({ tokenBudget: oneRowBudget, explainRanking: true }, { path: context.pmPath });
+      expect(bounded.recommended?.id).toBe(first);
+      expect(bounded.ready).toEqual([]);
+      expect(bounded.ranking?.items.map((row) => row.id)).toEqual([first]);
+      expect(bounded.truncation?.ready_budget).toMatchObject({
+        estimated_tokens: oneRowBudget, omitted_count: 2, within_budget: true,
+      });
+      const twoRowBudget = Math.max(...(["json", "toon"] as const).map((format) =>
+        Math.ceil(Buffer.byteLength(formatBuiltInOutput({ recommended: roomy.recommended, ready: roomy.ready.slice(0, 1) }, format), "utf8") / 4),
+      ));
+      const partial = await runNext({ tokenBudget: twoRowBudget }, { path: context.pmPath });
+      expect(partial.ready.map((row) => row.id)).toEqual(roomy.ready.slice(0, 1).map((row) => row.id));
+      for (const format of ["json", "toon"] as const) {
+        const cli = context.runCli(["next", "--token-budget", String(oneRowBudget), "--format", format], { expectJson: format === "json" });
+        expect(cli.code).toBe(0);
+        expect(cli.stdout).toContain("ready_budget");
+      }
+    });
+  });
+
   it("resolves caller identity through settings and unknown fallbacks", () => {
     const previousAuthor = process.env.PM_AUTHOR;
     delete process.env.PM_AUTHOR;
@@ -161,7 +214,7 @@ describe("runNext", () => {
 
       expect(result.recommended?.id).toBe(wip);
       expect(result.recommended?.reasons).toContain(
-        "in progress — resume to finish",
+        "resume work",
       );
       const readyIds = result.ready.map((entry) => entry.id);
       expect(readyIds).toContain(child);
@@ -209,8 +262,8 @@ describe("runNext", () => {
       const result = await runNext({}, { path: context.pmPath });
       expect(result.recommended?.id).toBe(focus);
       const reasons = result.recommended?.reasons ?? [];
-      expect(reasons).toContain("open and ready to start");
-      expect(reasons).toContain("priority p0 (highest)");
+      expect(reasons).toContain("ready");
+      expect(reasons).toContain("p0 (highest)");
       expect(reasons).toContain("all blockers resolved");
       expect(reasons).toContain(`advances ${epic}`);
       expect(
@@ -434,6 +487,7 @@ describe("runNext", () => {
       expect(result.summary.ready).toBe(3);
       expect(result.recommended).not.toBeNull();
       expect(result.ready).toHaveLength(1);
+      expect(result.truncation?.ready_total).toBe(3);
       expect(result.packing?.omitted_ids.length).toBeGreaterThan(0);
     });
   });

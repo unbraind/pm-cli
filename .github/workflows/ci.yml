@@ -374,6 +374,14 @@ jobs:
         if: matrix.gate == 'smokes'
         run: pnpm quality:context-eval
 
+      - name: Verify graded context at 10k and 100k items
+        if: matrix.gate == 'smokes'
+        timeout-minutes: 10
+        run: >-
+          node scripts/release/context-eval-gate.mjs
+          --corpus tests/context-eval/scale-scenarios.json
+          --baseline tests/context-eval/scale-baseline.json
+
   coverage-shards:
     name: Coverage shard ${{ matrix.shard }}/4
     needs: build-foundation

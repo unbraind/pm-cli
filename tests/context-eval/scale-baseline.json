@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "corpus_version": 1,
+  "aggregate": {
+    "ndcg": 1,
+    "reciprocal_rank": 1,
+    "required_recall": 1,
+    "continuity_coverage": 1,
+    "token_budget_adherence": 1
+  },
+  "scenarios": [
+    {
+      "id": "representative-10000-next",
+      "metrics": {
+        "ndcg": 1,
+        "reciprocal_rank": 1,
+        "required_recall": 1,
+        "continuity_coverage": 1,
+        "token_budget_adherence": 1,
+        "within_token_budget": true
+      }
+    },
+    {
+      "id": "scratch-100000-next",
+      "metrics": {
+        "ndcg": 1,
+        "reciprocal_rank": 1,
+        "required_recall": 1,
+        "continuity_coverage": 1,
+        "token_budget_adherence": 1,
+        "within_token_budget": true
+      }
+    }
+  ]
+}

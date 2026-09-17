@@ -8,15 +8,60 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { execFile } from "node:child_process";
+import { once } from "node:events";
+import { createServer, request, type IncomingMessage, type ServerResponse } from "node:http";
 import { tmpdir } from "node:os";
 import { promisify } from "node:util";
 import { describe, expect, it, vi } from "vitest";
 import { parse } from "yaml";
 import { createScriptHarness } from "../../../helpers/scriptModule.js";
 import type * as FirstRunModule from "../../../../scripts/release/packed-first-run.mjs";
-import { readQuickstartCommands } from "../../../../scripts/release/packed-first-run.mjs";
+import { collectTelemetryCompletion, readQuickstartCommands } from "../../../../scripts/release/packed-first-run.mjs";
 
 describe("packed first run", () => {
+  it("waits for completion across real delivery batches and rejects missing completion", async () => {
+    const collector = createServer();
+    collector.listen(0, "127.0.0.1");
+    await once(collector, "listening");
+    const address = collector.address();
+    if (address === null || typeof address === "string") throw new Error("Missing collector address");
+    const endpoint = `http://127.0.0.1:${address.port}/v1/events`;
+    try {
+      const delivery = collectTelemetryCompletion(collector, 2000);
+      const outcome = delivery.then((count) => ({ count }), (error: unknown) => ({ error }));
+      for (const event_type of ["command_start", "command_finish"]) {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          body: JSON.stringify({ events: [{ event_type }] }),
+          signal: AbortSignal.timeout(1000),
+        });
+        expect(response.status).toBe(202);
+        await response.text();
+      }
+      expect(await outcome).toEqual({ count: 2 });
+      expect(collector.listenerCount("request")).toBe(0);
+      await expect(collectTelemetryCompletion(collector, 10)).rejects.toMatchObject({ name: "AbortError" });
+      expect(collector.listenerCount("request")).toBe(0);
+      const incoming = once(collector, "request");
+      const stalled = collectTelemetryCompletion(collector, 500);
+      const refused = expect(stalled).rejects.toMatchObject({ name: "AbortError" });
+      const incomplete = request(endpoint, { method: "POST" });
+      incomplete.on("error", () => {});
+      incomplete.write('{"events":');
+      try {
+        const [unfinished] = await incoming as [IncomingMessage, ServerResponse];
+        expect(unfinished.complete).toBe(false);
+        await refused;
+        expect(collector.listenerCount("request")).toBe(0);
+      } finally {
+        incomplete.destroy();
+      }
+    } finally {
+      collector.closeAllConnections();
+      await new Promise<void>((resolve) => collector.close(() => resolve()));
+    }
+  });
+
   it("extracts the actual documented cold-start commands", async () => {
     const commands = readQuickstartCommands(
       await readFile("README.md", "utf8"),

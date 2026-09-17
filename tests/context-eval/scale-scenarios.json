@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "description": "Large graded workspaces using the shared measured shape generator. Run explicitly with the context evaluation gate.",
+  "thresholds": {
+    "ndcg": 0.9,
+    "reciprocal_rank": 0.9,
+    "required_recall": 1,
+    "continuity_coverage": 1,
+    "token_budget_adherence": 1
+  },
+  "scenarios": [
+    {
+      "id": "representative-10000-next",
+      "surface": "next",
+      "rationale": "A current claimed critical leaf must beat historical, foreign-held, blocked and structural work at scale while the emitted answer remains bounded. Shape metadata is measured by the shared scale generator.",
+      "workspace": {
+        "scale": {
+          "count": 10000,
+          "shape": "representative"
+        },
+        "items": [
+          {
+            "key": "anchor",
+            "title": "Resume critical current implementation",
+            "description": "Current claimed executable anchor added to the measured scale corpus",
+            "type": "Task",
+            "status": "in_progress",
+            "priority": "0",
+            "assignee": "context-eval-agent"
+          }
+        ],
+        "claims": [
+          "anchor"
+        ]
+      },
+      "options": {
+        "limit": "5",
+        "tokenBudget": 512,
+        "outputBudget": 4000
+      },
+      "judgments": {
+        "anchor": 3
+      },
+      "required_keys": [
+        "anchor"
+      ],
+      "continuity_keys": [
+        "anchor"
+      ],
+      "token_budget": 4000
+    },
+    {
+      "id": "scratch-100000-next",
+      "surface": "next",
+      "rationale": "A current claimed critical leaf must beat historical, foreign-held, blocked and structural work at scale while the emitted answer remains bounded. Shape metadata is measured by the shared scale generator.",
+      "workspace": {
+        "scale": {
+          "count": 100000,
+          "shape": "scratch"
+        },
+        "items": [
+          {
+            "key": "anchor",
+            "title": "Resume critical current implementation",
+            "description": "Current claimed executable anchor added to the measured scale corpus",
+            "type": "Task",
+            "status": "in_progress",
+            "priority": "0",
+            "assignee": "context-eval-agent"
+          }
+        ],
+        "claims": [
+          "anchor"
+        ]
+      },
+      "options": {
+        "limit": "5",
+        "tokenBudget": 512,
+        "outputBudget": 4000
+      },
+      "judgments": {
+        "anchor": 3
+      },
+      "required_keys": [
+        "anchor"
+      ],
+      "continuity_keys": [
+        "anchor"
+      ],
+      "token_budget": 4000
+    }
+  ]
+}

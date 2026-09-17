@@ -2036,6 +2036,16 @@
       ],
       "package_version": "2026.9.17",
       "reason": "Expand SecretGuardFinding rule union to the shared repository detector inventory; preserve all existing rule identifiers and redacted result fields (pm-wwooxx)."
+    },
+    {
+      "changes": [
+        "signature ./sdk:NextResult",
+        "signature ./sdk/core:NextResult",
+        "signature ./sdk/query:NextResult",
+        "signature ./sdk/runtime:NextResult"
+      ],
+      "package_version": "2026.9.17",
+      "reason": "Add optional next selection-budget receipt fields; existing NextResult fields and call signatures remain unchanged"
     }
   ],
   "entrypoints": {
@@ -10734,7 +10744,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NextResult",
-          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
+          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
         },
         {
           "classification": "supported",
@@ -25128,7 +25138,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NextResult",
-          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
+          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
         },
         {
           "classification": "supported",
@@ -30474,7 +30484,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NextResult",
-          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
+          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
         },
         {
           "classification": "supported",
@@ -32460,7 +32470,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NextResult",
-          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
+          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
         },
         {
           "classification": "supported",

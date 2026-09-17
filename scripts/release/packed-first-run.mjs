@@ -2,15 +2,32 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { once } from "node:events";
+import { on, once } from "node:events";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { addAbortSignal } from "node:stream";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { startPluginMcpSmoke } from "../plugin-mcp-smoke-harness.mjs";
 
 const execute = promisify(execFile);
+
+/** Acknowledge split worker batches until completion arrives, under one deadline with listener cleanup. */
+export async function collectTelemetryCompletion(collector, timeoutMs = 30_000) {
+  const signal = AbortSignal.timeout(timeoutMs);
+  let eventCount = 0;
+  for await (const [request, response] of on(collector, "request", {
+    signal,
+  })) {
+    let body = "";
+    for await (const chunk of addAbortSignal(signal, request)) body += chunk.toString();
+    response.writeHead(202).end();
+    const events = JSON.parse(body).events;
+    eventCount += events.length;
+    if (events.some((event) => event.event_type === "command_finish")) return eventCount;
+  }
+}
 
 /** Parse the documented init/create/list sequence without executing shell syntax. */
 export function readQuickstartCommands(markdown) {
@@ -151,16 +168,7 @@ export async function runPackedFirstRun(packageRoot) {
       const settings = JSON.parse(await readFile(settingsPath, "utf8"));
       settings.telemetry.endpoint = endpoint;
       await writeFile(settingsPath, JSON.stringify(settings));
-      const delivery = once(collector, "request", {
-        signal: AbortSignal.timeout(30_000),
-      }).then(async ([request, response]) => {
-        let body = "";
-        for await (const chunk of request) body += chunk.toString();
-        response.writeHead(202).end();
-        const events = JSON.parse(body).events;
-        assert(events.some((event) => event.event_type === "command_finish"));
-        return events.length;
-      });
+      const delivery = collectTelemetryCompletion(collector);
       const telemetryEnv = {
         ...env,
         PM_TELEMETRY_DISABLED: "0",

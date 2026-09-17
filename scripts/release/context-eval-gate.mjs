@@ -15,6 +15,8 @@ import {
   summarizeContextEvaluationReports,
 } from "../../dist/cli-bundle/sdk.js";
 import { fail, parseFlags, repoRoot } from "./utils.mjs";
+import { generateSyntheticWorkspace } from "../bench/scale-workspace.mjs";
+import { estimateReadOutputTokens } from "../../dist/sdk/read-output-budget.js";
 
 const DEFAULT_CORPUS_PATH = path.join(repoRoot, "tests", "context-eval", "golden-scenarios.json");
 const DEFAULT_BASELINE_PATH = path.join(repoRoot, "tests", "context-eval", "baseline.json");
@@ -94,12 +96,24 @@ export function mapScenarioDefinition(definition, idByKey) {
   };
 }
 
+/** Materialize isolated corpus fixtures and claims without touching repository tracking data. */
 async function seedWorkspace(definition, workspaceRoot) {
   const pmRoot = path.join(workspaceRoot, ".agents", "pm");
   const client = new PmClient({ pmRoot, cwd: workspaceRoot, author: "context-eval-agent", noExtensions: true });
-  await client.init(undefined, { defaults: true });
-  const idByKey = new Map();
   const workspace = requiredObject(definition.workspace, `scenario ${definition.id} workspace`);
+  if (workspace.scale !== undefined) {
+    const scale = requiredObject(workspace.scale, `scenario ${definition.id} workspace.scale`);
+    await generateSyntheticWorkspace({
+      workspaceRoot,
+      itemCount: scale.count,
+      shape: scale.shape,
+      seed: 42,
+      mode: "direct",
+    });
+  } else {
+    await client.init(undefined, { defaults: true });
+  }
+  const idByKey = new Map();
   for (const rawItem of optionalArray(workspace.items, `scenario ${definition.id} workspace.items`)) {
     const item = requiredObject(rawItem, `scenario ${definition.id} workspace item`);
     const { key, parent_key: parentKey, ...options } = item;
@@ -135,7 +149,32 @@ async function seedWorkspace(definition, workspaceRoot) {
       idByKey.set(key, created.item.id);
     }
   }
+  await claimScenarioItems(workspace, definition.id, idByKey, client);
   return { client, idByKey, pmRoot };
+}
+
+/** Record real claim history after all scenario keys have been materialized. */
+async function claimScenarioItems(workspace, scenarioId, idByKey, client) {
+  for (const key of optionalArray(workspace.claims, `scenario ${scenarioId} workspace.claims`)) {
+    const id = idByKey.get(key);
+    if (!id) fail(`Context evaluation claim references unknown item key: ${key}`);
+    await client.claim(id);
+  }
+}
+
+/** Independently measure explicit ready budgets so an ignored flag cannot pass a generous packet ceiling. */
+export async function verifyNextSelectionBudget(client, options) {
+  const budget = Number(options.tokenBudget);
+  const result = await client.next({ ...options, outputBudget: "unbounded", explainRanking: false });
+  const selection = { recommended: result.recommended, ready: result.ready };
+  const measured = Math.max(
+    estimateReadOutputTokens(selection, "json"),
+    estimateReadOutputTokens(selection, "toon"),
+  );
+  const receipt = result.truncation?.ready_budget;
+  if (!receipt || receipt.budget_tokens !== budget || !receipt.within_budget || measured > budget) {
+    fail(`Context evaluation next selection budget failed: ${measured} tokens against ${budget}`);
+  }
 }
 
 /** Seed one scenario's usage signals while preserving touch evidence on feedback failures. */
@@ -273,6 +312,7 @@ export function compareContextEvaluationBaseline(report, baseline) {
   return failures;
 }
 
+/** Evaluate each fresh workspace and always restore the caller identity and remove temporary data. */
 async function measureCorpus(corpus) {
   const reports = [];
   const originalAuthor = process.env.PM_AUTHOR;
@@ -283,7 +323,11 @@ async function measureCorpus(corpus) {
       try {
         const { client, idByKey, pmRoot } = await seedWorkspace(definition, workspaceRoot);
         await seedUsageFeedback(definition, idByKey, pmRoot);
-        reports.push(await runContextEvaluationScenario(mapScenarioDefinition(definition, idByKey), client));
+        const scenario = mapScenarioDefinition(definition, idByKey);
+        if (scenario.surface === "next" && scenario.options.tokenBudget !== undefined) {
+          await verifyNextSelectionBudget(client, scenario.options);
+        }
+        reports.push(await runContextEvaluationScenario(scenario, client));
       } finally {
         rmSync(workspaceRoot, { recursive: true, force: true });
       }
@@ -305,15 +349,16 @@ export async function main(argv = process.argv.slice(2)) {
   if (!existsSync(corpusPath)) fail(`Context evaluation corpus missing: ${corpusPath}`);
   const corpus = readCorpus(corpusPath);
   const report = await measureCorpus(corpus);
+  if (!report.passed) fail(`Context evaluation thresholds failed: ${report.failures.join(", ")}`);
   if (flags.has("update")) {
     writeFileSync(baselinePath, `${JSON.stringify(buildContextEvaluationBaseline(report, corpus.version), null, 2)}\n`);
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     return report;
   }
-  if (!existsSync(baselinePath)) fail(`Context evaluation baseline missing: ${baselinePath}\nRun pnpm quality:context-eval -- --update`);
+  if (!existsSync(baselinePath)) fail(`Context evaluation baseline missing: ${baselinePath}\nReview the corpus, then run this command with --update`);
   const baseline = readBaseline(baselinePath);
   const regressions = compareContextEvaluationBaseline(report, baseline);
-  if (!report.passed || regressions.length > 0) {
+  if (regressions.length > 0) {
     fail(`Context evaluation gate failed: ${[...report.failures, ...regressions].join(", ")}`);
   }
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);

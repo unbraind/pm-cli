@@ -895,12 +895,12 @@ export async function runContextEvaluationScenario(
       ? await reader.context({
           ...scenario.options,
           explainRanking: true,
-          outputBudget: "unbounded",
+          outputBudget: scenario.options?.outputBudget ?? "unbounded",
         })
       : await reader.next({
           ...scenario.options,
           explainRanking: true,
-          outputBudget: "unbounded",
+          outputBudget: scenario.options?.outputBudget ?? "unbounded",
         });
   const { rankedIds, attribution } = rankingPayloadForScenario(
     result,
