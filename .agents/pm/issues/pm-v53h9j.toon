@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:sdk",context-management,token-efficiency
 created_at: "2026-09-17T19:26:35.525Z"
-updated_at: "2026-09-17T20:28:58.928Z"
+updated_at: "2026-09-17T20:33:23.330Z"
 closed_at: "2026-09-17T20:28:58.146Z"
 completed_at: "2026-09-17T20:28:58.146Z"
 author: "harness:codex"
@@ -21,7 +21,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-1wujzi,related,"2026-09-17T20:12:02.812Z","harness:codex","cli:update:dep",detected
   pm-atfm,implements,"2026-09-17T20:12:02.812Z","harness:codex","cli:update:dep",detected
   pm-e9zh,verifies,"2026-09-17T20:12:02.812Z","harness:codex","cli:update:dep",detected
-comments[10]:
+comments[11]:
   - created_at: "2026-09-17T19:26:35.525Z"
     author: "harness:codex"
     text: "Duplicate check: live all-status searches for 1264, token budget, and next budget; read pm-55ra, pm-5t33or, pm-lixy, pm-atfm, and pm-1wujzi. No existing issue owns GH-1264. Existing packer history is retained as completed lineage; the new regression belongs under the binding-output contract."
@@ -53,6 +53,9 @@ comments[10]:
   - created_at: "2026-09-17T20:28:56.799Z"
     author: "harness:codex"
     text: "Final source proof after control-flow simplification: 704 files and 8974 tests passed in 631 seconds. Exact counters: statements 64762/64762, branches 49404/49404, functions 13443/13443, lines 61992/61992; zero uncovered counts. Final packed runtime and strict TypeScript consumers passed. All local static stages and unchanged graph/record assertions passed. Hosted exact-head checks and review follow in the delivery PR."
+  - created_at: "2026-09-17T20:33:23.330Z"
+    author: "harness:codex"
+    text: "Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1265 carries the implementation, SDK surface receipt, full validation evidence, structured closure and package-generated changelog. Implementation commit: 6a5e6826a. Exact-head hosted checks and bot feedback are retained on that PR; merge remains conditional on required checks and resolution of actionable findings."
 notes[2]{created_at,author,text}:
   "2026-09-17T19:49:25.795Z","harness:codex","Implementation boundary: next owns executable selection in the SDK. The documented selection estimate is the greater of JSON and TOON UTF-8 bytes divided by four; row limits apply first. Alternatives are removed before the recommendation, and infeasible empty envelopes are disclosed honestly. The universal output budget still owns companion queues and the full response. Intent reads omit redundant selection receipts only when no omission or infeasibility needs disclosure."
   "2026-09-17T19:53:49.161Z","harness:codex","All-status tracker health: the resolution validator still flags the 170 historical records explicitly retained as unknown by the completed pm-e9zh evidence-recovery pass; its full notes enumerate the residual and prohibit placeholder backfills. Concurrent validation saw only the two actively edited records as hash mismatches; both immediately passed history --verify --strict-exit with matching current hashes. Final frozen validation will run after all PM writes. Graph redundancy exposes 67 witnessed implied ordering edges; no arbitrary relationships were added to inflate depth."

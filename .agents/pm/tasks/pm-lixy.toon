@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: context,eval,quality-gate,relevance
 created_at: "2026-07-06T23:50:40.432Z"
-updated_at: "2026-09-17T20:29:00.374Z"
+updated_at: "2026-09-17T20:33:23.939Z"
 closed_at: "2026-09-17T20:28:59.714Z"
 completed_at: "2026-09-17T20:28:59.714Z"
 author: codex-agent
@@ -49,7 +49,7 @@ dependencies[7]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[11]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-07-06T23:50:40.432Z",codex-agent,"Duplicate check: searched all statuses for context eval corpus/golden workspace/continuity judgments; only pm-atfm and closed search-eval work matched."
   "2026-07-09T19:10:24.967Z",codex-root-20260709,"Progress evidence: committed four-scenario corpus covers tiny scratch, real-shaped hierarchy, 100-item synthetic scale, and returning-agent continuity with explicit judgments, budgets, and rationales; accepted baseline is versioned."
   "2026-07-09T19:50:42.298Z",codex-root-20260709,"Verification: committed four-scenario corpus is stable through isolated SDK-backed trackers; tiny, real-shaped, synthetic scale, and returning-agent continuity scenarios all score 1.0 for NDCG, reciprocal rank, recall, continuity, and token adherence. Scale packet is 695 estimated tokens."
@@ -61,6 +61,7 @@ comments[11]{created_at,author,text}:
   "2026-09-17T20:13:05.670Z","harness:codex","Large-corpus verification passed after real claim-history seeding: representative 10000-item fixture plus current anchor produced a 1980-token packet; scratch-shaped 100000-item fixture plus current anchor produced 1961 tokens. Both retained the required claimed anchor, stayed within the 4000-token packet ceiling, and scored 1.0 for nDCG, reciprocal rank, required recall, continuity coverage and token adherence. The independent 512-token executable-selection assertion also passed for each scenario."
   "2026-09-17T20:25:36.876Z","harness:codex","Both linked commands passed serially through pm test: quality:context-eval completed in 98 seconds, and the separately bounded 10k/100k corpus command completed in 192 seconds. The small corpus contains seven graded cases and the scale corpus two; every accepted quality metric remains 1.0. Final source coverage is running after these build producers completed."
   "2026-09-17T20:28:57.396Z","harness:codex","Final source coverage passed after the last implementation change: 8974 tests in 704 files with exact 100/100/100/100 and zero uncovered counts. Both linked context commands passed, all nine graded scenarios retain their accepted metrics, large tests are mandatory in CI, and baseline refresh refuses absolute-threshold failure. Hosted review and CI will validate the committed delivery head."
+  "2026-09-17T20:33:23.938Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1265 carries the completed corpus, required large-workspace CI step, SDK output-budget behavior, linked test evidence and structured closure. Implementation commit: 6a5e6826a. The PR retains exact-head hosted validation and review provenance."
 learnings[1]{created_at,author,text}:
   "2026-09-17T19:49:28.642Z","harness:codex",A baseline refresh must not bypass absolute quality thresholds. Pair graded ranking judgments with an independent byte measurement so a no-op token-budget flag cannot pass a generous packet ceiling; label large fixtures by measured shape as well as item count.
 files[8]{path,scope,note}:
