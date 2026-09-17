@@ -2028,6 +2028,14 @@
       ],
       "package_version": "2026.9.15",
       "reason": "Retain the original summary signature as the final overload so existing ReturnType and Parameters consumers remain compatible."
+    },
+    {
+      "changes": [
+        "signature ./sdk:SecretGuardFinding",
+        "signature ./sdk/governance:SecretGuardFinding"
+      ],
+      "package_version": "2026.9.17",
+      "reason": "Expand SecretGuardFinding rule union to the shared repository detector inventory; preserve all existing rule identifiers and redacted result fields (pm-wwooxx)."
     }
   ],
   "entrypoints": {
@@ -18316,7 +18324,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SecretGuardFinding",
-          "signature": "export interface SecretGuardFinding { rule: \"github_token\" | \"npm_token\" | \"slack_token\" | \"private_key\" | \"aws_access_key\" | \"high_entropy_assignment\"; path: string; }"
+          "signature": "export interface SecretGuardFinding { rule: (typeof SECRET_RULES)[number][\"mutationRule\"]; path: string; }"
         },
         {
           "classification": "supported",
@@ -27172,7 +27180,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SecretGuardFinding",
-          "signature": "export interface SecretGuardFinding { rule: \"github_token\" | \"npm_token\" | \"slack_token\" | \"private_key\" | \"aws_access_key\" | \"high_entropy_assignment\"; path: string; }"
+          "signature": "export interface SecretGuardFinding { rule: (typeof SECRET_RULES)[number][\"mutationRule\"]; path: string; }"
         },
         {
           "classification": "supported",

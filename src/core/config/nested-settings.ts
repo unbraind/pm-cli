@@ -623,7 +623,11 @@ export function readNestedSettingValue(
     if (typeof cursor !== "object" || cursor === null) {
       return null;
     }
-    cursor = (cursor as Record<string, unknown>)[segment];
+    const property = Object.getOwnPropertyDescriptor(cursor, segment);
+    if (!property || !Object.hasOwn(property, "value")) {
+      return null;
+    }
+    cursor = property.value;
   }
   if (
     typeof cursor === "string" ||
@@ -642,27 +646,36 @@ export function writeNestedSettingValue(
   value: string | number | boolean,
 ): boolean {
   const segments = descriptor.path.split(".");
+  if (segments.some((segment) =>
+    segment.length === 0 || ["__proto__", "constructor", "prototype"].includes(segment),
+  )) {
+    throw new Error("Unsafe settings path");
+  }
   let cursor: Record<string, unknown> = settings;
   for (let index = 0; index < segments.length - 1; index += 1) {
     const segment = segments[index];
-    const existing = cursor[segment];
+    const existing = Object.getOwnPropertyDescriptor(cursor, segment)?.value;
     if (
       typeof existing !== "object" ||
       existing === null ||
       Array.isArray(existing)
     ) {
       const next: Record<string, unknown> = {};
-      cursor[segment] = next;
+      Object.defineProperty(cursor, segment, {
+        value: next, writable: true, enumerable: true, configurable: true,
+      });
       cursor = next;
     } else {
       cursor = existing as Record<string, unknown>;
     }
   }
   const leafKey = segments[segments.length - 1];
-  const previous = cursor[leafKey];
+  const previous = Object.getOwnPropertyDescriptor(cursor, leafKey)?.value;
   if (previous === value) {
     return false;
   }
-  cursor[leafKey] = value;
+  Object.defineProperty(cursor, leafKey, {
+    value, writable: true, enumerable: true, configurable: true,
+  });
   return true;
 }

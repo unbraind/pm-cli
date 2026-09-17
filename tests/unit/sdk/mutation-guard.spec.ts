@@ -73,6 +73,7 @@ describe("SDK mutation guard", () => {
       { rule: "github_token", path: "$.github" },
       { rule: "npm_token", path: "$.npm" },
       { rule: "npm_token", path: "$.npmrc" },
+      { rule: "npm_auth_token_assignment", path: "$.npmrc" },
       { rule: "slack_token", path: "$.slack" },
       { rule: "aws_access_key", path: "$.aws" },
       { rule: "private_key", path: "$.key" },
@@ -82,7 +83,7 @@ describe("SDK mutation guard", () => {
       scanMutationSecrets({
         repeated: "token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         npmPackage: "npm_package_name=@unbrained/pm-cli",
-        slackPlaceholder: ["xo", "xb-placeholder-token"].join(""),
+        slackPlaceholder: "<slack-token>",
       }),
     ).toEqual([]);
   });

@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readdir, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -132,12 +132,33 @@ describe("CLI and MCP mutation guard adapters", () => {
     ).resolves.toEqual([]);
   });
 
-  it("redacts blocked values from CLI recovery bundles even with explain enabled", async () => {
+  it("excludes MCP routing paths but blocks private context in nested content", async () => {
+    const pmRoot = await initializedTracker();
+    const settings = await readSettings(pmRoot);
+    settings.mutation_guard.secret_guard = "block";
+    await writeSettings(pmRoot, settings, "test:private-context-guard");
+    const homePath = ["/home", "example", "project"].join("/");
+    await expect(mcpTestOnly.collectMutationGuardWarnings("pm_run", "create", {
+      path: pmRoot, cwd: homePath, title: "Safe title",
+    })).resolves.toEqual([]);
+    await expect(mcpTestOnly.collectMutationGuardWarnings("pm_mutate", undefined, {
+      path: pmRoot, mutations: [{ body: homePath }],
+    })).rejects.toThrow(/absolute_home_path/);
+    await expect(enforceMutationGuardPreflight("create", [], {
+      title: "Private context", description: homePath,
+    }, {}, pmRoot)).rejects.toThrow(/absolute_home_path/);
+  });
+
+  it.each([
+    GITHUB_TOKEN_SAMPLE,
+    ["/home", "example", "private-project"].join("/"),
+    ["192", "168", "42", "19"].join("."),
+  ])("refuses content before item writes and redacts CLI recovery", async (credential) => {
     const pmRoot = await initializedTracker();
     const settings = await readSettings(pmRoot);
     settings.mutation_guard.secret_guard = "block";
     await writeSettings(pmRoot, settings, "test:blocking-secret-guard");
-    const credential = GITHUB_TOKEN_SAMPLE;
+    const before = (await readdir(pmRoot, { recursive: true })).filter((entry) => entry.endsWith(".toon"));
     const result = spawnSync(
       process.execPath,
       [
@@ -160,7 +181,9 @@ describe("CLI and MCP mutation guard adapters", () => {
       },
     );
     expect(result.status).not.toBe(0);
+    expect(result.stdout).not.toContain(credential);
     expect(result.stderr).not.toContain(credential);
+    expect((await readdir(pmRoot, { recursive: true })).filter((entry) => entry.endsWith(".toon"))).toEqual(before);
     const error = JSON.parse(result.stderr) as {
       recovery?: {
         attempted_command?: string;
