@@ -1,0 +1,105 @@
+id: pm-v53h9j
+title: "GH-1264: enforce next ready-queue token budgets and disclose omitted recommendations"
+description: "The SDK computes context packing but returns the complete ranking instead of the packed rows. Explicit token budgets therefore do not bound ready output, and the normal receipt hides the discarded packing decision. Restore binding rendered ready-queue accounting, truthful budget receipts, and SDK/CLI/MCP acceptance."
+type: Issue
+status: closed
+priority: 1
+tags[4]: "area:cli","area:sdk",context-management,token-efficiency
+created_at: "2026-09-17T19:26:35.525Z"
+updated_at: "2026-09-17T20:28:58.928Z"
+closed_at: "2026-09-17T20:28:58.146Z"
+completed_at: "2026-09-17T20:28:58.146Z"
+author: "harness:codex"
+acceptance_criteria: "Explicit budgets bound the documented ready-selection scope; omitted recommendation and rows are disclosed; selection and usage feedback agree with delivered rows; SDK, CLI and MCP preserve the contract; regressions fail before implementation and pass afterward."
+parent: pm-5t33or
+resolution: "Explicit token budgets now bound recommendation and ready alternatives using rendered byte estimates; tiny infeasible envelopes and hidden work are disclosed, unchanged intent reads avoid redundant receipts, and CLI/MCP inherit the SDK behavior."
+expected_result: "Requested selection budgets bind without losing population counts, mislabeling an omitted recommendation as no work, or attributing hidden candidates as delivered."
+actual_result: "Real SDK/CLI regression and installed npm/Bun/npx/bunx/MCP acceptance pass; strict packed TypeScript consumption, 8974 tests, exact 100/100/100/100 coverage, static contracts and graph/record gates pass."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-55ra,discovered_from,"2026-09-17T19:26:35.525Z","harness:codex","cli:create:dep",detected
+  pm-g2zz,implements,"2026-09-17T19:26:35.525Z","harness:codex","cli:create:dep",detected
+  pm-1wujzi,related,"2026-09-17T20:12:02.812Z","harness:codex","cli:update:dep",detected
+  pm-atfm,implements,"2026-09-17T20:12:02.812Z","harness:codex","cli:update:dep",detected
+  pm-e9zh,verifies,"2026-09-17T20:12:02.812Z","harness:codex","cli:update:dep",detected
+comments[10]:
+  - created_at: "2026-09-17T19:26:35.525Z"
+    author: "harness:codex"
+    text: "Duplicate check: live all-status searches for 1264, token budget, and next budget; read pm-55ra, pm-5t33or, pm-lixy, pm-atfm, and pm-1wujzi. No existing issue owns GH-1264. Existing packer history is retained as completed lineage; the new regression belongs under the binding-output contract."
+  - created_at: "2026-09-17T19:31:06.054Z"
+    author: "harness:codex"
+    text: "TDD evidence: added an isolated SDK regression with three real items. Before implementation the 10-token request still returned a recommendation; 21 existing tests passed and the new test failed. The fix explicitly distinguishes ready-selection budgets from whole-response budgets and discloses when even the empty structured selection exceeds a tiny budget."
+  - created_at: "2026-09-17T19:41:42.055Z"
+    author: "harness:codex"
+    text: "Repository health snapshot: no open PRs; GitHub Dependabot, code-scanning and secret-scanning open-alert inventories are empty; pnpm audit reports zero vulnerabilities and tracked-file credential scan passes. GH-1264 is linked here; GH-1246 already has its own canonical PM link in its GitHub comment. Scheduled Auto Release run 35197095403 succeeded for v2026.9.17; npm and GitHub agree. Latest pm-changelog is 2026.9.16. Sentry 14-day gate passed with critical=0, high=0; this is separate from final physical telemetry queue drain proof."
+    edited_at: "2026-09-17T20:12:03.654Z"
+  - created_at: "2026-09-17T19:51:19.212Z"
+    author: "harness:codex"
+    text: "Installed-artifact acceptance passed in unrelated temporary projects: npm and Bun installs, SDK next, CLI next, npx and bunx all enforce a 32-token selection ceiling while preserving total ready counts; roomy and execute-intent reads retain the highest-ranked claimed task. Both installed MCP servers disclose omitted recommendations. Create/claim/update/comment/close/release/validate lifecycle, README cold start, Git merge reconciliation with strict history verification, and detached telemetry collector plus zero physical queue all passed. Temporary roots were removed."
+  - created_at: "2026-09-17T19:58:52.800Z"
+    author: "harness:codex"
+    text: "Full verification: all 704 test files and 8974 tests passed. Exact coverage gate reports statements 64762/64762, branches 49402/49402, functions 13443/13443, lines 61992/61992 (100/100/100/100; zero uncovered counts). Existing token-budget gate passed 32 surfaces and infeasible-intent negative control; existing intent calibration passed at 2 and 2243 items without baseline relaxation. A linked focused run queued behind the full-suite lease and timed out; its serialized rerun is the authoritative linked-test result."
+  - created_at: "2026-09-17T20:12:04.275Z"
+    author: "harness:codex"
+    text: "Graph evidence: the implementation contributes to the context-quality feature; the read-only health verification reconfirms the completed historical evidence-recovery result; bulk occupancy remains an adjacent unclaimed context-read problem with different prerequisites. The unrelated onboarding GitHub report keeps its canonical owner in its own issue comment. No ordering dependency or depth-only edge was invented."
+  - created_at: "2026-09-17T20:12:39.237Z"
+    author: "harness:codex"
+    text: "Repository static verification passed ESLint after flattening the budget-search control flow, all three clone checks, repository static/docstring assertions, token and intent budgets, documentation, package boundaries, SDK parity, grammar/flags/recovery, agent token surfaces, MCP deprecation inventory, tracker measurements, gate registry and SDK transport/entrypoint costs. The final graph stage initially identified four new prose references; their semantic ownership was corrected through PM, then graph-composition and record-integrity both passed without changing any bound."
+  - created_at: "2026-09-17T20:13:06.363Z"
+    author: "harness:codex"
+    text: "Fresh operations verification: required-mode Sentry/telemetry gate passed with zero critical/high issues, telemetry finish-error rate 1.47 percent below the existing 6 percent ceiling, and zero missing error-code rows. Live Sentry logs returned timestamps and trace identifiers from this session. GitHub alert APIs and pnpm audit remain empty. Scheduled release run 35197095403 actually published 2026.9.17 and verified npm/npx/bunx; no second automatic release is initiated by this delivery."
+  - created_at: "2026-09-17T20:25:36.077Z"
+    author: "harness:codex"
+    text: "Final packed rerun passed against the simplified build for npm/Bun SDK and CLI, npx/bunx executors, MCP, lifecycle/history, README cold start and detached telemetry. An additional unrelated strict TypeScript consumer compiled the installed public NextResult ready-budget receipt using the SDK whole-output omission union correctly; the guide now demonstrates that narrowing. This preserves honest refusal handling for package authors rather than asserting every budgeted read returns a normal result."
+  - created_at: "2026-09-17T20:28:56.799Z"
+    author: "harness:codex"
+    text: "Final source proof after control-flow simplification: 704 files and 8974 tests passed in 631 seconds. Exact counters: statements 64762/64762, branches 49404/49404, functions 13443/13443, lines 61992/61992; zero uncovered counts. Final packed runtime and strict TypeScript consumers passed. All local static stages and unchanged graph/record assertions passed. Hosted exact-head checks and review follow in the delivery PR."
+notes[2]{created_at,author,text}:
+  "2026-09-17T19:49:25.795Z","harness:codex","Implementation boundary: next owns executable selection in the SDK. The documented selection estimate is the greater of JSON and TOON UTF-8 bytes divided by four; row limits apply first. Alternatives are removed before the recommendation, and infeasible empty envelopes are disclosed honestly. The universal output budget still owns companion queues and the full response. Intent reads omit redundant selection receipts only when no omission or infeasibility needs disclosure."
+  "2026-09-17T19:53:49.161Z","harness:codex","All-status tracker health: the resolution validator still flags the 170 historical records explicitly retained as unknown by the completed pm-e9zh evidence-recovery pass; its full notes enumerate the residual and prohibit placeholder backfills. Concurrent validation saw only the two actively edited records as hash mismatches; both immediately passed history --verify --strict-exit with matching current hashes. Final frozen validation will run after all PM writes. Graph redundancy exposes 67 witnessed implied ordering edges; no arbitrary relationships were added to inflate depth."
+learnings[1]{created_at,author,text}:
+  "2026-09-17T19:49:27.251Z","harness:codex","Optimizer selection is not delivery evidence. Ranking explanations and usage inclusion must be based on emitted recommendation/ready identifiers. Keep intent receipts lean: an unchanged selection needs no second receipt when the complete-response intent contract already accounts for its cost."
+files[5]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,CLI-owned refresh of the latest changelog package registration
+  sdk/public-surface.json,project,Reviewed additive optional ready-budget receipt on NextResult
+  src/sdk/query/next-ready-budget.ts,project,Rendered selection accounting and explicit omission receipts
+  src/sdk/query/next.ts,project,SDK-owned budget enforcement and delivered-row attribution
+  tests/unit/commands/next-command.spec.ts,project,TDD regression with real isolated CLI and SDK reads
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts tests/unit/commands/context-relevance-command.spec.ts,project,240,"harness:codex","2026-09-17T19:39:59.584Z",local_mutation,fix/next-budget-context-quality
+test_runs[2]:
+  - run_id: test-local-mu5y5hfn-lr0o1u
+    kind: test
+    status: failed
+    started_at: "2026-09-17T19:48:53.593Z"
+    finished_at: "2026-09-17T19:52:53.891Z"
+    recorded_at: "2026-09-17T19:52:53.891Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts tests/unit/commands/context-relevance-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu5ycel6-t3s86o
+    kind: test
+    status: passed
+    started_at: "2026-09-17T19:58:03.770Z"
+    finished_at: "2026-09-17T19:58:16.794Z"
+    recorded_at: "2026-09-17T19:58:16.794Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts tests/unit/commands/context-relevance-command.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Generated by latest pm-changelog from closed delivery items
+  docs/NEXT_SELECTION_BUDGETS.md,project,Selection versus whole-response budgets and truthful recovery
+  docs/README.md,project,Make the selection-budget guide reachable from the public docs index
+close_reason: Implemented and locally verified SDK-owned next selection budgets with truthful omission receipts and delivered-row attribution.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-context-quality
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/context-eval-gate.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts,node scripts/release/context-eval-gate.mjs
+  hosted_checks[2]: Gates (smokes),Gates (coverage)
+  owner: pm-v53h9j
+body: ""

@@ -103,6 +103,98 @@
       "required_keys": ["used"],
       "continuity_keys": [],
       "token_budget": 1200
+    },
+    {
+      "id": "bounded-next-medium",
+      "surface": "next",
+      "rationale": "The claimed executable anchor must remain first while the explicit selection budget binds on a realistic lower-priority backlog. The independent gate must reject an ignored budget.",
+      "workspace": {
+        "items": [
+          {
+            "key": "anchor",
+            "title": "Resume the context budget fix",
+            "description": "Claimed highest-priority executable work",
+            "type": "Task",
+            "status": "in_progress",
+            "priority": "0",
+            "assignee": "context-eval-agent"
+          }
+        ],
+        "generators": [
+          {
+            "key_prefix": "backlog-",
+            "title_prefix": "Bounded context follow-up",
+            "description": "Lower-priority work must compete for the remaining selection budget",
+            "type": "Task",
+            "status": "open",
+            "priority": "4",
+            "count": 30
+          }
+        ],
+        "claims": [
+          "anchor"
+        ]
+      },
+      "options": {
+        "limit": "20",
+        "tokenBudget": 300
+      },
+      "judgments": {
+        "anchor": 3
+      },
+      "required_keys": [
+        "anchor"
+      ],
+      "continuity_keys": [
+        "anchor"
+      ],
+      "token_budget": 3500
+    },
+    {
+      "id": "bounded-next-roomy",
+      "surface": "next",
+      "rationale": "The claimed executable anchor must remain first while the explicit selection budget binds on a realistic lower-priority backlog. The independent gate must reject an ignored budget.",
+      "workspace": {
+        "items": [
+          {
+            "key": "anchor",
+            "title": "Resume the context budget fix",
+            "description": "Claimed highest-priority executable work",
+            "type": "Task",
+            "status": "in_progress",
+            "priority": "0",
+            "assignee": "context-eval-agent"
+          }
+        ],
+        "generators": [
+          {
+            "key_prefix": "backlog-",
+            "title_prefix": "Bounded context follow-up",
+            "description": "Lower-priority work must compete for the remaining selection budget",
+            "type": "Task",
+            "status": "open",
+            "priority": "4",
+            "count": 30
+          }
+        ],
+        "claims": [
+          "anchor"
+        ]
+      },
+      "options": {
+        "limit": "20",
+        "tokenBudget": 800
+      },
+      "judgments": {
+        "anchor": 3
+      },
+      "required_keys": [
+        "anchor"
+      ],
+      "continuity_keys": [
+        "anchor"
+      ],
+      "token_budget": 3500
     }
   ]
 }

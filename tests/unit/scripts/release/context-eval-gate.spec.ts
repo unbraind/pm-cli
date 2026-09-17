@@ -6,6 +6,7 @@ import { createScriptHarness } from "../../../helpers/scriptModule";
 const harness = createScriptHarness();
 
 interface ContextEvalGateModule {
+  verifyNextSelectionBudget: (client: { next: () => Promise<unknown> }, options: Record<string, unknown>) => Promise<void>;
   buildContextEvaluationBaseline: (report: EvaluationReport, corpusVersion: number) => unknown;
   compareContextEvaluationBaseline: (report: EvaluationReport, baseline: Record<string, unknown>) => string[];
   mapScenarioDefinition: (definition: Record<string, unknown>, idByKey: Map<string, string>) => Record<string, unknown>;
@@ -35,6 +36,22 @@ async function loadGate(): Promise<ContextEvalGateModule> {
 }
 
 describe("context evaluation gate", () => {
+  it("rejects ignored budgets, missing receipts and dishonest feasibility claims", async () => {
+    const gate = await loadGate();
+    harness.mockProcessExit();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const receipt = { budget_tokens: 32, within_budget: true };
+    const valid = { recommended: null, ready: [], truncation: { ready_budget: receipt } };
+    await expect(gate.verifyNextSelectionBudget({ next: async () => valid }, { tokenBudget: 32 })).resolves.toBeUndefined();
+    for (const result of [
+      { recommended: null, ready: [] },
+      { ...valid, truncation: { ready_budget: { ...receipt, budget_tokens: 33 } } },
+      { ...valid, truncation: { ready_budget: { ...receipt, within_budget: false } } },
+      { ...valid, ready: [{ id: "pm-large", title: "x".repeat(1024) }] },
+    ]) {
+      await expect(gate.verifyNextSelectionBudget({ next: async () => result }, { tokenBudget: 32 })).rejects.toThrow("EXIT:1");
+    }
+  });
   it("maps reviewable corpus keys onto generated tracker ids", async () => {
     const gate = await loadGate();
     const mapped = gate.mapScenarioDefinition({
@@ -199,6 +216,8 @@ describe("context evaluation gate", () => {
         surface: "context",
         options: { parent_key: "parent" },
         workspace: {
+          scale: { count: 100, shape: "scratch" },
+          claims: ["child"],
           items: [
             { key: "parent", title: "Parent", description: "Parent", type: "Feature", status: "open", priority: 1 },
             { key: "child", parent_key: "parent", title: "Child", description: "Child", type: "Task", status: "open", priority: 0 },
@@ -235,7 +254,7 @@ describe("context evaluation gate", () => {
     const gate = await loadGate();
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     delete process.env.PM_AUTHOR;
-    await expect(gate.main()).resolves.toMatchObject({ scenario_count: 5, passed: true });
+    await expect(gate.main()).resolves.toMatchObject({ scenario_count: 7, passed: true });
     expect(process.env.PM_AUTHOR).toBeUndefined();
   });
 
@@ -352,6 +371,10 @@ describe("context evaluation gate", () => {
     await expect(gate.main(["--corpus", corpusPath, "--baseline", baselinePath])).rejects.toThrow("EXIT:1");
     await gate.main(["--corpus", corpusPath, "--baseline", baselinePath, "--update"]);
     const baseline = JSON.parse(await readFile(baselinePath, "utf8")) as Record<string, unknown>;
+    await writeFile(corpusPath, JSON.stringify({ ...corpus, thresholds: { ...corpus.thresholds, reciprocal_rank: 1 } }));
+    await expect(gate.main(["--corpus", corpusPath, "--baseline", baselinePath, "--update"])).rejects.toThrow("EXIT:1");
+    expect(JSON.parse(await readFile(baselinePath, "utf8"))).toEqual(baseline);
+    await writeFile(corpusPath, JSON.stringify(corpus));
     await writeFile(baselinePath, JSON.stringify({ version: 1, scenarios: {}, aggregate: {} }));
     await expect(gate.main(["--corpus", corpusPath, "--baseline", baselinePath])).rejects.toThrow("EXIT:1");
     await writeFile(baselinePath, JSON.stringify({ version: 1, scenarios: [], aggregate: [] }));
@@ -362,6 +385,8 @@ describe("context evaluation gate", () => {
     const invalidWorkspaces: unknown[] = [
       null,
       { items: {} },
+      { scale: null },
+      { claims: ["missing"] },
       { items: [null] },
       { items: [{ key: "" }] },
       { generators: {} },
