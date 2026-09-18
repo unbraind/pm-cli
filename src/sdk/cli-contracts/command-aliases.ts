@@ -92,6 +92,7 @@ export const PM_RELOCATED_COMMAND_ALIASES: readonly PmCommandAliasContract[] = [
     ["dedupe-merge", "item duplicates merge", "pm-fmy9ih"],
     ["comments-audit", "item audit-comments", "pm-fmy9ih"],
     ["search-advanced", "search advanced", "pm-wfskfn"],
+    ...["meet", "event", "remind"].map((command) => [command, `calendar ${command}`, "pm-o3fh"]),
   ].map(([alias, canonical, owner]): PmCommandAliasContract => ({
     alias,
     canonical,

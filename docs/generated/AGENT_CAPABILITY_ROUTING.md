@@ -13,5 +13,5 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | evidence | `history`, `history events`, `history redact`, `history repair`, `history compact`, `history attest`, `history acknowledge`, `item append`, `item comments`, `item notes`, `item learnings`, `item files`, `item docs` |
 | graph | `graph`, `item deps`, `plan` |
 | quality | `item test`, `ops test-all`, `ops validate`, `assurance`, `contracts`, `ops` |
-| automation | `meet`, `event`, `remind` |
+| automation | `calendar meet`, `calendar event`, `calendar remind` |
 | extensions | `package` |

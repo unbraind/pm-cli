@@ -592,6 +592,23 @@ describe("docs-skills-gate", () => {
       expect(routing.get("empty")).toEqual([]);
     });
 
+    it("routes the longest nested command without crediting a parent or sibling", async () => {
+      mockUtils();
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      const routing = mod.mapCapabilityFamilyRouting([
+        { family: "views", commands: ["calendar"] },
+        { family: "meetings", commands: ["calendar meet"] },
+        { family: "reminders", commands: ["calendar remind"] },
+      ], [
+        { id: "parent", commands: ["pm calendar --view day"] },
+        { id: "meeting", workflows: [{ commands: ["pm calendar meet <title> --duration 5min"] }] },
+        { id: "unrelated", commands: ["pm unknown --json"] },
+      ]);
+      expect(routing).toEqual(new Map([
+        ["views", ["parent"]], ["meetings", ["meeting"]], ["reminders", []],
+      ]));
+    });
+
     it("validateCapabilityFamilyRouting refuses to pass vacuously and blocks an unrouted family", async () => {
       mockUtils();
       const mod = await harness.importModuleStable<DocsModule>(SCRIPT);

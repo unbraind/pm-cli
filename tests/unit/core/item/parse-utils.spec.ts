@@ -431,12 +431,12 @@ describe("core/item/parse", () => {
     ).toBe("2026-04-01T09:30:00.000Z");
   });
 
-  it("keeps bare m duration tokens as months for backward compatibility", () => {
+  it("accepts explicit mo duration tokens as months", () => {
     expect(
       resolveEventEndAt(
         "2026-04-01T09:00:00.000Z",
         undefined,
-        "45m",
+        "45mo",
         new Date("2026-04-01T08:00:00.000Z"),
       ),
     ).toBe("2030-01-01T09:00:00.000Z");

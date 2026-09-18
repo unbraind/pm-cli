@@ -2,7 +2,9 @@ import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import * as guideShellModule from "../../../packages/pm-guide-shell/extensions/guide-shell/index.ts";
+import * as linkedModule from "../../../packages/pm-linked-test-adapters/extensions/linked-test-adapters/index.ts";
+import * as templatesModule from "../../../packages/pm-templates/extensions/templates/index.ts";
 import type {
   CommandDefinition,
   CommandOverride,
@@ -70,17 +72,6 @@ function readRuntimeCalls(): RuntimeCall[] {
 
 function resetRuntimeCalls(): void {
   (globalThis as Record<string, unknown>)[RUNTIME_CALLS_KEY] = [];
-}
-
-function cacheBustToken(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-async function importRepoModule<T>(relativePath: string): Promise<T> {
-  const absolutePath = path.join(process.cwd(), relativePath);
-  return (await import(
-    `${pathToFileURL(absolutePath).href}?entrypoints=${cacheBustToken()}`
-  )) as T;
 }
 
 let testPackageRoot = "";
@@ -660,12 +651,10 @@ describe("built-in extension entrypoints", () => {
 
     activateCalendar(api);
     expect(commands.map((command) => command.name)).toEqual([
-      "calendar",
-      "cal",
+      "calendar", "cal", "meet", "event", "remind",
     ]);
     expect(commands.map((command) => command.action)).toEqual([
-      "calendar",
-      "calendar",
+      "calendar", "calendar", "meet", "event", "remind",
     ]);
     expect(commands[0]?.flags).toEqual(
       expect.arrayContaining([
@@ -1428,9 +1417,6 @@ describe("built-in extension entrypoints", () => {
       const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
       process.env[PM_PACKAGE_ROOT_ENV] = process.cwd();
       try {
-        const guideShellModule = await importRepoModule<
-          typeof import("../../../packages/pm-guide-shell/extensions/guide-shell/index.ts")
-        >("packages/pm-guide-shell/extensions/guide-shell/index.ts");
         const { api, commands, services } = createCommandOnlyApi();
         guideShellModule.activate(api);
         expect(guideShellModule.manifest.name).toBe("builtin-guide-shell");
@@ -1531,11 +1517,6 @@ describe("built-in extension entrypoints", () => {
       const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
       process.env[PM_PACKAGE_ROOT_ENV] = process.cwd();
       try {
-        const linkedModule = await importRepoModule<
-          typeof import("../../../packages/pm-linked-test-adapters/extensions/linked-test-adapters/index.ts")
-        >(
-          "packages/pm-linked-test-adapters/extensions/linked-test-adapters/index.ts",
-        );
         const { api, commands } = createCommandOnlyApi();
         linkedModule.activate(api);
         expect(linkedModule.manifest.name).toBe("builtin-linked-test-adapters");
@@ -1650,9 +1631,6 @@ describe("built-in extension entrypoints", () => {
       const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
       process.env[PM_PACKAGE_ROOT_ENV] = process.cwd();
       try {
-        const templatesModule = await importRepoModule<
-          typeof import("../../../packages/pm-templates/extensions/templates/index.ts")
-        >("packages/pm-templates/extensions/templates/index.ts");
         const { api, commands } = createCommandOnlyApi();
         templatesModule.activate(api);
         expect(templatesModule.manifest.name).toBe("builtin-templates");

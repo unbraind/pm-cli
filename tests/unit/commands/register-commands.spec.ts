@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Command } from "commander";
+import type * as RegistrationHelpers from "../../../src/cli/registration-helpers.js";
 import {
   afterAll,
   afterEach,
@@ -13,8 +14,7 @@ import {
   vi,
 } from "vitest";
 
-// Mock the per-command modules that the register-* action handlers load via
-// dynamic import so the handlers' normalization closures run without touching
+// Mock command delegates so the registration handlers normalize options without touching
 // real tracker state. registration-helpers is partially mocked only to stub the
 // search-cache invalidation hook (which would otherwise spawn background
 // refresh workers); every other helper stays real so its code is exercised.
@@ -32,7 +32,7 @@ const lifecyclePrimitives = vi.hoisted(() => ({
 vi.mock("../../../src/cli/registration-helpers.js", async (importOriginal) => {
   const actual =
     await importOriginal<
-      typeof import("../../../src/cli/registration-helpers.js")
+      typeof RegistrationHelpers
     >();
   return { ...actual, invalidateSearchCachesForMutation };
 });
@@ -86,11 +86,6 @@ vi.mock("../../../src/cli/commands/claim.js", () => lifecyclePrimitives);
 vi.mock("../../../src/cli/commands/create.js", () => ({ runCreate: vi.fn() }));
 vi.mock("../../../src/cli/commands/copy.js", () => ({ runCopy: vi.fn() }));
 vi.mock("../../../src/cli/commands/focus.js", () => ({ runFocus: vi.fn() }));
-vi.mock("../../../src/cli/commands/scheduling-shortcuts.js", () => ({
-  runMeet: vi.fn(),
-  runEvent: vi.fn(),
-  runRemind: vi.fn(),
-}));
 vi.mock("../../../src/cli/commands/update.js", () => lifecyclePrimitives);
 vi.mock("../../../src/cli/commands/update-many.js", () => ({
   runUpdateMany: vi.fn(),
@@ -265,11 +260,6 @@ import {
 import { runCreate } from "../../../src/cli/commands/create.js";
 import { runCopy } from "../../../src/cli/commands/copy.js";
 import { runFocus } from "../../../src/cli/commands/focus.js";
-import {
-  runMeet,
-  runEvent,
-  runRemind,
-} from "../../../src/cli/commands/scheduling-shortcuts.js";
 import { runUpdate } from "../../../src/cli/commands/update.js";
 import { runUpdateMany } from "../../../src/cli/commands/update-many.js";
 import { runClose } from "../../../src/cli/commands/close.js";
@@ -1402,95 +1392,11 @@ describe("operation command actions", () => {
     ).toBe("close-alias");
   });
 
-  it("delegates scheduling shortcuts to runMeet/runEvent/runRemind with translated options", async () => {
-    const result = { item: { id: "pm-1" }, changed_fields: [], warnings: [] };
-    vi.mocked(runMeet).mockResolvedValue(result as never);
-    vi.mocked(runEvent).mockResolvedValue(result as never);
-    vi.mocked(runRemind).mockResolvedValue(result as never);
-
-    await runCli(
-      "meet",
-      "Sprint Planning",
-      "--start",
-      "+1h",
-      "--duration",
-      "1h",
-      "--location",
-      "Room A",
-      "--timezone",
-      "UTC",
-      "--all-day",
-      "--tags",
-      "infra,demo",
-      "--parent",
-      "pm-epic",
-      "--allow-missing-parent",
-      "--priority",
-      "1",
-      "--body",
-      "body",
-      "--description",
-      "desc",
-      "--author",
-      "agent",
-      "--message",
-      "msg",
-    );
-    expect(vi.mocked(runMeet)).toHaveBeenLastCalledWith(
-      "Sprint Planning",
-      expect.objectContaining({
-        start: "+1h",
-        duration: "1h",
-        location: "Room A",
-        timezone: "UTC",
-        allDay: true,
-        tags: "infra,demo",
-        parent: "pm-epic",
-        allowMissingParent: true,
-        priority: "1",
-        author: "agent",
-        message: "msg",
-      }),
-      expect.anything(),
-    );
-    expect(invalidateSearchCachesForMutation).toHaveBeenCalled();
-
-    // Omitting optional flags exercises the undefined branches of optionalString
-    // and the all-day/allow-missing-parent falsey paths.
-    await runCli("event", "Release v2", "--end", "2026-07-01T12:00:00Z");
-    expect(vi.mocked(runEvent)).toHaveBeenLastCalledWith(
-      "Release v2",
-      expect.objectContaining({
-        end: "2026-07-01T12:00:00Z",
-        start: undefined,
-        allDay: undefined,
-        allowMissingParent: undefined,
-        location: undefined,
-      }),
-      expect.anything(),
-    );
-
-    await runCli("event", "Release window", "--duration", "PT30M");
-    expect(vi.mocked(runEvent)).toHaveBeenLastCalledWith(
-      "Release window",
-      expect.objectContaining({
-        duration: "PT30M",
-        end: undefined,
-      }),
-      expect.anything(),
-    );
-
-    await runCli("remind", "Review PR", "--at", "+2d", "--text", "ping");
-    expect(vi.mocked(runRemind)).toHaveBeenLastCalledWith(
-      "Review PR",
-      expect.objectContaining({ at: "+2d", text: "ping" }),
-      expect.anything(),
-    );
-
-    // Run without --profile to exercise the non-profile branch of each handler.
-    await runCliRaw("meet", "No profile");
-    await runCliRaw("event", "No profile");
-    await runCliRaw("remind", "No profile");
+  it("leaves scheduling shortcut registration to the calendar package", () => {
+    const names = buildProgram().commands.map((command) => command.name());
+    for (const name of ["meet", "event", "remind"]) {
+      expect(names).not.toContain(name);
+    }
   });
 
   it("resolves start-task to the registry's in_progress status when defined", () => {

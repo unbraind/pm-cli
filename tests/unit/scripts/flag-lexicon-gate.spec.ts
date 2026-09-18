@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { fileURLToPath } from "node:url";
+import { buildCoreCommandProgram } from "../../../scripts/release/flag-invocation-parity.mjs";
 import {
   main,
   measureCoreFlagHelpInventory,
@@ -22,6 +23,19 @@ describe("flag lexicon gate", () => {
       ok: false,
       findings: [expect.objectContaining({ code: "budget_exceeded" })],
     });
+  });
+
+  it("keeps migrated calendar help budgeted and detects lost package registration", () => {
+    const inventory = measureCoreFlagHelpInventory();
+    expect(inventory.filter(({ command }) => ["meet", "event", "remind"].includes(command)))
+      .toHaveLength(3);
+    const report = verifyFlagLexiconGate({
+      helpInventory: measureCoreFlagHelpInventory({ program: buildCoreCommandProgram() }),
+    });
+    expect(report.ok).toBe(false);
+    expect(report.findings).toEqual(["event", "meet", "remind"].map((command) =>
+      expect.objectContaining({ command, code: "missing_help_command" }),
+    ));
   });
 
   it("blocks removal from the persisted compatibility inventory", () => {

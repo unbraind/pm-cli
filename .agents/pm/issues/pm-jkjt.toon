@@ -1,24 +1,104 @@
 id: pm-jkjt
-title: "GH-450: --duration 5m parses as 5 MONTHS — silent wrong data on meet/event/remind"
+title: Reject ambiguous event durations with explicit minute and month units
 description: "Dogfood GH-450: relative-parser maps m=months (PR#263) so a 5-minute standup becomes a 5-month meeting with no warning; minutes exist as 'min' (pm-zoe4). Needs an ambiguity guard or convention flip. Duplicate check: pm-zoe4 (closed) added min granularity only; pm-o3fh moves the shortcuts but not the parser; no open overlap."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: agent-ux,bug,calendar,gh-issue
 created_at: "2026-07-06T08:03:09.588Z"
-updated_at: "2026-09-08T13:31:56.429Z"
+updated_at: "2026-09-18T03:55:53.094Z"
+closed_at: "2026-09-18T03:55:52.493Z"
+completed_at: "2026-09-18T03:55:52.493Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "Bare 'm' duration can no longer silently mean months (error-with-hint or convention flip with deprecation window, decision recorded under pm-m2u1); duration units exhaustively documented; parser spec covers m/min/mo"
 parent: pm-mpbb
 risk: medium
 confidence: high
-expected_result: "A bare m duration can no longer silently mean months, every duration unit is documented, and the parser spec covers m, min and mo."
-dependencies[4]{id,kind,created_at}:
-  pm-o3fh,related,"2026-07-06T08:03:09.588Z"
-  pm-gknu,related,"2026-07-24T23:53:55.977Z"
-  pm-mpbb,related,"2026-07-24T23:53:55.977Z"
-  pm-mpbb,implements,"2026-07-26T05:57:17.181Z"
-comments[1]{created_at,author,text}:
+resolution: "Shared SDK event validation rejects ambiguous bare m durations before any mutation and accepts explicit min and mo units; create, update and package shortcuts share the contract and guidance."
+expected_result: Five minutes requires 5min and five months requires 5mo; ambiguous input cannot silently create months or partially mutate items.
+actual_result: "Red-first rejection tests pass across scheduling, create and update; temporary Node/Bun sessions verified unchanged item metadata on refusal, explicit end precedence and month-end clamping."
+dependencies[7]:
+  - id: pm-o3fh
+    kind: related
+    created_at: "2026-07-06T08:03:09.588Z"
+  - id: pm-gknu
+    kind: related
+    created_at: "2026-07-24T23:53:55.977Z"
+  - id: pm-mpbb
+    kind: related
+    created_at: "2026-07-24T23:53:55.977Z"
+  - id: pm-mpbb
+    kind: implements
+    created_at: "2026-07-26T05:57:17.181Z"
+  - id: pm-m2u1
+    kind: implements
+    created_at: "2026-09-18T03:05:29.735Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-zoe4
+    kind: discovered_from
+    created_at: "2026-09-18T03:05:29.735Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-j1vw3a
+    kind: implements
+    created_at: "2026-09-18T03:08:33.047Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[4]{created_at,author,text}:
   "2026-08-22T18:42:10.625Z","harness:codex","GitHub mirror reconciliation 2026-08-22: GH-450 remains canonically tracked by this open, unclaimed PM Issue; the GitHub mirror is being closed so PM remains the single backlog system of record. Source: https://github.com/unbraind/pm-cli/issues/450"
+  "2026-09-18T02:53:07.535Z","harness:codex","Implementation decision: reject ambiguous bare m only in event duration with actionable min/mo alternatives; preserve existing deadline/start/end relative month semantics. Calendar package owns shortcut declarations; public scheduling SDK functions remain stable. Reuse pm-zoe4 and pm-o3fh lineage; no duplicate work items."
+  "2026-09-18T03:14:36.363Z","harness:codex",Manual Node and Bun acceptance confirmed a rejected create adds no item and a rejected update preserves all persisted metadata. Explicit 1mo from January 31 clamps to February 28. The create/update regression suites now preserve month behavior through mo and assert unchanged history/files on ambiguous m. The duration ADR is pm-j1vw3a under pm-m2u1; no legacy deadline/start/end month semantics were changed.
+  "2026-09-18T03:55:49.639Z","harness:codex","Final local evidence: 705 test files and 8,984 tests passed; statement coverage 64,769/64,769, branch coverage 49,414/49,414, function coverage 13,443/13,443 and line coverage 61,995/61,995, all 100%. No coverage exclusions or thresholds were added or relaxed. Linked pm tests passed. TypeScript, ESLint, zero-clone duplication scans, 100% source/export/member docstring gates, contracts, SDK parity, generated surfaces, guide routing and existing help budgets passed. All static stages passed; unchanged SDK import-cost and CLI transport budgets were rerun successfully without concurrent coverage load. Temporary Node and Bun manual sessions verified install/uninstall recovery, canonical and legacy scheduling, atomic refusal and calendar-month clamping. Packed npm/npx/bunx acceptance passed. Secret scan and dependency audit passed. Current GitHub security-alert inventories were empty. Sentry required gate passed with no unresolved issues; telemetry delivery drained the queue. Hosted PR checks and external reviews follow this local evidence and are independent claims."
+notes[1]{created_at,author,text}:
+  "2026-09-18T03:27:28.437Z","harness:codex","Migration is scoped to event duration units: min and existing minute aliases remain accepted, mo is explicit calendar months, and ambiguous integer m rejects before persistence. Explicit shortcut end retains precedence. Deadline/start/end/at relative m retains historical month semantics."
+files[5]{path,scope,note}:
+  src/sdk/lifecycle/event-validation-messages.ts,project,Shared ambiguity refusal and explicit month duration
+  tests/unit/commands/create-command.spec.ts,project,Explicit month creation and refusal without new files
+  tests/unit/commands/scheduling-shortcuts.spec.ts,project,SDK refusal is atomic and explicit units persist
+  tests/unit/commands/update-command.spec.ts,project,Rejected duration preserves item and append-only history
+  tests/unit/core/item/parse-utils.spec.ts,project,Shared event duration parser contract
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/scheduling-shortcuts.spec.ts tests/unit/core/item/parse-utils.spec.ts,project,240,"harness:codex","2026-09-18T03:03:23.938Z",local_mutation,feat/calendar-package-duration-contracts
+  node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts,project,240,"harness:codex","2026-09-18T03:14:35.425Z",local_mutation,feat/calendar-package-duration-contracts
+test_runs[2]:
+  - run_id: test-local-mu6dlbor-25j9r5
+    kind: test
+    status: passed
+    started_at: "2026-09-18T03:04:53.976Z"
+    finished_at: "2026-09-18T03:05:07.179Z"
+    recorded_at: "2026-09-18T03:05:07.179Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/scheduling-shortcuts.spec.ts tests/unit/core/item/parse-utils.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu6f9yf3-jpkbzn
+    kind: test
+    status: passed
+    started_at: "2026-09-18T03:51:49.267Z"
+    finished_at: "2026-09-18T03:52:15.999Z"
+    recorded_at: "2026-09-18T03:52:15.999Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/scheduling-shortcuts.spec.ts tests/unit/core/item/parse-utils.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated delivery notes owned by the latest pm-changelog package
+  packages/pm-calendar/README.md,project,Duration decision and migration guidance
+close_reason: Implementation and local verification complete; closure is included in the reviewed delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: maintainers
+  gate_id: coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/scheduling-shortcuts.spec.ts -t ambiguous
+  local_checks[1]: Shared event parser and installed calendar-package acceptance
+  hosted_checks[1]: CI coverage and cross-platform tests
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/450\n\n## Problem (silent wrong data)\n`--duration 5m` on meet/event/remind parses as 5 MONTHS (relative-parser: m=months, PR#263 decision; minutes = `5min`, added by pm-zoe4). Help shows only 1h/2d examples and never warns; a \"5-minute standup\" silently becomes a 5-month meeting with warnings: []. Every mainstream scheduling convention treats m=minutes.\n\n## Proposed fix (needs a small decision)\nOptions: (a) flip `m` to minutes with `mo` for months (breaking but convention-aligned; alias window + warning); (b) make bare `m` ambiguous -> hard error suggesting `min`/`mo`; (c) keep semantics but emit a loud warning + document. Recommend (b) then (a) after a deprecation cycle. Record choice on ADR log (pm-m2u1).\n\n## Definition of done\n`--duration 5m` can no longer silently produce months; help/docs document duration units exhaustively; parser spec covers m/min/mo; migration note in changelog item."
