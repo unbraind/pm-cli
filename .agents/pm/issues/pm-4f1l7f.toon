@@ -1,0 +1,27 @@
+id: pm-4f1l7f
+title: Count successful provenance resolutions so historical health advisories can clear
+description: "GitHub #1269 reports that successful resolver events omit agent_provenance_outcomes while health counts attempts and successes only from those outcomes, leaving old zero-success warnings after resolver repairs."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-09-18T04:33:51.530Z"
+updated_at: "2026-09-18T04:33:51.530Z"
+author: "harness:codex"
+acceptance_criteria: "Cover failed-then-resolved, genuinely all-failed, unavailable-only and incomplete or bounded-history samples; verify through real SDK mutation and health flows, not fabricated success-only history."
+parent: pm-5oj5
+severity: medium
+repro_steps: Use a workspace with historical failed resolver outcomes followed by successful probe-sourced model/version events. Inspect health zero-success warnings and compare successful event provenance with context.agent_provenance_outcomes.
+expected_result: Successful probe resolutions must contribute truthful success evidence; repaired resolvers must not retain a permanent zero-success advisory. Expose the sampled measurement window and preserve real all-failure warnings.
+actual_result: Reporter observes seven old failures and zero counted successes despite hundreds of newer successful probe records. Independent reproduction remains pending.
+affected_version: 2026.9.17
+component: SDK provenance health and immutable outcome recording
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5oj5,implements,"2026-09-18T04:33:51.530Z","harness:codex","cli:create:dep",detected
+  pm-lu6sca,discovered_from,"2026-09-18T04:33:51.530Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-18T04:33:51.530Z","harness:codex","Duplicate check: searched all statuses for 1269 and provenance_resolver_zero_success plus broader resolver outcomes; read the completed outcome-vocabulary feature and open observability charter in full, and checked open/in-progress work. The new report concerns success accounting after repair rather than the completed outcome-vocabulary or individual resolver fixes. Intake remains open and unclaimed."
+files[2]{path,scope,note}:
+  src/sdk/governance/provenance-health.ts,project,Reported health aggregation owner; implementation investigation pending
+  src/core/history/history.ts,project,Reported immutable outcome recording boundary; implementation investigation pending
+body: "Report: https://github.com/unbraind/pm-cli/issues/1269\n\nThe reporter confirms current model and version probes succeed, but health still counts seven historical failures from August 22 and no recorded successes. Treat this as a reported diagnostic accounting defect; do not describe the repaired resolver itself as broken. Independent reproduction is pending.\n\nImplementation should preserve append-only history and bounded, privacy-safe reason codes. Evaluate recording resolved outcomes or deriving genuine probe successes, and expose the measurement window so historical failures are distinguishable from current regressions."
