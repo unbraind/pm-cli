@@ -91,14 +91,28 @@ describe("CLI transport-floor benchmark", () => {
     await expect(
       buildCliTransportFloorReport({ iterations: 0 }),
     ).rejects.toThrow("between 1 and 20");
+  });
+
+  it("uses ten default samples and a warmup in distinct workspaces per operation", async () => {
+    const sampleRoots = new Set<string>();
     const defaultIterations = await buildCliTransportFloorReport({
-      measure: async () => ({
-        duration_ms: 100,
-        output_bytes: 10,
-        estimated_tokens: 3,
-      }),
+      measure: async (
+        _args: string[],
+        environment: { workspaceRoot: string },
+      ) => {
+        sampleRoots.add(environment.workspaceRoot);
+        return {
+          duration_ms: 100,
+          output_bytes: 10,
+          estimated_tokens: 3,
+        };
+      },
     });
     expect(defaultIterations.iterations).toBe(10);
+    expect(sampleRoots.size).toBe(66);
+    for (const operation of Object.values(defaultIterations.operations)) {
+      expect(operation).toMatchObject({ runs: 10 });
+    }
   });
 
   it("runs the default measurement and committed-budget path", async () => {

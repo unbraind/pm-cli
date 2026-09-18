@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Windows transport-floor contract test batches 78 fixtures under one deadline ([pm-lgyaw8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lgyaw8.toon))
+
 ## 2026.9.18 - 2026-09-18
 
 ### Fixed
