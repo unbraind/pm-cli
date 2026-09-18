@@ -367,7 +367,7 @@
     },
     {
       "id": "ambient-host-state-in-measured-fixture",
-      "version": 2,
+      "version": 3,
       "title": "A gate fixture that claims isolation still reads ambient host state, so local and hosted verdicts diverge for the same tree",
       "owner_item_id": "pm-4o7tlx",
       "escape_class": "review_caught_late",
@@ -378,6 +378,8 @@
           "scripts/release/repository-assurance.mjs",
           "scripts/release/run-gates.mjs",
           "scripts/release/*baseline*.json",
+          "scripts/release/verify-installed-agent-session.mjs",
+          "src/sdk/extension/install-sources.ts",
           "src/core/shared/author.ts",
           "src/sdk/governance/health.ts"
         ],
@@ -394,10 +396,13 @@
       "checks": {
         "local": [
           "node scripts/release/token-budget-gate.mjs",
+          "node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-installed-agent-session.spec.ts tests/unit/extensions/extension-install-security.spec.ts",
           "pnpm quality:static"
         ],
         "hosted": [
-          "CI / Gates (static)"
+          "CI / Gates (static)",
+          "CI / Gates (coverage)",
+          "CI / Windows regression (Node 24)"
         ]
       },
       "negative_control": {
@@ -408,7 +413,9 @@
       "historical_item_ids": [
         "pm-4o7tlx",
         "pm-5ug5xq",
-        "pm-t7wn04"
+        "pm-t7wn04",
+        "pm-gh1072",
+        "pm-64qsbl"
       ],
       "budget": {
         "max_escape_rate": 0,

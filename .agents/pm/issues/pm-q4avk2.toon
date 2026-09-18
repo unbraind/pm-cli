@@ -1,0 +1,55 @@
+id: pm-q4avk2
+title: macOS registry acceptance rejects empty optional flags under Bash nounset
+description: "Release run 35336550780 published 2026.9.18 successfully but macOS npm-local and Bun acceptance failed before invoking the harness: flags[@]: unbound variable. The macOS Bash version rejects expanding an empty array with set -u. Preserve strict shell failure behavior, candidate/control arguments and global mode, and execute the workflow command under a compatible shell regression before advertisement."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-18T11:27:18.367Z"
+updated_at: "2026-09-18T12:02:53.448Z"
+closed_at: "2026-09-18T11:33:21.954Z"
+completed_at: "2026-09-18T11:33:21.954Z"
+author: "harness:codex"
+parent: pm-ygli86
+resolution: Initialize the optional-argument array with required JSON output; execute actual workflow commands under native Bash for npm local/global and Bun with success and nonzero exit controls.
+expected_result: All install modes reach registry acceptance without empty-array nounset failures; failed acceptance commands still fail their job.
+actual_result: Bash 3.2 fails npm and Bun before the fix and passes all four workflow tests afterward; 42 related contracts pass. Hosted PR validation and same-tag recovery remain required delivery steps.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-e70zh5,discovered_from,"2026-09-18T11:27:18.367Z","harness:codex","cli:create:dep",detected
+  pm-ygli86,discovered_from,"2026-09-18T11:27:18.367Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-18T11:27:18.367Z","harness:codex","Duplicate check: all-status searches for flags unbound and macOS release acceptance plus open/in-progress inventories found no existing empty-array failure owner. Canonical completed registry acceptance parent pm-ygli86 is retained; this is a newly observed workflow defect with job logs 105581312635 and 105581312654."
+  "2026-09-18T11:31:30.841Z","harness:codex","Red-first reproduction: GNU Bash 3.2 built in a temporary directory executes the actual parsed release workflow step. Before the fix, npm-local and Bun fail with flags[@]: unbound variable, while npm-global passes. Initialize flags with the always-required --json argument so expansion is nonempty under nounset; retain set -euo pipefail. The same test now passes all three modes and independently proves npm exit status 37 propagates. Mandatory macOS PR runtime-smoke job runs this test with /bin/bash. GNU upstream documents the empty-array behavior change in Bash 4.4: https://lists.gnu.org/archive/html/bug-bash/2019-05/msg00024.html"
+  "2026-09-18T11:33:21.295Z","harness:codex","Verification: Bash 3.2 red/green reproduced the exact hosted refusal and validated all install-mode success/failure paths. All 42 release/CI workflow tests pass; focused ESLint, zero duplication and gate-registry checks pass. The native macOS PR gate must pass before merge. After merge, dispatch Release from main for existing v2026.9.18 to re-run exact artifact acceptance and advertisement; the existing public npm version is verify-only."
+  "2026-09-18T11:33:53.603Z","harness:codex","Recovery evidence is linked through GitHub issue https://github.com/unbraind/pm-cli/issues/1272 and the Release workflow exact-tag runs. The issue comment will retain the terminal recovery run and publication/advertisement outcome after this reviewed fix lands; this avoids direct-main post-merge tracker writes."
+files[4]{path,scope,note}:
+  .github/workflows/ci.yml,project,Mandatory native macOS shell regression in existing required job
+  .github/workflows/release.yml,project,Nonempty Bash argument array under strict mode
+  tests/integration/ci-workflow-contract.spec.ts,project,Enforce macOS-only frozen dependency setup and blocking native shell regression
+  tests/integration/registry-acceptance-workflow.spec.ts,project,Real shell execution across every install mode and failure propagation
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts,project,240,"harness:codex","2026-09-18T11:29:56.811Z",local_mutation,test/windows-transport-fixture-budget
+test_runs[1]:
+  - run_id: test-local-mu6wswhq-c2d36f
+    kind: test
+    status: passed
+    started_at: "2026-09-18T12:02:46.283Z"
+    finished_at: "2026-09-18T12:02:53.438Z"
+    recorded_at: "2026-09-18T12:02:53.438Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts,schema,schema,source,acknowledged
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,Preserve immutable-tag main-source recovery and advertisement gates
+close_reason: Fix strict Bash argument expansion and add mandatory native macOS regression
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  owner: pm-q4avk2
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts,pnpm exec eslint tests/integration/registry-acceptance-workflow.spec.ts --max-warnings=0
+  hosted_checks[3]: "Runtime smoke (macos-latest, Node 24)",Gates (coverage),Gates (static)
+body: ""
