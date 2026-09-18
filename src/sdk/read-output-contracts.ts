@@ -11,6 +11,7 @@ import {
   compactReadOutputToBudget,
   estimateReadOutputTokens,
   projectReadOutputItemToBrief,
+  preserveReadOutputRowContract,
   resolveReadOutputRecoveryBudget,
   updateReadOutputReceiptEstimate,
 } from "./read-output-budget.js";
@@ -27,6 +28,7 @@ import {
   readOutputBudgetCollections,
   readOutputContinuationRowCollections,
   readOutputRowPaths,
+  readOutputRowCollections,
 } from "./read-output-rows.js";
 import {
   applyReadOutputContinuation,
@@ -638,7 +640,9 @@ const HYBRID_READ_MUTATION_KEYS: Readonly<
 function hasCanonicalReadOutputOptions(
   options: Record<string, unknown>,
 ): boolean {
-  return CANONICAL_OPTION_KEYS.some((key) => options[key] !== undefined);
+  return CANONICAL_OPTION_KEYS.some((key) =>
+    key !== "outputFormat" && key !== "output_format" && options[key] !== undefined,
+  );
 }
 
 const READ_OUTPUT_VALUE_VALIDATORS = [
@@ -661,11 +665,6 @@ const READ_OUTPUT_VALUE_VALIDATORS = [
     message: "--output-budget must be a positive integer or unbounded.",
   },
   {
-    keys: ["outputFormat", "output_format"],
-    valid: (value: unknown): boolean => value === "toon" || value === "json",
-    message: "--output-format must be toon or json.",
-  },
-  {
     keys: ["outputSession", "output_session"],
     valid: (value: unknown): boolean => {
       parseReadOutputSession(value);
@@ -686,6 +685,10 @@ export function validateReadOutputOptions(
   command: string,
   options: Record<string, unknown>,
 ): void {
+  const encoding = options.outputFormat ?? options.output_format;
+  if (encoding !== undefined && encoding !== "json" && encoding !== "toon") {
+    throw new PmCliError("--output-format must be toon or json.", EXIT_CODE.USAGE);
+  }
   if (!hasCanonicalReadOutputOptions(options)) return;
   const normalizedCommand = resolveReadOutputSurface(command, options);
   if (!normalizedCommand) {
@@ -1397,13 +1400,16 @@ function attachReadOutputSessionContracts(
   format?: "json" | "toon",
 ): Record<string, unknown> {
   let withSession = attachReadOutputSessionReceipt(result, state, format);
+  preserveReadOutputRowContract(result, withSession);
   for (let iteration = 0; iteration < 8; iteration += 1) {
     const previousReadEstimate = receipt.estimated_tokens;
     const previousSessionEstimate = (
       withSession.read_session as PmReadOutputSessionReceipt
     ).spent_this_call_tokens;
     updateReadOutputReceiptEstimate(withSession, receipt, format);
+    const previous = withSession;
     withSession = attachReadOutputSessionReceipt(withSession, state, format);
+    preserveReadOutputRowContract(previous, withSession);
     const sessionEstimate = (
       withSession.read_session as PmReadOutputSessionReceipt
     ).spent_this_call_tokens;
@@ -1639,28 +1645,39 @@ function omitReadOutputForBudget(
   return boundedOmission;
 }
 
+/** Preserve receipts explicitly requested for audit or complete-list certification. */
+function requiresReadOutputAudit(
+  resolved: PmResolvedReadOutputDimensions,
+  options: Record<string, unknown>,
+): boolean {
+  return options.outputRowContract === true || options.output_row_contract === true ||
+    resolved.canonical_options_used!.includes("--output-include") ||
+    (resolved.command === "list" && resolved.canonical_options_used!.length > 0 && resolved.include?.value.includes("full") === true);
+}
+
 /** Decide whether shaping would add no value to an already-bounded result. */
 function canReturnReadOutputUnchanged(
   resolved: PmResolvedReadOutputDimensions,
   session: PmReadOutputSessionState | undefined,
   result: Record<string, unknown>,
-  format?: "json" | "toon",
+  format: "json" | "toon" | undefined,
+  options: Record<string, unknown>,
 ): boolean {
-  if (session !== undefined) return false;
-  const canonicalRequestedCount = resolved.canonical_options_used!.length;
-  if (resolved.cost?.value === "unbounded") {
-    return (
-      canonicalRequestedCount === (resolved.cost.source === "canonical" ? 1 : 0)
-    );
+  if (session !== undefined || requiresReadOutputAudit(resolved, options)) return false;
+  if (resolved.amount?.source === "canonical" && resolved.amount.value !== "unbounded") {
+    const limit = resolved.amount.value;
+    if (readOutputRowCollections(result).some(({ value }) =>
+      (Array.isArray(value) ? value.length : Object.keys(value).length) > limit,
+    )) return false;
   }
-  if (resolved.cost?.source === "legacy" && canonicalRequestedCount === 0) {
-    return true;
-  }
-  return (
-    canonicalRequestedCount === 0 &&
-    (resolved.cost === undefined ||
-      estimateReadOutputTokens(result, format) <= resolved.cost.value)
-  );
+  return resolved.cost === undefined || resolved.cost.value === "unbounded" ||
+    resolved.cost.source === "legacy" ||
+    estimateReadOutputTokens(
+      options.outputRowContract === false
+        ? Object.fromEntries(Object.entries(result).filter(([key]) => key !== "row_contract"))
+        : result,
+      format,
+    ) <= resolved.cost.value;
 }
 
 /**
@@ -1731,7 +1748,7 @@ function attachReadOutputTruncationDisclosure(
     effective_budget_tokens: bindingBudget.tokens,
     measured_result_tokens: measuredResultTokens,
   });
-  if (primary && typeof projected.next_cursor !== "string") {
+  if (primary && !continuationCursorRebased && (typeof projected.next_cursor !== "string" || projected.continuation_kind === "output_cursor")) {
     projected.next_cursor = primary.cursor;
   }
   projected.continuation_kind = continuationCursorRebased
@@ -1807,9 +1824,6 @@ function rebaseBudgetCompactedCursor(
     afterIndex,
     cursor.snapshot,
   );
-  if (typeof projected.applied_limit === "number") {
-    projected.applied_limit = retainedCount;
-  }
   return true;
 }
 
@@ -1885,42 +1899,35 @@ function compactReadOutputProjection(
           (row) => isRecord(row) && row.verdict !== "pass",
         ).length
       : 0;
-  let targetBudget = bindingBudget.tokens;
-  let compacted = projected;
-  for (let iteration = 0; iteration < 8; iteration += 1) {
-    compacted = compactReadOutputToBudget(
-      projected,
-      receipt,
-      targetBudget,
-      assuranceMinimumRows > 0
-        ? new Map([["assertions", assuranceMinimumRows]])
-        : new Map(),
-      format,
-    );
-    const continuationCursorRebased = rebaseBudgetCompactedCursor(
-      compacted,
-      continuationState.originalItemCount,
-      continuationState.cursorSource,
-      continuationState.cursorContinuesExistingPage,
-    );
-    attachReadOutputTruncationDisclosure(
-      compacted,
-      resolved,
-      receipt,
-      bindingBudget,
-      continuationCursorRebased,
-      measuredResultTokens,
-      continuationState.collectionsBeforeBudget,
-    );
-    if (session !== undefined) {
-      compacted = attachReadOutputSessionContracts(compacted, session, receipt, format);
-    }
-    updateReadOutputReceiptEstimate(compacted, receipt, format);
-    const overrun = receipt.estimated_tokens - bindingBudget.tokens;
-    if (overrun <= 0 || targetBudget <= 0) return compacted;
-    targetBudget = Math.max(0, targetBudget - overrun);
-  }
-  return compacted;
+  return compactReadOutputToBudget(
+    projected,
+    receipt,
+    bindingBudget.tokens,
+    assuranceMinimumRows > 0
+      ? new Map([["assertions", assuranceMinimumRows]])
+      : new Map(),
+    format,
+    (compacted) => {
+      const continuationCursorRebased = rebaseBudgetCompactedCursor(
+        compacted,
+        continuationState.originalItemCount,
+        continuationState.cursorSource,
+        continuationState.cursorContinuesExistingPage,
+      );
+      attachReadOutputTruncationDisclosure(
+        compacted,
+        resolved,
+        receipt,
+        bindingBudget,
+        continuationCursorRebased,
+        measuredResultTokens,
+        continuationState.collectionsBeforeBudget,
+      );
+      if (session !== undefined) {
+        Object.assign(compacted, attachReadOutputSessionContracts(compacted, session, receipt, format));
+      }
+    },
+  );
 }
 
 /** Apply universal field, row, and token bounds and attach an exact receipt. */
@@ -1943,16 +1950,16 @@ export function applyReadOutputDimensions<
       ? decodeReadOutputContinuationCursor(rawCursor)
       : undefined;
   const requested = requestedDimensions(resolved);
-  if (
-    cursor === undefined &&
-    canReturnReadOutputUnchanged(resolved, session, result, format)
-  ) {
-    return result;
-  }
   const continuationReadyResult = attachValidateDiagnosticRowContract(
     resolved.command,
     result,
   );
+  if (
+    cursor === undefined &&
+    canReturnReadOutputUnchanged(resolved, session, continuationReadyResult, format, options)
+  ) {
+    return continuationReadyResult as PmReadOutputResult<Result>;
+  }
   const bindingBudget = resolveBindingReadOutputBudget(resolved, session);
   let projected = projectReadOutputRows(
     continuationReadyResult,
@@ -1960,6 +1967,7 @@ export function applyReadOutputDimensions<
     session,
     cursor,
   );
+  preserveReadOutputRowContract(projected, projected, options.outputRowContract === false);
   const receipt: PmReadOutputReceipt = {
     contract_version: 1,
     command: resolved.command,
@@ -1991,6 +1999,7 @@ export function applyReadOutputDimensions<
     if (brief !== undefined) {
       receipt.applied_depth = "brief";
       receipt.degradation_reason = "output_budget_reached";
+      preserveReadOutputRowContract(projected, brief);
       projected = stabilizeReadOutputReceiptEstimates(brief, options);
     }
     if (receipt.estimated_tokens > bindingBudget.tokens) {
@@ -2041,6 +2050,8 @@ export function resolveReadOutputEncoding(
   command: string,
   options: Record<string, unknown>,
 ): "json" | "toon" | undefined {
+  const canonical = options.outputFormat ?? options.output_format;
+  if (canonical === "json" || canonical === "toon") return canonical;
   const encoding = resolveReadOutputDimensions(command, options)?.encoding;
   return encoding?.value === "json" || encoding?.value === "toon"
     ? encoding.value

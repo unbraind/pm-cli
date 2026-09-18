@@ -41,7 +41,7 @@ export function createPmCliProgram(version: string): Command {
       "--output-budget <tokens|unbounded>",
       "Bound estimated tokens in read output or explicitly disable the default ceiling",
     )
-    .option("--output-format <toon|json>", "Select the read-output encoding")
+    .option("--output-format <toon|json>", "Select the result encoding for reads and mutations")
     .option(
       "--output-session <state>",
       "Carry a JSON session budget and served-item ledger across read calls",
@@ -52,7 +52,7 @@ export function createPmCliProgram(version: string): Command {
     )
     .option(
       "--output-row-contract",
-      "Include the machine-readable row selector and TOON encoding contract",
+      "Include row selectors, encoding metadata, and read-output receipts",
     )
     .option("--quiet", "Suppress stdout output")
     .option(

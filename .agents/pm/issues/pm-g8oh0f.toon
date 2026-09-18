@@ -2,23 +2,69 @@ id: pm-g8oh0f
 title: Omit redundant read receipts when canonical output flags do not compact results
 description: "Canonical output flags reportedly add a verbose read_output receipt even when every requested field and row fits, unlike equivalent legacy flags."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-09-18T03:55:18.223Z"
-updated_at: "2026-09-18T03:55:18.223Z"
+updated_at: "2026-09-18T09:45:09.865Z"
+closed_at: "2026-09-18T09:45:09.254Z"
+completed_at: "2026-09-18T09:45:09.254Z"
 author: "harness:codex"
 acceptance_criteria: "Return compact output for no-op canonical output controls while preserving explicit audit requests and all actionable omission, fallback, truncation and continuation evidence."
 parent: pm-5t33or
 severity: medium
 repro_steps: "Compare a one-item read with default output and --output-limit 20: reporter measured 183 bytes / 6 lines versus 572 bytes / 25 lines. Compare list 3 with legacy versus canonical flags: 875 bytes / 33 lines versus 1409 bytes / 57 lines."
-expected_result: "Return compact output for no-op canonical output controls while preserving explicit audit requests and all actionable omission, fallback, truncation and continuation evidence."
-actual_result: Reported behavior above; independently reproducing the exact published-version fixture remains part of implementation.
+resolution: "Omitted redundant receipts for non-binding canonical amount, cost and encoding requests; retained explicit audit/include/session/continuation receipts and prepared validation diagnostic declarations before no-op checks."
+expected_result: Canonical no-op reads preserve all useful rows and fields without redundant receipt overhead; explicit or structurally required evidence remains available.
+actual_result: "8997 tests pass at exact 100/100/100/100 coverage; one-row SDK JSON falls from 172 to 25 tokens; complete-list, nested diagnostics, real mutation encoding and packed-consumer acceptance pass."
 affected_version: 2026.9.17
 component: SDK read-output budgets
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,implements,"2026-09-18T03:55:18.223Z","harness:codex","cli:create:dep",detected
   pm-o3fh,discovered_from,"2026-09-18T03:55:18.223Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-srns,implements,"2026-09-18T08:30:05.922Z","harness:codex","cli:update:dep",detected
+comments[8]{created_at,author,text}:
   "2026-09-18T03:55:18.223Z","harness:codex","Duplicate check: searched all statuses for the issue numbers and precise largest-prefix and receipt-overhead wording; inspected the canonical output-budget parent and closed read fallback lineage; inspected current open and in-progress inventories. No existing focused item owns this newly reported behavior. Keep this intake open and unclaimed until implementation starts."
-body: "GitHub report: https://github.com/unbraind/pm-cli/issues/1267\n\nReported against the published CLI. Intake is documented; the reproduction and implementation are still pending. Preserve the shared SDK output contract and thin adapters."
+  "2026-09-18T08:29:35.755Z","harness:codex","no-op output-limit, output-format and output-budget cases initially emitted redundant receipts; they now preserve the original result when it fits. Explicit include projections, session accounting, continuation and output-row-contract requests retain receipts. Mutation-format validation and real CLI lifecycle coverage are in the same delivery under pm-srns."
+  "2026-09-18T08:30:57.655Z","harness:codex","Live repository inventory: all 2772 recorded items participate in one connected knowledge graph with 13837 directed edges, zero orphans, no execution/hierarchy cycles, and a 12-layer execution graph. Seven grandfathered hierarchy inconsistencies remain; zero active violations. GitHub open PRs, Dependabot, code-scanning, and secret-scanning alerts are empty at intake. Dependency inventory has no wanted-version updates; major-version migrations remain separate compatibility work. Current work adds implements edges to the canonical output-contract owner rather than artificial depth."
+  "2026-09-18T08:51:14.791Z","harness:codex","Latest stable-build manual acceptance in a fresh temporary directory passed: 131 items through the public SDK, Node/Bun mutation lifecycle using canonical encoding, pre-mutation read-only flag refusal, no-op receipt elision, and opt-in audit receipts. Requests of 20/30/40/50/60/80/100/130 rows now retain 12 rows consistently at 1443-1444 rendered JSON tokens under a 1500 ceiling. Discovery schema no longer reserves serialized budget when hidden."
+  "2026-09-18T08:54:31.599Z","harness:codex","The repository agent-task token gate caught an unintended 350-token contracts discovery receipt. Restricted the explicit-full certification exception to list reads, where complete-list SDK validation requires it. Added a full-contracts no-op regression; complete-list certification and unchanged task token baselines are required before closeout. No token or quality thresholds were loosened."
+  "2026-09-18T09:16:19.078Z","harness:codex","Differential SDK measurement against the unchanged main implementation using the same one-row list payload and canonical outputLimit/outputFormat: rendered JSON falls from 172 tokens with the redundant receipt to 25 tokens without it. This isolates receipt overhead; it is not a whole-workspace benchmark. Full contracts snapshot and public SDK snapshot checks pass with zero classified API changes. Latest pm-changelog is 2026.9.18 and its repository has no open issues or PRs."
+  "2026-09-18T09:18:06.928Z","harness:codex","The completed stable-source suite passed 8995 tests and found one regression: a no-op validate request skipped enrichment of nested diagnostic continuation paths. Moved structural continuation declaration before receipt-elision eligibility, preserving nested resume contracts without reintroducing the redundant receipt. The existing diagnostic continuation regression is the red-first guard. Coverage was not produced because that test failed; no 100-percent claim is made from the failed run."
+  "2026-09-18T09:45:08.524Z","harness:codex","Final verification passed: all 8997 tests across 705 files; exact 100/100/100/100 coverage with no uncovered statements, branches, functions or lines. Explicit receipts, complete-list certificates, SDK/CLI transport parity and nested validate diagnostic declarations remain intact. The controlled one-row comparison falls from 172 to 25 JSON tokens; real temporary-workspace and packed npm/npx/Bun/bunx acceptance pass. No coverage threshold or ignore directive changed."
+learnings[1]{created_at,author,text}:
+  "2026-09-18T09:32:58.703Z","harness:codex","Receipt elision is an optimization after structural contract preparation. Validation diagnostic declarations, complete-list certificates, session accounting and explicit audit requests must survive a no-op request. A cheaper payload is valid only when it preserves those consumer-visible obligations."
+files[5]{path,scope,note}:
+  src/sdk/read-output-contracts.ts,project,No-op receipt elision and audit opt-in
+  tests/integration/duplicates-read-output.integration.spec.ts,project,Opt-in JSON and SDK receipt parity
+  tests/unit/sdk/governance/validate-read-output-continuation.spec.ts,project,Existing negative control preserves nested diagnostic declarations across no-op receipt elision
+  tests/unit/sdk/read-output-contracts.spec.ts,project,Receipt contract regressions
+  tests/unit/sdk/read-output-migration-hints.spec.ts,project,Explicit receipt discovery across every migration
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-migration-hints.spec.ts tests/unit/sdk/read-output-transport.spec.ts,project,240,"harness:codex","2026-09-18T08:30:16.539Z",local_mutation,fix/sdk-output-budget-and-format-contracts
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/validate-read-output-continuation.spec.ts,project,240,"harness:codex","2026-09-18T09:18:41.231Z",local_mutation,fix/sdk-output-budget-and-format-contracts
+test_runs[1]:
+  - run_id: test-local-mu6pyasu-y2x0cn
+    kind: test
+    status: passed
+    started_at: "2026-09-18T08:50:52.412Z"
+    finished_at: "2026-09-18T08:51:07.950Z"
+    recorded_at: "2026-09-18T08:51:07.950Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-migration-hints.spec.ts tests/unit/sdk/read-output-transport.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Latest package-generated delivery record
+  docs/READ_OUTPUT_CONTRACTS.md,project,No-op controls and opt-in audit receipts
+close_reason: "Implemented and locally verified receipt elision while retaining structural, audit and completeness contracts; include this closeout in the reviewed delivery."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-rendered-budget.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs coverage -- --maxWorkers=4
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-g8oh0f
+body: "GitHub report: https://github.com/unbraind/pm-cli/issues/1267\n\nCanonical amount, cost, and encoding options no longer add read_output receipts when the existing result already fits and no transformation or audit receipt is needed. Explicit row-contract/audit requests, include projections, complete-list certificates, sessions, and continuations retain their evidence. Validation diagnostic row declarations are prepared before the no-op decision, preserving nested continuation support.\n\nThe same one-row SDK payload drops from 172 rendered JSON tokens to 25 with no row or field loss. This is an isolated receipt-overhead comparison, not a whole-workspace benchmark. Existing complete-list, transport, migration-hint, and validation continuation tests protect the retained contracts; real CLI/SDK acceptance covers the public behavior. See comments and linked test runs for current verification status."

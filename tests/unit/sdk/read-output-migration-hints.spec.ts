@@ -311,6 +311,7 @@ describe("read-output migration hints are executable", () => {
             "unbounded",
             "--json",
             "--no-extensions",
+            "--output-row-contract",
           ],
           { expectJson: true },
         );
@@ -326,6 +327,7 @@ describe("read-output migration hints are executable", () => {
             "unbounded",
             "--json",
             "--no-extensions",
+            "--output-row-contract",
           ],
           { expectJson: true },
         );

@@ -1078,7 +1078,7 @@ export function attachReadOutputContracts(
     !Array.isArray(disclosedResult)
       ? applyReadOutputDimensions(
           command ?? "",
-          options,
+          { ...options, outputRowContract: options.outputRowContract === true || options.output_row_contract === true },
           collapseContinuationMetadata(
             options,
             attachContextIntentReceipt(
@@ -1100,12 +1100,18 @@ export function attachReadOutputContracts(
   ) {
     return projected;
   }
-  const suppressed = stabilizeSuppressedRowContractReceipts(
-    Object.fromEntries(
-      Object.entries(projected).filter(([key]) => key !== "row_contract"),
-    ),
-    options,
+  const withoutDiscoveryMetadata = Object.fromEntries(
+    Object.entries(projected).filter(([key]) => key !== "row_contract"),
   );
+  // Session accounting still needs nested row selectors even though the
+  // declaration is not part of the serialized response.
+  Object.defineProperty(withoutDiscoveryMetadata, "row_contract", {
+    value: (projected as Record<string, unknown>).row_contract,
+    enumerable: false,
+    configurable: true,
+  });
+  const suppressed = stabilizeSuppressedRowContractReceipts(withoutDiscoveryMetadata, options);
+  delete suppressed.row_contract;
   propagateContextUsageServingReceipt(projected, suppressed);
   return suppressed;
 }

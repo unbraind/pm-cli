@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- Allow canonical JSON/TOON encoding on mutations ([pm-1rta7z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1rta7z.toon))
+- Omit redundant read receipts when canonical output flags do not compact results ([pm-g8oh0f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g8oh0f.toon))
+- Keep the largest list prefix that fits the output budget ([pm-15yuly](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-15yuly.toon))
 - Reject ambiguous event durations with explicit minute and month units ([pm-jkjt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jkjt.toon))
 - Packed telemetry acceptance must await completion across delivery batches ([pm-07m41m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-07m41m.toon))
 - GH-1264: enforce next ready-queue token budgets and disclose omitted recommendations ([pm-v53h9j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v53h9j.toon))
