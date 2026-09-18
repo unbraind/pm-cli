@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:observability","area:sdk","area:storage",error-taxonomy,gate,recurrence
 created_at: "2026-08-08T08:00:22.880Z"
-updated_at: "2026-09-18T16:45:45.051Z"
+updated_at: "2026-09-18T16:58:22.702Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "One shared primitive translates host filesystem and resource errno faults into declared PmCliError refusals with a bounded operation label, recovery guidance, and no path disclosure; Every awaited filesystem call site in core and sdk either routes through that primitive or carries a recorded waiver naming why the raw fault is correct; A CI gate fails when a new unguarded filesystem call site is added, so the family cannot silently regrow; The declared codes resolve in the generated error catalog, and a negative control proves a non-errno fault still propagates as a defect rather than being swallowed as environment noise"
@@ -25,7 +25,7 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-j668gl,discovered_from,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
   pm-y4kovm,verifies,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
   pm-4odf0c,recurs_from,"2026-09-06T04:59:23.511Z","harness:codex","cli:update:dep",detected
-comments[38]:
+comments[39]:
   - created_at: "2026-08-08T10:32:51.895Z"
     author: "harness:codex"
     text: "Partial tranche evidence 2026-08-08: added the public path-redacted host errno classifier/translator/async boundary for EACCES, EDQUOT, EMFILE, ENFILE, ENOMEM, ENOSPC, EPERM, and EROFS; snapshot create/restore now consume it while preserving published snapshot error codes. Generated catalog, negative controls, 22/22 linked tests, security scan, and exact full coverage pass. Acceptance is not complete: the remaining awaited filesystem sites still need routing or explicit waivers and a CI recurrence gate. Returning this item to open and releasing the claim rather than claiming whole-repo completion."
@@ -141,6 +141,9 @@ comments[38]:
   - created_at: "2026-09-18T16:45:43.464Z"
     author: "harness:codex"
     text: "Review validation: existing helper acceptance also expected cleanup suppression and is updated to require the typed permission fault with finally-based fixture permission restoration. Focused extension runtime, real host permissions and graph scale suites pass. The preceding full run found this obsolete expectation plus two host temporary-storage quota failures; rerunning unchanged coverage requirements with TMPDIR on the larger scratch filesystem."
+  - created_at: "2026-09-18T16:58:22.702Z"
+    author: "harness:codex"
+    text: "Final-code hosted coverage is exactly 100/100/100/100. Local full reruns exposed host constraints rather than new source failures after the cleanup assertion fix: temporary-storage quota, then ancestor tracker discovery when TMPDIR was placed under the user home. All 96 affected CLI/store/agent-UX tests pass with scratch outside tracker ancestry in /var/tmp; all 142 focused extension/host/graph tests also pass. Future scratch acceptance must have both sufficient capacity and no ancestor tracker."
 learnings[2]{created_at,author,text}:
   "2026-08-17T02:30:00.618Z","harness:codex","Node can surface Linux quota exhaustion as code='Unknown system error -122' with errno=-122; portable host-boundary classification must normalize declared numeric node:os.constants.errno values rather than guess numeric literals."
   "2026-08-17T05:06:05.230Z","harness:codex","node:os.constants.errno is platform-specific: EDQUOT is declared on Linux but absent on Windows. Numeric errno tests must choose a locally declared equivalent while retaining the Linux EDQUOT path where available, and lookup tables must filter missing runtime constants before constructing numeric maps."
