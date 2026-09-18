@@ -135,3 +135,40 @@ Review the report and budget diff together. Before a refresh, compare the delive
 ## Startup and observability
 
 Sentry is loaded only when an error-reporting path actually initializes it. Disabled and normal successful commands do not resolve or compile the `@sentry/node` → OpenTelemetry → Undici graph. The loader uses the package's supported CommonJS export after the opt-out gate, preserving the repo-wide ban on dynamic/inline imports while keeping enabled capture, sanitization, and flush behavior intact.
+
+## Invocation timing
+
+Tracked by [pm-ag9nka](../.agents/pm/issues/pm-ag9nka.toon).
+
+Use `pm --profile list --limit 5` to print diagnostics on stderr while retaining
+normal stdout (including JSON). Every executable invocation with `--profile`
+emits one final receipt on normal process drain, including help, version, and
+handled refusals:
+
+```text
+profile:command=list took_ms=20
+profile:invocation total_ms=324.125 scope=process_start_to_output_drain command_took_ms_scope=handler
+```
+
+`total_ms` uses monotonic runtime uptime, starting before module initialization
+and ending after pending command output and event-loop work drain. It includes
+bootstrap, settings/schema and extension loading, dispatch, rendering, and
+foreground cleanup. Existing `profile:command` records retain their compatible
+`took_ms` field; `command_took_ms_scope=handler` explicitly labels those narrower
+spans. Extension discovery timing is another component, never an invocation
+total. Components may overlap and must not be added to the total.
+
+The total excludes parent-side scheduling/spawn, final OS teardown, and remote
+telemetry delivery after a detached flush. A forcibly terminated process may
+never reach the drain callback. In-process SDK calls do not emit a process-total
+receipt: their host owns the lifetime. `--profile` after the `--` positional
+terminator does not enable the receipt.
+
+The real-process regression compares the reported total against external wall
+time across query, mutation, configuration, schema, health, discovery, and
+refusal paths. It permits parent/teardown overhead of the greater of 250 ms or
+25% of external wall time, and no more than 5 ms of clock rounding above it.
+This is an instrument agreement tolerance, not a performance budget. Existing
+transport/scale gates retain external end-to-end process wall time and their
+unchanged stricter regression budgets; never gate invocation latency on handler
+`took_ms`.

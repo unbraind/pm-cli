@@ -1,0 +1,45 @@
+id: pm-senomv
+title: Reconcile provenance delivery metadata with reviewed implementation
+description: Address PR 1275 review feedback by replacing stale investigation notes through pm and recording settled analyzer and cross-platform acceptance evidence.
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-09-18T14:22:56.298Z"
+updated_at: "2026-09-18T14:24:23.953Z"
+closed_at: "2026-09-18T14:24:23.352Z"
+completed_at: "2026-09-18T14:24:23.352Z"
+author: "harness:codex"
+acceptance_criteria: Linked file notes match completed behavior; immutable history verifies; reviewed metadata and package changelog checks pass.
+parent: pm-4f1l7f
+resolution: Replace stale source-link investigation notes via append-only CLI mutations and retain hosted review evidence.
+expected_result: Completed implementation links describe actual behavior and immutable history remains valid.
+actual_result: Both notes corrected; complete history verification and linked regression tests pass; same-head Windows retry and hosted analyzers pass.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8p629e,verifies,"2026-09-18T14:22:56.298Z","harness:codex","cli:create:dep",detected
+  pm-ag9nka,verifies,"2026-09-18T14:22:56.298Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-18T14:22:56.298Z","harness:codex","Duplicate check: all-status baseline and current keyword search contain no PR 1275 metadata closeout. Reuse the completed implementation lineage as the parent; this child owns review reconciliation only."
+  "2026-09-18T14:23:23.766Z","harness:codex",CodeRabbit identified two stale linked-file investigation notes; corrected via pm files. Exact submitted-head CodeFactor and DeepScan report zero issues. Greptile is unavailable due to free-review quota; Sourcery exhausted its weekly diff budget. CodeRabbit completed a full review with one actionable metadata finding. Windows packed first-run telemetry timed out; the failed job is being retried without changing code or reducing its assertions.
+  "2026-09-18T14:24:00.106Z","harness:codex","The first add-only commands preserved existing notes as designed; explicit remove/add replacement now updates both notes and complete immutable-history verification passes. The same-head Windows packed first-run retry passed, confirming the telemetry timeout was transient. No timeout, assertion, source code, or coverage threshold was changed. CodeRabbit scope warning is inapplicable to the explicitly requested combined three-item PR; repository semantic documentation gate verifies all 626 source files, 4869 exported APIs and 8813 members."
+  "2026-09-18T14:24:22.642Z","harness:codex",Review correction validated by linked provenance-health tests and a fresh build. The accepted inline finding changes metadata only; the 9006-test exact full-coverage result remains applicable to the unchanged source/test tree.
+files[1]{path,scope,note}:
+  .agents/pm/issues/pm-4f1l7f.toon,project,Correct reviewed metadata through CLI with append-only history
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/provenance-health.spec.ts,project,240,"harness:codex","2026-09-18T14:23:24.464Z",local_mutation,fix/provenance-health-invocation-timing
+test_runs[1]:
+  - run_id: test-local-mu71ts0e-eyn79v
+    kind: test
+    status: passed
+    started_at: "2026-09-18T14:23:25.068Z"
+    finished_at: "2026-09-18T14:23:32.365Z"
+    recorded_at: "2026-09-18T14:23:32.365Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/provenance-health.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated reviewed closeout
+close_reason: Accepted PR metadata correction implemented and verified
+body: ""

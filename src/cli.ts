@@ -11,6 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runCliWithBundleIntegrity } from "./cli/bundle-integrity.js";
 import { runRuntimeCompatibleCli } from "./cli/runtime-compatibility-boundary.js";
+import { registerInvocationProfile } from "./cli/invocation-profile.js";
 import {
   pruneCompileCacheGenerations,
   resolveCompileCacheGeneration,
@@ -72,7 +73,9 @@ function findPackageJson(startPath: string): string | undefined {
 
 function printFastVersionIfRequested(): boolean {
   const args = process.argv.slice(2);
-  const versionArgs = args.filter((arg) => arg !== "--no-extensions");
+  const versionArgs = args.filter(
+    (arg) => arg !== "--no-extensions" && arg !== "--profile",
+  );
   if (
     versionArgs.length !== 1 ||
     (versionArgs[0] !== "--version" && versionArgs[0] !== "-V")
@@ -112,6 +115,8 @@ export const _testOnly = {
   printFastVersionIfRequested,
   readPackageVersionForPath,
 };
+
+registerInvocationProfile(process.argv.slice(2));
 
 if (!printFastVersionIfRequested()) {
   enableNodeCompileCache();

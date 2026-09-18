@@ -2,26 +2,75 @@ id: pm-4f1l7f
 title: Count successful provenance resolutions so historical health advisories can clear
 description: "GitHub #1269 reports that successful resolver events omit agent_provenance_outcomes while health counts attempts and successes only from those outcomes, leaving old zero-success warnings after resolver repairs."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-09-18T04:33:51.530Z"
-updated_at: "2026-09-18T04:33:51.530Z"
+updated_at: "2026-09-18T14:23:58.950Z"
+closed_at: "2026-09-18T14:04:15.816Z"
+completed_at: "2026-09-18T14:04:15.816Z"
 author: "harness:codex"
 acceptance_criteria: "Cover failed-then-resolved, genuinely all-failed, unavailable-only and incomplete or bounded-history samples; verify through real SDK mutation and health flows, not fabricated success-only history."
 parent: pm-5oj5
 severity: medium
 repro_steps: Use a workspace with historical failed resolver outcomes followed by successful probe-sourced model/version events. Inspect health zero-success warnings and compare successful event provenance with context.agent_provenance_outcomes.
-expected_result: Successful probe resolutions must contribute truthful success evidence; repaired resolvers must not retain a permanent zero-success advisory. Expose the sampled measurement window and preserve real all-failure warnings.
-actual_result: Reporter observes seven old failures and zero counted successes despite hundreds of newer successful probe records. Independent reproduction remains pending.
+resolution: Persist genuine successful resolver outcomes and expose typed bounded sample receipts through the SDK and full health output.
+expected_result: A new genuine probe success clears a complete all-failed sample without counting overrides or rewriting old history.
+actual_result: Real SDK failed/unavailable/override/recovery cases pass; incomplete samples suppress all-failed conclusions; immutable earlier bytes preserved; exact full coverage and static gates pass.
 affected_version: 2026.9.17
 component: SDK provenance health and immutable outcome recording
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-5oj5,implements,"2026-09-18T04:33:51.530Z","harness:codex","cli:create:dep",detected
   pm-lu6sca,discovered_from,"2026-09-18T04:33:51.530Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-ag9nka,related,"2026-09-18T13:23:00.254Z","harness:codex","cli:update:dep",detected
+comments[8]{created_at,author,text}:
   "2026-09-18T04:33:51.530Z","harness:codex","Duplicate check: searched all statuses for 1269 and provenance_resolver_zero_success plus broader resolver outcomes; read the completed outcome-vocabulary feature and open observability charter in full, and checked open/in-progress work. The new report concerns success accounting after repair rather than the completed outcome-vocabulary or individual resolver fixes. Intake remains open and unclaimed."
-files[2]{path,scope,note}:
-  src/sdk/governance/provenance-health.ts,project,Reported health aggregation owner; implementation investigation pending
-  src/core/history/history.ts,project,Reported immutable outcome recording boundary; implementation investigation pending
+  "2026-09-18T13:04:16.399Z","harness:codex","Live baseline: all-status strict inventory contains 2776 items (2461 closed, 242 open, 59 draft, 14 canceled), with no in-progress work before this tranche. GH issue 1269 has canonical linkage; no open PRs or Dependabot, secret-scanning, or code-scanning alerts. Confirmed createHistoryEntry filters resolved outcomes. Probe-sourced success must be distinguished from environment/session observations before enabling success counts. Work is paired with pm-ag9nka under the observability charter."
+  "2026-09-18T13:10:47.963Z","harness:codex","TDD evidence: both new integration regressions failed against the original implementation. Provenance still reported zero successes after a real SDK mutation with a recovered session probe; executable profiling emitted no invocation total for version/help. Tests use isolated trackers and real filesystem/process boundaries."
+  "2026-09-18T13:21:42.337Z","harness:codex",Manual full-health acceptance in a disposable project returned a complete six-event sample with byte count and observed timestamp bounds. Sentry required-mode gate passed with zero high/critical issues in 14 days; live telemetry had 1.54 percent finish errors and zero missing error-code rows. Independent telemetry flush drained one queued row to zero physical bytes. No secret contents or local operational paths are recorded here.
+  "2026-09-18T13:26:13.250Z","harness:codex",Graph assurance now passes over all 2777 items after materializing the new prose references as justified typed edges. The unchanged historical redundancy census reports 67 transitive edges; no speculative graph expansion was applied. Production query observed fresh events and 198 of 203 recent sessions with both start and finish records; sampled or in-flight sessions are not treated as complete delivery proof.
+  "2026-09-18T13:38:35.909Z","harness:codex","Validation refinement: existing full-storage and no-network boundary assertions now accept the documented sample receipt and real probe successes. The deterministic empty-outcome fixture explicitly disables native probes rather than depending on the current host. All 74 focused tests pass. Strict static quality passes with 100 percent source/API/member documentation and no complexity violations."
+  "2026-09-18T13:54:26.455Z","harness:codex","Linked regression execution passed both the genuine resolver recovery/sample suite and the health command/vector boundary suite. Full repository static quality, graph composition, record integrity, and 89-command package-first dogfood passed. Complete history verification matches each active item to its immutable stream with no errors."
+  "2026-09-18T14:04:13.926Z","harness:codex","Final local validation passed: 708 files / 9006 tests; exact coverage 64834/64834 statements, 49486/49486 branches, 13456/13456 functions, 62056/62056 lines. No threshold reductions or coverage exclusions were introduced. Full static-quality chain, linked tests, typecheck, 89-command dogfood, packed npm/npx/bunx, installed first-run/MCP/telemetry, docs, and security checks passed. Implementation complete; hosted review and merge are the remaining delivery steps."
+notes[1]{created_at,author,text}:
+  "2026-09-18T13:54:51.769Z","harness:codex","Compatibility: sample is a required public SDK result field, explicitly acknowledged in the surface snapshot and documented for consumers constructing scan objects. It describes sorted-history-prefix evidence rather than recency. Earlier history is never backfilled with inferred successes."
+learnings[1]{created_at,author,text}:
+  "2026-09-18T13:26:14.134Z","harness:codex","A resolved identity value is not sufficient evidence that a resolver succeeded: persist success only when the recorded provenance source is probe, and publish sample completeness before drawing population-wide conclusions."
+files[8]{path,scope,note}:
+  sdk/public-surface.json,project,Implementation and regression evidence for the observability measurement contract
+  src/core/history/history.ts,project,Implemented genuine probe-success outcome persistence; real SDK recovery regression passes
+  src/sdk/governance/health.ts,project,Implementation and regression evidence for the observability measurement contract
+  src/sdk/governance/provenance-health.ts,project,Implemented bounded completeness-aware resolver health samples; recovery and boundary tests pass
+  tests/integration/provenance-resolver-recovery.spec.ts,project,Implementation and regression evidence for the observability measurement contract
+  tests/unit/commands/health-command.spec.ts,project,Verify complete and unavailable storage sample receipts in existing health integration assertions
+  tests/unit/sdk/health-vector-boundary.spec.ts,project,Keep no-network health boundary compatible with genuine locally recorded probe success
+  tests/unit/sdk/provenance-health.spec.ts,project,Implementation and regression evidence for the observability measurement contract
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/provenance-resolver-recovery.spec.ts tests/unit/sdk/provenance-health.spec.ts,project,240,"harness:codex","2026-09-18T13:10:47.236Z",local_mutation,fix/provenance-health-invocation-timing
+  node scripts/run-tests.mjs test -- tests/unit/commands/health-command.spec.ts tests/unit/sdk/health-vector-boundary.spec.ts,project,240,"harness:codex","2026-09-18T13:31:39.628Z",local_mutation,fix/provenance-health-invocation-timing
+test_runs[1]:
+  - run_id: test-local-mu70qwcy-hciwrg
+    kind: test
+    status: passed
+    started_at: "2026-09-18T13:52:48.474Z"
+    finished_at: "2026-09-18T13:53:18.418Z"
+    recorded_at: "2026-09-18T13:53:18.418Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/provenance-resolver-recovery.spec.ts tests/unit/sdk/provenance-health.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/health-command.spec.ts tests/unit/sdk/health-vector-boundary.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated reviewed release history for successful provenance accounting
+  docs/SDK_AGENT_SESSION_CONTEXT.md,project,Implementation and regression evidence for the observability measurement contract
+close_reason: Implemented and locally verified in the combined observability delivery; reviewed closure is included in this PR.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/provenance-resolver-recovery.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/provenance-resolver-recovery.spec.ts tests/unit/sdk/provenance-health.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-4f1l7f
 body: "Report: https://github.com/unbraind/pm-cli/issues/1269\n\nThe reporter confirms current model and version probes succeed, but health still counts seven historical failures from August 22 and no recorded successes. Treat this as a reported diagnostic accounting defect; do not describe the repaired resolver itself as broken. Independent reproduction is pending.\n\nImplementation should preserve append-only history and bounded, privacy-safe reason codes. Evaluate recording resolved outcomes or deriving genuine probe successes, and expose the measurement window so historical failures are distinguishable from current regressions."
