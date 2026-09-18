@@ -1,0 +1,45 @@
+id: pm-d9bg0i
+title: Verify explicit calendar duration in package-first dogfood
+description: PR 1268 hosted smokes caught a stale 30m fixture after shared duration validation began refusing ambiguous units. Migrate the fixture and assert the persisted thirty-minute span.
+type: Task
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-18T04:12:30.301Z"
+updated_at: "2026-09-18T04:16:13.460Z"
+closed_at: "2026-09-18T04:16:12.661Z"
+completed_at: "2026-09-18T04:16:12.661Z"
+author: "harness:codex"
+parent: pm-jkjt
+resolution: Use explicit minute duration in the package-first journey and verify the stored thirty-minute span; use a top-level SDK import in its subprocess smoke.
+expected_result: The full installed package journey succeeds and rejects a stored duration inconsistent with thirty minutes.
+actual_result: "All 39 focused script tests, the complete real temporary journey, packed npm/npx/bunx and plugin smokes passed; negative-control test failed before the assertion existed."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-jkjt,verifies,"2026-09-18T04:12:30.301Z","harness:codex","cli:create:dep",detected
+  pm-o3fh,discovered_from,"2026-09-18T04:12:30.301Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-18T04:12:30.301Z","harness:codex","Duplicate check: all-status searches for dogfood duration and package-first explicit duration plus fresh open/in-progress inventories found no focused owner. This is follow-up verification for the already closed implementation; hosted run 35305204083 failed the existing Gates smokes negative control."
+  "2026-09-18T04:16:12.008Z","harness:codex","Evidence: first PR head fc3f330 failed only Gates (smokes) because the existing dogfood fixture used duration=30m. Changed it to 30min and added an assertion against the persisted start/end span. The wrong-span negative-control test failed before implementation; all 39 script tests and the complete temporary package-first journey passed afterward. Packed npm/npx/bunx and Claude plugin smokes, ESLint and typecheck passed. CodeFactor and DeepScan found zero new issues on the first head; hosted coverage passed. CodeRabbit and Sourcery reviews were unavailable because of quota, and Greptile had not responded. Read and reacted to every bot artifact; no inline findings existed to answer. The next pushed head will trigger fresh reviews and all hosted gates."
+files[2]{path,scope,note}:
+  scripts/dogfood-package-first.mjs,project,Use explicit minute units and assert the persisted event span
+  tests/unit/scripts/dogfood-package-first.spec.ts,project,Negative-control-proof-for-persisted-event-duration
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/dogfood-package-first.mjs,project,240,"harness:codex","2026-09-18T04:12:33.918Z",local_mutation,feat/calendar-package-duration-contracts
+  node scripts/run-tests.mjs test -- tests/unit/scripts/dogfood-package-first.spec.ts,project,240,"harness:codex","2026-09-18T04:13:19.707Z",local_mutation,feat/calendar-package-duration-contracts
+test_runs[1]:
+  - run_id: test-local-mu6g39dq-u3z9bb
+    kind: test
+    status: passed
+    started_at: "2026-09-18T04:13:49.848Z"
+    finished_at: "2026-09-18T04:15:03.230Z"
+    recorded_at: "2026-09-18T04:15:03.230Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/dogfood-package-first.mjs,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/dogfood-package-first.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated closeout evidence
+close_reason: Hosted smoke regression fixed and verified locally; included in PR 1268.
+body: ""

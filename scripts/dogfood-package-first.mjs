@@ -254,7 +254,7 @@ try {
   run("comments", ["comments", id, "Dogfood comment shorthand remains accepted."]);
   run("notes", ["notes", id, "--add", "Dogfood note shorthand remains accepted."]);
   run("learnings", ["learnings", id, "--add", "Dogfood learning shorthand remains accepted."]);
-  run("calendar event", [
+  const calendarCreated = run("calendar event", [
     "create",
     "--title",
     "Dogfood calendar event",
@@ -267,10 +267,16 @@ try {
     "--priority",
     "2",
     "--event",
-    "date=+1d,duration=30m,timezone=UTC",
+    "date=+1d,duration=30min,timezone=UTC",
     "--create-mode",
     "progressive",
   ]);
+  const calendarStored = run("calendar event duration", ["get", idFrom(calendarCreated, "calendar event"), "--depth", "full"]);
+  const calendarEvent = calendarStored.item.events[0];
+  assert(
+    Date.parse(calendarEvent.end_at) - Date.parse(calendarEvent.start_at) === 30 * 60 * 1000,
+    "calendar event did not persist a thirty-minute duration",
+  );
   run("context", ["context", "--limit", "5", "--depth", "standard"]);
   run("search keyword", ["search", "Dogfood package-first workflow", "--limit", "5"]);
   const getBrief = run("get brief", ["get", id, "--depth", "brief"]);
@@ -513,7 +519,7 @@ try {
   }
   const sdkSmoke = spawnSync(
     process.execPath,
-    ["--input-type=module", "-e", "import('./dist/sdk/index.js').then((sdk) => { if (!sdk.PM_PROVIDER_TOOL_PARAMETERS_SCHEMA) process.exit(2); })"],
+    ["--input-type=module", "-e", "import { PM_PROVIDER_TOOL_PARAMETERS_SCHEMA } from './dist/sdk/index.js'; if (!PM_PROVIDER_TOOL_PARAMETERS_SCHEMA) process.exit(2);"],
     {
       cwd: repoRoot,
       encoding: "utf8",

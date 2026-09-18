@@ -76,6 +76,9 @@ function handleCreateCommand(pmArgs: string[]): SpawnResult {
 }
 
 function handleGetCommand(pmArgs: string[]): SpawnResult | undefined {
+  if (pmArgs[1] === "pm-event-1") {
+    return pmJson({ item: { events: [{ start_at: "2026-09-18T09:00:00Z", end_at: "2026-09-18T09:30:00Z" }] } });
+  }
   if (pmArgs.includes("--depth") && pmArgs.includes("brief")) {
     return pmJson({ item: { id: "pm-dogfood-1" } });
   }
@@ -313,6 +316,23 @@ function mockFs(rmThrows = false, indexEmitted = true) {
 }
 
 describe("dogfood-package-first", () => {
+  it("rejects a persisted calendar span that is not thirty minutes", async () => {
+    const spawnSync = buildSpawnSync({
+      pm: (cmd, args) => cmd === "get" && args[1] === "pm-event-1"
+        ? pmJson({ item: { events: [{ start_at: "2026-09-18T09:00:00Z", end_at: "2027-09-18T09:00:00Z" }] } })
+        : undefined,
+    });
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+    mockFs();
+    delete process.env.PM_DOGFOOD_SEMANTIC;
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await harness.importModule(SCRIPT);
+
+    expect(errorSpy).toHaveBeenCalledWith("calendar event did not persist a thirty-minute duration");
+    expect(process.exitCode).toBe(1);
+  });
+
   it("runs the full success path (semantic skipped) and reports ok", async () => {
     const spawnSync = buildSpawnSync();
     vi.doMock("node:child_process", () => ({ spawnSync }));
