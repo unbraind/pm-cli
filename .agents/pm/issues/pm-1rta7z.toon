@@ -1,0 +1,57 @@
+id: pm-1rta7z
+title: Allow canonical JSON/TOON encoding on mutations
+description: "Fix GH-1271: accept the globally advertised encoding option on writes through the shared SDK while retaining pre-mutation rejection of read-only shaping controls."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-18T09:48:15.997Z"
+updated_at: "2026-09-18T09:53:07.537Z"
+closed_at: "2026-09-18T09:53:06.839Z"
+completed_at: "2026-09-18T09:53:06.839Z"
+author: "harness:codex"
+acceptance_criteria: Canonical JSON/TOON encoding succeeds on real CLI mutation lifecycle and SDK action transport; invalid encodings and read-only controls are rejected before mutation; compatibility aliases and strict gates remain intact.
+parent: pm-srns
+severity: medium
+resolution: "Resolve canonical JSON/TOON encoding before read-surface classification, preserve mutation rejection of read-only shaping controls, and document the global encoding contract."
+expected_result: Advertised canonical encoding works consistently on mutations without permitting read shaping or changing mutation semantics.
+actual_result: Real create/update/comment/close and SDK action acceptance passed; read-only controls refused before writes; full 8997-test suite passed at exact 100/100/100/100 coverage with packed npm/Bun consumer acceptance.
+component: SDK output contracts
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-hb7ug8,discovered_from,"2026-09-18T09:48:15.997Z","harness:codex","cli:create:dep",detected
+  pm-srns,implements,"2026-09-18T09:48:15.997Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-18T09:48:15.997Z","harness:codex","Duplicate check: all-status keyword search requiring output-format and mutation returned only the broad uniform-output owner and unrelated infrastructure or diagnostic-read work. Exact-title search returned zero; inspected the completed read-only dimension owner and current open/in-progress inventories. Reuse the uniform-output parent and record only its independently delivered GH-1271 mutation-encoding child; the parent remains open."
+  "2026-09-18T09:53:06.156Z","harness:codex","Delivery evidence: implemented under the claimed uniform-output parent and isolated this completed GH-1271 child for accurate package-generated release notes. Shared SDK validation and renderer resolution accept canonical JSON/TOON on mutations; read-only controls still refuse before writes. Linked sandboxed integration run passed both real CLI/SDK lifecycle tests. Final repository coverage passed 8997 tests in 705 files with 64806/64806 statements, 49453/49453 branches, 13451/13451 functions and 62027/62027 lines. Typecheck, strict docstring coverage, targeted ESLint, duplication, contract snapshots, secret/dependency scans and packed npm/npx/Bun/bunx consumers passed. Manual Node/Bun temporary-workspace acceptance exercised mutations and reads. Hosted PR checks and review are the remaining delivery gates; these results do not claim a published release."
+files[4]{path,scope,note}:
+  src/sdk/cli-program.ts,project,Global encoding help for reads and mutations
+  src/sdk/read-output-contracts.ts,project,Shared mutation encoding validation and renderer resolution
+  tests/integration/read-output-completeness.integration.spec.ts,project,Real CLI and SDK mutation lifecycle and no-write refusals
+  tests/unit/sdk/recovery/read-output-rendered-budget.spec.ts,project,Mutation and hybrid-mode encoding regression matrix
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/read-output-completeness.integration.spec.ts,project,240,"harness:codex","2026-09-18T09:48:37.314Z",local_mutation,fix/sdk-output-budget-and-format-contracts
+test_runs[1]:
+  - run_id: test-local-mu6s0kfr-lkfhle
+    kind: test
+    status: passed
+    started_at: "2026-09-18T09:48:38.010Z"
+    finished_at: "2026-09-18T09:48:52.982Z"
+    recorded_at: "2026-09-18T09:48:52.982Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output-completeness.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated focused delivery entry
+  docs/READ_OUTPUT_CONTRACTS.md,project,Shared encoding and read-only shaping distinction
+close_reason: Canonical mutation encoding implemented and verified through shared SDK and real CLI transports; included in the combined bounded-output delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/read-output-rendered-budget.spec.ts tests/integration/read-output-completeness.integration.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs coverage -- --maxWorkers=4 --coverage.reportOnFailure
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-1rta7z
+body: "GitHub report: https://github.com/unbraind/pm-cli/issues/1271\n\nThis focused delivery implements the mutation-encoding portion of the broader uniform-output contract. Canonical outputFormat/output_format selects JSON or TOON before read-surface resolution, while validation continues to reject read-only shaping controls on writes and hybrid mutation modes before execution. Existing --json compatibility remains intact.\n\nThe shared SDK owns validation and renderer resolution; the CLI help describes encoding as available for reads and mutations. Regression coverage exercises create, update, comments and close through the real CLI, runAction create through the SDK, TOON output, invalid encodings and pre-mutation refusal of output limits. Temporary-workspace acceptance also exercises Node and Bun; the full repository suite passes at exact 100/100/100/100 coverage.\n\nThe parent remains open for remaining command classification and universal envelope specification work. This child records the independently delivered defect fix so the package-owned changelog includes it."

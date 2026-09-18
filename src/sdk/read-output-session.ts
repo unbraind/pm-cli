@@ -188,7 +188,14 @@ function summarizeReadOutputSessionRows(result: Record<string, unknown>): {
 } {
   const deliveredIds = new Set<string>();
   let suppressedRepeatCount = 0;
-  for (const collection of readOutputRowCollections(result)) {
+  const collections = readOutputRowCollections(result);
+  const declaredPaths = new Set(collections.map(({ path }) => path));
+  // Final envelopes omit discovery schemas. Count the same top-level facts
+  // during prefix selection so later accounting cannot overrun the budget.
+  const additionalCollections = Object.entries(result).flatMap(([path, value]) =>
+    Array.isArray(value) && !declaredPaths.has(path) ? [{ path, value }] : [],
+  );
+  for (const collection of [...collections, ...additionalCollections]) {
     const rows = Array.isArray(collection.value)
       ? collection.value
       : Object.values(collection.value);

@@ -454,7 +454,7 @@ describe("read output contracts", () => {
     expect(() =>
       validateReadOutputOptions("comments", {
         add: "mutation",
-        outputFormat: "json",
+        outputLimit: 1,
       }),
     ).toThrow("cannot be combined with a comments mutation");
   });
@@ -588,7 +588,7 @@ describe("read output contracts", () => {
       );
     }
     expect(unbounded.items).toHaveLength(1);
-    expect(unbounded.read_output).toMatchObject({ within_budget: true });
+    expect(unbounded).not.toHaveProperty("read_output");
   });
 
   it("projects and bounds nested row paths through the same universal contract", () => {

@@ -9,6 +9,7 @@ describe("duplicates universal read output", () => {
       const json = context.runCli(
         [
           "duplicates",
+          "--output-row-contract",
           "--output-format",
           "json",
           "--output-budget",
@@ -29,7 +30,7 @@ describe("duplicates universal read output", () => {
       const sdk = await new PmClient({
         pmRoot: context.pmPath,
         noExtensions: true,
-      }).duplicates({ outputBudget: "unbounded", outputFormat: "json" });
+      }).duplicates({ outputBudget: "unbounded", outputFormat: "json", outputRowContract: true });
       expect(sdk).toMatchObject({
         count: 0,
         read_output: { command: "duplicates", within_budget: true },

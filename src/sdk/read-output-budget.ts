@@ -132,6 +132,18 @@ export function resolveReadOutputRecoveryBudget(
   };
 }
 
+/** Preserve an internal row declaration across clones without charging it as emitted metadata. */
+export function preserveReadOutputRowContract(
+  source: Record<string, unknown>,
+  target: Record<string, unknown>,
+  suppress = false,
+): void {
+  const descriptor = Object.getOwnPropertyDescriptor(source, "row_contract");
+  if (descriptor && (suppress || descriptor.enumerable === false)) {
+    Object.defineProperty(target, "row_contract", { ...descriptor, enumerable: false });
+  }
+}
+
 /** Estimate UTF-8 token cost using the selected JSON/TOON renderer, or compact JSON for structured SDK calls without a renderer. */
 export function estimateReadOutputTokens(
   result: unknown,
@@ -184,6 +196,33 @@ export function updateReadOutputReceiptEstimate(
   receipt.estimated_tokens = estimate;
 }
 
+/** Select the largest reducible declared row collection, breaking ties by path. */
+function selectCompactionCollection(
+  result: Record<string, unknown>,
+  minimumRowsByPath: ReadonlyMap<string, number>,
+): ReturnType<typeof readOutputBudgetCollections>[number] | undefined {
+  return readOutputBudgetCollections(result)
+    .filter((collection) => {
+      const length = Array.isArray(collection.value)
+        ? collection.value.length
+        : Object.keys(collection.value).length;
+      return (
+        length > Math.max(1, minimumRowsByPath.get(collection.path) ?? 0)
+      );
+    })
+    .map((collection) => ({
+      collection,
+      length: Array.isArray(collection.value)
+        ? collection.value.length
+        : Object.keys(collection.value).length,
+    }))
+    .sort(
+      (left, right) =>
+        right.length - left.length ||
+        left.collection.path.localeCompare(right.collection.path),
+    )[0]?.collection;
+}
+
 /** Reduce the largest row collection until the budget fits or no rows can move. */
 function compactRowsToBudget(
   result: Record<string, unknown>,
@@ -191,63 +230,59 @@ function compactRowsToBudget(
   budget: number,
   minimumRowsByPath: ReadonlyMap<string, number>,
   format?: "json" | "toon",
+  finalize?: (result: Record<string, unknown>) => void,
 ): void {
   for (
     let iteration = 0;
     iteration < MAX_COMPACTION_ITERATIONS;
     iteration += 1
   ) {
+    finalize?.(result);
     updateReadOutputReceiptEstimate(result, receipt, format);
     if (receipt.estimated_tokens <= budget) return;
-    const candidate = readOutputBudgetCollections(result)
-      .filter((collection) => {
-        const length = Array.isArray(collection.value)
-          ? collection.value.length
-          : Object.keys(collection.value).length;
-        return (
-          length > Math.max(1, minimumRowsByPath.get(collection.path) ?? 0)
-        );
-      })
-      .map((collection) => ({
-        collection,
-        length: Array.isArray(collection.value)
-          ? collection.value.length
-          : Object.keys(collection.value).length,
-      }))
-      .sort(
-        (left, right) =>
-          right.length - left.length ||
-          left.collection.path.localeCompare(right.collection.path),
-      )[0]?.collection;
+    const candidate = selectCompactionCollection(result, minimumRowsByPath);
     if (!candidate) return;
     const minimumRows = Math.max(1, minimumRowsByPath.get(candidate.path) ?? 0);
-    if (Array.isArray(candidate.value)) {
-      candidate.value.splice(
-        -Math.min(
-          candidate.value.length - minimumRows,
-          Math.max(1, Math.ceil(candidate.value.length / 2)),
-        ),
-      );
-    } else {
-      const keys = Object.keys(candidate.value);
-      for (const key of keys.slice(
-        -Math.min(
-          keys.length - minimumRows,
-          Math.max(1, Math.ceil(keys.length / 2)),
-        ),
-      )) {
-        delete candidate.value[key];
+    const values = Array.isArray(candidate.value)
+      ? [...candidate.value]
+      : Object.entries(candidate.value);
+    const retainPrefix = (length: number): void => {
+      if (Array.isArray(candidate.value)) {
+        candidate.value.length = length;
+        for (let index = 0; index < length; index += 1) candidate.value[index] = values[index];
+      } else {
+        for (const key of Object.keys(candidate.value)) delete candidate.value[key];
+        Object.defineProperties(candidate.value, Object.getOwnPropertyDescriptors(
+          Object.fromEntries(values.slice(0, length) as [string, unknown][]),
+        ));
       }
-    }
+      if (typeof result.count === "number") result.count = countReadOutputRows(result);
+      if (candidate.path === "items") result.applied_limit = length;
+      finalize?.(result);
+      updateReadOutputReceiptEstimate(result, receipt, format);
+    };
     receipt.rows_compacted = true;
     receipt.compacted_row_paths = [
       ...new Set([...(receipt.compacted_row_paths ?? []), candidate.path]),
     ].sort((left, right) => left.localeCompare(right));
     result.has_more = true;
     result.truncated = true;
-    if (typeof result.count === "number") {
-      result.count = countReadOutputRows(result);
+    // Measure the complete envelope at each candidate, including rebased
+    // cursors and session charges. Halving without backtracking wastes rows.
+    let low = minimumRows;
+    let high = values.length - 1;
+    let retained = minimumRows;
+    while (low <= high) {
+      const middle = Math.floor((low + high) / 2);
+      retainPrefix(middle);
+      if (receipt.estimated_tokens <= budget) {
+        retained = middle;
+        low = middle + 1;
+      } else {
+        high = middle - 1;
+      }
     }
+    retainPrefix(retained);
   }
 }
 
@@ -258,15 +293,17 @@ export function compactReadOutputToBudget(
   budget: number,
   minimumRowsByPath: ReadonlyMap<string, number> = new Map(),
   format?: "json" | "toon",
+  finalize?: (result: Record<string, unknown>) => void,
 ): Record<string, unknown> {
   const stringCompactionState: StringCompactionState = { compacted: false };
   const compacted = compactStrings(result, stringCompactionState) as Record<
     string,
     unknown
   >;
+  preserveReadOutputRowContract(result, compacted);
   receipt.strings_compacted = stringCompactionState.compacted;
   compacted.read_output = receipt;
-  compactRowsToBudget(compacted, receipt, budget, minimumRowsByPath, format);
+  compactRowsToBudget(compacted, receipt, budget, minimumRowsByPath, format, finalize);
   updateReadOutputReceiptEstimate(compacted, receipt, format);
   return compacted;
 }
