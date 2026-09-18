@@ -488,11 +488,15 @@ describe("scripts/release/verify-published-release: success path", () => {
       "",
       "utf8",
     );
-    for (const call of runCommand.mock.calls.slice(0, 7)) {
+    for (const call of runCommand.mock.calls.filter(([command]) => command !== "gh")) {
       expect(call[2]).toMatchObject({
         env: {
           NODE_AUTH_TOKEN: "",
           NPM_TOKEN: "",
+          PM_PATH: path.join("/tmp/pm-cli-published-verify-test", "project", ".agents", "pm"),
+          PM_GLOBAL_PATH: path.join("/tmp/pm-cli-published-verify-test", "global"),
+          PM_SENTRY_DISABLED: "1",
+          PM_TELEMETRY_DISABLED: "1",
           npm_config_cache: path.join(
             "/tmp/pm-cli-published-verify-test",
             "npm-cache",

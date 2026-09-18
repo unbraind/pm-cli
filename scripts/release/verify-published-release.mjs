@@ -672,6 +672,10 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
     const publicRegistryEnv = {
       NODE_AUTH_TOKEN: "",
       NPM_TOKEN: "",
+      PM_PATH: path.join(tempRoot, "project", ".agents", "pm"),
+      PM_GLOBAL_PATH: path.join(tempRoot, "global"),
+      PM_SENTRY_DISABLED: "1",
+      PM_TELEMETRY_DISABLED: "1",
       npm_config_cache: path.join(tempRoot, "npm-cache"),
       npm_config_userconfig: npmUserConfig,
       BUN_INSTALL_CACHE_DIR: path.join(tempRoot, "bun-cache"),

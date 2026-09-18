@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:observability","area:sdk","area:storage",error-taxonomy,gate,recurrence
 created_at: "2026-08-08T08:00:22.880Z"
-updated_at: "2026-09-08T13:31:51.127Z"
+updated_at: "2026-09-18T15:52:44.057Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "One shared primitive translates host filesystem and resource errno faults into declared PmCliError refusals with a bounded operation label, recovery guidance, and no path disclosure; Every awaited filesystem call site in core and sdk either routes through that primitive or carries a recorded waiver naming why the raw fault is correct; A CI gate fails when a new unguarded filesystem call site is added, so the family cannot silently regrow; The declared codes resolve in the generated error catalog, and a negative control proves a non-errno fault still propagates as a defect rather than being swallowed as environment noise"
@@ -25,7 +25,7 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-j668gl,discovered_from,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
   pm-y4kovm,verifies,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
   pm-4odf0c,recurs_from,"2026-09-06T04:59:23.511Z","harness:codex","cli:update:dep",detected
-comments[31]:
+comments[35]:
   - created_at: "2026-08-08T10:32:51.895Z"
     author: "harness:codex"
     text: "Partial tranche evidence 2026-08-08: added the public path-redacted host errno classifier/translator/async boundary for EACCES, EDQUOT, EMFILE, ENFILE, ENOMEM, ENOSPC, EPERM, and EROFS; snapshot create/restore now consume it while preserving published snapshot error codes. Generated catalog, negative controls, 22/22 linked tests, security scan, and exact full coverage pass. Acceptance is not complete: the remaining awaited filesystem sites still need routing or explicit waivers and a CI recurrence gate. Returning this item to open and releasing the claim rather than claiming whole-repo completion."
@@ -120,10 +120,22 @@ comments[31]:
   - created_at: "2026-09-06T08:48:42.075Z"
     author: "harness:codex"
     text: "Candidate mechanism reproduced independently with real Node processes (Node 26.7.0, no filesystem/API mocks): a spawnSync wrapper delegating with inherited stdio is terminated with ENOBUFS/SIGTERM after 94 ms at maxBuffer=16; its real child is still running when the caller returns and writes its completion marker later. This establishes the child-lifetime hazard underlying the pm-csv CI correlation. It does not prove the scrubbed Node 22 Sentry event came from that fixture or justify resolving PM-CLI-3A; the exact package fixture still needs reproduction and isolation correction in its owning repository."
+  - created_at: "2026-09-18T15:23:49.157Z"
+    author: "harness:codex"
+    text: "Live PM-CLI-3C evidence: one handled Node 26.7.0 numeric EDQUOT/write event from current 2026.9.18 packed acceptance. Matching the exact installed bundle frame identifies createExtensionInstallLock -> owner.json write. The existing copy/backup guards do not cover acquisition. Temporary-filesystem quota pressure caused the event; the identical packed workflow passes in a separate scratch filesystem. Implementing typed lock-operation boundary and a real permission-denial regression under this canonical owner; the broader all-call-site census/gate acceptance remains open. No private path or host identifiers retained."
+  - created_at: "2026-09-18T15:25:01.300Z"
+    author: "harness:codex"
+    text: "TDD red for PM-CLI-3C boundary: both a declared quota fault raised within the installation lease and a real POSIX permission denial while creating scope.lock escaped as raw Error. The new tests require a path-redacted host_environment_capacity_fault/permission_fault, verify no install runs without a lease, verify the lease is removed, and retain the original non-errno implementation exception."
+  - created_at: "2026-09-18T15:39:35.828Z"
+    author: "harness:codex"
+    text: "Implemented install-lease host boundary only: acquisition, owner metadata write and protected operation now translate host capacity/permission errors while preserving untyped programmer errors. RED acquisition and EDQUOT cases reproduced; host integration plus SDK host-boundary tests pass. Sentry PM-CLI-3C source frame matches owner.json write in the published install lease. Broader filesystem call-site migration remains outstanding; this umbrella will stay open."
+  - created_at: "2026-09-18T15:52:42.680Z"
+    author: "harness:codex"
+    text: "Full-suite evidence: 9010 cases passed and the existing owner-read regression correctly exposed an obsolete raw EACCES message assertion. It now requires host_environment_permission_fault and still verifies the active owner token survives unreadable metadata; the focused regression passes. No lock safety assertion removed."
 learnings[2]{created_at,author,text}:
   "2026-08-17T02:30:00.618Z","harness:codex","Node can surface Linux quota exhaustion as code='Unknown system error -122' with errno=-122; portable host-boundary classification must normalize declared numeric node:os.constants.errno values rather than guess numeric literals."
   "2026-08-17T05:06:05.230Z","harness:codex","node:os.constants.errno is platform-specific: EDQUOT is declared on Linux but absent on Windows. Numeric errno tests must choose a locally declared equivalent while retaining the Linux EDQUOT path where available, and lookup tables must filter missing runtime constants before constructing numeric maps."
-files[19]{path,scope,note}:
+files[20]{path,scope,note}:
   sdk/public-surface.json,project,Reviewed additive SDK surface snapshot
   src/core/extensions/module-graph-snapshot.ts,project,Typed module verification copy stage
   src/core/fs/host-environment-errors.ts,project,Shared core implementation with stable SDK reexports
@@ -140,6 +152,7 @@ files[19]{path,scope,note}:
   tests/fixtures/contracts/full.json,project,Generated CLI contract snapshot for typed archive refusal
   tests/integration/extension-host-faults.integration.spec.ts,project,Capacity classification and real permission-denied rollback boundaries
   tests/unit/commands/test-command.spec.ts,project,Portable numeric capacity-fault fixture at linked-test sandbox boundary
+  tests/unit/extensions/extension-command.spec.ts,project,Preserve stale lock ownership while expecting typed host permission fault
   tests/unit/extensions/extension-install-security.spec.ts,project,Registry archive link and missing-artifact negative controls
   tests/unit/sdk/host-environment-errors.spec.ts,project,All errno classes redaction recovery and non-errno negative controls
   tests/unit/sdk/workspace-snapshot.spec.ts,project,Snapshot integration coverage for compatible shared-boundary codes
@@ -174,7 +187,7 @@ tests[5]:
       created_at: "2026-09-06T05:02:19.554Z"
       source_kind: local_mutation
       source_ref: feat/receipt-recovery-and-extension-contracts
-test_runs[6]:
+test_runs[8]:
   - run_id: test-local-msk8hb2h-vcmjua
     kind: test
     status: passed
@@ -238,6 +251,28 @@ test_runs[6]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/extension-host-faults.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu741rs7-uxhs5i
+    kind: test
+    status: failed
+    started_at: "2026-09-18T15:25:44.382Z"
+    finished_at: "2026-09-18T15:25:44.551Z"
+    recorded_at: "2026-09-18T15:25:44.551Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extension-host-faults.integration.spec.ts,schema,schema,source,foreign_source_ref
+  - run_id: test-local-mu742vwl-b3byzd
+    kind: test
+    status: passed
+    started_at: "2026-09-18T15:26:32.438Z"
+    finished_at: "2026-09-18T15:26:36.549Z"
+    recorded_at: "2026-09-18T15:26:36.549Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extension-host-faults.integration.spec.ts,schema,schema,source,acknowledged
 docs[2]{path,scope,note}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated reachability inventory includes the new typed archive refusal
   docs/SDK_RUNTIME_BOUNDARIES.md,project,Package author guidance for host fault translation and compatibility codes

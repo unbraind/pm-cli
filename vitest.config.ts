@@ -6,6 +6,7 @@ import TestReliabilityReporter, {
   TEST_AT_RISK_RATIO,
   TEST_TIMEOUT_MS,
 } from "./scripts/test-reliability-reporter.mts";
+import McpContractReporter from "./scripts/mcp-contract-reporter.mts";
 
 /**
  * Strip the leading runtime shebang from repository `.mjs` and `.mts`
@@ -109,7 +110,7 @@ export default defineConfig({
     hookTimeout: 30_000,
     retry: process.env.CI ? 1 : 0,
     slowTestThreshold: TEST_TIMEOUT_MS * TEST_AT_RISK_RATIO,
-    reporters: testReporters,
+    reporters: [...testReporters, new McpContractReporter()],
     outputFile: { junit: "./coverage/junit.xml" },
     coverage: {
       provider: "v8",

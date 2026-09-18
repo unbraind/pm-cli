@@ -1,0 +1,66 @@
+id: pm-prmt1y
+title: Isolate published MCP verification from the caller global skill catalog
+description: Published-release verification inherits the caller PM roots. A larger global skill catalog paginates bundled pm-sdk out of the first resource page and falsely rejects a healthy published server. Isolate project/global configuration for all npm/npx/bunx stdio and HTTP verification subprocesses without weakening protocol assertions.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-18T15:37:46.481Z"
+updated_at: "2026-09-18T16:12:24.426Z"
+closed_at: "2026-09-18T15:53:11.453Z"
+completed_at: "2026-09-18T15:53:11.453Z"
+author: "harness:codex"
+acceptance_criteria: Every package verifier subprocess has isolated PM roots; existing MCP discovery checks remain strict; real published npm/npx/bunx stdio and HTTP checks pass.
+parent: pm-z3ez
+resolution: Isolated PM project/global roots across npm/npx/bunx verification subprocesses and disabled acceptance telemetry/Sentry
+expected_result: Healthy published CLI and MCP artifacts pass strict stdio and HTTP acceptance regardless of caller skill catalog
+actual_result: Both missing-isolation negative regressions reproduced before fix; 40 verifier cases and linked test pass; real 2026.9.18 npm/npx/bunx stdio/HTTP and missing-binary controls pass
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7zs0,verifies,"2026-09-18T15:37:46.481Z","harness:codex","cli:create:dep",detected
+  pm-v0s2rm,discovered_from,"2026-09-18T15:37:46.481Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-09-18T15:37:46.481Z","harness:codex","Duplicate check: inspected complete 2778-item all-status snapshot and searched published verification global skills. Existing release-health and prior MCP conformance lineages do not track caller catalog contamination. Current open and in-progress inventories checked before creation."
+  "2026-09-18T15:38:53.176Z","harness:codex","TDD evidence: both published-executor success cases failed on missing isolated PM roots before the fix. All 40 verifier regressions and 26 sandbox-runner cases now pass. Every package subprocess including HTTP receives isolated PM_PATH and PM_GLOBAL_PATH with telemetry/Sentry disabled; strict protocol assertions unchanged."
+  "2026-09-18T15:39:34.360Z","harness:codex","Real published verification now passes against npm/GitHub 2026.9.18 using empty registry credentials, isolated caches and isolated PM roots: npm metadata, npx/bunx CLI, stdio MCP, HTTP MCP and missing-binary negative controls all succeeded. Previous identical published artifact failed with inherited global skill pagination."
+  "2026-09-18T15:52:44.825Z","harness:codex",Linked verifier run passed after serializing behind full coverage. An earlier linked run timed out waiting for the shared build-consumer lease while coverage held it; the verifier itself passed all 40 cases. Real registry acceptance and strict negative controls also passed.
+  "2026-09-18T16:12:24.426Z","harness:codex","Final all-source suite passes 9011 tests and exact 100/100/100/100 coverage. Published release acceptance remains real registry evidence for 2026.9.18 and is distinct from the newly rebuilt candidate package, which separately passes installed npm/npx/bunx checks."
+files[2]{path,scope}:
+  scripts/release/verify-published-release.mjs,project
+  tests/unit/scripts/release/verify-published-release.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts,project,240,"harness:codex","2026-09-18T15:37:46.481Z",local_mutation,feat/enforce-graph-bounds-and-mcp-contracts
+test_runs[2]:
+  - run_id: test-local-mu74puay-xoafdv
+    kind: test
+    status: failed
+    started_at: "2026-09-18T15:40:26.983Z"
+    finished_at: "2026-09-18T15:44:27.562Z"
+    recorded_at: "2026-09-18T15:44:27.562Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu75048r-nt45wu
+    kind: test
+    status: passed
+    started_at: "2026-09-18T15:52:16.602Z"
+    finished_at: "2026-09-18T15:52:27.003Z"
+    recorded_at: "2026-09-18T15:52:27.003Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/MCP_OPTION_CONFORMANCE.md,project,Document isolated published MCP discovery acceptance
+close_reason: Published MCP verification is independent of caller global skills and tracker configuration
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: release-integrity
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts
+  local_checks[1]: "pnpm test:coverage"
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-k6t4yb
+body: ""

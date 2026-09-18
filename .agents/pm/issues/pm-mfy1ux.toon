@@ -1,12 +1,14 @@
 id: pm-mfy1ux
-title: "graph impact is the one traversal that ignores the default row bound its siblings honour, so the command whose help says bounded returns 1,824 rows and 57k tokens by default"
+title: Declare and enforce shared default bounds across graph queries
 description: "pm graph is documented as 'Bounded workspace relationship-graph queries, analytics, and governance audit'. Every subcommand honours a default row bound except impact, which returns the entire reachable set.\n\nMeasured on this tracker (2,079 nodes, 5,071 edges), default invocation, no flags:\n\n  pm graph ancestors pm-doxj         204 B\n  pm graph successors pm-doxj        205 B\n  pm graph predecessors pm-doxj      207 B\n  pm graph centrality              1,463 B     10 rows (default sample_limit 10)\n  pm graph communities             2,672 B\n  pm graph redundancy              3,119 B\n  pm graph descendants pm-doxj    15,846 B\n  pm graph impact pm-doxj        230,452 B   1,824 rows   (~57,613 tokens)\n\nThe bound already exists and already works on this exact command:\n\n  pm graph impact pm-doxj --limit 20      1,845 B   (~461 tokens)    125x smaller\n  pm graph impact pm-doxj --summary         227 B   (~56 tokens)   1,029x smaller\n\nSo this is not an output-verbosity opinion and not a missing capability. The row cap is implemented, the summary envelope is implemented, and pm graph analyze reports its own sample_limit of 10 — the default-bound concept is established in the same command group. impact simply does not apply it, and the cost scales with the workspace rather than with the question.\n\nThe consequence is specific to how the command is reached. impact is the traversal an agent is directed to for semantic questions — pm-3dyec2 records that predecessors and ancestors reject implements and verifies, and that graph impact --direction incoming is the working semantic traversal. So the one subcommand agents are steered toward for typed-edge reachability is the one that answers with a quarter of a megabyte. On a milestone root that is 1,824 rows to establish a fact the summary envelope states in 56 tokens, and an agent that has not already learned about --limit pays the full amount before it can discover that the flag exists.\n\nFix direction: give impact the same default bound its siblings use, disclose truncation in the envelope with the standard has_more/after cursor so nothing becomes unreachable, and keep unbounded traversal available behind an explicit opt-out. Sibling instance for the same class of unbounded default is pm-okgxwa (explain-ranking sized by the workspace rather than by the answer); the declared-ceiling contract those instances should ultimately satisfy is pm-5t33or."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:graph",context,perf,token-budget
 created_at: "2026-07-26T11:26:14.695Z"
-updated_at: "2026-09-08T13:32:58.060Z"
+updated_at: "2026-09-18T16:15:43.808Z"
+closed_at: "2026-09-18T15:53:07.285Z"
+completed_at: "2026-09-18T15:53:07.285Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "pm graph impact applies a default row bound consistent with its sibling subcommands, and the bound is declared in contract data rather than hardcoded per subcommand; Truncated results disclose has_more and a resumable cursor so no reachable node becomes unreachable through the default; A test asserts default-invocation output size for every graph subcommand against a real-scale fixture, so a future subcommand cannot ship unbounded; Unbounded traversal remains available through an explicit flag and is documented; The help text's 'bounded' claim is true of every subcommand it covers, asserted structurally"
@@ -17,33 +19,140 @@ impact: Makes typed-graph reachability answerable inside an agent's context budg
 parent: pm-96h7
 risk: low
 confidence: high
-expected_result: pm graph impact applies the same declared default row bound as its siblings and discloses has_more with a resumable cursor when it truncates.
-dependencies[8]{id,kind,created_at}:
-  pm-3dyec2,related,"2026-07-26T11:26:14.695Z"
-  pm-5t33or,blocked_by,"2026-07-26T11:26:14.695Z"
-  pm-okgxwa,related,"2026-07-26T11:26:14.695Z"
-  pm-6olc95,related,"2026-07-26T11:32:24.795Z"
-  pm-cxr0jb,related,"2026-07-26T11:32:24.795Z"
-  pm-du93sr,related,"2026-07-26T11:32:24.795Z"
-  pm-g3n00m,implements,"2026-07-26T11:32:24.795Z"
-  pm-o87av6,implements,"2026-07-26T11:32:24.795Z"
-comments[7]{created_at,author,text}:
-  "2026-07-30T10:27:24.832Z","harness:codex","Implementation evidence: graph impact defaults to 10 rows, returns resumable next_cursor pages, rejects unknown cursors and --full plus --limit, while --full explicitly restores the complete impact set."
-  "2026-07-30T11:24:15.338Z","harness:codex","Delivery boundary: impact now defaults to ten rows, resumes through stable cursors, rejects invalid cursor/full-limit combinations, and exposes explicit --full. The canonical issue remains open until the bound is declared in shared contract data and a real-scale structural test asserts every graph subcommand is bounded."
-  "2026-07-30T11:30:56.402Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/829 reviews cohesive SDK context budgets, universal row contracts, bounded graph/health diagnostics, quality ratchets, and exact-head commit e53544cd1."
-  "2026-07-30T11:54:23.905Z","harness:codex","Review correction: graph impact cursors are now opaque and fingerprinted by root, direction, kinds, and max depth; mismatched traversal resumes fail with invalid_query_cursor."
-  "2026-07-30T13:06:11.203Z","harness:codex","Review-fix evidence for PR #829: TDD reproduced zero-limit graph pagination losing the continuation cursor. Impact pagination now fingerprints a root-anchored cursor when limit=0 so the next request resumes at the first affected row; the new focused zero-limit SDK test passes, and the full sandboxed suite passed 6,578 tests at exact 100/100/100/100 coverage."
-  "2026-07-30T13:39:03.617Z","harness:codex","Exact-head Greptile review evidence: impact cursors intentionally bind traversal semantics rather than page size because resuming with a different limit is lossless. Source docstrings and the public contract documentation now state that callers may raise or lower --limit when resuming; the zero-limit continuation regression remains green and the full 6,579-test exact-coverage suite passes."
-  "2026-07-30T17:15:05.660Z","harness:claude-code","Verified shipped 2026-07-30 (evening) at HEAD. graph impact is now bounded by default and the reduction is 144-fold: 2,160 bytes default against 311,343 bytes with the explicit escape hatch, with 988 bytes on the summary form. The default now carries a resumable cursor rather than truncating silently, so the bound is recoverable rather than lossy. Measured on the same item and the same corpus as the original finding, which reported 230,452 bytes and roughly 57.6k tokens as the default.\n\nRecording this as evidence rather than closing the item: the original finding also owns the sibling asymmetry that centrality bounds at ten while analyze reports its sample limit and the ancestor and successor verbs return roughly 205 bytes, and it owns the question of whether the bound is declared in the contract or implied by the command. Whoever closes this should check that the new default appears in the contract output rather than only in the help text, since a bound an agent cannot discover before invoking is still a surprise at first use."
+resolution: Exported SDK graph bounds and enforced discoverable default row limits across all sixteen graph commands with explicit full restoration and cache invalidation
+expected_result: Default graph output remains bounded and discoverable before invocation without losing continuation or explicit full access
+actual_result: Thousand-item all-command acceptance passes; temporary CLI workspace returns ten rows plus continuation and full restores all rows; focused graph and linked tests pass
+dependencies[9]:
+  - id: pm-3dyec2
+    kind: related
+    created_at: "2026-07-26T11:26:14.695Z"
+  - id: pm-5t33or
+    kind: blocked_by
+    created_at: "2026-07-26T11:26:14.695Z"
+  - id: pm-okgxwa
+    kind: related
+    created_at: "2026-07-26T11:26:14.695Z"
+  - id: pm-6olc95
+    kind: related
+    created_at: "2026-07-26T11:32:24.795Z"
+  - id: pm-cxr0jb
+    kind: related
+    created_at: "2026-07-26T11:32:24.795Z"
+  - id: pm-du93sr
+    kind: related
+    created_at: "2026-07-26T11:32:24.795Z"
+  - id: pm-g3n00m
+    kind: implements
+    created_at: "2026-07-26T11:32:24.795Z"
+  - id: pm-o87av6
+    kind: implements
+    created_at: "2026-07-26T11:32:24.795Z"
+  - id: pm-ju83
+    kind: verifies
+    created_at: "2026-09-18T15:02:15.977Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[12]:
+  - created_at: "2026-07-30T10:27:24.832Z"
+    author: "harness:codex"
+    text: "Implementation evidence: graph impact defaults to 10 rows, returns resumable next_cursor pages, rejects unknown cursors and --full plus --limit, while --full explicitly restores the complete impact set."
+  - created_at: "2026-07-30T11:24:15.338Z"
+    author: "harness:codex"
+    text: "Delivery boundary: impact now defaults to ten rows, resumes through stable cursors, rejects invalid cursor/full-limit combinations, and exposes explicit --full. The canonical issue remains open until the bound is declared in shared contract data and a real-scale structural test asserts every graph subcommand is bounded."
+  - created_at: "2026-07-30T11:30:56.402Z"
+    author: "harness:codex"
+    text: "PR evidence: https://github.com/unbraind/pm-cli/pull/829 reviews cohesive SDK context budgets, universal row contracts, bounded graph/health diagnostics, quality ratchets, and exact-head commit e53544cd1."
+  - created_at: "2026-07-30T11:54:23.905Z"
+    author: "harness:codex"
+    text: "Review correction: graph impact cursors are now opaque and fingerprinted by root, direction, kinds, and max depth; mismatched traversal resumes fail with invalid_query_cursor."
+  - created_at: "2026-07-30T13:06:11.203Z"
+    author: "harness:codex"
+    text: "Review-fix evidence for PR #829: TDD reproduced zero-limit graph pagination losing the continuation cursor. Impact pagination now fingerprints a root-anchored cursor when limit=0 so the next request resumes at the first affected row; the new focused zero-limit SDK test passes, and the full sandboxed suite passed 6,578 tests at exact 100/100/100/100 coverage."
+  - created_at: "2026-07-30T13:39:03.617Z"
+    author: "harness:codex"
+    text: "Exact-head Greptile review evidence: impact cursors intentionally bind traversal semantics rather than page size because resuming with a different limit is lossless. Source docstrings and the public contract documentation now state that callers may raise or lower --limit when resuming; the zero-limit continuation regression remains green and the full 6,579-test exact-coverage suite passes."
+  - created_at: "2026-07-30T17:15:05.660Z"
+    author: "harness:claude-code"
+    text: "Verified shipped 2026-07-30 (evening) at HEAD. graph impact is now bounded by default and the reduction is 144-fold: 2,160 bytes default against 311,343 bytes with the explicit escape hatch, with 988 bytes on the summary form. The default now carries a resumable cursor rather than truncating silently, so the bound is recoverable rather than lossy. Measured on the same item and the same corpus as the original finding, which reported 230,452 bytes and roughly 57.6k tokens as the default.\n\nRecording this as evidence rather than closing the item: the original finding also owns the sibling asymmetry that centrality bounds at ten while analyze reports its sample limit and the ancestor and successor verbs return roughly 205 bytes, and it owns the question of whether the bound is declared in the contract or implied by the command. Whoever closes this should check that the new default appears in the contract output rather than only in the help text, since a bound an agent cannot discover before invoking is still a surprise at first use."
+  - created_at: "2026-09-18T15:02:13.900Z"
+    author: "harness:codex"
+    text: "Red-first evidence: a real 1000-item sandbox returned 999 ancestors against the expected default 10. Shared SDK graph defaults now bound hierarchy/order traversals and slack critical paths; focused 26-test graph run passes. Impact pagination and explicit full traversal remain available."
+  - created_at: "2026-09-18T15:13:27.832Z"
+    author: "harness:codex"
+    text: "Live repository graph evidence: all-status CLI snapshot contains 2778 items and graph analyze indexes 13871 deduplicated edges in one connected component, with zero orphans and zero ordering/hierarchy cycles. Execution depth is 12 layers. Audit has two informational findings covering seven terminal-only cardinality and seven terminal-only direction conflicts, with zero active hierarchy conflicts. Existing graph implementation and verification edges retain their concrete meaning; unrelated repository intake is tracked with its canonical owners."
+    edited_at: "2026-09-18T15:50:18.214Z"
+  - created_at: "2026-09-18T15:19:03.157Z"
+    author: "harness:codex"
+    text: "Manual and installed acceptance passed: a disposable CLI workspace created 13 items; descendants returned 10 rows then the final 2 through --after, and --full returned 12. pm contracts declares the same default before invocation. Packed npm/npx/bunx smoke passed with nine installed packages; a separate Bun-installed consumer imported matching GRAPH_QUERY_DEFAULTS from aggregate, graph and contracts SDK entrypoints under Node and Bun. Packed first-run acceptance passed README init/create/list, MCP handshake, concurrent branch merge/history validation and detached telemetry completion with physical queue drain. Initial npm smoke hit host temporary-filesystem EDQUOT; rerunning under an isolated scratch directory on the workspace filesystem passed without product changes."
+  - created_at: "2026-09-18T16:12:22.534Z"
+    author: "harness:codex"
+    text: "Final complete suite passed: 9011 tests across 710 files; exact counts 62071/62071 lines, 64853/64853 statements, 13463/13463 functions and 49478/49478 branches. Rebuilt packed npm/npx/bunx acceptance passes. Static source, contract, SDK import and graph/integrity checks pass. Node 24 transport-floor remains a local limitation: next best 443 ms against unchanged 440 ms limit after a quiet 20-sample run; comparing baseline before attributing a regression."
+  - created_at: "2026-09-18T16:15:43.808Z"
+    author: "harness:codex"
+    text: "Latency baseline comparison: rebuilt untouched main 14d992008 in an isolated worktree under Node 24.12.0 and the same 20-sample unchanged transport gate. Baseline next best 460 ms exceeds 440 ms; candidate best 443 ms also exceeds 440 ms. This is not evidence of a candidate regression or a local pass. Keep the committed budget unchanged and require the hosted static gate before merge."
 notes[1]{created_at,author,text}:
   "2026-07-30T09:21:20.690Z","harness:claude-code","Re-measured 2026-07-30 at HEAD, after PR 818 shipped bounded projections. Unchanged in kind and slightly worse in ratio: pm graph impact pm-doxj default = 223,214 B; the same call with --summary = 488 B, a 457x spread. The default still honours no row bound while sibling subcommands do. Bounded projections shipped somewhere else; this default was not among them."
-files[3]{path,scope,note}:
-  src/sdk/graph/run.ts,project,"Default bounded impact pages,cursors,and explicit full override"
-  src/sdk/relationship-analytics.ts,project,Deterministic resumable impact traversal
-  tests/unit/sdk/relationship-impact-zero-limit.spec.ts,project,Zero-row truncated pages retain a resumable root-bound cursor
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/graph/run.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/sdk/relationship-impact-zero-limit.spec.ts tests/unit/sdk/graph/run.spec.ts,project,240
-docs[1]{path,scope,note}:
+learnings[1]{created_at,author,text}:
+  "2026-09-18T15:15:13.313Z","harness:codex","Bound discovery belongs in reusable SDK contract data and pre-invocation command contracts. Row caps must be applied at the graph projection boundary so analytics continue to see the whole topology. Real-scale tests must enumerate the registered vocabulary: tiny fixtures can make an unlimited traversal appear bounded. CLI continuation intentionally amortizes metadata, so acceptance should verify emitted rows and continuation_contract rather than demand repeated first-page counts."
+files[12]:
+  - path: src/sdk/contracts.ts
+    scope: project
+    note: Runtime-free contract discovery
+  - path: src/sdk/graph/index.ts
+    scope: project
+    note: Public SDK contract export
+  - path: src/sdk/graph/query-contracts.ts
+    scope: project
+    note: Shared discoverable defaults for graph observations
+  - path: src/sdk/graph/run.ts
+    scope: project
+    note: "Default bounded impact pages,cursors,and explicit full override"
+  - path: src/sdk/graph/traversal.ts
+    scope: project
+    note: Path safety defaults derive from the shared contract
+  - path: src/sdk/relationship-analytics.ts
+    scope: project
+    note: Deterministic resumable impact traversal
+  - path: tests/unit/sdk/relationship-impact-zero-limit.spec.ts
+    scope: project
+    note: Zero-row truncated pages retain a resumable root-bound cursor
+  - path: src/sdk/cli-contracts/flag-contracts.ts
+    scope: project
+  - path: sdk/public-surface.json
+    scope: project
+  - path: tests/fixtures/contracts/full.json
+    scope: project
+  - path: tests/unit/sdk/graph/default-bounds.spec.ts
+    scope: project
+  - path: scripts/release/gate-registry.json
+    scope: project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/graph/default-bounds.spec.ts tests/unit/sdk/graph/run.spec.ts,project,240,"harness:codex","2026-09-18T15:05:36.243Z",local_mutation,feat/enforce-graph-bounds-and-mcp-contracts
+  node scripts/run-tests.mjs test -- tests/unit/sdk/relationship-impact-zero-limit.spec.ts,project,240,"harness:codex","2026-09-18T15:11:32.107Z",local_mutation,feat/enforce-graph-bounds-and-mcp-contracts
+test_runs[1]:
+  - run_id: test-local-mu73uesd-4fcdez
+    kind: test
+    status: passed
+    started_at: "2026-09-18T15:19:44.293Z"
+    finished_at: "2026-09-18T15:20:01.117Z"
+    recorded_at: "2026-09-18T15:20:01.117Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/graph/default-bounds.spec.ts tests/unit/sdk/graph/run.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/relationship-impact-zero-limit.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned changelog for completed graph and MCP contract work
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project,"Impact bound,cursor,and full override"
+close_reason: Shared graph defaults and all-command scale acceptance implemented and verified; delivery proceeds through the consolidated PR
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  gate_id: graph-default-bounds
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/graph/default-bounds.spec.ts
+  local_checks[2]: "pnpm test:coverage","pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-mfy1ux
 body: ""

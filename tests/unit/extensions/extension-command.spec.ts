@@ -5458,7 +5458,9 @@ describe("extension command runtime", () => {
     readError.code = "EACCES";
     const readFileSpy = vi.spyOn(fsPromises, "readFile").mockRejectedValueOnce(readError);
     try {
-      await expect(extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "protected-ext", async () => "unreachable", { attempts: 1, delay_ms: 0, stale_ms: 3 })).rejects.toThrow("owner metadata temporarily unreadable");
+      await expect(extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "protected-ext", async () => "unreachable", { attempts: 1, delay_ms: 0, stale_ms: 3 })).rejects.toMatchObject({
+        context: { code: "host_environment_permission_fault" },
+      });
       await expect(readFile(path.join(lockPath, "owner.json"), "utf8")).resolves.toContain('"token":"active-owner"');
     } finally {
       readFileSpy.mockRestore();

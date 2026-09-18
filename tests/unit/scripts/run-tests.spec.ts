@@ -178,18 +178,19 @@ describe("run-tests", () => {
     expect(process.exitCode).toBe(0);
   });
 
-  it("emits shard coverage without enforcing an incomplete report", async () => {
+  it.each(["--reporter=blob", "--reporter"])("retains contract enforcement with shard reporter syntax %s", async (reporter) => {
     const spawn = vi.fn(() => closeChild(0));
     vi.doMock("node:child_process", () => ({ spawn }));
     mockFsPromises();
     process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
+    const reporterArgs = reporter === "--reporter" ? [reporter, "blob"] : [reporter];
     process.argv = [
       "node",
       "scripts/run-tests.mjs",
       "coverage-shard",
       "--",
       "--shard=1/4",
-      "--reporter=blob",
+      ...reporterArgs,
     ];
     await harness.importModule("scripts/run-tests.mjs");
     expect(spawn).toHaveBeenCalledTimes(1);
@@ -198,7 +199,8 @@ describe("run-tests", () => {
         "run",
         "--coverage",
         "--shard=1/4",
-        "--reporter=blob",
+        ...reporterArgs,
+        `--reporter=${path.join(process.cwd(), "scripts", "mcp-contract-reporter.mts")}`,
       ]),
     );
     expect(process.exitCode).toBe(0);

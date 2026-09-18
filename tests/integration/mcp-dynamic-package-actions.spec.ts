@@ -736,7 +736,7 @@ describe("MCP dynamic package actions", () => {
       expect(fullResult?.changed_fields).toContain("status");
       expect(fullResult?.changed_field_count).toBeUndefined();
 
-      const compactUpdateWithFullOption = await handleRequest({
+      const compactPriorityUpdate = await handleRequest({
         jsonrpc: "2.0",
         id: 32,
         method: "tools/call",
@@ -746,12 +746,13 @@ describe("MCP dynamic package actions", () => {
             path: context.pmPath,
             id,
             author: "mcp-agent",
-            options: { priority: "1", message: "priority update keeps options.full available", full: true },
+            options: { priority: "1", message: "priority update uses the default compact receipt" },
           },
         },
       });
-      expect(compactUpdateWithFullOption?.isError).not.toBe(true);
-      const compactUpdateResult = (compactUpdateWithFullOption?.structuredContent as {
+      expect(compactPriorityUpdate?.isError).not.toBe(true);
+      expect(compactPriorityUpdate?.structuredContent).not.toHaveProperty("warnings");
+      const compactUpdateResult = (compactPriorityUpdate?.structuredContent as {
         result?: { changed_fields?: string[]; changed_field_count?: number };
       } | undefined)?.result;
       expect(compactUpdateResult?.changed_fields).toBeUndefined();
@@ -1445,15 +1446,13 @@ describe("MCP dynamic package actions", () => {
           arguments: {
             path: context.pmPath,
             id,
-            options: { dep: `id=${copyResult?.id},kind=related` },
+            options: {},
           },
         },
       });
       expect(deps?.isError).not.toBe(true);
 
-      // pm_deps is a read projection: it tolerates but never applies the
-      // mutation-shaped dep option above. Create the real edge through the
-      // supported pm_update path so the graph impact walk has work to report.
+      // Create the edge through pm_update; pm_deps above only reads dependencies.
       const linked = await handleRequest({
         jsonrpc: "2.0",
         id: 1230,
@@ -1538,9 +1537,10 @@ describe("MCP dynamic package actions", () => {
         jsonrpc: "2.0",
         id: 126,
         method: "tools/call",
-        params: { name: "pm_run", arguments: { path: context.pmPath, action: "test-all", options: { dryRun: true } } },
+        params: { name: "pm_run", arguments: { path: context.pmPath, action: "test-all", options: {} } },
       });
       expect(testAll?.isError).not.toBe(true);
+      expect(testAll?.structuredContent).not.toHaveProperty("warnings");
 
       const test = await handleRequest({
         jsonrpc: "2.0",
