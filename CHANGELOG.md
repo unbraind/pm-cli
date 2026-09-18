@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- macOS registry acceptance rejects empty optional flags under Bash nounset ([pm-q4avk2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q4avk2.toon))
 - Windows transport-floor contract test batches 78 fixtures under one deadline ([pm-lgyaw8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lgyaw8.toon))
 
 ## 2026.9.18 - 2026-09-18

@@ -403,12 +403,26 @@ describe("GitHub workflow contract", () => {
       /matrix:\n\s+include:\n\s+- os: ubuntu-latest\n\s+node: 22\n\s+- os: macos-latest\n\s+node: 24\n\s+- os: ubuntu-latest\n\s+node: 24/,
     );
     expectContainsNone(runtimeSmokeJob, [
-      "pnpm/action-setup",
       "cache: pnpm",
       "actions/cache",
-      "pnpm install",
       "pnpm test",
       "pnpm dogfood:package-first",
+    ]);
+    const runtimeSteps = (parse(ciWorkflow) as {
+      jobs: Record<string, { steps: Array<{ uses?: string; run?: string; if?: string; "continue-on-error"?: boolean; env?: Record<string, string> }> }>;
+    }).jobs["build-test"].steps;
+    const nativeShellSteps = runtimeSteps.filter(
+      (step) => step.uses?.startsWith("pnpm/action-setup@") || step.run?.includes("pnpm install"),
+    );
+    expect(nativeShellSteps).toHaveLength(2);
+    for (const step of nativeShellSteps) {
+      expect(step.if).toBe("matrix.os == 'macos-latest'");
+      expect(step["continue-on-error"]).toBeUndefined();
+    }
+    expect(nativeShellSteps[1].env).toEqual({ PM_RUN_TESTS_SKIP_BUILD: "1" });
+    expect(nativeShellSteps[1].run?.trim().split("\n")).toEqual([
+      "pnpm install --frozen-lockfile",
+      "node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts",
     ]);
     expectContainsAll(windowsRegressionJob, [
       "name: Windows regression (Node 24)",
@@ -443,7 +457,7 @@ describe("GitHub workflow contract", () => {
       ),
     );
     expectExactValidationCacheSteps(ciWorkflow, 3);
-    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(6);
+    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(7);
     expect(ciWorkflow).not.toMatch(/^\s*run: pnpm test\s*$/m);
     expect(ciWorkflow).not.toContain("Sandboxed PM regression");
 
