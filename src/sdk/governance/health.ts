@@ -93,7 +93,10 @@ import type {
   PmSettings,
 } from "../../types/index.js";
 import { readManagedExtensionState } from "../extension.js";
-import { scanProvenanceResolverHealth } from "./provenance-health.js";
+import {
+  scanProvenanceResolverHealth,
+  type ProvenanceResolverHealthScan,
+} from "./provenance-health.js";
 import { applyStoredExtensionMigrationState } from "../extension/migrations.js";
 import { inspectExtensionAuthorManifest } from "../extension/author-manifest.js";
 import {
@@ -2982,19 +2985,7 @@ function buildStorageHealthCheck(
   historySummary: HistoryStreamSummary,
   authorAttribution: HistoryAuthorAttributionScan,
   staleInProgress: StaleInProgressScan,
-  provenanceResolverOutcomes: Array<{
-    harness: string;
-    dimension: string;
-    resolver: string;
-    attempts: number;
-    successes: number;
-  }>,
-  provenanceInvalidValues: Array<{
-    harness: string;
-    dimension: string;
-    kind: "boolean" | "single_digit";
-    count: number;
-  }>,
+  provenance: ProvenanceResolverHealthScan,
 ): HealthCheck {
   const unknownAuthorEventCount =
     resolveUnknownAuthorEventCount(authorAttribution);
@@ -3036,12 +3027,13 @@ function buildStorageHealthCheck(
       ...(hasStaleInProgressItems
         ? { stale_in_progress: staleInProgress }
         : {}),
-      ...(provenanceResolverOutcomes.length > 0
-        ? { provenance_resolver_outcomes: provenanceResolverOutcomes }
+      ...(provenance.outcomes.length > 0
+        ? { provenance_resolver_outcomes: provenance.outcomes }
         : {}),
-      ...(provenanceInvalidValues.length > 0
-        ? { provenance_invalid_values: provenanceInvalidValues }
+      ...(provenance.invalid_values.length > 0
+        ? { provenance_invalid_values: provenance.invalid_values }
         : {}),
+      provenance_sample: provenance.sample,
       ...(historySummary.max_entries !== null
         ? {
             compact_policy: {
@@ -3456,8 +3448,6 @@ export async function runHealth(
     }),
   );
   const provenanceResolverHealth = await scanProvenanceResolverHealth(pmRoot);
-  const provenanceResolverOutcomes = provenanceResolverHealth.outcomes;
-  const provenanceInvalidValues = provenanceResolverHealth.invalid_values;
   const provenanceWarnings = provenanceResolverHealth.warnings;
   const locksCheck = await buildLocksCheck(pmRoot);
   const integrityCheck = skipPolicy.skipIntegrity && !requireMergeDrivers
@@ -3520,8 +3510,7 @@ export async function runHealth(
       historySummary,
       authorAttribution,
       staleInProgress.scan,
-      provenanceResolverOutcomes,
-      provenanceInvalidValues,
+      provenanceResolverHealth,
     ),
     locksCheck.check,
     integrityCheck.check,

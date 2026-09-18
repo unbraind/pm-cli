@@ -2,7 +2,10 @@ import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { scanProvenanceResolverHealth } from "../../../src/sdk/governance/provenance-health.js";
+import {
+  listInvalidProvenanceHistoryStreamIds,
+  scanProvenanceResolverHealth,
+} from "../../../src/sdk/governance/provenance-health.js";
 
 const tempRoots: string[] = [];
 
@@ -15,11 +18,56 @@ afterEach(async () => {
 });
 
 describe("provenance resolver health", () => {
+  it("reports the observed time range without pretending file order is chronological", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-provenance-window-"));
+    tempRoots.push(root);
+    await mkdir(path.join(root, "history"));
+    const timestamps = [
+      "2026-09-18T09:00:00.000Z",
+      "2026-08-01T00:00:00.000Z",
+      "2026-09-18T11:00:00.000+01:00",
+      "invalid",
+    ];
+    await writeFile(
+      path.join(root, "history", "window.jsonl"),
+      timestamps.map((ts) => JSON.stringify({ ts })).join("\n"),
+    );
+    expect((await scanProvenanceResolverHealth(root)).sample).toMatchObject({
+      earliest_event_at: "2026-08-01T00:00:00.000Z",
+      latest_event_at: "2026-09-18T10:00:00.000Z",
+      complete: true,
+    });
+    expect(await scanProvenanceResolverHealth(root, 0)).toMatchObject({
+      events_read: 0,
+      truncated: true,
+      sample: { complete: false },
+    });
+    for (const limit of [-1, 0.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      await expect(scanProvenanceResolverHealth(root, limit)).rejects.toThrow(
+        RangeError,
+      );
+    }
+  });
+
   it("returns an empty receipt when history storage is unavailable", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-provenance-empty-"));
     tempRoots.push(root);
+    expect(await listInvalidProvenanceHistoryStreamIds(root)).toEqual([]);
     await expect(scanProvenanceResolverHealth(root)).resolves.toEqual({
       outcomes: [],
+      sample: {
+        scope: "history_prefix",
+        event_limit: 10_000,
+        byte_limit: 8_388_608,
+        bytes_read: 0,
+        events_read: 0,
+        truncated: false,
+        unreadable_sources: 1,
+        malformed_events: 0,
+        earliest_event_at: null,
+        latest_event_at: null,
+        complete: false,
+      },
       invalid_values: [],
       warnings: [],
       events_read: 0,
@@ -177,13 +225,20 @@ describe("provenance resolver health", () => {
           successes: 1,
         },
       ],
-      warnings: [
-        "provenance_resolver_zero_success:claude-code:version:claude_session_file:1",
-        "provenance_value_domain_invalid:claude-code:effort:single_digit:1",
-        "provenance_value_domain_invalid:claude-code:role:boolean:1",
-        "provenance_value_domain_invalid:claude-code:role:single_digit:1",
-        "provenance_value_domain_invalid:claude-code:version:single_digit:1",
-      ],
+      warnings: [],
+      sample: {
+        scope: "history_prefix",
+        event_limit: 100,
+        byte_limit: 8_388_608,
+        bytes_read: Buffer.byteLength(`\n${entries.join("\n")}\n`),
+        events_read: entries.length,
+        truncated: false,
+        unreadable_sources: expect.any(Number),
+        malformed_events: 2,
+        earliest_event_at: null,
+        latest_event_at: null,
+        complete: false,
+      },
       invalid_values: [
         {
           harness: "claude-code",
@@ -213,6 +268,7 @@ describe("provenance resolver health", () => {
       events_read: entries.length,
       truncated: false,
     });
+    expect(result.sample.unreadable_sources).toBeGreaterThanOrEqual(1);
     expect(await scanProvenanceResolverHealth(root, 1)).toMatchObject({
       events_read: 1,
       truncated: true,

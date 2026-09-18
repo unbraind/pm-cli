@@ -64,9 +64,9 @@ describe("health vector provider boundary", () => {
         ).toBe(true);
         const storage = result.checks.find((check) => check.name === "storage");
         expect(storage).toBeDefined();
-        expect(storage!.details).not.toHaveProperty(
-          "provenance_resolver_outcomes",
-        );
+        expect(storage!.details).toMatchObject({
+          provenance_sample: { complete: true, truncated: false },
+        });
         expect(
           result.checks.find((check) => check.name === "integrity"),
         ).toMatchObject({ name: "integrity", status: "ok", ok: true });

@@ -4,9 +4,15 @@
 
 ### Fixed
 
+- The --profile timer reports a fraction of real invocation latency and is documented nowhere, so every latency judgement built on it is calibrated against the wrong number ([pm-ag9nka](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ag9nka.toon))
+- Count successful provenance resolutions so historical health advisories can clear ([pm-4f1l7f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4f1l7f.toon))
 - Isolated release acceptance inherits npm allow-scripts through npm run ([pm-64qsbl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-64qsbl.toon))
 - macOS registry acceptance rejects empty optional flags under Bash nounset ([pm-q4avk2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q4avk2.toon))
 - Windows transport-floor contract test batches 78 fixtures under one deadline ([pm-lgyaw8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lgyaw8.toon))
+
+### Other
+
+- Refresh Node declarations to 26.6.1 for SDK and process timing validation ([pm-8p629e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8p629e.toon))
 
 ## 2026.9.18 - 2026-09-18
 

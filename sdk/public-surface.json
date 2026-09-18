@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1956,
+    "covered_symbols": 1957,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1957
+    "required_symbols": 1958
   },
   "breaking_acknowledgements": [
     {
@@ -2046,6 +2046,14 @@
       ],
       "package_version": "2026.9.17",
       "reason": "Add optional next selection-budget receipt fields; existing NextResult fields and call signatures remain unchanged"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ProvenanceResolverHealthScan",
+        "signature ./sdk/governance:ProvenanceResolverHealthScan"
+      ],
+      "package_version": "2026.9.18",
+      "reason": "Add required sample receipt to provenance health output; consumers constructing scan objects must provide measurement bounds, while existing read fields and function inputs remain unchanged."
     }
   ],
   "entrypoints": {
@@ -14475,6 +14483,12 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "ProvenanceHealthSample",
+          "signature": "export interface ProvenanceHealthSample { scope: \"history_prefix\"; event_limit: number; byte_limit: number; bytes_read: number; events_read: number; truncated: boolean; unreadable_sources: number; malformed_events: number; earliest_event_at: string | null; latest_event_at: string | null; complete: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "ProvenanceNormalizationReceipt",
           "signature": "export interface ProvenanceNormalizationReceipt { changed: boolean; events_changed: number; observations_removed: number; invalid_values: ProvenanceValueHealthFinding[]; }"
         },
@@ -14494,7 +14508,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ProvenanceResolverHealthScan",
-          "signature": "export interface ProvenanceResolverHealthScan { outcomes: ProvenanceResolverHealthOutcome[]; invalid_values: ProvenanceValueHealthFinding[]; warnings: string[]; events_read: number; truncated: boolean; }"
+          "signature": "export interface ProvenanceResolverHealthScan { outcomes: ProvenanceResolverHealthOutcome[]; sample: ProvenanceHealthSample; invalid_values: ProvenanceValueHealthFinding[]; warnings: string[]; events_read: number; truncated: boolean; }"
         },
         {
           "classification": "supported",
@@ -26973,6 +26987,12 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "ProvenanceHealthSample",
+          "signature": "export interface ProvenanceHealthSample { scope: \"history_prefix\"; event_limit: number; byte_limit: number; bytes_read: number; events_read: number; truncated: boolean; unreadable_sources: number; malformed_events: number; earliest_event_at: string | null; latest_event_at: string | null; complete: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "ProvenanceNormalizationReceipt",
           "signature": "export interface ProvenanceNormalizationReceipt { changed: boolean; events_changed: number; observations_removed: number; invalid_values: ProvenanceValueHealthFinding[]; }"
         },
@@ -26992,7 +27012,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ProvenanceResolverHealthScan",
-          "signature": "export interface ProvenanceResolverHealthScan { outcomes: ProvenanceResolverHealthOutcome[]; invalid_values: ProvenanceValueHealthFinding[]; warnings: string[]; events_read: number; truncated: boolean; }"
+          "signature": "export interface ProvenanceResolverHealthScan { outcomes: ProvenanceResolverHealthOutcome[]; sample: ProvenanceHealthSample; invalid_values: ProvenanceValueHealthFinding[]; warnings: string[]; events_read: number; truncated: boolean; }"
         },
         {
           "classification": "supported",

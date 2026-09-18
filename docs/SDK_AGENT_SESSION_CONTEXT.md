@@ -7,7 +7,8 @@ Tracker references: [pm-9wbiye](../.agents/pm/issues/pm-9wbiye.toon),
 [pm-eq9dlw](../.agents/pm/issues/pm-eq9dlw.toon), and
 [pm-lu6sca](../.agents/pm/features/pm-lu6sca.toon), plus
 [pm-5q8wa0](../.agents/pm/issues/pm-5q8wa0.toon) and
-[pm-c0lrdm](../.agents/pm/features/pm-c0lrdm.toon).
+[pm-c0lrdm](../.agents/pm/features/pm-c0lrdm.toon) and
+[pm-4f1l7f](../.agents/pm/issues/pm-4f1l7f.toon).
 
 Project management is context management. The public SDK therefore carries a
 session's purpose and episode boundary through the same immutable history that
@@ -129,8 +130,8 @@ public SDK exports for custom hosts.
 the bounded built-in resolver. It never contains environment values, session
 paths, prompts, or file contents.
 
-New mutation history records failed or explicitly unavailable configured
-resolver outcomes under `context.agent_provenance_outcomes`; dimensions with
+New mutation history records successful probes, failed probes, and explicitly
+unavailable configured resolver outcomes under `context.agent_provenance_outcomes`; dimensions with
 no configured resolver retain the compact legacy-compatible null projection.
 A resolver is only counted as
 attempted when its required input belongs to the detected harness; a foreign
@@ -138,7 +139,30 @@ host's shared `AI_AGENT` value is not Codex input. Consequently `pm health` can 
 `provenance_resolver_zero_success:<harness>:<dimension>:<resolver>:<attempts>`
 without confusing an unavailable harness signal with a failed resolver. The
 warning is advisory and the storage check includes the bounded attempt and
-success counters for diagnosis.
+success counters for diagnosis. Resolved environment, session, client, and
+inferred observations do not count as probe successes merely because that
+harness declares a resolver. Existing immutable records are preserved; a new
+successful probe clears an all-failed advisory when the complete sample includes
+that event.
+
+`scanProvenanceResolverHealth()` from `@unbrained/pm-cli/sdk/governance` returns
+`sample`, also exposed as `checks[name=storage].details.provenance_sample` by
+`pm health --full --json`. The receipt declares `scope=history_prefix`, the
+10,000-event and 8 MiB ceilings, events/bytes read, truncation, unreadable sources, malformed rows,
+and the earliest/latest valid event timestamps inspected. Files are traversed
+by sorted name and events by append order: this is a bounded history prefix,
+not a rolling recent window. Timestamp bounds describe observed events only.
+`sample.complete=false` suppresses population-wide zero-success conclusions;
+`truncated` separately identifies byte/event limits. Missing or malformed input
+is diagnosed by the integrity checks. An empty or unavailable-only sample is
+not proof that a resolver works. These measurements describe the sampled
+history, not current probe availability or an unobserved historical success.
+The optional `eventLimit` argument must be a non-negative safe integer;
+invalid bounds throw `RangeError`, and zero requests an empty bounded sample.
+
+The `ProvenanceResolverHealthScan` TypeScript result adds a required `sample`
+receipt. Consumers that construct this result themselves must supply the receipt;
+consumers that only read returned scans retain all prior fields unchanged.
 
 Older immutable history can also contain roles outside the controlled domain,
 including values recorded from presence-only harness flags before semantic role

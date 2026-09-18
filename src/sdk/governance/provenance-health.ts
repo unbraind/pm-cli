@@ -9,6 +9,7 @@ import {
   resealHistoryRewrite,
   verifyHistoryRecordHash,
 } from "../../core/history/history.js";
+import { isMillisecondPrecisionRfc3339DateTime } from "../../core/shared/time.js";
 import type { HistoryEntry } from "../../types/index.js";
 
 /** Aggregated resolver attempts for one harness provenance dimension. */
@@ -37,10 +38,38 @@ export interface ProvenanceValueHealthFinding {
   count: number;
 }
 
+/** Declares exactly which immutable input supports the resolver counters. */
+export interface ProvenanceHealthSample {
+  /** Sorted file order, then append order; this is not a recent-time window. */
+  scope: "history_prefix";
+  /** Maximum nonblank events inspected. */
+  event_limit: number;
+  /** Maximum bytes read across all streams. */
+  byte_limit: number;
+  /** Bytes consumed, including a possible incomplete final line. */
+  bytes_read: number;
+  /** Nonblank events inspected, including malformed rows. */
+  events_read: number;
+  /** Whether an event or byte ceiling stopped this scan. */
+  truncated: boolean;
+  /** Unreadable files or history directories omitted from the scan. */
+  unreadable_sources: number;
+  /** Nonblank rows that could not be decoded as event objects. */
+  malformed_events: number;
+  /** Earliest valid event timestamp in the sample, normalized to UTC. */
+  earliest_event_at: string | null;
+  /** Latest valid event timestamp in the sample, normalized to UTC. */
+  latest_event_at: string | null;
+  /** False if any byte/event bound, unreadable source, or malformed row omitted input. */
+  complete: boolean;
+}
+
 /** Bounded provenance health result suitable for `pm health` adapters. */
 export interface ProvenanceResolverHealthScan {
   /** Stable resolver outcome aggregates. */
   outcomes: ProvenanceResolverHealthOutcome[];
+  /** Bounds, observed time range, and completeness of the input population. */
+  sample: ProvenanceHealthSample;
   /** Aggregated invalid legacy values without retaining the values themselves. */
   invalid_values: ProvenanceValueHealthFinding[];
   /** Advisory warnings for attempted resolvers with no success. */
@@ -180,7 +209,7 @@ export async function listInvalidProvenanceHistoryStreamIds(
   pmRoot: string,
 ): Promise<string[]> {
   const ids: string[] = [];
-  for (const file of await listHistoryFiles(pmRoot)) {
+  for (const file of (await listHistoryFiles(pmRoot)) ?? []) {
     try {
       const content = await fs.readFile(
         path.join(pmRoot, "history", file),
@@ -208,13 +237,13 @@ export async function listInvalidProvenanceHistoryStreamIds(
   return ids;
 }
 
-async function listHistoryFiles(pmRoot: string): Promise<string[]> {
+async function listHistoryFiles(pmRoot: string): Promise<string[] | null> {
   try {
     return (await fs.readdir(path.join(pmRoot, "history")))
       .filter((file) => file.endsWith(".jsonl"))
       .sort();
   } catch {
-    return [];
+    return null;
   }
 }
 
@@ -317,6 +346,7 @@ function collectHistoryContent(
   invalidValues: Map<string, ProvenanceValueHealthFinding>,
   eventLimit: number,
   initialEventsRead: number,
+  sample: ProvenanceHealthSample,
 ): { eventsRead: number; truncated: boolean } {
   let eventsRead = initialEventsRead;
   for (const line of content.split("\n")) {
@@ -324,9 +354,55 @@ function collectHistoryContent(
     if (eventsRead >= eventLimit) return { eventsRead, truncated: true };
     eventsRead += 1;
     const entry = parseHistoryEntry(line);
-    if (entry) collectResolverOutcomes(entry, aggregates, invalidValues);
+    if (entry === null) {
+      sample.malformed_events += 1;
+      continue;
+    }
+    if (
+      typeof entry.ts === "string" &&
+      isMillisecondPrecisionRfc3339DateTime(entry.ts)
+    ) {
+      const timestamp = new Date(entry.ts).toISOString();
+      if (
+        sample.earliest_event_at === null ||
+        timestamp < sample.earliest_event_at
+      ) {
+        sample.earliest_event_at = timestamp;
+      }
+      if (
+        sample.latest_event_at === null ||
+        timestamp > sample.latest_event_at
+      ) {
+        sample.latest_event_at = timestamp;
+      }
+    }
+    collectResolverOutcomes(entry, aggregates, invalidValues);
   }
   return { eventsRead, truncated: false };
+}
+
+/** Emit population-wide advisories only when the entire sampled input is readable. */
+function buildProvenanceWarnings(
+  outcomes: ProvenanceResolverHealthOutcome[],
+  invalidValueFindings: ProvenanceValueHealthFinding[],
+  complete: boolean,
+): string[] {
+  return !complete
+    ? []
+    : [
+        ...outcomes
+          .filter(
+            (outcome) => outcome.attempts > 0 && outcome.successes === 0,
+          )
+          .map(
+            (outcome) =>
+              `provenance_resolver_zero_success:${outcome.harness}:${outcome.dimension}:${outcome.resolver}:${String(outcome.attempts)}`,
+          ),
+        ...invalidValueFindings.map(
+          (finding) =>
+            `provenance_value_domain_invalid:${finding.harness}:${finding.dimension}:${finding.kind}:${String(finding.count)}`,
+        ),
+      ];
 }
 
 /** Scan immutable history without failing over malformed streams owned by integrity checks. */
@@ -334,18 +410,41 @@ export async function scanProvenanceResolverHealth(
   pmRoot: string,
   eventLimit = 10_000,
 ): Promise<ProvenanceResolverHealthScan> {
+  if (!Number.isSafeInteger(eventLimit) || eventLimit < 0) {
+    throw new RangeError(
+      "Provenance event limit must be a non-negative safe integer.",
+    );
+  }
+  const sample: ProvenanceHealthSample = {
+    scope: "history_prefix",
+    event_limit: eventLimit,
+    byte_limit: DEFAULT_PROVENANCE_HISTORY_BYTE_LIMIT,
+    bytes_read: 0,
+    events_read: 0,
+    truncated: false,
+    unreadable_sources: 0,
+    malformed_events: 0,
+    earliest_event_at: null,
+    latest_event_at: null,
+    complete: false,
+  };
   const aggregates = new Map<string, ProvenanceResolverHealthOutcome>();
   const invalidValues = new Map<string, ProvenanceValueHealthFinding>();
   let eventsRead = 0;
   let bytesRead = 0;
   let truncated = false;
-  for (const file of await listHistoryFiles(pmRoot)) {
+  const files = await listHistoryFiles(pmRoot);
+  if (files === null) sample.unreadable_sources += 1;
+  for (const file of files ?? []) {
     const history = await readHistoryFile(
       pmRoot,
       file,
       Math.max(0, DEFAULT_PROVENANCE_HISTORY_BYTE_LIMIT - bytesRead),
     );
-    if (history === null) continue;
+    if (history === null) {
+      sample.unreadable_sources += 1;
+      continue;
+    }
     bytesRead += history.bytesRead;
     const collected = collectHistoryContent(
       history.content,
@@ -353,6 +452,7 @@ export async function scanProvenanceResolverHealth(
       invalidValues,
       eventLimit,
       eventsRead,
+      sample,
     );
     eventsRead = collected.eventsRead;
     if (collected.truncated) {
@@ -376,25 +476,22 @@ export async function scanProvenanceResolverHealth(
       left.dimension.localeCompare(right.dimension) ||
       left.kind.localeCompare(right.kind),
   );
+  sample.bytes_read = bytesRead;
+  sample.events_read = eventsRead;
+  sample.truncated = truncated;
+  sample.complete =
+    !truncated &&
+    sample.unreadable_sources === 0 &&
+    sample.malformed_events === 0;
   return {
     outcomes,
+    sample,
     invalid_values: invalidValueFindings,
-    warnings: truncated
-      ? []
-      : [
-          ...outcomes
-            .filter(
-              (outcome) => outcome.attempts > 0 && outcome.successes === 0,
-            )
-            .map(
-              (outcome) =>
-                `provenance_resolver_zero_success:${outcome.harness}:${outcome.dimension}:${outcome.resolver}:${String(outcome.attempts)}`,
-            ),
-          ...invalidValueFindings.map(
-            (finding) =>
-              `provenance_value_domain_invalid:${finding.harness}:${finding.dimension}:${finding.kind}:${String(finding.count)}`,
-          ),
-        ],
+    warnings: buildProvenanceWarnings(
+      outcomes,
+      invalidValueFindings,
+      sample.complete,
+    ),
     events_read: eventsRead,
     truncated,
   };

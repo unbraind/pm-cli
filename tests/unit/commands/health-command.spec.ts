@@ -483,6 +483,7 @@ describe("runHealth", () => {
   });
 
   it("returns deterministic ok checks for initialized storage", async () => {
+    vi.stubEnv("PM_AGENT_PROBES", "0");
     await withTempPmPath(async (context) => {
       createSeedItem(context);
       const health = await runHealth({ path: context.pmPath });
@@ -587,6 +588,19 @@ describe("runHealth", () => {
       expect(storageCheck?.details).toEqual({
         items: 1,
         history_streams: 1,
+        provenance_sample: {
+          scope: "history_prefix",
+          event_limit: 10_000,
+          byte_limit: 8_388_608,
+          bytes_read: expect.any(Number),
+          events_read: 1,
+          truncated: false,
+          unreadable_sources: 0,
+          malformed_events: 0,
+          earliest_event_at: expect.any(String),
+          latest_event_at: expect.any(String),
+          complete: true,
+        },
         tombstones: {
           retention_policy: "retain_append_only",
           gc_enabled: false,
@@ -2114,6 +2128,19 @@ describe("runHealth", () => {
       expect(storageCheck?.details).toEqual({
         items: 0,
         history_streams: 0,
+        provenance_sample: {
+          scope: "history_prefix",
+          event_limit: 10_000,
+          byte_limit: 8_388_608,
+          bytes_read: 0,
+          events_read: 0,
+          truncated: false,
+          unreadable_sources: 1,
+          malformed_events: 0,
+          earliest_event_at: null,
+          latest_event_at: null,
+          complete: false,
+        },
         tombstones: {
           retention_policy: "retain_append_only",
           gc_enabled: false,

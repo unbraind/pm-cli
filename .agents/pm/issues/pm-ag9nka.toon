@@ -2,24 +2,80 @@ id: pm-ag9nka
 title: "The --profile timer reports a fraction of real invocation latency and is documented nowhere, so every latency judgement built on it is calibrated against the wrong number"
 description: "pm exposes a global --profile flag described in root help as 'Print deterministic timing diagnostics'. Fifty-eight call sites emit a single line, profile:command=<name> took_ms=<n>, computed as Date.now() minus a start timestamp taken inside the command handler. That span excludes process start, module graph resolution, settings and schema load, extension loading, and output rendering, which together are the majority of what a caller actually waits for.\n\nMeasured on this repository's live tracker (2,037 items), dist build 2026.7.25, wall clock from the shell against the number the same invocation printed:\n\n  pm list --limit 5              wall 1004 ms   profile 200 ms    20 percent reported\n  pm get pm-doxj                 wall  882 ms   profile 286 ms    32 percent\n  pm graph audit                 wall 1470 ms   profile 521 ms    35 percent\n  pm next --limit 3              wall 1307 ms   profile 577 ms    44 percent\n  pm search context --limit 5    wall 1539 ms   profile 602 ms    39 percent\n  pm context --limit 5           wall 1410 ms   profile 684 ms    49 percent\n  pm stats                       wall 1887 ms   profile 1155 ms   61 percent\n  pm validate                    wall 8135 ms   profile 7200 ms   89 percent\n\nThe un-instrumented remainder is roughly 600 to 800 ms and is close to constant, so the instrument is least truthful exactly where the product most wants to be fast. On pm list it hides four fifths of the cost. An agent or maintainer using --profile to decide whether a command is fast reads 200 ms for a one-second wait, and any budget or ratchet built on the printed value would pass while the experienced latency regressed.\n\nSecond half: --profile appears in no file under docs/. It is a global flag on every command with no reference documentation, no statement of what span it measures, and no note that the number is not end-to-end. There is nothing to correct the natural reading of took_ms as total command time.\n\nScope boundary. pm-yse5dt owns the per-invocation bootstrap floor and the CLI-versus-SDK delta as gated metrics; pm-801d owns read scaling; pm-9rxu owns the scale program. This item is about the measuring instrument rather than the thing measured: those items need a truthful timer to gate against, and today the only built-in one systematically under-reports."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",diagnostics,observability,performance
 created_at: "2026-07-25T21:38:06.243Z"
-updated_at: "2026-09-08T13:32:46.338Z"
+updated_at: "2026-09-18T14:04:36.851Z"
+closed_at: "2026-09-18T14:04:17.208Z"
+completed_at: "2026-09-18T14:04:17.208Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The --profile output reports end-to-end invocation latency measured from process entry to output flush, and any narrower spans it also reports are labelled with what they cover so the total and its parts are distinguishable. The reported total agrees with externally measured wall clock within a stated tolerance for every command family, asserted by a regression test rather than by inspection. --profile is documented with its measured span and its output shape. Any latency budget or ratchet in this repository consumes the end-to-end figure."
 parent: pm-5oj5
 risk: low
 confidence: high
-expected_result: "The --profile output reports end-to-end invocation latency that agrees with external wall clock within a stated tolerance, with any narrower spans labelled."
-dependencies[4]{id,kind,created_at}:
-  pm-801d,related,"2026-07-25T21:38:06.243Z"
-  pm-9rxu,related,"2026-07-25T21:38:06.243Z"
-  pm-yse5dt,related,"2026-07-25T21:38:06.243Z"
-  pm-5oj5,implements,"2026-07-26T05:57:34.111Z"
-comments[2]{created_at,author,text}:
+resolution: "Emit one opt-in stderr invocation total from runtime startup through natural output drain, with explicitly scoped legacy handler spans."
+expected_result: "Profiling reflects executable lifetime across help, version, queries, mutations, and refusals while preserving stdout and external performance budgets."
+actual_result: Real Node and Bun timing agrees with external wall clocks; process-family and lifecycle regressions pass; transport budgets and exact full coverage pass.
+dependencies[4]:
+  - id: pm-801d
+    kind: related
+    created_at: "2026-07-25T21:38:06.243Z"
+  - id: pm-9rxu
+    kind: related
+    created_at: "2026-07-25T21:38:06.243Z"
+  - id: pm-5oj5
+    kind: implements
+    created_at: "2026-07-26T05:57:34.111Z"
+  - id: pm-yse5dt
+    kind: verifies
+    created_at: "2026-09-18T13:19:37.473Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[8]{created_at,author,text}:
   "2026-07-26T10:29:58.742Z","harness:opencode","Fresh evidence 2026-07-26 (audit plan pm-t9e3bc): wall-clock re-measured on live tracker now at 2,066 items, dist 2026.7.26, Node 25.9.0 — pm context --limit 5: 1132/1224/1306ms across runs; pm search audit --limit 5: 1005/1105/1151ms; pm list-open --limit 5: 743/919ms; pm get pm-doxj --depth brief: 635/875ms; pm --version: 57ms; pm contracts --flags-only: 643ms. The ~600-800ms constant un-instrumented floor this item documents persists unchanged on current main; experienced read latency at the 2k-item dogfood scale remains ~1s+ for context/search, so the pm-801d read index relieves daily agent-perceived latency long before the 100k-item scale framing."
   "2026-08-04T09:18:09.684Z","harness:codex","Fresh latency evidence 2026-08-04: the transport-floor gate first failed pm next at best 464ms against 440ms, then passed unchanged on immediate rerun. The separate 10k-item CLI+SDK scale gate passed all 14 command/transport targets: CLI p95 341-776ms, SDK p95 12-264ms, all under 1s and token budgets. The user-visible fixed process/bootstrap floor and noisy single-run threshold remain distinct from scale-algorithm health."
+  "2026-09-18T13:04:17.017Z","harness:codex","Implementation scope: process-level timing from runtime startup through drained output, preserving the existing handler diagnostics with an explicit span label. Existing transport and scale gates already measure external process wall time; retain those authoritative budgets. All-status history reviewed, including completed pm-yse5dt; no duplicate item created."
+  "2026-09-18T13:10:53.233Z","harness:codex","TDD evidence: both new integration regressions failed against the original implementation. Provenance still reported zero successes after a real SDK mutation with a recovered session probe; executable profiling emitted no invocation total for version/help. Tests use isolated trackers and real filesystem/process boundaries."
+  "2026-09-18T13:21:41.269Z","harness:codex","Manual acceptance: ten isolated real CLI commands (init/create/claim/update/comments/close/release/get/validate/full health) each emitted exactly one invocation total. External wall times were 608-978 ms under concurrent validation load; process totals were 560-896 ms. Unprofiled JSON remained valid. Full typecheck, eslint, duplicate gates, secret scan, and docs/skills checks passed. Packed npm/npx/bunx smoke passed with nine packages."
+  "2026-09-18T13:36:16.521Z","harness:codex","Cross-runtime timing acceptance: direct Node and Bun version/help invocations emitted exactly one total each, below externally measured wall time. Fresh packed first-run acceptance passed the README workflow, merge-history behavior, MCP handshake, real detached telemetry completion, and physical queue drain."
+  "2026-09-18T13:54:25.068Z","harness:codex","Final repository gate evidence before hosted review: pnpm quality:static passed the complete lint/duplicates/build/contracts/static assurance/package boundaries/replication/grammar/flag parity/refusal/token/MCP/tracker-context/SDK surface/SDK import-cost/transport/graph/record-integrity chain. Sequential temporary package-first dogfood passed 89 commands, including an authored TypeScript package, SDK import, extension workflows, and a real linked test. Linked profiling tests passed."
+  "2026-09-18T14:04:14.502Z","harness:codex","Final local validation passed: 708 files / 9006 tests; exact coverage 64834/64834 statements, 49486/49486 branches, 13456/13456 functions, 62056/62056 lines. No threshold reductions or coverage exclusions were introduced. Full static-quality chain, linked tests, typecheck, 89-command dogfood, packed npm/npx/bunx, installed first-run/MCP/telemetry, docs, and security checks passed. Implementation complete; hosted review and merge are the remaining delivery steps."
+notes[1]{created_at,author,text}:
+  "2026-09-18T13:54:50.535Z","harness:codex","Compatibility: the final executable receipt is opt-in and stderr-only. Existing handler records and external process-wall performance budgets retain their formats and thresholds; SDK hosts own their own lifetime. Normal process drain is required, so forced termination may have no final receipt."
+learnings[1]{created_at,author,text}:
+  "2026-09-18T13:26:15.232Z","harness:codex","Use runtime uptime at natural process drain for executable timing, and retain external wall-clock performance budgets. Measure performance without concurrent coverage or static-analysis load; keep handler spans explicitly scoped."
+files[4]{path,scope,note}:
+  src/cli.ts,project,Implementation and regression evidence for the observability measurement contract
+  src/cli/invocation-profile.ts,project,Implementation and regression evidence for the observability measurement contract
+  tests/integration/invocation-profile.spec.ts,project,Implementation and regression evidence for the observability measurement contract
+  tests/unit/cli/invocation-profile.spec.ts,project,Implementation and regression evidence for the observability measurement contract
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/invocation-profile.spec.ts tests/unit/cli/invocation-profile.spec.ts,project,240,"harness:codex","2026-09-18T13:10:52.453Z",local_mutation,fix/provenance-health-invocation-timing
+test_runs[1]:
+  - run_id: test-local-mu70r6k5-p12rcc
+    kind: test
+    status: passed
+    started_at: "2026-09-18T13:53:19.020Z"
+    finished_at: "2026-09-18T13:53:31.637Z"
+    recorded_at: "2026-09-18T13:53:31.637Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/invocation-profile.spec.ts tests/unit/cli/invocation-profile.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated reviewed release history for complete invocation timing
+  docs/PERFORMANCE.md,project,Implementation and regression evidence for the observability measurement contract
+close_reason: Implemented and locally verified in the combined observability delivery; reviewed closure is included in this PR.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/invocation-profile.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/invocation-profile.spec.ts tests/unit/cli/invocation-profile.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-ag9nka
 body: ""
