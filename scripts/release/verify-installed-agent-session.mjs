@@ -88,6 +88,7 @@ function runAgentSession(manager, executable, installRoot, publicRegistryEnv) {
       capture: true,
       allowFailure: true,
       env,
+      inheritEnvironment: false,
       timeout: 120_000,
     });
     if (result.status !== 0) {
@@ -255,7 +256,7 @@ function installPackage(manager, packageSpec, installRoot, publicRegistryEnv, gl
           "--no-fund",
           packageSpec,
         ],
-        { capture: true, allowFailure: true, env: publicRegistryEnv, timeout: 120_000 },
+        { capture: true, allowFailure: true, env: publicRegistryEnv, inheritEnvironment: false, timeout: 120_000 },
       )
     : runCommand(
         "bun",
@@ -265,6 +266,7 @@ function installPackage(manager, packageSpec, installRoot, publicRegistryEnv, gl
           capture: true,
           allowFailure: true,
           env: publicRegistryEnv,
+          inheritEnvironment: false,
           timeout: 120_000,
         },
       );
@@ -355,6 +357,10 @@ function main() {
     const npmUserConfig = path.join(root, "npmrc-public");
     writeFileSync(npmUserConfig, "", "utf8");
     const publicRegistryEnv = {
+      ...Object.fromEntries(Object.entries(process.env).filter(
+        ([key]) => key.toLowerCase() !== "npm_config_allow_scripts",
+      )),
+      NPM_CONFIG_ALLOW_SCRIPTS: "",
       NODE_AUTH_TOKEN: "",
       NPM_TOKEN: "",
       npm_config_cache: path.join(root, "npm-cache"),

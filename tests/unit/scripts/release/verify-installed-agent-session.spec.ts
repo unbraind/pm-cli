@@ -35,7 +35,7 @@ async function runAcceptance(options: RunOptions) {
     writeFileSync: vi.fn(),
   };
   vi.doMock("node:fs", () => fsMocks);
-  const runCommand = vi.fn((command: string, args: string[]) =>
+  const runCommand = vi.fn((command: string, args: string[], _execution: { env: NodeJS.ProcessEnv; inheritEnvironment?: boolean }) =>
     (options.runCommand ?? successfulCommand)(command, args),
   );
   vi.doMock(UTILS_SPECIFIER, async () => {
@@ -118,6 +118,27 @@ function successfulCommand(command: string, args: string[]): CommandResult {
 }
 
 describe("verify-installed-agent-session", () => {
+  it("isolates inherited script policy without changing the caller environment", async () => {
+    vi.stubEnv("npm_config_allow_scripts", "lowercase-policy");
+    vi.stubEnv("NpM_CoNfIg_AlLoW_ScRiPtS", "mixed-policy");
+    vi.stubEnv("NPM_CONFIG_ALLOW_SCRIPTS", "uppercase-policy");
+    vi.stubEnv("npm_config_fetch_retries", "7");
+    const callerPolicy = Object.entries(process.env).filter(([key]) => key.toLowerCase() === "npm_config_allow_scripts");
+    try {
+      const result = await runAcceptance({ argv: ["--version", "2026.9.18", "--manager", "both", "--json"] });
+      expect(result.failure).toBeNull();
+      for (const [, , execution] of result.runCommand.mock.calls) {
+        expect(execution.inheritEnvironment).toBe(false);
+        expect(Object.keys(execution.env).filter((key) => key.toLowerCase() === "npm_config_allow_scripts")).toEqual(["NPM_CONFIG_ALLOW_SCRIPTS"]);
+        expect(execution.env.NPM_CONFIG_ALLOW_SCRIPTS).toBe("");
+        expect(execution.env.npm_config_fetch_retries).toBe("7");
+      }
+      expect(Object.entries(process.env).filter(([key]) => key.toLowerCase() === "npm_config_allow_scripts")).toEqual(callerPolicy);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("runs the previous public release first in an independent global prefix", async () => {
     const result = await runAcceptance({ argv: ["--version", "2026.9.16", "--previous-version", "2026.9.15", "--manager", "npm", "--global", "--json"] });
     expect(result.failure).toBeNull();

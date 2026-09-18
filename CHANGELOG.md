@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Isolated release acceptance inherits npm allow-scripts through npm run ([pm-64qsbl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-64qsbl.toon))
 - macOS registry acceptance rejects empty optional flags under Bash nounset ([pm-q4avk2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q4avk2.toon))
 - Windows transport-floor contract test batches 78 fixtures under one deadline ([pm-lgyaw8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lgyaw8.toon))
 

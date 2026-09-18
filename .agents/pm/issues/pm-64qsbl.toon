@@ -1,0 +1,58 @@
+id: pm-64qsbl
+title: Isolated release acceptance inherits npm allow-scripts through npm run
+description: The published-artifact verifier passes when run with node but fails through the documented npm run wrapper with EALLOWSCRIPTS. Ambient npm_config_allow_scripts survives the temporary npmrc boundary despite --ignore-scripts. Reuse the SDK installer isolation principle in the release verifier without changing caller policy or weakening script suppression.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-18T11:45:54.086Z"
+updated_at: "2026-09-18T12:04:55.212Z"
+closed_at: "2026-09-18T12:03:59.072Z"
+completed_at: "2026-09-18T12:03:59.072Z"
+author: "harness:codex"
+parent: pm-ygli86
+resolution: "Construct the owned child environment without inherited allow-scripts keys, install one empty policy and prevent helper re-inheritance; preserve unrelated settings, caller state and ignore-scripts."
+expected_result: The documented npm-run acceptance wrapper installs both public versions under npm and Bun despite ambient script policy and reports complete bounded lifecycle results.
+actual_result: "Previously failing npm-run wrapper passes all four eleven-step registry sessions; 14 focused verifier tests, all PM-linked tests, typecheck, ESLint and duplication pass; full 9002-test suite is exact 100/100/100/100. Hosted revised-head review and validation remain required before merge."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-e70zh5,discovered_from,"2026-09-18T11:45:54.086Z","harness:codex","cli:create:dep",detected
+  pm-gh1072,recurs_from,"2026-09-18T11:45:54.086Z","harness:codex","cli:create:dep",detected
+  pm-lgyaw8,discovered_from,"2026-09-18T12:04:54.885Z","harness:codex","evidence:registry-followup",detected
+comments[5]{created_at,author,text}:
+  "2026-09-18T11:45:54.086Z","harness:codex",All-status duplicate searches for allow-scripts EALLOWSCRIPTS and npm configuration isolation found completed SDK installer issue pm-gh1072; its release-verifier boundary is distinct and not covered by that shipped implementation. Reproduced npm run failure twice; direct node verifier and independent clean npm install both pass.
+  "2026-09-18T11:47:28.015Z","harness:codex","Red-first evidence: the documented npm-run verifier failed twice with EALLOWSCRIPTS while the same direct-node verifier completed four npm/Bun candidate/control sessions. A new mixed-case environment regression failed before the fix. Build a complete child environment that strips every allow-scripts key case-insensitively, sets one empty authoritative policy, preserves unrelated configuration, and prevents runCommand from merging contaminated parent keys back in. Caller environment and --ignore-scripts remain unchanged."
+  "2026-09-18T11:48:46.644Z","harness:codex","Green verification: 14 focused verifier tests pass, including the mixed-case policy isolation and caller-environment control. The exact previously failing documented npm run wrapper now passes four independent registry sessions (npm and Bun, control 2026.9.17 and candidate 2026.9.18), eleven steps and 5355 estimated output tokens per session. ESLint passes. Complete exact-threshold coverage is running before the next reviewed push."
+  "2026-09-18T12:02:23.912Z","harness:codex","Full validation: 9002 tests across 705 files pass with exact statements 64807/64807, branches 49453/49453, functions 13452/13452 and lines 62028/62028. The recurrence policy now registers this release-verifier boundary and completed SDK predecessor pm-gh1072 under ambient-host-state-in-measured-fixture with executable local and hosted checks. Defect-evidence and hosted gate-name registration pass without waivers."
+  "2026-09-18T12:03:58.366Z","harness:codex","All three delivery items now have successful PM-linked test-run receipts: Windows transport fixture contracts, native-shell workflow commands, and registry environment isolation. Typecheck, focused ESLint and all duplication gates pass. The original branch-name trust refusal was resolved by separately acknowledging the exact reviewed linked commands in this clone, without relaxing trust settings."
+learnings[1]{created_at,author,text}:
+  "2026-09-18T11:55:30.856Z","harness:codex","A temporary npmrc does not isolate npm configuration exported into the environment by npm run. Build the owned child environment case-insensitively, retain unrelated settings, and disable helper re-inheritance so stripped keys cannot return. Keep --ignore-scripts and verify the documented wrapper as well as direct execution."
+files[3]{path,scope,note}:
+  config/defect-recurrence-policy.json,project,Register SDK and release verifier ambient-policy recurrence with executable local and hosted checks
+  scripts/release/verify-installed-agent-session.mjs,project,Owned installer and lifecycle environment without ambient script-policy contamination
+  tests/unit/scripts/release/verify-installed-agent-session.spec.ts,project,Mixed-case policy isolation and caller preservation controls
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-installed-agent-session.spec.ts,project,240,"harness:codex","2026-09-18T11:47:05.151Z",local_mutation,fix/cross-platform-release-acceptance
+test_runs[1]:
+  - run_id: test-local-mu6wt4b3-3krq85
+    kind: test
+    status: passed
+    started_at: "2026-09-18T12:02:54.297Z"
+    finished_at: "2026-09-18T12:03:03.567Z"
+    recorded_at: "2026-09-18T12:03:03.567Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-installed-agent-session.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,Documented npm-run invocation and isolated registry acceptance contract
+close_reason: Isolate npm script policy in published-artifact verification with complete lifecycle evidence
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  owner: pm-64qsbl
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-installed-agent-session.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-installed-agent-session.spec.ts,"npm run release:verify-installed-agent -- --version 2026.9.18 --manager both --json"
+  hosted_checks[3]: Windows regression (Node 24),Gates (coverage),Gates (static)
+body: ""

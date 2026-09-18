@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-18T11:27:18.367Z"
-updated_at: "2026-09-18T11:33:53.603Z"
+updated_at: "2026-09-18T12:02:53.448Z"
 closed_at: "2026-09-18T11:33:21.954Z"
 completed_at: "2026-09-18T11:33:21.954Z"
 author: "harness:codex"
@@ -29,6 +29,18 @@ files[4]{path,scope,note}:
   tests/integration/registry-acceptance-workflow.spec.ts,project,Real shell execution across every install mode and failure propagation
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts,project,240,"harness:codex","2026-09-18T11:29:56.811Z",local_mutation,test/windows-transport-fixture-budget
+test_runs[1]:
+  - run_id: test-local-mu6wswhq-c2d36f
+    kind: test
+    status: passed
+    started_at: "2026-09-18T12:02:46.283Z"
+    finished_at: "2026-09-18T12:02:53.438Z"
+    recorded_at: "2026-09-18T12:02:53.438Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts,schema,schema,source,acknowledged
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,Preserve immutable-tag main-source recovery and advertisement gates
 close_reason: Fix strict Bash argument expansion and add mandatory native macOS regression

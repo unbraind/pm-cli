@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-18T11:01:51.704Z"
-updated_at: "2026-09-18T11:12:05.372Z"
+updated_at: "2026-09-18T12:02:45.646Z"
 closed_at: "2026-09-18T11:07:18.655Z"
 completed_at: "2026-09-18T11:07:18.655Z"
 author: "harness:codex"
@@ -20,16 +20,42 @@ component: Test fixture efficiency
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-yse5dt,discovered_from,"2026-09-18T11:01:51.704Z","harness:codex","cli:create:dep",detected
   pm-e70zh5,discovered_from,"2026-09-18T11:12:02.555Z","harness:codex","evidence:pm-lgyaw8",detected
-comments[4]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-09-18T11:01:51.704Z","harness:codex","All-status duplicate check: cli-transport-floor keyword search returned only completed benchmark/RSS owners and unrelated guidance/folder-density work. Read the completed benchmark owner metadata and refreshed open/in-progress inventories. This child records a distinct Windows fixture-deadline observation under that delivered benchmark lineage."
   "2026-09-18T11:04:40.476Z","harness:codex","Implementation decision: separate the independent explicit-iteration and default-iteration checks rather than batching 78 real filesystem fixtures in one deadline. Preserve the 30-second test policy, all 66 default warmup/sample fixtures and production latency/RSS admission. Add explicit distinct-workspace and per-operation ten-sample assertions so this efficiency adjustment strengthens the existing test contract rather than reducing measurement depth."
   "2026-09-18T11:07:17.810Z","harness:codex","Verification: all 13 focused tests pass in 16.82 seconds total on the local host, including the retained default fixture workload; ESLint and all duplication scans pass. The original immutable release-commit CI rerun completed successfully as attempt 2 without source changes, confirming intermittency rather than an assertion defect. The committed improvement separates the two sampling contracts and asserts 66 distinct default-case workspaces plus ten measured samples for every operation. No production code, benchmark sample count, admission threshold, global timeout, or retry policy changed. Hosted validation of this follow-up remains required before merge."
   "2026-09-18T11:12:05.372Z","harness:codex","Relationship correction: this Windows contract-test timeout was discovered during the release-reliability recovery tracked by pm-e70zh5; discovered_from records that provenance accurately instead of a generic related edge."
+  "2026-09-18T11:47:28.760Z","harness:codex","Final local static run preserved every quality gate but failed its transport latency check (next best 450ms versus 440ms). A separate recheck also exceeded unchanged get/context/create ceilings while other verification work was active. These runs are failures, not passing evidence; no thresholds or samples are weakened. Re-run the benchmark after concurrent verification finishes and require hosted static validation."
+  "2026-09-18T11:48:47.454Z","harness:codex","PR 1274 first head fe3cd4348 passed all hosted checks, including native Windows and macOS, full coverage and static gates. CodeRabbit flagged the generated PM record as a direct edit; declined inline with CLI mutation history and pm history --verify evidence (15 entries and matching current hash). No tracker files were hand edited. Every bot artifact received a usefulness reaction. The new npm environment defect is separately recorded as pm-64qsbl and will be included before the next review request."
+  "2026-09-18T12:02:24.701Z","harness:codex","After full coverage ended, an isolated local benchmark still exceeded next/create latency ceilings (487/438ms versus 440/398ms). Runtime CLI/SDK code is identical to the already-green first PR head and its hosted static gate; this remains a local performance limitation, not a passing local static result. No latency ceilings, warmup counts, or sample depths were changed. Final revised-head hosted static validation remains mandatory."
 files[2]{path,scope,note}:
   scripts/bench/cli-transport-floor.mjs,project,Fresh workspace per warmup and measured sample
   tests/unit/scripts/cli-transport-floor.spec.ts,project,Combined explicit and default sample fixture workload
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts,project,240,"harness:codex","2026-09-18T11:02:27.002Z",local_mutation,docs/sdk-output-release-evidence
+test_runs[2]:
+  - run_id: test-local-mu6wr5ii-2iz70x
+    kind: test
+    status: failed
+    started_at: "2026-09-18T12:01:31.622Z"
+    finished_at: "2026-09-18T12:01:31.818Z"
+    recorded_at: "2026-09-18T12:01:31.818Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts,schema,schema,source,foreign_source_ref
+  - run_id: test-local-mu6wsqgw-54zgrf
+    kind: test
+    status: passed
+    started_at: "2026-09-18T12:02:23.700Z"
+    finished_at: "2026-09-18T12:02:45.632Z"
+    recorded_at: "2026-09-18T12:02:45.632Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts,schema,schema,source,acknowledged
 docs[1]{path,scope,note}:
   docs/TESTING.md,project,Unchanged 30-second test deadline and retry evidence policy
 close_reason: Separate independent transport sampling contracts under unchanged deadlines and strengthen fixture-isolation assertions.
