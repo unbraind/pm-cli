@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Reject ambiguous event durations with explicit minute and month units ([pm-jkjt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jkjt.toon))
 - Packed telemetry acceptance must await completion across delivery batches ([pm-07m41m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-07m41m.toon))
 - GH-1264: enforce next ready-queue token budgets and disclose omitted recommendations ([pm-v53h9j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v53h9j.toon))
 - Reject malformed linked-test JSON paths instead of silently normalizing assertions ([pm-czr31p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-czr31p.toon))
@@ -19,6 +20,9 @@
 
 - Serialize the complete build pipeline so overlapping validation cannot consume partially rewritten dist artifacts ([pm-cxc4jc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cxc4jc.toon))
 - Released-artifact acceptance: the exact published tarball is installed clean and driven through a scripted agent session before the release is advertised ([pm-ygli86](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ygli86.toon))
+- Verify explicit calendar duration in package-first dogfood ([pm-d9bg0i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-d9bg0i.toon))
+- Move meet/event/remind calendar shortcuts from core surface into the builtin-calendar package as create sugar ([pm-o3fh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-o3fh.toon))
+- ADR: Require explicit minute and month units for event durations ([pm-j1vw3a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-j1vw3a.toon))
 - Context judgment corpus: small, real-shaped, scale, and returning-agent continuity scenarios for pm context/next ([pm-lixy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lixy.toon))
 - Refresh Sentry 10.75 and CLI 3.8 with Unicorn 75 compatibility proof ([pm-1wypwu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-1wypwu.toon))
 

@@ -739,9 +739,10 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
     intent:
       "Use this when an item needs a due signal, a scheduled event, or a meeting record that later context reads should surface.",
     commands: [
-      "pm remind <title> --at <when> --parent <ID>",
-      "pm event <title> --start <when> --parent <ID>",
-      "pm meet <title> --start <when> --duration <span> --parent <ID>",
+      "pm package install calendar --project",
+      "pm calendar remind <title> --at <when> --parent <ID>",
+      "pm calendar event <title> --start <when> --parent <ID>",
+      "pm calendar meet <title> --start <when> --duration 30min --parent <ID>",
       "pm context --limit 10",
     ],
     workflows: [
@@ -749,9 +750,10 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
         name: "Put A Deadline Where Context Will Find It",
         goal: "Time-bound work surfaces in the agenda section of context reads.",
         prompt:
-          "Record the reminder or event under the item that owns the work, then confirm it appears in the agenda summary of a context read.",
+          "Install calendar, then record the reminder or event under its owning item and confirm it in context. Use explicit min or mo for durations; bare m is ambiguous.",
         commands: [
-          "pm remind <title> --at <when> --parent <ID>",
+          "pm package install calendar --project",
+          "pm calendar remind <title> --at <when> --parent <ID>",
           "pm context --limit 10",
         ],
       },
@@ -760,6 +762,10 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
       {
         path: "docs/COMMANDS.md",
         purpose: "Calendar and context command family.",
+      },
+      {
+        path: "packages/pm-calendar/README.md",
+        purpose: "Package commands, duration units, and compatibility aliases.",
       },
     ],
     related: ["workflows", "quickstart", "extensions"],

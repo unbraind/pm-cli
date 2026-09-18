@@ -1,0 +1,26 @@
+id: pm-j1vw3a
+title: "ADR: Require explicit minute and month units for event durations"
+description: Reject ambiguous bare m in event duration while preserving relative-date month compatibility and SDK scheduling primitives.
+type: Decision
+status: closed
+priority: 2
+tags[4]: adr,calendar,compatibility,sdk
+created_at: "2026-09-18T03:08:10.859Z"
+updated_at: "2026-09-18T03:08:44.237Z"
+closed_at: "2026-09-18T03:08:42.836Z"
+completed_at: "2026-09-18T03:08:42.836Z"
+author: "harness:codex"
+acceptance_criteria: Decision records context and consequences; pm-jkjt implements the guard and pm-o3fh carries package-owned help and command contracts.
+parent: pm-m2u1
+resolution: Bare m durations are refused; min and mo express intent while relative date fields retain compatibility
+expected_result: Duration policy is durable and discoverable under the ADR log
+actual_result: ADR links historical pm-zoe4 and implementing pm-jkjt and pm-o3fh; migration guidance and focused tests are recorded
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-m2u1,implements,"2026-09-18T03:08:10.859Z","harness:codex","cli:create:dep",detected
+  pm-zoe4,discovered_from,"2026-09-18T03:08:10.859Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-18T03:08:10.859Z","harness:codex","Duplicate check: all-status duration search found pm-zoe4 and pm-jkjt; all 68 Decision titles contained no duration-unit ADR. Existing pm-m2u1 is reused as parent; implementation stays in canonical pm-jkjt and pm-o3fh."
+docs[1]{path,scope,note}:
+  packages/pm-calendar/README.md,project,Accepted duration policy and caller migration
+close_reason: Accepted explicit duration units with package-owned help and SDK compatibility
+body: "Context: pm-zoe4 added minute units while retaining m=months; GH-450 demonstrated silent wrong scheduling data. Decision: reject bare m in event durations and suggest min/mo. Keep h/d/w and ISO PT time forms; preserve m in other relative date fields. Consequences: callers using duration=5m must choose 5min or 5mo. Public scheduling SDK operations remain callable; calendar owns CLI shortcut declarations and aliases. Evidence: shared parser tests and real installed-package acceptance verify explicit units and refusal before mutation."

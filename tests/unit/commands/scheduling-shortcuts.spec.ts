@@ -63,7 +63,7 @@ describe("scheduling shortcuts", () => {
     });
   });
 
-  it("runMeet/runEvent accept minute forms while keeping bare m as months", async () => {
+  it("runMeet/runEvent accept explicit minute and month units", async () => {
     await withTempPmPath(async (context) => {
       const withMinutes = await runMeet(
         "Standup",
@@ -81,7 +81,7 @@ describe("scheduling shortcuts", () => {
 
       const withLegacyMonths = await runEvent(
         "Legacy months",
-        { start: "2026-07-01T10:00:00Z", duration: "45m" },
+        { start: "2026-07-01T10:00:00Z", duration: "45mo" },
         { path: context.pmPath },
       );
       expect(events(withLegacyMonths.item)[0].end_at).toBe("2030-04-01T10:00:00.000Z");
@@ -164,6 +164,18 @@ describe("scheduling shortcuts", () => {
       expect(child.item.parent).toBe(parent.item.id);
       expect(child.item.tags).toEqual(expect.arrayContaining(["scheduling", "demo"]));
       expect(child.item.priority).toBe(1);
+    });
+  });
+});
+
+
+describe("ambiguous scheduling duration refusal", () => {
+  it.each(["5m", "+5M", "-5m", "0m"])("rejects %s before creating an item", async (duration) => {
+    await withTempPmPath(async (context) => {
+      await expect(runMeet("Standup", { start: "2026-09-18T09:00:00Z", duration }, { path: context.pmPath }))
+        .rejects.toThrow(/ambiguous.*min.*mo/);
+      const listed = context.runCli(["list", "--json"], { expectJson: true });
+      expect(listed.json).toMatchObject({ count: 0 });
     });
   });
 });

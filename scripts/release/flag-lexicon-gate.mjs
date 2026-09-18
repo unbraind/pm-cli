@@ -10,6 +10,8 @@ import {
   listPmFlagSpellingInventory,
   verifyPmFlagLexicon,
 } from "../../dist/sdk/cli-contracts/flag-lexicon-contracts.js";
+import { schedulingCommandDefinitions } from "../../packages/pm-calendar/extensions/calendar/command-definitions.ts";
+import { applyDynamicExtensionFlagOptions } from "../../dist/cli/extension-command-help.js";
 import { buildCoreCommandProgram } from "./flag-invocation-parity.mjs";
 
 const FLAG_SPELLING_BASELINE_PATH = fileURLToPath(
@@ -26,11 +28,19 @@ export function readFlagSpellingBaseline(
   return JSON.parse(readFileSync(baselinePath, "utf8"));
 }
 
-/** Measure every budgeted command's generated help surface in token estimates. */
+/** Measure core and migrated calendar help with the host extension flag renderer. */
 export function measureCoreFlagHelpInventory({
-  program = buildCoreCommandProgram(),
+  program,
   budgets = listPmCommandFlagBudgets(),
 } = {}) {
+  if (!program) {
+    program = buildCoreCommandProgram();
+    for (const definition of schedulingCommandDefinitions) {
+      const command = program.command(`${definition.name} <title>`)
+        .description(definition.description);
+      applyDynamicExtensionFlagOptions(command, definition.flags);
+    }
+  }
   return budgets
     .map(({ command }) => {
       const registered = program.commands.find(

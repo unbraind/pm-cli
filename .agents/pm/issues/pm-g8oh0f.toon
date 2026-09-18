@@ -1,0 +1,24 @@
+id: pm-g8oh0f
+title: Omit redundant read receipts when canonical output flags do not compact results
+description: "Canonical output flags reportedly add a verbose read_output receipt even when every requested field and row fits, unlike equivalent legacy flags."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-09-18T03:55:18.223Z"
+updated_at: "2026-09-18T03:55:18.223Z"
+author: "harness:codex"
+acceptance_criteria: "Return compact output for no-op canonical output controls while preserving explicit audit requests and all actionable omission, fallback, truncation and continuation evidence."
+parent: pm-5t33or
+severity: medium
+repro_steps: "Compare a one-item read with default output and --output-limit 20: reporter measured 183 bytes / 6 lines versus 572 bytes / 25 lines. Compare list 3 with legacy versus canonical flags: 875 bytes / 33 lines versus 1409 bytes / 57 lines."
+expected_result: "Return compact output for no-op canonical output controls while preserving explicit audit requests and all actionable omission, fallback, truncation and continuation evidence."
+actual_result: Reported behavior above; independently reproducing the exact published-version fixture remains part of implementation.
+affected_version: 2026.9.17
+component: SDK read-output budgets
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,implements,"2026-09-18T03:55:18.223Z","harness:codex","cli:create:dep",detected
+  pm-o3fh,discovered_from,"2026-09-18T03:55:18.223Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-18T03:55:18.223Z","harness:codex","Duplicate check: searched all statuses for the issue numbers and precise largest-prefix and receipt-overhead wording; inspected the canonical output-budget parent and closed read fallback lineage; inspected current open and in-progress inventories. No existing focused item owns this newly reported behavior. Keep this intake open and unclaimed until implementation starts."
+body: "GitHub report: https://github.com/unbraind/pm-cli/issues/1267\n\nReported against the published CLI. Intake is documented; the reproduction and implementation are still pending. Preserve the shared SDK output contract and thin adapters."

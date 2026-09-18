@@ -193,8 +193,8 @@
     {
       "action": "event",
       "available": true,
-      "cli_exposed": true,
-      "command_path": "event",
+      "cli_exposed": false,
+      "command_path": "calendar event|event",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -503,8 +503,8 @@
     {
       "action": "meet",
       "available": true,
-      "cli_exposed": true,
-      "command_path": "meet",
+      "cli_exposed": false,
+      "command_path": "calendar meet|meet",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -723,8 +723,8 @@
     {
       "action": "remind",
       "available": true,
-      "cli_exposed": true,
-      "command_path": "remind",
+      "cli_exposed": false,
+      "command_path": "calendar remind|remind",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -1994,7 +1994,6 @@
           "docs",
           "duplicates",
           "eval",
-          "event",
           "events",
           "extension activate",
           "extension adopt",
@@ -2049,7 +2048,6 @@
           "item test worker",
           "learnings",
           "list",
-          "meet",
           "merge",
           "next",
           "notes",
@@ -2112,7 +2110,6 @@
           "plan validation",
           "profile",
           "release",
-          "remind",
           "restore",
           "schema",
           "search",
@@ -4048,11 +4045,6 @@
         }
       ],
       "provider": "core"
-    },
-    {
-      "command": "event",
-      "flags": [],
-      "provider": "extension"
     },
     {
       "command": "events",
@@ -6137,11 +6129,6 @@
         }
       ],
       "provider": "core"
-    },
-    {
-      "command": "meet",
-      "flags": [],
-      "provider": "extension"
     },
     {
       "command": "merge",
@@ -9070,11 +9057,6 @@
         }
       ],
       "provider": "core"
-    },
-    {
-      "command": "remind",
-      "flags": [],
-      "provider": "extension"
     },
     {
       "command": "restore",
@@ -12025,33 +12007,6 @@
     {
       "budget": {
         "allows_unbounded_opt_out": true,
-        "budget_class": "mutation",
-        "command": "event",
-        "default_max_estimated_tokens": 2000,
-        "default_max_estimated_tokens_by_format": {
-          "json": 3000,
-          "toon": 2000
-        },
-        "degradation_ladder": [
-          "full",
-          "compact",
-          "brief",
-          "summary",
-          "counts"
-        ],
-        "token_estimate": "ceil(utf8_bytes / 4)"
-      },
-      "envelope": {
-        "cardinality": "none",
-        "command": "event",
-        "format_flag": "--json",
-        "kind": "diagnostic",
-        "wrapper_key": null
-      }
-    },
-    {
-      "budget": {
-        "allows_unbounded_opt_out": true,
         "budget_class": "read",
         "command": "events",
         "default_max_estimated_tokens": 4000,
@@ -13510,33 +13465,6 @@
     {
       "budget": {
         "allows_unbounded_opt_out": true,
-        "budget_class": "mutation",
-        "command": "meet",
-        "default_max_estimated_tokens": 2000,
-        "default_max_estimated_tokens_by_format": {
-          "json": 3000,
-          "toon": 2000
-        },
-        "degradation_ladder": [
-          "full",
-          "compact",
-          "brief",
-          "summary",
-          "counts"
-        ],
-        "token_estimate": "ceil(utf8_bytes / 4)"
-      },
-      "envelope": {
-        "cardinality": "none",
-        "command": "meet",
-        "format_flag": "--json",
-        "kind": "diagnostic",
-        "wrapper_key": null
-      }
-    },
-    {
-      "budget": {
-        "allows_unbounded_opt_out": true,
         "budget_class": "governance",
         "command": "merge",
         "default_max_estimated_tokens": 6000,
@@ -15205,33 +15133,6 @@
         "command": "release",
         "format_flag": "--json",
         "kind": "mutation_receipt",
-        "wrapper_key": null
-      }
-    },
-    {
-      "budget": {
-        "allows_unbounded_opt_out": true,
-        "budget_class": "mutation",
-        "command": "remind",
-        "default_max_estimated_tokens": 2000,
-        "default_max_estimated_tokens_by_format": {
-          "json": 3000,
-          "toon": 2000
-        },
-        "degradation_ladder": [
-          "full",
-          "compact",
-          "brief",
-          "summary",
-          "counts"
-        ],
-        "token_estimate": "ceil(utf8_bytes / 4)"
-      },
-      "envelope": {
-        "cardinality": "none",
-        "command": "remind",
-        "format_flag": "--json",
-        "kind": "diagnostic",
         "wrapper_key": null
       }
     },
@@ -16260,16 +16161,6 @@
       "intent_source": "command"
     },
     {
-      "command": "event",
-      "default_max_estimated_tokens": 2000,
-      "default_max_estimated_tokens_by_format": {
-        "json": 3000,
-        "toon": 2000
-      },
-      "intent": "Manage events.",
-      "intent_source": "command"
-    },
-    {
       "command": "events",
       "default_max_estimated_tokens": 4000,
       "default_max_estimated_tokens_by_format": {
@@ -16898,16 +16789,6 @@
         "--fields"
       ],
       "intent": "List work.",
-      "intent_source": "command"
-    },
-    {
-      "command": "meet",
-      "default_max_estimated_tokens": 2000,
-      "default_max_estimated_tokens_by_format": {
-        "json": 3000,
-        "toon": 2000
-      },
-      "intent": "Record meeting context.",
       "intent_source": "command"
     },
     {
@@ -17578,16 +17459,6 @@
         "toon": 2000
       },
       "intent": "Release claim.",
-      "intent_source": "command"
-    },
-    {
-      "command": "remind",
-      "default_max_estimated_tokens": 2000,
-      "default_max_estimated_tokens_by_format": {
-        "json": 3000,
-        "toon": 2000
-      },
-      "intent": "Manage reminders.",
       "intent_source": "command"
     },
     {
@@ -19263,7 +19134,6 @@
     "docs",
     "duplicates",
     "eval",
-    "event",
     "events",
     "extension activate",
     "extension adopt",
@@ -19318,7 +19188,6 @@
     "item test worker",
     "learnings",
     "list",
-    "meet",
     "merge",
     "next",
     "notes",
@@ -19381,7 +19250,6 @@
     "plan validation",
     "profile",
     "release",
-    "remind",
     "restore",
     "schema",
     "search",
@@ -27537,7 +27405,15 @@
         "noun": "package",
         "owner": "pm-o3fh",
         "reason": "",
-        "target": "package calendar"
+        "target": "calendar event"
+      },
+      {
+        "command": "calendar event",
+        "disposition": "package_owned",
+        "noun": "package",
+        "owner": "pm-o3fh",
+        "reason": "",
+        "target": "calendar event"
       },
       {
         "command": "meet",
@@ -27545,7 +27421,15 @@
         "noun": "package",
         "owner": "pm-o3fh",
         "reason": "",
-        "target": "package calendar"
+        "target": "calendar meet"
+      },
+      {
+        "command": "calendar meet",
+        "disposition": "package_owned",
+        "noun": "package",
+        "owner": "pm-o3fh",
+        "reason": "",
+        "target": "calendar meet"
       },
       {
         "command": "remind",
@@ -27553,7 +27437,15 @@
         "noun": "package",
         "owner": "pm-o3fh",
         "reason": "",
-        "target": "package calendar"
+        "target": "calendar remind"
+      },
+      {
+        "command": "calendar remind",
+        "disposition": "package_owned",
+        "noun": "package",
+        "owner": "pm-o3fh",
+        "reason": "",
+        "target": "calendar remind"
       },
       {
         "command": "ops",
@@ -29643,6 +29535,18 @@
         ]
       },
       {
+        "command": "calendar event",
+        "slots": [
+          {
+            "name": "title",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
         "command": "meet",
         "slots": [
           {
@@ -29655,7 +29559,31 @@
         ]
       },
       {
+        "command": "calendar meet",
+        "slots": [
+          {
+            "name": "title",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
         "command": "remind",
+        "slots": [
+          {
+            "name": "title",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "calendar remind",
         "slots": [
           {
             "name": "title",

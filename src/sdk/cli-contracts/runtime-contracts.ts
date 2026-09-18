@@ -624,6 +624,9 @@ const PACKAGE_OWNED_ACTIONS = new Set<string>([
 ]);
 
 const PACKAGE_OWNED_COMMANDS = new Set<string>([
+  "meet",
+  "event",
+  "remind",
   "search-advanced",
   "dedupe-audit",
   "dedupe-merge",
@@ -650,6 +653,9 @@ const PACKAGE_OWNED_COMMANDS = new Set<string>([
 ]);
 
 const PACKAGE_OWNED_COMMAND_INSTALL_HINTS = new Map<string, string>([
+  ["meet", "calendar"],
+  ["event", "calendar"],
+  ["remind", "calendar"],
   ["search-advanced", "search-advanced"],
   ["dedupe-audit", "governance-audit"],
   ["dedupe-merge", "governance-audit"],
@@ -1752,7 +1758,9 @@ function resolveActionAvailability(
       provider: "core",
       disabled_reason: null,
       command_path: descriptor.command_path,
-      cli_exposed: descriptor.command_path !== null,
+      cli_exposed: descriptor.command_path !== null &&
+        (!PACKAGE_OWNED_COMMANDS.has(descriptor.action) ||
+          runtimeProbe.handlers.has(descriptor.action)),
     };
   }
 
@@ -2388,7 +2396,10 @@ function buildContractsCommandCatalog(
       ),
       /* c8 ignore next -- action descriptors always include concrete command paths in command-scoped test fixtures. */
       ...actionDescriptors.flatMap((entry) =>
-        entry.command_path ? splitCommandPathAliases(entry.command_path) : [],
+        entry.command_path ? splitCommandPathAliases(entry.command_path).filter(
+          (command) => entry.provider === "extension" || !PACKAGE_OWNED_COMMANDS.has(resolvePmCommandOperation(command)) ||
+            mergedExtensionContracts.some((contract) => contract.action === entry.action),
+        ) : [],
       ),
       ...mergedExtensionContracts.flatMap((entry) => entry.command.split("|").flatMap((command) => {
         const alias = PM_NAMESPACED_COMMAND_ALIASES.find((entry) => entry.alias === command || entry.canonical === command);

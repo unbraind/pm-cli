@@ -10,6 +10,7 @@ import type {
 } from "@unbrained/pm-cli/sdk";
 import type { CalendarOptions } from "@unbrained/pm-cli/sdk/runtime";
 import { renderCalendarPackageOutput, runCalendarPackage } from "./runtime.ts";
+import { schedulingCommands } from "./shortcuts.ts";
 
 const CALENDAR_VIEW_NAMES = ["agenda", "day", "week", "month"] as const;
 
@@ -278,6 +279,7 @@ function calendarCommand(name: "calendar" | "cal"): CommandDefinition {
 export function activate(api: ExtensionApi): void {
   api.registerCommand(calendarCommand("calendar"));
   api.registerCommand(calendarCommand("cal"));
+  for (const command of schedulingCommands) api.registerCommand(command);
   api.registerService("output_format", (context) => {
     const rendered = renderCalendarPackageOutput(
       context as ServiceOverrideContext,

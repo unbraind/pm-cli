@@ -1,7 +1,7 @@
 /**
  * @module sdk/lifecycle/event-validation-messages
  *
- * Implements the pm event validation messages command surface and its agent-facing runtime behavior.
+ * Resolves event endpoints once for all SDK mutations and calendar packages.
  */
 import {
   EXIT_CODE,
@@ -44,6 +44,14 @@ function resolveDurationAgainstStart(
   const start = new Date(startAt);
   const trimmedDuration = durationRaw.trim();
 
+  if (/^[+-]?\d+m$/i.test(trimmedDuration)) {
+    throw new PmCliError(
+      `Event duration "${trimmedDuration}" is ambiguous. Use min for minutes or mo for months (for example 5min or 5mo).`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  // Only durations use explicit mo; other relative date fields retain m=months.
+  const explicitDuration = trimmedDuration.replace(/^([+-]?\d+)mo$/i, "$1m");
   const minuteDuration = MINUTE_DURATION.exec(trimmedDuration);
   if (minuteDuration) {
     const sign = minuteDuration[1] === "-" ? -1 : 1;
@@ -75,9 +83,9 @@ function resolveDurationAgainstStart(
   }
 
   const normalizedDuration =
-    trimmedDuration.startsWith("+") || trimmedDuration.startsWith("-")
-      ? trimmedDuration
-      : `+${trimmedDuration}`;
+    explicitDuration.startsWith("+") || explicitDuration.startsWith("-")
+      ? explicitDuration
+      : `+${explicitDuration}`;
   return resolveIsoOrRelative(normalizedDuration, start, "event.duration");
 }
 
@@ -86,7 +94,7 @@ function resolveDurationAgainstStart(
 // either an explicit `end` or a relative `duration` (mutually exclusive).
 // Equal start/end (including a zero-length duration) collapses to an instant
 // event (end dropped); an end earlier than start is rejected.
-/** Implements resolve event end at for the public runtime surface of this module. */
+/** Resolve an explicit end or unambiguous duration; reject backwards spans and collapse zero-length events. */
 export function resolveEventEndAt(
   startAt: string,
   endRaw: string | undefined,
@@ -101,8 +109,7 @@ export function resolveEventEndAt(
   }
   if (durationRaw) {
     // Resolve duration with startAt as the reference so duration=2h means startAt + 2h.
-    // Keep global relative token semantics unchanged (`m` stays months) while
-    // allowing explicit sub-hour forms (`30min`, `PT30M`) for event durations.
+    // Duration units are explicit; global relative date semantics stay unchanged.
     const endAt = resolveDurationAgainstStart(startAt, durationRaw);
     if (endAt < startAt) {
       throw new PmCliError(EVENT_END_AFTER_START_MESSAGE, EXIT_CODE.USAGE);

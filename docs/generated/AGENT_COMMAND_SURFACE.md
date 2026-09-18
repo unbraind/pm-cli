@@ -105,8 +105,11 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `pause-task` | full | lifecycle |
 | `close-task` | full | lifecycle |
 | `meet` | full | automation |
+| `calendar meet` | full | automation |
 | `event` | full | automation |
+| `calendar event` | full | automation |
 | `remind` | full | automation |
+| `calendar remind` | full | automation |
 | `help` | core | context |
 | `ops` | core | quality |
 | `completion-statuses` | internal | internal |

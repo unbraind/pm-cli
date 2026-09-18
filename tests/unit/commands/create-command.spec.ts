@@ -2996,11 +2996,11 @@ describe("runCreate", () => {
         "2026-03-04T10:30:00.000Z",
       );
 
-      // Keep legacy semantics where bare `m` means months for relative durations.
+      // Calendar months require explicit mo; other relative-date fields retain m.
       const withMonthDuration = await runCreate(
         baseCreateOptions({
           event: [
-            "start=2026-03-04T10:00:00.000Z,duration=45m,title=legacy-months",
+            "start=2026-03-04T10:00:00.000Z,duration=45mo,title=explicit-months",
           ],
         }),
         { path: context.pmPath },
@@ -3008,6 +3008,12 @@ describe("runCreate", () => {
       expect(withMonthDuration.item.events?.[0]?.end_at).toBe(
         "2029-12-04T10:00:00.000Z",
       );
+
+      const beforeFiles = await readdir(path.join(context.pmPath, "tasks"));
+      await expect(runCreate(baseCreateOptions({
+        event: ["start=2026-03-04T10:00:00.000Z,duration=5m"],
+      }), { path: context.pmPath })).rejects.toThrow(/ambiguous.*min.*mo/);
+      expect(await readdir(path.join(context.pmPath, "tasks"))).toEqual(beforeFiles);
 
       await expect(
         runCreate(

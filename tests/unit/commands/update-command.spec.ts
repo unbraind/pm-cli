@@ -2571,10 +2571,10 @@ describe("runUpdate", () => {
         title: "iso-window",
       });
 
-      // Keep legacy semantics where bare `m` means months.
+      // Calendar months require explicit mo.
       const withMonthDuration = await runUpdate(
         id,
-        { event: ["start=2026-03-03T12:00:00.000Z,duration=45m,title=month-window"], message: "legacy month window" },
+        { event: ["start=2026-03-03T12:00:00.000Z,duration=45mo,title=month-window"], message: "explicit month window" },
         { path: context.pmPath },
       );
       expect(withMonthDuration.item.events?.[0]).toMatchObject({
@@ -2582,6 +2582,15 @@ describe("runUpdate", () => {
         end_at: "2029-12-03T12:00:00.000Z",
         title: "month-window",
       });
+
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const beforeHistory = await readFile(historyPath, "utf8");
+      await expect(runUpdate(id, {
+        event: ["start=2026-03-03T12:00:00.000Z,duration=5m"],
+      }, { path: context.pmPath })).rejects.toThrow(/ambiguous.*min.*mo/);
+      expect(await readFile(historyPath, "utf8")).toBe(beforeHistory);
+      expect((await runGet(id, { path: context.pmPath }, { full: true })).item.events)
+        .toEqual(withMonthDuration.item.events);
 
       await expect(
         runUpdate(

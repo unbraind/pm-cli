@@ -799,8 +799,8 @@ const SKILL_FLAG_SCAN_DIRECTORIES = Object.freeze([
   "plugins",
 ]);
 
-/** Collect the top-level command names a guide topic's examples and workflows invoke. */
-export function guideTopicCommandNames(topic) {
+/** Resolve guide invocations against full command paths, or root names when no inventory is supplied. */
+export function guideTopicCommandNames(topic, availableCommands) {
   const names = new Set();
   const examples = [
     ...(topic?.commands ?? []),
@@ -808,7 +808,12 @@ export function guideTopicCommandNames(topic) {
   ];
   for (const example of examples) {
     const match = /^\s*pm\s+([a-z][a-z0-9-]*)/u.exec(example);
-    if (match) names.add(match[1]);
+    if (match) {
+      const command = availableCommands
+        ? resolveExampleCommandPath(example, availableCommands)
+        : match[1];
+      if (command) names.add(command);
+    }
   }
   return names;
 }
@@ -822,12 +827,13 @@ export function guideTopicCommandNames(topic) {
  */
 export function mapCapabilityFamilyRouting(families, topics) {
   const routing = new Map();
+  const availableCommands = new Set((families ?? []).flatMap((family) => family.commands ?? []));
   for (const family of families ?? []) {
     const commands = new Set(family.commands ?? []);
     const routedBy = (topics ?? [])
       .filter((topic) => !GENERATED_GUIDE_TOPIC_IDS.includes(topic.id))
       .filter((topic) =>
-        [...guideTopicCommandNames(topic)].some((command) =>
+        [...guideTopicCommandNames(topic, availableCommands)].some((command) =>
           commands.has(command),
         ),
       )

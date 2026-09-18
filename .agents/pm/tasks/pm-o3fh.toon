@@ -2,26 +2,27 @@ id: pm-o3fh
 title: Move meet/event/remind calendar shortcuts from core surface into the builtin-calendar package as create sugar
 description: "The three calendar shortcut commands become builtin-calendar package-owned commands (or pm create --template sugar), removing 3 top-level core entries while keeping every flag; core keeps alias shims while the deprecation cycle runs. Duplicate check: PR#263 shipped the shortcuts; pm-ixoa is a calendar service collision, different concern."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:extensions",calendar,simplification
 created_at: "2026-07-05T04:53:33.905Z"
-updated_at: "2026-09-08T13:32:51.669Z"
+updated_at: "2026-09-18T03:55:51.731Z"
+closed_at: "2026-09-18T03:55:51.041Z"
+completed_at: "2026-09-18T03:55:51.041Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: meet/event/remind live in builtin-calendar (package-owned commands) with full flag parity incl. scheduling presets and relative-time parsing; core alias shims keep old spellings working; uninstalling the package surfaces the owning-package hint (pm-b3e9 pattern); calendar shortcut specs pass via aliases
 parent: pm-n7rr
 risk: medium
 confidence: medium
-expected_result: "meet, event and remind are builtin-calendar package commands with full flag parity, and core alias shims keep the old spellings working through the deprecation cycle."
-dependencies[5]:
+resolution: "Calendar package owns meet/event/remind commands and metadata through public SDK scheduling primitives; core registration is removed, legacy aliases and installation recovery remain, and nested discovery/help gates cover the package surface."
+expected_result: Installed calendar commands and legacy aliases preserve scheduling semantics while core remains a reusable SDK baseline.
+actual_result: "Real SDK and installed CLI acceptance passed for all shortcuts, flags, persistence, availability and uninstall recovery; full coverage is 100/100/100/100."
+dependencies[7]:
   - id: pm-0z7n
     kind: blocked_by
     created_at: "2026-07-05T04:55:01.457Z"
   - id: pm-ixoa
-    kind: related
-    created_at: "2026-07-25T06:29:10.512Z"
-  - id: pm-jkjt
     kind: related
     created_at: "2026-07-25T06:29:10.512Z"
   - id: pm-n7rr
@@ -33,4 +34,87 @@ dependencies[5]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
+  - id: pm-jkjt
+    kind: verifies
+    created_at: "2026-09-18T03:03:53.490Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-j1vw3a
+    kind: implements
+    created_at: "2026-09-18T03:08:38.017Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-z3ez
+    kind: related
+    created_at: "2026-09-18T03:42:16.196Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[7]{created_at,author,text}:
+  "2026-09-18T03:12:04.056Z","harness:codex","Verification: linked package/core registration tests passed; 53 runtime contract tests passed; typecheck and ESLint passed; generated contracts and agent surfaces refreshed with zero SDK export changes. Manual disposable Node and Bun sessions passed install, missing-package recovery, aliases, 5min persistence, rejected update atomicity, month-end clamping, reminders, doctor, validation, and uninstall. Packed npm/npx/bunx smoke passed. Static gate identified automation-guide routing drift; canonical guide examples are being corrected before the final full gate."
+  "2026-09-18T03:14:37.176Z","harness:codex","Independent live checks 2026-09-18: GitHub open PRs and Dependabot/code-scanning/secret-scanning alerts were empty; GH-1246 already has the canonical pm-z3ez item link. Last scheduled Auto Release run 35197095403 succeeded and v2026.9.17 is public on GitHub and npm. The workflow serializes automatic runs and verifies an existing same-day immutable tag before preparation. Sentry/telemetry required-mode gate passed: zero critical/high unresolved issues, 1.11 percent weighted finish error rate, zero failure rows missing error codes. Live database had 508 events in the previous hour and a fresh timestamp; RabbitMQ had zero queued or unacknowledged messages."
+  "2026-09-18T03:14:38.165Z","harness:codex","All-status graph verification: 2768 recorded nodes and 13824 directed edges form one connected knowledge component with zero orphans and no ordering or hierarchy cycles. Execution has 12 layers and critical path length 11. Seven grandfathered hierarchy cardinality/direction records remain informational; no active hierarchy violations. New duration lineage uses implements, discovered_from, and verifies edges rather than adding associative links to inflate counts. Only pm-o3fh and pm-jkjt are currently in progress."
+  "2026-09-18T03:20:50.653Z","harness:codex","Full-suite first pass: 8972 passed and 10 failures exposed stale registration/alias assertions, strict sandbox profile inconsistent with declared writes, help budget inventory dropping migrated commands, and guide routing against the prior build. Correcting production integration and contract observations; no budget increases or coverage exclusions."
+  "2026-09-18T03:30:25.413Z","harness:codex","Migration gate fixes now pass focused tests (49 tests): full nested guide routing, retained calendar help budgets, and real installed package contracts. Pure command metadata is separated from SDK execution bindings so native Node gate imports do not need a workspace package self-link. In-process package SDK dispatch also verifies all three default scheduling handlers against persisted items."
+  "2026-09-18T03:42:17.526Z","harness:codex","Final integration checks: package artifact smoke passed again after the metadata/runtime split; live telemetry flush drained the queue to zero. Static quality, docstrings, duplication, package/SDK parity, grammar, help budgets, refusal closure, agent-token gates, tracker-context quality, gate registry, and SDK snapshot checks passed. Import-cost checks initially exceeded budgets under simultaneous coverage load, then SDK and transport benchmarks passed after that load ended without changing limits. Validation retains the documented 170 unrecoverable historical resolution gaps; individual active histories match their latest records."
+  "2026-09-18T03:55:48.309Z","harness:codex","Final local evidence: 705 test files and 8,984 tests passed; statement coverage 64,769/64,769, branch coverage 49,414/49,414, function coverage 13,443/13,443 and line coverage 61,995/61,995, all 100%. No coverage exclusions or thresholds were added or relaxed. Linked pm tests passed. TypeScript, ESLint, zero-clone duplication scans, 100% source/export/member docstring gates, contracts, SDK parity, generated surfaces, guide routing and existing help budgets passed. All static stages passed; unchanged SDK import-cost and CLI transport budgets were rerun successfully without concurrent coverage load. Temporary Node and Bun manual sessions verified install/uninstall recovery, canonical and legacy scheduling, atomic refusal and calendar-month clamping. Packed npm/npx/bunx acceptance passed. Secret scan and dependency audit passed. Current GitHub security-alert inventories were empty. Sentry required gate passed with no unresolved issues; telemetry delivery drained the queue. Hosted PR checks and external reviews follow this local evidence and are independent claims."
+notes[1]{created_at,author,text}:
+  "2026-09-18T03:03:54.634Z","harness:codex","Architecture: calendar extension declares commands and flags over public SDK functions; generic SDK/MCP operation identities stay native. Core bootstrap retains legacy alias rewriting and missing-package recovery. Contract discovery distinguishes callable SDK actions from installed CLI commands."
+learnings[2]{created_at,author,text}:
+  "2026-09-18T03:03:55.471Z","harness:codex","Host-owned global flags such as --author must not be registered by packages: extension activation rejects collisions. Real installed-package tests verify global identity forwarding and persisted history rather than mocking the registration layer."
+  "2026-09-18T03:27:27.047Z","harness:codex",Package relocation must preserve the independent help budget inventory and full command-path documentation routing; a gate that matches only the root verb can silently lose or falsely reject nested capabilities. Keep negative controls for omitted package registration and parent/sibling confusion.
+files[17]{path,scope,note}:
+  packages/pm-calendar/extensions/calendar/command-definitions.ts,project,Pure package command metadata shared with independent host help measurement
+  packages/pm-calendar/extensions/calendar/index.ts,project,Activate scheduling registrations alongside views
+  packages/pm-calendar/extensions/calendar/manifest.json,project,Declare mutation permission and lazy activation commands
+  packages/pm-calendar/extensions/calendar/shortcuts.ts,project,Package-owned SDK scheduling declarations
+  scripts/release/docs-skills-gate.mjs,project,Resolve longest declared nested command for guide family routing
+  scripts/release/flag-lexicon-gate.mjs,project,Preserve existing help budgets across package relocation
+  src/cli/register-operations.ts,project,Remove domain shortcuts from core registration
+  src/sdk/cli-contracts/command-aliases.ts,project,Canonical calendar paths and compatibility aliases
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Separate SDK operation availability from installed CLI commands
+  src/sdk/guide-topics.ts,project,Teach canonical calendar commands and explicit units in handwritten guide
+  tests/fixtures/contracts/full.json,project,Generated runtime contract snapshot
+  tests/unit/commands/register-commands.spec.ts,project,Core surface regression coverage
+  tests/unit/extensions/builtin-extension-entrypoints.spec.ts,project,Assert all package-owned scheduling registrations
+  tests/unit/packages/calendar-shortcuts.spec.ts,project,Real installed package and alias acceptance
+  tests/unit/scripts/flag-lexicon-gate.spec.ts,project,Negative control rejects missing migrated package help
+  tests/unit/scripts/release/docs-skills-gate.spec.ts,project,Parent and sibling negative controls for nested routing
+  tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,Account for three retained hidden aliases
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/calendar-shortcuts.spec.ts tests/unit/commands/register-commands.spec.ts,project,240,"harness:codex","2026-09-18T03:03:23.136Z",local_mutation,feat/calendar-package-duration-contracts
+  node scripts/run-tests.mjs test -- tests/unit/extensions/builtin-extension-entrypoints.spec.ts tests/unit/packages/package-manifest.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/unit/scripts/flag-lexicon-gate.spec.ts tests/unit/scripts/release/docs-skills-gate.spec.ts,project,240,"harness:codex","2026-09-18T03:32:02.900Z",local_mutation,feat/calendar-package-duration-contracts
+test_runs[2]:
+  - run_id: test-local-mu6dl10f-errhe3
+    kind: test
+    status: passed
+    started_at: "2026-09-18T03:04:35.354Z"
+    finished_at: "2026-09-18T03:04:53.343Z"
+    recorded_at: "2026-09-18T03:04:53.343Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/packages/calendar-shortcuts.spec.ts tests/unit/commands/register-commands.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu6f9d8u-pamzh4
+    kind: test
+    status: passed
+    started_at: "2026-09-18T03:51:17.495Z"
+    finished_at: "2026-09-18T03:51:48.557Z"
+    recorded_at: "2026-09-18T03:51:48.557Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/packages/calendar-shortcuts.spec.ts tests/unit/commands/register-commands.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/extensions/builtin-extension-entrypoints.spec.ts tests/unit/packages/package-manifest.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/unit/scripts/flag-lexicon-gate.spec.ts tests/unit/scripts/release/docs-skills-gate.spec.ts,schema,schema,source,local_source_ref
+docs[5]{path,scope,note}:
+  CHANGELOG.md,project,Generated delivery notes owned by the latest pm-changelog package
+  docs/generated/AGENT_CAPABILITY_ROUTING.md,project,Generated capability routing
+  docs/generated/AGENT_COMMAND_SURFACE.md,project,Generated package-owned command discovery
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project,Generated flag budget inventory
+  packages/pm-calendar/README.md,project,Package ownership and SDK integration examples
+close_reason: Implementation and local verification complete; closure is included in the reviewed delivery.
 body: ""
