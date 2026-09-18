@@ -301,7 +301,7 @@
       },
       {
         "id": "coverage",
-        "gates": ["test-coverage"],
+        "gates": ["test-coverage", "mcp-option-contracts", "graph-default-bounds"],
         "executable": {
           "command": "pnpm",
           "args": ["test:coverage"],
@@ -407,6 +407,28 @@
     ]
   },
   "gates": [
+    {
+      "id": "mcp-option-contracts",
+      "owner": "pm-v0s2rm",
+      "pipelines": ["ci.yml#build-test", "ci.yml#coverage-shards", "ci.yml#windows-regression", "nightly.yml#nightly", "release.yml#release"],
+      "failure_taxonomy": ["mcp_unknown_option_contract_drift"],
+      "bypass": { "allowed": false, "audit": "Every Vitest run installs the warning reporter; intentional negative tests require exact file, test, option, tool and action identities with a recorded reason." },
+      "negative_control": {
+        "test": "tests/unit/scripts/mcp-contract-reporter.spec.ts",
+        "assertion": "fails a real otherwise-green Vitest process when an undeclared MCP option is emitted"
+      }
+    },
+    {
+      "id": "graph-default-bounds",
+      "owner": "pm-mfy1ux",
+      "pipelines": ["ci.yml#coverage-shards", "nightly.yml#nightly", "release.yml#release"],
+      "failure_taxonomy": ["graph_default_output_unbounded"],
+      "bypass": { "allowed": false, "audit": "Every registered graph subcommand is exercised on a thousand-item chain; removing the bound returns 999 traversal rows instead of ten." },
+      "negative_control": {
+        "test": "tests/unit/sdk/graph/default-bounds.spec.ts",
+        "assertion": "bounds every graph subcommand on a thousand-item workspace and restores explicit full traversals"
+      }
+    },
     {
       "id": "compilation",
       "owner": "pm-k6t4yb",

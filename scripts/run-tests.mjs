@@ -92,6 +92,11 @@ async function run() {
   const passthroughArgs = process.argv.slice(3);
   const normalizedVitestArgs =
     passthroughArgs[0] === "--" ? passthroughArgs.slice(1) : passthroughArgs;
+  // CLI reporter selection replaces the config list (including in coverage
+  // shards), so retain the contract gate beside every explicitly chosen reporter.
+  if (normalizedVitestArgs.some((arg) => arg === "--reporter" || arg.startsWith("--reporter="))) {
+    normalizedVitestArgs.push(`--reporter=${path.join(process.cwd(), "scripts", "mcp-contract-reporter.mts")}`);
+  }
   const skipBuild = process.env.PM_RUN_TESTS_SKIP_BUILD === "1";
 
   try {

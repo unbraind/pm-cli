@@ -377,13 +377,13 @@ const acquireExtensionInstallLock = async (
   return false;
 };
 
-/** Run one operation under an owner-bound extension install lock and heartbeat lease. */
+/** Hold an owner-bound install lease and translate host faults from acquisition through operation and cleanup. */
 export const withExtensionInstallLock = async <T>(
   settingsRoot: string,
   destinationDirectoryName: string,
   run: () => Promise<T>,
   options?: ExtensionInstallLockOptions,
-): Promise<T> => {
+): Promise<T> => withHostEnvironmentBoundary("extension_install", async () => {
   const lockRoot = path.join(
     settingsRoot,
     "runtime",
@@ -442,12 +442,17 @@ export const withExtensionInstallLock = async <T>(
     owner.token,
     heartbeatMs,
   );
+  let operationSucceeded = false;
   try {
-    return await run();
+    const result = await run();
+    operationSucceeded = true;
+    return result;
   } finally {
     await stopHeartbeat();
     await removeExtensionInstallLockIfOwned(lockPath, owner.token).catch(
-      () => false,
+      (error: unknown) => {
+        if (operationSucceeded) throw error;
+      },
     );
   }
-};
+});

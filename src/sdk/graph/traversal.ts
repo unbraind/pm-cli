@@ -16,6 +16,7 @@ import {
   type RelationshipQueryOptions,
   type RelationshipQueryResult,
 } from "../relationships.js";
+import { GRAPH_QUERY_DEFAULTS } from "./query-contracts.js";
 
 /**
  * Shared bounded-traversal controls extended with deterministic resumption.
@@ -54,11 +55,11 @@ export interface GraphPathOptions extends RelationshipQueryOptions {
 }
 
 /** Default number of paths returned by bounded path enumeration. */
-const DEFAULT_MAX_PATHS = 5;
+const DEFAULT_MAX_PATHS = GRAPH_QUERY_DEFAULTS.paths;
 /** Default expansion-safety bound for bounded path enumeration. */
-const DEFAULT_MAX_VISITED_PATHS = 10_000;
+const DEFAULT_MAX_VISITED_PATHS = GRAPH_QUERY_DEFAULTS.visited_paths;
 /** Default depth bound applied to bounded path enumeration. */
-const DEFAULT_PATH_MAX_DEPTH = 8;
+const DEFAULT_PATH_MAX_DEPTH = GRAPH_QUERY_DEFAULTS.path_depth;
 
 /** Require a finite non-negative integer for one path-enumeration bound. */
 function assertPathBound(name: string, value: number): void {

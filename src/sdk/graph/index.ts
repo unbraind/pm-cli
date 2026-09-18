@@ -7,6 +7,7 @@
  * relationship audit. Everything here layers on the dependency-free kernel in
  * `sdk/relationships` and is safe for CLI, MCP, extension, and non-PM callers.
  */
+export * from "./query-contracts.js";
 export {
   computeRelationshipDominators,
   detectRelationshipCommunities,

@@ -19,7 +19,11 @@ and canonical TOON tables are tracked by
 is tracked by [pm-8nev0o](../.agents/pm/issues/pm-8nev0o.toon) and
 [pm-oahhyc](../.agents/pm/issues/pm-oahhyc.toon). Exact command-local
 projection discovery is tracked by
-[pm-q4isdq](../.agents/pm/issues/pm-q4isdq.toon).
+[pm-q4isdq](../.agents/pm/issues/pm-q4isdq.toon). Shared graph defaults and
+scale enforcement are tracked by [pm-mfy1ux](../.agents/pm/issues/pm-mfy1ux.toon).
+
+For enforcement of declared MCP input options in repository tests, see
+[MCP Option Conformance](MCP_OPTION_CONFORMANCE.md).
 
 ## Agent Quick Context
 
@@ -167,7 +171,19 @@ Passing `--full` with the corresponding compact flag is a usage error. An
 explicit full request and the default full request produce the same payload
 shape; the flag exists as a machine-actionable restore instruction.
 
-`graph impact` is bounded to ten rows by default, returns `next_cursor` when
+Graph row collections default to ten rows, including hierarchy and ordering
+traversals, audit findings, and slack's critical path. The public
+`GRAPH_QUERY_DEFAULTS` contract is available from `@unbrained/pm-cli/sdk/graph`
+and `@unbrained/pm-cli/sdk/contracts`; `pm contracts --command graph --flags-only`
+declares the same defaults before invoking a graph query. Analytics still compute over the complete graph. `--full`
+restores row collections, while `--limit` chooses a finite cap; combining those
+two controls is rejected. Path enumeration retains its separate five-path,
+eight-edge-depth and 10,000-expansion safety defaults. Audit evidence uses
+`--sample` independently of the finding-row limit. The thousand-item graph
+regression enumerates every registered subcommand, bounds serialized output,
+and proves full traversal and cursor continuation.
+
+`graph impact` returns `next_cursor` when
 more affected nodes exist, and accepts `--after <cursor>` to resume in stable
 breadth-first order. `graph impact --full` is the explicit unbounded override;
 combining `--full` with `--limit` is rejected. A zero-row page remains

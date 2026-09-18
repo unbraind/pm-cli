@@ -8,6 +8,7 @@
  */
 import { resolvePmHistoryOperation } from "./command-aliases.js";
 import { normalizeUniqueStringList } from "./string-lists.js";
+import { GRAPH_QUERY_DEFAULTS } from "../graph/query-contracts.js";
 import { RESERVED_EXTENSION_HOST_FLAGS } from "../../core/extensions/reserved-host-flags.js";
 import {
   PM_POSITIONAL_ACTION_CONTRACTS,
@@ -1718,12 +1719,12 @@ export const DEPS_FLAG_CONTRACTS: CliFlagContract[] = [
 /** Public contract for graph flag contracts, shared by SDK and presentation-layer consumers. */
 export const GRAPH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--kind", list: true },
-  { flag: "--max-depth" },
-  { flag: "--limit" },
+  { flag: "--max-depth", description: `Maximum traversal depth; paths default to ${GRAPH_QUERY_DEFAULTS.path_depth}.` },
+  { flag: "--limit", description: `Maximum rows per collection; default ${GRAPH_QUERY_DEFAULTS.rows}. Use --full to remove the row cap.` },
   { flag: "--after" },
   { flag: "--direction" },
-  { flag: "--max-paths" },
-  { flag: "--sample" },
+  { flag: "--max-paths", description: `Maximum enumerated paths; default ${GRAPH_QUERY_DEFAULTS.paths}.` },
+  { flag: "--sample", description: `Maximum evidence examples per audit finding; default ${GRAPH_QUERY_DEFAULTS.samples}.` },
   { flag: "--exempt-isolate", list: true },
   { flag: "--exempt-isolate-type", list: true },
   { flag: "--save-baseline" },

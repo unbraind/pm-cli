@@ -4529,9 +4529,11 @@
           "list": true
         },
         {
+          "description": "Maximum traversal depth; paths default to 8.",
           "flag": "--max-depth"
         },
         {
+          "description": "Maximum rows per collection; default 10. Use --full to remove the row cap.",
           "flag": "--limit"
         },
         {
@@ -4541,9 +4543,11 @@
           "flag": "--direction"
         },
         {
+          "description": "Maximum enumerated paths; default 5.",
           "flag": "--max-paths"
         },
         {
+          "description": "Maximum evidence examples per audit finding; default 10.",
           "flag": "--sample"
         },
         {

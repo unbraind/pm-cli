@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1957,
+    "covered_symbols": 1958,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1958
+    "required_symbols": 1959
   },
   "breaking_acknowledgements": [
     {
@@ -2054,6 +2054,14 @@
       ],
       "package_version": "2026.9.18",
       "reason": "Add required sample receipt to provenance health output; consumers constructing scan objects must provide measurement bounds, while existing read fields and function inputs remain unchanged."
+    },
+    {
+      "changes": [
+        "signature ./sdk:GraphAuditResult",
+        "signature ./sdk/graph:GraphAuditResult"
+      ],
+      "package_version": "2026.9.18",
+      "reason": "GraphAuditResult gains only optional truncated receipt metadata; existing callers and constructed values remain compatible"
     }
   ],
   "entrypoints": {
@@ -8171,6 +8179,12 @@
         {
           "classification": "supported",
           "kind": "value",
+          "name": "GRAPH_QUERY_DEFAULTS",
+          "signature": "Readonly<{ rows: 10; paths: 5; samples: 10; path_depth: 8; visited_paths: 10000; }>"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
           "name": "GRAPH_SUBCOMMAND_VALUES",
           "signature": "readonly [\"ancestors\", \"descendants\", \"predecessors\", \"successors\", \"paths\", \"impact\", \"analyze\", \"audit\", \"communities\", \"redundancy\", \"dominators\", \"slack\", \"centrality\", \"articulation\", \"plan\", \"index\"]"
         },
@@ -8196,7 +8210,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphAuditResult",
-          "signature": "export interface GraphAuditResult { subcommand: \"audit\"; finding_count: number; findings_by_severity: Record<string, number>; findings_by_code: Record<string, number>; affected_subjects_by_severity: Record<string, number>; affected_subjects_by_code: Record<string, number>; profile: Omit<RelationshipAuditReport[\"profile\"], \"finding_subjects_by_code\"> & Partial<Pick<RelationshipAuditReport[\"profile\"], \"finding_subjects_by_code\">>; legacy_alias_counts?: Record<string, number>; findings?: RelationshipAuditReport[\"findings\"]; baseline?: RelationshipAuditDelta; cache?: GraphCacheMetadata; }"
+          "signature": "export interface GraphAuditResult { truncated?: boolean; subcommand: \"audit\"; finding_count: number; findings_by_severity: Record<string, number>; findings_by_code: Record<string, number>; affected_subjects_by_severity: Record<string, number>; affected_subjects_by_code: Record<string, number>; profile: Omit<RelationshipAuditReport[\"profile\"], \"finding_subjects_by_code\"> & Partial<Pick<RelationshipAuditReport[\"profile\"], \"finding_subjects_by_code\">>; legacy_alias_counts?: Record<string, number>; findings?: RelationshipAuditReport[\"findings\"]; baseline?: RelationshipAuditDelta; cache?: GraphCacheMetadata; }"
         },
         {
           "classification": "supported",
@@ -22535,6 +22549,12 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "GRAPH_QUERY_DEFAULTS",
+          "signature": "Readonly<{ rows: 10; paths: 5; samples: 10; path_depth: 8; visited_paths: 10000; }>"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "GUIDE_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
         },
@@ -28001,6 +28021,12 @@
         {
           "classification": "supported",
           "kind": "value",
+          "name": "GRAPH_QUERY_DEFAULTS",
+          "signature": "Readonly<{ rows: 10; paths: 5; samples: 10; path_depth: 8; visited_paths: 10000; }>"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
           "name": "GRAPH_SUBCOMMAND_VALUES",
           "signature": "readonly [\"ancestors\", \"descendants\", \"predecessors\", \"successors\", \"paths\", \"impact\", \"analyze\", \"audit\", \"communities\", \"redundancy\", \"dominators\", \"slack\", \"centrality\", \"articulation\", \"plan\", \"index\"]"
         },
@@ -28026,7 +28052,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphAuditResult",
-          "signature": "export interface GraphAuditResult { subcommand: \"audit\"; finding_count: number; findings_by_severity: Record<string, number>; findings_by_code: Record<string, number>; affected_subjects_by_severity: Record<string, number>; affected_subjects_by_code: Record<string, number>; profile: Omit<RelationshipAuditReport[\"profile\"], \"finding_subjects_by_code\"> & Partial<Pick<RelationshipAuditReport[\"profile\"], \"finding_subjects_by_code\">>; legacy_alias_counts?: Record<string, number>; findings?: RelationshipAuditReport[\"findings\"]; baseline?: RelationshipAuditDelta; cache?: GraphCacheMetadata; }"
+          "signature": "export interface GraphAuditResult { truncated?: boolean; subcommand: \"audit\"; finding_count: number; findings_by_severity: Record<string, number>; findings_by_code: Record<string, number>; affected_subjects_by_severity: Record<string, number>; affected_subjects_by_code: Record<string, number>; profile: Omit<RelationshipAuditReport[\"profile\"], \"finding_subjects_by_code\"> & Partial<Pick<RelationshipAuditReport[\"profile\"], \"finding_subjects_by_code\">>; legacy_alias_counts?: Record<string, number>; findings?: RelationshipAuditReport[\"findings\"]; baseline?: RelationshipAuditDelta; cache?: GraphCacheMetadata; }"
         },
         {
           "classification": "supported",

@@ -852,15 +852,22 @@ describe("extension command runtime", () => {
 
       const cleanupRoot = path.join(tempRoot, "cleanup-root");
       const cleanupLockRoot = path.join(cleanupRoot, "runtime", "extension-install-locks");
-      const cleanupResult = await extensionCommandTestOnly.withExtensionInstallLock(cleanupRoot, "cleanup-ext", async () => {
+      const cleanupResult = extensionCommandTestOnly.withExtensionInstallLock(cleanupRoot, "cleanup-ext", async () => {
         if (isPosix) {
           await chmod(cleanupLockRoot, 0o555);
         }
         return "cleanup-ok";
       });
-      expect(cleanupResult).toBe("cleanup-ok");
-      if (isPosix) {
-        await chmod(cleanupLockRoot, 0o755);
+      try {
+        if (isPosix) {
+          await expect(cleanupResult).rejects.toMatchObject({
+            context: { code: "host_environment_permission_fault" },
+          });
+        } else {
+          await expect(cleanupResult).resolves.toBe("cleanup-ok");
+        }
+      } finally {
+        if (isPosix) await chmod(cleanupLockRoot, 0o755);
       }
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
@@ -5458,7 +5465,9 @@ describe("extension command runtime", () => {
     readError.code = "EACCES";
     const readFileSpy = vi.spyOn(fsPromises, "readFile").mockRejectedValueOnce(readError);
     try {
-      await expect(extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "protected-ext", async () => "unreachable", { attempts: 1, delay_ms: 0, stale_ms: 3 })).rejects.toThrow("owner metadata temporarily unreadable");
+      await expect(extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "protected-ext", async () => "unreachable", { attempts: 1, delay_ms: 0, stale_ms: 3 })).rejects.toMatchObject({
+        context: { code: "host_environment_permission_fault" },
+      });
       await expect(readFile(path.join(lockPath, "owner.json"), "utf8")).resolves.toContain('"token":"active-owner"');
     } finally {
       readFileSpy.mockRestore();

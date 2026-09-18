@@ -106,6 +106,8 @@ import {
   type OutputProjectionDeclaration,
 } from "../output-projection.js";
 
+import { GRAPH_QUERY_DEFAULTS } from "./query-contracts.js";
+
 export { GRAPH_SUBCOMMAND_VALUES, type GraphSubcommand };
 
 /** Graph subcommands that require a root item id. */
@@ -118,9 +120,6 @@ const ROOTED_SUBCOMMANDS = new Set<GraphSubcommand>([
   "impact",
   "dominators",
 ]);
-
-/** Default bounded sample rows returned by analyze/audit projections. */
-const DEFAULT_SAMPLE_LIMIT = 10;
 
 /** Documents the graph command options payload exchanged by command, SDK, and package integrations. */
 export interface GraphCommandOptions {
@@ -334,6 +333,8 @@ export interface GraphAnalyzeResult {
 
 /** Result envelope for the audit subcommand. */
 export interface GraphAuditResult {
+  /** Whether the row bound omitted findings; counts still describe the complete audit. */
+  truncated?: boolean;
   /** Executed graph subcommand. */
   subcommand: "audit";
   /** Total audit findings. */
@@ -725,8 +726,8 @@ interface GraphInvocation {
   kinds?: string[];
   /** Parsed non-negative depth bound. */
   maxDepth?: number;
-  /** Parsed positive row bound. */
-  limit?: number;
+  /** Effective row bound, including the shared default or explicit full projection. */
+  limit: number;
   /** Traversal resume cursor. */
   after?: string;
   /** Validated traversal orientation. */
@@ -734,7 +735,7 @@ interface GraphInvocation {
   /** Parsed positive path-count bound. */
   maxPaths?: number;
   /** Parsed positive audit sample bound. */
-  sample?: number;
+  sample: number;
   /** Normalized audit isolate exemptions. */
   exemptIsolates: string[];
   /** Normalized audit isolate-exempt item types. */
@@ -745,6 +746,32 @@ interface GraphInvocation {
   summary: boolean;
   /** Whether the caller explicitly requested an unbounded full impact result. */
   unbounded: boolean;
+}
+
+/** Resolve shared projection defaults once before executing or caching a graph query. */
+function parseGraphInvocation(
+  subcommand: GraphSubcommand,
+  assembly: WorkspaceRelationshipAssembly,
+  kinds: string[] | undefined,
+  options: GraphCommandOptions,
+): GraphInvocation {
+  return {
+    assembly,
+    ...(kinds === undefined ? {} : { kinds }),
+    maxDepth: parseMaxDepth(options.maxDepth),
+    limit: subcommand === "impact" && Number(options.limit) === 0
+      ? 0
+      : parsePositiveInteger(options.limit, "limit") ?? (options.full === true ? Number.MAX_SAFE_INTEGER : GRAPH_QUERY_DEFAULTS.rows),
+    after: options.after?.trim() || undefined,
+    direction: parseDirection(options.direction),
+    maxPaths: parsePositiveInteger(options.maxPaths, "max-paths"),
+    sample: parsePositiveInteger(options.sample, "sample") ?? GRAPH_QUERY_DEFAULTS.samples,
+    exemptIsolates: normalizeIdList(options.exemptIsolate),
+    exemptIsolateTypes: normalizeIdList(options.exemptIsolateType),
+    saveBaseline: options.saveBaseline === true,
+    summary: options.summary === true,
+    unbounded: options.full === true,
+  };
 }
 
 /** Normalize repeatable or comma-separated id options into a flat list. */
@@ -847,7 +874,7 @@ function runGraphTraversal(
       ...(invocation.maxDepth === undefined
         ? {}
         : { maxDepth: invocation.maxDepth }),
-      ...(invocation.limit === undefined ? {} : { limit: invocation.limit }),
+      limit: invocation.limit,
       ...(invocation.after === undefined ? {} : { after: invocation.after }),
     });
   } catch (error) {
@@ -921,7 +948,7 @@ function runGraphImpact(
         : { maxDepth: invocation.maxDepth }),
       ...(invocation.unbounded
         ? {}
-        : { limit: invocation.limit ?? DEFAULT_SAMPLE_LIMIT }),
+        : { limit: invocation.limit }),
       ...(invocation.after === undefined ? {} : { after: invocation.after }),
     });
   } catch (error) {
@@ -1028,7 +1055,7 @@ function buildGraphHierarchySummary(
 /** Execute the workspace-wide execution and knowledge analytics subcommand. */
 function runGraphAnalyze(invocation: GraphInvocation): GraphAnalyzeResult {
   const graph = invocation.assembly.graph;
-  const sampleLimit = invocation.limit ?? DEFAULT_SAMPLE_LIMIT;
+  const sampleLimit = invocation.limit;
   const execution = analyzeRelationshipExecution(graph, {
     registry: graph.registry(),
   });
@@ -1064,9 +1091,7 @@ function runGraphAudit(
 ): GraphAuditResult {
   const report = auditWorkspaceRelationshipGraph(invocation.assembly, {
     isTerminal,
-    ...(invocation.sample === undefined
-      ? {}
-      : { maxSampleSize: invocation.sample }),
+    maxSampleSize: invocation.sample,
     ...(invocation.exemptIsolates.length === 0
       ? {}
       : { exemptIsolates: invocation.exemptIsolates }),
@@ -1090,6 +1115,7 @@ function runGraphAudit(
     report.profile;
   return {
     subcommand: "audit",
+    truncated: report.findings.length > invocation.limit,
     finding_count: report.findings.length,
     findings_by_severity: bySeverity,
     findings_by_code: byCode,
@@ -1097,7 +1123,7 @@ function runGraphAudit(
     affected_subjects_by_code: affectedByCode,
     profile: invocation.summary ? compactProfile : report.profile,
     legacy_alias_counts: invocation.assembly.legacyAliasCounts,
-    ...(invocation.summary ? {} : { findings: report.findings }),
+    ...(invocation.summary ? {} : { findings: report.findings.slice(0, invocation.limit) }),
   };
 }
 
@@ -1105,7 +1131,7 @@ function runGraphAudit(
 function runGraphCommunities(
   invocation: GraphInvocation,
 ): GraphCommunitiesResult {
-  const sampleLimit = invocation.limit ?? DEFAULT_SAMPLE_LIMIT;
+  const sampleLimit = invocation.limit;
   const options: Parameters<typeof detectRelationshipCommunities>[1] = {};
   if (invocation.kinds !== undefined) options.kinds = invocation.kinds;
   const result = detectRelationshipCommunities(
@@ -1149,7 +1175,7 @@ function runGraphRedundancy(
       ...(invocation.maxDepth === undefined
         ? {}
         : { maxDepth: invocation.maxDepth }),
-      ...(invocation.limit === undefined ? {} : { limit: invocation.limit }),
+      limit: invocation.limit,
     });
   } catch (error) {
     rethrowGraphUsage(error);
@@ -1176,7 +1202,7 @@ function runGraphDominators(
   root: string,
   invocation: GraphInvocation,
 ): GraphDominatorsResult {
-  const limit = invocation.limit ?? DEFAULT_SAMPLE_LIMIT;
+  const limit = invocation.limit;
   const result = computeRelationshipDominators(
     invocation.assembly.graph,
     root,
@@ -1214,7 +1240,7 @@ function runGraphDominators(
 
 /** Execute the critical-path slack (float) analysis subcommand. */
 function runGraphSlack(invocation: GraphInvocation): GraphSlackResult {
-  const limit = invocation.limit ?? DEFAULT_SAMPLE_LIMIT;
+  const limit = invocation.limit;
   // Scheduling spans every ordering kind; --kind is rejected upstream by
   // assertGraphFlagScope, so no kind filter reaches the analysis here.
   const analysis = analyzeRelationshipSchedule(invocation.assembly.graph);
@@ -1231,7 +1257,7 @@ function runGraphSlack(invocation: GraphInvocation): GraphSlackResult {
     ...(invocation.summary
       ? {}
       : {
-          critical_path: analysis.criticalPath,
+          critical_path: analysis.criticalPath.slice(0, limit),
           rows: analysis.rows.slice(0, limit).map((row) => ({
             id: row.id,
             earliest_start: row.earliestStart,
@@ -1247,7 +1273,7 @@ function runGraphSlack(invocation: GraphInvocation): GraphSlackResult {
 function runGraphCentrality(
   invocation: GraphInvocation,
 ): GraphCentralityResult {
-  const limit = invocation.limit ?? DEFAULT_SAMPLE_LIMIT;
+  const limit = invocation.limit;
   const result = computeRelationshipCentrality(
     invocation.assembly.graph,
     invocation.kinds === undefined ? {} : { kinds: invocation.kinds },
@@ -1282,7 +1308,7 @@ function runGraphCentrality(
 function runGraphArticulation(
   invocation: GraphInvocation,
 ): GraphArticulationResult {
-  const limit = invocation.limit ?? DEFAULT_SAMPLE_LIMIT;
+  const limit = invocation.limit;
   const result = findRelationshipCutStructure(
     invocation.assembly.graph,
     invocation.kinds === undefined ? {} : { kinds: invocation.kinds },
@@ -1311,13 +1337,11 @@ function runGraphPlan(
   invocation: GraphInvocation,
   isTerminal: (status: string) => boolean,
 ): GraphPlanResult {
-  const limit = invocation.limit ?? DEFAULT_SAMPLE_LIMIT;
+  const limit = invocation.limit;
   const plan = planRelationshipRemediation(invocation.assembly, {
     isTerminal,
     redundancyLimit: limit,
-    ...(invocation.sample === undefined
-      ? {}
-      : { maxSampleSize: invocation.sample }),
+    maxSampleSize: invocation.sample,
     ...(invocation.exemptIsolates.length === 0
       ? {}
       : { exemptIsolates: invocation.exemptIsolates }),
@@ -1354,16 +1378,17 @@ function buildGraphQueryKey(
   invocation: GraphInvocation,
 ): string {
   return JSON.stringify({
+    projection_version: 2,
     subcommand,
     root: root ?? null,
     target: pathsTarget ?? null,
     kinds: invocation.kinds ?? null,
     maxDepth: invocation.maxDepth ?? null,
-    limit: invocation.limit ?? null,
+    limit: invocation.limit,
     after: invocation.after ?? null,
     direction: invocation.direction,
     maxPaths: invocation.maxPaths ?? null,
-    sample: invocation.sample ?? null,
+    sample: invocation.sample,
     // The audit consumes exemptions as a case-insensitive set, so the key
     // must not distinguish logically identical spellings or orderings.
     exemptIsolates: [
@@ -1434,12 +1459,11 @@ function assertGraphFlagScope(
       EXIT_CODE.USAGE,
     );
   if (
-    subcommand === "impact" &&
     options.full === true &&
     options.limit !== undefined
   )
     throw new PmCliError(
-      "graph impact accepts either --full or --limit, not both.",
+      `graph ${subcommand} accepts either --full or --limit, not both.`,
       EXIT_CODE.USAGE,
     );
 }
@@ -1474,6 +1498,8 @@ async function runGraphIndex(
       exemptIsolateTypes: [],
       saveBaseline: false,
       summary: true,
+      limit: GRAPH_QUERY_DEFAULTS.rows,
+      sample: GRAPH_QUERY_DEFAULTS.samples,
       unbounded: false,
     };
     for (const warm of ["analyze", "audit"] as const) {
@@ -1590,7 +1616,7 @@ function attachDeadlineSchedule(
     items.filter((item) => !terminal.has(item.id)),
     {
       now: nowIso(),
-      limit: invocation.limit ?? DEFAULT_SAMPLE_LIMIT,
+      limit: invocation.limit,
     },
   );
   const { rows, residuals, overcommitted, ...counts } = analysis;
@@ -1645,21 +1671,7 @@ export async function runGraph(
         relationshipRegistry,
       ),
   );
-  const invocation: GraphInvocation = {
-    assembly: lookup.assembly,
-    ...(kinds === undefined ? {} : { kinds }),
-    maxDepth: parseMaxDepth(options.maxDepth),
-    limit: parsePositiveInteger(options.limit, "limit"),
-    after: options.after?.trim() || undefined,
-    direction: parseDirection(options.direction),
-    maxPaths: parsePositiveInteger(options.maxPaths, "max-paths"),
-    sample: parsePositiveInteger(options.sample, "sample"),
-    exemptIsolates: normalizeIdList(options.exemptIsolate),
-    exemptIsolateTypes: normalizeIdList(options.exemptIsolateType),
-    saveBaseline: options.saveBaseline === true,
-    summary: options.summary === true,
-    unbounded: options.full === true,
-  };
+  const invocation = parseGraphInvocation(subcommand, lookup.assembly, kinds, options);
   if (subcommand === "index") {
     return attachGraphProjection(
       await runGraphIndex(
