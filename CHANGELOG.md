@@ -12,6 +12,7 @@
 
 ### Other
 
+- Reconcile provenance delivery metadata with reviewed implementation ([pm-senomv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-senomv.toon))
 - Refresh Node declarations to 26.6.1 for SDK and process timing validation ([pm-8p629e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8p629e.toon))
 
 ## 2026.9.18 - 2026-09-18
