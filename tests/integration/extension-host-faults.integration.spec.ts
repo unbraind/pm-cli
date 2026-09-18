@@ -23,6 +23,37 @@ describe("extension host filesystem faults", () => {
       expect(await fs.readdir(path.join(context.pmPath, "runtime", "extension-install-locks"))).toEqual([]);
     });
   });
+  it.runIf(process.platform !== "win32" && process.getuid?.() !== 0)(
+    "reports failed lease cleanup after success and preserves a protected-operation failure",
+    async () => {
+      await withTempPmPath(async (context) => {
+        const lockPath = path.join(context.pmPath, "runtime", "extension-install-locks", "scope.lock");
+        const defect = new Error("Protected operation failed before cleanup");
+        for (const operationFails of [false, true]) {
+          try {
+            const operation = withExtensionInstallLock(context.pmPath, "fixture", async () => {
+              await fs.chmod(lockPath, 0o500);
+              if (operationFails) throw defect;
+              return "installed";
+            });
+            if (operationFails) {
+              await expect(operation).rejects.toBe(defect);
+            } else {
+              await expect(operation).rejects.toMatchObject({
+                name: "PmCliError",
+                context: { code: "host_environment_permission_fault" },
+                message: expect.not.stringContaining(context.tempRoot),
+              });
+            }
+            expect(await fs.readdir(lockPath)).toContain("owner.json");
+          } finally {
+            await fs.chmod(lockPath, 0o700);
+            await fs.rm(lockPath, { recursive: true });
+          }
+        }
+      });
+    },
+  );
   it("translates exhausted copy capacity without retrying or exposing paths, and preserves defects", async () => {
     await withTempPmPath(async (context) => {
       const source = path.join(context.tempRoot, "private-source");

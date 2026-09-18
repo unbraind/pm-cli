@@ -852,15 +852,22 @@ describe("extension command runtime", () => {
 
       const cleanupRoot = path.join(tempRoot, "cleanup-root");
       const cleanupLockRoot = path.join(cleanupRoot, "runtime", "extension-install-locks");
-      const cleanupResult = await extensionCommandTestOnly.withExtensionInstallLock(cleanupRoot, "cleanup-ext", async () => {
+      const cleanupResult = extensionCommandTestOnly.withExtensionInstallLock(cleanupRoot, "cleanup-ext", async () => {
         if (isPosix) {
           await chmod(cleanupLockRoot, 0o555);
         }
         return "cleanup-ok";
       });
-      expect(cleanupResult).toBe("cleanup-ok");
-      if (isPosix) {
-        await chmod(cleanupLockRoot, 0o755);
+      try {
+        if (isPosix) {
+          await expect(cleanupResult).rejects.toMatchObject({
+            context: { code: "host_environment_permission_fault" },
+          });
+        } else {
+          await expect(cleanupResult).resolves.toBe("cleanup-ok");
+        }
+      } finally {
+        if (isPosix) await chmod(cleanupLockRoot, 0o755);
       }
     } finally {
       await rm(tempRoot, { recursive: true, force: true });

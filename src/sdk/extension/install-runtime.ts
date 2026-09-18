@@ -377,7 +377,7 @@ const acquireExtensionInstallLock = async (
   return false;
 };
 
-/** Hold an owner-bound install lease and translate host faults from acquisition through the protected operation. */
+/** Hold an owner-bound install lease and translate host faults from acquisition through operation and cleanup. */
 export const withExtensionInstallLock = async <T>(
   settingsRoot: string,
   destinationDirectoryName: string,
@@ -442,12 +442,17 @@ export const withExtensionInstallLock = async <T>(
     owner.token,
     heartbeatMs,
   );
+  let operationSucceeded = false;
   try {
-    return await run();
+    const result = await run();
+    operationSucceeded = true;
+    return result;
   } finally {
     await stopHeartbeat();
     await removeExtensionInstallLockIfOwned(lockPath, owner.token).catch(
-      () => false,
+      (error: unknown) => {
+        if (operationSucceeded) throw error;
+      },
     );
   }
 });

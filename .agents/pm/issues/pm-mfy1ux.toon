@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:graph",context,perf,token-budget
 created_at: "2026-07-26T11:26:14.695Z"
-updated_at: "2026-09-18T16:15:43.808Z"
-closed_at: "2026-09-18T15:53:07.285Z"
-completed_at: "2026-09-18T15:53:07.285Z"
+updated_at: "2026-09-18T16:34:47.293Z"
+closed_at: "2026-09-18T16:34:45.864Z"
+completed_at: "2026-09-18T16:34:45.864Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "pm graph impact applies a default row bound consistent with its sibling subcommands, and the bound is declared in contract data rather than hardcoded per subcommand; Truncated results disclose has_more and a resumable cursor so no reachable node becomes unreachable through the default; A test asserts default-invocation output size for every graph subcommand against a real-scale fixture, so a future subcommand cannot ship unbounded; Unbounded traversal remains available through an explicit flag and is documented; The help text's 'bounded' claim is true of every subcommand it covers, asserted structurally"
@@ -19,9 +19,9 @@ impact: Makes typed-graph reachability answerable inside an agent's context budg
 parent: pm-96h7
 risk: low
 confidence: high
-resolution: Exported SDK graph bounds and enforced discoverable default row limits across all sixteen graph commands with explicit full restoration and cache invalidation
-expected_result: Default graph output remains bounded and discoverable before invocation without losing continuation or explicit full access
-actual_result: Thousand-item all-command acceptance passes; temporary CLI workspace returns ten rows plus continuation and full restores all rows; focused graph and linked tests pass
+resolution: Shared SDK graph defaults bound all graph command projections while preserving explicit full output and zero-row impact continuation
+expected_result: Default bounded pages and zero-row impact cursors remain resumable without weakening sibling positive limits
+actual_result: Real CLI zero-row regression fails before the fix and passes afterward; all 26 graph tests and 30 combined focused tests pass
 dependencies[9]:
   - id: pm-3dyec2
     kind: related
@@ -53,7 +53,7 @@ dependencies[9]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[12]:
+comments[14]:
   - created_at: "2026-07-30T10:27:24.832Z"
     author: "harness:codex"
     text: "Implementation evidence: graph impact defaults to 10 rows, returns resumable next_cursor pages, rejects unknown cursors and --full plus --limit, while --full explicitly restores the complete impact set."
@@ -91,6 +91,12 @@ comments[12]:
   - created_at: "2026-09-18T16:15:43.808Z"
     author: "harness:codex"
     text: "Latency baseline comparison: rebuilt untouched main 14d992008 in an isolated worktree under Node 24.12.0 and the same 20-sample unchanged transport gate. Baseline next best 460 ms exceeds 440 ms; candidate best 443 ms also exceeds 440 ms. This is not evidence of a candidate regression or a local pass. Keep the committed budget unchanged and require the hosted static gate before merge."
+  - created_at: "2026-09-18T16:33:16.030Z"
+    author: "harness:codex"
+    text: "PR 1276 review: shared positive-only parsing rejects the documented zero-row impact continuation. Reopen canonical item to add real CLI regression and preserve positive-only bounds for other graph commands."
+  - created_at: "2026-09-18T16:34:44.283Z"
+    author: "harness:codex"
+    text: "Review regression verified red-first: a real thousand-item CLI graph impact --limit 0 exited 2 before the correction. Impact now accepts zero and returns a resumable cursor; continuation returns ten rows. Positive-only sibling limits remain enforced. Graph runner and scale acceptance pass (26 tests), and all 30 graph/host focused tests pass."
 notes[1]{created_at,author,text}:
   "2026-07-30T09:21:20.690Z","harness:claude-code","Re-measured 2026-07-30 at HEAD, after PR 818 shipped bounded projections. Unchanged in kind and slightly worse in ratio: pm graph impact pm-doxj default = 223,214 B; the same call with --summary = 488 B, a 457x spread. The default still honours no row bound while sibling subcommands do. Bounded projections shipped somewhere else; this default was not among them."
 learnings[1]{created_at,author,text}:
@@ -146,7 +152,7 @@ test_runs[1]:
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Package-owned changelog for completed graph and MCP contract work
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project,"Impact bound,cursor,and full override"
-close_reason: Shared graph defaults and all-command scale acceptance implemented and verified; delivery proceeds through the consolidated PR
+close_reason: Shared bounds and review-discovered zero-row continuation corrected with real CLI regression evidence
 escape_class: production_defect
 gate_evidence:
   disposition: gate_added

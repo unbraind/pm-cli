@@ -35,6 +35,14 @@ describe("graph default bounds", () => {
         if ("critical_path" in result) expect(result.critical_path!.length).toBeLessThanOrEqual(10);
         await expect(runGraph(subcommand, root, ids[2], { full: true, limit: 1 }, { path: context.pmPath })).rejects.toThrow("accepts either --full or --limit, not both");
       }
+      const zero = context.runCli(["graph", "impact", ids[0]!, "--limit", "0", "--json"]);
+      expect(zero.status).toBe(0);
+      const zeroResult = JSON.parse(zero.stdout);
+      expect(zeroResult).toMatchObject({ count: 0, truncated: true, next_cursor: expect.any(String) });
+      const sdkZero = await runGraph("impact", ids[0], undefined, { limit: 0 }, { path: context.pmPath });
+      expect(sdkZero).toMatchObject({ count: 0, next_cursor: zeroResult.next_cursor });
+      const resumed = await runGraph("impact", ids[0], undefined, { after: zeroResult.next_cursor }, { path: context.pmPath });
+      expect(resumed).toMatchObject({ count: 10 });
       const first = await runGraph("descendants", ids[0], undefined, {}, { path: context.pmPath });
       expect(first).toMatchObject({ count: 10, truncated: true });
       const next = await runGraph("descendants", ids[0], undefined, { after: "next_cursor" in first ? first.next_cursor : undefined }, { path: context.pmPath });

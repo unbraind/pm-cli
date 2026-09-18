@@ -750,6 +750,7 @@ interface GraphInvocation {
 
 /** Resolve shared projection defaults once before executing or caching a graph query. */
 function parseGraphInvocation(
+  subcommand: GraphSubcommand,
   assembly: WorkspaceRelationshipAssembly,
   kinds: string[] | undefined,
   options: GraphCommandOptions,
@@ -758,7 +759,9 @@ function parseGraphInvocation(
     assembly,
     ...(kinds === undefined ? {} : { kinds }),
     maxDepth: parseMaxDepth(options.maxDepth),
-    limit: parsePositiveInteger(options.limit, "limit") ?? (options.full === true ? Number.MAX_SAFE_INTEGER : GRAPH_QUERY_DEFAULTS.rows),
+    limit: subcommand === "impact" && Number(options.limit) === 0
+      ? 0
+      : parsePositiveInteger(options.limit, "limit") ?? (options.full === true ? Number.MAX_SAFE_INTEGER : GRAPH_QUERY_DEFAULTS.rows),
     after: options.after?.trim() || undefined,
     direction: parseDirection(options.direction),
     maxPaths: parsePositiveInteger(options.maxPaths, "max-paths"),
@@ -1668,7 +1671,7 @@ export async function runGraph(
         relationshipRegistry,
       ),
   );
-  const invocation = parseGraphInvocation(lookup.assembly, kinds, options);
+  const invocation = parseGraphInvocation(subcommand, lookup.assembly, kinds, options);
   if (subcommand === "index") {
     return attachGraphProjection(
       await runGraphIndex(

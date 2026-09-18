@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- Isolate published MCP verification from the caller global skill catalog ([pm-prmt1y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-prmt1y.toon))
 - Declare and enforce shared default bounds across graph queries ([pm-mfy1ux](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mfy1ux.toon))
+- Isolate published MCP verification from the caller global skill catalog ([pm-prmt1y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-prmt1y.toon))
 - The --profile timer reports a fraction of real invocation latency and is documented nowhere, so every latency judgement built on it is calibrated against the wrong number ([pm-ag9nka](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ag9nka.toon))
 - Count successful provenance resolutions so historical health advisories can clear ([pm-4f1l7f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4f1l7f.toon))
 - Isolated release acceptance inherits npm allow-scripts through npm run ([pm-64qsbl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-64qsbl.toon))
