@@ -61,6 +61,7 @@ function renderFishRuntimeFieldFlagSpecs(
   return `${lines.join("\n")}\n`;
 }
 
+/** Emit a Fish status or type resolver with configurable cache lifetime and a literal fallback for unavailable helpers. */
 function renderFishDynamicChoiceResolver(
   kind: "status" | "type",
   command: "completion-statuses" | "completion-types",

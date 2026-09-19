@@ -127,10 +127,12 @@ import type { McpActionDispatchContext,McpActionHandler } from "./context.js";
 import { getOwnHandler,readRequiredString } from "./context.js";
 import { runMcpSchemaAction } from "./schema.js";
 
+/** Resolve a target argument with top-level transport arguments taking precedence over normalized options. */
 function readMcpTarget(ctx: McpActionDispatchContext): string | undefined {
   return readString(ctx.args, "target") ?? readString(ctx.options, "target");
 }
 
+/** Return the dispatch context item ID or require an ID from the selected mutation option record. */
 function requireMcpItemId(
   ctx: McpActionDispatchContext,
   source: Record<string, unknown> = ctx.options,
@@ -138,6 +140,7 @@ function requireMcpItemId(
   return ctx.id ?? readRequiredString(source, "id");
 }
 
+/** Apply list context projection and a compact default before invoking the SDK and attaching the applied query summary. */
 async function runMcpListAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
@@ -162,6 +165,7 @@ async function runMcpListAction(
   );
 }
 
+/** Require the search query, apply context projection and compact defaults, and return the SDK result with its query summary. */
 async function runMcpSearchAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
@@ -188,6 +192,7 @@ async function runMcpSearchAction(
   );
 }
 
+/** Run SDK item creation with normalized transport options and project the requested mutation receipt size. */
 async function runMcpCreateAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
@@ -205,6 +210,7 @@ async function runMcpCreateAction(
   );
 }
 
+/** Preserve top-level copy title and message fallbacks while applying shared mutation receipt projection. */
 async function runMcpCopyAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
@@ -236,6 +242,7 @@ async function runMcpCopyAction(
   );
 }
 
+/** Resolve the target item, invoke SDK update and project compact, full or ID-only mutation evidence. */
 async function runMcpUpdateAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
@@ -257,6 +264,7 @@ async function runMcpUpdateAction(
   );
 }
 
+/** Normalize annotation transport options and bound comment listings to twenty entries unless full history or a limit is requested. */
 function runMcpCommentsAction(ctx: McpActionDispatchContext): Promise<unknown> {
   const commentOptions = normalizeAnnotationTransportOptions(ctx.options);
   const isListing =
@@ -277,6 +285,7 @@ function runMcpCommentsAction(ctx: McpActionDispatchContext): Promise<unknown> {
   return runComments(requireMcpItemId(ctx), commentOptions, ctx.global);
 }
 
+/** Translate transport lookup options and paths into the SDK file provenance lookup request. */
 function runMcpFilesLookupAction(
   ctx: McpActionDispatchContext,
   paths: string[],
@@ -287,6 +296,7 @@ function runMcpFilesLookupAction(
   );
 }
 
+/** Route file requests to path lookup, item discovery or linked-file mutation according to the normalized options. */
 function runMcpFilesAction(ctx: McpActionDispatchContext): Promise<unknown> {
   const lookupPaths = readStringArray(ctx.options.lookupPath);
   if (lookupPaths && lookupPaths.length > 0) {
@@ -302,6 +312,7 @@ function runMcpFilesAction(ctx: McpActionDispatchContext): Promise<unknown> {
     : runFiles(fileId, withAddNoteOption(ctx.options), ctx.global);
 }
 
+/** Resolve telemetry subcommand and limit precedence before calling the shared SDK telemetry handler. */
 function runMcpTelemetryAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
@@ -316,6 +327,7 @@ function runMcpTelemetryAction(
   );
 }
 
+/** Default health output to a compact summary unless the caller explicitly chooses another detail level. */
 function runMcpHealthAction(ctx: McpActionDispatchContext): Promise<unknown> {
   const healthOptions: Record<string, unknown> = { ...ctx.options };
   if (
@@ -328,6 +340,7 @@ function runMcpHealthAction(ctx: McpActionDispatchContext): Promise<unknown> {
   return runHealth(ctx.global, healthOptions as never);
 }
 
+/** Resolve configuration scope, action and value precedence while preserving the policy-specific value transport contract. */
 function runMcpConfigAction(ctx: McpActionDispatchContext): Promise<unknown> {
   const configAction =
     readString(ctx.args, "configAction") ??
@@ -349,11 +362,13 @@ function runMcpConfigAction(ctx: McpActionDispatchContext): Promise<unknown> {
   );
 }
 
+/** Normalize activity projection options before invoking the SDK activity reader. */
 function runMcpActivityAction(ctx: McpActionDispatchContext): Promise<unknown> {
   const options = ctx.options as ActivityCommandOptions & { full?: unknown };
   return runActivity(normalizeActivityProjectionOptions(options), ctx.global);
 }
 
+/** Accept finite integers and integer strings with optional ordinal suffixes, rejecting other supplied numeric syntax. */
 function parseMcpIntegerPrefix(
   value: unknown,
   label: string,
@@ -378,6 +393,7 @@ function parseMcpIntegerPrefix(
   return undefined;
 }
 
+/** Resolve plan subcommand, item, step and reorder position before dispatching the shared plan workflow. */
 function runMcpPlanAction(ctx: McpActionDispatchContext): Promise<unknown> {
   const subcommand =
     readString(ctx.args, "subcommand") ??
@@ -401,6 +417,7 @@ function runMcpPlanAction(ctx: McpActionDispatchContext): Promise<unknown> {
   });
 }
 
+/** Prefer a string step reference from normalized options, then fall back to the top-level argument. */
 function readMcpPlanStepRef(ctx: McpActionDispatchContext): string | undefined {
   return typeof ctx.options.stepRef === "string"
     ? (ctx.options.stepRef as string)
@@ -409,6 +426,7 @@ function readMcpPlanStepRef(ctx: McpActionDispatchContext): string | undefined {
       : undefined;
 }
 
+/** Dispatch supported profile operations with normalized name and mutation options, rejecting unknown subcommands. */
 function runMcpProfileAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> | unknown {
@@ -446,6 +464,7 @@ function runMcpProfileAction(
   return handler();
 }
 
+/** Append item content through the SDK and preserve the requested mutation receipt projection. */
 async function runMcpAppendAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
@@ -467,6 +486,7 @@ async function runMcpAppendAction(
   );
 }
 
+/** Translate flat bulk-update options and project the resulting mutation evidence according to caller preferences. */
 async function runMcpUpdateManyAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
@@ -480,6 +500,7 @@ async function runMcpUpdateManyAction(
   );
 }
 
+/** Merge top-level closure reason and force defaults into bulk options before executing and projecting the close result. */
 async function runMcpCloseManyAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
@@ -504,6 +525,7 @@ async function runMcpCloseManyAction(
   );
 }
 
+/** Require the historical restore target and item ID, then apply shared mutation receipt projection to the SDK result. */
 async function runMcpRestoreAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
@@ -541,6 +563,7 @@ function runMcpGraphAction(ctx: McpActionDispatchContext): Promise<unknown> {
   );
 }
 
+/** Resolve the workspace tracker and delegate merged transport arguments to canonical history author acknowledgement. */
 function runMcpHistoryAuthorAcknowledgeAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {

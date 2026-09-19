@@ -23,6 +23,7 @@ import {
 /** Fallback extension priority used when callers do not provide an override. */
 export const DEFAULT_EXTENSION_PRIORITY = 100;
 
+/** Return a trimmed optional manifest value, undefined when absent, or null when its supplied shape is invalid. */
 function parseOptionalManifestString(
   candidate: Record<string, unknown>,
   field: string,
@@ -37,6 +38,7 @@ function parseOptionalManifestString(
   return value.trim();
 }
 
+/** Validate and normalize engine constraints; distinguish absent constraints from malformed records with undefined and null. */
 function parseManifestEngines(
   value: unknown,
 ): ExtensionManifestEngines | null | undefined {

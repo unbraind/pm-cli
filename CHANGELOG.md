@@ -8,6 +8,10 @@
 - Decompose CLI bootstrap, SDK dispatch, extension loading, and shell completion ([pm-yh8r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-yh8r.toon))
 - Decompose SDK search into query, retrieval, and response modules ([pm-jt3b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-jt3b.toon))
 
+### Fixed
+
+- Harden Bash completion literals and large-workspace search normalization ([pm-ul5lph](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ul5lph.toon))
+
 ### Other
 
 - Resolve validate duplicate issue-code GH-209 warning without changelog drag ([pm-pivf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-pivf.toon))

@@ -9,6 +9,7 @@ import { SCAFFOLD_CAPABILITIES } from "../extension/scaffold.js";
 import type { CompletionRuntimeConfig } from "./shared.js";
 import { ATTEST_INVOCATIONS,COMMAND_COMPLETION_DESCRIPTIONS,EXTENSION_LIFECYCLE_ACTIONS,GLOBAL_COMPLETION_INLINE_PATTERNS,GLOBAL_COMPLETION_SWITCH_PATTERNS,GLOBAL_COMPLETION_VALUE_PATTERNS,GUIDE_TOPIC_CHOICES,HIDDEN_COMMAND_ALIASES,NAMESPACE_NOUNS,PACKAGE_LIFECYCLE_ACTIONS,RESTORE_INVOCATIONS,SCHEMA_SUBCOMMAND_CHOICES,completionNamespaceLeaves,completionStatusValues,completionTypeValues,joinCompletionValues,normalizeRuntimeCompletionFlags,shellDoubleQuote } from "./shared.js";
 
+/** Render normalized runtime field flags as value-taking Zsh argument specifications, or no text when none exist. */
 function renderZshRuntimeFieldFlagSpecs(
   runtimeFlags: string[] | undefined,
 ): string {
@@ -19,6 +20,7 @@ function renderZshRuntimeFieldFlagSpecs(
   return `${normalized.map((flag) => `            '${flag}[Runtime schema field flag]:value' \\`).join("\n")}\n`;
 }
 
+/** Join Zsh argument specifications with explicit continuation control so adjacent command blocks remain syntactically separate. */
 function renderZshArgumentSpecs(
   specs: readonly string[],
   options: { readonly trailingContinuation?: boolean } = {},
@@ -40,6 +42,7 @@ function renderZshCommandDescriptions(): string {
   ).join("\n");
 }
 
+/** Render paired content-presence and missing-metadata flags using the command-specific prefixes and alias policy. */
 function renderZshPresenceFilterSpecs(options: {
   readonly missingPrefix: "" | "filter-";
   readonly pairedPrefix: "" | "filter-";
@@ -133,6 +136,7 @@ const ZSH_MUTATION_COLLECTION_ARGUMENT_SPECS = [
   "'--clear-type-options[Clear type options]'",
 ];
 
+/** Render shared scheduling option specifications for commands that accept reminder and event metadata. */
 function renderZshScheduleItemSpecs(kind: "reminder" | "event"): string {
   const leadingSpecs =
     kind === "reminder"
@@ -166,6 +170,7 @@ function renderZshScheduleItemSpecs(kind: "reminder" | "event"): string {
   );
 }
 
+/** Render the shared selection filters accepted by bulk mutation commands as Zsh argument specifications. */
 function renderZshBulkSelectionFilterSpecs(
   action: "applying updates" | "closing",
   statusChoices: string,
@@ -191,6 +196,7 @@ function renderZshBulkSelectionFilterSpecs(
   ]);
 }
 
+/** Emit a cached Zsh status or type resolver that falls back to the configured choices when live resolution is empty. */
 function renderZshDynamicChoiceResolver(
   kind: "status" | "type",
   command: "completion-statuses" | "completion-types",

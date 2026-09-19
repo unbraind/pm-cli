@@ -98,10 +98,12 @@ function extensionActivationCommands(extension: ExtensionDiscoveryResult["effect
   ];
 }
 
+/** Treat an absent registration collection as empty without copying an existing readonly collection. */
 function entriesOrEmpty<T>(entries: readonly T[] | undefined): readonly T[] {
   return entries ?? [];
 }
 
+/** Flatten declared command ownership so activation can select only packages relevant to an invocation. */
 function ownershipCommands(entries: readonly { commands: readonly string[] }[] | undefined): string[] {
   return entriesOrEmpty(entries).flatMap((entry) => entry.commands);
 }

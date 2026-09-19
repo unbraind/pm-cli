@@ -343,6 +343,7 @@ function joinCompletionValues(values: string[]): string {
     .join(" ");
 }
 
+/** Trim and deduplicate completion values while preserving their first-seen order in the emitted word list. */
 function joinCompletionValuesInOrder(values: string[]): string {
   return [
     ...new Set(

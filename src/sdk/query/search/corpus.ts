@@ -74,6 +74,7 @@ interface LinkedCorpusRoots {
   globalContainmentRoot: ContainmentRoot | null;
 }
 
+/** Resolve both lexical and real filesystem roots for linked-content containment, returning null if the root cannot be resolved. */
 async function resolveContainmentRoot(
   root: string,
 ): Promise<ContainmentRoot | null> {

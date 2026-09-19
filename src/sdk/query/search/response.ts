@@ -270,6 +270,7 @@ function compactModeSource(
   return source === "settings" ? { mode_source: source } : {};
 }
 
+/** Attach collected search warnings to a result only when warnings exist, preserving the warning-free envelope. */
 function withSearchWarnings(
   result: SearchResult,
   warnings: string[],

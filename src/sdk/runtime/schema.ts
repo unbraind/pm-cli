@@ -40,6 +40,7 @@ interface McpSchemaContext {
   aliases: string[] | undefined;
 }
 
+/** Normalize schema subcommand, name, author, force and aliases once for all schema action handlers. */
 function createMcpSchemaContext(
   ctx: McpActionDispatchContext,
 ): McpSchemaContext {
@@ -58,6 +59,7 @@ function createMcpSchemaContext(
   };
 }
 
+/** Dispatch schema inspection, removal and preset operations, returning null when a specialized handler is needed. */
 function runMcpSchemaReadOrRemoveAction(
   schema: McpSchemaContext,
 ): Promise<unknown> | unknown | null {
@@ -86,6 +88,7 @@ function runMcpSchemaReadOrRemoveAction(
   return handler ? handler() : null;
 }
 
+/** Translate transport field declarations, requirement policies and aliases into the SDK schema field creation contract. */
 function runMcpSchemaAddFieldAction(
   schema: McpSchemaContext,
 ): Promise<unknown> {
@@ -127,6 +130,7 @@ function runMcpSchemaAddFieldAction(
   );
 }
 
+/** Resolve status roles, aliases and strict integer ordering before invoking the schema status mutation. */
 function runMcpSchemaAddStatusAction(
   schema: McpSchemaContext,
 ): Promise<unknown> {
@@ -151,6 +155,7 @@ function runMcpSchemaAddStatusAction(
   );
 }
 
+/** Resolve item type metadata and both default-status spellings before invoking the schema type mutation. */
 function runMcpSchemaAddTypeAction(schema: McpSchemaContext): Promise<unknown> {
   const { ctx, name, author, force, aliases } = schema;
   return runSchemaAddType(
@@ -174,6 +179,7 @@ function runMcpSchemaAddTypeAction(schema: McpSchemaContext): Promise<unknown> {
   );
 }
 
+/** Construct the requested type, field or status migration with dry-run, scope and migration identity options. */
 function runMcpSchemaMigrationAction(
   schema: McpSchemaContext,
 ): Promise<SchemaEvolutionMigrationResult> {

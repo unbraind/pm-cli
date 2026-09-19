@@ -267,6 +267,7 @@ interface SearchScoreState {
   matchedTokens: Set<string>;
 }
 
+/** Resolve the canonical searchable fields and their tuning weights, then append the optional linked-content corpus. */
 function buildSearchableScoringFields(
   document: ItemDocument,
   linkedCorpus: string,
@@ -286,6 +287,7 @@ function buildSearchableScoringFields(
   ];
 }
 
+/** Recognize a normalized full or prefix-free item ID and assign the dedicated exact-match relevance score. */
 function buildExactIdSearchHit(
   item: ItemMetadata,
   normalizedQuery: string,
@@ -318,6 +320,7 @@ function buildExactIdSearchHit(
   };
 }
 
+/** Accumulate weighted token occurrences and record matched fields and distinct query terms in the scoring state. */
 function scoreTokenMatches(
   tokens: string[],
   titleTokenCounts: Map<string, number>,
@@ -343,6 +346,7 @@ function scoreTokenMatches(
   }
 }
 
+/** Apply exact-title and repeated phrase bonuses to the same fields used by token scoring. */
 function scorePhraseMatches(
   item: ItemMetadata,
   normalizedQuery: string,
@@ -482,9 +486,12 @@ function normalizeScoreMap(
   if (scoreById.size === 0) {
     return new Map();
   }
-  const values = [...scoreById.values()];
-  const minScore = Math.min(...values);
-  const maxScore = Math.max(...values);
+  let minScore = Number.POSITIVE_INFINITY;
+  let maxScore = Number.NEGATIVE_INFINITY;
+  for (const score of scoreById.values()) {
+    minScore = Math.min(minScore, score);
+    maxScore = Math.max(maxScore, score);
+  }
   if (maxScore === minScore) {
     return new Map([...scoreById.keys()].map((id) => [id, 1]));
   }

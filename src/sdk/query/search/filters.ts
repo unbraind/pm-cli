@@ -173,6 +173,7 @@ interface SearchMetadataFilterSet {
   contentFiltersActive: boolean;
 }
 
+/** Reject the unsupported none/null assignee sentinel values instead of treating them as literal owners. */
 function assertSearchAssigneeFilter(assigneeFilter: Set<string> | undefined): void {
   // Match pm list: --assignee no longer accepts none/null (unassigned filtering
   // belongs to a dedicated flag there; pm search has no presence flag so reject
@@ -190,6 +191,7 @@ function assertSearchAssigneeFilter(assigneeFilter: Set<string> | undefined): vo
   }
 }
 
+/** Parse type, tag, priority, ownership, time and governance selectors into the shared search predicate set. */
 function resolveSearchMetadataFilterSet(
   options: SearchOptions,
   typeRegistry: ItemTypeRegistry,
@@ -240,6 +242,7 @@ function resolveSearchMetadataFilterSet(
   };
 }
 
+/** Combine identity, timestamp and ownership predicates to filter items before scoring. */
 function matchesScalarSearchFilters(
   item: ItemMetadata,
   filters: SearchMetadataFilterSet,
@@ -251,6 +254,7 @@ function matchesScalarSearchFilters(
   );
 }
 
+/** Apply status, type, tag and priority constraints from the resolved search filter set. */
 function matchesIdentitySearchFilters(
   item: ItemMetadata,
   filters: SearchMetadataFilterSet,
@@ -269,6 +273,7 @@ function matchesIdentitySearchFilters(
 }
 
 
+/** Apply assignee, sprint, release and parent constraints without changing relevance scores. */
 function matchesOwnerSearchFilters(
   item: ItemMetadata,
   filters: SearchMetadataFilterSet,
@@ -298,6 +303,7 @@ function matchesOwnerSearchFilters(
   return true;
 }
 
+/** Combine scalar, identity, ownership, timestamp and governance predicates to decide corpus membership. */
 function matchesSearchMetadataFilters(
   document: ItemDocument,
   filters: SearchMetadataFilterSet,

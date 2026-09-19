@@ -50,6 +50,7 @@ const FLAG_DEFINITION_KEYS = new Set([
   "visible",
 ]);
 
+/** Normalize registration records and expand the repeatable alias into the canonical list flag property. */
 function normalizeFlagDefinitions(
   name: string,
   value: unknown,
@@ -62,6 +63,7 @@ function normalizeFlagDefinitions(
   });
 }
 
+/** Canonicalize an explicit action name to a lowercase dashed token before checking that it is nonempty. */
 function normalizeCommandActionName(value: string): string {
   return value
     .trim()
@@ -72,6 +74,7 @@ function normalizeCommandActionName(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+/** Derive an action from the command path or reject an invalid explicit action before registration. */
 function resolveCommandDefinitionAction(
   commandPath: string,
   action: unknown,
@@ -93,6 +96,7 @@ function resolveCommandDefinitionAction(
   return normalized;
 }
 
+/** Validate positional argument records and enforce that at most one variadic argument appears last. */
 function normalizeCommandDefinitionArguments(
   value: unknown,
 ): ExtensionCommandArgumentDefinition[] {
@@ -166,6 +170,7 @@ function normalizeCommandDefinitionArguments(
   return normalized;
 }
 
+/** Reject unknown flag properties, invalid tokens, inconsistent repeatability and defaults incompatible with the declared value type. */
 function validateFlagDefinitions(flags: unknown): void {
   if (!Array.isArray(flags)) {
     throw new TypeError(
@@ -294,6 +299,7 @@ function assertFlagValueTypeAndDefault(
   }
 }
 
+/** Validate custom field names and types, including typo guidance, before fields enter the runtime schema. */
 function validateItemFieldDefinitions(fields: unknown): void {
   if (!Array.isArray(fields)) {
     throw new TypeError(
@@ -370,6 +376,7 @@ function validateItemTypeOptions(typeIndex: number, value: unknown): void {
   }
 }
 
+/** Check custom item type metadata, creation requirements and command option policies before registration. */
 function validateItemTypeDefinitions(types: unknown): void {
   if (!Array.isArray(types)) {
     throw new TypeError(
@@ -398,6 +405,7 @@ function validateItemTypeDefinitions(types: unknown): void {
   }
 }
 
+/** Validate optional migration metadata and ensure a supplied migration runner is callable. */
 function validateMigrationDefinition(definition: unknown): void {
   const record = asRegistrationRecord(
     "registerMigration definition",
@@ -495,6 +503,7 @@ const PROJECT_PROFILE_ENTRY_VALIDATORS: Partial<
   },
 };
 
+/** Reject malformed profile dimensions and entries before downstream planners dereference their schema properties. */
 function validateProjectProfileDefinition(profile: unknown): void {
   const record = asRegistrationRecord("registerProfile profile", profile);
   assertNonEmptyRegistrationString("registerProfile profile.name", record.name);

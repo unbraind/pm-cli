@@ -8,6 +8,7 @@ import {
 import type { CompletionRuntimeConfig } from "./shared.js";
 import { AGGREGATE_FLAGS,ALL_COMMANDS,APPEND_FLAGS,CALENDAR_FLAGS,CLAIM_MUTATION_FLAGS,CLOSE_MANY_FLAGS,CLOSE_MUTATION_FLAGS,CLOSE_TASK_MUTATION_FLAGS,COMPLETION_SHELL_CHOICES,CONTEXT_FLAGS,CONTRACTS_FLAGS,COPY_FLAGS,CREATE_FLAGS,DELETE_MUTATION_FLAGS,DEPS_FLAGS,DUPLICATES_FLAGS,EVENTS_FLAGS,EXTENSION_LIFECYCLE_ACTIONS,EXTENSION_LIFECYCLE_FLAGS,FOCUS_FLAGS,GET_FLAGS,GLOBAL_COMPLETION_INLINE_PATTERNS,GLOBAL_COMPLETION_SWITCH_PATTERNS,GLOBAL_COMPLETION_VALUE_PATTERNS,GLOBAL_FLAGS,GRAPH_FLAGS,GUIDE_FLAGS,GUIDE_TOPIC_CHOICES,HEALTH_FLAGS,HISTORY_AUTHOR_ACKNOWLEDGE_FLAGS,HISTORY_FLAGS,HISTORY_LEAVES,HISTORY_OPERATION_FLAGS,INIT_FLAGS,LIST_FLAGS,MEET_FLAGS,MUTATION_FLAGS,NAMESPACE_NOUNS,NAMESPACE_PREFIXES,NEXT_FLAGS,PACKAGE_LIFECYCLE_ACTIONS,PACKAGE_LIFECYCLE_FLAGS,PLAN_FLAGS,PLAN_SUBCOMMANDS_LIST,RELEASE_MUTATION_FLAGS,REMIND_FLAGS,SCHEMA_SUBCOMMAND_CHOICES,SEARCH_FLAGS,STATS_FLAGS,UPDATE_FLAGS,UPDATE_MANY_FLAGS,UPGRADE_FLAGS,completionNamespaceLeaves,completionStatusValues,completionTypeValues,joinCompletionValues,mergeFlagStrings,shellDoubleQuote } from "./shared.js";
 
+/** Emit a TTL-cached Bash status or type resolver with a source-escaped fallback when the helper returns no choices. */
 function renderBashDynamicChoiceResolver(
   kind: "status" | "type",
   command: "completion-statuses" | "completion-types",
@@ -81,7 +82,7 @@ export function generateBashScript(
   // Note: "${...}" inside regular (non-template) strings are literal characters,
   // not JS interpolation. Only backtick template literals interpolate ${...}.
   const compgen = (flags: string): string =>
-    `$(compgen -W "${flags}" -- "$cur")`;
+    `$(compgen -W "${shellDoubleQuote(flags.replace(/([^a-zA-Z0-9_:./\s-])/g, "\\$1"))}" -- "$cur")`;
   return [
     "# bash completion for pm",
     "# Source this file or add 'eval \"$(pm completion bash)\"' to ~/.bashrc",
@@ -102,6 +103,16 @@ export function generateBashScript(
       statusValues,
     ),
     "",
+    "# Quote each word before compgen performs its own shell expansion.",
+    "_pm_completion_wordlist() {",
+    "  local line",
+    "  local -a values",
+    "  while IFS= read -r line; do",
+    "    read -r -a values <<< \"$line\"",
+    "    printf '%q ' \"${values[@]}\"",
+    "  done <<< \"$1\"",
+    "}",
+    "",
     "_pm_completion() {",
     "  local cur prev words cword",
     "  _init_completion 2>/dev/null || {",
@@ -117,13 +128,13 @@ export function generateBashScript(
     "",
     '  if [[ "$prev" == "--type" ]]; then',
     useDynamicTypeExpansion
-      ? '    COMPREPLY=($(compgen -W "$(_pm_completion_type_choices)" -- "$cur"))'
+      ? '    COMPREPLY=($(compgen -W "$(_pm_completion_wordlist "$(_pm_completion_type_choices)")" -- "$cur"))'
       : `    COMPREPLY=(${compgen(typeValues)})`,
     "    return 0",
     "  fi",
     "",
     '  if [[ "$prev" == "--status" ]]; then',
-    '    COMPREPLY=($(compgen -W "$(_pm_completion_status_choices)" -- "$cur"))',
+    '    COMPREPLY=($(compgen -W "$(_pm_completion_wordlist "$(_pm_completion_status_choices)")" -- "$cur"))',
     "    return 0",
     "  fi",
     "",
@@ -146,7 +157,7 @@ export function generateBashScript(
           '      PM_COMPLETION_TAG_CACHE="$tag_values"',
           '      PM_COMPLETION_TAG_CACHE_TS="$now"',
           "    fi",
-          '    COMPREPLY=($(compgen -W "$tag_values" -- "$cur"))',
+          '    COMPREPLY=($(compgen -W "$(_pm_completion_wordlist "$tag_values")" -- "$cur"))',
           "    return 0",
           "  fi",
         ]),

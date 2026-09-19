@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: code-quality,deepsource,documentation,quality
 created_at: "2026-07-14T22:42:24.715Z"
-updated_at: "2026-09-17T18:44:29.489Z"
+updated_at: "2026-09-19T18:08:52.654Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Documentation rules reconciled with the repo's own docstring gate (quality:docs-skills + docstring coverage): rules duplicating the gate's scope get suppressed with rationale; genuinely missing public-surface docs get written; category reads 0"
@@ -14,7 +14,7 @@ parent: pm-vlnc
 risk: low
 confidence: medium
 expected_result: DeepSource documentation rules are reconciled with the repository docstring gate and the category reads zero.
-dependencies[6]:
+dependencies[8]:
   - id: pm-87bu
     kind: blocked_by
     created_at: "2026-07-14T22:42:24.715Z"
@@ -39,20 +39,73 @@ dependencies[6]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[2]{created_at,author,text}:
+  - id: pm-jt3b
+    kind: discovered_from
+    created_at: "2026-09-19T17:45:28.801Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-yh8r
+    kind: discovered_from
+    created_at: "2026-09-19T17:45:28.801Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[6]{created_at,author,text}:
   "2026-09-17T18:42:49.007Z","harness:codex","PR 1263 final runtime head b56131ff2 passed 37 hosted checks and full CodeRabbit review with no actionable findings. Its touched-function docstring metric is 92.31%, whereas the repository gate measures module/public API/data-contract coverage. The missing touched private function is collectMutationGuardWarnings. Current user policy requires documenting it as well; no suppression or threshold reduction will be added. This is partial progress under the existing documentation reconciliation owner, not completion of the broader DeepSource category."
   "2026-09-17T18:44:28.161Z","harness:codex","Documented the private MCP helper with its workspace-policy, routing-path, redacted-advisory and blocking-failure contract. Build, ESLint and linked static-quality test pass. Module, exported and public-member documentation gates each report 100% with no missing entries. TypeScript transpilation with comments removed is byte-identical before and after, so runtime behavior and the verified 8972-test coverage result are unchanged. Broader private-helper documentation and DeepSource rule reconciliation remain open; this is not a claim of repo-wide private-function coverage. Final provider availability: Cubic monthly quota exhausted; Sourcery weekly quota exhausted; Greptile silent; CodeRabbit full runtime-head review completed with no actionable findings."
-files[1]{path,scope,note}:
+  "2026-09-19T17:45:28.244Z","harness:codex","PR 1279 CodeRabbit reports 63.29 percent touched-function documentation across 237 functions. The required repository gate measures modules, exported APIs and public members and passes 100 percent; these are different scopes. AST inspection confirms remaining private helpers in the extracted and original orchestrators lack JSDoc. This remains canonical documentation reconciliation work, not a claim of repo-wide private-function completeness. The behavior refactor did not remove existing documentation."
+  "2026-09-19T17:53:13.997Z","harness:codex","Documented all 74 previously undocumented top-level function declarations across 15 newly extracted modules. Comments explain precedence, validation failures, fallback behavior, mutation receipt projection and shell expansion boundaries. TypeScript transpilation with comments removed is byte-identical before and after. The broader original-orchestrator/private-helper and external category reconciliation remains open."
+  "2026-09-19T17:56:29.037Z","harness:codex","AST documentation census: all 207 top-level function declarations in the newly extracted modules now have JSDoc. No docstring metric thresholds or analyzer exclusions changed. The original entrypoints and broader repository reconciliation retain their existing open scope."
+  "2026-09-19T18:08:51.178Z","harness:codex","Current-branch linked static-quality verification passed, including module/export/public-member docstring gates and directory-load limits. The old linked command was safely refused for foreign source provenance; it was removed and re-added through PM with this branch identity, without a trust override. Returning broader reconciliation to open because this delivery documents extracted helpers only."
+files[16]{path,scope,note}:
+  src/cli/runtime/activation.ts,project,Document private helper contracts after domain extraction
+  src/cli/runtime/invocation-options.ts,project,Document private helper contracts after domain extraction
+  src/core/extensions/manifest-parser.ts,project,Document private helper contracts after domain extraction
+  src/core/extensions/registration-contracts.ts,project,Document private helper contracts after domain extraction
   src/mcp/server.ts,project,Document private MCP pre-dispatch mutation guard semantics
+  src/sdk/completion/bash.ts,project,Document private helper contracts after domain extraction
+  src/sdk/completion/fish.ts,project,Document private helper contracts after domain extraction
+  src/sdk/completion/shared.ts,project,Document private helper contracts after domain extraction
+  src/sdk/completion/zsh.ts,project,Document private helper contracts after domain extraction
+  src/sdk/query/search/corpus.ts,project,Document private helper contracts after domain extraction
+  src/sdk/query/search/filters.ts,project,Document private helper contracts after domain extraction
+  src/sdk/query/search/lexical.ts,project,Document private helper contracts after domain extraction
+  src/sdk/query/search/response.ts,project,Document private helper contracts after domain extraction
+  src/sdk/query/search/semantic.ts,project,Document private helper contracts after domain extraction
+  src/sdk/runtime/actions.ts,project,Document private helper contracts after domain extraction
+  src/sdk/runtime/schema.ts,project,Document private helper contracts after domain extraction
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/release/static-quality-gate.mts --json,project,120,"harness:codex","2026-09-17T18:43:40.934Z",local_mutation,fix/shared-secret-policy-safe-paths
-test_runs[1]:
+  node scripts/release/static-quality-gate.mts --json,project,240,"harness:codex","2026-09-19T18:07:15.015Z",local_mutation,refactor/search-query-cli-domains
+test_runs[3]:
   - run_id: test-local-mu5votm0-uks1l8
     kind: test
     status: passed
     started_at: "2026-09-17T18:43:41.544Z"
     finished_at: "2026-09-17T18:43:57.288Z"
     recorded_at: "2026-09-17T18:43:57.288Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/static-quality-gate.mts --json,schema,schema,source,local_source_ref
+  - run_id: test-local-mu8p7f30-hw8vyx
+    kind: test
+    status: failed
+    started_at: "2026-09-19T18:05:45.980Z"
+    finished_at: "2026-09-19T18:05:46.139Z"
+    recorded_at: "2026-09-19T18:05:46.139Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/static-quality-gate.mts --json,schema,schema,source,foreign_source_ref
+  - run_id: test-local-mu8p9qyr-d70jxa
+    kind: test
+    status: passed
+    started_at: "2026-09-19T18:07:15.872Z"
+    finished_at: "2026-09-19T18:07:34.851Z"
+    recorded_at: "2026-09-19T18:07:34.851Z"
     passed: 1
     failed: 0
     skipped: 0

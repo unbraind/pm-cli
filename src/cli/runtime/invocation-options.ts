@@ -214,6 +214,7 @@ function dynamicCommandArguments(descriptor: ExtensionCommandHelpDescriptor): Ex
   return descriptor.arguments ?? [];
 }
 
+/** Render required, optional and variadic arguments in the usage string for an extension command. */
 function formatDynamicCommandUsage(descriptor: ExtensionCommandHelpDescriptor): string {
   const argumentSuffix = dynamicCommandArguments(descriptor)
     .map((argument) => {
@@ -263,6 +264,7 @@ function validateDynamicExtensionCommandArgs(descriptor: ExtensionCommandHelpDes
   }
 }
 
+/** Convert a parsed option key to its canonical dashed flag spelling for actionable usage errors. */
 function formatDynamicOptionFlag(optionKey: string): string {
   return `--${optionKey
     .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
@@ -270,6 +272,7 @@ function formatDynamicOptionFlag(optionKey: string): string {
     .toLowerCase()}`;
 }
 
+/** Validate declared extension flags and reject all supplied options when a command declares no flags. */
 function validateDynamicExtensionCommandOptions(
   descriptor: ExtensionCommandHelpDescriptor,
   options: Record<string, unknown>,

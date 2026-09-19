@@ -551,6 +551,7 @@ function buildSemanticHits(
 // guarantee holds no matter what scale the backend returns, and the hit is
 // re-inserted even if it was dropped from `rankedHits` (e.g. it had no semantic
 // vector match) so it is never lost to the threshold or the result-limit slice.
+/** Promote full and short ID matches above all other hits while retaining their relative exact-match priority. */
 function forceExactIdHitsToTop(
   rankedHits: SearchHit[],
   keywordHits: SearchHit[],
@@ -797,6 +798,7 @@ function buildRerankCorpus(document: ItemDocument): string {
     .join("\n");
 }
 
+/** Merge deterministic and extension query expansions within the configured budget, falling back with warnings on provider failure. */
 async function resolveExpandedSemanticQueries(
   context: SemanticQueryContext,
   queryTrimmed: string,
@@ -845,6 +847,7 @@ async function resolveExpandedSemanticQueries(
   return expandedQueries;
 }
 
+/** Query the selected extension vector adapter with built-in fallback, or fail explicitly when no usable store exists. */
 async function executeSemanticVectorQuery(
   context: SemanticQueryContext,
   semanticVector: number[],
@@ -892,6 +895,7 @@ async function executeSemanticVectorQuery(
   );
 }
 
+/** Select the highest-ranked candidates up to the rerank limit and associate each with its searchable document text. */
 function buildRerankCandidateContexts(
   hybridHits: SearchHit[],
   filteredById: Map<string, ItemDocument>,
@@ -914,6 +918,7 @@ function buildRerankCandidateContexts(
     );
 }
 
+/** Invoke an extension reranker and normalize its scores while converting provider failures into search warnings. */
 async function resolveExtensionRerankScores(
   context: SemanticQueryContext,
   queryTrimmed: string,
@@ -953,6 +958,7 @@ async function resolveExtensionRerankScores(
   }
 }
 
+/** Resolve reranking through the configured extension or built-in provider and preserve graceful fallback behavior. */
 async function resolveRerankScores(
   context: SemanticQueryContext,
   queryTrimmed: string,
@@ -986,6 +992,7 @@ async function resolveRerankScores(
   }
 }
 
+/** Apply available rerank scores and deterministically order reranked hits before candidates without replacement scores. */
 function applyRerankScores(
   hybridHits: SearchHit[],
   rerankScores: Map<string, number>,
@@ -1020,6 +1027,7 @@ function applyRerankScores(
   return rerankedHits;
 }
 
+/** Rerank eligible hybrid candidates when enabled and retain the original hits when no usable scores are returned. */
 async function applyHybridRerank(
   context: SemanticQueryContext,
   queryTrimmed: string,

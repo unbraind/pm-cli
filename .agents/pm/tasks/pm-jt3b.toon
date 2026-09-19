@@ -1,17 +1,17 @@
 id: pm-jt3b
 title: "Decompose SDK search into query, retrieval, and response modules"
-description: "2026-07-04 code-quality sweep: src/cli/commands/search.ts is 3119 LOC vs the 3400 static-gate cap — one feature-add from failing the gate — and contains 4 sub-threshold jscpd clones internally (plus a cross-file clone with list.ts:489). Split along rendering vs query-parsing vs inline field:value syntax boundaries (the two parse layers from PR#290) to pay down both LOC and duplication."
+description: "Decompose SDK-owned search orchestration into query input, filters, lexical scoring, corpus loading, semantic retrieval and response projection. Earlier CLI rendering extraction is complete; remaining ownership follows the SDK-first architecture."
 type: Task
 status: closed
 priority: 2
 tags[2]: "area:quality",refactor
 created_at: "2026-07-04T08:32:10.019Z"
-updated_at: "2026-09-19T17:10:32.450Z"
+updated_at: "2026-09-19T17:44:36.522Z"
 closed_at: "2026-09-19T17:10:31.626Z"
 completed_at: "2026-09-19T17:10:31.626Z"
 author: maintainer-agent
 estimated_minutes: 180
-acceptance_criteria: "search.ts split into rendering, query-parsing, and inline-field modules each under the LOC cap; coverage stays at 100 and search output byte-identical on golden queries."
+acceptance_criteria: SDK search orchestrator and domain modules below 1500 physical lines; public SDK exports and search envelopes preserved; zero-clone gates and exact full coverage pass
 parent: pm-92if
 risk: low
 confidence: high
@@ -72,4 +72,4 @@ docs[2]{path,scope,note}:
   CHANGELOG.md,project,Package-generated release entry from reviewed item closure
   docs/ARCHITECTURE.md,project,Module responsibilities and dependency direction
 close_reason: SDK search domain decomposition verified by complete golden parity and exact coverage
-body: "## Context\n2026-07-04 code-quality sweep: src/cli/commands/search.ts is 3119 LOC against the 3400 static-gate LOC cap — one feature away from failing the gate — and carries 4 internal jscpd clones plus a cross-file clone with list.ts:489.\n\n## Approach\nSplit along the natural boundaries that already exist in the file: (1) result rendering, (2) query parsing, (3) inline field:value syntax (the second parse layer from PR#290 — keep the two layers' order intact). Follow the established split playbook (PR#396 cli-contracts, 2026-05-25 all-src <2000 LOC pass): extract modules at the same call position, keep the command's public surface byte-identical, and update vitest.config.ts excludes/mirrored test paths if files move.\n\n## Definition of done\nsearch.ts well under the cap (~≤1500 LOC per module); internal clones gone (jscpd clean at current minTokens); search output byte-identical on a golden query set; coverage gate still 100%."
+body: "## Current scope\nSearch behavior resides in src/sdk/query/search.ts behind the thin CLI adapter. Split input parsing, inline filters, lexical scoring/highlights, linked and semantic corpus retrieval, and response projection while preserving query precedence and public contracts.\n\n## Historical lineage\nThe July CLI rendering and timestamp-predicate extraction was partial delivery. Append-only comments and history retain that original scope; September finishes the remaining decomposition where behavior now lives in the SDK.\n\n## Definition of done\nEach search module is below 1500 physical lines. Complete fixed-time golden envelopes remain byte-identical. Required zero-clone, SDK contract and exact 100/100/100/100 coverage gates pass."
