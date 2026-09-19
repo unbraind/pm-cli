@@ -1,31 +1,75 @@
 id: pm-jt3b
-title: "Split search.ts (3119 LOC, 92% of 3400 cap) into rendering / query-parsing / inline-field modules"
+title: "Decompose SDK search into query, retrieval, and response modules"
 description: "2026-07-04 code-quality sweep: src/cli/commands/search.ts is 3119 LOC vs the 3400 static-gate cap — one feature-add from failing the gate — and contains 4 sub-threshold jscpd clones internally (plus a cross-file clone with list.ts:489). Split along rendering vs query-parsing vs inline field:value syntax boundaries (the two parse layers from PR#290) to pay down both LOC and duplication."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[2]: "area:quality",refactor
 created_at: "2026-07-04T08:32:10.019Z"
-updated_at: "2026-09-08T13:33:08.813Z"
+updated_at: "2026-09-19T17:10:32.450Z"
+closed_at: "2026-09-19T17:10:31.626Z"
+completed_at: "2026-09-19T17:10:31.626Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "search.ts split into rendering, query-parsing, and inline-field modules each under the LOC cap; coverage stays at 100 and search output byte-identical on golden queries."
 parent: pm-92if
 risk: low
 confidence: high
-expected_result: "search.ts is split into rendering, query-parsing and inline-field modules each under the LOC cap with byte-identical golden output."
+resolution: "Split SDK search into input, filters, corpus, lexical, semantic, response and shared types while preserving public exports and CLI delegation"
+expected_result: Search modules below 1500 lines with unchanged query behavior and exact full coverage
+actual_result: Largest search module 1151 physical lines; orchestrator 697 effective lines; ten byte-identical golden configurations; 9057 tests and exact 100/100/100/100 coverage pass
 dependencies[5]{id,kind,created_at}:
   pm-yh8r,related,"2026-07-16T05:45:18.323Z"
   pm-kb5h,related,"2026-07-24T23:53:57.499Z"
   pm-usfg,related,"2026-07-24T23:53:57.499Z"
   pm-ydp6,related,"2026-07-24T23:53:57.499Z"
   pm-92if,implements,"2026-07-26T05:55:16.897Z"
-comments[2]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-10T23:16:46.855Z",codex-gpt5,"Implementation evidence: search rendering extraction remains in the broad docstring bundle; shared list/search timestamp predicates removed the final cross-command clone without changing filter semantics. pnpm typecheck, pnpm lint (0 clones), and focused search/list regression suites passed."
   "2026-07-11T00:02:35.336Z",codex-gpt5,"Scope boundary: this PR extracted search rendering and shared list/search timestamp filtering, reducing duplication to zero, but query-parsing and inline-field extraction remain outstanding and the acceptance target of <=1500 LOC per module is not yet met. Returning the item to open so only actively worked items remain in_progress."
-notes[2]{created_at,author,text}:
+  "2026-09-19T16:29:59.265Z","harness:codex","Implementation evidence: original files fully inspected before extraction. Public compatibility exports and test hooks retained; no cap or coverage threshold raised. Search and CLI focused baseline 272 tests passed before and after extraction. Infrastructure now additionally separates native SDK action dispatch/schema, manifest parsing/registration validation, and all three completion renderers. Full quality and coverage validation in progress."
+  "2026-09-19T17:01:12.443Z","harness:codex","Linked verification passed for both registered search/list and BM25/default-mode/relevance suites. Full temporary-project acceptance completed 17 steps including init, package activation, create/claim, comments/notes/files, exact-ID/count/highlighted linked-content searches, three shell completions, structured close/release and history/resolution validation. Search and all infrastructure ownership modules remain below their item acceptance caps."
+  "2026-09-19T17:10:28.068Z","harness:codex","Final coverage: 9057 tests across 717 files pass; statements 64759/64759, branches 49447/49447, functions 13457/13457, lines 61969/61969. Exact zero-uncovered gate passes 100/100/100/100. Search orchestration is 697 effective lines; largest search module is 1151 physical lines. Ten fixed-time golden result envelopes are byte-identical; linked search/list/relevance tests pass. Implementation closure is prepared on the review branch; hosted checks and merge remain delivery follow-up."
+notes[3]{created_at,author,text}:
   "2026-07-11T02:51:12.677Z",maintainer-agent,"Scope update after PR#506 (2026-07-11): the rendering slice is PARTIALLY done — search-rendering.ts extracted (137 lines) but search.ts is now 3740 physical / ~3330 effective lines (the static gate now counts only non-empty non-comment lines, changed in PR#506 to avoid penalizing docstrings — title's \"3119/3400\" numbers predate both changes). Effective count sits at ~98% of the 3400 cap, so this file is still one feature away from failing the gate. Remaining scope per PR#506 tracker note: query-parser + inline-field decomposition (keep the two parse layers' order from PR#290 intact). Suggested order: (1) inline field:value layer out first — it is the most self-contained and owns the list.ts:489 cross-file clone site; (2) query parser; (3) sweep remaining render helpers into search-rendering.ts."
   "2026-07-13T09:49:55.267Z",maintainer-agent,"Scope refresh 2026-07-13 (review pass #78): search.ts is now 3359 gate-normalized LOC (98.8% of the 3400 cap) — grown from the 3119 (92%) in this item's title. ~40 lines of headroom; any non-trivial search feature lands over the cap. Split urgency now on par with main.ts (see pm-yh8r census note of same date)."
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/search-command.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/commands/list-sort-branches.spec.ts,project,300
+  "2026-09-19T16:46:02.483Z","harness:codex","September architecture decision: CLI search was already a thin SDK adapter, so complete the historical decomposition in SDK query ownership. Keep parsing order and explicit-option precedence in input/filters, lexical scoring/highlights in lexical, linked/vector corpus work in corpus/semantic, and projections in response. Preserve public search exports and test seams. Ten fixed-time complete JSON golden configurations matched the original byte for byte; no consumer migration is required."
+files[8]{path,scope,note}:
+  src/sdk/query/search.ts,project,Behavior-preserving domain decomposition
+  src/sdk/query/search/corpus.ts,project,Behavior-preserving domain decomposition
+  src/sdk/query/search/filters.ts,project,Behavior-preserving domain decomposition
+  src/sdk/query/search/input.ts,project,Behavior-preserving domain decomposition
+  src/sdk/query/search/lexical.ts,project,Behavior-preserving domain decomposition
+  src/sdk/query/search/response.ts,project,Behavior-preserving domain decomposition
+  src/sdk/query/search/semantic.ts,project,Behavior-preserving domain decomposition
+  src/sdk/query/search/types.ts,project,Behavior-preserving domain decomposition
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/search-command.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/commands/list-sort-branches.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/search-command.spec.ts tests/unit/commands/search-bm25.spec.ts tests/unit/sdk/query/search-default-mode.spec.ts tests/integration/search-relevance.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-19T16:35:38.399Z"
+      source_kind: local_mutation
+      source_ref: refactor/search-query-cli-domains
+test_runs[1]:
+  - run_id: test-local-mu8muy9y-rtrz3o
+    kind: test
+    status: passed
+    started_at: "2026-09-19T16:59:54.456Z"
+    finished_at: "2026-09-19T17:00:05.254Z"
+    recorded_at: "2026-09-19T17:00:05.254Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/search-command.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/commands/list-sort-branches.spec.ts,schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/unit/commands/search-command.spec.ts tests/unit/commands/search-bm25.spec.ts tests/unit/sdk/query/search-default-mode.spec.ts tests/integration/search-relevance.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated release entry from reviewed item closure
+  docs/ARCHITECTURE.md,project,Module responsibilities and dependency direction
+close_reason: SDK search domain decomposition verified by complete golden parity and exact coverage
 body: "## Context\n2026-07-04 code-quality sweep: src/cli/commands/search.ts is 3119 LOC against the 3400 static-gate LOC cap — one feature away from failing the gate — and carries 4 internal jscpd clones plus a cross-file clone with list.ts:489.\n\n## Approach\nSplit along the natural boundaries that already exist in the file: (1) result rendering, (2) query parsing, (3) inline field:value syntax (the second parse layer from PR#290 — keep the two layers' order intact). Follow the established split playbook (PR#396 cli-contracts, 2026-05-25 all-src <2000 LOC pass): extract modules at the same call position, keep the command's public surface byte-identical, and update vitest.config.ts excludes/mirrored test paths if files move.\n\n## Definition of done\nsearch.ts well under the cap (~≤1500 LOC per module); internal clones gone (jscpd clean at current minTokens); search output byte-identical on a golden query set; coverage gate still 100%."

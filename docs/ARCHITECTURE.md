@@ -11,6 +11,8 @@ This page is for contributors changing `pm-cli` internals. Users should start wi
 - `pm contracts` is the machine-readable runtime contract source.
 
 Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
+Search and invocation decomposition: [pm-jt3b](../.agents/pm/tasks/pm-jt3b.toon)
+and [pm-yh8r](../.agents/pm/chores/pm-yh8r.toon).
 
 ## System Overview
 
@@ -31,6 +33,11 @@ src/
   cli.ts
   cli/
     main.ts
+    runtime/
+      activation.ts
+      invocation-options.ts
+      selection.ts
+      telemetry-outcome.ts
     register-setup.ts
     register-list-query.ts
     register-mutation.ts
@@ -44,6 +51,9 @@ src/
     extension-command-options.ts
   core/
     extensions/
+      loader.ts
+      manifest-parser.ts
+      registration-contracts.ts
     fs/
     history/
     item/
@@ -62,6 +72,27 @@ src/
   sdk/
     cli-contracts.ts
     index.ts
+    runtime.ts
+    runtime/
+      actions.ts
+      context.ts
+      schema.ts
+    completion.ts
+    completion/
+      shared.ts
+      bash.ts
+      zsh.ts
+      fish.ts
+    query/
+      search.ts
+      search/
+        input.ts
+        filters.ts
+        corpus.ts
+        lexical.ts
+        semantic.ts
+        response.ts
+        types.ts
     mcp/
       discovery.ts
   types/
@@ -297,6 +328,23 @@ with field, workflow, and migration behavior delegated to the SDK-backed schema
 adapter. This keeps the general mutation registrar focused on family wiring
 ([pm-gdi7](../.agents/pm/tasks/pm-gdi7.toon)).
 
+`src/cli/main.ts` owns invocation state and lifecycle sequencing. Its `runtime/`
+modules separately own extension activation decisions, command-family selection,
+option validation and provenance, and telemetry outcome classification. These
+modules consume SDK contracts and never import the main entrypoint. Mutable
+invocation caches remain in the orchestrator so repeated calls retain the same
+reset boundary.
+
+`src/sdk/runtime.ts` owns the public client, extension lifecycle isolation and
+final read projection. `runtime/actions.ts` routes built-in actions to SDK
+operations, `runtime/schema.ts` translates schema requests, and
+`runtime/context.ts` owns shared dispatch types and argument validation. These
+modules do not import the runtime entrypoint. Public imports remain stable.
+
+Completion generation follows the same pattern: `src/sdk/completion.ts` selects
+the shell, `completion/shared.ts` derives shared vocabulary from contracts, and
+the Bash, Zsh and Fish modules render their respective scripts.
+
 Progressive tool discovery follows this boundary directly: `src/sdk/mcp/discovery.ts` owns ranking, authorization filtering, budgets, cursors, omissions, cache identity, and the canonical result contract. `src/mcp/server.ts` only negotiates the extension, selects the entry catalog, and adapts compatibility text. See [Progressive Tool Discovery](PROGRESSIVE_TOOL_DISCOVERY.md).
 
 ## Telemetry Schema Negotiation
@@ -320,6 +368,20 @@ Core output formats:
 The renderer omits null, undefined, empty arrays, and empty objects from sparse TOON fallback output. JSON preserves the machine payload.
 
 ## Search Architecture
+
+`src/sdk/query/search.ts` is the search orchestrator and compatibility export
+surface. Its `search/` directory separates input parsing, metadata filtering,
+corpus reads, lexical scoring and highlighting, semantic provider execution,
+response projection, and shared type contracts. The CLI search adapter delegates
+to this SDK pipeline; package consumers continue to use the published SDK
+entrypoints rather than these internal module paths.
+
+Inline `field:value` filters are extracted before keyword tokenization; explicit
+flags take precedence. Filtering precedes ranking, and projection follows
+ranking and pagination. Lexical scoring and highlighting share their field
+definitions, while linked-content reads retain both path and realpath containment
+checks. Changes to a stage must preserve this ordering and the public result
+contract.
 
 Search supports:
 
@@ -384,6 +446,12 @@ the synchronous mutation path. See the observability epic
 ([pm-5oj5](../.agents/pm/epics/pm-5oj5.toon)) for tracked perf work.
 
 ## Extension Host
+
+`core/extensions/loader.ts` sequences discovery and extension lifecycle calls.
+`manifest-parser.ts` parses untrusted manifest data without loading code;
+`registration-contracts.ts` validates contributed definitions before the
+registrar publishes them. Containment checks, activation rollback and teardown
+remain at their original lifecycle boundaries.
 
 Load order:
 

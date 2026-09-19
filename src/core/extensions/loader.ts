@@ -1,11 +1,14 @@
 /**
  * @module core/extensions/loader
- *
- * Implements extension runtime contracts and governance for Loader.
+ * Coordinates extension discovery, loading, activation and teardown.
  */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import {
+  createRelationshipKindRegistry,
+  type RelationshipKindDefinition,
+} from "../../sdk/relationships.js";
 import { pathExists } from "../fs/fs-utils.js";
 import { isPathWithinDirectory } from "../fs/path-utils.js";
 import {
@@ -13,45 +16,159 @@ import {
   suppressHostOutput,
 } from "../output/output-control.js";
 import { resolvePmPackageRootFromModule } from "../packages/root.js";
-import { resolveGlobalPmRoot } from "../store/paths.js";
+import type {
+  ProjectProfileRegistrationInput
+} from "../profile/profile-presets.js";
 import {
   asRecordLoose,
   resolveActivatablePropertyRecord,
 } from "../shared/primitives.js";
-import {
-  flattenFlagListValue,
-  isFlagDefaultValueCoercible,
-  resolveFlagValueKind,
-} from "./flag-value-types.js";
-import {
-  KNOWN_ITEM_FIELD_TYPES,
-  normalizeItemFieldType,
-  suggestKnownItemFieldType,
-} from "./item-field-types.js";
-import { snapshotExtensionModuleGraph } from "./module-graph-snapshot.js";
+import { resolveGlobalPmRoot } from "../store/paths.js";
 import { captureExtensionActivationRollback } from "./activation-transaction.js";
-import {
-  collectPreflightCollisionWarnings,
-  normalizePreflightOverride,
-} from "./preflight-ownership.js";
-import { normalizeServiceOverrideOwnership } from "./service-ownership.js";
 import { assertCommandDefinitionMetadataStrings } from "./command-visibility-tier.js";
+import { normalizeExtensionContributionInventory } from "./contribution-inventory.js";
 import {
   buildImportExportContext,
   resolveImportExportArtifactOutput,
 } from "./exporter-output-contract.js";
 import {
-  asRegistrationRecord,
-  assertOptionalBooleanField,
-  assertOptionalFlagDefaultField,
-  assertOptionalStringArrayField,
+  buildReadyExtensionCandidate,
+  type ExtensionCandidateSourceIdentity,
+} from "./extension-candidate.js";
+import {
+  collectUnknownExtensionCapabilities,
+  formatLegacyExtensionCapabilityAliasWarning,
+  formatUnknownExtensionCapabilityWarning,
+  isKnownExtensionCapability,
+  normalizeNames
+} from "./extension-capability-aliases.js";
+import {
+  evaluateExtensionPolicyForCapability,
+  evaluateExtensionPolicyForExtension,
+  evaluateExtensionPolicyForRegistration,
+  hydrateExtensionPolicy,
+  normalizeExtensionPolicy,
+  serializeExtensionPolicy,
+  type NormalizedExtensionPolicy,
+  type PolicyExtensionRef
+} from "./extension-policy.js";
+import {
+  createEmptyExtensionCommandRegistry,
+  createEmptyExtensionHookRegistry,
+  createEmptyExtensionParserRegistry,
+  createEmptyExtensionPreflightRegistry,
+  createEmptyExtensionRegistrationRegistry,
+  createEmptyExtensionRendererRegistry,
+  createEmptyExtensionServiceRegistry,
+} from "./extension-registries.js";
+import { normalizeCommandName } from "./extension-runtime-helpers.js";
+import {
+  KNOWN_EXTENSION_CAPABILITIES,
+  KNOWN_EXTENSION_SERVICE_NAMES,
+  createDefaultExtensionGovernancePolicy,
+  type ActivatableExtension,
+  type AfterCommandHook,
+  type AssuranceMeasurementProviderDefinition,
+  type BeforeCommandHook,
+  type BeforeMutationHook,
+  type CommandDefinition,
+  type CommandHandler,
+  type CommandOverride,
+  type DiscoverExtensionsOptions,
+  type EffectiveExtension,
+  type Exporter,
+  type ExporterRegistrationOptions,
+  type ExtensionActivationFailureTrace,
+  type ExtensionActivationResult,
+  type ExtensionApi,
+  type ExtensionCandidate,
+  type ExtensionCapability,
+  type ExtensionCommandRegistry,
+  type ExtensionDeactivationFailure,
+  type ExtensionDeactivationOptions,
+  type ExtensionDeactivationResult,
+  type ExtensionDiagnostic,
+  type ExtensionDiscoveryResult,
+  type ExtensionGovernancePolicy,
+  type ExtensionHookRegistry,
+  type ExtensionLayer,
+  type ExtensionLayerScanResult,
+  type ExtensionLoadResult,
+  type ExtensionManifest,
+  type ExtensionParserRegistry,
+  type ExtensionPolicySurface,
+  type ExtensionPreflightRegistry,
+  type ExtensionRegistrationCounts,
+  type ExtensionRegistrationRegistry,
+  type ExtensionRendererRegistry,
+  type ExtensionSelfIdentity,
+  type ExtensionServiceName,
+  type ExtensionServiceRegistry,
+  type FailedExtensionActivation,
+  type FailedExtensionLoad,
+  type FlagDefinition,
+  type ImportExportRegistrationOptions,
+  type Importer,
+  type LoadedExtension,
+  type OnIndexHook,
+  type OnReadHook,
+  type OnWriteHook,
+  type OutputRendererFormat,
+  type ParserOverride,
+  type PmMaxVersionExceededMode,
+  type PreflightOverride,
+  type RegisteredExporterArtifactOutputContract,
+  type RegisteredExtensionAssuranceMeasurementProvider,
+  type RegisteredExtensionCommandDefinition,
+  type RegisteredExtensionParserOverride,
+  type RegisteredExtensionRendererOverride,
+  type RegisteredExtensionSchemaMigrationDefinition,
+  type RegisteredExtensionSearchProvider,
+  type RegisteredExtensionServiceOverride,
+  type RegisteredExtensionVectorStoreAdapter,
+  type RendererOverride,
+  type RendererOverrideOwnership,
+  type ScannedExtensionDirectory,
+  type SchemaFieldDefinition,
+  type SchemaItemTypeDefinition,
+  type SchemaMigrationDefinition,
+  type ScopedPreflightOverrideDefinition,
+  type SearchProviderDefinition,
+  type ServiceOverride,
+  type ServiceOverrideOwnership,
+  type VectorStoreAdapterDefinition
+} from "./extension-types.js";
+import { parseExtensionManifestDocument } from "./manifest-parser.js";
+import { formatExtensionManifestSchemaWarnings } from "./manifest-schema.js";
+import { snapshotExtensionModuleGraph } from "./module-graph-snapshot.js";
+import {
+  collectPreflightCollisionWarnings,
+  normalizePreflightOverride,
+} from "./preflight-ownership.js";
+import { applyProjectProfileDefaults,assertFlagValueTypeAndDefault,normalizeCommandDefinitionArguments,normalizeFlagDefinitions,resolveCommandDefinitionAction,validateFlagDefinitions,validateItemFieldDefinitions,validateItemTypeDefinitions,validateMigrationDefinition,validateProjectProfileDefinition } from "./registration-contracts.js";
+import {
   assertOptionalStringField,
-  normalizeOptionalStringArrayField,
+  normalizeOptionalStringArrayField
 } from "./registration-validation.js";
 import {
-  describeExtensionLongFlagFailure,
-  findExtensionFlagTokenFailure,
-} from "./flag-definition-validation.js";
+  assertHookHandler,
+  assertNonEmptyRegistrationString,
+  assertRegistrationFunction,
+  attachRuntimeDefinition,
+  cloneRuntimeRegistrationValue,
+  createRegistrationValidationError,
+  extractRegistrationValidationTrace,
+  isExtensionServiceName,
+  isOutputRendererFormat,
+  normalizeRegistrationName,
+  normalizeRegistrationRecord,
+  normalizeRegistrationRecordList,
+  normalizeRuntimeRegistrationRecord,
+  sanitizeRegistrationValue,
+  toRegistrationCommandPath,
+  validateAssuranceMeasurementProviderDefinition,
+} from "./registration-values.js";
+import { normalizeServiceOverrideOwnership } from "./service-ownership.js";
 import {
   compareComparableVersions,
   evaluatePmMaxVersionBound,
@@ -59,179 +176,25 @@ import {
   parseComparableVersion,
   type PmVersionBoundEvaluation,
 } from "./version-compat.js";
-import type {
-  ProjectProfileDefinition,
-  ProjectProfileRegistrationInput,
-} from "../profile/profile-presets.js";
-import {
-  createRelationshipKindRegistry,
-  type RelationshipKindDefinition,
-} from "../../sdk/relationships.js";
-import {
-  normalizeNames,
-  isKnownExtensionCapability,
-  collectUnknownExtensionCapabilities,
-  normalizeManifestCapabilities,
-  formatUnknownExtensionCapabilityWarning,
-  formatLegacyExtensionCapabilityAliasWarning,
-} from "./extension-capability-aliases.js";
-import {
-  normalizeExtensionPolicy,
-  serializeExtensionPolicy,
-  hydrateExtensionPolicy,
-  normalizePolicySandboxProfile,
-  evaluateExtensionPolicyForExtension,
-  evaluateExtensionPolicyForCapability,
-  evaluateExtensionPolicyForRegistration,
-  type NormalizedExtensionPolicy,
-  type PolicyExtensionRef,
-} from "./extension-policy.js";
-import {
-  createEmptyExtensionHookRegistry,
-  createEmptyExtensionCommandRegistry,
-  createEmptyExtensionParserRegistry,
-  createEmptyExtensionPreflightRegistry,
-  createEmptyExtensionServiceRegistry,
-  createEmptyExtensionRendererRegistry,
-  createEmptyExtensionRegistrationRegistry,
-} from "./extension-registries.js";
-import { normalizeCommandName } from "./extension-runtime-helpers.js";
-import { normalizeExtensionContributionInventory } from "./contribution-inventory.js";
-import { formatExtensionManifestSchemaWarnings } from "./manifest-schema.js";
-import {
-  attachRuntimeDefinition,
-  assertHookHandler,
-  assertNonEmptyRegistrationString,
-  assertRegistrationFunction,
-  cloneRuntimeRegistrationValue,
-  createRegistrationValidationError,
-  extractRegistrationValidationTrace,
-  isExtensionServiceName,
-  isOutputRendererFormat,
-  normalizeRegistrationRecord,
-  normalizeRegistrationRecordList,
-  normalizeRuntimeRegistrationRecord,
-  normalizeRegistrationName,
-  sanitizeRegistrationValue,
-  toRegistrationCommandPath,
-  validateAssuranceMeasurementProviderDefinition,
-} from "./registration-values.js";
-import {
-  buildReadyExtensionCandidate,
-  type ExtensionCandidateSourceIdentity,
-} from "./extension-candidate.js";
-export {
-  parseUnknownExtensionCapabilityWarning,
-  parseLegacyExtensionCapabilityAliasWarning,
-} from "./extension-capability-aliases.js";
-export {
-  createEmptyExtensionHookRegistry,
-  createEmptyExtensionCommandRegistry,
-  createEmptyExtensionParserRegistry,
-  createEmptyExtensionPreflightRegistry,
-  createEmptyExtensionServiceRegistry,
-  createEmptyExtensionRendererRegistry,
-  createEmptyExtensionRegistrationRegistry,
-} from "./extension-registries.js";
-export {
-  runBeforeCommandHooks,
-  runBeforeMutationHooks,
-  runAfterCommandHooks,
-  runOnWriteHooks,
-  runOnReadHooks,
-  runOnIndexHooks,
-  runCommandHandler,
-  runParserOverride,
-  runPreflightOverride,
-  runServiceOverrideSync,
-  runServiceOverride,
-  runCommandOverride,
-  runRendererOverride,
-} from "./extension-hook-runtime.js";
-import {
-  KNOWN_EXTENSION_CAPABILITIES,
-  KNOWN_EXTENSION_SERVICE_NAMES,
-  createDefaultExtensionGovernancePolicy,
-  type ExtensionDeactivationFailure,
-  type ExtensionDeactivationOptions,
-  type ExtensionDeactivationResult,
-  type ExtensionSelfIdentity,
-  type ExtensionCapability,
-  type ExtensionPolicySurface,
-  type ExtensionSandboxProfile,
-  type ExtensionGovernancePolicy,
-  type PmMaxVersionExceededMode,
-  type ExtensionLayer,
-  type ExtensionManifest,
-  type ExtensionManifestEngines,
-  type ExtensionDiagnostic,
-  type EffectiveExtension,
-  type ExtensionDiscoveryResult,
-  type LoadedExtension,
-  type FailedExtensionLoad,
-  type ExtensionLoadResult,
-  type BeforeCommandHook,
-  type BeforeMutationHook,
-  type AfterCommandHook,
-  type OnWriteHook,
-  type OnReadHook,
-  type OnIndexHook,
-  type OutputRendererFormat,
-  type CommandOverride,
-  type RendererOverride,
-  type RendererOverrideOwnership,
-  type CommandHandler,
-  type ParserOverride,
-  type PreflightOverride,
-  type ScopedPreflightOverrideDefinition,
-  type ServiceOverride,
-  type ServiceOverrideOwnership,
-  type ExtensionHookRegistry,
-  type ExtensionServiceName,
-  type ExtensionCommandArgumentDefinition,
-  type CommandDefinition,
-  type FlagDefinition,
-  type SchemaFieldDefinition,
-  type SchemaItemTypeDefinition,
-  type SchemaMigrationDefinition,
-  type ImportExportRegistrationOptions,
-  type ExporterRegistrationOptions,
-  type RegisteredExporterArtifactOutputContract,
-  type Importer,
-  type Exporter,
-  type SearchProviderDefinition,
-  type VectorStoreAdapterDefinition,
-  type AssuranceMeasurementProviderDefinition,
-  type RegisteredExtensionParserOverride,
-  type RegisteredExtensionServiceOverride,
-  type RegisteredExtensionRendererOverride,
-  type ExtensionCommandRegistry,
-  type ExtensionParserRegistry,
-  type ExtensionPreflightRegistry,
-  type ExtensionServiceRegistry,
-  type ExtensionRendererRegistry,
-  type RegisteredExtensionCommandDefinition,
-  type RegisteredExtensionSchemaMigrationDefinition,
-  type RegisteredExtensionSearchProvider,
-  type RegisteredExtensionVectorStoreAdapter,
-  type RegisteredExtensionAssuranceMeasurementProvider,
-  type ExtensionRegistrationRegistry,
-  type ExtensionRegistrationCounts,
-  type ExtensionApi,
-  type FailedExtensionActivation,
-  type ExtensionActivationFailureTrace,
-  type ExtensionActivationResult,
-  type ExtensionCandidate,
-  type ExtensionLayerScanResult,
-  type ScannedExtensionDirectory,
-  type LegacyExtensionCapabilityAliasMapping,
-  type DiscoverExtensionsOptions,
-  type ActivatableExtension,
-} from "./extension-types.js";
-export * from "./extension-types.js";
 
-/** Fallback extension priority used when callers do not provide an override. */
-export const DEFAULT_EXTENSION_PRIORITY = 100;
+export {
+  parseLegacyExtensionCapabilityAliasWarning,parseUnknownExtensionCapabilityWarning
+} from "./extension-capability-aliases.js";
+
+export {
+  createEmptyExtensionCommandRegistry,createEmptyExtensionHookRegistry,createEmptyExtensionParserRegistry,
+  createEmptyExtensionPreflightRegistry,createEmptyExtensionRegistrationRegistry,createEmptyExtensionRendererRegistry,createEmptyExtensionServiceRegistry
+} from "./extension-registries.js";
+
+export {
+  runAfterCommandHooks,runBeforeCommandHooks,
+  runBeforeMutationHooks,runCommandHandler,runCommandOverride,runOnIndexHooks,runOnReadHooks,runOnWriteHooks,runParserOverride,
+  runPreflightOverride,runRendererOverride,runServiceOverride,runServiceOverrideSync
+} from "./extension-hook-runtime.js";
+
+export * from "./extension-types.js";
+export { DEFAULT_EXTENSION_PRIORITY,parseExtensionManifestDocument } from "./manifest-parser.js";
+
 let currentPmCliVersionPromise: Promise<string | null> | null = null;
 
 const DEFAULT_EXTENSION_POLICY: ExtensionGovernancePolicy = Object.freeze(
@@ -244,368 +207,6 @@ let extensionReloadEpoch = 0;
 export function nextExtensionReloadToken(seed = Date.now()): string {
   extensionReloadEpoch += 1;
   return `${extensionReloadEpoch}-${seed}`;
-}
-
-function parseOptionalManifestString(
-  candidate: Record<string, unknown>,
-  field: string,
-): string | null | undefined {
-  const value = candidate[field];
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-  if (typeof value !== "string" || value.trim().length === 0) {
-    return null;
-  }
-  return value.trim();
-}
-
-function parseManifestEngines(
-  value: unknown,
-): ExtensionManifestEngines | null | undefined {
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-  const enginesRecord = asRecordLoose(value);
-  if (!enginesRecord) {
-    return null;
-  }
-  const engines: ExtensionManifestEngines = {};
-  for (const key of Object.keys(enginesRecord).sort((left, right) =>
-    left.localeCompare(right),
-  )) {
-    if (key.trim().length === 0) {
-      return null;
-    }
-    const engineValue = enginesRecord[key];
-    if (typeof engineValue !== "string" || engineValue.trim().length === 0) {
-      return null;
-    }
-    engines[key.trim()] = engineValue.trim();
-  }
-  return Object.keys(engines).length > 0 ? engines : undefined;
-}
-
-/** Parse a required manifest string field, returning `null` when it is absent, non-string, or blank. */
-function parseRequiredManifestString(
-  candidate: Record<string, unknown>,
-  field: string,
-): string | null {
-  const value = candidate[field];
-  if (typeof value !== "string" || value.trim().length === 0) {
-    return null;
-  }
-  return value.trim();
-}
-
-/** Parse an optional integer value (`undefined` when absent, `null` when present but not an integer). */
-function parseOptionalIntegerValue(value: unknown): number | null | undefined {
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-  if (typeof value !== "number" || !Number.isInteger(value)) {
-    return null;
-  }
-  return value;
-}
-
-/** Parse an optional boolean value (`undefined` when absent, `null` when present but not a boolean). */
-function parseOptionalBooleanValue(value: unknown): boolean | null | undefined {
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-  if (typeof value !== "boolean") {
-    return null;
-  }
-  return value;
-}
-
-/** Parse the optional integer `priority`, defaulting to {@link DEFAULT_EXTENSION_PRIORITY} when absent and rejecting (`null`) a non-integer. */
-function parseManifestPriority(
-  candidate: Record<string, unknown>,
-): number | null {
-  const value = parseOptionalIntegerValue(candidate.priority);
-  return value === undefined ? DEFAULT_EXTENSION_PRIORITY : value;
-}
-
-/** Parse the optional `sandbox_profile`, rejecting (`null`) any value that does not round-trip through {@link normalizePolicySandboxProfile}. */
-function parseManifestSandboxProfile(
-  candidate: Record<string, unknown>,
-): ExtensionSandboxProfile | null | undefined {
-  const value = candidate.sandbox_profile;
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-  if (typeof value !== "string") {
-    return null;
-  }
-  const normalizedProfile = normalizePolicySandboxProfile(value);
-  if (normalizedProfile !== value.trim().toLowerCase()) {
-    return null;
-  }
-  return normalizedProfile;
-}
-
-/** Return the trimmed string when `value` is a non-blank string, otherwise `undefined`. */
-function optionalTrimmedString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0
-    ? value.trim()
-    : undefined;
-}
-
-/** Parse the optional `provenance` record (`undefined` absent, `null` malformed), keeping only the present trimmed string fields and a boolean `verified`. */
-function parseManifestProvenance(
-  value: unknown,
-): ExtensionManifest["provenance"] | null | undefined {
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-  const provenanceRecord = asRecordLoose(value);
-  if (!provenanceRecord) {
-    return null;
-  }
-  const source = optionalTrimmedString(provenanceRecord.source);
-  const signature = optionalTrimmedString(provenanceRecord.signature);
-  const attestation = optionalTrimmedString(provenanceRecord.attestation);
-  const verified =
-    provenanceRecord.verified === undefined ||
-    provenanceRecord.verified === null
-      ? undefined
-      : typeof provenanceRecord.verified === "boolean"
-        ? provenanceRecord.verified
-        : null;
-  if (verified === null) {
-    return null;
-  }
-  return {
-    ...(source ? { source } : {}),
-    ...(signature ? { signature } : {}),
-    ...(attestation ? { attestation } : {}),
-    ...(typeof verified === "boolean" ? { verified } : {}),
-  };
-}
-
-/** Parse the optional `permissions` record (`undefined` absent, `null` malformed), keeping only the boolean grants that are present. */
-function parseManifestPermissions(
-  value: unknown,
-): ExtensionManifest["permissions"] | null | undefined {
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-  const permissionsRecord = asRecordLoose(value);
-  if (!permissionsRecord) {
-    return null;
-  }
-  const fsRead = parseOptionalBooleanValue(permissionsRecord.fs_read);
-  const fsWrite = parseOptionalBooleanValue(permissionsRecord.fs_write);
-  const network = parseOptionalBooleanValue(permissionsRecord.network);
-  const envRead = parseOptionalBooleanValue(permissionsRecord.env_read);
-  const envWrite = parseOptionalBooleanValue(permissionsRecord.env_write);
-  const processSpawn = parseOptionalBooleanValue(
-    permissionsRecord.process_spawn,
-  );
-  if (
-    [fsRead, fsWrite, network, envRead, envWrite, processSpawn].includes(null)
-  ) {
-    return null;
-  }
-  return {
-    ...(typeof fsRead === "boolean" ? { fs_read: fsRead } : {}),
-    ...(typeof fsWrite === "boolean" ? { fs_write: fsWrite } : {}),
-    ...(typeof network === "boolean" ? { network } : {}),
-    ...(typeof envRead === "boolean" ? { env_read: envRead } : {}),
-    ...(typeof envWrite === "boolean" ? { env_write: envWrite } : {}),
-    ...(typeof processSpawn === "boolean"
-      ? { process_spawn: processSpawn }
-      : {}),
-  };
-}
-
-/** Parse the optional `capabilities` array, normalizing legacy aliases; returns empty lists when absent and `null` when the field is not a string array. */
-function parseManifestCapabilities(value: unknown): {
-  capabilities: string[];
-  legacy_aliases: LegacyExtensionCapabilityAliasMapping[];
-} | null {
-  if (value === undefined || value === null) {
-    return { capabilities: [], legacy_aliases: [] };
-  }
-  if (
-    !Array.isArray(value) ||
-    value.some((entry) => typeof entry !== "string")
-  ) {
-    return null;
-  }
-  const normalizedCapabilities = normalizeManifestCapabilities(
-    value as string[],
-  );
-  return {
-    capabilities: normalizedCapabilities.capabilities,
-    legacy_aliases: normalizedCapabilities.legacy_aliases,
-  };
-}
-
-/** Parse the optional `activation` block, returning the de-duplicated sorted `commands` set, `undefined` when no command activation is declared, and `null` when the block is malformed. */
-function parseManifestActivation(
-  value: unknown,
-): ExtensionManifest["activation"] | null | undefined {
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-  const activationRecord = asRecordLoose(value);
-  if (!activationRecord) {
-    return null;
-  }
-  const rawCommands = activationRecord.commands;
-  if (rawCommands === undefined || rawCommands === null) {
-    return undefined;
-  }
-  if (
-    !Array.isArray(rawCommands) ||
-    rawCommands.some((entry) => typeof entry !== "string")
-  ) {
-    return null;
-  }
-  const commands = [
-    ...new Set(
-      rawCommands
-        .map((entry) => normalizeCommandName(entry))
-        .filter((entry) => entry.length > 0),
-    ),
-  ].sort((left, right) => left.localeCompare(right));
-  return commands.length > 0 ? { commands } : undefined;
-}
-
-/** The optional metadata fields a manifest may declare, parsed and validated as a single bundle so {@link parseManifest} stays a thin orchestrator. */
-interface ParsedManifestMetadata {
-  manifest_version: number | undefined;
-  pm_min_version: string | undefined;
-  pm_max_version: string | undefined;
-  engines: ExtensionManifestEngines | undefined;
-  trusted: boolean | undefined;
-  sandbox_profile: ExtensionSandboxProfile | undefined;
-  provenance: ExtensionManifest["provenance"];
-  permissions: ExtensionManifest["permissions"];
-  capabilities: string[];
-  legacy_capability_aliases: LegacyExtensionCapabilityAliasMapping[];
-  activation: ExtensionManifest["activation"];
-  contributions: ExtensionManifest["contributions"];
-}
-
-/** Parse every optional manifest metadata field, returning `null` as soon as any one is malformed. */
-function parseManifestMetadata(
-  candidate: Record<string, unknown>,
-): ParsedManifestMetadata | null {
-  const manifestVersion = parseOptionalIntegerValue(candidate.manifest_version);
-  if (manifestVersion === null) {
-    return null;
-  }
-  const pmMinVersion = parseOptionalManifestString(candidate, "pm_min_version");
-  if (pmMinVersion === null) {
-    return null;
-  }
-  const pmMaxVersion = parseOptionalManifestString(candidate, "pm_max_version");
-  if (pmMaxVersion === null) {
-    return null;
-  }
-  const engines = parseManifestEngines(candidate.engines);
-  if (engines === null) {
-    return null;
-  }
-  const trusted = parseOptionalBooleanValue(candidate.trusted);
-  if (trusted === null) {
-    return null;
-  }
-  const sandboxProfile = parseManifestSandboxProfile(candidate);
-  if (sandboxProfile === null) {
-    return null;
-  }
-  const provenance = parseManifestProvenance(candidate.provenance);
-  if (provenance === null) {
-    return null;
-  }
-  const permissions = parseManifestPermissions(candidate.permissions);
-  if (permissions === null) {
-    return null;
-  }
-  const capabilities = parseManifestCapabilities(candidate.capabilities);
-  if (capabilities === null) {
-    return null;
-  }
-  const activation = parseManifestActivation(candidate.activation);
-  if (activation === null) {
-    return null;
-  }
-  const contributions = normalizeExtensionContributionInventory(
-    candidate.contributions,
-  );
-  if (contributions === null) {
-    return null;
-  }
-  return {
-    manifest_version: manifestVersion,
-    pm_min_version: pmMinVersion,
-    pm_max_version: pmMaxVersion,
-    engines,
-    trusted,
-    sandbox_profile: sandboxProfile,
-    provenance,
-    permissions,
-    capabilities: capabilities.capabilities,
-    legacy_capability_aliases: capabilities.legacy_aliases,
-    activation,
-    contributions,
-  };
-}
-
-/** Parse and normalize one complete on-disk extension manifest contract. */
-export function parseExtensionManifestDocument(
-  raw: unknown,
-): ExtensionManifest | null {
-  if (typeof raw !== "object" || raw === null) {
-    return null;
-  }
-  const candidate = raw as Record<string, unknown>;
-  const name = parseRequiredManifestString(candidate, "name");
-  if (name === null) {
-    return null;
-  }
-  const version = parseRequiredManifestString(candidate, "version");
-  if (version === null) {
-    return null;
-  }
-  const entry = parseRequiredManifestString(candidate, "entry");
-  if (entry === null) {
-    return null;
-  }
-  const priority = parseManifestPriority(candidate);
-  if (priority === null) {
-    return null;
-  }
-  const metadata = parseManifestMetadata(candidate);
-  if (metadata === null) {
-    return null;
-  }
-  return {
-    name,
-    version,
-    entry,
-    priority,
-    manifest_version: metadata.manifest_version,
-    pm_min_version: metadata.pm_min_version,
-    pm_max_version: metadata.pm_max_version,
-    engines: metadata.engines,
-    trusted: metadata.trusted,
-    provenance: metadata.provenance,
-    sandbox_profile: metadata.sandbox_profile,
-    permissions: metadata.permissions,
-    activation: metadata.activation,
-    contributions: metadata.contributions,
-    capabilities: metadata.capabilities,
-    legacy_capability_aliases:
-      metadata.legacy_capability_aliases.length > 0
-        ? metadata.legacy_capability_aliases
-        : undefined,
-  };
 }
 
 function shouldEnable(
@@ -1330,6 +931,7 @@ export async function loadExtensions(
 }
 
 const DEFAULT_EXTENSION_DEACTIVATE_TIMEOUT_MS = 5_000;
+
 const MAX_EXTENSION_DEACTIVATE_TIMEOUT_MS = 2_147_483_647;
 
 function toActivatableExtension(
@@ -1480,531 +1082,6 @@ async function runExtensionDeactivateWithTimeout(
   } finally {
     clearTimeout(timeoutHandle as ReturnType<typeof setTimeout>);
   }
-}
-
-const FLAG_DEFINITION_KEYS = new Set([
-  "default",
-  "description",
-  "enabled",
-  "list",
-  "long",
-  "repeatable",
-  "required",
-  "short",
-  "type",
-  "value_name",
-  "value_type",
-  "visible",
-]);
-
-function normalizeFlagDefinitions(
-  name: string,
-  value: unknown,
-): FlagDefinition[] {
-  return normalizeRegistrationRecordList(name, value).map((record) => {
-    if (record.repeatable === true) {
-      record.list = true;
-    }
-    return record as FlagDefinition;
-  });
-}
-
-function normalizeCommandActionName(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[\s_]+/g, "-")
-    .replace(/[^a-z0-9-]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function resolveCommandDefinitionAction(
-  commandPath: string,
-  action: unknown,
-): string {
-  if (action === undefined) {
-    return commandPath.replace(/\s+/g, "-");
-  }
-  if (typeof action !== "string" || action.trim().length === 0) {
-    throw new TypeError(
-      "registerCommand definition.action must be a non-empty string when provided",
-    );
-  }
-  const normalized = normalizeCommandActionName(action);
-  if (normalized.length === 0) {
-    throw new TypeError(
-      "registerCommand definition.action must contain alphanumeric characters",
-    );
-  }
-  return normalized;
-}
-
-function normalizeCommandDefinitionArguments(
-  value: unknown,
-): ExtensionCommandArgumentDefinition[] {
-  if (value === undefined) {
-    return [];
-  }
-  if (!Array.isArray(value)) {
-    throw new TypeError(
-      "registerCommand definition.arguments must be an array when provided",
-    );
-  }
-  const normalized: ExtensionCommandArgumentDefinition[] = [];
-  for (const [index, entry] of value.entries()) {
-    const record = asRegistrationRecord(
-      `registerCommand definition.arguments[${index}]`,
-      entry,
-    );
-    const name = assertNonEmptyRegistrationString(
-      `registerCommand definition.arguments[${index}].name`,
-      record.name,
-    );
-    assertOptionalBooleanField(
-      `registerCommand definition.arguments[${index}].required`,
-      record.required,
-    );
-    assertOptionalBooleanField(
-      `registerCommand definition.arguments[${index}].variadic`,
-      record.variadic,
-    );
-    assertOptionalStringField(
-      `registerCommand definition.arguments[${index}].description`,
-      record.description,
-    );
-    if (name.includes(" ")) {
-      throw new TypeError(
-        `registerCommand definition.arguments[${index}].name must not contain spaces`,
-      );
-    }
-    const definition: ExtensionCommandArgumentDefinition = {
-      name,
-    };
-    if (record.required === true) {
-      definition.required = true;
-    }
-    if (record.variadic === true) {
-      definition.variadic = true;
-    }
-    if (typeof record.description === "string") {
-      definition.description = record.description.trim();
-    }
-    normalized.push(definition);
-  }
-
-  const variadicIndexes = normalized
-    .map((argument, index) => (argument.variadic ? index : -1))
-    .filter((index) => index >= 0);
-  if (variadicIndexes.length > 1) {
-    throw new TypeError(
-      "registerCommand definition.arguments supports at most one variadic argument",
-    );
-  }
-  if (
-    variadicIndexes.length === 1 &&
-    variadicIndexes[0] !== normalized.length - 1
-  ) {
-    throw new TypeError(
-      "registerCommand definition.arguments variadic argument must be the final argument",
-    );
-  }
-
-  return normalized;
-}
-
-function validateFlagDefinitions(flags: unknown): void {
-  if (!Array.isArray(flags)) {
-    throw new TypeError(
-      "registerFlags flags requires an array of object definitions",
-    );
-  }
-  for (const [index, raw] of flags.entries()) {
-    const record = asRegistrationRecord(`registerFlags flags[${index}]`, raw);
-    const unknownKeys = Object.keys(record)
-      .filter((key) => !FLAG_DEFINITION_KEYS.has(key))
-      .sort((left, right) => left.localeCompare(right));
-    if (unknownKeys.length > 0) {
-      throw new TypeError(
-        `registerFlags flags[${index}] contains unknown field(s): ${unknownKeys.join(", ")}`,
-      );
-    }
-    const long = record.long;
-    const short = record.short;
-    if (long === undefined && short === undefined) {
-      throw new TypeError(
-        `registerFlags flags[${index}] requires at least one of long or short`,
-      );
-    }
-    assertOptionalStringField(`registerFlags flags[${index}].long`, long);
-    assertOptionalStringField(`registerFlags flags[${index}].short`, short);
-    const tokenFinding = findExtensionFlagTokenFailure(long, short);
-    if (tokenFinding !== null) {
-      throw new TypeError(
-        `registerFlags flags[${index}] ${describeExtensionLongFlagFailure(tokenFinding.token, tokenFinding.failure)}`,
-      );
-    }
-    assertOptionalStringField(
-      `registerFlags flags[${index}].value_name`,
-      record.value_name,
-    );
-    assertOptionalStringField(
-      `registerFlags flags[${index}].description`,
-      record.description,
-    );
-    assertOptionalBooleanField(
-      `registerFlags flags[${index}].required`,
-      record.required,
-    );
-    assertOptionalBooleanField(
-      `registerFlags flags[${index}].enabled`,
-      record.enabled,
-    );
-    assertOptionalBooleanField(
-      `registerFlags flags[${index}].visible`,
-      record.visible,
-    );
-    assertOptionalBooleanField(
-      `registerFlags flags[${index}].list`,
-      record.list,
-    );
-    assertOptionalBooleanField(
-      `registerFlags flags[${index}].repeatable`,
-      record.repeatable,
-    );
-    if (
-      record.list !== undefined &&
-      record.repeatable !== undefined &&
-      record.list !== record.repeatable
-    ) {
-      throw new TypeError(
-        `registerFlags flags[${index}].list and repeatable must match when both are provided`,
-      );
-    }
-    assertOptionalFlagDefaultField(
-      `registerFlags flags[${index}].default`,
-      record.default,
-    );
-    if (
-      Array.isArray(record.default) &&
-      record.list !== true &&
-      record.repeatable !== true
-    ) {
-      throw new TypeError(
-        `registerFlags flags[${index}].default cannot be an array unless list is true.`,
-      );
-    }
-    assertFlagValueTypeAndDefault(`registerFlags flags[${index}]`, record);
-  }
-}
-
-/** Reject a declared `value_type`/`type` that is not a known flag value kind, and a `default` whose value(s) would not cleanly coerce under that kind — so the typed-flag contract is enforced at registration instead of silently leaving an untyped value to surface at use time. */
-function assertFlagValueTypeAndDefault(
-  label: string,
-  record: Record<string, unknown>,
-): void {
-  const declaredType =
-    (typeof record.value_type === "string" ? record.value_type : undefined) ??
-    (typeof record.type === "string" ? record.type : undefined);
-  if (declaredType === undefined) {
-    return;
-  }
-  const kind = resolveFlagValueKind(declaredType);
-  if (kind === null) {
-    throw new TypeError(
-      `${label} value_type "${declaredType}" is not a known flag value type (expected one of: string, number, boolean).`,
-    );
-  }
-  if (record.default === undefined) {
-    return;
-  }
-  // For list flags, validate the default exactly as the runtime will see it —
-  // comma-joined strings and nested arrays are flattened first — so a valid
-  // default like `value_type: "number", default: "10,20"` is not wrongly rejected.
-  const defaults =
-    record.list === true || record.repeatable === true
-      ? flattenFlagListValue(record.default)
-      : [record.default];
-  for (const [defaultIndex, defaultValue] of defaults.entries()) {
-    if (
-      !isFlagDefaultValueCoercible(
-        defaultValue as string | number | boolean,
-        kind,
-      )
-    ) {
-      const suffix =
-        defaults.length > 1 ? `default[${defaultIndex}]` : "default";
-      throw new TypeError(
-        `${label}.${suffix} (${JSON.stringify(defaultValue)}) is not coercible to ${kind}.`,
-      );
-    }
-  }
-}
-
-function validateItemFieldDefinitions(fields: unknown): void {
-  if (!Array.isArray(fields)) {
-    throw new TypeError(
-      "registerItemFields fields requires an array of object definitions",
-    );
-  }
-  for (const [index, raw] of fields.entries()) {
-    const record = asRegistrationRecord(
-      `registerItemFields fields[${index}]`,
-      raw,
-    );
-    assertNonEmptyRegistrationString(
-      `registerItemFields fields[${index}].name`,
-      record.name,
-    );
-    const fieldType = assertNonEmptyRegistrationString(
-      `registerItemFields fields[${index}].type`,
-      record.type,
-    );
-    if (normalizeItemFieldType(fieldType) === null) {
-      const suggestion = suggestKnownItemFieldType(fieldType);
-      const hint = suggestion ? ` Did you mean "${suggestion}"?` : "";
-      throw new TypeError(
-        `registerItemFields fields[${index}].type "${fieldType}" is not a known field type ` +
-          `(expected one of: ${KNOWN_ITEM_FIELD_TYPES.join(", ")}).${hint}`,
-      );
-    }
-    assertOptionalBooleanField(
-      `registerItemFields fields[${index}].optional`,
-      record.optional,
-    );
-  }
-}
-
-/** Validate the optional command-specific visibility and requirement policies of one extension item type. */
-function validateItemTypeCommandOptionPolicies(
-  typeIndex: number,
-  value: unknown,
-): void {
-  if (value === undefined) {
-    return;
-  }
-  const label = `registerItemTypes types[${typeIndex}].command_option_policies`;
-  if (!Array.isArray(value)) {
-    throw new TypeError(`${label} must be an array when provided`);
-  }
-  for (const [policyIndex, rawPolicy] of value.entries()) {
-    const at = `${label}[${policyIndex}]`;
-    const policy = asRegistrationRecord(at, rawPolicy);
-    assertNonEmptyRegistrationString(`${at}.command`, policy.command);
-    assertNonEmptyRegistrationString(`${at}.option`, policy.option);
-    assertOptionalBooleanField(`${at}.enabled`, policy.enabled);
-    assertOptionalBooleanField(`${at}.required`, policy.required);
-    assertOptionalBooleanField(`${at}.visible`, policy.visible);
-  }
-}
-
-/** Validate the optional custom option vocabulary of one extension item type. */
-function validateItemTypeOptions(typeIndex: number, value: unknown): void {
-  if (value === undefined) {
-    return;
-  }
-  const label = `registerItemTypes types[${typeIndex}].options`;
-  if (!Array.isArray(value)) {
-    throw new TypeError(`${label} must be an array when provided`);
-  }
-  for (const [optionIndex, rawOption] of value.entries()) {
-    const at = `${label}[${optionIndex}]`;
-    const option = asRegistrationRecord(at, rawOption);
-    assertNonEmptyRegistrationString(`${at}.key`, option.key);
-    assertOptionalStringArrayField(`${at}.values`, option.values);
-    assertOptionalBooleanField(`${at}.required`, option.required);
-    assertOptionalStringArrayField(`${at}.aliases`, option.aliases);
-  }
-}
-
-function validateItemTypeDefinitions(types: unknown): void {
-  if (!Array.isArray(types)) {
-    throw new TypeError(
-      "registerItemTypes types requires an array of object definitions",
-    );
-  }
-  for (const [typeIndex, raw] of types.entries()) {
-    const at = `registerItemTypes types[${typeIndex}]`;
-    const record = asRegistrationRecord(at, raw);
-    assertNonEmptyRegistrationString(`${at}.name`, record.name);
-    assertOptionalStringField(`${at}.folder`, record.folder);
-    assertOptionalStringArrayField(`${at}.aliases`, record.aliases);
-    assertOptionalStringArrayField(
-      `${at}.required_create_fields`,
-      record.required_create_fields,
-    );
-    assertOptionalStringArrayField(
-      `${at}.required_create_repeatables`,
-      record.required_create_repeatables,
-    );
-    validateItemTypeCommandOptionPolicies(
-      typeIndex,
-      record.command_option_policies,
-    );
-    validateItemTypeOptions(typeIndex, record.options);
-  }
-}
-
-function validateMigrationDefinition(definition: unknown): void {
-  const record = asRegistrationRecord(
-    "registerMigration definition",
-    definition,
-  );
-  if (record.id !== undefined && typeof record.id !== "string") {
-    throw new TypeError(
-      "registerMigration definition.id must be a string when provided",
-    );
-  }
-  if (
-    record.description !== undefined &&
-    typeof record.description !== "string"
-  ) {
-    throw new TypeError(
-      "registerMigration definition.description must be a string when provided",
-    );
-  }
-  if (record.status !== undefined && typeof record.status !== "string") {
-    throw new TypeError(
-      "registerMigration definition.status must be a string when provided",
-    );
-  }
-  assertOptionalBooleanField(
-    "registerMigration definition.mandatory",
-    record.mandatory,
-  );
-  if (record.run !== undefined && typeof record.run !== "function") {
-    throw new TypeError(
-      "registerMigration definition.run must be a function when provided",
-    );
-  }
-}
-
-/**
- * The seven array-valued dimensions a {@link ProjectProfileDefinition} stages.
- * Each is "optional-by-emptiness": an omitted dimension normalizes to an empty
- * array so the profile planner can iterate every dimension unconditionally.
- */
-const PROJECT_PROFILE_DIMENSIONS = [
-  "types",
-  "statuses",
-  "fields",
-  "workflows",
-  "config",
-  "templates",
-  "packages",
-] as const;
-
-type ProjectProfileDimension = (typeof PROJECT_PROFILE_DIMENSIONS)[number];
-
-/** Dimension-specific profile entry validators used after the common object-shape boundary. */
-const PROJECT_PROFILE_ENTRY_VALIDATORS: Partial<
-  Record<
-    ProjectProfileDimension,
-    (at: string, entry: Record<string, unknown>) => void
-  >
-> = {
-  types: (at, entry) => {
-    if (entry.name !== undefined && typeof entry.name !== "string") {
-      throw new TypeError(`${at}.name must be a string when provided`);
-    }
-  },
-  workflows: (at, entry) => {
-    if (typeof entry.type !== "string") {
-      throw new TypeError(`${at}.type must be a string`);
-    }
-    if (!Array.isArray(entry.allowed_transitions)) {
-      throw new TypeError(`${at}.allowed_transitions must be an array`);
-    }
-    for (const [pairIndex, pair] of entry.allowed_transitions.entries()) {
-      if (!Array.isArray(pair)) {
-        throw new TypeError(
-          `${at}.allowed_transitions[${pairIndex}] must be a [from, to] array`,
-        );
-      }
-    }
-  },
-  templates: (at, entry) => {
-    if (typeof entry.name !== "string") {
-      throw new TypeError(`${at}.name must be a string`);
-    }
-    if (
-      typeof entry.options !== "object" ||
-      entry.options === null ||
-      Array.isArray(entry.options)
-    ) {
-      throw new TypeError(`${at}.options must be an object`);
-    }
-  },
-  packages: (at, entry) => {
-    if (typeof entry.spec !== "string") {
-      throw new TypeError(`${at}.spec must be a string`);
-    }
-  },
-};
-
-function validateProjectProfileDefinition(profile: unknown): void {
-  const record = asRegistrationRecord("registerProfile profile", profile);
-  assertNonEmptyRegistrationString("registerProfile profile.name", record.name);
-  assertNonEmptyRegistrationString(
-    "registerProfile profile.title",
-    record.title,
-  );
-  if (record.summary !== undefined && typeof record.summary !== "string") {
-    throw new TypeError(
-      "registerProfile profile.summary must be a string when provided",
-    );
-  }
-  for (const dimension of PROJECT_PROFILE_DIMENSIONS) {
-    const value = record[dimension];
-    if (value === undefined) {
-      continue;
-    }
-    if (!Array.isArray(value)) {
-      throw new TypeError(
-        `registerProfile profile.${dimension} must be an array when provided`,
-      );
-    }
-    // Each dimension entry must be a non-null object: a primitive or null entry
-    // (e.g. `statuses: [null]`, `types: [42]`) survives an array-only check but
-    // crashes the profile planner and `pm profile show` when they read `entry.id`
-    // / `entry.key` / `entry.type` later. Reject it at the registration boundary.
-    for (const [index, entry] of value.entries()) {
-      if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
-        throw new TypeError(
-          `registerProfile profile.${dimension}[${index}] must be an object`,
-        );
-      }
-      // Beyond "is an object", validate the specific field shapes consumers
-      // dereference so a type-violating entry can never crash the planner, the
-      // `pm profile` surfaces, or describeProjectProfile downstream.
-      PROJECT_PROFILE_ENTRY_VALIDATORS[dimension]?.(
-        `registerProfile profile.${dimension}[${index}]`,
-        entry as Record<string, unknown>,
-      );
-    }
-  }
-}
-
-/**
- * Fills an already-validated profile snapshot's optional surfaces — an absent
- * `summary` becomes an empty string and every omitted dimension an empty array —
- * so the stored definition always has the full {@link ProjectProfileDefinition}
- * shape the profile planner and `pm profile` resolution rely on. It runs after
- * validation on the cloned snapshot, so it only ever supplies missing defaults
- * and never has to coerce an invalid type (those are already rejected).
- */
-function applyProjectProfileDefaults(
-  profile: Record<string, unknown>,
-): ProjectProfileDefinition {
-  if (profile.summary === undefined) {
-    profile.summary = "";
-  }
-  for (const dimension of PROJECT_PROFILE_DIMENSIONS) {
-    if (profile[dimension] === undefined) {
-      profile[dimension] = [];
-    }
-  }
-  return profile as unknown as ProjectProfileDefinition;
 }
 
 function getDeclaredExtensionCapabilities(
