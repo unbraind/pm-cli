@@ -32,10 +32,10 @@ describe("workspace singleton concurrency", () => {
     });
   });
 
-  it("refuses to recreate a deleted settings document from a stale snapshot", async () => {
+  it.each([false, true])("refuses a deleted settings document with an edited=%s stale snapshot", async (edited) => {
     await withTempPmPath(async ({ pmPath }) => {
       const settings = await readSettings(pmPath);
-      settings.ids.token_length = 6;
+      if (edited) settings.ids.token_length = 6;
       await rm(path.join(pmPath, "settings.json"));
       await expect(writeSettings(pmPath, settings)).rejects.toMatchObject({ exitCode: EXIT_CODE.CONFLICT });
       expect(await readdir(path.join(pmPath, "locks"))).toEqual([]);

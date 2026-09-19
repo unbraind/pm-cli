@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- The close-time blocker-clear warning names one deleted ordering edge out of N, so silent multi-blocker data loss is indistinguishable from single-blocker clearing ([pm-scbr0s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-scbr0s.toon))
 - Workspace singleton files (settings.json, schema, session-state, checkpoints) are lock-free read-modify-write — parallel pm config set demonstrably loses updates ([pm-bgcu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bgcu.toon))
+- The close-time blocker-clear warning names one deleted ordering edge out of N, so silent multi-blocker data loss is indistinguishable from single-blocker clearing ([pm-scbr0s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-scbr0s.toon))
 - Declare and enforce shared default bounds across graph queries ([pm-mfy1ux](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mfy1ux.toon))
 - Isolate published MCP verification from the caller global skill catalog ([pm-prmt1y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-prmt1y.toon))
 - The --profile timer reports a fraction of real invocation latency and is documented nowhere, so every latency judgement built on it is calibrated against the wrong number ([pm-ag9nka](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ag9nka.toon))

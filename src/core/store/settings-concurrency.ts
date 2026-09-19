@@ -15,7 +15,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 /**
  * Preserve concurrent edits to untouched leaves. Arrays and scalar values are
  * indivisible: incompatible edits to the same leaf refuse the entire write.
- * Error receipts contain a key path, never the potentially secret values.
+ * The root must remain an object even for an unchanged snapshot. Error receipts
+ * contain a key path, never the potentially secret values.
  */
 export function reconcileSettingsSnapshot(
   baseline: unknown,
@@ -23,7 +24,7 @@ export function reconcileSettingsSnapshot(
   current: unknown,
   segments: readonly string[] = [],
 ): unknown {
-  if (stableValueEquals(baseline, proposed)) return current;
+  if (stableValueEquals(baseline, proposed) && (segments.length > 0 || isRecord(current))) return current;
   if (stableValueEquals(baseline, current) || stableValueEquals(proposed, current)) {
     return proposed;
   }

@@ -1,6 +1,7 @@
 # Concurrent Workspace Mutations
 
-Tracked by [pm-bgcu](../.agents/pm/issues/pm-bgcu.toon).
+Tracked by [pm-bgcu](../.agents/pm/issues/pm-bgcu.toon). Power-loss durability is
+governed by [pm-o2kc](../.agents/pm/epics/pm-o2kc.toon).
 
 The CLI and MCP use the SDK's persistence primitives. Atomic replacement makes
 one file write indivisible, but preserving concurrent edits also requires
@@ -20,6 +21,8 @@ return a conflict before writing. Read a fresh settings snapshot and reapply
 the intended operation. Equal concurrent changes are idempotent. A successful
 write advances that instance's baseline, so reusing it cannot replay an earlier
 edit over another writer. Conflict messages name keys without exposing values.
+Deleting the settings document also invalidates an unchanged read snapshot;
+its next write returns the same structured conflict.
 
 Keep the object returned by `readSettings` when editing settings. Constructing
 a new object, spreading it, or using `structuredClone` drops the internal
@@ -49,6 +52,13 @@ seeds. Filesystem identity also protects paths reached through symlink aliases.
 A byte-identical retry succeeds; reusing an ID for different contents fails without
 replacing the original rollback evidence. Different checkpoint paths remain
 independent.
+
+Atomic publication guarantees complete visible bytes and prevents replacement.
+It does not flush file data or directory entries to stable storage, so success
+does not guarantee survival of power loss. A stronger durability policy must
+cover all writers, newly created ancestor directories, retry acknowledgements,
+and supported filesystems; syncing only this publication path would not establish
+that workspace-wide guarantee.
 
 The mutation locks use the existing bounded contention and stale-owner recovery
 mechanism. Settings use configured lock TTL and wait values. Internal session

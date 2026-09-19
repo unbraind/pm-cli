@@ -9,6 +9,7 @@ describe("settings snapshot reconciliation", () => {
     [{}, { group: { a: 1 } }, { group: { b: 2 } }, { group: { a: 1, b: 2 } }],
     [{ a: 1, b: 2 }, { b: 2 }, { a: 1, b: 3 }, { b: 3 }],
     [{ a: null, b: 2 }, { a: "value", b: 2 }, { a: null, b: 3 }, { a: "value", b: 3 }],
+    [{ a: 1, b: 2 }, { a: 1, b: 3 }, { a: null, b: 2 }, { a: null, b: 3 }],
   ])("preserves independent changes without mutating its inputs", (baseline, proposed, current, expected) => {
     const inputs = structuredClone([baseline, proposed, current]);
     expect(reconcileSettingsSnapshot(baseline, proposed, current)).toEqual(expected);
@@ -21,6 +22,7 @@ describe("settings snapshot reconciliation", () => {
     [{ a: 1 }, undefined, { a: 2 }],
     [null, { a: 1 }, { b: 2 }],
     [{ a: 1 }, { a: 2 }, null],
+    [{ a: 1 }, { a: 1 }, null],
   ])("refuses conflicting replacements and deletions", (baseline, proposed, current) => {
     expect(() => reconcileSettingsSnapshot(baseline, proposed, current)).toThrow(/Settings changed concurrently/);
   });
