@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[7]: "area:commands",code,docs,"milestone:1",pm-cli,"priority:1",tests
 created_at: "2026-03-04T00:26:07.113Z"
-updated_at: "2026-07-26T17:04:21.535Z"
+updated_at: "2026-09-19T08:39:28.726Z"
 deadline: "2026-03-08T23:59:00.000Z"
+closed_at: "2026-03-04T00:47:45.944Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 180
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/implement-pm-delete-command
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Implement pm delete command.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-u9r,parent,"2026-03-04T00:26:07.113Z",cursor-maintainer,null
-  pm-u9r,implements,"2026-07-26T17:04:21.289Z",null,null
+dependencies[2]:
+  - id: pm-u9r
+    kind: parent
+    created_at: "2026-03-04T00:26:07.113Z"
+    author: cursor-maintainer
+  - id: pm-u9r
+    kind: implements
+    created_at: "2026-07-26T17:04:21.289Z"
 comments[5]{created_at,author,text}:
   "2026-03-04T00:26:07.113Z",cursor-maintainer,Delete is roadmap only and this item implements it with deterministic behavior.
   "2026-03-04T00:26:24.527Z",cursor-maintainer,"Planned changeset: update PRD and README first to move pm delete from roadmap to implemented command surface, then implement delete command/store flow and add unit plus integration plus docs contract coverage before running pm test and test-all."

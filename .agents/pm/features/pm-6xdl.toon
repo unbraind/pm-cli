@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[4]: agent-ux,"area:observability","area:telemetry",living-map
 created_at: "2026-05-31T19:45:02.912Z"
-updated_at: "2026-09-08T05:32:36.075Z"
+updated_at: "2026-09-19T08:39:36.924Z"
+closed_at: "2026-06-06T05:04:59.888Z"
 author: maintainer-agent
 acceptance_criteria: "pm telemetry status (queue depth/last flush/endpoint), flush (inline flushTelemetryQueueNow), stats [--limit N] (group local events by command, offline), clear (disable+delete queue); advisory; pm_run action=telemetry; empty-queue exits 0."
 value: "No direct command to inspect the local queue, trigger a flush, or see per-command frequency from local JSONL; today only pm health surfaces telemetry state."

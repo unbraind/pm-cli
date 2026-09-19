@@ -6,15 +6,16 @@ status: closed
 priority: 2
 tags[4]: audit-2026-06-13,health,history,performance
 created_at: "2026-06-12T22:47:21.538Z"
-updated_at: "2026-07-26T17:10:56.405Z"
+updated_at: "2026-09-19T08:40:00.375Z"
+closed_at: "2026-06-19T22:58:06.093Z"
 author: audit-quality-agent
 parent: pm-y7sc
 release: v2026.6.20
 resolution: "Implemented a split drift-cache verification policy: strict content-hash verification remains the default for validate/history-repair, while pm health uses metadata-only cache hits for warm agent-loop scans."
 expected_result: Warm pm health avoids rereading every cached history stream while validation and repair still detect metadata-stable content replacement.
 actual_result: "Focused tests, linked tests, full coverage, static quality, security, contracts, changelog check, temp smoke, package dogfood, and Sentry/telemetry gate passed; real-repo warm health measured 615/483/422 ms."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-y7sc,implements,"2026-07-26T17:10:56.178Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-y7sc,implements,"2026-07-26T17:10:56.178Z"
 comments[4]{created_at,author,text}:
   "2026-06-17T22:04:54.799Z",codex-audit-20260618,"Sub-agent performance audit evidence: current repo has 1293 history streams, 20691 entries, 24641681 bytes; hotspot remains src/core/history/drift-scan.ts full stream read/content_hash on metadata cache hits. Recommended safe shape: add cacheHitVerification mode, use stat-fingerprint for health warm-cache, keep history-repair --all on content-hash, bump drift cache version, and test health/validate/repair callers separately. Not bundled into GH-262/templates branch because it changes shared drift-scan correctness semantics."
   "2026-06-17T23:12:21.038Z",codex-audit-agent,"Audit decision: performance subagent confirmed pm health hotspot remains drift-scan cache-hit content hashing across 1293 streams/24.6MB; this branch did not change it because a cache-hit verification mode/stat-fingerprint optimization needs separate correctness design. Current command-profile fixture paths remain low-ms; package-first dogfood slowest health brief/health around ~516ms in isolated temp project."

@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[8]: "area:extensions","area:health",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-05T15:13:38.557Z"
-updated_at: "2026-07-26T17:23:07.407Z"
+updated_at: "2026-09-19T08:40:59.212Z"
 deadline: "2026-03-07T23:59:00.000Z"
+closed_at: "2026-03-05T15:27:26.152Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 90
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-health-extension-activation-probe
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: health extension activation probe."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-7sd,related,"2026-03-05T15:13:38.557Z",cursor-maintainer,null
-  pm-2p6q,implements,"2026-07-26T17:23:07.131Z",null,null
+dependencies[2]:
+  - id: pm-7sd
+    kind: related
+    created_at: "2026-03-05T15:13:38.557Z"
+    author: cursor-maintainer
+  - id: pm-2p6q
+    kind: implements
+    created_at: "2026-07-26T17:23:07.131Z"
 comments[4]{created_at,author,text}:
   "2026-03-05T15:13:38.557Z",cursor-maintainer,"Why this exists: close remaining M5 health hardening by surfacing extension activation failures in health diagnostics."
   "2026-03-05T15:13:56.008Z",cursor-maintainer,"Planned changeset: docs-first update PRD and README to require extension activation probe diagnostics in pm health, then wire health command to surface activate(api) failures with deterministic warnings and add unit coverage before full pm test and test-all sweeps."

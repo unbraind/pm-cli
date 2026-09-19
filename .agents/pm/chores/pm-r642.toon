@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[4]: agent-ux,audit,ci,dependencies
 created_at: "2026-06-25T00:14:23.041Z"
-updated_at: "2026-09-08T05:33:25.476Z"
+updated_at: "2026-09-19T08:41:08.749Z"
+closed_at: "2026-06-25T00:42:20.732Z"
 author: codex-audit-20260625
 parent: pm-5dbn
 release: v2026.6.30

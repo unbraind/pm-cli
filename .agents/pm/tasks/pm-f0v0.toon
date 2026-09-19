@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:calendar","area:recurrence","area:schema",code,pm-cli
 created_at: "2026-03-31T22:29:50.963Z"
-updated_at: "2026-07-26T17:13:26.410Z"
+updated_at: "2026-09-19T08:40:13.064Z"
 deadline: "2026-04-07T22:29:50.963Z"
+closed_at: "2026-03-31T22:32:56.137Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 180
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/add-event-and-recurrence-schema-normalization
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add event and recurrence schema normalization.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-7e6n,related,"2026-03-31T22:29:50.963Z",codex-agent,null
-  pm-0ab3,implements,"2026-07-26T17:13:26.123Z",null,null
+dependencies[2]:
+  - id: pm-7e6n
+    kind: related
+    created_at: "2026-03-31T22:29:50.963Z"
+    author: codex-agent
+  - id: pm-0ab3
+    kind: implements
+    created_at: "2026-07-26T17:13:26.123Z"
 comments[2]{created_at,author,text}:
   "2026-03-31T22:29:50.963Z",codex-agent,Task created for event and recurrence schema foundations.
   "2026-03-31T22:32:48.801Z",codex-agent,Implemented first-class event and recurrence schema support with deterministic validation and normalization in item-format and front-matter ordering.

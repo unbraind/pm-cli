@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[7]: "area:test-safety",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T08:50:46.032Z"
-updated_at: "2026-07-26T17:23:42.368Z"
+updated_at: "2026-09-19T08:41:03.030Z"
 deadline: "2026-03-07T23:59:59.000Z"
+closed_at: "2026-03-06T09:10:24.180Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 75
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/harden-sandbox-guard-for-run-script-test-command
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden sandbox guard for run-script test commands.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-b1w,related,"2026-03-06T08:50:46.032Z",maintainer-agent,null
-  pm-2p6q,implements,"2026-07-26T17:23:42.100Z",null,null
+dependencies[2]:
+  - id: pm-b1w
+    kind: related
+    created_at: "2026-03-06T08:50:46.032Z"
+    author: maintainer-agent
+  - id: pm-2p6q
+    kind: implements
+    created_at: "2026-07-26T17:23:42.100Z"
 comments[6]{created_at,author,text}:
   "2026-03-06T08:50:46.032Z",maintainer-agent,Need to close run-script loophole so sandbox safety policy cannot be bypassed via npm or pnpm or yarn or bun run test wrappers.
   "2026-03-06T08:50:57.779Z",maintainer-agent,"Docs-first change: tighten sandbox policy text to explicitly include npm/pnpm/yarn/bun run-script test variants; then harden test command parsing and extend unit coverage for rejected and allowed run-script cases."

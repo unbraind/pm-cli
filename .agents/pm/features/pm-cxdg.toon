@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[5]: "area:search","area:semantic",config,corpus,living-map
 created_at: "2026-05-31T19:44:23.168Z"
-updated_at: "2026-09-08T05:32:28.949Z"
+updated_at: "2026-09-19T08:40:02.970Z"
+closed_at: "2026-06-06T06:21:59.578Z"
 author: maintainer-agent
 acceptance_criteria: New positive-integer setting wired through corpus build call sites; validator falls back to defaults on unset/invalid; reindex+background refresh honor it; PRD+README+tests.
 value: "Corpus truncation (8000 default, 3200 Ollama) is hardcoded in corpus.ts; large-body items truncate with no override and cost-sensitive users cannot lower it. buildSemanticCorpusInput already accepts maxCharacters."

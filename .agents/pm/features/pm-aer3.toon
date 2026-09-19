@@ -6,16 +6,17 @@ status: closed
 priority: 4
 tags[3]: backlog,cli,plan
 created_at: "2026-06-10T09:00:58.601Z"
-updated_at: "2026-07-26T17:09:14.735Z"
+updated_at: "2026-09-19T08:39:50.994Z"
+closed_at: "2026-06-19T00:59:41.050Z"
 author: maintainer-agent
 parent: pm-mpbb
 release: v2026.6.19
 resolution: Implemented built-in plan templates and step completion percentage for low-token plan inspection.
 expected_result: Agents can create a Plan from a named template and read progress directly from steps_summary.completion_pct.
 actual_result: "plan create --template bug-investigation/feature-implementation/refactoring-sprint works, docs/contracts/tests are updated, and temp-dir smoke plus 100% coverage passed."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-jmld,related,"2026-07-26T17:09:14.549Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:09:14.549Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-jmld,related,"2026-07-26T17:09:14.549Z"
+  pm-mpbb,implements,"2026-07-26T17:09:14.549Z"
 comments[3]{created_at,author,text}:
   "2026-06-19T00:23:36.407Z",claude-code-agent,"Continuation note: Codex resumed existing branch feat/dedupe-merge-plan-discoverability on 2026-06-19, verified GitHub issue #158 maps to this item, and will finish plan discoverability work alongside pm-jmld in one coherent PR."
   "2026-06-19T00:58:19.304Z",claude-code-agent,"Verification evidence: linked plan/contracts test passed (2 files, 70 tests), contracts:check passed, pnpm build passed, and full repo coverage passed at 100/100/100/100 with 4620 tests."

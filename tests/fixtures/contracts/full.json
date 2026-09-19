@@ -25398,6 +25398,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "validate_metadata_missing_closed_at",
+      "class": "generic_failure",
+      "code": "validate_metadata_missing_closed_at",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Validate metadata missing closed at condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "validate_metadata_missing_confidence",
       "class": "generic_failure",
       "code": "validate_metadata_missing_confidence",

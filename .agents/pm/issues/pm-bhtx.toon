@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[5]: agent-ux,aggregate,"area:cli",dedupe,status-filter
 created_at: "2026-06-25T04:51:51.175Z"
-updated_at: "2026-07-26T17:10:18.660Z"
+updated_at: "2026-09-19T08:39:56.254Z"
+closed_at: "2026-06-25T05:13:43.052Z"
 author: codex-pm-ecosystem-audit-20260625
 estimated_minutes: 45
 acceptance_criteria: pm aggregate --status all succeeds and behaves like no status filter; mixed all plus another status remains invalid; focused aggregate tests cover the sentinel; validation evidence is recorded on this item.
@@ -16,9 +17,9 @@ repro_steps: Run pm aggregate --group-by parent --count --completion --include-u
 resolution: Aggregate status parsing now reuses the shared status-filter parser so standalone --status all is treated as the no-filter sentinel while mixed all+status and multiple statuses remain invalid for aggregate's single-status contract.
 expected_result: Standalone --status all is accepted as a no-filter sentinel for duplicate-safe aggregate governance queries.
 actual_result: Focused aggregate tests pass; the real repository command pm aggregate --group-by parent --count --completion --include-unparented --status all succeeds; the linked sandbox command also verifies the parser no longer rejects the all sentinel; pnpm build passes.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-i02t,related,"2026-07-26T17:10:18.456Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:10:18.456Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-i02t,related,"2026-07-26T17:10:18.456Z"
+  pm-mpbb,implements,"2026-07-26T17:10:18.456Z"
 comments[4]{created_at,author,text}:
   "2026-06-25T04:51:51.175Z",codex-pm-ecosystem-audit-20260625,"Duplicate check before create: pm search \"aggregate --status all rejects\" --status all --limit 20 found related closed status-all work pm-i02t for list/search and aggregate feature work, but no open issue for aggregate rejecting the all sentinel."
   "2026-06-25T05:13:26.870Z",codex-ecosystem-auditor,"Evidence: focused test node scripts/run-tests.mjs test -- tests/unit/commands/aggregate-command.spec.ts passed (17 tests). Real command pm aggregate --group-by parent --count --completion --include-unparented --status all now succeeds and returns all-status grouped output."

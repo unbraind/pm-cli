@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[3]: agent-ux,create,dogfood
 created_at: "2026-05-16T16:12:05.486Z"
-updated_at: "2026-07-29T04:25:39.019Z"
+updated_at: "2026-09-19T08:39:41.590Z"
+closed_at: "2026-05-16T16:12:05.486Z"
 author: maintainer-agent
 parent: pm-rnpb
 release: v2026.5.18

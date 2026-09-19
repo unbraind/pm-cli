@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[4]: automation,governance,ownership,pm-cli
 created_at: "2026-04-04T21:55:27.146Z"
-updated_at: "2026-07-26T17:19:40.453Z"
+updated_at: "2026-09-19T08:40:44.357Z"
 deadline: "2026-04-25T21:55:27.146Z"
+closed_at: "2026-04-06T18:47:59.214Z"
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: "A governance batch mode can generate an override plan (dry-run), list affected assignees/items, require explicit confirmation, and execute scoped mutations with clear per-item audit output."
@@ -35,10 +36,10 @@ affected_version: 2026.3.12
 component: governance-batch-ownership
 regression: false
 customer_impact: Maintainers can execute approved governance maintenance faster with explicit safety evidence.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-5rjn,implements,"2026-07-26T17:19:40.172Z",null,null
-  pm-lf6s,related,"2026-07-26T17:19:40.172Z",null,null
-  pm-umhv,related,"2026-07-26T17:19:40.172Z",null,null
+dependencies[3]{id,kind,created_at}:
+  pm-5rjn,implements,"2026-07-26T17:19:40.172Z"
+  pm-lf6s,related,"2026-07-26T17:19:40.172Z"
+  pm-umhv,related,"2026-07-26T17:19:40.172Z"
 comments[6]{created_at,author,text}:
   "2026-04-04T21:55:27.146Z",codex-agent,"Duplicate-check evidence: pm search 'ownership conflict force audit override workflow' --limit 20; pm search 'ownership-safe batch mutation mode governance override' --limit 20; pm list-open --limit 20. Net-new because current items improve guidance only; no feature currently provides plan+execute batch ownership override workflow for governance operations."
   "2026-04-05T20:39:58.011Z",codex-agent,Duplicate-check evidence refreshed; existing open feature reused as canonical parent for transactional annotate/batch mutation implementation (no duplicate item created).

@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:linked-ops",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:02:09.505Z"
-updated_at: "2026-08-13T09:50:43.977Z"
+updated_at: "2026-09-19T08:40:41.862Z"
 deadline: "2026-03-03T23:02:09.505Z"
+closed_at: "2026-02-18T02:01:02.336Z"
 assignee: steve
 author: steve
 estimated_minutes: 150

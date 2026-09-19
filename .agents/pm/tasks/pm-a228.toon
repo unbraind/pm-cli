@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:files","area:validation",follow-up,pm-cli
 created_at: "2026-04-03T21:59:58.425Z"
-updated_at: "2026-07-26T17:08:46.500Z"
+updated_at: "2026-09-19T08:39:49.332Z"
 deadline: "2026-04-10T21:59:58.425Z"
+closed_at: "2026-04-06T23:51:29.397Z"
 author: codex-agent
 estimated_minutes: 220
 acceptance_criteria: pm validate --check-files --scan-mode tracked-all prioritizes actionable repository files by default; users can explicitly include PM internals when desired; completion/contracts/wrapper/tests are aligned.
@@ -28,9 +29,9 @@ expected_result: "Acceptance criteria for External follow-up: reduce tracked-all
 actual_result: "Work completed and recorded with linked artifacts for External follow-up: reduce tracked-all orphaned noise from PM internals."
 component: project-management/external-follow-up-reduce-tracked-all-orphaned-n
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for External follow-up: reduce tracked-all orphaned noise from PM internals."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-j371,related,"2026-07-26T17:08:46.289Z",null,null
-  pm-o7be,implements,"2026-07-26T17:08:46.289Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-j371,related,"2026-07-26T17:08:46.289Z"
+  pm-o7be,implements,"2026-07-26T17:08:46.289Z"
 comments[12]{created_at,author,text}:
   "2026-04-03T21:59:58.425Z",codex-agent,Child task created from tracked-all orphaned-path signal-quality report.
   "2026-04-03T22:03:12.315Z",codex-agent,"Implementation started: add default tracked-all exclusion for PM internals plus explicit opt-in include flag with contracts/completion/Pi parity."

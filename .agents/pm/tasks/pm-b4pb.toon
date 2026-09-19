@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:search","milestone:4",pm-cli,"priority:1",semantic
 created_at: "2026-03-09T00:05:54.250Z"
-updated_at: "2026-08-13T08:04:41.635Z"
+updated_at: "2026-09-19T08:39:54.495Z"
 deadline: "2026-03-10T00:05:54.250Z"
+closed_at: "2026-03-09T00:06:18.329Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 60

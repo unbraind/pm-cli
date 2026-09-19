@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[4]: "area:search",living-map,quality,story
 created_at: "2026-05-31T19:49:45.631Z"
-updated_at: "2026-09-08T05:32:38.804Z"
+updated_at: "2026-09-19T08:40:15.458Z"
+closed_at: "2026-06-06T08:12:34.113Z"
 author: maintainer-agent
 acceptance_criteria: "A relevance/ranking change can be validated against a stored baseline before release: regressions surface as a measurable nDCG@5 drop on the golden-query set, and the maintainer gets a clear per-query pass/fail signal. (Implemented by the eval-harness task pm-22x2, which owns the fixture format and runner.)"
 parent: pm-ydp6

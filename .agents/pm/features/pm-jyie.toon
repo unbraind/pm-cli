@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[4]: "area:search","area:semantic",corpus,relevance
 created_at: "2026-06-07T10:04:56.338Z"
-updated_at: "2026-09-08T05:32:49.430Z"
+updated_at: "2026-09-19T08:40:38.851Z"
+closed_at: "2026-06-14T16:24:09.338Z"
 author: audit-data-agent
 acceptance_criteria: "- Add `type`, `priority`, `assignee`, `goal`, `value`, `why_now`, `ac`, `risk`, `confidence` to the semantic corpus\n- Make the corpus field inclusion config-driven so teams can opt fields in/out\n- Add `estimate` and `resolution` for richer closed-item recall\n- Evaluate corpus character budget impact and adjust `OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS` or truncation policy if needed"
 parent: pm-ydp6

@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[5]: "area:ci","area:docs","area:release","area:tests",audit
 created_at: "2026-06-07T10:04:25.288Z"
-updated_at: "2026-07-26T17:04:42.411Z"
+updated_at: "2026-09-19T08:39:30.721Z"
+closed_at: "2026-06-25T16:52:07.050Z"
 author: audit-docs-tests-agent
 goal: "Identify and track genuine forward-work gaps in docs, CI, release reliability, and test/coverage quality"
 parent: pm-u9d0
@@ -14,22 +15,22 @@ release: v2026.6.30
 resolution: Closed as terminal stale audit container during dedicated tracker-only normalization.
 expected_result: Audit wrapper remains open only while active findings need tracking.
 actual_result: All findings are closed or represented by current backlog; descendant check found no open child work.
-dependencies[15]{id,kind,created_at,author,source_kind}:
-  pm-4dtf,related,"2026-07-26T17:04:42.181Z",null,null
-  pm-5rge,related,"2026-07-26T17:04:42.181Z",null,null
-  pm-7p4w,related,"2026-07-26T17:04:42.181Z",null,null
-  pm-7tvx,related,"2026-07-26T17:04:42.181Z",null,null
-  pm-8d00,related,"2026-07-26T17:04:42.181Z",null,null
-  pm-96wm,related,"2026-07-26T17:04:42.181Z",null,null
-  pm-97yv,related,"2026-07-26T17:04:42.181Z",null,null
-  pm-btwe,related,"2026-07-26T17:04:42.181Z",null,null
-  pm-eg9k,related,"2026-07-26T17:04:42.181Z",null,null
-  pm-ehbb,related,"2026-07-26T17:04:42.181Z",null,null
-  pm-ji5c,related,"2026-07-26T17:04:42.181Z",null,null
-  pm-js02,related,"2026-07-26T17:04:42.181Z",null,null
-  pm-mcgf,related,"2026-07-26T17:04:42.181Z",null,null
-  pm-mthy,related,"2026-07-26T17:04:42.181Z",null,null
-  pm-u9d0,implements,"2026-07-26T17:04:42.181Z",null,null
+dependencies[15]{id,kind,created_at}:
+  pm-4dtf,related,"2026-07-26T17:04:42.181Z"
+  pm-5rge,related,"2026-07-26T17:04:42.181Z"
+  pm-7p4w,related,"2026-07-26T17:04:42.181Z"
+  pm-7tvx,related,"2026-07-26T17:04:42.181Z"
+  pm-8d00,related,"2026-07-26T17:04:42.181Z"
+  pm-96wm,related,"2026-07-26T17:04:42.181Z"
+  pm-97yv,related,"2026-07-26T17:04:42.181Z"
+  pm-btwe,related,"2026-07-26T17:04:42.181Z"
+  pm-eg9k,related,"2026-07-26T17:04:42.181Z"
+  pm-ehbb,related,"2026-07-26T17:04:42.181Z"
+  pm-ji5c,related,"2026-07-26T17:04:42.181Z"
+  pm-js02,related,"2026-07-26T17:04:42.181Z"
+  pm-mcgf,related,"2026-07-26T17:04:42.181Z"
+  pm-mthy,related,"2026-07-26T17:04:42.181Z"
+  pm-u9d0,implements,"2026-07-26T17:04:42.181Z"
 comments[3]{created_at,author,text}:
   "2026-06-07T17:05:17.230Z",maintainer-agent,"Audit 2026-06-07 (PR pass): docs/CI findings — SHIPPED pm-7tvx (MCP tool-count drift + live-count smoke), pm-t73k (CONTRIBUTING PR-matrix), pm-ji5c (CodeQL SHA pin + contract test). See ADR pm-96wm."
   "2026-06-25T00:41:53.152Z",codex-audit-20260625,"Audit evidence: GitHub main CI/Docs/CodeQL baseline was green before changes. Repository settings remediated via gh API: secret-scanning push protection enabled, main branch protection added with required CI/Docs/CodeQL checks, strict up-to-date checks, linear history, no force pushes/deletions, and required conversation resolution. Changelog check passed unchanged via pm-changelog 2026.6.20; contracts snapshot current."

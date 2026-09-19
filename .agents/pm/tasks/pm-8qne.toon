@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:architecture","area:docs","area:extensions",pm-cli
 created_at: "2026-04-01T02:17:42.148Z"
-updated_at: "2026-07-26T17:07:47.727Z"
+updated_at: "2026-09-19T08:39:44.885Z"
 deadline: "2026-04-10T02:17:42.148Z"
+closed_at: "2026-04-01T03:02:04.277Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 120
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/d1-rewrite-extension-and-architecture-docs-for-f
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for D1: Rewrite extension and architecture docs for full override."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-31fj,parent,"2026-04-01T02:17:42.148Z",codex-agent,null
-  pm-31fj,implements,"2026-07-26T17:07:47.470Z",null,null
+dependencies[2]:
+  - id: pm-31fj
+    kind: parent
+    created_at: "2026-04-01T02:17:42.148Z"
+    author: codex-agent
+  - id: pm-31fj
+    kind: implements
+    created_at: "2026-07-26T17:07:47.470Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T02:17:42.148Z",codex-agent,D1 task created from full-override feature D.
   "2026-04-01T03:01:13.330Z",codex-agent,Rewrote extension/runtime architecture docs for extension-first dispatch and live registration wiring in docs/EXTENSIONS.md + docs/ARCHITECTURE.md.

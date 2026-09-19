@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:status",code,pm-cli
 created_at: "2026-04-01T10:47:04.830Z"
-updated_at: "2026-07-26T17:23:20.539Z"
+updated_at: "2026-09-19T08:41:00.357Z"
 deadline: "2026-04-03T10:47:04.830Z"
+closed_at: "2026-04-01T10:58:37.714Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 90
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: status-normalization
 regression: true
 customer_impact: status updates and filters work with common agent output
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-1r6p,parent,"2026-04-01T10:47:04.830Z",codex-agent,null
-  pm-1r6p,implements,"2026-07-26T17:23:20.284Z",null,null
+dependencies[2]:
+  - id: pm-1r6p
+    kind: parent
+    created_at: "2026-04-01T10:47:04.830Z"
+    author: codex-agent
+  - id: pm-1r6p
+    kind: implements
+    created_at: "2026-07-26T17:23:20.284Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T10:47:04.830Z",codex-agent,Task targets core helper plus command integration points create/update/calendar/test-all and importers.
   "2026-04-01T10:58:28.201Z",codex-agent,"Implemented centralized status normalization helper (src/core/item/status.ts) and wired create/update/calendar/test-all/import/front-matter parsing to accept in-progress while persisting canonical in_progress. Verification: node scripts/run-tests.mjs test passed (61 files, 636 tests)."

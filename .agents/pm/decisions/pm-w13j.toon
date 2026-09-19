@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: adr,"area:ci","area:tests",coverage
 created_at: "2026-06-09T22:05:03.764Z"
-updated_at: "2026-09-08T05:32:56.919Z"
+updated_at: "2026-09-19T08:42:24.428Z"
+closed_at: "2026-06-16T07:23:51.189Z"
 author: codex-active-pm-cycle-20260610
 parent: pm-m2u1
 release: v2026.6.16

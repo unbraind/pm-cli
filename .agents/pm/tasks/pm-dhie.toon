@@ -6,7 +6,8 @@ status: closed
 priority: 0
 tags[6]: agent-ux,ci,docs,extensions,pm-cli,sdk
 created_at: "2026-05-10T09:48:16.405Z"
-updated_at: "2026-07-26T17:12:04.377Z"
+updated_at: "2026-09-19T08:40:05.323Z"
+closed_at: "2026-05-10T12:30:59.433Z"
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: Granular extension controls and diagnostics are implemented; SDK/contracts expose deterministic machine-friendly surfaces; docs/examples are comprehensive and runnable; automated and manual temp-project E2E verification pass; final checks are green on GitHub.
@@ -15,11 +16,20 @@ release: v2026.5.11
 resolution: Full-scope SDK and extension platform upgrade delivered.
 expected_result: "Granular extension controls, deterministic SDK/contracts, runnable docs/examples, and verified extension platform behavior are available."
 actual_result: "Implementation and docs were delivered, automated/manual verification passed, and CI was reported green at closure."
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-rnpb,parent,"2026-05-10T09:48:16.405Z",codex-agent,null
-  pm-0c9q,related,"2026-07-26T17:12:04.206Z",null,null
-  pm-4z9m,related,"2026-07-26T17:12:04.206Z",null,null
-  pm-rnpb,implements,"2026-07-26T17:12:04.206Z",null,null
+dependencies[4]:
+  - id: pm-rnpb
+    kind: parent
+    created_at: "2026-05-10T09:48:16.405Z"
+    author: codex-agent
+  - id: pm-0c9q
+    kind: related
+    created_at: "2026-07-26T17:12:04.206Z"
+  - id: pm-4z9m
+    kind: related
+    created_at: "2026-07-26T17:12:04.206Z"
+  - id: pm-rnpb
+    kind: implements
+    created_at: "2026-07-26T17:12:04.206Z"
 comments[2]{created_at,author,text}:
   "2026-05-10T09:48:16.405Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10 --depth standard,pm search full scope sdk extension capabilities docs examples ci --limit 10,pm list-open --limit 20,and pm list-in-progress --limit 20. Existing active items either cover plugin-specific work (pm-0c9q),docs-skills modernization (pm-4z9m),or unrelated issues,so this is net-new child scope under pm-rnpb."
   "2026-05-10T12:07:48.192Z",codex-agent,"Evidence: implemented extension governance policy enforcement in loader/runtime and surfaced policy diagnostics in extension doctor/manage + contracts output; added SDK policy/action helpers and Pi/native schema alignment. Verified with node scripts/run-tests.mjs test -- --maxWorkers=2, node scripts/run-tests.mjs coverage -- --maxWorkers=2, targeted extension/contracts suites, and integration suite. Manual temp-project E2E passed using docs/examples/policy-restricted-extension (install + activate + enforce services.override block + doctor strict-exit) and docs/examples/sdk-contract-consumer (local package install + inspect-contracts.mjs create)."

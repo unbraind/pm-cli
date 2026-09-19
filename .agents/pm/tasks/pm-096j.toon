@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[8]: "area:docs","area:extensions-pi",code,"milestone:6",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-08T16:08:41.139Z"
-updated_at: "2026-07-26T16:59:54.593Z"
+updated_at: "2026-09-19T08:39:11.978Z"
 deadline: "2026-03-09T16:10:00.000Z"
+closed_at: "2026-03-08T16:41:42.942Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 150
@@ -41,9 +42,14 @@ fixed_version: v0.1
 component: project-management/pi-wrapper-all-fields-create-update-parity
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Pi wrapper all-fields create/update parity.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-igv,related,"2026-03-08T16:08:41.139Z",maintainer-agent,null
-  pm-8a2s,implements,"2026-07-26T16:59:54.434Z",null,null
+dependencies[2]:
+  - id: pm-igv
+    kind: related
+    created_at: "2026-03-08T16:08:41.139Z"
+    author: maintainer-agent
+  - id: pm-8a2s
+    kind: implements
+    created_at: "2026-07-26T16:59:54.434Z"
 comments[4]{created_at,author,text}:
   "2026-03-08T16:08:41.139Z",maintainer-agent,Why this exists because Pi wrapper docs claim broad action parity but the current create update mapper omits newer canonical metadata fields.
   "2026-03-08T16:08:48.319Z",maintainer-agent,"Planned changeset before edits: make docs explicit about Pi wrapper create and update all-fields parity, then add schema plus arg mapping coverage for the missing metadata fields and close the gap with targeted release-contract assertions."

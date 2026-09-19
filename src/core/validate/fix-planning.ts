@@ -32,6 +32,7 @@ export type ValidateFixKind =
   | "set_resolution"
   | "set_close_reason"
   | "set_estimate"
+  | "set_closed_at"
   | "reparent"
   | "unset_parent"
   | "prune_file_link"
@@ -42,6 +43,7 @@ export type ValidateFixScope =
   | "metadata"
   | "resolution"
   | "estimates"
+  | "timestamps"
   | "lifecycle";
 
 /** Scopes auto-applied without an explicit `--fix-scope` (safe field backfills). */
@@ -50,11 +52,12 @@ export const DEFAULT_GRANTED_FIX_SCOPES: readonly ValidateFixScope[] = [
   "resolution",
 ];
 
-/** Scopes accepted by `--fix-scope`. `estimates` and `lifecycle` are opt-in: estimate backfills are heuristic per-type guesses (not derived facts) and lifecycle changes are structural, so neither is granted by default. */
+/** Scopes accepted by `--fix-scope`. Estimates are heuristic, timestamps require verified historical replay, and lifecycle changes are structural; all three require explicit opt-in. */
 export const SUPPORTED_FIX_SCOPES: readonly ValidateFixScope[] = [
   "metadata",
   "resolution",
   "estimates",
+  "timestamps",
   "lifecycle",
 ];
 

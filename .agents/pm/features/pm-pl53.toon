@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[3]: "area:extensions",docs,security
 created_at: "2026-06-07T10:05:40.761Z"
-updated_at: "2026-07-26T17:23:11.686Z"
+updated_at: "2026-09-19T08:40:59.541Z"
+closed_at: "2026-06-09T18:41:08.906Z"
 author: audit-platform-agent
 acceptance_criteria: "- `pm health`/doctor surfaces the advisory-only sandbox trust caveat\n- Caveat documented wherever sandbox_profile is described\n- No false runtime-enforcement claim (consistent with ADR pm-6ef3)"
 parent: pm-ugqx
@@ -16,9 +17,9 @@ release: v2026.6.10
 resolution: Documented advisory-only sandbox/permissions model and surfaced policy posture in package doctor output.
 expected_result: "Operators understand declared sandbox profiles are load-policy metadata, not runtime isolation."
 actual_result: EXTENSIONS docs and package doctor policy summary now state the advisory enforcement caveat; tests passed.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-6ef3,related,"2026-07-26T17:23:11.466Z",null,null
-  pm-ugqx,implements,"2026-07-26T17:23:11.466Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-6ef3,related,"2026-07-26T17:23:11.466Z"
+  pm-ugqx,implements,"2026-07-26T17:23:11.466Z"
 comments[4]{created_at,author,text}:
   "2026-06-09T17:46:48.641Z",sdk-core-agent,"sdk-core-agent starting: one-line advisory-trust-model caveat in pm extension doctor sandbox/permission output; verify pm health makes no runtime-enforcement claim."
   "2026-06-09T18:09:32.053Z",codex-implementation-agent,"Trust-model evidence: EXTENSIONS.md and package doctor policy summary now state sandbox_profile/permissions are declaration-based load gates, not runtime isolation."

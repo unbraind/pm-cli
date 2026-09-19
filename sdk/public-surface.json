@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1958,
+    "covered_symbols": 1963,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1959
+    "required_symbols": 1964
   },
   "breaking_acknowledgements": [
     {
@@ -2717,6 +2717,12 @@
           "signature": "(argv: string[]) => () => void | calls: (argv: string[]) => () => void"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "applyClosureTimestampFix",
+          "signature": "(fix: ValidateFixRecord, global: GlobalOptions) => Promise<void> | calls: (fix: ValidateFixRecord, global: GlobalOptions) => Promise<void>"
+        },
+        {
           "classification": "contract_data",
           "kind": "function",
           "name": "applyContextIntentProjection",
@@ -4365,6 +4371,18 @@
           "kind": "interface",
           "name": "CloseTaskResult",
           "signature": "export interface CloseTaskResult { id: string; action: \"close_task\"; close: CloseResult; release: ReleaseResult; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ClosureTimestampEvidence",
+          "signature": "export type ClosureTimestampEvidence = { timestamp: string; source_index: number; } | { reason: \"missing_history\" | \"unverified_history\" | \"not_terminal\" | \"no_proven_transition\"; };"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ClosureTimestampScan",
+          "signature": "export interface ClosureTimestampScan { details: Record<string, unknown>; fixes: ValidateFixRecord[]; warnings: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -6207,6 +6225,12 @@
           "kind": "function",
           "name": "deriveAssuranceProposals",
           "signature": "(context: AssuranceEvaluationContext, ownerItemId: string) => Promise<AssuranceDerivedProposal[]> | calls: (context: AssuranceEvaluationContext, ownerItemId: string) => Promise<AssuranceDerivedProposal[]>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "deriveClosureTimestamp",
+          "signature": "(history: HistoryEntry[], document: ItemDocument, terminalStatuses: ReadonlySet<string>) => ClosureTimestampEvidence | calls: (history: HistoryEntry[], document: ItemDocument, terminalStatuses: ReadonlySet<string>) => ClosureTimestampEvidence"
         },
         {
           "classification": "supported",
@@ -17731,6 +17755,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "scanClosureTimestamps",
+          "signature": "(pmRoot: string, items: readonly ValidateItem[], registry: RuntimeStatusRegistry, inspectHistory: boolean, limit: number) => Promise<ClosureTimestampScan> | calls: (pmRoot: string, items: readonly ValidateItem[], registry: RuntimeStatusRegistry, inspectHistory: boolean, limit: number) => Promise<ClosureTimestampScan>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "scanExtensionHostVersions",
           "signature": "(loadedExtensions: readonly LoadedExtension[], workspaceRoot: string, hostPackageRoot?: string) => Promise<ExtensionHostVersionCensus> | calls: (loadedExtensions: readonly LoadedExtension[], workspaceRoot: string, hostPackageRoot?: string) => Promise<ExtensionHostVersionCensus>"
         },
@@ -25806,6 +25836,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "applyClosureTimestampFix",
+          "signature": "(fix: ValidateFixRecord, global: GlobalOptions) => Promise<void> | calls: (fix: ValidateFixRecord, global: GlobalOptions) => Promise<void>"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "ASSURANCE_ACTIONS",
           "signature": "readonly [\"list\", \"show\", \"put\", \"remove\", \"run\", \"verdicts\", \"presets\", \"apply\", \"derive\", \"promote\", \"risk\", \"lineages\"]"
@@ -26274,6 +26310,18 @@
         },
         {
           "classification": "supported",
+          "kind": "type",
+          "name": "ClosureTimestampEvidence",
+          "signature": "export type ClosureTimestampEvidence = { timestamp: string; source_index: number; } | { reason: \"missing_history\" | \"unverified_history\" | \"not_terminal\" | \"no_proven_transition\"; };"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ClosureTimestampScan",
+          "signature": "export interface ClosureTimestampScan { details: Record<string, unknown>; fixes: ValidateFixRecord[]; warnings: string[]; }"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "createAssurancePreset",
           "signature": "(id: AssurancePresetId, ownerItemId: string) => AssurancePreset | calls: (id: AssurancePresetId, ownerItemId: string) => AssurancePreset"
@@ -26457,6 +26505,12 @@
           "kind": "function",
           "name": "deriveAssuranceProposals",
           "signature": "(context: AssuranceEvaluationContext, ownerItemId: string) => Promise<AssuranceDerivedProposal[]> | calls: (context: AssuranceEvaluationContext, ownerItemId: string) => Promise<AssuranceDerivedProposal[]>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "deriveClosureTimestamp",
+          "signature": "(history: HistoryEntry[], document: ItemDocument, terminalStatuses: ReadonlySet<string>) => ClosureTimestampEvidence | calls: (history: HistoryEntry[], document: ItemDocument, terminalStatuses: ReadonlySet<string>) => ClosureTimestampEvidence"
         },
         {
           "classification": "supported",
@@ -27177,6 +27231,12 @@
           "kind": "function",
           "name": "runWorkflowPolicyAction",
           "signature": "(action: WorkflowPolicyAction, name: string | undefined, options?: WorkflowPolicyActionOptions, global?: Pick<GlobalOptions, \"path\">) => Promise<WorkflowPolicyActionResult> | calls: (action: WorkflowPolicyAction, name: string | undefined, options?: WorkflowPolicyActionOptions, global?: Pick<GlobalOptions, \"path\">) => Promise<WorkflowPolicyActionResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "scanClosureTimestamps",
+          "signature": "(pmRoot: string, items: readonly ValidateItem[], registry: RuntimeStatusRegistry, inspectHistory: boolean, limit: number) => Promise<ClosureTimestampScan> | calls: (pmRoot: string, items: readonly ValidateItem[], registry: RuntimeStatusRegistry, inspectHistory: boolean, limit: number) => Promise<ClosureTimestampScan>"
         },
         {
           "classification": "supported",
@@ -35267,6 +35327,7 @@
     "validate_metadata_duplicate_issue_codes",
     "validate_metadata_missing_acceptance_criteria",
     "validate_metadata_missing_close_reason",
+    "validate_metadata_missing_closed_at",
     "validate_metadata_missing_confidence",
     "validate_metadata_missing_estimate",
     "validate_metadata_missing_release",

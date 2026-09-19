@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: dependabot,dependencies,github-pr,pm-cli
 created_at: "2026-04-03T17:25:08.955Z"
-updated_at: "2026-07-26T17:20:53.881Z"
+updated_at: "2026-09-19T08:40:48.796Z"
 deadline: "2026-04-17T17:25:08.955Z"
+closed_at: "2026-04-03T17:46:24.295Z"
 author: codex-agent
 estimated_minutes: 30
 acceptance_criteria: PR #7 is merged/superseded/closed with rationale and linked verification evidence.
@@ -39,9 +40,9 @@ fixed_version: target-vnext
 component: dependabot-pr
 regression: true
 customer_impact: Delayed updates can keep vulnerabilities or compatibility gaps open
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-0jpx,related,"2026-07-26T17:20:53.656Z",null,null
-  pm-i7w2,implements,"2026-07-26T17:20:53.656Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-0jpx,related,"2026-07-26T17:20:53.656Z"
+  pm-i7w2,implements,"2026-07-26T17:20:53.656Z"
 comments[3]{created_at,author,text}:
   "2026-04-03T17:25:08.955Z",codex-agent,Imported open Dependabot PR #7 for tracking and remediation.
   "2026-04-03T17:46:23.342Z",codex-agent,Superseded by direct dependency/workflow upgrades on main branch and validated by full regression and coverage runs.

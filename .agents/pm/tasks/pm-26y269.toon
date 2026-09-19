@@ -1,0 +1,24 @@
+id: pm-26y269
+title: Bound replication-gate Git work independently of tracker migration size
+description: "Large audited tracker migrations cause changedLinesFromGit in surface-replication-gate.mjs to execute three git diff subprocesses for every changed path, even paths absent from all content-scoped replication triggers. The 1488-item closure-timestamp migration exposes roughly 9000 redundant Git subprocesses. Filter to declared content-trigger paths or batch patches while preserving deleted-file handling and fail-closed unknown evidence."
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-09-19T09:04:56.152Z"
+updated_at: "2026-09-19T09:15:14.861Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: "Git subprocess count is bounded by declared content triggers or a constant number of batched diffs, not unrelated changed tracker files; missing or unreadable diff evidence still activates applicable sets fail-closed; deleted structured triggers and unrelated-hunk negative controls remain covered; a large temporary Git fixture proves equivalent findings and bounded process work"
+parent: pm-92if
+risk: low
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-92if,implements,"2026-09-19T09:04:56.152Z","harness:codex","cli:create:dep",detected
+  pm-mrhwow,discovered_from,"2026-09-19T09:04:56.152Z","harness:codex","cli:create:dep",detected
+  pm-wrbe,discovered_from,"2026-09-19T09:04:56.152Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text,edited_at}:
+  "2026-09-19T09:04:56.152Z","harness:codex","Duplicate check: all-status keyword search changedLinesFromGit returned zero; all 59 replication matches were inspected for matching scope. Closed pm-mrhwow owns semantic activation correctness, not subprocess fanout; its completed behavior must be preserved. Open and in_progress inventories were refreshed. This follow-up remains open and unclaimed; its discovery is the pm-wrbe bulk migration.","2026-09-19T09:15:14.861Z"
+files[1]{path,scope,note}:
+  scripts/release/surface-replication-gate.mjs,project,Per-path Git subprocess fanout observed during historical repair validation
+body: ""

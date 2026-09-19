@@ -6,15 +6,16 @@ status: closed
 priority: 1
 tags[5]: changelog,ci,pm-changelog,release,reliability
 created_at: "2026-05-25T08:18:53.175Z"
-updated_at: "2026-07-26T17:30:15.269Z"
+updated_at: "2026-09-19T08:43:07.092Z"
+closed_at: "2026-05-25T10:10:35.621Z"
 author: claude-code-agent
 parent: pm-rnpb
 release: v2026.5.27
 resolution: Added missing auto-release build step before release pipeline and kept workflow-order contract coverage.
 expected_result: Scheduled auto-release runs should build dist and no longer fail at dist/cli.js lookup during pm-changelog generation.
 actual_result: Workflow now builds before pipeline; merged fix verified by focused contract tests and successful post-merge CI.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-rnpb,implements,"2026-07-26T17:30:15.081Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-rnpb,implements,"2026-07-26T17:30:15.081Z"
 comments[6]{created_at,author,text}:
   "2026-05-25T08:20:11.943Z",release-ci-subagent,"release-ci-subagent START: Plan = (1) add a 'Build' step (run: pnpm build) to .github/workflows/auto-release.yml between 'Install dependencies' and 'Run auto release pipeline' so dist/cli.js exists before run-release-pipeline.mjs calls it for pm-changelog generation; (2) add a regression contract test in tests/integration/release-automation-contract.spec.ts asserting auto-release.yml contains 'pnpm build' AND that its indexOf precedes run-release-pipeline.mjs; (3) run the contract spec. Not touching CHANGELOG.md, config.ts, or run-release-pipeline.mjs."
   "2026-05-25T08:20:41.641Z",release-ci-subagent,"release-ci-subagent DONE.\n\nFILES CHANGED (2):\n1) .github/workflows/auto-release.yml -- inserted a new step between 'Install dependencies' and 'Run auto release pipeline':\n      - name: Build\n        run: pnpm build\n   This builds dist/cli.js so the release pipeline (run-release-pipeline.mjs lines ~284-302) can call 'dist/cli.js install npm:pm-changelog --project' and 'dist/cli.js changelog generate' without Cannot-find-module errors. Verified step order is now Install dependencies -> Build -> Run auto release pipeline; YAML parses cleanly.\n\n2) tests/integration/release-automation-contract.spec.ts -- added regression test 'builds dist before the auto-release pipeline consumes dist/cli.js' (placed right after the existing auto-release workflow contract test). It reads auto-release.yml, asserts it contains 'pnpm build', and asserts indexOf('pnpm build') < indexOf('scripts/release/run-release-pipeline.mjs') so the build always precedes the pipeline. Matches existing indexOf style in the file.\n\nTESTS RUN:\n  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts\n  => 1 file passed, 11 tests passed (was 10, +1 new). Build runs first then tests; all green.\n\nNOT TOUCHED (per constraints): CHANGELOG.md, src/cli/commands/config.ts (other agent), scripts/release/run-release-pipeline.mjs (workflow-only fix is sufficient; pipeline assumes dist/cli.js exists, which is the correct contract for a release job).\n\nCOORDINATOR TODO:\n  - Add CHANGELOG.md [Unreleased] line, e.g. under Fixed:\n    'Fixed daily Auto Release workflow failing since 2026-05-24 by adding the missing pnpm build step before the release pipeline, so dist/cli.js exists when pm-changelog generation runs (pm-yf8t).'\n  - Do NOT close pm-yf8t until PR merges (per instructions)."

@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[7]: audit,calendar,dogfood,extensibility,pm-cli,sdk,telemetry
 created_at: "2026-04-30T19:37:11.721Z"
-updated_at: "2026-08-10T11:52:40.417Z"
+updated_at: "2026-09-19T08:39:16.913Z"
 deadline: "2026-05-02T19:37:11.721Z"
+closed_at: "2026-05-01T18:07:25.214Z"
 author: codex-audit
 estimated_minutes: 360
 acceptance_criteria: "All material findings are documented in pm; any feasible defects discovered are fixed and linked; verification evidence includes build, focused tests, coverage where practical, and temp-project dogfood commands."

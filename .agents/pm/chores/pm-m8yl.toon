@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[4]: code-quality,codefactor,eslint,maintainability
 created_at: "2026-06-26T13:32:34.362Z"
-updated_at: "2026-07-26T17:20:03.072Z"
+updated_at: "2026-09-19T08:40:45.630Z"
+closed_at: "2026-06-26T15:46:31.862Z"
 author: claude-code-agent
 acceptance_criteria: "CodeFactor reports 0 unsafe-optional-chaining (\"Optional chaining with invalid undefined usage\") findings; full coverage suite stays green at 100%; pnpm typecheck passes."
 parent: pm-92if
@@ -14,8 +15,8 @@ release: v2026.6.30
 resolution: Rewrote unsafe optional-chain assertion dereferences and the CodeFactor no-useless-spread helper.
 expected_result: Unsafe optional-chain and no-useless-spread CodeFactor maintainability findings are removed without behavior changes.
 actual_result: "Assertions use explicit intermediate values; focused tests, typecheck, static quality, coverage 100/100/100/100, release gates, and temp smoke passed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-92if,implements,"2026-07-26T17:20:02.842Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-92if,implements,"2026-07-26T17:20:02.842Z"
 comments[5]{created_at,author,text}:
   "2026-06-26T15:46:31.025Z",codex-gpt5,"Evidence: rewrote unsafe optional-chain assertion shapes and the no-useless-spread corpus setting helper. Also normalized adjacent optional-chain cast shapes to avoid future CodeFactor churn. Verification passed: targeted 309-test suite; extra 186-test guard suite; pnpm typecheck; pnpm quality:static; node scripts/run-tests.mjs coverage (5133 tests, 100/100/100/100); node scripts/release/run-gates.mjs --telemetry-mode best-effort; manual temp-project smoke."
   "2026-06-26T15:52:00.796Z",codex,"Follow-up evidence: PR #379 branch updated with current main and deterministic CHANGELOG.md entry for the closed unsafe optional chaining item; pnpm changelog:pm:check and pnpm quality:static pass locally."

@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: ci,matrix,performance,pm-cli
 created_at: "2026-05-16T22:07:45.274Z"
-updated_at: "2026-07-26T17:19:23.976Z"
+updated_at: "2026-09-19T08:40:43.408Z"
+closed_at: "2026-05-16T23:59:45.379Z"
 author: maintainer-agent
 acceptance_criteria: PRs run 2-entry matrix (ubuntu+macos on Node 20); main push runs the full 5-entry matrix; nightly continues full matrix; documentation reflects this in CONTRIBUTING.md.
 parent: pm-tzwy
@@ -14,8 +15,8 @@ release: v2026.5.18
 resolution: "Implemented event-aware GitHub Actions matrix: pull_request runs ubuntu-latest/macOS Node 20 only; main push keeps full five-job matrix."
 expected_result: PRs run 2-entry matrix; main pushes run full five-entry matrix; nightly remains unchanged; CONTRIBUTING documents behavior.
 actual_result: "Focused CI contract, linked pm test, isolated dogfood, static/secret/typecheck, full release gate, Sentry, and telemetry checks passed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-tzwy,implements,"2026-07-26T17:19:23.769Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-tzwy,implements,"2026-07-26T17:19:23.769Z"
 comments[1]{created_at,author,text}:
   "2026-05-16T23:59:44.382Z",codex-agent,"Evidence 2026-05-17: implemented event-aware CI matrix using free GitHub Actions features. pull_request now expands only ubuntu-latest Node 20 and macos-latest Node 20; main push keeps the full five-job matrix with ubuntu/macos/windows Node 20 plus ubuntu Node 22/24. Documentation updated in CONTRIBUTING.md. Verification passed: focused CI workflow contract, pm linked test sandbox, typecheck, isolated dogfood 46 workflows including contract parity assertions, static quality, secret scan, and full release gate with 93 files / 1316 tests at 100 percent coverage; Sentry critical/high/total 0 and telemetry finish_error_rate_pct 2.28 with zero missing error-code rows."
 files[2]{path,scope,note}:

@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:contracts","area:error","area:help","area:schema",implementation,pm-cli
 created_at: "2026-04-03T15:42:04.739Z"
-updated_at: "2026-07-26T17:09:49.650Z"
+updated_at: "2026-09-19T08:39:54.171Z"
 deadline: "2026-04-10T15:42:04.739Z"
+closed_at: "2026-04-03T16:02:53.197Z"
 author: codex-agent
 estimated_minutes: 480
 acceptance_criteria: "Code, tests, docs, and verification commands for UX v3 are completed and linked with evidence."
@@ -28,9 +29,14 @@ expected_result: Acceptance criteria for Execute Agent-First CLI UX v3 implement
 actual_result: Work completed and recorded with linked artifacts for Execute Agent-First CLI UX v3 implementation.
 component: project-management/execute-agent-first-cli-ux-v3-implementation
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Execute Agent-First CLI UX v3 implementation.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-dqqa,parent,"2026-04-03T15:42:04.739Z",codex-agent,null
-  pm-dqqa,implements,"2026-07-26T17:09:49.453Z",null,null
+dependencies[2]:
+  - id: pm-dqqa
+    kind: parent
+    created_at: "2026-04-03T15:42:04.739Z"
+    author: codex-agent
+  - id: pm-dqqa
+    kind: implements
+    created_at: "2026-07-26T17:09:49.453Z"
 comments[4]{created_at,author,text}:
   "2026-04-03T15:42:04.739Z",codex-agent,Task created and ready to claim for implementation.
   "2026-04-03T15:42:13.574Z",codex-agent,"Implementation started: working through help semantics, JSON help surfaces, contracts command, schema v4, and context-aware diagnostics."

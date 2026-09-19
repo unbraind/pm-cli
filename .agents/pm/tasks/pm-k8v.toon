@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:cli",core,"milestone:0",pm-cli
 created_at: "2026-02-17T23:02:06.596Z"
-updated_at: "2026-07-26T17:18:09.021Z"
+updated_at: "2026-09-19T08:40:39.795Z"
 deadline: "2026-02-23T14:44:54.941Z"
+closed_at: "2026-02-22T15:03:04.038Z"
 assignee: steve
 author: steve
 estimated_minutes: 90
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/project-scaffolding-cli-entrypoint-config-loader
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Project scaffolding CLI entrypoint config loader.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-2xl,parent,"2026-02-17T23:02:06.596Z",steve,null
-  pm-2xl,implements,"2026-07-26T17:18:08.678Z",null,null
+dependencies[2]:
+  - id: pm-2xl
+    kind: parent
+    created_at: "2026-02-17T23:02:06.596Z"
+    author: steve
+  - id: pm-2xl
+    kind: implements
+    created_at: "2026-07-26T17:18:08.678Z"
 comments[2]{created_at,author,text}:
   "2026-02-22T14:45:08.201Z",cursor-maintainer,"Planned validation change-set: align tracking metadata with completed milestone-0 scaffolding by linking governing docs, canonical CLI/config-loader files, and sandbox-safe verification commands before running pm test + regression sweeps."
   "2026-02-22T15:03:03.728Z",cursor-maintainer,"Evidence: pm test pm-k8v --run --timeout 2400 --json passed 2/2 linked tests (coverage + focused settings/cli integration). Regression sweeps passed: pm test-all --status in_progress --timeout 2400 --json => items=11 linked_tests=37 passed=16 failed=0 skipped=21; pm test-all --status closed --timeout 2400 --json => items=23 linked_tests=88 passed=42 failed=0 skipped=46. Coverage proof remains 100% lines/branches/functions/statements in sandbox coverage runs."

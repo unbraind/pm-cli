@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[4]: audit,backlog,governance,pm-cli
 created_at: "2026-07-06T21:26:55.847Z"
-updated_at: "2026-08-10T12:05:38.763Z"
+updated_at: "2026-09-19T08:40:43.339Z"
+closed_at: "2026-07-06T21:27:18.439Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "All active items carry AC+estimate (validate metadata warnings for active items zero); every strategic goal stated for the product (simplification, SDK-first, scale to 1M items / 1000s of agents, unix composability, long-term horizons) has a dedup-checked tracker home; roadmap milestone index current incl. pm-qwoy; changelog regenerated drift-free"

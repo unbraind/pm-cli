@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[5]: background-runtime,item-tracking,linked-tests,pm-cli,test-runs
 created_at: "2026-04-04T19:05:06.647Z"
-updated_at: "2026-08-10T11:53:08.157Z"
+updated_at: "2026-09-19T08:40:43.514Z"
 deadline: "2026-04-18T19:05:06.647Z"
+closed_at: "2026-04-04T20:22:57.965Z"
 author: codex-agent
 estimated_minutes: 720
 acceptance_criteria: Background test orchestration lifecycle commands are available with duplicate prevention; test result tracking is configurable and persisted safely; docs/contracts/tests remain release-ready.

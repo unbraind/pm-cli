@@ -4,6 +4,7 @@
  * Implements the pm validate command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { applyClosureTimestampFix, scanClosureTimestamps } from "./closure-timestamps.js";
 import { readWorkflowCompletenessCheck } from "./workflow-completeness.js";
 import fs from "node:fs/promises";
 import { realpathSync } from "node:fs";
@@ -124,6 +125,7 @@ import {
   inspectStatusRoleAssignments,
 } from "./status-role-diagnostics.js";
 import {
+  summarizeCommandPreview,
   normalizeRelativeDirectoryPath,
   normalizeRelativePath,
   toMeaningfulString,
@@ -2826,23 +2828,6 @@ async function buildFilesCheck(
 }
 /* c8 ignore stop */
 
-/** Collapse a linked command to the bounded preview used in validation rows. */
-function summarizeCommandPreview(command: string): string {
-  const normalizedCommand = command.trim().replaceAll(/\s+/g, " ");
-  return normalizedCommand.length > 120
-    ? `${normalizedCommand.slice(0, 117)}...`
-    : normalizedCommand;
-}
-
-/** Join command-reference identity and its bounded preview for diagnostics. */
-function summarizeCommandReferenceRow(
-  ownerId: string,
-  referencedId: string,
-  command: string,
-): string {
-  return `${ownerId}:${referencedId}:${summarizeCommandPreview(command)}`;
-}
-
 /** Render portable diagnostics for linked tests that this clone has not trusted. */
 function buildUntrustedLinkedTestRows(
   linkedTests: Array<{ item: ItemWithBody; linkedTest: LinkedTest }>,
@@ -2908,11 +2893,7 @@ async function buildCommandReferencesCheck(
       referencedPmIds.add(referencedId);
       if (!knownIds.has(referencedId.toLowerCase())) {
         staleReferenceRows.push(
-          summarizeCommandReferenceRow(
-            item.id,
-            referencedId,
-            linkedTest.command,
-          ),
+          `${item.id}:${referencedId}:${summarizeCommandPreview(linkedTest.command)}`,
         );
       }
     }
@@ -3042,6 +3023,9 @@ async function applyValidateFix(
   services: ValidateMutationServices,
 ): Promise<void> {
   switch (fix.kind) {
+    case "set_closed_at":
+      await applyClosureTimestampFix(fix, global);
+      return;
     case "set_resolution":
     case "set_close_reason":
     case "set_estimate":
@@ -3345,6 +3329,7 @@ async function buildStorageIntegrityCheck(
 }
 
 interface ValidateCheckExecutionState {
+  closureTimestampFixes: ValidateFixRecord[];
   checks: ValidateCheck[];
   warnings: string[];
   closeReasonBackfillRows: CloseReasonBackfillRow[];
@@ -3385,6 +3370,7 @@ async function executeRequestedValidateChecks(params: {
   sourceIncomplete: boolean;
 }): Promise<ValidateCheckExecutionState> {
   const state: ValidateCheckExecutionState = {
+    closureTimestampFixes: [],
     checks: [],
     warnings: [...params.initialWarnings],
     closeReasonBackfillRows: [],
@@ -3412,6 +3398,16 @@ async function executeRequestedValidateChecks(params: {
     );
     state.closeReasonBackfillRows = built.closeReasonBackfillRows;
     state.estimateBackfillRows = built.estimateBackfillRows;
+    const timestamps = await scanClosureTimestamps(
+      params.pmRoot, params.items, params.statusRegistry,
+      params.options.autoFix === true || fixHintsEnabled,
+      fullDiagnostics ? Infinity : DIAGNOSTIC_LIST_SUMMARY_LIMIT,
+    );
+    state.closureTimestampFixes = timestamps.fixes;
+    Object.assign(built.check.details, timestamps.details);
+    built.warnings.push(...timestamps.warnings);
+    built.check.ok = built.warnings.length === 0;
+    built.check.status = built.check.ok ? "ok" : "warn";
     recordValidateCheck(state, built, fixHintsEnabled);
   }
   if (params.requestedChecks.has("resolution")) {
@@ -3514,6 +3510,7 @@ function planValidateFixes(
 ): ValidateFixRecord[] {
   const planned: ValidateFixRecord[] = [];
   if (options.autoFix === true) {
+    planned.push(...state.closureTimestampFixes);
     planned.push(
       ...planCloseReasonBackfillFixes(state.closeReasonBackfillRows),
     );

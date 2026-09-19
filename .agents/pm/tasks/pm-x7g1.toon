@@ -6,15 +6,16 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-06-18T00:09:30.023Z"
-updated_at: "2026-07-26T17:29:24.003Z"
+updated_at: "2026-09-19T08:42:45.259Z"
+closed_at: "2026-06-18T00:14:43.957Z"
 author: codex-audit-agent
 parent: pm-mpbb
 release: v2026.6.19
 resolution: "Exact and short ID search now returns matching items, list-blocked defaults to the same compact status-list projection as sibling commands, and context markdown section metadata is limited to sections with rendered markdown bodies."
 expected_result: GitHub #268-#270 should be resolved without expanding command verbosity or breaking existing list/search/context contracts.
 actual_result: "Focused tests passed; manual temp-project dist/cli.js smoke confirmed id search, list-blocked compact projection, and context markdown section metadata behavior."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-mpbb,implements,"2026-07-26T17:29:23.809Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-mpbb,implements,"2026-07-26T17:29:23.809Z"
 comments[3]{created_at,author,text}:
   "2026-06-18T00:14:34.662Z",codex-audit-agent,"Evidence: fixed GitHub #268, #269, and #270. Manual temp-project check with dist/cli.js confirmed pm search <id> and short id return the matching item with matched_fields:[id], list-blocked --json uses projection.mode compact, and context --format markdown --depth deep no longer advertises an empty blockers section. Focused suite passed: node scripts/run-tests.mjs test -- tests/unit/commands/search-command.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/commands/context-command.spec.ts plus prior review/cleanup suites (8 files / 323 tests)."
   "2026-06-18T00:40:14.928Z",codex-audit-agent,"Final coverage evidence: after adding GH #268-#270 fixes, node scripts/run-tests.mjs coverage passed with 226 test files, 4495 tests, and 100% statements/branches/functions/lines."

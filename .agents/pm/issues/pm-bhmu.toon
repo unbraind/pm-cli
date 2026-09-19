@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[5]: performance,pm-cli,product-analytics,search,telemetry
 created_at: "2026-04-26T13:51:28.435Z"
-updated_at: "2026-07-26T17:10:17.756Z"
+updated_at: "2026-09-19T08:39:56.141Z"
+closed_at: "2026-04-27T17:50:13.082Z"
 author: cursor-agent
 estimated_minutes: 180
 acceptance_criteria: Telemetry-backed search latency issue is mitigated via bounded implicit semantic execution and deterministic fallback diagnostics; linked regression tests cover fallback classification and command behavior stability.
@@ -15,8 +16,8 @@ release: v2026.5.1
 resolution: "Implicit auto-default hybrid semantic execution now uses bounded timeout windows and deterministic fallback warning codes, reducing worst-case latency impact from repeated 30s semantic waits."
 expected_result: Telemetry-observed high p95 waits from implicit semantic timeouts are mitigated through bounded semantic attempts and explicit keyword fallback diagnostics.
 actual_result: Search command now applies bounded implicit semantic timeout options and emits classified fallback warnings (timeout/connection/error); linked regression suite passes.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-o7be,implements,"2026-07-26T17:10:17.517Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-o7be,implements,"2026-07-26T17:10:17.517Z"
 comments[3]{created_at,author,text}:
   "2026-04-26T13:51:28.435Z",cursor-agent,Duplicate check used pm search for search latency p95 telemetry performance slow. Results found closed vector store and telemetry work but no active search latency issue. Evidence shows search had 83 finishes with average 6753.6 ms and p95 32822 ms in persisted telemetry.
   "2026-04-26T20:17:10.539Z",audit-agent,"Audit observation: search command with semantic/hybrid mode experienced embedding timeout (30000ms) during batch search operations. This aligns with the existing issue description. The search falls back gracefully to keyword-only results when embeddings timeout."

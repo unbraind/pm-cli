@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[6]: auto-release,bug,ci,github-actions,pm-cli,release
 created_at: "2026-05-17T06:23:17.480Z"
-updated_at: "2026-08-10T12:02:41.886Z"
+updated_at: "2026-09-19T08:41:03.224Z"
+closed_at: "2026-05-17T06:23:17.480Z"
 assignee: claude-code-agent
 author: claude-code-agent
 release: v2026.5.18

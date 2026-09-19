@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:test-command",code,"milestone:3",pm-cli,"priority:1",tests
 created_at: "2026-03-05T00:01:19.931Z"
-updated_at: "2026-07-26T17:07:25.695Z"
+updated_at: "2026-09-19T08:39:43.380Z"
 deadline: "2026-03-06T00:01:19.000Z"
+closed_at: "2026-03-05T00:16:36.383Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 75
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/harden-recursive-test-all-detection-for-npx-pack
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden recursive test-all detection for npx package specs.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-k3zx,related,"2026-03-05T00:01:19.931Z",cursor-maintainer,null
-  pm-2p6q,implements,"2026-07-26T17:07:25.503Z",null,null
+dependencies[2]:
+  - id: pm-k3zx
+    kind: related
+    created_at: "2026-03-05T00:01:19.931Z"
+    author: cursor-maintainer
+  - id: pm-2p6q
+    kind: implements
+    created_at: "2026-07-26T17:07:25.503Z"
 comments[7]{created_at,author,text}:
   "2026-03-05T00:01:19.931Z",cursor-maintainer,Docs require recursive pm test-all entries to be rejected and package-spec launchers currently bypass validation.
   "2026-03-05T00:01:31.917Z",cursor-maintainer,"Planned changeset: update PRD/README wording to explicitly include npx package-spec recursive forms, then harden src/cli/commands/test.ts detection and add unit regression coverage."

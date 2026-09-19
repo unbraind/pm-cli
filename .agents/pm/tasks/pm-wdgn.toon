@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[7]: "area:test-command",code,doc,"milestone:3",pm-cli,"priority:1",tests
 created_at: "2026-03-05T12:46:34.203Z"
-updated_at: "2026-07-26T17:28:40.739Z"
+updated_at: "2026-09-19T08:42:28.916Z"
 deadline: "2026-03-06T23:59:00.000Z"
+closed_at: "2026-03-05T12:57:33.453Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/harden-chained-sandbox-env-detection-per-segment
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden chained sandbox env detection per segment.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-mlc3,related,"2026-03-05T12:46:34.203Z",maintainer-agent,null
-  pm-2p6q,implements,"2026-07-26T17:28:40.438Z",null,null
+dependencies[2]:
+  - id: pm-mlc3
+    kind: related
+    created_at: "2026-03-05T12:46:34.203Z"
+    author: maintainer-agent
+  - id: pm-2p6q
+    kind: implements
+    created_at: "2026-07-26T17:28:40.438Z"
 comments[4]{created_at,author,text}:
   "2026-03-05T12:46:34.203Z",maintainer-agent,Need per-segment sandbox checks to close a chained-command bypass in pm test add validation
   "2026-03-05T12:46:50.440Z",maintainer-agent,"Implementing now: update docs language for chained direct-runner safety semantics, then enforce per-segment sandbox-env validation in src/cli/commands/test.ts and add regression tests for cross-segment bypass attempts."

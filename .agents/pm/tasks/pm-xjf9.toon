@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[4]: governance,pm-cli,standards,traceability
 created_at: "2026-04-04T21:28:06.939Z"
-updated_at: "2026-07-26T17:29:36.895Z"
+updated_at: "2026-09-19T08:42:50.091Z"
 deadline: "2026-04-06T21:28:06.939Z"
+closed_at: "2026-04-04T21:57:47.262Z"
 author: codex-agent
 estimated_minutes: 600
 acceptance_criteria: "All pm items are sequentially reviewed and enriched, duplicate active scope is eliminated, hierarchy links are normalized, and tracker validation checks pass with documented residuals."
@@ -35,22 +36,22 @@ affected_version: 2026.3.12
 component: tracker-governance
 regression: false
 customer_impact: Maintainers and agents get a higher-fidelity project management source of truth.
-dependencies[15]{id,kind,created_at,author,source_kind}:
-  pm-02c4,related,"2026-07-26T17:29:36.653Z",null,null
-  pm-10no,related,"2026-07-26T17:29:36.653Z",null,null
-  pm-16f4,related,"2026-07-26T17:29:36.653Z",null,null
-  pm-4moz,related,"2026-07-26T17:29:36.653Z",null,null
-  pm-53q4,related,"2026-07-26T17:29:36.653Z",null,null
-  pm-5rjn,related,"2026-07-26T17:29:36.653Z",null,null
-  pm-9ik7,related,"2026-07-26T17:29:36.653Z",null,null
-  pm-abhj,related,"2026-07-26T17:29:36.653Z",null,null
-  pm-bi0z,related,"2026-07-26T17:29:36.653Z",null,null
-  pm-c1bn,related,"2026-07-26T17:29:36.653Z",null,null
-  pm-cg7l,related,"2026-07-26T17:29:36.653Z",null,null
-  pm-dw5s,related,"2026-07-26T17:29:36.653Z",null,null
-  pm-dzrj,related,"2026-07-26T17:29:36.653Z",null,null
-  pm-elsh,related,"2026-07-26T17:29:36.653Z",null,null
-  pm-wtsp,implements,"2026-07-26T17:29:36.653Z",null,null
+dependencies[15]{id,kind,created_at}:
+  pm-02c4,related,"2026-07-26T17:29:36.653Z"
+  pm-10no,related,"2026-07-26T17:29:36.653Z"
+  pm-16f4,related,"2026-07-26T17:29:36.653Z"
+  pm-4moz,related,"2026-07-26T17:29:36.653Z"
+  pm-53q4,related,"2026-07-26T17:29:36.653Z"
+  pm-5rjn,related,"2026-07-26T17:29:36.653Z"
+  pm-9ik7,related,"2026-07-26T17:29:36.653Z"
+  pm-abhj,related,"2026-07-26T17:29:36.653Z"
+  pm-bi0z,related,"2026-07-26T17:29:36.653Z"
+  pm-c1bn,related,"2026-07-26T17:29:36.653Z"
+  pm-cg7l,related,"2026-07-26T17:29:36.653Z"
+  pm-dw5s,related,"2026-07-26T17:29:36.653Z"
+  pm-dzrj,related,"2026-07-26T17:29:36.653Z"
+  pm-elsh,related,"2026-07-26T17:29:36.653Z"
+  pm-wtsp,implements,"2026-07-26T17:29:36.653Z"
 comments[10]{created_at,author,text}:
   "2026-04-04T21:28:06.939Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'governance tracker overhaul documentation' --limit 20; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new scope because existing epics are closed snapshots and this run is a new standards-alignment execution cycle."
   "2026-04-04T21:28:29.024Z",codex-agent,"Phase 1 complete: standards-mapped rubric finalized (PMBOK 8, ISO 21502, Scrum commitments, DORA evidence), including per-type/per-status quality bars, lineage policy, duplicate policy, and placeholder-elimination rules."

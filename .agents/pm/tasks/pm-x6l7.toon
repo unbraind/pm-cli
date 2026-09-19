@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:release","area:tests",compatibility,pm-cli
 created_at: "2026-04-01T11:27:01.828Z"
-updated_at: "2026-07-26T17:29:22.142Z"
+updated_at: "2026-09-19T08:42:44.598Z"
 deadline: "2026-04-08T11:27:01.828Z"
+closed_at: "2026-04-01T11:40:56.400Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 110
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: tests/cli
 regression: true
 customer_impact: Current users remain unaffected by parser enhancement.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-lau3,parent,"2026-04-01T11:27:01.828Z",codex-agent,null
-  pm-lau3,implements,"2026-07-26T17:29:21.940Z",null,null
+dependencies[2]:
+  - id: pm-lau3
+    kind: parent
+    created_at: "2026-04-01T11:27:01.828Z"
+    author: codex-agent
+  - id: pm-lau3
+    kind: implements
+    created_at: "2026-07-26T17:29:21.940Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T11:27:01.828Z",codex-agent,Task ensures no-regression guarantee requested by user is verified with concrete test evidence.
   "2026-04-01T11:39:02.967Z",codex-agent,"Verification evidence: node scripts/run-tests.mjs test passed full suite (61 files, 638 tests). Coverage run executed and failed only on existing global 100% threshold gate (97.98% lines, 96.29% branches, 98.38% functions, 97.79% statements), confirming functionality while highlighting pre-existing coverage policy strictness."

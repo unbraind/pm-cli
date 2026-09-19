@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:ux",code,pm-cli
 created_at: "2026-04-01T01:40:02.062Z"
-updated_at: "2026-07-26T17:15:07.512Z"
+updated_at: "2026-09-19T08:40:22.255Z"
 deadline: "2026-04-09T01:40:02.062Z"
+closed_at: "2026-04-01T01:52:44.463Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 160
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: extensions/tooling
 regression: true
 customer_impact: Improves discoverability and consistency across extension and tooling paths.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-5bwo,parent,"2026-04-01T01:40:02.062Z",codex-agent,null
-  pm-5bwo,implements,"2026-07-26T17:15:07.344Z",null,null
+dependencies[2]:
+  - id: pm-5bwo
+    kind: parent
+    created_at: "2026-04-01T01:40:02.062Z"
+    author: codex-agent
+  - id: pm-5bwo
+    kind: implements
+    created_at: "2026-07-26T17:15:07.344Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T01:40:02.062Z",codex-agent,Task covers extension metadata handling and completion plus Pi wrapper parity.
   "2026-04-01T01:52:43.746Z",codex-agent,Extended dynamic extension flag help metadata to support required/disabled markers and hidden visibility behavior; verified with integration coverage.

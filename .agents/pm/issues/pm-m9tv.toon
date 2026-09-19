@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: files,governance,pm-cli,validation
 created_at: "2026-04-04T17:53:32.045Z"
-updated_at: "2026-07-26T17:20:06.284Z"
+updated_at: "2026-09-19T08:40:45.863Z"
 deadline: "2026-04-11T17:53:32.045Z"
+closed_at: "2026-04-25T17:54:29.999Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: "pm validate --check-files supports tracked-all-strict full candidate mode, reports excluded_by_reason for filtered tracked-all scans, and no longer emits false-positive missing_linked_paths for correctly linked files."
@@ -36,9 +37,14 @@ affected_version: 2026.3.12
 component: validation-files
 regression: true
 customer_impact: Maintainers currently receive incorrect warnings that reduce confidence in project-management audits.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-wtsp,discovered_from,"2026-04-04T17:53:32.045Z",codex-agent,null
-  pm-gt8u,implements,"2026-07-26T17:20:05.999Z",null,null
+dependencies[2]:
+  - id: pm-wtsp
+    kind: discovered_from
+    created_at: "2026-04-04T17:53:32.045Z"
+    author: codex-agent
+  - id: pm-gt8u
+    kind: implements
+    created_at: "2026-07-26T17:20:05.999Z"
 comments[6]{created_at,author,text}:
   "2026-04-04T17:53:32.045Z",codex-agent,Duplicate-check evidence pm context --limit 10; pm search validate check-files missing_linked_paths false positive --limit 20; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no existing item tracks this active false-positive behavior.
   "2026-04-04T17:54:15.825Z",codex-agent,"Reproduction captured after governance remediation: pm validate --check-files --scan-mode tracked-all still reports 9 missing_linked_paths even after explicit linking. Independent audit (git tracked minus parsed project file links) reports candidate=202 linked=222 missing=0, confirming false-positive behavior in validate path matching layer."

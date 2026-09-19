@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T11:28:28.621Z"
-updated_at: "2026-09-08T05:33:10.612Z"
+updated_at: "2026-09-19T08:41:40.069Z"
+closed_at: "2026-06-17T05:22:45.660Z"
 author: codex-sdk-cli-consolidation-20260616
 parent: pm-8jdc
 release: v2026.6.17

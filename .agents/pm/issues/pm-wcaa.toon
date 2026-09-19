@@ -6,16 +6,17 @@ status: closed
 priority: 3
 tags[3]: agent-ux,dogfood,mcp
 created_at: "2026-06-11T22:13:41.473Z"
-updated_at: "2026-07-26T17:28:39.619Z"
+updated_at: "2026-09-19T08:42:28.652Z"
+closed_at: "2026-06-11T22:41:49.896Z"
 author: cli-fixes-agent
 parent: pm-mpbb
 release: v2026.6.12
 resolution: implemented
 expected_result: MCP pm_files discover/apply/discoveryNote parameters perform file discovery and apply discovered links through the narrow MCP tool.
 actual_result: "pm_files discover=true now routes to runFilesDiscover, maps discoveryNote to note, preserves normal runFiles behavior, and passes MCP integration plus temp-project smoke."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-mpbb,implements,"2026-07-26T17:28:39.346Z",null,null
-  pm-pfnx,related,"2026-07-26T17:28:39.346Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-mpbb,implements,"2026-07-26T17:28:39.346Z"
+  pm-pfnx,related,"2026-07-26T17:28:39.346Z"
 comments[2]{created_at,author,text}:
   "2026-06-11T22:34:40.599Z",codex-sdk-cli-continuation,"Evidence: fixed narrow MCP pm_files discover/apply dispatch; focused MCP handshake regression passed (19 tests)."
   "2026-06-11T22:39:15.765Z",codex-sdk-cli-continuation,"Manual temp smoke: fresh temp project with isolated PM_GLOBAL_PATH passed init --type-preset agile, create, files --note, MCP pm_files discover/apply with discoveryNote, validate --check-files, and health --check-only --summary (health ok, warning_count 0)."

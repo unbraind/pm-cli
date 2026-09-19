@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[4]: "area:body","area:update",normalization,pm-cli
 created_at: "2026-04-02T11:44:45.857Z"
-updated_at: "2026-08-10T11:53:04.210Z"
+updated_at: "2026-09-19T08:40:29.301Z"
 deadline: "2026-04-09T11:44:45.857Z"
+closed_at: "2026-04-02T11:59:17.760Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "pm update accepts body updates with history and lock safety, contracts and docs remain aligned, and regression tests pass without breaking current users."

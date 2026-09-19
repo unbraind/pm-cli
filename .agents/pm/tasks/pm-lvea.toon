@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[5]: audit,extensions,pm-cli,re-audit,sdk
 created_at: "2026-05-03T12:09:00.992Z"
-updated_at: "2026-07-26T17:19:37.439Z"
+updated_at: "2026-09-19T08:40:44.179Z"
 deadline: "2026-05-06T12:09:00.992Z"
+closed_at: "2026-05-03T12:26:55.178Z"
 author: audit-agent
 estimated_minutes: 90
 acceptance_criteria: SDK exports comprehensive. Extension authoring path works e2e. Docs accurate.
@@ -16,10 +17,17 @@ release: v2026.5.3
 resolution: Resolution normalized from closed status; existing close_reason remains the detailed closure evidence.
 expected_result: Expected closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
 actual_result: Actual closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-476d,parent,"2026-05-03T12:09:00.992Z",audit-agent,null
-  pm-476d,implements,"2026-07-26T17:19:37.217Z",null,null
-  pm-937o,related,"2026-07-26T17:19:37.217Z",null,null
+dependencies[3]:
+  - id: pm-476d
+    kind: parent
+    created_at: "2026-05-03T12:09:00.992Z"
+    author: audit-agent
+  - id: pm-476d
+    kind: implements
+    created_at: "2026-07-26T17:19:37.217Z"
+  - id: pm-937o
+    kind: related
+    created_at: "2026-07-26T17:19:37.217Z"
 comments[1]{created_at,author,text}:
   "2026-05-03T12:09:00.992Z",audit-agent,"Duplicate check: predecessor pm-937o closed. Net-new for re-audit."
 close_reason: "SDK verified: 70+ type exports covering 9 capability types. defineExtension helper works. Contracts schema v4.0.0 functional. Extension loader/runtime-registrations operational. Health check passes. SDK.md and EXTENSIONS.md accurate and up-to-date. No issues found."

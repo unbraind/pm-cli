@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:history",core,"milestone:2",pm-cli
 created_at: "2026-02-17T23:02:08.633Z"
-updated_at: "2026-07-26T17:22:57.286Z"
+updated_at: "2026-09-19T08:40:58.445Z"
 deadline: "2026-02-27T23:02:08.633Z"
+closed_at: "2026-03-03T20:20:08.954Z"
 assignee: steve
 author: steve
 estimated_minutes: 120
@@ -41,10 +42,18 @@ fixed_version: archive-2026q2
 component: project-management/append-only-history-writer
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Append-only history writer.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-c0r,parent,"2026-02-17T23:02:08.633Z",steve,null
-  pm-u9r,blocks,"2026-02-17T23:02:08.633Z",steve,null
-  pm-c0r,implements,"2026-07-26T17:22:56.994Z",null,null
+dependencies[3]:
+  - id: pm-c0r
+    kind: parent
+    created_at: "2026-02-17T23:02:08.633Z"
+    author: steve
+  - id: pm-u9r
+    kind: blocks
+    created_at: "2026-02-17T23:02:08.633Z"
+    author: steve
+  - id: pm-c0r
+    kind: implements
+    created_at: "2026-07-26T17:22:56.994Z"
 comments[3]{created_at,author,text}:
   "2026-03-03T20:09:44.136Z",cursor-maintainer,"Planned changeset: verify append-only history writer behavior against implementation and add focused determinism regression coverage asserting appendHistoryEntry preserves prior JSONL lines while appending new entries."
   "2026-03-03T20:10:09.692Z",cursor-maintainer,"Implemented focused regression in tests/unit/determinism.spec.ts: appendHistoryEntry now has explicit append-only verification that first JSONL line remains unchanged after a second append and entries stay ordered/deterministic."

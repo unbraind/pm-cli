@@ -1993,6 +1993,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "validate_metadata_missing_closed_at",
+    meaning: "Validate metadata missing closed at condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/diagnostics/remediation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "validate_metadata_missing_closed_at",
+    aliases: [],
+  },
+  {
     code: "validate_metadata_missing_confidence",
     meaning: "Validate metadata missing confidence condition.",
     stability: "stable",

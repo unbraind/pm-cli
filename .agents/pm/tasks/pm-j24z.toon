@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:sdk",phase2,pm-cli
 created_at: "2026-04-01T19:29:05.089Z"
-updated_at: "2026-07-26T17:17:09.667Z"
+updated_at: "2026-09-19T08:40:35.051Z"
 deadline: "2026-04-08T19:29:05.089Z"
+closed_at: "2026-04-01T19:57:50.434Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 120
@@ -41,9 +42,14 @@ fixed_version: vnext
 component: sdk
 regression: true
 customer_impact: Extension authors get stable typings for advanced overrides.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-0u1y,parent,"2026-04-01T19:29:05.089Z",codex-agent,null
-  pm-0u1y,implements,"2026-07-26T17:17:09.478Z",null,null
+dependencies[2]:
+  - id: pm-0u1y
+    kind: parent
+    created_at: "2026-04-01T19:29:05.089Z"
+    author: codex-agent
+  - id: pm-0u1y
+    kind: implements
+    created_at: "2026-07-26T17:17:09.478Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T19:29:05.089Z",codex-agent,Task covers SDK export updates for new extension contracts.
   "2026-04-01T19:57:49.710Z",codex-agent,"Implemented in Phase 2 full-override rollout. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed (64 files/702 tests) with aligned coverage gates and release-readiness checks green."

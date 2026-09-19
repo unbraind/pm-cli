@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[9]: "area:cli","area:core","area:docs","area:schema",code,"milestone:7",pm-cli,"priority:1",tests
 created_at: "2026-03-07T23:59:27.285Z"
-updated_at: "2026-08-13T08:04:29.626Z"
+updated_at: "2026-09-19T08:39:19.739Z"
 deadline: "2026-04-15T11:57:44.149Z"
+closed_at: "2026-04-03T13:07:15.668Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: Sprint and release fields support deterministic format validation with compatibility-safe migration strategy and docs/tests updates.

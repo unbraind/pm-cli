@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:audit","area:comments",external-audit,pm-cli
 created_at: "2026-04-04T22:38:06.028Z"
-updated_at: "2026-07-26T17:09:44.911Z"
+updated_at: "2026-09-19T08:39:53.781Z"
 deadline: "2026-04-11T22:38:06.028Z"
+closed_at: "2026-04-05T21:44:50.895Z"
 author: codex-agent
 estimated_minutes: 260
 acceptance_criteria: CLI provides a bulk comments audit surface with status/type/assignee filters and latest-N output in deterministic grouped shape with docs and tests.
@@ -22,9 +23,9 @@ release: v2026.5.1
 resolution: Resolution metadata backfilled during governance normalization; implementation evidence is already captured in linked comments and artifacts.
 expected_result: Closed item includes explicit resolution/expected_result/actual_result metadata for deterministic validation and audit workflows.
 actual_result: Resolution fields were previously missing and are now backfilled as part of governance hardening.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-gt8u,implements,"2026-07-26T17:09:44.709Z",null,null
-  pm-w1j3,related,"2026-07-26T17:09:44.709Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-gt8u,implements,"2026-07-26T17:09:44.709Z"
+  pm-w1j3,related,"2026-07-26T17:09:44.709Z"
 comments[4]{created_at,author,text}:
   "2026-04-04T22:38:06.028Z",codex-agent,"Duplicate-check evidence: pm search bulk comments audit status latest --limit 10; pm list-open --limit 20; no active item currently tracks a bulk comments query command surface."
   "2026-04-04T23:35:34.695Z",codex-agent,"Delivery evidence: child task pm-w1j3 is closed with linked pm test run passing; comments-audit command shipped with filters/latest controls plus contracts/completion/Pi/docs parity. Full project test and coverage suites passed."

@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[9]: "area:cli","area:docs","area:tests",code,doc,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-07T09:31:15.557Z"
-updated_at: "2026-07-26T17:20:27.999Z"
+updated_at: "2026-09-19T08:40:47.219Z"
 deadline: "2026-03-08T23:59:00.000Z"
+closed_at: "2026-03-07T09:42:49.648Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
@@ -41,10 +42,17 @@ fixed_version: archive-2026q2
 component: project-management/release-readiness-maintenance-loop-2026-03-07-ru
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release-readiness maintenance loop 2026-03-07 run 6.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-f0e9,related,"2026-03-07T09:31:15.557Z",maintainer-agent,null
-  pm-7hx6,implements,"2026-07-26T17:20:27.775Z",null,null
-  pm-phpq,related,"2026-07-26T17:20:27.775Z",null,null
+dependencies[3]:
+  - id: pm-f0e9
+    kind: related
+    created_at: "2026-03-07T09:31:15.557Z"
+    author: maintainer-agent
+  - id: pm-7hx6
+    kind: implements
+    created_at: "2026-07-26T17:20:27.775Z"
+  - id: pm-phpq
+    kind: related
+    created_at: "2026-07-26T17:20:27.775Z"
 comments[5]{created_at,author,text}:
   "2026-03-07T09:31:15.557Z",maintainer-agent,This run exists to extend help-contract hardening to pm close.
   "2026-03-07T09:31:22.670Z",maintainer-agent,"Intended change-set: extend release-readiness contract tests with pm close --help assertions for required options and usage text semantics so close help cannot drift from PRD/README contract."

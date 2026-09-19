@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:release","area:verification",phase2,pm-cli
 created_at: "2026-04-01T19:29:36.722Z"
-updated_at: "2026-07-26T17:01:08.739Z"
+updated_at: "2026-09-19T08:39:15.565Z"
 deadline: "2026-04-09T19:29:36.722Z"
+closed_at: "2026-04-01T19:57:57.519Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 120
@@ -41,9 +42,14 @@ fixed_version: vnext
 component: release
 regression: true
 customer_impact: Existing users retain stable behavior with verified parity.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-r9nf,parent,"2026-04-01T19:29:36.722Z",codex-agent,null
-  pm-r9nf,implements,"2026-07-26T17:01:08.446Z",null,null
+dependencies[2]:
+  - id: pm-r9nf
+    kind: parent
+    created_at: "2026-04-01T19:29:36.722Z"
+    author: codex-agent
+  - id: pm-r9nf
+    kind: implements
+    created_at: "2026-07-26T17:01:08.446Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T19:29:36.722Z",codex-agent,Task captures mandatory release verification and evidence logging.
   "2026-04-01T19:57:56.808Z",codex-agent,"Implemented in Phase 2 full-override rollout. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed (64 files/702 tests) with aligned coverage gates and release-readiness checks green."

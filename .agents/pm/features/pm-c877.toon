@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:reminders","area:schema",core,pm-cli
 created_at: "2026-03-31T21:27:38.931Z"
-updated_at: "2026-07-26T17:10:53.433Z"
+updated_at: "2026-09-19T08:40:00.057Z"
 deadline: "2026-04-10T21:27:38.931Z"
+closed_at: "2026-03-31T22:09:18.630Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 220
@@ -41,13 +42,28 @@ fixed_version: vnext
 component: core/item-format
 regression: true
 customer_impact: Lets agents store explicit reminder metadata on tasks.
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-2p6q,related,"2026-03-31T21:27:38.931Z",codex-agent,null
-  pm-qh3p,parent,"2026-03-31T21:27:38.931Z",codex-agent,null
-  pm-r0m,related,"2026-03-31T21:27:38.931Z",codex-agent,null
-  pm-7e6n,related,"2026-07-26T17:10:53.205Z",null,null
-  pm-qh3p,implements,"2026-07-26T17:10:53.205Z",null,null
-  pm-ysgr,related,"2026-07-26T17:10:53.205Z",null,null
+dependencies[6]:
+  - id: pm-2p6q
+    kind: related
+    created_at: "2026-03-31T21:27:38.931Z"
+    author: codex-agent
+  - id: pm-qh3p
+    kind: parent
+    created_at: "2026-03-31T21:27:38.931Z"
+    author: codex-agent
+  - id: pm-r0m
+    kind: related
+    created_at: "2026-03-31T21:27:38.931Z"
+    author: codex-agent
+  - id: pm-7e6n
+    kind: related
+    created_at: "2026-07-26T17:10:53.205Z"
+  - id: pm-qh3p
+    kind: implements
+    created_at: "2026-07-26T17:10:53.205Z"
+  - id: pm-ysgr
+    kind: related
+    created_at: "2026-07-26T17:10:53.205Z"
 comments[2]{created_at,author,text}:
   "2026-03-31T21:27:38.931Z",codex-agent,Feature created for persistent reminder field support.
   "2026-03-31T22:09:17.899Z",codex-agent,Feature complete via closed tasks pm-7e6n and pm-ysgr; reminder schema plus create/update mutation support shipped with passing tests.

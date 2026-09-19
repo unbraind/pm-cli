@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[6]: audit,dogfood,governance,pm-cli,tracker-hygiene,validation
 created_at: "2026-04-30T20:03:14.326Z"
-updated_at: "2026-07-26T17:12:28.833Z"
+updated_at: "2026-09-19T08:40:07.813Z"
 deadline: "2026-05-03T20:03:14.326Z"
+closed_at: "2026-05-01T19:30:13.293Z"
 author: codex-audit
 estimated_minutes: 90
 acceptance_criteria: Historical closed-item resolution metadata is backfilled with item-specific evidence; missing remote linked paths are corrected or documented; history drift is restored or accepted with explicit audit comments.
@@ -16,15 +17,15 @@ release: v2026.5.2
 resolution: All 599 closed items backfilled with resolution metadata; history drift accepted for 2 legacy items; missing linked paths documented as remote server files
 expected_result: pm validate --check-resolution reports 0 missing; history drift documented; linked paths explained
 actual_result: "Resolution metadata: 0 missing (was 37). History drift: 0 drifted (was 2, now accepted). Missing linked paths: 3 remote server files documented."
-dependencies[8]{id,kind,created_at,author,source_kind}:
-  pm-3fti,implements,"2026-07-26T17:12:28.555Z",null,null
-  pm-b1pd,related,"2026-07-26T17:12:28.555Z",null,null
-  pm-gmnh,related,"2026-07-26T17:12:28.555Z",null,null
-  pm-ne67,related,"2026-07-26T17:12:28.555Z",null,null
-  pm-r9ei,related,"2026-07-26T17:12:28.555Z",null,null
-  pm-vg5h,related,"2026-07-26T17:12:28.555Z",null,null
-  pm-vhdc,related,"2026-07-26T17:12:28.555Z",null,null
-  pm-yvwt,related,"2026-07-26T17:12:28.555Z",null,null
+dependencies[8]{id,kind,created_at}:
+  pm-3fti,implements,"2026-07-26T17:12:28.555Z"
+  pm-b1pd,related,"2026-07-26T17:12:28.555Z"
+  pm-gmnh,related,"2026-07-26T17:12:28.555Z"
+  pm-ne67,related,"2026-07-26T17:12:28.555Z"
+  pm-r9ei,related,"2026-07-26T17:12:28.555Z"
+  pm-vg5h,related,"2026-07-26T17:12:28.555Z"
+  pm-vhdc,related,"2026-07-26T17:12:28.555Z"
+  pm-yvwt,related,"2026-07-26T17:12:28.555Z"
 comments[6]{created_at,author,text}:
   "2026-04-30T20:03:14.326Z",codex-audit,"Duplicate check before create: pm search 'validate resolution missing fields history drift missing linked paths tracker hygiene' found closed related validation work only,not an active item tracking the current warning set. Net-new issue is required under audit feature pm-3fti."
   "2026-05-01T08:56:46.885Z",codex-release-agent,"Release prep validation rerun on 2026-05-01 confirmed this issue remains the active tracker for historical hygiene warnings: pm validate --check-resolution --check-history-drift reported 18 closed items missing resolution metadata and 3 history hash mismatches; pm normalize --dry-run planned 18 closed_resolution_backfill updates; pm validate --check-files --scan-mode tracked-all reported 3 missing linked paths. No new release-blocking migration/data-loss issue remains after pm-yvwt fix."

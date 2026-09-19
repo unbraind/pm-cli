@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[3]: audit,meta,project-management
 created_at: "2026-07-04T18:41:08.232Z"
-updated_at: "2026-08-10T12:05:43.089Z"
+updated_at: "2026-09-19T08:43:04.640Z"
+closed_at: "2026-07-04T18:51:08.943Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "Every open item has parent, tags, acceptance criteria and estimate; no orphan non-epic items; in-flight code work is reflected as in_progress items; duplicate issue-code warnings resolved or delegated with rationale; concurrency-audit items grouped under a capability epic; findings recorded via pm notes/learnings on this item."

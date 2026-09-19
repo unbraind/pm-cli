@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:list",body,json,pm-cli
 created_at: "2026-03-31T19:36:54.824Z"
-updated_at: "2026-07-26T17:30:22.480Z"
+updated_at: "2026-09-19T08:43:09.187Z"
 deadline: "2026-04-02T19:36:54.824Z"
+closed_at: "2026-03-31T19:45:43.971Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 120
@@ -41,14 +42,31 @@ fixed_version: v0.1
 component: cli/list
 regression: true
 customer_impact: Users can accurately request body-inclusive list output for metadata analysis.
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-0lbm,parent,"2026-03-31T19:36:54.824Z",codex-agent,null
-  pm-r0m,related,"2026-03-31T19:36:54.824Z",codex-agent,null
-  pm-zzt1,related,"2026-03-31T19:36:54.824Z",codex-agent,null
-  pm-0lbm,implements,"2026-07-26T17:30:22.244Z",null,null
-  pm-6e0p,related,"2026-07-26T17:30:22.244Z",null,null
-  pm-gudp,related,"2026-07-26T17:30:22.244Z",null,null
-  pm-vsux,related,"2026-07-26T17:30:22.244Z",null,null
+dependencies[7]:
+  - id: pm-0lbm
+    kind: parent
+    created_at: "2026-03-31T19:36:54.824Z"
+    author: codex-agent
+  - id: pm-r0m
+    kind: related
+    created_at: "2026-03-31T19:36:54.824Z"
+    author: codex-agent
+  - id: pm-zzt1
+    kind: related
+    created_at: "2026-03-31T19:36:54.824Z"
+    author: codex-agent
+  - id: pm-0lbm
+    kind: implements
+    created_at: "2026-07-26T17:30:22.244Z"
+  - id: pm-6e0p
+    kind: related
+    created_at: "2026-07-26T17:30:22.244Z"
+  - id: pm-gudp
+    kind: related
+    created_at: "2026-07-26T17:30:22.244Z"
+  - id: pm-vsux
+    kind: related
+    created_at: "2026-07-26T17:30:22.244Z"
 comments[5]{created_at,author,text}:
   "2026-03-31T19:36:54.824Z",codex-agent,Feature created as child of list body projection epic.
   "2026-03-31T19:45:43.415Z",codex-agent,"Child tasks pm-vsux pm-6e0p and pm-gudp are closed. include-body is wired across all list variants, completion scripts include the new flag, targeted suites pass, and full sandbox test plus coverage are green at 100%."

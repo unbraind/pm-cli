@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[3]: code-quality,pm-cli,search
 created_at: "2026-05-01T23:39:02.682Z"
-updated_at: "2026-07-26T17:22:34.774Z"
+updated_at: "2026-09-19T08:40:55.561Z"
+closed_at: "2026-05-02T11:27:58.888Z"
 author: audit-agent
 acceptance_criteria: "Shared search HTTP helpers centralize timeout normalization and response-body diagnostics; semantic search behavior remains unchanged; build, targeted tests, coverage, and temp-project dogfood pass."
 parent: pm-nnhi
@@ -14,9 +15,14 @@ release: v2026.5.3
 resolution: Shared search HTTP helper extracted and used by embedding/vector remote request paths.
 expected_result: "Duplicate timeout, fetcher, failed-response, and JSON diagnostics are centralized without behavior changes."
 actual_result: "Providers and vector stores use src/core/search/http-client.ts; targeted tests, linked pm test, typecheck, and full coverage passed."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-kkmo,related,"2026-05-02T06:55:15.007Z",audit-agent,null
-  pm-nnhi,implements,"2026-07-26T17:22:34.472Z",null,null
+dependencies[2]:
+  - id: pm-kkmo
+    kind: related
+    created_at: "2026-05-02T06:55:15.007Z"
+    author: audit-agent
+  - id: pm-nnhi
+    kind: implements
+    created_at: "2026-07-26T17:22:34.472Z"
 comments[3]{created_at,author,text}:
   "2026-05-02T06:47:17.797Z",audit-agent,"Audit 2026-05-02: Duplication confirmed -- normalizeTimeoutMs and readFailedResponseBody still duplicated across providers.ts and vector-stores.ts. Both implement identical timeout normalization (DEFAULT_EMBEDDING_TIMEOUT_MS=30000) and response body extraction."
   "2026-05-02T07:45:57.175Z",audit-agent,"2026-05-02 audit: providers.ts (351 lines) and vector-stores.ts (755 lines) share identical patterns: normalizeTimeoutMs, readFailedResponseBody, resolveVectorFetcher/resolveEmbeddingFetcher. Consolidation would remove ~50 lines of duplication."

@@ -6,15 +6,16 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-06-17T22:59:33.033Z"
-updated_at: "2026-07-26T17:09:04.141Z"
+updated_at: "2026-09-19T08:39:50.457Z"
+closed_at: "2026-06-17T23:12:41.017Z"
 author: codex-audit-agent
 parent: pm-8jdc
 release: v2026.6.19
 resolution: Fixed GH #265 by preventing read-like unknown schema tokens from entering shorthand add-type.
 expected_result: pm schema list-statuses/help/show-all/list-types/types should exit usage and leave schema/types.json unchanged; explicit pm schema add-type remains available.
 actual_result: Schema shorthand now rejects reserved schema verb/read-like tokens; unit/temp-tracker regression/manual SHA reproduction/full coverage passed.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-8jdc,implements,"2026-07-26T17:09:03.839Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-8jdc,implements,"2026-07-26T17:09:03.839Z"
 comments[1]{created_at,author,text}:
   "2026-06-17T23:12:01.468Z",codex-audit-agent,"Evidence: fixed GH #265 by rejecting read-like unknown schema tokens (help/types/list-*/show-*/add-*/remove-*/apply-*) before the shorthand add-type fallback. Manual temp-project reproduction: pm schema list-statuses exits 2 and schema/types.json SHA stayed unchanged. Focused tests passed: node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/commands/schema-command.spec.ts. Full coverage passed: 225 files, 4488 tests, 100% statements/branches/functions/lines."
 files[3]{path,scope,note}:

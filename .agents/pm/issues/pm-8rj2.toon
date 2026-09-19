@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: agent-ux,bug,cli,help
 created_at: "2026-05-17T06:47:16.090Z"
-updated_at: "2026-08-10T12:02:16.576Z"
+updated_at: "2026-09-19T08:39:45.111Z"
 deadline: "2026-05-22T06:47:16.090Z"
+closed_at: "2026-05-17T07:05:08.460Z"
 author: maintainer-agent
 release: v2026.5.18
 resolution: "Implemented bare 'pm' invocation now shows --help via outputHelp() in src/cli/main.ts. Verified: 'pm' (no args) prints usage and command list, exits 0."

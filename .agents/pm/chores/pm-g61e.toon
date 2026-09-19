@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: agent-guidance,"area:docs",living-map,reliability
 created_at: "2026-06-30T15:52:28.052Z"
-updated_at: "2026-09-08T05:33:26.851Z"
+updated_at: "2026-09-19T08:40:17.512Z"
+closed_at: "2026-06-30T15:53:02.696Z"
 author: claude-code-agent
 parent: pm-u9d0
 release: v2026.7.1

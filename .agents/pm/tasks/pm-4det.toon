@@ -6,7 +6,8 @@ status: closed
 priority: 0
 tags[4]: gitignore,pm-cli,privacy,schema
 created_at: "2026-05-11T17:15:35.823Z"
-updated_at: "2026-07-26T17:03:51.754Z"
+updated_at: "2026-09-19T08:39:25.401Z"
+closed_at: "2026-05-11T17:17:18.233Z"
 author: codex-agent
 acceptance_criteria: Runtime metadata cache is untracked and ignored; schema URL changes remain committed; tracked secret scan passes before push.
 parent: pm-0c9q
@@ -14,8 +15,8 @@ release: v2026.5.12
 resolution: Runtime metadata cache is no longer tracked and future cache writes are ignored; schema contract URL update remains included.
 expected_result: "Cache file is removed from the Git index, ignored for future local runs, and no credential-like or private host/path data is tracked in the final tree."
 actual_result: "git stages the cache path as deleted and ignored locally; the staged tree contains the schema URL update, contract regression, ignore rule, and sanitized pm evidence; linked secret scan and contract regression passed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-0c9q,implements,"2026-07-26T17:03:51.508Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-0c9q,implements,"2026-07-26T17:03:51.508Z"
 comments[2]{created_at,author,text}:
   "2026-05-11T17:15:35.823Z",codex-agent,"Duplicate check: pm search metadata cache git tracking ignore schema url --limit 10 found only this turn's closed schema task and older unrelated items; create a sanitized follow-up for cache untracking and publish verification."
   "2026-05-11T17:17:13.534Z",codex-agent,"Evidence: removed runtime metadata cache from Git tracking, added an ignore rule for future cache writes, kept schema contract URL update, and verified tracked files with node scripts/check-secrets.mjs plus linked contract regression."

@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:calendar","area:tests",code,pm-cli
 created_at: "2026-03-31T21:28:54.771Z"
-updated_at: "2026-07-26T17:26:44.167Z"
+updated_at: "2026-09-19T08:41:46.710Z"
 deadline: "2026-04-07T21:28:54.771Z"
+closed_at: "2026-03-31T22:05:46.873Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 140
@@ -41,11 +42,22 @@ fixed_version: vnext
 component: tests/runtime-contract
 regression: true
 customer_impact: Protects existing behavior while adding calendar/reminder features.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-122q,parent,"2026-03-31T21:28:54.771Z",codex-agent,null
-  pm-ezri,blocks,"2026-03-31T21:28:54.771Z",codex-agent,null
-  pm-qze9,blocks,"2026-03-31T21:28:54.771Z",codex-agent,null
-  pm-122q,implements,"2026-07-26T17:26:43.817Z",null,null
+dependencies[4]:
+  - id: pm-122q
+    kind: parent
+    created_at: "2026-03-31T21:28:54.771Z"
+    author: codex-agent
+  - id: pm-ezri
+    kind: blocks
+    created_at: "2026-03-31T21:28:54.771Z"
+    author: codex-agent
+  - id: pm-qze9
+    kind: blocks
+    created_at: "2026-03-31T21:28:54.771Z"
+    author: codex-agent
+  - id: pm-122q
+    kind: implements
+    created_at: "2026-07-26T17:26:43.817Z"
 comments[3]{created_at,author,text}:
   "2026-03-31T21:28:54.771Z",codex-agent,Task created for regression and runtime contract expansion.
   "2026-03-31T21:46:07.405Z",codex-agent,Expanded unit/integration/runtime test coverage for reminders and calendar command behavior including help contracts and deterministic output assertions.

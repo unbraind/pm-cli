@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[8]: "area:extensions","area:health",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T06:55:04.808Z"
-updated_at: "2026-07-26T17:19:09.390Z"
+updated_at: "2026-09-19T08:40:42.645Z"
 deadline: "2026-03-07T23:59:00.000Z"
+closed_at: "2026-03-06T07:11:49.123Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 75
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-include-built-in-extensions-in-heal
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: include built-in extensions in health probe."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-pjj7,related,"2026-03-06T06:55:04.808Z",maintainer-agent,null
-  pm-2p6q,implements,"2026-07-26T17:19:09.171Z",null,null
+dependencies[2]:
+  - id: pm-pjj7
+    kind: related
+    created_at: "2026-03-06T06:55:04.808Z"
+    author: maintainer-agent
+  - id: pm-2p6q
+    kind: implements
+    created_at: "2026-07-26T17:19:09.171Z"
 comments[5]{created_at,author,text}:
   "2026-03-06T06:55:04.808Z",maintainer-agent,"Why this exists: keep health diagnostics aligned with runtime extension behavior by probing built-in extensions too."
   "2026-03-06T06:55:17.798Z",maintainer-agent,"Planned changeset before edits: docs-first update README and PRD to require built-in extension inclusion in health probe, then implement shared built-in extension helper and wire health to include built-ins with deterministic activation metadata and tests."

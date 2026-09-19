@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[6]: "area:extensions","area:sdk",capability,context-management,doctor,least-privilege
 created_at: "2026-06-21T11:08:59.286Z"
-updated_at: "2026-09-08T05:33:18.881Z"
+updated_at: "2026-09-19T08:40:15.573Z"
+closed_at: "2026-06-21T11:35:44.870Z"
 author: claude-code-agent
 parent: pm-ugqx
 release: v2026.6.22

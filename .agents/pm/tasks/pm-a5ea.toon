@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[9]: "area:cli","area:docs","area:tests",code,doc,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-07T10:12:40.909Z"
-updated_at: "2026-07-26T17:08:55.154Z"
+updated_at: "2026-09-19T08:39:49.885Z"
 deadline: "2026-03-08T23:59:00.000Z"
+closed_at: "2026-03-07T10:24:11.813Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
@@ -41,10 +42,17 @@ fixed_version: archive-2026q2
 component: project-management/release-readiness-maintenance-loop-2026-03-07-ru
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release-readiness maintenance loop 2026-03-07 run 8.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-wjdr,related,"2026-03-07T10:12:40.909Z",maintainer-agent,null
-  pm-2p6q,implements,"2026-07-26T17:08:54.953Z",null,null
-  pm-phpq,related,"2026-07-26T17:08:54.953Z",null,null
+dependencies[3]:
+  - id: pm-wjdr
+    kind: related
+    created_at: "2026-03-07T10:12:40.909Z"
+    author: maintainer-agent
+  - id: pm-2p6q
+    kind: implements
+    created_at: "2026-07-26T17:08:54.953Z"
+  - id: pm-phpq
+    kind: related
+    created_at: "2026-07-26T17:08:54.953Z"
 comments[5]{created_at,author,text}:
   "2026-03-07T10:12:40.909Z",maintainer-agent,This run exists to extend help-contract hardening to pm delete.
   "2026-03-07T10:12:50.847Z",maintainer-agent,"Intended change-set: extend release-readiness contract tests with pm delete --help assertions for required metadata flags and usage/description semantics."

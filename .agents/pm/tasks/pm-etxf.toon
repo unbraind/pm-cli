@@ -6,7 +6,8 @@ status: closed
 priority: 0
 tags[7]: agents,audit,dogfood,package-first,performance,sdk,telemetry
 created_at: "2026-05-31T20:51:25.691Z"
-updated_at: "2026-09-08T05:32:40.298Z"
+updated_at: "2026-09-19T08:40:11.816Z"
+closed_at: "2026-06-01T20:49:32.256Z"
 author: codex-late-audit-20260531
 acceptance_criteria: "Latest main is dogfooded in isolated temporary projects, external pm packages are verified, specialist sub-agent findings are recorded, actionable issues are fixed or tracked, local gates pass, changes are committed/pushed to a descriptive PR, review feedback is handled, checks are green, and PR is merged back to main when clean."
 parent: pm-59gj

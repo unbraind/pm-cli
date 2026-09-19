@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: governance,linked-tests,pm-cli,validation
 created_at: "2026-04-03T22:53:42.450Z"
-updated_at: "2026-07-26T17:03:40.132Z"
+updated_at: "2026-09-19T08:39:24.730Z"
 deadline: "2026-04-13T22:53:42.450Z"
+closed_at: "2026-04-03T23:47:07.943Z"
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: pm test --add and create --test reject entries missing command metadata; existing malformed stored entries still skip deterministically at runtime with explicit diagnostics.
@@ -38,12 +39,23 @@ affected_version: 2026.3.12
 component: linked-test-validation
 regression: true
 customer_impact: Governance sweeps can misreport coverage when linked tests are non-runnable.
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-mf5z,parent,"2026-04-03T22:53:42.450Z",codex-agent,null
-  pm-au2z,related,"2026-07-26T17:03:39.927Z",null,null
-  pm-mf5z,implements,"2026-07-26T17:03:39.927Z",null,null
-  pm-wn34,related,"2026-07-26T17:03:39.927Z",null,null
-  pm-wtq6,related,"2026-07-26T17:03:39.927Z",null,null
+dependencies[5]:
+  - id: pm-mf5z
+    kind: parent
+    created_at: "2026-04-03T22:53:42.450Z"
+    author: codex-agent
+  - id: pm-au2z
+    kind: related
+    created_at: "2026-07-26T17:03:39.927Z"
+  - id: pm-mf5z
+    kind: implements
+    created_at: "2026-07-26T17:03:39.927Z"
+  - id: pm-wn34
+    kind: related
+    created_at: "2026-07-26T17:03:39.927Z"
+  - id: pm-wtq6
+    kind: related
+    created_at: "2026-07-26T17:03:39.927Z"
 comments[3]{created_at,author,text}:
   "2026-04-03T22:53:42.450Z",codex-agent,Feature carved from epic scope for pm-8ys5 command-required policy.
   "2026-04-03T23:46:54.478Z",codex-agent,"Feature delivered: linked-test mutation boundaries now require command metadata (path optional), preventing new unrunnable path-only entries while preserving deterministic runtime skips for legacy malformed records. Verified by parser unit/integration regressions and pm test pm-wn34 evidence."

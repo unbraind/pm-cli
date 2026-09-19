@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:extensions",code,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-04T15:51:09.392Z"
-updated_at: "2026-07-26T17:03:38.094Z"
+updated_at: "2026-09-19T08:39:24.487Z"
 deadline: "2026-03-07T15:51:09.000Z"
+closed_at: "2026-03-04T16:01:29.599Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 75
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-normalize-extension-command-path-wh
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: normalize extension command path whitespace."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-b1w,parent,"2026-03-04T15:51:09.392Z",maintainer-agent,null
-  pm-b1w,implements,"2026-07-26T17:03:37.898Z",null,null
+dependencies[2]:
+  - id: pm-b1w
+    kind: parent
+    created_at: "2026-03-04T15:51:09.392Z"
+    author: maintainer-agent
+  - id: pm-b1w
+    kind: implements
+    created_at: "2026-07-26T17:03:37.898Z"
 comments[4]{created_at,author,text}:
   "2026-03-04T15:51:09.392Z",maintainer-agent,Whitespace normalization gap found in extension command name matching; this task closes that deterministic matching hole.
   "2026-03-04T15:51:17.623Z",maintainer-agent,"Starting implementation: normalize extension command name canonicalization to collapse repeated internal whitespace for both registration and dispatch, then add loader unit tests."

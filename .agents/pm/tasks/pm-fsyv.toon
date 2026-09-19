@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[7]: "area:extensions-loader",code,"milestone:5",pm-cli,"priority:1",security,tests
 created_at: "2026-03-03T23:15:51.883Z"
-updated_at: "2026-07-26T17:14:06.027Z"
+updated_at: "2026-09-19T08:40:16.669Z"
 deadline: "2026-03-10T23:15:51.000Z"
+closed_at: "2026-03-03T23:27:53.044Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 90
@@ -41,10 +42,18 @@ fixed_version: archive-2026q2
 component: project-management/enforce-symlink-resolved-extension-entry-boundar
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Enforce symlink-resolved extension entry boundary.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-7sd,discovered_from,"2026-03-03T23:15:51.883Z",cursor-maintainer,null
-  pm-b1w,parent,"2026-03-03T23:15:51.883Z",cursor-maintainer,null
-  pm-b1w,implements,"2026-07-26T17:14:05.761Z",null,null
+dependencies[3]:
+  - id: pm-7sd
+    kind: discovered_from
+    created_at: "2026-03-03T23:15:51.883Z"
+    author: cursor-maintainer
+  - id: pm-b1w
+    kind: parent
+    created_at: "2026-03-03T23:15:51.883Z"
+    author: cursor-maintainer
+  - id: pm-b1w
+    kind: implements
+    created_at: "2026-07-26T17:14:05.761Z"
 comments[4]{created_at,author,text}:
   "2026-03-03T23:15:51.883Z",cursor-maintainer,Symlink escapes can bypass current entry boundary checks and this task hardens containment.
   "2026-03-03T23:16:07.069Z",cursor-maintainer,"Planned changeset: docs-first clarify symlink-resolved entry containment semantics, then implement loader realpath enforcement with unit coverage for escaped and in-tree symlink targets."

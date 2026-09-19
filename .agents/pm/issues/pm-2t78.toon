@@ -6,7 +6,8 @@ status: closed
 priority: 0
 tags[4]: package-first,packages,pm-cli,sdk
 created_at: "2026-05-14T05:20:21.502Z"
-updated_at: "2026-07-26T17:02:22.579Z"
+updated_at: "2026-09-19T08:39:20.319Z"
+closed_at: "2026-05-14T05:43:22.591Z"
 author: codex-agent
 estimated_minutes: 90
 acceptance_criteria: First-party package runtime JavaScript artifacts use the public SDK barrel instead of dist/core deep imports; tests fail on stale package runtime artifacts; package-first dogfood and focused package/MCP tests pass; progress and evidence are recorded in pm.
@@ -15,9 +16,9 @@ release: v2026.5.14
 resolution: "Closed after aligning shipped package runtime JavaScript with the public SDK barrel, adding manifest-declared bundled package aliases, dynamic packages/pm-* discovery, stable extension action IDs, and installed package-command dogfood coverage."
 expected_result: "First-party packages remain fully TypeScript-authored, shipped JavaScript avoids private dist/core and dist/types imports, install/catalog/install-all discover package aliases from package manifests, and installed package commands keep working through the SDK surface."
 actual_result: "Package JS now imports ../../../../dist/sdk/index.js; runtime guard rejects private dist/core and dist/types imports; beads/todos declare aliases; package catalog/install discover manifest aliases including synthetic pm-custom test fixture; dogfood runs beads import and todos export after install; focused tests, coverage, release gate, Sentry, and telemetry passed."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-59gj,implements,"2026-07-26T17:02:22.363Z",null,null
-  pm-hkql,related,"2026-07-26T17:02:22.363Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-59gj,implements,"2026-07-26T17:02:22.363Z"
+  pm-hkql,related,"2026-07-26T17:02:22.363Z"
 comments[4]{created_at,author,text}:
   "2026-05-14T05:20:21.502Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10, pm search 'package-first SDK packages upgrade extensible' --limit 10, pm search 'MCP dynamic package action dogfood wildcard source refresh' --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Existing pm-hkql closed the TypeScript source cleanup but did not cover stale shipped runtime.js artifacts, so this focused child issue is needed under pm-59gj."
   "2026-05-14T05:30:50.374Z",codex-agent,"Progress: fixed stale first-party package runtime artifacts to import the built public SDK barrel instead of private dist/core internals; added stable package action IDs; added manifest-declared aliases and dynamic bundled package discovery from packages/pm-* manifests; updated dogfood to execute installed beads import and todos export commands. Verification so far: pnpm build passed; pnpm typecheck passed; focused package/MCP suite passed 6 files / 99 tests; pnpm dogfood:package-first passed 37 isolated temp-project commands; pm test pm-2t78 --run --progress passed all 3 linked checks."

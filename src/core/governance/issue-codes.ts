@@ -24,6 +24,8 @@ export interface IssueCodeItem {
   duplicate_of?: string | null;
   /** Optional body evidence used to disambiguate mixed-case prose compounds. */
   body?: string | null;
+  /** Typed provenance links; only derivations targeting this same code group exempt a follow-up. */
+  dependencies?: readonly { id: string; kind: string }[] | null;
 }
 
 /** Explicit classifier inputs for repository-specific issue-code formats. */
@@ -110,13 +112,61 @@ function isNonEmptyIdReference(
   return typeof value === "string" && value.trim().length > 0;
 }
 
+/** Internal code-group identity plus the explicit ancestry that may explain reuse. */
+interface CodeGroupEntry {
+  /** Original item identifier used in diagnostic output. */
+  id: string;
+  /** Original title carrying the shared logical code. */
+  title: string;
+  /** Explicit hierarchy predecessor, if present. */
+  parent: string | null;
+  /** Normalized targets of supported provenance relationships. */
+  derivations: string[];
+}
+
+/** Retain independent roots and unresolved cycles; collapse only acyclic same-code lineage. */
+function findCodeCollisionEntries(entries: CodeGroupEntry[]): CodeGroupEntry[] {
+  const idsInGroup = new Set(entries.map((entry) => entry.id.toLowerCase()));
+  const prerequisites = new Map<string, Set<string>>();
+  const dependents = new Map<string, string[]>();
+  for (const entry of entries) {
+    const id = entry.id.toLowerCase();
+    const targets = new Set([
+      ...(entry.parent === null ? [] : [entry.parent.toLowerCase()]),
+      ...entry.derivations,
+    ].filter((target) => target !== id && idsInGroup.has(target)));
+    prerequisites.set(id, targets);
+    for (const target of targets) {
+      const successors = dependents.get(target) ?? [];
+      successors.push(id);
+      dependents.set(target, successors);
+    }
+  }
+  // Resolve only ancestry ending at a real root. Cycles never exempt their
+  // own members or followers, even when an unrelated root shares the code.
+  const roots = [...prerequisites].filter(([, targets]) => targets.size === 0).map(([id]) => id);
+  const queue = [...roots];
+  const derived = new Set<string>();
+  for (let index = 0; index < queue.length; index += 1) {
+    for (const successor of dependents.get(queue[index]) ?? []) {
+      const targets = prerequisites.get(successor)!;
+      targets.delete(queue[index]);
+      if (targets.size === 0) {
+        derived.add(successor);
+        queue.push(successor);
+      }
+    }
+  }
+  return entries.filter((entry) => !derived.has(entry.id.toLowerCase()));
+}
+
 /**
  * Find logical issue codes used by 2+ items. Any item whose title begins with a
  * conventional issue code contributes; codes used by a single item are not
  * reported. Status is intentionally NOT considered for genuine collisions — a
  * closed item and an open item sharing a code still collide for audit purposes.
  *
- * Two adjudicated/by-design cases are excluded so `validate` output stays
+ * Adjudicated/by-design cases are excluded so `validate` output stays
  * trustworthy in real trackers (GH-275, GH-278):
  *
  * - **Closed-as-duplicate** (GH-278): an item with a non-empty `duplicate_of`
@@ -129,6 +179,10 @@ function isNonEmptyIdReference(
  *   collision. A genuine duplicate (two items with the same code, neither the
  *   parent of the other) still surfaces after this filtering.
  *
+ * - **Typed derivation** (pm-pivf): discovered_from, supersedes and incident_from
+ *   links within the same code group exempt follow-ups whose ancestry reaches
+ *   a root. Unrelated links, self references and cycles never establish lineage.
+ *
  * Results are deterministic: duplicate groups are sorted by code, and the
  * `ids`/`titles` within each group are sorted by id. The first-seen title for a
  * given (id) is used; duplicate ids (should not occur for a valid corpus) are
@@ -140,7 +194,7 @@ export function findDuplicateIssueCodes(
 ): DuplicateIssueCode[] {
   const byCode = new Map<
     string,
-    Array<{ id: string; title: string; parent: string | null }>
+    CodeGroupEntry[]
   >();
   for (const item of items) {
     // A non-string title can never carry a code, so skip it before extraction;
@@ -169,6 +223,10 @@ export function findDuplicateIssueCodes(
         id: item.id,
         title: item.title,
         parent: isNonEmptyIdReference(item.parent) ? item.parent.trim() : null,
+        derivations: (item.dependencies ?? [])
+          .filter((edge) => ["discovered_from", "supersedes", "incident_from"].includes(edge.kind))
+          .map((edge) => edge.id.trim().toLowerCase())
+          .filter((id) => id !== item.id.toLowerCase()),
       });
     }
   }
@@ -186,11 +244,7 @@ export function findDuplicateIssueCodes(
     // siblings whose parent merely exists elsewhere). Comparison is
     // case-insensitive so a `parent` reference recorded in a different case than
     // the canonical id (e.g. an upper-case `id_prefix`) still matches.
-    const idsInGroup = new Set(entries.map((entry) => entry.id.toLowerCase()));
-    const collisionEntries = entries.filter(
-      (entry) =>
-        entry.parent === null || !idsInGroup.has(entry.parent.toLowerCase()),
-    );
+    const collisionEntries = findCodeCollisionEntries(entries);
     if (collisionEntries.length < 2) {
       continue;
     }

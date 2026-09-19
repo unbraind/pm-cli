@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[3]: audit-2026-06-12,docs,drift
 created_at: "2026-06-12T16:11:21.762Z"
-updated_at: "2026-09-08T05:32:58.171Z"
+updated_at: "2026-09-19T08:39:41.123Z"
+closed_at: "2026-06-19T13:36:38.055Z"
 author: maintainer-agent
 parent: pm-gpea
 release: v2026.6.20

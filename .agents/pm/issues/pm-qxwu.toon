@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[5]: agent-ux,"area:mcp",contracts,dx,living-map
 created_at: "2026-05-31T19:45:01.543Z"
-updated_at: "2026-09-08T05:32:35.332Z"
+updated_at: "2026-09-19T08:41:06.886Z"
+closed_at: "2026-06-05T14:56:53.962Z"
 author: maintainer-agent
 acceptance_criteria: "Either additionalProperties:false with a documented allow-list of known top-level keys, or a server-side warning on unexpected keys; a typo-arg test triggers warning/error; existing tests pass."
 value: "All narrow tool schemas inherit additionalProperties:true; a typo like fullChangedField (missing s) is ignored with no error, so agents silently get default behavior."

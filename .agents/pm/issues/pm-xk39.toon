@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[5]: history,pm-cli,privacy,redaction,security
 created_at: "2026-05-03T13:34:41.813Z"
-updated_at: "2026-07-26T17:29:37.830Z"
+updated_at: "2026-09-19T08:42:50.810Z"
+closed_at: "2026-05-25T12:28:42.077Z"
 author: codex-audit
 acceptance_criteria: A supported pm command can redact configured literals/patterns from item files and history streams; history drift validation remains meaningful after redaction; redaction operations are themselves auditable; secret scans can include history streams without false failures from known private operations paths.
 parent: pm-rnpb
@@ -14,23 +15,56 @@ release: v2026.5.27
 resolution: Resolution normalized from closed status; existing close_reason remains the detailed closure evidence.
 expected_result: Expected closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
 actual_result: Actual closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
-dependencies[16]{id,kind,created_at,author,source_kind}:
-  pm-rnpb,parent,"2026-05-03T13:34:41.813Z",codex-audit,null
-  pm-2326,related,"2026-07-26T17:29:37.613Z",null,null
-  pm-7vm9,related,"2026-07-26T17:29:37.613Z",null,null
-  pm-cakn,related,"2026-07-26T17:29:37.613Z",null,null
-  pm-dhie,related,"2026-07-26T17:29:37.613Z",null,null
-  pm-f3q4,related,"2026-07-26T17:29:37.613Z",null,null
-  pm-fdla,related,"2026-07-26T17:29:37.613Z",null,null
-  pm-gt82,related,"2026-07-26T17:29:37.613Z",null,null
-  pm-imob,related,"2026-07-26T17:29:37.613Z",null,null
-  pm-m0fh,related,"2026-07-26T17:29:37.613Z",null,null
-  pm-mb4n,related,"2026-07-26T17:29:37.613Z",null,null
-  pm-ny6y,related,"2026-07-26T17:29:37.613Z",null,null
-  pm-r9ei,related,"2026-07-26T17:29:37.613Z",null,null
-  pm-rnpb,implements,"2026-07-26T17:29:37.613Z",null,null
-  pm-swie,related,"2026-07-26T17:29:37.613Z",null,null
-  pm-vhdc,related,"2026-07-26T17:29:37.613Z",null,null
+dependencies[16]:
+  - id: pm-rnpb
+    kind: parent
+    created_at: "2026-05-03T13:34:41.813Z"
+    author: codex-audit
+  - id: pm-2326
+    kind: related
+    created_at: "2026-07-26T17:29:37.613Z"
+  - id: pm-7vm9
+    kind: related
+    created_at: "2026-07-26T17:29:37.613Z"
+  - id: pm-cakn
+    kind: related
+    created_at: "2026-07-26T17:29:37.613Z"
+  - id: pm-dhie
+    kind: related
+    created_at: "2026-07-26T17:29:37.613Z"
+  - id: pm-f3q4
+    kind: related
+    created_at: "2026-07-26T17:29:37.613Z"
+  - id: pm-fdla
+    kind: related
+    created_at: "2026-07-26T17:29:37.613Z"
+  - id: pm-gt82
+    kind: related
+    created_at: "2026-07-26T17:29:37.613Z"
+  - id: pm-imob
+    kind: related
+    created_at: "2026-07-26T17:29:37.613Z"
+  - id: pm-m0fh
+    kind: related
+    created_at: "2026-07-26T17:29:37.613Z"
+  - id: pm-mb4n
+    kind: related
+    created_at: "2026-07-26T17:29:37.613Z"
+  - id: pm-ny6y
+    kind: related
+    created_at: "2026-07-26T17:29:37.613Z"
+  - id: pm-r9ei
+    kind: related
+    created_at: "2026-07-26T17:29:37.613Z"
+  - id: pm-rnpb
+    kind: implements
+    created_at: "2026-07-26T17:29:37.613Z"
+  - id: pm-swie
+    kind: related
+    created_at: "2026-07-26T17:29:37.613Z"
+  - id: pm-vhdc
+    kind: related
+    created_at: "2026-07-26T17:29:37.613Z"
 comments[24]{created_at,author,text}:
   "2026-05-03T13:34:41.813Z",codex-audit,"Duplicate-check evidence: pm search history stream redaction command redact private path history drift --limit 10 found only closed history/security items; current audit discovered remaining private remote paths in historical JSONL streams after current item docs were sanitized."
   "2026-05-09T11:21:19.310Z",codex-agent,"2026-05-09 duplicate-check evidence: pm search tracker history privacy redaction private paths --limit 10 found this existing item as the canonical match. Current scan found no raw IP/password/token values in non-history tracked files; current pm item files only mention Sentry token variable names, but historical JSONL streams still include private remote paths from older telemetry operations. Do not hand-edit history; implement audited redaction support or migrate history safely."

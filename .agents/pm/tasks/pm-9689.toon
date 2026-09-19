@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[3]: pm-cli,settings,toon
 created_at: "2026-03-31T20:13:38.843Z"
-updated_at: "2026-07-26T17:08:07.140Z"
+updated_at: "2026-09-19T08:39:46.608Z"
 deadline: "2026-04-14T20:13:38.843Z"
+closed_at: "2026-03-31T20:57:56.254Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 120
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/implement-item-format-settings-model
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Implement item_format settings model.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-5cbm,parent,"2026-03-31T20:13:38.843Z",codex-agent,null
-  pm-5cbm,implements,"2026-07-26T17:08:06.912Z",null,null
+dependencies[2]:
+  - id: pm-5cbm
+    kind: parent
+    created_at: "2026-03-31T20:13:38.843Z"
+    author: codex-agent
+  - id: pm-5cbm
+    kind: implements
+    created_at: "2026-07-26T17:08:06.912Z"
 comments[3]{created_at,author,text}:
   "2026-03-31T20:13:38.843Z",codex-agent,Task tracks item_format schema and metadata changes.
   "2026-03-31T20:15:32.913Z",codex-agent,"Implemented settings model updates: added item_format toon|json_markdown, introduced readSettingsWithMetadata explicit selection signal, and updated deterministic settings serialization order. Validation: targeted settings/config/init tests passed."

@@ -6,15 +6,16 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-06T19:14:09.143Z"
-updated_at: "2026-07-26T17:03:36.176Z"
+updated_at: "2026-09-19T08:39:24.137Z"
+closed_at: "2026-06-06T19:33:02.953Z"
 author: codex-sdk-continuation
 parent: pm-mpbb
 release: v2026.6.7
 resolution: Delivered repeatable list --ids support for focused agent working-set refresh.
 expected_result: Agents can pass repeated --ids flags to list commands and receive the same focused set as comma-separated ids.
 actual_result: Bootstrap list filtering now merges repeated --ids; command help/docs/tests/manual smoke verify list-open returns exactly the requested item set.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-mpbb,implements,"2026-07-26T17:03:35.950Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-mpbb,implements,"2026-07-26T17:03:35.950Z"
 comments[3]{created_at,author,text}:
   "2026-06-06T19:32:32.171Z",codex-sdk-continuation,"Evidence: list-family --ids is now bootstrap-mergeable so repeated --ids filters accumulate like comma-separated ids; docs and help text updated. Verification: linked bootstrap/list specs passed; focused combined tests passed 115 tests; full coverage passed 2526 tests with 100% statements/branches/functions/lines; manual isolated PM_PATH smoke created three items and list-open --ids first --ids second returned exactly the two requested ids; pnpm build passed; audit/security/Sentry/telemetry gates passed."
   "2026-06-06T19:38:58.937Z",codex-sdk-continuation,"CI follow-up evidence: reproduced PR static failure locally as stale contracts:check after adding list --ids to the list commander contract; ran pnpm contracts:update, linked tests/fixtures/contracts/full.json, and exact static CI block now passes: version:check, changelog:pm:check, contracts:check, security:scan, quality:static, npm pack --dry-run."

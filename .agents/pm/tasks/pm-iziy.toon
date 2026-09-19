@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[9]: "area:cli","area:docs","area:tests",code,doc,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-07T08:03:43.005Z"
-updated_at: "2026-07-26T17:16:59.649Z"
+updated_at: "2026-09-19T08:40:33.147Z"
 deadline: "2026-03-08T23:59:00.000Z"
+closed_at: "2026-03-07T08:16:32.202Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 120
@@ -41,10 +42,17 @@ fixed_version: archive-2026q2
 component: project-management/release-readiness-maintenance-loop-2026-03-07-ru
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release-readiness maintenance loop 2026-03-07 run 4.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-204c,related,"2026-03-07T08:03:43.005Z",maintainer-agent,null
-  pm-2p6q,implements,"2026-07-26T17:16:59.460Z",null,null
-  pm-phpq,related,"2026-07-26T17:16:59.460Z",null,null
+dependencies[3]:
+  - id: pm-204c
+    kind: related
+    created_at: "2026-03-07T08:03:43.005Z"
+    author: maintainer-agent
+  - id: pm-2p6q
+    kind: implements
+    created_at: "2026-07-26T17:16:59.460Z"
+  - id: pm-phpq
+    kind: related
+    created_at: "2026-07-26T17:16:59.460Z"
 comments[6]{created_at,author,text}:
   "2026-03-07T08:03:43.005Z",maintainer-agent,This run continues release-readiness hardening with one targeted help-contract fix for files/docs.
   "2026-03-07T08:04:03.806Z",maintainer-agent,"Intended change-set: remove misleading default-array help rendering from pm files/pm docs --add and --remove options, and add release-readiness contract assertions so this text cannot regress."

@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[3]: "area:ci",security,supply-chain
 created_at: "2026-06-07T10:05:02.314Z"
-updated_at: "2026-09-08T05:32:49.699Z"
+updated_at: "2026-09-19T08:40:36.966Z"
+closed_at: "2026-06-07T17:03:46.687Z"
 author: audit-docs-tests-agent
 acceptance_criteria: "- codeql.yml pins both github/codeql-action/init and github/codeql-action/analyze to the current immutable SHA for @v3\n- ci-workflow-contract.spec.ts PINNED_ACTIONS check extended to cover CodeQL actions (or a comment explains why it is excluded)"
 parent: pm-u9d0

@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[3]: "area:cli",coverage,pr-240
 created_at: "2026-06-16T08:40:14.428Z"
-updated_at: "2026-09-08T05:33:09.835Z"
+updated_at: "2026-09-19T08:39:58.614Z"
+closed_at: "2026-06-16T09:18:14.566Z"
 author: maintainer-agent
 parent: pm-0xix
 release: v2026.6.16

@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:docs-validation",core,"milestone:6",pm-cli
 created_at: "2026-02-17T23:02:12.823Z"
-updated_at: "2026-08-13T09:47:57.991Z"
+updated_at: "2026-09-19T08:39:14.922Z"
 deadline: "2026-03-19T23:02:12.823Z"
+closed_at: "2026-02-18T01:49:59.592Z"
 assignee: steve
 author: steve
 estimated_minutes: 90

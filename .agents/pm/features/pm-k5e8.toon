@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[3]: "area:extensions",compat,dx
 created_at: "2026-06-07T10:04:51.632Z"
-updated_at: "2026-07-26T17:18:01.642Z"
+updated_at: "2026-09-19T08:40:39.452Z"
+closed_at: "2026-06-09T18:41:09.230Z"
 author: audit-platform-agent
 acceptance_criteria: "- A per-layer setting toggles pm_max_version violation from block to warn\n- Default remains block (backward compatible)\n- Setting documented + validated; covered by tests"
 parent: pm-ugqx
@@ -16,9 +17,9 @@ release: v2026.6.10
 resolution: Implemented per-layer pm_max_version_exceeded_mode with block default and warn override.
 expected_result: Operators can keep default blocking behavior or opt into warn-only for managed upgrade windows.
 actual_result: "Settings, validator, policy normalization, loader behavior, docs, and tests now cover block and warn modes."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-4gw6,related,"2026-06-07T10:04:51.632Z",null,null
-  pm-ugqx,implements,"2026-07-26T17:18:01.395Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-4gw6,related,"2026-06-07T10:04:51.632Z"
+  pm-ugqx,implements,"2026-07-26T17:18:01.395Z"
 comments[3]{created_at,author,text}:
   "2026-06-09T17:46:48.397Z",sdk-core-agent,"sdk-core-agent starting: extensions.policy.pm_max_version_exceeded_mode block|warn (default block) with per-layer override, validator wiring, loader relax + tests."
   "2026-06-09T18:09:32.040Z",codex-implementation-agent,"Sidecar evidence: GitHub/security/release sidecar found no open PRs/issues, no open Dependabot/code-scanning/secret-scanning/security-advisory alerts, pnpm audit --audit-level low clean, pnpm security:scan clean, pm-changelog latest 2026.6.8 active and changelog check passed. Current npm version 2026.6.9 is already published; release flow should handle next version rather than this PR hand-editing package version."

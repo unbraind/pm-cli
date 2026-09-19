@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli",bulk-ops,living-map,query
 created_at: "2026-06-04T15:24:46.355Z"
-updated_at: "2026-09-08T05:32:44.070Z"
+updated_at: "2026-09-19T08:40:35.569Z"
+closed_at: "2026-06-04T20:12:36.677Z"
 author: maintainer-agent
 parent: pm-mpbb
 release: v2026.6.5

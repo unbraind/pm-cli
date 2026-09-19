@@ -6,7 +6,8 @@ status: canceled
 priority: 2
 tags: []
 created_at: "2026-05-31T10:42:23.331Z"
-updated_at: "2026-08-28T20:58:29.821Z"
+updated_at: "2026-09-19T08:40:02.055Z"
+closed_at: "2026-05-31T10:43:39.205Z"
 author: agent-ux-contract-review-20260531
 release: v2026.6.1
 resolution: Closed as invalid accidental typo-normalization probe under pm-kd9n cleanup

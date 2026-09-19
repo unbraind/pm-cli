@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:comments","area:docs","area:help",implementation,pm-cli
 created_at: "2026-04-03T09:36:23.063Z"
-updated_at: "2026-07-26T17:07:33.269Z"
+updated_at: "2026-09-19T08:39:44.027Z"
 deadline: "2026-04-08T09:36:23.063Z"
+closed_at: "2026-04-03T09:58:04.059Z"
 author: codex-agent
 estimated_minutes: 70
 acceptance_criteria: "comments force guidance is explicit in command help, completion, README/PRD/AGENTS, and parity tests pass."
@@ -38,9 +39,14 @@ affected_version: 2026.3.12
 component: cli/help
 regression: true
 customer_impact: Users can self-correct comments commands without trial-and-error
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-7y8q,parent,"2026-04-03T09:36:23.063Z",codex-agent,null
-  pm-7y8q,implements,"2026-07-26T17:07:33.072Z",null,null
+dependencies[2]:
+  - id: pm-7y8q
+    kind: parent
+    created_at: "2026-04-03T09:36:23.063Z"
+    author: codex-agent
+  - id: pm-7y8q
+    kind: implements
+    created_at: "2026-07-26T17:07:33.072Z"
 comments[2]{created_at,author,text}:
   "2026-04-03T09:36:23.063Z",codex-agent,Task created to make comments force usage explicit across guidance surfaces.
   "2026-04-03T09:58:00.439Z",codex-agent,"Hardened comments --force guidance parity in rich help, bash completion, README/PRD/AGENTS, and release notes; updated completion/runtime contract tests."

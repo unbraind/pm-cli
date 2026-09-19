@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[3]: "area:agent-ux","area:sdk","audit:2026-04-25"
 created_at: "2026-04-25T20:01:16.224Z"
-updated_at: "2026-07-26T17:12:52.702Z"
+updated_at: "2026-09-19T08:40:09.779Z"
 deadline: "2026-04-27T20:01:16.224Z"
+closed_at: "2026-04-25T20:03:47.606Z"
 author: codex-agent
 estimated_minutes: 75
 acceptance_criteria: templates-save contract schema and wrapper only expose/emit flags accepted by pm templates save --help; regression tests cover schema and arg building.
@@ -23,8 +24,8 @@ actual_result: Wrapper emits unsupported flags and CLI returns unknown_option.
 component: pi-wrapper-contracts
 regression: true
 customer_impact: Agent tool invocations can fail despite passing schema validation.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-o7be,implements,"2026-07-26T17:12:52.459Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-o7be,implements,"2026-07-26T17:12:52.459Z"
 comments[2]{created_at,author,text}:
   "2026-04-25T20:01:16.224Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'templates save create-mode contracts mismatch' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no active item tracked templates-save createMode/schema parity bug."
   "2026-04-25T20:03:46.240Z",codex-agent,"Constrained templates-save schema/wrapper options to supported flags only; removed createMode/schedulePreset/unset/clear* from templates-save action contract and arg emission. Evidence: node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts (11 passed)."

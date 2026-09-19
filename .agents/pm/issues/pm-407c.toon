@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[4]: bug,config,search,semantic
 created_at: "2026-05-29T22:28:36.468Z"
-updated_at: "2026-09-08T05:30:36.183Z"
+updated_at: "2026-09-19T08:39:23.919Z"
+closed_at: "2026-05-30T05:15:07.643Z"
 author: maintainer-agent
 release: v2026.5.30
 resolution: Fixed in perf/cache-split-and-agent-ux

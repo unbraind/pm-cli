@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:ownership","area:ux",external-audit,pm-cli
 created_at: "2026-04-03T14:48:03.782Z"
-updated_at: "2026-07-26T17:07:51.918Z"
+updated_at: "2026-09-19T08:39:45.321Z"
 deadline: "2026-04-13T14:48:03.782Z"
+closed_at: "2026-04-06T15:42:00.330Z"
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: Ownership conflict errors include actionable force-usage scenarios and tests/docs remain deterministic and backward compatible.
@@ -28,9 +29,14 @@ expected_result: Acceptance criteria for Clarify ownership conflict guidance for
 actual_result: Work completed and recorded with linked artifacts for Clarify ownership conflict guidance for force overrides.
 component: project-management/clarify-ownership-conflict-guidance-for-force-ov
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Clarify ownership conflict guidance for force overrides.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-w9w4,related,"2026-04-03T14:48:03.782Z",codex-agent,null
-  pm-iswo,implements,"2026-07-26T17:07:51.683Z",null,null
+dependencies[2]:
+  - id: pm-w9w4
+    kind: related
+    created_at: "2026-04-03T14:48:03.782Z"
+    author: codex-agent
+  - id: pm-iswo
+    kind: implements
+    created_at: "2026-07-26T17:07:51.683Z"
 comments[5]{created_at,author,text}:
   "2026-04-03T14:48:03.782Z",codex-agent,Feature targets message clarity and keeps existing ownership enforcement behavior.
   "2026-04-03T14:50:20.546Z",codex-agent,"Implemented ownership conflict guidance scenarios with explicit force-usage next steps in CLI error guidance and added runtime integration assertions. Evidence: node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts passed (7/7)."

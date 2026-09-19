@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[5]: "area:extensions","area:sdk",compat,dx,living-map
 created_at: "2026-05-31T19:44:25.419Z"
-updated_at: "2026-09-08T05:32:31.352Z"
+updated_at: "2026-09-19T08:39:26.039Z"
+closed_at: "2026-05-31T22:17:58.955Z"
 author: maintainer-agent
 acceptance_criteria: Optional pm_max_version parsed like pm_min_version; compatibility check covers both bounds; policy mode controls block vs warn; doctor surfaces a max-version-exceeded code; scaffold placeholder; loader tests.
 value: pm_min_version sets a floor but no ceiling; a CLI major release removing a deprecated capability cannot block stale packages from crashing at activation. pm_max_version closes this.

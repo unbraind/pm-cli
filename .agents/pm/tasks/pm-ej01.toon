@@ -6,7 +6,8 @@ status: closed
 priority: 0
 tags[5]: agent-ux,audit,commands,dogfood,pm-cli
 created_at: "2026-05-10T08:29:09.798Z"
-updated_at: "2026-07-26T17:12:57.556Z"
+updated_at: "2026-09-19T08:40:10.369Z"
+closed_at: "2026-05-14T17:22:05.698Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: Commands accept intuitive rich agent input without dropping metadata; validation failures preserve actionable recovery guidance; temp project end-to-end dogfood passes; changed files/tests/docs are linked; full coverage and GitHub checks are green.
@@ -15,12 +16,12 @@ release: v2026.5.14
 resolution: Implemented forgiving repeatable-entry parsing while preserving all rich agent-provided metadata as text when it cannot fit a narrower log schema.
 expected_result: "Agents can pass intuitive bare IDs, paths, commands, and rich log text once without needing lossy retry simplification after a validation failure."
 actual_result: Create/update/files/docs/test workflows accept the intuitive forms in unit tests and an isolated temp-project dogfood run; rich key-like comment/note/learning payloads remain stored verbatim.
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-dhie,related,"2026-07-26T17:12:57.294Z",null,null
-  pm-f3q4,related,"2026-07-26T17:12:57.294Z",null,null
-  pm-fdla,related,"2026-07-26T17:12:57.294Z",null,null
-  pm-mb4n,related,"2026-07-26T17:12:57.294Z",null,null
-  pm-rnpb,implements,"2026-07-26T17:12:57.294Z",null,null
+dependencies[5]{id,kind,created_at}:
+  pm-dhie,related,"2026-07-26T17:12:57.294Z"
+  pm-f3q4,related,"2026-07-26T17:12:57.294Z"
+  pm-fdla,related,"2026-07-26T17:12:57.294Z"
+  pm-mb4n,related,"2026-07-26T17:12:57.294Z"
+  pm-rnpb,implements,"2026-07-26T17:12:57.294Z"
 comments[8]{created_at,author,text}:
   "2026-05-10T08:29:09.798Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search simplify commands parameters schema strict agent input intuitive --limit 10,pm list-open --limit 20,pm list-in-progress --limit 20,and pm search create strict repeatable metadata shorthand command intuitive agents retry --limit 10. Existing agent UX items are closed or broad parent work; pm-rnpb is the canonical parent,so this dedicated child tracks the current command-simplification audit."
   "2026-05-10T08:47:54.924Z",codex-agent,"Evidence: implemented forgiving repeatable-entry parsing for create/update/files/docs/test so bare dependency IDs infer kind=related, bare file/doc paths infer path with project scope, bare linked test values infer command, and rich comment/note/learning seeds with extra key-like metadata are preserved as text instead of failing and causing lossy retries. Verification passed: temp project end-to-end dogfood with isolated PM_PATH/PM_GLOBAL_PATH; pm linked tests passed including coverage 90 files/1252 tests at 100%; focused command suite 129 tests passed; pnpm quality:static passed; scripts/check-secrets passed. pm validate and pm health still report only the pre-existing history drift warnings on pm-54d, pm-f3q4, pm-fdla, pm-mb4n, and pm-tq1."

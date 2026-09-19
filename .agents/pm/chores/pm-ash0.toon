@@ -6,7 +6,8 @@ status: closed
 priority: 0
 tags[6]: branding,mcp,naming,packages,plugins,pm-cli
 created_at: "2026-05-16T22:18:14.976Z"
-updated_at: "2026-07-26T17:09:30.367Z"
+updated_at: "2026-09-19T08:39:52.362Z"
+closed_at: "2026-05-25T10:10:44.935Z"
 author: maintainer-agent
 acceptance_criteria: All MCP server registrations use 'pm-mcp'; all plugin dirs and plugin names use pm-claude/pm-codex; all packages use @unbrained/pm-X; marketplace name normalised to pm-local where applicable; full test suite green; smoke tests for both plugins pass; plugin version bumped so existing users pick up rename on next plugin update.
 parent: pm-rnpb
@@ -14,8 +15,8 @@ release: v2026.5.27
 resolution: Completed naming migration to pm-claude/pm-codex/pm-mcp and @unbrained/pm-* in tracked source surfaces.
 expected_result: No active source surface should depend on legacy pm-cli-* or @unbrained/pm-package-* naming.
 actual_result: Legacy names remain only in historical tracker artifacts; active runtime/docs/plugin surfaces use unified naming.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-rnpb,implements,"2026-07-26T17:09:30.168Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-rnpb,implements,"2026-07-26T17:09:30.168Z"
 comments[1]{created_at,author,text}:
   "2026-05-25T10:10:42.863Z",codex-reliability-agent,"Closure evidence 2026-05-25: naming migration is complete in tracked source. Search for legacy names (pm-cli-claude/pm-cli-codex/pm-cli-native/@unbrained/pm-package-) now returns only historical .agents/pm artifacts; runtime files use pm-claude, pm-codex, pm-mcp and @unbrained/pm-* naming. Added file links plus codex plugin MCP smoke evidence."
 files[3]{path,scope,note}:

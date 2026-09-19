@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:output",code,pm-cli
 created_at: "2026-04-01T12:39:43.394Z"
-updated_at: "2026-07-26T17:29:17.336Z"
+updated_at: "2026-09-19T08:42:43.196Z"
 deadline: "2026-04-08T12:39:43.394Z"
+closed_at: "2026-04-01T13:51:30.983Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 180
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: cli-output
 regression: true
 customer_impact: Results become easier to understand and act on
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-t2hj,parent,"2026-04-01T12:39:43.394Z",codex-agent,null
-  pm-t2hj,implements,"2026-07-26T17:29:17.127Z",null,null
+dependencies[2]:
+  - id: pm-t2hj
+    kind: parent
+    created_at: "2026-04-01T12:39:43.394Z"
+    author: codex-agent
+  - id: pm-t2hj
+    kind: implements
+    created_at: "2026-07-26T17:29:17.127Z"
 comments[3]{created_at,author,text}:
   "2026-04-01T12:39:43.394Z",codex-agent,Task maps directly to plan todo output-redesign.
   "2026-04-01T12:44:59.854Z",codex-agent,Added command-aware non-JSON output envelopes in src/core/output/command-aware.ts and integrated in src/core/output/output.ts using active command context.

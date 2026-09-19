@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[7]: "area:extensions-hooks",code,docs,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-04T15:33:55.396Z"
-updated_at: "2026-07-26T17:02:52.131Z"
+updated_at: "2026-09-19T08:39:21.527Z"
 deadline: "2026-03-06T23:59:00.000Z"
+closed_at: "2026-03-04T15:44:41.263Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 90
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-dispatch-onindex-hooks-in-gc-comman
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: dispatch onIndex hooks in gc command."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-p8p,discovered_from,"2026-03-04T15:33:55.396Z",cursor-maintainer,null
-  pm-8a2s,implements,"2026-07-26T17:02:51.891Z",null,null
+dependencies[2]:
+  - id: pm-p8p
+    kind: discovered_from
+    created_at: "2026-03-04T15:33:55.396Z"
+    author: cursor-maintainer
+  - id: pm-8a2s
+    kind: implements
+    created_at: "2026-07-26T17:02:51.891Z"
 comments[6]{created_at,author,text}:
   "2026-03-04T15:33:55.396Z",cursor-maintainer,Follow-up from hook lifecycle task. gc should emit onIndex events for index cache observability.
   "2026-03-04T15:34:05.690Z",cursor-maintainer,"Planned changeset: docs-first update for gc onIndex hook behavior then implement onIndex dispatch in gc command and extend gc unit coverage before running pm test and regression sweeps."

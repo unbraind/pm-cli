@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: cache,ci,performance,pm-cli
 created_at: "2026-05-16T22:07:50.563Z"
-updated_at: "2026-07-26T17:01:22.307Z"
+updated_at: "2026-09-19T08:39:16.410Z"
+closed_at: "2026-05-17T11:15:09.948Z"
 author: maintainer-agent
 acceptance_criteria: "actions/cache restores .tsbuildinfo and vitest cache on warm runs; tsconfig has incremental:true; second consecutive CI run measurably faster than first; cache key invalidates on lockfile or source changes."
 parent: pm-tzwy
@@ -14,8 +15,8 @@ release: v2026.5.18
 resolution: Validation workflows restore TypeScript and Vitest caches with deterministic keys and restore-keys.
 expected_result: Warm CI runs reuse .cache/tsbuildinfo and .cache/vitest safely for faster incremental validation.
 actual_result: Cache steps are present across CI/nightly/release/auto-release with contract coverage and green main evidence.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-tzwy,implements,"2026-07-26T17:01:21.961Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-tzwy,implements,"2026-07-26T17:01:21.961Z"
 comments[7]{created_at,author,text}:
   "2026-05-17T00:14:26.274Z",codex-agent,"Evidence 2026-05-17: implemented free-tier CI validation caches using pinned actions/cache@v5 for CI, nightly, release, and auto-release validation paths; TypeScript now writes incremental build info to .cache/tsbuildinfo and Vitest cache uses .cache/vitest with .cache ignored. Verification passed: pnpm build, pnpm typecheck, focused CI workflow contract test (4 tests), pm test pm-1pah --run with sandboxed 48-command dogfood, static quality, secret scan, and full release gate with 93 files / 1316 tests at 100 percent coverage. Sentry/telemetry gate passed with Sentry critical/high/total 0 and telemetry finish_error_rate_pct 2.27, missing error-code rows 0."
   "2026-05-17T00:14:51.628Z",codex-agent,"Tracker hygiene note 2026-05-17: after concurrent evidence mutations, health briefly reported pm-1pah history drift and stale vector. Adding this serialized mutation after the full gate and refresh-vector check to restore a clean latest hash anchor before final validation."

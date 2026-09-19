@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[2]: audit-followup,performance
 created_at: "2026-07-02T21:55:41.688Z"
-updated_at: "2026-08-10T12:03:14.523Z"
+updated_at: "2026-09-19T08:43:13.465Z"
+closed_at: "2026-07-03T05:18:23.106Z"
 author: claude-code-agent
 release: v2026.7.3
 resolution: "Merged PR #421: stat-validated in-process memo for the three front-matter cache envelopes (LRU re-insert on hit, cap 24, repopulated on persist) plus capped memos for Date.parse in compareTimestampStrings and normalizeStatusToken; shared evictOldestMemoEntries half-eviction helper in core/shared/memo.ts."

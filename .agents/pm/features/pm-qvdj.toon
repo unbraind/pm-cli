@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:sdk",custom-fields,extensions,github-issue
 created_at: "2026-06-02T15:55:03.159Z"
-updated_at: "2026-09-08T05:32:43.263Z"
+updated_at: "2026-09-19T08:41:06.552Z"
+closed_at: "2026-06-02T22:19:38.945Z"
 author: codex-gpt5
 parent: pm-8jdc
 release: v2026.6.5

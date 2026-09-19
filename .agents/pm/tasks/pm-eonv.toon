@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:error",code,pm-cli
 created_at: "2026-04-01T12:39:34.369Z"
-updated_at: "2026-07-26T17:13:04.452Z"
+updated_at: "2026-09-19T08:40:11.133Z"
 deadline: "2026-04-08T12:39:34.369Z"
+closed_at: "2026-04-01T12:56:14.053Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 160
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: cli-commander
 regression: true
 customer_impact: Cleaner and clearer usage errors improve trust and speed
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-frk8,parent,"2026-04-01T12:39:34.369Z",codex-agent,null
-  pm-frk8,implements,"2026-07-26T17:13:04.208Z",null,null
+dependencies[2]:
+  - id: pm-frk8
+    kind: parent
+    created_at: "2026-04-01T12:39:34.369Z"
+    author: codex-agent
+  - id: pm-frk8
+    kind: implements
+    created_at: "2026-07-26T17:13:04.208Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T12:39:34.369Z",codex-agent,Task maps directly to plan todo commander-mapping.
   "2026-04-01T12:44:58.576Z",codex-agent,"Commander usage handling now routes through structured guidance and suppresses default commander stderr noise via program.configureOutput(writeErr noop), removing duplicate message patterns."

@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[4]: npm,packaging,pm-cli,release-readiness
 created_at: "2026-02-17T23:37:47.025Z"
-updated_at: "2026-07-26T17:11:36.853Z"
+updated_at: "2026-09-19T08:40:03.424Z"
 deadline: "2026-02-21T23:37:47.025Z"
+closed_at: "2026-02-18T01:23:44.957Z"
 assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 180
@@ -41,12 +42,26 @@ fixed_version: archive-2026q2
 component: project-management/packaging-hardening-for-npm-release
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Packaging hardening for npm release.
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-2c8,related,"2026-02-17T23:37:47.025Z",cursor-agent,null
-  pm-912,related,"2026-02-17T23:37:47.025Z",cursor-agent,null
-  pm-ote,parent,"2026-02-17T23:37:47.025Z",cursor-agent,null
-  pm-pq8,related,"2026-02-17T23:37:47.025Z",cursor-agent,null
-  pm-ote,implements,"2026-07-26T17:11:36.623Z",null,null
+dependencies[5]:
+  - id: pm-2c8
+    kind: related
+    created_at: "2026-02-17T23:37:47.025Z"
+    author: cursor-agent
+  - id: pm-912
+    kind: related
+    created_at: "2026-02-17T23:37:47.025Z"
+    author: cursor-agent
+  - id: pm-ote
+    kind: parent
+    created_at: "2026-02-17T23:37:47.025Z"
+    author: cursor-agent
+  - id: pm-pq8
+    kind: related
+    created_at: "2026-02-17T23:37:47.025Z"
+    author: cursor-agent
+  - id: pm-ote
+    kind: implements
+    created_at: "2026-07-26T17:11:36.623Z"
 comments[4]{created_at,author,text}:
   "2026-02-18T00:06:40.377Z",cursor-agent,"Packaging evidence: npm pack --dry-run succeeds, bin remains pm->dist/cli.js, dist artifacts are included, and publish payload uses a files allowlist excluding .agents project data."
   "2026-02-18T00:16:41.772Z",cursor-agent,Final npm pack smoke check passes with scripts/install.sh and scripts/install.ps1 included in package allowlist alongside dist and docs.

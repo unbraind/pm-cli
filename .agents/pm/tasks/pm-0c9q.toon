@@ -6,7 +6,8 @@ status: closed
 priority: 0
 tags[6]: agent-ux,codex,mcp,plugin,pm-cli,skills
 created_at: "2026-05-09T15:54:11.396Z"
-updated_at: "2026-07-26T17:00:00.675Z"
+updated_at: "2026-09-19T08:39:12.521Z"
+closed_at: "2026-05-25T10:10:47.855Z"
 author: codex-agent
 acceptance_criteria: Pi can install the package via local/package source; native pm tool covers pm CLI feature actions without shelling out to pm; bundled skills/prompts/resources are discovered by Pi; tests verify action mapping and package/resource shape; docs explain installation and workflows.
 parent: pm-rnpb
@@ -14,12 +15,12 @@ release: v2026.5.27
 resolution: Shipped native Codex plugin + pm-mcp integration and verified runtime smoke behavior.
 expected_result: Codex plugin resources and MCP execution should be installable and operational from the repository package.
 actual_result: Smoke and recorded tests confirm plugin/MCP behavior; open status was stale and item is now closed with metadata.
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-4z9m,related,"2026-07-26T17:00:00.465Z",null,null
-  pm-f3q4,related,"2026-07-26T17:00:00.465Z",null,null
-  pm-fdla,related,"2026-07-26T17:00:00.465Z",null,null
-  pm-mb4n,related,"2026-07-26T17:00:00.465Z",null,null
-  pm-rnpb,implements,"2026-07-26T17:00:00.465Z",null,null
+dependencies[5]{id,kind,created_at}:
+  pm-4z9m,related,"2026-07-26T17:00:00.465Z"
+  pm-f3q4,related,"2026-07-26T17:00:00.465Z"
+  pm-fdla,related,"2026-07-26T17:00:00.465Z"
+  pm-mb4n,related,"2026-07-26T17:00:00.465Z"
+  pm-rnpb,implements,"2026-07-26T17:00:00.465Z"
 comments[16]{created_at,author,text}:
   "2026-05-09T15:54:11.396Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search codex plugin native mcp extension --limit 10,pm list-open --limit 20,and pm list-in-progress --limit 20. Existing pm-4z9m is docs/skills modernization and does not package a Codex plugin/MCP server,so this is net-new child scope under pm-rnpb."
   "2026-05-09T16:10:37.829Z",codex-agent,"Evidence: implemented native Codex plugin with pm-mcp MCP server, repo marketplace, bundled skills/commands/docs, and package inclusion. Verification passed: codex plugin marketplace add <repo-root> on Codex 0.130.0; pm-mcp initialize; native MCP smoke; pm linked tests (focused packaging suite, smoke, build); full coverage 89 files/1242 tests with 100%; quality:static; quality:docs-skills; check-secrets; npm pack --dry-run includes dist/mcp and plugin files. pm validate/health only report pre-existing history drift warnings on pm-54d, pm-f3q4, pm-fdla, pm-mb4n, pm-tq1."

@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:ci","area:security",code,"milestone:6",pm-cli,tests
 created_at: "2026-03-08T21:48:02.472Z"
-updated_at: "2026-08-13T08:05:03.781Z"
+updated_at: "2026-09-19T08:40:48.036Z"
 deadline: "2026-03-09T21:48:02.472Z"
+closed_at: "2026-03-08T21:49:07.487Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 20

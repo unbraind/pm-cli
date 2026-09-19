@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 377
+- Catalog error codes: 378
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 358
-- Coverage fraction: 0.050398
+- Uncovered error codes: 359
+- Coverage fraction: 0.050265
 - Closed-domain probes: 19
 - Grammar probes: 113
 
@@ -353,6 +353,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `validate_metadata_duplicate_issue_codes` | `validate_metadata_duplicate_issue_codes` | uncovered | none | 0 |
 | `validate_metadata_missing_acceptance_criteria` | `validate_metadata_missing_acceptance_criteria` | uncovered | none | 0 |
 | `validate_metadata_missing_close_reason` | `validate_metadata_missing_close_reason` | uncovered | none | 0 |
+| `validate_metadata_missing_closed_at` | `validate_metadata_missing_closed_at` | uncovered | none | 0 |
 | `validate_metadata_missing_confidence` | `validate_metadata_missing_confidence` | uncovered | none | 0 |
 | `validate_metadata_missing_estimate` | `validate_metadata_missing_estimate` | uncovered | none | 0 |
 | `validate_metadata_missing_release` | `validate_metadata_missing_release` | uncovered | none | 0 |

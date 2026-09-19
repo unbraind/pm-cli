@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[7]: "area:extensions-pi",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-04T23:13:22.240Z"
-updated_at: "2026-07-26T17:21:12.229Z"
+updated_at: "2026-09-19T08:40:50.057Z"
 deadline: "2026-03-05T23:13:22.240Z"
+closed_at: "2026-03-04T23:24:06.861Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 60
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/pi-wrapper-numeric-scalar-flag-parity
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Pi wrapper numeric scalar flag parity.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-igv,related,"2026-03-04T23:13:22.240Z",cursor-maintainer,null
-  pm-2p6q,implements,"2026-07-26T17:21:11.995Z",null,null
+dependencies[2]:
+  - id: pm-igv
+    kind: related
+    created_at: "2026-03-04T23:13:22.240Z"
+    author: cursor-maintainer
+  - id: pm-2p6q
+    kind: implements
+    created_at: "2026-07-26T17:21:11.995Z"
 comments[6]{created_at,author,text}:
   "2026-03-04T23:13:22.240Z",cursor-maintainer,"Why this exists: Pi tool callers often emit JSON numbers for numeric flags and wrapper should accept that deterministically."
   "2026-03-04T23:13:33.716Z",cursor-maintainer,"Planned changeset: docs-first update README and PRD to document numeric scalar parity for Pi wrapper numeric flags; then update wrapper schema and arg builder to accept number|string values and add targeted unit coverage."

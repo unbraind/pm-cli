@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: automation,governance,normalization,pm-cli
 created_at: "2026-04-04T21:55:02.727Z"
-updated_at: "2026-07-26T17:28:05.729Z"
+updated_at: "2026-09-19T08:42:03.467Z"
 deadline: "2026-05-09T17:10:36.281Z"
+closed_at: "2026-04-27T20:47:25.671Z"
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: "A governance normalize command can (1) scan and report placeholder/low-signal metadata patterns, (2) emit deterministic mutation previews, and (3) apply approved updates while preserving history and ownership semantics."
@@ -35,11 +36,11 @@ affected_version: 2026.3.12
 component: governance-normalize
 regression: false
 customer_impact: Maintainers and agents can perform consistent tracker normalization with less manual overhead.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-5rjn,implements,"2026-07-26T17:28:05.478Z",null,null
-  pm-k8i0,related,"2026-07-26T17:28:05.478Z",null,null
-  pm-r9ei,related,"2026-07-26T17:28:05.478Z",null,null
-  pm-vhdc,related,"2026-07-26T17:28:05.478Z",null,null
+dependencies[4]{id,kind,created_at}:
+  pm-5rjn,implements,"2026-07-26T17:28:05.478Z"
+  pm-k8i0,related,"2026-07-26T17:28:05.478Z"
+  pm-r9ei,related,"2026-07-26T17:28:05.478Z"
+  pm-vhdc,related,"2026-07-26T17:28:05.478Z"
 comments[3]{created_at,author,text}:
   "2026-04-04T21:55:02.727Z",codex-agent,"Duplicate-check evidence: pm search 'automated standards alignment metadata normalization command' --limit 20; pm search 'bulk governance normalization command pm tracker' --limit 20; pm list-open --limit 20. Net-new because existing items capture manual execution history,not a dedicated normalize command surface."
   "2026-04-27T20:10:34.789Z",codex-agent,"Execution scope 2026-04-27 (mixed-wave): implement first-class normalize command in two slices. Slice A (dry-run): detect low-signal metadata/closure-like drift patterns and emit deterministic mutation previews sorted by item id/field, reusing governance policy primitives from validate and update-many planning semantics. Slice B (apply): execute approved normalization updates via safe mutation flow with explicit apply flag, preserving ownership semantics/history writes and avoiding non-deterministic side effects. Acceptance mapping: (1) scan/report = normalized findings + per-item planned field changes and summary counts; (2) deterministic preview = stable dry-run output contract suitable for agent automation (--json); (3) apply mode = history-backed updates through existing PM mutation pathways with clear result reporting and warnings."

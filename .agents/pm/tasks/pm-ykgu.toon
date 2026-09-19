@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:verification",external-audit,pm-cli
 created_at: "2026-04-03T18:07:53.409Z"
-updated_at: "2026-07-26T17:30:21.510Z"
+updated_at: "2026-09-19T08:43:08.779Z"
 deadline: "2026-04-08T18:07:53.409Z"
+closed_at: "2026-04-03T18:56:05.017Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: README/PRD/ARCHITECTURE/CHANGELOG/AGENTS reflect final behavior; targeted and full verification runs are recorded; items are closed/released with evidence before commit/push.
@@ -39,9 +40,14 @@ fixed_version: target-vnext
 component: docs-verification
 regression: true
 customer_impact: Users get reliable behavior with accurate docs
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-qfg8,parent,"2026-04-03T18:07:53.409Z",codex-agent,null
-  pm-qfg8,implements,"2026-07-26T17:30:21.198Z",null,null
+dependencies[2]:
+  - id: pm-qfg8
+    kind: parent
+    created_at: "2026-04-03T18:07:53.409Z"
+    author: codex-agent
+  - id: pm-qfg8
+    kind: implements
+    created_at: "2026-07-26T17:30:21.198Z"
 comments[3]{created_at,author,text}:
   "2026-04-03T18:07:53.409Z",codex-agent,Task created for docs parity and final verification gate.
   "2026-04-03T18:55:49.544Z",codex-agent,"Docs synchronized across README/PRD/docs/ARCHITECTURE/CHANGELOG/AGENTS for validate, validate-close, list offset/stream, and explicit --progress behavior."

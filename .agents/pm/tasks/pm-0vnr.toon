@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:release","area:tests",pm-cli
 created_at: "2026-04-01T15:27:36.473Z"
-updated_at: "2026-08-13T09:47:57.080Z"
+updated_at: "2026-09-19T08:39:13.995Z"
 deadline: "2026-04-07T15:27:36.473Z"
+closed_at: "2026-04-01T21:19:29.045Z"
 author: cursor-agent
 estimated_minutes: 180
 acceptance_criteria: "Unit/integration tests cover strict and default behaviors, README/PRD/ARCHITECTURE/CHANGELOG are updated, build+test+coverage pass, and pm evidence is logged."

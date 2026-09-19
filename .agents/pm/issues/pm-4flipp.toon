@@ -6,7 +6,8 @@ status: canceled
 priority: 1
 tags[6]: agent-ux,"area:contracts","area:extensions",dedupe,governance-audit,regression
 created_at: "2026-08-01T20:19:42.243Z"
-updated_at: "2026-08-01T20:27:41.355Z"
+updated_at: "2026-09-19T08:39:25.872Z"
+closed_at: "2026-08-01T20:23:42.754Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Explicit --status all succeeds and considers the same all-lifecycle candidate set as an omitted status filter; result metadata truthfully records the explicit all sentinel; help, action contracts, docs, completion metadata, SDK/package handler, focused tests, and packed installed-consumer behavior agree; configured custom statuses remain accepted and invalid statuses still fail with the declared domain; a regression gate prevents the package-owned parser from drifting from the shared lifecycle-filter contract"

@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[4]: contracts,docs,pm-cli,release-readiness
 created_at: "2026-02-17T23:37:21.381Z"
-updated_at: "2026-07-26T17:23:17.021Z"
+updated_at: "2026-09-19T08:41:00.023Z"
 deadline: "2026-02-19T23:37:21.381Z"
+closed_at: "2026-02-18T01:15:08.076Z"
 assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 180
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/docs-contract-sync-for-release-readiness
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Docs contract sync for release readiness.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-ote,parent,"2026-02-17T23:37:21.381Z",cursor-agent,null
-  pm-ote,implements,"2026-07-26T17:23:16.819Z",null,null
+dependencies[2]:
+  - id: pm-ote
+    kind: parent
+    created_at: "2026-02-17T23:37:21.381Z"
+    author: cursor-agent
+  - id: pm-ote
+    kind: implements
+    created_at: "2026-07-26T17:23:16.819Z"
 comments[9]{created_at,author,text}:
   "2026-02-17T23:38:07.132Z",cursor-agent,"Phase 0 complete: created epic pm-ote and child items pm-pq8, pm-2c8, pm-912, pm-wo8, pm-cyj, pm-tq1 with explicit dependencies."
   "2026-02-17T23:42:24.565Z",cursor-agent,"Updated docs-first contracts before code behavior changes: command surface scoped to v0.1, release-ready structure defined, sandbox PM_PATH test safety codified, and release checklist added."

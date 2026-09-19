@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:schema",pm-cli
 created_at: "2026-04-01T01:39:25.869Z"
-updated_at: "2026-07-26T17:04:39.375Z"
+updated_at: "2026-09-19T08:39:30.463Z"
 deadline: "2026-04-11T01:39:25.869Z"
+closed_at: "2026-04-01T01:58:20.793Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 360
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: cli/create-update
 regression: false
 customer_impact: Reduces failed command retries caused by unclear option contracts.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-00yy,parent,"2026-04-01T01:39:25.869Z",codex-agent,null
-  pm-00yy,implements,"2026-07-26T17:04:39.155Z",null,null
+dependencies[2]:
+  - id: pm-00yy
+    kind: parent
+    created_at: "2026-04-01T01:39:25.869Z"
+    author: codex-agent
+  - id: pm-00yy
+    kind: implements
+    created_at: "2026-07-26T17:04:39.155Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T01:39:25.869Z",codex-agent,Feature decomposes implementation into schema and enforcement and UX and regression tracks.
   "2026-04-01T01:58:20.086Z",codex-agent,Completed schema/runtime/help/extension/docs tracks for command_option_policies across create/update with compatibility-safe defaults and regression coverage.

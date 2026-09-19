@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[3]: agent-ux,"area:cli",context-management
 created_at: "2026-06-26T04:53:53.825Z"
-updated_at: "2026-07-26T17:02:08.403Z"
+updated_at: "2026-09-19T08:39:19.299Z"
+closed_at: "2026-06-26T05:10:49.463Z"
 author: codex-gpt5-pm-next-20260626
 estimated_minutes: 90
 acceptance_criteria: pm next does not recommend open containers that have children_total > 0 and children_closed == children_total ahead of actionable leaf items; output remains token-efficient and documents any completed-container governance signal; focused tests cover the regression.
@@ -15,10 +16,10 @@ release: v2026.6.30
 resolution: Resolved the pm next ranking regression by demoting otherwise-ready completed containers behind concrete leaf work while preserving them as governance closeout rows.
 expected_result: pm next recommends active concrete leaf work before 100%-complete open containers and documents completed-container closeout behavior across CLI docs and MCP contracts.
 actual_result: "pm next now ranks concrete leaf entries ahead of completed containers, adds a completed-container governance closeout rationale when such a row is recommended, updates docs/MCP contract text, and passes focused tests, contracts, full coverage, temp smoke, security, changelog, and observability gates."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-9x6k,related,"2026-07-26T17:02:08.175Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:02:08.175Z",null,null
-  pm-nj90,related,"2026-07-26T17:02:08.175Z",null,null
+dependencies[3]{id,kind,created_at}:
+  pm-9x6k,related,"2026-07-26T17:02:08.175Z"
+  pm-mpbb,implements,"2026-07-26T17:02:08.175Z"
+  pm-nj90,related,"2026-07-26T17:02:08.175Z"
 comments[3]{created_at,author,text}:
   "2026-06-26T04:54:03.066Z",codex-gpt5-pm-next-20260626,"Duplicate check: searched all statuses for 'pm next completed container epics children closed recommended actionable leaf' and 'ready queue container completion_pct open children closed next recommendation'. Existing pm-nj90/pm-9x6k are closed original feature/ADR items; this is a regression follow-up observed live on 2026-06-26 where pm next recommended 100%-complete open containers ahead of leaf work."
   "2026-06-26T05:10:32.714Z",codex-gpt5-pm-next-20260626,"Evidence: implemented pm next concrete-leaf-first ranking for completed containers; focused tests passed (24 tests); linked build passed; linked contracts check passed in tracker context after replacing the duplicate sandboxed contracts link. Full coverage passed at literal 100/100/100/100 (31815 statements, 24773 branches, 5403 functions, 30538 lines; 256 files, 5132 tests). Typecheck, static quality/docstring gate, security scan, pnpm audit --audit-level low, contracts:check, and pm-changelog@2026.6.20 check passed. Manual temp smoke passed with isolated PM_PATH/PM_GLOBAL_PATH: init, create completed Epic+closed child, create leaf, pm next recommended the leaf before the completed container, contracts, health, validate. GitHub open PRs/issues none; Dependabot/CodeQL/secret-scanning open alerts all 0. Sentry/telemetry gate passed: critical=0 high=0, telemetry finish_error_rate_pct=0.75, failures_without_error_code_rows=0. pm health summary ok with 0 warnings; validate history_drift ok with existing resolution metadata backlog warning validate_resolution_missing_fields:257 tracked separately."

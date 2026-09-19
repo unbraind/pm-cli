@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[4]: calendar,review,sdk,search
 created_at: "2026-05-27T16:52:57.613Z"
-updated_at: "2026-09-08T05:30:36.031Z"
+updated_at: "2026-09-19T08:39:49.172Z"
+closed_at: "2026-05-27T17:17:21.140Z"
 author: feature-review-agent
 parent: pm-th6y
 release: v2026.5.27

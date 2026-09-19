@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:item-io",core,"milestone:1",pm-cli
 created_at: "2026-02-17T23:02:07.611Z"
-updated_at: "2026-08-13T09:48:15.676Z"
+updated_at: "2026-09-19T08:40:42.454Z"
 deadline: "2026-02-23T23:02:07.611Z"
+closed_at: "2026-02-23T00:02:13.096Z"
 assignee: steve
 author: steve
 estimated_minutes: 150

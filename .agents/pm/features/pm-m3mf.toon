@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:create","area:parser",external-audit,pm-cli
 created_at: "2026-04-04T08:23:37.509Z"
-updated_at: "2026-07-26T17:19:53.882Z"
+updated_at: "2026-09-19T08:40:45.135Z"
 deadline: "2026-04-10T08:23:37.509Z"
+closed_at: "2026-04-04T08:40:13.389Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "Ambiguous unquoted log-seed payloads are rejected with deterministic guidance; quoted, markdown, and stdin flows remain supported; tests and docs reflect behavior."
@@ -40,10 +41,17 @@ fixed_version: target-vnext
 component: cli-create-parser
 regression: true
 customer_impact: Users avoid silent narrative truncation during seeded metadata creation.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-pb0g,parent,"2026-04-04T08:23:37.509Z",codex-agent,null
-  pm-l5tr,related,"2026-07-26T17:19:53.663Z",null,null
-  pm-pb0g,implements,"2026-07-26T17:19:53.663Z",null,null
+dependencies[3]:
+  - id: pm-pb0g
+    kind: parent
+    created_at: "2026-04-04T08:23:37.509Z"
+    author: codex-agent
+  - id: pm-l5tr
+    kind: related
+    created_at: "2026-07-26T17:19:53.663Z"
+  - id: pm-pb0g
+    kind: implements
+    created_at: "2026-07-26T17:19:53.663Z"
 comments[2]{created_at,author,text}:
   "2026-04-04T08:23:37.509Z",codex-agent,Feature created as the single net-new follow-up after dedupe mapping.
   "2026-04-04T08:40:12.225Z",codex-agent,"Child task pm-l5tr is closed with evidence. Feature outcome met: create log-seed parsing now rejects unsupported parsed keys to prevent silent truncation, and quoted/markdown/stdin paths remain valid with regression + docs parity."

@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[4]: dedupe,governance,pm-cli,reporting
 created_at: "2026-04-04T17:53:51.723Z"
-updated_at: "2026-07-26T17:06:40.646Z"
+updated_at: "2026-09-19T08:39:39.755Z"
 deadline: "2026-04-18T17:53:51.723Z"
+closed_at: "2026-04-06T13:29:18.848Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "A deterministic command or report output groups duplicate candidates, identifies canonical item candidates, and produces auditable mapping output that can be reviewed before any mutation operations."
@@ -36,10 +37,17 @@ affected_version: 2026.3.12
 component: dedupe-automation
 regression: false
 customer_impact: Maintainers get faster and safer duplicate management for large trackers.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-wtsp,discovered_from,"2026-04-04T17:53:51.723Z",codex-agent,null
-  pm-4n1a,related,"2026-07-26T17:06:40.458Z",null,null
-  pm-5rjn,implements,"2026-07-26T17:06:40.458Z",null,null
+dependencies[3]:
+  - id: pm-wtsp
+    kind: discovered_from
+    created_at: "2026-04-04T17:53:51.723Z"
+    author: codex-agent
+  - id: pm-4n1a
+    kind: related
+    created_at: "2026-07-26T17:06:40.458Z"
+  - id: pm-5rjn
+    kind: implements
+    created_at: "2026-07-26T17:06:40.458Z"
 comments[3]{created_at,author,text}:
   "2026-04-04T17:53:51.723Z",codex-agent,Duplicate-check evidence pm context --limit 10; pm search duplicate cluster consolidation automation --limit 20; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no dedicated automation feature exists for duplicate-cluster reporting.
   "2026-04-05T22:43:14.897Z",codex-agent,"Normalization decision: this open dedupe-automation feature remains active and is reparented from closed governance epic pm-wtsp to active governance epic pm-5rjn to restore active lineage integrity."

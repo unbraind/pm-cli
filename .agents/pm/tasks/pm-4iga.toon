@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[8]: "area:search",code,doc,"milestone:4",pm-cli,"priority:1",roadmap,tests
 created_at: "2026-03-06T22:11:04.906Z"
-updated_at: "2026-07-26T17:04:00.453Z"
+updated_at: "2026-09-19T08:39:26.443Z"
 deadline: "2026-03-08T22:11:04.906Z"
+closed_at: "2026-04-07T00:12:30.035Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: Keyword and hybrid search apply deterministic exact-title token boost; docs are aligned first; tests cover ranking behavior; pm test + test-all sweeps pass with 100% coverage.
@@ -40,9 +41,14 @@ fixed_version: archive-2026q2
 component: project-management/m4-follow-up-exact-title-lexical-boost-for-deter
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M4 follow-up: exact-title lexical boost for deterministic search ranking."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-f45,related,"2026-03-06T22:11:04.906Z",maintainer-agent,null
-  pm-o7be,implements,"2026-07-26T17:04:00.246Z",null,null
+dependencies[2]:
+  - id: pm-f45
+    kind: related
+    created_at: "2026-03-06T22:11:04.906Z"
+    author: maintainer-agent
+  - id: pm-o7be
+    kind: implements
+    created_at: "2026-07-26T17:04:00.246Z"
 comments[8]{created_at,author,text}:
   "2026-03-06T22:11:04.906Z",maintainer-agent,"Why this exists: Milestone 4 still tracks advanced relevance tuning and exact-title boosting is a bounded deterministic increment."
   "2026-03-06T22:11:18.394Z",maintainer-agent,"Planned changeset: docs-first update PRD/README search tuning notes for exact-title boost, then implement deterministic title-token bonus in keyword/hybrid scoring and add ranking assertions in search command tests."

@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:docs",pm-cli
 created_at: "2026-03-31T23:47:54.230Z"
-updated_at: "2026-07-26T17:09:52.620Z"
+updated_at: "2026-09-19T08:39:54.294Z"
 deadline: "2026-04-10T23:47:54.230Z"
+closed_at: "2026-04-01T00:28:56.017Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: cli/docs
 regression: false
 customer_impact: Improves usability for human and agent users
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-r15d,parent,"2026-03-31T23:47:54.230Z",codex-agent,null
-  pm-r15d,implements,"2026-07-26T17:09:52.413Z",null,null
+dependencies[2]:
+  - id: pm-r15d
+    kind: parent
+    created_at: "2026-03-31T23:47:54.230Z"
+    author: codex-agent
+  - id: pm-r15d
+    kind: implements
+    created_at: "2026-07-26T17:09:52.413Z"
 comments[3]{created_at,author,text}:
   "2026-03-31T23:47:54.230Z",codex-agent,Feature tracks required option UX and docs parity.
   "2026-04-01T00:28:53.993Z",codex-agent,Completed required-option UX improvements and documentation parity for dynamic/custom type workflows.

@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-pi",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:12.269Z"
-updated_at: "2026-08-13T09:50:38.822Z"
+updated_at: "2026-09-19T08:40:29.178Z"
 deadline: "2026-03-13T23:02:12.269Z"
+closed_at: "2026-03-04T11:50:42.769Z"
 assignee: steve
 author: steve
 estimated_minutes: 120

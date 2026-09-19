@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-05-16T21:37:12.766Z"
-updated_at: "2026-08-10T12:03:11.532Z"
+updated_at: "2026-09-19T08:42:52.926Z"
+closed_at: "2026-05-16T21:37:15.564Z"
 author: unknown
 release: v2026.5.18
 resolution: Closed audit smoke item was cleanup-only and required no product code changes.

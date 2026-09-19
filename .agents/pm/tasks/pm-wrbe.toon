@@ -2,28 +2,26 @@ id: pm-wrbe
 title: Deterministic closed_at backfill for legacy closed items derived from history streams
 description: Backfill closed_at on all legacy terminal items from their history streams so closed items stop bucketing by updated_at.
 type: Task
-status: open
+status: closed
 priority: 1
 tags[4]: metadata,normalization,pm-cli,tracker-governance
 created_at: "2026-07-07T07:17:15.111Z"
-updated_at: "2026-09-08T13:31:50.456Z"
+updated_at: "2026-09-19T09:41:41.039Z"
+closed_at: "2026-09-19T09:41:40.397Z"
+completed_at: "2026-09-19T09:41:40.397Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "validate emits a fix hint for closed items missing closed_at; auto-fix (new timestamps fix-scope) populates closed_at solely from history-replay evidence and is idempotent; items with unrecoverable history land on a documented residual list with counts; changelog regenerated in the same commit as the bulk pass shows zero unintended [Unreleased] churn"
 parent: pm-33cw
 risk: medium
 confidence: high
-expected_result: "Every legacy closed item whose history proves a close time carries closed_at, the residue is listed with counts, and the changelog regenerates without unintended churn."
-dependencies[8]:
+resolution: "Add opt-in timestamps repair scope, verified lifecycle replay, bounded residual diagnostics, locked stale-plan revalidation, public SDK primitives, CLI discovery and documentation; apply the complete proven repository backfill."
+expected_result: "Recover only proven missing terminal closure dates, preserve existing dates and history, converge idempotently, and retain historical release attribution."
+actual_result: "1488 applied, zero failed or unresolved; rerun finds zero missing dates. All histories verify; 2463 historical changelog memberships unchanged. 9057 tests pass with exact 100/100/100/100 coverage, full static gates and real temporary/packed npm and Bun acceptance pass."
+dependencies[10]:
   - id: pm-33cw
     kind: implements
     created_at: "2026-07-26T05:54:49.432Z"
-  - id: pm-lnrk
-    kind: related
-    created_at: "2026-07-26T10:48:26.843Z"
-  - id: pm-pcys9n
-    kind: related
-    created_at: "2026-07-26T10:48:26.843Z"
   - id: pm-chahyq
     kind: related
     created_at: "2026-08-05T18:14:18.113Z"
@@ -54,10 +52,81 @@ dependencies[8]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[5]{created_at,author,text}:
+  - id: pm-3j6it6
+    kind: verifies
+    created_at: "2026-09-19T09:11:36.354Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-do5b
+    kind: related
+    created_at: "2026-09-19T09:11:36.354Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-fokyhh
+    kind: related
+    created_at: "2026-09-19T09:11:36.354Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-ksr40d
+    kind: related
+    created_at: "2026-09-19T09:11:36.354Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[14]{created_at,author,text}:
   "2026-07-10T17:22:13.335Z",maintainer-agent,"Scope quantification (verified live 2026-07-10): 1478 of 1503 closed items carry closed_at=null; the 25 stamped ones are exactly the closes after the pm-m4iu fix landed (first stamped close 2026-07-08T04:50Z, fix-era boundary confirmed via pm-8t5x closed 2026-07-05 pre-fix = null vs pm-kfq5 closed 2026-07-10T15:56Z post-fix = stamped). Post-fix stamping verified working on every close path used since — the backfill target set is precisely the pre-fix 1478 plus 12 canceled items (all 12 carry supersession reasons, closed_at also null). Full-graph integrity sweep same day found NO other structural debt to fold in: zero open children under closed/canceled parents, zero dangling parent pointers, zero malformed/dangling structured dep edges, zero unexplained duplicate titles."
   "2026-07-26T17:17:17.586Z","harness:claude-code","Unblocked 2026-07-26. The constraint that held this item was that a metadata write on a long-closed item re-buckets it into the current changelog section, because attribution resolved through closed_at ?? updated_at ?? created_at and 1,488 of 1,795 terminal items carried no closed_at. That is no longer true.\n\nEvery terminal item now carries a release identifier derived from the tag whose window contains its close event, taken from its immutable history stream: 1,782 stamped, 13 deliberately left unstamped because they close after the newest tag and therefore belong to the pending window. The derivation was validated against ground truth before any write — for the 307 items that already had closed_at, the history-derived instant matched on 307 and disagreed on 0.\n\nThe generator honours the release field as the attribution authority under --all-release-tags, which was proved directly rather than assumed: stamping a closed item, which moved its updated_at to now, produced a byte-identical CHANGELOG.md. After the full backfill, regeneration moved 295 items and every one of those moves matched the derivation, with no items added or removed and the Unreleased section unchanged.\n\nThe practical consequence for this item: the backfill work it describes can now proceed as ordinary mutations without changelog churn, and the ordering constraint that deferred it no longer applies. Evidence and method are recorded on pm-3j6it6.\n"
   "2026-07-31T06:14:42.865Z","harness:claude-code","Unblocked and re-scoped 2026-07-31. The declared blocker pm-m4iu (closed_at lifecycle stamping) closed 2026-07-10 with closed_at present, so this backfill has been executable for 21 days; the stale blocked_by edge is retired and priority raised to P1. Fresh measurement: 1,488 of 1,904 terminal items carry neither closed_at nor completed_at (78.2 percent), so the pm-changelog precedence chain completed_at -> closed_at -> updated_at resolves their release section from a mutable field. Consequence recorded as typed edges rather than prose: pm-lnrk, pm-e9zh, pm-pivf, pm-hnc9w7, pm-s5e04g, pm-ye46ns and pm-1w6scp are all blocked_by this item, because each mutates terminal items and would re-bucket them into the current release. This is the single largest unlock in the backlog: it is what the create-only-on-closed-items convention is standing in for, and that convention is why the terminal ordering spine is still 87.7 percent frontier."
   "2026-08-05T18:14:15.224Z","harness:claude-code","Derivability measured 2026-08-05, so the plan is now proven executable rather than proposed. 1,489 terminal items carry a null closed_at. Reading each item's history stream directly, 1,379 of them (92.6 percent) contain an explicit close op whose ts is the value this item specifies; the op's patch sets /metadata/status to closed and stamps /metadata/updated_at with the same instant, so the derived closed_at equals what a replay yields by construction.\n\nThat leaves a residual of 110 with no close op — items created already-closed, plus streams repaired before the op vocabulary settled. They are the documented residual list this item's Delivery section already calls for, not a reason to guess: 110 is small enough to disposition individually.\n\nWhy this keeps mattering: the blocked-by edges from pm-e9zh, pm-pivf and pm-j8z6 are all live, and today a fourth consumer appeared. Fixing the 9 dangling links into the gitignored pm-changelog install (the excess in pm-j8z6's population that forced the ratchet re-baseline from 195 to 204, see pm-fr4dg8) means mutating ten legacy closed items whose closed_at is null, which re-buckets every one of them into the current changelog section. Until this lands, that burn-down cannot be done changelog-safely."
   "2026-08-10T12:17:28.917Z","harness:claude-code","Scope correction 2026-08-10, measured rather than assumed: the changelog-safety argument this item carries is now confirmed for section membership and narrowed for row order, which changes what it gates.\nA single dependency row added to a legacy closed item with a null closed_at (pm-02c4) produced a changelog diff of exactly one moved row, within its own unchanged release section, with item_count and byte count identical on both sides. Release-tag attribution is therefore doing the work the 2026-07-26 comment claimed, and the re-bucketing hazard is gone.\nWhat remains is intra-section ordering on a mutable timestamp, owned by pm-nwuzaq, and it is cosmetic given that changelog regeneration is already the mandated last step of any tracker change.\nThis does not close this item; the backfill still matters on its own terms, because closed_at is the correct immutable attribution key, 1,489 terminal items still lack it, and 1,379 of those derive cleanly from an explicit close op in their own history stream. What it does change is the dependency direction recorded on 2026-07-31: pm-lnrk, pm-e9zh, pm-pivf, pm-hnc9w7, pm-s5e04g, pm-ye46ns and pm-1w6scp were marked blocked_by this item on the grounds that mutating terminal items would re-bucket them. That premise no longer holds. Those seven are unblocked for changelog reasons and the proof is that 220 typed edges were written across mostly terminal holders on 2026-08-10 with no membership change at all.\nThe create-only-on-closed-items convention this item was standing in for can be retired now rather than after the backfill lands."
+  "2026-09-19T08:36:47.056Z","harness:codex","Live preflight scanned all 2779 items: 1488 terminal items lack closed_at; all 1488 dates derive from verified history with zero unresolved residuals. Dry run preserves the 16 unrelated close_reason fixes as gated by the exact timestamps allowlist. GitHub inventory: zero open PRs and security/dependency/secret alerts; issue 1246 already links to pm-z3ez. Historical timestamp stamping pm-m4iu and release attribution pm-3j6it6 were read in full and retained as delivered predecessor evidence."
+  "2026-09-19T08:40:57.351Z","harness:codex","Dependency disposition: pnpm outdated has no compatible wanted upgrades. Registry metadata confirms npm-package-arg 14 requires Node 22.22.2 versus our 22.18.0 floor (canonical pm-ksr40d); typescript-eslint accepts TypeScript <6.1.0 (pm-do5b); CodSpeed accepts Vitest 3.2 or 4 (pm-fokyhh). Do not bypass these contracts. Production audit reports zero vulnerabilities. The host temporary quota interrupted the first broad test import; rerun using external scratch storage passed all 156 focused tests."
+  "2026-09-19T08:44:42.773Z","harness:codex","Repository application completed: all 1,488 missing closure timestamps were derived from verified histories and applied through the locked audited SDK mutation path; zero failed fixes. Sixteen unrelated close-reason repairs remained gated by the explicit timestamps scope. The scheduled September 19 release succeeded (run 35429507172), and both npm and GitHub now expose 2026.9.19. Full coverage and acceptance remain in progress."
+  "2026-09-19T08:50:35.510Z","harness:codex","Acceptance evidence: timestamp rerun reports missing_closed_at_count=0 and no applicable fixes. Latest pm-changelog 2026.9.18 regenerated 2,463 item memberships with zero changed release buckets. Disposable SDK-seeded legacy item passed CLI preview, repair, and retry; its completed_at remained unchanged. Packed npm/npx/bunx smoke passed with nine packages; published 2026.9.19 installed-agent loops passed under npm and Bun. Recent Sentry gate: zero critical/high; telemetry finish error rate 1.88%, zero missing error-code rows. These aggregate metrics do not alone prove per-command correlation."
+  "2026-09-19T08:58:04.192Z","harness:codex","Validation follow-up: 2,779 live items passed history-drift validation with zero missing streams, hash mismatches, chain mismatches, or singleton drift. Static quality now passes its unchanged file-size, duplication, architecture and docstring gates after moving shared preview normalization out of orchestration. Docs reachability and tracked-secret scanning pass. Full regression rerun remains active after correcting the initially missing documentation-index link."
+  "2026-09-19T09:05:55.558Z","harness:codex","Packed candidate acceptance additionally passed after Bun installation: README init/create/list, real branch merge and history reconciliation, MCP initialization, detached telemetry completion with physical queue drain, and Bun governance validation. Discovered gate-performance follow-up is pm-26y269, linked to this migration and the closed semantic-trigger predecessor; it stays open/unclaimed."
+  "2026-09-19T09:23:27.374Z","harness:codex","Audited migration diff independently checked: exactly 1488 Backfill closed_at history events, each touching only /metadata/closed_at and the normal /metadata/updated_at audit timestamp. No migration event changes status, title, release, completed_at, or body. Graph composition passes after retaining meaningful verification/discovery links and removing redundant generic backlinks; no ratchet ceilings changed."
+  "2026-09-19T09:31:23.033Z","harness:codex","Final full regression: 9057 tests across 717 files passed. Exact coverage is statements 64968/64968, branches 49575/49575, functions 13484/13484, lines 62172/62172: 100/100/100/100 with zero uncovered counts. Both linked tests passed through pm test --run --progress. Generated contracts, SDK surface, error catalog, and refusal census refreshed from their owners. Record-integrity and docs/skills gates pass. Complete static chain and hosted review remain pending."
+  "2026-09-19T09:41:39.185Z","harness:codex","Complete pnpm quality:static passed unchanged: ESLint, zero clones, generated contract/capability/error snapshots, repository static quality and 100 percent docstring gates, package boundaries/parity, surface replication, command/flag grammar, refusal closure, agent token tasks, MCP deprecations, tracker-context quality, gate registry, SDK surface/cost, CLI transport, graph composition, and record integrity. All local acceptance requirements are complete; hosted exact-head checks/reviews will be required before merge."
+learnings[1]{created_at,author,text}:
+  "2026-09-19T08:54:53.492Z","harness:codex","Historical maintenance needs two separate proofs: the field value must derive from replay verified against current state, and the resulting changelog must preserve release membership. Metadata-write time is not closure time; checkpoint-only terminal state is insufficient evidence. Recheck under the item lock and retain explicit residuals instead of inventing dates."
+files[13]{path,scope,note}:
+  sdk/public-surface.json,project,Reviewed additive closure-timestamp SDK public surface
+  src/cli/register-operations.ts,project,Discoverable timestamp opt-in help
+  src/core/diagnostics/remediation.ts,project,Executable repair preview hint
+  src/core/validate/fix-planning.ts,project,Opt-in timestamp scope
+  src/sdk/completion.ts,project,Expose timestamps opt-in scope in Zsh and Fish completion
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Regenerated error vocabulary for fail-closed timestamp evidence changes
+  src/sdk/governance.ts,project,Public governance primitives
+  src/sdk/governance/closure-timestamps.ts,project,Verified closure evidence and locked repair
+  src/sdk/governance/validate-normalization.ts,project,Keep shared diagnostic normalization outside validation orchestration under mandatory file-size ceiling
+  src/sdk/governance/validate.ts,project,SDK validation integration
+  tests/fixtures/contracts/full.json,project,Generated contract snapshot includes the opt-in timestamp scope and actionable metadata remediation
+  tests/unit/sdk/governance/closure-timestamps.spec.ts,project,Replay and real workspace negative controls
+  tests/unit/sdk/governance/validate-normalization.spec.ts,project,Verify long multiline linked-command diagnostics remain bounded after extraction
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/closure-timestamps.spec.ts,project,240,"harness:codex","2026-09-19T08:40:33.206Z",local_mutation,feat/history-derived-governance-repair
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/validate-normalization.spec.ts,project,240,"harness:codex","2026-09-19T09:06:01.305Z",local_mutation,feat/history-derived-governance-repair
+test_runs[1]:
+  - run_id: test-local-mu86sukf-t6sboi
+    kind: test
+    status: passed
+    started_at: "2026-09-19T09:30:28.573Z"
+    finished_at: "2026-09-19T09:30:33.279Z"
+    recorded_at: "2026-09-19T09:30:33.279Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/closure-timestamps.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/validate-normalization.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,Latest pm-changelog projection verified unchanged historical release membership after 1488 audited repairs
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated diagnostic census includes the new missing-closure-date remediation code
+  docs/HISTORY_GOVERNANCE_REPAIR.md,project,History-backed repair and release-membership verification
+  docs/README.md,project,Reachable navigation to history governance repair
+close_reason: Implemented and validated SDK-owned history-derived closure repair; 1488 audited legacy dates recovered with no residuals or historical release-membership changes.
 body: "## Context\nEvery existing closed item (511 closed Tasks alone; effectively 100% of terminal items across types, verified 2026-07-07) predates a working `closed_at` stamp (defect pm-m4iu). Until they carry `closed_at`, any metadata write on them re-buckets the item into `[Unreleased]` via the `updated_at` fallback — which is exactly what blocks pm-e9zh (close_reason:18 + resolution backfill) and pm-pivf (GH-209 duplicate issue-code rename).\n\n## Derivation (deterministic, no placeholders)\nThe hash-chained history streams (`.agents/pm/history/<id>.jsonl`) record every mutation as a timestamped JSON-patch op. For each closed item missing `closed_at`:\n- `closed_at := ts` of the earliest history entry whose patch puts `status` at closed with no later transition away from closed; for items created already-closed (e.g. pm-2lbp, created 2026-05-01 with closed status), that is the `create` op itself.\n- Items whose history is incomplete (pre-history-era or repaired chains) go to a documented residual list instead of receiving a guessed value.\n\n## Delivery\nPrefer extending `pm validate --fix-hints` with a closed_at hint plus a new `--auto-fix --fix-scope timestamps` remediation (matches the existing fix-hint machinery; today's hints cover close_reason/title/resolution only). A `pm run normalize` rule is the fallback home. The backfill write is an ordinary history-recorded mutation, so the immutable-proof chain stays intact; the assigned value must equal what history replay yields.\n\n## Ordering\nRun only after pm-m4iu ships (otherwise newly closed items regress immediately) and regenerate + review the changelog in the same commit as the first bulk pass. Once complete, pm-e9zh and pm-pivf become executable without `[Unreleased]` churn."

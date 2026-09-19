@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:stdin","area:terminal",compatibility,pm-cli
 created_at: "2026-04-01T11:57:46.797Z"
-updated_at: "2026-07-26T17:22:08.086Z"
+updated_at: "2026-09-19T08:40:53.238Z"
 deadline: "2026-04-11T11:57:46.797Z"
+closed_at: "2026-04-01T12:22:45.885Z"
 assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 180
@@ -41,10 +42,18 @@ fixed_version: archive-2026q2
 component: cli/stdin
 regression: true
 customer_impact: Prevents confusing hangs in IDE and emulated terminals.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-mudv,parent,"2026-04-01T11:57:46.797Z",cursor-agent,null
-  pm-nhgt,related,"2026-04-01T11:57:46.797Z",cursor-agent,null
-  pm-mudv,implements,"2026-07-26T17:22:07.859Z",null,null
+dependencies[3]:
+  - id: pm-mudv
+    kind: parent
+    created_at: "2026-04-01T11:57:46.797Z"
+    author: cursor-agent
+  - id: pm-nhgt
+    kind: related
+    created_at: "2026-04-01T11:57:46.797Z"
+    author: cursor-agent
+  - id: pm-mudv
+    kind: implements
+    created_at: "2026-07-26T17:22:07.859Z"
 comments[1]{created_at,author,text}:
   "2026-04-01T11:57:46.797Z",cursor-agent,Feature created as part of universal terminal hardening epic.
 notes[1]{created_at,author,text}:

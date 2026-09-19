@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:hooks","area:runtime",extensions,pm-cli
 created_at: "2026-04-01T02:17:03.345Z"
-updated_at: "2026-07-26T17:22:17.465Z"
+updated_at: "2026-09-19T08:40:53.919Z"
 deadline: "2026-04-10T02:17:03.345Z"
+closed_at: "2026-04-01T03:01:59.013Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 120
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/a3-hook-context-parity-and-lifecycle-symmetry
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for A3: Hook context parity and lifecycle symmetry."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-al0h,parent,"2026-04-01T02:17:03.345Z",codex-agent,null
-  pm-al0h,implements,"2026-07-26T17:22:17.224Z",null,null
+dependencies[2]:
+  - id: pm-al0h
+    kind: parent
+    created_at: "2026-04-01T02:17:03.345Z"
+    author: codex-agent
+  - id: pm-al0h
+    kind: implements
+    created_at: "2026-07-26T17:22:17.224Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T02:17:03.345Z",codex-agent,A3 task created from full-override feature A.
   "2026-04-01T03:01:06.821Z",codex-agent,Expanded before/after hook context payloads (options/global/result) and ensured extension-handled command results are propagated into afterCommand context via setActiveCommandResult in src/cli/main.ts + src/core/output/output.ts.

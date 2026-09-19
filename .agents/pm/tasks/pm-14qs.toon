@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:search",pm-cli,runtime
 created_at: "2026-04-01T02:17:16.030Z"
-updated_at: "2026-07-26T17:00:53.229Z"
+updated_at: "2026-09-19T08:39:14.859Z"
 deadline: "2026-04-10T02:17:16.030Z"
+closed_at: "2026-04-01T03:02:00.801Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 150
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/b2-wire-search-providers-and-vector-adapters
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for B2: Wire search providers and vector adapters."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-zd6y,parent,"2026-04-01T02:17:16.030Z",codex-agent,null
-  pm-zd6y,implements,"2026-07-26T17:00:52.940Z",null,null
+dependencies[2]:
+  - id: pm-zd6y
+    kind: parent
+    created_at: "2026-04-01T02:17:16.030Z"
+    author: codex-agent
+  - id: pm-zd6y
+    kind: implements
+    created_at: "2026-07-26T17:00:52.940Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T02:17:16.030Z",codex-agent,B2 task created from full-override feature B.
   "2026-04-01T03:01:09.128Z",codex-agent,Wired registerSearchProvider/registerVectorStoreAdapter to live search/reindex runtime selection via settings.search.provider and settings.vector_store.adapter in src/cli/commands/search.ts + reindex.ts with deterministic fallback behavior.

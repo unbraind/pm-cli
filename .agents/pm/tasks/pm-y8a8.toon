@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:tests","area:time",compatibility,pm-cli
 created_at: "2026-04-01T11:26:42.395Z"
-updated_at: "2026-07-26T17:30:08.466Z"
+updated_at: "2026-09-19T08:43:04.262Z"
 deadline: "2026-04-08T11:26:42.395Z"
+closed_at: "2026-04-01T11:40:47.335Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 140
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: core/shared/time
 regression: true
 customer_impact: Date-heavy workflows stop failing on practical values.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-lau3,parent,"2026-04-01T11:26:42.395Z",codex-agent,null
-  pm-lau3,implements,"2026-07-26T17:30:08.234Z",null,null
+dependencies[2]:
+  - id: pm-lau3
+    kind: parent
+    created_at: "2026-04-01T11:26:42.395Z"
+    author: codex-agent
+  - id: pm-lau3
+    kind: implements
+    created_at: "2026-07-26T17:30:08.234Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T11:26:42.395Z",codex-agent,Task carved from feature plan to isolate parser and test logic changes.
   "2026-04-01T11:39:01.722Z",codex-agent,"Implemented parser expansion in src/core/shared/time.ts: added +m month-relative support, tolerant date-string normalization (including T13-59 and compact forms), and updated usage error guidance while preserving ISO persistence. Validation evidence: node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts passed (78/78)."

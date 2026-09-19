@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-beads",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:11.883Z"
-updated_at: "2026-08-13T09:50:40.000Z"
+updated_at: "2026-09-19T08:40:52.242Z"
 deadline: "2026-03-13T23:02:11.883Z"
+closed_at: "2026-04-04T16:13:31.239Z"
 author: steve
 estimated_minutes: 120
 acceptance_criteria: "beads extension source is bundled in package, not auto-installed, and pm beads import appears only after extension install/activation via pm extension manager."

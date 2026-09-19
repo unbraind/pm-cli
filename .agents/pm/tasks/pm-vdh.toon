@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:determinism",core,"milestone:0",pm-cli
 created_at: "2026-02-17T23:02:06.839Z"
-updated_at: "2026-07-26T17:27:56.582Z"
+updated_at: "2026-09-19T08:42:01.595Z"
 deadline: "2026-02-20T23:02:06.839Z"
+closed_at: "2026-02-19T01:28:01.837Z"
 assignee: steve
 author: steve
 estimated_minutes: 120
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/deterministic-serializer-utilities
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Deterministic serializer utilities.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-2xl,parent,"2026-02-17T23:02:06.839Z",steve,null
-  pm-2xl,implements,"2026-07-26T17:27:56.348Z",null,null
+dependencies[2]:
+  - id: pm-2xl
+    kind: parent
+    created_at: "2026-02-17T23:02:06.839Z"
+    author: steve
+  - id: pm-2xl
+    kind: implements
+    created_at: "2026-07-26T17:27:56.348Z"
 comments[8]{created_at,author,text}:
   "2026-02-19T00:16:29.256Z",maintainer-agent,"Planned changeset: harden deterministic serialization utilities for JSON-like and edge-case inputs, add explicit unit coverage for sorting/undefined-skipping/fallback coercion behavior, and include the core serializer utility in enforced coverage scope."
   "2026-02-19T00:17:34.181Z",maintainer-agent,"Implemented serializer hardening: stableStringify now canonicalizes Date values and respects object toJSON outputs when they differ from the original object, while preserving deterministic sorted-key behavior for plain objects and undefined-field omission."

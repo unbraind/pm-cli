@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[3]: cleanup,linked-test,tests
 created_at: "2026-05-23T20:44:49.461Z"
-updated_at: "2026-07-26T17:26:50.973Z"
+updated_at: "2026-09-19T08:41:47.844Z"
+closed_at: "2026-05-23T20:50:21.290Z"
 author: codex-pm-changelog
 parent: pm-7811
 release: v2026.5.24
@@ -15,8 +16,8 @@ resolution: "Linked-test sandbox cleanup now retries recursive removal, matching
 expected_result: "pm test --run exits 0 when linked commands pass, even if the OS briefly keeps sandbox directories busy."
 actual_result: pm test pm-7811 --run and pm test pm-u43m --run both passed after reinstalling the patched CLI; focused test-command unit suite passed 40 tests.
 component: linked-test
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-7811,implements,"2026-07-26T17:26:50.665Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-7811,implements,"2026-07-26T17:26:50.665Z"
 comments[1]{created_at,author,text}:
   "2026-05-23T20:50:19.678Z",codex-pm-changelog,"Evidence: patched linked-test sandbox cleanup to use fs.rm maxRetries/retryDelay. Reproduced previous ENOTEMPTY before reinstalling patched CLI, then reran pm test for pm-7811 and pm-u43m successfully after npm install -g .; focused node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts passed 40 tests."
 files[1]{path,scope,note}:

@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[4]: "area:verification",core,"milestone:0",pm-cli
 created_at: "2026-02-17T23:14:58.875Z"
-updated_at: "2026-08-13T08:04:40.392Z"
+updated_at: "2026-09-19T08:39:53.197Z"
 deadline: "2026-03-05T11:19:39.284Z"
+closed_at: "2026-03-04T11:34:43.959Z"
 assignee: steve
 author: steve
 estimated_minutes: 30

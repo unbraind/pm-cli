@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[6]: "area:history","area:stats","area:storage",race-condition,release-blocker,sentry
 created_at: "2026-06-25T04:55:08.065Z"
-updated_at: "2026-07-26T17:06:45.192Z"
+updated_at: "2026-09-19T08:39:40.069Z"
+closed_at: "2026-06-25T05:12:57.082Z"
 author: codex-pm-ecosystem-audit-20260625
 estimated_minutes: 90
 acceptance_criteria: History-stream ENOENT between readdir and readFile is reproduced or simulated; pm stats skips disappearing streams without sending raw ENOENT to Sentry; non-ENOENT history read failures still surface; focused tests cover the race; Sentry gate passes after PM-CLI-1T is resolved or no longer blocking.
@@ -16,8 +17,8 @@ repro_steps: Run pm stats while another pm process creates/removes history strea
 resolution: Handled disappearing history-stream ENOENT as a benign concurrent-write race in pm stats while preserving non-ENOENT read failures; resolved Sentry PM-CLI-1T after the fix and verified the Sentry/telemetry release gate.
 expected_result: pm stats tolerates concurrent history stream disappearance as a benign race and still reports aggregate storage metrics.
 actual_result: Regression tests pass; pm stats --storage --json passes; Sentry/telemetry gate passes with sentry critical=0/high=0 and telemetry required-mode ok.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-34gb,implements,"2026-07-26T17:06:45.002Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-34gb,implements,"2026-07-26T17:06:45.002Z"
 comments[2]{created_at,author,text}:
   "2026-06-25T04:55:08.065Z",codex-pm-ecosystem-audit-20260625,"Duplicate check before create: status-all searches for PM-CLI-1T ENOENT stats readHistoryStreamContents history stream and disappearing history file found related closed history/stats work and open broad pm-34gb, but no exact open race item."
   "2026-06-25T05:12:23.121Z",codex-ecosystem-auditor,"Evidence: Sentry PM-CLI-1T had one event at 2026-06-25T02:10:19Z and was the only release-gate blocker. After the stats ENOENT race fix, resolved PM-CLI-1T in Sentry and reran node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required: ok=true, sentry critical=0/high=0, telemetry ok=true, finish_error_rate_pct=0.82, failures_without_error_code_rows=0."

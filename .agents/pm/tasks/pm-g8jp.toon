@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:update",close-reason,implementation,pm-cli
 created_at: "2026-04-03T09:34:23.361Z"
-updated_at: "2026-07-26T17:14:21.529Z"
+updated_at: "2026-09-19T08:40:18.158Z"
 deadline: "2026-04-08T09:34:23.361Z"
+closed_at: "2026-04-03T09:58:02.261Z"
 author: codex-agent
 estimated_minutes: 140
 acceptance_criteria: "Update accepts close_reason set/clear, reopen auto-clear works, and all affected surfaces (contracts/completion/pi/help/docs/tests) are synchronized."
@@ -38,9 +39,14 @@ affected_version: 2026.3.12
 component: cli/update
 regression: true
 customer_impact: Reopened work reflects accurate lifecycle state
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-m4vu,parent,"2026-04-03T09:34:23.361Z",codex-agent,null
-  pm-m4vu,implements,"2026-07-26T17:14:21.268Z",null,null
+dependencies[2]:
+  - id: pm-m4vu
+    kind: parent
+    created_at: "2026-04-03T09:34:23.361Z"
+    author: codex-agent
+  - id: pm-m4vu
+    kind: implements
+    created_at: "2026-07-26T17:14:21.268Z"
 comments[2]{created_at,author,text}:
   "2026-04-03T09:34:23.361Z",codex-agent,Task created to implement runtime and surface parity for close_reason update semantics.
   "2026-04-03T09:57:57.683Z",codex-agent,"Implemented update close_reason lifecycle: added --close-reason/--close_reason wiring across CLI/contracts/type-policy/Pi/completion, plus closed->non-terminal auto-clear logic and new unit/integration regression coverage."

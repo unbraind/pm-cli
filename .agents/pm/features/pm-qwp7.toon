@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:release","area:tests",pm-cli
 created_at: "2026-04-01T02:16:16.834Z"
-updated_at: "2026-07-26T17:24:24.223Z"
+updated_at: "2026-09-19T08:41:06.769Z"
 deadline: "2026-04-11T02:16:16.834Z"
+closed_at: "2026-04-01T19:58:27.103Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 220
@@ -41,10 +42,17 @@ fixed_version: archive-2026q2
 component: testing
 regression: true
 customer_impact: existing users keep stable behavior after override expansion
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-x395,parent,"2026-04-01T02:16:16.834Z",codex-agent,null
-  pm-rl7j,related,"2026-07-26T17:24:24.002Z",null,null
-  pm-x395,implements,"2026-07-26T17:24:24.002Z",null,null
+dependencies[3]:
+  - id: pm-x395
+    kind: parent
+    created_at: "2026-04-01T02:16:16.834Z"
+    author: codex-agent
+  - id: pm-rl7j
+    kind: related
+    created_at: "2026-07-26T17:24:24.002Z"
+  - id: pm-x395
+    kind: implements
+    created_at: "2026-07-26T17:24:24.002Z"
 comments[3]{created_at,author,text}:
   "2026-04-01T02:16:16.834Z",codex-agent,Feature E from full-override plan.
   "2026-04-01T03:05:12.720Z",codex-agent,Feature remains blocked solely by the unresolved global coverage-threshold gate tracked in pm-rl7j after push of b21a27b.

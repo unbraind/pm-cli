@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[6]: bug,compatibility,github,item-format,migration,pm-cli
 created_at: "2026-05-05T18:05:26.674Z"
-updated_at: "2026-07-26T17:28:28.275Z"
+updated_at: "2026-09-19T08:42:25.889Z"
 deadline: "2026-05-06T18:05:26.674Z"
+closed_at: "2026-05-05T21:56:05.781Z"
 author: codex-release-agent
 estimated_minutes: 120
 acceptance_criteria: A temp previous-version workspace containing clean JSON-frontmatter and YAML-prepended item markdown migrates or is recoverably handled without bricking create/update/list; regression tests cover the mixed-frontmatter case; GitHub issue #20 is closed with release evidence.
@@ -16,9 +17,14 @@ release: v2026.5.6
 resolution: "Implemented resilient json_markdown migration for YAML-prepended item markdown and recoverable migration warnings, then released the fix in v2026.5.5."
 expected_result: Previous-version item data with mixed JSON/YAML frontmatter migrates or is recoverably skipped without bricking create/update/list workflows.
 actual_result: Compatibility temp-project gate passed; v2026.5.5 published and verified; GitHub issue #20 closed as completed.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-0rjf,parent,"2026-05-05T18:05:26.674Z",codex-release-agent,null
-  pm-0rjf,implements,"2026-07-26T17:28:27.914Z",null,null
+dependencies[2]:
+  - id: pm-0rjf
+    kind: parent
+    created_at: "2026-05-05T18:05:26.674Z"
+    author: codex-release-agent
+  - id: pm-0rjf
+    kind: implements
+    created_at: "2026-07-26T17:28:27.914Z"
 comments[3]{created_at,author,text}:
   "2026-05-05T18:05:26.674Z",codex-release-agent,"Duplicate-check evidence: ran pm search GitHub issue 20 non JSON frontmatter migration crashes bricked workspace --limit 10. Results were closed historical migration items,not an open tracker for GitHub issue #20,so this issue item records the external bug."
   "2026-05-05T18:50:24.426Z",codex-release-agent,"Implemented resilient json_markdown migration for YAML-prepended item markdown, moved item-format settings write after migration, and added temp previous-version compatibility coverage. Evidence: focused unit tests passed, compatibility-check passed against 2026.5.4 fixture, full run-gates passed with 100 percent coverage."

@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:sdk",living-map,sdk-testing
 created_at: "2026-06-21T12:16:50.066Z"
-updated_at: "2026-09-08T05:33:19.075Z"
+updated_at: "2026-09-19T08:39:14.141Z"
+closed_at: "2026-06-21T12:30:37.354Z"
 author: claude-code-agent
 parent: pm-ugqx
 release: v2026.6.22

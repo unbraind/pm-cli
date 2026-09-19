@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[6]: "area:packages","area:sdk",customization,dogfood,package-author,profiles
 created_at: "2026-06-25T04:57:08.891Z"
-updated_at: "2026-09-08T05:33:25.950Z"
+updated_at: "2026-09-19T08:39:49.975Z"
+closed_at: "2026-06-25T15:51:37.479Z"
 author: codex-pm-ecosystem-audit-20260625
 estimated_minutes: 300
 acceptance_criteria: "A first-party baseline/profile package is installable; it uses public SDK APIs only; package catalog/describe/doctor are clean; docs and examples explain the archetype; SDK testing helpers cover registrations; temp-project dogfood installs the package, applies the profile, and creates sample items."

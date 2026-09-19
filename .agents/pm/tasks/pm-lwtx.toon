@@ -6,7 +6,8 @@ status: closed
 priority: 0
 tags[6]: agent-ux,audit,dependency-update,ecosystem,github-issue,sdk
 created_at: "2026-06-02T21:58:47.916Z"
-updated_at: "2026-09-08T05:32:43.603Z"
+updated_at: "2026-09-19T08:40:44.431Z"
+closed_at: "2026-06-02T22:59:23.359Z"
 author: codex-broad-audit-20260602
 parent: pm-doxj
 release: v2026.6.5

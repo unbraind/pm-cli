@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:metadata","area:update",close-reason,pm-cli,ux
 created_at: "2026-04-03T09:33:47.173Z"
-updated_at: "2026-07-26T17:20:01.100Z"
+updated_at: "2026-09-19T08:40:45.429Z"
 deadline: "2026-04-09T09:33:47.173Z"
+closed_at: "2026-04-03T09:58:04.963Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: "pm update supports close_reason set/clear, reopening removes stale close_reason automatically, and all contracts/tests/docs stay aligned."
@@ -38,9 +39,14 @@ affected_version: 2026.3.12
 component: cli/update
 regression: true
 customer_impact: Reduces confusion in reopened work tracking
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-hp31,parent,"2026-04-03T09:33:47.173Z",codex-agent,null
-  pm-hp31,implements,"2026-07-26T17:20:00.887Z",null,null
+dependencies[2]:
+  - id: pm-hp31
+    kind: parent
+    created_at: "2026-04-03T09:33:47.173Z"
+    author: codex-agent
+  - id: pm-hp31
+    kind: implements
+    created_at: "2026-07-26T17:20:00.887Z"
 comments[1]{created_at,author,text}:
   "2026-04-03T09:33:47.173Z",codex-agent,Feature spun from user-reported close_reason integrity issue.
 notes[1]{created_at,author,text}:

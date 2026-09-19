@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[4]: contract-sync,maintenance,pm-cli,release-readiness
 created_at: "2026-03-06T19:44:34.375Z"
-updated_at: "2026-08-13T08:04:50.049Z"
+updated_at: "2026-09-19T08:40:16.997Z"
 deadline: "2026-03-07T19:44:34.375Z"
+closed_at: "2026-03-06T20:07:51.914Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90

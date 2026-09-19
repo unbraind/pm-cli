@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[9]: "area:extensions-pi","area:install",code,docs,"milestone:6",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-08T19:47:48.867Z"
-updated_at: "2026-07-26T17:07:20.815Z"
+updated_at: "2026-09-19T08:39:42.780Z"
 deadline: "2026-03-10T20:00:00.000Z"
+closed_at: "2026-04-04T15:49:16.626Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "pm install command wiring, help/contracts/completion/tests are removed, and install flows are handled by pm extension without breaking extension management UX."
@@ -40,9 +41,14 @@ fixed_version: v0.1
 component: cli-installer
 regression: false
 customer_impact: Pi users can load pm tracking tools in TUI without manual file-copy steps
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-oqe0,related,"2026-03-08T19:47:48.867Z",maintainer-agent,null
-  pm-m9jc,implements,"2026-07-26T17:07:20.618Z",null,null
+dependencies[2]:
+  - id: pm-oqe0
+    kind: related
+    created_at: "2026-03-08T19:47:48.867Z"
+    author: maintainer-agent
+  - id: pm-m9jc
+    kind: implements
+    created_at: "2026-07-26T17:07:20.618Z"
 comments[7]{created_at,author,text}:
   "2026-03-08T19:47:48.867Z",maintainer-agent,Why this exists users need one-command Pi extension install for project/global scopes and reliable TUI availability.
   "2026-03-08T19:48:00.841Z",maintainer-agent,"Planned changeset before edits: update PRD/README/AGENTS with install command contract and Pi scope semantics, implement runInstallPi command + CLI wiring, add unit/integration/release-contract tests, then run temporary-folder Pi smoke validation."

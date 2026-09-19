@@ -6,7 +6,8 @@ status: closed
 priority: 0
 tags[5]: calendar,packages,pm-cli,refactor,sdk
 created_at: "2026-05-14T06:05:23.346Z"
-updated_at: "2026-09-08T05:36:37.883Z"
+updated_at: "2026-09-19T08:41:01.447Z"
+closed_at: "2026-05-14T10:11:11.608Z"
 author: codex-agent
 acceptance_criteria: pm-calendar package owns optional calendar UX; core keeps item deadline fields; contracts/MCP expose calendar commands only when package installed or during compatibility fallback; temp-project dogfood covers installed package behavior.
 parent: pm-59gj

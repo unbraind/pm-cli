@@ -6,20 +6,21 @@ status: closed
 priority: 3
 tags[5]: "area:ci","area:tests",cross-platform,flake,windows
 created_at: "2026-06-23T12:18:09.377Z"
-updated_at: "2026-07-26T17:02:03.283Z"
+updated_at: "2026-09-19T08:39:19.036Z"
+closed_at: "2026-06-27T14:23:51.646Z"
 author: claude-code-agent
 parent: pm-u9d0
 release: v2026.6.30
 resolution: "Closed the Windows nightly Vitest worker teardown lineage after the next full scheduled Nightly Validation run completed successfully on all configured lanes, including windows-latest / Node 24."
 expected_result: The Windows nightly lane should complete the full scheduled suite without the teardown-only Vitest worker fork exit that previously appeared after assertions passed.
 actual_result: "Scheduled Nightly Validation run 28281792898 completed successfully on 2026-06-27; the windows-latest / Node 24 job 83798809644 passed, and the overall run conclusion was success."
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-i84i,related,"2026-06-23T12:18:17.665Z",null,null
-  pm-zpe7,related,"2026-06-23T12:18:17.665Z",null,null
-  pm-2p7a,related,"2026-06-24T09:06:44.485Z",null,null
-  pm-e9zh,related,"2026-07-26T17:02:03.050Z",null,null
-  pm-u9d0,implements,"2026-07-26T17:02:03.050Z",null,null
-  pm-xaib,related,"2026-07-26T17:02:03.050Z",null,null
+dependencies[6]{id,kind,created_at}:
+  pm-i84i,related,"2026-06-23T12:18:17.665Z"
+  pm-zpe7,related,"2026-06-23T12:18:17.665Z"
+  pm-2p7a,related,"2026-06-24T09:06:44.485Z"
+  pm-e9zh,related,"2026-07-26T17:02:03.050Z"
+  pm-u9d0,implements,"2026-07-26T17:02:03.050Z"
+  pm-xaib,related,"2026-07-26T17:02:03.050Z"
 comments[28]{created_at,author,text}:
   "2026-06-23T15:39:40.414Z",codex,"Continuation check (codex): GH-348 still open and remains separate from the SDK version-compatibility branch. Current main CI run 28028252104 had Windows regression (Node 20) green, while GH-348 describes intermittent Nightly Validation worker teardown after tests pass. No SDK version-compat code changes touch the suspected LanceDB/OTLP teardown surface; leave pm-2kkl open for a Windows-runner reproduction/hardening lane."
   "2026-06-24T09:06:44.562Z",codex-gpt5,"Continuation note: GitHub issue #348 was refreshed by run 28083306766 on 2026-06-24 for windows-latest / Node 20. PR #353 / pm-2p7a resolves the live scheduled failure class by removing unsupported Node 20 nightly lanes as part of the Node >=22.18 TypeScript-only extension runtime floor; branch nightly matrix is Node 22/24/25 on Ubuntu plus Node 24 on macOS/Windows. Keep this issue open until PR #353 is merged to main and the next scheduled nightly no longer reports Node 20."

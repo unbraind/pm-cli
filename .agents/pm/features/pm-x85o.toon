@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:dependencies","area:visualization",external-audit,pm-cli
 created_at: "2026-04-03T14:48:19.923Z"
-updated_at: "2026-07-26T17:29:24.915Z"
+updated_at: "2026-09-19T08:42:45.929Z"
 deadline: "2026-04-13T14:48:19.923Z"
+closed_at: "2026-04-06T15:41:56.918Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "pm deps returns deterministic dependency views (tree and graph), has help/contract parity, and includes regression coverage."
@@ -28,9 +29,14 @@ expected_result: Acceptance criteria for Add dependency visualization command (p
 actual_result: Work completed and recorded with linked artifacts for Add dependency visualization command (pm deps).
 component: project-management/add-dependency-visualization-command-pm-deps
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add dependency visualization command (pm deps).
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-zdec,related,"2026-04-03T14:48:19.923Z",codex-agent,null
-  pm-iswo,implements,"2026-07-26T17:29:24.725Z",null,null
+dependencies[2]:
+  - id: pm-zdec
+    kind: related
+    created_at: "2026-04-03T14:48:19.923Z"
+    author: codex-agent
+  - id: pm-iswo
+    kind: implements
+    created_at: "2026-07-26T17:29:24.725Z"
 comments[5]{created_at,author,text}:
   "2026-04-03T14:48:19.923Z",codex-agent,Feature builds on existing dependency mutation support by adding deterministic read-only visualization.
   "2026-04-03T15:05:28.830Z",codex-agent,"Implemented pm deps command with deterministic tree/graph traversal, cycle-safe recursion, and missing-node reporting; wired CLI/completion/sdk/Pi surfaces and added unit+integration regressions. Evidence: node scripts/run-tests.mjs test -- tests/unit/deps-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts passed (126/126)."

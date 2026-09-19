@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:list",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:02:09.324Z"
-updated_at: "2026-08-13T09:50:45.162Z"
+updated_at: "2026-09-19T08:41:07.576Z"
 deadline: "2026-03-03T23:02:09.324Z"
+closed_at: "2026-02-18T18:45:00.201Z"
 assignee: steve
 author: steve
 estimated_minutes: 120

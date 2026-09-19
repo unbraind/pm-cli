@@ -6,17 +6,18 @@ status: closed
 priority: 2
 tags[3]: "area:ci","area:coverage",codecov
 created_at: "2026-06-26T15:22:45.840Z"
-updated_at: "2026-07-26T17:29:26.077Z"
+updated_at: "2026-09-19T08:42:46.272Z"
+closed_at: "2026-06-26T15:46:31.584Z"
 author: codex-sdk-cli-continuation
 parent: pm-u9d0
 release: v2026.6.30
 resolution: Pinned README Codecov badge to the main-branch badge URL and sent explicit branch/commit metadata in CI uploads.
 expected_result: README badge no longer renders unknown and CI workflow contracts protect Codecov upload metadata.
 actual_result: "Branch-pinned badge returned a 100% SVG; workflow contract, typecheck, static quality, coverage, release gates, and temp smoke passed."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-m8yl,related,"2026-07-26T17:29:25.796Z",null,null
-  pm-u9d0,implements,"2026-07-26T17:29:25.796Z",null,null
-  pm-xsth,related,"2026-07-26T17:29:25.796Z",null,null
+dependencies[3]{id,kind,created_at}:
+  pm-m8yl,related,"2026-07-26T17:29:25.796Z"
+  pm-u9d0,implements,"2026-07-26T17:29:25.796Z"
+  pm-xsth,related,"2026-07-26T17:29:25.796Z"
 comments[4]{created_at,author,text}:
   "2026-06-26T15:33:05.031Z",codex-gpt5,"Evidence: branch-pinned Codecov badge URL returned SVG with 100% text during live curl verification."
   "2026-06-26T15:46:30.947Z",codex-gpt5,"Evidence: README now uses the branch-pinned Codecov badge URL, CI Codecov uploads pass explicit branch/commit metadata, and workflow contracts guard both. Live curl to https://codecov.io/gh/unbraind/pm-cli/branch/main/graph/badge.svg returned a 100% SVG. Verification passed: ci-workflow-contract spec, pnpm typecheck, pnpm quality:static, coverage 100/100/100/100, release gates, and temp smoke."

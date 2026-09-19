@@ -6,19 +6,20 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",context-management,query
 created_at: "2026-06-20T00:12:19.204Z"
-updated_at: "2026-07-26T17:16:07.130Z"
+updated_at: "2026-09-19T08:40:26.659Z"
+closed_at: "2026-06-20T00:31:02.653Z"
 author: codex-sdk-cli-continuation
 parent: pm-mpbb
 release: v2026.6.20
 resolution: Added a shared all-status sentinel for list/search filters and documented it across CLI/MCP/contracts/docs.
 expected_result: Agents can run pm search --status all and pm list --status all to deliberately scan every lifecycle bucket for duplicate-safe context discovery.
 actual_result: Standalone all now resolves to no status set while preserving explicit filter intent; search and list return open and closed items and echo filters.status=all; mixed all with other statuses is rejected.
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-ec4s,related,"2026-06-20T00:12:59.537Z",null,null
-  pm-j2ig,related,"2026-06-20T00:12:59.537Z",null,null
-  pm-e7dn,related,"2026-07-26T17:16:06.876Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:16:06.876Z",null,null
-  pm-srex,related,"2026-07-26T17:16:06.876Z",null,null
+dependencies[5]{id,kind,created_at}:
+  pm-ec4s,related,"2026-06-20T00:12:59.537Z"
+  pm-j2ig,related,"2026-06-20T00:12:59.537Z"
+  pm-e7dn,related,"2026-07-26T17:16:06.876Z"
+  pm-mpbb,implements,"2026-07-26T17:16:06.876Z"
+  pm-srex,related,"2026-07-26T17:16:06.876Z"
 comments[4]{created_at,author,text}:
   "2026-06-20T00:12:27.661Z",codex-sdk-cli-continuation,"Duplicate-check evidence: pm list --parent pm-mpbb --status open showed only pm-srex and pm-e7dn; pm search 'status all duplicate discovery' across default/open and closed results found historical closed lineage pm-j2ig and pm-ec4s but no active item for the current --status all rejection. Live reproduction: pm search '<query>' --status all exits with Invalid --status value all."
   "2026-06-20T00:30:47.457Z",codex-sdk-cli-continuation,"Evidence: implemented standalone --status all as explicit no-op lifecycle filter for search and list. Search now returns all lifecycle buckets and echoes filters.status=all; list now disables active-only terminal exclusion when --status all is supplied and echoes filters.status=all. Focused tests passed (149 tests); full coverage passed 4699 tests with Statements/Branches/Functions/Lines all 100%; contracts:check and quality:static passed; manual temp-dir smoke with sandboxed PM_PATH/PM_GLOBAL_PATH passed for init/create/close/search/list."

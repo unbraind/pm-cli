@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[6]: "area:search",hybrid,living-map,post-v0.1,roadmap,tuning
 created_at: "2026-05-31T19:44:23.684Z"
-updated_at: "2026-09-08T05:32:29.590Z"
+updated_at: "2026-09-19T08:40:03.329Z"
+closed_at: "2026-06-06T06:21:58.813Z"
 author: maintainer-agent
 acceptance_criteria: pm search --mode hybrid --semantic-weight <0..1>; in SEARCH_FLAG_CONTRACTS+MCP+completions; range-validated; falls back to setting; effective value in filters; tests.
 value: PRD line 1680 defers broader hybrid tuning; hybrid_semantic_weight is global-only. A per-query --semantic-weight lets agents bias keyword-heavy (exact IDs) vs concept-heavy queries.

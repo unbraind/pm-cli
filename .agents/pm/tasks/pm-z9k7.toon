@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: item-tracking,linked-tests,pm-cli,settings
 created_at: "2026-04-04T19:06:44.096Z"
-updated_at: "2026-07-26T17:30:51.981Z"
+updated_at: "2026-09-19T08:43:16.023Z"
 deadline: "2026-04-13T19:06:44.096Z"
+closed_at: "2026-04-04T20:22:39.418Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: settings schema/defaults include test-result tracking key; pm config get/set supports deterministic enabled/disabled policy values for project/global scopes.
@@ -29,9 +30,14 @@ fixed_version: target-vnext
 component: settings-config
 regression: true
 customer_impact: Lets teams opt into item-level test-result history safely.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-16f4,parent,"2026-04-04T19:06:44.096Z",codex-agent,null
-  pm-16f4,implements,"2026-07-26T17:30:51.738Z",null,null
+dependencies[2]:
+  - id: pm-16f4
+    kind: parent
+    created_at: "2026-04-04T19:06:44.096Z"
+    author: codex-agent
+  - id: pm-16f4
+    kind: implements
+    created_at: "2026-07-26T17:30:51.738Z"
 comments[2]{created_at,author,text}:
   "2026-04-04T19:06:44.096Z",codex-agent,"Duplicate-check evidence: no active open task exposes a dedicated settings/config policy path for item-level test-result tracking."
   "2026-04-04T20:22:21.000Z",codex-agent,Added testing.record_results_to_items defaults/schema plus config key policy handling; settings/constants verification suites passed (14 tests).

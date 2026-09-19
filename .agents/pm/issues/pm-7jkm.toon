@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[3]: "area:agent-ux","area:extensions","audit:2026-04-25"
 created_at: "2026-04-25T20:01:14.954Z"
-updated_at: "2026-07-26T17:06:36.977Z"
+updated_at: "2026-09-19T08:39:39.452Z"
 deadline: "2026-04-27T20:01:14.954Z"
+closed_at: "2026-04-25T20:03:45.637Z"
 author: codex-agent
 estimated_minutes: 90
 acceptance_criteria: Core parser overrides affect built-in commands with and without positional args; regression test covers pm list override.
@@ -23,8 +24,8 @@ actual_result: override ignored for core list command.
 component: extension-runtime
 regression: true
 customer_impact: Agent-authored parser extensions cannot reliably shape built-in command UX.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-o7be,implements,"2026-07-26T17:06:36.764Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-o7be,implements,"2026-07-26T17:06:36.764Z"
 comments[2]{created_at,author,text}:
   "2026-04-25T20:01:14.954Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'parser override core command' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no active item tracked no-positional core parser forwarding bug."
   "2026-04-25T20:03:44.443Z",codex-agent,"Implemented core parser-forwarding fix in wrapped action dispatch by replaying parser-mutated args through Commander processedArgs and syncing option values via setOptionValueWithSource. Evidence: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts (61 passed)."

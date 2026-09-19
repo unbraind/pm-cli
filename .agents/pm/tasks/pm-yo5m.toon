@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:tests",pm-cli,verification
 created_at: "2026-04-01T14:42:52.196Z"
-updated_at: "2026-07-26T17:30:26.563Z"
+updated_at: "2026-09-19T08:43:10.290Z"
 deadline: "2026-04-09T14:42:52.196Z"
+closed_at: "2026-04-01T15:08:59.866Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 140
@@ -41,9 +42,14 @@ fixed_version: vnext
 component: docs-verification
 regression: true
 customer_impact: Users see clear guidance and stable behavior after rollout
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-1hkq,parent,"2026-04-01T14:42:52.196Z",codex-agent,null
-  pm-1hkq,implements,"2026-07-26T17:30:26.224Z",null,null
+dependencies[2]:
+  - id: pm-1hkq
+    kind: parent
+    created_at: "2026-04-01T14:42:52.196Z"
+    author: codex-agent
+  - id: pm-1hkq
+    kind: implements
+    created_at: "2026-07-26T17:30:26.224Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T14:42:52.196Z",codex-agent,Task captures required docs updates and final verification evidence before release operations.
   "2026-04-01T15:08:42.038Z",codex-agent,"Docs updated (README.md, docs/ARCHITECTURE.md, PRD.md, CHANGELOG.md). Verification evidence: pnpm build passed; node scripts/run-tests.mjs test passed (63 files / 665 tests); targeted suites passed; PM_DISABLE_OLLAMA_AUTO_DEFAULTS=1 pm health --json smoke passed with new checks. Coverage command still fails on existing repository-wide 100% global thresholds (statements 97.15, branches 95.18, functions 98.08, lines 97.45)."

@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:calendar",output,pm-cli
 created_at: "2026-03-31T21:27:29.408Z"
-updated_at: "2026-07-26T17:26:39.430Z"
+updated_at: "2026-09-19T08:41:45.255Z"
 deadline: "2026-04-10T21:27:29.408Z"
+closed_at: "2026-03-31T22:09:20.417Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
@@ -41,13 +42,28 @@ fixed_version: vnext
 component: cli/calendar
 regression: true
 customer_impact: Improves deadline and planning visibility for agents.
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-0lbm,related,"2026-03-31T21:27:29.408Z",codex-agent,null
-  pm-qh3p,parent,"2026-03-31T21:27:29.408Z",codex-agent,null
-  pm-r0m,related,"2026-03-31T21:27:29.408Z",codex-agent,null
-  pm-ezri,related,"2026-07-26T17:26:39.156Z",null,null
-  pm-kglq,related,"2026-07-26T17:26:39.156Z",null,null
-  pm-qh3p,implements,"2026-07-26T17:26:39.156Z",null,null
+dependencies[6]:
+  - id: pm-0lbm
+    kind: related
+    created_at: "2026-03-31T21:27:29.408Z"
+    author: codex-agent
+  - id: pm-qh3p
+    kind: parent
+    created_at: "2026-03-31T21:27:29.408Z"
+    author: codex-agent
+  - id: pm-r0m
+    kind: related
+    created_at: "2026-03-31T21:27:29.408Z"
+    author: codex-agent
+  - id: pm-ezri
+    kind: related
+    created_at: "2026-07-26T17:26:39.156Z"
+  - id: pm-kglq
+    kind: related
+    created_at: "2026-07-26T17:26:39.156Z"
+  - id: pm-qh3p
+    kind: implements
+    created_at: "2026-07-26T17:26:39.156Z"
 comments[2]{created_at,author,text}:
   "2026-03-31T21:27:29.408Z",codex-agent,Feature created for calendar command and markdown default behavior.
   "2026-03-31T22:09:19.547Z",codex-agent,Feature complete via closed tasks pm-ezri and pm-kglq; calendar core views plus markdown-default output behavior verified.

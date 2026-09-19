@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[7]: "area:cli","area:docs",code,"milestone:1",pm-cli,"priority:1",tests
 created_at: "2026-03-07T00:21:45.673Z"
-updated_at: "2026-07-26T17:28:21.165Z"
+updated_at: "2026-09-19T08:42:06.528Z"
 deadline: "2026-03-10T23:59:00.000Z"
+closed_at: "2026-03-07T00:47:57.983Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/add-ac-alias-for-create-acceptance-criteria
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add --ac alias for create acceptance criteria.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-u9r,related,"2026-03-07T00:21:45.673Z",maintainer-agent,null
-  pm-2p6q,implements,"2026-07-26T17:28:20.883Z",null,null
+dependencies[2]:
+  - id: pm-u9r
+    kind: related
+    created_at: "2026-03-07T00:21:45.673Z"
+    author: maintainer-agent
+  - id: pm-2p6q
+    kind: implements
+    created_at: "2026-07-26T17:28:20.883Z"
 comments[4]{created_at,author,text}:
   "2026-03-07T00:21:45.673Z",maintainer-agent,Why this exists maintainers need concise acceptance criteria flag alias parity in create contract
   "2026-03-07T00:21:52.621Z",maintainer-agent,"Planned change-set: update PRD README AGENTS create flag contracts to include --ac alias first, then wire CLI create option alias and add regression assertions for help and parsing behavior."

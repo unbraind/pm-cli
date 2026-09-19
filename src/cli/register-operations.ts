@@ -1208,7 +1208,7 @@ export function registerOperationCommands(program: Command): void {
     )
     .option(
       "--fix-scope <scope>",
-      "Grant --auto-fix scopes (metadata, resolution, lifecycle; comma-separated or repeatable). Default: metadata, resolution; lifecycle must be named explicitly",
+      "Grant --auto-fix scopes (metadata, resolution, estimates, timestamps, lifecycle; comma-separated or repeatable). Default: metadata, resolution; other scopes require explicit opt-in",
       collect,
     )
     .option(

@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:create","area:validation",audit,governance,pm-cli
 created_at: "2026-04-03T20:57:44.679Z"
-updated_at: "2026-07-26T17:03:37.188Z"
+updated_at: "2026-09-19T08:39:24.269Z"
 deadline: "2026-04-12T20:57:44.679Z"
+closed_at: "2026-04-03T21:27:10.926Z"
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: pm create supports additive strict/progressive policy selection with strict default preserved and progressive mode enabling staged creation workflows.
@@ -28,10 +29,17 @@ expected_result: "Acceptance criteria for Issue4: create strict vs progressive p
 actual_result: "Work completed and recorded with linked artifacts for Issue4: create strict vs progressive policy mode."
 component: project-management/issue4-create-strict-vs-progressive-policy-mode
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for Issue4: create strict vs progressive policy mode."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-r7t2,parent,"2026-04-03T20:57:44.679Z",codex-agent,null
-  pm-r7t2,implements,"2026-07-26T17:03:36.937Z",null,null
-  pm-v7aw,related,"2026-07-26T17:03:36.937Z",null,null
+dependencies[3]:
+  - id: pm-r7t2
+    kind: parent
+    created_at: "2026-04-03T20:57:44.679Z"
+    author: codex-agent
+  - id: pm-r7t2
+    kind: implements
+    created_at: "2026-07-26T17:03:36.937Z"
+  - id: pm-v7aw
+    kind: related
+    created_at: "2026-07-26T17:03:36.937Z"
 comments[1]{created_at,author,text}:
   "2026-04-03T20:57:44.679Z",codex-agent,"Net-new scope after dedupe: runtime still enforces strict required create fields/repeatables for all built-in types."
 notes[1]{created_at,author,text}:

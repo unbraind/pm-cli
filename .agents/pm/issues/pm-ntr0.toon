@@ -6,7 +6,8 @@ status: closed
 priority: 0
 tags[4]: audit,bug,pm-cli,telemetry
 created_at: "2026-05-01T18:03:03.601Z"
-updated_at: "2026-07-26T17:21:29.463Z"
+updated_at: "2026-09-19T08:40:51.018Z"
+closed_at: "2026-05-01T18:20:42.097Z"
 author: audit-agent
 acceptance_criteria: result_summary payloads are bounded; queue bloat is prevented; existing oversized entries are pruned
 parent: pm-2eb3
@@ -18,9 +19,14 @@ resolution: Cap result_summary byte size or truncate nested sample values in sum
 expected_result: Telemetry events stay under 1MB regardless of command output size
 actual_result: list-all events reach 5MB and get rejected by Cloudflare WAF
 component: core/telemetry
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-2eb3,parent,"2026-05-01T18:03:03.601Z",audit-agent,null
-  pm-2eb3,implements,"2026-07-26T17:21:29.241Z",null,null
+dependencies[2]:
+  - id: pm-2eb3
+    kind: parent
+    created_at: "2026-05-01T18:03:03.601Z"
+    author: audit-agent
+  - id: pm-2eb3
+    kind: implements
+    created_at: "2026-07-26T17:21:29.241Z"
 comments[2]{created_at,author,text}:
   "2026-05-01T18:03:03.601Z",audit-agent,"Evidence: 190 queue entries totaling 130MB. 59 entries over 1MB. Largest entry 5MB. Old entries have 70+ retry attempts with max backoff. Endpoint returns HTTP 403 with error code 1010 for large payloads."
   "2026-05-01T18:20:36.393Z",audit-agent,"Fixed: Added TELEMETRY_MAX_EVENT_BYTES (512KB) pre-enqueue size guard that truncates result_summary for oversized events. Added TELEMETRY_SANITIZE_MAX_DEPTH (6) and TELEMETRY_SANITIZE_MAX_ARRAY_ITEMS (20) to bound nested value recursion. Added TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS (15) to prune entries that have failed too many times. All 1087 tests pass."

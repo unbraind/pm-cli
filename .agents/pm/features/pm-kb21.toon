@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[3]: "area:history","area:restore",pm-cli
 created_at: "2026-04-01T15:26:50.133Z"
-updated_at: "2026-07-26T17:18:12.233Z"
+updated_at: "2026-09-19T08:40:39.944Z"
 deadline: "2026-04-07T15:26:50.133Z"
+closed_at: "2026-04-01T21:21:19.229Z"
 author: cursor-agent
 estimated_minutes: 240
 acceptance_criteria: "All history-touching commands honor configured missing-stream policy, restore can recover deleted/missing items from history-only state, and full verification succeeds."
@@ -40,15 +41,34 @@ fixed_version: target-vnext
 component: history-policy
 regression: true
 customer_impact: Prevents surprising failures when history files are missing
-dependencies[8]{id,kind,created_at,author,source_kind}:
-  pm-9lc,related,"2026-04-01T15:26:50.133Z",cursor-agent,null
-  pm-er7n,related,"2026-04-01T15:26:50.133Z",cursor-agent,null
-  pm-ofh9,parent,"2026-04-01T15:26:50.133Z",cursor-agent,null
-  pm-0vnr,related,"2026-07-26T17:18:11.959Z",null,null
-  pm-1tyv,related,"2026-07-26T17:18:11.959Z",null,null
-  pm-8wnm,related,"2026-07-26T17:18:11.959Z",null,null
-  pm-g6qd,related,"2026-07-26T17:18:11.959Z",null,null
-  pm-ofh9,implements,"2026-07-26T17:18:11.959Z",null,null
+dependencies[8]:
+  - id: pm-9lc
+    kind: related
+    created_at: "2026-04-01T15:26:50.133Z"
+    author: cursor-agent
+  - id: pm-er7n
+    kind: related
+    created_at: "2026-04-01T15:26:50.133Z"
+    author: cursor-agent
+  - id: pm-ofh9
+    kind: parent
+    created_at: "2026-04-01T15:26:50.133Z"
+    author: cursor-agent
+  - id: pm-0vnr
+    kind: related
+    created_at: "2026-07-26T17:18:11.959Z"
+  - id: pm-1tyv
+    kind: related
+    created_at: "2026-07-26T17:18:11.959Z"
+  - id: pm-8wnm
+    kind: related
+    created_at: "2026-07-26T17:18:11.959Z"
+  - id: pm-g6qd
+    kind: related
+    created_at: "2026-07-26T17:18:11.959Z"
+  - id: pm-ofh9
+    kind: implements
+    created_at: "2026-07-26T17:18:11.959Z"
 comments[3]{created_at,author,text}:
   "2026-04-01T15:26:50.133Z",cursor-agent,Feature created from accepted implementation plan with no active duplicate scope found.
   "2026-04-01T15:59:04.817Z",cursor-agent,"Feature implementation complete across settings/config, strict-vs-auto history policy enforcement, restore history-only recovery, regression tests, and docs/changelog updates. Verification: full build + full test suite pass; coverage gate remains below repository-wide 100% thresholds (pre-existing baseline)."

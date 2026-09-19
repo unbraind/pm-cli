@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: contracts,packages,pm-cli,sdk
 created_at: "2026-05-12T19:46:36.014Z"
-updated_at: "2026-07-26T17:29:07.490Z"
+updated_at: "2026-09-19T08:42:41.124Z"
+closed_at: "2026-05-13T19:10:21.326Z"
 author: codex-agent
 acceptance_criteria: Static SDK core actions no longer imply optional first-party package commands are always core; installed package commands remain discoverable through runtime contracts; MCP/action availability parity is documented or tested; focused SDK/contracts/package tests pass.
 parent: pm-59gj
@@ -14,11 +15,11 @@ release: v2026.5.14
 resolution: Completed optional package action decoupling and public SDK type-import cleanup.
 expected_result: Static SDK core actions exclude Beads/Todos optional package actions; installed package commands remain discoverable through runtime extension contracts.
 actual_result: "Verified static no-extensions contracts reject beads-import while installed package/runtime contracts expose Beads/Todos actions; focused, coverage, temp-project, release, Sentry, and telemetry gates passed."
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-59gj,implements,"2026-07-26T17:29:07.242Z",null,null
-  pm-f3q4,related,"2026-07-26T17:29:07.242Z",null,null
-  pm-fdla,related,"2026-07-26T17:29:07.242Z",null,null
-  pm-mb4n,related,"2026-07-26T17:29:07.242Z",null,null
+dependencies[4]{id,kind,created_at}:
+  pm-59gj,implements,"2026-07-26T17:29:07.242Z"
+  pm-f3q4,related,"2026-07-26T17:29:07.242Z"
+  pm-fdla,related,"2026-07-26T17:29:07.242Z"
+  pm-mb4n,related,"2026-07-26T17:29:07.242Z"
 comments[10]{created_at,author,text}:
   "2026-05-12T19:46:36.014Z",codex-agent,"Duplicate check before create: ran pm search 'SDK optional package actions beads todos public contracts' --limit 10. Results were closed contract/history items plus active pm-59gj; no open child tracked optional package action decoupling, so this follow-up is created under pm-59gj."
   "2026-05-12T21:38:18.308Z",codex-agent,"Evidence: removed Beads/Todos optional package actions from the static SDK tool action schema; runtime contracts still surface installed package commands. First-party package entrypoints now use public SDK type imports. Verification passed: pnpm typecheck; pm test pm-wxxv --run --progress; isolated temp-project E2E for pm install '*', package doctor, Beads/Todos import/export, runtime contracts, SDK import, pm upgrade --dry-run, validate, health; node scripts/run-tests.mjs coverage at 100%; node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json."

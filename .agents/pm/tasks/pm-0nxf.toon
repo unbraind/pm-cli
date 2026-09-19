@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[3]: pm-cli,search,tests
 created_at: "2026-04-06T09:49:11.684Z"
-updated_at: "2026-08-10T12:02:55.436Z"
+updated_at: "2026-09-19T08:39:13.416Z"
+closed_at: "2026-04-27T17:12:37.585Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."

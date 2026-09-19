@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[6]: audit,pm-cli,re-audit,search,semantic,vector
 created_at: "2026-05-03T12:09:13.790Z"
-updated_at: "2026-07-26T17:04:13.405Z"
+updated_at: "2026-09-19T08:39:28.012Z"
 deadline: "2026-05-05T12:09:13.790Z"
+closed_at: "2026-05-03T12:28:19.778Z"
 author: audit-agent
 estimated_minutes: 120
 acceptance_criteria: Semantic search works e2e with Ollama. Keyword/hybrid modes verified. Reindex deterministic. Performance benchmarked.
@@ -16,10 +17,17 @@ release: v2026.5.3
 resolution: Resolution normalized from closed status; existing close_reason remains the detailed closure evidence.
 expected_result: Expected closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
 actual_result: Actual closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-476d,parent,"2026-05-03T12:09:13.790Z",audit-agent,null
-  pm-476d,implements,"2026-07-26T17:04:13.155Z",null,null
-  pm-937o,related,"2026-07-26T17:04:13.155Z",null,null
+dependencies[3]:
+  - id: pm-476d
+    kind: parent
+    created_at: "2026-05-03T12:09:13.790Z"
+    author: audit-agent
+  - id: pm-476d
+    kind: implements
+    created_at: "2026-07-26T17:04:13.155Z"
+  - id: pm-937o
+    kind: related
+    created_at: "2026-07-26T17:04:13.155Z"
 comments[1]{created_at,author,text}:
   "2026-05-03T12:09:13.790Z",audit-agent,"Duplicate check: predecessor pm-937o closed. Net-new for re-audit search deep-dive."
 close_reason: "Search/vector audit verified: keyword (2.3s), semantic with Ollama Qwen (2.1s), hybrid (2.0s) all working. Reindex: keyword 668 items in 1.6s, semantic 668 items+vectors in 35s via LanceDB. Auto-detection, deduplication, embedding batching, stale cleanup all operational. 49 search tests + 14 reindex tests pass."
