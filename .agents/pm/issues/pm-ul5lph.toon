@@ -1,0 +1,76 @@
+id: pm-ul5lph
+title: Harden Bash completion literals and large-workspace search normalization
+description: PR 1279 review found unescaped static Bash completion values and argument-spread score extrema that fail for large result maps. Also align search decomposition metadata with current SDK ownership.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-19T17:41:53.086Z"
+updated_at: "2026-09-19T18:13:34.040Z"
+closed_at: "2026-09-19T18:13:33.357Z"
+completed_at: "2026-09-19T18:13:33.357Z"
+author: "harness:codex"
+acceptance_criteria: Real Bash regression proves no command execution; 200000-score regression normalizes correctly; search item scope metadata matches SDK implementation; exact coverage and required gates pass
+parent: pm-yh8r
+severity: high
+repro_steps: Generate Bash completion with a command substitution in a static value and invoke that completion branch; normalize more than 200000 matching search scores.
+resolution: "Escaped both Bash expansion stages for static and dynamic values, normalized search scores without variadic calls, and reconciled current SDK task scope"
+expected_result: Completion treats supplied values as data and search normalization supports large result sets without changing public contracts
+actual_result: Six real Bash routes preserve literal values with no injected execution; 200000-score regression passes; 9059 tests and exact 100/100/100/100 coverage plus mandatory static gates pass
+component: sdk
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-jt3b,discovered_from,"2026-09-19T17:41:53.086Z","harness:codex","cli:create:dep",detected
+  pm-yh8r,discovered_from,"2026-09-19T17:41:53.086Z","harness:codex","cli:create:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-09-19T17:41:53.086Z","harness:codex","Duplicate check: all-status completion injection and normalizeScoreMap searches inspected; existing completion and relevance owners describe prior delivered features. No matching open defect found. Open and in_progress inventories checked; this child records new PR 1279 findings without reopening completed decomposition."
+  "2026-09-19T17:44:11.964Z","harness:codex","Red-first evidence: both new tests failed before fixes: real Bash emitted INJECTEDBACKTICK and score normalization threw RangeError at 200000 entries. A single source-escaping layer is insufficient because compgen -W expands again. Static values now escape wordlist metacharacters then source interpolation; dynamic values use Bash printf %q per word. All six real-shell input routes pass, retaining literal variables, quotes and backslashes. Extrema now scan using two-argument Math.min/max, preserving NaN and equal-score semantics."
+  "2026-09-19T17:48:39.556Z","harness:codex",Focused linked verification passed all completion and search-cache tests; four TypeScript projects and touched-file ESLint pass. Repeated disposable-workspace lifecycle acceptance passes all 17 steps after the security changes. Full exact coverage and mandatory static pipeline are being rerun for the final reviewed head.
+  "2026-09-19T17:53:14.644Z","harness:codex","Full coverage retry encountered host disk-quota error -122 on temporary writes, cascading into fixture initialization and lock failures; no coverage receipt was produced. Re-running the unchanged regression assertions under the established /var/tmp acceptance root after static checks complete. This failed host run is not counted as passing evidence."
+  "2026-09-19T18:05:34.933Z","harness:codex","Final full coverage passes after host-safe scratch relocation: 9059 tests in 718 files; statements 64761/64761, branches 49447/49447, functions 13457/13457, lines 61971/61971. Exact 100/100/100/100 with zero uncovered counts. No production assertion, coverage exclusion or limit was weakened."
+  "2026-09-19T18:13:32.704Z","harness:codex","Final mandatory quality:static pipeline passed with zero clones, complete module/export/public-member documentation coverage, SDK contract snapshot unchanged, package and command boundaries, context budgets, performance floors, graph composition and record integrity green. Current-branch linked tests and full 9059-test exact coverage pass. All three accepted review findings are implemented; hosted validation will run on the consolidated revision."
+notes[1]{created_at,author,text}:
+  "2026-09-19T17:57:49.367Z","harness:codex",Static gate caught 121 tests in tests/unit/sdk against the 120-file ceiling. Relocated the input-boundary regression into the existing tests/unit/sdk/security directory; assertions and gate ceilings are unchanged. Full verification uses /var/tmp for host-safe scratch allocation.
+learnings[1]{created_at,author,text}:
+  "2026-09-19T17:46:50.688Z","harness:codex","Bash compgen -W performs word expansion on its input after the generated source has already been parsed. Protect both boundaries: quote static wordlist metacharacters before source quoting, and encode dynamic words with printf %q. A substring assertion cannot detect this; execute the actual generated function in a clean Bash process with inert stderr-only attack probes."
+files[4]{path,scope,note}:
+  src/sdk/completion/bash.ts,project,Escape both generated-source and compgen wordlist expansion boundaries
+  src/sdk/query/search/lexical.ts,project,Normalize all matching scores without variadic argument limits
+  tests/unit/commands/completion-command.spec.ts,project,Require quoted dynamic wordlist boundary in generated scripts
+  tests/unit/sdk/security/completion-search-boundaries.spec.ts,project,Real Bash expansion and large-corpus input-boundary regressions
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/core/search/search-cache.spec.ts,project,240,"harness:codex","2026-09-19T17:54:22.143Z",local_mutation,refactor/search-query-cli-domains
+test_runs[2]:
+  - run_id: test-local-mu8ogpi7-ltdu3h
+    kind: test
+    status: passed
+    started_at: "2026-09-19T17:44:37.227Z"
+    finished_at: "2026-09-19T17:44:59.935Z"
+    recorded_at: "2026-09-19T17:44:59.935Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/completion-search-boundaries.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/core/search/search-cache.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu8p7ee9-9ui8xn
+    kind: test
+    status: passed
+    started_at: "2026-09-19T18:05:21.397Z"
+    finished_at: "2026-09-19T18:05:45.249Z"
+    recorded_at: "2026-09-19T18:05:45.249Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/core/search/search-cache.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated review-fix release note
+close_reason: Reviewed input-boundary regressions fixed and verified before merge
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-ul5lph
+  gate_id: sdk-completion-search-input-boundaries
+  negative_control: Before fixes real Bash emits INJECTEDBACKTICK and 200000-score normalization throws RangeError; both regressions pass after fixes.
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts
+  hosted_checks[1]: Coverage / Typecheck / Static Gates (100% gate)
+body: "## Review findings\nPR 1279 identified three related issues at the new SDK domain boundaries: Bash completion interpolated static values into shell source, score normalization spread all matched scores into Math.min/Math.max, and the completed search item retained historical CLI-only scope metadata.\n\n## Correctness and security boundaries\nBash compgen performs word expansion after source parsing, so one layer of double-quote escaping is insufficient. Static word lists must protect both stages. Dynamic helper output must also encode each word before compgen sees it. Tests run the generated completion function in a real Bash subprocess and assert that command substitutions and backticks do not execute, variables remain literal, and quotes/backslashes survive across six input routes.\n\nScore normalization scans extrema without variadic calls or a temporary values array. Two-argument Math.min/Math.max preserve existing non-finite semantics. The regression exercises 200000 distinct scores and verifies the range endpoints and an interior normalized value.\n\n## Verification and lineage\nBoth regressions failed against the prior implementation before code changes. Existing completion/search-cache suites and four TypeScript projects pass. Temporary-project lifecycle acceptance covers package activation, search, annotations, all shell renderers and immutable history. The parent decomposition remains complete; this child records defects found during its pre-merge review. Original historical metadata remains available in append-only history."

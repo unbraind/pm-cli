@@ -1377,10 +1377,10 @@ describe("runCompletion", () => {
     expect(bashResult.script).toContain('resolved="Bug Task"');
     expect(bashResult.script).toContain('resolved="draft qa_review"');
     expect(bashResult.script).toContain(
-      'compgen -W "$(_pm_completion_status_choices)"',
+      'compgen -W "$(_pm_completion_wordlist "$(_pm_completion_status_choices)")"',
     );
     expect(bashResult.script).toContain(
-      'compgen -W "$(_pm_completion_type_choices)"',
+      'compgen -W "$(_pm_completion_wordlist "$(_pm_completion_type_choices)")"',
     );
 
     const zshResult = runCompletion("zsh", ["Task"], [], false, runtime);

@@ -1,0 +1,50 @@
+id: pm-xgbzxs
+title: Refresh jscpd 5.3 and verify decomposed source with zero-clone gates
+description: Adopt the compatible current duplicate-scanner release alongside the search and infrastructure decomposition; preserve all three zero-clone profiles and negative controls.
+type: Chore
+status: closed
+priority: 2
+tags[3]: dependencies,quality,refactor
+created_at: "2026-09-19T16:37:09.203Z"
+updated_at: "2026-09-19T17:10:35.794Z"
+closed_at: "2026-09-19T17:10:34.979Z"
+completed_at: "2026-09-19T17:10:34.979Z"
+author: "harness:codex"
+acceptance_criteria: jscpd 5.3 resolves under the normal release-age policy; all three zero-clone profiles and detector regression controls pass; lockfile is reproducible; dependency audit reports no known vulnerabilities.
+parent: pm-92if
+resolution: Updated jscpd and platform binaries to 5.3.0 with reproducible lockfile and canonical dependency-triage lineage
+expected_result: "Normal-policy install, zero clones, effective negative controls and zero known dependency vulnerabilities"
+actual_result: Frozen-lockfile install and all three zero-clone profiles pass; real table-clone negative control rejects duplicate and accepts shared source; pnpm audit reports zero vulnerabilities across 364 dependencies
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-jt3b,verifies,"2026-09-19T16:37:09.203Z","harness:codex","cli:create:dep",detected
+  pm-qs5iiq,discovered_from,"2026-09-19T16:37:09.203Z","harness:codex","cli:create:dep",detected
+  pm-yh8r,verifies,"2026-09-19T16:37:09.203Z","harness:codex","cli:create:dep",detected
+  pm-do5b,discovered_from,"2026-09-19T17:01:59.872Z","harness:codex","cli:update:dep",detected
+  pm-fokyhh,discovered_from,"2026-09-19T17:01:59.872Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,discovered_from,"2026-09-19T17:01:59.872Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-19T16:37:09.203Z","harness:codex","Duplicate check: all-status keyword searches for jscpd and jscpd 5.3 found the closed 5.2 owner pm-qs5iiq and no 5.3 upgrade owner; open and in-progress inventories inspected. Registry jscpd 5.3.0 was published 2026-09-18T12:55:38.703Z and supports Node >=18. No runtime-floor change or release-age override is authorized or needed."
+  "2026-09-19T16:46:04.585Z","harness:codex","Normal pnpm update selected jscpd 5.3.0 and platform binaries without release-age exclusions. pnpm audit reports zero vulnerabilities across 364 dependencies. Other available major upgrades remain with canonical live owners pm-fokyhh (CodSpeed lacks Vitest 5 peer support), pm-do5b (TypeScript 7 compiler API and typescript-eslint peer boundary), pm-ksr40d (npm-package-arg 14 raises the supported Node floor); no duplicate upgrade items created."
+  "2026-09-19T16:50:32.308Z","harness:codex","Release checks independently verified: scheduled Auto Release run 35429507172 and exact-tag publish run 35430412823 succeeded today; v2026.9.19 is public and non-draft. The automatic workflow first checks an existing UTC-day tag and verifies/reuses its exact publication instead of creating another automatic release. New branch changes remain for the next eligible daily release. No release mutation or same-day override performed."
+  "2026-09-19T17:03:07.280Z","harness:codex","Final scoped verification: all three clone profiles pass with jscpd 5.3.0; the real historical low-token table-clone negative control rejects duplication and accepts its shared declaration. Frozen-lockfile reinstall and audit pass. Graph composition now reports pass with discovery provenance linking the inspected major-upgrade owners, verifies edges to both decomposition items, and parent quality lineage; record integrity also passes."
+files[2]{path,scope,note}:
+  package.json,project,Upgrade compatible duplicate detector to 5.3.0
+  pnpm-lock.yaml,project,Reproducible scanner and native binary resolution
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/duplicate-table-profile.spec.ts,project,240,"harness:codex","2026-09-19T16:44:19.180Z",local_mutation,refactor/search-query-cli-domains
+test_runs[1]:
+  - run_id: test-local-mu8mva93-9c2brb
+    kind: test
+    status: passed
+    started_at: "2026-09-19T17:00:19.716Z"
+    finished_at: "2026-09-19T17:00:20.775Z"
+    recorded_at: "2026-09-19T17:00:20.775Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/duplicate-table-profile.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated dependency refresh entry
+close_reason: Compatible scanner refresh verified without lowering quality or release-age policy
+body: ""
