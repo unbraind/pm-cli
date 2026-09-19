@@ -2,27 +2,73 @@ id: pm-scbr0s
 title: "The close-time blocker-clear warning names one deleted ordering edge out of N, so silent multi-blocker data loss is indistinguishable from single-blocker clearing"
 description: "clearClosedBlockerSignals in src/cli/commands/close.ts selects the reported blocker with existingDeps.find((dep) => dep.kind === \"blocked_by\") at line 607 and then deletes rows with existingDeps.filter((dep) => dep.kind !== \"blocked_by\") at line 626. find returns one row, filter removes all of them, and the emitted warning at line 641 is built from the single found id: closed_cleared_blocked_by:<item>:<blocker>.\n\nVerified in an isolated sandbox 2026-07-31. Item D held three blocked_by rows to A, B and C, all three still open. Closing D produced exactly one warning, closed_cleared_blocked_by:ord4-fohw:ord4-hbaz, naming the alphabetically first blocker in storage order. Two ordering edges were deleted with no mention in the output, no count, and no aggregate. An operator or agent reading the close result cannot tell a one-edge clear from a three-edge clear, and the warning string carries no cardinality field that a downstream consumer could check.\n\nThis is separable from the deletion defect itself, tracked as pm-xm0id4. Even if the retention semantics change so that ordering edges survive close, any transition that does remove edges must report every edge it removed, because the warning is the only signal a caller receives and it is currently a sample of size one presented as a complete statement. It is also the reason the deletion went unnoticed long enough to reach a 1-of-1900 corpus signature: the product announced each clearing once, in a form that understated how much it removed."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: data-loss,graph,lifecycle,observability
 created_at: "2026-07-31T14:09:54.466Z"
-updated_at: "2026-07-31T14:28:13.394Z"
+updated_at: "2026-09-19T00:13:39.545Z"
+closed_at: "2026-09-19T00:13:38.723Z"
+completed_at: "2026-09-19T00:13:38.723Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "The close result reports every ordering edge it removes, with the removed count, so a caller can distinguish a one-edge clear from an N-edge clear without re-reading history; A test closes an item holding three blocked_by rows and asserts that all three appear in the emitted warnings or in one warning carrying an explicit count; The warning shape stays parseable by existing consumers, or the change to its shape is recorded as a contract change with the consumers updated in the same tranche; The reported set is derived from the same collection that the removal operates on, so find and filter can no longer disagree about scope"
 parent: pm-96h7
 risk: medium
 confidence: 97
-expected_result: A close that removes three ordering edges reports three removals.
-actual_result: "It reports one: the warning is built from a find while the deletion is built from a filter over the same array."
+resolution: "The SDK selects predecessor rows once for removal and reporting, emits every removed ID and row count, and reports transient blocker scalar clearing separately."
+expected_result: Explicit removal reports exactly the rows removed; default CLI/MCP closure preserves predecessor history.
+actual_result: Three-predecessor regression and linked close/lifecycle suites pass. Installed npm and Bun SDK consumers each removed three real predecessor rows and received count=3 with the complete ID list. Full source verification passes 9039 tests at exact 100 percent coverage.
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-5oj5,related,"2026-07-31T14:20:37.376Z","harness:claude-code","cli:update:dep",detected
   pm-96h7,implements,"2026-07-31T14:20:37.376Z","harness:claude-code","cli:update:dep",detected
   pm-jkbqt8,related,"2026-07-31T14:20:37.376Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,verifies,"2026-07-31T14:20:37.376Z","harness:claude-code","cli:update:dep",detected
   pm-xm0id4,discovered_from,"2026-07-31T14:20:37.376Z","harness:claude-code","cli:update:dep",detected
-files[1]{path,scope,note}:
+comments[3]{created_at,author,text}:
+  "2026-09-18T23:18:44.432Z","harness:codex","Live lineage verification: closed pm-xm0id4 already changed default CLI/MCP closure to retain predecessor rows. This issue is completed at the public SDK explicit orderingEdges=remove boundary: remove and report use one selected row set, emit every removed predecessor plus a row count, and distinguish the transient blocked_by scalar. The original implementation failed the three-predecessor regression; existing preserved-edge behavior remains covered. Focused cross-component regression suite passed 365 tests."
+  "2026-09-18T23:35:58.930Z","harness:codex","Both linked test groups pass. Installed npm and Bun SDK consumers each closed a real three-predecessor item with explicit removal, observed all three IDs and count=3, and verified the persisted item no longer contained those dependencies. The default preserve path remains covered in the existing CLI close suite."
+  "2026-09-19T00:13:37.815Z","harness:codex","Final source verification: all 9039 tests in 714 files pass. Exact coverage is statements 64887/64887, branches 49530/49530, functions 13467/13467 and lines 62103/62103. Module, exported-declaration and member documentation coverage is 100 percent. Typechecks, ESLint, duplicate detection, docs/skills, installed npm/Bun and packed npx/bunx acceptance pass; production and development dependency audit and credential scanning report no findings. The final neutral test environment removes ambient session IDs while preserving harness identity and normal probe behavior. Prior temporary quota and environment failures remain documented separately."
+learnings[1]{created_at,author,text}:
+  "2026-09-18T23:29:09.346Z","harness:codex","A lifecycle warning must describe the exact rows selected for mutation. Count dependency rows separately from transient blocked-state scalars, and retain duplicate targets when their rows carry distinct provenance. Default terminal closure preserves historical predecessor facts."
+files[3]{path,scope,note}:
   src/cli/commands/close.ts,project,find at line 607 selects the reported blocker while filter at line 626 removes all of them; warning built at line 641
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- close,project,300
+  src/sdk/lifecycle-policy.ts,project,Concurrent workspace integrity and lifecycle receipts
+  tests/unit/sdk/lifecycle-policy.spec.ts,project,Concurrent workspace integrity and lifecycle receipts
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- close
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle-policy.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-18T23:17:30.620Z"
+      source_kind: local_mutation
+      source_ref: fix/workspace-mutation-integrity
+test_runs[1]:
+  - run_id: test-local-mu7li0ds-8ye7ox
+    kind: test
+    status: passed
+    started_at: "2026-09-18T23:33:55.487Z"
+    finished_at: "2026-09-18T23:34:15.663Z"
+    recorded_at: "2026-09-18T23:34:15.663Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- close,schema,schema,source,legacy
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle-policy.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Latest pm-changelog projects the completed lifecycle receipt work
+  docs/SDK_LIFECYCLE.md,project,Concurrent workspace integrity and lifecycle receipts
+close_reason: Implemented complete explicit predecessor-removal receipts while retaining historical edges by default.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle-policy.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle-policy.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-scbr0s
 body: ""

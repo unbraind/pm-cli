@@ -7,8 +7,8 @@ import path from "node:path";
 import {
   pathExists,
   readFileIfExists,
-  writeFileAtomic,
 } from "../fs/fs-utils.js";
+import { createFileAtomic } from "../fs/atomic-create.js";
 import {
   DEFAULT_STATUS_DEFINITIONS,
   DEFAULT_WORKFLOW_DEFINITION,
@@ -713,34 +713,6 @@ export function normalizeRuntimeSchemaSettings(
   };
 }
 
-function serializeJson(value: unknown): string {
-  return `${JSON.stringify(value, null, 2)}\n`;
-}
-
-function buildTypesFileSeed(): unknown {
-  return {
-    definitions: [],
-  };
-}
-
-function buildStatusesFileSeed(): unknown {
-  return {
-    statuses: DEFAULT_RUNTIME_STATUS_DEFINITIONS,
-  };
-}
-
-function buildFieldsFileSeed(): unknown {
-  return {
-    fields: [],
-  };
-}
-
-function buildWorkflowsFileSeed(): unknown {
-  return {
-    workflow: DEFAULT_RUNTIME_WORKFLOW,
-  };
-}
-
 function parseOptionalJson(
   raw: string,
   warningKey: string,
@@ -876,7 +848,7 @@ export function resolveItemTypesFilePath(
   );
 }
 
-/** Implements ensure runtime schema file scaffold for the public runtime surface of this module. */
+/** Publish missing schema seeds without overwriting definitions created by a concurrent reader or schema mutation. */
 export async function ensureRuntimeSchemaFileScaffold(
   pmRoot: string,
   schema: RuntimeSchemaSettings,
@@ -889,7 +861,7 @@ export async function ensureRuntimeSchemaFileScaffold(
         normalizedSchema.files.types,
         DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types,
       ),
-      seed: buildTypesFileSeed(),
+      seed: { definitions: [] },
     },
     {
       path: filePathForSchemaSection(
@@ -897,7 +869,7 @@ export async function ensureRuntimeSchemaFileScaffold(
         normalizedSchema.files.statuses,
         DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.statuses,
       ),
-      seed: buildStatusesFileSeed(),
+      seed: { statuses: DEFAULT_RUNTIME_STATUS_DEFINITIONS },
     },
     {
       path: filePathForSchemaSection(
@@ -905,7 +877,7 @@ export async function ensureRuntimeSchemaFileScaffold(
         normalizedSchema.files.fields,
         DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.fields,
       ),
-      seed: buildFieldsFileSeed(),
+      seed: { fields: [] },
     },
     {
       path: filePathForSchemaSection(
@@ -913,7 +885,7 @@ export async function ensureRuntimeSchemaFileScaffold(
         normalizedSchema.files.workflows,
         DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.workflows,
       ),
-      seed: buildWorkflowsFileSeed(),
+      seed: { workflow: DEFAULT_RUNTIME_WORKFLOW },
     },
   ];
   const createdPaths: string[] = [];
@@ -921,8 +893,9 @@ export async function ensureRuntimeSchemaFileScaffold(
     if (await pathExists(spec.path)) {
       continue;
     }
-    await writeFileAtomic(spec.path, serializeJson(spec.seed));
-    createdPaths.push(spec.path);
+    if (await createFileAtomic(spec.path, `${JSON.stringify(spec.seed, null, 2)}\n`)) {
+      createdPaths.push(spec.path);
+    }
   }
   return {
     created_paths: createdPaths,

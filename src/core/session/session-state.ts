@@ -8,6 +8,8 @@ import { existsSync, promises as fs, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { writeFileAtomic } from "../fs/fs-utils.js";
+import { acquireLock } from "../lock/lock.js";
+import { SETTINGS_DEFAULTS } from "../shared/constants.js";
 import { getRuntimePath } from "../store/paths.js";
 
 /**
@@ -149,13 +151,24 @@ export async function readSessionState(pmRoot: string): Promise<SessionState> {
   }
 }
 
-async function writeSessionState(
+/** Apply a session edit to the latest state while holding its singleton lock. */
+async function mutateSessionState(
   pmRoot: string,
-  state: SessionState,
+  mutate: (state: SessionState) => void,
 ): Promise<void> {
-  const target = getSessionStatePath(pmRoot);
-  await fs.mkdir(path.dirname(target), { recursive: true });
-  await writeFileAtomic(target, JSON.stringify(state));
+  const release = await acquireLock(
+    pmRoot, "session-state", SETTINGS_DEFAULTS.locks.ttl_seconds,
+    "session-state", false, true, SETTINGS_DEFAULTS.locks.wait_ms,
+  );
+  try {
+    const state = await readSessionState(pmRoot);
+    mutate(state);
+    const target = getSessionStatePath(pmRoot);
+    await fs.mkdir(path.dirname(target), { recursive: true });
+    await writeFileAtomic(target, JSON.stringify(state));
+  } finally {
+    await release();
+  }
 }
 
 /** Derive a non-secret state key from a claim principal. */
@@ -191,18 +204,17 @@ async function updateSemanticAttribution(
     current: AgentSemanticAttribution | undefined,
   ) => AgentSemanticAttribution | undefined,
 ): Promise<void> {
-  const state = await readSessionState(pmRoot);
-  const attributions = { ...state.semantic_attribution };
-  const next = mutate(attributions[key]);
-  if (next === undefined) delete attributions[key];
-  else attributions[key] = next;
-  const nextState: SessionState = { ...state };
-  if (Object.keys(attributions).length === 0) {
-    delete nextState.semantic_attribution;
-  } else {
-    nextState.semantic_attribution = attributions;
-  }
-  await writeSessionState(pmRoot, nextState);
+  await mutateSessionState(pmRoot, (state) => {
+    const attributions = { ...state.semantic_attribution };
+    const next = mutate(attributions[key]);
+    if (next === undefined) delete attributions[key];
+    else attributions[key] = next;
+    if (Object.keys(attributions).length === 0) {
+      delete state.semantic_attribution;
+    } else {
+      state.semantic_attribution = attributions;
+    }
+  });
 }
 
 /** Record a successful claim as incremental semantic session evidence. */
@@ -348,14 +360,14 @@ export async function setFocusedItem(
   pmRoot: string,
   id: string,
 ): Promise<void> {
-  const state = await readSessionState(pmRoot);
-  await writeSessionState(pmRoot, { ...state, focused_item: id });
+  await mutateSessionState(pmRoot, (state) => {
+    state.focused_item = id;
+  });
 }
 
 /** Implements clear focused item for the public runtime surface of this module. */
 export async function clearFocusedItem(pmRoot: string): Promise<void> {
-  const state = await readSessionState(pmRoot);
-  const next: SessionState = { ...state };
-  delete next.focused_item;
-  await writeSessionState(pmRoot, next);
+  await mutateSessionState(pmRoot, (state) => {
+    delete state.focused_item;
+  });
 }

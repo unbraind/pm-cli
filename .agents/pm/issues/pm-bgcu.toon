@@ -2,23 +2,23 @@ id: pm-bgcu
 title: "Workspace singleton files (settings.json, schema, session-state, checkpoints) are lock-free read-modify-write — parallel pm config set demonstrably loses updates"
 description: "`pm config set` and other singleton-file writers do read→modify→writeFileAtomic with NO lock, so concurrent writers last-writer-win and silently drop each other's changes. Empirically demonstrated: looped two parallel `pm config set` on DIFFERENT keys (author_default vs locks_ttl_seconds) → the locks_ttl_seconds write was lost in 3 of 6 rounds (value stuck at stale round's value while the other key advanced). Affected writers (all read-modify-write without acquireLock): src/core/store/settings.ts (~L1313, pm config set / governance preset), src/core/schema/runtime-schema.ts (~L588, pm schema add-type/add-field/add-status), src/core/session/session-state.ts (~L56, pm focus / focus inheritance), src/core/checkpoint/mutation-checkpoint.ts (~L119). Fix: route these through the existing lock infra with reserved workspace-scoped lock ids (e.g. __settings, __schema, __session) held across the read-modify-write window — same TTL/stale-sweep semantics as item locks, and pm gc --scope locks sweeps debris for free. Atomicity of the write itself is fine (temp+rename); the lost-update window is the read→write gap."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: concurrency,config,robustness
 created_at: "2026-07-03T13:25:22.827Z"
-updated_at: "2026-09-08T13:32:21.634Z"
+updated_at: "2026-09-19T00:19:55.295Z"
+closed_at: "2026-09-19T00:13:36.349Z"
+completed_at: "2026-09-19T00:13:36.349Z"
 author: claude-code-agent
 estimated_minutes: 180
 acceptance_criteria: "settings.json, schema, session-state, and checkpoint writes use singleton-lock discipline; parallel pm config set loses zero updates under stress."
 parent: pm-dj98
 risk: high
 confidence: high
-expected_result: "Parallel writes to settings, schema, session state and checkpoints use singleton-lock discipline and lose zero updates under stress."
-dependencies[4]:
-  - id: pm-2muu
-    kind: related
-    created_at: "2026-07-05T04:07:28.525Z"
-    author: claude-code-agent
+resolution: "Reconcile settings snapshots inside the history lock; serialize session mutations; atomically publish schema seeds and immutable checkpoints without replacement, including through path aliases."
+expected_result: "Independent edits survive, stale overlapping writes refuse safely, schema seeds and rollback evidence cannot be overwritten, and locks release after errors."
+actual_result: "All 9039 source tests and exact 100/100/100/100 coverage pass; the final linked singleton group passes 25 cases, including real alias collisions and synchronized SDK processes. npm/Bun consumers and npx/bunx workflows pass."
+dependencies[8]:
   - id: pm-szv11n
     kind: implements
     created_at: "2026-07-26T05:49:38.808Z"
@@ -34,4 +34,97 @@ dependencies[4]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
+  - id: pm-z3ez
+    kind: related
+    created_at: "2026-09-19T00:01:52.945Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-do5b
+    kind: verifies
+    created_at: "2026-09-19T00:19:54.455Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-fokyhh
+    kind: verifies
+    created_at: "2026-09-19T00:19:54.455Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-ksr40d
+    kind: verifies
+    created_at: "2026-09-19T00:19:54.455Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-p5u6
+    kind: verifies
+    created_at: "2026-09-19T00:19:54.455Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[8]{created_at,author,text}:
+  "2026-09-18T23:06:38.627Z","harness:codex","TDD evidence: four new real-filesystem regressions failed on the original source: disjoint settings edits lost a value, conflicting stale snapshots silently overwrote the accepted value, simultaneous session writes lost all eight agent attribution records, and a checkpoint ID collision overwrote rollback evidence. The implemented settings reconciliation under the workspace-history lock, session singleton lock, and checkpoint collision guard now pass those four cases plus existing sparse-settings and session suites (19 tests). Schema mutations already use per-file locks; inspecting the bootstrap create path for a separate check-then-write race."
+  "2026-09-18T23:21:34.845Z","harness:codex","Repository-wide live checks: authoritative all-status population contains 2779 items and 13874 recorded edges in one connected component; no missing relationship endpoints, isolated nodes, ordering cycles, or hierarchy cycles. Legacy hierarchy advisories remain visible and are not rewritten into invented history. GitHub has no open PRs at orientation, no Dependabot/code-scanning/secret-scanning alerts, and issue #1246 already links its canonical pm-z3ez feature. Full production and development dependency audit reports zero vulnerabilities. Major dependency upgrades remain governed by pm-do5b, pm-ksr40d and pm-fokyhh compatibility evidence. Current Sentry/required telemetry gate passes: zero recent unresolved Sentry issues, 1.86 percent finish error rate, zero missing error-code rows. Manual temporary CLI workspace preserved three simultaneous context settings changes and passed health integrity checks."
+  "2026-09-18T23:29:07.984Z","harness:codex","Installed-artifact acceptance passed: npm and Bun installed the current tarball into unrelated temporary roots; both public SDK consumers preserved concurrent disjoint settings and completed three-predecessor closure with exact receipts. Packed npx/bunx smoke passed nine package workflows. Installed README cold start, divergent Git history merge/reconcile, MCP initialization, detached telemetry command_finish delivery and physical local queue drain all passed. Source quality verifies 100 percent module/export/member documentation coverage, and the public SDK surface snapshot has zero classified changes. Initial broad test/pack attempts exhausted the host temporary-filesystem user quota; reruns use an isolated external scratch root on the larger filesystem."
+  "2026-09-18T23:35:57.285Z","harness:codex","Verification correction: the five failures in the initial complete run were isolated to temporary-root ancestor discovery and ambient agent-probe attribution. All 141 tests in those four affected suites pass unchanged with neutral external scratch storage and PM_AGENT_PROBES=0. The linked singleton test group passes 24 tests, including error-release paths and reused snapshots. No production code, coverage thresholds, exclusion rules, or assertions were relaxed for the environment correction. Canonical pm-p5u6 retains the temporary-footprint finding."
+  "2026-09-18T23:39:48.071Z","harness:codex","Operational proof: the inspected production telemetry window contains matching start and finish counts for comments (4/4), files (1/1), learnings (1/1), notes (2/2), and linked tests (2/2), with current event timestamps. Explicit local flush drained the queue to zero; production RabbitMQ reported zero ready and unacknowledged messages. Release tag and npm latest agree on 2026.9.18, latest successful Auto Release run is 35346366266, and a later issue event was skipped. The same-day guard prevents another automatic release today; no release was manually forced."
+  "2026-09-19T00:02:53.726Z","harness:codex","Final filesystem negative control: two simultaneous checkpoint writes through real and symlink-aliased workspace paths both succeeded under path-derived locks, proving those lock keys did not share filesystem identity. The new alias test failed with two successful writers. Checkpoint publication now reuses atomic create-if-absent directly; one writer succeeds, conflicting bytes are refused, and identical retries remain idempotent. The alias regression and 88 focused checkpoint, settings, history and provenance cases pass. Final full-suite environment retains harness identity while removing only ambient session IDs; no production probes or test expectations are disabled."
+  "2026-09-19T00:13:35.444Z","harness:codex","Final source verification: all 9039 tests in 714 files pass. Exact coverage is statements 64887/64887, branches 49530/49530, functions 13467/13467 and lines 62103/62103. Module, exported-declaration and member documentation coverage is 100 percent. Typechecks, ESLint, duplicate detection, docs/skills, installed npm/Bun and packed npx/bunx acceptance pass; production and development dependency audit and credential scanning report no findings. The final neutral test environment removes ambient session IDs while preserving harness identity and normal probe behavior. Prior temporary quota and environment failures remain documented separately."
+  "2026-09-19T00:19:55.295Z","harness:codex","Relationship evidence scope: verifies edges cite the fresh npm engine/peer metadata reproducing the three existing major-upgrade compatibility constraints and the observed temporary-quota failure. They verify those recorded conditions, not completion of the open upgrades or cleanup work. The first-run feature remains an associative review-context link. The legacy related row to pm-2muu was redundant with the retained canonical blocked_by ordering row; no predecessor fact was removed."
+notes[1]{created_at,author,text}:
+  "2026-09-18T23:36:15.493Z","harness:codex","Delivery scope: singleton persistence semantics are SDK-owned and shared by CLI/MCP. Existing per-file schema mutation locks and default lifecycle predecessor retention were verified against closed canonical history before editing. No public SDK exports or contract shapes changed. Hard-link publication intentionally refuses unsupported filesystems rather than overwriting concurrently created schema bytes; full-document settings replacement remains explicit for caller-constructed objects."
+learnings[1]{created_at,author,text}:
+  "2026-09-18T23:18:45.361Z","harness:codex",Atomic rename prevents torn bytes but cannot prevent a stale read-modify-write from losing a peer edit. Reconcile tracked settings snapshots inside the history lock; serialize session mutations; publish schema seeds without replacing an existing pathname; reject non-identical checkpoint ID reuse.
+files[11]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog installation refreshed only the registry timestamp with identical package entries
+  src/core/checkpoint/mutation-checkpoint.ts,project,Concurrent workspace integrity and lifecycle receipts
+  src/core/fs/atomic-create.ts,project,Concurrent workspace integrity and lifecycle receipts
+  src/core/schema/runtime-schema.ts,project,Concurrent workspace integrity and lifecycle receipts
+  src/core/session/session-state.ts,project,Concurrent workspace integrity and lifecycle receipts
+  src/core/store/settings-concurrency.ts,project,Concurrent workspace integrity and lifecycle receipts
+  src/core/store/settings.ts,project,Concurrent workspace integrity and lifecycle receipts
+  tests/integration/workspace-singleton-concurrency.spec.ts,project,Concurrent workspace integrity and lifecycle receipts
+  tests/unit/core/fs/atomic-create.spec.ts,project,Concurrent workspace integrity and lifecycle receipts
+  tests/unit/core/store/settings-concurrency.spec.ts,project,Concurrent workspace integrity and lifecycle receipts
+  tests/unit/core/store/singleton-concurrency.spec.ts,project,Concurrent workspace integrity and lifecycle receipts
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/store/singleton-concurrency.spec.ts tests/unit/core/store/settings-concurrency.spec.ts tests/unit/core/fs/atomic-create.spec.ts tests/integration/workspace-singleton-concurrency.spec.ts,project,300,"harness:codex","2026-09-18T23:17:28.556Z",local_mutation,fix/workspace-mutation-integrity
+test_runs[2]:
+  - run_id: test-local-mu7lhkb8-bo6aoh
+    kind: test
+    status: passed
+    started_at: "2026-09-18T23:29:23.108Z"
+    finished_at: "2026-09-18T23:33:54.836Z"
+    recorded_at: "2026-09-18T23:33:54.836Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/store/singleton-concurrency.spec.ts tests/unit/core/store/settings-concurrency.spec.ts tests/unit/core/fs/atomic-create.spec.ts tests/integration/workspace-singleton-concurrency.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu7mvwek-mcgdch
+    kind: test
+    status: passed
+    started_at: "2026-09-19T00:12:58.610Z"
+    finished_at: "2026-09-19T00:13:03.308Z"
+    recorded_at: "2026-09-19T00:13:03.308Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/store/singleton-concurrency.spec.ts tests/unit/core/store/settings-concurrency.spec.ts tests/unit/core/fs/atomic-create.spec.ts tests/integration/workspace-singleton-concurrency.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Latest pm-changelog projects the completed concurrency work
+  docs/SDK_LIFECYCLE.md,project,Concurrent workspace integrity and lifecycle receipts
+  docs/WORKSPACE_CONCURRENCY.md,project,Concurrent workspace integrity and lifecycle receipts
+close_reason: Implemented concurrent workspace persistence with executable filesystem and installed-consumer evidence.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/store/singleton-concurrency.spec.ts tests/unit/core/store/settings-concurrency.spec.ts tests/unit/core/fs/atomic-create.spec.ts tests/integration/workspace-singleton-concurrency.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/store/singleton-concurrency.spec.ts tests/unit/core/store/settings-concurrency.spec.ts tests/unit/core/fs/atomic-create.spec.ts tests/integration/workspace-singleton-concurrency.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-bgcu
 body: "## Context\nFiled by the 2026-07-03 concurrency review. All workspace singleton files are written read→modify→writeFileAtomic with NO lock, so parallel writers silently last-writer-win.\n\n## Empirical repro\nTwo parallel `pm config set` loops on DIFFERENT keys (author_default vs locks_ttl_seconds): the locks_ttl_seconds write was lost in 3 of 6 rounds — the file kept one writer's view, dropping the other's committed change with exit 0.\n\n## Affected writers (all read-modify-write without acquireLock)\n- src/core/store/settings.ts (~L1313) — pm config set / governance preset\n- src/core/schema/runtime-schema.ts (~L588) — pm schema add-type/add-field/add-status\n- src/core/session/session-state.ts (~L56) — pm focus\n- checkpoints state writers\n\n## Approach\nReuse the existing per-item lock machinery with a reserved singleton lock id per file (e.g. __settings__, __schema__), wrapping read+modify+write. After pm-2muu lands, contended singleton writes get the same bounded-wait self-healing instead of failing. Alternative (compare-and-swap on content hash with one retry) is weaker — still loses under sustained contention.\n\n## Definition of done\nParallel config/schema/focus write stress shows zero lost updates; lock is released on error paths; docs note the singleton lock ids; evidence recorded on this item."
