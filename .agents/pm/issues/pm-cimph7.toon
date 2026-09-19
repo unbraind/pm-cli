@@ -1,0 +1,97 @@
+id: pm-cimph7
+title: "Preserve Unicode and isolate completion data in Bash, Zsh and Fish"
+description: Second PR 1279 review found Bash surrogate splitting and Zsh source injection. Native Fish execution reproduced equivalent static type/tag injection and obsolete stderr redirection. Harden all shell parsing stages and require native-shell smoke acceptance.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-19T18:41:35.944Z"
+updated_at: "2026-09-19T19:49:52.656Z"
+closed_at: "2026-09-19T19:26:12.266Z"
+completed_at: "2026-09-19T19:26:12.266Z"
+author: "harness:codex"
+acceptance_criteria: Astral Unicode survives generated Bash execution; static Zsh values cannot escape source or argument-spec parsing; existing completion contracts and full required gates pass; Native Fish and Zsh execution keeps adversarial completion metadata inert
+parent: pm-ul5lph
+severity: high
+repro_steps: Generate Bash with an emoji tag; generate Zsh with an apostrophe and shell syntax in a static tag or type.
+resolution: "Preserve Bash Unicode, isolate static Zsh/Fish choices and runtime flags, quote Fish fallbacks and modernize stderr redirection; require native shell smoke acceptance."
+expected_result: Completion metadata remains literal and Unicode survives all supported shell renderers.
+actual_result: "110 focused tests and 31 native Fish/Zsh cases pass, as do both linked tests, four TypeScript projects, 17-step temporary lifecycle, npm/Bun installed sessions and nine npx/bunx package workflows. Local full-run timeout passes separately; final exact coverage and performance gates remain required in PR 1279."
+component: sdk
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ul5lph,discovered_from,"2026-09-19T18:41:35.944Z","harness:codex","cli:create:dep",detected
+  pm-yh8r,discovered_from,"2026-09-19T18:41:35.944Z","harness:codex","cli:create:dep",detected
+  pm-e9zh,verifies,"2026-09-19T19:46:55.665Z","harness:codex","cli:update:dep",detected
+comments[10]{created_at,author,text}:
+  "2026-09-19T18:41:35.944Z","harness:codex",All-status Zsh escaping and surrogate completion searches plus live open/in_progress inventories found historical feature owners and the completed first review boundary issue. This child records two distinct second-review findings under the existing completion lineage.
+  "2026-09-19T18:51:36.173Z","harness:codex",Native Fish 4.9.3 reproduced repeated INJECTED output while sourcing static type/tag values. Dynamic resolvers also reported date extra operand for obsolete caret stderr redirection. These adjacent completion defects belong to this same active boundary fix.
+  "2026-09-19T18:59:44.742Z","harness:codex",Focused verification passes 110 tests across completion contracts and shell/search boundaries; four TypeScript projects and focused zero-warning ESLint pass. Native Fish/Zsh acceptance passes 31 cases. Full coverage and complete static gates are running with sandbox temp storage. A host npm-cache failure was isolated outside the repository; installing the pinned pnpm version with an isolated cache succeeded.
+  "2026-09-19T19:00:59.831Z","harness:codex","Package-manager verification correction: the first isolated install wrote only the lockfile. A subsequent isolated npm ci installed the actual pinned package; build/test evidence remains from direct repository entrypoints and the full static script is running its unchanged commands through npm run."
+  "2026-09-19T19:08:22.547Z","harness:codex","Latest full local run: 9059 tests passed, one existing refusal-closure execution test exceeded its unchanged 240s limit under concurrent validation; therefore this run produced no valid coverage report and is not counted as a pass. The linked run also timed out waiting behind the shared build lease and will be repeated after contention clears. Prior reviewed-head coverage was exact 100/100/100/100; the final head must independently satisfy the unchanged hosted exact-coverage gate."
+  "2026-09-19T19:13:35.245Z","harness:codex","Contention-free refusal-gate rerun passes all 9 tests in 124.79s with the unchanged 240s deadline. Both linked tests now pass. The rebuilt candidate passes a fresh 17-step temporary tracker lifecycle plus separate npm/Node and Bun installed sessions, 11 steps each. Native Fish/Zsh acceptance remains 31/31."
+  "2026-09-19T19:24:15.514Z","harness:codex","Static validation passes lint, all duplicate profiles, build, contract and SDK snapshots, repository documentation/quality providers, all 41 context assertions and gate registry. Local SDK import-cost measurements remain over the unchanged budget: merge 239/248ms versus 226ms, and an earlier-Node control also fails (merge 238ms, governance 357ms). This is not recorded as green and no limit is relaxed; exact-head hosted performance gates must pass before merge. Native acceptance assertions are organized under tests/acceptance and remain mandatory in smoke CI, with no new coverage exclusions."
+  "2026-09-19T19:25:46.216Z","harness:codex",Final local graph-composition (10 assertions) and record-integrity (1 assertion) gates pass. CLI transport timing also exceeds local budgets across several commands; it remains a validation limitation alongside SDK import timing and will be checked by unchanged required hosted gates. Package smoke passes all nine npx/bunx workflows. All three shells preserve the tested data boundaries.
+  "2026-09-19T19:31:40.211Z","harness:codex","Final corpus validation verifies all 2783 history streams with zero workspace drift. Its 170 historical structured-resolution warnings exactly match the explicitly unrecoverable residual documented in completed pm-e9zh (full live metadata, comments and residual notes inspected); this delivery adds no missing closure fields and does not fabricate historical expectations or outcomes."
+  "2026-09-19T19:49:52.656Z","harness:codex","Hosted CI at 7674714d2 (run 35464651024) passes 9060 tests with zero failures and exact coverage: 61974/61974 lines, 64764/64764 statements, 13460/13460 functions and 49447/49447 branches. Hosted import-cost and transport timing gates pass without budget changes. The remaining CI failures are native harness invocation compatibility and the missing graph edge for this item’s historical-evidence reference; that edge is now recorded as verifies."
+learnings[1]{created_at,author,text}:
+  "2026-09-19T19:26:07.015Z","harness:codex","Completion metadata crosses shell source parsing and completion-time expansion. Escape each context independently, preserve Unicode code points, and execute generated output in native shells; rendering-only assertions do not prove injection safety."
+files[7]{path,scope,note}:
+  .github/workflows/ci.yml,project,Mandatory native completion smoke gate
+  src/sdk/completion/bash.ts,project,Unicode-safe completion escaping
+  src/sdk/completion/fish.ts,project,Source and completion-time quoting plus supported stderr redirection
+  src/sdk/completion/zsh.ts,project,Source and argument-action quoting
+  tests/acceptance/shell-completion.mjs,project,Native shell acceptance assertions executed by required smoke CI
+  tests/unit/commands/completion-command.spec.ts,project,Quoted runtime flag rendering contracts
+  tests/unit/sdk/security/completion-search-boundaries.spec.ts,project,Real shell regression coverage
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts tests/unit/commands/completion-command.spec.ts,project,240,"harness:codex","2026-09-19T18:54:53.963Z",local_mutation,refactor/search-query-cli-domains
+  node tests/acceptance/shell-completion.mjs,project,120,"harness:codex","2026-09-19T19:19:55.154Z",local_mutation,refactor/search-query-cli-domains
+test_runs[3]:
+  - run_id: test-local-mu8re7uz-z1zptp
+    kind: test
+    status: failed
+    started_at: "2026-09-19T19:03:01.308Z"
+    finished_at: "2026-09-19T19:07:02.603Z"
+    recorded_at: "2026-09-19T19:07:02.603Z"
+    passed: 1
+    failed: 1
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts tests/unit/commands/completion-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/release/shell-completion-acceptance.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-mu8rjlpj-nq2vuo
+    kind: test
+    status: passed
+    started_at: "2026-09-19T19:10:56.794Z"
+    finished_at: "2026-09-19T19:11:13.831Z"
+    recorded_at: "2026-09-19T19:11:13.831Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts tests/unit/commands/completion-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/release/shell-completion-acceptance.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-mu8s289a-ol3x5f
+    kind: test
+    status: passed
+    started_at: "2026-09-19T19:25:17.309Z"
+    finished_at: "2026-09-19T19:25:42.861Z"
+    recorded_at: "2026-09-19T19:25:42.861Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts tests/unit/commands/completion-command.spec.ts,schema,schema,source,local_source_ref
+      node tests/acceptance/shell-completion.mjs,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated shell completion security and Unicode fix entry
+close_reason: Completion boundary defects fixed with executable regressions; PR merge remains gated on hosted validation
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-cimph7
+  gate_id: native-shell-completion-boundaries
+  negative_control: "Before fixes Bash emoji becomes replacement characters, Zsh static input emits INJECTED, and native Fish emits INJECTED while sourcing static metadata; generated Fish also reports obsolete caret redirection errors."
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts tests/unit/commands/completion-command.spec.ts,node tests/acceptance/shell-completion.mjs
+  hosted_checks[2]: Gates (smokes),Gates (coverage)
+body: "## Review and native execution findings\nPR 1279 second review identified Bash UTF-16 surrogate splitting and unquoted Zsh static metadata. Native Fish execution then confirmed equivalent static choice injection, unquoted runtime flags, incomplete fallback backslash quoting, and obsolete caret stderr redirection.\n\n## Implementation\nBash escapes Unicode code points. Zsh protects both single-quoted source and the later _arguments parenthesized-action evaluation, including runtime flag specifications. Fish separately protects source quoting and completion-time choice expansion, quotes runtime field flags, preserves literal resolver fallbacks, and uses supported 2>/dev/null redirection.\n\n## Verification\nReal Bash regression covers six input routes and retains astral Unicode. Zsh source/evaluation regressions fail before quoting and pass afterward. A required native smoke command runs 31 Fish/Zsh parser cases, including type/tag values, runtime flags, helper output and unavailable-helper fallbacks. Missing native interpreters fail rather than skip; required CI smoke setup installs both shells. Existing completion rendering contracts remain enforced with quoted Fish runtime flags.\n\n## Lineage\nThis is a child of the first review boundary fix and links to the completion decomposition owner. Historical parent fixes remain closed; only this actively edited issue is in progress."

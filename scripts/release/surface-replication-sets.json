@@ -212,7 +212,7 @@
           "changed_lines_contain_any": ["full: { type: \"boolean\" }"]
         },
         {
-          "path": "src/sdk/completion.ts",
+          "path": "src/sdk/completion/zsh.ts",
           "changed_lines_contain_any": ["--full-history"]
         }
       ],
@@ -225,8 +225,8 @@
         "src/sdk/cli-contracts/flag-contracts.ts",
         "src/sdk/cli-contracts/tool-schema.ts",
         "src/sdk/cli-contracts/tool-parameter-tables.ts",
-        "src/sdk/completion.ts",
-        "src/sdk/runtime.ts",
+        "src/sdk/completion/zsh.ts",
+        "src/sdk/runtime/actions.ts",
         "tests/unit/sdk/read-contract-integrity.spec.ts",
         "docs/SDK_CONTEXT_INTEGRITY.md"
       ],
@@ -269,13 +269,13 @@
           "contains_all": ["full: { type: \"boolean\" }"]
         },
         {
-          "path": "src/sdk/completion.ts",
+          "path": "src/sdk/completion/zsh.ts",
           "contains_all": [
             "--full-history[Return complete post-mutation history]"
           ]
         },
         {
-          "path": "src/sdk/runtime.ts",
+          "path": "src/sdk/runtime/actions.ts",
           "contains_all": ["normalizeAnnotationTransportOptions"]
         },
         {
@@ -302,7 +302,7 @@
       "required_changed_members": [
         "src/sdk/author-attribution.ts",
         "src/cli/register-history-author.ts",
-        "src/sdk/runtime.ts",
+        "src/sdk/runtime/actions.ts",
         "tests/integration/sdk-context-integrity.integration.spec.ts",
         "tests/unit/sdk/history-author-acknowledgment-plan.spec.ts",
         "docs/SDK_CONTEXT_INTEGRITY.md"
@@ -321,7 +321,7 @@
           "contains_all": ["acknowledgeUnknownAuthorHistoryEventsFromTransport"]
         },
         {
-          "path": "src/sdk/runtime.ts",
+          "path": "src/sdk/runtime/actions.ts",
           "contains_all": [
             "acknowledgeUnknownAuthorHistoryEventsFromTransport",
             "runMcpHistoryAuthorAcknowledgeAction"
@@ -500,6 +500,76 @@
       "pm_item": "pm-mkinft",
       "reason": "Context-integrity receipts are unchanged; item addressing is documented in COMMANDS and SDK.",
       "expires_on": "2026-08-12"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/annotations.ts",
+      "pm_item": "pm-yh8r",
+      "reason": "Mechanical extraction relocates the unchanged shell template and SDK action handlers. Existing annotation receipt contracts, tests and documentation remain valid; full suite and byte-identical completion parity verify preservation.",
+      "expires_on": "2026-10-03"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/comments.ts",
+      "pm_item": "pm-yh8r",
+      "reason": "Mechanical extraction relocates the unchanged shell template and SDK action handlers. Existing annotation receipt contracts, tests and documentation remain valid; full suite and byte-identical completion parity verify preservation.",
+      "expires_on": "2026-10-03"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/notes.ts",
+      "pm_item": "pm-yh8r",
+      "reason": "Mechanical extraction relocates the unchanged shell template and SDK action handlers. Existing annotation receipt contracts, tests and documentation remain valid; full suite and byte-identical completion parity verify preservation.",
+      "expires_on": "2026-10-03"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/learnings.ts",
+      "pm_item": "pm-yh8r",
+      "reason": "Mechanical extraction relocates the unchanged shell template and SDK action handlers. Existing annotation receipt contracts, tests and documentation remain valid; full suite and byte-identical completion parity verify preservation.",
+      "expires_on": "2026-10-03"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/cli/register-annotations.ts",
+      "pm_item": "pm-yh8r",
+      "reason": "Mechanical extraction relocates the unchanged shell template and SDK action handlers. Existing annotation receipt contracts, tests and documentation remain valid; full suite and byte-identical completion parity verify preservation.",
+      "expires_on": "2026-10-03"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/cli-contracts/flag-contracts.ts",
+      "pm_item": "pm-yh8r",
+      "reason": "Mechanical extraction relocates the unchanged shell template and SDK action handlers. Existing annotation receipt contracts, tests and documentation remain valid; full suite and byte-identical completion parity verify preservation.",
+      "expires_on": "2026-10-03"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/cli-contracts/tool-schema.ts",
+      "pm_item": "pm-yh8r",
+      "reason": "Mechanical extraction relocates the unchanged shell template and SDK action handlers. Existing annotation receipt contracts, tests and documentation remain valid; full suite and byte-identical completion parity verify preservation.",
+      "expires_on": "2026-10-03"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/cli-contracts/tool-parameter-tables.ts",
+      "pm_item": "pm-yh8r",
+      "reason": "Mechanical extraction relocates the unchanged shell template and SDK action handlers. Existing annotation receipt contracts, tests and documentation remain valid; full suite and byte-identical completion parity verify preservation.",
+      "expires_on": "2026-10-03"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "tests/unit/sdk/read-contract-integrity.spec.ts",
+      "pm_item": "pm-yh8r",
+      "reason": "Mechanical extraction relocates the unchanged shell template and SDK action handlers. Existing annotation receipt contracts, tests and documentation remain valid; full suite and byte-identical completion parity verify preservation.",
+      "expires_on": "2026-10-03"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "docs/SDK_CONTEXT_INTEGRITY.md",
+      "pm_item": "pm-yh8r",
+      "reason": "Mechanical extraction relocates the unchanged shell template and SDK action handlers. Existing annotation receipt contracts, tests and documentation remain valid; full suite and byte-identical completion parity verify preservation.",
+      "expires_on": "2026-10-03"
     }
   ],
   "cli_refusal_dispositions": [
@@ -561,7 +631,7 @@
     },
     {
       "path": "src/cli/main.ts",
-      "expected_count": 7,
+      "expected_count": 3,
       "rule_ownership": "all_occurrences",
       "owner": "pm-0xmajx",
       "disposition": "transport_validation",
@@ -622,6 +692,22 @@
       "owner": "pm-0xmajx",
       "disposition": "host_safety",
       "reason": "Process-level migration confirmation and environment fences are CLI host safety checks."
+    },
+    {
+      "path": "src/cli/runtime/invocation-options.ts",
+      "expected_count": 3,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-yh8r",
+      "disposition": "transport_validation",
+      "reason": "Existing argv global-option syntax refusals moved from main into invocation parsing; domain validation remains SDK-owned."
+    },
+    {
+      "path": "src/cli/runtime/selection.ts",
+      "expected_count": 1,
+      "rule_ownership": "all_occurrences",
+      "owner": "pm-yh8r",
+      "disposition": "transport_validation",
+      "reason": "Existing invalid command selection refusal moved from main into command selection; SDK action behavior is unchanged."
     }
   ],
   "refusal_parity_contracts": [
@@ -698,7 +784,7 @@
           "contains_all": ["acknowledgeUnknownAuthorHistoryEventsFromTransport"]
         },
         {
-          "path": "src/sdk/runtime.ts",
+          "path": "src/sdk/runtime/actions.ts",
           "contains_all": ["acknowledgeUnknownAuthorHistoryEventsFromTransport"]
         },
         {

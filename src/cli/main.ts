@@ -1,27 +1,84 @@
-#!/usr/bin/env node
 /**
  * @module cli/main
+ * Coordinates CLI invocation state, extension lifecycle and command dispatch.
  */
-import { Command, CommanderError } from "commander";
-import { PM_RELOCATED_COMMAND_ALIASES, findPmNamespacedCommand, resolvePmCommandOperation } from "../sdk/cli-contracts/command-aliases.js";
+import { Command,CommanderError } from "commander";
+import { findPmNamespacedCommand,resolvePmCommandOperation } from "../sdk/cli-contracts/command-aliases.js";
+import { createPmCliProgram } from "../sdk/cli-program.js";
+import { runWithDiscoveredContextIntentContracts } from "../sdk/context-intent-runtime.js";
+import { describeUnknownError,isCommanderError,normalizeThrownExitCode,readThrownExitCode,wrapThrownErrorForSentry } from "../sdk/error-runtime.js";
+import { createExtensionCommandSdk } from "../sdk/extension-command-context.js";
+import { runExtensionMigrations } from "../sdk/extension/migrations.js";
+import { applyInvocationAuthorOverride } from "../sdk/invocation-author.js";
+import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import {
+  validateReadOutputOptions
+} from "../sdk/read-output-contracts.js";
+import { runWithReproducibleProcessEnvironment } from "../sdk/reproducibility/process.js";
+import {
+  type ActiveExtensionHookContext,
+  type ActiveTelemetryCommand,
+  type ExtensionCommandRegistry,
+  type ExtensionDiscoveryResult,
+  type ExtensionHookRegistry,
+  type ExtensionParserRegistry,
+  type ExtensionPreflightRegistry,
+  type ExtensionRendererRegistry,
+  type ExtensionServiceRegistry,
+  type GlobalOptions,
+  type PmCliErrorContext,
+  type PmCliErrorRecoveryPayload,
+  type PreflightRuntimeDecision,
+  type RegisteredExtensionSchemaMigrationDefinition,
+  type RuntimeFieldCommand,
+  type TelemetryCommandOutcome,
+  type TelemetryCommandResolution,
+  type TelemetryErrorCategory,
+  type TelemetryResolutionStage,
+  EXIT_CODE,
+  PmCliError,
   activateExtensions,
   clearActiveExtensionHooks,
+  consumeAfterCommandAffectedItems,
   createCoreCommandHookContext,
-  resetActiveExtensionRuntimeState,
   createEmptyExtensionRegistrationRegistry,
+  createLazyModule,
+  deriveTelemetryCommandResolution,
   discoverExtensions,
+  emitTelemetryErrorEvent,
+  ensureSentryInit,
   getActiveCommandResult,
   getActiveExtensionRegistrations,
+  getSettingsPath,
   loadExtensions,
-  consumeAfterCommandAffectedItems,
+  maybeRunFirstUseTelemetryPrompt,
+  pathExists,
+  printError,
+  printResult,
+  readSettings,
+  readSettingsWithMetadata,
+  resetActiveExtensionRuntimeState,
+  resolveItemTypeRegistry,
+  resolvePmCliVersion,
+  resolvePmPackageRootFromModule,
+  resolvePmRoot,
+  resolveRuntimeFieldRegistry,
+  resolveTelemetryErrorCategory,
   runActiveCommandHandler,
   runActiveParserOverride,
   runActivePreflightOverride,
   runAfterCommandHooks,
   runBeforeCommandHooks,
-  setActiveCommandResult,
+  runWithHarnessDetectionSignals,
+  runWithWorkspaceHarnessSignalDescriptors,
+  sentryCaptureCliError,
+  sentryFinishCommandSpan,
+  sentryFlush,
+  sentryLogCliUsageError,
+  sentrySetCommandContext,
+  sentryStartCommandSpan,
   setActiveCommandContext,
+  setActiveCommandResult,
   setActiveExtensionCommands,
   setActiveExtensionHooks,
   setActiveExtensionParsers,
@@ -29,78 +86,32 @@ import {
   setActiveExtensionRegistrations,
   setActiveExtensionRenderers,
   setActiveExtensionServices,
-  type ExtensionCommandRegistry,
-  type ExtensionDiscoveryResult,
-  type ExtensionHookRegistry,
-  type ActiveExtensionHookContext,
-  type ExtensionParserRegistry,
-  type ExtensionPreflightRegistry,
-  type ExtensionServiceRegistry,
-  type FlagDefinition,
-  type PreflightRuntimeDecision,
-  type RegisteredExtensionSchemaMigrationDefinition,
-  type ExtensionRendererRegistry,
-  pathExists,
-  resolvePmCliVersion,
-  resolvePmPackageRootFromModule,
-  resolveItemTypeRegistry,
-  resolveRuntimeFieldRegistry,
-  type RuntimeFieldCommand,
-  EXIT_CODE,
-  resolveTelemetryErrorCategory,
-  type TelemetryErrorCategory,
-  PmCliError,
-  type PmCliErrorContext,
-  type PmCliErrorRecoveryPayload,
-  asRecordOrNull,
-  printError,
-  printResult,
-  writeStderr,
-  maybeRunFirstUseTelemetryPrompt,
-  emitTelemetryErrorEvent,
   startTelemetryCommand,
-  type ActiveTelemetryCommand,
-  type TelemetryCommandOutcome,
-  deriveTelemetryCommandResolution,
-  type TelemetryCommandResolution,
-  type TelemetryResolutionStage,
-  sentryCaptureCliError,
-  sentryFinishCommandSpan,
-  sentryFlush,
-  sentryLogCliUsageError,
-  sentrySetCommandContext,
-  sentryStartCommandSpan,
-  ensureSentryInit,
-  getSettingsPath,
-  resolvePmRoot,
-  readSettings,
-  readSettingsWithMetadata,
-  runWithHarnessDetectionSignals,
-  runWithWorkspaceHarnessSignalDescriptors,
-  type GlobalOptions,
-  createLazyModule,
+  writeStderr
 } from "../sdk/runtime-primitives.js";
-import type { PmSettings } from "../types/index.js";
-import { runWithReproducibleProcessEnvironment } from "../sdk/reproducibility/process.js";
-import { resolveSubcommandFlagContractsForCommand } from "../sdk/cli-contracts.js";
-import { createExtensionCommandSdk } from "../sdk/extension-command-context.js";
 import { PmClient } from "../sdk/runtime.js";
+import type { PmSettings } from "../types/index.js";
+import { finishActiveTelemetryCommand,recordAfterCommandContextUsage } from "./after-command-context-usage.js";
+import { extractProvidedOptionFlags,normalizeLongOptionFlag,redactSensitiveCommandArgs,renderPmCommand } from "./argv-utils.js";
 import {
-  coerceLooseCommandOptionsWithFlagDefinitions,
-  collectLooseCommandOptionKeysForDefinitions,
-  collectLoosePositionalArgs,
-  parseLooseCommandOptions,
-  stripLooseCommandOptionTokens,
-  validateLooseCommandOptionsWithFlagDefinitions,
-  type LooseCommandFlagDefinition,
-} from "./extension-command-options.js";
+  applyBootstrapPagerPolicy,
+  findBootstrapCommandTokenIndex,
+  normalizeBootstrapInvocation,
+  parseBootstrapCommandName,
+  parseBootstrapGlobalOptions,
+  parseBootstrapHelpRequest,
+  stripGlobalBootstrapTokens,
+} from "./bootstrap-args.js";
+import { installCommandNamespaces } from "./command-namespaces.js";
 import {
-  attachRichHelpText,
-  isFullHelpDiscovery,
-  setPmCommandHelpVisibilityTier,
-} from "./help-content.js";
-import { finishActiveTelemetryCommand, recordAfterCommandContextUsage } from "./after-command-context-usage.js";
-import { extractProvidedOptionFlags, normalizeLongOptionFlag, redactSensitiveCommandArgs, renderPmCommand } from "./argv-utils.js";
+  appendCommanderExtensionFailures,
+  formatCommanderUsageJson,
+  formatCommanderUsageMessage,
+  isKnownHelpCommandPath,
+  resolveCommanderUsageContext,
+  resolveUnknownCommanderToken,
+} from "./commander-usage.js";
+import { loadContextIntentSnapshotForInvocation } from "./context-intent-invocation.js";
 import {
   classifyCommanderError,
   classifyPmCliError,
@@ -110,7 +121,45 @@ import {
   formatUnknownErrorForJson,
   projectLeanErrorEnvelope,
 } from "./error-guidance.js";
-import { describeUnknownError, isCommanderError, normalizeThrownExitCode, readThrownExitCode, wrapThrownErrorForSentry } from "../sdk/error-runtime.js";
+import {
+  type ExtensionCommandHelpDescriptor,
+  applyDynamicExtensionArguments,
+  applyDynamicExtensionFlagOptions,
+  buildCanonicalExtensionAliases,
+  buildDynamicExtensionCommandMetadataHelp,
+  buildResidualDynamicExtensionFlagHelp,
+  collectDynamicExtensionFlagHelpByCommand,
+  collectExtensionCommandHelpDescriptors,
+  collectSafeExtensionCommandPaths,
+  ensureCommandPath,
+  extensionFlagTakesValueForInvocation,
+  findCommandByPath,
+  normalizeExtensionCommandPath,
+  reportExtensionCommandCollision,
+} from "./extension-command-help.js";
+import {
+  type LooseCommandFlagDefinition,
+  collectLoosePositionalArgs,
+  stripLooseCommandOptionTokens
+} from "./extension-command-options.js";
+import { loadExtensionRecoveryFailures,loadUnknownCommandRecoveryFailures } from "./extension-recovery.js";
+import {
+  attachRichHelpText,
+  isFullHelpDiscovery,
+  setPmCommandHelpVisibilityTier,
+} from "./help-content.js";
+import { attachCreateUpdatePolicyHelpText,maybeRenderBootstrapJsonHelp } from "./help-json-payload.js";
+import {
+  type MandatoryMigrationBlocker,
+  collectMandatoryMigrationBlockers,
+  enforceItemFormatWriteGateAndPreflightMigration,
+  enforceMandatoryMigrationWriteGate,
+  enforceMutationGuardPreflight,
+} from "./migration-gates.js";
+import type { registerListQueryCommands as RegisterListQueryCommandsFn } from "./register-list-query.js";
+import type { registerMutationCommands as RegisterMutationCommandsFn } from "./register-mutation.js";
+import type { registerOperationCommands as RegisterOperationCommandsFn } from "./register-operations.js";
+import type { registerSetupCommands as RegisterSetupCommandsFn } from "./register-setup.js";
 import {
   applyDefaultOutputFormat,
   clearResolvedGlobalOptions,
@@ -122,103 +171,14 @@ import {
   setResolvedGlobalOptions,
   syncCommanderActionOptions,
 } from "./registration-helpers.js";
-import type { registerSetupCommands as RegisterSetupCommandsFn } from "./register-setup.js";
-import type { registerListQueryCommands as RegisterListQueryCommandsFn } from "./register-list-query.js";
-import type { registerMutationCommands as RegisterMutationCommandsFn } from "./register-mutation.js";
-import type { registerOperationCommands as RegisterOperationCommandsFn } from "./register-operations.js";
-import {
-  type ExtensionCommandHelpDescriptor,
-  normalizeExtensionCommandPath,
-  collectDynamicExtensionFlagHelpByCommand,
-  collectExtensionCommandHelpDescriptors,
-  applyDynamicExtensionFlagOptions,
-  buildResidualDynamicExtensionFlagHelp,
-  applyDynamicExtensionArguments,
-  buildDynamicExtensionCommandMetadataHelp,
-  findCommandByPath,
-  collectSafeExtensionCommandPaths,
-  reportExtensionCommandCollision,
-  ensureCommandPath,
-  buildCanonicalExtensionAliases,
-  extensionFlagTakesValueForInvocation,
-} from "./extension-command-help.js";
-import {
-  parseBootstrapGlobalOptions,
-  applyBootstrapPagerPolicy,
-  parseBootstrapHelpRequest,
-  parseBootstrapCommandName,
-  findBootstrapCommandTokenIndex,
-  normalizeBootstrapInvocation,
-  stripGlobalBootstrapTokens,
-} from "./bootstrap-args.js";
-import { applyInvocationAuthorOverride } from "../sdk/invocation-author.js";
-import { createPmCliProgram } from "../sdk/cli-program.js";
-import {
-  type MandatoryMigrationBlocker,
-  collectMandatoryMigrationBlockers,
-  enforceMandatoryMigrationWriteGate,
-  enforceItemFormatWriteGateAndPreflightMigration,
-  enforceMutationGuardPreflight,
-} from "./migration-gates.js";
-import { runExtensionMigrations } from "../sdk/extension/migrations.js";
-import {
-  appendCommanderExtensionFailures,
-  isKnownHelpCommandPath,
-  formatCommanderUsageMessage,
-  formatCommanderUsageJson,
-  resolveCommanderUsageContext,
-  resolveUnknownCommanderToken,
-} from "./commander-usage.js";
-import { loadExtensionRecoveryFailures, loadUnknownCommandRecoveryFailures } from "./extension-recovery.js";
-import { maybeRenderBootstrapJsonHelp, attachCreateUpdatePolicyHelpText } from "./help-json-payload.js";
-import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
-import { runWithDiscoveredContextIntentContracts } from "../sdk/context-intent-runtime.js";
-import {
-  PM_READ_OUTPUT_SURFACE_CONTRACTS,
-  applyReadOutputIncludeModes,
-  readOutputIncludeModeOptions,
-  resolveReadOutputSurface,
-  validateReadOutputOptions,
-} from "../sdk/read-output-contracts.js";
-import { loadContextIntentSnapshotForInvocation } from "./context-intent-invocation.js";
-import { isPmSuccessfulExitCode } from "../sdk/cli-contracts/command-exit-contracts.js";
-import { installCommandNamespaces } from "./command-namespaces.js";
+import type { RuntimeExtensionActivationProbe } from "./runtime/activation.js";
+import { activationCommandMatchesProbe,buildBootstrapActivationProbe,buildRuntimeExtensionActivationScope,buildRuntimeExtensionFilterForProbe,collectActivationCommandCandidates,collectLeadingCommandArgs,collectParsedActivationCommandArgs,commandPathNeedsSearchExtensions,commandPathNeedsTemplateExtensions,discoveryNeedsActivationForProbe,extensionActivationCommands,extensionCapabilities,extensionNeedsActivationForProbe,extensionProvidesTemplatesRuntime,hasAnyCapability,hasGlobalExtensionContributions,matchesStaticExtensionCommand,probeUsesAnyFlag,resolveStaticExtensionActivationDecision } from "./runtime/activation.js";
+import { collectExtensionFlagDefinitionsForCommand,collectExtensionFlagDefinitionsForInvocation,dynamicCommandArguments,extractCommandScopedOptions,forwardReadOutputIncludeModes,isImporterOrExporterCommandPath,recordCliReadOutputInvocationProvenance,validateDynamicExtensionCommandArgs,validateDynamicExtensionCommandInvocation } from "./runtime/invocation-options.js";
+import type { CoreCommandRegistrationSelection } from "./runtime/selection.js";
+import { LIST_QUERY_COMMAND_NAMES,enforceExplicitRetryForFlagTypos,invocationRequestsVersion,resolveCoreCommandRegistrationSelection,shouldAttachRichHelpTextForInvocation,shouldRegisterDynamicExtensionPaths,shouldRegisterRuntimeSchemaFlags } from "./runtime/selection.js";
+import { buildPostActionTelemetryOutcome,inferPostActionErrorCode,inferPostActionFailureMessage,normalizeTelemetryCommandResolution,normalizeTelemetryErrorCategory,normalizeTelemetryResolutionStage,readRecordBoolean,readRecordNumber,readRecordString } from "./runtime/telemetry-outcome.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
-const READ_OUTPUT_INVOCATION_PROVENANCE = Symbol.for("pm.readOutputInvocationProvenance");
-
-/** Carry private read-output provenance across Commander's option rebuilds. */
-function copyReadOutputInvocationProvenance(source: object, target: object): void {
-  const provenance = Reflect.get(source, READ_OUTPUT_INVOCATION_PROVENANCE);
-  if (provenance !== undefined) {
-    Reflect.set(target, READ_OUTPUT_INVOCATION_PROVENANCE, provenance);
-  }
-}
-
-/** Record the exact compatibility flags present in the raw CLI invocation. */
-function recordCliReadOutputInvocationProvenance(actionCommand: Command, commandPath: string, commandOptions: Record<string, unknown>): void {
-  const surface = resolveReadOutputSurface(commandPath, commandOptions);
-  if (!surface) return;
-  let rootCommand = actionCommand;
-  while (rootCommand.parent) rootCommand = rootCommand.parent;
-  const rawArgs = (rootCommand as Command & { rawArgs: string[] }).rawArgs;
-  const providedFlags = new Set(extractProvidedOptionFlags(rawArgs.slice(2)));
-  const contract = PM_READ_OUTPUT_SURFACE_CONTRACTS.find((candidate) => candidate.command === surface)!;
-  const explicitLegacyAliases = Object.values(contract.dimensions).flatMap((dimension) =>
-    dimension.legacy_aliases.flatMap((alias) => (providedFlags.has(alias.flag) ? [alias.flag] : [])),
-  );
-  const previous = Reflect.get(commandOptions, READ_OUTPUT_INVOCATION_PROVENANCE) as
-    | {
-        canonical_include_modes?: string[];
-      }
-    | undefined;
-  Reflect.set(commandOptions, READ_OUTPUT_INVOCATION_PROVENANCE, {
-    canonical_include_modes: previous?.canonical_include_modes ?? [],
-    explicit_legacy_aliases: explicitLegacyAliases,
-    cli_invocation_observed: true,
-  });
-  copyReadOutputInvocationProvenance(commandOptions, actionCommand);
-}
 
 function resolvePmPackageRoot(): string {
   return resolvePmPackageRootFromModule(import.meta.url, ["../.."]);
@@ -229,6 +189,7 @@ if (typeof process.env[PM_PACKAGE_ROOT_ENV] !== "string" || process.env[PM_PACKA
 }
 
 let activeExtensionHookContext: ActiveExtensionHookContext<MandatoryMigrationBlocker> | null = null;
+
 let activeTelemetryCommandContext: ActiveTelemetryCommand | null = null;
 
 function setActiveExtensionHookContextForTest(context: ActiveExtensionHookContext<MandatoryMigrationBlocker> | null): void {
@@ -238,24 +199,6 @@ function setActiveExtensionHookContextForTest(context: ActiveExtensionHookContex
 function setActiveRuntimeExtensionCommandDescriptorsForTest(descriptors: Map<string, ExtensionCommandHelpDescriptor>): void {
   activeRuntimeExtensionCommandDescriptors = descriptors;
 }
-
-const TELEMETRY_COMMAND_RESOLUTION_SET = new Set<TelemetryCommandResolution>([
-  "success",
-  "nonexistent_command",
-  "invalid_option",
-  "missing_required_option",
-  "missing_required_argument",
-  "invalid_usage",
-  "validation_failed",
-  "health_findings",
-  "validation_findings",
-  "conflict",
-  "runtime_failed",
-  "unknown_failed",
-]);
-
-const TELEMETRY_RESOLUTION_STAGE_SET = new Set<TelemetryResolutionStage>(["parse", "preflight", "execute", "unknown"]);
-const TELEMETRY_ERROR_CATEGORY_SET = new Set<TelemetryErrorCategory>(["usage", "validation", "conflict", "runtime", "unknown"]);
 
 interface RuntimeExtensionSnapshot {
   hooks: ExtensionHookRegistry;
@@ -287,44 +230,50 @@ interface RuntimeExtensionDiscoverySnapshot {
   settingsReadWarnings: string[];
 }
 
-interface RuntimeExtensionActivationProbe {
-  commandPath?: string;
-  commandArgs?: string[];
-  allowCommandPrefixMatch?: boolean;
-}
-
 let runtimeExtensionSnapshotCache: {
   key: string;
   snapshot: RuntimeExtensionSnapshot | null;
 } | null = null;
+
 let runtimeExtensionDiscoverySnapshotCache: {
   key: string;
   snapshot: RuntimeExtensionDiscoverySnapshot | null;
 } | null = null;
+
 let activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
+
 const HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS = 250;
+
 const EXPECTED_HANDLED_ERROR_EXIT_CODES = new Set<number>([EXIT_CODE.USAGE, EXIT_CODE.NOT_FOUND, EXIT_CODE.CONFLICT]);
+
 const TRUE_LIKE_ENV_VALUES = new Set(["1", "true", "yes", "on"]);
 
 type SetupRegistrationModule = {
   registerSetupCommands: typeof RegisterSetupCommandsFn;
 };
+
 type ListQueryRegistrationModule = {
   registerListQueryCommands: typeof RegisterListQueryCommandsFn;
 };
+
 type MutationRegistrationModule = {
   registerMutationCommands: typeof RegisterMutationCommandsFn;
 };
+
 type OperationRegistrationModule = {
   registerOperationCommands: typeof RegisterOperationCommandsFn;
 };
 
 const loadSetupRegistrationModule = createLazyModule<SetupRegistrationModule>(() => import("./register-setup.js"));
+
 const loadListQueryRegistrationModule = createLazyModule<ListQueryRegistrationModule>(() => import("./register-list-query.js"));
+
 const loadMutationRegistrationModule = createLazyModule<MutationRegistrationModule>(() => import("./register-mutation.js"));
+
 const loadOperationRegistrationModule = createLazyModule<OperationRegistrationModule>(() => import("./register-operations.js"));
 
 /* c8 ignore start */
+
 function renderAttemptedCommand(argv: string[]): string {
   return renderPmCommand(argv);
 }
@@ -475,174 +424,7 @@ function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invoc
     recovery,
   };
 }
-/* c8 ignore stop */
 
-function readRecordString(record: Record<string, unknown> | null, ...keys: string[]): string | undefined {
-  if (!record) {
-    return undefined;
-  }
-  for (const key of keys) {
-    const candidate = record[key];
-    if (typeof candidate === "string") {
-      const normalized = candidate.trim();
-      if (normalized.length > 0) {
-        return normalized;
-      }
-    }
-  }
-  return undefined;
-}
-
-function readRecordBoolean(record: Record<string, unknown> | null, ...keys: string[]): boolean | undefined {
-  if (!record) {
-    return undefined;
-  }
-  for (const key of keys) {
-    const candidate = record[key];
-    if (typeof candidate === "boolean") {
-      return candidate;
-    }
-  }
-  return undefined;
-}
-
-function readRecordNumber(record: Record<string, unknown> | null, ...keys: string[]): number | undefined {
-  if (!record) {
-    return undefined;
-  }
-  for (const key of keys) {
-    const candidate = record[key];
-    if (typeof candidate === "number" && Number.isFinite(candidate)) {
-      return Math.max(0, Math.trunc(candidate));
-    }
-  }
-  return undefined;
-}
-
-function normalizeTelemetryCommandResolution(value: string | undefined): TelemetryCommandResolution | undefined {
-  if (!value) {
-    return undefined;
-  }
-  const normalized = value.trim().toLowerCase();
-  if (!TELEMETRY_COMMAND_RESOLUTION_SET.has(normalized as TelemetryCommandResolution)) {
-    return undefined;
-  }
-  return normalized as TelemetryCommandResolution;
-}
-
-function normalizeTelemetryResolutionStage(value: string | undefined): TelemetryResolutionStage | undefined {
-  if (!value) {
-    return undefined;
-  }
-  const normalized = value.trim().toLowerCase();
-  if (!TELEMETRY_RESOLUTION_STAGE_SET.has(normalized as TelemetryResolutionStage)) {
-    return undefined;
-  }
-  return normalized as TelemetryResolutionStage;
-}
-
-function normalizeTelemetryErrorCategory(value: string | undefined): TelemetryErrorCategory | undefined {
-  if (!value) {
-    return undefined;
-  }
-  const normalized = value.trim().toLowerCase();
-  if (!TELEMETRY_ERROR_CATEGORY_SET.has(normalized as TelemetryErrorCategory)) {
-    return undefined;
-  }
-  return normalized as TelemetryErrorCategory;
-}
-
-/* c8 ignore start */
-function inferPostActionFailureMessage(result: Record<string, unknown> | null): string | undefined {
-  const explicit = readRecordString(result, "error", "message");
-  if (explicit) {
-    return explicit;
-  }
-
-  const warnings = result?.warnings;
-  if (Array.isArray(warnings)) {
-    const firstWarning = warnings.find((value) => typeof value === "string" && value.trim().length > 0);
-    /* c8 ignore next */
-    if (typeof firstWarning === "string") {
-      return firstWarning.trim();
-    }
-  }
-
-  const skippedTriggered = readRecordBoolean(result, "fail_on_skipped_triggered", "failOnSkippedTriggered");
-  if (skippedTriggered) {
-    return "linked_test_fail_on_skipped_triggered";
-  }
-
-  const failedCount = readRecordNumber(result, "failed");
-  if (typeof failedCount === "number" && failedCount > 0) {
-    return `failed_runs:${failedCount}`;
-  }
-
-  const runResults = result?.run_results;
-  if (Array.isArray(runResults)) {
-    const failedRuns = runResults.filter((entry) => {
-      const row = asRecordOrNull(entry);
-      return row?.status === "failed";
-    }).length;
-    /* c8 ignore next */
-    if (failedRuns > 0) {
-      return `failed_runs:${failedRuns}`;
-    }
-  }
-
-  return undefined;
-}
-/* c8 ignore stop */
-
-function inferPostActionErrorCode(ok: boolean, exitCode: number): string | undefined {
-  if (ok) {
-    return undefined;
-  }
-  if (exitCode === EXIT_CODE.USAGE) {
-    return "invalid_command_usage";
-  }
-  if (exitCode === EXIT_CODE.NOT_FOUND) {
-    return "item_not_found";
-  }
-  if (exitCode === EXIT_CODE.CONFLICT) {
-    return "lock_conflict";
-  }
-  if (exitCode === EXIT_CODE.DEPENDENCY_FAILED) {
-    return "dependency_failed";
-  }
-  return "command_failed";
-}
-
-function buildPostActionTelemetryOutcome(): TelemetryCommandOutcome {
-  const result = asRecordOrNull(getActiveCommandResult());
-  const processExitCode = typeof process.exitCode === "number" && Number.isFinite(process.exitCode) ? Math.max(0, Math.trunc(process.exitCode)) : undefined;
-  const resultExitCode = readRecordNumber(result, "exit_code", "exitCode");
-  const exitCode = processExitCode ?? resultExitCode ?? EXIT_CODE.SUCCESS;
-  const ok = isPmSuccessfulExitCode(exitCode);
-  const errorCode = readRecordString(result, "error_code", "errorCode") ?? inferPostActionErrorCode(ok, exitCode);
-  const errorCategory =
-    normalizeTelemetryErrorCategory(readRecordString(result, "error_category", "errorCategory")) ?? (!ok ? resolveTelemetryErrorCategory(errorCode) : undefined);
-  const errorMessage = !ok ? (inferPostActionFailureMessage(result) ?? `command_exit_${exitCode}`) : undefined;
-  const commandResolution =
-    normalizeTelemetryCommandResolution(readRecordString(result, "command_resolution", "commandResolution")) ??
-    deriveTelemetryCommandResolution({
-      ok,
-      errorCode,
-      errorCategory,
-    });
-  const resolutionStage = normalizeTelemetryResolutionStage(readRecordString(result, "resolution_stage", "resolutionStage")) ?? "execute";
-  return {
-    ok,
-    error: errorMessage,
-    exit_code: exitCode,
-    error_code: errorCode,
-    error_category: errorCategory,
-    command_resolution: commandResolution,
-    resolution_stage: resolutionStage,
-  };
-}
-
-/* c8 ignore start */
 async function runAndClearAfterCommandHooks(outcome: TelemetryCommandOutcome): Promise<void> {
   const telemetryRuntime = activeTelemetryCommandContext;
   activeTelemetryCommandContext = null;
@@ -810,233 +592,7 @@ async function handleGenericRunPmCliError(params: {
   }
 }
 
-/**
- * Hand canonical `--output-include` projection modes to the command that owns
- * them, leaving only field selectors for post-execution projection.
- *
- * `--output-include brief` must be the exact behaviour of `--brief`, which the
- * emitted migration hint promises; a mode can only be honoured before the
- * command computes its rows, so it cannot be resolved by the output layer.
- */
-function forwardReadOutputIncludeModes(actionCommand: Command, commandPath: string, globalOptions: GlobalOptions, commandOptions: Record<string, unknown>): void {
-  recordCliReadOutputInvocationProvenance(actionCommand, commandPath, commandOptions);
-  const requested = globalOptions.outputInclude;
-  if (requested === undefined) return;
-  const { selectors, modes } = applyReadOutputIncludeModes(commandPath, requested, commandOptions);
-  if (commandPath === "get" && typeof commandOptions.fields === "string") {
-    actionCommand.setOptionValueWithSource("fields", commandOptions.fields, "cli");
-  }
-  if (modes.length === 0) return;
-  copyReadOutputInvocationProvenance(commandOptions, actionCommand);
-  const modeOptions = readOutputIncludeModeOptions(commandPath);
-  for (const mode of modes) {
-    const key = modeOptions.get(mode)!;
-    const value = commandOptions[key];
-    actionCommand.setOptionValueWithSource(key, value, "cli");
-  }
-  const residual = selectors.length > 0 ? selectors.join(",") : undefined;
-  if (residual === undefined) {
-    delete globalOptions.outputInclude;
-  } else {
-    globalOptions.outputInclude = residual;
-  }
-  // The resolved-global cache is cleared and re-read from Commander before the
-  // handler runs, so the consumed modes have to leave the parsed option too.
-  for (let scope: Command | null = actionCommand; scope; scope = scope.parent) {
-    scope.setOptionValueWithSource("outputInclude", residual, "cli");
-  }
-  setResolvedGlobalOptions(actionCommand, globalOptions);
-}
-
-/** Collect inherited options without leaking namespace-parent defaults into relocated leaves. */
-function collectCommandInvocationOptions(command: Command): Record<string, unknown> {
-  const allOptions = command.optsWithGlobals() as Record<string, unknown>;
-  const commandPath = getCommandPath(command);
-  if (resolvePmCommandOperation(commandPath) === commandPath) return allOptions;
-  const ownOptions = command.opts() as Record<string, unknown>;
-  for (let parent = command.parent; parent?.parent; parent = parent.parent) {
-    for (const key of Object.keys(parent.opts())) {
-      if (!(key in ownOptions) && parent.getOptionValueSource(key) === "default") delete allOptions[key];
-    }
-  }
-  return allOptions;
-}
-
-/** Separate handler options from global controls, then validate and coerce contributed flags against the command's declared schema. */
-function extractCommandScopedOptions(command: Command, commandArgs: string[], extensionFlagDefinitions: LooseCommandFlagDefinition[] = []): Record<string, unknown> {
-  const allOptions = collectCommandInvocationOptions(command);
-  const scoped: Record<string, unknown> = { ...allOptions };
-  copyReadOutputInvocationProvenance(command, scoped);
-  delete scoped.json;
-  delete scoped.quiet;
-  delete scoped.path;
-  delete scoped.pmPath;
-  delete scoped.noExtensions;
-  delete scoped.extensions;
-  delete scoped.profile;
-  delete scoped.pager;
-  // Global output controls must not leak into per-command mutation fields.
-  delete scoped.changedFields;
-  delete scoped.fullChangedFields;
-  delete scoped.idOnly;
-  delete scoped.lean;
-  delete scoped.tokenAccounting;
-  delete scoped.outputInclude;
-  delete scoped.outputLimit;
-  delete scoped.outputBudget;
-  delete scoped.outputFormat;
-  delete scoped.outputSession;
-
-  const looseOptions = parseLooseCommandOptions(commandArgs);
-  for (const [key, value] of Object.entries(looseOptions)) {
-    /* c8 ignore next */
-    if (scoped[key] === undefined) {
-      scoped[key] = value;
-    }
-  }
-  if (extensionFlagDefinitions.length > 0) {
-    const extensionOptionKeys = collectLooseCommandOptionKeysForDefinitions(extensionFlagDefinitions);
-    const coreFlagDefinitions = resolveSubcommandFlagContractsForCommand(getCommandPath(command)).map((contract) => ({
-      long: contract.flag,
-      short: contract.short,
-      aliases: contract.aliases,
-    }));
-    const optionsToValidate: Record<string, unknown> = { ...looseOptions };
-    for (const key of extensionOptionKeys) {
-      /* c8 ignore next */
-      if (scoped[key] !== undefined) {
-        optionsToValidate[key] = scoped[key];
-      }
-    }
-    validateLooseCommandOptionsWithFlagDefinitions(optionsToValidate, [...coreFlagDefinitions, ...extensionFlagDefinitions], getCommandPath(command));
-    return coerceLooseCommandOptionsWithFlagDefinitions(scoped, extensionFlagDefinitions, looseOptions);
-  }
-  return scoped;
-}
 /* c8 ignore stop */
-
-/** Join contributed flags by stable operation identity so canonical and compatibility command paths share the same schema. */
-function collectExtensionFlagDefinitionsForCommand(registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry>, commandPath: string): FlagDefinition[] {
-  const normalizedCommandPath = normalizeExtensionCommandPath(commandPath);
-  if (normalizedCommandPath.length === 0) {
-    return [];
-  }
-  return registrations.flags.filter((entry) => resolvePmCommandOperation(normalizeExtensionCommandPath(entry.target_command)) === resolvePmCommandOperation(normalizedCommandPath)).flatMap((entry) => entry.flags);
-}
-
-function collectExtensionFlagDefinitionsForInvocation(
-  registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry>,
-  commandPath: string,
-  commandArgs: string[],
-): FlagDefinition[] {
-  const exact = collectExtensionFlagDefinitionsForCommand(registrations, commandPath);
-  const pathParts = [commandPath];
-  let nestedMatch: FlagDefinition[] = [];
-  for (const arg of commandArgs) {
-    if (arg.startsWith("-")) {
-      break;
-    }
-    pathParts.push(arg);
-    const nested = collectExtensionFlagDefinitionsForCommand(registrations, pathParts.join(" "));
-    if (nested.length > 0) {
-      nestedMatch = nested;
-    }
-  }
-  return nestedMatch.length > 0 ? nestedMatch : exact;
-}
-
-function dynamicCommandArguments(descriptor: ExtensionCommandHelpDescriptor): ExtensionCommandHelpDescriptor["arguments"] {
-  return descriptor.arguments ?? [];
-}
-
-function formatDynamicCommandUsage(descriptor: ExtensionCommandHelpDescriptor): string {
-  const argumentSuffix = dynamicCommandArguments(descriptor)
-    .map((argument) => {
-      const label = argument.variadic ? `${argument.name}...` : argument.name;
-      return argument.required ? `<${label}>` : `[${label}]`;
-    })
-    .join(" ");
-  return `pm ${descriptor.command}${argumentSuffix ? ` ${argumentSuffix}` : ""}`;
-}
-
-/**
- * Reports whether {@link commandPath} is the generated command path of a
- * registered importer (`<name> import`) or exporter (`<name> export`). Importers
- * and exporters read/write a source/destination via flags and take no positional
- * operand, so an unexpected positional is a usage error; free-form
- * `registerCommand` commands intentionally accept positionals via `context.args`
- * and are excluded.
- */
-function isImporterOrExporterCommandPath(registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry> | null, commandPath: string): boolean {
-  if (!registrations) {
-    return false;
-  }
-  const normalized = normalizeExtensionCommandPath(commandPath);
-  return (
-    registrations.importers.some((entry) => normalizeExtensionCommandPath(`${entry.importer} import`) === normalized) ||
-    registrations.exporters.some((entry) => normalizeExtensionCommandPath(`${entry.exporter} export`) === normalized)
-  );
-}
-
-function validateDynamicExtensionCommandArgs(descriptor: ExtensionCommandHelpDescriptor, args: string[]): void {
-  const descriptorArguments = dynamicCommandArguments(descriptor);
-  const requiredCount = descriptorArguments.filter((argument) => argument.required).length;
-  const variadic = descriptorArguments.some((argument) => argument.variadic);
-  const maxCount = variadic ? Number.POSITIVE_INFINITY : descriptorArguments.length;
-  const failureHints = descriptor.failure_hints ?? [];
-  const hintSuffix = failureHints.length > 0 ? ` ${failureHints.join(" ")}` : "";
-  if (args.length < requiredCount) {
-    throw new PmCliError(`Missing required argument for extension command '${descriptor.command}'. Usage: ${formatDynamicCommandUsage(descriptor)}${hintSuffix}`, EXIT_CODE.USAGE);
-  }
-  if (args.length > maxCount) {
-    const extra = args.slice(maxCount).join(" ");
-    throw new PmCliError(
-      `Too many arguments for extension command '${descriptor.command}': ${extra}. Usage: ${formatDynamicCommandUsage(descriptor)}${hintSuffix}`,
-      EXIT_CODE.USAGE,
-    );
-  }
-}
-
-function formatDynamicOptionFlag(optionKey: string): string {
-  return `--${optionKey
-    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
-    .replace(/_/g, "-")
-    .toLowerCase()}`;
-}
-
-function validateDynamicExtensionCommandOptions(
-  descriptor: ExtensionCommandHelpDescriptor,
-  options: Record<string, unknown>,
-  extensionFlagDefinitions: LooseCommandFlagDefinition[],
-): void {
-  if (extensionFlagDefinitions.length > 0) {
-    validateLooseCommandOptionsWithFlagDefinitions(options, extensionFlagDefinitions, descriptor.command);
-    return;
-  }
-  const unknownOptions = Object.keys(options)
-    .filter((key) => options[key] !== undefined)
-    .sort();
-  if (unknownOptions.length === 0) {
-    return;
-  }
-  throw new PmCliError(
-    `Unknown option '${unknownOptions.map(formatDynamicOptionFlag).join(", ")}' for extension command '${descriptor.command}'. This command does not define extension flags.`,
-    EXIT_CODE.USAGE,
-  );
-}
-
-function validateDynamicExtensionCommandInvocation(
-  descriptor: ExtensionCommandHelpDescriptor | undefined,
-  args: string[],
-  options: Record<string, unknown>,
-  extensionFlagDefinitions: LooseCommandFlagDefinition[],
-): void {
-  if (!descriptor) {
-    return;
-  }
-  validateDynamicExtensionCommandArgs(descriptor, args);
-  validateDynamicExtensionCommandOptions(descriptor, options, extensionFlagDefinitions);
-}
 
 const RUNTIME_FIELD_COMMAND_BY_COMMAND_PATH: Readonly<Record<string, RuntimeFieldCommand>> = {
   create: "create",
@@ -1215,282 +771,6 @@ function buildRuntimeExtensionDiscoverySnapshotCacheKey(pmRoot: string): string 
   return `pm-root:${pmRoot}`;
 }
 
-function collectLeadingCommandArgs(commandArgs: readonly string[] | undefined): string[] {
-  const leading: string[] = [];
-  for (const arg of commandArgs ?? []) {
-    if (arg.startsWith("-")) {
-      break;
-    }
-    const normalized = normalizeExtensionCommandPath(arg);
-    if (normalized.length === 0) {
-      continue;
-    }
-    leading.push(normalized);
-  }
-  return leading;
-}
-
-/* c8 ignore start */
-/** Match leading command paths against both native history spellings and stable extension operation identities. */
-function collectActivationCommandCandidates(probe: RuntimeExtensionActivationProbe): string[] {
-  /* c8 ignore next */
-  const commandPath = normalizeExtensionCommandPath(probe.commandPath ?? "");
-  if (commandPath.length === 0) {
-    return [];
-  }
-  const candidates = [commandPath];
-  const parts = commandPath.split(" ").filter((part) => part.length > 0);
-  for (const arg of collectLeadingCommandArgs(probe.commandArgs)) {
-    parts.push(...arg.split(" ").filter((part) => part.length > 0));
-    candidates.push(parts.join(" "));
-  }
-  return [...new Set(candidates.flatMap((candidate) => [candidate, resolvePmCommandOperation(candidate)]))];
-}
-
-function activationCommandMatchesProbe(command: string, probe: RuntimeExtensionActivationProbe): boolean {
-  const normalized = normalizeExtensionCommandPath(command);
-  if (normalized.length === 0) {
-    return false;
-  }
-  const candidates = collectActivationCommandCandidates(probe);
-  for (const candidate of candidates) {
-    if (candidate === normalized || candidate.startsWith(`${normalized} `)) {
-      return true;
-    }
-  }
-  if (probe.allowCommandPrefixMatch === true) {
-    return candidates.some((candidate) => normalized.startsWith(`${candidate} `));
-  }
-  return false;
-}
-
-function extensionActivationCommands(extension: ExtensionDiscoveryResult["effective"][number]): string[] {
-  const explicitCommands = extension.activation?.commands;
-  if (explicitCommands) {
-    return explicitCommands;
-  }
-  const contributions = extension.contributions;
-  if (!contributions) {
-    return [];
-  }
-  return [
-    ...entriesOrEmpty(contributions.commands),
-    ...entriesOrEmpty(contributions.command_handlers),
-    ...entriesOrEmpty(contributions.command_overrides),
-    ...entriesOrEmpty(contributions.flag_commands),
-    ...entriesOrEmpty(contributions.parser_overrides),
-    ...ownershipCommands(contributions.preflight_ownership),
-    ...ownershipCommands(contributions.renderer_ownership),
-  ];
-}
-
-function entriesOrEmpty<T>(entries: readonly T[] | undefined): readonly T[] {
-  return entries ?? [];
-}
-
-function ownershipCommands(entries: readonly { commands: readonly string[] }[] | undefined): string[] {
-  return entriesOrEmpty(entries).flatMap((entry) => entry.commands);
-}
-
-function extensionCapabilities(extension: ExtensionDiscoveryResult["effective"][number]): Set<string> {
-  /* c8 ignore next */
-  return new Set((extension.capabilities ?? []).map((capability) => capability.trim().toLowerCase()));
-}
-
-const GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES = new Set(["hooks", "parser", "preflight", "renderers"]);
-// Capabilities that register command handlers whose names are not statically
-// known without declared `activation.commands`, so the extension must activate
-// for any command probe. `importers`/`exporters` register their import/export as
-// command handlers, so they belong here alongside commands/schema/services.
-const CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES = new Set(["commands", "schema", "services", "importers"]);
-const SEARCH_EXTENSION_ACTIVATION_COMMANDS = new Set(["reindex", "search", "search-advanced"]);
-const CREATE_TEMPLATE_FLAGS = new Set(["--template"]);
-
-function hasAnyCapability(capabilities: Set<string>, expected: Set<string>): boolean {
-  for (const capability of expected) {
-    if (capabilities.has(capability)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function commandPathNeedsSearchExtensions(commandPath: string | undefined): boolean {
-  const normalized = normalizeExtensionCommandPath(commandPath ?? "");
-  if (normalized.length === 0) {
-    return false;
-  }
-  const [topLevel] = normalized.split(" ");
-  /* c8 ignore next */
-  return SEARCH_EXTENSION_ACTIVATION_COMMANDS.has(topLevel ?? normalized);
-}
-
-function probeUsesAnyFlag(probe: RuntimeExtensionActivationProbe, flags: Set<string>): boolean {
-  /* c8 ignore next */
-  for (const arg of probe.commandArgs ?? []) {
-    if (!arg.startsWith("--")) {
-      continue;
-    }
-    const [flagName] = arg.split("=", 1);
-    if (flags.has(flagName)) {
-      return true;
-    }
-  }
-  return false;
-}
-/* c8 ignore stop */
-
-function commandPathNeedsTemplateExtensions(probe: RuntimeExtensionActivationProbe): boolean {
-  return normalizeExtensionCommandPath(probe.commandPath ?? "") === "create" && probeUsesAnyFlag(probe, CREATE_TEMPLATE_FLAGS);
-}
-
-function extensionProvidesTemplatesRuntime(commands: readonly string[]): boolean {
-  return commands.some((command) => {
-    const normalized = normalizeExtensionCommandPath(command);
-    return normalized === "templates" || normalized.startsWith("templates ");
-  });
-}
-
-/** Match direct command paths plus the built-in create-template bridge. */
-function matchesStaticExtensionCommand(commands: readonly string[], probe: RuntimeExtensionActivationProbe): boolean {
-  return commands.some((command) => activationCommandMatchesProbe(command, probe)) || (commandPathNeedsTemplateExtensions(probe) && extensionProvidesTemplatesRuntime(commands));
-}
-
-/** Identify contribution surfaces that participate in global runtime behavior. */
-function hasGlobalExtensionContributions(contributions: NonNullable<ExtensionDiscoveryResult["effective"][number]["contributions"]>): boolean {
-  const contributionCounts = [
-    entriesOrEmpty(contributions.hooks).length,
-    (contributions.preflight_overrides ?? 0) - entriesOrEmpty(contributions.preflight_ownership).length,
-    entriesOrEmpty(contributions.item_types).length,
-    entriesOrEmpty(contributions.item_fields).length,
-    entriesOrEmpty(contributions.relationship_kinds).length,
-    entriesOrEmpty(contributions.service_overrides).length,
-    entriesOrEmpty(contributions.assurance_providers).length,
-    entriesOrEmpty(contributions.renderer_overrides).length - entriesOrEmpty(contributions.renderer_ownership).length,
-  ];
-  return contributionCounts.some((count) => count > 0);
-}
-
-/** Resolve an exact activation verdict from declared commands and contributions. */
-function resolveStaticExtensionActivationDecision(extension: ExtensionDiscoveryResult["effective"][number], probe: RuntimeExtensionActivationProbe): boolean | undefined {
-  const explicitCommands = extension.activation?.commands ?? [];
-  if (explicitCommands.length > 0) {
-    return matchesStaticExtensionCommand(explicitCommands, probe);
-  }
-  const commands = extensionActivationCommands(extension);
-  if (matchesStaticExtensionCommand(commands, probe)) return true;
-  if (extensionCapabilities(extension).has("search") && commandPathNeedsSearchExtensions(probe.commandPath)) {
-    return true;
-  }
-  if (extension.contributions) {
-    return hasGlobalExtensionContributions(extension.contributions);
-  }
-  return undefined;
-}
-
-function extensionNeedsActivationForProbe(extension: ExtensionDiscoveryResult["effective"][number], probe: RuntimeExtensionActivationProbe): boolean {
-  const staticDecision = resolveStaticExtensionActivationDecision(extension, probe);
-  if (staticDecision !== undefined) return staticDecision;
-  const capabilities = extensionCapabilities(extension);
-
-  if (hasAnyCapability(capabilities, GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES)) {
-    return true;
-  }
-
-  // Without declared activation commands the contributed command names are
-  // unknown, so any command-bearing capability (commands/schema/services and
-  // importers/exporters, all of which register command handlers) must activate
-  // for the probe — the invoked command could be one it registers. Activation
-  // stays lazy once the extension declares `activation.commands` (handled by the
-  // exact-match path above).
-  if (hasAnyCapability(capabilities, CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES)) {
-    return true;
-  }
-
-  return false;
-}
-
-/** Decide whether installed providers must activate for a targeted invocation or complete command discovery. */
-function discoveryNeedsActivationForProbe(discovery: ExtensionDiscoveryResult, probe: RuntimeExtensionActivationProbe): boolean {
-  if (discovery.effective.length === 0) {
-    return false;
-  }
-  const hasCommandProbe = buildRuntimeExtensionActivationScope(probe) !== "all";
-  if (!hasCommandProbe) {
-    return discovery.effective.some((extension) => {
-      const capabilities = extensionCapabilities(extension);
-      return (
-        extensionActivationCommands(extension).length > 0 ||
-        hasAnyCapability(capabilities, GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES) ||
-        hasAnyCapability(capabilities, CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES) ||
-        capabilities.has("search")
-      );
-    });
-  }
-  return discovery.effective.some((extension) => extensionNeedsActivationForProbe(extension, probe));
-}
-
-/** Build a deterministic activation scope; completion and unconstrained discovery include every installed command provider. */
-function buildRuntimeExtensionActivationScope(probe: RuntimeExtensionActivationProbe): string {
-  // Completion discovers every installed command, including commands owned by
-  // packages other than the package providing the completion renderer.
-  if (normalizeExtensionCommandPath(probe.commandPath ?? "").split(" ")[0] === "completion") {
-    return "all";
-  }
-  const commandPath =
-    collectActivationCommandCandidates(probe)
-      .filter((candidate) => candidate.split(" ").every((part) => !part.startsWith("-")))
-      .sort((left, right) => right.length - left.length)[0] ?? normalizeExtensionCommandPath(probe.commandPath ?? "");
-  if (commandPath.length === 0) {
-    return "all";
-  }
-  const args = commandPathNeedsTemplateExtensions(probe) ? "--template" : "";
-  const prefix = probe.allowCommandPrefixMatch === true ? "prefix" : "exact";
-  return `${prefix}:${commandPath}:${args}`;
-}
-
-function buildRuntimeExtensionFilterForProbe(probe: RuntimeExtensionActivationProbe): ((extension: ExtensionDiscoveryResult["effective"][number]) => boolean) | undefined {
-  return buildRuntimeExtensionActivationScope(probe) === "all" ? undefined : (extension) => extensionNeedsActivationForProbe(extension, probe);
-}
-
-function buildBootstrapActivationProbe(invocationArgv: string[]): RuntimeExtensionActivationProbe {
-  const helpRequest = parseBootstrapHelpRequest(invocationArgv);
-  if (helpRequest.requested && helpRequest.commandPathTokens.length > 0) {
-    const [commandPath, ...commandArgs] = helpRequest.commandPathTokens;
-    return {
-      commandPath,
-      commandArgs,
-      allowCommandPrefixMatch: true,
-    };
-  }
-
-  const stripped = stripGlobalBootstrapTokens(invocationArgv);
-  const commandIndex = stripped.findIndex((token) => token.trim().length > 0 && !token.startsWith("-"));
-  if (commandIndex < 0) {
-    return {};
-  }
-  return {
-    commandPath: stripped[commandIndex],
-    commandArgs: stripped.slice(commandIndex + 1),
-    allowCommandPrefixMatch: helpRequest.requested,
-  };
-}
-
-/* c8 ignore start */
-function collectParsedActivationCommandArgs(command: Command): string[] {
-  const commandArgs = command.args.map(String);
-  const commandPath = normalizeExtensionCommandPath(getCommandPath(command));
-  if (commandPath === "create") {
-    const options = command.optsWithGlobals() as Record<string, unknown>;
-    /* c8 ignore next */
-    if (typeof options.template === "string" && options.template.trim().length > 0) {
-      commandArgs.push("--template");
-    }
-  }
-  return commandArgs;
-}
-/* c8 ignore stop */
-
 /** Surface settings-read warnings once per command on stderr. readSettings() silently falls back to defaults when settings.json is invalid, so most commands (create/list/search/...) generate the warning but never show it — a typo would change behavior with no explanation. Only the `settings_read_*` codes are surfaced (the corrupt-settings fallbacks: invalid_json / invalid_schema / merge_failed); other informational settings warnings (schema bootstrap, legacy-format coercion) stay quiet. Mirrors the same finding in `pm health`, which also carries a remediation_map for it. */
 function emitSettingsReadWarnings(warnings: readonly string[]): void {
   for (const warning of warnings) {
@@ -1635,6 +915,7 @@ async function loadRuntimeExtensionSnapshot(
 }
 
 /* c8 ignore start */
+
 async function maybeLoadRuntimeExtensions(command: Command): Promise<{
   hooks: ExtensionHookRegistry;
   commands: ExtensionCommandRegistry;
@@ -1695,6 +976,7 @@ async function maybeLoadRuntimeExtensions(command: Command): Promise<{
     pmRoot,
   };
 }
+
 /* c8 ignore stop */
 
 async function loadRuntimeExtensionCommandDescriptorsForRecovery(pmRoot: string): Promise<Map<string, ExtensionCommandHelpDescriptor>> {
@@ -1714,6 +996,7 @@ async function executeRegisteredRuntimeMigrations(migrations: RegisteredExtensio
 }
 
 /* c8 ignore start */
+
 /** Build one host-bound extension SDK using the command's resolved author. */
 function buildExtensionCommandSdk(pmRoot: string, global: GlobalOptions) {
   const author = typeof global.author === "string" && global.author.trim() ? global.author.trim() : "pm-extension";
@@ -1926,6 +1209,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
   };
   visit(rootProgram);
 }
+
 /* c8 ignore stop */
 
 async function clearDynamicExtensionCommandState(params?: { rootProgram: Command; pmRoot: string; invocationArgv: string[]; settings?: PmSettings }): Promise<void> {
@@ -1951,9 +1235,12 @@ function attachDynamicExtensionHelp(command: Command, descriptor: ExtensionComma
     command.addHelpText("after", metadataHelp);
   }
 }
-/* v8 ignore stop */
 
 /* c8 ignore start */
+
+/* v8 ignore stop */
+
+
 /** Apply descendant-derived visibility to every generated extension namespace. */
 function applyDynamicExtensionRootHelpVisibility(
   rootProgram: Command,
@@ -2094,15 +1381,15 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
   }
   applyDynamicExtensionRootHelpVisibility(rootProgram, preexistingTopLevelCommands, snapshot.commandDescriptors);
 }
-/* c8 ignore stop */
 
-/* c8 ignore start */
 const CLI_VERSION = resolvePmCliVersion(import.meta.url, ["../.."]) ?? "0.0.0";
+
 /* c8 ignore stop */
 
 let program = createPmCliProgram(CLI_VERSION);
 
 /* c8 ignore start */
+
 /** Bind output validation, extension policy, mutation guards, and observability to the selected semantic command. */
 function attachProgramLifecycleHooks(rootProgram: Command): void {
   rootProgram.hook("preAction", async (_thisCommand, actionCommand) => {
@@ -2273,174 +1560,8 @@ function attachProgramLifecycleHooks(rootProgram: Command): void {
     await runAndClearAfterCommandHooks(outcome);
   });
 }
+
 attachProgramLifecycleHooks(program);
-
-const VERSION_FLAG_TOKENS = new Set(["--version", "-V"]);
-const SETUP_COMMAND_NAMES = new Set(["config", "extension", "init", "install", "package", "packages", "templates", "upgrade"]);
-const LIST_QUERY_COMMAND_NAMES = new Set([
-  "activity",
-  "aggregate",
-  "context",
-  "ctx",
-  "events",
-  "get",
-  "graph",
-  "history",
-  "list",
-  "list-all",
-  "list-blocked",
-  "list-canceled",
-  "list-closed",
-  "list-draft",
-  "list-in-progress",
-  "list-open",
-  "search",
-]);
-const MUTATION_COMMAND_NAMES = new Set([
-  "append",
-  "close",
-  "close-many",
-  "comments",
-  "delete",
-  "deps",
-  "discover",
-  "docs",
-  "files",
-  "history-repair",
-  "history-redact",
-  "history-compact",
-  "learnings",
-  "notes",
-  "plan",
-  "restore",
-  "update",
-  "update-many",
-  "create",
-]);
-const OPERATION_COMMAND_NAMES = new Set([
-  "claim",
-  "close-task",
-  "contracts",
-  "duplicates",
-  "gc",
-  "health",
-  "pause-task",
-  "release",
-  "start-task",
-  "stats",
-  "test",
-  "test-all",
-  "test-runs",
-  "test-runs-worker",
-  "validate",
-]);
-const MUTATING_OPERATION_COMMAND_NAMES = new Set(["claim", "close-task", "pause-task", "release", "start-task", "test"]);
-interface CoreCommandRegistrationSelection {
-  setup: boolean;
-  listQuery: boolean;
-  mutation: boolean;
-  operation: boolean;
-  targetCommandName?: string;
-}
-const REGISTER_ALL_CORE_COMMAND_FAMILIES: CoreCommandRegistrationSelection = {
-  setup: true,
-  listQuery: true,
-  mutation: true,
-  operation: true,
-};
-
-const RUNTIME_SCHEMA_FLAG_BOOTSTRAP_COMMANDS = new Set([
-  "create",
-  "update",
-  "update-many",
-  "list",
-  "list-all",
-  "list-draft",
-  "list-open",
-  "list-in-progress",
-  "list-blocked",
-  "list-closed",
-  "list-canceled",
-  "search",
-  "calendar",
-  "context",
-  "templates",
-]);
-
-function invocationRequestsVersion(invocationArgv: string[]): boolean {
-  return invocationArgv.some((token) => VERSION_FLAG_TOKENS.has(token));
-}
-
-/** Load only the selected core registration family, retaining complete discovery for help and unknown paths. */
-function resolveCoreCommandRegistrationSelection(invocationArgv: string[]): CoreCommandRegistrationSelection {
-  if (invocationRequestsVersion(invocationArgv)) {
-    return {
-      setup: false,
-      listQuery: false,
-      mutation: false,
-      operation: false,
-    };
-  }
-  if (invocationArgv.length === 0 || parseBootstrapHelpRequest(invocationArgv).requested) {
-    return REGISTER_ALL_CORE_COMMAND_FAMILIES;
-  }
-  const commandName = parseBootstrapCommandName(invocationArgv);
-  if (!commandName) {
-    return REGISTER_ALL_CORE_COMMAND_FAMILIES;
-  }
-  const normalizedCommand = commandName.trim().toLowerCase();
-  const commandTokens = stripGlobalBootstrapTokens(invocationArgv);
-  const semanticCommand = findPmNamespacedCommand(commandTokens)?.alias;
-  if (PM_RELOCATED_COMMAND_ALIASES.some((alias) => alias.alias === semanticCommand)) {
-    return { ...REGISTER_ALL_CORE_COMMAND_FAMILIES, targetCommandName: semanticCommand };
-  }
-  if (SETUP_COMMAND_NAMES.has(normalizedCommand)) {
-    return {
-      setup: true,
-      listQuery: false,
-      mutation: false,
-      operation: false,
-      targetCommandName: normalizedCommand,
-    };
-  }
-  if (LIST_QUERY_COMMAND_NAMES.has(normalizedCommand)) {
-    return {
-      setup: false,
-      listQuery: true,
-      mutation: false,
-      operation: false,
-      targetCommandName: normalizedCommand,
-    };
-  }
-  if (MUTATION_COMMAND_NAMES.has(normalizedCommand)) {
-    return {
-      setup: false,
-      listQuery: false,
-      mutation: true,
-      operation: false,
-      targetCommandName: normalizedCommand,
-    };
-  }
-  if (OPERATION_COMMAND_NAMES.has(normalizedCommand)) {
-    return {
-      setup: false,
-      listQuery: false,
-      mutation: false,
-      operation: true,
-      targetCommandName: normalizedCommand,
-    };
-  }
-  return REGISTER_ALL_CORE_COMMAND_FAMILIES;
-}
-
-function shouldAttachRichHelpTextForInvocation(invocationArgv: string[]): boolean {
-  return (
-    invocationArgv.length === 0 ||
-    parseBootstrapHelpRequest(invocationArgv).requested ||
-    (invocationArgv.includes("--explain") &&
-      parseBootstrapCommandName(invocationArgv) === undefined)
-  );
-}
 
 const IDEMPOTENT_TOP_LEVEL_REGISTRATION = Symbol("pmCliIdempotentTopLevelRegistration");
 
@@ -2504,105 +1625,6 @@ async function registerCoreCommandFamilies(rootProgram: Command, selection: Core
     const { registerOperationCommands } = await loadOperationRegistrationModule();
     registerOperationCommands(rootProgram);
   }
-}
-
-function shouldRegisterDynamicExtensionPaths(_rootProgram: Command, invocationArgv: string[]): boolean {
-  if (invocationRequestsVersion(invocationArgv)) {
-    return false;
-  }
-  if (isFullHelpDiscovery(invocationArgv)) {
-    return true;
-  }
-  const helpRequest = parseBootstrapHelpRequest(invocationArgv);
-  if (helpRequest.requested) {
-    return true;
-  }
-  const commandName = parseBootstrapCommandName(invocationArgv);
-  if (!commandName) {
-    return false;
-  }
-  return true;
-}
-
-function shouldRegisterRuntimeSchemaFlags(invocationArgv: string[]): boolean {
-  if (invocationRequestsVersion(invocationArgv)) {
-    return false;
-  }
-  const commandName = parseBootstrapCommandName(invocationArgv);
-  if (!commandName) {
-    return false;
-  }
-  return RUNTIME_SCHEMA_FLAG_BOOTSTRAP_COMMANDS.has(commandName);
-}
-
-/**
- * Project a typo trace and its canonical target into disclosure-safe source,
- * target, and retry values before they are copied into error diagnostics.
- */
-function redactSensitiveFlagTypo(params: { argv: string[]; normalizedDisplay: string; normalizedTokens: string[]; rawFrom: unknown }): {
-  argv: string[];
-  normalizedDisplay: string;
-  sourceDisplay: string;
-} {
-  const rawTypoToken = String(params.rawFrom ?? "");
-  const rawTypoEqualsIndex = rawTypoToken.indexOf("=");
-  const rawTypoFlag = rawTypoEqualsIndex >= 0 ? rawTypoToken.slice(0, rawTypoEqualsIndex) : rawTypoToken;
-  const sensitiveCanonicalFlag = params.normalizedTokens
-    .map((token) => {
-      const equalsIndex = token.indexOf("=");
-      return equalsIndex >= 0 ? token.slice(0, equalsIndex) : token;
-    })
-    .find((token) => token === "--literal" || token === "--regex" || token === "--replacement");
-  const typoNormalizedArgv = sensitiveCanonicalFlag
-    ? params.argv.map((token) => {
-        const equalsIndex = token.indexOf("=");
-        const flag = equalsIndex >= 0 ? token.slice(0, equalsIndex) : token;
-        return flag === rawTypoFlag ? (equalsIndex >= 0 ? `${sensitiveCanonicalFlag}${token.slice(equalsIndex)}` : sensitiveCanonicalFlag) : token;
-      })
-    : params.argv;
-  const safeArgv = redactSensitiveCommandArgs(typoNormalizedArgv);
-  const safeTypoDisplay = sensitiveCanonicalFlag && rawTypoEqualsIndex >= 0 ? `${rawTypoFlag}=[redacted]` : rawTypoToken;
-  const safeNormalizedDisplay = sensitiveCanonicalFlag && params.normalizedDisplay.includes("=") ? `${sensitiveCanonicalFlag}=[redacted]` : params.normalizedDisplay;
-  return {
-    argv: safeArgv,
-    normalizedDisplay: safeNormalizedDisplay,
-    sourceDisplay: safeTypoDisplay,
-  };
-}
-
-function enforceExplicitRetryForFlagTypos(bootstrapInvocation: ReturnType<typeof normalizeBootstrapInvocation>): void {
-  const commandName = bootstrapInvocation.commandName;
-  if (!commandName) {
-    return;
-  }
-  const typoEvent = bootstrapInvocation.trace.find((entry) => entry.reason === "flag_typo");
-  if (!typoEvent) {
-    return;
-  }
-  const normalizedTokens = Array.isArray(typoEvent.to) ? typoEvent.to : [String(typoEvent.to ?? "")].filter((entry) => entry.length > 0);
-  const normalizedDisplay = normalizedTokens.length > 0 ? normalizedTokens.join(" ") : "the canonical flag";
-  const mutatingCommand = MUTATION_COMMAND_NAMES.has(commandName) || MUTATING_OPERATION_COMMAND_NAMES.has(commandName);
-  const code = mutatingCommand ? "mutating_flag_typo_requires_retry" : "flag_typo_requires_retry";
-  const commandScope = mutatingCommand ? "mutating option" : "option";
-  const safeTypo = redactSensitiveFlagTypo({
-    argv: bootstrapInvocation.argv,
-    normalizedDisplay,
-    normalizedTokens,
-    rawFrom: typoEvent.from,
-  });
-  throw new PmCliError(
-    `Refusing to auto-correct ${commandScope} ${safeTypo.sourceDisplay} to ${safeTypo.normalizedDisplay}. Retry with the canonical flag so the command is explicit.`,
-    EXIT_CODE.USAGE,
-    {
-      code,
-      examples: [renderPmCommand(safeTypo.argv)],
-      nextSteps: ["Retry the command with the canonical flag shown in examples."],
-      recovery: {
-        normalized_args: safeTypo.argv,
-        suggested_retry: renderPmCommand(safeTypo.argv),
-      },
-    },
-  );
 }
 
 type TelemetryCommandErrorEmitter = (params: {

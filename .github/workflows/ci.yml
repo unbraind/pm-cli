@@ -356,6 +356,13 @@ jobs:
         timeout-minutes: 6
         run: node scripts/release/compatibility-check.mjs --json
 
+      - name: Verify native shell completion boundaries
+        if: matrix.gate == 'smokes'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes fish zsh
+          node tests/acceptance/shell-completion.mjs
+
       - name: Run npx + plugin smoke gates
         if: matrix.gate == 'smokes'
         run: |

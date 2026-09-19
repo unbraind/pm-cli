@@ -1,18 +1,7 @@
 /**
  * @module sdk/runtime
- *
- * Defines public SDK APIs and package-author helpers for Runtime.
+ * Provides the public client and coordinates isolated extension lifecycles.
  */
-export {
-  PM_GITIGNORE_END,
-  PM_GITIGNORE_START,
-  ensurePmGitignore,
-  getPmGitignoreBlock,
-  type EnsurePmGitignoreResult,
-} from "./workspace.js";
-export { SEARCH_EXTENSION_FLAG_DEFINITIONS } from "./extension-contracts.js";
-export type { FlagDefinition } from "../core/extensions/loader.js";
-export * from "./cli-contracts/agent-output-contracts.js";
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
   createEmptyExtensionCommandRegistry,
@@ -38,245 +27,48 @@ import {
   setActiveExtensionServices,
 } from "../core/extensions/index.js";
 import { pathExists } from "../core/fs/fs-utils.js";
-import { projectMutationResult } from "../core/output/mutation-projection.js";
-import { withQuerySummary } from "../core/output/query-summary.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { asRecordClone } from "../core/shared/primitives.js";
 import { createAsyncReadWriteGate } from "../core/shared/serial-queue.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import { getSettingsPath,resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import type { ItemMetadata } from "../types/index.js";
-import { listClientItemMetadataLight } from "./query/light-metadata.js";
-import { certifyCompleteListResult, createCompleteListOptions, type PmCompleteListOptions, type PmCompleteListResult } from "./query/complete-list.js";
-export { PmCompleteListValidationError, assertCompleteListResult, certifyCompleteListResult, createCompleteListOptions, inspectCompleteListResult, type PmCompleteListCertificate, type PmCompleteListFailureReceipt, type PmCompleteListFinding, type PmCompleteListFindingCode, type PmCompleteListInspection, type PmCompleteListOptions, type PmCompleteListResult } from "./query/complete-list.js";
-export { getWorkspaceContracts } from "./query/workspace-contracts.js";
-export type {
-  WorkspaceExtensionCommandContract,
-  WorkspaceFieldContract,
-} from "./workspace-contracts.js";
-import { PM_TOOL_ACTIONS } from "./cli-contracts/enum-contracts.js";
 import {
-  clearWorkspaceContractsCache,
-} from "./workspace-contracts-cache.js";
-import { SDK_ACTION_ALIASES } from "./runtime-action-aliases.js";
-import { createExtensionCommandSdk } from "./extension-command-context.js";
-import { createUnknownSubcommandError } from "./agent/subcommand-recovery.js";
-import {
-  applyContextIntentProjection,
-  attachReadOutputContracts,
-} from "./context-intent-contracts.js";
-import { finalizeContextUsageEgress } from "./context/usage-egress.js";
-import {
-  runWithDiscoveredContextIntentContracts,
-  type PmContextIntentPackageModule,
-} from "./context-intent-runtime.js";
-import {
-  normalizeReadOutputIncludeModeOptions, validateReadOutputOptions,
-  type PmReadOutputOptions,
-  type PmReadOutputResultFor,
-} from "./read-output-contracts.js";
-export type {
-  PmReadOutputBudgetExceeded,
-  PmReadOutputOptions,
-  PmReadOutputResult,
-  PmReadOutputResultFor,
-  PmReadOutputSurfaceContract,
-} from "./read-output-contracts.js";
-export type {
-  PmReadOutputSessionReceipt,
-  PmReadOutputSessionState,
-} from "./read-output-session.js";
-export type { PmContextIntentContract } from "./context-intent-contracts.js";
-export type { PmErrorCodeContract } from "./error-code-catalog.js";
-export { clearWorkspaceContractsCache } from "./workspace-contracts-cache.js";
-import {
-  normalizeActivityProjectionOptions,
-  runActivity,
-  type ActivityCommandOptions,
-} from "./query/activity.js";
-import { runAssuranceDispatch, type AssuranceActionInput, type AssuranceActionResult } from "./governance/assurance-action.js";
-import { WORKFLOW_POLICY_ACTIONS, runWorkflowPolicyAction, type WorkflowPolicyAction, type WorkflowPolicyActionOptions, type WorkflowPolicyActionResult } from "./governance/workflow-policy.js";
-export * from "./governance/workflow-policy.js";
-export type * from "./governance/assurance-action-contracts.js";
-import {
-  runAggregate,
-  type AggregateOptions,
-  type AggregateResult,
-} from "./query/aggregate.js";
-import { runAppend } from "./lifecycle/append.js";
-export { runStartTask, runPauseTask, runCloseTask, type TaskCompositionOptions } from "./lifecycle/task-composition.js";
-import { runCloseMany } from "./lifecycle/close-many.js";
-import { normalizeAnnotationTransportOptions } from "./annotations.js";
-import { runComments } from "./comments.js";
-import { runHistory } from "./query/history.js";
-import { runHistoryAttest, type HistoryAttestCommandOptions } from "./history/attestation-command.js";
-import { runLearnings } from "./learnings.js";
-import { runNotes } from "./notes.js";
-import { runUpdateMany } from "./lifecycle/update-many.js";
-import {
-  runUpgrade,
-  type UpgradeCommandOptions,
-  type UpgradeResult,
-} from "./governance/upgrade.js";
-import { runCreate, type CreateResult } from "./lifecycle/create.js";
-import { runUpdate, type UpdateResult } from "./lifecycle/update.js";
-import type { ReopenCommandOptions, ReopenResult } from "./lifecycle/reopen.js";
-import {
-  runPlan,
-  type PlanCommandOptions,
-  type PlanCommandResult,
-  type PlanSubcommand,
-} from "./lifecycle/plan.js";
-import {
-  runContext,
-  type ContextOptions,
-  type ContextResult,
-} from "./query/context.js";
-import { runNext, type NextOptions, type NextResult } from "./query/next.js";
-import { runCopy, type CopyResult } from "./lifecycle/copy.js";
-import { runDelete, type DeleteResult } from "./lifecycle/delete.js";
-import { runRestore, type RestoreResult } from "./lifecycle/restore.js";
-import { runFocus, type FocusResult } from "./lifecycle/focus.js";
-import { runGet, type GetOptions, type GetResult } from "./query/get.js";
-import {
-  runGc,
-  type GcCommandOptions,
-  type GcResult,
-} from "./governance/gc.js";
-import {
-  runHealth,
-  type HealthResult,
-  type RunHealthOptions,
-} from "./governance/health.js";
-import {
-  runValidate,
-  type ValidateCommandOptions,
-  type ValidateCountsResult,
-  type ValidateResult,
-} from "./governance/validate.js";
-import {
-  runExtension,
-  type ExtensionCommandOptions,
-  type ExtensionCommandResult,
-} from "./extension.js";
-import { runConfig } from "./config.js";
-import { INIT_INVOCATION_CWD, runInit } from "./init.js";
-import {
-  runRuntimeEvalAction,
-  runRuntimeEventsAction,
-  runRuntimeMergeAction,
-  runRuntimeSchedulingAction,
-  runRuntimeWorkspaceAction,
-} from "./runtime-extended-actions.js";
-import {
-  acknowledgeUnknownAuthorHistoryEventsFromTransport,
   type AcknowledgeUnknownAuthorEventsOptions,
-  type UnknownAuthorAcknowledgmentResult,
+  type UnknownAuthorAcknowledgmentResult
 } from "./author-attribution.js";
-import {
-  PROFILE_SUBCOMMANDS,
-  runProfileApply,
-  runProfileLint,
-  runProfileList,
-  runProfileShow,
-} from "./profile.js";
-import {
-  type HistoryCompactBulkCommandOptions,
-  type HistoryCompactBulkResult,
-  type HistoryCompactCommandOptions,
-  type HistoryCompactResult,
-} from "./history-compact.js";
-import {
-  runHistoryRedact,
-  type HistoryRedactCommandOptions,
-  type HistoryRedactResult,
-} from "./history-redact.js";
-import {
-  type HistoryRepairAllResult,
-  type HistoryRepairCommandOptions,
-  type HistoryRepairResult,
-} from "./history-repair.js";
-import {
-  runMcpHistoryCompactAction,
-  runMcpHistoryRepairAction,
-} from "./history-mcp.js";
-import { runMcpClaimAction, runMcpCloseAction, runMcpReopenAction, runMcpReleaseAction, runMcpTaskCompositionAction } from "./lifecycle/mcp-actions.js";
-import {
-  actionGlobalOptions as globalOptions,
-  closeManyOptionsFromFlat,
-  extensionOptionsFromArgs,
-  graphOptionsFromFlat,
-  mutationListOptions,
-  mutationOptionsWithOverrides,
-  normalizeActionName,
-  normalizeCommandPath,
-  normalizeMcpOptionsArrays,
-  normalizeMcpUpdateOptions,
-  optionsWithAuthor,
-  parseRuntimeInteger as parseMcpInteger,
-  readRuntimeScalarString as readScalarString,
-  readRuntimeScalarStringAllowBlank as readScalarStringAllowBlank,
-  readRuntimeString as readString,
-  readRuntimeStringArray as readStringArray,
-  resolveRuntimeLimit,
-  shouldInvalidateWorkspaceContractsCacheAfterAction,
-  updateManyOptionsFromFlat,
-  withAddNoteOption,
-  withFilesDiscoveryOptions,
-  withMutationCompaction,
-} from "./runtime-input.js";
-import { runDeps } from "./dependencies.js";
-import { runDocs } from "./docs.js";
-import type {
-  PmCreateActionOptions,
-  PmUpdateActionOptions,
-} from "./cli-contracts/typed-action-inputs.js";
-import {
-  runGraph,
-  type GraphCommandOptions,
-  type GraphResult,
-  type GraphSubcommand,
-} from "./graph/run.js";
-import { runFiles, runFilesDiscover, runFilesLookup } from "./files.js";
-import { runtimeFilesLookupOptions } from "./traceability/runtime-files-lookup.js";
-import type { AppendCommandOptions, AppendResult } from "./lifecycle/append.js";
-import type {
-  ClaimNextResult,
-  ClaimResult,
-  ReleaseResult,
-} from "./lifecycle/claim.js";
-import type { CloseResult } from "./lifecycle/close.js";
+import { PM_TOOL_ACTIONS } from "./cli-contracts/enum-contracts.js";
 import {
   runContracts,
   type ContractsCommandOptions,
   type ContractsResult,
 } from "./cli-contracts/runtime-contracts.js";
-import { runList, type ListOptions, type ListResult } from "./query/list.js";
+import type {
+  PmCreateActionOptions,
+  PmUpdateActionOptions,
+} from "./cli-contracts/typed-action-inputs.js";
+import type { CommentsCommandOptions,CommentsResult } from "./comments.js";
+import type { ConfigCommandOptions,ConfigResult } from "./config.js";
 import {
-  runSearch,
-  type SearchOptions,
-  type SearchResult,
-} from "./query/search.js";
+  attachReadOutputContracts
+} from "./context-intent-contracts.js";
 import {
-  runStats,
-  type StatsCommandOptions,
-  type StatsResult,
-} from "./stats.js";
-import { statsCommandOptionsFromRuntime } from "./runtime-stats-options.js";
+  runWithDiscoveredContextIntentContracts
+} from "./context-intent-runtime.js";
+import { finalizeContextUsageEgress } from "./context/usage-egress.js";
+import type { DepsCommandOptions,DepsResult } from "./dependencies.js";
+import type { DocsCommandOptions,DocsResult } from "./docs.js";
 import {
-  runDuplicates,
   type DuplicatesCommandOptions,
-  type DuplicatesResult,
+  type DuplicatesResult
 } from "./duplicates.js";
-import { runTelemetry } from "./telemetry.js";
-import { runTest } from "./test/execution.js";
-import { runTestAll } from "./test/batch.js";
-import type { CommentsCommandOptions, CommentsResult } from "./comments.js";
-import type { ConfigCommandOptions, ConfigResult } from "./config.js";
-import type { DepsCommandOptions, DepsResult } from "./dependencies.js";
-import type { DocsCommandOptions, DocsResult } from "./docs.js";
+import { createExtensionCommandSdk } from "./extension-command-context.js";
+import {
+  type ExtensionCommandOptions,
+  type ExtensionCommandResult
+} from "./extension.js";
 import type {
   FilesCommandOptions,
   FilesDiscoverOptions,
@@ -285,9 +77,69 @@ import type {
   FilesLookupResult,
   FilesResult,
 } from "./files.js";
-import type { InitCommandOptions, InitResult } from "./init.js";
-import type { LearningsCommandOptions, LearningsResult } from "./learnings.js";
-import type { NotesCommandOptions, NotesResult } from "./notes.js";
+import { type AssuranceActionInput,type AssuranceActionResult } from "./governance/assurance-action.js";
+import {
+  type GcCommandOptions,
+  type GcResult
+} from "./governance/gc.js";
+import {
+  type HealthResult,
+  type RunHealthOptions
+} from "./governance/health.js";
+import {
+  type UpgradeCommandOptions,
+  type UpgradeResult
+} from "./governance/upgrade.js";
+import {
+  type ValidateCommandOptions,
+  type ValidateCountsResult,
+  type ValidateResult
+} from "./governance/validate.js";
+import { type WorkflowPolicyAction,type WorkflowPolicyActionOptions,type WorkflowPolicyActionResult } from "./governance/workflow-policy.js";
+import {
+  type GraphCommandOptions,
+  type GraphResult,
+  type GraphSubcommand
+} from "./graph/run.js";
+import {
+  type HistoryCompactBulkCommandOptions,
+  type HistoryCompactBulkResult,
+  type HistoryCompactCommandOptions,
+  type HistoryCompactResult,
+} from "./history-compact.js";
+import {
+  type HistoryRedactCommandOptions,
+  type HistoryRedactResult
+} from "./history-redact.js";
+import {
+  type HistoryRepairAllResult,
+  type HistoryRepairCommandOptions,
+  type HistoryRepairResult,
+} from "./history-repair.js";
+import { runHistoryAttest,type HistoryAttestCommandOptions } from "./history/attestation-command.js";
+import type { InitCommandOptions,InitResult } from "./init.js";
+import { INIT_INVOCATION_CWD } from "./init.js";
+import type { LearningsCommandOptions,LearningsResult } from "./learnings.js";
+import type { AppendCommandOptions,AppendResult } from "./lifecycle/append.js";
+import type {
+  ClaimNextResult,
+  ClaimResult,
+  ReleaseResult,
+} from "./lifecycle/claim.js";
+import type { CloseResult } from "./lifecycle/close.js";
+import { type CopyResult } from "./lifecycle/copy.js";
+import { type CreateResult } from "./lifecycle/create.js";
+import { type DeleteResult } from "./lifecycle/delete.js";
+import { type FocusResult } from "./lifecycle/focus.js";
+import {
+  type PlanCommandOptions,
+  type PlanCommandResult,
+  type PlanSubcommand
+} from "./lifecycle/plan.js";
+import type { ReopenCommandOptions,ReopenResult } from "./lifecycle/reopen.js";
+import { type RestoreResult } from "./lifecycle/restore.js";
+import { type UpdateResult } from "./lifecycle/update.js";
+import type { NotesCommandOptions,NotesResult } from "./notes.js";
 import type {
   ProfileApplyCommandOptions,
   ProfileApplyResult,
@@ -298,21 +150,69 @@ import type {
   ProfileSubcommand,
 } from "./profile.js";
 import {
-  SCHEMA_SUBCOMMANDS,
-  runSchemaAddField,
-  runSchemaAddStatus,
-  runSchemaAddType,
-  runSchemaApplyPreset,
-  runSchemaInferTypes,
-  runSchemaList,
-  runSchemaListFields,
-  runSchemaEvolutionMigration,
-  runSchemaRemoveField,
-  runSchemaRemoveStatus,
-  runSchemaRemoveType,
-  runSchemaShow,
-  runSchemaShowField,
-  runSchemaShowStatus,
+  type AggregateOptions,
+  type AggregateResult
+} from "./query/aggregate.js";
+import { certifyCompleteListResult,createCompleteListOptions,type PmCompleteListOptions,type PmCompleteListResult } from "./query/complete-list.js";
+import {
+  type ContextOptions,
+  type ContextResult
+} from "./query/context.js";
+import { type GetOptions,type GetResult } from "./query/get.js";
+import { listClientItemMetadataLight } from "./query/light-metadata.js";
+import { type ListOptions,type ListResult } from "./query/list.js";
+import { type NextOptions,type NextResult } from "./query/next.js";
+import {
+  type SearchOptions,
+  type SearchResult
+} from "./query/search.js";
+import {
+  normalizeReadOutputIncludeModeOptions,validateReadOutputOptions,
+  type PmReadOutputOptions,
+  type PmReadOutputResultFor,
+} from "./read-output-contracts.js";
+import { SDK_ACTION_ALIASES } from "./runtime-action-aliases.js";
+import {
+  closeManyOptionsFromFlat,
+  extensionOptionsFromArgs,
+  actionGlobalOptions as globalOptions,
+  mutationListOptions,
+  mutationOptionsWithOverrides,
+  normalizeActionName,
+  normalizeCommandPath,
+  normalizeMcpOptionsArrays,
+  normalizeMcpUpdateOptions,
+  optionsWithAuthor,
+  readRuntimeScalarString as readScalarString,
+  readRuntimeScalarStringAllowBlank as readScalarStringAllowBlank,
+  readRuntimeString as readString,
+  readRuntimeStringArray as readStringArray,
+  shouldInvalidateWorkspaceContractsCacheAfterAction,
+  updateManyOptionsFromFlat,
+  withAddNoteOption,
+  withFilesDiscoveryOptions,
+  withMutationCompaction
+} from "./runtime-input.js";
+import type {
+  ClaimNextOptions,
+  CloseTaskResult,
+  GetContractsOptions,
+  PauseTaskResult,
+  PmActionInput,
+  PmActionName,
+  PmActionOptions,
+  PmClientCloseActionOptions,
+  PmClientFullMutationOptions,
+  PmClientOptions,
+  PmClientRunArgs,
+  SchemaResult,
+  StartTaskResult,
+} from "./runtime-public-contracts.js";
+import { SDK_ACTION_HANDLERS } from "./runtime/actions.js";
+import type { ActiveExtensionRuntime,ExtensionActivationResult,McpActionDispatchContext } from "./runtime/context.js";
+import { getOwnHandler,readRequiredString } from "./runtime/context.js";
+import {
+  type RunSchemaEvolutionMigrationOptions,
   type SchemaAddFieldCommandOptions,
   type SchemaAddFieldResult,
   type SchemaAddStatusCommandOptions,
@@ -323,12 +223,11 @@ import {
   type SchemaAddTypeResult,
   type SchemaApplyPresetCommandOptions,
   type SchemaApplyPresetResult,
+  type SchemaEvolutionMigrationRequest,
+  type SchemaEvolutionMigrationResult,
   type SchemaInspectResult,
   type SchemaListFieldsResult,
   type SchemaListResult,
-  type RunSchemaEvolutionMigrationOptions,
-  type SchemaEvolutionMigrationRequest,
-  type SchemaEvolutionMigrationResult,
   type SchemaRemoveFieldCommandOptions,
   type SchemaRemoveFieldResult,
   type SchemaRemoveStatusCommandOptions,
@@ -338,50 +237,112 @@ import {
   type SchemaShowFieldResult,
   type SchemaShowResult,
   type SchemaShowStatusResult,
-  type SchemaSubcommand,
+  type SchemaSubcommand
 } from "./schema.js";
+import {
+  type StatsCommandOptions,
+  type StatsResult
+} from "./stats.js";
+import {
+  clearWorkspaceContractsCache,
+} from "./workspace-contracts-cache.js";
+
+export {
+  PM_GITIGNORE_END,
+  PM_GITIGNORE_START,
+  ensurePmGitignore,
+  getPmGitignoreBlock,
+  type EnsurePmGitignoreResult
+} from "./workspace.js";
+
+export { SEARCH_EXTENSION_FLAG_DEFINITIONS } from "./extension-contracts.js";
+
+export type { FlagDefinition } from "../core/extensions/loader.js";
+
+export * from "./cli-contracts/agent-output-contracts.js";
+
+export { PmCompleteListValidationError,assertCompleteListResult,certifyCompleteListResult,createCompleteListOptions,inspectCompleteListResult,type PmCompleteListCertificate,type PmCompleteListFailureReceipt,type PmCompleteListFinding,type PmCompleteListFindingCode,type PmCompleteListInspection,type PmCompleteListOptions,type PmCompleteListResult } from "./query/complete-list.js";
+
+export { getWorkspaceContracts } from "./query/workspace-contracts.js";
+
+export type {
+  WorkspaceExtensionCommandContract,
+  WorkspaceFieldContract
+} from "./workspace-contracts.js";
+
+export type {
+  PmReadOutputBudgetExceeded,
+  PmReadOutputOptions,
+  PmReadOutputResult,
+  PmReadOutputResultFor,
+  PmReadOutputSurfaceContract
+} from "./read-output-contracts.js";
+
+export type {
+  PmReadOutputSessionReceipt,
+  PmReadOutputSessionState
+} from "./read-output-session.js";
+
+export type { PmContextIntentContract } from "./context-intent-contracts.js";
+
+export type { PmErrorCodeContract } from "./error-code-catalog.js";
+
+export { clearWorkspaceContractsCache } from "./workspace-contracts-cache.js";
+
+export * from "./governance/workflow-policy.js";
+
+export type * from "./governance/assurance-action-contracts.js";
+
+export { runCloseTask,runPauseTask,runStartTask,type TaskCompositionOptions } from "./lifecycle/task-composition.js";
 
 export type {
   ClaimResult,
   CloseResult,
   CreateResult,
   ReleaseResult,
-  UpdateResult,
+  UpdateResult
 };
 
-export {
-  getActiveExtensionRegistrations,
-  runActiveOnReadHooks,
-  runActiveOnWriteHooks,
-} from "../core/extensions/index.js";
+  export {
+    getActiveExtensionRegistrations,
+    runActiveOnReadHooks,
+    runActiveOnWriteHooks
+  } from "../core/extensions/index.js";
+
 export {
   pathExists,
   readFileIfExists,
   removeFileIfExists,
-  writeFileAtomic,
+  writeFileAtomic
 } from "../core/fs/fs-utils.js";
+
 export {
   appendHistoryEntry,
-  createHistoryEntry,
+  createHistoryEntry
 } from "../core/history/history.js";
-export { classifyHistoryEvent, HISTORY_EVENT_CLASSIFICATION_VERSION, MAINTENANCE_HISTORY_OPERATIONS, SUBSTANTIVE_HISTORY_OPERATIONS, type HistoryEventClass } from "../core/history/event-classification.js";
+
+export { HISTORY_EVENT_CLASSIFICATION_VERSION,MAINTENANCE_HISTORY_OPERATIONS,SUBSTANTIVE_HISTORY_OPERATIONS,classifyHistoryEvent,type HistoryEventClass } from "../core/history/event-classification.js";
+
 export {
   generateItemId,
   normalizeItemId,
-  normalizeRawItemId,
+  normalizeRawItemId
 } from "../core/item/id.js";
+
 export {
   readBooleanOption,
   readCsvListOption,
-  readStringOption,
+  readStringOption
 } from "./package-runtime-options.js";
+
 export {
   PM_CLI_EXPECTED_ERROR_NAME,
   createPmCliExpectedError,
   isPmCliExpectedError,
   type CreatePmCliExpectedErrorOptions,
-  type PmCliExpectedError,
+  type PmCliExpectedError
 } from "./errors.js";
+
 export {
   commitImportedItem,
   emptyImportedDocument,
@@ -409,14 +370,16 @@ export {
   type ImportPriorityValue,
   type ToImportLinkedArtifactsOptions,
   type ToImportLinkedTestsOptions,
-  type ToImportLogEntriesOptions,
+  type ToImportLogEntriesOptions
 } from "./package-import-adapters.js";
+
 export {
   canonicalDocument,
   normalizeItemMetadata,
   serializeItemDocument,
-  splitFrontMatter,
+  splitFrontMatter
 } from "../core/item/item-format.js";
+
 export {
   BASELINE_ITEM_FORMAT_VERSION,
   CURRENT_ITEM_FORMAT_VERSION,
@@ -426,46 +389,60 @@ export {
   scanItemFormatVersions,
   type ItemFormatVersionScanEntry,
   type ItemFormatVersionScanResult,
-  type ItemFormatVersionStatus,
+  type ItemFormatVersionStatus
 } from "../core/item/item-format-version.js";
+
 export { parseTags } from "../core/item/parse.js";
-export { isTerminalStatus, normalizeStatusInput } from "../core/item/status.js";
+
+export { isTerminalStatus,normalizeStatusInput } from "../core/item/status.js";
+
 export { resolveItemTypeRegistry } from "../core/item/type-registry.js";
+
 export { acquireLock } from "../core/lock/lock.js";
+
 export {
   resolveRuntimeFieldRegistry,
-  resolveRuntimeStatusRegistry,
+  resolveRuntimeStatusRegistry
 } from "../core/schema/runtime-schema.js";
+
 export { EXIT_CODE };
-export { PmCliError } from "../core/shared/errors.js";
-export { isTimestampLiteral, nowIso } from "../core/shared/time.js";
+
+  export { PmCliError } from "../core/shared/errors.js";
+
+export { isTimestampLiteral,nowIso } from "../core/shared/time.js";
+
 export {
   jaccardSimilarity,
   normalizeSimilarityText,
   scoreItemSimilarity,
   tokenizeSimilarityText,
-  type ItemSimilarityScore,
+  type ItemSimilarityScore
 } from "./similarity-scoring.js";
+
 export {
   listAllItemMetadata,
   listAllItemMetadataLight,
   locateItem,
-  readLocatedItem,
+  readLocatedItem
 } from "../core/store/item-store.js";
+
 export {
   getHistoryPath,
   getItemPath,
   getSettingsPath,
   resolveImplicitPmRoot,
-  resolvePmRoot,
+  resolvePmRoot
 } from "../core/store/paths.js";
+
 export { readSettings } from "../core/store/settings.js";
+
 export {
   runAggregate,
   type AggregateOptions,
   type AggregateResult,
-  type AggregateRow,
+  type AggregateRow
 } from "./query/aggregate.js";
+
 export {
   CONTEXT_OUTPUT_VALUES,
   runContext,
@@ -481,15 +458,13 @@ export {
   type RecentContextItem,
   type StaleEntry,
   type TestHealthSummary,
-  type WorkloadEntry,
+  type WorkloadEntry
 } from "./query/context.js";
-export { runGet, type GetOptions, type GetResult } from "./query/get.js";
+
+export { runGet,type GetOptions,type GetResult } from "./query/get.js";
+
 export {
-  runList,
-  type ListFullResult,
-  type ListCompactResult,
-  type ListedItem,
-  type ListOptions,
+  runList,type ListCompactResult,type ListFullResult,type ListOptions,
   type ListProjectedItem,
   type ListProjectedItemCore,
   type ListResult,
@@ -498,33 +473,39 @@ export {
   type ListSortOrder,
   type ListTreeItem,
   type ListTreeMetadata,
-  type ListVerboseResult,
+  type ListVerboseResult,type ListedItem
 } from "./query/list.js";
+
 export {
   closeItem,
   runClose,
-  type CloseCommandOptions,
+  type CloseCommandOptions
 } from "./lifecycle/close.js";
+
 export {
   runCopy,
   type CopyOptions,
-  type CopyResult,
+  type CopyResult
 } from "./lifecycle/copy.js";
+
 export {
   runDelete,
   type DeleteCommandOptions,
-  type DeleteResult,
+  type DeleteResult
 } from "./lifecycle/delete.js";
+
 export {
   runFocus,
   type FocusOptions,
-  type FocusResult,
+  type FocusResult
 } from "./lifecycle/focus.js";
+
 export {
   runRestore,
   type RestoreCommandOptions,
-  type RestoreResult,
+  type RestoreResult
 } from "./lifecycle/restore.js";
+
 export {
   DEFAULT_TERMINAL_TRANSITION_POLICY,
   applyTerminalOrderingPolicy,
@@ -536,10 +517,13 @@ export {
   type TerminalReasonInput,
   type TerminalReasonResolution,
   type TerminalReasonSource,
-  type TerminalTransitionPolicy,
+  type TerminalTransitionPolicy
 } from "./lifecycle-policy.js";
-export { runUpdate, type UpdateCommandOptions } from "./lifecycle/update.js";
-export { runReopen, type PreviousTerminalEvidence, type RecurrenceReceipt, type ReopenCommandOptions, type ReopenResult } from "./lifecycle/reopen.js";
+
+export { runUpdate,type UpdateCommandOptions } from "./lifecycle/update.js";
+
+export { runReopen,type PreviousTerminalEvidence,type RecurrenceReceipt,type ReopenCommandOptions,type ReopenResult } from "./lifecycle/reopen.js";
+
 export {
   NEXT_OUTPUT_VALUES,
   runNext,
@@ -548,8 +532,9 @@ export {
   type NextOptions,
   type NextOutputFormat,
   type NextRecommendation,
-  type NextResult,
+  type NextResult
 } from "./query/next.js";
+
 export {
   runSearch,
   type SearchCompactResult,
@@ -559,26 +544,30 @@ export {
   type SearchOptions,
   type SearchResult,
   type SearchResultItem,
-  type SearchVerboseResult,
+  type SearchVerboseResult
 } from "./query/search.js";
+
 export {
   runStats,
   type StatsCommandOptions,
-  type StatsResult,
+  type StatsResult
 } from "./stats.js";
+
 export {
   runDuplicates,
   type DuplicatesCommandOptions,
-  type DuplicatesResult,
+  type DuplicatesResult
 } from "./duplicates.js";
+
 export {
   renderCalendarMarkdown,
   renderCalendarToon,
   resolveCalendarOutputFormat,
   runCalendar,
   type CalendarOptions,
-  type CalendarResult,
+  type CalendarResult
 } from "./query/calendar.js";
+
 export {
   renderGuideMarkdown,
   resolveGuideOutputFormat,
@@ -586,18 +575,21 @@ export {
   type GuideDepth,
   type GuideOptions,
   type GuideOutputFormat,
-  type GuideResult,
+  type GuideResult
 } from "./guide.js";
+
 export {
   runCompletion,
   type CompletionResult,
-  type CompletionShell,
+  type CompletionShell
 } from "./completion.js";
+
 export {
   runReindex,
   type ReindexOptions,
-  type ReindexResult,
+  type ReindexResult
 } from "./governance/reindex.js";
+
 export {
   loadCreateTemplateOptions,
   runTemplatesList,
@@ -606,8 +598,9 @@ export {
   type CreateTemplateOptions,
   type TemplatesListResult,
   type TemplatesSaveResult,
-  type TemplatesShowResult,
+  type TemplatesShowResult
 } from "./templates.js";
+
 export {
   runTestRunsList,
   runTestRunsLogs,
@@ -617,22 +610,25 @@ export {
   type TestRunsListCommandOptions,
   type TestRunsLogsCommandOptions,
   type TestRunsResumeCommandOptions,
-  type TestRunsStopCommandOptions,
+  type TestRunsStopCommandOptions
 } from "./test/runs.js";
+
 export {
-  CONFIDENCE_TEXT_VALUES,
-  DEPENDENCY_KIND_VALUES,
-  BUILTIN_ITEM_TYPE_VALUES,
-  ISSUE_SEVERITY_VALUES,
+  BUILTIN_ITEM_TYPE_VALUES,CONFIDENCE_TEXT_VALUES,
+  DEPENDENCY_KIND_VALUES,ISSUE_SEVERITY_VALUES,
   ITEM_TYPE_VALUES,
   RISK_VALUES,
-  STATUS_VALUES,
+  STATUS_VALUES
 } from "../types/index.js";
+
 export type { GlobalOptions } from "../core/shared/command-types.js";
+
 /** Inputs that customize the package command operation. */
 export type PackageCommandOptions = ExtensionCommandOptions;
+
 /** Structured result returned by the package command operation. */
 export type PackageCommandResult = ExtensionCommandResult;
+
 export type {
   Dependency,
   ItemDocument,
@@ -643,23 +639,9 @@ export type {
   LinkedFile,
   LinkedTest,
   LogNote,
-  PmSettings,
+  PmSettings
 } from "../types/index.js";
-import type {
-  ClaimNextOptions,
-  CloseTaskResult,
-  GetContractsOptions,
-  PauseTaskResult,
-  PmActionInput,
-  PmActionName,
-  PmActionOptions,
-  PmClientCloseActionOptions,
-  PmClientFullMutationOptions,
-  PmClientOptions,
-  PmClientRunArgs,
-  SchemaResult,
-  StartTaskResult,
-} from "./runtime-public-contracts.js";
+
 export type {
   ClaimNextOptions,
   CloseTaskResult,
@@ -676,12 +658,13 @@ export type {
   SchemaResult,
   StartTaskResult,
   WorkspaceContracts,
-  WorkspaceContractsOptions,
+  WorkspaceContractsOptions
 } from "./runtime-public-contracts.js";
 
 const ACTIVE_EXTENSION_HOST_CONTEXT = Symbol(
   "pm.active-extension-host-context",
 );
+
 interface PmClientDefaults {
   path?: string;
   cwd?: string;
@@ -691,6 +674,7 @@ interface PmClientDefaults {
 }
 
 type ReadOptions<Options> = Options & PmReadOutputOptions;
+
 type ReadPromise<Result, Options> = Promise<
   PmReadOutputResultFor<Result, Options>
 >;
@@ -2126,6 +2110,7 @@ export function validate<
   options: Options,
   clientOptions?: PmClientOptions,
 ): ReadPromise<ValidateCountsResult, Options>;
+
 /** Validate a tracker without constructing a reusable client using complete diagnostics. */
 export function validate<
   Options extends ReadOptions<ValidateCommandOptions> & { counts?: false } =
@@ -2134,11 +2119,13 @@ export function validate<
   options?: Options,
   clientOptions?: PmClientOptions,
 ): ReadPromise<ValidateResult, Options>;
+
 /** Validate a tracker without constructing a reusable client with a dynamic projection. */
 export function validate<Options extends ReadOptions<ValidateCommandOptions>>(
   options: Options,
   clientOptions?: PmClientOptions,
 ): ReadPromise<ValidateResult | ValidateCountsResult, Options>;
+
 /** Validate a tracker without constructing a reusable client. */
 export function validate<
   Options extends ReadOptions<ValidateCommandOptions> = ValidateCommandOptions,
@@ -2244,6 +2231,7 @@ export function close(
   options: PmClientCloseActionOptions & { releaseAssignment: true },
   clientOptions?: PmClientOptions,
 ): Promise<CloseTaskResult>;
+
 /** Return the base receipt when composition is disabled or omitted. */
 export function close(
   id: string,
@@ -2251,6 +2239,7 @@ export function close(
   options?: PmClientCloseActionOptions & { releaseAssignment?: false },
   clientOptions?: PmClientOptions,
 ): Promise<CloseResult>;
+
 /** Preserve both receipt shapes when the composition flag is dynamic. */
 export function close(
   id: string,
@@ -2258,6 +2247,7 @@ export function close(
   options?: PmClientCloseActionOptions & { releaseAssignment?: boolean },
   clientOptions?: PmClientOptions,
 ): Promise<CloseResult | CloseTaskResult>;
+
 /** Dispatch lifecycle mutation options through the shared SDK runtime. */
 export function close(
   id: string,
@@ -2274,18 +2264,21 @@ export function claim(
   options: PmClientFullMutationOptions & { start: true },
   clientOptions?: PmClientOptions,
 ): Promise<StartTaskResult>;
+
 /** Return the base receipt when composition is disabled or omitted. */
 export function claim(
   id: string,
   options?: PmClientFullMutationOptions & { start?: false },
   clientOptions?: PmClientOptions,
 ): Promise<ClaimResult>;
+
 /** Preserve both receipt shapes when the composition flag is dynamic. */
 export function claim(
   id: string,
   options?: PmClientFullMutationOptions & { start?: boolean },
   clientOptions?: PmClientOptions,
 ): Promise<ClaimResult | StartTaskResult>;
+
 /** Dispatch lifecycle mutation options through the shared SDK runtime. */
 export function claim(
   id: string,
@@ -2309,18 +2302,21 @@ export function release(
   options: PmClientFullMutationOptions & { pause: true },
   clientOptions?: PmClientOptions,
 ): Promise<PauseTaskResult>;
+
 /** Return the base receipt when composition is disabled or omitted. */
 export function release(
   id: string,
   options?: PmClientFullMutationOptions & { pause?: false },
   clientOptions?: PmClientOptions,
 ): Promise<ReleaseResult>;
+
 /** Preserve both receipt shapes when the composition flag is dynamic. */
 export function release(
   id: string,
   options?: PmClientFullMutationOptions & { pause?: boolean },
   clientOptions?: PmClientOptions,
 ): Promise<ReleaseResult | PauseTaskResult>;
+
 /** Dispatch lifecycle mutation options through the shared SDK runtime. */
 export function release(
   id: string,
@@ -2550,39 +2546,13 @@ export async function getContracts(
   return runContracts(resolvedOptions, global);
 }
 
-/** Read a required non-empty string from an action argument bag. */
-export function readRequiredString(
-  args: Record<string, unknown>,
-  key: string,
-): string {
-  const value = readString(args, key);
-  if (!value) {
-    throw new PmCliError(`Missing required argument: ${key}`, 64);
-  }
-  return value;
-}
-
 // pm-zpoyg9: request-local registries permit independent activation cycles to
 // overlap, but explicit cwd calls still mutate process-global state. The gate
 // retains reader concurrency while making cwd mutation exclusive against every
 // activation path, including callers that resolve paths through process.cwd().
 const extensionActivationGate = createAsyncReadWriteGate();
+
 const activeExtensionScope = new AsyncLocalStorage<boolean>();
-
-type ExtensionActivationResult = Awaited<ReturnType<typeof activateExtensions>>;
-
-/**
- * The active extension runtime exposed to an action while it executes: the merged
- * registration registry (custom item types, fields, profiles) plus the command handler
- * registry used to dispatch extension-contributed actions. `null` when extensions are
- * disabled, no workspace exists yet, or activation failed (see {@link withActiveExtensions}).
- */
-type ActiveExtensionRuntime = {
-  registrations: ExtensionActivationResult["registrations"];
-  commands: ExtensionActivationResult["commands"];
-  pmRoot: string;
-  packages: readonly PmContextIntentPackageModule[];
-};
 
 /** Publishes empty active extension registries so built-in fallback actions cannot observe stale or partially published extension state from a failed activation cycle. */
 function resetActiveExtensionRegistries(): void {
@@ -2910,817 +2880,6 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
   }
 }
 
-interface McpActionDispatchContext {
-  action: string;
-  args: Record<string, unknown>;
-  options: Record<string, unknown>;
-  id: string | undefined;
-  force: boolean;
-  global: GlobalOptions;
-  activeExtensions: ActiveExtensionRuntime | null;
-}
-
-type McpActionHandler = (
-  ctx: McpActionDispatchContext,
-) => Promise<unknown> | unknown;
-
-function getOwnHandler<T>(
-  handlers: Readonly<Record<string, T>>,
-  key: string,
-): T | undefined {
-  return Object.prototype.hasOwnProperty.call(handlers, key)
-    ? handlers[key]
-    : undefined;
-}
-
-function readMcpTarget(ctx: McpActionDispatchContext): string | undefined {
-  return readString(ctx.args, "target") ?? readString(ctx.options, "target");
-}
-
-function requireMcpItemId(
-  ctx: McpActionDispatchContext,
-  source: Record<string, unknown> = ctx.options,
-): string {
-  return ctx.id ?? readRequiredString(source, "id");
-}
-
-async function runMcpListAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> {
-  const listOptions = applyContextIntentProjection("list", ctx.options);
-  if (
-    listOptions.compact === undefined &&
-    listOptions.brief === undefined &&
-    listOptions.full === undefined &&
-    listOptions.fields === undefined &&
-    listOptions.includeBody === undefined
-  ) {
-    listOptions.compact = true;
-  }
-  // pm-rmjy: echo applied filters + projection mode so agents get structured confirmation.
-  return withQuerySummary(
-    (await runList(
-      readString(ctx.args, "status") ?? readString(listOptions, "status"),
-      listOptions as never,
-      ctx.global,
-    )) as unknown as Record<string, unknown>,
-    listOptions,
-  );
-}
-
-async function runMcpSearchAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> {
-  const query = readRequiredString(ctx.args, "query");
-  const searchOptions = applyContextIntentProjection(
-    "search",
-    ctx.options,
-    [query],
-  ) as Parameters<typeof runSearch>[1];
-  if (
-    searchOptions.compact === undefined &&
-    searchOptions.full === undefined &&
-    searchOptions.fields === undefined
-  ) {
-    searchOptions.compact = true;
-  }
-  return withQuerySummary(
-    (await runSearch(
-      query,
-      searchOptions,
-      ctx.global,
-    )) as unknown as Record<string, unknown>,
-    searchOptions as Record<string, unknown>,
-  );
-}
-
-async function runMcpCreateAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> {
-  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(
-    ctx.args,
-    ctx.options,
-  );
-  return projectMutationResult(
-    await runCreate(runnerOptions as never, ctx.global),
-    {
-      changedFields,
-      compactEnvelope: changedFields === "compact" && !idOnly,
-      idOnly,
-    },
-  );
-}
-
-async function runMcpCopyAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> {
-  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(
-    ctx.args,
-    ctx.options,
-  );
-  const copyOptions: Record<string, unknown> = {
-    ...runnerOptions,
-    ...(runnerOptions.title === undefined && typeof ctx.args.title === "string"
-      ? { title: ctx.args.title }
-      : {}),
-    ...(runnerOptions.message === undefined &&
-    typeof ctx.args.message === "string"
-      ? { message: ctx.args.message }
-      : {}),
-  };
-  return projectMutationResult(
-    await runCopy(
-      requireMcpItemId(ctx, copyOptions),
-      copyOptions as never,
-      ctx.global,
-    ),
-    {
-      changedFields,
-      compactEnvelope: changedFields === "compact" && !idOnly,
-      idOnly,
-    },
-  );
-}
-
-async function runMcpUpdateAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> {
-  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(
-    ctx.args,
-    ctx.options,
-  );
-  return projectMutationResult(
-    await runUpdate(
-      requireMcpItemId(ctx, runnerOptions),
-      runnerOptions as never,
-      ctx.global,
-    ),
-    {
-      changedFields,
-      compactEnvelope: changedFields === "compact" && !idOnly,
-      idOnly,
-    },
-  );
-}
-
-function runMcpCommentsAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const commentOptions = normalizeAnnotationTransportOptions(ctx.options);
-  const isListing =
-    commentOptions.add === undefined &&
-    commentOptions.stdin === undefined &&
-    commentOptions.file === undefined &&
-    commentOptions.edit === undefined &&
-    commentOptions.delete === undefined;
-  if (isListing) {
-    commentOptions.includeMeta = true;
-    if (
-      commentOptions.limit === undefined &&
-      commentOptions.fullHistory !== true
-    ) {
-      commentOptions.limit = "20";
-    }
-  }
-  return runComments(requireMcpItemId(ctx), commentOptions, ctx.global);
-}
-
-function runMcpFilesLookupAction(
-  ctx: McpActionDispatchContext,
-  paths: string[],
-): Promise<FilesLookupResult> {
-  return runFilesLookup(
-    runtimeFilesLookupOptions(ctx.options, paths, parseMcpInteger),
-    ctx.global,
-  );
-}
-
-function runMcpFilesAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const lookupPaths = readStringArray(ctx.options.lookupPath);
-  if (lookupPaths && lookupPaths.length > 0) {
-    return runMcpFilesLookupAction(ctx, lookupPaths);
-  }
-  const fileId = requireMcpItemId(ctx);
-  return ctx.options.discover === true
-    ? runFilesDiscover(
-        fileId,
-        withFilesDiscoveryOptions(ctx.options),
-        ctx.global,
-      )
-    : runFiles(fileId, withAddNoteOption(ctx.options), ctx.global);
-}
-
-function runMcpTelemetryAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> {
-  return runTelemetry(
-    {
-      subcommand:
-        readString(ctx.args, "subcommand") ??
-        readString(ctx.options, "subcommand"),
-      limit: resolveRuntimeLimit(ctx.args, ctx.options),
-    },
-    ctx.global,
-  );
-}
-
-function runMcpHealthAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const healthOptions: Record<string, unknown> = { ...ctx.options };
-  if (
-    healthOptions.brief === undefined &&
-    healthOptions.summary === undefined &&
-    healthOptions.full === undefined
-  ) {
-    healthOptions.summary = true;
-  }
-  return runHealth(ctx.global, healthOptions as never);
-}
-
-function runMcpConfigAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const configAction =
-    readString(ctx.args, "configAction") ??
-    readString(ctx.options, "configAction") ??
-    readString(ctx.options, "action");
-  if (configAction === undefined)
-    throw new PmCliError("Missing required argument: configAction", 64);
-  const value = readString(ctx.args, "value") ?? readString(ctx.options, "value");
-  const options = readString(ctx.options, "policy") !== undefined && value !== undefined ? { ...ctx.options, value } : ctx.options;
-  return runConfig(
-    readString(ctx.args, "scope") ??
-      readString(ctx.options, "scope") ??
-      "project",
-    configAction,
-    readString(ctx.args, "key") ?? readString(ctx.options, "key"),
-    options,
-    ctx.global,
-    readString(ctx.options, "policy") === undefined ? value : undefined,
-  );
-}
-
-function runMcpActivityAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const options = ctx.options as ActivityCommandOptions & { full?: unknown };
-  return runActivity(normalizeActivityProjectionOptions(options), ctx.global);
-}
-
-function parseMcpIntegerPrefix(
-  value: unknown,
-  label: string,
-): number | undefined {
-  if (typeof value === "number") {
-    if (!Number.isFinite(value) || !Number.isInteger(value)) {
-      throw new PmCliError(`${label} must be a finite integer.`, 64);
-    }
-    return value;
-  }
-  if (typeof value === "string" && value.trim().length > 0) {
-    const trimmed = value.trim();
-    if (!/^[+-]?\d+(?:st|nd|rd|th)?$/i.test(trimmed)) {
-      throw new PmCliError(`${label} must be a finite integer.`, 64);
-    }
-    const parsed = Number.parseInt(trimmed, 10);
-    if (!Number.isInteger(parsed)) {
-      throw new PmCliError(`${label} must be a finite integer.`, 64);
-    }
-    return parsed;
-  }
-  return undefined;
-}
-
-function runMcpPlanAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const subcommand =
-    readString(ctx.args, "subcommand") ??
-    readRequiredString(ctx.options, "subcommand");
-  const planRecord = ctx.options as Record<string, unknown>;
-  return runPlan({
-    subcommand: subcommand as never,
-    id:
-      typeof ctx.id === "string"
-        ? ctx.id
-        : typeof planRecord.id === "string"
-          ? (planRecord.id as string)
-          : undefined,
-    stepRef: readMcpPlanStepRef(ctx),
-    reorderTo: parseMcpIntegerPrefix(
-      planRecord.reorderTo ?? ctx.args.reorderTo,
-      "plan reorderTo",
-    ),
-    options: ctx.options as never,
-    global: ctx.global,
-  });
-}
-
-function readMcpPlanStepRef(ctx: McpActionDispatchContext): string | undefined {
-  return typeof ctx.options.stepRef === "string"
-    ? (ctx.options.stepRef as string)
-    : typeof ctx.args.stepRef === "string"
-      ? (ctx.args.stepRef as string)
-      : undefined;
-}
-
-interface McpSchemaContext {
-  ctx: McpActionDispatchContext;
-  subcommand: string;
-  name: string | undefined;
-  author: string | undefined;
-  force: boolean;
-  aliases: string[] | undefined;
-}
-
-function createMcpSchemaContext(
-  ctx: McpActionDispatchContext,
-): McpSchemaContext {
-  const subcommand =
-    readString(ctx.args, "subcommand") ??
-    readRequiredString(ctx.options, "subcommand");
-  const aliasSource = ctx.args.alias ?? ctx.options.alias;
-  return {
-    ctx,
-    subcommand: subcommand.trim().toLowerCase(),
-    name: readString(ctx.args, "name") ?? readString(ctx.options, "name"),
-    author: readString(ctx.args, "author") ?? readString(ctx.options, "author"),
-    force: ctx.args.force === true || ctx.options.force === true,
-    aliases:
-      aliasSource === undefined ? undefined : readStringArray(aliasSource),
-  };
-}
-
-function runMcpSchemaReadOrRemoveAction(
-  schema: McpSchemaContext,
-): Promise<unknown> | unknown | null {
-  const { ctx, subcommand, name, author, force } = schema;
-  const simpleHandlers: Record<string, () => Promise<unknown> | unknown> = {
-    list: () => runSchemaList(ctx.global),
-    show: () => runSchemaShow(name, ctx.global),
-    "show-status": () => runSchemaShowStatus(name, ctx.global),
-    "list-fields": () => runSchemaListFields(ctx.global),
-    "show-field": () => runSchemaShowField(name, ctx.global),
-    "remove-type": () =>
-      runSchemaRemoveType(name, { author, force }, ctx.global),
-    "remove-field": () =>
-      runSchemaRemoveField(name, { author, force }, ctx.global),
-    "remove-status": () =>
-      runSchemaRemoveStatus(name, { author, force }, ctx.global),
-    "apply-preset": () =>
-      runSchemaApplyPreset(
-        readString(ctx.args, "typePreset") ??
-          readString(ctx.options, "typePreset"),
-        { author, force },
-        ctx.global,
-      ),
-  };
-  const handler = getOwnHandler(simpleHandlers, subcommand);
-  return handler ? handler() : null;
-}
-
-function runMcpSchemaAddFieldAction(
-  schema: McpSchemaContext,
-): Promise<unknown> {
-  const { ctx, name, author, force, aliases } = schema;
-  const commandsSource = ctx.args.commands ?? ctx.options.commands;
-  const requiredTypesSource =
-    ctx.args.requiredTypes ?? ctx.options.requiredTypes;
-  return runSchemaAddField(
-    name,
-    {
-      type:
-        readString(ctx.args, "fieldType") ??
-        readString(ctx.options, "fieldType"),
-      commands:
-        commandsSource === undefined
-          ? undefined
-          : readStringArray(commandsSource),
-      description:
-        readString(ctx.args, "description") ??
-        readString(ctx.options, "description"),
-      cliFlag:
-        readString(ctx.args, "cliFlag") ?? readString(ctx.options, "cliFlag"),
-      alias: aliases,
-      required: ctx.args.required === true || ctx.options.required === true,
-      requiredOnCreate:
-        ctx.args.requiredOnCreate === true ||
-        ctx.options.requiredOnCreate === true,
-      allowUnset: !(
-        ctx.args.allowUnset === false || ctx.options.allowUnset === false
-      ),
-      requiredTypes:
-        requiredTypesSource === undefined
-          ? undefined
-          : readStringArray(requiredTypesSource),
-      author,
-      force,
-    },
-    ctx.global,
-  );
-}
-
-function runMcpSchemaAddStatusAction(
-  schema: McpSchemaContext,
-): Promise<unknown> {
-  const { ctx, name, author, force, aliases } = schema;
-  const roleSource = ctx.args.role ?? ctx.options.role;
-  return runSchemaAddStatus(
-    name,
-    {
-      role: roleSource === undefined ? undefined : readStringArray(roleSource),
-      alias: aliases,
-      description:
-        readString(ctx.args, "description") ??
-        readString(ctx.options, "description"),
-      order: parseMcpInteger(
-        ctx.args.order ?? ctx.options.order,
-        "schema add-status order",
-      ),
-      author,
-      force,
-    },
-    ctx.global,
-  );
-}
-
-function runMcpSchemaAddTypeAction(schema: McpSchemaContext): Promise<unknown> {
-  const { ctx, name, author, force, aliases } = schema;
-  return runSchemaAddType(
-    name,
-    {
-      description:
-        readString(ctx.args, "description") ??
-        readString(ctx.options, "description"),
-      defaultStatus:
-        readString(ctx.args, "defaultStatus") ??
-        readString(ctx.args, "default_status") ??
-        readString(ctx.options, "defaultStatus") ??
-        readString(ctx.options, "default_status"),
-      folder:
-        readString(ctx.args, "folder") ?? readString(ctx.options, "folder"),
-      alias: aliases,
-      author,
-      force,
-    },
-    ctx.global,
-  );
-}
-
-function runMcpSchemaMigrationAction(
-  schema: McpSchemaContext,
-): Promise<SchemaEvolutionMigrationResult> {
-  const { ctx, subcommand, name, author, force } = schema;
-  const to =
-    readString(ctx.args, "to") ?? readRequiredString(ctx.options, "to");
-  const migrationId =
-    readString(ctx.args, "migrationId") ??
-    readString(ctx.args, "migration_id") ??
-    readString(ctx.options, "migrationId") ??
-    readString(ctx.options, "migration_id");
-  const fieldTypeScope =
-    readString(ctx.args, "fieldTypeScope") ??
-    readString(ctx.options, "fieldTypeScope") ??
-    readString(ctx.args, "type") ??
-    readString(ctx.options, "type");
-  const request: SchemaEvolutionMigrationRequest =
-    subcommand === "rename-type"
-      ? { kind: "rename-type", from: name ?? "", to }
-      : subcommand === "rename-field"
-        ? {
-            kind: "rename-field",
-            from: name ?? "",
-            to,
-            ...(fieldTypeScope === undefined ? {} : { type: fieldTypeScope }),
-          }
-        : { kind: "remap-status", from: name ?? "", to };
-  return runSchemaEvolutionMigration(
-    request,
-    {
-      migrationId,
-      dryRun: ctx.args.dryRun === true || ctx.options.dryRun === true,
-      author,
-      force,
-    },
-    ctx.global,
-  );
-}
-
-function runMcpSchemaAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> | unknown {
-  const schema = createMcpSchemaContext(ctx);
-  const policyAction = WORKFLOW_POLICY_ACTIONS.find((action) => action === schema.subcommand);
-  if (policyAction) return runWorkflowPolicyAction(policyAction, schema.name, {
-    definition: ctx.args.definition ?? ctx.options.definition,
-    policy: readString(ctx.args, "policy") ?? readString(ctx.options, "policy"),
-    message: readString(ctx.args, "message") ?? readString(ctx.options, "message"),
-    author: schema.author,
-    dryRun: ctx.args.dryRun === true || ctx.options.dryRun === true,
-  }, ctx.global);
-  const simpleResult = runMcpSchemaReadOrRemoveAction(schema);
-  if (simpleResult !== null) {
-    return simpleResult;
-  }
-  if (
-    ["rename-type", "rename-field", "remap-status"].includes(schema.subcommand)
-  ) {
-    return runMcpSchemaMigrationAction(schema);
-  }
-  if (schema.subcommand === "add-field") {
-    return runMcpSchemaAddFieldAction(schema);
-  }
-  if (schema.subcommand === "add-status") {
-    return runMcpSchemaAddStatusAction(schema);
-  }
-  if (schema.subcommand === "add-type") {
-    if (ctx.args.infer === true || ctx.options.infer === true) {
-      return runSchemaInferTypes(
-        {
-          minCount: parseMcpInteger(
-            ctx.args.minCount ?? ctx.options.minCount,
-            "schema infer minCount",
-          ),
-          apply: ctx.args.apply === true || ctx.options.apply === true,
-          author: schema.author,
-          force: schema.force,
-        },
-        ctx.global,
-      );
-    }
-    return runMcpSchemaAddTypeAction(schema);
-  }
-  throw createUnknownSubcommandError({
-    command_path: "schema",
-    token: schema.subcommand,
-    allowed: SCHEMA_SUBCOMMANDS,
-    exit_code: 64,
-  });
-}
-
-function runMcpProfileAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> | unknown {
-  const subcommand =
-    readString(ctx.args, "subcommand") ??
-    readRequiredString(ctx.options, "subcommand");
-  const normalizedSubcommand = subcommand.trim().toLowerCase();
-  const profileName =
-    readString(ctx.args, "name") ?? readString(ctx.options, "name");
-  const handlers: Record<string, () => Promise<unknown> | unknown> = {
-    list: () => runProfileList(),
-    show: () => runProfileShow(profileName),
-    lint: () => runProfileLint(profileName),
-    apply: () =>
-      runProfileApply(
-        profileName,
-        {
-          dryRun: ctx.args.dryRun === true || ctx.options.dryRun === true,
-          author:
-            readString(ctx.args, "author") ?? readString(ctx.options, "author"),
-          force: ctx.args.force === true || ctx.options.force === true,
-        },
-        ctx.global,
-      ),
-  };
-  const handler = getOwnHandler(handlers, normalizedSubcommand);
-  if (!handler) {
-    throw createUnknownSubcommandError({
-      command_path: "profile",
-      token: subcommand,
-      allowed: PROFILE_SUBCOMMANDS,
-      exit_code: 64,
-    });
-  }
-  return handler();
-}
-
-async function runMcpAppendAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> {
-  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(
-    ctx.args,
-    ctx.options,
-  );
-  return projectMutationResult(
-    await runAppend(
-      requireMcpItemId(ctx, runnerOptions),
-      runnerOptions as never,
-      ctx.global,
-    ),
-    {
-      changedFields,
-      compactEnvelope: changedFields === "compact" && !idOnly,
-      idOnly,
-    },
-  );
-}
-
-async function runMcpUpdateManyAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> {
-  const { changedFields, runnerOptions } = withMutationCompaction(
-    ctx.args,
-    ctx.options,
-  );
-  return projectMutationResult(
-    await runUpdateMany(updateManyOptionsFromFlat(runnerOptions), ctx.global),
-    { changedFields },
-  );
-}
-
-async function runMcpCloseManyAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> {
-  const { changedFields, runnerOptions } = withMutationCompaction(
-    ctx.args,
-    ctx.options,
-  );
-  const topLevelReason = readString(ctx.args, "reason");
-  const closeManyRunnerOptions: Record<string, unknown> =
-    topLevelReason !== undefined && runnerOptions.reason === undefined
-      ? { ...runnerOptions, reason: topLevelReason }
-      : { ...runnerOptions };
-  if (ctx.force && closeManyRunnerOptions.force === undefined) {
-    closeManyRunnerOptions.force = true;
-  }
-  return projectMutationResult(
-    await runCloseMany(
-      closeManyOptionsFromFlat(closeManyRunnerOptions),
-      ctx.global,
-    ),
-    { changedFields },
-  );
-}
-
-async function runMcpRestoreAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> {
-  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(
-    ctx.args,
-    ctx.options,
-  );
-  const target =
-    readString(runnerOptions, "target") ??
-    readRequiredString(ctx.args, "target");
-  return projectMutationResult(
-    await runRestore(
-      requireMcpItemId(ctx, runnerOptions),
-      target,
-      runnerOptions,
-      ctx.global,
-    ),
-    {
-      changedFields,
-      compactEnvelope: changedFields === "compact" && !idOnly,
-      idOnly,
-    },
-  );
-}
-
-/** Dispatch the graph action merging flat MCP parameters onto runner options. */
-function runMcpGraphAction(ctx: McpActionDispatchContext): Promise<unknown> {
-  const merged = { ...ctx.args, ...ctx.options };
-  return runGraph(
-    readRequiredString(merged, "subcommand"),
-    readString(merged, "id") ?? ctx.id,
-    readString(merged, "target"),
-    graphOptionsFromFlat(merged),
-    ctx.global,
-  );
-}
-
-function runMcpHistoryAuthorAcknowledgeAction(
-  ctx: McpActionDispatchContext,
-): Promise<unknown> {
-  return acknowledgeUnknownAuthorHistoryEventsFromTransport(
-    resolvePmRoot(process.cwd(), ctx.global.path),
-    { ...ctx.args, ...ctx.options },
-  );
-}
-
-const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
-  init: (ctx) =>
-    runInit(
-      readString(ctx.args, "prefix"),
-      ctx.global,
-      ctx.options,
-    ),
-  context: (ctx) =>
-    runContext(
-      applyContextIntentProjection("context", ctx.options),
-      ctx.global,
-    ),
-  next: (ctx) =>
-    runNext(applyContextIntentProjection("next", ctx.options), ctx.global),
-  eval: runRuntimeEvalAction,
-  events: runRuntimeEventsAction,
-  merge: runRuntimeMergeAction,
-  workspace: runRuntimeWorkspaceAction,
-  meet: runRuntimeSchedulingAction,
-  event: runRuntimeSchedulingAction,
-  remind: runRuntimeSchedulingAction,
-  list: runMcpListAction,
-  get: (ctx) => {
-    const id = requireMcpItemId(ctx);
-    return runGet(
-      id,
-      ctx.global,
-      applyContextIntentProjection("get", ctx.options, [id]),
-    );
-  },
-  search: runMcpSearchAction,
-  /** Normalize MCP duplicate controls before delegating to the shared SDK action. */
-  duplicates: (ctx) => {
-    const status =
-      typeof ctx.options.status === "string"
-        ? [ctx.options.status]
-        : readStringArray(ctx.options.status);
-    return runDuplicates(ctx.global, {
-      exhaustive: ctx.options.exhaustive === true,
-      ...(status.length === 0 ? {} : { status }),
-      since: readString(ctx.options, "since"),
-      threshold:
-        typeof ctx.options.threshold === "number"
-          ? ctx.options.threshold
-          : undefined,
-      limit:
-        ctx.options.limit === "default"
-          ? undefined
-          : parseMcpInteger(ctx.options.limit, "limit"),
-    });
-  },
-  create: runMcpCreateAction,
-  copy: runMcpCopyAction,
-  focus: (ctx) =>
-    runFocus(
-      ctx.id,
-      { clear: ctx.options.clear === true || ctx.args.clear === true },
-      ctx.global,
-    ),
-  update: runMcpUpdateAction,
-  "item-reopen": runMcpReopenAction,
-  restore: runMcpRestoreAction,
-  claim: runMcpClaimAction,
-  release: runMcpReleaseAction,
-  "start-task": (ctx) => runMcpTaskCompositionAction(ctx, "start_task"),
-  "pause-task": (ctx) => runMcpTaskCompositionAction(ctx, "pause_task"),
-  "close-task": (ctx) => runMcpTaskCompositionAction(ctx, "close_task"),
-  close: runMcpCloseAction,
-  comments: runMcpCommentsAction,
-  notes: (ctx) =>
-    runNotes(
-      requireMcpItemId(ctx),
-      normalizeAnnotationTransportOptions(ctx.options),
-      ctx.global,
-    ),
-  learnings: (ctx) =>
-    runLearnings(
-      requireMcpItemId(ctx),
-      normalizeAnnotationTransportOptions(ctx.options),
-      ctx.global,
-    ),
-  files: runMcpFilesAction,
-  docs: (ctx) =>
-    runDocs(requireMcpItemId(ctx), withAddNoteOption(ctx.options), ctx.global),
-  test: (ctx) => runTest(requireMcpItemId(ctx), ctx.options, ctx.global),
-  "test-all": (ctx) => runTestAll(ctx.options, ctx.global),
-  telemetry: runMcpTelemetryAction,
-  validate: (ctx) =>
-    runValidate(ctx.options, ctx.global, {
-      runUpdate: (id, options, global) => runUpdate(id, options, global),
-    }),
-  health: runMcpHealthAction,
-  assurance: (ctx) => runAssuranceDispatch(ctx.args, ctx.options, ctx.global),
-  contracts: (ctx) => runContracts(ctx.options, ctx.global),
-  config: runMcpConfigAction,
-  activity: runMcpActivityAction,
-  aggregate: (ctx) => runAggregate(ctx.options, ctx.global),
-  extension: (ctx) => runExtension(readMcpTarget(ctx), ctx.options, ctx.global),
-  package: (ctx) => runExtension(readMcpTarget(ctx), ctx.options, ctx.global),
-  install: (ctx) =>
-    runExtension(
-      readMcpTarget(ctx),
-      { ...ctx.options, install: true },
-      ctx.global,
-    ),
-  upgrade: (ctx) => runUpgrade(readMcpTarget(ctx), ctx.options, ctx.global),
-  delete: (ctx) => runDelete(requireMcpItemId(ctx), ctx.options, ctx.global),
-  deps: (ctx) => runDeps(requireMcpItemId(ctx), ctx.options, ctx.global),
-  graph: runMcpGraphAction,
-  "files-discover": (ctx) =>
-    runFilesDiscover(requireMcpItemId(ctx), ctx.options, ctx.global),
-  "files-lookup": (ctx) =>
-    runMcpFilesLookupAction(ctx, readStringArray(ctx.options.paths)),
-  history: (ctx) => runHistory(requireMcpItemId(ctx), ctx.options, ctx.global),
-  "history-redact": (ctx) =>
-    runHistoryRedact(requireMcpItemId(ctx), ctx.options, ctx.global),
-  "history-repair": runMcpHistoryRepairAction,
-  "history-compact": runMcpHistoryCompactAction,
-  "history-attest": (ctx) => runHistoryAttest(ctx.options, ctx.global),
-  "history-author-acknowledge": runMcpHistoryAuthorAcknowledgeAction,
-  plan: runMcpPlanAction,
-  schema: runMcpSchemaAction,
-  profile: runMcpProfileAction,
-  stats: (ctx) =>
-    runStats(ctx.global, statsCommandOptionsFromRuntime(ctx.options)),
-  append: runMcpAppendAction,
-  "update-many": runMcpUpdateManyAction,
-  "close-many": runMcpCloseManyAction,
-  gc: (ctx) => runGc(ctx.global, ctx.options),
-};
-
 /** One action's static SDK dispatch-resolution proof. */
 export interface SdkActionCoverageRow {
   /** Public action being analyzed. */
@@ -3826,72 +2985,69 @@ if (
   globalThis.__pmCliActionRunnerTestHooks = actionRunnerTestHooks;
 }
 
-export type { ContractsCommandOptions, ContractsResult };
-export type {
-  AppendCommandOptions,
-  AppendResult,
-  CommentsCommandOptions,
-  CommentsResult,
-  ConfigCommandOptions,
-  ConfigResult,
-  DepsCommandOptions,
-  DepsResult,
-  DocsCommandOptions,
-  DocsResult,
-  ExtensionCommandOptions,
-  ExtensionCommandResult,
-  FilesCommandOptions,
-  FilesDiscoverOptions,
-  FilesDiscoverResult,
-  FilesLookupOptions,
-  FilesLookupResult,
-  FilesResult,
-  GcCommandOptions,
-  GcResult,
-  HealthResult,
-  InitCommandOptions,
-  InitResult,
-  LearningsCommandOptions,
-  LearningsResult,
-  NotesCommandOptions,
-  NotesResult,
-  ProfileApplyCommandOptions,
-  ProfileApplyResult,
-  ProfileLintResult,
-  ProfileListResult,
-  ProfileResult,
-  ProfileShowResult,
-  ProfileSubcommand,
-  RunHealthOptions,
-  SchemaAddFieldCommandOptions,
-  SchemaAddFieldResult,
-  SchemaAddStatusCommandOptions,
-  SchemaAddStatusResult,
-  SchemaAddTypeCommandOptions,
-  SchemaAddTypeInferCommandOptions,
-  SchemaAddTypeInferResult,
-  SchemaAddTypeResult,
-  SchemaApplyPresetCommandOptions,
-  SchemaApplyPresetResult,
-  SchemaInspectResult,
-  SchemaListFieldsResult,
-  SchemaListResult,
-  RunSchemaEvolutionMigrationOptions,
-  SchemaEvolutionMigrationRequest,
-  SchemaEvolutionMigrationResult,
-  SchemaRemoveFieldCommandOptions,
-  SchemaRemoveFieldResult,
-  SchemaRemoveStatusCommandOptions,
-  SchemaRemoveStatusResult,
-  SchemaRemoveTypeCommandOptions,
-  SchemaRemoveTypeResult,
-  SchemaShowFieldResult,
-  SchemaShowResult,
-  SchemaShowStatusResult,
-  SchemaSubcommand,
-  UpgradeCommandOptions,
-  UpgradeResult,
-  ValidateCommandOptions,
-  ValidateCountsResult,
-  ValidateResult,
-};
+export type { ContractsCommandOptions,ContractsResult };
+
+  export { readRequiredString } from "./runtime/context.js";
+  export type {
+    AppendCommandOptions,
+    AppendResult,
+    CommentsCommandOptions,
+    CommentsResult,
+    ConfigCommandOptions,
+    ConfigResult,
+    DepsCommandOptions,
+    DepsResult,
+    DocsCommandOptions,
+    DocsResult,
+    ExtensionCommandOptions,
+    ExtensionCommandResult,
+    FilesCommandOptions,
+    FilesDiscoverOptions,
+    FilesDiscoverResult,
+    FilesLookupOptions,
+    FilesLookupResult,
+    FilesResult,
+    GcCommandOptions,
+    GcResult,
+    HealthResult,
+    InitCommandOptions,
+    InitResult,
+    LearningsCommandOptions,
+    LearningsResult,
+    NotesCommandOptions,
+    NotesResult,
+    ProfileApplyCommandOptions,
+    ProfileApplyResult,
+    ProfileLintResult,
+    ProfileListResult,
+    ProfileResult,
+    ProfileShowResult,
+    ProfileSubcommand,
+    RunHealthOptions,RunSchemaEvolutionMigrationOptions,SchemaAddFieldCommandOptions,
+    SchemaAddFieldResult,
+    SchemaAddStatusCommandOptions,
+    SchemaAddStatusResult,
+    SchemaAddTypeCommandOptions,
+    SchemaAddTypeInferCommandOptions,
+    SchemaAddTypeInferResult,
+    SchemaAddTypeResult,
+    SchemaApplyPresetCommandOptions,
+    SchemaApplyPresetResult,SchemaEvolutionMigrationRequest,
+    SchemaEvolutionMigrationResult,SchemaInspectResult,
+    SchemaListFieldsResult,
+    SchemaListResult,SchemaRemoveFieldCommandOptions,
+    SchemaRemoveFieldResult,
+    SchemaRemoveStatusCommandOptions,
+    SchemaRemoveStatusResult,
+    SchemaRemoveTypeCommandOptions,
+    SchemaRemoveTypeResult,
+    SchemaShowFieldResult,
+    SchemaShowResult,
+    SchemaShowStatusResult,
+    SchemaSubcommand,
+    UpgradeCommandOptions,
+    UpgradeResult,
+    ValidateCommandOptions,
+    ValidateCountsResult,
+    ValidateResult
+  };

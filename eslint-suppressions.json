@@ -182,11 +182,6 @@
       "count": 1
     }
   },
-  "src/sdk/completion.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/sdk/config.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
