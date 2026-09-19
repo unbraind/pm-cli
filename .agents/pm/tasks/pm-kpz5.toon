@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[8]: "area:cli","area:docs","area:schema",code,"milestone:7",pm-cli,"priority:0",tests
 created_at: "2026-03-08T02:57:27.489Z"
-updated_at: "2026-08-13T08:04:59.211Z"
+updated_at: "2026-09-19T08:40:41.566Z"
 deadline: "2026-03-10T02:57:27.489Z"
+closed_at: "2026-03-08T03:17:50.776Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 150

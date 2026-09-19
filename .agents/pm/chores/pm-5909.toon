@@ -6,15 +6,16 @@ status: closed
 priority: 3
 tags[3]: audit-2026-06-12,ci,workflows
 created_at: "2026-06-12T16:11:59.237Z"
-updated_at: "2026-07-26T17:04:35.609Z"
+updated_at: "2026-09-19T08:39:29.829Z"
+closed_at: "2026-06-12T16:54:31.215Z"
 author: maintainer-agent
 parent: pm-gpea
 release: v2026.6.13
 resolution: Changed workflow path filters so plugin markdown changes on main run functional CI while docs markdown still routes through docs workflow.
 expected_result: Plugin markdown edits are not skipped by all functional validation on push.
 actual_result: "CI workflow now uses paths with plugins/** re-inclusion; workflow contract, docs gates, and coverage passed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-gpea,implements,"2026-07-26T17:04:35.432Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-gpea,implements,"2026-07-26T17:04:35.432Z"
 comments[2]{created_at,author,text}:
   "2026-06-12T16:44:28.305Z",codex-sdk-cli-agent,"Evidence: focused workflow contract run passed: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts (5 tests)."
   "2026-06-12T16:54:04.834Z",codex-sdk-cli-agent,"Evidence: workflow/docs gates passed after path-filter update: pnpm quality:docs-skills, pnpm quality:docs-links, node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts, and full coverage."

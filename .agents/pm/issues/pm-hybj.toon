@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[1]: telemetry
 created_at: "2026-05-24T06:57:51.663Z"
-updated_at: "2026-08-15T19:53:22.409Z"
+updated_at: "2026-09-19T08:40:26.297Z"
+closed_at: "2026-05-24T13:01:01.027Z"
 author: claude-code-agent
 estimated_minutes: 45
 acceptance_criteria: "pm-changelog generator includes all closed items readable by the current pm core (item_count equals total closed count); the bundled-SDK shadowing is either eliminated (host SDK used) or documented as release-gated; no regression to changelog:pm:check."

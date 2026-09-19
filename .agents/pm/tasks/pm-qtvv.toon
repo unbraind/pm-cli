@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: extensions,implementation,linked-tests,pm-cli
 created_at: "2026-04-03T22:53:55.590Z"
-updated_at: "2026-07-26T17:24:20.997Z"
+updated_at: "2026-09-19T08:41:06.463Z"
 deadline: "2026-04-10T22:53:55.590Z"
+closed_at: "2026-04-03T23:47:03.434Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: "runLinkedTests receives source roots, seeds sandbox settings/extensions for project+global, and linked commands validate custom extension types consistently."
@@ -38,9 +39,14 @@ affected_version: 2026.3.12
 component: linked-test-sandbox
 regression: true
 customer_impact: Automation currently disagrees with manual command outcomes.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-bkvx,parent,"2026-04-03T22:53:55.590Z",codex-agent,null
-  pm-bkvx,implements,"2026-07-26T17:24:20.761Z",null,null
+dependencies[2]:
+  - id: pm-bkvx
+    kind: parent
+    created_at: "2026-04-03T22:53:55.590Z"
+    author: codex-agent
+  - id: pm-bkvx
+    kind: implements
+    created_at: "2026-07-26T17:24:20.761Z"
 comments[2]{created_at,author,text}:
   "2026-04-03T22:53:55.590Z",codex-agent,Task focuses on runtime sandbox seeding and caller propagation.
   "2026-04-03T23:46:43.524Z",codex-agent,"Implemented linked-test sandbox seeding for project/global settings and extensions in src/cli/commands/test.ts and propagated source roots in test-all. Evidence: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts passed; pm test pm-qtvv --run --timeout 7200 --json passed (1/1)."

@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:reminders","area:schema",code,pm-cli
 created_at: "2026-03-31T21:28:01.402Z"
-updated_at: "2026-07-26T17:06:25.115Z"
+updated_at: "2026-09-19T08:39:38.848Z"
 deadline: "2026-04-07T21:28:01.402Z"
+closed_at: "2026-03-31T21:43:56.632Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 120
@@ -41,10 +42,18 @@ fixed_version: vnext
 component: core/item-format
 regression: true
 customer_impact: Ensures reminder data is safely persisted.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-2p6q,related,"2026-03-31T21:28:01.402Z",codex-agent,null
-  pm-c877,parent,"2026-03-31T21:28:01.402Z",codex-agent,null
-  pm-c877,implements,"2026-07-26T17:06:24.826Z",null,null
+dependencies[3]:
+  - id: pm-2p6q
+    kind: related
+    created_at: "2026-03-31T21:28:01.402Z"
+    author: codex-agent
+  - id: pm-c877
+    kind: parent
+    created_at: "2026-03-31T21:28:01.402Z"
+    author: codex-agent
+  - id: pm-c877
+    kind: implements
+    created_at: "2026-07-26T17:06:24.826Z"
 comments[3]{created_at,author,text}:
   "2026-03-31T21:28:01.402Z",codex-agent,Task created for reminder schema and normalization work.
   "2026-03-31T21:43:35.258Z",codex-agent,Implemented reminder schema support across types/constants/item-format with strict validation and deterministic reminder sorting.

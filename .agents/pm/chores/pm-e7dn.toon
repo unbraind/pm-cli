@@ -6,15 +6,16 @@ status: closed
 priority: 2
 tags[3]: "area:cleanup",complexity,refactor
 created_at: "2026-06-07T17:04:16.688Z"
-updated_at: "2026-07-26T17:12:39.296Z"
+updated_at: "2026-09-19T08:40:08.540Z"
+closed_at: "2026-06-20T04:04:47.711Z"
 author: maintainer-agent
 parent: pm-mpbb
 release: v2026.6.20
 resolution: Refactored runUpdate scalar metadata mutation handling into table-driven helpers while preserving update ordering and behavior.
 expected_result: "runUpdate no longer carries repeated inline scalar mutation blocks or fragile non-null assertions for those fields, and existing update behavior remains covered."
 actual_result: "src/cli/commands/update.ts now uses shared scalar mutation definitions for post-tag, stakeholder, and issue metadata fields; focused tests, full coverage, release gates, temp smoke, Sentry, telemetry, changelog, health, and validate gates passed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-mpbb,implements,"2026-07-26T17:12:39.021Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-mpbb,implements,"2026-07-26T17:12:39.021Z"
 comments[2]{created_at,author,text}:
   "2026-06-20T03:49:29.098Z",codex-sdk-cli-continuation-20260620,"Progress: refactored runUpdate scalar metadata mutation handling into table-driven helpers in src/cli/commands/update.ts; focused typecheck and update/update-many tests pass locally."
   "2026-06-20T04:04:47.126Z",codex-sdk-cli-continuation-20260620,"Evidence: pnpm build; pnpm typecheck; node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts tests/unit/commands/update-many-command.spec.ts (140 passed); node scripts/run-tests.mjs coverage (235 files, 4700 tests, 100/100/100/100); pnpm quality:static; pnpm quality:docs-links; pnpm contracts:check; pnpm security:scan; pnpm changelog:pm:check; pm health --check-only --summary --json ok; pm validate --check-resolution --check-history-drift ok with known pre-existing resolution warning only and history_drift ok; node scripts/release/sentry-telemetry-gate.mjs required ok (Sentry critical=0 high=0, telemetry error rate 1.74%, missing error rows 0); temp PM_PATH/PM_GLOBAL_PATH smoke passed for init/create/update/unset/comments/health; pnpm release:gates passed."

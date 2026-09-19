@@ -380,6 +380,11 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
       "Embedding provider/model changed since the last index; run a semantic reindex to rebuild vectors.",
   },
   // --- pm validate: metadata ---
+  {
+    code: "validate_metadata_missing_closed_at",
+    command: "pm validate --check-metadata --auto-fix --fix-scope timestamps --dry-run",
+    summary: "Preview closure dates proven by verified lifecycle history; inspect residuals and omit --dry-run to apply only proven dates.",
+  },
   // Note: validate_metadata_missing_author has no entry on purpose. `pm update
   // --author` sets the mutation/audit author (history), not the item's
   // `metadata.author` item-metadata field, and there is no CLI flag that writes

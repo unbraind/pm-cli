@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: architecture,pm-cli,refactor,release-readiness
 created_at: "2026-02-17T23:37:26.647Z"
-updated_at: "2026-07-26T17:01:47.655Z"
+updated_at: "2026-09-19T08:39:17.973Z"
 deadline: "2026-02-21T23:37:26.647Z"
+closed_at: "2026-02-18T21:55:12.550Z"
 assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 360
@@ -41,10 +42,18 @@ fixed_version: archive-2026q2
 component: project-management/repo-restructure-and-module-boundaries
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Repo restructure and module boundaries.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-ote,parent,"2026-02-17T23:37:26.647Z",cursor-agent,null
-  pm-pq8,related,"2026-02-17T23:37:26.647Z",cursor-agent,null
-  pm-ote,implements,"2026-07-26T17:01:47.427Z",null,null
+dependencies[3]:
+  - id: pm-ote
+    kind: parent
+    created_at: "2026-02-17T23:37:26.647Z"
+    author: cursor-agent
+  - id: pm-pq8
+    kind: related
+    created_at: "2026-02-17T23:37:26.647Z"
+    author: cursor-agent
+  - id: pm-ote
+    kind: implements
+    created_at: "2026-07-26T17:01:47.427Z"
 comments[47]{created_at,author,text}:
   "2026-02-17T23:51:03.059Z",cursor-agent,Implemented first-pass modular layout (src/cli + src/core + src/types) with stable bin wrapper and new list/test-all command wiring while preserving existing behavior through compatibility bridges.
   "2026-02-17T23:51:36.869Z",cursor-agent,"Validation evidence: pnpm build succeeded; pm --help includes version/list-in-progress/list-blocked/list-closed/list-canceled/test-all; test-all command executed successfully with dependency_failed semantics available via exit code when failures exist."

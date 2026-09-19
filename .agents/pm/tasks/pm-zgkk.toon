@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:search-indexing",code,"milestone:4",pm-cli,"priority:1"
 created_at: "2026-03-03T22:38:40.837Z"
-updated_at: "2026-07-26T17:31:00.900Z"
+updated_at: "2026-09-19T08:43:18.573Z"
 deadline: "2026-03-10T23:59:00.000Z"
+closed_at: "2026-03-03T22:57:30.119Z"
 assignee: cursor-maintainer-agent
 author: cursor-maintainer-agent
 estimated_minutes: 150
@@ -41,10 +42,18 @@ fixed_version: archive-2026q2
 component: project-management/mutation-triggered-search-cache-invalidation
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Mutation-triggered search cache invalidation.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-cwp,related,"2026-03-03T22:38:40.837Z",cursor-maintainer-agent,null
-  pm-f45,parent,"2026-03-03T22:38:40.837Z",cursor-maintainer-agent,null
-  pm-f45,implements,"2026-07-26T17:31:00.657Z",null,null
+dependencies[3]:
+  - id: pm-cwp
+    kind: related
+    created_at: "2026-03-03T22:38:40.837Z"
+    author: cursor-maintainer-agent
+  - id: pm-f45
+    kind: parent
+    created_at: "2026-03-03T22:38:40.837Z"
+    author: cursor-maintainer-agent
+  - id: pm-f45
+    kind: implements
+    created_at: "2026-07-26T17:31:00.657Z"
 comments[6]{created_at,author,text}:
   "2026-03-03T22:38:40.837Z",cursor-maintainer-agent,Gap discovered during docs and implementation audit because reindex artifacts can become stale after mutations.
   "2026-03-03T22:38:57.674Z",cursor-maintainer-agent,"Planned changeset: docs-first define mutation-triggered search cache invalidation baseline then add shared post-mutation invalidation helper and wire it into mutating command paths with deterministic non-fatal behavior."

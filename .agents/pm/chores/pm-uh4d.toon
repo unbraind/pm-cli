@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[8]: "area:bootstrap",contract-sync,doc,maintenance,pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-06T20:52:25.754Z"
-updated_at: "2026-07-26T17:27:05.452Z"
+updated_at: "2026-09-19T08:41:51.718Z"
 deadline: "2026-03-07T20:52:25.754Z"
+closed_at: "2026-03-06T21:03:27.735Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/release-readiness-loop-enforce-global-install-bo
 regression: false
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for Release-readiness loop: enforce global install bootstrap contract."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-lfae,related,"2026-03-06T20:52:25.754Z",maintainer-agent,null
-  pm-8a2s,implements,"2026-07-26T17:27:05.103Z",null,null
+dependencies[2]:
+  - id: pm-lfae
+    kind: related
+    created_at: "2026-03-06T20:52:25.754Z"
+    author: maintainer-agent
+  - id: pm-8a2s
+    kind: implements
+    created_at: "2026-07-26T17:27:05.103Z"
 comments[4]{created_at,author,text}:
   "2026-03-06T20:52:25.754Z",maintainer-agent,"Why this exists: convert maintainer global-install habit into explicit doc plus regression contract guard."
   "2026-03-06T20:52:35.909Z",maintainer-agent,"Planned changeset: update AGENTS session bootstrap with explicit npm install -g . refresh + verification guidance, then extend release-readiness contract tests to assert that guidance remains present."

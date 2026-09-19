@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[4]: agent-ux,dogfood-2026-06-12,packages,todos
 created_at: "2026-06-12T16:19:38.893Z"
-updated_at: "2026-09-08T05:33:01.148Z"
+updated_at: "2026-09-19T08:39:46.197Z"
+closed_at: "2026-06-19T11:44:18.924Z"
 author: maintainer-agent
 parent: pm-mpbb
 release: v2026.6.20

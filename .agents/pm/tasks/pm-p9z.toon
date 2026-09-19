@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:history",core,"milestone:2",pm-cli
 created_at: "2026-02-17T23:02:08.449Z"
-updated_at: "2026-07-26T17:22:47.728Z"
+updated_at: "2026-09-19T08:40:57.095Z"
 deadline: "2026-04-17T11:57:39.988Z"
+closed_at: "2026-04-03T14:12:48.095Z"
 author: steve
 estimated_minutes: 120
 acceptance_criteria: Users can view meaningful item-level diffs/verification output tied to history without breaking existing history/activity behavior.
@@ -40,10 +41,18 @@ fixed_version: archive-2026q2
 component: project-management/rfc6902-patch-generation-per-mutation
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for RFC6902 patch generation per mutation.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-c0r,parent,"2026-02-17T23:02:08.449Z",steve,null
-  pm-u9r,blocks,"2026-02-17T23:02:08.449Z",steve,null
-  pm-c0r,implements,"2026-07-26T17:22:47.411Z",null,null
+dependencies[3]:
+  - id: pm-c0r
+    kind: parent
+    created_at: "2026-02-17T23:02:08.449Z"
+    author: steve
+  - id: pm-u9r
+    kind: blocks
+    created_at: "2026-02-17T23:02:08.449Z"
+    author: steve
+  - id: pm-c0r
+    kind: implements
+    created_at: "2026-07-26T17:22:47.411Z"
 comments[7]{created_at,author,text}:
   "2026-02-23T18:06:11.005Z",cursor-maintainer,"Planned change-set: audit RFC6902 patch generation determinism and strengthen unit coverage for canonical before/after patch output; update tracking links and close this task with evidence if criteria are met."
   "2026-02-23T18:07:11.136Z",cursor-maintainer,"Implemented deterministic patch-assertion coverage in tests/unit/determinism.spec.ts: asserts exact RFC6902 operations and verifies identical patch/hash output when front-matter keys are reordered."

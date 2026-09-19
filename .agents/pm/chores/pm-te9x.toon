@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[5]: "area:sdk","area:telemetry",docs,extensions,living-map
 created_at: "2026-05-31T19:45:03.201Z"
-updated_at: "2026-09-08T05:32:36.341Z"
+updated_at: "2026-09-19T08:41:40.838Z"
+closed_at: "2026-06-05T14:57:12.720Z"
 author: maintainer-agent
 acceptance_criteria: SDK.md+EXTENSIONS.md gain a Telemetry & privacy section explaining levels+redaction and how to read capture_level from activation; optional advisory doctor lint when a telemetry-capability extension reads no telemetry setting; no core redaction change.
 value: The three capture levels (minimal/redacted/max) are enforced for core commands but undocumented for extension authors; the activation context exposes settings.telemetry.capture_level but no guidance exists.

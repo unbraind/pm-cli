@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: extensions,external-audit,pm-cli,sdk
 created_at: "2026-04-25T23:06:27.563Z"
-updated_at: "2026-07-26T17:01:02.980Z"
+updated_at: "2026-09-19T08:39:15.344Z"
+closed_at: "2026-04-27T17:55:19.852Z"
 author: audit-agent
 estimated_minutes: 120
 acceptance_criteria: "Doctor/install diagnostics provide deterministic actionable guidance for local extension SDK import failures (dependency and module-mode mismatch cases), with regression coverage proving warning-code/remediation behavior."
@@ -15,8 +16,8 @@ release: v2026.5.1
 resolution: Extension doctor now emits targeted warning codes and remediation hints for missing @unbrained/pm-cli dependency resolution and ESM module-mode mismatches during extension load failures.
 expected_result: Local extension SDK import failures produce deterministic diagnostics that point directly to dependency install and package module-mode remediation.
 actual_result: "Doctor diagnostics now classify local load failures into sdk_dependency_missing and module_mode_mismatch warning codes, and docs/runtime guidance were updated with passing regression coverage."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-o7be,implements,"2026-07-26T17:01:02.798Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-o7be,implements,"2026-07-26T17:01:02.798Z"
 comments[7]{created_at,author,text}:
   "2026-04-25T23:06:27.563Z",audit-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'audit extension sdk calendar docs' --mode keyword --limit 10; pm list-open --fields id,title,type,parent,status,priority --limit 50; pm list-in-progress --fields id,title,type,parent,status,priority --limit 50. Net-new because active items cover extension runtime probe/docs parity but not local install SDK module-resolution behavior."
   "2026-04-25T23:07:38.813Z",audit-agent,"Repro evidence from sandbox audit: local extension install succeeds, but doctor reports extension_load_failed when extension entry imports @unbrained/pm-cli/sdk and source package has no installed dependency. Runtime error: Cannot find package '@unbrained/pm-cli' imported from installed extension index.js."

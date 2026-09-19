@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[3]: "area:architecture","area:docs",performance
 created_at: "2026-06-07T10:06:41.383Z"
-updated_at: "2026-09-08T05:32:50.695Z"
+updated_at: "2026-09-19T08:40:55.660Z"
+closed_at: "2026-06-19T13:37:12.136Z"
 author: audit-docs-tests-agent
 acceptance_criteria: "- ARCHITECTURE.md has a 'Performance characteristics' section covering:\n- Startup cost model: ~90ms from ESM module resolution; pm --version short-circuits cli.ts before main.ts\n- Mutation perf: non-blocking background semantic refresh (detached worker + reindex lock); migration skip for already-migrated items\n- Front-matter cache: body-split for list performance\n- Drift-scan verification cache: pm health bottleneck addressed\n- Known remaining levers (bundling note)"
 parent: pm-u9d0

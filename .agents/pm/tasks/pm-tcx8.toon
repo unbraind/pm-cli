@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:contracts","area:docs",external-audit,pm-cli
 created_at: "2026-04-03T14:48:29.306Z"
-updated_at: "2026-07-26T17:26:15.753Z"
+updated_at: "2026-09-19T08:41:40.457Z"
 deadline: "2026-04-13T14:48:29.306Z"
+closed_at: "2026-04-03T15:22:47.390Z"
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: "All touched command surfaces are documented and contract-tested with no drift across CLI, SDK contracts, and Pi wrapper mappings."
@@ -28,11 +29,22 @@ expected_result: Acceptance criteria for Sync docs/contracts/wrapper parity for 
 actual_result: Work completed and recorded with linked artifacts for Sync docs/contracts/wrapper parity for unresolved external audit additions.
 component: project-management/sync-docs-contracts-wrapper-parity-for-unresolve
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Sync docs/contracts/wrapper parity for unresolved external audit additions.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-3eu2,blocks,"2026-04-03T14:48:29.306Z",codex-agent,null
-  pm-8sgf,blocks,"2026-04-03T14:48:29.306Z",codex-agent,null
-  pm-x85o,blocks,"2026-04-03T14:48:29.306Z",codex-agent,null
-  pm-iswo,implements,"2026-07-26T17:26:15.501Z",null,null
+dependencies[4]:
+  - id: pm-3eu2
+    kind: blocks
+    created_at: "2026-04-03T14:48:29.306Z"
+    author: codex-agent
+  - id: pm-8sgf
+    kind: blocks
+    created_at: "2026-04-03T14:48:29.306Z"
+    author: codex-agent
+  - id: pm-x85o
+    kind: blocks
+    created_at: "2026-04-03T14:48:29.306Z"
+    author: codex-agent
+  - id: pm-iswo
+    kind: implements
+    created_at: "2026-07-26T17:26:15.501Z"
 comments[3]{created_at,author,text}:
   "2026-04-03T14:48:29.306Z",codex-agent,Task will be completed after implementation features land to keep docs/contracts in lockstep.
   "2026-04-03T15:10:54.314Z",codex-agent,"Updated README/PRD/ARCHITECTURE/CHANGELOG/AGENTS for ownership-force guidance detail, files/docs add-glob usage, and pm deps contract surfaces; synced release-readiness assertions and vitest coverage include list for deps.ts. Evidence: node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts passed (93/93)."

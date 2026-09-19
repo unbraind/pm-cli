@@ -6,21 +6,22 @@ status: closed
 priority: 1
 tags[6]: "area:extensions","area:sdk",authoring,breaking-change,ci,loader
 created_at: "2026-06-24T07:24:07.989Z"
-updated_at: "2026-07-26T17:02:16.293Z"
+updated_at: "2026-09-19T08:39:19.890Z"
+closed_at: "2026-06-24T10:37:41.144Z"
 author: claude-code-agent
 parent: pm-ugqx
 release: v2026.6.30
 resolution: "TypeScript-only extension/package loading delivered and PR #353 follow-up failures fixed: .ts source is the manifest entry loaded by Node native type stripping, package runtime loaders rethrow missing dependencies inside discovered runtime.ts, scaffolded packages declare engines.node >=22.18.0, tsconfig examples allow explicit .ts imports, CI now has a Node 22 TypeScript package-runtime smoke, and stale scaffolder metadata/changelog state is reconciled through pm."
 expected_result: "All extension/package loading is TypeScript-only with 100% coverage, green dogfood/smoke gates, and a working manual smoke; docs/docstrings reframed; auto-release healthy."
 actual_result: "Verified after PR #353 current-head review follow-up: dependency-free Node 22 runtime-loader smoke passes locally under mise node@22.21.1; pm-beads/pm-todos package runtimes load SDK values from PM_CLI_PACKAGE_ROOT/dist/sdk/index.js, preserve dynamic SDK import failures as Error.cause, validate required EXIT_CODE members before accepting SDK modules, and match missing-runtime ERR_MODULE_NOT_FOUND messages using native, file URL, and forward-slashed normalized paths for Windows robustness; package-first dogfood passes 88 commands; manual temp smoke passes with zero doctor/health warnings; full coverage passes 248 files / 5001 tests at exact 100% statements/branches/functions/lines; typecheck, static quality, contracts, security scan, audit, Sentry/telemetry gate, external package smoke, docs/skills, and release gates are green."
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-m1uz,related,"2026-06-24T07:24:30.548Z",null,null
-  pm-2c28,related,"2026-06-24T07:24:30.848Z",null,null
-  pm-ax7z,related,"2026-06-24T07:24:31.215Z",null,null
-  pm-09rh,related,"2026-06-24T07:24:31.582Z",null,null
-  pm-2kkl,related,"2026-06-24T09:06:50.494Z",null,null
-  pm-frou,related,"2026-07-26T17:02:15.996Z",null,null
-  pm-ugqx,implements,"2026-07-26T17:02:15.996Z",null,null
+dependencies[7]{id,kind,created_at}:
+  pm-m1uz,related,"2026-06-24T07:24:30.548Z"
+  pm-2c28,related,"2026-06-24T07:24:30.848Z"
+  pm-ax7z,related,"2026-06-24T07:24:31.215Z"
+  pm-09rh,related,"2026-06-24T07:24:31.582Z"
+  pm-2kkl,related,"2026-06-24T09:06:50.494Z"
+  pm-frou,related,"2026-07-26T17:02:15.996Z"
+  pm-ugqx,implements,"2026-07-26T17:02:15.996Z"
 comments[9]{created_at,author,text}:
   "2026-06-24T08:42:52.228Z",codex-gpt5,"Continuation: PR #353 is still open with failing Gates (coverage) and Gates (smokes) on head 5bd07b82. Reopening/continuing the existing TypeScript-only extension loading lineage instead of creating a duplicate item. Root failure: beads/todos package commands cannot resolve runtime.ts from the package-first installed path; review follow-up also requires tsconfig.examples allowImportingTsExtensions, scaffold engines.node >=22.18.0, Node 22 TS-loading smoke coverage, and pm-frou metadata reconciliation via pm."
   "2026-06-24T09:14:36.493Z",codex-gpt5,"Evidence: PR #353 follow-up fixes are implemented and locally verified. Fixed package runtime-loader missing-module classification so missing dependencies inside discovered runtime.ts are rethrown instead of being swallowed as a missing runtime. Added Node 22 dist smoke for TS package runtime loading, tsconfig.examples allowImportingTsExtensions, scaffold package engines.node >=22.18.0, and pm-frou metadata reconciliation. Focused checks passed: gen-package-runtime-loaders --check; runtime-loader/scaffold/CI contract tests 30 passed; CI failure slice 3 passed; pnpm dogfood:package-first 88 commands ok. Full gates passed: pnpm typecheck; node scripts/run-tests.mjs coverage = 248 files, 4993 tests, 100/100/100/100; quality:static; quality:docs-skills; contracts:check; changelog:pm:check with pm-changelog latest npm version 2026.6.20; security:scan; pnpm audit --audit-level low; version:check; compatibility-check; npm pack --dry-run; pm health --check-only; pnpm smoke:external-packages tested 10 packages with 0 failures; pnpm release:gates passed end to end. Manual temp-dir smoke passed at /tmp/tmp.YPXDQmEAE4 using isolated PM_PATH and PM_GLOBAL_PATH: init, create, install beads/todos one-at-a-time, beads import, todos export, scaffold/install starter-extension, run starter extension ping, extension doctor strict summary with 3 active runtimes and 0 warnings, health ok. GitHub reports checked: PR #353 had stale failures on previous head; open issue #348 is related to unsupported Node 20 nightly and is linked to pm-2kkl; branch nightly matrix no longer includes Node 20. Dependabot/code-scanning/secret-scanning alert APIs returned 404/not enabled or not visible to token, while local secret scan and pnpm audit are green. Sentry/telemetry gate checked unbrained/pm-cli over 14 days: 0 critical, 0 high, 11 expected CLI-error issues ignored, telemetry finish error rate 0.86%, missing error-code rows 0."

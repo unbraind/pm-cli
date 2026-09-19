@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[3]: agent-ux,audit-2026-06-12,token-efficiency
 created_at: "2026-06-12T16:11:27.751Z"
-updated_at: "2026-08-10T12:02:09.697Z"
+updated_at: "2026-09-19T08:39:23.176Z"
+closed_at: "2026-06-12T16:54:31.168Z"
 author: maintainer-agent
 release: v2026.6.13
 resolution: Removed duplicate missing alias from compact strict-create recovery payloads.

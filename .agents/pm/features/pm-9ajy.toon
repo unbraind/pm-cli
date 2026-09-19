@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:extensions","area:pi","area:sdk","milestone:extension-manager",pm-cli
 created_at: "2026-04-03T16:16:50.033Z"
-updated_at: "2026-07-26T17:08:13.817Z"
+updated_at: "2026-09-19T08:39:47.168Z"
 deadline: "2026-04-13T16:16:50.033Z"
+closed_at: "2026-04-05T02:19:18.615Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: SDK contracts and Pi wrapper expose deterministic extension lifecycle actions aligned with CLI behavior.
@@ -39,8 +40,8 @@ fixed_version: target-vnext
 component: sdk-contracts
 regression: false
 customer_impact: Wrapper users can automate extension lifecycle operations
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-m9jc,implements,"2026-07-26T17:08:13.560Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-m9jc,implements,"2026-07-26T17:08:13.560Z"
 comments[6]{created_at,author,text}:
   "2026-04-03T16:16:50.033Z",codex-agent,Created after de-dup scan for SDK and Pi wrapper lifecycle parity scope.
   "2026-04-03T17:09:38.168Z",codex-agent,Extended shared SDK command contracts and Pi wrapper action/argument mapping for extension lifecycle actions including scope/github/ref parity.

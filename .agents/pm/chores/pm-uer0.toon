@@ -6,16 +6,17 @@ status: closed
 priority: 3
 tags[4]: code-quality,concurrency,history,locking
 created_at: "2026-05-22T21:06:47.968Z"
-updated_at: "2026-07-26T17:27:04.217Z"
+updated_at: "2026-09-19T08:41:51.447Z"
+closed_at: "2026-05-25T10:55:02.750Z"
 author: claude-code-agent
 parent: pm-rnpb
 release: v2026.5.27
 resolution: Implemented uniform pre-lock snapshot + under-lock revalidation for history-redact/history-repair/restore to prevent stale rewrite commits.
 expected_result: Concurrent mutations that occur between precompute and lock acquisition should trigger a conflict instead of allowing stale history/item rewrites.
 actual_result: Merged in PR #67 with conflict guards and regression coverage; full CI/release gates passed and command behavior verified in manual temp-dir flow.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-7rlp,related,"2026-07-26T17:27:03.973Z",null,null
-  pm-rnpb,implements,"2026-07-26T17:27:03.973Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-7rlp,related,"2026-07-26T17:27:03.973Z"
+  pm-rnpb,implements,"2026-07-26T17:27:03.973Z"
 comments[5]{created_at,author,text}:
   "2026-05-25T10:00:16.815Z",codex-reliability-agent,Execution start 2026-05-25 under combined reliability PR scope with pm-7rlp. Duplicate-check evidence recorded (context/search/list-open/list-in-progress) and canonical item reuse confirmed; no new item created. Claim taken and status moved to in_progress before code edits.
   "2026-05-25T10:08:51.624Z",codex-reliability-agent,"Implementation complete: hardened TOCTOU read-then-lock windows uniformly across history-redact/history-repair/restore by snapshotting pre-lock history/item raw state and re-verifying under lock before any write. Commands now fail fast with EXIT_CODE.CONFLICT and retry guidance when the target history stream or item changed while waiting for lock, preventing stale rewrite commits. Regression coverage added in tests/unit/history-activity-command.spec.ts, tests/unit/history-repair-command.spec.ts, and tests/unit/restore-command.spec.ts via acquireLock spy mutation hooks. Verification: node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/history-repair-command.spec.ts tests/unit/restore-command.spec.ts --reporter=dot (3 files, 43 tests passed)."

@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[3]: beads,import,pm-cli
 created_at: "2026-03-12T21:42:11.716Z"
-updated_at: "2026-08-13T08:04:40.963Z"
+updated_at: "2026-09-19T08:39:53.490Z"
 deadline: "2026-03-13T21:42:11.716Z"
+closed_at: "2026-03-12T22:08:17.266Z"
 assignee: codex-maintainer
 author: codex-maintainer
 estimated_minutes: 180

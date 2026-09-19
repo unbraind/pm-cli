@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[3]: agent-ux,cli,token-efficiency
 created_at: "2026-05-23T17:07:40.015Z"
-updated_at: "2026-08-10T12:03:41.700Z"
+updated_at: "2026-09-19T08:40:16.897Z"
+closed_at: "2026-05-23T18:16:13.074Z"
 author: claude-code-agent
 release: v2026.5.24
 resolution: "Completed combined CLI ergonomics plan: concise init, hidden pure snake help aliases, named priorities, package install hints, starter templates, delete dry-run/default-safety, templates dedup integration, shared contracts/completions/docs, manual dogfood, and full release gate."

@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[4]: annotations,code-quality,commands,dedup
 created_at: "2026-05-22T18:59:53.812Z"
-updated_at: "2026-07-26T17:08:42.772Z"
+updated_at: "2026-09-19T08:39:48.995Z"
+closed_at: "2026-05-24T01:58:30.355Z"
 author: codex-duplication-audit
 acceptance_criteria: "comments/notes/learnings share one command core for item resolution, append/list modes, author/message handling, and output rendering; resource-specific behavior remains explicit through adapters; existing comments, notes, and learnings tests pass; pnpm build passes."
 parent: pm-rnpb
@@ -14,10 +15,10 @@ release: v2026.5.24
 resolution: "Closed by extracting the shared annotation command core for comments, notes, and learnings."
 expected_result: "Annotation commands share list/add, limit, author, mutation, rendering, and ownership plumbing while keeping command-specific input and audit semantics."
 actual_result: "src/cli/commands/annotation-command.ts now owns the shared core; comments, notes, and learnings delegate to it; focused tests, manual dogfood, validate, and full release gate passed."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-c465,related,"2026-07-26T17:08:42.540Z",null,null
-  pm-rnpb,implements,"2026-07-26T17:08:42.540Z",null,null
-  pm-v1s1,related,"2026-07-26T17:08:42.540Z",null,null
+dependencies[3]{id,kind,created_at}:
+  pm-c465,related,"2026-07-26T17:08:42.540Z"
+  pm-rnpb,implements,"2026-07-26T17:08:42.540Z"
+  pm-v1s1,related,"2026-07-26T17:08:42.540Z"
 comments[5]{created_at,author,text}:
   "2026-05-24T01:29:07.751Z",codex-annotation-specialist,"Investigation note: annotation-command specialist explorer pass starting. Scope is read-only inspection of comments, notes, learnings commands and relevant tests to plan shared command-core extraction without behavior loss."
   "2026-05-24T01:36:07.455Z",codex-active-work,"Evidence: implementation extracted src/cli/commands/annotation-command.ts as the shared annotation command core. comments.ts, notes.ts, and learnings.ts now delegate list/add, limit slicing, author resolution, mutateItem append, result rendering, and ownership wrapping through the shared core while preserving comments stdin/file/includeMeta behavior and notes/learnings legacy audit aliases. Focused tests passed: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/notes-learnings-command.spec.ts tests/integration/help-runtime.spec.ts --reporter=dot => 3 files / 62 tests."

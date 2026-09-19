@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:tests",pm-cli,release
 created_at: "2026-04-01T01:40:10.122Z"
-updated_at: "2026-07-26T17:24:46.388Z"
+updated_at: "2026-09-19T08:41:09.042Z"
 deadline: "2026-04-10T01:40:10.122Z"
+closed_at: "2026-04-01T01:58:13.141Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 180
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: tests/docs
 regression: true
 customer_impact: Ensures safe rollout with clear guidance and regression confidence.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-5bwo,parent,"2026-04-01T01:40:10.122Z",codex-agent,null
-  pm-5bwo,implements,"2026-07-26T17:24:46.130Z",null,null
+dependencies[2]:
+  - id: pm-5bwo
+    kind: parent
+    created_at: "2026-04-01T01:40:10.122Z"
+    author: codex-agent
+  - id: pm-5bwo
+    kind: implements
+    created_at: "2026-07-26T17:24:46.130Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T01:40:10.122Z",codex-agent,Task captures final tests docs changelog and closure evidence.
   "2026-04-01T01:58:08.429Z",codex-agent,"Evidence: node scripts/run-tests.mjs test passed (57 files, 595 tests). Focused suites for create/update/settings/help/extensions also passed. node scripts/run-tests.mjs coverage currently fails repository-wide 100% thresholds with global 97.57 statements baseline; no policy-regression failures observed."

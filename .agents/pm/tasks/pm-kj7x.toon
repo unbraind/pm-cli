@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[3]: "area:extensions",dogfood,pm-cli
 created_at: "2026-06-29T09:02:17.897Z"
-updated_at: "2026-09-08T05:36:37.180Z"
+updated_at: "2026-09-19T08:40:40.856Z"
+closed_at: "2026-06-29T13:38:02.885Z"
 author: claude-code-agent
 parent: pm-08sv
 release: v2026.6.30

@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:docs","area:search","area:semantic",compatibility,pm-cli
 created_at: "2026-04-01T13:07:03.217Z"
-updated_at: "2026-07-26T17:23:21.800Z"
+updated_at: "2026-09-19T08:41:00.455Z"
 deadline: "2026-04-08T13:07:03.217Z"
+closed_at: "2026-04-01T13:24:44.385Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 90
@@ -41,10 +42,18 @@ fixed_version: archive-2026q2
 component: docs/search
 regression: true
 customer_impact: Provides clear guidance and confidence for users adopting default semantic behavior.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-9k33,related,"2026-04-01T13:07:03.217Z",codex-agent,null
-  pm-zvn2,parent,"2026-04-01T13:07:03.217Z",codex-agent,null
-  pm-zvn2,implements,"2026-07-26T17:23:21.492Z",null,null
+dependencies[3]:
+  - id: pm-9k33
+    kind: related
+    created_at: "2026-04-01T13:07:03.217Z"
+    author: codex-agent
+  - id: pm-zvn2
+    kind: parent
+    created_at: "2026-04-01T13:07:03.217Z"
+    author: codex-agent
+  - id: pm-zvn2
+    kind: implements
+    created_at: "2026-07-26T17:23:21.492Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T13:07:03.217Z",codex-agent,Task ensures docs and changelog remain contract-accurate for the semantic default rollout.
   "2026-04-01T13:24:31.920Z",codex-agent,"Updated documentation contracts in README.md, docs/ARCHITECTURE.md, PRD.md, and CHANGELOG.md to describe Ollama-backed semantic auto defaults, precedence rules, fallback behavior, and control environment variables. Evidence: pm test pm-ptu0 --run passed linked full regression verification (62 files, 648 tests); host-level sandbox checks confirmed default hybrid mode and successful semantic reindex/search execution with local Ollama."

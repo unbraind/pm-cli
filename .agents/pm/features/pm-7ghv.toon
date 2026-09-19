@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:extensions","area:ux","milestone:extension-manager",pm-cli
 created_at: "2026-04-03T16:16:17.605Z"
-updated_at: "2026-07-26T17:06:27.585Z"
+updated_at: "2026-09-19T08:39:39.097Z"
 deadline: "2026-04-13T16:16:17.605Z"
+closed_at: "2026-04-03T17:09:33.353Z"
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: pm extension exposes lifecycle actions with deterministic validation/help/completion and no regressions to existing commands.
@@ -39,8 +40,8 @@ fixed_version: target-vnext
 component: cli-extensions
 regression: false
 customer_impact: Users get predictable extension lifecycle UX
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-m9jc,implements,"2026-07-26T17:06:27.386Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-m9jc,implements,"2026-07-26T17:06:27.386Z"
 comments[2]{created_at,author,text}:
   "2026-04-03T16:16:17.605Z",codex-agent,Created after de-dup scan for extension lifecycle command coverage.
   "2026-04-03T17:09:31.169Z",codex-agent,"Implemented pm extension lifecycle command surface in CLI wiring, help narratives, and completion with deterministic action/scope/source flag validation."

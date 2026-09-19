@@ -6,15 +6,16 @@ status: closed
 priority: 1
 tags[3]: agent-ux,github-262,init
 created_at: "2026-06-17T22:02:31.964Z"
-updated_at: "2026-07-26T17:17:24.249Z"
+updated_at: "2026-09-19T08:40:36.665Z"
+closed_at: "2026-06-17T23:12:41.034Z"
 author: codex-audit-20260618
 parent: pm-mpbb
 release: v2026.6.19
 resolution: Fixed init positional target handling and existing-settings force guard for GH #262.
 expected_result: Path-like pm init positional targets create/initialize the target tracker and do not rewrite the caller tracker unless --force is explicitly used for existing settings.
 actual_result: "Path-like targets are detected, existing settings rewrites require --force, help text documents prefix-or-path, focused tests/manual temp-project reproduction/full coverage/dogfood passed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-mpbb,implements,"2026-07-26T17:17:23.957Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-mpbb,implements,"2026-07-26T17:17:23.957Z"
 comments[1]{created_at,author,text}:
   "2026-06-17T23:12:20.894Z",codex-audit-agent,"Final evidence: init path-like target fix verified by focused init tests, full integration tests, manual /tmp caller-target SHA check, full coverage 100%, dogfood package-first, release gates, security scan, and validation history_drift ok."
 files[3]{path,scope,note}:

@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: "area:search","area:semantic",performance,ux
 created_at: "2026-06-07T10:04:28.723Z"
-updated_at: "2026-09-08T05:32:49.159Z"
+updated_at: "2026-09-19T08:40:51.497Z"
+closed_at: "2026-06-09T22:47:11.611Z"
 author: audit-data-agent
 acceptance_criteria: "- `pm reindex --mode semantic` defaults to stale-only (only re-embeds items whose `updated_at` differs from ledger)\n- `pm reindex --mode semantic --full` forces a full re-embed (current behaviour)\n- Progress output shows `X stale of Y total items to re-embed`\n- Help text explains the default stale-only behaviour and the --full override"
 parent: pm-ydp6

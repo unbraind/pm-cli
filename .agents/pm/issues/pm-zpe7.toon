@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: "area:ci","area:telemetry",gh-340,windows
 created_at: "2026-06-22T10:53:34.353Z"
-updated_at: "2026-07-26T17:31:07.826Z"
+updated_at: "2026-09-19T08:43:20.785Z"
+closed_at: "2026-06-22T11:20:11.012Z"
 author: codex-sdk-cli-continuation
 parent: pm-5oj5
 release: v2026.6.23
@@ -17,8 +18,8 @@ repro_steps: "gh run view 27944143257 --job 82684505929 --log shows tests/integr
 resolution: Resolved by setting the detached telemetry flush worker cwd to os.tmpdir() so Windows no longer keeps the caller temp project directory locked after the foreground command exits; PR #341 verified on local gates and GitHub Windows Node 20 regression.
 expected_result: Nightly Windows Node 20 telemetry nonblocking test should pass without temp cleanup races.
 actual_result: "Functional assertions passed, but cleanup failed after 8 attempts because a detached telemetry flush worker can keep the temp root busy on Windows."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-5oj5,implements,"2026-07-26T17:31:07.576Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-5oj5,implements,"2026-07-26T17:31:07.576Z"
 comments[3]{created_at,author,text}:
   "2026-06-22T10:58:31.892Z",codex-sdk-cli-continuation,"Evidence: Root cause from GH run 27944143257 job 82684505929: Windows Node 20 nightly failed after telemetry-otel-nonblocking functional assertions because afterAll cleanup hit EBUSY removing the temp root. The detached OTLP flush worker inherits cwd, so using the disposable temp root as cwd creates a Windows cleanup race. Patch keeps PM_PATH/PM_GLOBAL_PATH sandboxed but runs spawned CLI from repoRoot, and adds fs.rm retry options for cleanup. Verification: targeted test passed (2 tests); pnpm build passed; node scripts/run-tests.mjs coverage passed 100/100/100/100 with 242 files and 4840 tests; pnpm quality:static passed; pnpm security:scan found no credential-like secrets; pnpm audit --audit-level moderate found no known vulnerabilities; pnpm changelog:pm:check passed with pm-changelog 2026.6.20 unchanged; pm health ok; pm validate history drift ok with pre-existing resolution warnings; manual isolated temp smoke passed init/create/update/get/health. GitHub: no open PRs; GH issue #340 is the active nightly failure report; newer main CI run 27947183372 completed success including Windows Node 20."
   "2026-06-22T11:07:27.740Z",codex-sdk-cli-continuation,"Review follow-up: Gemini correctly pointed out the stronger fix belongs in src/core/telemetry/runtime.ts. Updated scheduleTelemetryFlush to spawn the detached worker with cwd=os.tmpdir(), then restored the integration test to run the foreground CLI from the sandbox temp root and removed redundant fs.rm native retries."

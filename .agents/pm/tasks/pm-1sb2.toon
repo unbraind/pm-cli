@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: agent-docs,docs,readme,security
 created_at: "2026-05-01T20:47:21.143Z"
-updated_at: "2026-07-26T17:01:24.141Z"
+updated_at: "2026-09-19T08:39:16.561Z"
 deadline: "2026-05-02T20:47:21.143Z"
+closed_at: "2026-05-01T21:21:30.461Z"
 author: codex-agent
 estimated_minutes: 150
 acceptance_criteria: "README is concise and routes to deeper docs; docs use GitHub-compatible relative links; agent-facing sections are token-efficient with progressive disclosure; public docs reference pm-3042, pm-r9gu, and this task where relevant; private operations material stays local-only and gitignored; links and build verification pass."
@@ -16,9 +17,9 @@ release: v2026.5.2
 resolution: "README and public documentation were restructured into a concise entry point plus focused progressive-disclosure docs for users, agents, commands, configuration, testing, architecture, SDK, extensions, and releasing."
 expected_result: "Public docs are concise, navigable with GitHub-compatible links, linked to pm tracker items, and exclude private operations material."
 actual_result: README is 104 lines; docs index and focused pages were added; changed docs are linked to pm-1sb2; public docs private-string scan passed; package dry-run excludes private operations artifacts; linked coverage passed at 100%.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-3042,related,"2026-07-26T17:01:23.943Z",null,null
-  pm-r9gu,implements,"2026-07-26T17:01:23.943Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-3042,related,"2026-07-26T17:01:23.943Z"
+  pm-r9gu,implements,"2026-07-26T17:01:23.943Z"
 comments[2]{created_at,author,text}:
   "2026-05-01T21:23:36.581Z",codex-agent,"Duplicate check evidence: ran pm context --limit 10,pm search for README documentation docs progressive disclosure agents private operations,pm list-open --limit 20,and pm list-in-progress --limit 20. No active task covered this README and docs overhaul; closed historical hits were not reusable,so this child task was net-new under pm-r9gu."
   "2026-05-01T21:23:36.581Z",codex-agent,"Evidence: pnpm build passed; markdown link checker passed for 16 public markdown files; public-doc private-string scan passed; local private operations paths are ignored; npm pack dry-run checked 472 files with no private operations artifacts; pnpm security:scan found no credential-like secrets; pm docs/files --validate-paths passed; focused release-readiness and vector-store specs passed; linked coverage passed with 81 files,1088 tests,and 100% coverage. pm validate history drift is clean; remaining resolution warnings are unrelated pre-existing closed items."

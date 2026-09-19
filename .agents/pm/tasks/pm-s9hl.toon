@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:compat","area:docs","area:tests",pm-cli
 created_at: "2026-04-01T10:12:49.030Z"
-updated_at: "2026-08-13T09:48:22.794Z"
+updated_at: "2026-09-19T08:41:31.648Z"
 deadline: "2026-04-06T10:12:49.030Z"
+closed_at: "2026-04-01T10:37:07.378Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 160

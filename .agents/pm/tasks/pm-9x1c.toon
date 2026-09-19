@@ -6,7 +6,8 @@ status: closed
 priority: 0
 tags[4]: commands,install,packages,pm-cli
 created_at: "2026-05-11T17:41:31.580Z"
-updated_at: "2026-07-26T17:08:39.280Z"
+updated_at: "2026-09-19T08:39:48.834Z"
+closed_at: "2026-05-11T19:12:15.850Z"
 author: codex-agent
 acceptance_criteria: pm install installs package/extension sources; pm package and pm packages expose lifecycle subcommands; contracts/native integrations include package actions; command tests cover aliases.
 parent: pm-59gj
@@ -14,12 +15,12 @@ release: v2026.5.12
 resolution: "Implemented package-first command aliases and install support while preserving extension compatibility. Added pm install, pm package, and pm packages command surfaces; expanded SDK/Pi/MCP contracts; package-root discovery supports pm.extensions, Pi-compatible pi.extensions, conventional extension directories, and npm:<spec> sources via npm pack; docs and skills now route users through package-first terminology."
 expected_result: "Users can install package sources through pm install and manage them through pm package/package aliases without breaking existing pm extension workflows; SDK, Pi wrapper, MCP, docs, and tests expose the package vocabulary."
 actual_result: "Manual temp-project dogfood installed local pm.extensions and npm pi.extensions packages, pm package manage listed both installed extensions, SDK package-install/install contracts were present, linked tests passed, full release gates passed with 100% coverage, and telemetry/Sentry gate returned fresh actionable data."
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-59gj,implements,"2026-07-26T17:08:39.075Z",null,null
-  pm-dhie,related,"2026-07-26T17:08:39.075Z",null,null
-  pm-f3q4,related,"2026-07-26T17:08:39.075Z",null,null
-  pm-fdla,related,"2026-07-26T17:08:39.075Z",null,null
-  pm-mb4n,related,"2026-07-26T17:08:39.075Z",null,null
+dependencies[5]{id,kind,created_at}:
+  pm-59gj,implements,"2026-07-26T17:08:39.075Z"
+  pm-dhie,related,"2026-07-26T17:08:39.075Z"
+  pm-f3q4,related,"2026-07-26T17:08:39.075Z"
+  pm-fdla,related,"2026-07-26T17:08:39.075Z"
+  pm-mb4n,related,"2026-07-26T17:08:39.075Z"
 comments[8]{created_at,author,text}:
   "2026-05-11T17:41:31.580Z",codex-agent,Child task created after Pi research showed install/package terminology is the user-facing model and existing pm extension manager can provide the first compatible implementation slice.
   "2026-05-11T18:02:29.269Z",codex-agent,"Progress: implemented package-first command surface (pm install, pm package, pm packages), SDK contract/native/MCP aliases, local package root discovery via pm.extensions/pi.extensions and conventional directories, npm:<spec> install through npm pack, docs/skills routing, and focused regression coverage. Verification so far: pnpm build passed; docs-skills gate passed; secret scan passed; focused package suite passed 4 files / 128 tests."

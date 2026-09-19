@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[8]: "area:install",code,docs,"milestone:6",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-08T22:50:29.347Z"
-updated_at: "2026-07-26T17:11:33.806Z"
+updated_at: "2026-09-19T08:40:03.228Z"
 deadline: "2026-03-09T22:50:29.347Z"
+closed_at: "2026-04-04T15:49:03.106Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: No remaining runtime/help/contracts/tests depend on pm install --path semantics; extension manager install scopes remain documented and verified.
@@ -40,9 +41,14 @@ fixed_version: v0.1
 component: cli/install
 regression: true
 customer_impact: Automation scripts may install integration files into wrong repository when using --path.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-8a2s,related,"2026-03-08T22:50:29.347Z",maintainer-agent,null
-  pm-8a2s,implements,"2026-07-26T17:11:33.616Z",null,null
+dependencies[2]:
+  - id: pm-8a2s
+    kind: related
+    created_at: "2026-03-08T22:50:29.347Z"
+    author: maintainer-agent
+  - id: pm-8a2s
+    kind: implements
+    created_at: "2026-07-26T17:11:33.616Z"
 comments[9]{created_at,author,text}:
   "2026-03-08T22:50:29.347Z",maintainer-agent,Why this exists install command should honor global --path semantics for deterministic project-targeted integration installs.
   "2026-03-08T22:50:39.256Z",maintainer-agent,"Planned changeset before edits: update PRD and README install contract to state project scope follows resolved PM root then implement install destination derivation from --path or PM_PATH and add unit plus contract tests."

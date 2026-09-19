@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: dedupe,external-audit,pm-cli,query-surfaces
 created_at: "2026-04-06T12:40:35.234Z"
-updated_at: "2026-07-26T17:04:04.317Z"
+updated_at: "2026-09-19T08:39:26.991Z"
+closed_at: "2026-04-06T13:28:32.708Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: "pm dedupe-audit returns deterministic duplicate candidates in all three modes, includes merge suggestions in JSON output, and is covered by unit/integration/help/completion/contracts tests."
@@ -15,8 +16,8 @@ release: v2026.5.1
 resolution: Governance metadata backfill completed after repository-wide PM CLI health audit.
 expected_result: Closed item includes deterministic resolution metadata for validation and audit readiness.
 actual_result: Resolution metadata fields were backfilled without altering closure intent.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-7lum,implements,"2026-07-26T17:04:04.107Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-7lum,implements,"2026-07-26T17:04:04.107Z"
 comments[2]{created_at,author,text}:
   "2026-04-06T12:40:35.234Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'duplicate dedupe audit' --limit 20; pm search 'automate duplicate-cluster detection and canonical mapping report' --limit 10; pm list-open --limit 50; pm list-in-progress --limit 50. Reusing open parent pm-7lum and creating only this implementation task because no active child task currently tracks command-level dedupe-audit delivery."
   "2026-04-06T13:28:30.651Z",codex-agent,"Implemented pm dedupe-audit with title_exact/title_fuzzy/parent_scope clustering, deterministic merge suggestions, contracts/Pi wrapper parity, and documentation updates. Verification: node scripts/run-tests.mjs test -- tests/unit/dedupe-audit-command.spec.ts tests/integration/aggregate-dedupe.integration.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts; pnpm build; node scripts/run-tests.mjs test; node scripts/run-tests.mjs coverage."

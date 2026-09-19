@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[5]: "area:dependencies","area:files","area:ux",external-audit,pm-cli
 created_at: "2026-04-03T14:47:48.291Z"
-updated_at: "2026-08-10T11:52:53.207Z"
+updated_at: "2026-09-19T08:40:31.534Z"
 deadline: "2026-04-17T14:47:48.291Z"
+closed_at: "2026-04-03T15:22:50.049Z"
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: "Unresolved gaps ship with backward-compatible behavior, docs/contracts parity, and full verification evidence."

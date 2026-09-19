@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[3]: code-quality,dedup,packages
 created_at: "2026-05-24T22:03:17.712Z"
-updated_at: "2026-08-10T12:03:37.727Z"
+updated_at: "2026-09-19T08:42:40.638Z"
+closed_at: "2026-05-24T22:51:25.048Z"
 author: package-dedup-agent
 release: v2026.5.27
 resolution: Implemented install-safe generated runtime-loader entrypoints for beads/todos and verified copied package installs.

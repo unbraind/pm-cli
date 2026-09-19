@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:core","area:docs",close,pm-cli,workflow
 created_at: "2026-03-06T13:04:03.661Z"
-updated_at: "2026-08-13T08:04:31.770Z"
+updated_at: "2026-09-19T08:39:22.747Z"
 deadline: "2026-03-07T13:04:03.661Z"
+closed_at: "2026-03-06T13:23:20.666Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 120

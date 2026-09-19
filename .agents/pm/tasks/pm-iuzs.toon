@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[7]: "area:extensions",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-05T20:15:49.066Z"
-updated_at: "2026-07-26T17:16:48.820Z"
+updated_at: "2026-09-19T08:40:31.768Z"
 deadline: "2026-03-07T20:15:48.000Z"
+closed_at: "2026-03-05T20:33:02.046Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 180
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-extension-api-registration-surface-
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: Extension API registration surface baseline."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-b1w,related,"2026-03-05T20:15:49.066Z",maintainer-agent,null
-  pm-2p6q,implements,"2026-07-26T17:16:48.655Z",null,null
+dependencies[2]:
+  - id: pm-b1w
+    kind: related
+    created_at: "2026-03-05T20:15:49.066Z"
+    author: maintainer-agent
+  - id: pm-2p6q
+    kind: implements
+    created_at: "2026-07-26T17:16:48.655Z"
 comments[4]{created_at,author,text}:
   "2026-03-05T20:15:49.066Z",maintainer-agent,Why this exists add baseline registration coverage for remaining v1 ExtensionApi methods.
   "2026-03-05T20:16:01.010Z",maintainer-agent,"Planned changeset: update PRD and README first for extension API registration baseline then implement loader registries and activation diagnostics then add regression tests and run pm test plus pm test-all sweeps."

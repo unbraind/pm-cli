@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:ollama","area:search","area:semantic",compatibility,pm-cli
 created_at: "2026-04-01T13:06:19.646Z"
-updated_at: "2026-07-26T17:31:17.746Z"
+updated_at: "2026-09-19T08:43:22.242Z"
 deadline: "2026-04-11T13:06:19.646Z"
+closed_at: "2026-04-01T13:25:06.066Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
@@ -41,13 +42,27 @@ fixed_version: archive-2026q2
 component: search/runtime
 regression: true
 customer_impact: Enables semantic defaults where available while preserving stable behavior for existing users.
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-67uh,parent,"2026-04-01T13:06:19.646Z",codex-agent,null
-  pm-yv2,discovered_from,"2026-04-01T13:06:19.646Z",codex-agent,null
-  pm-67uh,implements,"2026-07-26T17:31:17.512Z",null,null
-  pm-9k33,related,"2026-07-26T17:31:17.512Z",null,null
-  pm-ptu0,related,"2026-07-26T17:31:17.512Z",null,null
-  pm-wn3r,related,"2026-07-26T17:31:17.512Z",null,null
+dependencies[6]:
+  - id: pm-67uh
+    kind: parent
+    created_at: "2026-04-01T13:06:19.646Z"
+    author: codex-agent
+  - id: pm-yv2
+    kind: discovered_from
+    created_at: "2026-04-01T13:06:19.646Z"
+    author: codex-agent
+  - id: pm-67uh
+    kind: implements
+    created_at: "2026-07-26T17:31:17.512Z"
+  - id: pm-9k33
+    kind: related
+    created_at: "2026-07-26T17:31:17.512Z"
+  - id: pm-ptu0
+    kind: related
+    created_at: "2026-07-26T17:31:17.512Z"
+  - id: pm-wn3r
+    kind: related
+    created_at: "2026-07-26T17:31:17.512Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T13:06:19.646Z",codex-agent,Feature created from audited semantic search roadmap and Ollama fixes to add default-on behavior safely.
   "2026-04-01T13:25:05.107Z",codex-agent,"Feature delivered via closed child tasks pm-wn3r (runtime), pm-9k33 (tests), and pm-ptu0 (docs). Evidence: linked task test runs passed including full node scripts/run-tests.mjs test (62 files, 648 tests), host sandbox validation confirmed automatic hybrid default and successful semantic reindex/search with local Ollama, and coverage run was executed with only the existing global threshold shortfall."

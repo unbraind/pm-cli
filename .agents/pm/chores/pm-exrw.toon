@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[5]: "area:extensions","area:packages",ci,governance,living-map
 created_at: "2026-05-31T19:44:26.168Z"
-updated_at: "2026-09-08T05:32:31.818Z"
+updated_at: "2026-09-19T08:40:12.500Z"
+closed_at: "2026-05-31T22:18:01.730Z"
 author: maintainer-agent
 acceptance_criteria: Test reads all packages/pm-*/extensions/*/manifest.json and asserts non-empty pm_min_version + integer manifest_version; failure names the offending file; in vitest include; runs in static gate.
 value: "After declaring pm_min_version, a governance test (like coverage-allowlist/marketplace drift-lock) prevents future omission as package count grows."

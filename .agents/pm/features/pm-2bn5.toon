@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[1]: "area:performance"
 created_at: "2026-06-07T17:04:16.436Z"
-updated_at: "2026-09-08T05:32:55.562Z"
+updated_at: "2026-09-19T08:39:17.520Z"
+closed_at: "2026-06-09T22:47:09.261Z"
 author: maintainer-agent
 parent: pm-mpbb
 release: v2026.6.10

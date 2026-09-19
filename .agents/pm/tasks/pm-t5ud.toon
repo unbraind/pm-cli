@@ -6,7 +6,8 @@ status: closed
 priority: 0
 tags[5]: manifest,packages,planning,pm-cli,sdk
 created_at: "2026-05-11T17:58:43.930Z"
-updated_at: "2026-07-26T17:26:06.065Z"
+updated_at: "2026-09-19T08:41:38.912Z"
+closed_at: "2026-05-14T15:49:57.161Z"
 author: codex-agent
 acceptance_criteria: Package manifest schema is documented and represented in SDK/contracts; resource precedence is explicit for runtime extensions; direct Pi agent code and package metadata are removed from the main codebase; focused package/SDK/install tests pass.
 parent: pm-59gj
@@ -14,36 +15,72 @@ release: v2026.5.14
 resolution: Metadata-first package resource contract was delivered with extension-only activation semantics and no direct agent-specific resource model in core.
 expected_result: "Package manifest schema is documented, SDK-visible, and keeps direct Pi resource semantics out of pm core."
 actual_result: "Package manifest, SDK, extension, dogfood, coverage, release gate, and plugin smoke verification passed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-59gj,implements,"2026-07-26T17:26:05.797Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-59gj,implements,"2026-07-26T17:26:05.797Z"
 comments[4]{created_at,author,text}:
   "2026-05-11T17:58:43.930Z",codex-agent,"Plan item created from Pi research: Pi packages bundle extensions,skills,prompts,and themes through package.json resource arrays and conventional directories. pm first slice supports extension resources; broader resource kinds need an explicit manifest design."
   "2026-05-11T20:05:29.769Z",codex-agent,"Implementation update: package manifest contract now exposes only pm.extensions for general project-management extension packages. Removed direct Pi runtime/package assets from the main codebase, renamed provider-safe SDK schema exports to provider-neutral names, removed Pi package metadata and optional peer dependency from package.json, and changed the todos extension default folder from .pi/todos to .pm/todos."
   "2026-05-14T15:37:48.330Z",codex-package-refactor,"Implemented metadata-first package resource expansion: core manifest contract now supports extensions/docs/examples, package install/catalog surfaces communicate extension-only activation semantics, and first-party package manifests now publish docs/examples metadata resources. Focused tests updated and passing."
   "2026-05-14T15:49:52.921Z",codex-package-refactor,"Verification complete: node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/extension-command.spec.ts passed (60 tests); node scripts/dogfood-package-first.mjs passed; node scripts/run-tests.mjs coverage passed (1299/1299, 100%); node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json passed with sentry critical=1 high=4 and telemetry finish_error_rate_pct=2.24; node scripts/smoke-claude-plugin.mjs passed."
-files[22]{path,scope,note}:
-  docs/EXTENSIONS.md,project,manifest/resource contract docs
-  docs/SDK.md,project,SDK resource kind docs
-  package.json,project,removed Pi package metadata and peer
-  packages/pm-beads/package.json,project,null
-  packages/pm-calendar/package.json,project,null
-  packages/pm-governance-audit/package.json,project,null
-  packages/pm-guide-shell/package.json,project,null
-  packages/pm-linked-test-adapters/package.json,project,null
-  packages/pm-search-advanced/package.json,project,null
-  packages/pm-templates/package.json,project,null
-  packages/pm-todos/extensions/todos/runtime.js,project,default todos package folder changed to .pm/todos
-  packages/pm-todos/extensions/todos/runtime.ts,project,default todos package folder changed to .pm/todos
-  packages/pm-todos/package.json,project,null
-  pnpm-lock.yaml,project,removed Pi optional peer lock entries
-  src/cli/commands/extension.ts,project,install diagnostics use pm.extensions only
-  src/core/packages/manifest.ts,project,general pm package manifest contract
-  src/sdk/cli-contracts.ts,project,provider-neutral tool schema names
-  src/sdk/index.ts,project,package manifest SDK exports
-  tests/unit/extension-command.spec.ts,project,catalog messaging assertions
-  tests/unit/package-manifest.spec.ts,project,package manifest contract tests
-  tests/unit/sdk-index.spec.ts,project,SDK resource kind export coverage
-  vitest.config.ts,project,coverage includes package manifest module
+files[22]:
+  - path: docs/EXTENSIONS.md
+    scope: project
+    note: manifest/resource contract docs
+  - path: docs/SDK.md
+    scope: project
+    note: SDK resource kind docs
+  - path: package.json
+    scope: project
+    note: removed Pi package metadata and peer
+  - path: packages/pm-beads/package.json
+    scope: project
+  - path: packages/pm-calendar/package.json
+    scope: project
+  - path: packages/pm-governance-audit/package.json
+    scope: project
+  - path: packages/pm-guide-shell/package.json
+    scope: project
+  - path: packages/pm-linked-test-adapters/package.json
+    scope: project
+  - path: packages/pm-search-advanced/package.json
+    scope: project
+  - path: packages/pm-templates/package.json
+    scope: project
+  - path: packages/pm-todos/extensions/todos/runtime.js
+    scope: project
+    note: default todos package folder changed to .pm/todos
+  - path: packages/pm-todos/extensions/todos/runtime.ts
+    scope: project
+    note: default todos package folder changed to .pm/todos
+  - path: packages/pm-todos/package.json
+    scope: project
+  - path: pnpm-lock.yaml
+    scope: project
+    note: removed Pi optional peer lock entries
+  - path: src/cli/commands/extension.ts
+    scope: project
+    note: install diagnostics use pm.extensions only
+  - path: src/core/packages/manifest.ts
+    scope: project
+    note: general pm package manifest contract
+  - path: src/sdk/cli-contracts.ts
+    scope: project
+    note: provider-neutral tool schema names
+  - path: src/sdk/index.ts
+    scope: project
+    note: package manifest SDK exports
+  - path: tests/unit/extension-command.spec.ts
+    scope: project
+    note: catalog messaging assertions
+  - path: tests/unit/package-manifest.spec.ts
+    scope: project
+    note: package manifest contract tests
+  - path: tests/unit/sdk-index.spec.ts
+    scope: project
+    note: SDK resource kind export coverage
+  - path: vitest.config.ts
+    scope: project
+    note: coverage includes package manifest module
 tests[2]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/extension-command.spec.ts,project,600,metadata-first package resource contract suite
   node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/extension-command.spec.ts tests/unit/extension-command-github.spec.ts tests/unit/todos-extension.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/main-loose-options.spec.ts tests/integration/claude-plugin-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,600,focused package and Pi-decoupling regression suite

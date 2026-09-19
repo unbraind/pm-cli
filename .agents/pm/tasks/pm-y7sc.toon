@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[2]: audit-2026-06-13,session
 created_at: "2026-06-12T22:38:35.775Z"
-updated_at: "2026-08-10T12:03:12.580Z"
+updated_at: "2026-09-19T08:43:03.726Z"
+closed_at: "2026-06-13T04:41:50.341Z"
 author: maintainer-agent
 release: v2026.6.13
 resolution: "Fixed the feasible combined branch scope: duplicate close reason autofill, container child rollups, linked-test pipe/sandbox ergonomics, audit-update retry guidance, esbuild security override, coverage expansion and threshold ratchet, plus tracker evidence/backlog items."

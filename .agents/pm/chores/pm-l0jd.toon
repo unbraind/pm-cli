@@ -6,15 +6,16 @@ status: closed
 priority: 3
 tags[3]: "area:sdk",ergonomics,extensions
 created_at: "2026-06-07T17:04:18.516Z"
-updated_at: "2026-07-26T17:18:58.211Z"
+updated_at: "2026-09-19T08:40:42.088Z"
+closed_at: "2026-06-09T18:41:08.564Z"
 author: maintainer-agent
 parent: pm-ugqx
 release: v2026.6.10
 resolution: "Added extension manifest schema docs, cached workspace contracts, and unified flag value type support."
 expected_result: "SDK authors get schema guidance, efficient contracts access, and consistent flag typing."
 actual_result: "docs/schemas/extension-manifest.schema.json, sdk runtime cache, and tests/docs are in place with 100% coverage passing."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-ugqx,implements,"2026-07-26T17:18:57.896Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-ugqx,implements,"2026-07-26T17:18:57.896Z"
 comments[7]{created_at,author,text}:
   "2026-06-08T13:51:52.213Z",maintainer-agent,"Partially addressed in the Extension SDK platform-maturity PR: FlagDefinition type/value_type precedence is now unified on value_type (value_type ?? type) in resolveLooseOptionCoercionKind, with type marked @deprecated in the SDK type + docs. REMAINING (kept open): (1) extension-manifest.schema.json + $schema pointer for IDE validation; (2) getWorkspaceContracts per-pmRoot memoization or documentation."
   "2026-06-09T17:46:48.169Z",sdk-core-agent,"sdk-core-agent starting: (a) extension-manifest JSON Schema + $schema tolerance + governance sync test, (b) getWorkspaceContracts per-pmRoot memo with clearWorkspaceContractsCache, (c) FlagDefinition.type @deprecated JSDoc."

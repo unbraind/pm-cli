@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[4]: "area:history","area:storage",correctness,gc
 created_at: "2026-06-07T10:02:16.723Z"
-updated_at: "2026-09-08T05:32:45.251Z"
+updated_at: "2026-09-19T08:39:39.969Z"
+closed_at: "2026-06-07T13:43:35.763Z"
 author: audit-data-agent
 acceptance_criteria: "- Add `{ scope: 'runtime', relativePath: 'runtime/history-drift-cache.json', kind: 'file' }` to `GC_TARGETS`\n- `pm gc --scope runtime` removes the drift cache (triggers a fresh full-scan on next `pm health`)\n- GC guidance updated to mention that removing the drift cache forces a full re-scan\n- Unit test covering the new target path"
 parent: pm-o2kc

@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:release","area:tests",pm-cli
 created_at: "2026-04-01T12:38:52.243Z"
-updated_at: "2026-07-26T17:16:09.120Z"
+updated_at: "2026-09-19T08:40:26.769Z"
 deadline: "2026-04-11T12:38:52.243Z"
+closed_at: "2026-04-03T10:57:29.299Z"
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: README/PRD/ARCHITECTURE/EXTENSIONS/CHANGELOG reflect new help-error-output behavior; tests validate contracts; full verification passes before ship.
@@ -40,10 +41,18 @@ fixed_version: archive-2026q2
 component: cli-docs-tests
 regression: true
 customer_impact: Users retain trust through stable behavior and clear documentation
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-izbd,parent,"2026-04-01T12:38:52.243Z",codex-agent,null
-  pm-qwp7,related,"2026-04-01T12:38:52.243Z",codex-agent,null
-  pm-izbd,implements,"2026-07-26T17:16:08.876Z",null,null
+dependencies[3]:
+  - id: pm-izbd
+    kind: parent
+    created_at: "2026-04-01T12:38:52.243Z"
+    author: codex-agent
+  - id: pm-qwp7
+    kind: related
+    created_at: "2026-04-01T12:38:52.243Z"
+    author: codex-agent
+  - id: pm-izbd
+    kind: implements
+    created_at: "2026-07-26T17:16:08.876Z"
 comments[3]{created_at,author,text}:
   "2026-04-01T12:38:52.243Z",codex-agent,Feature covers documentation parity and full release verification evidence.
   "2026-04-03T10:23:27.517Z",codex-agent,Reopened for Phase 2 schema-v3 and docs/contracts verification workstream.

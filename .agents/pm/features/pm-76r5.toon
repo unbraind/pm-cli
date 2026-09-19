@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T11:28:39.146Z"
-updated_at: "2026-09-08T05:33:11.305Z"
+updated_at: "2026-09-19T08:39:37.665Z"
+closed_at: "2026-06-17T16:02:57.720Z"
 author: codex-sdk-cli-consolidation-20260616
 parent: pm-mpbb
 release: v2026.6.17

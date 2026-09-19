@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[8]: "area:bootstrap","area:docs",doc,"milestone:6",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-06T21:09:54.214Z"
-updated_at: "2026-07-26T17:20:04.198Z"
+updated_at: "2026-09-19T08:40:45.707Z"
 deadline: "2026-03-07T21:09:54.214Z"
+closed_at: "2026-03-06T21:21:21.418Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 75
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/contributing-maintainer-bootstrap-global-install
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Contributing maintainer bootstrap global-install parity.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-uh4d,related,"2026-03-06T21:09:54.214Z",maintainer-agent,null
-  pm-8a2s,implements,"2026-07-26T17:20:03.917Z",null,null
+dependencies[2]:
+  - id: pm-uh4d
+    kind: related
+    created_at: "2026-03-06T21:09:54.214Z"
+    author: maintainer-agent
+  - id: pm-8a2s
+    kind: implements
+    created_at: "2026-07-26T17:20:03.917Z"
 comments[4]{created_at,author,text}:
   "2026-03-06T21:09:54.214Z",maintainer-agent,"Why this exists: AGENTS already requires global install refresh but CONTRIBUTING bootstrap omits the explicit command."
   "2026-03-06T21:10:17.174Z",maintainer-agent,"Planned changeset: update CONTRIBUTING maintainer bootstrap to include npm install -g . refresh requirement and add release-readiness contract assertions to keep CONTRIBUTING aligned with AGENTS bootstrap policy."

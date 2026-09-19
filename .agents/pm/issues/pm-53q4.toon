@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[4]: dependabot,github-alert,security,undici
 created_at: "2026-04-03T17:24:38.934Z"
-updated_at: "2026-07-26T17:04:25.925Z"
+updated_at: "2026-09-19T08:39:29.101Z"
 deadline: "2026-04-17T17:24:38.934Z"
+closed_at: "2026-04-03T17:46:11.604Z"
 author: codex-agent
 estimated_minutes: 45
 acceptance_criteria: Alert is resolved by an upgrade or explicitly dismissed with recorded rationale and verification.
@@ -39,9 +40,9 @@ fixed_version: 7.24.0
 component: "dependency:undici"
 regression: true
 customer_impact: Runtime dependency vulnerabilities may affect CLI users and maintainers until remediated.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-i7w2,implements,"2026-07-26T17:04:25.581Z",null,null
-  pm-ylg3,related,"2026-07-26T17:04:25.581Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-i7w2,implements,"2026-07-26T17:04:25.581Z"
+  pm-ylg3,related,"2026-07-26T17:04:25.581Z"
 comments[3]{created_at,author,text}:
   "2026-04-03T17:24:38.934Z",codex-agent,Imported open GitHub Dependabot alert GHSA-v9p9-hfj2-hcw8.
   "2026-04-03T17:46:09.945Z",codex-agent,"Remediated in GH findings sweep: upgraded undici to 8.0.1, updated dependency stack to patched versions, added brace-expansion override >=5.0.5, and verified pnpm audit --prod/--all report zero vulnerabilities."

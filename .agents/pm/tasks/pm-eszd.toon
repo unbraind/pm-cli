@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:body","area:update",pm-cli,runtime
 created_at: "2026-04-02T11:45:10.089Z"
-updated_at: "2026-07-26T17:13:11.604Z"
+updated_at: "2026-09-19T08:40:11.670Z"
 deadline: "2026-04-06T11:45:10.089Z"
+closed_at: "2026-04-02T11:59:13.032Z"
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: "update command accepts --body/-b, normalizeUpdateOptions forwards body, runUpdate mutates document.body and reports changed field body."
@@ -38,9 +39,14 @@ affected_version: 2026.3.12
 component: cli-update
 regression: true
 customer_impact: Body backfill is impossible via update.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-ghha,parent,"2026-04-02T11:45:10.089Z",codex-agent,null
-  pm-ghha,implements,"2026-07-26T17:13:11.320Z",null,null
+dependencies[2]:
+  - id: pm-ghha
+    kind: parent
+    created_at: "2026-04-02T11:45:10.089Z"
+    author: codex-agent
+  - id: pm-ghha
+    kind: implements
+    created_at: "2026-07-26T17:13:11.320Z"
 comments[2]{created_at,author,text}:
   "2026-04-02T11:45:10.089Z",codex-agent,Runtime task created under feature pm-ghha.
   "2026-04-02T11:59:12.280Z",codex-agent,"Implemented update runtime wiring for --body/-b in main normalization and runUpdate mutation path with changed_fields body support. Evidence: pm test pm-eszd --run passed (1 command, 20 tests)."

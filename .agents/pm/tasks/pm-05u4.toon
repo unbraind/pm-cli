@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:claim",implementation,ownership,pm-cli
 created_at: "2026-04-03T09:36:12.515Z"
-updated_at: "2026-07-26T16:59:49.499Z"
+updated_at: "2026-09-19T08:39:11.618Z"
 deadline: "2026-04-08T09:36:12.515Z"
+closed_at: "2026-04-03T09:58:03.231Z"
 author: codex-agent
 estimated_minutes: 90
 acceptance_criteria: Claim takes over non-terminal assigned items without force; terminal claim remains force-gated; tests and docs reflect behavior.
@@ -38,9 +39,14 @@ affected_version: 2026.3.12
 component: core/item-store
 regression: true
 customer_impact: Ownership handoffs are faster and less error-prone
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-w9w4,parent,"2026-04-03T09:36:12.515Z",codex-agent,null
-  pm-w9w4,implements,"2026-07-26T16:59:49.275Z",null,null
+dependencies[2]:
+  - id: pm-w9w4
+    kind: parent
+    created_at: "2026-04-03T09:36:12.515Z"
+    author: codex-agent
+  - id: pm-w9w4
+    kind: implements
+    created_at: "2026-07-26T16:59:49.275Z"
 comments[2]{created_at,author,text}:
   "2026-04-03T09:36:12.515Z",codex-agent,Task created for claim takeover semantics implementation and verification.
   "2026-04-03T09:57:59.664Z",codex-agent,Implemented claim takeover behavior for non-terminal assigned items by relaxing store ownership guard for claim mutations while preserving terminal/lock force protections; updated unit/integration tests.

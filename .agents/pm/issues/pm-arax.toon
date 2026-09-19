@@ -6,15 +6,16 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-05-30T07:07:36.147Z"
-updated_at: "2026-07-26T17:09:26.533Z"
+updated_at: "2026-09-19T08:39:52.060Z"
+closed_at: "2026-05-30T07:10:40.985Z"
 author: maintainer-agent
 parent: pm-59gj
 release: v2026.5.31
 resolution: Use platform-aware npm executable selection for extension package installs.
 expected_result: Windows and Unix extension package installs can run npm pack/install from pm without spawn ENOENT.
 actual_result: "Windows now resolves npm commands to npm.cmd and uses shell mode on win32 for execFile compatibility. Review follow-up linked test run passed: secret scan, 130 focused extension tests, static quality, and typecheck."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-59gj,implements,"2026-07-26T17:09:26.283Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-59gj,implements,"2026-07-26T17:09:26.283Z"
 comments[4]{created_at,author,text}:
   "2026-05-30T07:08:48.060Z",maintainer-agent,"Implementation note: centralized npm executable selection so Windows extension package installs run npm.cmd instead of bare npm, matching the existing Windows test helper behavior and avoiding spawn npm ENOENT."
   "2026-05-30T07:10:39.189Z",maintainer-agent,"Evidence: linked test run passed: secret scan, focused extension unit/integration tests (130 tests), static quality gate, and typecheck. git diff --check also passed. Root cause was bare npm executable resolution on Windows; fix selects npm.cmd on win32."

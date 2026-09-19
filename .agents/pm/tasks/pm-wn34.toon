@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: implementation,linked-tests,pm-cli,validation
 created_at: "2026-04-03T22:54:06.408Z"
-updated_at: "2026-07-26T17:28:49.211Z"
+updated_at: "2026-09-19T08:42:30.784Z"
 deadline: "2026-04-10T22:54:06.408Z"
+closed_at: "2026-04-03T23:47:04.758Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: parseAddEntries and create parseTests reject missing command metadata; legacy malformed records still produce deterministic runtime skip diagnostics.
@@ -38,9 +39,14 @@ affected_version: 2026.3.12
 component: linked-test-validation
 regression: true
 customer_impact: Users may think tests are linked and validated when they are not runnable.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-44iu,parent,"2026-04-03T22:54:06.408Z",codex-agent,null
-  pm-44iu,implements,"2026-07-26T17:28:48.945Z",null,null
+dependencies[2]:
+  - id: pm-44iu
+    kind: parent
+    created_at: "2026-04-03T22:54:06.408Z"
+    author: codex-agent
+  - id: pm-44iu
+    kind: implements
+    created_at: "2026-07-26T17:28:48.945Z"
 comments[3]{created_at,author,text}:
   "2026-04-03T22:54:06.408Z",codex-agent,Task targets parser mutation guards and compatibility-preserving runtime behavior.
   "2026-04-03T23:46:44.159Z",codex-agent,"Implemented command-required mutation enforcement for linked tests: pm test --add and create --test now reject entries without command metadata while runtime still skips legacy malformed stored entries. Evidence: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts tests/integration/cli.integration.spec.ts passed; pm test pm-wn34 --run --timeout 7200 --json passed (1/1)."

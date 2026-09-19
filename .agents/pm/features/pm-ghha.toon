@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:body","area:update",feature,pm-cli
 created_at: "2026-04-02T11:44:56.845Z"
-updated_at: "2026-07-26T17:14:34.242Z"
+updated_at: "2026-09-19T08:40:19.328Z"
 deadline: "2026-04-07T11:44:56.845Z"
+closed_at: "2026-04-02T11:59:16.627Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: pm update supports --body with deterministic changed_fields/history behavior; policy and wrapper contracts are aligned; tests and docs pass.
@@ -38,12 +39,23 @@ affected_version: 2026.3.12
 component: cli-update
 regression: true
 customer_impact: Users cannot complete all-field normalization via CLI today.
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-ihfm,parent,"2026-04-02T11:44:56.845Z",codex-agent,null
-  pm-eszd,related,"2026-07-26T17:14:34.057Z",null,null
-  pm-ha5a,related,"2026-07-26T17:14:34.057Z",null,null
-  pm-ihfm,implements,"2026-07-26T17:14:34.057Z",null,null
-  pm-ipm8,related,"2026-07-26T17:14:34.057Z",null,null
+dependencies[5]:
+  - id: pm-ihfm
+    kind: parent
+    created_at: "2026-04-02T11:44:56.845Z"
+    author: codex-agent
+  - id: pm-eszd
+    kind: related
+    created_at: "2026-07-26T17:14:34.057Z"
+  - id: pm-ha5a
+    kind: related
+    created_at: "2026-07-26T17:14:34.057Z"
+  - id: pm-ihfm
+    kind: implements
+    created_at: "2026-07-26T17:14:34.057Z"
+  - id: pm-ipm8
+    kind: related
+    created_at: "2026-07-26T17:14:34.057Z"
 comments[2]{created_at,author,text}:
   "2026-04-02T11:44:56.845Z",codex-agent,Feature created under epic pm-ihfm.
   "2026-04-02T11:59:15.902Z",codex-agent,"Feature complete: runtime update-body support, contracts/completion parity, regression coverage, and docs updates are all implemented via closed child tasks pm-eszd, pm-ha5a, and pm-ipm8."

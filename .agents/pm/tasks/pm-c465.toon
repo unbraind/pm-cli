@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:learnings","area:notes","area:tests",external-audit,pm-cli
 created_at: "2026-04-01T16:22:47.797Z"
-updated_at: "2026-07-26T17:10:50.571Z"
+updated_at: "2026-09-19T08:39:59.875Z"
 deadline: "2026-04-06T16:22:47.797Z"
+closed_at: "2026-04-06T23:42:47.422Z"
 author: cursor-agent
 estimated_minutes: 180
 acceptance_criteria: pm notes and pm learnings support list/add and expected options; help/completion/wrapper/output and tests are updated.
@@ -40,9 +41,14 @@ fixed_version: vnext
 component: cli-commands
 regression: true
 customer_impact: Users can capture ongoing notes and learnings
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-v1s1,parent,"2026-04-01T16:22:47.797Z",cursor-agent,null
-  pm-o7be,implements,"2026-07-26T17:10:50.288Z",null,null
+dependencies[2]:
+  - id: pm-v1s1
+    kind: parent
+    created_at: "2026-04-01T16:22:47.797Z"
+    author: cursor-agent
+  - id: pm-o7be
+    kind: implements
+    created_at: "2026-07-26T17:10:50.288Z"
 comments[9]{created_at,author,text}:
   "2026-04-01T16:22:47.797Z",cursor-agent,Task created for Issue1 implementation scope.
   "2026-04-01T16:34:20.737Z",cursor-agent,"Implemented notes/learnings command stack across new command modules, CLI registration/write-gate wiring, completion/help surfaces, command-aware output, Pi wrapper actions, and unit/integration coverage. Verification: node scripts/run-tests.mjs test -- tests/unit/notes-learnings-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts (all passing in reruns)."

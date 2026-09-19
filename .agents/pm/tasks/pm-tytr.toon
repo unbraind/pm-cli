@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:calendar","area:docs","area:recurrence",pm-cli,release
 created_at: "2026-03-31T22:30:11.669Z"
-updated_at: "2026-07-26T17:26:45.392Z"
+updated_at: "2026-09-19T08:41:47.001Z"
 deadline: "2026-04-07T22:30:11.669Z"
+closed_at: "2026-03-31T23:26:45.298Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 160
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/document-recurrence-features-and-finalize-releas
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Document recurrence features and finalize release evidence.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-2v01,related,"2026-03-31T22:30:11.669Z",codex-agent,null
-  pm-02gd,implements,"2026-07-26T17:26:45.108Z",null,null
+dependencies[2]:
+  - id: pm-2v01
+    kind: related
+    created_at: "2026-03-31T22:30:11.669Z"
+    author: codex-agent
+  - id: pm-02gd
+    kind: implements
+    created_at: "2026-07-26T17:26:45.108Z"
 comments[2]{created_at,author,text}:
   "2026-03-31T22:30:11.669Z",codex-agent,Task created for recurrence documentation and release finalization.
   "2026-03-31T23:26:44.209Z",codex-agent,"Updated README, docs/ARCHITECTURE.md, and CHANGELOG.md for event + recurrence support, include controls, and markdown-default calendar behavior. Verification: pm test pm-tytr --run passed both node scripts/run-tests.mjs coverage and node scripts/run-tests.mjs test (57 files, 588 tests, 100 percent coverage)."

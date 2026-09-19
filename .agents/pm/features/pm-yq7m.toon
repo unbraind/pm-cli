@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[11]: agent-ux,"area:cli",gh-213,gh-218,gh-219,gh-220,gh-224,gh-225,gh-228,governance,metadata-coverage
 created_at: "2026-06-13T21:54:21.534Z"
-updated_at: "2026-09-08T05:33:02.948Z"
+updated_at: "2026-09-19T08:43:11.233Z"
+closed_at: "2026-06-13T22:32:06.443Z"
 author: claude-code-agent
 parent: pm-mpbb
 release: v2026.6.16

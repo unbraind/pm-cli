@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:output","area:terminal",follow-up,pm-cli
 created_at: "2026-04-03T21:59:51.456Z"
-updated_at: "2026-07-26T17:03:55.647Z"
+updated_at: "2026-09-19T08:39:25.666Z"
 deadline: "2026-04-10T21:59:51.456Z"
+closed_at: "2026-04-05T03:47:07.293Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: Broken-pipe writes in standard piped workflows are handled without Node stack traces; behavior remains stable for non-EPIPE failures and is covered by unit/runtime tests.
@@ -28,8 +29,8 @@ expected_result: "Acceptance criteria for External follow-up: suppress EPIPE sta
 actual_result: "Work completed and recorded with linked artifacts for External follow-up: suppress EPIPE stack traces in piped output."
 component: project-management/external-follow-up-suppress-epipe-stack-traces-i
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for External follow-up: suppress EPIPE stack traces in piped output."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-axlr,implements,"2026-07-26T17:03:55.471Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-axlr,implements,"2026-07-26T17:03:55.471Z"
 comments[7]{created_at,author,text}:
   "2026-04-03T21:59:51.456Z",codex-agent,Child task created from external issue report reproduction in this repository.
   "2026-04-03T22:00:17.085Z",codex-agent,"Implementation started: will add safe broken-pipe handling for stdout/stderr writes and regression tests for piped JSON workflows."

@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[8]: "area:search","area:security",code,docs,"milestone:4",pm-cli,"priority:1",tests
 created_at: "2026-03-04T20:55:49.857Z"
-updated_at: "2026-07-26T17:23:37.125Z"
+updated_at: "2026-09-19T08:41:02.326Z"
 deadline: "2026-03-05T20:55:49.000Z"
+closed_at: "2026-03-04T21:07:35.177Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
@@ -41,10 +42,18 @@ fixed_version: archive-2026q2
 component: project-management/harden-include-linked-path-containment
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden include-linked path containment.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-cwp,related,"2026-03-04T20:55:49.857Z",maintainer-agent,null
-  pm-j7a,parent,"2026-03-04T20:55:49.857Z",maintainer-agent,null
-  pm-j7a,implements,"2026-07-26T17:23:36.823Z",null,null
+dependencies[3]:
+  - id: pm-cwp
+    kind: related
+    created_at: "2026-03-04T20:55:49.857Z"
+    author: maintainer-agent
+  - id: pm-j7a
+    kind: parent
+    created_at: "2026-03-04T20:55:49.857Z"
+    author: maintainer-agent
+  - id: pm-j7a
+    kind: implements
+    created_at: "2026-07-26T17:23:36.823Z"
 comments[6]{created_at,author,text}:
   "2026-03-04T20:55:49.857Z",maintainer-agent,Security hardening follow-up for include-linked baseline with scope root containment checks
   "2026-03-04T20:56:03.040Z",maintainer-agent,"Planned changeset before edits: update PRD and README first to document that include-linked only reads files inside project/global roots and skips out-of-scope paths, then implement root containment in search linked corpus loading and add regression tests for traversal-style linked paths."

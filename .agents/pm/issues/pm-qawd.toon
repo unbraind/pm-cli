@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: ci,observability,release,reliability
 created_at: "2026-06-25T08:31:33.895Z"
-updated_at: "2026-09-08T05:33:26.300Z"
+updated_at: "2026-09-19T08:41:03.339Z"
+closed_at: "2026-06-25T08:41:30.214Z"
 author: claude-code-agent
 parent: pm-u9d0
 release: v2026.6.30

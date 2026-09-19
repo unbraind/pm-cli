@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[3]: agent-ux,errors,pm-cli
 created_at: "2026-05-16T21:54:12.960Z"
-updated_at: "2026-07-26T17:16:52.753Z"
+updated_at: "2026-09-19T08:40:32.179Z"
+closed_at: "2026-05-16T23:44:51.118Z"
 author: maintainer-agent
 acceptance_criteria: Recovery bundle for malformed --reminder no longer claims --reminder is missing; suggested_retry only repeats the original command if no other recovery hint exists.
 parent: pm-rnpb
@@ -14,8 +15,8 @@ release: v2026.5.18
 resolution: Fixed recovery payload generation so already-provided malformed flags are not listed as missing and identical retry commands are omitted.
 expected_result: Malformed --reminder recovery shows provided_fields but no missing --reminder and no no-op suggested_retry.
 actual_result: "Focused regression, dogfood, and full release gate passed with the expected recovery envelope."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-rnpb,implements,"2026-07-26T17:16:52.545Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-rnpb,implements,"2026-07-26T17:16:52.545Z"
 comments[1]{created_at,author,text}:
   "2026-05-16T23:44:34.221Z",codex-agent,"Evidence 2026-05-17: fixed recovery context to omit suggested_retry when it exactly matches attempted_command, and classified requires-style validation messages as invalid_argument_value. Verified focused malformed-reminder regression and error/telemetry observability regressions; full dogfood and release gate passed."
 files[4]{path,scope,note}:

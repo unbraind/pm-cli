@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,latest,pm-cli,sdk,search,telemetry
 created_at: "2026-05-03T13:19:49.829Z"
-updated_at: "2026-08-10T11:52:39.182Z"
+updated_at: "2026-09-19T08:40:38.128Z"
 deadline: "2026-05-04T13:19:49.829Z"
+closed_at: "2026-05-16T14:54:44.221Z"
 author: codex-audit
 estimated_minutes: 360
 acceptance_criteria: Baseline build/tests pass; temporary-project dogfood exercises core workflows; SDK/extensibility/search/calendar/telemetry/CI findings are reviewed; code fixes are linked and verified; no host credentials or tokens are tracked or recorded.

@@ -6,27 +6,28 @@ status: closed
 priority: 3
 tags[4]: "area:health","area:observability","area:telemetry",audit
 created_at: "2026-06-07T10:02:40.700Z"
-updated_at: "2026-07-26T17:19:46.717Z"
+updated_at: "2026-09-19T08:40:44.742Z"
+closed_at: "2026-06-25T16:52:31.171Z"
 author: audit-observability-agent
 parent: pm-5oj5
 release: v2026.6.30
 resolution: Closed as terminal stale audit container during dedicated tracker-only normalization.
 expected_result: Audit wrapper remains open only while active findings need tracking.
 actual_result: All findings are closed or represented by current backlog; descendant check found no open child work.
-dependencies[13]{id,kind,created_at,author,source_kind}:
-  pm-3n3b,related,"2026-07-26T17:19:46.398Z",null,null
-  pm-5oj5,implements,"2026-07-26T17:19:46.398Z",null,null
-  pm-bdvm,related,"2026-07-26T17:19:46.398Z",null,null
-  pm-dfhp,related,"2026-07-26T17:19:46.398Z",null,null
-  pm-fbyu,related,"2026-07-26T17:19:46.398Z",null,null
-  pm-gg8e,related,"2026-07-26T17:19:46.398Z",null,null
-  pm-gsoe,related,"2026-07-26T17:19:46.398Z",null,null
-  pm-irc7,related,"2026-07-26T17:19:46.398Z",null,null
-  pm-jxls,related,"2026-07-26T17:19:46.398Z",null,null
-  pm-psc0,related,"2026-07-26T17:19:46.398Z",null,null
-  pm-r7md,related,"2026-07-26T17:19:46.398Z",null,null
-  pm-t4wb,related,"2026-07-26T17:19:46.398Z",null,null
-  pm-xo1n,related,"2026-07-26T17:19:46.398Z",null,null
+dependencies[13]{id,kind,created_at}:
+  pm-3n3b,related,"2026-07-26T17:19:46.398Z"
+  pm-5oj5,implements,"2026-07-26T17:19:46.398Z"
+  pm-bdvm,related,"2026-07-26T17:19:46.398Z"
+  pm-dfhp,related,"2026-07-26T17:19:46.398Z"
+  pm-fbyu,related,"2026-07-26T17:19:46.398Z"
+  pm-gg8e,related,"2026-07-26T17:19:46.398Z"
+  pm-gsoe,related,"2026-07-26T17:19:46.398Z"
+  pm-irc7,related,"2026-07-26T17:19:46.398Z"
+  pm-jxls,related,"2026-07-26T17:19:46.398Z"
+  pm-psc0,related,"2026-07-26T17:19:46.398Z"
+  pm-r7md,related,"2026-07-26T17:19:46.398Z"
+  pm-t4wb,related,"2026-07-26T17:19:46.398Z"
+  pm-xo1n,related,"2026-07-26T17:19:46.398Z"
 comments[1]{created_at,author,text}:
   "2026-06-25T00:41:53.453Z",codex-audit-20260625,"Audit evidence: release gate Sentry/telemetry step returned ok. Sentry checked unbrained/pm-cli over 14 days with critical=0 high=0 total blocking=0, access_ok=true; expected CLI errors were classified as ignored. Telemetry best-effort check returned finish_error_rate_pct=0.73 and failures_without_error_code_rows=0."
 notes[1]{created_at,author,text}:

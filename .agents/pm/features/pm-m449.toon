@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[3]: "area:tests",refactor,test-architecture
 created_at: "2026-06-15T05:09:50.874Z"
-updated_at: "2026-09-08T05:33:07.985Z"
+updated_at: "2026-09-19T08:40:45.196Z"
+closed_at: "2026-06-16T05:50:20.029Z"
 author: maintainer-agent
 goal: "Replace tests/unit/lane-a|b|c/*waveN*.spec.ts grab-bag files with module-mirrored specs: tests/unit/scripts/**, tests/unit/packages/**, tests/unit/plugins/**, tests/unit/docs-examples/**, tests/unit/core/**, one module per file, conventional describe titles."
 value: "Discoverable, deduplicated, fast suite aligned with the existing tests/unit/<area>/<module>.spec.ts convention; no transient lane/wave vocabulary leaks into the repo."

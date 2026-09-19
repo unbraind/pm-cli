@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[5]: ci,cross-platform,github-actions,pm-cli,tests
 created_at: "2026-04-03T17:25:23.654Z"
-updated_at: "2026-07-26T17:25:45.111Z"
+updated_at: "2026-09-19T08:41:34.924Z"
 deadline: "2026-04-10T17:25:23.654Z"
+closed_at: "2026-04-03T17:46:32.431Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: macOS and Windows CI lanes pass consistently for current test suite and open dependency PR workflows.
@@ -39,8 +40,8 @@ fixed_version: target-vnext
 component: ci-cross-platform
 regression: true
 customer_impact: Users and contributors are blocked by inconsistent CI failures
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-i7w2,implements,"2026-07-26T17:25:44.821Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-i7w2,implements,"2026-07-26T17:25:44.821Z"
 comments[2]{created_at,author,text}:
   "2026-04-03T17:25:23.654Z",codex-agent,Created from gh run evidence showing platform-specific failures in Test step.
   "2026-04-03T17:46:31.228Z",codex-agent,"Implemented cross-platform fixes (macOS path canonicalization assertions, Windows-safe hook path expectation, linked-test exit-code normalization) and verified with targeted + full suites."

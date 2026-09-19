@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:comments","area:docs",compatibility,pm-cli
 created_at: "2026-04-01T11:05:50.847Z"
-updated_at: "2026-07-26T22:18:23.408Z"
+updated_at: "2026-09-19T08:40:02.574Z"
 deadline: "2026-05-09T17:05:53.426Z"
+closed_at: "2026-05-08T23:08:11.492Z"
 author: codex-agent
 estimated_minutes: 160
 acceptance_criteria: "pm comments accepts positional and --add shorthand, plus --stdin and --file for multiline markdown; conflicting input sources error deterministically; contracts/completion/Pi/docs/tests updated and passing."
@@ -37,11 +38,20 @@ fixed_version: archive-2026q2
 component: cli-comments
 regression: true
 customer_impact: Existing users keep working syntax while agents gain intuitive shorthand
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-v3g3,parent,"2026-04-01T11:05:50.847Z",codex-agent,null
-  pm-r9ei,related,"2026-07-26T17:11:28.555Z",null,null
-  pm-vhdc,related,"2026-07-26T17:11:28.555Z",null,null
-  pm-00yy,discovered_from,"2026-07-26T22:18:23.136Z",null,null
+dependencies[4]:
+  - id: pm-v3g3
+    kind: parent
+    created_at: "2026-04-01T11:05:50.847Z"
+    author: codex-agent
+  - id: pm-r9ei
+    kind: related
+    created_at: "2026-07-26T17:11:28.555Z"
+  - id: pm-vhdc
+    kind: related
+    created_at: "2026-07-26T17:11:28.555Z"
+  - id: pm-00yy
+    kind: discovered_from
+    created_at: "2026-07-26T22:18:23.136Z"
 comments[16]{created_at,author,text}:
   "2026-04-01T11:05:50.847Z",codex-agent,Feature created after deep duplicate search over open/in-progress/blocked/search surfaces.
   "2026-04-01T11:18:49.987Z",codex-agent,"Feature evidence: targeted and full test suites pass after implementation; manual validation confirms positional comments, --add compatibility, and conflict-path usage error. Full coverage gate remains globally below repository threshold (98.14/96.57/98.37/97.99)."

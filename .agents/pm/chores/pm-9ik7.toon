@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: background-runtime,pm-cli,release-readiness,verification
 created_at: "2026-04-04T19:07:27.270Z"
-updated_at: "2026-07-26T17:08:23.918Z"
+updated_at: "2026-09-19T08:39:48.257Z"
 deadline: "2026-04-15T19:07:27.270Z"
+closed_at: "2026-04-04T20:22:44.827Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: pnpm build + sandbox tests + coverage + linked sweeps pass; closure comments capture reproducible evidence; no regressions introduced for existing users.
@@ -29,9 +30,14 @@ fixed_version: target-vnext
 component: verification
 regression: true
 customer_impact: Reduces rollout risk and protects existing user flows.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-elsh,parent,"2026-04-04T19:07:27.270Z",codex-agent,null
-  pm-elsh,implements,"2026-07-26T17:08:23.671Z",null,null
+dependencies[2]:
+  - id: pm-elsh
+    kind: parent
+    created_at: "2026-04-04T19:07:27.270Z"
+    author: codex-agent
+  - id: pm-elsh
+    kind: implements
+    created_at: "2026-07-26T17:08:23.671Z"
 comments[2]{created_at,author,text}:
   "2026-04-04T19:07:27.270Z",codex-agent,"Duplicate-check evidence: no active open chore currently gates background-service rollout with full verification evidence."
   "2026-04-04T20:22:26.236Z",codex-agent,"Release verification completed: pnpm build, node scripts/run-tests.mjs coverage, pm test-all --status in_progress --timeout 7200 --progress, and pm validate checks executed with passing test gates."

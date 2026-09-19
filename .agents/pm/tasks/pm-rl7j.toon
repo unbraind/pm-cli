@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:release","area:tests",evidence,pm-cli
 created_at: "2026-04-01T02:18:07.586Z"
-updated_at: "2026-07-26T17:25:03.011Z"
+updated_at: "2026-09-19T08:41:10.540Z"
 deadline: "2026-04-10T02:18:07.586Z"
+closed_at: "2026-04-01T19:58:30.440Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 100
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/e2-final-verification-and-closure-evidence
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for E2: Final verification and closure evidence."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-qwp7,parent,"2026-04-01T02:18:07.586Z",codex-agent,null
-  pm-qwp7,implements,"2026-07-26T17:25:02.776Z",null,null
+dependencies[2]:
+  - id: pm-qwp7
+    kind: parent
+    created_at: "2026-04-01T02:18:07.586Z"
+    author: codex-agent
+  - id: pm-qwp7
+    kind: implements
+    created_at: "2026-07-26T17:25:02.776Z"
 comments[5]{created_at,author,text}:
   "2026-04-01T02:18:07.586Z",codex-agent,E2 task created from full-override feature E.
   "2026-04-01T03:01:16.337Z",codex-agent,"Verification evidence: pnpm build (pass), node scripts/run-tests.mjs test (pass, 60 files/613 tests), pm test-all --status in_progress (11/12 linked checks pass or dedupe-skip; remaining failure is coverage threshold gate at 97.14/95.91/97.09/96.96)."

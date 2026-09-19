@@ -6,18 +6,19 @@ status: closed
 priority: 2
 tags[4]: agent-ux,dogfood,dx,pm-cli
 created_at: "2026-05-25T23:04:50.517Z"
-updated_at: "2026-07-26T17:06:05.745Z"
+updated_at: "2026-09-19T08:39:37.250Z"
+closed_at: "2026-05-26T15:19:28.912Z"
 author: claude-code-agent
 parent: pm-rnpb
 release: v2026.5.27
 resolution: Bundled the pm-ch59 (compact mutation output) and pm-8nyc (smarter unknown-flag recovery) agent-UX deliverables into PR #72 with shared review/dogfood/release-gate evidence.
 expected_result: Single PR ships both improvements; CI/Codex/Gemini reviews pass; release gate stays green; CHANGELOG regenerated from closed items.
 actual_result: PR #72 merged 2026-05-25 with all CI checks green; Codex/Gemini feedback addressed across multiple iterations; CHANGELOG auto-regenerated.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-rnpb,parent,"2026-05-25T23:04:50.517Z",null,null
-  pm-8nyc,related,"2026-07-26T17:06:05.514Z",null,null
-  pm-ch59,related,"2026-07-26T17:06:05.514Z",null,null
-  pm-rnpb,implements,"2026-07-26T17:06:05.514Z",null,null
+dependencies[4]{id,kind,created_at}:
+  pm-rnpb,parent,"2026-05-25T23:04:50.517Z"
+  pm-8nyc,related,"2026-07-26T17:06:05.514Z"
+  pm-ch59,related,"2026-07-26T17:06:05.514Z"
+  pm-rnpb,implements,"2026-07-26T17:06:05.514Z"
 comments[4]{created_at,author,text}:
   "2026-05-26T14:42:06.541Z",codex-review-continuation,"Evidence: addressed latest PR #72 Codex review feedback. Projection now only compacts mutation envelopes plus update-many apply/rollback rows, preserving nested/user changed_fields metadata and non-mutation payloads. MCP full changed_fields control moved to fullChangedFields so mutation options.full is forwarded unchanged. Verification passed: pm linked focused test (34 tests), direct node scripts/run-tests.mjs focused suite (34 tests), pnpm build, pnpm quality:static."
   "2026-05-26T14:57:25.379Z",codex-review-continuation,"Evidence: fixed remote coverage failure by adding the missing update-many apply rows-without-changed_fields branch regression. Verification passed locally: node scripts/run-tests.mjs coverage (1825 tests, 100% statements/branches/functions/lines)."

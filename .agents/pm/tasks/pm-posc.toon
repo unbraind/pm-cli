@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:release","area:status",pm-cli
 created_at: "2026-04-01T10:47:25.606Z"
-updated_at: "2026-07-26T17:23:15.997Z"
+updated_at: "2026-09-19T08:40:59.904Z"
 deadline: "2026-04-03T10:47:25.606Z"
+closed_at: "2026-04-01T10:58:39.115Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 60
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: documentation
 regression: true
 customer_impact: users can rely on both status spellings without workflow breaks
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-1r6p,parent,"2026-04-01T10:47:25.606Z",codex-agent,null
-  pm-1r6p,implements,"2026-07-26T17:23:15.753Z",null,null
+dependencies[2]:
+  - id: pm-1r6p
+    kind: parent
+    created_at: "2026-04-01T10:47:25.606Z"
+    author: codex-agent
+  - id: pm-1r6p
+    kind: implements
+    created_at: "2026-07-26T17:23:15.753Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T10:47:25.606Z",codex-agent,Task ensures contract docs and changelog capture alias behavior and verification evidence.
   "2026-04-01T10:58:29.954Z",codex-agent,"Updated README/PRD/AGENTS/CHANGELOG with explicit in-progress alias compatibility and canonical storage wording. Verification: node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage currently reports pre-existing global threshold shortfall (98.14 lines / 96.57 branches) outside this change scope."

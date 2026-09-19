@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[4]: adr,"area:tests",coverage,pr-240
 created_at: "2026-06-16T08:40:13.786Z"
-updated_at: "2026-09-08T05:33:09.649Z"
+updated_at: "2026-09-19T08:40:43.213Z"
+closed_at: "2026-06-16T09:33:19.392Z"
 author: maintainer-agent
 parent: pm-0xix
 release: v2026.6.16

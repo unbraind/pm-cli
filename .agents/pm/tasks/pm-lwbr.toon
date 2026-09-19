@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cli,init,pm-cli
 created_at: "2026-05-17T19:19:24.505Z"
-updated_at: "2026-07-26T17:19:39.448Z"
+updated_at: "2026-09-19T08:40:44.285Z"
+closed_at: "2026-05-17T19:44:52.173Z"
 author: claude-code-agent
 acceptance_criteria: pm init --yes works equivalent to --defaults; pm init -y works; help shows alias; regression test added
 parent: pm-rnpb
@@ -14,8 +15,8 @@ release: v2026.5.18
 resolution: Added -y/--yes as an alias for pm init --defaults and surfaced it through contracts and completions.
 expected_result: "pm init --yes and pm init -y run non-interactive defaults like --defaults, and agents can discover the alias without retrying."
 actual_result: "Integration, contracts, completion, dogfood, and release gates passed with the alias available."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-rnpb,implements,"2026-07-26T17:19:39.226Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-rnpb,implements,"2026-07-26T17:19:39.226Z"
 comments[1]{created_at,author,text}:
   "2026-05-17T19:44:50.647Z",codex-20260517,"Evidence: init now accepts --yes and -y as aliases for --defaults; contracts expose --defaults with short -y and alias --yes; bash/zsh/fish completions include the alias. Verification passed in focused integration/contracts/completion tests, dogfood, and full release gate."
 files[6]{path,scope,note}:

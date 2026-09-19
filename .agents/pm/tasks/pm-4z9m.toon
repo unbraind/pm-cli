@@ -6,7 +6,8 @@ status: closed
 priority: 0
 tags[5]: agent-ux,docs,pm-cli,progressive-disclosure,skills
 created_at: "2026-05-09T15:01:04.019Z"
-updated_at: "2026-07-26T17:04:22.552Z"
+updated_at: "2026-09-19T08:39:28.825Z"
+closed_at: "2026-05-16T20:47:33.458Z"
 author: codex-agent
 acceptance_criteria: guide-shell package docs are explicit about installation; docs+skills stay progressive-disclosure; stale-docs gate enforces guide-shell prerequisites; focused docs/help tests pass.
 parent: pm-rnpb
@@ -14,53 +15,119 @@ release: v2026.5.18
 resolution: "Closed after guide-shell package prerequisite was made explicit in docs, skills, help, and docs-skills gate."
 expected_result: Docs and skills no longer imply pm guide is available in bare core; agents get copy-paste guide-shell install guidance.
 actual_result: "Focused docs/help tests, docs-skills gate, isolated package-enabled calendar smoke, and full release gate with required Sentry/telemetry passed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-rnpb,implements,"2026-07-26T17:04:22.273Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-rnpb,implements,"2026-07-26T17:04:22.273Z"
 comments[3]{created_at,author,text}:
   "2026-05-09T15:01:04.019Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search docs skills guide --limit 10,pm list-open --limit 20,and pm list-in-progress --limit 20. Existing similar docs efforts were already closed,so this request needs a new dedicated task under pm-rnpb."
   "2026-05-09T15:45:24.435Z",codex-agent,"Workstreams complete: docs routed through pm guide topics; added agentskills-compliant bundles (pm-developer, pm-user, pm-extensions, pm-sdk) plus harness matrix; implemented scripts/release/docs-skills-gate.mjs and wired quality:docs-skills + run-gates step. Verification: focused regression suite (165 tests) passed; docs-skills gate passed; full release gates passed with --skip-telemetry-sentry; baseline run without skip failed only on external Sentry high-issue threshold (2 highs, telemetry ok)."
   "2026-05-16T20:47:15.072Z",codex-agent,"Evidence 2026-05-16: fixed GitHub issue #29 by making guide-shell installation explicit before every public/skill pm guide workflow and by tightening docs-skills gate to require the guide-shell prerequisite. Verification passed: focused guide/docs tests (31 tests), docs-skills gate, pm --help --explain smoke, isolated package-enabled calendar guide smoke, and full release gate with required Sentry/telemetry."
-files[40]{path,scope,note}:
-  .agents/skills/HARNESS_COMPATIBILITY.md,project,null
-  .agents/skills/pm-developer/references/COMMAND_PLAYBOOK.md,project,null
-  .agents/skills/pm-developer/references/PROMPTS.md,project,null
-  .agents/skills/pm-developer/SKILL.md,project,null
-  .agents/skills/pm-extensions/references/LIFECYCLE.md,project,null
-  .agents/skills/pm-extensions/references/TROUBLESHOOTING.md,project,null
-  .agents/skills/pm-extensions/SKILL.md,project,null
-  .agents/skills/pm-sdk/references/INTEGRATION_CHECKLIST.md,project,null
-  .agents/skills/pm-sdk/references/PROMPTS.md,project,null
-  .agents/skills/pm-sdk/SKILL.md,project,null
-  .agents/skills/pm-user/references/PROMPTS.md,project,null
-  .agents/skills/pm-user/references/WORKFLOWS.md,project,null
-  .agents/skills/pm-user/SKILL.md,project,null
-  .agents/skills/README.md,project,null
-  docs/AGENT_GUIDE.md,project,agent routing and skills references
-  docs/COMMANDS.md,project,guide command routing references
-  docs/EXTENSIONS.md,project,extensions guide routing
-  docs/QUICKSTART.md,project,quickstart guide routing
-  docs/README.md,project,guide topic routing map
-  docs/RELEASING.md,project,release docs-skills gate references
-  docs/SDK.md,project,sdk guide routing
-  package.json,project,publish and quality docs-skills gate wiring
-  README.md,project,guide-routing entrypoint
-  scripts/release/docs-skills-gate.mjs,project,docs and skills staleness gate
-  scripts/release/run-gates.mjs,project,release gates include docs-skills
-  src/cli/commands/completion.ts,project,guide completion wiring
-  src/cli/commands/contracts.ts,project,guide flag contracts mapping
-  src/cli/commands/guide.ts,project,guide command implementation
-  src/cli/commands/index.ts,project,guide command exports
-  src/cli/guide-topics.ts,project,guide topic registry
-  src/cli/help-content.ts,project,guide help narrative
-  src/cli/register-list-query.ts,project,guide command registration
-  src/sdk/cli-contracts.ts,project,guide contracts and command catalog
-  tests/integration/help-runtime.spec.ts,project,guide help runtime coverage
-  tests/integration/release-automation-contract.spec.ts,project,release scripts include docs-skills gate
-  tests/integration/release-readiness-runtime.spec.ts,project,release readiness expectations for guide/docs-skills paths
-  tests/unit/completion-command.spec.ts,project,guide completion coverage
-  tests/unit/contracts-command.spec.ts,project,guide contracts flag coverage
-  tests/unit/docs-skills-gate.spec.ts,project,docs-skills gate helper tests
-  tests/unit/guide-command.spec.ts,project,guide command unit coverage
+files[40]:
+  - path: .agents/skills/HARNESS_COMPATIBILITY.md
+    scope: project
+  - path: .agents/skills/pm-developer/references/COMMAND_PLAYBOOK.md
+    scope: project
+  - path: .agents/skills/pm-developer/references/PROMPTS.md
+    scope: project
+  - path: .agents/skills/pm-developer/SKILL.md
+    scope: project
+  - path: .agents/skills/pm-extensions/references/LIFECYCLE.md
+    scope: project
+  - path: .agents/skills/pm-extensions/references/TROUBLESHOOTING.md
+    scope: project
+  - path: .agents/skills/pm-extensions/SKILL.md
+    scope: project
+  - path: .agents/skills/pm-sdk/references/INTEGRATION_CHECKLIST.md
+    scope: project
+  - path: .agents/skills/pm-sdk/references/PROMPTS.md
+    scope: project
+  - path: .agents/skills/pm-sdk/SKILL.md
+    scope: project
+  - path: .agents/skills/pm-user/references/PROMPTS.md
+    scope: project
+  - path: .agents/skills/pm-user/references/WORKFLOWS.md
+    scope: project
+  - path: .agents/skills/pm-user/SKILL.md
+    scope: project
+  - path: .agents/skills/README.md
+    scope: project
+  - path: docs/AGENT_GUIDE.md
+    scope: project
+    note: agent routing and skills references
+  - path: docs/COMMANDS.md
+    scope: project
+    note: guide command routing references
+  - path: docs/EXTENSIONS.md
+    scope: project
+    note: extensions guide routing
+  - path: docs/QUICKSTART.md
+    scope: project
+    note: quickstart guide routing
+  - path: docs/README.md
+    scope: project
+    note: guide topic routing map
+  - path: docs/RELEASING.md
+    scope: project
+    note: release docs-skills gate references
+  - path: docs/SDK.md
+    scope: project
+    note: sdk guide routing
+  - path: package.json
+    scope: project
+    note: publish and quality docs-skills gate wiring
+  - path: README.md
+    scope: project
+    note: guide-routing entrypoint
+  - path: scripts/release/docs-skills-gate.mjs
+    scope: project
+    note: docs and skills staleness gate
+  - path: scripts/release/run-gates.mjs
+    scope: project
+    note: release gates include docs-skills
+  - path: src/cli/commands/completion.ts
+    scope: project
+    note: guide completion wiring
+  - path: src/cli/commands/contracts.ts
+    scope: project
+    note: guide flag contracts mapping
+  - path: src/cli/commands/guide.ts
+    scope: project
+    note: guide command implementation
+  - path: src/cli/commands/index.ts
+    scope: project
+    note: guide command exports
+  - path: src/cli/guide-topics.ts
+    scope: project
+    note: guide topic registry
+  - path: src/cli/help-content.ts
+    scope: project
+    note: guide help narrative
+  - path: src/cli/register-list-query.ts
+    scope: project
+    note: guide command registration
+  - path: src/sdk/cli-contracts.ts
+    scope: project
+    note: guide contracts and command catalog
+  - path: tests/integration/help-runtime.spec.ts
+    scope: project
+    note: guide help runtime coverage
+  - path: tests/integration/release-automation-contract.spec.ts
+    scope: project
+    note: release scripts include docs-skills gate
+  - path: tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    note: release readiness expectations for guide/docs-skills paths
+  - path: tests/unit/completion-command.spec.ts
+    scope: project
+    note: guide completion coverage
+  - path: tests/unit/contracts-command.spec.ts
+    scope: project
+    note: guide contracts flag coverage
+  - path: tests/unit/docs-skills-gate.spec.ts
+    scope: project
+    note: docs-skills gate helper tests
+  - path: tests/unit/guide-command.spec.ts
+    scope: project
+    note: guide command unit coverage
 tests[4]:
   - command: node scripts/release/docs-skills-gate.mjs
     scope: project

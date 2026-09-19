@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:search-semantic",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:02:10.253Z"
-updated_at: "2026-08-13T09:48:29.341Z"
+updated_at: "2026-09-19T08:43:12.007Z"
 deadline: "2026-03-07T23:02:10.253Z"
+closed_at: "2026-03-03T21:05:51.210Z"
 assignee: steve
 author: steve
 estimated_minutes: 120

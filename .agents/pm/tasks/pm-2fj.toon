@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:history",core,"milestone:2",pm-cli
 created_at: "2026-02-17T23:02:08.818Z"
-updated_at: "2026-07-26T17:01:56.255Z"
+updated_at: "2026-09-19T08:39:18.545Z"
 deadline: "2026-02-27T23:02:08.818Z"
+closed_at: "2026-02-18T01:33:09.736Z"
 assignee: steve
 author: steve
 estimated_minutes: 90
@@ -41,10 +42,18 @@ fixed_version: archive-2026q2
 component: project-management/history-and-activity-commands
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for History and activity commands.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-c0r,parent,"2026-02-17T23:02:08.818Z",steve,null
-  pm-u9r,blocks,"2026-02-17T23:02:08.818Z",steve,null
-  pm-c0r,implements,"2026-07-26T17:01:56.003Z",null,null
+dependencies[3]:
+  - id: pm-c0r
+    kind: parent
+    created_at: "2026-02-17T23:02:08.818Z"
+    author: steve
+  - id: pm-u9r
+    kind: blocks
+    created_at: "2026-02-17T23:02:08.818Z"
+    author: steve
+  - id: pm-c0r
+    kind: implements
+    created_at: "2026-07-26T17:01:56.003Z"
 comments[3]{created_at,author,text}:
   "2026-02-18T01:27:26.694Z",agent,Implementing history/activity CLI commands with deterministic output contracts and test coverage; docs will be updated before behavior changes.
   "2026-02-18T01:33:09.397Z",agent,"Implemented new history/activity command surface: added runHistory and runActivity handlers, wired CLI registration/exports, updated README+PRD command matrices first, and added unit/integration coverage for deterministic history/activity behavior."

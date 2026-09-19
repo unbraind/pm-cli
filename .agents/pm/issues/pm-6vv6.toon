@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[3]: "area:storage",correctness,durability
 created_at: "2026-06-07T10:02:44.972Z"
-updated_at: "2026-09-08T05:32:45.558Z"
+updated_at: "2026-09-19T08:39:36.749Z"
+closed_at: "2026-06-07T13:43:36.481Z"
 author: audit-data-agent
 acceptance_criteria: "- `writeFileAtomic` catches `EXDEV` and falls back to: write to a tmp in `os.tmpdir()`, copy to target, unlink tmp\n- OR falls back to a non-atomic `writeFile` with a warning so the file is never left corrupt\n- Both `fs-utils.ts` and the LanceDB snapshot writer handle this case\n- Unit test covering the EXDEV code path (mock `rename` to throw EXDEV)"
 parent: pm-o2kc

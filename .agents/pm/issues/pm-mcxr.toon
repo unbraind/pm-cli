@@ -6,16 +6,17 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T11:28:40.523Z"
-updated_at: "2026-07-26T17:20:12.380Z"
+updated_at: "2026-09-19T08:40:46.328Z"
+closed_at: "2026-06-18T19:15:06.202Z"
 author: codex-sdk-cli-consolidation-20260616
 parent: pm-mpbb
 release: v2026.6.19
 resolution: Resolved GH-206 test-all liveness UX by preserving every stderr progress line in background workers and exposing current test-all item plus linked command state in compact background status.
 expected_result: Background test-all runs provide visible current item/test-command progress and no stale non-runnable linked-test metadata remains on the item.
 actual_result: "Background records include item_index, item_total, item_id, linked_test_index, linked_test_total, and current_command; temp tarball smoke passed with test-runs status and full coverage remained 100/100/100/100."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-mpbb,implements,"2026-07-26T17:20:12.127Z",null,null
-  pm-u8y9,related,"2026-07-26T17:20:12.127Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-mpbb,implements,"2026-07-26T17:20:12.127Z"
+  pm-u8y9,related,"2026-07-26T17:20:12.127Z"
 comments[12]{created_at,author,text}:
   "2026-06-18T12:21:55.941Z",codex-gpt5,"Partial implementation evidence: strict --fail-on-empty-test-run now marks zero-linked-test aggregate selections as failed with an explicit empty_run category and warning. Broader GH-206 liveness/progress work remains open intentionally."
   "2026-06-18T12:41:26.890Z",codex-gpt5,"Review follow-up evidence: updated PRD test-all foreground contract to include fail_on_empty_test_run_triggered alongside the strict empty-run runtime result field."

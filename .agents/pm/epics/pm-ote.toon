@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[4]: "area:meta",pm-cli,release,release-readiness
 created_at: "2026-02-17T23:36:55.193Z"
-updated_at: "2026-08-13T08:05:08.749Z"
+updated_at: "2026-09-19T08:40:54.478Z"
 deadline: "2026-03-03T23:36:55.193Z"
+closed_at: "2026-03-04T14:29:01.729Z"
 assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 960

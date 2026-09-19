@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: package-first,packages,pm-cli,sdk
 created_at: "2026-05-13T19:52:42.446Z"
-updated_at: "2026-07-26T17:15:36.720Z"
+updated_at: "2026-09-19T08:40:24.595Z"
+closed_at: "2026-05-13T20:05:45.779Z"
 author: codex-agent
 acceptance_criteria: First-party package runtimes import runtime primitives from the public SDK surface; SDK barrel tests cover the exported helpers; package typecheck and focused package tests pass; dogfood/observability/CI evidence is recorded.
 parent: pm-59gj
@@ -14,10 +15,10 @@ release: v2026.5.14
 resolution: Completed public SDK runtime helper exports and moved Beads/Todos package runtimes off internal core imports.
 expected_result: First-party TypeScript package runtimes use the public SDK barrel for runtime primitives and remain fully functional through installed packages.
 actual_result: "Beads/Todos runtimes now import from src/sdk/index.ts; SDK barrel regression, package tests, typecheck, dogfood, release gate, Sentry, and telemetry checks passed."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-59gj,implements,"2026-07-26T17:15:36.425Z",null,null
-  pm-qfuq,related,"2026-07-26T17:15:36.425Z",null,null
-  pm-wxxv,related,"2026-07-26T17:15:36.425Z",null,null
+dependencies[3]{id,kind,created_at}:
+  pm-59gj,implements,"2026-07-26T17:15:36.425Z"
+  pm-qfuq,related,"2026-07-26T17:15:36.425Z"
+  pm-wxxv,related,"2026-07-26T17:15:36.425Z"
 comments[5]{created_at,author,text}:
   "2026-05-13T19:52:42.446Z",codex-agent,"Duplicate check before create: ran pm search 'public SDK runtime helpers package internal imports' --limit 10 and pm list-open --limit 20. Found closed prior issue pm-qfuq plus closed related pm-wxxv,but no open item for the current remaining package runtime deep-import cleanup,so this child task is created under pm-59gj."
   "2026-05-13T19:55:55.520Z",codex-agent,"Progress: exposed runtime primitives through src/sdk/runtime.ts and the SDK barrel, moved Beads/Todos package runtimes to import from src/sdk/index.ts, and added SDK barrel regression coverage. Verification so far passed: pnpm typecheck; focused package/runtime tests; pnpm dogfood:package-first; pm test pm-hkql --run --progress."

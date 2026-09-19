@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[4]: core,pm-cli,testing,verification
 created_at: "2026-04-26T20:18:06.100Z"
-updated_at: "2026-08-10T12:03:01.078Z"
+updated_at: "2026-09-19T08:40:12.286Z"
 deadline: "2026-04-27T20:18:06.100Z"
+closed_at: "2026-04-26T20:18:44.852Z"
 author: audit-agent
 estimated_minutes: 15
 acceptance_criteria: All core commands verified with evidence

@@ -6,16 +6,22 @@ status: closed
 priority: 2
 tags[5]: "area:extensions","area:sdk","area:testing",context-management,living-map
 created_at: "2026-06-21T14:33:28.420Z"
-updated_at: "2026-07-26T17:20:22.838Z"
+updated_at: "2026-09-19T08:40:46.907Z"
+closed_at: "2026-06-21T14:58:18.777Z"
 author: claude-code-agent
 parent: pm-ugqx
 release: v2026.6.22
 resolution: "Shipped in PR #329 (squash 28b61e92): 6 SDK testing invoke helpers (runRegisteredHookForTest + 5 override-invoke helpers) completing the command-pipeline invoke verb, exported from the SDK barrel and documented."
 expected_result: "Package authors can invoke every registered runtime surface (lifecycle hooks + parser/preflight/command/renderer/service overrides) in tests and assert behavior, symmetric to runRegisteredCommandForTest."
 actual_result: All 6 helpers added with type-safe contexts and registration guards; 100% coverage of testing.ts; full suite green (4816 tests); manual E2E against built dist passed; CodeRabbit clean; Gemini findings declined as false positives.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-owm0,related,"2026-06-21T14:33:48.888Z",claude-code-agent,null
-  pm-ugqx,implements,"2026-07-26T17:20:22.588Z",null,null
+dependencies[2]:
+  - id: pm-owm0
+    kind: related
+    created_at: "2026-06-21T14:33:48.888Z"
+    author: claude-code-agent
+  - id: pm-ugqx
+    kind: implements
+    created_at: "2026-07-26T17:20:22.588Z"
 comments[1]{created_at,author,text}:
   "2026-06-21T14:49:11.109Z",claude-code-agent,"PR #329 opened (branch feat/sdk-invoke-hooks-overrides): https://github.com/unbraind/pm-cli/pull/329 — 6 invoke helpers, 100% cov, full suite green (4816 tests)."
 notes[1]{created_at,author,text}:

@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[6]: calendar,dependabot,github,pm-cli,recurrence,security
 created_at: "2026-04-03T17:22:39.406Z"
-updated_at: "2026-08-10T11:52:50.640Z"
+updated_at: "2026-09-19T08:40:28.308Z"
 deadline: "2026-04-13T17:22:39.406Z"
+closed_at: "2026-04-03T17:46:38.448Z"
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: "All open GH findings are tracked in pm, remediated or dispositioned with evidence, weekly recurring check is active, and regression suite passes."

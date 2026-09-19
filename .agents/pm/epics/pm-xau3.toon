@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: "area:ci","area:tests",coverage,test-architecture
 created_at: "2026-06-15T05:09:21.282Z"
-updated_at: "2026-09-08T05:33:07.802Z"
+updated_at: "2026-09-19T08:42:47.772Z"
+closed_at: "2026-06-16T05:50:21.290Z"
 author: maintainer-agent
 goal: "Every file in the coverage scope (src, packages, plugins, scripts, docs/examples) reaches literal 100% statements/branches/functions/lines, with a clean, conventionally-named, deduplicated, fast test suite."
 objective: "Retire the curated include/exclude allowlist (ADR pm-w13j) AND the interim lane-A/B/C + waveN spec scaffolding, replacing them with module-mirrored spec files and shared harness helpers."

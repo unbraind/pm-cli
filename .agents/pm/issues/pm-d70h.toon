@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[4]: "area:lock","area:storage",gc,living-map
 created_at: "2026-05-31T19:43:37.801Z"
-updated_at: "2026-09-08T05:32:27.259Z"
+updated_at: "2026-09-19T08:40:03.952Z"
+closed_at: "2026-06-05T21:19:35.591Z"
 author: maintainer-agent
 acceptance_criteria: pm gc --scope locks removes only expired locks (created_at+ttl); --dry-run lists; default all-scope gc includes locks; aligns with pm health stale-lock warnings.
 value: Crashed processes leave .lock files cleaned only lazily on the next mutation of that same item; items never re-mutated keep stale locks forever. gc has no locks scope.

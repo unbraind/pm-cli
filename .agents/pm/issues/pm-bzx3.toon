@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: classification,observability,pm-cli,telemetry
 created_at: "2026-05-16T21:54:18.262Z"
-updated_at: "2026-08-04T15:47:11.389Z"
+updated_at: "2026-09-19T08:39:59.056Z"
+closed_at: "2026-05-16T23:44:51.253Z"
 author: maintainer-agent
 acceptance_criteria: validate/health soft-failures (run completed; findings present) reported as a distinct resolution code; KPI report shows realistic error rates for diagnostics family.
 parent: pm-rnpb

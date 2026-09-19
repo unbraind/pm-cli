@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:calendar","area:integration",code,pm-cli
 created_at: "2026-03-31T21:28:44.478Z"
-updated_at: "2026-07-26T17:24:30.862Z"
+updated_at: "2026-09-19T08:41:07.248Z"
 deadline: "2026-04-07T21:28:44.478Z"
+closed_at: "2026-03-31T21:45:53.062Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 100
@@ -41,11 +42,22 @@ fixed_version: vnext
 component: integration/pi-completion
 regression: true
 customer_impact: Calendar functionality becomes automatable via Pi and easier to discover via completion.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-122q,parent,"2026-03-31T21:28:44.478Z",codex-agent,null
-  pm-ezri,related,"2026-03-31T21:28:44.478Z",codex-agent,null
-  pm-kglq,blocks,"2026-03-31T21:28:44.478Z",codex-agent,null
-  pm-122q,implements,"2026-07-26T17:24:30.567Z",null,null
+dependencies[4]:
+  - id: pm-122q
+    kind: parent
+    created_at: "2026-03-31T21:28:44.478Z"
+    author: codex-agent
+  - id: pm-ezri
+    kind: related
+    created_at: "2026-03-31T21:28:44.478Z"
+    author: codex-agent
+  - id: pm-kglq
+    kind: blocks
+    created_at: "2026-03-31T21:28:44.478Z"
+    author: codex-agent
+  - id: pm-122q
+    kind: implements
+    created_at: "2026-07-26T17:24:30.567Z"
 comments[3]{created_at,author,text}:
   "2026-03-31T21:28:44.478Z",codex-agent,Task created for completion and Pi wrapper updates.
   "2026-03-31T21:45:39.035Z",codex-agent,Updated shell completion scripts and Pi wrapper schema/action mappings to include calendar command and reminder flags.

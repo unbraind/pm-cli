@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: context-parity,external-audit,linked-tests,pm-cli
 created_at: "2026-04-04T12:42:19.890Z"
-updated_at: "2026-07-26T17:05:45.086Z"
+updated_at: "2026-09-19T08:39:35.820Z"
 deadline: "2026-04-14T12:42:19.890Z"
+closed_at: "2026-04-04T18:33:57.560Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: "Linked-test PM-command runs can enforce dataset parity and fail when context mismatch is detected, with explicit per-run context metadata."
@@ -38,10 +39,10 @@ fixed_version: target-vnext
 component: linked-test-runtime
 regression: true
 customer_impact: Teams can trust linked-test PM command evidence for governance and release checks.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-5z9r,implements,"2026-07-26T17:05:44.859Z",null,null
-  pm-mf5z,related,"2026-07-26T17:05:44.859Z",null,null
-  pm-vrsn,related,"2026-07-26T17:05:44.859Z",null,null
+dependencies[3]{id,kind,created_at}:
+  pm-5z9r,implements,"2026-07-26T17:05:44.859Z"
+  pm-mf5z,related,"2026-07-26T17:05:44.859Z"
+  pm-vrsn,related,"2026-07-26T17:05:44.859Z"
 comments[3]{created_at,author,text}:
   "2026-04-04T12:42:19.890Z",codex-agent,"Duplicate-check evidence: existing closed parity item pm-mf5z restored extension/type parity but does not add tracker dataset parity guardrails or strict mismatch failure behavior."
   "2026-04-04T14:02:36.560Z",codex-agent,Resolved by pm-vrsn context parity implementation; linked PM command runs now support tracker parity mode and mismatch guardrails.

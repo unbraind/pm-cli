@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:list","area:ux",external-audit,pm-cli
 created_at: "2026-04-03T18:07:10.235Z"
-updated_at: "2026-07-26T22:18:22.295Z"
+updated_at: "2026-09-19T08:39:49.767Z"
 deadline: "2026-05-09T17:09:59.589Z"
+closed_at: "2026-04-27T21:15:09.271Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: List-family commands support offset pagination and opt-in streaming output with deterministic behavior and unchanged default payloads.
@@ -37,11 +38,20 @@ fixed_version: target-vnext
 component: cli-list
 regression: false
 customer_impact: Improves automation reliability for repositories with many items
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-qfg8,parent,"2026-04-03T18:07:10.235Z",codex-agent,null
-  pm-r9ei,related,"2026-07-26T17:08:53.821Z",null,null
-  pm-vhdc,related,"2026-07-26T17:08:53.821Z",null,null
-  pm-qfg8,discovered_from,"2026-07-26T22:18:21.958Z",null,null
+dependencies[4]:
+  - id: pm-qfg8
+    kind: parent
+    created_at: "2026-04-03T18:07:10.235Z"
+    author: codex-agent
+  - id: pm-r9ei
+    kind: related
+    created_at: "2026-07-26T17:08:53.821Z"
+  - id: pm-vhdc
+    kind: related
+    created_at: "2026-07-26T17:08:53.821Z"
+  - id: pm-qfg8
+    kind: discovered_from
+    created_at: "2026-07-26T22:18:21.958Z"
 comments[11]{created_at,author,text}:
   "2026-04-03T18:07:10.235Z",codex-agent,Feature created after dedup scan for list pagination/stream scope.
   "2026-04-03T18:55:48.992Z",codex-agent,"Feature complete: list family supports --offset pagination and JSON stream mode; full suite and coverage gates now pass with updated docs/contracts."

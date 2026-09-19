@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: "area:ci","area:extensions","area:security",pm-cli
 created_at: "2026-06-06T20:41:22.500Z"
-updated_at: "2026-09-08T05:32:44.936Z"
+updated_at: "2026-09-19T08:40:32.987Z"
+closed_at: "2026-06-06T22:10:43.355Z"
 author: codex-open-cycle
 parent: pm-ugqx
 release: v2026.6.7

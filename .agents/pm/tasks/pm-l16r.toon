@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:packaging","area:sdk","area:types",pm-cli
 created_at: "2026-04-01T02:17:28.241Z"
-updated_at: "2026-07-26T17:18:59.427Z"
+updated_at: "2026-09-19T08:40:42.155Z"
 deadline: "2026-04-10T02:17:28.241Z"
+closed_at: "2026-04-25T17:55:03.738Z"
 author: codex-agent
 estimated_minutes: 90
 acceptance_criteria: package.json exports provide stable extension SDK entrypoints and docs/examples reference the correct scoped imports.
@@ -40,9 +41,14 @@ fixed_version: archive-2026q2
 component: project-management/c1-publish-explicit-extension-sdk-exports
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for C1: Publish explicit extension SDK exports."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-oga6,parent,"2026-04-01T02:17:28.241Z",codex-agent,null
-  pm-oga6,implements,"2026-07-26T17:18:59.200Z",null,null
+dependencies[2]:
+  - id: pm-oga6
+    kind: parent
+    created_at: "2026-04-01T02:17:28.241Z"
+    author: codex-agent
+  - id: pm-oga6
+    kind: implements
+    created_at: "2026-07-26T17:18:59.200Z"
 comments[3]{created_at,author,text}:
   "2026-04-01T02:17:28.241Z",codex-agent,C1 task created from full-override feature C.
   "2026-04-01T03:01:11.228Z",codex-agent,Published explicit SDK surface with package exports/types and new src/sdk/index.ts entrypoint; added packaging contract assertions in tests/integration/release-readiness-runtime.spec.ts.

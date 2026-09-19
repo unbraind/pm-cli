@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[4]: agent-ux,dogfood-2026-06-12,packages,templates
 created_at: "2026-06-12T16:19:03.068Z"
-updated_at: "2026-08-10T12:02:44.074Z"
+updated_at: "2026-09-19T08:41:08.179Z"
+closed_at: "2026-06-17T23:12:41.362Z"
 author: maintainer-agent
 release: v2026.6.19
 resolution: Fixed templates package fallback so unknown parent/subcommand/options/extra args fail fast.

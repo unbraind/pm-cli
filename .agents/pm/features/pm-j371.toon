@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:files","area:validation",audit,governance,pm-cli
 created_at: "2026-04-03T20:57:28.175Z"
-updated_at: "2026-07-26T17:17:12.633Z"
+updated_at: "2026-09-19T08:40:35.702Z"
 deadline: "2026-04-12T20:57:28.175Z"
+closed_at: "2026-04-03T22:17:39.123Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: pm validate supports additive full tracked-file scan mode and reports candidate_total and candidate_scanned without breaking default behavior.
@@ -28,10 +29,17 @@ expected_result: "Acceptance criteria for Issue1: validate check-files full trac
 actual_result: "Work completed and recorded with linked artifacts for Issue1: validate check-files full tracked scan mode."
 component: project-management/issue1-validate-check-files-full-tracked-scan-mo
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for Issue1: validate check-files full tracked scan mode."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-r7t2,parent,"2026-04-03T20:57:28.175Z",codex-agent,null
-  pm-a228,related,"2026-07-26T17:17:12.448Z",null,null
-  pm-r7t2,implements,"2026-07-26T17:17:12.448Z",null,null
+dependencies[3]:
+  - id: pm-r7t2
+    kind: parent
+    created_at: "2026-04-03T20:57:28.175Z"
+    author: codex-agent
+  - id: pm-a228
+    kind: related
+    created_at: "2026-07-26T17:17:12.448Z"
+  - id: pm-r7t2
+    kind: implements
+    created_at: "2026-07-26T17:17:12.448Z"
 comments[3]{created_at,author,text}:
   "2026-04-03T20:57:28.175Z",codex-agent,"Net-new scope after dedupe: validate check-files needs full tracked scan mode and explicit totals."
   "2026-04-03T21:59:36.647Z",codex-agent,"External issue report reproduced in current repo: validate --check-files --scan-mode tracked-all orphaned output is dominated by .agents/pm internals. Tracking additive remediation in new child task."

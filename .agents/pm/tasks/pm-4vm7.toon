@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[5]: audit,hardening,pm-cli,quality,release-readiness
 created_at: "2026-04-01T21:49:02.011Z"
-updated_at: "2026-07-26T17:04:19.611Z"
+updated_at: "2026-09-19T08:39:28.456Z"
 deadline: "2026-04-03T21:49:02.011Z"
+closed_at: "2026-04-12T16:00:51.161Z"
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: All CI-aligned local gates pass; surfaced warnings are triaged/fixed where actionable; evidence is recorded in pm comments/files/tests/docs.
@@ -39,8 +40,8 @@ fixed_version: target-vnext
 component: core-runtime-and-release-docs
 regression: true
 customer_impact: improves reliability and contributor clarity
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-431e,implements,"2026-07-26T17:04:19.429Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-431e,implements,"2026-07-26T17:04:19.429Z"
 comments[9]{created_at,author,text}:
   "2026-04-01T21:49:02.011Z",codex-agent,Created to track full-repo audit findings and warning-first hardening implementation.
   "2026-04-01T21:49:16.626Z",codex-agent,"Audit baseline (full repo): prioritized findings are silent settings fallback on invalid JSON, lock read/parse failures collapsing to stale behavior without diagnostics, unreadable item skips without visibility, and docs/package metadata drift (calendar versioning wording + repository links + packaged community docs). Chosen implementation policy is warn-continue to preserve compatibility while improving diagnosability."

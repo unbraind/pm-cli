@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[3]: agent-ux,cli,list
 created_at: "2026-06-14T11:52:21.311Z"
-updated_at: "2026-09-08T05:33:05.141Z"
+updated_at: "2026-09-19T08:39:12.285Z"
+closed_at: "2026-06-14T12:12:49.456Z"
 author: maintainer-agent
 parent: pm-mpbb
 release: v2026.6.16

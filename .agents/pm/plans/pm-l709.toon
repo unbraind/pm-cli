@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[5]: "area:cli","area:history","area:storage",living-map,observability
 created_at: "2026-06-05T20:36:47.034Z"
-updated_at: "2026-09-08T05:32:44.776Z"
+updated_at: "2026-09-19T08:40:42.571Z"
+closed_at: "2026-06-05T21:19:44.761Z"
 author: claude-code-agent
 parent: pm-mpbb
 release: v2026.6.6

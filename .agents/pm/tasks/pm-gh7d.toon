@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:terminal","area:tests",code,compatibility,pm-cli
 created_at: "2026-04-01T12:00:15.766Z"
-updated_at: "2026-07-26T17:14:32.165Z"
+updated_at: "2026-09-19T08:40:19.215Z"
 deadline: "2026-04-08T12:00:15.766Z"
+closed_at: "2026-04-01T19:12:40.606Z"
 assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 110
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: tests/runtime
 regression: true
 customer_impact: Ensures current workflows remain stable.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-t6f7,parent,"2026-04-01T12:00:15.766Z",cursor-agent,null
-  pm-t6f7,implements,"2026-07-26T17:14:31.989Z",null,null
+dependencies[2]:
+  - id: pm-t6f7
+    kind: parent
+    created_at: "2026-04-01T12:00:15.766Z"
+    author: cursor-agent
+  - id: pm-t6f7
+    kind: implements
+    created_at: "2026-07-26T17:14:31.989Z"
 comments[4]{created_at,author,text}:
   "2026-04-01T12:00:15.766Z",cursor-agent,Task corresponds to plan workstream D.
   "2026-04-01T12:06:56.221Z",cursor-agent,"Expanded terminal compatibility regressions: tests/unit/test-command.spec.ts now asserts timeout diagnostic messaging and adds a deterministic maxBuffer overflow case; tests/unit/beads-command.spec.ts covers interactive TTY fail-fast for --file -. Validation evidence: node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts tests/unit/beads-command.spec.ts tests/unit/test-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (97/97)."

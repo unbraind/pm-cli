@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: background-runtime,completion,contracts,pi,pm-cli
 created_at: "2026-04-04T19:07:14.888Z"
-updated_at: "2026-07-26T17:04:03.402Z"
+updated_at: "2026-09-19T08:39:26.835Z"
 deadline: "2026-04-14T19:07:14.888Z"
+closed_at: "2026-04-04T20:22:42.496Z"
 author: codex-agent
 estimated_minutes: 220
 acceptance_criteria: "cli-contracts, completion scripts, Pi wrapper mappings, and runtime contract tests cover background flags and test-runs actions with deterministic schemas."
@@ -29,9 +30,14 @@ fixed_version: target-vnext
 component: contracts-completion-pi
 regression: true
 customer_impact: Prevents automation breakage from undocumented command changes.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-elsh,parent,"2026-04-04T19:07:14.888Z",codex-agent,null
-  pm-elsh,implements,"2026-07-26T17:04:03.228Z",null,null
+dependencies[2]:
+  - id: pm-elsh
+    kind: parent
+    created_at: "2026-04-04T19:07:14.888Z"
+    author: codex-agent
+  - id: pm-elsh
+    kind: implements
+    created_at: "2026-07-26T17:04:03.228Z"
 comments[2]{created_at,author,text}:
   "2026-04-04T19:07:14.888Z",codex-agent,"Duplicate-check evidence: existing closed parity tasks do not include background test-run command/action surfaces; net-new parity coverage task required."
   "2026-04-04T20:22:23.130Z",codex-agent,"Synced cli contracts, completion, help content, command-aware output, and Pi wrapper action mappings for background test-run surfaces; release-readiness integration suite passed (23 tests)."

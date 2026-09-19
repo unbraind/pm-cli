@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[7]: changelog,ci,compatibility,pm-cli,release,sentry,telemetry
 created_at: "2026-05-03T18:30:09.216Z"
-updated_at: "2026-07-26T17:00:20.946Z"
+updated_at: "2026-09-19T08:39:13.639Z"
 deadline: "2026-05-04T18:30:09.216Z"
+closed_at: "2026-05-03T19:33:57.839Z"
 author: codex-release-agent
 estimated_minutes: 240
 acceptance_criteria: Temporary previous-version data migrates safely under the new build; telemetry and Sentry latest data are reviewed; release notes/changelog/docs are current and generated from pm evidence; full tests and secret scans pass; GitHub/npm/npx/bunx publish verification succeeds.
@@ -16,9 +17,9 @@ release: v2026.5.3-2
 resolution: "Release 2026.5.3 was published through the tag-driven GitHub Actions workflow and verified across npm, npx, bunx, GitHub Releases, and Sentry."
 expected_result: "A backward-compatible 2026.5.3 release is publicly available from npm and GitHub with generated release notes, passing local and CI gates."
 actual_result: GitHub Actions run 25288517005 completed successfully; npm latest resolves to 2026.5.3; npx and bunx execute 2026.5.3; GitHub release v2026.5.3 is published; Sentry release pm-cli@2026.5.3 is visible.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-5jw8,related,"2026-07-26T17:00:20.769Z",null,null
-  pm-rnpb,implements,"2026-07-26T17:00:20.769Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-5jw8,related,"2026-07-26T17:00:20.769Z"
+  pm-rnpb,implements,"2026-07-26T17:00:20.769Z"
 comments[9]{created_at,author,text}:
   "2026-05-03T18:30:09.216Z",codex-release-agent,"Duplicate-check evidence: ran pm context --limit 10, pm search release compatibility telemetry sentry changelog 2026.5.3 --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Only prior release item pm-5jw8 was closed and open audit parent pm-rnpb covers the lineage, so a new release chore is required."
   "2026-05-03T18:39:25.526Z",codex-release-agent,"Compatibility gate passed in isolated temp project: @unbrained/pm-cli@2026.5.2 initialized and created 3 representative items with parent/dependency links, files/docs/tests, comments, notes, learnings, reminders, events, close metadata, and history. Current built CLI read and mutated legacy data, ran linked test node --version, and passed pm validate --check-resolution --check-history-drift plus pm health --check-only without item loss (3 before, 3 after). Temp root: /tmp/pm-compat-2026-5-2.00lPcA."

@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[5]: agent-ux,create,docs,external-audit,pm-cli
 created_at: "2026-04-26T13:12:14.570Z"
-updated_at: "2026-07-26T17:18:05.816Z"
+updated_at: "2026-09-19T08:40:39.631Z"
+closed_at: "2026-04-26T13:14:06.885Z"
 author: cursor-agent
 estimated_minutes: 30
 acceptance_criteria: Agent guidance matches current strict create behavior or CLI behavior is changed; root-item create examples avoid suggesting --clear-deps as strict-mode satisfaction.
@@ -15,8 +16,8 @@ release: v2026.5.1
 resolution: Updated AGENTS.md strict-create guidance to require concrete repeatable values and recommend progressive mode for staged empty repeatables.
 expected_result: Agent guidance matches current CLI strict-mode behavior.
 actual_result: pnpm build passed via linked pm test after docs update.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-r15d,implements,"2026-07-26T17:18:05.576Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-r15d,implements,"2026-07-26T17:18:05.576Z"
 comments[2]{created_at,author,text}:
   "2026-04-26T13:12:14.570Z",cursor-agent,"Duplicate-check evidence: pm search 'strict create clear deps required options' --limit 10 plus context/open/in-progress checks found closed historical required-option work but no active direct docs/runtime parity item for strict empty repeatables."
   "2026-04-26T13:13:55.640Z",cursor-agent,"Updated AGENTS.md strict-create guidance to match runtime behavior: strict mode requires concrete repeatable values; use progressive mode for staged/empty repeatables. Evidence: pnpm build passed via linked pm test."

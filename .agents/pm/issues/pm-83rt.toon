@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: ci,nightly,tests,windows
 created_at: "2026-06-21T08:57:26.311Z"
-updated_at: "2026-07-26T17:07:13.524Z"
+updated_at: "2026-09-19T08:39:42.286Z"
+closed_at: "2026-06-21T09:18:27.323Z"
 author: codex-gpt5
 parent: pm-u9d0
 release: v2026.6.22
@@ -16,12 +17,12 @@ resolution: "Fixed Windows/nightly and post-merge CI test reliability by making 
 expected_result: Nightly Validation full test matrix passes on Windows without POSIX-only assertions or chmod-only permission assumptions.
 actual_result: Focused linked pm tests passed in the schema sandbox; direct repo coverage passed literal 100/100/100/100 across 241 files and 4796 tests; manual temp-dir smoke passed with isolated tracker/global paths.
 component: CI test suite
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-dita,related,"2026-06-21T08:57:26.311Z",null,null
-  pm-i84i,related,"2026-06-21T08:57:26.311Z",null,null
-  pm-s5pe,related,"2026-06-21T08:57:26.311Z",null,null
-  pm-tq5t,related,"2026-06-21T08:57:26.311Z",null,null
-  pm-u9d0,implements,"2026-07-26T17:07:13.330Z",null,null
+dependencies[5]{id,kind,created_at}:
+  pm-dita,related,"2026-06-21T08:57:26.311Z"
+  pm-i84i,related,"2026-06-21T08:57:26.311Z"
+  pm-s5pe,related,"2026-06-21T08:57:26.311Z"
+  pm-tq5t,related,"2026-06-21T08:57:26.311Z"
+  pm-u9d0,implements,"2026-07-26T17:07:13.330Z"
 comments[10]{created_at,author,text}:
   "2026-06-21T08:57:26.311Z",codex-gpt5,"Duplicate check: pm search --status all for Windows nightly path separator chmod telemetry eval search-cache found only closed lineage pm-s5pe, pm-i84i, pm-dita, pm-tq5t and no active duplicate. Creating a new current GitHub-reported failure item for run 27898852339. Dependency links point to closed prior Windows-nightly/path-separator lineage."
   "2026-06-21T08:59:50.425Z",codex-gpt5,"Evidence: focused affected specs pass locally: 4 files, 199 tests via node scripts/run-tests.mjs test -- eval/extension/search-cache/telemetry specs. This covers the GitHub nightly failure files from run 27898852339."

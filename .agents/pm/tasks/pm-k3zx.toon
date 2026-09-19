@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:test-command",code,"milestone:root",pm-cli,"priority:1",tests
 created_at: "2026-03-04T18:43:55.776Z"
-updated_at: "2026-07-26T17:17:59.613Z"
+updated_at: "2026-09-19T08:40:39.307Z"
 deadline: "2026-03-06T23:59:00.000Z"
+closed_at: "2026-03-04T19:08:10.665Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 75
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/harden-recursive-test-all-detection-for-global-f
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden recursive test-all detection for global-flag invocation forms.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-j7a,parent,"2026-03-04T18:43:55.776Z",cursor-maintainer,null
-  pm-j7a,implements,"2026-07-26T17:17:59.386Z",null,null
+dependencies[2]:
+  - id: pm-j7a
+    kind: parent
+    created_at: "2026-03-04T18:43:55.776Z"
+    author: cursor-maintainer
+  - id: pm-j7a
+    kind: implements
+    created_at: "2026-07-26T17:17:59.386Z"
 comments[5]{created_at,author,text}:
   "2026-03-04T18:43:55.776Z",cursor-maintainer,This task hardens recursive test-all guard coverage for flag-before-subcommand invocation forms.
   "2026-03-04T18:44:09.466Z",cursor-maintainer,"Planned changeset: replace substring recursion checks with token-aware invocation parsing so pm/npx/node forms still detect test-all when global flags precede the subcommand; add unit regressions for add-time rejection and runtime skip parity."

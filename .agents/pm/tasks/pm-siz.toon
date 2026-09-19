@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:error-model",core,"milestone:0",pm-cli
 created_at: "2026-02-17T23:02:07.105Z"
-updated_at: "2026-07-26T17:25:40.671Z"
+updated_at: "2026-09-19T08:41:34.545Z"
 deadline: "2026-02-20T23:02:07.105Z"
+closed_at: "2026-02-19T21:58:55.145Z"
 assignee: steve
 author: steve
 estimated_minutes: 120
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/error-model-and-exit-code-mapping
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Error model and exit code mapping.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-2xl,parent,"2026-02-17T23:02:07.105Z",steve,null
-  pm-2xl,implements,"2026-07-26T17:25:40.446Z",null,null
+dependencies[2]:
+  - id: pm-2xl
+    kind: parent
+    created_at: "2026-02-17T23:02:07.105Z"
+    author: steve
+  - id: pm-2xl
+    kind: implements
+    created_at: "2026-07-26T17:25:40.446Z"
 comments[3]{created_at,author,text}:
   "2026-02-19T21:34:16.277Z",cursor-maintainer,"Planned change-set: add deterministic integration coverage for CLI exit-code mapping paths (usage, not-found, conflict, dependency-failed, generic failure), validate existing error model contracts in src/core/shared/errors.ts and src/cli/main.ts, then run pm test + test-all regression sweeps with 100% coverage evidence."
   "2026-02-19T21:58:54.806Z",cursor-maintainer,"Implemented exit-code hardening for generic-failure path by adding integration coverage in tests/integration/cli.integration.spec.ts (new test: returns generic-failure exit code for unexpected init filesystem errors), which validates top-level unknown-error mapping to exit code 1 while preserving existing checks for usage/not-found/conflict/dependency-failed. Evidence: pm test pm-siz --run --timeout 2400 --json passed all linked tests (3/3); pm test-all --status in_progress --timeout 2400 --json passed totals items=8 linked_tests=36 passed=35 failed=0 skipped=1; pm test-all --status closed --timeout 2400 --json passed totals items=16 linked_tests=44 passed=41 failed=0 skipped=3; coverage remains 100% statements/branches/functions/lines."

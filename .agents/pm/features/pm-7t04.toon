@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[5]: agent-ux,bootstrap,docs,init,pm-cli
 created_at: "2026-05-17T08:58:01.020Z"
-updated_at: "2026-08-13T07:48:43.067Z"
+updated_at: "2026-09-19T08:39:40.735Z"
+closed_at: "2026-05-17T10:24:19.569Z"
 author: codex-agent
 acceptance_criteria: pm init detects missing core pm guidance in AGENTS.md and/or CLAUDE.md; TTY init asks before modifying files; approval writes idempotent marked guidance; decline persists project state so future init runs do not ask; explicit pm init option can add guidance later; non-interactive runs do not block; settings/schema/contracts/help/docs/tests cover the behavior.
 parent: pm-rnpb

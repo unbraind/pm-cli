@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: "area:ci","area:release",blocking,release
 created_at: "2026-06-01T20:17:08.897Z"
-updated_at: "2026-08-10T12:02:29.306Z"
+updated_at: "2026-09-19T08:40:40.058Z"
+closed_at: "2026-06-03T05:16:19.240Z"
 author: maintainer-agent
 release: v2026.6.5
 resolution: Added Auto Release preflight for the mandatory Sentry reliability token before creating version commits/tags.

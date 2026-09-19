@@ -6,7 +6,8 @@ status: closed
 priority: 0
 tags[5]: changelog,ci,packages,release,sdk
 created_at: "2026-05-23T20:25:40.368Z"
-updated_at: "2026-08-15T19:53:20.492Z"
+updated_at: "2026-09-19T08:39:38.055Z"
+closed_at: "2026-05-23T23:28:01.289Z"
 author: codex-pm-changelog
 parent: pm-59gj
 release: v2026.5.24

@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[5]: "area:ollama","area:search","area:semantic",compatibility,pm-cli
 created_at: "2026-04-01T13:06:03.573Z"
-updated_at: "2026-08-10T11:53:10.080Z"
+updated_at: "2026-09-19T08:39:33.866Z"
 deadline: "2026-04-15T13:06:03.573Z"
+closed_at: "2026-04-01T13:25:10.797Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 360

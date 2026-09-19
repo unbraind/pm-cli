@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:completion","area:store",pm-cli
 created_at: "2026-03-31T23:47:46.436Z"
-updated_at: "2026-07-26T17:01:37.957Z"
+updated_at: "2026-09-19T08:39:17.211Z"
 deadline: "2026-04-10T23:47:46.436Z"
+closed_at: "2026-04-01T00:28:41.091Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 360
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: cli/store
 regression: true
 customer_impact: Custom types become first-class in daily commands
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-r15d,parent,"2026-03-31T23:47:46.436Z",codex-agent,null
-  pm-r15d,implements,"2026-07-26T17:01:37.730Z",null,null
+dependencies[2]:
+  - id: pm-r15d
+    kind: parent
+    created_at: "2026-03-31T23:47:46.436Z"
+    author: codex-agent
+  - id: pm-r15d
+    kind: implements
+    created_at: "2026-07-26T17:01:37.730Z"
 comments[3]{created_at,author,text}:
   "2026-03-31T23:47:46.436Z",codex-agent,Feature tracks runtime command and storage integration.
   "2026-04-01T00:28:38.985Z",codex-agent,Integrated dynamic type behavior end-to-end across create/update/filtering/completion/storage routing with built-in compatibility defaults.

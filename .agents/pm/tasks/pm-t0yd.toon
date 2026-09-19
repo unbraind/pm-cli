@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:schema",pm-cli,runtime
 created_at: "2026-04-01T02:17:09.670Z"
-updated_at: "2026-07-26T17:26:01.697Z"
+updated_at: "2026-09-19T08:41:37.975Z"
 deadline: "2026-04-10T02:17:09.670Z"
+closed_at: "2026-04-01T03:02:00.002Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 150
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/b1-wire-registeritemfields-into-runtime-validati
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for B1: Wire registerItemFields into runtime validation."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-zd6y,parent,"2026-04-01T02:17:09.670Z",codex-agent,null
-  pm-zd6y,implements,"2026-07-26T17:26:01.405Z",null,null
+dependencies[2]:
+  - id: pm-zd6y
+    kind: parent
+    created_at: "2026-04-01T02:17:09.670Z"
+    author: codex-agent
+  - id: pm-zd6y
+    kind: implements
+    created_at: "2026-07-26T17:26:01.405Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T02:17:09.670Z",codex-agent,B1 task created from full-override feature B.
   "2026-04-01T03:01:08.113Z",codex-agent,Wired registerItemFields into create/update runtime through src/core/extensions/item-fields.ts and applied validation/defaulting in src/cli/commands/create.ts + update.ts; preserved extension front-matter fields during normalization in src/core/item/item-format.ts.

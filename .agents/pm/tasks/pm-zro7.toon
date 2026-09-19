@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[5]: "area:extensions","area:sdk",code-quality,codefactor,living-map
 created_at: "2026-06-30T14:47:19.790Z"
-updated_at: "2026-09-08T05:33:26.684Z"
+updated_at: "2026-09-19T08:43:21.675Z"
+closed_at: "2026-06-30T15:21:06.229Z"
 author: claude-code-agent
 parent: pm-92if
 release: v2026.7.1

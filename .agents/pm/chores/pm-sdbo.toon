@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[3]: agent-ux,"area:observability","area:validate"
 created_at: "2026-06-19T20:43:00.587Z"
-updated_at: "2026-09-08T05:33:18.086Z"
+updated_at: "2026-09-19T08:41:32.492Z"
+closed_at: "2026-06-19T20:57:52.778Z"
 author: claude-code-agent
 acceptance_criteria: Add validate_metadata_duplicate_issue_codes to REMEDIATION_REGISTRY with an executable command + summary covering the rename-or-close-as-duplicate fix; the mutual-exclusivity test still passes; pm validate --fix-hints on a tracker with duplicate issue codes lists the fix command.
 parent: pm-5oj5

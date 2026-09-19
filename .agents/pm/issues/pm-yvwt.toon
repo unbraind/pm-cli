@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[5]: compatibility,migration,pm-cli,release,storage
 created_at: "2026-05-01T08:29:05.321Z"
-updated_at: "2026-07-26T17:30:37.708Z"
+updated_at: "2026-09-19T08:43:12.273Z"
 deadline: "2026-05-02T08:29:05.321Z"
+closed_at: "2026-05-01T08:57:23.708Z"
 author: codex-release-agent
 estimated_minutes: 90
 acceptance_criteria: "A tracker created by @unbrained/pm-cli 2026.3.12 can be read and mutated by the current build without manual item-format setup; first mutation auto-selects/migrates to the current default format without losing items, linked artifacts, comments, history, or close metadata."
@@ -16,8 +17,8 @@ release: v2026.5.1
 resolution: Legacy settings without item_format now auto-select the default format and run pre-mutation item-file migration.
 expected_result: Trackers created by @unbrained/pm-cli@2026.3.12 can be read and mutated by the current build without manual item-format setup or data loss.
 actual_result: "Previous-version sandbox migrated 3 markdown items to TOON on first current mutation while preserving item count, linked artifacts, comments, close metadata, health, and history integrity."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-x6ni,implements,"2026-07-26T17:30:37.455Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-x6ni,implements,"2026-07-26T17:30:37.455Z"
 comments[2]{created_at,author,text}:
   "2026-05-01T08:29:05.321Z",codex-release-agent,"Compatibility sandbox using isolated npm install of @unbrained/pm-cli@2026.3.12 created three legacy items and then current dist/cli.js update failed with exit 4: Write command update requires explicit item format selection before mutations. Duplicate check: pm search 'item format selection before mutations previous version auto migrate' found only closed prior migration feature/task work; pm list-open --type Issue showed no active compatibility issue."
   "2026-05-01T08:36:30.340Z",codex-release-agent,"Implemented compatibility fix: legacy settings without item_format now persist the default item_format and run pre-mutation item-file sync instead of blocking. Evidence: targeted sandboxed integration test passed; previous-version sandbox created 3 items with @unbrained/pm-cli@2026.3.12 and current dist/cli.js migrated 3 .md items to 3 .toon items with item count, linked artifacts, close reason, health, and history drift checks preserved."

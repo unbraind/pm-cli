@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[6]: "area:search",code,"milestone:4",pm-cli,"priority:2",roadmap
 created_at: "2026-03-04T21:46:22.475Z"
-updated_at: "2026-07-26T17:12:53.725Z"
+updated_at: "2026-09-19T08:40:09.888Z"
 deadline: "2026-03-18T21:46:22.000Z"
+closed_at: "2026-03-04T22:25:14.456Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 180
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/m4-roadmap-mutation-triggered-semantic-embedding
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M4 roadmap: mutation-triggered semantic embedding refresh."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-f45,related,"2026-03-04T21:46:22.475Z",maintainer-agent,null
-  pm-f45,implements,"2026-07-26T17:12:53.483Z",null,null
+dependencies[2]:
+  - id: pm-f45
+    kind: related
+    created_at: "2026-03-04T21:46:22.475Z"
+    author: maintainer-agent
+  - id: pm-f45
+    kind: implements
+    created_at: "2026-07-26T17:12:53.483Z"
 comments[3]{created_at,author,text}:
   "2026-03-04T21:46:22.475Z",maintainer-agent,Roadmap gap from PRD Milestone 4 requires tracked implementation work.
   "2026-03-04T21:51:09.470Z",cursor-maintainer-agent,Implement best-effort mutation-triggered semantic embedding refresh for changed item IDs while retaining deterministic keyword cache invalidation. Wire refresh dispatch in CLI mutation paths and add unit coverage for configured/unconfigured/failure scenarios.

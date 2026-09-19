@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: docs,linked-tests,pm-cli,tests,verification
 created_at: "2026-04-03T22:54:20.449Z"
-updated_at: "2026-07-26T17:12:08.412Z"
+updated_at: "2026-09-19T08:40:05.692Z"
 deadline: "2026-04-10T22:54:20.449Z"
+closed_at: "2026-04-04T20:22:43.680Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: Docs and changelog describe background test-run lifecycle + item-tracking setting; targeted/full verification evidence is captured.
@@ -39,10 +40,18 @@ affected_version: 2026.3.12
 component: docs-and-verification
 regression: true
 customer_impact: Clear docs and evidence reduce upgrade ambiguity for current users.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-qtvv,related,"2026-04-03T22:54:20.449Z",codex-agent,null
-  pm-wn34,related,"2026-04-03T22:54:20.449Z",codex-agent,null
-  pm-elsh,implements,"2026-07-26T17:12:08.249Z",null,null
+dependencies[3]:
+  - id: pm-qtvv
+    kind: related
+    created_at: "2026-04-03T22:54:20.449Z"
+    author: codex-agent
+  - id: pm-wn34
+    kind: related
+    created_at: "2026-04-03T22:54:20.449Z"
+    author: codex-agent
+  - id: pm-elsh
+    kind: implements
+    created_at: "2026-07-26T17:12:08.249Z"
 comments[3]{created_at,author,text}:
   "2026-04-03T22:54:20.449Z",codex-agent,Task coordinates regression updates docs and final verification runs.
   "2026-04-03T23:46:44.845Z",codex-agent,"Docs synced for linked-test parity and command-required policy across README, PRD, AGENTS, docs/EXTENSIONS, and CHANGELOG. Verification evidence: targeted suites passed (117 tests), full coverage run passed (71 files, 828 tests), pnpm build passed, and pm test-all --status in_progress --timeout 7200 --json reported failed=0."

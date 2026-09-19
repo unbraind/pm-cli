@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[4]: audit,backlog,governance,pm-cli
 created_at: "2026-07-06T22:01:13.578Z"
-updated_at: "2026-07-27T07:13:22.057Z"
+updated_at: "2026-09-19T08:41:00.789Z"
+closed_at: "2026-07-06T22:02:29.009Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: All in_progress items are genuinely claimed or reset; every open GH issue and post-release commit maps to a pm item; every command family has a grammar-table owner under pm-n7rr and every SDK domain an owner under pm-usfg; long-term horizons extended where genuinely uncovered; zero duplicate items created

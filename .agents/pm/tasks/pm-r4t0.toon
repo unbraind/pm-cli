@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:release","area:tests",compatibility,pm-cli,verification
 created_at: "2026-04-01T12:00:41.055Z"
-updated_at: "2026-07-26T17:24:40.372Z"
+updated_at: "2026-09-19T08:41:08.404Z"
 deadline: "2026-04-08T12:00:41.055Z"
+closed_at: "2026-04-01T12:22:40.036Z"
 assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 120
@@ -41,14 +42,29 @@ fixed_version: archive-2026q2
 component: release-readiness
 regression: true
 customer_impact: Protects existing users through full validation before ship.
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-t6f7,parent,"2026-04-01T12:00:41.055Z",cursor-agent,null
-  pm-1119,related,"2026-07-26T17:24:40.104Z",null,null
-  pm-dzrj,related,"2026-07-26T17:24:40.104Z",null,null
-  pm-fas4,related,"2026-07-26T17:24:40.104Z",null,null
-  pm-gh7d,related,"2026-07-26T17:24:40.104Z",null,null
-  pm-qkva,related,"2026-07-26T17:24:40.104Z",null,null
-  pm-t6f7,implements,"2026-07-26T17:24:40.104Z",null,null
+dependencies[7]:
+  - id: pm-t6f7
+    kind: parent
+    created_at: "2026-04-01T12:00:41.055Z"
+    author: cursor-agent
+  - id: pm-1119
+    kind: related
+    created_at: "2026-07-26T17:24:40.104Z"
+  - id: pm-dzrj
+    kind: related
+    created_at: "2026-07-26T17:24:40.104Z"
+  - id: pm-fas4
+    kind: related
+    created_at: "2026-07-26T17:24:40.104Z"
+  - id: pm-gh7d
+    kind: related
+    created_at: "2026-07-26T17:24:40.104Z"
+  - id: pm-qkva
+    kind: related
+    created_at: "2026-07-26T17:24:40.104Z"
+  - id: pm-t6f7
+    kind: implements
+    created_at: "2026-07-26T17:24:40.104Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T12:00:41.055Z",cursor-agent,Task corresponds to plan final verification and delivery stream.
   "2026-04-01T12:22:21.016Z",cursor-agent,"Verification matrix executed: pnpm build passed; node scripts/run-tests.mjs test passed (640/640); node scripts/run-tests.mjs coverage ran and reported existing repository-wide global threshold shortfall (97.98/96.28/98.38/97.8 vs required 100). Linked pm test runs passed for pm-fas4, pm-1119, pm-dzrj, pm-gh7d, and pm-qkva; pm-r4t0 linked run reproduced same known coverage gate shortfall while full test suite still passed."

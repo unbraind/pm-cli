@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[3]: agent-ux,"area:storage",never-block
 created_at: "2026-06-07T17:03:25.350Z"
-updated_at: "2026-09-08T05:32:54.807Z"
+updated_at: "2026-09-19T08:41:30.243Z"
+closed_at: "2026-06-07T17:03:43.933Z"
 author: maintainer-agent
 parent: pm-mpbb
 release: v2026.6.8

@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[5]: "area:testing","milestone:6",pm-cli,"priority:2",tests
 created_at: "2026-02-19T02:36:38.700Z"
-updated_at: "2026-07-26T17:02:21.457Z"
+updated_at: "2026-09-19T08:39:20.247Z"
 deadline: "2026-02-26T02:36:38.700Z"
+closed_at: "2026-02-19T04:00:56.119Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 45
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/fix-sandbox-runner-passthrough-for-targeted-test
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Fix sandbox runner passthrough for targeted test commands.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-jiw,parent,"2026-02-19T02:36:38.700Z",maintainer-agent,null
-  pm-jiw,implements,"2026-07-26T17:02:21.252Z",null,null
+dependencies[2]:
+  - id: pm-jiw
+    kind: parent
+    created_at: "2026-02-19T02:36:38.700Z"
+    author: maintainer-agent
+  - id: pm-jiw
+    kind: implements
+    created_at: "2026-07-26T17:02:21.252Z"
 comments[5]{created_at,author,text}:
   "2026-02-19T02:36:38.700Z",maintainer-agent,"Created from verification evidence: targeted linked tests currently fan out to full-suite runs; fix is required for efficient deterministic pm test-all sweeps."
   "2026-02-19T03:19:51.483Z",maintainer-agent,"Intent: patch sandbox runner argument forwarding so targeted filters after '--' are normalized before invoking Vitest, then verify with targeted run + coverage + test-all sweeps."

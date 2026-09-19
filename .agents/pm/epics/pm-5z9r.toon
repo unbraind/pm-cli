@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[4]: extensions,external-audit,linked-tests,pm-cli
 created_at: "2026-04-04T12:42:06.028Z"
-updated_at: "2026-08-10T11:52:54.518Z"
+updated_at: "2026-09-19T08:39:33.095Z"
 deadline: "2026-04-18T12:42:06.028Z"
+closed_at: "2026-04-04T18:33:59.183Z"
 author: codex-agent
 estimated_minutes: 420
 acceptance_criteria: Unresolved external audit deltas are implemented additively with full docs/tests verification and no regressions for existing users.

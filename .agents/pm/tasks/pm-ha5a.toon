@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:contracts","area:tests","area:update",pm-cli
 created_at: "2026-04-02T11:45:22.901Z"
-updated_at: "2026-07-26T17:15:17.356Z"
+updated_at: "2026-09-19T08:40:22.926Z"
 deadline: "2026-04-06T11:45:22.901Z"
+closed_at: "2026-04-02T11:59:14.248Z"
 author: codex-agent
 estimated_minutes: 150
 acceptance_criteria: type-registry and sdk contracts include update body; completion surfaces expose update body; unit and integration tests cover behavior and help contracts.
@@ -38,9 +39,14 @@ affected_version: 2026.3.12
 component: cli-contracts
 regression: true
 customer_impact: Wrapper and completion users cannot discover or use body update.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-ghha,parent,"2026-04-02T11:45:22.901Z",codex-agent,null
-  pm-ghha,implements,"2026-07-26T17:15:17.112Z",null,null
+dependencies[2]:
+  - id: pm-ghha
+    kind: parent
+    created_at: "2026-04-02T11:45:22.901Z"
+    author: codex-agent
+  - id: pm-ghha
+    kind: implements
+    created_at: "2026-07-26T17:15:17.112Z"
 comments[2]{created_at,author,text}:
   "2026-04-02T11:45:22.901Z",codex-agent,Contracts/tests task created under feature pm-ghha.
   "2026-04-02T11:59:13.479Z",codex-agent,"Completed contract and discoverability parity: type-registry update policy keys, shared cli-contracts, completion/help surfaces, and regression tests for wrapper/completion/integration/runtime help flags. Evidence: pm test pm-ha5a --run passed (4 files, 135 tests)."

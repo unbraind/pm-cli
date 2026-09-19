@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[3]: agent-ux,cli,dogfood-2026-06-12
 created_at: "2026-06-12T16:19:38.636Z"
-updated_at: "2026-09-08T05:33:00.939Z"
+updated_at: "2026-09-19T08:40:27.835Z"
+closed_at: "2026-06-19T11:44:17.314Z"
 author: maintainer-agent
 parent: pm-mpbb
 release: v2026.6.20

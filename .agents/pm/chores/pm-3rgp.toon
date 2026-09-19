@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[4]: audit,backlog,governance,pm-cli
 created_at: "2026-07-06T21:10:23.139Z"
-updated_at: "2026-08-10T12:05:36.158Z"
+updated_at: "2026-09-19T08:39:23.117Z"
+closed_at: "2026-07-06T21:11:35.442Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Every open GitHub issue maps to a pm item; zero unparented items except the root milestone; new capability epic follows the living-backlog + agent-story conventions; validate/health green with all warnings mapped to open items

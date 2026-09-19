@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[5]: docs,marketplace,npm,packages,pm-cli
 created_at: "2026-05-11T17:59:04.701Z"
-updated_at: "2026-07-26T17:01:43.295Z"
+updated_at: "2026-09-19T08:39:17.460Z"
+closed_at: "2026-05-13T18:09:33.685Z"
 author: codex-agent
 acceptance_criteria: Package metadata fields are documented; package list/catalog command or generated artifact exists; npm keywords and public docs support package discovery.
 parent: pm-59gj
@@ -14,8 +15,8 @@ release: v2026.5.14
 resolution: "Implemented pm package catalog/package list with pm.catalog metadata, SDK/MCP contract mirroring, docs, tests, and dogfood coverage."
 expected_result: Users and agents can discover bundled first-party pm packages and metadata before installing them.
 actual_result: "pm package catalog --project returns Beads and Todos package metadata, install commands, resources, links, and installed state; release gates and linked tests passed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-59gj,implements,"2026-07-26T17:01:42.781Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-59gj,implements,"2026-07-26T17:01:42.781Z"
 comments[3]{created_at,author,text}:
   "2026-05-11T17:59:04.701Z",codex-agent,"Plan item created from pi.dev/packages research: package discovery depends on npm keywords plus catalog metadata such as package type,media preview,repo,and report links."
   "2026-05-13T17:47:16.332Z",codex-agent,"Implementation update: added pm package catalog/package list action with first-party package metadata from package.json pm.catalog, mirrored the surface through SDK contracts and MCP, documented catalog usage, and verified pnpm typecheck, pnpm build, focused package/SDK/runtime suite, direct package catalog JSON, and package contract flags."

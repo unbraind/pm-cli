@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:sdk",phase2,pm-cli
 created_at: "2026-04-01T19:28:48.026Z"
-updated_at: "2026-07-26T17:00:24.506Z"
+updated_at: "2026-09-19T08:39:13.846Z"
 deadline: "2026-04-11T19:28:48.026Z"
+closed_at: "2026-04-01T19:58:15.390Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
@@ -41,10 +42,18 @@ fixed_version: vnext
 component: sdk
 regression: true
 customer_impact: Existing extensions keep working while new capabilities become available.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-bw3h,related,"2026-04-01T19:28:48.026Z",codex-agent,null
-  pm-x395,parent,"2026-04-01T19:28:48.026Z",codex-agent,null
-  pm-x395,implements,"2026-07-26T17:00:24.335Z",null,null
+dependencies[3]:
+  - id: pm-bw3h
+    kind: related
+    created_at: "2026-04-01T19:28:48.026Z"
+    author: codex-agent
+  - id: pm-x395
+    kind: parent
+    created_at: "2026-04-01T19:28:48.026Z"
+    author: codex-agent
+  - id: pm-x395
+    kind: implements
+    created_at: "2026-07-26T17:00:24.335Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T19:28:48.026Z",codex-agent,Phase-2 SDK v2 extends current contracts while preserving compatibility shims.
   "2026-04-01T19:58:14.645Z",codex-agent,"Feature delivered across runtime, SDK, docs, and tests. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed; release-readiness integration checks passing."

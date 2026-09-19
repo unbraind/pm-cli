@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[7]: "area:extensions",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T10:06:02.590Z"
-updated_at: "2026-07-26T17:28:15.320Z"
+updated_at: "2026-09-19T08:42:05.329Z"
 deadline: "2026-03-07T23:30:00.000Z"
+closed_at: "2026-03-06T10:32:24.082Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 150
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-surface-registerflags-on-dynamic-co
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: surface registerFlags on dynamic command help."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-iuzs,related,"2026-03-06T10:06:02.590Z",maintainer-agent,null
-  pm-2p6q,implements,"2026-07-26T17:28:15.089Z",null,null
+dependencies[2]:
+  - id: pm-iuzs
+    kind: related
+    created_at: "2026-03-06T10:06:02.590Z"
+    author: maintainer-agent
+  - id: pm-2p6q
+    kind: implements
+    created_at: "2026-07-26T17:28:15.089Z"
 comments[5]{created_at,author,text}:
   "2026-03-06T10:06:02.590Z",maintainer-agent,Why this exists move registerFlags from metadata only to visible runtime help for extension commands.
   "2026-03-06T10:06:17.841Z",maintainer-agent,Planned changeset docs first update PRD and README then wire registerFlags metadata into dynamic extension command help text and add regression tests.

@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[3]: "area:mcp",dx,protocol
 created_at: "2026-06-07T10:04:00.498Z"
-updated_at: "2026-09-08T05:32:46.674Z"
+updated_at: "2026-09-19T08:40:42.339Z"
+closed_at: "2026-06-07T17:03:46.318Z"
 author: audit-platform-agent
 acceptance_criteria: "- Success and isError tools/call responses use a consistent structuredContent envelope shape\n- Error path envelope parity with success path (both include or both omit the result wrapper)\n- Test asserts envelope parity across success/error"
 parent: pm-5k4v

@@ -6,19 +6,20 @@ status: closed
 priority: 2
 tags[3]: "area:packages","area:sdk",context-management
 created_at: "2026-06-27T16:27:57.458Z"
-updated_at: "2026-07-26T17:02:18.425Z"
+updated_at: "2026-09-19T08:39:20.023Z"
+closed_at: "2026-06-27T16:39:42.116Z"
 author: codex-20260627
 parent: pm-ugqx
 release: v2026.6.30
 resolution: SDK harness activationSummary/renderMarkdown shipped for package-author context surfaces.
 expected_result: "Package authors can use createExtensionTestHarness to activate an extension, inspect its activation summary, and render markdown documentation without wiring standalone helpers manually."
 actual_result: "createExtensionTestHarness now exposes activationSummary() and renderMarkdown(), exports RenderExtensionHarnessMarkdownOptions, documents the flow in docs/SDK.md, and verifies it with unit, repo-wide, temp-project, security, changelog, telemetry, and coverage gates."
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-16ue,related,"2026-07-26T17:02:18.213Z",null,null
-  pm-dmum,related,"2026-07-26T17:02:18.213Z",null,null
-  pm-jcyn,related,"2026-07-26T17:02:18.213Z",null,null
-  pm-u2tm,related,"2026-07-26T17:02:18.213Z",null,null
-  pm-ugqx,implements,"2026-07-26T17:02:18.213Z",null,null
+dependencies[5]{id,kind,created_at}:
+  pm-16ue,related,"2026-07-26T17:02:18.213Z"
+  pm-dmum,related,"2026-07-26T17:02:18.213Z"
+  pm-jcyn,related,"2026-07-26T17:02:18.213Z"
+  pm-u2tm,related,"2026-07-26T17:02:18.213Z"
+  pm-ugqx,implements,"2026-07-26T17:02:18.213Z"
 comments[5]{created_at,author,text}:
   "2026-06-27T16:27:57.458Z",codex-20260627,"Duplicate check: searched all statuses for createExtensionTestHarness describe/render markdown surface and harness describeExtensionActivation renderExtensionSurfaceMarkdown. Existing closed items pm-jcyn, pm-16ue, pm-dmum, and pm-u2tm shipped the harness and standalone describe/render helpers; none binds describe/render into the fluent harness. Reusing parent epic pm-ugqx for this narrow package-author primitive."
   "2026-06-27T16:39:24.367Z",codex-20260627,"Evidence: implemented SDK harness describe/renderMarkdown convenience methods and exported RenderExtensionHarnessMarkdownOptions so package authors can inspect and publish extension surfaces from the same createExtensionTestHarness primitive. Verification passed: focused linked test via pm test (tests/unit/sdk/sdk-index.spec.ts, 109 tests), pnpm typecheck, pnpm lint, pnpm contracts:check, pnpm security:scan, pnpm changelog:pm:check with pm-changelog 2026.6.27 and unchanged CHANGELOG.md before closure, repo coverage 100/100/100/100 across 5,137 tests, temp-dir smoke with isolated PM_PATH/PM_GLOBAL_PATH importing dist/sdk/testing.js and rendering harness markdown, pm health clean after telemetry flush, and Sentry telemetry gate clean for critical/high blockers. GitHub checks before implementation: no open PRs, no Dependabot/secret/code-scanning/security-advisory alerts, open issue #374 remains an external RELEASE_PAT configuration blocker for scheduled auto-release rather than a code defect."

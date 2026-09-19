@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:close","area:validation",external-audit,pm-cli
 created_at: "2026-04-03T18:07:31.764Z"
-updated_at: "2026-07-26T17:14:51.848Z"
+updated_at: "2026-09-19T08:40:21.163Z"
 deadline: "2026-04-09T18:07:31.764Z"
+closed_at: "2026-04-03T18:56:02.578Z"
 author: codex-agent
 estimated_minutes: 260
 acceptance_criteria: "pm validate command exists with metadata/resolution/files/history checks, and pm close supports opt-in validate-close behavior with warning-first compatibility."
@@ -39,10 +40,17 @@ fixed_version: target-vnext
 component: cli-validation
 regression: false
 customer_impact: Improves data quality and confidence in closed-item history
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-qfg8,parent,"2026-04-03T18:07:31.764Z",codex-agent,null
-  pm-k6ml,related,"2026-07-26T17:14:51.672Z",null,null
-  pm-qfg8,implements,"2026-07-26T17:14:51.672Z",null,null
+dependencies[3]:
+  - id: pm-qfg8
+    kind: parent
+    created_at: "2026-04-03T18:07:31.764Z"
+    author: codex-agent
+  - id: pm-k6ml
+    kind: related
+    created_at: "2026-07-26T17:14:51.672Z"
+  - id: pm-qfg8
+    kind: implements
+    created_at: "2026-07-26T17:14:51.672Z"
 comments[2]{created_at,author,text}:
   "2026-04-03T18:07:31.764Z",codex-agent,Feature created after dedup scan for validate command and close validation scope.
   "2026-04-03T18:55:48.434Z",codex-agent,"Feature scope complete: validation command and close-time validation shipped with additive compatibility defaults, contract/help/completion parity, and task-level regression evidence in pm-k6ml."

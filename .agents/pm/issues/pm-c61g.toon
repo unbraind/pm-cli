@@ -6,17 +6,18 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-06-17T23:22:24.131Z"
-updated_at: "2026-07-26T17:10:52.548Z"
+updated_at: "2026-09-19T08:39:59.974Z"
+closed_at: "2026-06-17T23:28:46.424Z"
 author: codex-audit-agent
 parent: pm-u9d0
 release: v2026.6.19
 resolution: Made contracts snapshot temp cleanup deterministic for CI by disabling telemetry in the child CLI and retrying transient cleanup errors.
 expected_result: "pnpm contracts:check should not fail the static CI gate with ENOTEMPTY while removing temporary PM_GLOBAL_PATH directories."
 actual_result: "contracts-snapshot now sets PM_NO_TELEMETRY/PM_TELEMETRY_DISABLED and retries ENOTEMPTY/EBUSY/EPERM cleanup; pnpm contracts:check and the full static CI block pass locally."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-i2xg,related,"2026-07-26T17:10:52.289Z",null,null
-  pm-u43m,related,"2026-07-26T17:10:52.289Z",null,null
-  pm-u9d0,implements,"2026-07-26T17:10:52.289Z",null,null
+dependencies[3]{id,kind,created_at}:
+  pm-i2xg,related,"2026-07-26T17:10:52.289Z"
+  pm-u43m,related,"2026-07-26T17:10:52.289Z"
+  pm-u9d0,implements,"2026-07-26T17:10:52.289Z"
 comments[2]{created_at,author,text}:
   "2026-06-17T23:28:37.986Z",codex-audit-agent,"Evidence: PR #266 static gate failed in contracts:check cleanup with ENOTEMPTY removing /tmp/pm-cli-contracts-global-*. Fixed scripts/contracts-snapshot.mjs to set PM_NO_TELEMETRY=1 and PM_TELEMETRY_DISABLED=1 for the child contracts command and retry ENOTEMPTY/EBUSY/EPERM temp cleanup. Local verification passed: pnpm contracts:check; full CI static block (version, changelog check, contracts check, security scan, static quality, npm pack --dry-run)."
   "2026-06-17T23:56:30.811Z",codex-audit-agent,"Follow-up evidence: extracted contracts snapshot temp cleanup retry logic into scripts/contracts-snapshot-cleanup.mjs and added focused coverage for first-attempt success, transient retry/backoff, non-object failure, non-retryable failure, and exhausted retryable failure. Verification passed: node scripts/run-tests.mjs test -- tests/unit/scripts/contracts-snapshot.spec.ts tests/unit/scripts/contracts-snapshot-cleanup.spec.ts ... plus full coverage 226 files / 4493 tests with 100% statements, branches, functions, and lines."

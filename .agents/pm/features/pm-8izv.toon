@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: context-parity,external-audit,linked-tests,pm-cli
 created_at: "2026-04-04T12:42:31.364Z"
-updated_at: "2026-07-26T17:07:29.574Z"
+updated_at: "2026-09-19T08:39:43.647Z"
 deadline: "2026-04-14T12:42:31.364Z"
+closed_at: "2026-04-04T18:33:55.562Z"
 author: codex-agent
 estimated_minutes: 260
 acceptance_criteria: pm test and pm test-all support additive PM context parity controls; PM-command run results include execution context metadata; strict mismatch guard can fail linked commands deterministically.
@@ -39,12 +40,23 @@ fixed_version: target-vnext
 component: linked-test-runtime
 regression: true
 customer_impact: Reduces false-green linked verification for governance-critical PM commands.
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-6pij,related,"2026-04-04T12:42:31.364Z",codex-agent,null
-  pm-5z9r,implements,"2026-07-26T17:07:29.372Z",null,null
-  pm-mf5z,related,"2026-07-26T17:07:29.372Z",null,null
-  pm-qtvv,related,"2026-07-26T17:07:29.372Z",null,null
-  pm-vrsn,related,"2026-07-26T17:07:29.372Z",null,null
+dependencies[5]:
+  - id: pm-6pij
+    kind: related
+    created_at: "2026-04-04T12:42:31.364Z"
+    author: codex-agent
+  - id: pm-5z9r
+    kind: implements
+    created_at: "2026-07-26T17:07:29.372Z"
+  - id: pm-mf5z
+    kind: related
+    created_at: "2026-07-26T17:07:29.372Z"
+  - id: pm-qtvv
+    kind: related
+    created_at: "2026-07-26T17:07:29.372Z"
+  - id: pm-vrsn
+    kind: related
+    created_at: "2026-07-26T17:07:29.372Z"
 comments[3]{created_at,author,text}:
   "2026-04-04T12:42:31.364Z",codex-agent,"Duplicate-check evidence: pm-mf5z and pm-qtvv restored extension-defined type parity but do not provide tracker-data parity mode or mismatch-fail controls."
   "2026-04-04T14:02:27.223Z",codex-agent,"Child task pm-vrsn delivered PM-context parity controls, execution_context metadata, and mismatch guardrails with linked sweeps passing."

@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: files,governance,pm-cli,traceability
 created_at: "2026-04-25T20:08:23.573Z"
-updated_at: "2026-07-26T17:20:51.809Z"
+updated_at: "2026-09-19T08:40:48.635Z"
+closed_at: "2026-04-25T20:46:04.164Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: "pm files can discover referenced files from item body/comments/notes/learnings and other text context, skip already linked files, validate file existence/containment, support dry-run/reporting and apply modes, and include detailed end-to-end tests in sandboxed temporary projects."
@@ -15,8 +16,8 @@ release: v2026.5.1
 resolution: Implemented pm files discover with dry-run candidate reporting and --apply linked-file backfill.
 expected_result: "Referenced project and global file paths in item text are discovered, existing linked files are skipped, and apply mode adds only missing links with history."
 actual_result: "Runtime, CLI, contracts, Pi wrapper, completion, docs, unit coverage, and temporary-project end-to-end coverage are implemented and verified."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-5rjn,implements,"2026-07-26T17:20:51.567Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-5rjn,implements,"2026-07-26T17:20:51.567Z"
 comments[3]{created_at,author,text}:
   "2026-04-25T20:08:23.573Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'files referenced linked files comments body learnings' --limit 10; pm search 'pm files scan referenced paths linked file hygiene' --limit 10; pm search 'linked-file hygiene referenced files comments body' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20; pm list-blocked --limit 20. Net-new because related linked-file hygiene and check-files items are closed and do not implement a files command scanner/backfill path."
   "2026-04-25T20:45:56.709Z",codex-agent,"Evidence: implemented pm files discover <ID> dry-run reporting and --apply backfill for existing project/global file paths found in item text. Duplicate protection normalizes linked paths and skips already linked entries. Verification passed: focused unit/contract/wrapper/completion suite (123 tests), temporary-project CLI e2e (1 passed / 61 skipped), full regression (76 files / 1042 tests), coverage (100% statements/branches/functions/lines), pm test pm-n2ts --run --progress (4/4 linked commands passed), pm validate --check-resolution --check-history-drift, and pm validate --check-files --scan-mode tracked-all."

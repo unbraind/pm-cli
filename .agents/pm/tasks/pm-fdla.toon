@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[7]: "area:search",code,docs,"milestone:4",pm-cli,"priority:1",tests
 created_at: "2026-03-05T13:05:50.978Z"
-updated_at: "2026-07-26T17:13:49.268Z"
+updated_at: "2026-09-19T08:40:15.399Z"
 deadline: "2026-03-06T23:59:00.000Z"
+closed_at: "2026-03-05T13:33:15.916Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/m4-follow-up-remove-deleted-items-from-semantic-
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M4 follow-up: remove deleted items from semantic vector indexes."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-f45,parent,"2026-03-05T13:05:50.978Z",maintainer-agent,null
-  pm-f45,implements,"2026-07-26T17:13:49.027Z",null,null
+dependencies[2]:
+  - id: pm-f45
+    kind: parent
+    created_at: "2026-03-05T13:05:50.978Z"
+    author: maintainer-agent
+  - id: pm-f45
+    kind: implements
+    created_at: "2026-07-26T17:13:49.027Z"
 comments[7]{created_at,author,text}:
   "2026-03-05T13:05:50.978Z",maintainer-agent,Why this exists semantic mutation refresh skips missing IDs and delete flows can leave stale vector records
   "2026-03-05T13:06:04.251Z",maintainer-agent,"Planned change-set docs first: clarify semantic mutation refresh delete behavior in PRD and README, then implement vector-store delete execution and missing-ID refresh pruning with deterministic warnings plus targeted/unit regression tests."

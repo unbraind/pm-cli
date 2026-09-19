@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[7]: "area:planning","area:tracking",docs,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-06T23:17:23.778Z"
-updated_at: "2026-07-26T17:11:54.229Z"
+updated_at: "2026-09-19T08:40:04.362Z"
 deadline: "2026-03-09T23:59:00.000Z"
+closed_at: "2026-03-06T23:33:07.984Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 75
@@ -41,16 +42,35 @@ fixed_version: archive-2026q2
 component: project-management/normalize-duplicate-milestone-epics-in-tracker
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Normalize duplicate milestone epics in tracker.
-dependencies[9]{id,kind,created_at,author,source_kind}:
-  pm-ep96,discovered_from,"2026-03-06T23:17:23.778Z",maintainer-agent,null
-  pm-6hhn,related,"2026-07-26T17:11:50.989Z",null,null
-  pm-8a2s,implements,"2026-07-26T17:11:50.989Z",null,null
-  pm-defw,related,"2026-07-26T17:11:50.989Z",null,null
-  pm-gyfn,related,"2026-07-26T17:11:50.989Z",null,null
-  pm-met4,related,"2026-07-26T17:11:50.989Z",null,null
-  pm-murz,related,"2026-07-26T17:11:50.989Z",null,null
-  pm-xtfo,related,"2026-07-26T17:11:50.989Z",null,null
-  pm-zetb,related,"2026-07-26T17:11:50.989Z",null,null
+dependencies[9]:
+  - id: pm-ep96
+    kind: discovered_from
+    created_at: "2026-03-06T23:17:23.778Z"
+    author: maintainer-agent
+  - id: pm-6hhn
+    kind: related
+    created_at: "2026-07-26T17:11:50.989Z"
+  - id: pm-8a2s
+    kind: implements
+    created_at: "2026-07-26T17:11:50.989Z"
+  - id: pm-defw
+    kind: related
+    created_at: "2026-07-26T17:11:50.989Z"
+  - id: pm-gyfn
+    kind: related
+    created_at: "2026-07-26T17:11:50.989Z"
+  - id: pm-met4
+    kind: related
+    created_at: "2026-07-26T17:11:50.989Z"
+  - id: pm-murz
+    kind: related
+    created_at: "2026-07-26T17:11:50.989Z"
+  - id: pm-xtfo
+    kind: related
+    created_at: "2026-07-26T17:11:50.989Z"
+  - id: pm-zetb
+    kind: related
+    created_at: "2026-07-26T17:11:50.989Z"
 comments[3]{created_at,author,text}:
   "2026-03-06T23:17:23.778Z",maintainer-agent,Duplicate open milestone epics were introduced during backlog seeding and now violate duplicate-prevention policy.
   "2026-03-06T23:17:54.342Z",maintainer-agent,"Planned change-set: annotate and cancel duplicate open milestone epics (pm-6hhn, pm-zetb, pm-murz, pm-met4, pm-xtfo, pm-gyfn, pm-defw) in favor of existing canonical closed milestone lineage to restore deterministic work selection."

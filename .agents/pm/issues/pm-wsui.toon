@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[5]: "audit:2026-04-26",dx,extensions,pm-cli,sdk
 created_at: "2026-04-26T14:52:29.628Z"
-updated_at: "2026-07-26T17:28:58.267Z"
+updated_at: "2026-09-19T08:42:38.059Z"
 deadline: "2026-05-10T14:52:29.628Z"
+closed_at: "2026-04-27T18:12:24.199Z"
 author: audit-agent
 estimated_minutes: 90
 acceptance_criteria: "pm extension --init creates a working starter extension with manifest, entry point, and example capability."
@@ -17,8 +18,8 @@ resolution: fixed
 expected_result: "pm extension --init/--scaffold generates a working starter extension project with manifest, entrypoint, example command capability, and deterministic guidance."
 actual_result: "Implemented extension init/scaffold action with idempotent scaffold generation (manifest/index/README), contract/completion wiring, and regression coverage across extension + contracts surfaces."
 fixed_version: target-vnext
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-o7be,implements,"2026-07-26T17:28:57.990Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-o7be,implements,"2026-07-26T17:28:57.990Z"
 comments[4]{created_at,author,text}:
   "2026-04-26T19:58:06.880Z",codex-agent,"Audit mitigation delivered: added docs/examples/starter-extension with manifest, entry point, and full capability walkthrough to provide deterministic copyable scaffold for extension authors."
   "2026-04-26T19:58:09.965Z",codex-agent,Item remains open because CLI-native scaffold command (for example pm extension --init/--scaffold) is still not implemented; current deliverable is documentation/template only.

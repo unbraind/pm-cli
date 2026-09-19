@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:status","area:tests",pm-cli,regression
 created_at: "2026-04-01T10:47:14.569Z"
-updated_at: "2026-07-26T17:00:11.894Z"
+updated_at: "2026-09-19T08:39:12.991Z"
 deadline: "2026-04-03T10:47:14.569Z"
+closed_at: "2026-04-01T10:58:38.400Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 70
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: tests
 regression: true
 customer_impact: future releases preserve status alias compatibility
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-1r6p,parent,"2026-04-01T10:47:14.569Z",codex-agent,null
-  pm-1r6p,implements,"2026-07-26T17:00:11.705Z",null,null
+dependencies[2]:
+  - id: pm-1r6p
+    kind: parent
+    created_at: "2026-04-01T10:47:14.569Z"
+    author: codex-agent
+  - id: pm-1r6p
+    kind: implements
+    created_at: "2026-07-26T17:00:11.705Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T10:47:14.569Z",codex-agent,Coverage includes command module tests and integration command path checks for alias parity.
   "2026-04-01T10:58:29.153Z",codex-agent,"Added regression coverage for alias parity in create/update/calendar/test-all, item-format validation, integration lifecycle filtering, and direct helper branches. Verification: node scripts/run-tests.mjs test passed after updates."

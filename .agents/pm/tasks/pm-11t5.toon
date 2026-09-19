@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:test-command",code,"milestone:3",pm-cli,"priority:1",tests
 created_at: "2026-03-05T11:05:52.887Z"
-updated_at: "2026-07-26T17:00:41.241Z"
+updated_at: "2026-09-19T08:39:14.434Z"
 deadline: "2026-03-06T23:59:00.000Z"
+closed_at: "2026-03-05T11:30:16.075Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 90
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/harden-recursive-test-all-detection-for-pnpm-dlx
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden recursive test-all detection for pnpm dlx and npm exec launchers.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-8fvl,related,"2026-03-05T11:05:52.887Z",cursor-maintainer,null
-  pm-2p6q,implements,"2026-07-26T17:00:41.016Z",null,null
+dependencies[2]:
+  - id: pm-8fvl
+    kind: related
+    created_at: "2026-03-05T11:05:52.887Z"
+    author: cursor-maintainer
+  - id: pm-2p6q
+    kind: implements
+    created_at: "2026-07-26T17:00:41.016Z"
 comments[6]{created_at,author,text}:
   "2026-03-05T11:05:52.887Z",cursor-maintainer,"Gap verified by probe command: pnpm dlx pm-cli@latest --json test-all currently bypasses recursion guard."
   "2026-03-05T11:06:13.568Z",cursor-maintainer,"Planned changeset: update PRD/README/AGENTS to explicitly include pnpm dlx and npm exec package launcher recursion forms, then harden src/cli/commands/test.ts parsing and extend unit regressions for add-time rejection plus runtime skip parity."

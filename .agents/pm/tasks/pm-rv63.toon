@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:migrations","area:store",code,pm-cli
 created_at: "2026-03-31T23:48:22.551Z"
-updated_at: "2026-07-26T17:25:10.659Z"
+updated_at: "2026-09-19T08:41:29.796Z"
 deadline: "2026-04-07T23:48:22.551Z"
+closed_at: "2026-04-01T00:27:34.211Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 180
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: core/store
 regression: true
 customer_impact: Prevents data placement inconsistencies
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-277p,parent,"2026-03-31T23:48:22.551Z",codex-agent,null
-  pm-277p,implements,"2026-07-26T17:25:10.395Z",null,null
+dependencies[2]:
+  - id: pm-277p
+    kind: parent
+    created_at: "2026-03-31T23:48:22.551Z"
+    author: codex-agent
+  - id: pm-277p
+    kind: implements
+    created_at: "2026-07-26T17:25:10.395Z"
 comments[3]{created_at,author,text}:
   "2026-03-31T23:48:22.551Z",codex-agent,Task tracks storage routing and update type relocation behavior.
   "2026-04-01T00:27:31.779Z",codex-agent,Implemented dynamic storage routing and safe type-change relocation for configured item type folders.

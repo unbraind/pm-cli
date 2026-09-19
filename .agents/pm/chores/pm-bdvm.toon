@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[3]: agent-ux,"area:health","area:observability"
 created_at: "2026-06-07T10:03:47.039Z"
-updated_at: "2026-09-08T05:32:46.448Z"
+updated_at: "2026-09-19T08:39:55.357Z"
+closed_at: "2026-06-19T20:57:52.270Z"
 author: audit-observability-agent
 acceptance_criteria: "- Add `extension_update_health_partial_coverage` code to REMEDIATION_REGISTRY with command: 'pm extension --adopt-all --project' and a summary explaining the adoption flow.\n- The existing mutually-exclusive-codes test in remediation-registry.spec.ts still passes.\n- pm health --json on a repo with unmanaged extensions shows remediation_map for this code."
 parent: pm-5oj5

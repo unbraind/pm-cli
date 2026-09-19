@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:comments","area:tests",compatibility,pm-cli
 created_at: "2026-04-01T11:06:17.554Z"
-updated_at: "2026-07-26T17:17:52.412Z"
+updated_at: "2026-09-19T08:40:38.980Z"
 deadline: "2026-04-03T11:06:17.554Z"
+closed_at: "2026-04-01T11:19:01.550Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 50
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: cli-comments
 regression: true
 customer_impact: Users receive a safe fix with verified compatibility
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-cvwi,parent,"2026-04-01T11:06:17.554Z",codex-agent,null
-  pm-cvwi,implements,"2026-07-26T17:17:52.149Z",null,null
+dependencies[2]:
+  - id: pm-cvwi
+    kind: parent
+    created_at: "2026-04-01T11:06:17.554Z"
+    author: codex-agent
+  - id: pm-cvwi
+    kind: implements
+    created_at: "2026-07-26T17:17:52.149Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T11:06:17.554Z",codex-agent,Task captures targeted tests for shorthand compatibility and no-regression behavior.
   "2026-04-01T11:18:49.095Z",codex-agent,"Regression coverage added and passing: integration lifecycle tests plus release-readiness runtime help/key-order contracts now validate comments shorthand usage and command help usage line."

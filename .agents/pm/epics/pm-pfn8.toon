@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[6]: agent-ux,"area:contracts","area:error","area:help","area:schema",pm-cli
 created_at: "2026-04-03T15:41:49.872Z"
-updated_at: "2026-08-10T11:52:58.743Z"
+updated_at: "2026-09-19T08:40:58.084Z"
 deadline: "2026-04-17T15:41:49.872Z"
+closed_at: "2026-04-03T16:02:56.292Z"
 author: codex-agent
 estimated_minutes: 720
 acceptance_criteria: Help command semantics are fixed; --help --json and contracts command surfaces are shipped; schema metadata upgraded; error guidance uses runtime context; docs/tests updated and passing.

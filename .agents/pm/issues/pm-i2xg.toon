@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[3]: agent-ux,"area:ci",reliability
 created_at: "2026-06-07T19:58:13.334Z"
-updated_at: "2026-09-08T05:32:56.504Z"
+updated_at: "2026-09-19T08:40:27.663Z"
+closed_at: "2026-06-08T06:26:02.722Z"
 author: codex-agent-ux-reliability-20260607
 parent: pm-u9d0
 release: v2026.6.8

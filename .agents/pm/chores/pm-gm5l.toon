@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:tests",pm-cli,release-readiness
 created_at: "2026-03-06T14:49:38.366Z"
-updated_at: "2026-07-26T17:14:36.422Z"
+updated_at: "2026-09-19T08:40:19.432Z"
 deadline: "2026-03-07T14:49:38.366Z"
+closed_at: "2026-03-06T15:02:55.345Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 60
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/harden-settings-serialization-contract-coverage
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden settings serialization contract coverage.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-wo8,related,"2026-03-06T14:49:38.366Z",maintainer-agent,null
-  pm-i0iy,implements,"2026-07-26T17:14:36.205Z",null,null
+dependencies[2]:
+  - id: pm-wo8
+    kind: related
+    created_at: "2026-03-06T14:49:38.366Z"
+    author: maintainer-agent
+  - id: pm-i0iy
+    kind: implements
+    created_at: "2026-07-26T17:14:36.205Z"
 comments[3]{created_at,author,text}:
   "2026-03-06T14:49:38.366Z",maintainer-agent,"Why this exists: PRD requires exact settings key order and this guard prevents silent serializer drift."
   "2026-03-06T14:49:48.673Z",maintainer-agent,"Planned changeset: strengthen settings-store unit assertions to enforce exact PRD key order across top-level and nested settings blocks without changing runtime behavior."

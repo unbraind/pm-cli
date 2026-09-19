@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[3]: audit-2026-06-12,dead-code,hygiene
 created_at: "2026-06-12T16:11:22.616Z"
-updated_at: "2026-08-10T12:03:10.516Z"
+updated_at: "2026-09-19T08:42:04.353Z"
+closed_at: "2026-06-19T23:34:16.820Z"
 author: maintainer-agent
 release: v2026.6.20
 resolution: Export hygiene shipped by removing the test-only KNOWN_EXTENSION_MANIFEST_FIELDS value from the exported extension runtime surface and keeping manifest schema governance local to the test.

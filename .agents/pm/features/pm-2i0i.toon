@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:directories","area:health",external-audit,pm-cli
 created_at: "2026-04-04T22:37:49.756Z"
-updated_at: "2026-07-26T17:02:00.452Z"
+updated_at: "2026-09-19T08:39:18.713Z"
 deadline: "2026-04-11T22:37:49.756Z"
+closed_at: "2026-04-05T17:56:54.378Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: pm health treats optional item-type directories as non-fatal by default while supporting explicit strict directory enforcement and deterministic diagnostics.
@@ -22,9 +23,9 @@ release: v2026.5.1
 resolution: Added strict health exit options with compatibility-safe default behavior.
 expected_result: Health can return non-zero in strict mode when warnings make ok=false.
 actual_result: Implemented --strict-exit/--fail-on-warn with docs/contracts/completion/Pi/test coverage.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-gt8u,implements,"2026-07-26T17:02:00.210Z",null,null
-  pm-t7xl,related,"2026-07-26T17:02:00.210Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-gt8u,implements,"2026-07-26T17:02:00.210Z"
+  pm-t7xl,related,"2026-07-26T17:02:00.210Z"
 comments[5]{created_at,author,text}:
   "2026-04-04T22:37:49.756Z",codex-agent,"Duplicate-check evidence: pm search health missing directory strict-directories optional directories --limit 10; pm list-open --limit 20; no active item currently tracks optional-directory strictness semantics for pm health."
   "2026-04-04T23:35:32.836Z",codex-agent,"Delivery evidence: child task pm-t7xl is closed with linked pm test run passing; implementation includes health optional-directory defaults + --strict-directories and docs/contracts parity. Full project test and coverage suites passed."

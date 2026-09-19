@@ -6,7 +6,8 @@ status: closed
 priority: 0
 tags[5]: packages,pm-cli,refactor,sdk,test-runner
 created_at: "2026-05-14T06:05:23.106Z"
-updated_at: "2026-07-26T17:07:11.676Z"
+updated_at: "2026-09-19T08:39:42.082Z"
+closed_at: "2026-05-14T10:10:05.542Z"
 author: codex-agent
 acceptance_criteria: Core linked-test safety and orchestration remain stable; package boundary for adapters/reporters is documented; future packages expose optional handlers/contracts without weakening sandbox safety; focused tests cover any extracted adapter surface.
 parent: pm-59gj
@@ -14,8 +15,8 @@ release: v2026.5.14
 resolution: Linked-test adapters were extracted to an installable package while core retained safety-critical linked-test orchestration.
 expected_result: Optional adapters/reporters are package-owned and core linked-test sandbox safety remains intact.
 actual_result: "Focused release-readiness, extension, and package-manifest tests verified the package boundary."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-59gj,implements,"2026-07-26T17:07:11.504Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-59gj,implements,"2026-07-26T17:07:11.504Z"
 comments[3]{created_at,author,text}:
   "2026-05-14T06:05:23.106Z",codex-agent,"Duplicate check 2026-05-14: pm search linked-test-runner package extraction found only closed sandbox runner fixes plus parent pm-59gj; net-new extraction child under pm-59gj."
   "2026-05-14T06:12:20.800Z",codex-agent,"Research correction 2026-05-14: CLI surface audit recommends keeping linked-test safety/orchestration in core for agent PM reliability, while extracting external test adapters/reporters and specialized output packs instead of moving the whole runner out of core."

@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[7]: agent-ux,commands,dependencies,history,plan,planning,pm-cli
 created_at: "2026-05-17T08:50:06.874Z"
-updated_at: "2026-07-26T17:30:59.828Z"
+updated_at: "2026-09-19T08:43:17.811Z"
+closed_at: "2026-05-17T13:46:34.515Z"
 author: codex-agent
 acceptance_criteria: pm plan command family supports create/show/add-step/update-step/complete-step/block-step/reorder-step/link/approve/materialize/close; each mutation writes history; step links support related/dependency pm ids; outputs are low-token TOON plus deterministic JSON; focused tests cover command contracts and behavior.
 parent: pm-v7dj
@@ -14,10 +15,18 @@ release: v2026.5.18
 resolution: "pm plan command family shipped with full step lifecycle, link/unlink, decision/discovery/validation/resume logs, approve, materialize, and progressive-disclosure show."
 expected_result: Agents can plan-and-execute via pm plan with deterministic history.
 actual_result: "Verified: 21 focused tests pass; dogfood-package-first.mjs covers create→add-step→update-step→complete-step→decision→discovery→validation→resume→approve→materialize→history-verify; hash chain ok=true."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-jauk,blocks,"2026-05-17T08:50:06.874Z",codex-agent,null
-  pm-v7dj,parent,"2026-05-17T08:50:06.874Z",codex-agent,null
-  pm-v7dj,implements,"2026-07-26T17:30:59.652Z",null,null
+dependencies[3]:
+  - id: pm-jauk
+    kind: blocks
+    created_at: "2026-05-17T08:50:06.874Z"
+    author: codex-agent
+  - id: pm-v7dj
+    kind: parent
+    created_at: "2026-05-17T08:50:06.874Z"
+    author: codex-agent
+  - id: pm-v7dj
+    kind: implements
+    created_at: "2026-07-26T17:30:59.652Z"
 comments[3]{created_at,author,text}:
   "2026-05-17T08:50:06.874Z",codex-agent,Child task created from pm-v7dj. This slice depends on the built-in Plan type/storage foundation in pm-jauk.
   "2026-05-17T08:52:39.781Z",codex-agent,"Research evidence: pm plan commands should mirror harness step lifecycle: Codex living plans, Claude TaskCreate/TaskUpdate style updates, and Cursor editable plans with code references. Linked command/contract files and focused regression command for future work."

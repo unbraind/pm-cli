@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: gate,migration,pm-cli,toon
 created_at: "2026-03-31T20:13:39.182Z"
-updated_at: "2026-07-26T17:25:15.982Z"
+updated_at: "2026-09-19T08:41:30.470Z"
 deadline: "2026-04-14T20:13:39.182Z"
+closed_at: "2026-03-31T20:57:57.478Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 180
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/implement-automatic-migration-and-mutation-gate
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Implement automatic migration and mutation gate.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-z8bl,parent,"2026-03-31T20:13:39.182Z",codex-agent,null
-  pm-z8bl,implements,"2026-07-26T17:25:15.735Z",null,null
+dependencies[2]:
+  - id: pm-z8bl
+    kind: parent
+    created_at: "2026-03-31T20:13:39.182Z"
+    author: codex-agent
+  - id: pm-z8bl
+    kind: implements
+    created_at: "2026-07-26T17:25:15.735Z"
 comments[2]{created_at,author,text}:
   "2026-03-31T20:13:39.182Z",codex-agent,Task tracks migration execution and gate rules.
   "2026-03-31T20:56:44.985Z",codex-agent,Implemented automatic item format migration and pre-mutation explicit-selection gate; configured format now wins during dual-file conflicts and preflight sync runs before mutations.

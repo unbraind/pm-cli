@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[4]: "area:search","area:semantic",living-map,story
 created_at: "2026-05-31T19:49:45.373Z"
-updated_at: "2026-09-08T05:32:38.535Z"
+updated_at: "2026-09-19T08:41:43.506Z"
+closed_at: "2026-06-06T06:22:00.302Z"
 author: maintainer-agent
 acceptance_criteria: search.embedding_corpus_max_characters raises/lowers the limit; invalid falls back to default with a warning; reindex+background refresh honor it
 parent: pm-ydp6

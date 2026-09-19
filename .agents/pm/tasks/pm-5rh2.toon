@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[9]: "area:core","area:docs","area:extensions-pi",code,doc,"milestone:next",pm-cli,"priority:0",tests
 created_at: "2026-03-05T08:56:51.061Z"
-updated_at: "2026-07-26T17:04:59.639Z"
+updated_at: "2026-09-19T08:39:32.289Z"
 deadline: "2026-03-06T08:56:51.061Z"
+closed_at: "2026-03-05T09:32:53.572Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 240
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/remove-session-based-ownership-model
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Remove session-based ownership model.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-06t,related,"2026-03-05T08:56:51.061Z",maintainer-agent,null
-  pm-2p6q,implements,"2026-07-26T17:04:59.377Z",null,null
+dependencies[2]:
+  - id: pm-06t
+    kind: related
+    created_at: "2026-03-05T08:56:51.061Z"
+    author: maintainer-agent
+  - id: pm-2p6q
+    kind: implements
+    created_at: "2026-07-26T17:04:59.377Z"
 comments[4]{created_at,author,text}:
   "2026-03-05T08:56:51.061Z",maintainer-agent,"Why this exists: remove Pi-specific session semantics and make ownership model generic for all agents."
   "2026-03-05T08:57:02.247Z",maintainer-agent,"Planned changeset: replace assigned_to_session/session.id/PM_SESSION with assignee semantics and owner-based locking metadata; migrate CLI flags to --assignee; update Pi wrapper parameter names and docs path references; then run targeted plus full regression and remove session attributes from tracker items using pm updates."

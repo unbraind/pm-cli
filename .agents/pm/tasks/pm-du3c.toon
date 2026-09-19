@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[7]: "area:docs","area:extensions-pi",doc,"milestone:6",pm-cli,"priority:0",release-readiness
 created_at: "2026-03-08T18:23:37.306Z"
-updated_at: "2026-07-26T17:12:21.719Z"
+updated_at: "2026-09-19T08:40:06.953Z"
 deadline: "2026-03-09T20:00:00.000Z"
+closed_at: "2026-03-08T18:40:26.636Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 60
@@ -41,9 +42,14 @@ fixed_version: v0.1
 component: documentation
 regression: false
 customer_impact: Reduces ambiguity for contributors relying on roadmap text
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-bdz5,related,"2026-03-08T18:23:37.306Z",maintainer-agent,null
-  pm-8a2s,implements,"2026-07-26T17:12:21.496Z",null,null
+dependencies[2]:
+  - id: pm-bdz5
+    kind: related
+    created_at: "2026-03-08T18:23:37.306Z"
+    author: maintainer-agent
+  - id: pm-8a2s
+    kind: implements
+    created_at: "2026-07-26T17:12:21.496Z"
 comments[4]{created_at,author,text}:
   "2026-03-08T18:23:37.306Z",maintainer-agent,Why this exists docs currently lag completed Pi wrapper packaging polish and need authoritative alignment.
   "2026-03-08T18:24:01.297Z",maintainer-agent,Planned changeset before edits update PRD and README to remove stale roadmap wording for Pi wrapper packaging polish then tighten release-readiness docs contract assertions.

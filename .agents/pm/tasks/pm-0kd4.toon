@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[3]: audit,cicd,hardening
 created_at: "2026-05-03T10:47:42.126Z"
-updated_at: "2026-07-26T17:00:10.814Z"
+updated_at: "2026-09-19T08:39:12.929Z"
+closed_at: "2026-05-03T10:57:50.662Z"
 author: audit-agent
 estimated_minutes: 120
 acceptance_criteria: "All workflows pass, dependency pinning verified, provenance enabled, no deprecated actions"
@@ -15,7 +16,7 @@ release: v2026.5.3
 resolution: Resolution normalized from closed status; existing close_reason remains the detailed closure evidence.
 expected_result: Expected closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
 actual_result: Actual closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-5zkg,implements,"2026-07-26T17:00:10.561Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-5zkg,implements,"2026-07-26T17:00:10.561Z"
 close_reason: "CI/CD hardening complete: timeout-minutes on all jobs, SHA-pinned actions, step timeouts on network ops, zero vulns, Dependabot configured"
 body: ""

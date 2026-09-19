@@ -6,15 +6,16 @@ status: closed
 priority: 1
 tags[4]: "area:runtime","area:sdk","external:github","gh:190"
 created_at: "2026-06-09T22:33:17.019Z"
-updated_at: "2026-07-26T17:24:58.885Z"
+updated_at: "2026-09-19T08:41:10.047Z"
+closed_at: "2026-06-10T05:14:29.775Z"
 author: codex-active-pm-cycle-20260610
 parent: pm-5k4v
 release: v2026.6.10
 resolution: Implemented in src/core/store/item-store.ts by defaulting locateItem idPrefix to pm- and verified through the public SDK barrel test.
 expected_result: "Package authors can call locateItem(pmRoot, id) for default pm-prefixed trackers without a low-signal TypeError."
 actual_result: "locateItem(pmRoot, id) resolves default pm-prefixed items; tests/unit/sdk-index.spec.ts covers the public SDK barrel path."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-5k4v,implements,"2026-07-26T17:24:58.594Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-5k4v,implements,"2026-07-26T17:24:58.594Z"
 comments[3]{created_at,author,text}:
   "2026-06-09T22:33:32.211Z",codex-active-pm-cycle-20260610,"Source: GitHub issue https://github.com/unbraind/pm-cli/issues/190. Duplicate-check run (pm search locateItem/idPrefix/runtime-SDK terms) found no open canonical item for this scope, so this issue captures that lineage."
   "2026-06-10T05:11:07.148Z",codex-active-pm-cycle-20260610,"Implementation note: bundled small GH-190 SDK ergonomics fix into PR #192 because it is package-author-facing and low-risk: locateItem now defaults to the standard pm- prefix, with public SDK barrel regression coverage."

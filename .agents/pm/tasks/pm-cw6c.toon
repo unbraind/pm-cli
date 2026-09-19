@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[8]: "area:extensions","area:health",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T08:22:27.153Z"
-updated_at: "2026-07-26T17:11:29.649Z"
+updated_at: "2026-09-19T08:40:02.704Z"
 deadline: "2026-03-08T23:59:00.000Z"
+closed_at: "2026-03-06T08:39:37.248Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-classify-applied-extension-migratio
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: classify applied extension migrations."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-42oa,related,"2026-03-06T08:22:27.153Z",maintainer-agent,null
-  pm-2p6q,implements,"2026-07-26T17:11:29.466Z",null,null
+dependencies[2]:
+  - id: pm-42oa
+    kind: related
+    created_at: "2026-03-06T08:22:27.153Z"
+    author: maintainer-agent
+  - id: pm-2p6q
+    kind: implements
+    created_at: "2026-07-26T17:11:29.466Z"
 comments[5]{created_at,author,text}:
   "2026-03-06T08:22:27.153Z",maintainer-agent,Why this exists to reduce false pending migration warnings by distinguishing applied definitions in health diagnostics.
   "2026-03-06T08:22:41.163Z",maintainer-agent,"Planned changeset: update PRD and README first to classify migration status into applied/pending/failed, then adjust runHealth migration summary and warnings accordingly with targeted and full regression runs."

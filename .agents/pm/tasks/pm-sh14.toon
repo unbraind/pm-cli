@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:lifecycle",phase2,pm-cli
 created_at: "2026-04-01T19:28:03.281Z"
-updated_at: "2026-07-26T17:25:33.993Z"
+updated_at: "2026-09-19T08:41:33.645Z"
 deadline: "2026-04-08T19:28:03.281Z"
+closed_at: "2026-04-01T19:57:32.316Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 150
@@ -41,9 +42,14 @@ fixed_version: vnext
 component: extensions-runtime
 regression: true
 customer_impact: Advanced teams can enforce custom command policy gates.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-977j,parent,"2026-04-01T19:28:03.281Z",codex-agent,null
-  pm-977j,implements,"2026-07-26T17:25:33.756Z",null,null
+dependencies[2]:
+  - id: pm-977j
+    kind: parent
+    created_at: "2026-04-01T19:28:03.281Z"
+    author: codex-agent
+  - id: pm-977j
+    kind: implements
+    created_at: "2026-07-26T17:25:33.756Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T19:28:03.281Z",codex-agent,Task focuses on executing preflight override decisions prior to core gate enforcement.
   "2026-04-01T19:57:31.580Z",codex-agent,"Implemented in Phase 2 full-override rollout. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed (64 files/702 tests) with aligned coverage gates and release-readiness checks green."

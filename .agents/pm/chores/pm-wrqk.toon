@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[2]: "area:cleanup",refactor
 created_at: "2026-06-07T17:03:26.340Z"
-updated_at: "2026-09-08T05:56:56.529Z"
+updated_at: "2026-09-19T08:42:37.600Z"
+closed_at: "2026-06-07T17:03:45.606Z"
 author: maintainer-agent
 parent: pm-mpbb
 release: v2026.6.8

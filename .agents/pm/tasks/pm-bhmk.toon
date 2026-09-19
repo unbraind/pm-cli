@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[5]: "area:contracts","area:mcp",customization,profiles,schema
 created_at: "2026-06-25T04:57:09.188Z"
-updated_at: "2026-09-08T05:33:26.112Z"
+updated_at: "2026-09-19T08:39:56.049Z"
+closed_at: "2026-06-25T08:19:16.586Z"
 author: codex-pm-ecosystem-audit-20260625
 estimated_minutes: 180
 acceptance_criteria: "Profile application is exposed via pm_schema or a narrow profile MCP tool; tool schemas and command contracts include the new surface; contract snapshots, handshake tests, and negative tests are updated; pm contracts --command schema --schema-only --json remains green."

@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[7]: "area:ci","area:telemetry","area:tests",cross-platform,flake,node24,windows
 created_at: "2026-06-25T09:18:05.862Z"
-updated_at: "2026-08-17T00:47:56.964Z"
+updated_at: "2026-09-19T08:42:47.275Z"
+closed_at: "2026-06-25T10:52:50.314Z"
 author: claude-code-agent
 parent: pm-u9d0
 release: v2026.6.30

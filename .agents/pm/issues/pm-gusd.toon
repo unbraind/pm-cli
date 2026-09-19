@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[4]: "audit:2026-04-26",pm-cli,privacy,telemetry
 created_at: "2026-04-26T14:52:26.308Z"
-updated_at: "2026-07-26T17:14:56.768Z"
+updated_at: "2026-09-19T08:40:21.643Z"
 deadline: "2026-05-10T14:52:26.308Z"
+closed_at: "2026-04-26T19:48:58.394Z"
 author: audit-agent
 estimated_minutes: 60
 acceptance_criteria: "capture_level minimal: only command name and duration. redacted: current behavior. max: full payload."
@@ -16,8 +17,8 @@ release: v2026.5.1
 resolution: Implemented capture-aware telemetry payload builders and sanitization routing so capture_level now controls collected fields and redaction depth.
 expected_result: minimal capture_level records only essential command outcome metadata while redacted and max modes preserve intended detail boundaries.
 actual_result: Telemetry runtime now emits minimal payloads when configured and retains redacted/max behaviors with dedicated unit coverage and passing linked tests.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-lnq3,implements,"2026-07-26T17:14:56.538Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-lnq3,implements,"2026-07-26T17:14:56.538Z"
 comments[2]{created_at,author,text}:
   "2026-04-26T19:48:42.032Z",codex-agent,"Implemented capture_level enforcement in telemetry runtime with explicit minimal/redacted/max payload builders, capture-aware sanitization, and runtime state persistence updates; validated with targeted unit suite."
   "2026-04-26T19:48:43.547Z",codex-agent,"Verification evidence: node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts tests/unit/health-command.spec.ts (subset included in 12-file regression run; all passed)."

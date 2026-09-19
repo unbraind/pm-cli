@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:extensions",code,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-04T16:32:27.596Z"
-updated_at: "2026-07-26T17:24:07.202Z"
+updated_at: "2026-09-19T08:41:05.378Z"
 deadline: "2026-03-06T16:32:06.000Z"
+closed_at: "2026-04-05T22:42:19.481Z"
 author: cursor-maintainer
 estimated_minutes: 75
 acceptance_criteria: Invalid extension registerCommand and registerRenderer payloads fail activation deterministically with extension_activate_failed warnings and regression tests proving behavior.
@@ -40,9 +41,14 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-validate-extension-registration-han
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: validate extension registration handler types."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-b1w,parent,"2026-03-04T16:32:27.596Z",cursor-maintainer,null
-  pm-b1w,implements,"2026-07-26T17:24:06.932Z",null,null
+dependencies[2]:
+  - id: pm-b1w
+    kind: parent
+    created_at: "2026-03-04T16:32:27.596Z"
+    author: cursor-maintainer
+  - id: pm-b1w
+    kind: implements
+    created_at: "2026-07-26T17:24:06.932Z"
 comments[7]{created_at,author,text}:
   "2026-03-04T16:32:27.596Z",cursor-maintainer,This exists to close a runtime hardening gap for malformed JS extension registration calls.
   "2026-03-04T16:32:35.773Z",cursor-maintainer,Implementing deterministic runtime checks for malformed registerCommand definitions and registerRenderer handlers before adding regression assertions.

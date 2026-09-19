@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:history",code,"milestone:3",pm-cli,"priority:1",tests
 created_at: "2026-03-06T04:58:36.054Z"
-updated_at: "2026-07-26T17:13:09.562Z"
+updated_at: "2026-09-19T08:40:11.466Z"
 deadline: "2026-03-07T23:59:00.000Z"
+closed_at: "2026-03-06T05:13:31.505Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 75
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: project-management/m3-follow-up-harden-activity-when-history-direct
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M3 follow-up: harden activity when history directory is missing."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-54d,related,"2026-03-06T04:58:36.054Z",cursor-maintainer,null
-  pm-2p6q,implements,"2026-07-26T17:13:09.326Z",null,null
+dependencies[2]:
+  - id: pm-54d
+    kind: related
+    created_at: "2026-03-06T04:58:36.054Z"
+    author: cursor-maintainer
+  - id: pm-2p6q
+    kind: implements
+    created_at: "2026-07-26T17:13:09.326Z"
 comments[5]{created_at,author,text}:
   "2026-03-06T04:58:36.054Z",cursor-maintainer,"Why this exists: activity should not crash when history directory is absent; command should remain deterministic and resilient."
   "2026-03-06T04:58:48.695Z",cursor-maintainer,"Planned changeset: make activity command tolerate absent history directory by returning empty activity; add unit regression case and run linked tests plus test-all sweeps before closure."

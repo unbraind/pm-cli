@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[4]: all-source,"area:tests",coverage,lane-b
 created_at: "2026-06-14T17:58:54.522Z"
-updated_at: "2026-09-08T05:33:07.580Z"
+updated_at: "2026-09-19T08:39:36.550Z"
+closed_at: "2026-06-16T05:50:18.811Z"
 author: codex-all-source-coverage-20260614
 parent: pm-xau3
 release: v2026.6.16

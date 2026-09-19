@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:schema","area:search",pm-cli
 created_at: "2026-04-01T02:15:48.301Z"
-updated_at: "2026-07-26T17:30:57.876Z"
+updated_at: "2026-09-19T08:43:17.178Z"
 deadline: "2026-04-11T02:15:48.301Z"
+closed_at: "2026-04-01T03:02:15.341Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 320
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: extensions-loader
 regression: true
 customer_impact: extension authors can rely on full registration behavior
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-x395,parent,"2026-04-01T02:15:48.301Z",codex-agent,null
-  pm-x395,implements,"2026-07-26T17:30:57.667Z",null,null
+dependencies[2]:
+  - id: pm-x395
+    kind: parent
+    created_at: "2026-04-01T02:15:48.301Z"
+    author: codex-agent
+  - id: pm-x395
+    kind: implements
+    created_at: "2026-07-26T17:30:57.667Z"
 comments[1]{created_at,author,text}:
   "2026-04-01T02:15:48.301Z",codex-agent,Feature B from full-override plan.
 notes[1]{created_at,author,text}:

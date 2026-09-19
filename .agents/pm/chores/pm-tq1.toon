@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: install,pm-cli,release-readiness,windows
 created_at: "2026-02-17T23:37:53.836Z"
-updated_at: "2026-07-26T17:26:34.978Z"
+updated_at: "2026-09-19T08:41:44.393Z"
 deadline: "2026-02-22T23:37:53.836Z"
+closed_at: "2026-02-22T16:01:10.646Z"
 assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 180
@@ -41,11 +42,22 @@ fixed_version: archive-2026q2
 component: project-management/installer-scripts-and-update-path
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Installer scripts and update path.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-cyj,related,"2026-02-17T23:37:53.836Z",cursor-agent,null
-  pm-ote,parent,"2026-02-17T23:37:53.836Z",cursor-agent,null
-  pm-pq8,related,"2026-02-17T23:37:53.836Z",cursor-agent,null
-  pm-ote,implements,"2026-07-26T17:26:34.648Z",null,null
+dependencies[4]:
+  - id: pm-cyj
+    kind: related
+    created_at: "2026-02-17T23:37:53.836Z"
+    author: cursor-agent
+  - id: pm-ote
+    kind: parent
+    created_at: "2026-02-17T23:37:53.836Z"
+    author: cursor-agent
+  - id: pm-pq8
+    kind: related
+    created_at: "2026-02-17T23:37:53.836Z"
+    author: cursor-agent
+  - id: pm-ote
+    kind: implements
+    created_at: "2026-07-26T17:26:34.648Z"
 comments[11]{created_at,author,text}:
   "2026-02-18T00:06:54.171Z",cursor-agent,"Installer evidence: scripts/install.sh successfully installs from local file package spec with custom --prefix and verifies pm --version. PowerShell runtime (pwsh) is unavailable in this Linux environment, so install.ps1 execution is documented but not executable here."
   "2026-02-18T00:16:09.711Z",cursor-agent,README now documents npm update path and idempotent installer rerun behavior to complete install/update documentation scope.

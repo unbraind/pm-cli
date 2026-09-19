@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[4]: "area:history",bulk,compaction,ux
 created_at: "2026-06-07T10:02:30.064Z"
-updated_at: "2026-09-08T05:32:45.388Z"
+updated_at: "2026-09-19T08:40:13.658Z"
+closed_at: "2026-06-18T17:47:34.570Z"
 author: audit-data-agent
 acceptance_criteria: "- `pm history-compact --all-over <N>` compacts every stream with more than N entries, defaulting to a configurable threshold\n- OR expose `pm history-compact --ids id1,id2,...` to support scripted bulk compaction\n- Progress output shows per-item result (changed/noop/error)\n- `--dry-run` supported for the bulk path\n- Max concurrent operations bounded (sequential is fine for initial ship)"
 parent: pm-o2kc

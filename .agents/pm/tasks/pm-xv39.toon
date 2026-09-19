@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:files",audit,governance,implementation,pm-cli
 created_at: "2026-04-03T20:58:12.553Z"
-updated_at: "2026-07-26T17:29:53.678Z"
+updated_at: "2026-09-19T08:42:56.968Z"
 deadline: "2026-04-11T20:58:12.553Z"
+closed_at: "2026-04-03T21:27:00.564Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: files command supports stable append mode with reduced patch churn and passing tests/contracts.
@@ -28,9 +29,14 @@ expected_result: Acceptance criteria for Implement Issue3 files stable-append mu
 actual_result: Work completed and recorded with linked artifacts for Implement Issue3 files stable-append mutation mode.
 component: project-management/implement-issue3-files-stable-append-mutation-mo
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Implement Issue3 files stable-append mutation mode.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-6jps,parent,"2026-04-03T20:58:12.553Z",codex-agent,null
-  pm-6jps,implements,"2026-07-26T17:29:53.437Z",null,null
+dependencies[2]:
+  - id: pm-6jps
+    kind: parent
+    created_at: "2026-04-03T20:58:12.553Z"
+    author: codex-agent
+  - id: pm-6jps
+    kind: implements
+    created_at: "2026-07-26T17:29:53.437Z"
 comments[3]{created_at,author,text}:
   "2026-04-03T20:58:12.553Z",codex-agent,Task created for direct implementation of Issue #3 workstream.
   "2026-04-03T21:08:31.321Z",codex-agent,"Implemented opt-in --append-stable mode for files mutations, preserving existing linked-file order and appending new entries without full-array resorting. Kept default sorting behavior unchanged, updated CLI/completion/contracts/Pi mappings, and passed targeted suite: node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts."

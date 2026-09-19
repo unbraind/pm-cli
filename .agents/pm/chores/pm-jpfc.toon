@@ -6,7 +6,8 @@ status: closed
 priority: 0
 tags[3]: npm,pm-cli,release
 created_at: "2026-05-24T10:35:44.711Z"
-updated_at: "2026-07-26T17:17:34.475Z"
+updated_at: "2026-09-19T08:40:37.719Z"
+closed_at: "2026-05-24T11:51:17.491Z"
 author: codex-release
 parent: pm-rnpb
 release: v2026.5.27
@@ -14,8 +15,8 @@ resolution: Published @unbrained/pm-cli 2026.5.24 through the tag-driven GitHub 
 expected_result: "A signed npm package, latest npm dist-tag, GitHub Release, Sentry release metadata, and npx/bunx execution all verify for 2026.5.24."
 actual_result: Release workflow 26360300582 passed; npm latest is 2026.5.24; npx and bunx print 2026.5.24; GitHub release v2026.5.24 exists; Sentry release pm-cli@2026.5.24 exists.
 fixed_version: 2026.5.24
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-rnpb,implements,"2026-07-26T17:17:34.236Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-rnpb,implements,"2026-07-26T17:17:34.236Z"
 comments[13]{created_at,author,text}:
   "2026-05-24T10:36:39.110Z",codex-release,"Release preparation note: initial dry-run command refused to run because the working tree contained the newly created release tracker item; committing tracker setup first so the release pipeline can enforce its clean-tree guard."
   "2026-05-24T10:40:59.740Z",codex-release,"Evidence: pnpm release:pipeline:dry-run passed for 2026.5.24. Gate details included build, typecheck, docs/skills, static quality, coverage 108 files / 1623 tests / 100%, version policy, security scan, packed npx smoke, package-first dogfood 84 commands, npm pack, and release-note generation."

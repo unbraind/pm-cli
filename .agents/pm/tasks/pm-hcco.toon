@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: agent-experience,"area:cli","area:comments",compatibility,pm-cli
 created_at: "2026-04-01T11:06:08.121Z"
-updated_at: "2026-07-26T17:15:24.328Z"
+updated_at: "2026-09-19T08:40:23.721Z"
 deadline: "2026-04-03T11:06:08.121Z"
+closed_at: "2026-04-01T11:19:00.634Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 70
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: cli-comments
 regression: true
 customer_impact: Agents can reliably add progress comments during implementation loops
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-cvwi,parent,"2026-04-01T11:06:08.121Z",codex-agent,null
-  pm-cvwi,implements,"2026-07-26T17:15:24.099Z",null,null
+dependencies[2]:
+  - id: pm-cvwi
+    kind: parent
+    created_at: "2026-04-01T11:06:08.121Z"
+    author: codex-agent
+  - id: pm-cvwi
+    kind: implements
+    created_at: "2026-07-26T17:15:24.099Z"
 comments[5]{created_at,author,text}:
   "2026-04-01T11:06:08.121Z",codex-agent,Task focuses on commander argument shape and safe option fallback behavior.
   "2026-04-01T11:14:38.842Z",codex-agent,manual shorthand validation via positional text

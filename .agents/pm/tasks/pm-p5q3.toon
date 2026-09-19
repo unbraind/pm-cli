@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:schema","area:settings",code,pm-cli
 created_at: "2026-03-31T23:48:06.252Z"
-updated_at: "2026-07-26T17:22:39.093Z"
+updated_at: "2026-09-19T08:40:56.025Z"
 deadline: "2026-04-07T23:48:06.252Z"
+closed_at: "2026-04-04T21:12:03.270Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: Built-in Event/Reminder/Milestone/Meeting types are wired across type constants/registry/completion/bootstrap guidance; deterministic folder mapping is validated; existing built-ins remain backward compatible.
@@ -40,9 +41,14 @@ fixed_version: archive-2026q2
 component: core/store/settings
 regression: true
 customer_impact: Enables per-project custom workflow types
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-x2k0,parent,"2026-03-31T23:48:06.252Z",codex-agent,null
-  pm-x2k0,implements,"2026-07-26T17:22:38.822Z",null,null
+dependencies[2]:
+  - id: pm-x2k0
+    kind: parent
+    created_at: "2026-03-31T23:48:06.252Z"
+    author: codex-agent
+  - id: pm-x2k0
+    kind: implements
+    created_at: "2026-07-26T17:22:38.822Z"
 comments[5]{created_at,author,text}:
   "2026-03-31T23:48:06.252Z",codex-agent,Task created for settings schema extension.
   "2026-04-01T00:26:57.578Z",codex-agent,Implemented configurable item type schemas in settings/types plus deterministic normalization and test updates.

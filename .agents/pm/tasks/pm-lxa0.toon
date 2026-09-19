@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[8]: "area:search","area:security",code,docs,"milestone:4",pm-cli,"priority:1",tests
 created_at: "2026-03-04T21:16:24.297Z"
-updated_at: "2026-07-26T17:19:44.453Z"
+updated_at: "2026-09-19T08:40:44.609Z"
 deadline: "2026-03-06T00:00:00.000Z"
+closed_at: "2026-03-04T21:29:13.861Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
@@ -41,10 +42,18 @@ fixed_version: archive-2026q2
 component: project-management/harden-include-linked-symlink-containment
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden include-linked symlink containment.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-j7a,parent,"2026-03-04T21:16:24.297Z",maintainer-agent,null
-  pm-q35x,discovered_from,"2026-03-04T21:16:24.297Z",maintainer-agent,null
-  pm-j7a,implements,"2026-07-26T17:19:44.143Z",null,null
+dependencies[3]:
+  - id: pm-j7a
+    kind: parent
+    created_at: "2026-03-04T21:16:24.297Z"
+    author: maintainer-agent
+  - id: pm-q35x
+    kind: discovered_from
+    created_at: "2026-03-04T21:16:24.297Z"
+    author: maintainer-agent
+  - id: pm-j7a
+    kind: implements
+    created_at: "2026-07-26T17:19:44.143Z"
 comments[6]{created_at,author,text}:
   "2026-03-04T21:16:24.297Z",maintainer-agent,Follow-up security hardening for include-linked containment with symlink escape coverage
   "2026-03-04T21:16:37.174Z",maintainer-agent,"Planned changeset before edits: update PRD and README first to require symlink-resolved scope containment for include-linked reads, then implement realpath-aware checks in search linked-corpus loader and add regression tests for in-root symlink escape paths."

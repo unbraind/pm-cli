@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[3]: "area:cli",ergonomics,gh-226
 created_at: "2026-06-13T20:54:33.503Z"
-updated_at: "2026-09-08T05:33:02.791Z"
+updated_at: "2026-09-19T08:40:26.966Z"
+closed_at: "2026-06-13T21:20:48.933Z"
 author: claude-code-agent
 parent: pm-mpbb
 release: v2026.6.16

@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[5]: pm-cli,pm-data,release-readiness,runtime,tests
 created_at: "2026-03-12T22:55:06.526Z"
-updated_at: "2026-08-13T08:05:17.669Z"
+updated_at: "2026-09-19T08:41:32.753Z"
 deadline: "2026-03-13T22:55:06.526Z"
+closed_at: "2026-03-12T23:09:43.714Z"
 assignee: codex-maintainer
 author: codex-maintainer
 estimated_minutes: 120

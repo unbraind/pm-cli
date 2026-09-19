@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[3]: context-management,metadata,tracker-governance
 created_at: "2026-07-04T19:09:41.942Z"
-updated_at: "2026-08-10T12:05:49.420Z"
+updated_at: "2026-09-19T08:40:51.268Z"
+closed_at: "2026-07-04T19:20:52.951Z"
 author: maintainer-agent
 estimated_minutes: 300
 acceptance_criteria: Every active (open/in_progress) item has a non-empty body carrying its full investigation/design context; items with cross-item interactions have pm deps edges; risk/confidence set where meaningful; no closed items are mutated; spot-check confirms a fresh agent can reconstruct each item's context from pm get + pm comments + pm notes + pm files alone.

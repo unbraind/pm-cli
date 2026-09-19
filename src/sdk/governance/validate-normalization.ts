@@ -36,3 +36,11 @@ export function toMeaningfulString(value: unknown): string | undefined {
   }
   return normalized;
 }
+
+/** Collapse a linked command to the bounded preview used in validation rows. */
+export function summarizeCommandPreview(command: string): string {
+  const normalizedCommand = command.trim().replaceAll(/\s+/g, " ");
+  return normalizedCommand.length > 120
+    ? `${normalizedCommand.slice(0, 117)}...`
+    : normalizedCommand;
+}

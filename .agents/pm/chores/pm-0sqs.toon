@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[5]: "area:ci","area:docs",contributor-ux,dx,living-map
 created_at: "2026-05-31T19:45:43.014Z"
-updated_at: "2026-09-08T05:32:38.082Z"
+updated_at: "2026-09-19T08:39:13.793Z"
+closed_at: "2026-06-06T02:39:48.326Z"
 author: maintainer-agent
 acceptance_criteria: Add a single non-blocking checklist item to PULL_REQUEST_TEMPLATE.md.
 value: "The PR template lacks a reminder to update AGENTS.md/README workflow sections when new agent-facing commands/flags ship, so the agent quickstart drifts behind."

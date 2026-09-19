@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: docs,external-audit,pm-cli,verification
 created_at: "2026-04-04T12:43:42.029Z"
-updated_at: "2026-07-26T17:05:13.116Z"
+updated_at: "2026-09-19T08:39:33.484Z"
 deadline: "2026-04-12T12:43:42.029Z"
+closed_at: "2026-04-04T14:01:50.254Z"
 author: codex-agent
 estimated_minutes: 220
 acceptance_criteria: README/PRD/ARCHITECTURE/EXTENSIONS/AGENTS/CHANGELOG reflect delivered behavior; build/test/coverage and linked pm sweeps pass with evidence attached before close.
@@ -38,11 +39,11 @@ fixed_version: target-vnext
 component: docs-and-verification
 regression: true
 customer_impact: Users get accurate docs and reliable upgrade guidance for new audit-hardening behavior.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-5z9r,implements,"2026-07-26T17:05:12.837Z",null,null
-  pm-au2z,related,"2026-07-26T17:05:12.837Z",null,null
-  pm-hjrr,related,"2026-07-26T17:05:12.837Z",null,null
-  pm-vrsn,related,"2026-07-26T17:05:12.837Z",null,null
+dependencies[4]{id,kind,created_at}:
+  pm-5z9r,implements,"2026-07-26T17:05:12.837Z"
+  pm-au2z,related,"2026-07-26T17:05:12.837Z"
+  pm-hjrr,related,"2026-07-26T17:05:12.837Z"
+  pm-vrsn,related,"2026-07-26T17:05:12.837Z"
 comments[2]{created_at,author,text}:
   "2026-04-04T12:43:42.029Z",codex-agent,Created as net-new cross-cutting closure sweep item; existing closed docs items do not cover this unresolved audit delta implementation batch.
   "2026-04-04T14:01:47.958Z",codex-agent,"Updated README/PRD/docs/ARCHITECTURE/docs/EXTENSIONS/AGENTS/CHANGELOG to reflect PM-context controls, fail-on-skipped/assertions, and extension doctor guidance. Verification evidence: pnpm build; expanded regression suite (create/test/test-all/validate/extension/pi-agent/integration); node scripts/run-tests.mjs coverage (thresholds met); pm test sweeps for pm-vrsn/pm-au2z/pm-hjrr/pm-64f1 all passed."

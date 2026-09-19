@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[4]: "area:architecture","area:docs",commands,contributor-experience
 created_at: "2026-06-07T10:07:10.892Z"
-updated_at: "2026-09-08T05:32:50.837Z"
+updated_at: "2026-09-19T08:43:23.768Z"
+closed_at: "2026-06-19T13:37:15.480Z"
 author: audit-docs-tests-agent
 acceptance_criteria: "- docs/ARCHITECTURE.md has a 'Adding a new command: wiring checklist' section listing all 10+ sites\n- The coverage tactic (include-only vs include+exclude) is documented alongside the checklist\n- The checklist cross-references relevant source files so it stays findable by grep"
 parent: pm-u9d0

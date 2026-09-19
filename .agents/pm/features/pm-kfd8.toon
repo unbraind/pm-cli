@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[5]: "area:sdk",dx,extensions,living-map,testing
 created_at: "2026-05-31T19:44:25.664Z"
-updated_at: "2026-09-08T05:32:31.555Z"
+updated_at: "2026-09-19T08:40:40.439Z"
+closed_at: "2026-05-31T22:18:05.722Z"
 author: maintainer-agent
 acceptance_criteria: Add assertRegisteredHook/SearchProvider/Importer/Exporter with clear failure listings; sdk-index.spec coverage; SDK.md docs; at least one first-party package test uses them.
 value: sdk/testing.ts only has assertRegisteredCommandContract; authors testing hook/importer/search-provider registrations have no SDK assertion utility.

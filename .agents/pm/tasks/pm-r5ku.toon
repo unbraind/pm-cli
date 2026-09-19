@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:search-keyword",code,"milestone:4",pm-cli,"priority:1",tests
 created_at: "2026-02-22T14:11:09.924Z"
-updated_at: "2026-07-26T17:24:42.616Z"
+updated_at: "2026-09-19T08:41:08.628Z"
 deadline: "2026-02-25T23:59:00.000Z"
+closed_at: "2026-02-22T14:30:51.408Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
@@ -41,10 +42,18 @@ fixed_version: archive-2026q2
 component: project-management/strict-keyword-search-filter-validation-parity
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Strict keyword search filter validation parity.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-f45,parent,"2026-02-22T14:11:09.924Z",maintainer-agent,null
-  pm-pmd,related,"2026-02-22T14:11:09.924Z",maintainer-agent,null
-  pm-f45,implements,"2026-07-26T17:24:42.343Z",null,null
+dependencies[3]:
+  - id: pm-f45
+    kind: parent
+    created_at: "2026-02-22T14:11:09.924Z"
+    author: maintainer-agent
+  - id: pm-pmd
+    kind: related
+    created_at: "2026-02-22T14:11:09.924Z"
+    author: maintainer-agent
+  - id: pm-f45
+    kind: implements
+    created_at: "2026-07-26T17:24:42.343Z"
 comments[6]{created_at,author,text}:
   "2026-02-22T14:11:09.924Z",maintainer-agent,Gap found in search filter validation branch coverage and strictness.
   "2026-02-22T14:11:30.945Z",maintainer-agent,"Planned change-set: enforce strict search filter parsing parity with list (validate type enum and integer priority), then add focused unit coverage and run full pm-linked regression commands."

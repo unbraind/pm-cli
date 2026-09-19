@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[4]: "area:cli","area:schema",customization,dx
 created_at: "2026-06-07T10:08:41.495Z"
-updated_at: "2026-09-08T05:32:51.846Z"
+updated_at: "2026-09-19T08:39:42.450Z"
+closed_at: "2026-06-17T05:22:45.153Z"
 author: audit-cli-schema-agent
 acceptance_criteria: "- pm schema apply-preset agile|ops|research registers the preset types into schema/types.json\n- Idempotent: re-running on an already-preset project reports replaced=true but makes no breaking changes\n- pm schema list shows the newly registered types as custom entries\n- COMMANDS.md schema section updated with example\n- Shell completions updated with apply-preset subcommand and agile|ops|research values"
 goal: Allow any project to adopt domain vocabulary without re-running pm init

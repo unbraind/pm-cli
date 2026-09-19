@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:11.397Z"
-updated_at: "2026-07-26T17:20:25.972Z"
+updated_at: "2026-09-19T08:40:47.145Z"
 deadline: "2026-05-04T13:20:11.397Z"
+closed_at: "2026-05-03T13:55:47.655Z"
 author: codex-audit
 estimated_minutes: 240
 acceptance_criteria: Core dogfood commands work in a temporary project; source review findings are captured; changed files are linked; sandbox-safe tests and coverage are linked and run; sensitive data scan passes for tracked files and pm items.
@@ -16,15 +17,32 @@ release: v2026.5.3
 resolution: "Latest-state dogfood audit completed with targeted privacy hardening and regression coverage. Telemetry and Sentry scrubbing now redact paths, private-address literals, emails, bearer tokens, and inline credentials; default telemetry capture level is redacted. Core dogfood, SDK/extension docs, calendar, semantic search, CI/CD, health, and tracker hygiene were reviewed and documented."
 expected_result: "pm CLI is audited against current tree, verified in an isolated temporary project, privacy leaks are not introduced in tracked files/current item docs, search/calendar/extension/SDK/CI surfaces remain functional, and residual larger hygiene work is tracked without duplicate items."
 actual_result: "Implemented telemetry/Sentry redaction hardening, updated docs/changelog/tests, validated temp dogfood lifecycle, hybrid semantic search, calendar markdown output, health/vectorization, security scan, targeted tests, full test suite, and 100% coverage. Created follow-ups pm-xk39 and pm-xz1p for history-stream redaction and legacy linked-file hygiene."
-dependencies[8]{id,kind,created_at,author,source_kind}:
-  pm-rnpb,parent,"2026-05-03T13:20:11.397Z",codex-audit,null
-  pm-cakn,related,"2026-07-26T17:20:25.734Z",null,null
-  pm-ny6y,related,"2026-07-26T17:20:25.734Z",null,null
-  pm-r9ei,related,"2026-07-26T17:20:25.734Z",null,null
-  pm-rnpb,implements,"2026-07-26T17:20:25.734Z",null,null
-  pm-vhdc,related,"2026-07-26T17:20:25.734Z",null,null
-  pm-xk39,related,"2026-07-26T17:20:25.734Z",null,null
-  pm-xz1p,related,"2026-07-26T17:20:25.734Z",null,null
+dependencies[8]:
+  - id: pm-rnpb
+    kind: parent
+    created_at: "2026-05-03T13:20:11.397Z"
+    author: codex-audit
+  - id: pm-cakn
+    kind: related
+    created_at: "2026-07-26T17:20:25.734Z"
+  - id: pm-ny6y
+    kind: related
+    created_at: "2026-07-26T17:20:25.734Z"
+  - id: pm-r9ei
+    kind: related
+    created_at: "2026-07-26T17:20:25.734Z"
+  - id: pm-rnpb
+    kind: implements
+    created_at: "2026-07-26T17:20:25.734Z"
+  - id: pm-vhdc
+    kind: related
+    created_at: "2026-07-26T17:20:25.734Z"
+  - id: pm-xk39
+    kind: related
+    created_at: "2026-07-26T17:20:25.734Z"
+  - id: pm-xz1p
+    kind: related
+    created_at: "2026-07-26T17:20:25.734Z"
 comments[5]{created_at,author,text}:
   "2026-05-03T13:20:11.397Z",codex-audit,"Duplicate check evidence inherited from parent lineage: current open/in-progress lists were empty and related search results were closed prior audits,so this task tracks the new latest-state execution."
   "2026-05-03T13:25:10.236Z",codex-audit,"Dogfood evidence: temporary project at /tmp/pm-cli-dogfood-6L7tIo used sandboxed PM_PATH/PM_GLOBAL_PATH and exercised init/create hierarchy/claim/update/append/comments/notes/learnings/files/docs/test add/test run/search/calendar/context/health/validate/close/release. All commands passed; close emitted expected warn-mode readiness warning for intentionally omitted resolution metadata."

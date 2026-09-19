@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[7]: "area:search",code,docs,"milestone:4",pm-cli,"priority:1",tests
 created_at: "2026-03-08T11:09:48.873Z"
-updated_at: "2026-07-26T17:05:42.445Z"
+updated_at: "2026-09-19T08:39:35.625Z"
 deadline: "2026-03-10T23:59:00.000Z"
+closed_at: "2026-03-08T11:26:27.838Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 75
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: search
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M4 follow-up: semantic/hybrid search limit=0 deterministic empty result."
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-f45,parent,"2026-03-08T11:09:48.873Z",maintainer-agent,null
-  pm-f45,implements,"2026-07-26T17:05:42.221Z",null,null
+dependencies[2]:
+  - id: pm-f45
+    kind: parent
+    created_at: "2026-03-08T11:09:48.873Z"
+    author: maintainer-agent
+  - id: pm-f45
+    kind: implements
+    created_at: "2026-07-26T17:05:42.221Z"
 comments[4]{created_at,author,text}:
   "2026-03-08T11:09:48.873Z",maintainer-agent,"Why this exists: semantic/hybrid --limit 0 should be deterministic empty output instead of runtime vector limit errors."
   "2026-03-08T11:09:58.857Z",maintainer-agent,"Planned change-set: docs-first note for search limit=0 semantics, then implement semantic/hybrid early return in runSearch and add regression tests asserting no embedding/vector calls when limit is zero."

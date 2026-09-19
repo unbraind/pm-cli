@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[4]: dependabot,github-alert,security,undici
 created_at: "2026-03-12T22:34:21.376Z"
-updated_at: "2026-08-13T08:04:34.606Z"
+updated_at: "2026-09-19T08:39:32.089Z"
 deadline: "2026-03-26T22:34:21.376Z"
+closed_at: "2026-04-03T17:45:42.547Z"
 author: codex-agent
 estimated_minutes: 30
 acceptance_criteria: Alert is resolved by an upgrade or explicitly dismissed with recorded rationale and verification.

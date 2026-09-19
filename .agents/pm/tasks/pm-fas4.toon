@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:stdin","area:terminal",code,compatibility,pm-cli
 created_at: "2026-04-01T11:59:45.450Z"
-updated_at: "2026-07-26T17:13:42.834Z"
+updated_at: "2026-09-19T08:40:15.024Z"
 deadline: "2026-04-08T11:59:45.450Z"
+closed_at: "2026-04-01T12:22:29.581Z"
 assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 120
@@ -41,9 +42,14 @@ fixed_version: archive-2026q2
 component: cli/stdin
 regression: true
 customer_impact: Users receive immediate guidance instead of apparent hangs.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-olxl,parent,"2026-04-01T11:59:45.450Z",cursor-agent,null
-  pm-olxl,implements,"2026-07-26T17:13:42.585Z",null,null
+dependencies[2]:
+  - id: pm-olxl
+    kind: parent
+    created_at: "2026-04-01T11:59:45.450Z"
+    author: cursor-agent
+  - id: pm-olxl
+    kind: implements
+    created_at: "2026-07-26T17:13:42.585Z"
 comments[2]{created_at,author,text}:
   "2026-04-01T11:59:45.450Z",cursor-agent,Task corresponds to plan workstream A.
   "2026-04-01T12:02:23.059Z",cursor-agent,"Implemented stdin fail-safe behavior: src/core/item/parse.ts now provides actionable Ctrl+D/Ctrl+Z guidance for stdin token errors, and src/cli/commands/beads.ts now fails fast for --file - when stdin is interactive TTY instead of waiting for EOF. Added regressions in tests/unit/parse-utils.spec.ts and tests/unit/beads-command.spec.ts. Evidence: node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts tests/unit/beads-command.spec.ts passed (30/30)."

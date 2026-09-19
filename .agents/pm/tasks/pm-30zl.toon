@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: agents,cli,docs,help,pm-cli
 created_at: "2026-03-12T22:38:16.043Z"
-updated_at: "2026-08-13T08:04:30.313Z"
+updated_at: "2026-09-19T08:39:20.857Z"
 deadline: "2026-03-13T22:38:16.043Z"
+closed_at: "2026-03-12T22:49:46.898Z"
 assignee: codex-maintainer
 author: codex-maintainer
 estimated_minutes: 60

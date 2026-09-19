@@ -6,7 +6,8 @@ status: closed
 priority: 3
 tags[4]: "area:history","area:storage",concurrency,durability
 created_at: "2026-06-07T10:03:03.472Z"
-updated_at: "2026-07-26T17:29:56.549Z"
+updated_at: "2026-09-19T08:42:58.470Z"
+closed_at: "2026-06-19T18:27:46.969Z"
 author: audit-data-agent
 acceptance_criteria: "- Document the invariant explicitly: history writes are only safe when the per-item lock is held\n- Add a dev-time assertion or eslint rule that `appendHistoryEntry` is not called outside item-store mutation context\n- OR replace appendLineAtomic with a write-temp+rename atomic approach for history JSONL (safer, slightly more expensive)"
 parent: pm-o2kc
@@ -16,8 +17,8 @@ release: v2026.6.20
 resolution: "Documented the concurrency invariant (AC option 1). appendLineAtomic opens with O_APPEND so each write(2) atomically positions at EOF; the common case hands the whole line to the kernel in one write(2) which mainstream filesystems commit atomically, keeping small concurrent multi-process appends (telemetry + OTLP queues) line-coherent without an external lock. The guarantee only weakens for multi-KiB single records; the only caller that produces those (history JSONL) always holds the per-item store lock, so those appends are serialized regardless."
 expected_result: The lock/atomicity invariant for history (and queue) appends is explicit so future callers know large concurrent appends need an item lock.
 actual_result: appendLineAtomic docstring now states the O_APPEND + single-write atomicity and the per-item-lock requirement for large lines; no behavioral change needed because all large-line callers already hold the lock; 100% coverage retained.
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-o2kc,implements,"2026-07-26T17:29:56.297Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-o2kc,implements,"2026-07-26T17:29:56.297Z"
 files[1]{path,scope,note}:
   src/core/fs/fs-utils.ts,project,Document appendLineAtomic O_APPEND single-write atomicity + per-item-lock invariant for large lines
 tests[1]{command,scope}:

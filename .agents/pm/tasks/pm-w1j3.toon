@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:comments",external-audit,implementation,pm-cli
 created_at: "2026-04-04T22:38:14.047Z"
-updated_at: "2026-07-26T17:28:25.785Z"
+updated_at: "2026-09-19T08:42:25.040Z"
 deadline: "2026-04-10T22:38:14.047Z"
+closed_at: "2026-04-07T08:38:33.900Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "comments-audit command returns deterministic grouped comment snapshots with status/type/assignee filters and latest limit, without modifying existing comments behavior."
@@ -22,9 +23,9 @@ release: v2026.5.1
 resolution: Resolution metadata backfilled during governance normalization; implementation evidence is already captured in linked comments and artifacts.
 expected_result: Closed item includes explicit resolution/expected_result/actual_result metadata for deterministic validation and audit workflows.
 actual_result: Resolution fields were previously missing and are now backfilled as part of governance hardening.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-ayyt,related,"2026-07-26T17:28:25.501Z",null,null
-  pm-o7be,implements,"2026-07-26T17:28:25.501Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-ayyt,related,"2026-07-26T17:28:25.501Z"
+  pm-o7be,implements,"2026-07-26T17:28:25.501Z"
 comments[13]{created_at,author,text}:
   "2026-04-04T22:38:14.047Z",codex-agent,Task created for direct implementation of comments-audit command and integration parity updates.
   "2026-04-04T22:48:16.609Z",codex-agent,"Implemented additive comments-audit surface with status/type/assignee filters, --limit-items, and --latest snapshots. Wired main/completion/contracts/Pi and added runCommentsAudit unit coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts passed."

@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[3]: agent-ux,"area:cli",never-block
 created_at: "2026-06-07T17:03:25.100Z"
-updated_at: "2026-09-08T05:32:54.680Z"
+updated_at: "2026-09-19T08:40:17.829Z"
+closed_at: "2026-06-07T17:03:43.626Z"
 author: maintainer-agent
 parent: pm-mpbb
 release: v2026.6.8

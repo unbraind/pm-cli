@@ -6,7 +6,8 @@ status: closed
 priority: 1
 tags[5]: "area:search","area:semantic",embedding,migration,ux
 created_at: "2026-06-07T10:04:13.999Z"
-updated_at: "2026-09-08T05:32:48.886Z"
+updated_at: "2026-09-19T08:42:38.540Z"
+closed_at: "2026-06-09T22:47:14.254Z"
 author: audit-data-agent
 acceptance_criteria: "- `pm health` surfaces a specific warning when `embedding_identity_changed` is detected (not just advisory)\n- `pm reindex` detects the identity mismatch and prompts/warns: 'Provider or model has changed since last index. Run pm reindex --mode semantic to rebuild.'\n- OR add `pm reindex --auto-migrate` that detects the mismatch and runs automatically\n- Document the provider-switch workflow in COMMANDS.md / AGENT_GUIDE"
 parent: pm-ydp6

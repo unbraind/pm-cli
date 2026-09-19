@@ -6,7 +6,8 @@ status: closed
 priority: 2
 tags[5]: "area:packages","area:sdk","area:search",dx,living-map
 created_at: "2026-05-31T19:44:24.904Z"
-updated_at: "2026-09-08T05:32:31.074Z"
+updated_at: "2026-09-19T08:39:57.715Z"
+closed_at: "2026-06-01T19:57:28.312Z"
 author: maintainer-agent
 acceptance_criteria: Manifest gains search capability; activate() registers an Ollama/local SearchProvider (and optionally a vector-store adapter); assertion-helper test; SDK.md search-provider example references it.
 value: pm-search-advanced is the natural owner of registerSearchProvider but only uses commands+schema; the search capability has zero first-party exemplar for authors building custom embeddings/vector stores.
