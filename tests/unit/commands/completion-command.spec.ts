@@ -1413,19 +1413,19 @@ describe("runCompletion", () => {
     );
     expect(fishResult.script).not.toContain("function __pm_type_choices");
     expect(fishResult.script).toContain(
-      "-l alpha-segment -d 'Runtime schema field flag' -r",
+      "-l 'alpha-segment' -d 'Runtime schema field flag' -r",
     );
     expect(fishResult.script).toContain(
-      "-l customer-segment -d 'Runtime schema field flag' -r",
+      "-l 'customer-segment' -d 'Runtime schema field flag' -r",
     );
     expect(fishResult.script).toContain(
-      "complete -c pm -n '__pm_history_operation context' -l context-segment -d 'Runtime schema field flag' -r",
+      "complete -c pm -n '__pm_history_operation context' -l 'context-segment' -d 'Runtime schema field flag' -r",
     );
     expect(fishResult.script).not.toContain(
-      "__fish_seen_subcommand_from context' -l context-segment",
+      "__fish_seen_subcommand_from context' -l 'context-segment'",
     );
     expect(fishResult.script).not.toContain(
-      "__fish_seen_subcommand_from ctx' -l context-segment",
+      "__fish_seen_subcommand_from ctx' -l 'context-segment'",
     );
   });
 
@@ -1450,7 +1450,7 @@ describe("runCompletion", () => {
     expect(
       (
         fishResult.script.match(
-          /-l customer-segment -d 'Runtime schema field flag' -r/g,
+          /-l 'customer-segment' -d 'Runtime schema field flag' -r/g,
         ) ?? []
       ).length,
     ).toBe(1);
@@ -1528,7 +1528,7 @@ describe("pm completion CLI command", () => {
       const fishResult = context.runCli(["completion", "fish"]);
       expect(fishResult.code).toBe(0);
       expect(fishResult.stdout).toContain(
-        "-l customer-segment -d 'Runtime schema field flag' -r",
+        "-l 'customer-segment' -d 'Runtime schema field flag' -r",
       );
     });
   });

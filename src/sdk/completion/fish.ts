@@ -9,6 +9,16 @@ import { SCAFFOLD_CAPABILITIES } from "../extension/scaffold.js";
 import type { CompletionRuntimeConfig } from "./shared.js";
 import { ALL_COMMANDS,ATTEST_INVOCATIONS,COMMAND_COMPLETION_DESCRIPTIONS,EXTENSION_LIFECYCLE_ACTIONS,GLOBAL_COMPLETION_INLINE_PATTERNS,GLOBAL_COMPLETION_SWITCH_PATTERNS,GLOBAL_COMPLETION_VALUE_PATTERNS,GUIDE_TOPIC_CHOICES,HIDDEN_COMMAND_ALIASES,NAMESPACE_NOUNS,NAMESPACE_PREFIXES,PACKAGE_LIFECYCLE_ACTIONS,RESTORE_INVOCATIONS,SCHEMA_SUBCOMMAND_CHOICES,completionNamespaceLeaves,completionStatusValues,completionTypeValues,joinCompletionValues,normalizeRuntimeCompletionFlags } from "./shared.js";
 
+/** Escape literal data inside a Fish single-quoted source argument. */
+function escapeFishSource(value: string): string {
+  return value.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
+}
+
+/** Protect static choices from completion-time expansion and source parsing. */
+function escapeFishChoices(value: string): string {
+  return escapeFishSource(value.replace(/([^a-zA-Z0-9_:./\s-])/gu, "\\$1"));
+}
+
 const FISH_COMMAND_DESCRIPTION_OVERRIDES = new Map<string, string>([
   ["calendar", "Show deadline/reminder calendar views"],
   ["schema", "Inspect and manage runtime schema"],
@@ -54,7 +64,7 @@ function renderFishRuntimeFieldFlagSpecs(
       : "__fish_seen_subcommand_from";
     for (const flag of normalizedFlags) {
       lines.push(
-        `complete -c pm -n '${predicate} ${command}' -l ${flag} -d 'Runtime schema field flag' -r`,
+        `complete -c pm -n '${predicate} ${command}' -l '${escapeFishSource(flag)}' -d 'Runtime schema field flag' -r`,
       );
     }
   }
@@ -68,10 +78,10 @@ function renderFishDynamicChoiceResolver(
   fallback: string,
 ): string {
   const envKind = kind.toUpperCase();
-  const escapedFallback = fallback.replaceAll("'", "\\'");
+  const escapedFallback = escapeFishSource(fallback);
   return `
 function __pm_${kind}_choices
-  set -l now (date +%s ^/dev/null)
+  set -l now (date +%s 2>/dev/null)
   if test -z "$now"
     set now 0
   end
@@ -86,7 +96,7 @@ function __pm_${kind}_choices
       return
     end
   end
-  set -l resolved (pm ${command} ^/dev/null)
+  set -l resolved (pm ${command} 2>/dev/null)
   if test (count $resolved) -eq 0
     set resolved '${escapedFallback}'
   end
@@ -103,7 +113,7 @@ function renderFishDynamicTagResolver(useEagerTagExpansion: boolean): string {
     ? ""
     : `
 function __pm_tag_choices
-  set -l now (date +%s ^/dev/null)
+  set -l now (date +%s 2>/dev/null)
   if test -z "$now"
     set now 0
   end
@@ -118,7 +128,7 @@ function __pm_tag_choices
       return
     end
   end
-  set -l resolved (pm completion-tags ^/dev/null)
+  set -l resolved (pm completion-tags 2>/dev/null)
   set -gx PM_COMPLETION_TAG_CACHE $resolved
   set -gx PM_COMPLETION_TAG_CACHE_TS $now
   printf '%s\n' $resolved
@@ -144,13 +154,13 @@ export function generateFishScript(
   const statusFallbackChoices = completionStatusValues(runtime);
   const typeChoices = useDynamicTypeExpansion
     ? "(__pm_type_choices)"
-    : typeFallbackChoices;
+    : escapeFishChoices(typeFallbackChoices);
   const statusChoices = "(__pm_status_choices)";
   const guideTopicChoices = GUIDE_TOPIC_CHOICES;
   const tagChoices = joinCompletionValues(tags);
   const useEagerTagExpansion = eagerTagExpansion || tags.length > 0;
   const fishTagChoices = useEagerTagExpansion
-    ? `'${tagChoices}'`
+    ? `'${escapeFishChoices(tagChoices)}'`
     : "'(__pm_tag_choices)'";
   const fishListRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(
     listCommandNames,

@@ -6,7 +6,7 @@ import { itOnPosix } from "../../../helpers/platform.js";
 
 describe("reviewed SDK input boundaries", () => {
   itOnPosix("keeps static and dynamic Bash completion values inert", () => {
-    const unsafe = '$(printf INJECTED >&2) `printf BACKTICK >&2` ${PM_SECRET} "quoted" back\\slash';
+    const unsafe = '$(printf INJECTED >&2) `printf BACKTICK >&2` ${PM_SECRET} "quoted" back\\slash 🚀';
     for (const mode of ["type", "tag", "flag", "dynamic-type", "dynamic-tag", "status"]) {
       const script = runCompletion(
         "bash",
@@ -28,6 +28,26 @@ describe("reviewed SDK input boundaries", () => {
       expect(result.stdout, mode).toContain("${PM_SECRET}");
       expect(result.stdout, mode).toContain('"quoted"');
       expect(result.stdout, mode).toContain("back\\slash");
+      expect(result.stdout, mode).toContain("🚀");
+    }
+  });
+
+  itOnPosix("keeps Zsh static choice specifications inside their shell argument", () => {
+    const unsafe = "safe'; printf INJECTED >&2; : '$(printf SUBSTITUTED >&2)";
+    const script = runCompletion("zsh", [unsafe], [unsafe]).script;
+    const specs = script.split("\n").filter((line) => /--(?:filter-)?(?:type|tags?)\[[^\]]*\]:\(/.test(line));
+    expect(specs.length).toBeGreaterThan(10);
+    for (const spec of specs) {
+      // These generated arguments use POSIX single-quote syntax, so exercise
+      // the source boundary without requiring Zsh on every CI runner.
+      const result = spawnSync("bash", ["--noprofile", "--norc"], {
+        encoding: "utf8",
+        input: `args=( ${spec.trim().replace(/\\$/, "")} )\n[[ \${#args[@]} == 1 ]] || exit 2\naction="\${args[0]#*]:}"\neval "values=( \${action:1:\${#action}-2} )"\nprintf '%s ' "\${values[@]}"\n`,
+      });
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout.trim().split("\n")).toHaveLength(1);
+      expect(result.stdout.trim()).toBe(unsafe);
     }
   });
 

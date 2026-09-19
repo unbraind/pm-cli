@@ -9,6 +9,11 @@ import { SCAFFOLD_CAPABILITIES } from "../extension/scaffold.js";
 import type { CompletionRuntimeConfig } from "./shared.js";
 import { ATTEST_INVOCATIONS,COMMAND_COMPLETION_DESCRIPTIONS,EXTENSION_LIFECYCLE_ACTIONS,GLOBAL_COMPLETION_INLINE_PATTERNS,GLOBAL_COMPLETION_SWITCH_PATTERNS,GLOBAL_COMPLETION_VALUE_PATTERNS,GUIDE_TOPIC_CHOICES,HIDDEN_COMMAND_ALIASES,NAMESPACE_NOUNS,PACKAGE_LIFECYCLE_ACTIONS,RESTORE_INVOCATIONS,SCHEMA_SUBCOMMAND_CHOICES,completionNamespaceLeaves,completionStatusValues,completionTypeValues,joinCompletionValues,normalizeRuntimeCompletionFlags,shellDoubleQuote } from "./shared.js";
 
+/** Escape static choice tokens for _arguments evaluation, then for the surrounding single-quoted shell source. */
+function escapeZshStaticChoices(value: string): string {
+  return value.replace(/([^a-zA-Z0-9_./\s-])/gu, "\\$1").replaceAll("'", "'\\''");
+}
+
 /** Render normalized runtime field flags as value-taking Zsh argument specifications, or no text when none exist. */
 function renderZshRuntimeFieldFlagSpecs(
   runtimeFlags: string[] | undefined,
@@ -17,7 +22,7 @@ function renderZshRuntimeFieldFlagSpecs(
   if (normalized.length === 0) {
     return "";
   }
-  return `${normalized.map((flag) => `            '${flag}[Runtime schema field flag]:value' \\`).join("\n")}\n`;
+  return `${normalized.map((flag) => `            '${escapeZshStaticChoices(flag)}[Runtime schema field flag]:value' \\`).join("\n")}\n`;
 }
 
 /** Join Zsh argument specifications with explicit continuation control so adjacent command blocks remain syntactically separate. */
@@ -241,13 +246,13 @@ export function generateZshScript(
   const statusFallbackChoices = completionStatusValues(runtime);
   const typeChoices = useDynamicTypeExpansion
     ? '${(f)"$(_pm_type_choices)"}'
-    : typeFallbackChoices;
+    : escapeZshStaticChoices(typeFallbackChoices);
   const statusChoices = '${(f)"$(_pm_status_choices)"}';
   const guideTopicChoices = GUIDE_TOPIC_CHOICES;
   const tagChoices = joinCompletionValues(tags);
   const useEagerTagExpansion = eagerTagExpansion || tags.length > 0;
   const zshTagChoices = useEagerTagExpansion
-    ? tagChoices
+    ? escapeZshStaticChoices(tagChoices)
     : '${(f)"$(_pm_tag_choices)"}';
   const zshListRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(
     runtime.command_flags?.list,

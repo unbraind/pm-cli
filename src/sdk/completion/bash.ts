@@ -82,7 +82,7 @@ export function generateBashScript(
   // Note: "${...}" inside regular (non-template) strings are literal characters,
   // not JS interpolation. Only backtick template literals interpolate ${...}.
   const compgen = (flags: string): string =>
-    `$(compgen -W "${shellDoubleQuote(flags.replace(/([^a-zA-Z0-9_:./\s-])/g, "\\$1"))}" -- "$cur")`;
+    `$(compgen -W "${shellDoubleQuote(flags.replace(/([^a-zA-Z0-9_:./\s-])/gu, "\\$1"))}" -- "$cur")`;
   return [
     "# bash completion for pm",
     "# Source this file or add 'eval \"$(pm completion bash)\"' to ~/.bashrc",

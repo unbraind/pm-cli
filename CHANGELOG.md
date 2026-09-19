@@ -10,6 +10,7 @@
 
 ### Fixed
 
+- Preserve Unicode and isolate completion data in Bash, Zsh and Fish ([pm-cimph7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cimph7.toon))
 - Harden Bash completion literals and large-workspace search normalization ([pm-ul5lph](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ul5lph.toon))
 
 ### Other
