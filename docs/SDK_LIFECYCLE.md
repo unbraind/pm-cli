@@ -1,8 +1,9 @@
 # SDK Lifecycle Policy
 
 Tracked by [pm-z5pmf8](../.agents/pm/issues/pm-z5pmf8.toon),
-[pm-xm0id4](../.agents/pm/issues/pm-xm0id4.toon), and
-[pm-2ew0w3](../.agents/pm/issues/pm-2ew0w3.toon).
+[pm-xm0id4](../.agents/pm/issues/pm-xm0id4.toon),
+[pm-2ew0w3](../.agents/pm/issues/pm-2ew0w3.toon), and
+[pm-scbr0s](../.agents/pm/issues/pm-scbr0s.toon).
 
 The public SDK owns lifecycle transactions and policy. CLI and MCP operations
 delegate to SDK modules, so an item does not gain different storage,
@@ -38,6 +39,10 @@ facade over command implementations.
 Package authors can import these operations from `@unbrained/pm-cli/sdk`
 without importing CLI modules or spawning the executable. Existing CLI import
 paths remain source-compatible while integrations migrate.
+
+See [Concurrent Workspace Mutations](WORKSPACE_CONCURRENCY.md) for settings
+snapshot reconciliation, schema publication, session locks, and checkpoint
+collision semantics shared by these operations.
 
 ## Relationship Identity
 
@@ -93,6 +98,15 @@ context reconstruction after both endpoints are terminal.
 An embedded SDK consumer can explicitly choose `orderingEdges: "remove"` for
 a domain where predecessor facts are intentionally ephemeral. The CLI and MCP
 do not expose that override and use the durable default.
+
+Explicit removal returns `closed_removed_predecessors:<item>:<ids>` for the
+complete removed row set and `closed_removed_predecessors_count:<item>:<n>`
+for its cardinality. The count is the number of dependency rows, including
+distinct provenance rows that reference the same item. Clearing a transient
+`blocked_by` scalar is reported separately as
+`closed_cleared_blocked_by:<item>:<blocker>` and does not inflate that count.
+Both removal and its receipts use the same selected rows; other relationship
+kinds survive unchanged.
 
 ```ts
 import {

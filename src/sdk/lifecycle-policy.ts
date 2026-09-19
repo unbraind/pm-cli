@@ -209,8 +209,9 @@ export function applyTerminalOrderingPolicy(
     changedFields.push("blocked_reason");
   }
   if (policy.orderingEdges === "remove" && predecessorEdges.length > 0) {
+    const removed = new Set(predecessorEdges);
     const retained = dependencies.filter(
-      (dependency) => dependency.kind !== "blocked_by",
+      (dependency) => !removed.has(dependency),
     );
     if (retained.length > 0) {
       metadata.dependencies = retained;
@@ -218,6 +219,23 @@ export function applyTerminalOrderingPolicy(
       delete metadata.dependencies;
     }
     changedFields.push("dependencies");
+  }
+
+  if (policy.orderingEdges === "remove") {
+    return {
+      changedFields,
+      warnings: [
+        ...(previousBlockedBy
+          ? [`closed_cleared_blocked_by:${metadata.id}:${previousBlockedBy}`]
+          : []),
+        ...(predecessorEdges.length > 0
+          ? [
+              `closed_removed_predecessors:${metadata.id}:${predecessorEdges.map((edge) => edge.id).join(",")}`,
+              `closed_removed_predecessors_count:${metadata.id}:${predecessorEdges.length}`,
+            ]
+          : []),
+      ],
+    };
   }
 
   const blockerIds = [
@@ -232,9 +250,7 @@ export function applyTerminalOrderingPolicy(
   return {
     changedFields,
     warnings: [
-      policy.orderingEdges === "preserve"
-        ? `closed_preserved_predecessors:${metadata.id}:${blockerIds.join(",")}`
-        : `closed_removed_predecessors:${metadata.id}:${blockerIds.join(",")}`,
+      `closed_preserved_predecessors:${metadata.id}:${blockerIds.join(",")}`,
     ],
   };
 }

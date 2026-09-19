@@ -14,7 +14,8 @@ import {
 } from "../shared/constants.js";
 import { resolveAuthor } from "../shared/author.js";
 import { readFileIfExists } from "../fs/fs-utils.js";
-import { writeWorkspaceJsonWithHistory } from "../history/workspace-history.js";
+import { mutateWorkspaceJsonWithHistory } from "../history/workspace-history.js";
+import { reconcileSettingsSnapshot } from "./settings-concurrency.js";
 import {
   DEFAULT_RUNTIME_SCHEMA_FILE_PATHS,
   ensureRuntimeSchemaFileScaffold,
@@ -58,6 +59,8 @@ const MAX_VECTOR_STORE_COLLECTION_NAME_LENGTH = 128;
 const DUPLICATE_DETECTION_MODES = new Set(["off", "advisory", "strict"]);
 
 interface SettingsPersistSourceSnapshot {
+  /** Last sparse state proposed by this instance, independent of peer edits. */
+  persisted_settings: unknown;
   source_settings: ParsedSettings;
   has_source_item_type_definitions: boolean;
   source_item_type_definitions: ItemTypeDefinition[];
@@ -401,6 +404,7 @@ function buildSettingsPersistSourceSnapshot(
   const sourceFields = cloneOptionalArray(sourceSchema?.fields);
   const sourceTypeWorkflows = cloneOptionalArray(sourceSchema?.type_workflows);
   return {
+    persisted_settings: structuredClone(parsedSettings),
     source_settings: structuredClone(parsedSettings),
     has_source_item_type_definitions: Array.isArray(
       parsedSettings.item_types?.definitions,
@@ -2009,27 +2013,49 @@ export async function readSettings(pmRoot: string): Promise<PmSettings> {
   return (await readSettingsWithMetadata(pmRoot)).settings;
 }
 
-/** Implements write settings for the public runtime surface of this module. */
+/**
+ * Persist edits to a readSettings snapshot under the workspace-history lock.
+ * Disjoint concurrent edits survive; overlapping stale edits fail before any
+ * write. Caller-constructed settings without a read snapshot replace the whole
+ * document. History append failures compensate the document before unlocking.
+ */
 export async function writeSettings(
   pmRoot: string,
   settings: PmSettings,
   op = SETTINGS_WRITE_OP,
 ): Promise<void> {
   const settingsPath = getSettingsPath(pmRoot);
+  const source = getSettingsPersistSourceSnapshot(settings);
   const afterRaw = serializeSettings(settings, {
-    persist_source: getSettingsPersistSourceSnapshot(settings),
+    persist_source: source,
   });
+  const proposed: unknown = JSON.parse(afterRaw);
   try {
-    await writeWorkspaceJsonWithHistory({
+    await mutateWorkspaceJsonWithHistory({
       pmRoot,
       filePath: settingsPath,
-      raw: afterRaw,
+      mutate: (beforeRaw) => ({
+        raw: source
+          ? `${JSON.stringify(orderObject(reconcileSettingsSnapshot(
+              source.persisted_settings,
+              proposed,
+              beforeRaw === null ? null : JSON.parse(beforeRaw) as unknown,
+            ) as Record<string, unknown>, SETTINGS_TOP_LEVEL_KEY_ORDER), null, 2)}\n`
+          : afterRaw,
+        result: undefined,
+      }),
       op,
       author: resolveAuthor(undefined, settings.author_default),
       lockTtlSeconds: settings.locks.ttl_seconds,
       lockWaitMs: settings.locks.wait_ms,
       recordCreation: false,
     });
+    if (source) {
+      attachSettingsPersistSourceSnapshot(settings, {
+        ...source,
+        persisted_settings: structuredClone(proposed),
+      });
+    }
     await runActiveOnWriteHooks({
       path: settingsPath,
       scope: "project",

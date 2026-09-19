@@ -3,9 +3,10 @@
  *
  * Provides mutation checkpoint primitives for reversible multi-item operations.
  */
-import { mkdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { pathExists, writeFileAtomic } from "../fs/fs-utils.js";
+import { pathExists, readFileIfExists } from "../fs/fs-utils.js";
+import { createFileAtomic } from "../fs/atomic-create.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { toErrorMessage } from "../shared/primitives.js";
@@ -117,17 +118,21 @@ export function checkpointFilePath(
   );
 }
 
-/** Implements write mutation checkpoint for the public runtime surface of this module. */
+/** Publish immutable checkpoint bytes once, including through path aliases; identical retries succeed and conflicting IDs preserve the original evidence. */
 export async function writeMutationCheckpoint(
   pmRoot: string,
   subdir: string,
   checkpointId: string,
   payload: unknown,
 ): Promise<string> {
-  const checkpointDir = checkpointDirectoryPath(pmRoot, subdir);
-  await mkdir(checkpointDir, { recursive: true });
   const filePath = checkpointFilePath(pmRoot, subdir, checkpointId);
-  await writeFileAtomic(filePath, `${JSON.stringify(payload, null, 2)}\n`);
+  const raw = `${JSON.stringify(payload, null, 2)}\n`;
+  if (!(await createFileAtomic(filePath, raw)) && (await readFileIfExists(filePath)) !== raw) {
+    throw new PmCliError(
+      `Checkpoint ${checkpointId} already exists with different contents; use a new checkpoint ID.`,
+      EXIT_CODE.CONFLICT,
+    );
+  }
   return filePath;
 }
 

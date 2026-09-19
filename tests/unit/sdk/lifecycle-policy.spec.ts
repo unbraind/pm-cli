@@ -15,6 +15,26 @@ import {
 import type { ItemMetadata } from "../../../src/types/index.js";
 
 describe("SDK terminal lifecycle policy", () => {
+  it("counts every removed predecessor row without counting transient scalar state", () => {
+    const metadata: ItemMetadata = {
+      id: "pm-dependent", title: "Dependent", type: "Task", status: "open",
+      blocked_by: "pm-transient",
+      dependencies: [
+        { id: "pm-a", kind: "blocked_by" },
+        { id: "pm-b", kind: "blocked_by" },
+        { id: "pm-c", kind: "blocked_by" },
+        { id: "pm-evidence", kind: "verifies" },
+      ],
+    };
+    const result = applyTerminalOrderingPolicy(metadata, { orderingEdges: "remove" });
+    expect(result.warnings).toEqual([
+      "closed_cleared_blocked_by:pm-dependent:pm-transient",
+      "closed_removed_predecessors:pm-dependent:pm-a,pm-b,pm-c",
+      "closed_removed_predecessors_count:pm-dependent:3",
+    ]);
+    expect(metadata.dependencies).toEqual([{ id: "pm-evidence", kind: "verifies" }]);
+  });
+
   it("keeps the compilable SDK lifecycle example executable", () => {
     expect(exampleReason.source).toBe("message");
     expect(exampleOrdering.changedFields).not.toContain("dependencies");
@@ -137,7 +157,7 @@ describe("SDK terminal lifecycle policy", () => {
       applyTerminalOrderingPolicy(metadata, { orderingEdges: "remove" }),
     ).toEqual({
       changedFields: ["dependencies"],
-      warnings: ["closed_removed_predecessors:pm-dependent:pm-a"],
+      warnings: ["closed_removed_predecessors:pm-dependent:pm-a", "closed_removed_predecessors_count:pm-dependent:1"],
     });
     expect(metadata.dependencies).toEqual([
       { id: "pm-related", kind: "related" },
@@ -159,12 +179,12 @@ describe("SDK terminal lifecycle policy", () => {
       applyTerminalOrderingPolicy(metadata, { orderingEdges: "remove" }),
     ).toEqual({
       changedFields: ["dependencies"],
-      warnings: ["closed_removed_predecessors:pm-dependent:pm-a"],
+      warnings: ["closed_removed_predecessors:pm-dependent:pm-a", "closed_removed_predecessors_count:pm-dependent:1"],
     });
     expect(metadata.dependencies).toBeUndefined();
   });
 
-  it("is a no-op for items without blocked-state signals", () => {
+  it.each(["preserve", "remove"] as const)("is a no-op for items without blocked-state signals under %s", (orderingEdges) => {
     const metadata: ItemMetadata = {
       id: "pm-independent",
       title: "Independent",
@@ -174,7 +194,7 @@ describe("SDK terminal lifecycle policy", () => {
       updated_at: "2026-01-01T00:00:00.000Z",
     };
     expect(
-      applyTerminalOrderingPolicy(metadata, { orderingEdges: "preserve" }),
+      applyTerminalOrderingPolicy(metadata, { orderingEdges }),
     ).toEqual({ changedFields: [], warnings: [] });
   });
 });
