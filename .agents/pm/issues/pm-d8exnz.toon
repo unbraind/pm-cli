@@ -1,0 +1,54 @@
+id: pm-d8exnz
+title: Make native shell acceptance portable to hosted Fish
+description: PR 1279 CI exposed Fish 3.7 stdin invocation incompatibility in the new native acceptance harness and a prose-reference graph gap introduced by the final validation evidence comment. Preserve all assertions and graph budgets while fixing the harness transport and recording the actual historical-evidence relationship.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-19T19:45:31.758Z"
+updated_at: "2026-09-19T19:53:35.158Z"
+closed_at: "2026-09-19T19:53:34.127Z"
+completed_at: "2026-09-19T19:53:34.127Z"
+author: "harness:codex"
+acceptance_criteria: Fish 3 and Fish 4 execute all native assertions; graph composition returns within its existing ceiling; final hosted checks pass
+parent: pm-cimph7
+severity: medium
+repro_steps: Run the native shell acceptance on Ubuntu 24.04 with Fish 3.7 and Node 24.20; run graph-composition after the final historical-resolution evidence comment.
+resolution: Use explicit Fish command mode for the native acceptance program and link the parent validation receipt to its historical-evidence owner with verifies.
+expected_result: All native assertions run on Fish 3 and Fish 4 and the graph remains within its existing ceiling.
+actual_result: "Ubuntu 24.04 / Node 24.20 / Fish 3.7 reproduces the prior exit 127, then passes 31 native cases after the fix. Fish 4.9 also passes 31 cases, linked verification and ESLint pass, and all 10 graph assertions pass with 1236 prose gaps against the unchanged 1236 ceiling."
+component: testing
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-cimph7,discovered_from,"2026-09-19T19:45:31.758Z","harness:codex","cli:create:dep",detected
+  pm-e9zh,verifies,"2026-09-19T19:46:52.242Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-19T19:45:31.758Z","harness:codex",All-status native Fish and stdin searches plus live open/in_progress inventories found the completed shell-boundary parent but no separate hosted harness transport owner. This child records the CI-only follow-up without reopening completed production fixes.
+  "2026-09-19T19:52:55.981Z","harness:codex","Negative control: the previous harness fails in Ubuntu 24.04 / Node 24.20.0 / Fish 3.7.0 with the same exit 127 and input-file error as hosted CI. Positive control: explicit command-mode invocation passes 31/31 in that container and on native Fish 4.9.3/Zsh. The graph gate passes 10/10 assertions with prose-edge gaps 1236 <= 1236."
+files[1]{path,scope,note}:
+  tests/acceptance/shell-completion.mjs,project,Hosted Fish 3 and native Fish 4 execution compatibility
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node tests/acceptance/shell-completion.mjs,project,120,"harness:codex","2026-09-19T19:47:03.249Z",local_mutation,refactor/search-query-cli-domains
+test_runs[1]:
+  - run_id: test-local-mu8t1ar2-2pw4r7
+    kind: test
+    status: passed
+    started_at: "2026-09-19T19:52:57.342Z"
+    finished_at: "2026-09-19T19:52:59.054Z"
+    recorded_at: "2026-09-19T19:52:59.054Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node tests/acceptance/shell-completion.mjs,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated native acceptance compatibility follow-up entry
+close_reason: Hosted Fish compatibility reproduced and fixed; review evidence graph repaired without weakening gates
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-d8exnz
+  gate_id: native-shell-completion-boundaries
+  negative_control: "Hosted Ubuntu Fish 3.7 exits 127 with Unable to read input file: Is a directory when the harness sends source on stdin; graph-composition reports 1237 prose gaps above its existing 1236 ceiling before adding the missing verifies edge."
+  local_checks[2]: node tests/acceptance/shell-completion.mjs,node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded
+  hosted_checks[2]: Gates (smokes),Gates (static)
+body: "## Hosted failure and reproduction\nPR 1279 head 7674714d2 passed all 9060 hosted tests and exact coverage, plus the hosted import and transport cost gates. Its native shell smoke failed before assertions could run because Fish 3.7 rejected the stdin transport used by Node 24.20. The final validation comment also named the historical-evidence owner without a graph edge.\n\n## Fix and executable evidence\nPass the generated Fish program through explicit command mode (-c), keeping the source, hostile input cases, exit-status checks, stderr checks and literal-preservation assertions unchanged. A read-only Ubuntu 24.04 container with Node 24.20.0 and Fish 3.7.0 reproduces the original exit 127 and passes all 31 Fish/Zsh cases after the change. Native Fish 4.9.3 also passes all 31 cases.\n\nThe completion parent now verifies the historical-evidence owner, matching its actual validation comment. Graph composition passes all ten assertions and restores prose-edge gaps to 1236, exactly the existing ceiling. No graph budget, coverage exclusion, timing bound or test assertion changes.\n\n## Delivery boundary\nThis item owns only the hosted acceptance transport and graph receipt follow-up. Production SDK shell escaping remains the completed parent change. All final-head hosted checks remain mandatory before merging PR 1279."

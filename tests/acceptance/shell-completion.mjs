@@ -15,11 +15,11 @@ for (const mode of ["type", "tag", "flag", "dynamic-type", "dynamic-tag", "statu
       : mode === "fallback-status" ? { statuses: [unsafe] } : {};
   const script = runCompletion("fish", mode === "type" ? [unsafe] : [], mode === "tag" ? [unsafe] : [], false, runtime).script;
   const previous = mode === "flag" ? "--" : `--${mode.replace("dynamic-", "").replace("fallback-", "")} `;
-  const result = spawnSync("fish", ["--no-config"], {
+  // Pass the program explicitly for Fish 3 compatibility with Node subprocesses.
+  const result = spawnSync("fish", ["--no-config", "-c", `function pm\n${mode.startsWith("fallback-") ? "return 1" : "printf '%s\\n' \"$PM_TEST_VALUES\""}\nend\n${script}\ncomplete --do-complete 'pm list ${previous}'\n`], {
     encoding: "utf8",
     timeout: 10_000,
     env: { ...process.env, PM_TEST_VALUES: unsafe, PM_SECRET: "EXPANDED_SECRET" },
-    input: `function pm\n${mode.startsWith("fallback-") ? "return 1" : "printf '%s\\n' \"$PM_TEST_VALUES\""}\nend\n${script}\ncomplete --do-complete 'pm list ${previous}'\n`,
   });
   assert.equal(result.status, 0, `Fish ${mode}: ${result.error ?? result.stderr}`);
   assert.equal(result.stderr, "", `Fish ${mode} must not execute data or emit parser errors`);
