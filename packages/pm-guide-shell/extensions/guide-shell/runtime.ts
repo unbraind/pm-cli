@@ -1,5 +1,5 @@
 /**
- * Runtime contracts and behavior for packages/pm guide shell/extensions/guide shell/runtime.
+ * Adapt package commands to public SDK guide/completion operations and preserve their Markdown, script and word-list transports.
  *
  * @module packages/pm-guide-shell/extensions/guide-shell/runtime
  */
@@ -27,6 +27,7 @@ import {
   type ServiceOverrideContext,
 } from "@unbrained/pm-cli/sdk";
 
+/** Resolve the explicit topic before positional input and retain only SDK-supported guide options. */
 function normalizeGuideOptions(
   args: string[],
   options: Record<string, unknown>,
@@ -44,6 +45,7 @@ function normalizeGuideOptions(
   };
 }
 
+/** Choose the shell with a Bash default and normalize camel-case or snake-case choice options. */
 function normalizeCompletionOptions(
   args: string[],
   options: Record<string, unknown>,
@@ -66,6 +68,7 @@ function normalizeCompletionOptions(
   };
 }
 
+/** Return distinct nonblank runtime type names in stable locale order without inventing fallback types. */
 function collectTypeNames(
   typeRegistry: ReturnType<typeof resolveItemTypeRegistry>,
 ): string[] {
@@ -79,6 +82,7 @@ function collectTypeNames(
   ].sort((left, right) => left.localeCompare(right));
 }
 
+/** Extract nonblank workflow status identifiers in stable locale order for helper responses. */
 function collectStatusNames(
   statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>,
 ): string[] {
@@ -150,6 +154,7 @@ async function buildCompletionRuntimeConfig(global: GlobalOptions): Promise<Comp
   };
 }
 
+/** Accept only non-array objects as output envelopes; primitive and array results remain unwrapped. */
 function payloadRecord(payload: unknown): Record<string, unknown> | undefined {
   return typeof payload === "object" &&
     payload !== null &&
@@ -158,15 +163,18 @@ function payloadRecord(payload: unknown): Record<string, unknown> | undefined {
     : undefined;
 }
 
+/** Honor an explicit JSON envelope format and otherwise select the default human-readable transport. */
 function readPayloadFormat(payload: unknown): "toon" | "json" {
   return payloadRecord(payload)?.format === "json" ? "json" : "toon";
 }
 
+/** Unwrap an own result property while preserving bare results and explicit undefined payload values. */
 function readPayloadResult(payload: unknown): unknown {
   const record = payloadRecord(payload);
   return record && Object.hasOwn(record, "result") ? record.result : payload;
 }
 
+/** Trim and deduplicate nonblank string tags across all items, then sort the helper word list. */
 function collectTagsFromItems(items: ItemMetadata[]): string[] {
   const tagSet = new Set<string>();
   for (const item of items) {
@@ -180,6 +188,7 @@ function collectTagsFromItems(items: ItemMetadata[]): string[] {
   return [...tagSet].sort((left, right) => left.localeCompare(right));
 }
 
+/** Read only string entries from the requested helper collection, returning no choices for malformed results. */
 function readStringArrayResult(
   result: unknown,
   key: "tags" | "statuses" | "types",
@@ -193,6 +202,7 @@ function readStringArrayResult(
     : [];
 }
 
+/** Serialize explicit JSON or the whitespace-delimited helper protocol, always terminating output with a newline. */
 function renderJsonOrWords(
   payload: unknown,
   result: unknown,
@@ -204,6 +214,7 @@ function renderJsonOrWords(
   return `${readStringArrayResult(result, key).join(" ")}\n`;
 }
 
+/** Render explicit JSON or a generated script with a trailing newline; defer unsupported result shapes. */
 function renderCompletionPackageOutput(
   payload: unknown,
   result: unknown,
@@ -222,6 +233,7 @@ function renderCompletionPackageOutput(
   return null;
 }
 
+/** Render guide Markdown or JSON according to SDK format precedence and defer generic TOON rendering. */
 function renderGuidePackageOutput(
   context: ServiceOverrideContext,
   result: unknown,
@@ -241,7 +253,7 @@ function renderGuidePackageOutput(
   return null;
 }
 
-/** Executes the guide package operation through the package runtime. */
+/** Normalize package arguments and delegate guide discovery to the public SDK using the caller workspace options. */
 export async function runGuidePackage(
   args: string[],
   options: Record<string, unknown>,
@@ -250,7 +262,7 @@ export async function runGuidePackage(
   return runGuide(normalizeGuideOptions(args, options), global);
 }
 
-/** Executes the completion package operation through the package runtime. */
+/** Render the requested shell using explicit choices plus the active workspace schema and package command paths. */
 export async function runCompletionPackage(
   args: string[],
   options: Record<string, unknown>,
@@ -267,7 +279,7 @@ export async function runCompletionPackage(
   );
 }
 
-/** Executes the completion tags package operation through the package runtime. */
+/** Collect tags across configured item folders and formats; return an empty counted collection before initialization. */
 export async function runCompletionTagsPackage(
   global: GlobalOptions,
 ): Promise<{ tags: string[]; count: number }> {
@@ -296,7 +308,7 @@ export async function runCompletionTagsPackage(
   };
 }
 
-/** Executes the completion statuses package operation through the package runtime. */
+/** Expose configured workflow status IDs with an exact count, or an empty collection before initialization. */
 export async function runCompletionStatusesPackage(
   global: GlobalOptions,
 ): Promise<{ statuses: string[]; count: number }> {
@@ -314,7 +326,7 @@ export async function runCompletionStatusesPackage(
   };
 }
 
-/** Executes the completion types package operation through the package runtime. */
+/** Expose distinct configured and extension-provided type names with an exact count; tolerate an uninitialized workspace. */
 export async function runCompletionTypesPackage(
   global: GlobalOptions,
 ): Promise<{ types: string[]; count: number }> {

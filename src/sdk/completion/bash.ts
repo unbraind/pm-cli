@@ -81,6 +81,7 @@ export function generateBashScript(
   const useEagerTagExpansion = eagerTagExpansion || tags.length > 0;
   // Note: "${...}" inside regular (non-template) strings are literal characters,
   // not JS interpolation. Only backtick template literals interpolate ${...}.
+  /** Quote static choices once when embedding them in an invocation of the literal Bash matcher. */
   const matchWords = (values: string): string =>
     `_pm_completion_add_matches "${shellDoubleQuote(values)}"`;
   return [

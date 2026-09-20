@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[5]: "area:docs",code-quality,docstrings,maintainability,token-efficiency
 created_at: "2026-07-19T04:07:16.881Z"
-updated_at: "2026-09-13T16:45:43.487Z"
+updated_at: "2026-09-20T15:13:27.805Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Census script or lint rule flags the known filler templates (Implements X for the public runtime surface of this module; Value that configures or reports X for this contract; Provides CLI runtime support for X; payload exchanged by command, SDK, and package integrations) and the count is ratcheted down, not up; Touched-file burn-down policy documented so gate-mandated docstrings added going forward must carry real information (what the value means, units, invariants) or use @inheritDoc/type-level docs; Static-gate docstring coverage stays at 100 percent throughout - the fix is content quality, never coverage relaxation"
@@ -14,10 +14,64 @@ parent: pm-n7rr
 risk: low
 confidence: 70
 expected_result: Filler docstrings are replaced with informative documentation and a ratcheted census keeps the filler count falling.
-dependencies[3]{id,kind,created_at}:
-  pm-92if,related,"2026-07-19T04:07:16.881Z"
-  pm-fb3i,related,"2026-07-19T04:07:16.881Z"
-  pm-n7rr,implements,"2026-07-26T05:56:05.301Z"
-comments[1]{created_at,author,text,edited_at}:
-  "2026-09-13T16:15:21.639Z","harness:codex","Continuation observation: runtime-contracts.ts still contains generic interface/member filler despite coverage gates. The command-discovery tranche improves the modified module and function documentation with concrete visibility and assembly semantics, but does not implement the repository-wide filler census or ratchet owned here. Reuse this canonical owner for that remaining work; no duplicate item created.","2026-09-13T16:45:43.487Z"
+dependencies[6]:
+  - id: pm-92if
+    kind: related
+    created_at: "2026-07-19T04:07:16.881Z"
+  - id: pm-fb3i
+    kind: related
+    created_at: "2026-07-19T04:07:16.881Z"
+  - id: pm-n7rr
+    kind: implements
+    created_at: "2026-07-26T05:56:05.301Z"
+  - id: pm-26y269
+    kind: discovered_from
+    created_at: "2026-09-20T15:05:47.864Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-cljdn3
+    kind: discovered_from
+    created_at: "2026-09-20T15:05:47.864Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-t6jl1f
+    kind: discovered_from
+    created_at: "2026-09-20T15:05:47.864Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[4]:
+  - created_at: "2026-09-13T16:15:21.639Z"
+    author: "harness:codex"
+    text: "Continuation observation: runtime-contracts.ts still contains generic interface/member filler despite coverage gates. The command-discovery tranche improves the modified module and function documentation with concrete visibility and assembly semantics, but does not implement the repository-wide filler census or ratchet owned here. Reuse this canonical owner for that remaining work; no duplicate item created."
+    edited_at: "2026-09-13T16:45:43.487Z"
+  - created_at: "2026-09-20T15:05:48.688Z"
+    author: "harness:codex"
+    text: "PR 1281 review reports 60 percent docstring coverage for touched functions, while repository gates enforce a different public-API denominator. Reusing this canonical open documentation-quality owner after all-status duplicate and ownership checks. This pass documents private helpers and replaces generic package-export descriptions in the three touched modules; the repository-wide filler census and ratchet remain open here. No runtime behavior or coverage thresholds will change."
+  - created_at: "2026-09-20T15:08:14.465Z"
+    author: "harness:codex"
+    text: "Review evidence: https://github.com/unbraind/pm-cli/pull/1281#issuecomment-5750542236 identifies missing touched-function docstrings. Added semantic documentation for all 49 named callables across the three implementation modules and replaced generic guide-shell export descriptions. TypeScript AST printing with comments removed proves all three executable syntax trees are identical to the prior fully covered head. The scope-splitting suggestion is declined because the requested delivery intentionally combines the three PM workstreams; the PR description now explains that scope."
+  - created_at: "2026-09-20T15:13:26.783Z"
+    author: "harness:codex"
+    text: "Documentation-only verification passed: linked build, repository ESLint and repository-static-quality assurance. Named-callable AST census is 49/49 across the three touched modules, and comment-stripped syntax trees are unchanged from the 9150-test, exact-four-metric-100-percent implementation head. The broader repository filler census and ratchet remain unfinished; releasing this owner back to open after the scoped improvements."
+files[3]{path,scope,note}:
+  packages/pm-guide-shell/extensions/guide-shell/runtime.ts,project,Semantic contracts for every named callable in the reviewed module
+  scripts/release/surface-replication-gate.mjs,project,Semantic contracts for every named callable in the reviewed module
+  src/sdk/completion/bash.ts,project,Semantic contracts for every named callable in the reviewed module
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  pnpm build,project,300,"harness:codex","2026-09-20T15:08:13.893Z",local_mutation,fix/shell-portability-validation,Documentation-only source build
+test_runs[1]:
+  - run_id: test-local-mu9ybc3z-w1b0ua
+    kind: test
+    status: passed
+    started_at: "2026-09-20T15:08:24.047Z"
+    finished_at: "2026-09-20T15:08:31.631Z"
+    recorded_at: "2026-09-20T15:08:31.631Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm build,schema,schema,source,local_source_ref
 body: "The 100 percent docstring gates (source/exported/member) incentivized mass template docstrings that satisfy coverage while carrying zero information: grep counts 622 'Implements X for the public runtime surface of this module', 2,945 'Value that configures or reports X for this contract' across 135 files, plus 543 'Provides CLI runtime support for X'/'payload exchanged by command, SDK, and package integrations' variants - about 4,100 filler lines. Cost: inflated file length (the 3400-LOC gate deliberately excludes comment lines, but agents reading files still pay the tokens), noise for agent context assembly, and docs that answer nothing (example: ExtensionCommandArgumentHelpDescriptor.name documented as 'Value that configures or reports name for this contract'). This is content-quality simplification under pm-n7rr; distinct from pm-fb3i (coverage floors) and pm-gvnj (DeepSource docs category)."

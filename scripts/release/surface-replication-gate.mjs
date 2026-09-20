@@ -24,6 +24,7 @@ const AST_PRINTER = ts.createPrinter({
   removeComments: true,
 });
 
+/** Run a read-only Git command and normalize nonblank output rows, propagating failures to the caller. */
 function gitLines(args, root) {
   return execFileSync("git", args, {
     cwd: root,
@@ -35,6 +36,7 @@ function gitLines(args, root) {
     .filter(Boolean);
 }
 
+/** Find the first available main/master merge base, returning null for clones without a usable default-branch reference. */
 function resolveDefaultBranchBase(root) {
   for (const candidate of ["origin/main", "main", "origin/master", "master"]) {
     try {
@@ -47,6 +49,7 @@ function resolveDefaultBranchBase(root) {
   return null;
 }
 
+/** Combine committed, unstaged, staged and untracked paths; fail when neither a base nor local changes can establish the census. */
 function changedFilesFromGit(root) {
   const changed = new Set();
   const base = resolveDefaultBranchBase(root);
@@ -71,6 +74,7 @@ function changedFilesFromGit(root) {
   return [...changed].sort();
 }
 
+/** Read added and removed lines only for requested paths; omit empty or partially unreadable evidence so semantic triggers fail closed. */
 function changedLinesFromGit(root, changedFiles) {
   if (changedFiles.length === 0) return {};
   const base = resolveDefaultBranchBase(root);
@@ -114,6 +118,7 @@ function changedLinesFromGit(root, changedFiles) {
   return changedLines;
 }
 
+/** Recursively collect TypeScript source paths, tolerating absent roots while propagating other filesystem failures. */
 async function collectTypeScriptFiles(directory) {
   const files = [];
   let entries;
@@ -141,6 +146,7 @@ async function collectTypeScriptFiles(directory) {
   return files;
 }
 
+/** Recover a declared AST name for rule-body grouping, excluding anonymous nodes from named replication clusters. */
 function functionName(node, sourceFile) {
   if (node.name === undefined) return null;
   return node.name.getText(sourceFile).trim();
@@ -159,6 +165,7 @@ export async function detectReplicatedRuleBodies(root, policy) {
       true,
       ts.ScriptKind.TS,
     );
+    /** Traverse nested declarations and group sufficiently large named bodies by normalized, comment-free source. */
     const visit = (node) => {
       if (
         node.body !== undefined &&
@@ -206,6 +213,7 @@ export async function detectReplicatedRuleBodies(root, policy) {
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
+/** Require finite integer cluster bounds and a declaration-coverage ratio between zero and one before scanning source. */
 function isReplicationDetectionPolicy(policy) {
   if (typeof policy !== "object" || policy === null) return false;
   return [
@@ -221,6 +229,7 @@ function isReplicationDetectionPolicy(policy) {
   ].every(Boolean);
 }
 
+/** Measure identical named rule clusters against declared member sets and enforce cluster-count and coverage floors when configured. */
 async function replicationDenominator(config, root) {
   const policy = config.replication_detection;
   if (policy === undefined) return null;
@@ -265,6 +274,7 @@ async function replicationDenominator(config, root) {
   };
 }
 
+/** Reject member declarations without a path and nonempty required patterns, appending the caller-specific diagnostic. */
 function validateMemberShape(member, label, violations) {
   if (
     typeof member !== "object" ||
@@ -282,6 +292,7 @@ function validateMemberShape(member, label, violations) {
   return true;
 }
 
+/** Accept a nonempty whole-file trigger or a path paired with nonempty literal changed-line markers. */
 function isTriggerDeclaration(trigger) {
   return (
     (typeof trigger === "string" && trigger.length > 0) ||
@@ -297,6 +308,7 @@ function isTriggerDeclaration(trigger) {
   );
 }
 
+/** Validate the set identity, PM owner, trigger declarations and nonempty member list before activation. */
 function isReplicationSetDeclaration(set) {
   return (
     typeof set === "object" &&
@@ -311,6 +323,7 @@ function isReplicationSetDeclaration(set) {
   );
 }
 
+/** Activate changed whole-file triggers immediately and semantic triggers when markers match or patch evidence is unavailable. */
 function triggerActivates(trigger, changedFiles, changedLines) {
   const triggerPath = typeof trigger === "string" ? trigger : trigger.path;
   if (!changedFiles.includes(triggerPath)) return false;
@@ -322,6 +335,7 @@ function triggerActivates(trigger, changedFiles, changedLines) {
   );
 }
 
+/** Validate required changed members against declared paths while retaining valid sets for further diagnostics. */
 function normalizeReplicationSet(set) {
   if (!isReplicationSetDeclaration(set)) {
     return { set: null, violation: "set:invalid" };
@@ -361,6 +375,7 @@ function normalizeReplicationSet(set) {
   };
 }
 
+/** Find a matching reasoned PM waiver whose calendar date is valid and has not expired on the evaluation day. */
 function activeWaiver(config, setId, memberPath, today) {
   return (config.waivers ?? []).find(
     (waiver) =>
@@ -378,6 +393,7 @@ function activeWaiver(config, setId, memberPath, today) {
   );
 }
 
+/** Read declared members, enforce required text, count source implementation lines and apply only active missing-content waivers. */
 async function validateMembers(config, setId, members, root, today) {
   const violations = [];
   const waivers = [];
@@ -422,6 +438,7 @@ async function validateMembers(config, setId, members, root, today) {
   return { violations, waivers, sizes };
 }
 
+/** Count CLI-owned PmCliError constructions and require exact, reasoned dispositions for every occurrence without stale entries. */
 async function refusalInventory(config, root) {
   const declared = new Map(
     (config.cli_refusal_dispositions ?? []).map((entry) => [entry.path, entry]),
@@ -484,6 +501,7 @@ async function refusalInventory(config, root) {
   };
 }
 
+/** Require at least one nonempty string so a policy cannot silently disable roots or patterns with an empty declaration. */
 function isNonEmptyStringArray(values) {
   return (
     Array.isArray(values) &&
@@ -492,6 +510,7 @@ function isNonEmptyStringArray(values) {
   );
 }
 
+/** Validate owner, source roots, literal patterns and a nonnegative occurrence floor before measuring a source ratchet. */
 function isSourcePatternRatchet(ratchet) {
   return (
     typeof ratchet === "object" &&
@@ -508,10 +527,12 @@ function isSourcePatternRatchet(ratchet) {
   );
 }
 
+/** Count non-overlapping literal pattern occurrences without treating policy text as a regular expression. */
 function countSourcePattern(source, pattern) {
   return source.split(pattern).length - 1;
 }
 
+/** Scan each source file once, report required and forbidden literal occurrences, and identify floor or forbidden-pattern violations. */
 async function measureSourcePatternRatchet(ratchet, root) {
   const files = new Set();
   for (const sourceRoot of ratchet.source_roots) {
@@ -564,6 +585,7 @@ async function measureSourcePatternRatchet(ratchet, root) {
   };
 }
 
+/** Measure optional valid ratchets and preserve explicit diagnostics for malformed collections and individual declarations. */
 async function validateSourcePatternRatchets(config, root) {
   const reports = [];
   const violations = [];
@@ -593,6 +615,7 @@ async function validateSourcePatternRatchets(config, root) {
   return { reports, violations };
 }
 
+/** Evaluate activated sets, required changed members and content waivers, then report recurrence density and source-cap utilization. */
 async function validateActiveSets(
   config,
   changedFiles,
