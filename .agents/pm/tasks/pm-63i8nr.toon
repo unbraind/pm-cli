@@ -1,0 +1,21 @@
+id: pm-63i8nr
+title: Diagnose abandoned build leases before the full acquisition timeout
+description: A dead build owner can leave a lease that makes bootstrap wait silently until timeout. Report recorded owner liveness and actionable recovery guidance promptly without age-based lock stealing or removal of live leases.
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-09-20T13:15:17.233Z"
+updated_at: "2026-09-20T13:48:42.552Z"
+author: "harness:codex"
+acceptance_criteria: Dead owner diagnostics identify the lease and safe recovery path; live and permission-ambiguous owners remain protected; independent-process tests cover both outcomes
+parent: pm-u9d0
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-cxc4jc,discovered_from,"2026-09-20T13:15:17.233Z","harness:codex","cli:create:dep",detected
+  pm-dj98,implements,"2026-09-20T13:15:17.233Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-20T13:15:17.233Z","harness:codex","Duplicate check: all-status abandoned search returned 18 nonmatching records; exact build-lease search returned zero. Read completed pm-cxc4jc and its safe no-stealing contract. Bootstrap encountered an owner that no longer existed; user explicitly approved removal after re-verification. This follow-up stays open and unclaimed."
+  "2026-09-20T13:28:14.698Z","harness:codex","Recovery evidence: the recorded owner process was rechecked and absent; the lease owner record still matched the inspected abandoned lease. After explicit user authorization, only that lease owner file and empty lease directory were removed. Original checkout has no remaining build lease. Active consumers in the isolated checkout retain their own independent lease."
+files[1]{path,scope,note}:
+  scripts/build-lease.mjs,project,Future owner-liveness diagnostics while preserving no-stealing behavior
+body: ""

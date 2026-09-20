@@ -207,6 +207,13 @@ jobs:
           pnpm install --frozen-lockfile
           node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts
 
+      - name: Verify literal completion on native macOS Bash
+        if: matrix.os == 'macos-latest'
+        env:
+          PM_RUN_TESTS_SKIP_BUILD: "1"
+          PM_COMPLETION_TEST_BASH: /bin/bash
+        run: node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts
+
   # pm-7msh7k: exercise Node 22 subprocess behavior before merge.
   node22-telemetry:
     name: Telemetry regression (Node 22)

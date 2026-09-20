@@ -1,0 +1,111 @@
+id: pm-t6jl1f
+title: "GH-1280: preserve literal completion across Bash versions and package helper paths"
+description: "Replace Bash word re-expansion with literal prefix selection for static, dynamic, fallback and cached choices. Preserve Unicode on Bash 3.2 and byte locales, shell-quote accepted candidates to prevent command execution and globbing, refuse ambiguous quoted prefixes, and route canonical guide-shell helper paths to their plain-word transport."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-20T12:59:34.645Z"
+updated_at: "2026-09-20T14:52:54.604Z"
+closed_at: "2026-09-20T14:48:31.908Z"
+completed_at: "2026-09-20T14:48:31.908Z"
+author: "harness:codex"
+acceptance_criteria: All Bash completion routes preserve literal argument values after acceptance; candidate metadata cannot execute or expand filesystem globs; ambiguous quoted prefixes produce no suggestions; native Bash 3.2 and current Bash cover byte and UTF-8 locales; required coverage and security gates pass.
+parent: pm-mpbb
+severity: high
+environment: macOS system Bash 3.2; also literal glob corruption on current Bash
+repro_steps: Generate Bash completion with a dynamic Unicode type; invoke _pm_completion for --type under Bash 3.2. Add a literal wildcard candidate in a directory with files to observe unquoted array pathname expansion.
+resolution: "Delivered Bash 3.2 literal matching, safe accepted-word quoting and canonical package helper transport."
+expected_result: Unicode and metacharacters remain literal through completion and command acceptance on Bash 3.2 and current Bash.
+actual_result: 91 native Bash boundary cases pass; real Tab-and-Enter acceptance is literal on Bash 3.2 and 5.3; installed helpers preserve words and explicit JSON; temporary lifecycle and packed npm/npx/bunx acceptance pass.
+affected_version: 2026.9.20
+component: sdk-completion
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2zjs0g,implements,"2026-09-20T12:59:34.645Z","harness:codex","cli:create:dep",detected
+  pm-cimph7,incident_from,"2026-09-20T12:59:34.645Z","harness:codex","cli:create:dep",detected
+  pm-ul5lph,discovered_from,"2026-09-20T13:52:06.206Z","harness:codex","cli:update:dep",detected
+comments[14]{created_at,author,text}:
+  "2026-09-20T12:59:34.645Z","harness:codex","Duplicate check: live all-status searches for 1280 and completion injection found no matching open defect. Full metadata and history of completed pm-cimph7 and pm-ul5lph establish prior shipped fixes. Open and in_progress inventories checked. This records the new macOS runtime compatibility escape."
+  "2026-09-20T13:04:06.722Z","harness:codex","Red-first evidence: the expanded real Bash regression failed because a literal wildcard completion expanded into checkout filenames. Literal prefix selection now writes quoted array elements for every Bash route and removes completion-time shell re-evaluation. Native macOS regression is added to the existing required runtime-smoke job."
+  "2026-09-20T13:16:43.435Z","harness:codex","Operational verification: required Sentry and telemetry gate passed using the local query adapter. Fourteen-day Sentry inventory has zero blocking critical/high issues; telemetry finish error rate is 1.76 percent with zero missing error-code rows. GitHub open Dependabot alerts and open PR inventory are empty before this delivery. Latest pm-changelog is 2026.9.18. These provider checks do not alone prove every new command has arrived remotely."
+  "2026-09-20T13:17:39.419Z","harness:codex",Full-suite execution caught an existing parsed CI contract requiring the registry regression command to retain its dedicated scope. Native completion now has its own required macOS step using the same installed dependencies and prebuilt artifact; the registry test is unchanged.
+  "2026-09-20T13:25:36.694Z","harness:codex","Manual temporary-workspace acceptance found an additional boundary defect: completion-types resolves to command completion types, but guide-shell output_format compares only the legacy hyphen path. Helpers therefore emit TOON, which is incompatible with the literal shell word protocol. The temporary lifecycle passed; real helper completion failed before this package-routing fix. Added namespaced renderer and installed-command regressions before changing production routing."
+  "2026-09-20T13:30:44.705Z","harness:codex","Release/provider context refreshed: scheduled Auto Release 35498097047 succeeded and v2026.9.20 is published on GitHub and npm. This branch is later than that immutable daily release; no second automatic release was triggered. GitHub issue 1246 already links its canonical first-run owner; issue 1280 links this item. No open Dependabot, code-scanning or secret-scanning alerts were returned. Required native macOS regression and full exact-head checks must still prove this branch before merge."
+  "2026-09-20T13:33:15.748Z","harness:codex","Green focused evidence: 112 tests across native Bash 3.2 adversarial matrix, CI workflow contracts, history-author flag uniqueness, package runtime rendering and installed helper transport. Independent temporary workspace initialized, installed guide-shell, created/claimed/updated/commented/closed/released a real item, verified its history and completed Task through the actual helper under both Bash 3.2 and current Bash. Packed npm/npx/bunx acceptance passed after the package fix."
+  "2026-09-20T13:42:33.765Z","harness:codex","Validation scheduling correction: the second full run had 9145 passes and four 30-second timeouts in unrelated whole-repository/benchmark tests under concurrent host load, with no changed-behavior assertion failure. Queued linked tests and package dogfood also exhausted their 240-second budget while awaiting the coverage lease. Preserve these failures in history; rerun serially after static validation, with fewer coverage workers and unchanged timeout/coverage thresholds."
+  "2026-09-20T13:53:37.961Z","harness:codex",Code-quality pass also inlines the private single-use type-to-folder wrapper in the touched package runtime. The package still derives all registry types from the public SDK; the existing registry-shape regression verifies the direct lookup.
+  "2026-09-20T14:19:45.969Z","harness:codex","Interactive acceptance exposed a second shell boundary: raw COMPREPLY values can execute when the completed command is submitted. A harmless marker in a temporary directory demonstrated the defect. The permanent regression now parses accepted candidate source with real Bash: 44 cases failed before portable single-quote encoding; all 91 completion/input-boundary cases pass on Bash 3.2 after the fix. Quoted and escaped prefixes return no suggestions before optional dequoting, avoiding ambiguous insertion contexts. Production completion never evaluates metadata."
+  "2026-09-20T14:23:19.450Z","harness:codex","Manual Tab-and-Enter acceptance now passes under real Bash 3.2 and Bash 5.3: the adversarial candidate reaches the command as a literal argument and the temporary marker is absent. Follow-up pm-eswzn9 owns quote-aware prefix support; it remains open and unclaimed. The current conservative refusal is documented and independently regression-tested."
+  "2026-09-20T14:28:12.345Z","harness:codex",The required macOS regression explicitly selects /bin/bash through PM_COMPLETION_TEST_BASH; resolving bash through PATH could silently select Homebrew and miss Bash 3.2. The workflow contract failed before this binding and passed after it. Native Bash acceptance and accepted-command parsing remain required without continue-on-error.
+  "2026-09-20T14:48:31.104Z","harness:codex","Final local evidence: 9150 tests in 720 files pass. Exact source coverage is statements 64773/64773; branches 49459/49459; functions 13462/13462; lines 61981/61981, with zero skipped coverage. Native Bash 3.2 regression, serial linked tests, temporary-workspace lifecycle, installed helper transport, native Fish/Zsh acceptance and packed npm/npx/bunx smoke pass. Existing thresholds and exclusions were not weakened. GitHub review and CI will validate the submitted delivery head."
+  "2026-09-20T14:52:54.604Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1281 combines the implementation, regression coverage, package-generated changelog and recorded local evidence. Hosted checks and review findings are attached to the PR head; no published release is claimed for these Unreleased changes."
+notes[2]{created_at,author,text}:
+  "2026-09-20T13:28:18.737Z","harness:codex","Manual acceptance caught the command-path versus action-name mismatch that mocked helper tests missed. Preserve both layers: execute shell parsing against adversarial candidate bytes, and exercise the installed package helper to verify the real wire format."
+  "2026-09-20T13:48:41.886Z","harness:codex","Incident source: https://github.com/unbraind/pm-cli/issues/1280 and https://github.com/unbraind/pm-cli/actions/runs/35501530012 at e74372690. Native macOS Bash 3.2 corrupted dynamic Unicode completion after the previous source-escaping repair. The new required macOS step executes the adversarial source/cache/fallback and locale matrix before merge."
+learnings[2]{created_at,author,text}:
+  "2026-09-20T13:07:34.572Z","harness:codex","Do not use printf %q plus compgen -W as a portable data transport. Bash 3.2 does not round-trip ANSI-C quoted Unicode, and unquoted result arrays expand globs. Compare literal prefixes and append quoted array elements instead."
+  "2026-09-20T13:28:21.854Z","harness:codex",Namespace migration must cover output service routing as well as command registration. A shell renderer can pass pure SDK tests while its installed helper emits structured output instead of protocol words.
+files[9]{path,scope,note}:
+  .github/workflows/ci.yml,project,Pre-merge native macOS Bash regression
+  packages/pm-guide-shell/extensions/guide-shell/runtime.ts,project,Canonical and alias output service routing preserves helper word protocol
+  src/sdk/completion/bash.ts,project,Literal Bash prefix matcher shared by all completion routes
+  tests/integration/ci-workflow-contract.spec.ts,project,Required macOS completion step and prebuilt execution contract
+  tests/integration/completion-package-wire.integration.spec.ts,project,Actual installed helper plain-word and JSON transport acceptance
+  tests/unit/commands/completion-command.spec.ts,project,Completion rendering contract compatibility
+  tests/unit/packages/guide-shell-runtime.spec.ts,project,Canonical and alias renderer protocol regression
+  tests/unit/sdk/history-author-completion.spec.ts,project,Preserve unique history-author flags with literal matcher renderer
+  tests/unit/sdk/security/completion-search-boundaries.spec.ts,project,88 native Bash source locale and prefix cases
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts tests/unit/commands/completion-command.spec.ts,project,240,"harness:codex","2026-09-20T13:06:43.839Z",local_mutation,fix/shell-portability-validation
+  node scripts/run-tests.mjs test -- tests/integration/completion-package-wire.integration.spec.ts tests/unit/packages/guide-shell-runtime.spec.ts tests/unit/sdk/history-author-completion.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240,"harness:codex","2026-09-20T13:27:01.876Z",local_mutation,fix/shell-portability-validation
+test_runs[3]:
+  - run_id: test-local-mu9v3aaw-ivsgas
+    kind: test
+    status: failed
+    started_at: "2026-09-20T13:30:16.762Z"
+    finished_at: "2026-09-20T13:38:17.192Z"
+    recorded_at: "2026-09-20T13:38:17.192Z"
+    passed: 0
+    failed: 2
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts tests/unit/commands/completion-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/completion-package-wire.integration.spec.ts tests/unit/packages/guide-shell-runtime.spec.ts tests/unit/sdk/history-author-completion.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu9vlqv2-7ilnzy
+    kind: test
+    status: passed
+    started_at: "2026-09-20T13:52:10.517Z"
+    finished_at: "2026-09-20T13:52:38.462Z"
+    recorded_at: "2026-09-20T13:52:38.462Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts tests/unit/commands/completion-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/completion-package-wire.integration.spec.ts tests/unit/packages/guide-shell-runtime.spec.ts tests/unit/sdk/history-author-completion.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu9wy0gs-z53f1g
+    kind: test
+    status: passed
+    started_at: "2026-09-20T14:29:47.284Z"
+    finished_at: "2026-09-20T14:30:10.396Z"
+    recorded_at: "2026-09-20T14:30:10.396Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts tests/unit/commands/completion-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/completion-package-wire.integration.spec.ts tests/unit/packages/guide-shell-runtime.spec.ts tests/unit/sdk/history-author-completion.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated delivery entry
+  docs/README.md,project,Discoverable portability contract documentation
+  docs/VALIDATION_PORTABILITY.md,project,Shell data protocol and native compatibility verification
+close_reason: Implementation and local acceptance complete; delivery proceeds through reviewed PR.
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-t6jl1f
+  gate_id: native-bash-completion-portability
+  negative_control: "Pre-fix Bash 3.2 emits octal Unicode fragments; the accepted-word parser regression fails 44 cases before portable candidate quoting, including wildcard expansion and shell substitutions. Interactive Readline acceptance reproduced harmless marker creation before quoting."
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts
+  hosted_checks[2]: "Runtime smoke (macos-latest, Node 24)",Gates (coverage)
+body: ""

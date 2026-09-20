@@ -1,0 +1,57 @@
+id: pm-cljdn3
+title: Refresh compatible September 20 validation tooling alongside portability regressions
+description: "Update Node declaration patches, Greptile tooling, ESLint and Unicorn within the supported runtime and peer contracts. Preserve canonical TypeScript 7, Vitest 5 and npm-package-arg 14 migration owners; do not bypass supply-chain age or peer controls."
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-09-20T13:16:11.875Z"
+updated_at: "2026-09-20T14:52:55.686Z"
+closed_at: "2026-09-20T14:48:36.665Z"
+completed_at: "2026-09-20T14:48:36.665Z"
+author: "harness:codex"
+acceptance_criteria: Compatible wanted updates applied with normal pnpm age policy; strict ESLint and typecheck pass; no known dependency vulnerabilities; incompatible majors retain canonical migration context
+parent: pm-92if
+resolution: "Updated compatible ESLint, Unicorn, Greptile and Node declarations without changing public Node support or incompatible migration ownership."
+expected_result: "Compatible tooling passes strict quality, dependency security and exact source coverage gates."
+actual_result: "Lint, typecheck, zero-clone duplication, static gate components and isolated performance checks pass; audit reports zero vulnerabilities; full coverage passes all four metrics at exactly 100 percent."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-do5b,discovered_from,"2026-09-20T13:16:11.875Z","harness:codex","cli:create:dep",detected
+  pm-fokyhh,discovered_from,"2026-09-20T13:16:11.875Z","harness:codex","cli:create:dep",detected
+  pm-ksr40d,discovered_from,"2026-09-20T13:16:11.875Z","harness:codex","cli:create:dep",detected
+  pm-92if,implements,"2026-09-20T13:47:29.157Z","harness:codex","cli:update:dep",detected
+comments[10]{created_at,author,text}:
+  "2026-09-20T13:16:11.875Z","harness:codex","Duplicate check: complete 2786-item all-status title inventory and live open/in-progress inventory contain no active September 20 compatible refresh. Current registry peer contracts exclude TypeScript 7 and Vitest 5; npm-package-arg 14 exceeds supported Node 22.18.0 floor. Existing canonical owners are reused as decision provenance."
+  "2026-09-20T13:26:22.572Z","harness:codex","Applied compatible registry releases through pnpm with normal supply-chain policies: ESLint 10.11.0, Unicorn 76.0.0, Greptile 3.5.3 and Node declarations 26.6.2. Retained public @types/node >=22 and unchanged Node runtime floor. Current upstream typescript-eslint peer range is >=4.8.4 <6.1.0; CodSpeed accepts Vitest ^3.2 or ^4; npm-package-arg 14 requires Node ^22.22.2 or newer supported major floors. Canonical incompatible migrations remain open and unclaimed."
+  "2026-09-20T13:42:35.002Z","harness:codex","After the compatible update, repository ESLint, typecheck and zero-clone duplication checks passed. pnpm outdated now contains only the existing incompatible major migrations; full audit remains zero vulnerabilities. Final static, serialized linked-test and full exact-coverage verdicts remain pending."
+  "2026-09-20T13:47:29.999Z","harness:codex",Tracker-context assurance rejected growth of generic related edges. Removed the two incidental co-delivery links and retained typed discovered_from migration provenance plus implements the quality epic. No graph threshold or historical relationship was weakened.
+  "2026-09-20T14:30:55.157Z","harness:codex","Repository static chain passed ESLint, duplicate checks, generated contracts, source-quality, package and command boundaries, token budgets, tracker quality, gate registry and SDK import costs. The initial transport-floor check exceeded latency limits; an isolated rerun passed all six operations without threshold changes. The remaining graph-composition and record-integrity checks passed. Serial linked tooling checks remain green."
+  "2026-09-20T14:35:20.089Z","harness:codex","Live observability verification: required Sentry/telemetry gate passes with no blocking Sentry issues, 1.76% finish error rate and zero missing-error-code rows. A separate 15-minute production query observed 108 command_start, 107 command_finish and 4 command_error events, with latest finish at 2026-09-20T14:34:22Z; the physical event queue had zero ready or unacknowledged messages. Sentry had no unresolved issues seen in 24 hours, no one-hour trace rows, and its latest seven-day issue was already resolved. These are distinct receipts, not a claim that every possible user action has been exhaustively observed."
+  "2026-09-20T14:37:50.245Z","harness:codex","Additional production correlation receipt: the recent 15-minute window contains 100 session/command start-finish pairs and zero starts older than two minutes without a corresponding finish. Only aggregate counts were retained; no raw user payloads or identifiers were copied into project records."
+  "2026-09-20T14:48:36.011Z","harness:codex","Final local evidence: 9150 tests in 720 files pass. Exact source coverage is statements 64773/64773; branches 49459/49459; functions 13462/13462; lines 61981/61981, with zero skipped coverage. Native Bash 3.2 regression, serial linked tests, temporary-workspace lifecycle, installed helper transport, native Fish/Zsh acceptance and packed npm/npx/bunx smoke pass. Existing thresholds and exclusions were not weakened. GitHub review and CI will validate the submitted delivery head."
+  "2026-09-20T14:51:18.494Z","harness:codex","Closeout verification: GitHub reports zero open Dependabot, code-scanning and secret-scanning alerts. Latest pm-changelog 2026.9.18 generated the three completed implementation entries under Unreleased, preserving the already published 2026.9.20 section. Terminal defect evidence has zero findings; tracker resolution/history-drift validation and documentation-link checks pass."
+  "2026-09-20T14:52:55.686Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1281 combines the implementation, regression coverage, package-generated changelog and recorded local evidence. Hosted checks and review findings are attached to the PR head; no published release is claimed for these Unreleased changes."
+files[3]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog installation receipt generated through package install
+  package.json,project,Compatible validation-tool release declarations with unchanged public Node types floor
+  pnpm-lock.yaml,project,Resolved age-policy-checked ESLint Unicorn Greptile and Node type upgrades
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  "pnpm lint:eslint",project,300,"harness:codex","2026-09-20T13:26:20.709Z",local_mutation,fix/shell-portability-validation
+  pnpm typecheck,project,300,"harness:codex","2026-09-20T13:26:21.715Z",local_mutation,fix/shell-portability-validation
+test_runs[1]:
+  - run_id: test-local-mu9vnfla-zg3mnq
+    kind: test
+    status: passed
+    started_at: "2026-09-20T13:52:58.354Z"
+    finished_at: "2026-09-20T13:53:57.166Z"
+    recorded_at: "2026-09-20T13:53:57.166Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm lint:eslint",schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated delivery entry
+close_reason: Implementation and local acceptance complete; delivery proceeds through reviewed PR.
+body: ""

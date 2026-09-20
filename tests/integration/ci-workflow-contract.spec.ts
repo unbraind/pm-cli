@@ -424,6 +424,13 @@ describe("GitHub workflow contract", () => {
       "pnpm install --frozen-lockfile",
       "node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts",
     ]);
+    const completionStep = runtimeSteps.find((step) => step.run?.includes("tests/unit/sdk/security/completion-search-boundaries.spec.ts"));
+    expect(completionStep).toMatchObject({
+      if: "matrix.os == 'macos-latest'",
+      env: { PM_RUN_TESTS_SKIP_BUILD: "1", PM_COMPLETION_TEST_BASH: "/bin/bash" },
+      run: "node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts",
+    });
+    expect(completionStep?.["continue-on-error"]).toBeUndefined();
     expectContainsAll(windowsRegressionJob, [
       "name: Windows regression (Node 24)",
       "name: Restore exact TypeScript and Vitest caches",
@@ -457,7 +464,7 @@ describe("GitHub workflow contract", () => {
       ),
     );
     expectExactValidationCacheSteps(ciWorkflow, 3);
-    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(7);
+    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(8);
     expect(ciWorkflow).not.toMatch(/^\s*run: pnpm test\s*$/m);
     expect(ciWorkflow).not.toContain("Sandboxed PM regression");
 

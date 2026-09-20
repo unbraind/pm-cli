@@ -1,0 +1,22 @@
+id: pm-eswzn9
+title: Support safe Bash completion inside quoted and escaped prefixes
+description: "Extend the conservative literal matcher with an explicit Readline insertion-context contract for single quotes, double quotes and escaped prefixes. Preserve accepted argument bytes without shell evaluation on Bash 3.2 and current Bash, including candidates with Unicode, apostrophes and shell metacharacters."
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-09-20T14:22:39.461Z"
+updated_at: "2026-09-20T14:23:18.860Z"
+author: "harness:codex"
+acceptance_criteria: Real Tab-and-Enter acceptance across quoting contexts preserves exact argument bytes; adversarial candidates cannot execute or expand globs; no global Readline option changes; current safe unquoted completion remains compatible.
+parent: pm-7hx6
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7hx6,implements,"2026-09-20T14:23:18.589Z","harness:codex","cli:update:dep",detected
+  pm-t6jl1f,discovered_from,"2026-09-20T14:23:18.589Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-20T14:22:39.461Z","harness:codex","Duplicate check: inspected the full all-status title census and open/in-progress inventories; Readline keyword search returned six unrelated historical items; completion history and current portability work contain no existing quoted-prefix implementation owner. This is an unclaimed UX follow-up for the deliberately conservative quoted-prefix boundary."
+files[1]{path,scope,note}:
+  src/sdk/completion/bash.ts,project,Future insertion-context implementation
+docs[1]{path,scope,note}:
+  docs/VALIDATION_PORTABILITY.md,project,Current conservative quoted-prefix contract
+body: ""

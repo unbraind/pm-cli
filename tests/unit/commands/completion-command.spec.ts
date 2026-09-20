@@ -319,7 +319,7 @@ describe("generateBashScript", () => {
     expect(bashAnnotationAliasStart).toBeGreaterThan(-1);
     expect(bashAnnotationAliasBlock).toContain('"$cmd" == "notes"');
     expect(bashAnnotationAliasBlock).toContain('"$cmd" == "learnings"');
-    expect(bashAnnotationAliasBlock).toContain('--text" -- "$cur"');
+    expect(bashAnnotationAliasBlock).toContain('_pm_completion_add_matches "--text"');
 
     for (const command of ["comments", "notes", "learnings"]) {
       const zshStart = zsh.indexOf(`        ${command})`);
@@ -746,7 +746,7 @@ describe("generateBashScript", () => {
   it("uses valid bash syntax patterns", () => {
     const script = generateBashScript();
     expect(script).toContain("COMPREPLY=");
-    expect(script).toContain("compgen -W");
+    expect(script).toContain("_pm_completion_add_matches");
     expect(script).toContain("case ");
     expect(script).toContain("esac");
   });
@@ -1377,10 +1377,10 @@ describe("runCompletion", () => {
     expect(bashResult.script).toContain('resolved="Bug Task"');
     expect(bashResult.script).toContain('resolved="draft qa_review"');
     expect(bashResult.script).toContain(
-      'compgen -W "$(_pm_completion_wordlist "$(_pm_completion_status_choices)")"',
+      '_pm_completion_add_matches "$(_pm_completion_status_choices)"',
     );
     expect(bashResult.script).toContain(
-      'compgen -W "$(_pm_completion_wordlist "$(_pm_completion_type_choices)")"',
+      '_pm_completion_add_matches "$(_pm_completion_type_choices)"',
     );
 
     const zshResult = runCompletion("zsh", ["Task"], [], false, runtime);
