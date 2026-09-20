@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1280: preserve literal completion across Bash versions and package helper paths ([pm-t6jl1f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t6jl1f.toon))
+
+### Other
+
+- Refresh compatible September 20 validation tooling alongside portability regressions ([pm-cljdn3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-cljdn3.toon))
+- Bound replication-gate Git work independently of tracker migration size ([pm-26y269](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-26y269.toon))
+
 ## 2026.9.20 - 2026-09-20
 
 ### Changed

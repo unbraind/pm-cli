@@ -5,30 +5,55 @@ import { normalizeScoreMap } from "../../../../src/sdk/query/search/lexical.js";
 import { itOnPosix } from "../../../helpers/platform.js";
 
 describe("reviewed SDK input boundaries", () => {
-  itOnPosix("keeps static and dynamic Bash completion values inert", () => {
-    const unsafe = '$(printf INJECTED >&2) `printf BACKTICK >&2` ${PM_SECRET} "quoted" back\\slash 🚀';
-    for (const mode of ["type", "tag", "flag", "dynamic-type", "dynamic-tag", "status"]) {
-      const script = runCompletion(
-        "bash",
-        mode === "type" ? ["Safe", unsafe] : [],
-        mode === "tag" ? ["Safe", unsafe] : [],
-        false,
-        mode === "flag" ? { command_flags: { list: ["--safe", unsafe] } } : {},
-      ).script;
-      const previous = mode === "flag" ? "list" : `--${mode.replace("dynamic-", "")}`;
-      const result = spawnSync("bash", ["--noprofile", "--norc"], {
+  const modes = ["type", "tag", "flag", "dynamic-type", "dynamic-tag", "status", "fallback-type", "fallback-status", "cached-type", "cached-tag", "cached-status"];
+  const locales = ["C", process.platform === "darwin" ? "en_US.UTF-8" : "C.UTF-8"];
+  const cases = modes.flatMap((mode) => locales.flatMap((locale) =>
+    ["", "🚀", "*", "missing-choice"].map((prefix) => ({ mode, locale, prefix, expected: prefix === "missing-choice" ? [] : [prefix] })),
+  ));
+  itOnPosix.each(cases)("preserves Bash $mode choices in $locale for prefix '$prefix'", ({ mode, locale, prefix, expected }) => {
+    const unsafe = '$(printf INJECTED >&2) `printf BACKTICK >&2` ${PM_SECRET} "quoted" back\\slash 🚀 * single\'quote $(printf${IFS}ACCEPTED>&2)';
+    const kind = mode.replace(/^(?:dynamic|fallback|cached)-/, "");
+    const runtime = mode === "flag" ? { command_flags: { list: ["--safe", unsafe] } }
+      : mode === "fallback-type" ? { item_types: ["Safe", unsafe] }
+        : mode === "fallback-status" ? { statuses: ["Safe", unsafe] } : {};
+    const script = runCompletion("bash", mode === "type" ? ["Safe", unsafe] : [], mode === "tag" ? ["Safe", unsafe] : [], false, runtime).script;
+    const result = spawnSync(process.env.PM_COMPLETION_TEST_BASH ?? "bash", ["--noprofile", "--norc"], {
+      encoding: "utf8",
+      timeout: 10_000,
+      env: {
+        ...process.env,
+        LC_ALL: locale,
+        PM_TEST_VALUES: `Safe ${unsafe}`,
+        PM_SECRET: "EXPANDED_SECRET",
+        PM_TEST_PREFIX: prefix,
+        [`PM_COMPLETION_${kind.toUpperCase()}_CACHE`]: mode.startsWith("cached-") ? `Safe ${unsafe}` : "",
+        [`PM_COMPLETION_${kind.toUpperCase()}_CACHE_TS`]: String(Math.floor(Date.now() / 1000)),
+      },
+      input: `${script}\npm() { ${mode.startsWith("fallback-") || mode.startsWith("cached-") ? "return 1" : "printf '%s\\n' \"$PM_TEST_VALUES\""}; }\nCOMP_WORDS=(pm list '${mode === "flag" ? "list" : `--${kind}`}' "$PM_TEST_PREFIX")\nCOMP_CWORD=3\n_pm_completion\neval "set -- \${COMPREPLY[*]}"\nprintf '%s\\n' "$@"\n`,
+    });
+    const label = `${locale} ${mode} ${prefix}: ${result.stderr}`;
+    expect(result.status, label).toBe(0);
+    expect(result.stderr, label).toBe("");
+    const choices = result.stdout.trim().split("\n").filter(Boolean);
+    if (prefix !== "") {
+      expect(choices, label).toEqual(expected);
+    } else {
+      expect(result.stdout, label).not.toContain("EXPANDED_SECRET");
+      expect(choices, label).toEqual(expect.arrayContaining([mode === "flag" ? "--safe" : "Safe", ...unsafe.split(" ")]));
+    }
+  });
+
+  itOnPosix("refuses quoted or escaped prefixes before completion initialization", () => {
+    const script = runCompletion("bash", ["Task"]).script;
+    for (const prefix of ["'", '"', "`", "\\"]) {
+      const result = spawnSync(process.env.PM_COMPLETION_TEST_BASH ?? "bash", ["--noprofile", "--norc"], {
         encoding: "utf8",
-        env: { ...process.env, PM_TEST_VALUES: `Safe ${unsafe}`, PM_SECRET: "EXPANDED_SECRET" },
-        input: `${script}\npm() { printf '%s\\n' "$PM_TEST_VALUES"; }\nCOMP_WORDS=(pm list '${previous}' '')\nCOMP_CWORD=3\n_pm_completion\nprintf '%s\\n' "\${COMPREPLY[@]}"\n`,
+        env: { ...process.env, PM_TEST_PREFIX: prefix },
+        input: `${script}\n_init_completion() { cur=""; prev=--type; cword=3; }\nCOMP_WORDS=(pm list --type "$PM_TEST_PREFIX")\nCOMP_CWORD=3\nCOMPREPLY=(stale)\n_pm_completion\nprintf '%s' "\${COMPREPLY[*]}"\n`,
       });
-      expect(result.status, mode).toBe(0);
-      expect(result.stderr, mode).toBe("");
-      expect(result.stdout, mode).not.toContain("EXPANDED_SECRET");
-      expect(result.stdout, mode).toContain(mode === "flag" ? "--safe" : "Safe");
-      expect(result.stdout, mode).toContain("${PM_SECRET}");
-      expect(result.stdout, mode).toContain('"quoted"');
-      expect(result.stdout, mode).toContain("back\\slash");
-      expect(result.stdout, mode).toContain("🚀");
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toBe("");
     }
   });
 

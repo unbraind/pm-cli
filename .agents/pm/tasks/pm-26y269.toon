@@ -2,23 +2,80 @@ id: pm-26y269
 title: Bound replication-gate Git work independently of tracker migration size
 description: "Large audited tracker migrations cause changedLinesFromGit in surface-replication-gate.mjs to execute three git diff subprocesses for every changed path, even paths absent from all content-scoped replication triggers. The 1488-item closure-timestamp migration exposes roughly 9000 redundant Git subprocesses. Filter to declared content-trigger paths or batch patches while preserving deleted-file handling and fail-closed unknown evidence."
 type: Task
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-09-19T09:04:56.152Z"
-updated_at: "2026-09-19T09:15:14.861Z"
+updated_at: "2026-09-20T14:48:34.858Z"
+closed_at: "2026-09-20T14:48:34.301Z"
+completed_at: "2026-09-20T14:48:34.301Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Git subprocess count is bounded by declared content triggers or a constant number of batched diffs, not unrelated changed tracker files; missing or unreadable diff evidence still activates applicable sets fail-closed; deleted structured triggers and unrelated-hunk negative controls remain covered; a large temporary Git fixture proves equivalent findings and bounded process work"
 parent: pm-92if
 risk: low
 confidence: high
+resolution: Bound semantic replication patch reads to declared trigger paths while preserving the complete path census and fail-closed evidence handling.
+expected_result: Patch subprocess work depends on semantic triggers rather than unrelated changed files; absent or unreadable evidence remains conservative.
+actual_result: "The real 1001-path fixture now makes 3 patch calls instead of 3003; unrelated hunks, no default branch, untracked triggers and partial staged-read failures pass linked regressions."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-92if,implements,"2026-09-19T09:04:56.152Z","harness:codex","cli:create:dep",detected
   pm-mrhwow,discovered_from,"2026-09-19T09:04:56.152Z","harness:codex","cli:create:dep",detected
   pm-wrbe,discovered_from,"2026-09-19T09:04:56.152Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text,edited_at}:
-  "2026-09-19T09:04:56.152Z","harness:codex","Duplicate check: all-status keyword search changedLinesFromGit returned zero; all 59 replication matches were inspected for matching scope. Closed pm-mrhwow owns semantic activation correctness, not subprocess fanout; its completed behavior must be preserved. Open and in_progress inventories were refreshed. This follow-up remains open and unclaimed; its discovery is the pm-wrbe bulk migration.","2026-09-19T09:15:14.861Z"
-files[1]{path,scope,note}:
+comments[6]:
+  - created_at: "2026-09-19T09:04:56.152Z"
+    author: "harness:codex"
+    text: "Duplicate check: all-status keyword search changedLinesFromGit returned zero; all 59 replication matches were inspected for matching scope. Closed pm-mrhwow owns semantic activation correctness, not subprocess fanout; its completed behavior must be preserved. Open and in_progress inventories were refreshed. This follow-up remains open and unclaimed; its discovery is the pm-wrbe bulk migration."
+    edited_at: "2026-09-19T09:15:14.861Z"
+  - created_at: "2026-09-20T13:04:06.116Z"
+    author: "harness:codex"
+    text: "Red-first evidence: a real temporary Git repository with 1000 unrelated tracker files and one content trigger executed 3003 patch subprocesses; the new acceptance requires exactly three while retaining all 1001 changed paths. The collector now limits content reads to declared structured triggers and treats partial patch-read failure as unknown evidence."
+  - created_at: "2026-09-20T13:27:03.520Z"
+    author: "harness:codex"
+    text: "The real Git regression covers a 1001-path census with only three patch subprocesses, semantic activation equivalence, feature-only clones without a default branch, and partial staged-patch failure remaining fail-closed. Baseline required 3003 patch subprocesses for the same census."
+  - created_at: "2026-09-20T13:28:25.951Z"
+    author: "harness:codex"
+    text: The aborted bootstrap was recovered only after explicit approval and recorded-owner re-verification. Implementation remained isolated during recovery. Git diff collection is read-only and unrelated PM history remains untouched by direct edits; tracker evidence is appended through the CLI.
+  - created_at: "2026-09-20T14:30:54.522Z"
+    author: "harness:codex"
+    text: "Final focused verification passes the real 1001-path Git cost fixture, no-default-branch activation, unreadable staged layer and untracked semantic trigger. Added the untracked case after full coverage identified an unexercised empty-hunk branch; it asserts conservative activation rather than adjusting coverage exclusions. All linked replication tests pass."
+  - created_at: "2026-09-20T14:48:33.620Z"
+    author: "harness:codex"
+    text: "Final local evidence: 9150 tests in 720 files pass. Exact source coverage is statements 64773/64773; branches 49459/49459; functions 13462/13462; lines 61981/61981, with zero skipped coverage. Native Bash 3.2 regression, serial linked tests, temporary-workspace lifecycle, installed helper transport, native Fish/Zsh acceptance and packed npm/npx/bunx smoke pass. Existing thresholds and exclusions were not weakened. GitHub review and CI will validate the submitted delivery head."
+notes[1]{created_at,author,text}:
+  "2026-09-20T13:30:46.422Z","harness:codex","Cost is measured by real Git trace events rather than elapsed-time thresholds. One semantic trigger with 1000 unrelated tracker paths needs three patch subprocesses, preserving the full 1001-path census and fail-closed missing evidence."
+learnings[1]{created_at,author,text}:
+  "2026-09-20T13:07:35.101Z","harness:codex",A complete changeset census and semantic patch evidence have different consumers. Retain every changed path but collect hunks only for declared structured triggers. Any failed patch layer makes the whole path unknown and therefore activates its ratchet.
+files[2]{path,scope,note}:
   scripts/release/surface-replication-gate.mjs,project,Per-path Git subprocess fanout observed during historical repair validation
+  tests/unit/scripts/release/surface-replication-cost.spec.ts,project,Real Git process-count acceptance and partial-failure regression
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/surface-replication-cost.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts,project,240,"harness:codex","2026-09-20T13:06:43.293Z",local_mutation,fix/shell-portability-validation
+test_runs[2]:
+  - run_id: test-local-mu9vm5l0-oyxyf9
+    kind: test
+    status: passed
+    started_at: "2026-09-20T13:52:39.151Z"
+    finished_at: "2026-09-20T13:52:57.540Z"
+    recorded_at: "2026-09-20T13:52:57.540Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/surface-replication-cost.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mu9wyday-fvlr8p
+    kind: test
+    status: passed
+    started_at: "2026-09-20T14:30:10.875Z"
+    finished_at: "2026-09-20T14:30:27.034Z"
+    recorded_at: "2026-09-20T14:30:27.034Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/surface-replication-cost.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated delivery entry
+  docs/VALIDATION_PORTABILITY.md,project,Bounded collection and fail-closed evidence contract
+close_reason: Implementation and local acceptance complete; delivery proceeds through reviewed PR.
 body: ""

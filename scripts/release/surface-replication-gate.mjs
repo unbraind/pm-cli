@@ -72,10 +72,12 @@ function changedFilesFromGit(root) {
 }
 
 function changedLinesFromGit(root, changedFiles) {
+  if (changedFiles.length === 0) return {};
   const base = resolveDefaultBranchBase(root);
   const changedLines = {};
   for (const file of changedFiles) {
     const patches = [];
+    let incomplete = false;
     for (const args of [
       ...(base === null
         ? []
@@ -92,9 +94,12 @@ function changedLinesFromGit(root, changedFiles) {
           }),
         );
       } catch {
-        // Missing patches remain unknown and therefore activate scoped triggers.
+        // One unreadable layer makes the entire path unknown: another layer
+        // may contain the marker even when readable hunks do not.
+        incomplete = true;
       }
     }
+    if (incomplete) continue;
     const lines = patches
       .join("\n")
       .split(/\r?\n/u)
@@ -656,11 +661,6 @@ async function validateActiveSets(
 export async function validateSurfaceReplication(config, options = {}) {
   const root = options.repoRoot ?? repoRoot;
   const changedFiles = options.changedFiles ?? changedFilesFromGit(root);
-  const changedLines =
-    options.changedLines ??
-    (options.changedFiles === undefined
-      ? changedLinesFromGit(root, changedFiles)
-      : {});
   const today = options.today ?? new Date().toISOString().slice(0, 10);
   const violations = [];
   if (
@@ -675,6 +675,21 @@ export async function validateSurfaceReplication(config, options = {}) {
       changed_files: changedFiles,
     };
   }
+  // Only structured triggers consume diff content. Keep the complete path
+  // census for whole-file triggers and required-member checks, but do not spawn
+  // Git for unrelated tracker migrations or ordinary declaration members.
+  const contentPaths = new Set(
+    config.sets.filter(isReplicationSetDeclaration).flatMap((set) =>
+      set.triggers.flatMap((trigger) =>
+        typeof trigger === "string" ? [] : [trigger.path],
+      ),
+    ),
+  );
+  const changedLines =
+    options.changedLines ??
+    (options.changedFiles === undefined
+      ? changedLinesFromGit(root, changedFiles.filter((file) => contentPaths.has(file)))
+      : {});
   const activeSets = await validateActiveSets(
     config,
     changedFiles,

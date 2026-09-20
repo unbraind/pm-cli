@@ -79,12 +79,6 @@ function collectTypeNames(
   ].sort((left, right) => left.localeCompare(right));
 }
 
-function collectTypeToFolder(
-  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>,
-): Record<string, string> {
-  return typeRegistry.type_to_folder;
-}
-
 function collectStatusNames(
   statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>,
 ): string[] {
@@ -284,7 +278,7 @@ export async function runCompletionTagsPackage(
   const settings = await readSettings(pmRoot);
   const registrations = getActiveExtensionRegistrations();
   const typeRegistry = resolveItemTypeRegistry(settings, registrations);
-  const typeToFolder = collectTypeToFolder(typeRegistry);
+  const typeToFolder = typeRegistry.type_to_folder;
   const itemFormat = (
     settings.item_format === "json_markdown" ? "json_markdown" : "toon"
   ) as "toon" | "json_markdown";
@@ -338,7 +332,7 @@ export async function runCompletionTypesPackage(
   };
 }
 
-/** Formats guide shell package output data for the selected output mode. */
+/** Preserve script and word-list wire formats for canonical commands and compatibility aliases, with explicit JSON output retained. */
 export function renderGuideShellPackageOutput(
   context: ServiceOverrideContext,
 ): string | null {
@@ -349,13 +343,13 @@ export function renderGuideShellPackageOutput(
   if (context.command === "completion") {
     return renderCompletionPackageOutput(context.payload, result);
   }
-  if (context.command === "completion-tags") {
+  if (context.command === "completion-tags" || context.command === "completion tags") {
     return renderJsonOrWords(context.payload, result, "tags");
   }
-  if (context.command === "completion-statuses") {
+  if (context.command === "completion-statuses" || context.command === "completion statuses") {
     return renderJsonOrWords(context.payload, result, "statuses");
   }
-  if (context.command === "completion-types") {
+  if (context.command === "completion-types" || context.command === "completion types") {
     return renderJsonOrWords(context.payload, result, "types");
   }
   return null;

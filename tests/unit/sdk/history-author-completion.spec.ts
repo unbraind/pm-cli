@@ -36,7 +36,7 @@ describe("history author acknowledgment completion", () => {
       )?.[0] ?? "";
     const completionWords =
       commandBlock
-        .match(/compgen -W "([^"]*)"/u)?.[1]
+        .match(/_pm_completion_add_matches "([^"]*)"/u)?.[1]
         ?.split(/\s+/u)
         .filter((value) => value.length > 0) ?? [];
     expect(completionWords).toContain("--plan-fingerprint");

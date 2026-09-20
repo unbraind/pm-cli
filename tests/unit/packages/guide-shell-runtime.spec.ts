@@ -274,8 +274,11 @@ describe("guide-shell static SDK runtime", () => {
     ).toContain('"script": "complete"');
 
     for (const [command, key] of [
+      ["completion tags", "tags"],
       ["completion-tags", "tags"],
+      ["completion statuses", "statuses"],
       ["completion-statuses", "statuses"],
+      ["completion types", "types"],
       ["completion-types", "types"],
     ] as const) {
       expect(
