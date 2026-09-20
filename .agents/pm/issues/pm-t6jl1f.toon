@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-20T12:59:34.645Z"
-updated_at: "2026-09-20T14:48:32.431Z"
+updated_at: "2026-09-20T14:52:54.604Z"
 closed_at: "2026-09-20T14:48:31.908Z"
 completed_at: "2026-09-20T14:48:31.908Z"
 author: "harness:codex"
@@ -24,7 +24,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2zjs0g,implements,"2026-09-20T12:59:34.645Z","harness:codex","cli:create:dep",detected
   pm-cimph7,incident_from,"2026-09-20T12:59:34.645Z","harness:codex","cli:create:dep",detected
   pm-ul5lph,discovered_from,"2026-09-20T13:52:06.206Z","harness:codex","cli:update:dep",detected
-comments[13]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-09-20T12:59:34.645Z","harness:codex","Duplicate check: live all-status searches for 1280 and completion injection found no matching open defect. Full metadata and history of completed pm-cimph7 and pm-ul5lph establish prior shipped fixes. Open and in_progress inventories checked. This records the new macOS runtime compatibility escape."
   "2026-09-20T13:04:06.722Z","harness:codex","Red-first evidence: the expanded real Bash regression failed because a literal wildcard completion expanded into checkout filenames. Literal prefix selection now writes quoted array elements for every Bash route and removes completion-time shell re-evaluation. Native macOS regression is added to the existing required runtime-smoke job."
   "2026-09-20T13:16:43.435Z","harness:codex","Operational verification: required Sentry and telemetry gate passed using the local query adapter. Fourteen-day Sentry inventory has zero blocking critical/high issues; telemetry finish error rate is 1.76 percent with zero missing error-code rows. GitHub open Dependabot alerts and open PR inventory are empty before this delivery. Latest pm-changelog is 2026.9.18. These provider checks do not alone prove every new command has arrived remotely."
@@ -38,6 +38,7 @@ comments[13]{created_at,author,text}:
   "2026-09-20T14:23:19.450Z","harness:codex","Manual Tab-and-Enter acceptance now passes under real Bash 3.2 and Bash 5.3: the adversarial candidate reaches the command as a literal argument and the temporary marker is absent. Follow-up pm-eswzn9 owns quote-aware prefix support; it remains open and unclaimed. The current conservative refusal is documented and independently regression-tested."
   "2026-09-20T14:28:12.345Z","harness:codex",The required macOS regression explicitly selects /bin/bash through PM_COMPLETION_TEST_BASH; resolving bash through PATH could silently select Homebrew and miss Bash 3.2. The workflow contract failed before this binding and passed after it. Native Bash acceptance and accepted-command parsing remain required without continue-on-error.
   "2026-09-20T14:48:31.104Z","harness:codex","Final local evidence: 9150 tests in 720 files pass. Exact source coverage is statements 64773/64773; branches 49459/49459; functions 13462/13462; lines 61981/61981, with zero skipped coverage. Native Bash 3.2 regression, serial linked tests, temporary-workspace lifecycle, installed helper transport, native Fish/Zsh acceptance and packed npm/npx/bunx smoke pass. Existing thresholds and exclusions were not weakened. GitHub review and CI will validate the submitted delivery head."
+  "2026-09-20T14:52:54.604Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1281 combines the implementation, regression coverage, package-generated changelog and recorded local evidence. Hosted checks and review findings are attached to the PR head; no published release is claimed for these Unreleased changes."
 notes[2]{created_at,author,text}:
   "2026-09-20T13:28:18.737Z","harness:codex","Manual acceptance caught the command-path versus action-name mismatch that mocked helper tests missed. Preserve both layers: execute shell parsing against adversarial candidate bytes, and exercise the installed package helper to verify the real wire format."
   "2026-09-20T13:48:41.886Z","harness:codex","Incident source: https://github.com/unbraind/pm-cli/issues/1280 and https://github.com/unbraind/pm-cli/actions/runs/35501530012 at e74372690. Native macOS Bash 3.2 corrupted dynamic Unicode completion after the previous source-escaping repair. The new required macOS step executes the adversarial source/cache/fallback and locale matrix before merge."

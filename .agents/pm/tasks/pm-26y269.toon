@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-19T09:04:56.152Z"
-updated_at: "2026-09-20T14:48:34.858Z"
+updated_at: "2026-09-20T14:52:55.142Z"
 closed_at: "2026-09-20T14:48:34.301Z"
 completed_at: "2026-09-20T14:48:34.301Z"
 author: "harness:codex"
@@ -22,7 +22,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-92if,implements,"2026-09-19T09:04:56.152Z","harness:codex","cli:create:dep",detected
   pm-mrhwow,discovered_from,"2026-09-19T09:04:56.152Z","harness:codex","cli:create:dep",detected
   pm-wrbe,discovered_from,"2026-09-19T09:04:56.152Z","harness:codex","cli:create:dep",detected
-comments[6]:
+comments[7]:
   - created_at: "2026-09-19T09:04:56.152Z"
     author: "harness:codex"
     text: "Duplicate check: all-status keyword search changedLinesFromGit returned zero; all 59 replication matches were inspected for matching scope. Closed pm-mrhwow owns semantic activation correctness, not subprocess fanout; its completed behavior must be preserved. Open and in_progress inventories were refreshed. This follow-up remains open and unclaimed; its discovery is the pm-wrbe bulk migration."
@@ -42,6 +42,9 @@ comments[6]:
   - created_at: "2026-09-20T14:48:33.620Z"
     author: "harness:codex"
     text: "Final local evidence: 9150 tests in 720 files pass. Exact source coverage is statements 64773/64773; branches 49459/49459; functions 13462/13462; lines 61981/61981, with zero skipped coverage. Native Bash 3.2 regression, serial linked tests, temporary-workspace lifecycle, installed helper transport, native Fish/Zsh acceptance and packed npm/npx/bunx smoke pass. Existing thresholds and exclusions were not weakened. GitHub review and CI will validate the submitted delivery head."
+  - created_at: "2026-09-20T14:52:55.142Z"
+    author: "harness:codex"
+    text: "Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1281 combines the implementation, regression coverage, package-generated changelog and recorded local evidence. Hosted checks and review findings are attached to the PR head; no published release is claimed for these Unreleased changes."
 notes[1]{created_at,author,text}:
   "2026-09-20T13:30:46.422Z","harness:codex","Cost is measured by real Git trace events rather than elapsed-time thresholds. One semantic trigger with 1000 unrelated tracker paths needs three patch subprocesses, preserving the full 1001-path census and fail-closed missing evidence."
 learnings[1]{created_at,author,text}:
