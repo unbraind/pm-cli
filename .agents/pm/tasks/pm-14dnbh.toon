@@ -1,0 +1,40 @@
+id: pm-14dnbh
+title: Fix smoke and contract workspace cleanup on exits and interrupts
+description: "Completed delivery under the broader temporary-footprint chore: shared owned-root lifecycle registration for package smoke, external-package smoke, package-first dogfood, contract snapshots and the plugin MCP harness. Remaining test-runner, benchmark and release-script adoption stays with the parent. Implementation was claimed and recorded on the parent before edits; this child preserves accurate shipped-scope changelog provenance."
+type: Task
+status: closed
+priority: 2
+tags[3]: cleanup,fix,scripts
+created_at: "2026-09-21T10:49:23.510Z"
+updated_at: "2026-09-21T10:50:32.984Z"
+closed_at: "2026-09-21T10:50:32.050Z"
+completed_at: "2026-09-21T10:50:32.050Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Five named entrypoints register owned roots; normal completion unregisters; supported signals await bounded child shutdown; failed shutdown and explicit retention preserve roots; unrelated roots remain untouched; exit diagnostics survive piped stderr and cannot replace the original failure; real-process and focused coverage tests pass
+parent: pm-p5u6
+risk: low
+confidence: high
+resolution: "Centralized process-owned cleanup, child stop-before-delete, explicit retention and synchronous failure diagnostics; migrated the five named smoke/contract entrypoints."
+expected_result: Covered entrypoints clean only their owned roots on normal exit and supported interruption while preserving live-consumer or diagnostic evidence.
+actual_result: Real subprocess regressions and focused acceptance pass; original failures survive unavailable stderr; linked parent verification and follow-up tests are recorded.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-p5u6,implements,"2026-09-21T10:49:23.510Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-21T10:49:23.510Z","harness:codex","Duplicate check: complete all-status item export and refreshed temporary-workspace search reviewed, including the older closed test-fixture helper extraction. The canonical parent has no existing children. This is the completed five-entrypoint delivery decomposition of the existing parent, not a replacement or duplicate of its remaining every-runner acceptance scope."
+  "2026-09-21T10:50:30.593Z","harness:codex","Verification inherited from the actively claimed parent delivery: full 9170-test suite passed exact 100/100/100/100 before review; follow-up passed 153 tests in eight suites after synchronous diagnostic and docstring improvements. The lifecycle primitives have exact 74/74 statements, 42/42 branches, 9/9 functions and 68/68 lines. Real subprocesses prove natural exit, uncaught failure, explicit retention, Unix interruption, asynchronous shutdown ordering, piped diagnostic output and closed stderr preserving exit status. Packed npx/bunx, both plugin MCP smokes, package-first dogfood and manual CLI/SDK acceptance passed. CodeRabbit finding 4061327789 is addressed in PR 1283; unsupported forced-termination cleanup is documented."
+files[7]{path,scope,note}:
+  scripts/contracts-snapshot.mjs,project,Owned workspace lifecycle implementation and regression evidence
+  scripts/dogfood-package-first.mjs,project,Owned workspace lifecycle implementation and regression evidence
+  scripts/plugin-mcp-smoke-harness.mjs,project,Owned workspace lifecycle implementation and regression evidence
+  scripts/smoke-external-packages.mjs,project,Owned workspace lifecycle implementation and regression evidence
+  scripts/smoke-npx-from-pack.mjs,project,Owned workspace lifecycle implementation and regression evidence
+  scripts/temp-lifecycle.mjs,project,Owned workspace lifecycle implementation and regression evidence
+  tests/unit/scripts/temp-lifecycle.spec.ts,project,Owned workspace lifecycle implementation and regression evidence
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/temp-lifecycle.spec.ts tests/unit/scripts/dogfood-package-first.spec.ts tests/unit/scripts/contracts-snapshot.spec.ts tests/unit/scripts/plugin-mcp-smoke-harness.spec.ts tests/unit/scripts/smoke-external-packages.spec.ts tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,240,"harness:codex","2026-09-21T10:50:28.372Z",local_mutation,fix/build-ownership-and-validation-workspaces
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Lifecycle guarantees and package-generated delivery notes
+  docs/BUILD_AND_RELEASE_ACCEPTANCE.md,project,Lifecycle guarantees and package-generated delivery notes
+close_reason: Delivered and verified owned-root lifecycle for five validation entrypoints
+body: ""

@@ -7,7 +7,8 @@ import { setTimeout as delay } from "node:timers/promises";
 async function readLeaseOwner(ownerFile) {
   try {
     const owner = JSON.parse(await readFile(ownerFile, "utf8"));
-    return owner && Number.isSafeInteger(owner.pid) && owner.pid > 0 ? owner : undefined;
+    return owner && Number.isSafeInteger(owner.pid) && owner.pid > 0
+      && typeof owner.token === "string" && owner.token.length > 0 ? owner : undefined;
   } catch {
     return undefined;
   }

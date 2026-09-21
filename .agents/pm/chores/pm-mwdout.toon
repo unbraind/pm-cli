@@ -2,27 +2,33 @@ id: pm-mwdout
 title: Refresh pinned Codecov CodeQL and TruffleHog actions with dependency-update-safe workflow contracts
 description: Integrate Dependabot PR 1282 into the validation-lifecycle delivery and replace the stale exact Codecov SHA assertion with semantic immutable-pin checks that still reject mutable references. Preserve security and coverage enforcement and record full reviewed-head evidence.
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags[3]: "area:ci",dependencies,security
 created_at: "2026-09-21T10:01:33.804Z"
-updated_at: "2026-09-21T10:26:30.461Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#57e216f31342d96e4f90d9f2"
+updated_at: "2026-09-21T10:53:13.898Z"
+closed_at: "2026-09-21T10:53:13.003Z"
+completed_at: "2026-09-21T10:53:13.003Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Updated actions remain immutable SHA pins; workflow contract rejects mutable references without requiring stale version literals; hosted checks and review feedback settle successfully
 parent: pm-u9d0
 risk: low
 confidence: high
+resolution: "Updated immutable Codecov, CodeQL and TruffleHog pins and strengthened both-upload SHA contracts with executable negative controls."
+expected_result: Dependency updates retain immutable references and all mandatory security and coverage checks.
+actual_result: Linked workflow tests passed; Gates (coverage) and Gates (static) succeeded on the first reviewed head; structured gate evidence matches those exact names and scanner inventories are clear.
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-63i8nr,verifies,"2026-09-21T10:01:33.804Z","harness:codex","cli:create:dep",detected
   pm-p5u6,verifies,"2026-09-21T10:01:33.804Z","harness:codex","cli:create:dep",detected
   pm-z3ez,related,"2026-09-21T10:26:30.127Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-21T10:01:33.804Z","harness:codex","Duplicate check: full live all-status export contains 2788 items with no omissions; exact PR URL and focused Codecov/workflow-pin searches found no owner for PR 1282. Existing historical dependency refresh items concern earlier releases. GitHub coverage shard failed on an old Codecov SHA literal, while scanner alerts inventories are empty."
   "2026-09-21T10:06:10.906Z","harness:codex","Live operational inventory: GitHub Dependabot, code-scanning and secret-scanning open-alert queries each returned zero. Issue 1246 already links canonical pm-z3ez. Scheduled Auto Release run 35576462384 succeeded and GitHub plus npm independently expose 2026.9.21; preserve the existing daily release. Registry latest pm-changelog is 2026.9.18. Dependency census shows fast-check 4.10.2 and tsx 4.23.15 not yet admitted by the existing age policy, plus the already-owned major migrations for TypeScript, Vitest and npm-package-arg. No release-policy or supply-chain-age bypass is introduced."
   "2026-09-21T10:23:20.956Z","harness:codex","Operational verification: pnpm audit reports zero vulnerabilities at every severity; GitHub Dependabot, code-scanning and secret-scanning open alert inventories are empty. Updated Codecov, CodeQL and TruffleHog SHAs resolve in their official upstream repositories. Scheduled Auto Release 35576462384 succeeded and v2026.9.21 is available on GitHub and npm. Exact-version npm/Bun installed-agent acceptance passed 11 steps per manager; npx/bunx CLI plus MCP stdio/HTTP and missing-bin negative controls passed. Sentry required gate reports zero critical/high recent issues; telemetry correlation observed one start and one finish for a current invocation, and explicit flush progressed the local queue to empty. These release checks verify the existing daily release, not publication of this branch."
+  "2026-09-21T10:29:14.759Z","harness:codex","PR 1283 contains the combined build ownership, temporary-workspace and pinned-action delivery. All local static stages passed after linking the governance census evidence and retyping its historically documented discovery relationship. A full two-worker coverage rerun is underway; hosted checks and requested review providers are being awaited before final delivery closeout. Original dependency PR 1282 will be closed as superseded only after this reviewed replacement lands."
+  "2026-09-21T10:47:47.720Z","harness:codex","Review round one settled on 308b7186c with 37 successful, one neutral and two skipped checks, including exact coverage, CodeFactor and DeepScan. CodeRabbit supplied two valid lifecycle diagnostic findings; both are fixed with failing-before/passing-after regressions and 153 passing focused tests. Sourcery reported quota exhaustion; Greptile has not supplied a review despite the request. Final evidence/changelog push will retrigger providers and require all checks again before merge."
+  "2026-09-21T10:53:10.290Z","harness:codex","Additional provider evidence: cubic returned a neutral check because its monthly review line limit was exhausted. Sourcery quota and Greptile silence are reported as unavailable reviews, not approvals. CodeRabbit supplied the actionable review and both findings have passing regressions."
 files[5]{path,scope,note}:
   .github/workflows/ci.yml,project,Validation lifecycle delivery and regression evidence
   .github/workflows/codeql.yml,project,Validation lifecycle delivery and regression evidence
@@ -43,4 +49,15 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated dependency and workflow closeout entry
+close_reason: Integrated and verified immutable action updates with exact hosted gate provenance
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: ci-workflow-contract
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts -t \"rejects mutable and incomplete Codecov references in either upload\""
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: maintainer
 body: ""

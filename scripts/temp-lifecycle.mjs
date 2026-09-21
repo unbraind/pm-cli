@@ -1,11 +1,16 @@
+import { writeSync } from "node:fs";
 import { cleanupTempRoot } from "./smoke-cleanup.mjs";
 
 const workspaces = new Map();
 let stopping = false;
 
-/** Report a retained workspace without replacing the original process failure. */
+/** Write exit-time diagnostics synchronously; unavailable stderr must not mask the original failure. */
 function reportFailure(root, error) {
-  console.error(`Temporary workspace retained at ${root}: ${String(error)}`);
+  try {
+    writeSync(2, `Temporary workspace retained at ${root}: ${String(error)}\n`);
+  } catch {
+    // Reporting is best effort when the stderr descriptor is closed or unwritable.
+  }
 }
 
 /** Remove only roots whose producers need no asynchronous shutdown at process exit. */

@@ -29,6 +29,7 @@ if (!existsSync(cliPath)) {
   process.exit(1);
 }
 
+/** Capture baseline CLI JSON in isolated project/global roots and always dispose of the sandbox. */
 function runCliJson(args, label) {
   const isolatedRoot = mkdtempSync(resolve(tmpdir(), "pm-cli-contracts-"));
   const releaseCleanup = registerTempCleanup(isolatedRoot);
@@ -81,6 +82,7 @@ function runCliJson(args, label) {
   }
 }
 
+/** Reject rendered public commands absent from contracts, excluding declared hidden/internal aliases. */
 function assertRenderedCommandCoverage(contractSummary, renderedHelp) {
   if (
     !Array.isArray(contractSummary?.commands) ||
@@ -117,6 +119,7 @@ function assertRenderedCommandCoverage(contractSummary, renderedHelp) {
   }
 }
 
+/** Read the complete baseline contract and cross-check the rendered command inventory. */
 function runContracts() {
   const contracts = runCliJson(
     ["contracts", "--full", "--output-budget", "unbounded"],
@@ -129,6 +132,7 @@ function runContracts() {
   return contracts;
 }
 
+/** Sort object keys recursively while preserving array order for reproducible snapshots. */
 function stableValue(value) {
   if (Array.isArray(value)) {
     return value.map((entry) => stableValue(entry));
@@ -143,10 +147,7 @@ function stableValue(value) {
   return value;
 }
 
-function stableJson(value) {
-  return `${JSON.stringify(stableValue(value), null, 2)}\n`;
-}
-
+/** Locate the first differing one-based line for an actionable stale-snapshot diagnostic. */
 function firstDiffLine(left, right) {
   const leftLines = left.split("\n");
   const rightLines = right.split("\n");
@@ -160,7 +161,7 @@ function firstDiffLine(left, right) {
   return 0;
 }
 
-const next = stableJson(runContracts());
+const next = `${JSON.stringify(stableValue(runContracts()), null, 2)}\n`;
 
 if (mode === "update") {
   await mkdir(dirname(snapshotPath), { recursive: true });

@@ -2,24 +2,29 @@ id: pm-63i8nr
 title: Diagnose abandoned build leases before the full acquisition timeout
 description: A dead build owner can leave a lease that makes bootstrap wait silently until timeout. Report recorded owner liveness and actionable recovery guidance promptly without age-based lock stealing or removal of live leases.
 type: Task
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-09-20T13:15:17.233Z"
-updated_at: "2026-09-21T10:17:54.517Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#57e216f31342d96e4f90d9f2"
+updated_at: "2026-09-21T10:47:46.671Z"
+closed_at: "2026-09-21T10:47:45.861Z"
+completed_at: "2026-09-21T10:47:45.861Z"
 author: "harness:codex"
 acceptance_criteria: Dead owner diagnostics identify the lease and safe recovery path; live and permission-ambiguous owners remain protected; independent-process tests cover both outcomes
 parent: pm-u9d0
+resolution: "Build acquisition diagnoses an absent owner only after valid PID/token parsing and an unchanged reread, preserving all ambiguous receipts and never deleting a lease automatically."
+expected_result: "Abandoned ownership produces prompt actionable diagnostics while live, malformed, permission-ambiguous and replaced ownership remains protected."
+actual_result: Real independent-process abandonment and competing-producer tests pass; invalid-token negative controls refuse diagnosis; linked tests and 153 focused follow-up tests pass.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-cxc4jc,discovered_from,"2026-09-20T13:15:17.233Z","harness:codex","cli:create:dep",detected
   pm-dj98,implements,"2026-09-20T13:15:17.233Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-20T13:15:17.233Z","harness:codex","Duplicate check: all-status abandoned search returned 18 nonmatching records; exact build-lease search returned zero. Read completed pm-cxc4jc and its safe no-stealing contract. Bootstrap encountered an owner that no longer existed; user explicitly approved removal after re-verification. This follow-up stays open and unclaimed."
   "2026-09-20T13:28:14.698Z","harness:codex","Recovery evidence: the recorded owner process was rechecked and absent; the lease owner record still matched the inspected abandoned lease. After explicit user authorization, only that lease owner file and empty lease directory were removed. Original checkout has no remaining build lease. Active consumers in the isolated checkout retain their own independent lease."
   "2026-09-21T09:52:52.915Z","harness:codex","Implementation design: inspect the owner record while waiting; fail promptly only when a valid recorded PID is definitively absent. Live, permission-ambiguous, malformed and publication-race records remain protected. Preserve lease bytes and directory; no automatic removal. Bundle with canonical temporary-validation lifecycle work and dependency CI repair."
   "2026-09-21T09:56:02.290Z","harness:codex","TDD evidence: new independent-process abandoned-owner regression failed by reaching the 30-second test deadline before implementation. After owner-liveness inspection, all 11 lease tests passed in 756 ms overall, including absent owner, live competing process, malformed/unpublished receipt, permission ambiguity and existing inherited-lease behavior."
+  "2026-09-21T10:42:38.767Z","harness:codex","PR 1283 review: accepting CodeRabbit finding 4061327730. A positive PID without a valid token is malformed and must remain protected; add regression cases for missing, null, numeric and empty tokens before tightening receipt validation. First full two-worker suite passed all 9170 tests at exact 64830/64830 statements, 49487/49487 branches, 13469/13469 functions and 62033/62033 lines."
+  "2026-09-21T10:47:45.154Z","harness:codex","Review remediation verified: four invalid-token cases failed before the change and now pass without probing or deleting the malformed receipt. Combined follow-up verification passed 153 tests across eight suites, typechecking, targeted ESLint and the static quality gate. The two lifecycle primitives remain exactly covered at 74/74 statements, 42/42 branches, 9/9 functions and 68/68 lines. A fresh full-suite run is executing alongside the final hosted review round."
 learnings[1]{created_at,author,text}:
   "2026-09-21T10:17:54.517Z","harness:codex","A dead owner PID is sufficient for a prompt diagnostic, not for lock theft: surviving consumers and PID reuse remain possible. Reread the owner receipt after ESRCH and preserve absent, malformed, permission-ambiguous and replaced receipts. Serialize full artifact-producing and artifact-consuming validation runs; a build-only lease cannot protect later independent consumers."
 files[2]{path,scope,note}:
@@ -39,6 +44,8 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/build-lease.spec.ts,schema,schema,source,local_source_ref
-docs[1]{path,scope,note}:
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated implementation closeout entry
   docs/BUILD_AND_RELEASE_ACCEPTANCE.md,project,Ownership recovery and temporary-workspace guarantees and limits
+close_reason: Delivered conservative abandoned-owner diagnostics with independent-process and malformed-receipt regressions
 body: ""

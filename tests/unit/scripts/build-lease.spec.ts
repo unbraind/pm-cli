@@ -51,6 +51,21 @@ await withBuildLease(process.cwd(), async () => { process.exit(0); });
     },
   );
 
+  it.each([undefined, null, 17, ""])("protects an owner with an invalid token: %s", async (token) => {
+    const root = await harness.createTempRoot("pm-build-invalid-token-");
+    const directory = path.join(root, ".cache", "build-lease");
+    await mkdir(directory, { recursive: true });
+    const record = JSON.stringify({ pid: process.pid, token });
+    await writeFile(path.join(directory, "owner.json"), record);
+    const probe = vi.spyOn(process, "kill").mockImplementation(() => {
+      throw Object.assign(new Error("departed"), { code: "ESRCH" });
+    });
+    const mod = await harness.importModule<LeaseModule>("scripts/build-lease.mjs");
+    await expect(mod.withBuildLease(root, vi.fn(), { timeoutMs: 0 })).rejects.toThrow("Timed out");
+    expect(probe).not.toHaveBeenCalled();
+    expect(await readFile(path.join(directory, "owner.json"), "utf8")).toBe(record);
+  });
+
   it("protects a permission-ambiguous owner", async () => {
     const root = await harness.createTempRoot("pm-build-ambiguous-");
     const directory = path.join(root, ".cache", "build-lease");

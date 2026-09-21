@@ -1,6 +1,7 @@
 import { fork } from "node:child_process";
 import { once } from "node:events";
 import { existsSync } from "node:fs";
+import * as fs from "node:fs";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -15,7 +16,10 @@ interface LifecycleModule {
 
 const harness = createScriptHarness(["../../../scripts/smoke-cleanup.mjs"]);
 const releases: Array<() => void> = [];
-beforeEach(() => { vi.doUnmock("../../../scripts/smoke-cleanup.mjs"); });
+beforeEach(() => {
+  vi.doUnmock("../../../scripts/smoke-cleanup.mjs");
+  vi.doUnmock("node:fs");
+});
 afterEach(() => { for (const release of releases.splice(0)) release(); });
 
 /** Launch the lifecycle owner as an independent process so real exit and signal semantics are exercised. */
@@ -26,12 +30,12 @@ async function runFixture(mode: string): Promise<void> {
     const sentinel = path.join(parent, "retained");
     await writeFile(sentinel, "unrelated");
     await writeFile(fixture, `
-import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { closeSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { registerTempCleanup } from ${JSON.stringify(pathToFileURL(path.resolve("scripts/temp-lifecycle.mjs")).href)};
 const root = ${JSON.stringify(root)};
 mkdirSync(root);
 const mode = ${JSON.stringify(mode)};
-const release = registerTempCleanup(root, mode === 'shutdown' ? {
+const release = registerTempCleanup(root, ['shutdown', 'retained', 'closed-stderr'].includes(mode) ? {
   shutdown: async () => {
     await new Promise(resolve => setTimeout(resolve, 20));
     if (!existsSync(root)) throw new Error('workspace removed before shutdown');
@@ -39,6 +43,8 @@ const release = registerTempCleanup(root, mode === 'shutdown' ? {
   }
 } : {});
 if (mode === 'release') release();
+if (mode === 'closed-stderr') closeSync(2);
+if (mode === 'retained' || mode === 'closed-stderr') process.exit(7);
 if (mode === 'failure') throw new Error('fixture failure');
 if (mode === 'signal' || mode === 'shutdown') {
   process.send('ready');
@@ -46,6 +52,8 @@ if (mode === 'signal' || mode === 'shutdown') {
 }
 `);
     const child = fork(fixture, [], { stdio: ["ignore", "pipe", "pipe", "ipc"] });
+    let stderr = "";
+    child.stderr!.on("data", (chunk: Buffer) => { stderr += chunk.toString(); });
     const closed = once(child, "close");
     try {
       if (mode === "signal" || mode === "shutdown") {
@@ -56,10 +64,11 @@ if (mode === 'signal' || mode === 'shutdown') {
         child.kill("SIGTERM");
       }
       const [code] = await closed;
-      expect(code).toBe(mode === "failure" ? 1 : mode === "signal" || mode === "shutdown" ? 143 : 0);
-      expect(existsSync(root)).toBe(mode === "release");
+      expect(code).toBe(["retained", "closed-stderr"].includes(mode) ? 7 : mode === "failure" ? 1 : mode === "signal" || mode === "shutdown" ? 143 : 0);
+      expect(existsSync(root)).toBe(["release", "retained", "closed-stderr"].includes(mode));
       expect(existsSync(sentinel)).toBe(true);
       if (mode === "shutdown") expect(existsSync(path.join(parent, "stopped"))).toBe(true);
+      if (mode === "retained") expect(stderr).toContain(`Temporary workspace retained at ${root}: process exited before asynchronous shutdown completed\n`);
     } finally {
       child.kill();
     }
@@ -67,7 +76,7 @@ if (mode === 'signal' || mode === 'shutdown') {
 }
 
 describe("owned temporary workspace lifecycle", () => {
-  it.each(["normal", "failure", "release"])("cleans safely on %s", runFixture);
+  it.each(["normal", "failure", "release", "retained", "closed-stderr"])("cleans safely on %s", runFixture);
   // Windows process.kill terminates the target unconditionally; it cannot deliver Unix signals.
   it.skipIf(process.platform === "win32").each(["signal", "shutdown"])("cleans safely on %s", runFixture);
 
@@ -90,23 +99,28 @@ describe("owned temporary workspace lifecycle", () => {
     const before = new Set(process.listeners("exit"));
     const remove = vi.fn(() => { throw new Error("filesystem denied"); });
     vi.doMock("../../../scripts/smoke-cleanup.mjs", () => ({ cleanupTempRoot: remove }));
-    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = vi.fn<typeof fs.writeSync>().mockReturnValue(0);
+    vi.doMock("node:fs", async () => ({ ...await vi.importActual<typeof fs>("node:fs"), writeSync: error }));
     const mod = await harness.importModule<LifecycleModule>("scripts/temp-lifecycle.mjs");
     releases.push(mod.registerTempCleanup("owned-sync"), mod.registerTempCleanup("owned-async", { shutdown: async () => {} }));
     process.listeners("exit").find((listener) => !before.has(listener))!(1);
     expect(remove).toHaveBeenCalledExactlyOnceWith("owned-sync");
     expect(error.mock.calls.flat().join(" ")).toContain("filesystem denied");
     expect(error.mock.calls.flat().join(" ")).toContain("before asynchronous shutdown");
+    expect(error.mock.calls.every(([descriptor, message]) => descriptor === 2 && String(message).endsWith("\n"))).toBe(true);
+    error.mockImplementation(() => { throw new Error("stderr unavailable"); });
+    expect(() => process.listeners("exit").find((listener) => !before.has(listener))!(1)).not.toThrow();
   });
 
   it.each(["SIGINT", "SIGTERM"])("waits for shutdown, preserves failures and coalesces repeated %s", async (signal) => {
     const before = new Set(process.listeners(signal));
-    const mod = await harness.importModule<LifecycleModule>("scripts/temp-lifecycle.mjs");
     const root = await harness.createTempRoot("pm-owned-signal-");
     const failedRoot = await harness.createTempRoot("pm-owned-failure-");
     let finish: () => void = () => {};
     const stopped = new Promise<void>((resolve) => { finish = resolve; });
-    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = vi.fn<typeof fs.writeSync>().mockReturnValue(0);
+    vi.doMock("node:fs", async () => ({ ...await vi.importActual<typeof fs>("node:fs"), writeSync: error }));
+    const mod = await harness.importModule<LifecycleModule>("scripts/temp-lifecycle.mjs");
     vi.spyOn(process, "exit").mockImplementation((code) => { throw new Error(`exit:${code}`); });
     releases.push(mod.registerTempCleanup(root, { shutdown: () => stopped }));
     releases.push(mod.registerTempCleanup(failedRoot, { shutdown: async () => { throw new Error("still alive"); } }));
