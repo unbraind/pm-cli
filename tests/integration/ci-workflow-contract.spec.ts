@@ -73,6 +73,16 @@ function expectContainsNone(content: string, blockedSnippets: string[]): void {
   }
 }
 
+/** Require both Codecov uploads to use a complete immutable action reference. */
+function expectPinnedCodecovUploads(content: string): void {
+  const workflow = parse(content) as { jobs: { coverage: { steps: Array<{ name?: string; uses?: string }> } } };
+  const uploads = workflow.jobs.coverage.steps.filter((step) =>
+    step.name === "Upload coverage to Codecov" || step.name === "Upload test results to Codecov",
+  );
+  expect(uploads).toHaveLength(2);
+  for (const step of uploads) expect(step.uses).toMatch(/^codecov\/codecov-action@[0-9a-f]{40}$/);
+}
+
 function extractWorkflowJob(content: string, jobName: string): string {
   const match = content.match(
     new RegExp(
@@ -232,6 +242,7 @@ describe("GitHub workflow contract", () => {
   it("keeps CI matrix and quality-gate steps aligned with release requirements", async () => {
     const ciPath = path.resolve(repoRoot, ".github/workflows/ci.yml");
     const ciWorkflow = normalizeWorkflow(await readFile(ciPath, "utf8"));
+    expectPinnedCodecovUploads(ciWorkflow);
     const runtimeSmokeJob = extractWorkflowJob(ciWorkflow, "build-test");
     const gatesJob = extractWorkflowJob(ciWorkflow, "gates");
     const coverageShardsJob = extractWorkflowJob(ciWorkflow, "coverage-shards");
@@ -323,7 +334,7 @@ describe("GitHub workflow contract", () => {
       "name: coverage-node24-ubuntu-latest",
       "path: coverage",
       "if-no-files-found: ignore",
-      "uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0",
+      new RegExp(`uses: codecov/codecov-action@${SHA_PATTERN}(?:\\s|$)`),
       "token: ${{ secrets.CODECOV_TOKEN }}",
       "files: ./coverage/lcov.info",
       "name: pm-cli-coverage",
@@ -469,6 +480,18 @@ describe("GitHub workflow contract", () => {
     expect(ciWorkflow).not.toContain("Sandboxed PM regression");
 
     expectContainsNone(ciWorkflow, PUBLISH_OR_RELEASE_PATTERNS);
+  });
+
+  it("rejects mutable and incomplete Codecov references in either upload", async () => {
+    const workflow = await readFile(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
+    const pins = [...workflow.matchAll(/codecov\/codecov-action@[0-9a-f]{40}/g)];
+    expect(pins).toHaveLength(2);
+    for (const pin of pins) {
+      for (const reference of ["v7", "abc123", "a".repeat(41)]) {
+        const changed = workflow.slice(0, pin.index) + `codecov/codecov-action@${reference}` + workflow.slice(pin.index + pin[0].length);
+        expect(() => expectPinnedCodecovUploads(changed)).toThrow();
+      }
+    }
   });
 
   it("proves the full CI merge-integrity command rejects a non-representative drifted stream", async () => {

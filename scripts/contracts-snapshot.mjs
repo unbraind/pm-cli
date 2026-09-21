@@ -6,6 +6,7 @@ import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { removeTempDirectory } from "./contracts-snapshot-cleanup.mjs";
+import { registerTempCleanup } from "./temp-lifecycle.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const snapshotPath = resolve(repoRoot, "tests/fixtures/contracts/full.json");
@@ -30,6 +31,7 @@ if (!existsSync(cliPath)) {
 
 function runCliJson(args, label) {
   const isolatedRoot = mkdtempSync(resolve(tmpdir(), "pm-cli-contracts-"));
+  const releaseCleanup = registerTempCleanup(isolatedRoot);
   const isolatedProjectRoot = resolve(isolatedRoot, "project");
   let result;
   try {
@@ -57,6 +59,7 @@ function runCliJson(args, label) {
     );
   } finally {
     removeTempDirectory(isolatedRoot);
+    releaseCleanup();
   }
   if (result.error !== undefined) {
     throw new Error(`${label} failed to start: ${result.error.message}`);

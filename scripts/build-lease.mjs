@@ -3,6 +3,31 @@ import { mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
+/** Read a published owner conservatively; incomplete receipts never authorize recovery. */
+async function readLeaseOwner(ownerFile) {
+  try {
+    const owner = JSON.parse(await readFile(ownerFile, "utf8"));
+    return owner && Number.isSafeInteger(owner.pid) && owner.pid > 0 ? owner : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Diagnose a missing owner without deleting its lease or assuming its consumers stopped. */
+async function assertLeaseOwnerPresent(ownerFile) {
+  const owner = await readLeaseOwner(ownerFile);
+  if (!owner) return;
+  try {
+    process.kill(owner.pid, 0);
+  } catch (error) {
+    if (error.code !== "ESRCH") return;
+    // The original owner may have released and another acquired between reads.
+    const current = await readLeaseOwner(ownerFile);
+    if (current?.pid !== owner.pid || current.token !== owner.token) return;
+    throw new Error(`Abandoned build lease: recorded owner PID ${owner.pid} is absent. Inspect ${ownerFile}; confirm its producer and consumers have stopped before manually removing the lease. No files were removed.`, { cause: error });
+  }
+}
+
 /**
  * Hold an exclusive checkout lease through a complete producer or consumer.
  * Never steal a lock by age: a slow compiler or test is still its owner.
@@ -27,6 +52,7 @@ export async function withBuildLease(root, operation, options = {}) {
       break;
     } catch (error) {
       if (error.code !== "EEXIST") throw error;
+      await assertLeaseOwnerPresent(ownerFile);
       if (Date.now() >= deadline) {
         throw new Error("Timed out waiting for build lease. Check .cache/build-lease/owner.json; remove an abandoned lease only after confirming its producer and consumers have stopped.", { cause: error });
       }

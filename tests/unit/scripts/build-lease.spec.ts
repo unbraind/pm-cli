@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import * as fsPromises from "node:fs/promises";
 import { fork } from "node:child_process";
 import { once } from "node:events";
@@ -20,6 +20,69 @@ afterEach(async () => {
 });
 
 describe("complete build lease", () => {
+  it("diagnoses a departed independent owner promptly without deleting its lease", async () => {
+    const root = await harness.createTempRoot("pm-build-abandoned-");
+    const fixture = path.join(root, "owner.mjs");
+    const moduleUrl = pathToFileURL(path.resolve("scripts/build-lease.mjs")).href;
+    await writeFile(fixture, `
+import { withBuildLease } from ${JSON.stringify(moduleUrl)};
+await withBuildLease(process.cwd(), async () => { process.exit(0); });
+`);
+    const worker = fork(fixture, [], { cwd: root, stdio: "ignore" });
+    expect((await once(worker, "close"))[0]).toBe(0);
+    const ownerFile = path.join(root, ".cache", "build-lease", "owner.json");
+    const before = await readFile(ownerFile, "utf8");
+    const mod = await harness.importModule<LeaseModule>("scripts/build-lease.mjs");
+    const operation = vi.fn();
+    await expect(mod.withBuildLease(root, operation, { timeoutMs: 60_000 }))
+      .rejects.toThrow(/Abandoned build lease.*confirm.*consumers/s);
+    expect(operation).not.toHaveBeenCalled();
+    expect(await readFile(ownerFile, "utf8")).toBe(before);
+  });
+
+  it.each(["missing", "{", "null", '{"pid":0}', '{"pid":"123"}'])(
+    "protects an unreadable or unpublished owner record: %s", async (record) => {
+      const root = await harness.createTempRoot("pm-build-unknown-");
+      const directory = path.join(root, ".cache", "build-lease");
+      await mkdir(directory, { recursive: true });
+      if (record !== "missing") await writeFile(path.join(directory, "owner.json"), record);
+      const mod = await harness.importModule<LeaseModule>("scripts/build-lease.mjs");
+      await expect(mod.withBuildLease(root, vi.fn(), { timeoutMs: 1 })).rejects.toThrow("Timed out");
+    },
+  );
+
+  it("protects a permission-ambiguous owner", async () => {
+    const root = await harness.createTempRoot("pm-build-ambiguous-");
+    const directory = path.join(root, ".cache", "build-lease");
+    await mkdir(directory, { recursive: true });
+    const record = JSON.stringify({ pid: process.pid, token: "protected" });
+    await writeFile(path.join(directory, "owner.json"), record);
+    vi.spyOn(process, "kill").mockImplementation(() => {
+      throw Object.assign(new Error("permission denied"), { code: "EPERM" });
+    });
+    const mod = await harness.importModule<LeaseModule>("scripts/build-lease.mjs");
+    await expect(mod.withBuildLease(root, vi.fn(), { timeoutMs: 1 })).rejects.toThrow("Timed out");
+    expect(await readFile(path.join(directory, "owner.json"), "utf8")).toBe(record);
+  });
+
+  it.each(["missing", "pid", "token"])("rechecks a replaced owner before abandonment: %s", async (replacement) => {
+    const root = await harness.createTempRoot("pm-build-replaced-");
+    const directory = path.join(root, ".cache", "build-lease");
+    await mkdir(directory, { recursive: true });
+    const ownerFile = path.join(directory, "owner.json");
+    await writeFile(ownerFile, JSON.stringify({ pid: process.pid, token: "old" }));
+    vi.spyOn(process, "kill").mockImplementation(() => {
+      throw Object.assign(new Error("departed"), { code: "ESRCH" });
+    });
+    const read = vi.fn().mockResolvedValueOnce(JSON.stringify({ pid: process.pid, token: "old" }));
+    if (replacement === "missing") read.mockRejectedValueOnce(new Error("removed"));
+    else read.mockResolvedValueOnce(JSON.stringify({ pid: replacement === "pid" ? process.pid + 1 : process.pid, token: "new" }));
+    vi.doMock("node:fs/promises", async () => ({ ...await vi.importActual<typeof fsPromises>("node:fs/promises"), readFile: read }));
+    const mod = await harness.importModule<LeaseModule>("scripts/build-lease.mjs");
+    await expect(mod.withBuildLease(root, vi.fn(), { timeoutMs: 0 })).rejects.toThrow("Timed out");
+    expect(await readFile(ownerFile, "utf8")).toContain('"old"');
+  });
+
   it("blocks an independent process until the producer publishes complete exports", async () => {
     const root = await harness.createTempRoot("pm-build-process-");
     const fixture = path.join(root, "consumer.mjs");

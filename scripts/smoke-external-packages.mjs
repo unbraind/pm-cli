@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { cleanupTempRoot } from "./smoke-cleanup.mjs";
+import { registerTempCleanup } from "./temp-lifecycle.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "..");
@@ -238,6 +239,7 @@ function availableRuntimeActions(contracts) {
 
 function smokePackage(packageName, options) {
   const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-external-package-smoke-"));
+  const releaseCleanup = options.keepTemp ? undefined : registerTempCleanup(tempRoot);
   const startedAt = Date.now();
   let commands = [];
   // Shared so the success and failure returns expose the same temp-root policy
@@ -281,6 +283,7 @@ function smokePackage(packageName, options) {
     if (!options.keepTemp) {
       try {
         cleanupTempRoot(tempRoot);
+        releaseCleanup();
       } catch (cleanupError) {
         console.error(
           `Warning: failed to clean up temp directory ${tempRoot}: ${String(cleanupError)}`,

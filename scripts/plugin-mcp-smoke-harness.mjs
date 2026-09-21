@@ -17,6 +17,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import readline from "node:readline";
+import { registerTempCleanup } from "./temp-lifecycle.mjs";
 import {
   PM_MCP_LEGACY_PROTOCOL_VERSIONS,
   PM_MCP_PROTOCOL_VERSION,
@@ -283,6 +284,7 @@ export async function startPluginMcpSmoke({
       clearTimeout(timeout);
       if (exited) {
         await rm(tmpRoot, { recursive: true, force: true });
+        releaseCleanup();
         if (stderr.trim()) console.error(stderr.trim());
         return;
       }
@@ -297,5 +299,6 @@ export async function startPluginMcpSmoke({
     );
   }
 
+  const releaseCleanup = registerTempCleanup(tmpRoot, { shutdown: dispose });
   return { tmpRoot, request, callTool, getStderr, dispose };
 }

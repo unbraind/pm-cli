@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { cleanupTempRoot } from "./smoke-cleanup.mjs";
+import { registerTempCleanup } from "./temp-lifecycle.mjs";
 
 const repoRoot = process.cwd();
 const cliPath = path.join(repoRoot, "dist", "cli.js");
 const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-dogfood-"));
+const releaseCleanup = process.env.PM_DOGFOOD_KEEP_TEMP === "1" ? undefined : registerTempCleanup(tempRoot);
 const pmPath = path.join(tempRoot, "project", ".agents", "pm");
 const globalPath = path.join(tempRoot, "global");
 const markerFile = path.join(tempRoot, "project", "README.md");
@@ -24,15 +27,6 @@ const timings = [];
 
 function trimOutput(value) {
   return typeof value === "string" ? value.trim() : "";
-}
-
-function cleanupTempRoot() {
-  try {
-    rmSync(tempRoot, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn(`Warning: failed to remove dogfood temp root ${tempRoot}: ${message}`);
-  }
 }
 
 function runProcess(label, args, options = {}) {
@@ -718,6 +712,11 @@ try {
   process.exitCode = 1;
 } finally {
   if (process.env.PM_DOGFOOD_KEEP_TEMP !== "1") {
-    cleanupTempRoot();
+    try {
+      cleanupTempRoot(tempRoot);
+      releaseCleanup();
+    } catch (error) {
+      console.warn(`Warning: failed to remove dogfood temp root ${tempRoot}: ${String(error)}`);
+    }
   }
 }
