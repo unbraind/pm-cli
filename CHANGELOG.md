@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Fix smoke and contract workspace cleanup on exits and interrupts ([pm-14dnbh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-14dnbh.toon))
+
+### Security
+
+- Refresh pinned Codecov CodeQL and TruffleHog actions with dependency-update-safe workflow contracts ([pm-mwdout](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-mwdout.toon))
+
+### Other
+
+- Diagnose abandoned build leases before the full acquisition timeout ([pm-63i8nr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-63i8nr.toon))
+
 ## 2026.9.21 - 2026-09-21
 
 ### Fixed

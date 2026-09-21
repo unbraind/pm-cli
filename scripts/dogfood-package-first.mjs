@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { cleanupTempRoot } from "./smoke-cleanup.mjs";
+import { registerTempCleanup } from "./temp-lifecycle.mjs";
 
 const repoRoot = process.cwd();
 const cliPath = path.join(repoRoot, "dist", "cli.js");
 const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-dogfood-"));
+const releaseCleanup = process.env.PM_DOGFOOD_KEEP_TEMP === "1" ? undefined : registerTempCleanup(tempRoot);
 const pmPath = path.join(tempRoot, "project", ".agents", "pm");
 const globalPath = path.join(tempRoot, "global");
 const markerFile = path.join(tempRoot, "project", "README.md");
@@ -22,19 +25,12 @@ const semanticDogfoodEnabled = process.env.PM_DOGFOOD_SEMANTIC === "1";
 
 const timings = [];
 
+/** Normalize optional captured subprocess output for readable failure evidence. */
 function trimOutput(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function cleanupTempRoot() {
-  try {
-    rmSync(tempRoot, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn(`Warning: failed to remove dogfood temp root ${tempRoot}: ${message}`);
-  }
-}
-
+/** Run one isolated CLI step, record its timing, and return the requested text or JSON result. */
 function runProcess(label, args, options = {}) {
   const startedAt = Date.now();
   const completed = spawnSync(process.execPath, [cliPath, ...(options.json === false ? [] : ["--json"]), ...args], {
@@ -70,14 +66,17 @@ function runProcess(label, args, options = {}) {
   }
 }
 
+/** Execute a JSON-oriented dogfood step using the shared failure and timing contract. */
 function run(label, args, options = {}) {
   return runProcess(label, args, options);
 }
 
+/** Execute a human-readable CLI step without injecting JSON output flags. */
 function runText(label, args) {
   return runProcess(label, args, { json: false });
 }
 
+/** Extract a required item identity from either supported create-result envelope. */
 function idFrom(result, label) {
   const id = result?.item?.id ?? result?.id;
   if (typeof id !== "string" || id.length === 0) {
@@ -86,6 +85,7 @@ function idFrom(result, label) {
   return id;
 }
 
+/** Stop the acceptance journey immediately when an observable contract is violated. */
 function assert(condition, message) {
   if (!condition) {
     throw new Error(message);
@@ -98,6 +98,7 @@ function assert(condition, message) {
 // (`npm run typecheck`): link the SDK + @types/node into the scaffold's
 // node_modules (so the type imports resolve), run the repo's tsc (noEmit), then
 // assert the .ts entry the manifest points at is present.
+/** Typecheck an authored scaffold against this SDK and require its declared TypeScript entrypoint. */
 function typecheckScaffoldedPackage(label, scaffoldPath) {
   const sdkLink = path.join(scaffoldPath, "node_modules", "@unbrained", "pm-cli");
   const typesLink = path.join(scaffoldPath, "node_modules", "@types", "node");
@@ -131,11 +132,13 @@ function typecheckScaffoldedPackage(label, scaffoldPath) {
   assert(existsSync(path.join(scaffoldPath, "index.ts")), `${label} did not author the ./index.ts manifest entry`);
 }
 
+/** Require both the calendar heading and the known fixture event in rendered Markdown. */
 function assertCalendarMarkdown(label, markdown) {
   assert(markdown.includes("# pm calendar"), `${label} did not render calendar markdown heading`);
   assert(markdown.includes("Dogfood calendar event"), `${label} did not render dogfood calendar event`);
 }
 
+/** Execute a semantic probe with its explicit provider environment and retain command timing. */
 function runSemanticCommand(label, semanticEnv, args) {
   const startedAt = Date.now();
   const result = spawnSync(process.execPath, [cliPath, "--json", ...args], {
@@ -161,6 +164,7 @@ function runSemanticCommand(label, semanticEnv, args) {
   return JSON.parse(result.stdout);
 }
 
+/** Require actual embedding batches, embedded items and vector upserts from semantic reindex. */
 function assertSemanticReindexPayload(payload) {
   assert(payload?.semantic?.enabled === true, "semantic hybrid reindex did not report semantic.enabled=true");
   assert((payload?.semantic?.batches_completed ?? 0) >= 1, "semantic hybrid reindex completed no batches");
@@ -168,11 +172,13 @@ function assertSemanticReindexPayload(payload) {
   assert((payload?.semantic?.vector_upserted ?? 0) >= 1, "semantic hybrid reindex upserted no vectors");
 }
 
+/** Verify hybrid search returns at least one item from the seeded workspace. */
 function assertSemanticSearchPayload(payload) {
   assert(payload?.mode === "hybrid", "semantic hybrid search did not report mode=hybrid");
   assert((payload?.items ?? []).length >= 1, "semantic hybrid search returned no items");
 }
 
+/** Verify the advanced-search alias selects hybrid mode without leaking flags into the query. */
 function assertSemanticAdvancedSearchPayload(payload) {
   assert(payload?.mode === "hybrid", "search-advanced --hybrid alias did not select hybrid mode");
   assert(
@@ -181,6 +187,7 @@ function assertSemanticAdvancedSearchPayload(payload) {
   );
 }
 
+/** Exercise the optional live semantic provider or record an explicit, attributable skip. */
 function runSemanticDogfoodProbe() {
   if (!semanticDogfoodEnabled) {
     timings.push({ label: "semantic dogfood skipped", took_ms: 0, code: 0 });
@@ -718,6 +725,11 @@ try {
   process.exitCode = 1;
 } finally {
   if (process.env.PM_DOGFOOD_KEEP_TEMP !== "1") {
-    cleanupTempRoot();
+    try {
+      cleanupTempRoot(tempRoot);
+      releaseCleanup();
+    } catch (error) {
+      console.warn(`Warning: failed to remove dogfood temp root ${tempRoot}: ${String(error)}`);
+    }
   }
 }

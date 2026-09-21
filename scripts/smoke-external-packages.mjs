@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { cleanupTempRoot } from "./smoke-cleanup.mjs";
+import { registerTempCleanup } from "./temp-lifecycle.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "..");
@@ -13,6 +14,7 @@ const cliPath = path.join(repoRoot, "dist", "cli.js");
 const defaultQuery = "keywords:pm-package";
 const ecosystemMarkers = ["pm-package", "pm-cli", "pm-extension", "pm-cli-extension"];
 
+/** Parse smoke selection, timeout and retention options, rejecting unsupported flags. */
 function parseArgs(argv) {
   const options = {
     query: defaultQuery,
@@ -56,6 +58,7 @@ function parseArgs(argv) {
   return options;
 }
 
+/** Require a value token after an option instead of accidentally consuming the next flag. */
 function requireValue(argv, index, flag) {
   const value = argv[index];
   if (!value || value.startsWith("--")) {
@@ -64,6 +67,7 @@ function requireValue(argv, index, flag) {
   return value;
 }
 
+/** Parse a positive integer limit or timeout and report the responsible flag on failure. */
 function parsePositiveInteger(value, flag) {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isInteger(parsed) || parsed <= 0) {
@@ -72,10 +76,12 @@ function parsePositiveInteger(value, flag) {
   return parsed;
 }
 
+/** Remove the optional CLI npm-source prefix before using a package name with the registry. */
 function normalizePackageName(value) {
   return value.startsWith("npm:") ? value.slice("npm:".length) : value;
 }
 
+/** Describe package discovery and isolated smoke controls for direct script users. */
 function printHelp() {
   console.log(`Usage: node scripts/smoke-external-packages.mjs [options]
 
@@ -92,6 +98,7 @@ Options:
 `);
 }
 
+/** Run a bounded subprocess and retain its exit, signal, output and elapsed-time evidence. */
 function runCommand(command, args, options = {}) {
   const startedAt = Date.now();
   const result = spawnSync(command, args, {
@@ -112,6 +119,7 @@ function runCommand(command, args, options = {}) {
   };
 }
 
+/** Decode captured JSON and attribute malformed output to its producing command. */
 function parseJsonOutput(result, label) {
   try {
     return JSON.parse(result.stdout);
@@ -121,12 +129,14 @@ function parseJsonOutput(result, label) {
   }
 }
 
+/** Bound combined stderr/stdout evidence so one failed package cannot overwhelm the report. */
 function summarizeFailure(result) {
   const stderr = result.stderr.trim();
   const stdout = result.stdout.trim();
   return [stderr, stdout].filter(Boolean).join("\n").slice(0, 4000);
 }
 
+/** Deduplicate explicit packages or discover ecosystem-marked npm results within the requested limit. */
 function discoverPackages(options) {
   if (options.packages.length > 0) {
     return [...new Set(options.packages)].slice(0, options.limit);
@@ -144,6 +154,7 @@ function discoverPackages(options) {
   return [...new Set(payload.filter(isPmPackageSearchResult).map((entry) => entry.name))].slice(0, options.limit);
 }
 
+/** Recognize valid registry entries bearing a supported pm ecosystem marker. */
 function isPmPackageSearchResult(entry) {
   if (!entry || typeof entry.name !== "string" || entry.name.length === 0) {
     return false;
@@ -160,6 +171,7 @@ function isPmPackageSearchResult(entry) {
   return ecosystemMarkers.some((marker) => haystack.includes(marker));
 }
 
+/** Require an executable built CLI before installing packages into smoke workspaces. */
 function assertCliBuilt() {
   const result = runCommand(process.execPath, [cliPath, "--version"], { timeoutMs: 30_000 });
   if (result.code !== 0) {
@@ -168,6 +180,7 @@ function assertCliBuilt() {
   return result.stdout.trim();
 }
 
+/** Convert an isolated CLI invocation into structured command evidence and optional JSON data. */
 function runPm(label, args, env, options) {
   const result = runCommand(process.execPath, [cliPath, "--json", ...args], {
     cwd: options.cwd,
@@ -189,6 +202,7 @@ function runPm(label, args, env, options) {
   }
 }
 
+/** Initialize private workspace paths and a command recorder that stops on the first failure. */
 function setupSmokeProject(tempRoot, packageName, options) {
   const projectRoot = path.join(tempRoot, "project");
   const pmPath = path.join(projectRoot, ".agents", "pm");
@@ -218,6 +232,7 @@ function setupSmokeProject(tempRoot, packageName, options) {
   return { commands, record, packageName };
 }
 
+/** Reject activation or blocking diagnostics while retaining their independent counts. */
 function validatePackageDoctor(doctor) {
   const summary = doctor?.details?.summary ?? {};
   const activationFailures = summary.activation_failure_count ?? 0;
@@ -228,6 +243,7 @@ function validatePackageDoctor(doctor) {
   return { activationFailures, blockingFailures };
 }
 
+/** Report only runtime actions that the installed package declares invocable. */
 function availableRuntimeActions(contracts) {
   return Array.isArray(contracts?.action_availability)
     ? contracts.action_availability
@@ -236,8 +252,10 @@ function availableRuntimeActions(contracts) {
     : [];
 }
 
+/** Install and inspect one package in an owned workspace, honoring explicit diagnostic retention. */
 function smokePackage(packageName, options) {
   const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-external-package-smoke-"));
+  const releaseCleanup = options.keepTemp ? undefined : registerTempCleanup(tempRoot);
   const startedAt = Date.now();
   let commands = [];
   // Shared so the success and failure returns expose the same temp-root policy
@@ -281,6 +299,7 @@ function smokePackage(packageName, options) {
     if (!options.keepTemp) {
       try {
         cleanupTempRoot(tempRoot);
+        releaseCleanup();
       } catch (cleanupError) {
         console.error(
           `Warning: failed to clean up temp directory ${tempRoot}: ${String(cleanupError)}`,
@@ -290,6 +309,7 @@ function smokePackage(packageName, options) {
   }
 }
 
+/** Discover or smoke selected packages and emit one aggregate machine-readable verdict. */
 function main() {
   const options = parseArgs(process.argv.slice(2));
   const version = assertCliBuilt();

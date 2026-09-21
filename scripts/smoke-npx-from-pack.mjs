@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { cleanupTempRoot } from "./smoke-cleanup.mjs";
+import { registerTempCleanup } from "./temp-lifecycle.mjs";
 
 const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -233,7 +234,7 @@ function assertPackedTypescriptConsumer(consumerRoot) {
   writeFileSync(
     path.join(consumerRoot, "cli-consumer.mjs"),
     [
-      'const cli = await import("@unbrained/pm-cli/cli");',
+      'import * as cli from "@unbrained/pm-cli/cli";',
       "const exportedNames = Object.keys(cli).sort();",
       'const expectedNames = ["runPmCli"];',
       "if (JSON.stringify(exportedNames) !== JSON.stringify(expectedNames)) {",
@@ -284,6 +285,7 @@ function run() {
   const npx = resolveCommand("npx");
   const bunx = resolveCommand("bunx");
   const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-pack-smoke-"));
+  const releaseCleanup = registerTempCleanup(tempRoot);
 
   try {
     const tarballPath = packCurrentPackage(npm, tempRoot);
@@ -331,6 +333,7 @@ function run() {
   } finally {
     try {
       cleanupTempRoot(tempRoot);
+      releaseCleanup();
     } catch (cleanupError) {
       // Cleanup failures should not mask the actual smoke result in CI.
       console.warn(
