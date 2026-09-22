@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:extensions",calendar,simplification
 created_at: "2026-07-05T04:53:33.905Z"
-updated_at: "2026-09-22T06:46:49.188Z"
+updated_at: "2026-09-22T06:48:40.024Z"
 closed_at: "2026-09-22T06:43:34.180Z"
 completed_at: "2026-09-22T06:43:34.180Z"
 author: maintainer-agent
@@ -58,7 +58,7 @@ dependencies[8]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[12]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-09-18T03:12:04.056Z","harness:codex","Verification: linked package/core registration tests passed; 53 runtime contract tests passed; typecheck and ESLint passed; generated contracts and agent surfaces refreshed with zero SDK export changes. Manual disposable Node and Bun sessions passed install, missing-package recovery, aliases, 5min persistence, rejected update atomicity, month-end clamping, reminders, doctor, validation, and uninstall. Packed npm/npx/bunx smoke passed. Static gate identified automation-guide routing drift; canonical guide examples are being corrected before the final full gate."
   "2026-09-18T03:14:37.176Z","harness:codex","Independent live checks 2026-09-18: GitHub open PRs and Dependabot/code-scanning/secret-scanning alerts were empty; GH-1246 already has the canonical pm-z3ez item link. Last scheduled Auto Release run 35197095403 succeeded and v2026.9.17 is public on GitHub and npm. The workflow serializes automatic runs and verifies an existing same-day immutable tag before preparation. Sentry/telemetry required-mode gate passed: zero critical/high unresolved issues, 1.11 percent weighted finish error rate, zero failure rows missing error codes. Live database had 508 events in the previous hour and a fresh timestamp; RabbitMQ had zero queued or unacknowledged messages."
   "2026-09-18T03:14:38.165Z","harness:codex","All-status graph verification: 2768 recorded nodes and 13824 directed edges form one connected knowledge component with zero orphans and no ordering or hierarchy cycles. Execution has 12 layers and critical path length 11. Seven grandfathered hierarchy cardinality/direction records remain informational; no active hierarchy violations. New duration lineage uses implements, discovered_from, and verifies edges rather than adding associative links to inflate counts. Only pm-o3fh and pm-jkjt are currently in progress."
@@ -71,6 +71,7 @@ comments[12]{created_at,author,text}:
   "2026-09-22T06:27:26.994Z","harness:codex",The two original linked commands retain provenance from the earlier delivery branch and were correctly refused by current-branch trust checks. Their sandboxed runner commands have been reviewed and are being re-registered unchanged under this active delivery; no trust or lock override is used. The new recovery test already passed via pm test.
   "2026-09-22T06:33:43.235Z","harness:codex","Delivery verification: the new linked recovery suite passed 141 tests, including real absent-package text/JSON diagnostics, installation, and legacy help retry. Packed npm/npx/bunx acceptance passed across nine packages; the additive optional SDK receipt field is captured in the public snapshot. The two original sandboxed command links remain present with reviewed current-branch provenance; a duplicate release-note test link was removed from its owning issue so the same suite is not registered twice."
   "2026-09-22T06:43:30.791Z","harness:codex","Final repository coverage passed: 725 files and 9192 tests; statements 64834/64834, branches 49506/49506, functions 13467/13467, lines 62037/62037. All exact thresholds remain 100 percent. Typecheck, ESLint, zero-clone scans, 100-percent module/export/member documentation, structural/static contracts, graph composition and record integrity passed. Temporary Node/Bun lifecycle and packed npm/npx/bunx consumers passed. Local import/transport timing is documented separately because unchanged main also exceeds budgets on this host; hosted gates and reviews are still required before merge."
+  "2026-09-22T06:48:40.024Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1286 — command-domain organization, mandatory private-export gate, package recovery and complete release evidence. Source implementation and local verification are committed; exact-head hosted checks and external review determine merge readiness."
 notes[1]{created_at,author,text}:
   "2026-09-18T03:03:54.634Z","harness:codex","Architecture: calendar extension declares commands and flags over public SDK functions; generic SDK/MCP operation identities stay native. Core bootstrap retains legacy alias rewriting and missing-package recovery. Contract discovery distinguishes callable SDK actions from installed CLI commands."
 learnings[2]{created_at,author,text}:
