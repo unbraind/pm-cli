@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { registerTempCleanup } from "../temp-lifecycle.mjs";
 import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -320,6 +321,7 @@ async function measureCorpus(corpus) {
   try {
     for (const definition of corpus.scenarios) {
       const workspaceRoot = mkdtempSync(path.join(tmpdir(), `pm-context-eval-${definition.id}-`));
+      const releaseCleanup = registerTempCleanup(workspaceRoot);
       try {
         const { client, idByKey, pmRoot } = await seedWorkspace(definition, workspaceRoot);
         await seedUsageFeedback(definition, idByKey, pmRoot);
@@ -330,6 +332,7 @@ async function measureCorpus(corpus) {
         reports.push(await runContextEvaluationScenario(scenario, client));
       } finally {
         rmSync(workspaceRoot, { recursive: true, force: true });
+        releaseCleanup();
       }
     }
   } finally {

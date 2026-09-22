@@ -6,12 +6,16 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { withBuildLease } from "./build-lease.mjs";
+import { registerTempCleanup } from "./temp-lifecycle.mjs";
 
 const MODE_TO_VITEST_ARGS = {
   test: [],
   coverage: ["--coverage"],
   "coverage-shard": ["--coverage"],
 };
+let activeChild;
+let execution;
+let interrupted = false;
 
 function resolveMode(argv) {
   const mode = (argv[2] ?? "test").toLowerCase();
@@ -23,17 +27,38 @@ function resolveMode(argv) {
 }
 
 function runChild(command, args, env) {
+  if (interrupted) return Promise.reject(new Error("Test execution interrupted before the next stage."));
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: process.cwd(),
       env,
       stdio: "inherit",
     });
+    activeChild = child;
     child.on("error", reject);
     child.on("close", (code, signal) => {
       resolve(signal ? 1 : (code ?? 1));
     });
-  });
+  }).finally(() => { activeChild = undefined; });
+}
+
+/** Stop the active stage before cleanup; an unresponsive child retains its workspace. */
+async function stopActiveChild() {
+  interrupted = true;
+  // Await the runner's finally blocks too: deleting its root before the build
+  // lease is released would turn an ordinary interrupt into an abandoned lease.
+  const completion = execution.then(() => true, () => true);
+  activeChild?.kill("SIGTERM");
+  let timeout;
+  try {
+    const stopped = await Promise.race([
+      completion,
+      new Promise((resolve) => { timeout = setTimeout(resolve, 5000, false); }),
+    ]);
+    if (!stopped) throw new Error("Test child did not close within 5000ms; workspace retained.");
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function assertExternalTemporaryDirectory() {
@@ -81,6 +106,7 @@ async function run() {
   }
 
   const tempRoot = await mkdtemp(path.join(tmpdir(), "pm-cli-tests-"));
+  const releaseCleanup = registerTempCleanup(tempRoot, { shutdown: stopActiveChild });
   const pmPath = path.join(tempRoot, "project", ".agents", "pm");
   const pmGlobalPath = path.join(tempRoot, "global");
   const vitestEntry = path.join(
@@ -173,7 +199,9 @@ async function run() {
     process.exitCode = 1;
   } finally {
     await rm(tempRoot, { recursive: true, force: true });
+    releaseCleanup();
   }
 }
 
-await run();
+execution = run();
+await execution;

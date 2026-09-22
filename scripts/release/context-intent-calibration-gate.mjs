@@ -5,6 +5,7 @@
  *
  * Trackers: pm-7hbfch, pm-yekkvt, pm-sf31yl, and pm-hid9g1.
  */
+import { registerTempCleanup } from "../temp-lifecycle.mjs";
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -370,6 +371,7 @@ async function measureTier(
   const workspaceRoot = await createWorkspaceRoot(
     path.join(tmpdir(), `pm-intent-calibration-${itemCount}-`),
   );
+  const releaseCleanup = registerTempCleanup(workspaceRoot);
   try {
     const manifest = await generateWorkspace({
       workspaceRoot,
@@ -422,6 +424,7 @@ async function measureTier(
     };
   } finally {
     cleanupWorkspaceRoot(workspaceRoot);
+    releaseCleanup();
   }
 }
 

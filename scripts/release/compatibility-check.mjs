@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { mkdtemp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { registerTempCleanup } from "../temp-lifecycle.mjs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { commandFor, fail, flagBool, flagString, parseFlags, repoRoot, runCommand } from "./utils.mjs";
@@ -383,6 +384,7 @@ then validates migration/read/write compatibility with the current local build.
   const author = flagString(flags, "author", "release-compatibility-gate");
   const baseVersion = resolvePublishedVersion(flagString(flags, "base-version", null));
   const tempRoot = await mkdtemp(path.join(tmpdir(), "pm-cli-compat-"));
+  const releaseCleanup = keepTemp ? undefined : registerTempCleanup(tempRoot);
   const pmPath = path.join(tempRoot, "project", ".agents", "pm");
   const pmGlobalPath = path.join(tempRoot, "global");
   const env = {
@@ -420,6 +422,7 @@ then validates migration/read/write compatibility with the current local build.
   } finally {
     if (!keepTemp) {
       await removeTempRoot(tempRoot);
+      releaseCleanup();
     }
   }
 }

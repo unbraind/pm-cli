@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 /** Execute closed-domain refusal retries and score their recovery closure. */
+import { registerTempCleanup } from "../temp-lifecycle.mjs";
 import {
   chmodSync,
   mkdirSync,
@@ -529,6 +530,7 @@ export function verifyExecutableRefusalClosure({
   const root = makeTemporaryDirectory(
     path.join(tmpdir(), "pm-refusal-closure-"),
   );
+  const releaseCleanup = registerTempCleanup(root);
   try {
     const environment = {
       ...process.env,
@@ -658,6 +660,7 @@ export function verifyExecutableRefusalClosure({
     };
   } finally {
     removeDirectory(root, { recursive: true, force: true });
+    releaseCleanup();
   }
 }
 

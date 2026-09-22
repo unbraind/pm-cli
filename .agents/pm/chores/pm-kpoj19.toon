@@ -1,0 +1,46 @@
+id: pm-kpoj19
+title: Refresh fast-check and tsx patches under unchanged dependency policy
+description: "Adopt fast-check 4.10.2 and tsx 4.23.15 after a disposable admission probe with the repository-pinned pnpm 11.10.0 and unchanged workspace supply-chain settings succeeds. Preserve the Node floor and separately tracked incompatible major migrations, then verify fuzz/property tests and the actual TypeScript quality runner."
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-09-22T10:32:00.245Z"
+updated_at: "2026-09-22T10:38:00.474Z"
+closed_at: "2026-09-22T10:37:59.557Z"
+completed_at: "2026-09-22T10:37:59.557Z"
+author: "harness:codex"
+acceptance_criteria: "Both compatible patch updates install without age or peer bypass; lockfile changes are limited to their resolution graph; property/fuzz tests, TypeScript quality execution and audit pass; final hosted coverage and static checks remain mandatory"
+parent: pm-u9d0
+resolution: Updated fast-check to 4.10.2 and tsx to 4.23.15 with regenerated peer snapshots and no dependency-policy bypass.
+expected_result: "No eligible compatible patch remains while the Node floor, peer contracts and supply-chain settings remain intact."
+actual_result: "Both exact patches pass installation, 30 fuzz/property tests, typecheck, source-quality execution and source CLI launch; audit reports zero vulnerabilities."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-k47gdd,recurs_from,"2026-09-22T10:32:00.245Z","harness:codex","cli:create:dep",detected
+  pm-lq10y3,discovered_from,"2026-09-22T10:32:00.245Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-09-22T10:32:00.245Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-22T10:32:00.245Z","harness:codex","Duplicate check: all-status searches for exact 4.10.2 and 4.23.15 found only prior intake comments on pm-mwdout and this delivery. Full closed pm-mwdout and pm-k47gdd records distinguish earlier shipped action/tsx updates from this newly admitted patch pair. Disposable pnpm 11.10.0 install succeeds with the existing workspace configuration and both package engines retain Node >=22.18 support."
+  "2026-09-22T10:33:58.650Z","harness:codex","Admission proof: disposable project pins this repository packageManager pnpm@11.10.0 and copies its complete pnpm-workspace.yaml without modification. Exact fast-check 4.10.2 and tsx 4.23.15 resolution succeeds. Their published Node requirements are >=12.17 and >=18 respectively, within the supported >=22.18 floor. Wait for the current coverage process to exit before replacing installed dependencies."
+  "2026-09-22T10:37:57.741Z","harness:codex","Implementation and acceptance: fast-check 4.10.2 and tsx 4.23.15 installed under pnpm 11.10.0 without policy exceptions. Lockfile changes include their expected peer snapshots and Vite reusing already-present picomatch 4.0.7. All 30 linked fuzz/property tests pass; typecheck and the TypeScript source-quality gate pass; tsx 4.23.15 executes the source CLI version command. Audit: zero vulnerabilities across 422 dependencies. The preceding unchanged-source full run passed 9202 tests at exact 100/100/100/100; final hosted coverage on this lockfile is required before merge."
+files[2]{path,scope,note}:
+  package.json,project,Compatible development patch requirements
+  pnpm-lock.yaml,project,Resolved development patch graph
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/fuzz tests/unit/sdk/context/duplicate-candidates.spec.ts tests/unit/sdk/context-relevance.spec.ts,project,300,"harness:codex","2026-09-22T10:33:57.572Z",local_mutation,fix/release-validation-workspace-lifecycle
+test_runs[1]:
+  - run_id: test-local-mucjgvu5-itd0f6
+    kind: test
+    status: passed
+    started_at: "2026-09-22T10:35:56.905Z"
+    finished_at: "2026-09-22T10:36:14.765Z"
+    recorded_at: "2026-09-22T10:36:14.765Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/fuzz tests/unit/sdk/context/duplicate-candidates.spec.ts tests/unit/sdk/context-relevance.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned dependency refresh release evidence
+close_reason: Adopted and verified admitted compatible development patches
+body: ""

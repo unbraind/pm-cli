@@ -19,6 +19,9 @@ const env = {
   PM_PATH: pmPath,
   PM_GLOBAL_PATH: globalPath,
   PM_AUTHOR: "dogfood-agent",
+  // Synthetic acceptance must not leave detached flush workers writing into a
+  // deleted root. Dedicated telemetry acceptance exercises actual delivery.
+  PM_TELEMETRY_DISABLED: "1",
   PM_TELEMETRY_SOURCE_CONTEXT: process.env.PM_TELEMETRY_SOURCE_CONTEXT || "dogfood",
 };
 const semanticDogfoodEnabled = process.env.PM_DOGFOOD_SEMANTIC === "1";
