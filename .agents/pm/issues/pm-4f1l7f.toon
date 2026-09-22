@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-18T04:33:51.530Z"
-updated_at: "2026-09-18T14:23:58.950Z"
+updated_at: "2026-09-22T05:06:25.766Z"
 closed_at: "2026-09-18T14:04:15.816Z"
 completed_at: "2026-09-18T14:04:15.816Z"
 author: "harness:codex"
@@ -42,12 +42,12 @@ files[8]{path,scope,note}:
   src/sdk/governance/health.ts,project,Implementation and regression evidence for the observability measurement contract
   src/sdk/governance/provenance-health.ts,project,Implemented bounded completeness-aware resolver health samples; recovery and boundary tests pass
   tests/integration/provenance-resolver-recovery.spec.ts,project,Implementation and regression evidence for the observability measurement contract
-  tests/unit/commands/health-command.spec.ts,project,Verify complete and unavailable storage sample receipts in existing health integration assertions
+  tests/unit/commands/governance/health-command.spec.ts,project,Verify complete and unavailable storage sample receipts in existing health integration assertions
   tests/unit/sdk/health-vector-boundary.spec.ts,project,Keep no-network health boundary compatible with genuine locally recorded probe success
   tests/unit/sdk/provenance-health.spec.ts,project,Implementation and regression evidence for the observability measurement contract
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/provenance-resolver-recovery.spec.ts tests/unit/sdk/provenance-health.spec.ts,project,240,"harness:codex","2026-09-18T13:10:47.236Z",local_mutation,fix/provenance-health-invocation-timing
-  node scripts/run-tests.mjs test -- tests/unit/commands/health-command.spec.ts tests/unit/sdk/health-vector-boundary.spec.ts,project,240,"harness:codex","2026-09-18T13:31:39.628Z",local_mutation,fix/provenance-health-invocation-timing
+  node scripts/run-tests.mjs test -- tests/unit/commands/governance/health-command.spec.ts tests/unit/sdk/health-vector-boundary.spec.ts,project,240,"harness:codex","2026-09-22T05:06:25.678Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]:
   - run_id: test-local-mu70qwcy-hciwrg
     kind: test

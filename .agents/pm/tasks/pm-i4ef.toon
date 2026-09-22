@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: dependencies,governance,pm-cli,validation
 created_at: "2026-04-06T16:47:21.911Z"
-updated_at: "2026-09-19T08:40:27.975Z"
+updated_at: "2026-09-22T05:03:32.316Z"
 closed_at: "2026-04-27T16:44:23.535Z"
 author: codex-agent
 estimated_minutes: 60
@@ -23,7 +23,7 @@ comments[2]{created_at,author,text}:
   "2026-04-27T16:44:10.015Z",codex-agent,"Implemented lifecycle dependency-cycle diagnostics in pm validate: lifecycle check now builds a deterministic active-item dependency graph, detects cyclic SCC components, and emits stable cycle item IDs + sample cycle paths in check details. Added configurable policy flag --dependency-cycle-severity (off|warn|error) across CLI runtime, completion, contracts, and Pi wrapper mappings. Verification: pm test pm-i4ef --run --progress passed (validate/contracts/completion/pi/release-readiness suites: 236 tests) and pnpm build passed."
 files[9]{path,scope,note}:
   src/cli/commands/completion.ts,project,validate-dependency-cycle-severity-shell-completion
-  src/cli/commands/validate.ts,project,lifecycle-dependency-cycle-detection-and-severity-policy
+  src/cli/commands/governance/validate.ts,project,lifecycle-dependency-cycle-detection-and-severity-policy
   src/cli/help-content.ts,project,validate-help-narrative-and-example-for-cycle-severity
   src/cli/main.ts,project,validate-flag-wiring-for-dependency-cycle-severity
   src/sdk/cli-contracts.ts,project,validate-contract-schema-flag-and-parameter-metadata

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,multi-agent,mutations
 created_at: "2026-07-19T03:42:11.195Z"
-updated_at: "2026-07-26T17:29:34.865Z"
+updated_at: "2026-09-22T05:18:39.581Z"
 closed_at: "2026-07-19T14:05:53.627Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -18,11 +18,11 @@ release: v2026.7.20
 resolution: "Add repeatable additive/removal acceptance-criteria mutations across CLI, bulk planning, contracts, MCP, completions, SDK docs, warnings, and no-op integrity."
 expected_result: Agents can edit individual criteria without clobbering concurrent changes.
 actual_result: "Direct and bulk mutations merge disjoint edits, report misses, reject delimiter corruption, and preserve freshness on no-ops."
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-b84u,related,"2026-07-19T03:42:11.195Z",null,null
-  pm-g5sx,related,"2026-07-19T03:42:11.195Z",null,null
-  pm-m3nl,related,"2026-07-19T03:42:11.195Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:29:34.679Z",null,null
+dependencies[4]{id,kind,created_at}:
+  pm-b84u,related,"2026-07-19T03:42:11.195Z"
+  pm-g5sx,related,"2026-07-19T03:42:11.195Z"
+  pm-m3nl,related,"2026-07-19T03:42:11.195Z"
+  pm-mpbb,implements,"2026-07-26T17:29:34.679Z"
 comments[6]{created_at,author,text}:
   "2026-07-19T12:41:28.445Z",maintainer-agent,"Evidence: --add-ac/--remove-ac are wired through update/update-many, contracts, MCP, completions, docs, previews, conflict guards, and exact-match warnings. Linked 204-test gate passes; full coverage is 100/100/100/100; manual built-CLI acceptance produced base criterion; cli criterion."
   "2026-07-19T12:50:16.361Z",maintainer-agent,"Release-gate evidence: pnpm release:gates completed build, typecheck, docs/skills, static quality, package boundary, token budget, 5,963 tests with exact 100/100/100/100 coverage, version/sync, secret scan, packed-package smoke, and package-first dogfood successfully. The aggregate command stopped only at its intentional Greptile stage because Greptile requires a committed diff against main; the local commit will be reviewed before push."
@@ -34,8 +34,8 @@ notes[1]{created_at,author,text}:
   "2026-07-19T11:59:56.829Z",maintainer-agent,"Implemented with full new-flag checklist: --add-ac/--remove-ac on pm update AND pm update-many. Core helpers splitAcceptanceCriteria/applyAcceptanceCriteriaMutations in core/item/parse.ts (criteria = \"; \"-separated segments; adds append in argv order + dedupe exact trimmed text; removals exact trimmed match; unmatched removals surface remove_ac_unmatched:<text> warnings — never a silent no-op). Additive mutation runs AFTER the scalar --ac replace so composition uses the replaced base. Guards: --unset ac × --add-ac/--remove-ac rejected; ownership-dependency-bypass scope rejects both; command_option_policy marks acceptanceCriteria for additive forms. update-many gets a composed preview plan (an --add-ac-only bulk run is actionable, not a skip; scalar+additive plans deduped into one acceptance_criteria change). Wiring: UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS (+snake aliases), registration-helpers, update-many hand-registered options + hidden aliases, UPDATE/UPDATE_MANY flag contracts, MCP tool-option-contracts (addAc/removeAc repeatable) + parameter tables + descriptions, zsh/fish completions for update+update-many, docs COMMANDS.md + AGENT_GUIDE.md, contracts snapshot regenerated after build. Manual verify: add/dedupe/remove/unmatched-warning all correct."
 files[14]{path,scope,note}:
   src/cli/commands/completion.ts,project,additive acceptance-criteria contract and coverage
-  src/cli/commands/update-many.ts,project,additive acceptance-criteria contract and coverage
-  src/cli/commands/update.ts,project,additive acceptance-criteria contract and coverage
+  src/cli/commands/lifecycle/update-many.ts,project,additive acceptance-criteria contract and coverage
+  src/cli/commands/lifecycle/update.ts,project,additive acceptance-criteria contract and coverage
   src/cli/register-mutation.ts,project,additive acceptance-criteria contract and coverage
   src/cli/registration-helpers.ts,project,additive acceptance-criteria contract and coverage
   src/core/item/parse.ts,project,additive acceptance-criteria contract and coverage
@@ -44,11 +44,11 @@ files[14]{path,scope,note}:
   src/sdk/cli-contracts/tool-option-contracts.ts,project,additive acceptance-criteria contract and coverage
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,additive acceptance-criteria contract and coverage
   tests/fixtures/contracts/full.json,project,additive acceptance-criteria contract and coverage
-  tests/unit/commands/update-command.spec.ts,project,additive acceptance-criteria contract and coverage
-  tests/unit/commands/update-many-command.spec.ts,project,additive acceptance-criteria contract and coverage
+  tests/unit/commands/lifecycle/update-command.spec.ts,project,additive acceptance-criteria contract and coverage
+  tests/unit/commands/lifecycle/update-many-command.spec.ts,project,additive acceptance-criteria contract and coverage
   tests/unit/core/item/parse-utils.spec.ts,project,additive acceptance-criteria contract and coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts tests/unit/commands/update-many-command.spec.ts tests/unit/core/item/parse-utils.spec.ts,project,300
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/commands/lifecycle/update-many-command.spec.ts tests/unit/core/item/parse-utils.spec.ts,project,300,"harness:codex","2026-09-22T05:18:39.510Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrrs888m-t15sld,test,passed,"2026-07-19T12:38:38.577Z","2026-07-19T12:38:53.110Z","2026-07-19T12:38:53.110Z",1,0,0
 docs[2]{path,scope,note}:

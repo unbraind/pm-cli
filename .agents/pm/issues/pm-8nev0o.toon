@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: context,output-budget,pagination,scale
 created_at: "2026-08-14T05:11:18.919Z"
-updated_at: "2026-08-18T16:34:56.394Z"
+updated_at: "2026-09-22T05:07:57.421Z"
 closed_at: "2026-08-18T16:34:55.711Z"
 completed_at: "2026-08-18T16:34:55.711Z"
 author: "harness:claude-code"
@@ -68,7 +68,7 @@ files[31]{path,scope,note}:
   src/sdk/runtime-input.ts,project,Runtime cursor propagation
   tests/fixtures/contracts/full.json,project,Generated MCP unbounded output-budget schema contract
   tests/types/read-output-contracts.test-d.ts,project,Compile-time cursor result narrowing
-  tests/unit/commands/contracts-command.spec.ts,project,transport recovery contract coverage
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,transport recovery contract coverage
   tests/unit/sdk/governance/validate-read-output-continuation.spec.ts,project,Prove disjoint resolution and history pages in governance test domain
   tests/unit/sdk/pagination.spec.ts,project,Shared cursor-envelope decoder regression coverage
   tests/unit/sdk/read-output-contracts.spec.ts,project,list-all and no-truncate completeness tests

@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: agent-ux,cli,error-recovery,gh-issue
 created_at: "2026-07-10T16:38:55.646Z"
-updated_at: "2026-08-10T12:02:12.479Z"
+updated_at: "2026-09-22T05:23:51.835Z"
 closed_at: "2026-07-10T20:32:49.329Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -34,7 +34,7 @@ comments[2]{created_at,author,text}:
   "2026-07-10T17:51:59.995Z",codex-root,"Implementation start: active in the broad atomic work-selection and agent recovery PR. Live all-status duplicate check, full item metadata, closed prerequisite lineage, GitHub issues, security alerts, dependency audit, release state, and Sentry issue surface were reviewed before claiming. This item shares CLI/SDK contracts, recovery envelopes, and end-to-end verification with the seven sibling items in the bundle."
   "2026-07-10T20:32:33.292Z",codex-wide-pm-sdk,"Verification: pnpm release:gates passed build/typecheck/static/docstring ratchets/docs/context/security, 100/100/100/100 coverage with 5,524 tests, packed npx smoke, and 88-command package dogfood; isolated installed-tarball acceptance created two items, atomically claimed one, accepted comments --body, detected one dangling dependency, and imported PmClient. Live Sentry/telemetry: 0 blocking critical/high, 0.34% finish error rate, zero missing error-code rows. pm health: all 7 checks ok; history drift: 0 across 1,709 items."
 files[3]{path,scope,note}:
-  src/cli/commands/next.ts,project,shared agent work-selection envelope
+  src/cli/commands/query/next.ts,project,shared agent work-selection envelope
   src/cli/main.ts,project,arity-aware executable recovery retry
   src/core/item/actionability.ts,project,shared dependency-aware readiness primitive
 tests[1]{command,scope,timeout_seconds}:

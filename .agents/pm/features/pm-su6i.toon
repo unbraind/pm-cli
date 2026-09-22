@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: extensions,packages,pm-cli,provider-neutral,resources
 created_at: "2026-05-11T17:59:04.698Z"
-updated_at: "2026-09-19T08:41:36.480Z"
+updated_at: "2026-09-22T05:02:18.373Z"
 closed_at: "2026-05-11T23:05:55.167Z"
 author: codex-agent
 acceptance_criteria: Package resource kinds remain provider-neutral and pm-specific; unsupported agent-harness resources produce clear docs guidance; project scope precedence and install diagnostics are covered by tests.
@@ -31,14 +31,14 @@ files[14]{path,scope,note}:
   packages/pm-todos/extensions/todos/index.ts,project,TypeScript-authored todos entrypoint
   packages/pm-todos/package.json,project,ESM package root metadata
   scripts/release/static-quality-gate.mjs,project,static gate scans package TS
-  src/cli/commands/extension.ts,project,install-all package lifecycle and ESM scaffold
+  src/cli/commands/extension/extension.ts,project,install-all package lifecycle and ESM scaffold
+  src/cli/register-setup.ts,project,package install-all argument normalization
   tests/integration/cli.integration.spec.ts,project,root install all CLI integration coverage
   tests/integration/release-automation-contract.spec.ts,project,typecheck script contract
   tests/integration/release-readiness-runtime.spec.ts,project,release readiness typecheck contract
   tests/unit/extension-command.spec.ts,project,install-all and ESM scaffold regression coverage
   tests/unit/package-manifest.spec.ts,project,first-party package TS source regression
   tsconfig.packages.json,project,package source typecheck gate
-  src/cli/register-setup.ts,project,package install-all argument normalization
 tests[4]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,900
   node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/beads-command.spec.ts tests/unit/todos-extension.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,900

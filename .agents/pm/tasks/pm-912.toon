@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: coverage,pm-cli,release-readiness,testing
 created_at: "2026-02-17T23:37:35.015Z"
-updated_at: "2026-09-19T08:39:46.350Z"
+updated_at: "2026-09-22T05:00:37.163Z"
 deadline: "2026-02-22T23:37:35.015Z"
 closed_at: "2026-02-18T02:53:01.625Z"
 assignee: cursor-agent
@@ -78,7 +78,7 @@ files[14]{path,scope,note}:
   AGENTS.md,project,align workflow examples with sandbox-safe test commands
   package.json,project,Test scripts and prepublish guard updates
   README.md,project,align quickstart and examples with sandbox-safe test commands
-  src/cli/commands/test.ts,project,sandbox linked test command execution
+  src/cli/commands/test/test.ts,project,sandbox linked test command execution
   src/cli/main.ts,project,verify dependency-failed exit behavior path
   tests/helpers/withTempPmPath.ts,project,Sandbox PM_PATH helper
   tests/integration/cli.integration.spec.ts,project,Sandbox subprocess command matrix

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:health","area:merge","area:sdk",context-integrity
 created_at: "2026-07-29T21:43:53.986Z"
-updated_at: "2026-07-29T22:59:45.322Z"
+updated_at: "2026-09-22T05:10:10.336Z"
 closed_at: "2026-07-29T22:20:04.449Z"
 completed_at: "2026-07-29T22:20:04.449Z"
 author: "harness:codex"
@@ -44,7 +44,7 @@ files[9]{path,scope,note}:
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,Strict merge-driver MCP parameter contract
   src/sdk/cli-contracts/tool-schema.ts,project,Health action strict-policy reachability
   src/sdk/governance/health.ts,project,Advisory default and explicit strict merge-driver policy
-  tests/unit/commands/completion-command.spec.ts,project,Shell completion coverage for strict health policy
+  tests/unit/commands/workspace/completion-command.spec.ts,project,Shell completion coverage for strict health policy
   tests/unit/sdk/action-schema-parity.spec.ts,project,CLI SDK MCP parity for health policy
   tests/unit/sdk/health-merge-driver-policy.spec.ts,project,Policy coverage for advisory and strict merge-driver health modes
 tests[1]{command,scope,timeout_seconds}:

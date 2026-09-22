@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:test-command",code,doc,"milestone:3",pm-cli,"priority:1",tests
 created_at: "2026-03-05T12:46:34.203Z"
-updated_at: "2026-09-19T08:42:28.916Z"
+updated_at: "2026-09-22T05:01:52.601Z"
 deadline: "2026-03-06T23:59:00.000Z"
 closed_at: "2026-03-05T12:57:33.453Z"
 assignee: maintainer-agent
@@ -60,7 +60,7 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-03-05T12:46:34.203Z",maintainer-agent,Safety checks for chained shell commands must evaluate segment boundaries
 files[2]{path,scope,note}:
-  src/cli/commands/test.ts,project,sandbox direct-runner validation
+  src/cli/commands/test/test.ts,project,sandbox direct-runner validation
   tests/unit/test-command.spec.ts,project,regression coverage
 tests[2]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,project,2400,coverage gate verification

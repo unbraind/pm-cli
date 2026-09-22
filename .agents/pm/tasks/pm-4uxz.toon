@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:config","area:schema",audit,living-map,pm-cli
 created_at: "2026-05-31T19:22:09.575Z"
-updated_at: "2026-09-19T08:39:28.280Z"
+updated_at: "2026-09-22T05:05:38.237Z"
 closed_at: "2026-05-31T19:51:40.440Z"
 author: maintainer-agent
 acceptance_criteria: "Domain audited read-only across code+docs+tests; existing pm coverage mapped via search; genuine gaps, forward work, improvements, ADRs, and agent/user stories proposed (dedup-checked); work-log + key decisions recorded in pm on this task."
@@ -25,9 +25,9 @@ learnings[2]{created_at,author,text}:
   "2026-05-31T19:30:36.272Z",audit-config-agent,"ADR evidence: dependency-free settings-validator (settings-validator.ts) replaced zod 2026-05-22 to eliminate ~85ms startup cost. The design reproduces all-or-nothing failure semantics matching zod safeParse: any invalid field returns {success:false} with no field-level detail. This is a deliberate trade-off: the validator is on the hot read path of every command. If the settings.json is malformed, it silently falls back to SETTINGS_DEFAULTS with a warning code 'settings_read_invalid_schema'. The warning IS threaded into SettingsReadResult.warnings and IS surfaced in config command output (normalizeWarnings -> ConfigResult.warnings). So the diagnostics gap is specifically: no pm command (other than pm config get/list/export which requires --action) surfaces these warnings by default."
   "2026-05-31T19:30:46.366Z",audit-config-agent,"Story type assessment: No built-in 'Story' type. The 11 built-in types (Epic/Feature/Task/Chore/Issue/Decision/Event/Reminder/Milestone/Meeting/Plan) have no agile user/agent story type. Assessment: 'Story' is a genuine modeling gap for agile/scrum workflows where user stories are a first-class work unit distinct from Task (a unit of implementation work). Modeling it as a custom type via pm schema add-type Story is the RIGHT approach over adding it as a 12th built-in: (a) custom types are already feature-complete for default_status/folder/aliases/options/command_option_policies, (b) not every project needs agile stories, (c) projects can further customize Story with required fields like acceptance_criteria via command_option_policies. The friction is: currently there is no pm schema list to confirm Story is registered, and no pm init --type-preset agile to batch-install domain types. RECOMMENDATION: add pm schema list + an init type-preset mechanism rather than adding Story as a built-in."
 files[8]{path,scope}:
-  src/cli/commands/config.ts,project
-  src/cli/commands/init.ts,project
-  src/cli/commands/schema.ts,project
+  src/cli/commands/workspace/config.ts,project
+  src/cli/commands/workspace/init.ts,project
+  src/cli/commands/workspace/schema.ts,project
   src/core/config/nested-settings.ts,project
   src/core/schema/item-types-file.ts,project
   src/core/schema/runtime-schema.ts,project

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:schema","area:sdk",gh-issue,migration
 created_at: "2026-07-24T12:38:52.752Z"
-updated_at: "2026-07-26T17:25:22.467Z"
+updated_at: "2026-09-22T05:11:05.132Z"
 closed_at: "2026-07-24T13:35:05.058Z"
 author: codex-root-agent
 estimated_minutes: 180
@@ -24,12 +24,12 @@ actual_result: "The nominally optional migration id is de facto required and omi
 component: schema evolution SDK and CLI adapter
 regression: true
 customer_impact: Agents cannot discover or self-correct the headline schema-evolution workflow from runtime contracts and structured errors.
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-8jdc,related,"2026-07-24T12:38:52.752Z",null,null
-  pm-klo8,related,"2026-07-24T12:38:52.752Z",null,null
-  pm-rxqcp9,related,"2026-07-24T12:38:52.752Z",null,null
-  pm-usfg,related,"2026-07-24T12:38:52.752Z",null,null
-  pm-dijg,implements,"2026-07-26T17:25:22.187Z",null,null
+dependencies[5]{id,kind,created_at}:
+  pm-8jdc,related,"2026-07-24T12:38:52.752Z"
+  pm-klo8,related,"2026-07-24T12:38:52.752Z"
+  pm-rxqcp9,related,"2026-07-24T12:38:52.752Z"
+  pm-usfg,related,"2026-07-24T12:38:52.752Z"
+  pm-dijg,implements,"2026-07-26T17:25:22.187Z"
 comments[4]{created_at,author,text}:
   "2026-07-24T12:38:52.752Z",codex-root-agent,"Duplicate-check evidence: searched all statuses for GH-665, migrationId omission, dry-run planning, raw schema assertion, and structured recovery. Existing items shipped the migration engine and boundary classification; none owns this new first-use ergonomics regression."
   "2026-07-24T12:40:41.482Z",codex-root-agent,"Implementation start: claimed as an actively worked part of the broad SDK workspace mutation integrity PR. TDD scope covers deterministic id allocation, atomic stale-lock takeover, init cache and merge-fence ownership, schema migration idempotency/recovery, cross-runtime machine channels, and the fixed 10k performance gate."
@@ -40,9 +40,9 @@ files[4]{path,scope,note}:
   src/sdk/cli-contracts/tool-schema.ts,project,Agent schema optional migration id
   src/sdk/runtime.ts,project,Optional MCP migration identity
   src/sdk/schema-migration.ts,project,Public schema evolution plan and apply primitives
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/schema-migration.spec.ts tests/unit/cli/migration-gates.spec.ts tests/unit/commands/schema-command.spec.ts,project,300
-  node scripts/run-tests.mjs test -- tests/unit/sdk/schema-migration.spec.ts tests/unit/commands/schema-command.spec.ts,project,300
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/schema-migration.spec.ts tests/unit/cli/migration-gates.spec.ts tests/unit/commands/workspace/schema-command.spec.ts,project,300,"harness:codex","2026-09-22T05:11:05.000Z",local_mutation,refactor/cli-command-domains-export-gate
+  node scripts/run-tests.mjs test -- tests/unit/sdk/schema-migration.spec.ts tests/unit/commands/workspace/schema-command.spec.ts,project,300,"harness:codex","2026-09-22T05:11:05.000Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,CLI migration recovery contract
   docs/SDK.md,project,Migration idempotency and dry-run contract

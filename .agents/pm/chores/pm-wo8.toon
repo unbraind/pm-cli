@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: ci,github-actions,pm-cli,release-readiness
 created_at: "2026-02-17T23:37:41.134Z"
-updated_at: "2026-09-19T08:42:36.434Z"
+updated_at: "2026-09-22T05:09:14.726Z"
 deadline: "2026-02-22T23:37:41.134Z"
 closed_at: "2026-02-22T03:08:25.444Z"
 assignee: cursor-agent
@@ -233,23 +233,23 @@ notes[1]{created_at,author,text}:
   "2026-04-01T20:33:27.803Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:33:29.668Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[58]{path,scope,note}:
+files[57]{path,scope,note}:
   .github/workflows/ci.yml,project,PR/push CI with cross-platform coverage gate
   .github/workflows/nightly.yml,project,Scheduled validation workflow without publish actions
   AGENTS.md,project,align all-fields template with create flags
+  codecov.yml,project,Exact tracked artifact owned by the canonical capability and verified against repository commit history
   package.json,project,validate packaging allowlist and prepublish guard contract
   PRD.md,project,align Milestone 6 checklist to implemented state
   README.md,project,align create explicit-field list with CLI help
-  src/cli/commands/append.ts,project,append command coverage target
-  src/cli/commands/claim.ts,project,claim/release branch coverage target
-  src/cli/commands/comments.ts,project,comments command coverage target
-  src/cli/commands/create.ts,project,create command coverage target
-  src/cli/commands/docs.ts,project,docs command coverage target
-  src/cli/commands/files.ts,project,files command coverage target
-  src/cli/commands/get.ts,project,get command coverage target
-  src/cli/commands/index.ts,project,coverage gate expansion target
-  src/cli/commands/test.ts,project,test command coverage target
-  src/cli/commands/update.ts,project,update command coverage target
+  src/cli/commands/annotations/comments.ts,project,comments command coverage target
+  src/cli/commands/annotations/docs.ts,project,docs command coverage target
+  src/cli/commands/annotations/files.ts,project,files command coverage target
+  src/cli/commands/lifecycle/append.ts,project,append command coverage target
+  src/cli/commands/lifecycle/claim.ts,project,claim/release branch coverage target
+  src/cli/commands/lifecycle/create.ts,project,create command coverage target
+  src/cli/commands/lifecycle/update.ts,project,update command coverage target
+  src/cli/commands/query/get.ts,project,get command coverage target
+  src/cli/commands/test/test.ts,project,test command coverage target
   src/core/extensions/index.ts,project,coverage target for active hook runtime wrappers
   src/core/fs/fs-utils.ts,project,coverage gate target
   src/core/history/history.ts,project,newly enforced coverage target
@@ -291,7 +291,6 @@ files[58]{path,scope,note}:
   tests/unit/todos-extension.spec.ts,project,branch coverage for todos import-export internals
   tests/unit/update-command.spec.ts,project,unit coverage for runUpdate branch matrix
   vitest.config.ts,project,coverage thresholds and scope
-  codecov.yml,project,Exact tracked artifact owned by the canonical capability and verified against repository commit history
 tests[29]:
   - command: node scripts/run-tests.mjs coverage
     scope: project

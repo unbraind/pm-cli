@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-31T10:41:51.338Z"
-updated_at: "2026-07-31T12:54:37.804Z"
+updated_at: "2026-09-22T05:10:00.861Z"
 closed_at: "2026-07-31T12:54:17.471Z"
 completed_at: "2026-07-31T12:54:17.471Z"
 author: "harness:codex"
@@ -34,9 +34,9 @@ comments[5]{created_at,author,text}:
 files[3]{path,scope,note}:
   src/core/shared/errors.ts,project,init target provenance diagnostics and structured recovery error contract
   src/sdk/init.ts,project,typed current-versus-ancestor init target provenance and safe recovery
-  tests/unit/commands/init-command.spec.ts,project,ancestor rejection before directory mutation regression
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts,project,240
+  tests/unit/commands/workspace/init-command.spec.ts,project,ancestor rejection before directory mutation regression
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts,project,240,"harness:codex","2026-09-22T05:10:00.825Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,nested init target safety and explicit pm-path recovery
 close_reason: "Delivered typed current-versus-ancestor init provenance and exact safe recovery, with rejection before directory mutation proven in isolated nested workspaces and full gates in PR #845."

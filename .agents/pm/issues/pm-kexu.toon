@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: agent-ux,"area:cli",bulk-ops,review
 created_at: "2026-07-06T22:29:52.125Z"
-updated_at: "2026-08-24T02:32:08.670Z"
+updated_at: "2026-09-22T05:23:47.406Z"
 closed_at: "2026-08-24T02:32:08.088Z"
 completed_at: "2026-08-24T02:32:08.088Z"
 author: codex-agent
@@ -52,7 +52,7 @@ files[2]{path,scope,note}:
   src/cli/register-mutation.ts,project,CLI filter-only preview adapter
   src/sdk/lifecycle/update-many.ts,project,Filter-only dry-run preview contract
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/update-many-command.spec.ts tests/integration/bulk-input-composability.integration.spec.ts,project,240,"harness:codex","2026-08-23T20:53:29.964Z",local_mutation,codex/bulk-input-composability-contracts
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/update-many-command.spec.ts tests/integration/bulk-input-composability.integration.spec.ts,project,240,"harness:codex","2026-09-22T05:23:47.331Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[2]:
   - run_id: test-local-mt6btlq6-wlkpgd
     kind: test

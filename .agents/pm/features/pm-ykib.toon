@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:list",body,json,pm-cli
 created_at: "2026-03-31T19:36:54.824Z"
-updated_at: "2026-09-19T08:43:09.187Z"
+updated_at: "2026-09-22T05:01:24.870Z"
 deadline: "2026-04-02T19:36:54.824Z"
 closed_at: "2026-03-31T19:45:43.971Z"
 assignee: codex-agent
@@ -78,7 +78,7 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:26:01.173Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
-  src/cli/commands/list.ts,project,list result and filter changes
+  src/cli/commands/query/list.ts,project,list result and filter changes
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts,project,1800,unit coverage for list behavior
 docs[1]{path,scope,note}:

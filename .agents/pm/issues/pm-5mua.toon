@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: agent-ux,extensions,github,pm-cli
 created_at: "2026-05-12T22:05:12.311Z"
-updated_at: "2026-09-19T08:39:31.757Z"
+updated_at: "2026-09-22T05:00:45.176Z"
 closed_at: "2026-05-12T22:08:43.502Z"
 author: codex-audit
 acceptance_criteria: pm extension/package explore reports runtime_active/activation_status plus command paths for enabled extensions; extension-defined paths such as pm-graph export remain invocable; regression tests cover the behavior; GitHub issue #27 is addressed.
@@ -22,7 +22,7 @@ comments[3]{created_at,author,text}:
   "2026-05-12T22:08:35.749Z",codex-audit,"Evidence: implemented runtime probing for extension/package explore, added command_paths/action_paths to extension summaries, and verified a pm-graph export dynamic command path remains invocable. Verification passed: linked focused suite (112 tests), full release gates (1289 tests, 100% coverage, static/docs/secret/pack/compatibility), pm health/vectorization ok with only known history drift warnings."
   "2026-07-22T19:18:07.912Z",codex-sdk-boundary-20260722,"GitHub provenance: added the missing direct pm item link to closed GH-27 for runtime extension command-path exposure."
 files[3]{path,scope,note}:
-  src/cli/commands/extension.ts,project,explore runtime activation and command paths
+  src/cli/commands/extension/extension.ts,project,explore runtime activation and command paths
   tests/integration/cli.integration.spec.ts,project,explore runtime status integration expectation
   tests/unit/extension-command.spec.ts,project,pm-graph command path regression
 tests[1]{command,scope,timeout_seconds}:

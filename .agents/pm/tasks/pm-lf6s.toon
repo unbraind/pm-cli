@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: automation,governance,pm-cli,update
 created_at: "2026-04-06T16:47:17.517Z"
-updated_at: "2026-09-19T08:40:43.019Z"
+updated_at: "2026-09-22T05:09:26.200Z"
 closed_at: "2026-04-07T00:11:35.998Z"
 author: codex-agent
 estimated_minutes: 60
@@ -27,18 +27,17 @@ comments[7]{created_at,author,text}:
   "2026-04-06T23:08:15.281Z",codex-agent,"Reopened as canonical remediation tracker under pm-o7be for current audit findings wave to avoid duplicate item creation. Scope retained from prior implementation lineage and expanded for new report deltas only. Decision rationale: duplicate-check sweep in this run found no open/in-progress item directly covering this exact delta while this closed item already contains closest historical context, linked artifacts, and verification lineage."
   "2026-04-07T00:02:39.757Z",codex-agent,"In-progress implementation: expanded update-many mutation surface to parity with update for linked arrays (dep/comment/note/learning/file/test/doc/reminder/event plus clear/replace controls), added planning support that marks linked-array operations actionable in dry-run/apply, and aligned command contracts/completion/help surfaces. Verification so far: pnpm vitest tests/unit/update-many-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts (92 passed), pnpm build, and pnpm vitest tests/integration/release-readiness-runtime.spec.ts (28 passed)."
   "2026-04-07T00:11:33.784Z",codex-agent,"Completion evidence: update-many now accepts linked-array repeatables and clear/replace controls with deterministic dry-run/apply planning parity. Verified with pnpm build, node scripts/run-tests.mjs test (1002 passed), node scripts/run-tests.mjs coverage (1002 passed, 100% thresholds), and targeted release-readiness checks for update-many help/flags."
-files[11]{path,scope,note}:
+files[10]{path,scope,note}:
   src/cli/commands/completion.ts,project,completion-surface-for-update-many
-  src/cli/commands/contracts.ts,project,contracts-command-core-flag-surface-for-update-many
-  src/cli/commands/index.ts,project,command-export-surface-for-update-many
-  src/cli/commands/update-many.ts,project,bulk-update-planning-apply-rollback-checkpoint
+  src/cli/commands/lifecycle/update-many.ts,project,bulk-update-planning-apply-rollback-checkpoint
+  src/cli/commands/workspace/contracts.ts,project,contracts-command-core-flag-surface-for-update-many
+  src/cli/help-content.ts,project,update-many-help-examples-linked-array-guidance
   src/cli/main.ts,project,update-many-cli-command-wiring
   src/sdk/cli-contracts.ts,project,command-and-flag-contract-surface-for-update-many
   tests/integration/release-readiness-runtime.spec.ts,project,coverage-include-allowlist-update-for-new-command-module
-  tests/unit/update-many-command.spec.ts,project,bulk-update-dry-run-apply-rollback-regressions
-  src/cli/help-content.ts,project,update-many-help-examples-linked-array-guidance
-  tests/unit/contracts-command.spec.ts,project,contracts-flag-parity-coverage-for-update-many-linked-array-flags
   tests/unit/completion-command.spec.ts,project,completion-coverage-for-update-many-linked-array-flags
+  tests/unit/contracts-command.spec.ts,project,contracts-flag-parity-coverage-for-update-many-linked-array-flags
+  tests/unit/update-many-command.spec.ts,project,bulk-update-dry-run-apply-rollback-regressions
 tests[2]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/update-many-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,7200,linked-array-update-many-dry-run-apply-and-surface-parity
   node scripts/run-tests.mjs test -- tests/unit/update-many-command.spec.ts tests/unit/update-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,7200,bulk-update-dry-run-checkpoint-rollback-regression

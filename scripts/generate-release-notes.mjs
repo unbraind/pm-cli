@@ -113,13 +113,18 @@ function extractUnreleasedSection(changelog) {
   return extractChangelogSection(changelog, "Unreleased");
 }
 
+/** Read only release-summary fields and reject partial, unreadable, or malformed tracker input. */
 function loadPmItems() {
   const cliPath = path.join(repoRoot, "dist", "cli.js");
   if (!existsSync(cliPath)) {
     return { items: [], warning: "dist/cli.js is not built; pm tracker summary skipped." };
   }
   try {
-    const output = execFileSync(process.execPath, [cliPath, "list-all", "--json"], {
+    const output = execFileSync(process.execPath, [
+      cliPath, "list", "--all",
+      "--fields", "id,title,type,status,priority,tags,completed_at,closed_at,updated_at,created_at",
+      "--output-budget", "unbounded", "--output-limit", "unbounded", "--json",
+    ], {
       cwd: repoRoot,
       encoding: "utf8",
       env: {
@@ -130,7 +135,13 @@ function loadPmItems() {
       maxBuffer: 20 * 1024 * 1024,
     });
     const parsed = JSON.parse(output);
-    return { items: Array.isArray(parsed.items) ? parsed.items : [], warning: null };
+    if (!Array.isArray(parsed.items) || parsed.truncated !== false || parsed.has_more !== false ||
+      parsed.count !== parsed.items.length || parsed.total !== parsed.items.length ||
+      parsed.completeness?.status !== "complete" ||
+      parsed.completeness.unreadable_item_count !== 0 || parsed.completeness.unreadable_directory_count !== 0) {
+      throw new Error("Incomplete or malformed pm list receipt; release evidence cannot be inferred from a partial tracker read.");
+    }
+    return { items: parsed.items, warning: null };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return { items: [], warning: `pm tracker summary skipped: ${message}` };

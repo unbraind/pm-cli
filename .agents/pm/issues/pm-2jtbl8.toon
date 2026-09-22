@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,error-contract,github-intake
 created_at: "2026-07-30T11:27:37.570Z"
-updated_at: "2026-07-30T23:37:19.418Z"
+updated_at: "2026-09-22T05:17:45.636Z"
 closed_at: "2026-07-30T22:52:29.664Z"
 completed_at: "2026-07-30T22:52:29.664Z"
 author: "harness:codex"
@@ -36,15 +36,15 @@ comments[7]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-07-30T22:51:23.254Z","harness:codex",Reserved core metadata must be classified before extension-field lookup so recovery points to an executable dedicated flag and never suggests irrelevant activation.
 files[7]{path,scope,note}:
-  src/cli/commands/close.ts,project,render executable close-validation flags
+  src/cli/commands/lifecycle/close.ts,project,render executable close-validation flags
   src/core/extensions/item-fields.ts,project,route reserved core metadata to dedicated flags
   src/sdk/generated-error-code-catalog.ts,project,Generated public error-code catalog entry for reserved core-field recovery
   tests/fixtures/contracts/full.json,project,Generated full contract snapshot for the new stable recovery code
   tests/integration/cli.integration.spec.ts,project,CLI warning integration expectation
-  tests/unit/commands/close-command.spec.ts,project,close warning recovery coverage
-  tests/unit/commands/update-command.spec.ts,project,core-field recovery contract
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts tests/unit/commands/close-command.spec.ts tests/integration/cli.integration.spec.ts,project,300,core field and close recovery
+  tests/unit/commands/lifecycle/close-command.spec.ts,project,close warning recovery coverage
+  tests/unit/commands/lifecycle/update-command.spec.ts,project,core-field recovery contract
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/commands/lifecycle/close-command.spec.ts tests/integration/cli.integration.spec.ts,project,300,"harness:codex","2026-09-22T05:17:45.518Z",local_mutation,refactor/cli-command-domains-export-gate,core field and close recovery
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms83vk66-z286jp,test,passed,"2026-07-30T22:48:47.821Z","2026-07-30T22:49:16.253Z","2026-07-30T22:49:16.253Z",1,0,0
 close_reason: "Implemented executable reserved-core-field recovery and dedicated close-validation flag guidance; focused linked tests, fresh-workspace no-write acceptance, and full 100/100/100/100 coverage passed."

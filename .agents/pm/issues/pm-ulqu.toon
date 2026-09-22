@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",gh-issue
 created_at: "2026-07-11T22:55:46.032Z"
-updated_at: "2026-08-09T22:09:14.702Z"
+updated_at: "2026-09-22T05:17:31.415Z"
 closed_at: "2026-08-09T22:09:14.140Z"
 completed_at: "2026-08-09T22:09:14.140Z"
 author: maintainer-agent
@@ -29,8 +29,8 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/sdk/agent/command-recovery.ts,project,Enum-domain placeholder rendering
   src/sdk/lifecycle/close.ts,project,Blocker-first close recovery
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/close-command.spec.ts tests/unit/sdk/agent-command-primitives.spec.ts,project,240,Enum recovery and blocker ordering
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/close-command.spec.ts tests/unit/sdk/agent-command-primitives.spec.ts,project,240,"harness:codex","2026-09-22T05:17:31.334Z",local_mutation,refactor/cli-command-domains-export-gate,Enum recovery and blocker ordering
 docs[1]{path,scope,note}:
   docs/SDK.md,project,Enum recovery and close ordering
 close_reason: Blocker-first enum-aware close recovery is implemented.

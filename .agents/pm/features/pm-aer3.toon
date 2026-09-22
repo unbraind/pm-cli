@@ -6,7 +6,7 @@ status: closed
 priority: 4
 tags[3]: backlog,cli,plan
 created_at: "2026-06-10T09:00:58.601Z"
-updated_at: "2026-09-19T08:39:50.994Z"
+updated_at: "2026-09-22T05:24:39.700Z"
 closed_at: "2026-06-19T00:59:41.050Z"
 author: maintainer-agent
 parent: pm-mpbb
@@ -22,12 +22,12 @@ comments[3]{created_at,author,text}:
   "2026-06-19T00:58:19.304Z",claude-code-agent,"Verification evidence: linked plan/contracts test passed (2 files, 70 tests), contracts:check passed, pnpm build passed, and full repo coverage passed at 100/100/100/100 with 4620 tests."
   "2026-06-19T00:59:37.996Z",claude-code-agent,"Closeout evidence: temp-dir manual smoke verified pm plan create --template bug-investigation creates five ordered steps with completion_pct=0 and current_step populated. Full coverage passed at 100/100/100/100, contracts/build passed, and docs updated."
 files[4]{path,scope,note}:
-  src/cli/commands/plan.ts,project,plan template seeding and completion progress
+  src/cli/commands/lifecycle/plan.ts,project,plan template seeding and completion progress
   src/cli/register-mutation.ts,project,plan template CLI flag
   tests/fixtures/contracts/full.json,project,contract snapshot update
-  tests/unit/commands/plan-command.spec.ts,project,plan template and progress regression tests
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/commands/contracts-command.spec.ts,project,240
+  tests/unit/commands/lifecycle/plan-command.spec.ts,project,plan template and progress regression tests
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/plan-command.spec.ts tests/unit/commands/workspace/contracts-command.spec.ts,project,240,"harness:codex","2026-09-22T05:24:39.627Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mqk6yek7-1kyh1j,test,passed,"2026-06-19T00:28:28.167Z","2026-06-19T00:29:17.239Z","2026-06-19T00:29:17.239Z",1,0,0
 docs[1]{path,scope,note}:

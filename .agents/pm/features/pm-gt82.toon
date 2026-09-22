@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[2]: performance,startup
 created_at: "2026-05-16T15:07:08.622Z"
-updated_at: "2026-09-19T08:40:20.809Z"
+updated_at: "2026-09-22T05:00:24.646Z"
 closed_at: "2026-05-26T22:58:21.462Z"
 author: claude-code-agent
 release: v2026.5.27
@@ -71,9 +71,9 @@ learnings[1]{created_at,author,text}:
   "2026-05-17T09:27:52.419Z",codex-agent,"Durable learning: startup refactors that replace static imports with dynamic imports can trigger orphan-module governance checks; preserving type-only import edges keeps static-quality graph integrity while maintaining runtime lazy-loading."
 files[12]{path,scope,note}:
   src/cli.ts,project,fast --version startup path
-  src/cli/commands/extension.ts,project,bundled package discovery root resolution
+  src/cli/commands/extension/extension.ts,project,bundled package discovery root resolution
   src/cli/commands/guide.ts,project,guide docs root resolution
-  src/cli/commands/upgrade.ts,project,upgrade version root resolution
+  src/cli/commands/workspace/upgrade.ts,project,upgrade version root resolution
   src/cli/main.ts,project,package-root resolution uses shared helper
   src/cli/register-list-query.ts,project,selective list-query command registration for faster startup
   src/core/packages/root.ts,project,package-root discovery shared by bundled/future entrypoints

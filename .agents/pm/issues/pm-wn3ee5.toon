@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:health","area:merge","area:sdk",compatibility,github-1179,merge-receipts,regression
 created_at: "2026-09-02T21:14:41.932Z"
-updated_at: "2026-09-03T08:52:42.465Z"
+updated_at: "2026-09-22T05:07:12.537Z"
 closed_at: "2026-09-03T05:56:56.743Z"
 completed_at: "2026-09-03T08:52:40.000Z"
 author: "harness:codex"
@@ -48,7 +48,7 @@ files[7]{path,scope,note}:
   src/sdk/governance/merge-receipt-history.ts,project,Implementation and regression evidence for pm-wn3ee5
   tests/integration/legacy-merge-receipt-history.integration.spec.ts,project,Implementation and regression evidence for pm-wn3ee5
   tests/integration/merge-receipt-health-classification.integration.spec.ts,project,Implementation and regression evidence for pm-wn3ee5
-  tests/unit/commands/merge-reconcile-command.spec.ts,project,Implementation and regression evidence for pm-wn3ee5
+  tests/unit/commands/workspace/merge-reconcile-command.spec.ts,project,Implementation and regression evidence for pm-wn3ee5
   tests/unit/sdk/governance/merge-receipt-history.spec.ts,project,Implementation and regression evidence for pm-wn3ee5
   tests/unit/sdk/merge-safety.spec.ts,project,Implementation and regression evidence for pm-wn3ee5
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:

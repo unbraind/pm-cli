@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:cli",audit,ergonomics,gh-207
 created_at: "2026-06-13T20:54:33.757Z"
-updated_at: "2026-09-19T08:40:39.861Z"
+updated_at: "2026-09-22T05:12:50.567Z"
 closed_at: "2026-06-18T23:35:48.904Z"
 author: claude-code-agent
 parent: pm-mpbb
@@ -25,11 +25,20 @@ comments[6]{created_at,author,text}:
   "2026-06-18T23:45:01.972Z",codex-implementation,"Review follow-up: addressed CodeRabbit findings by forcing audit-update comment authors to the actual command author, updating audit-scope error guidance to mention allowed evidence appends, and clarifying replacement-map intent for narrower audit scopes."
   "2026-06-18T23:51:35.638Z",codex-implementation,"Review follow-up verification: focused update-command test passed (95 tests), full coverage passed 228 files / 4609 tests with 100% statements, branches, functions, and lines, changelog:pm:check passed unchanged, and pm validate history drift remained ok with only existing backlog-wide resolution warnings."
 files[2]{path,scope,note}:
-  src/cli/commands/update.ts,project,Allow --allow-audit-update to append comment/file/doc evidence
-  tests/unit/commands/update-command.spec.ts,project,Regression coverage for GH-207 audit evidence appends
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs coverage,project,360
-  node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts,project,240
+  src/cli/commands/lifecycle/update.ts,project,Allow --allow-audit-update to append comment/file/doc evidence
+  tests/unit/commands/lifecycle/update-command.spec.ts,project,Regression coverage for GH-207 audit evidence appends
+tests[2]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 360
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/update-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:12:50.507Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Document agent ownership/audit evidence guidance
   docs/COMMANDS.md,project,Document audit evidence update boundary

@@ -12,7 +12,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { _testOnly } from "../../../src/cli/commands/extension.js";
+import { _testOnly } from "../../../src/cli/commands/extension/extension.js";
 
 const tempRoots: string[] = [];
 

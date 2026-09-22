@@ -16,7 +16,7 @@ import {
   readManagedExtensionState,
   resolveCanonicalExtensionInstallDestination,
   validateExtensionDirectory,
-} from "../../../src/cli/commands/extension.js";
+} from "../../../src/cli/commands/extension/extension.js";
 import { createEmptyManagedExtensionState, managedExtensionSourcesEquivalent, normalizeManagedState, sortManagedEntries, upsertManagedEntry, writeManagedExtensionState } from "../../../src/sdk/extension/managed-state.js";
 import { SCAFFOLD_PM_MIN_VERSION } from "../../../src/cli/commands/extension/scaffold.js";
 import {

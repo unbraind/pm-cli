@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: exit-codes,external-audit,linked-tests,pm-cli
 created_at: "2026-04-04T18:16:15.038Z"
-updated_at: "2026-09-19T08:39:59.404Z"
+updated_at: "2026-09-22T05:00:30.941Z"
 deadline: "2026-04-14T18:16:15.038Z"
 closed_at: "2026-04-05T17:57:00.177Z"
 author: codex-agent
@@ -56,8 +56,8 @@ notes[1]{created_at,author,text}:
   "2026-04-04T18:16:15.038Z",codex-agent,Implement CLI test command exit-code parity with test-all dependency-failed behavior.
 files[10]{path,scope,note}:
   src/cli/commands/completion.ts,project,fail-on-empty-test-run completion parity
-  src/cli/commands/test-all.ts,project,test-all empty-run guard passthrough
-  src/cli/commands/test.ts,project,empty-run detection and linked-test failure category handling
+  src/cli/commands/test/test-all.ts,project,test-all empty-run guard passthrough
+  src/cli/commands/test/test.ts,project,empty-run detection and linked-test failure category handling
   src/cli/main.ts,project,test command exit semantics
   src/sdk/cli-contracts.ts,project,fail-on-empty-test-run contracts parity
   tests/integration/cli.integration.spec.ts,project,pm-test-exit-code-integration-coverage

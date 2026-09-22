@@ -303,8 +303,9 @@ function renderAttemptedCommand(argv: string[]): string {
   return renderPmCommand(argv);
 }
 
-function resolveOptionalPackageInstallHint(commandPath: string): string | null {
-  const topLevel = commandPath.split(" ")[0]?.trim().toLowerCase();
+function resolveOptionalPackageInstallHint(commandPath: string): { packageAlias: string; canonicalPath: string; installCommand: string } | null {
+  const canonicalPath = resolvePmCommandAlias(commandPath)?.canonical ?? EXECUTABLE_COMMAND_ALIASES[commandPath] ?? commandPath;
+  const topLevel = canonicalPath.split(" ")[0]?.trim().toLowerCase();
   if (!topLevel) {
     return null;
   }
@@ -312,7 +313,7 @@ function resolveOptionalPackageInstallHint(commandPath: string): string | null {
   if (!packageAlias) {
     return null;
   }
-  return `If this command comes from an optional package, install it with: pm install ${packageAlias}`;
+  return { packageAlias, canonicalPath, installCommand: `pm package install ${packageAlias} --project` };
 }
 
 function normalizePackageCommandAliasToken(value: string): string {
@@ -650,6 +651,14 @@ export function buildUnknownCommandGuidanceFromRuntime(
     return undefined;
   }
 
+  const optionalPackageHint = resolveOptionalPackageInstallHint(normalizedUnknown);
+  if (optionalPackageHint && !commandPaths.includes(optionalPackageHint.canonicalPath.split(" ")[0])) {
+    return {
+      unknownCommandExamples: [optionalPackageHint.installCommand, `pm ${optionalPackageHint.canonicalPath} --help`, "pm --help --all"],
+      unknownCommandNextSteps: [`"${normalizedUnknown}" is provided by the "${optionalPackageHint.packageAlias}" package. Install it with: ${optionalPackageHint.installCommand}. Command after installation: pm ${optionalPackageHint.canonicalPath}.`],
+      suggestedRetryCommand: optionalPackageHint.installCommand,
+    };
+  }
   const primaryToken = normalizedUnknown.split(" ")[0];
   // Executable aliases are scored against their canonical runtime command, so a
   // typo of an alias still points at the command path that would actually run.
@@ -667,8 +676,6 @@ export function buildUnknownCommandGuidanceFromRuntime(
     suggestedPaths,
     combinedCandidates.length > 0,
   );
-  const optionalPackageHint =
-    resolveOptionalPackageInstallHint(normalizedUnknown);
   const didYouMean =
     combinedCandidates.length > 0
       ? `Did you mean: ${suggestedPaths.join(", ")}?`
@@ -679,8 +686,7 @@ export function buildUnknownCommandGuidanceFromRuntime(
     unknownCommandNextSteps: [
       ...(didYouMean ? [didYouMean] : []),
       'Run "pm --help --all" to list every command available in this runtime, including active extensions.',
-      "Use one of the suggested command paths above with --help to inspect valid flags and usage.",
-      ...(optionalPackageHint ? [optionalPackageHint] : []),
+      ...(didYouMean ? ["Use one of the suggested command paths above with --help to inspect valid flags and usage."] : []),
     ],
   };
 }

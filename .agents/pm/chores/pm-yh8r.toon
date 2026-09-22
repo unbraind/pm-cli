@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[2]: "area:quality",refactor
 created_at: "2026-07-11T10:47:52.058Z"
-updated_at: "2026-09-19T17:10:34.078Z"
+updated_at: "2026-09-22T05:01:11.136Z"
 closed_at: "2026-09-19T17:10:33.270Z"
 completed_at: "2026-09-19T17:10:33.270Z"
 author: maintainer-agent
@@ -72,7 +72,7 @@ files[21]{path,scope,note}:
   src/sdk/runtime/context.ts,project,Behavior-preserving domain decomposition
   src/sdk/runtime/schema.ts,project,Behavior-preserving domain decomposition
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/cli-main-reentrancy.spec.ts tests/unit/cli/main-loose-options.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/unit/extensions/extension-loader-internal.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts,project,240,"harness:codex","2026-09-19T16:35:39.726Z",local_mutation,refactor/search-query-cli-domains
+  node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/cli-main-reentrancy.spec.ts tests/unit/cli/main-loose-options.spec.ts tests/unit/commands/workspace/completion-command.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/unit/extensions/extension-loader-internal.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts,project,240,"harness:codex","2026-09-22T05:01:10.888Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]:
   - run_id: test-local-mu8mv8zi-th0noi
     kind: test

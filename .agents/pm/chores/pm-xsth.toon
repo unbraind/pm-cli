@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: code-quality,codefactor,eslint,good-first-issue,maintainability
 created_at: "2026-06-26T13:32:27.757Z"
-updated_at: "2026-09-19T08:42:55.135Z"
+updated_at: "2026-09-22T05:22:20.402Z"
 closed_at: "2026-06-26T15:46:31.609Z"
 author: claude-code-agent
 acceptance_criteria: CodeFactor reports 0 no-useless-fallback-in-spread findings; full coverage suite (node scripts/run-tests.mjs coverage) stays green at 100%; pnpm typecheck and quality gates pass.
@@ -25,8 +25,8 @@ comments[4]{created_at,author,text}:
 files[22]{path,scope,note}:
   .agents/pm/history/pm-xsth.jsonl,project,review audit author metadata correction
   src/cli/commander-usage.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
-  src/cli/commands/create.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
-  src/cli/commands/test.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
+  src/cli/commands/lifecycle/create.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
+  src/cli/commands/test/test.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
   src/cli/help-json-payload.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
   src/cli/main.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
   src/core/schema/fields-file.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
@@ -38,17 +38,28 @@ files[22]{path,scope,note}:
   tests/helpers/extensions.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
   tests/integration/cli.integration.spec.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
   tests/integration/extension-startup.integration.spec.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
-  tests/unit/commands/close-command.spec.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
-  tests/unit/commands/create-command.spec.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
-  tests/unit/commands/normalize-command.spec.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
-  tests/unit/commands/test-all-command.spec.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
-  tests/unit/commands/test-command.spec.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
-  tests/unit/commands/update-command.spec.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
-  tests/unit/commands/validate-command.spec.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
-tests[3]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/commands/test-command.spec.ts tests/unit/commands/test-all-command.spec.ts tests/unit/commands/validate-command.spec.ts tests/unit/commands/close-command.spec.ts tests/unit/commands/normalize-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/extension-startup.integration.spec.ts,project,600
-  "pnpm quality:static",project,240
-  pnpm typecheck,project,240
+  tests/unit/commands/governance/normalize-command.spec.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
+  tests/unit/commands/governance/validate-command.spec.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
+  tests/unit/commands/lifecycle/close-command.spec.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
+  tests/unit/commands/lifecycle/create-command.spec.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
+  tests/unit/commands/lifecycle/update-command.spec.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
+  tests/unit/commands/test/test-all-command.spec.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
+  tests/unit/commands/test/test-command.spec.ts,project,remove object-spread fallback no-op for CodeFactor maintainability
+tests[3]:
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 240
+  - command: pnpm typecheck
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/commands/test/test-command.spec.ts tests/unit/commands/test/test-all-command.spec.ts tests/unit/commands/governance/validate-command.spec.ts tests/unit/commands/lifecycle/close-command.spec.ts tests/unit/commands/governance/normalize-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/extension-startup.integration.spec.ts
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:22:20.294Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mqv2v3q6-3b6us0,test,failed,"2026-06-26T15:13:59.096Z","2026-06-26T15:20:12.702Z","2026-06-26T15:20:12.702Z",3,1,0
   test-local-mqv4nhn5-56elzb,test,failed,"2026-06-26T16:04:38.217Z","2026-06-26T16:10:16.721Z","2026-06-26T16:10:16.721Z",3,1,0

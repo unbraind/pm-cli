@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[2]: audit-2026-06-13,session
 created_at: "2026-06-12T22:38:35.775Z"
-updated_at: "2026-09-19T08:43:03.726Z"
+updated_at: "2026-09-22T05:01:26.251Z"
 closed_at: "2026-06-13T04:41:50.341Z"
 author: maintainer-agent
 release: v2026.6.13
@@ -51,10 +51,10 @@ comments[6]{created_at,author,text}:
 files[11]{path,scope,note}:
   package.json,project,esbuild audit override
   pnpm-lock.yaml,project,esbuild audit lockfile refresh
-  src/cli/commands/close.ts,project,GH-204 duplicate close reason autofill
-  src/cli/commands/get.ts,project,GH-155 container child rollup for agent reads
-  src/cli/commands/test.ts,project,GH-206 linked-test pipe close grace
-  src/cli/commands/update.ts,project,GH-207 audit update retry guidance
+  src/cli/commands/lifecycle/close.ts,project,GH-204 duplicate close reason autofill
+  src/cli/commands/lifecycle/update.ts,project,GH-207 audit update retry guidance
+  src/cli/commands/query/get.ts,project,GH-155 container child rollup for agent reads
+  src/cli/commands/test/test.ts,project,GH-206 linked-test pipe close grace
   src/cli/help-content.ts,project,get output shape help copy
   tests/unit/close-command.spec.ts,project,GH-204 duplicate close regression
   tests/unit/get-append-command.spec.ts,project,GH-155 get child rollup regression

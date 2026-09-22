@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: bug,gh-issue,plan,schema
 created_at: "2026-07-06T08:03:10.077Z"
-updated_at: "2026-07-26T17:23:50.459Z"
+updated_at: "2026-09-22T05:11:11.058Z"
 closed_at: "2026-07-11T12:02:20.112Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -18,15 +18,15 @@ release: v2026.7.12
 resolution: fixed
 expected_result: plan materialize succeeds on types with required-on-create custom fields
 actual_result: "--field name=value passthrough with reserved-key collision rejection shipped in PR#512; closes GH-452"
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-8jdc,implements,"2026-07-26T17:23:50.176Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-8jdc,implements,"2026-07-26T17:23:50.176Z"
 comments[1]{created_at,author,text}:
   "2026-07-11T12:02:19.021Z",codex-root,"Evidence: plan materialize accepts repeatable --field name=value, normalizes schema option keys, and forwards them through runCreate so required-on-create governance remains enforced. SDK regression creates required Task field acceptance_owner, materializes through PmClient, and verifies persisted value. Packed installed-package proof passed."
 files[2]{path,scope,note}:
-  src/cli/commands/plan.ts,project,governed materialization and enriched result projection
+  src/cli/commands/lifecycle/plan.ts,project,governed materialization and enriched result projection
   src/sdk/runtime.ts,project,typed public plan workflow primitives
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/sdk/sdk-context-primitives.spec.ts,project,300
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/plan-command.spec.ts tests/unit/sdk/sdk-context-primitives.spec.ts,project,300,"harness:codex","2026-09-22T05:11:11.011Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[1]{path,scope,note}:
   docs/SDK.md,project,public plan workflow SDK guide
 close_reason: Implemented governed materialization field passthrough with SDK and packed-package proof.

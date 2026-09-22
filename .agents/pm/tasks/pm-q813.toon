@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:test-safety",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T08:50:46.032Z"
-updated_at: "2026-09-19T08:41:03.030Z"
+updated_at: "2026-09-22T05:02:29.834Z"
 deadline: "2026-03-07T23:59:59.000Z"
 closed_at: "2026-03-06T09:10:24.180Z"
 assignee: maintainer-agent
@@ -65,7 +65,7 @@ files[5]{path,scope,note}:
   AGENTS.md,project,agent workflow test safety policy
   PRD.md,project,policy wording for run-script variants
   README.md,project,public test safety examples
-  src/cli/commands/test.ts,project,run-script direct runner detection
+  src/cli/commands/test/test.ts,project,run-script direct runner detection
   tests/unit/test-command.spec.ts,project,coverage for run-script detection
 tests[2]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,project,7200,coverage gate

@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { runClose } from "../../src/cli/commands/close.js";
+import { runClose } from "../../src/cli/commands/lifecycle/close.js";
 import { createTestItemId } from "../helpers/itemFactory.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",token-efficiency
 created_at: "2026-06-07T17:04:17.220Z"
-updated_at: "2026-09-19T08:42:03.188Z"
+updated_at: "2026-09-22T05:12:11.141Z"
 closed_at: "2026-06-08T06:26:01.523Z"
 author: maintainer-agent
 parent: pm-mpbb
@@ -43,9 +43,9 @@ comments[8]{created_at,author,text}:
   "2026-06-08T06:26:00.349Z",codex-agent-ux-reliability-20260607,Merged in PR #147 (commit d05b21d529e3ed4f5734a029b98ed242fe8fb461). Final CI checks all green including coverage/static/smokes/compat/typecheck; compact list/search token-light output shipped with type-safe compact/verbose result contracts after review-loop follow-up.
 files[7]{path,scope,note}:
   src/cli/commands/comments-audit.ts,project,Handle compact list result now-field optionality with deterministic timestamp fallback
-  src/cli/commands/list.ts,project,Compact-mode list responses now emit only active filter summary and omit projection/sorting/now trailer metadata
   src/cli/commands/normalize.ts,project,Handle compact list result now-field optionality with deterministic generated_at fallback
-  src/cli/commands/search.ts,project,Compact-mode search responses now emit only active filter summary and omit projection/now trailer metadata
+  src/cli/commands/query/list.ts,project,Compact-mode list responses now emit only active filter summary and omit projection/sorting/now trailer metadata
+  src/cli/commands/query/search.ts,project,Compact-mode search responses now emit only active filter summary and omit projection/now trailer metadata
   tests/integration/cli.integration.spec.ts,project,CLI compact search/list integration assertions updated for token-light metadata output
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,MCP compact list/search assertions updated to verify trimmed metadata trailer shape
   tests/unit/search-command.spec.ts,project,Projection compaction regression checks updated for compact-trailer elision

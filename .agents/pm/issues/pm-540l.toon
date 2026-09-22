@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: code-quality,dedup,pm-cli
 created_at: "2026-05-01T22:37:57.400Z"
-updated_at: "2026-09-19T08:39:29.222Z"
+updated_at: "2026-09-22T05:14:10.154Z"
 closed_at: "2026-05-01T22:41:59.940Z"
 author: audit-agent
 parent: pm-rrjv
@@ -20,8 +20,8 @@ comments[2]{created_at,author,text}:
   "2026-05-01T22:59:34.986Z",audit-agent,"Follow-up dedup completed: removed local toNonEmptyString copies from validate.ts, health.ts, main.ts, normalize.ts - all now use canonical toNonEmptyStringOrUndefined from core/shared/primitives.ts. Build passes clean."
   "2026-05-02T11:51:49.755Z",audit-agent,"Follow-up: 2026-05-02 audit discovered 3 more local toOptionalNonEmptyString copies in search.ts, reindex.ts, semantic-defaults.ts. Consolidated to use toNonEmptyStringOrUndefined and toNonEmptyString from core/shared/primitives.ts. All 1090 tests pass."
 files[5]{path,scope,note}:
+  src/cli/commands/query/search.ts,project,removed local toOptionalNonEmptyString
   src/cli/commands/reindex.ts,project,removed local toOptionalNonEmptyString
-  src/cli/commands/search.ts,project,removed local toOptionalNonEmptyString
   src/core/search/cache.ts,project,duplicated toErrorMessage
   src/core/search/semantic-defaults.ts,project,removed local toOptionalNonEmptyString
   src/core/shared/primitives.ts,project,canonical toErrorMessage/toNonEmptyString

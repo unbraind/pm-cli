@@ -34,4 +34,21 @@ describe("canonical unknown-command recovery", () => {
     expect(guidance?.unknownCommandExamples).toContain("pm list --status open --help");
     expect(JSON.stringify(guidance)).not.toContain("list-open");
   });
+  it.each(["meet", "event", "remind"])("names the package and canonical path for missing %s", (command) => {
+    const program = new Command().name("pm");
+    program.command("list");
+    const guidance = buildUnknownCommandGuidanceFromRuntime(`unknown command '${command}'`, program, new Map());
+    expect(guidance?.unknownCommandNextSteps).toHaveLength(1);
+    expect(guidance?.unknownCommandNextSteps?.[0]).toContain("pm package install calendar --project");
+    expect(guidance?.unknownCommandExamples).toContain(`pm calendar ${command} --help`);
+    expect(JSON.stringify(guidance)).not.toContain("suggested command paths above");
+  });
+
+  it("does not refer to nonexistent suggestions for an unrelated missing command", () => {
+    const program = new Command().name("pm");
+    program.command("list");
+    const guidance = buildUnknownCommandGuidanceFromRuntime("unknown command 'zzzzzzzzzz'", program, new Map());
+    expect(JSON.stringify(guidance)).not.toContain("suggested command paths above");
+  });
+
 });

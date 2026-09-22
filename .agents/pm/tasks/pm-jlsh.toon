@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: error-guidance,list,pm-cli,tests
 created_at: "2026-04-06T09:49:14.733Z"
-updated_at: "2026-09-19T08:40:37.388Z"
+updated_at: "2026-09-22T05:03:19.587Z"
 closed_at: "2026-04-06T11:20:50.081Z"
 author: codex-agent
 estimated_minutes: 60
@@ -23,7 +23,7 @@ comments[3]{created_at,author,text}:
   "2026-04-06T11:01:43.232Z",codex-agent,"Implemented parent-scoped list filtering () across list/list-* command paths and replaced invalid-id echo guidance for get-not-found flows. Verification: targeted list/guidance/Pi wrapper regressions plus full-suite and coverage passes."
   "2026-04-06T11:02:29.538Z",codex-agent,"Clarification: parent-scoped list filtering via --parent is implemented across list/list-* command paths with contract and Pi-wrapper parity, and get-not-found guidance now points to deterministic recovery commands."
 files[7]{path,scope,note}:
-  src/cli/commands/list.ts,project,parent filter support in list/list-* runtime filters
+  src/cli/commands/query/list.ts,project,parent filter support in list/list-* runtime filters
   src/cli/error-guidance.ts,project,get not-found deterministic recovery examples
   src/cli/main.ts,project,list parent filter and get guidance wiring
   src/sdk/cli-contracts.ts,project,list parent contract metadata and aliases

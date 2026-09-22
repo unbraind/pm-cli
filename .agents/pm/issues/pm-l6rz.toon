@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cli,gh-issue,templates
 created_at: "2026-07-10T12:15:43.286Z"
-updated_at: "2026-09-08T05:33:32.316Z"
+updated_at: "2026-09-22T05:16:05.148Z"
 closed_at: "2026-07-10T15:02:44.913Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -47,9 +47,9 @@ comments[6]{created_at,author,text}:
   "2026-07-10T14:39:34.027Z",codex-root,"Final Gemini evidence: template custom-option promotion now first excludes every key recognized by canonicalizeCommandOptionKey('create', ...), then transfers and deletes only matched non-core primitive options. Regression defines a colliding custom 'title' option and proves the explicit core title survives while valid primitive custom options and precedence remain correct. Strict lint/complexity/type gates and full 5514-test coverage pass at 100/100/100/100."
   "2026-07-10T15:02:44.197Z",codex-root,"Final Gemini array evidence: template custom type options are scalar schema values. Non-scalar arrays now fail loudly with the exact custom option key instead of being silently ignored or expanded into repeated last-wins assignments; template collection fields such as tags remain supported by their core pipeline. Regression covers absent optional custom defaults and an invalid category array. Strict lint/type and full 5514-test coverage pass at 100/100/100/100."
 files[1]{path,scope,note}:
-  src/cli/commands/create.ts,project,Promote template-declared custom type option keys into validated type-option entries
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/sdk/sdk-compose.spec.ts tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/cli/registration-helpers.spec.ts,project,240
+  src/cli/commands/lifecycle/create.ts,project,Promote template-declared custom type option keys into validated type-option entries
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/sdk/sdk-compose.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/cli/registration-helpers.spec.ts,project,240,"harness:codex","2026-09-22T05:16:05.012Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,CLI behavior and validation guidance
   docs/SDK.md,project,SDK/package-author contract guidance

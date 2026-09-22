@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: context-integrity,linked-tests,sdk,security
 created_at: "2026-08-08T10:14:38.912Z"
-updated_at: "2026-08-08T10:34:24.008Z"
+updated_at: "2026-09-22T05:09:06.386Z"
 closed_at: "2026-08-08T10:32:57.708Z"
 completed_at: "2026-08-08T10:32:57.708Z"
 author: "harness:codex"
@@ -35,8 +35,8 @@ files[9]{path,scope,note}:
   src/sdk/test/parsers.ts,project,Protects access and override variables from linked-test metadata
   tests/unit/sdk/merge-safety.spec.ts,project,Source sibling and explicit override integration coverage
   tests/unit/sdk/source-context.spec.ts,project,Policy parser and real child-process negative controls
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/source-context.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/commands/linked-test-parsers.spec.ts --reporter=dot,project,180
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/source-context.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/commands/test/linked-test-parsers.spec.ts --reporter=dot,project,180,"harness:codex","2026-09-22T05:09:06.341Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msk8gy5y-9krk33,test,passed,"2026-08-08T10:30:50.957Z","2026-08-08T10:31:06.742Z","2026-08-08T10:31:06.742Z",1,0,0
 docs[2]{path,scope,note}:

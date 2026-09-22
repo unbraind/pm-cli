@@ -31,6 +31,11 @@ function changelogAndPackage(version = "2026.6.14", changelogText = changelog) {
   };
 }
 
+function completeList(items: readonly unknown[]) {
+  return { items, count: items.length, total: items.length, truncated: false, has_more: false,
+    completeness: { status: "complete", unreadable_item_count: 0, unreadable_directory_count: 0 } };
+}
+
 describe("generate-release-notes", () => {
   it("writes release notes to the output path and notes the skipped pm summary", async () => {
     const outputChangelog = [
@@ -150,7 +155,7 @@ describe("generate-release-notes", () => {
         return tag === "v2026.6.10" ? "2026-06-09T00:00:00.000Z" : "2026-06-14T00:00:00.000Z";
       }
       if (String(args[args.length - 1]) === "--json" || args.includes("list-all")) {
-        return JSON.stringify(pmItems);
+        return JSON.stringify(completeList(pmItems.items));
       }
       throw new Error(`unexpected execFileSync ${command} ${args.join(" ")}`);
     });
@@ -172,7 +177,7 @@ describe("generate-release-notes", () => {
     const execFileSync = vi.fn((command: string, args: string[]) => {
       if (command === "git" && args[0] === "tag") return "";
       if (command === "git" && args[0] === "log") return "";
-      return JSON.stringify({ items: [] });
+      return JSON.stringify(completeList([]));
     });
     vi.doMock("node:child_process", () => ({ execFileSync }));
     mockFs(changelogAndPackage(), vi.fn(), () => true);
@@ -204,7 +209,8 @@ describe("generate-release-notes", () => {
     await harness.importModule("scripts/generate-release-notes.mjs");
     const out = stdoutWrite.mock.calls.map((call) => String(call[0])).join("");
     expect(out).toContain("Source range: initial...v2026.6.14");
-    expect(out).toContain("No closed pm tracker items were updated");
+    expect(out).toContain("Incomplete or malformed pm list receipt");
+    expect(out).not.toContain("No closed pm tracker items were updated");
   });
 
   it("omits overflow release items beyond the first twenty", async () => {
@@ -221,7 +227,7 @@ describe("generate-release-notes", () => {
     const execFileSync = vi.fn((command: string, args: string[]) => {
       if (command === "git" && args[0] === "tag") return "";
       if (command === "git" && args[0] === "log") return "";
-      return JSON.stringify({ items: manyReleaseItems });
+      return JSON.stringify(completeList(manyReleaseItems));
     });
     vi.doMock("node:child_process", () => ({ execFileSync }));
     mockFs(changelogAndPackage(), vi.fn(), () => true);
@@ -246,7 +252,7 @@ describe("generate-release-notes", () => {
     const execFileSync = vi.fn((command: string, args: string[]) => {
       if (command === "git" && args[0] === "tag") return "";
       if (command === "git" && args[0] === "log") return "";
-      return JSON.stringify({ items });
+      return JSON.stringify(completeList(items));
     });
     vi.doMock("node:child_process", () => ({ execFileSync }));
     mockFs(changelogAndPackage(), vi.fn(), () => true);
@@ -366,7 +372,7 @@ describe("generate-release-notes", () => {
     const execFileSync = vi.fn((command: string, args: string[]) => {
       if (command === "git" && args[0] === "tag") return "";
       if (command === "git" && args[0] === "log") return "";
-      return JSON.stringify({ items });
+      return JSON.stringify(completeList(items));
     });
     vi.doMock("node:child_process", () => ({ execFileSync }));
     mockFs(changelogAndPackage("2026.6.14", lastSectionChangelog), vi.fn(), () => true);
@@ -387,4 +393,25 @@ describe("generate-release-notes", () => {
     await harness.importModule("scripts/generate-release-notes.mjs");
     expect(stdoutWrite.mock.calls.map((call) => String(call[0])).join("")).toContain("# @unbrained/pm-cli 2026.6.14");
   });
+  it.each([
+    { truncated: true }, { has_more: true }, { count: 1 }, { total: 1 },
+    { completeness: undefined }, { completeness: { status: "incomplete" } },
+    { completeness: { status: "complete", unreadable_item_count: 1, unreadable_directory_count: 0 } },
+    { completeness: { status: "complete", unreadable_item_count: 0, unreadable_directory_count: 1 } },
+  ])("visibly refuses partial or unreadable tracker receipts: %j", async (override) => {
+    const execFileSync = vi.fn((command: string, args: string[]) => {
+      if (command === "git") return "";
+      expect(args).toEqual(expect.arrayContaining(["list", "--all", "--fields", "--output-budget", "unbounded", "--output-limit"]));
+      return JSON.stringify({ ...completeList([]), ...override });
+    });
+    vi.doMock("node:child_process", () => ({ execFileSync }));
+    mockFs(changelogAndPackage(), vi.fn(), () => true);
+    const stdoutWrite = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    process.argv = ["node", "scripts/generate-release-notes.mjs"];
+    await harness.importModule("scripts/generate-release-notes.mjs");
+    const output = stdoutWrite.mock.calls.map((call) => String(call[0])).join("");
+    expect(output).toContain("Incomplete or malformed pm list receipt");
+    expect(output).not.toContain("No closed pm tracker items were updated");
+  });
+
 });

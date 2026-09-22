@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ux,github-262,init
 created_at: "2026-06-17T22:02:31.964Z"
-updated_at: "2026-09-19T08:40:36.665Z"
+updated_at: "2026-09-22T05:03:21.785Z"
 closed_at: "2026-06-17T23:12:41.034Z"
 author: codex-audit-20260618
 parent: pm-mpbb
@@ -19,12 +19,21 @@ dependencies[1]{id,kind,created_at}:
 comments[1]{created_at,author,text}:
   "2026-06-17T23:12:20.894Z",codex-audit-agent,"Final evidence: init path-like target fix verified by focused init tests, full integration tests, manual /tmp caller-target SHA check, full coverage 100%, dogfood package-first, release gates, security scan, and validation history_drift ok."
 files[3]{path,scope,note}:
-  src/cli/commands/init.ts,project,GH-262 init path target and force guard
+  src/cli/commands/workspace/init.ts,project,GH-262 init path target and force guard
   src/cli/register-setup.ts,project,init help argument description
   tests/integration/cli.integration.spec.ts,project,init force integration contract
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,420
-  node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts,project,240
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts
+    scope: project
+    timeout_seconds: 420
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/workspace/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:03:21.687Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mqimmd2c-mlwtv1,test,passed,"2026-06-17T22:11:56.146Z","2026-06-17T22:12:16.932Z","2026-06-17T22:12:16.932Z",1,0,0
 docs[1]{path,scope,note}:

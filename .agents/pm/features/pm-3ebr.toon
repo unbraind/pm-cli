@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:health","area:search",pm-cli,semantic
 created_at: "2026-04-01T14:42:18.406Z"
-updated_at: "2026-09-19T08:39:21.973Z"
+updated_at: "2026-09-22T05:05:50.523Z"
 deadline: "2026-04-10T14:42:18.406Z"
 closed_at: "2026-04-06T23:51:26.792Z"
 author: codex-agent
@@ -60,7 +60,7 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:21:48.583Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[9]{path,scope,note}:
   src/cli/commands/completion.ts,project,Added completion coverage for verbose health/validate flags
-  src/cli/commands/health.ts,project,Summarized stale vectorization lists by default with verbose opt-in
+  src/cli/commands/governance/health.ts,project,Summarized stale vectorization lists by default with verbose opt-in
   src/cli/main.ts,project,Added --verbose-stale-items and --verbose-file-lists CLI options
   src/core/search/cache.ts,project,targeted semantic refresh plumbing
   src/sdk/cli-contracts.ts,project,Added health/validate verbosity flag contracts and schema metadata

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:testing",cache,ci,cross-platform,regression,windows
 created_at: "2026-08-14T06:11:37.472Z"
-updated_at: "2026-09-08T05:56:46.892Z"
+updated_at: "2026-09-22T05:06:42.453Z"
 closed_at: "2026-08-14T08:28:44.356Z"
 completed_at: "2026-08-14T08:28:44.356Z"
 author: "harness:codex"
@@ -32,9 +32,9 @@ comments[4]{created_at,author,text}:
   "2026-08-14T08:28:43.374Z","harness:codex","Hosted evidence: PR https://github.com/unbraind/pm-cli/pull/1013 at exact head 8beb34a269f08fca28748960531b8b74656c86a4 passed Windows regression (Node 24) in 2m50s, plus the full cross-platform matrix. This completes the successor exact-head requirement without weakening the authoritative re-read assertion."
   "2026-08-14T10:02:45.069Z","harness:codex","Delivery closeout 2026-08-14: PR #1013 exact head cd6d04061 merged to main as a7f68fb84 with Windows Node 24, the complete cross-platform runtime matrix, coverage, and static gates green. The cache fixture regression remains closed, released, and unclaimed."
 files[1]{path,scope,note}:
-  tests/unit/commands/validate-command.spec.ts,project,platform-native cache key fixture
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts,project,240
+  tests/unit/commands/governance/validate-command.spec.ts,project,platform-native cache key fixture
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/governance/validate-command.spec.ts,project,240,"harness:codex","2026-09-22T05:06:42.400Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mssngyhc-7pizg4,test,passed,"2026-08-14T07:52:53.729Z","2026-08-14T07:53:10.800Z","2026-08-14T07:53:10.800Z",1,0,0
 close_reason: Canonical path joining fixes the cache fixture and the exact-head Windows Node 24 regression job is green.

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[2]: "area:quality",refactor
 created_at: "2026-07-12T19:14:42.057Z"
-updated_at: "2026-09-08T13:32:03.037Z"
+updated_at: "2026-09-22T06:43:39.274Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: Every tracked source directory holds ≤~20 direct files or carries a documented exemption in this body; all moves land as import-specifier-only refactors with full gates green per tranche and byte-identical CLI/MCP/contract surface; pm files links updated for moved paths on open items in the same tranche; vitest/eslint-suppressions/coverage/package.json/workflow/docs references updated within the moving tranche
@@ -14,16 +14,33 @@ parent: pm-92if
 risk: medium
 confidence: 75
 expected_result: "Every tracked source directory holds at most about twenty direct files or a documented exemption, reached through import-only refactors with byte-identical surfaces."
-dependencies[2]{id,kind,created_at}:
-  pm-yh8r,related,"2026-07-12T19:14:50.801Z"
-  pm-92if,implements,"2026-07-26T05:56:17.024Z"
-comments[5]{created_at,author,text}:
+dependencies[3]:
+  - id: pm-yh8r
+    kind: related
+    created_at: "2026-07-12T19:14:50.801Z"
+  - id: pm-92if
+    kind: implements
+    created_at: "2026-07-26T05:56:17.024Z"
+  - id: pm-z3ez
+    kind: related
+    created_at: "2026-09-22T06:24:18.533Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[12]{created_at,author,text}:
   "2026-07-15T19:27:49.847Z",maintainer-agent,"Third maintainer recurrence 2026-07-15 (review pass #89): the too-many-files directive re-issued with src/sdk flatness called out EXPLICITLY (\"no sub-folder in the sdk folder and its getting very confusing\"). Combined with sdk/runtime.ts hitting the 3400 gate at zero headroom (pm-yh8r note same day), the sdk tranche moves to the FRONT of the tranche order as T0 (8-cluster grouping mapped in this item's 2026-07-15 note). Rider for T0: once domain folders exist, evaluate mirroring them as package.json subpath exports (./sdk/relationships, ./sdk/governance already precedented by ./sdk/runtime + ./sdk/testing) so package authors deep-import by domain instead of the 935-line index.ts barrel — decide within T0, not as a separate item. Priority bumped 2->1 on the recurrence + the yh8r sequencing coupling."
   "2026-07-15T20:06:30.225Z",codex-audit-20260715,"Review pass 91 architecture evidence: src/sdk currently contains 70 TypeScript source files and roughly 52k raw lines, with 46 files still flat at src/sdk root and 24 nested. Largest SDK units include runtime.ts at about 4.0k and extension.ts at about 3.8k lines. Existing T0 cluster migration remains canonical; new pm-ld0z is deliberately separate and covers oversized test-suite decomposition rather than SDK topology."
   "2026-07-24T12:05:46.252Z",claude-code-agent,"Current direct-file fan-out census confirms this program is still necessary: src/sdk 70 files, src/cli/commands 65, tests/unit/commands 64, tests/unit/sdk 45, tests/integration 35, tests/unit/scripts 24, and src/cli 22. The existing SDK-first/domain-noun folder blueprint remains the right organization target; combine physical moves with owning splits so paths migrate once and public exports stay stable."
   "2026-07-28T10:33:38.163Z","harness:claude-code","Census refresh (2026-07-28) — the blueprint in this item's description is now stale in a way that changes which tranche should go first.\n\nDirectories over the ~20-file policy, current tree:\n\n```\n86  src/sdk                (44,681 LOC at the top level alone)\n66  tests/unit/commands\n66  src/cli/commands\n36  tests/integration\n26  src/cli\n22  src/core/extensions\n22  scripts\n```\n\nThe description names `src/cli/commands 72, tests/unit/commands 60, tests/integration 32, scripts 23, src/cli 19`. Two things moved since:\n\n1. **`src/sdk` is not in the blueprint at all and is now the worst directory in the repo by a wide margin** — 86 top-level files, 20 more than the next. This is a direct consequence of the pm-usfg SDK-first promotion landing slice after slice into a flat namespace: `runtime.ts` 4,040 LOC, `extension.ts` 3,777, `testing.ts` 2,846, `schema.ts` 2,434, `config.ts` 2,030, `compose.ts` 1,834.\n2. `src/sdk` already has the right shape available — `cli-contracts/`, `extension/`, `governance/`, `graph/`, `merge/`, `query/`, `test/` all exist. The subfolder convention was established and then not applied to the files that kept arriving, so the fix is draining the top level into folders that already exist rather than inventing a taxonomy.\n\n`src/cli` also drifted 19 → 26. Everything else is stable or slightly worse.\n\nSuggested re-ordering: `src/sdk` should lead the tranche sequence, not be absent from it. It is also where the fence in this item matters most — the pm-yh8r LOC-decomposition targets (`runtime.ts`, `extension.ts`) sit in exactly this directory, so those files must move with their split rather than being relocated first and split later.\n"
   "2026-08-04T09:18:07.504Z","harness:codex","Fresh topology census 2026-08-04: src/sdk now has 112 direct TypeScript files, src/cli/commands 52, and tests/unit/commands 67. The SDK top level has grown from the 86-file 2026-07-28 census despite established domain subfolders. This confirms the canonical domain-noun migration remains urgent and should be coordinated with pm-yh8r so large owners split and move once."
-notes[7]{created_at,author,text}:
+  "2026-09-22T04:54:16.549Z","harness:codex","Live topology census: src/sdk 120 direct files, src/cli/commands 52 before removal of the dead barrel, src/cli 37, tests/unit/sdk 120. This tranche couples command-adapter domain grouping and mirrored spec organization with pm-f4yn dead-export enforcement. Remaining SDK density remains a separate portion of this canonical program; no completed historical implementation is being reopened."
+  "2026-09-22T04:58:02.130Z","harness:codex","Mechanical relocation proof: 123 source/spec moves and 168 full source/test token streams inspected; non-comment, non-string AST token sequences are identical across the move. All four TypeScript projects now completed successfully after relocation. Published package export paths remain unchanged. Linked-file/test-command migration and complete regression gates follow."
+  "2026-09-22T05:09:44.441Z","harness:codex","Verification: all four TypeScript projects pass; broad command/CLI regression run passed 2663/2665, and both relocation defects were corrected and all 167 focused tests now pass. ESLint has zero warnings; all three jscpd profiles report zero clones. Full static and all-source coverage follow before closure. npm dependency audit reports zero vulnerabilities; tracked-file secret scan is clean."
+  "2026-09-22T05:20:57.314Z","harness:codex","Temporary acceptance passed 34 CLI steps across Node and Bun, including init, lifecycle, annotations, context/search/graph/schema, closure, release, verified history, validation, and two SDK complete-corpus reads. Packed npm/npx/bunx smoke passed with 9 package entries and TypeScript SDK consumer compilation. Published 2026.9.21 separately passed installed npm/Bun agent loops and the full public registry/bin/MCP verifier."
+  "2026-09-22T06:01:43.293Z","harness:codex","Full coverage run: 9189 of 9192 tests passed. Fixed the stale optional-package recovery expectations and kept EXTENSIONS.md within its existing 450-line ceiling. The 10000-item aggregation timed out under eight concurrent workers; retrying with four workers keeps the same input size, assertions, 30-second test deadline, and exact 100-percent coverage thresholds."
+  "2026-09-22T06:09:42.827Z","harness:codex","Operational evidence: the latest scheduled auto-release completed successfully. Fresh required reliability checks found zero unresolved Sentry issues in the 14-day window; telemetry finish-error rate is 1.9 percent with zero missing error-code rows. A new context invocation reached the backend as exactly one successful start/finish pair, and the physical local queue drained to zero rows. Node and Bun temporary-project acceptance passed 34 CLI actions and two complete public SDK reads. GitHub currently has no open dependency, code-scanning or secret-scanning alerts; reports 1284 and 1285 are linked to active canonical work, and 1246 already links pm-z3ez."
+  "2026-09-22T06:21:18.970Z","harness:codex","Performance investigation: local quality:static passed the structural/documentation/ownership and contract gates but failed unchanged SDK import budgets. A clean bfcc1cd38 main worktree also failed. In a serial alternating 15-sample comparison, unchanged main merge import p50 was 562 ms and candidate p50 545 ms (both above the existing 226 ms allowance). Host/runtime timing evidence is therefore not a clean candidate regression signal. No timing/coverage budget was relaxed; clean hosted static/performance gates remain required for merge."
+notes[9]{created_at,author,text}:
   "2026-07-15T19:12:21.033Z",maintainer-agent,"src/sdk fan-out census refresh 2026-07-15 (review pass #89; method: direct-children .ts count): src/sdk now has 46 FLAT top-level files — nearly 3x the 16 recorded in the body census of 2026-07-12 — plus the four existing sub-folders (cli-contracts/ 9, extension/ 11, governance/ 3, test/ 1); 70 files / ~52.5k raw LOC total. Growth driver is the pm-usfg promotion slices themselves (each lane lands new flat modules). Maintainer re-flagged sdk flatness explicitly on 2026-07-15 — the sdk tranche should move to the FRONT of the tranche order. Natural 8-cluster grouping mapped this pass (aligns with usfg slice nouns and the existing sub-folder precedent): runtime/ (runtime, runtime-input, package-runtime-options, command-line, cli-program, output, invocation-author, author-attribution, start-task-status, workspace, workspace-contracts-cache, errors) · query/ (pagination, item-children, item-schedule, files, docs) · lifecycle/ (define, compose, init, init-agent-guidance, templates) · annotations/ (annotations, linked-artifacts) · history/ (history-compact/-read/-mcp/-redact/-repair) · relationships/ (relationships, relationship-analytics/-context/-history, dependencies, dependency-flag-validation) · context/ (context-relevance/-packing/-usage) · schema/ (schema, config, profile) — index.ts + cli-contracts.ts shim stay at root; package-import-adapters.ts joins extension/ or a packages/ cluster. NOTE the \"plan\" cluster has no flat-file home (plan logic lives in core/profile, re-exported via profile.ts) — confirm the tranche blueprint's folder set covers it so nothing is orphaned. Fence unchanged: yh8r/usfg target files move WITH their split/slice. Other deltas: src/cli/commands 66 direct .ts children (was 72 — improving), src/cli 20, src/core/shared 18."
   "2026-07-15T19:41:34.194Z",maintainer-agent,"T0 external-safety clearance (pass #90, 2026-07-15): org-wide code search confirms every external consumer (pm-graph, pm-web, pm-github, pm-changelog, companion examples) and every in-repo package runtime imports ONLY the official subpath exports (./sdk, ./sdk/runtime, ./sdk/testing, ./cli) — zero deep dist/ imports anywhere. The T0 sdk folder reorganization cannot break external packages as long as the package.json exports map stays stable; the per-domain subpath-exports rider EXTENDS this verified contract rather than introducing new risk."
   "2026-07-17T10:22:54.933Z",maintainer-agent,"src/sdk fan-out census refresh 2026-07-17 (review pass #96, direct-children .ts count, non-spec): 52 FLAT top-level files (46 at pass #89 — +6 from the PR#571-lane/#573/#575/#577 promotion waves: relationship-context/relationships/dependencies growth plus sdk/test + sdk/diagnostics folders absorbing some pressure). Sub-folders now: cli-contracts/ 9, extension/ 11, query/ 6, test/ 6, governance/ 3+. src/cli/commands remains the widest dir at 63 files. The T0 subpath-exports rider stays safe (external consumers import official subpaths only, evidence in the earlier T0 note). Trend signal: each usfg/96h7 lane adds ~1-2 flat sdk files; the sdk tranche of the blueprint is the highest-leverage one to execute next."
@@ -31,4 +48,231 @@ notes[7]{created_at,author,text}:
   "2026-07-25T07:13:56.034Z","harness:claude-code","Repository-root organization observations from the ecosystem review 2026-07-25, scoped to this item's structure remit (no new item filed per the three-item fence with pm-yh8r and pm-0qg5). (1) PRD.md sits at the root at 118KB / 1,759 lines, self-labelled 'Draft v1' and 'archival planning reference', Last Updated 2026-05-12 — two and a half months stale — while its own navigation block routes readers to docs/ and to .toon item paths. It is the single largest hand-authored document in the repo and the only large one outside docs/. Candidate disposition: move under docs/ as an explicitly archival page, or retire it in favour of the tracker, which is the stated system of record. (2) Two foreign toolchain caches persist at the root — .mypy_cache/ and .pytest_cache/ — in a repository with no Python source. They stay invisible to git status only because each writes its own self-ignoring .gitignore, so the repo's own .gitignore does not mention them and a fresh clone plus any stray Python run recreates them. (3) Root currently carries 12 tool-config dotfiles (.codefactor.yml, .deepscan.json, .deepsource.toml, .jscpd.json, .trivyignore, .trufflehog-exclude-paths.txt, codecov.yml, eslint.config.mjs, eslint-suppressions.json plus four tsconfig variants), which is the main driver of root fan-out now that source is organised."
   "2026-07-25T21:15:16.806Z","harness:claude-code","Benchmark-root triplication found by live inspection 2026-07-25 (evening ecosystem review) — scoped to this item's structure remit, no new item filed per the three-item fence with pm-yh8r and pm-0qg5. The repository carries THREE tracked benchmark locations whose names do not distinguish their roles:\n\n(1) benchmarks/ at the repository root — 3 vitest microbenchmarks (bm25, pagination, text-normalization), wired by vitest.bench.config.ts include \"benchmarks/**/*.bench.ts\".\n(2) scripts/bench/ — 7 files, the real CI budget surface: run-scale-benchmarks.mjs, scale-workspace.mjs, cli-transport-floor.mjs, sdk-entrypoint-costs.mjs plus three committed budget JSONs. Wired by six package.json scripts and, for two of them, by quality:static itself.\n(3) scripts/benchmarks/ — a ONE-file directory holding graph-adapter-scale.mjs, differing from its sibling (2) by pluralization only. It has no package.json script and no CI wiring; its sole reference in the repo is a shell snippet inside docs/RELATIONSHIP_GRAPH.md line 162. It is the clearest instance of the \"unorganized and confusing\" symptom in the tree: a name-collided singleton that reads as a peer of the gated benchmark suite while being unreachable from any entrypoint.\n\nCandidate disposition, cheapest first: fold scripts/benchmarks/graph-adapter-scale.mjs into scripts/bench/ (it is a scale harness like run-scale-benchmarks.mjs), update the RELATIONSHIP_GRAPH.md reference, and delete the empty directory; then decide whether root benchmarks/ belongs under scripts/bench/vitest/ or stays at root because vitest.bench.config.ts and the CodSpeed workflow address it there. Note the two roles are genuinely different (vitest microbenchmarks vs node budget gates), so the fix is naming and colocation, not merging the harnesses.\n\nAdjacent observation, recorded but NOT claimed as duplication given the deliberate SDK docs partition: docs/ now holds six SDK-prefixed pages (SDK.md 2,950 lines plus SDK_CONTEXT_COORDINATION, SDK_CONTEXT_INTEGRITY_PRIMITIVES, SDK_CUSTOMIZATION_PRIMITIVES, SDK_PRIMITIVE_INVENTORY, and EXTENSION_AUTHOR_CONTRACTS) and three plugin pages whose names overlap (CODEX_PLUGIN.md 43 lines vs CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md 774 lines). Root telemetry tooling is correctly out of the tree: scripts/prod is gitignored with zero tracked files, confirmed this pass."
   "2026-07-25T21:40:49.353Z","harness:claude-code","Directory fan-out measured 2026-07-25 against the shipped tree, for the ~20-files-per-directory policy in this item's body. Directories over the threshold:\n\n  src/sdk              81 files at the top level\n  src/cli/commands     65\n  tests/unit/commands  65\n  tests/unit/sdk       50\n  src/cli              26\n  tests/integration    35\n  tests/unit/scripts   27\n  tests/unit/cli       23\n\nsrc/sdk at 81 flat files is the largest single offender and also the one with the clearest domain-noun structure available: it already has query/, graph/, governance/, test/, extension/ and cli-contracts/ subfolders, so 81 files sit alongside six existing groupings rather than in an unstructured directory. That makes it the lowest-risk tranche to take first, and the highest-value one — src/sdk is the directory a package author browses to understand the public surface, and it is currently the least legible directory in the repository.\n\nThe tests tree mirrors the source tree's fan-out one-for-one (65 commands, 50 sdk), which is worth noting as a constraint rather than a separate problem: a source tranche that moves files without moving their specs doubles the confusion instead of halving it. The fence recorded on this item — files move with their split — should be read as covering the spec alongside the module.\n\nRoot is at 32 entries, which is unremarkable for a repository of this kind and is not the source of the reported confusion; the fan-out inside src and tests is."
+  "2026-09-22T05:14:40.556Z","harness:codex","2026-09-22 command-domain delivery: reorganize lifecycle, annotations, history, query, workspace, governance, test and extension adapters with mirrored specs. Remove orphan SDK-forwarding shims as part of the same export cleanup. The remaining source-folder program (notably SDK root and SDK tests, CLI registration/parser roots, broader scripts/integration organization) stays open; this delivery does not assert the global soft-20 target is complete."
+  "2026-09-22T06:43:37.665Z","harness:codex","This delivery reorganizes the complete CLI command adapter family and mirrored specs into domain folders, with registration/workflow/doc paths updated and full 9192-test exact 100-percent coverage. Remaining broader SDK/root/integration/script directory-density work is not complete; keep this canonical program open and unclaimed. Local host timing limits and clean-main comparison are recorded in comments; mandatory hosted gates remain unchanged."
+files[183]{path,scope,note}:
+  .github/workflows/ci.yml,project,Command-domain organization and export-gate integration
+  config/defect-recurrence-policy.json,project,Command-domain organization and export-gate integration
+  eslint-suppressions.json,project,Command-domain organization and export-gate integration
+  knip.json,project,Command-domain organization and export-gate integration
+  package.json,project,Command-domain organization and export-gate integration
+  pnpm-lock.yaml,project,Command-domain organization and export-gate integration
+  scripts/release/lifecycle-evidence-control.mjs,project,Command-domain organization and export-gate integration
+  src/cli/commands/annotations/comments.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/annotations/docs.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/annotations/files.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/annotations/learnings.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/annotations/notes.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/extension/extension.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/governance/gc.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/governance/health.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/governance/telemetry.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/governance/validate.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/history/activity.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/history/history-compact.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/history/history-redact.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/history/history-repair.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/history/history.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/history/restore.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/lifecycle/append.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/lifecycle/claim.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/lifecycle/close-many.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/lifecycle/close.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/lifecycle/copy.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/lifecycle/create.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/lifecycle/delete.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/lifecycle/focus.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/lifecycle/plan.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/lifecycle/update-many.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/lifecycle/update.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/query/aggregate.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/query/context.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/query/deps.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/query/duplicates.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/query/eval.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/query/get.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/query/graph.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/query/list.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/query/next.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/query/search.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/query/stats.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/test/test-all.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/test/test-runs.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/test/test.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/workspace/config.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/workspace/contracts.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/workspace/init.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/workspace/merge.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/workspace/profile.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/workspace/schema.ts,project,Command-domain organization and export-gate integration
+  src/cli/commands/workspace/upgrade.ts,project,Command-domain organization and export-gate integration
+  src/cli/register-annotations.ts,project,Command-domain organization and export-gate integration
+  src/cli/register-history-activity.ts,project,Command-domain organization and export-gate integration
+  src/cli/register-history-maintenance.ts,project,Command-domain organization and export-gate integration
+  src/cli/register-list-query.ts,project,Command-domain organization and export-gate integration
+  src/cli/register-mutation.ts,project,Command-domain organization and export-gate integration
+  src/cli/register-operations.ts,project,Command-domain organization and export-gate integration
+  src/cli/register-setup.ts,project,Command-domain organization and export-gate integration
+  src/cli/schema/registration.ts,project,Command-domain organization and export-gate integration
+  src/cli/stats-analytics-json.ts,project,Command-domain organization and export-gate integration
+  src/core/config/positional-value.ts,project,Command-domain organization and export-gate integration
+  src/core/history/history-diff.ts,project,Command-domain organization and export-gate integration
+  src/core/schema/type-workflows.ts,project,Command-domain organization and export-gate integration
+  src/core/search/eval.ts,project,Command-domain organization and export-gate integration
+  src/core/shared/item-metadata-contract.ts,project,Command-domain organization and export-gate integration
+  src/sdk/extension/shared.ts,project,Command-domain organization and export-gate integration
+  src/sdk/init-agent-guidance.ts,project,Command-domain organization and export-gate integration
+  src/sdk/lifecycle/lifecycle-transitions.ts,project,Command-domain organization and export-gate integration
+  src/sdk/query/search-contracts.ts,project,Command-domain organization and export-gate integration
+  src/sdk/scheduling-shortcuts.ts,project,Command-domain organization and export-gate integration
+  src/sdk/schema.ts,project,Command-domain organization and export-gate integration
+  tests/helpers/extensions.ts,project,Command-domain organization and export-gate integration
+  tests/helpers/withTempPmPath.ts,project,Command-domain organization and export-gate integration
+  tests/integration/ci-workflow-contract.spec.ts,project,Command-domain organization and export-gate integration
+  tests/integration/cli.integration.spec.ts,project,Command-domain organization and export-gate integration
+  tests/integration/close-history-evidence.integration.spec.ts,project,Command-domain organization and export-gate integration
+  tests/integration/copy-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/integration/hierarchy-governance-surfaces.integration.spec.ts,project,Command-domain organization and export-gate integration
+  tests/integration/hierarchy-reader-contract.integration.spec.ts,project,Command-domain organization and export-gate integration
+  tests/integration/history-compact-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/integration/run-tests-script.integration.spec.ts,project,Command-domain organization and export-gate integration
+  tests/integration/service-pass-through-package.integration.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/cli/merge-reconcile-registration.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/cli/register-list-query.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/cli/structure-exports.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/cli/structured-mutation-registration.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/agent-ux-feedback-wave.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/annotations/comments-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/annotations/files-docs-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/annotations/notes-learnings-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/governance/content-governance-filter-resolvers.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/governance/dedupe-audit-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/governance/dedupe-merge-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/governance/dedupe-status-contract.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/governance/gc-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/governance/health-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/governance/metadata-governance-commands.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/governance/normalize-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/governance/telemetry-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/governance/validate-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/history/history-activity-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/history/history-repair-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/history/restore-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/claim-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/claim-receipts.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/close-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/close-many-branch.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/create-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/delete-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/focus-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/hierarchy-mutation-contract.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/legacy-none-tokens.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/lifecycle-transitions.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/plan-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/plan-lifecycle-regressions.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/recurrence-parsers.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/scheduling-shortcuts.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/update-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/lifecycle/update-many-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/aggregate-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/aggregate-set-members.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/calendar-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/calendar-toon-renderer.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/context-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/context-extension-health.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/context-relevance-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/dependency-exact-removal-contract.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/dependency-provenance-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/deps-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/eval-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/get-append-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/list-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/list-sort-branches.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/next-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/query-pagination.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/reindex-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/search-bm25.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/search-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/query/stats-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/register-commands.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/test/linked-command-detection.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/test/linked-test-entry.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/test/linked-test-parsers.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/test/test-all-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/test/test-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/test/test-runs-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/workspace/completion-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/workspace/config-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/workspace/config-key-aliases-search.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/workspace/contracts-projection-modes.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/workspace/guide-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/workspace/init-author-provenance.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/workspace/init-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/workspace/merge-reconcile-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/workspace/schema-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/workspace/templates-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/workspace/upgrade-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/commands/workspace/workspace-memory-command-integration.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/core/history/workspace-history.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/core/search/search-cache.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/extensions/builtin-extension-entrypoints.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/extensions/extension-command-github.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/extensions/extension-command.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/extensions/extension-copy-safety.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/extensions/extension-describe.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/scripts/release/dead-exports.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/sdk/agent-contract-correctness.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/sdk/author-attribution.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/sdk/cli-contracts/runtime-alias-surface.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/sdk/execution-diagnostics-primitives.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/sdk/graph/durable-cache.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/sdk/graph/run.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/sdk/schema-migration.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/sdk/tracked-runtime-cache.spec.ts,project,Command-domain organization and export-gate integration
+  tests/unit/validate/linked-artifact-reference.spec.ts,project,Command-domain organization and export-gate integration
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs coverage -- --maxWorkers 4 --coverage.reportOnFailure,project,1800,"harness:codex","2026-09-22T06:02:16.424Z",local_mutation,refactor/cli-command-domains-export-gate
+test_runs[3]:
+  - run_id: test-local-muc8in5j-uhmk3b
+    kind: test
+    status: failed
+    started_at: "2026-09-22T05:13:50.167Z"
+    finished_at: "2026-09-22T05:29:41.047Z"
+    recorded_at: "2026-09-22T05:29:41.047Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-muc9kkid-5t4y1h
+    kind: test
+    status: failed
+    started_at: "2026-09-22T05:47:12.464Z"
+    finished_at: "2026-09-22T05:59:10.549Z"
+    recorded_at: "2026-09-22T05:59:10.549Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mucb49sk-lez5pw
+    kind: test
+    status: passed
+    started_at: "2026-09-22T06:30:20.356Z"
+    finished_at: "2026-09-22T06:42:29.396Z"
+    recorded_at: "2026-09-22T06:42:29.396Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage -- --maxWorkers 4 --coverage.reportOnFailure,schema,schema,source,local_source_ref
+docs[4]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,Command-domain organization and export-gate integration
+  docs/COMMANDS.md,project,Command-domain organization and export-gate integration
+  docs/READ_OUTPUT_CONTRACTS.md,project,Command-domain organization and export-gate integration
+  docs/SDK_CONTEXT_INTEGRITY_PRIMITIVES.md,project,Command-domain organization and export-gate integration
 body: "## Why (2026-07-12 maintainer directive: too many files per folder + too-long files; document-only pass)\nThe intra-file effective-LOC half of this directive class is owned by pm-yh8r (census current as of its 2026-07-12 note; sdk/runtime.ts 3388/3400 is #1 at-risk). THIS item owns the inter-file half: tracked-file fan-out per source directory. Census (git ls-files, direct children only):\n\n- src/cli/commands 72 (~55 command modules interleaved with ~17 cross-command helper modules; `extension/` and `test/` subfolders already exist as grouping precedent)\n- tests/unit/commands 60 (mirror of the above)\n- tests/integration 32 · scripts 23 · tests/unit/scripts 23 · src/cli 19 · src/core/shared 18 · docs 18 · src/sdk 16 · src/core/item 16 · src/core/extensions 16 · tests/helpers 16\n\nOUT OF SCOPE: `.agents/pm/**` fan-out (history 1758, tasks 567, issues 397) — tracker-store bucketing is owned by pm-0qg5 (format_version-gated migration); never double-file.\n\n## Target policy\n- Soft ceiling ~20 direct files per source directory; exceedances need a grouping move or a documented exemption in this body.\n- Group by DOMAIN NOUN (align with the pm-n7rr grammar nouns), never by file kind — no `utils/`/`helpers/` dumping grounds; a single `shared/` module folder per level is the one sanctioned exception.\n- Tests mirror src 1:1 — every src move carries its mirrored spec move in the same commit.\n\n## Disposition blueprint (per directory)\n1. src/cli/commands (72 → ≤20 root + noun subfolders):\n   - Cross-command support → `commands/shared/`: event-validation-messages, item-filter-options, legacy-none-tokens, lifecycle-transitions, linked-artifacts, linked-test-entry, linked-test-parsers, list-filter-shared, metadata-normalizers, mutation-command-options, recurrence-parsers, repeatable-metadata-parsers, scheduling-shortcuts, search-pagination, search-rendering, shared-unset-fields, init-agent-guidance.\n   - Noun families into per-noun folders (extension/ + test/ precedent): `history/` (history, history-compact, history-redact, history-repair) · `test/` (test, test-all, test-runs joining existing linked-command-detection) · `annotations/` (notes, learnings, comments, comments-audit) · `maintenance/` (normalize, reindex, gc, dedupe-audit, dedupe-merge).\n   - Remaining single-verb modules stay at root.\n2. src/cli (19 direct): help family (help-content, help-json-payload, guide-topics, commander-usage, error-guidance) → `cli/help/`; parser family (shared-parsers, argv-utils, bootstrap-args) → `cli/parsing/`; register-* + registration-helpers stay (registration IS this folder's identity); main.ts stays (entry point, wired in package/bin).\n3. scripts (23 direct): smoke-*.mjs + plugin-mcp-smoke-harness.mjs → `scripts/smoke/`; release-version.mjs, generate-release-notes.mjs, sync-versions.mjs → `scripts/release/`; bundle-cli.mjs, prepare-build-cache.mjs, finalize-build.mjs, gen-*.mjs → `scripts/build/`; run-tests.mjs + install.sh/install.ps1 + check-secrets*.mjs STAY at root (README curl paths, CI invocations, contributor muscle memory) — verify EVERY consumer (package.json scripts, .github/workflows, docs, other scripts) before moving any script.\n4. tests/integration (32): group by surface — `cli/`, `mcp/`, `extensions/`, `release/`, `telemetry/`; tests/unit/scripts follows the scripts/ regrouping mirror.\n5. AT-threshold, no move yet (re-evaluate at T6): src/core/shared 18 (it is the sanctioned shared level), src/sdk 16 (PR#396 barrel split + cli-contracts/ already relieved it; pm-usfg partition will re-shape it), src/core/item 16, src/core/extensions 16, tests/helpers 16.\n6. docs 18: navigated via the AGENTS.md progressive-disclosure map, not by folder browsing — exempt.\n\n## Constraints (why this is not a mechanical mv)\n- Zero feature/behavior loss: bin entry, package exports, contract tables, MCP tool surface, completion output byte-identical; moves are import-specifier-only refactors.\n- Sequencing fence: files inside the SDK-promotion partition (pm-usfg slices pm-3mna/pm-zwpp/pm-oxrw/pm-4a7m/pm-oslr) and pm-yh8r decomposition targets move WITH their slice/split, never in a separate churn pass — one migration per file, no double conflict surface against active lanes.\n- Reference-churn checklist per tranche: ESM relative import specifiers (.js), vitest.config.ts path-keyed excludes (big legacy files listed by path), eslint-suppressions.json path keys (A+ source of truth, max 17), coverage literal all-src globs, package.json script paths, .github/workflows script invocations, docs command examples, jscpd/CodeFactor path baselines.\n- pm tracked file-links: every moved path strands `pm files` links → files_missing rises above the 155/122 baseline owned by pm-j8z6. Each tranche updates links on OPEN items it touches; closed-item drift is handed to the pm-j8z6 reconciliation (CREATE-ONLY on closed items — never mutate them).\n- `git mv` per file for rename detection; ONE directory family per PR tranche, each independently green through the full gate set.\n\n## Tranche order (each tranche = one PR)\nT1 scripts/ regrouping (lowest blast radius, zero src imports) → T2 tests/integration surface folders → T3 src/cli/commands `shared/` extraction → T4 src/cli/commands noun folders (excluding usfg/yh8r-fenced files) → T5 src/cli help/ + parsing/ → T6 re-census + threshold re-check after the pm-usfg partition lands."

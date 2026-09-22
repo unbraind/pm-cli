@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:extensions-hooks",code,"milestone:5",pm-cli,"priority:1"
 created_at: "2026-03-04T20:23:40.638Z"
-updated_at: "2026-09-19T08:42:58.820Z"
+updated_at: "2026-09-22T05:01:28.192Z"
 deadline: "2026-03-06T20:23:22.000Z"
 closed_at: "2026-03-04T20:34:55.479Z"
 assignee: maintainer-agent
@@ -60,7 +60,7 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-03-04T20:23:40.638Z",maintainer-agent,Track hook call-site parity at directory and file read levels.
 files[3]{path,scope,note}:
-  src/cli/commands/activity.ts,project,add history-directory onRead hook dispatch
+  src/cli/commands/history/activity.ts,project,add history-directory onRead hook dispatch
   tests/integration/cli.integration.spec.ts,project,assert read hook event for history directory scan
   tests/unit/history-activity-command.spec.ts,project,assert activity onRead hook for history directory scans
 tests[3]{command,scope,timeout_seconds,note}:

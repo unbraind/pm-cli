@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,annotations,"area:cli","area:sdk",contracts,error-recovery,token-efficiency
 created_at: "2026-08-11T18:12:18.364Z"
-updated_at: "2026-08-11T22:24:03.100Z"
+updated_at: "2026-09-22T05:08:32.689Z"
 closed_at: "2026-08-11T22:24:02.510Z"
 completed_at: "2026-08-11T22:24:02.510Z"
 author: "harness:codex"
@@ -51,10 +51,21 @@ files[11]{path,scope,note}:
   tests/unit/cli/error-guidance.spec.ts,project,Generic collection recovery coverage
   tests/unit/commands/register-commands.spec.ts,project,Annotation command recovery coverage
   tests/unit/scripts/generate-error-code-catalog.spec.ts,project,Partition generation and stale-check coverage
-tests[3]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/notes-learnings-command.spec.ts tests/unit/commands/comments-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,300
-  node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/unit/commands/register-commands.spec.ts,project,600
-  node scripts/run-tests.mjs test -- tests/unit/scripts/generate-error-code-catalog.spec.ts tests/unit/sdk/error-code-catalog.spec.ts,project,300
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/unit/commands/register-commands.spec.ts
+    scope: project
+    timeout_seconds: 600
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/generate-error-code-catalog.spec.ts tests/unit/sdk/error-code-catalog.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/annotations/notes-learnings-command.spec.ts tests/unit/commands/annotations/comments-command.spec.ts tests/unit/commands/register-commands.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:08:32.652Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msp61h4l-b5eopp,test,passed,"2026-08-11T21:21:25.845Z","2026-08-11T21:21:56.469Z","2026-08-11T21:21:56.469Z",2,0,0
   test-local-msp851fj-k6vqul,test,passed,"2026-08-11T22:20:07.060Z","2026-08-11T22:20:41.983Z","2026-08-11T22:20:41.983Z",3,0,0

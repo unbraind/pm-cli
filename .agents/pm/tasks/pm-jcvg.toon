@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: architecture,"area:governance","area:links","area:sdk"
 created_at: "2026-07-13T09:59:04.847Z"
-updated_at: "2026-07-26T17:17:19.179Z"
+updated_at: "2026-09-22T05:11:29.675Z"
 closed_at: "2026-07-13T10:35:51.337Z"
 author: codex-sdk-wide-20260713
 estimated_minutes: 420
@@ -18,13 +18,13 @@ release: v2026.7.14
 resolution: "Promoted linked-artifact, files, docs, and dependency orchestration into typed public SDK modules; routed runtime consumers through SDK primitives; removed 34 private CLI-to-core imports; documented and verified packed consumption."
 expected_result: "Public SDK owns linked-resource and dependency primitives while CLI behavior, strict quality, exact coverage, and installed-package behavior remain compatible."
 actual_result: "CLI files/docs/deps are thin SDK re-exports; direct SDK and PmClient consumers pass; 5,604 tests pass at 100/100/100/100; static/docs/contracts/security/package/Sentry gates pass."
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-2ler,related,"2026-07-13T09:59:04.847Z",null,null
-  pm-a2h3,related,"2026-07-26T17:17:18.963Z",null,null
-  pm-b24b,related,"2026-07-26T17:17:18.963Z",null,null
-  pm-u5zr,related,"2026-07-26T17:17:18.963Z",null,null
-  pm-usfg,related,"2026-07-26T17:17:18.963Z",null,null
-  pm-zwpp,implements,"2026-07-26T17:17:18.963Z",null,null
+dependencies[6]{id,kind,created_at}:
+  pm-2ler,related,"2026-07-13T09:59:04.847Z"
+  pm-a2h3,related,"2026-07-26T17:17:18.963Z"
+  pm-b24b,related,"2026-07-26T17:17:18.963Z"
+  pm-u5zr,related,"2026-07-26T17:17:18.963Z"
+  pm-usfg,related,"2026-07-26T17:17:18.963Z"
+  pm-zwpp,implements,"2026-07-26T17:17:18.963Z"
 comments[10]{created_at,author,text}:
   "2026-07-13T09:59:04.847Z",codex-sdk-wide-20260713,"author=codex-sdk-wide-20260713,text=Duplicate check evidence: searched all tracker statuses for file/doc link management, dependency edge management, facet SDK files/docs/deps, and the full pm-usfg child lineage. pm-zwpp is the canonical parent; pm-a2h3 and earlier annotation work are closed, while no existing child owns the remaining S2 files/docs, S3 deps, and S4 direct-facade completion bundle. External baseline: open Dependabot PRs #537-#541; GitHub Dependabot, code-scanning, and secret-scanning alerts are empty; pnpm audit reports 0 vulnerabilities; Windows nightly failure is already tracked separately by pm-u5zr/pm-b24b; latest pm-changelog is 2026.7.12-2."
   "2026-07-13T09:59:20.214Z",codex-sdk-wide-20260713,"Implementation start: active bundle is pm-jcvg + pm-2ler only. Scope combines public files/docs/deps domain kernels, CLI-on-SDK presentation layering, dependency validation actionability, SDK docs/docstrings, exact coverage, packed temp-project proof, and full PR review/merge closeout. Parent pm-zwpp remains open as the canonical feature container rather than being marked in progress."
@@ -40,10 +40,10 @@ learnings[1]{created_at,author,text}:
   "2026-07-13T10:35:50.352Z",codex-sdk-wide-20260713,"Architecture learning: command-owned linked-resource kernels can move intact behind SDK modules while retaining thin CLI compatibility exports; the import-boundary ratchet then proves the migration by removing private CLI-to-core edges instead of adding exemptions."
 files[16]{path,scope,note}:
   scripts/release/sdk-import-boundary-baseline.json,project,Ratchet records removal of 34 private CLI-to-core imports
-  src/cli/commands/deps.ts,project,Wide SDK primitive extraction and dependency governance implementation
-  src/cli/commands/docs.ts,project,Wide SDK primitive extraction and dependency governance implementation
-  src/cli/commands/files.ts,project,Wide SDK primitive extraction and dependency governance implementation
-  src/cli/commands/validate.ts,project,Wide SDK primitive extraction and dependency governance implementation
+  src/cli/commands/annotations/docs.ts,project,Wide SDK primitive extraction and dependency governance implementation
+  src/cli/commands/annotations/files.ts,project,Wide SDK primitive extraction and dependency governance implementation
+  src/cli/commands/governance/validate.ts,project,Wide SDK primitive extraction and dependency governance implementation
+  src/cli/commands/query/deps.ts,project,Wide SDK primitive extraction and dependency governance implementation
   src/sdk/dependencies.ts,project,Wide SDK primitive extraction and dependency governance implementation
   src/sdk/docs.ts,project,Wide SDK primitive extraction and dependency governance implementation
   src/sdk/files.ts,project,Wide SDK primitive extraction and dependency governance implementation
@@ -51,13 +51,22 @@ files[16]{path,scope,note}:
   src/sdk/linked-artifacts.ts,project,Wide SDK primitive extraction and dependency governance implementation
   src/sdk/runtime.ts,project,Wide SDK primitive extraction and dependency governance implementation
   tests/unit/cli/linked-artifacts-remove.spec.ts,project,Linked-artifact parser coverage imports the public SDK primitive
-  tests/unit/commands/deps-command.spec.ts,project,Focused SDK primitive and validator coverage
-  tests/unit/commands/files-docs-command.spec.ts,project,Focused SDK primitive and validator coverage
-  tests/unit/commands/validate-command.spec.ts,project,Focused SDK primitive and validator coverage
+  tests/unit/commands/annotations/files-docs-command.spec.ts,project,Focused SDK primitive and validator coverage
+  tests/unit/commands/governance/validate-command.spec.ts,project,Focused SDK primitive and validator coverage
+  tests/unit/commands/query/deps-command.spec.ts,project,Focused SDK primitive and validator coverage
   tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,MCP runtime test boundary follows SDK-native files docs and dependency imports
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs coverage,project,1200
-  node scripts/run-tests.mjs test -- tests/unit/commands/deps-command.spec.ts tests/unit/commands/files-docs-command.spec.ts tests/unit/commands/validate-command.spec.ts,project,240
+tests[2]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 1200
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/commands/annotations/files-docs-command.spec.ts tests/unit/commands/governance/validate-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:11:29.594Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 docs[1]{path,scope,note}:
   docs/SDK.md,project,Public linked-resource and dependency governance SDK guide
 close_reason: "Delivered the public linked-resource/dependency SDK bundle with exact coverage, strict quality, packed acceptance, and live telemetry evidence."

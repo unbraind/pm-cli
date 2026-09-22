@@ -79,7 +79,7 @@ function installGitMock(): void {
 describe("extension command github source handling", () => {
   it("installs from forced GitHub shorthand sources with deterministic metadata", async () => {
     installGitMock();
-    const { runExtension } = await import("../../../src/cli/commands/extension.js");
+    const { runExtension } = await import("../../../src/cli/commands/extension/extension.js");
     await withTempPmPath(async (context) => {
       const result = await runExtension(
         undefined,
@@ -105,7 +105,7 @@ describe("extension command github source handling", () => {
 
   it("accepts --github alias input for forced shorthand installs", async () => {
     installGitMock();
-    const { runExtension } = await import("../../../src/cli/commands/extension.js");
+    const { runExtension } = await import("../../../src/cli/commands/extension/extension.js");
     await withTempPmPath(async (context) => {
       const result = await runExtension(
         undefined,
@@ -124,7 +124,7 @@ describe("extension command github source handling", () => {
 
   it("discovers default extension roots when no explicit subpath is provided", async () => {
     installGitMock();
-    const { runExtension } = await import("../../../src/cli/commands/extension.js");
+    const { runExtension } = await import("../../../src/cli/commands/extension/extension.js");
     await withTempPmPath(async (context) => {
       const result = await runExtension(
         "https://github.com/owner/repo-default",
@@ -145,7 +145,7 @@ describe("extension command github source handling", () => {
 
   it("supports repository-root manifests for GitHub installs", async () => {
     installGitMock();
-    const { runExtension } = await import("../../../src/cli/commands/extension.js");
+    const { runExtension } = await import("../../../src/cli/commands/extension/extension.js");
     await withTempPmPath(async (context) => {
       const result = await runExtension(
         "https://github.com/owner/repo-root",
@@ -166,7 +166,7 @@ describe("extension command github source handling", () => {
 
   it("returns usage errors for ambiguous or missing GitHub manifest discovery", async () => {
     installGitMock();
-    const { runExtension } = await import("../../../src/cli/commands/extension.js");
+    const { runExtension } = await import("../../../src/cli/commands/extension/extension.js");
     await withTempPmPath(async (context) => {
       await expect(
         runExtension("https://github.com/owner/repo-multiple", { install: true, project: true }, { path: context.pmPath }),
@@ -184,7 +184,7 @@ describe("extension command github source handling", () => {
 
   it("returns generic failure when git clone fails", async () => {
     installGitMock();
-    const { runExtension } = await import("../../../src/cli/commands/extension.js");
+    const { runExtension } = await import("../../../src/cli/commands/extension/extension.js");
     await withTempPmPath(async (context) => {
       await expect(
         runExtension("https://github.com/owner/repo-fail", { install: true, project: true }, { path: context.pmPath }),

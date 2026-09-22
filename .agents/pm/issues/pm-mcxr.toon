@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T11:28:40.523Z"
-updated_at: "2026-09-19T08:40:46.328Z"
+updated_at: "2026-09-22T05:12:43.195Z"
 closed_at: "2026-06-18T19:15:06.202Z"
 author: codex-sdk-cli-consolidation-20260616
 parent: pm-mpbb
@@ -32,13 +32,13 @@ comments[12]{created_at,author,text}:
   "2026-06-18T20:22:11.189Z",codex-gpt5,"Review follow-up evidence: clarified command-label unescaping with an explicit commandMatch ternary for Gemini feedback. Verified focused test-runs regression, static quality, and full coverage 100/100/100/100 (29418 statements, 23075 branches, 4877 functions, 28281 lines)."
 files[5]{path,scope,note}:
   docs/TESTING.md,project,Document strict empty-run gate behavior
-  src/cli/commands/test-all.ts,project,Fail strict test-all empty selections under --fail-on-empty-test-run
+  src/cli/commands/test/test-all.ts,project,Fail strict test-all empty selections under --fail-on-empty-test-run
   src/core/test/background-runs.ts,project,Capture structured test-all item progress and current linked command in background run records
-  tests/unit/commands/test-all-command.spec.ts,project,Regression coverage for strict aggregate empty selection failure
-  tests/unit/commands/test-runs-command.spec.ts,project,Regression coverage for background test-all progress parsing
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/test-all-command.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/commands/test-runs-command.spec.ts tests/unit/commands/test-all-command.spec.ts,project,240
+  tests/unit/commands/test/test-all-command.spec.ts,project,Regression coverage for strict aggregate empty selection failure
+  tests/unit/commands/test/test-runs-command.spec.ts,project,Regression coverage for background test-all progress parsing
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/test/test-all-command.spec.ts,project,240,"harness:codex","2026-09-22T05:12:43.148Z",local_mutation,refactor/cli-command-domains-export-gate
+  node scripts/run-tests.mjs test -- tests/unit/commands/test/test-runs-command.spec.ts tests/unit/commands/test/test-all-command.spec.ts,project,240,"harness:codex","2026-09-22T05:12:43.148Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mqjv6nwr-j6kjr4,test,failed,"2026-06-18T18:57:43.407Z","2026-06-18T18:59:47.211Z","2026-06-18T18:59:47.211Z",2,1,0
   test-local-mqjvaboz-c1176c,test,passed,"2026-06-18T19:00:12.881Z","2026-06-18T19:02:38.003Z","2026-06-18T19:02:38.003Z",2,0,0

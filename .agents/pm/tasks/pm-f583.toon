@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: "area:context",implementation,pm-cli
 created_at: "2026-04-01T14:10:51.504Z"
-updated_at: "2026-09-19T08:40:14.532Z"
+updated_at: "2026-09-22T05:09:28.643Z"
 deadline: "2026-05-09T17:09:59.572Z"
 closed_at: "2026-04-27T17:03:47.190Z"
 author: codex-agent
@@ -59,10 +59,9 @@ notes[2]{created_at,author,text}:
 learnings[2]{created_at,author,text}:
   "2026-04-01T20:14:49.670Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
   "2026-04-27T17:03:40.344Z",codex-agent,"When long-lived in_progress tasks already have implementation evidence, rerunning linked pm test bundles before close provides deterministic, current-state proof and avoids stale quality assumptions."
-files[10]{path,scope,note}:
+files[9]{path,scope,note}:
   src/cli/commands/completion.ts,project,shell completion parity
-  src/cli/commands/context.ts,project,core command implementation
-  src/cli/commands/index.ts,project,command exports
+  src/cli/commands/query/context.ts,project,core command implementation
   src/cli/help-content.ts,project,context help bundle
   src/cli/main.ts,project,command registration and format handling
   tests/integration/cli.integration.spec.ts,project,context integration behavior

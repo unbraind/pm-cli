@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:health","area:history","area:search",compatibility,pm-cli
 created_at: "2026-04-01T14:41:57.443Z"
-updated_at: "2026-09-19T08:39:15.632Z"
+updated_at: "2026-09-22T05:00:56.383Z"
 deadline: "2026-04-11T14:41:57.443Z"
 closed_at: "2026-04-01T15:09:14.181Z"
 assignee: codex-agent
@@ -70,7 +70,7 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:15:14.983Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
-  src/cli/commands/health.ts,project,primary command surface
+  src/cli/commands/governance/health.ts,project,primary command surface
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test,project,7200,full regression baseline
 docs[1]{path,scope,note}:

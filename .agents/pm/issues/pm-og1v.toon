@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:search",bug,paths,vector-store
 created_at: "2026-07-06T08:44:42.249Z"
-updated_at: "2026-09-19T08:40:52.608Z"
+updated_at: "2026-09-22T05:02:47.854Z"
 closed_at: "2026-07-06T09:26:59.244Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -43,14 +43,14 @@ comments[3]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-07-06T08:51:41.233Z",maintainer-agent,"Fix implemented and verified 2026-07-06 - anchorLanceDbStorePath in vector-stores.ts anchors relative paths to the workspace root (basename-based pm-root derivation, separator-safe); resolveVectorStores(settings, pmRoot?) optional param threaded through search.ts, health.ts (buildVectorizationRuntimeSnapshot), reindex.ts (assertSemanticRuntimeAvailable), cache.ts semantic-refresh context. cache.ts isSemanticRefreshActive left unanchored on purpose (boolean availability check only). 4 regression tests added to search-provider-store-selection.spec.ts (conventional root, bare root, absolute path, no-root back-compat); spec passes 20/20. Stray .agents/pm/.agents/ directory removed from the workspace. tsc clean."
 files[6]{path,scope,note}:
-  src/cli/commands/health.ts,project,Thread pmRoot into health vectorization snapshot and expose auto-default remediation
+  src/cli/commands/governance/health.ts,project,Thread pmRoot into health vectorization snapshot and expose auto-default remediation
+  src/cli/commands/query/search.ts,project,Thread pmRoot into search runtime vector-store resolution
   src/cli/commands/reindex.ts,project,Thread pmRoot into reindex vector-store availability checks
-  src/cli/commands/search.ts,project,Thread pmRoot into search runtime vector-store resolution
   src/core/search/cache.ts,project,Thread pmRoot into semantic refresh vector-store resolution
   src/core/search/vector-stores.ts,project,Anchor relative LanceDB paths to pmRoot-derived workspace root
   tests/unit/core/search/search-provider-store-selection.spec.ts,project,"Regression coverage for workspace-root,bare-root,absolute,and back-compat LanceDB paths"
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/core/search/search-provider-store-selection.spec.ts tests/unit/commands/health-command.spec.ts,project,180,Vector-store path and health vectorization regression coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/core/search/search-provider-store-selection.spec.ts tests/unit/commands/governance/health-command.spec.ts,project,180,"harness:codex","2026-09-22T05:02:47.819Z",local_mutation,refactor/cli-command-domains-export-gate,Vector-store path and health vectorization regression coverage
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mr90dkd3-o6rk9f,test,passed,"2026-07-06T09:18:14.309Z","2026-07-06T09:19:21.687Z","2026-07-06T09:19:21.687Z",1,0,0
 close_reason: Fixed relative LanceDB vector-store path anchoring and verified no nested workspace store is created

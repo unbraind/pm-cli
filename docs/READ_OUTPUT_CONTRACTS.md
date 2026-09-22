@@ -298,5 +298,5 @@ The full runtime contract reports every surface and all four dimensions. Strict 
 pnpm contracts:check
 node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts
 node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-migration-hints.spec.ts
-node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts
+node scripts/run-tests.mjs test -- tests/unit/commands/workspace/completion-command.spec.ts
 ```

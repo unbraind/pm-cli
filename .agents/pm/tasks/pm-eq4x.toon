@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli","area:lifecycle",simplification
 created_at: "2026-07-05T04:53:33.295Z"
-updated_at: "2026-09-10T00:06:41.536Z"
+updated_at: "2026-09-22T05:15:26.362Z"
 closed_at: "2026-09-10T00:06:41.311Z"
 completed_at: "2026-09-10T00:06:41.311Z"
 author: maintainer-agent
@@ -81,8 +81,8 @@ files[24]{path,scope,note}:
   tests/integration/lifecycle-composition-sdk.spec.ts,project,Lifecycle canonical command implementation and verification
   tests/integration/task-lifecycle-aliases.spec.ts,project,Lifecycle canonical command implementation and verification
   tests/types/lifecycle-composition.test-d.ts,project,Compile-time regression for actual composition flags and base versus composed receipt overloads
-  tests/unit/commands/create-command.spec.ts,project,Canonical lifecycle contract and regression evidence
-  tests/unit/commands/lifecycle-transitions.spec.ts,project,Canonical claim --start next-step suggestion regression
+  tests/unit/commands/lifecycle/create-command.spec.ts,project,Canonical lifecycle contract and regression evidence
+  tests/unit/commands/lifecycle/lifecycle-transitions.spec.ts,project,Canonical claim --start next-step suggestion regression
   tests/unit/commands/register-commands.spec.ts,project,Canonical lifecycle contract and regression evidence
   tests/unit/scripts/release/command-grammar-gate.spec.ts,project,Positive and missing-registration checks for hidden alias census
   tests/unit/sdk/action-schema-parity.spec.ts,project,Canonical lifecycle contract and regression evidence

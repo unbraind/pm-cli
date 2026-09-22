@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:test",concurrency,merge-safety,multi-agent,security,trust
 created_at: "2026-07-25T07:11:20.321Z"
-updated_at: "2026-08-22T23:27:20.075Z"
+updated_at: "2026-09-22T05:07:44.425Z"
 closed_at: "2026-08-22T23:27:19.358Z"
 completed_at: "2026-08-22T23:27:19.358Z"
 author: unknown
@@ -58,14 +58,14 @@ files[22]{path,scope,note}:
   src/sdk/merge/three-way.ts,project,linked-test provenance and trust boundary
   src/sdk/test/trust.ts,project,linked-test provenance and trust boundary
   src/types.ts,project,linked-test provenance and trust boundary
-  tests/unit/commands/config-command.spec.ts,project,linked-test provenance and trust boundary
-  tests/unit/commands/validate-command.spec.ts,project,linked-test provenance and trust boundary
+  tests/unit/commands/governance/validate-command.spec.ts,project,linked-test provenance and trust boundary
+  tests/unit/commands/workspace/config-command.spec.ts,project,linked-test provenance and trust boundary
   tests/unit/core/store/settings-store.spec.ts,project,linked-test provenance and trust boundary
   tests/unit/extensions/extension-command.spec.ts,project,generated SDK fixture settings coverage
   tests/unit/sdk/test/linked-test-provenance-merge.spec.ts,project,linked-test provenance and trust boundary
   tests/unit/sdk/test/linked-test-trust.spec.ts,project,linked-test provenance and trust boundary
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/test/linked-test-trust.spec.ts tests/unit/sdk/test/linked-test-provenance-merge.spec.ts tests/unit/commands/validate-command.spec.ts tests/unit/commands/config-command.spec.ts,project,300,"harness:codex","2026-08-22T17:47:45.700Z",local_mutation,codex/linked-test-context-trust,Trust provenance merge validation and policy coverage
+  node scripts/run-tests.mjs test -- tests/unit/sdk/test/linked-test-trust.spec.ts tests/unit/sdk/test/linked-test-provenance-merge.spec.ts tests/unit/commands/governance/validate-command.spec.ts tests/unit/commands/workspace/config-command.spec.ts,project,300,"harness:codex","2026-09-22T05:07:44.374Z",local_mutation,refactor/cli-command-domains-export-gate,Trust provenance merge validation and policy coverage
 test_runs[2]:
   - run_id: test-local-mt4o8x6q-g1qtel
     kind: test

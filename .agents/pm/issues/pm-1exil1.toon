@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:cli","area:sdk",gh-issue,projection,tests,token-efficiency
 created_at: "2026-07-25T00:15:31.271Z"
-updated_at: "2026-07-26T17:01:04.209Z"
+updated_at: "2026-09-22T05:12:02.572Z"
 closed_at: "2026-07-25T02:24:34.207Z"
 author: codex-root
 parent: pm-mpbb
@@ -14,18 +14,18 @@ release: v2026.7.25
 resolution: Added tests_count to the standard get projection while retaining omission of the full tests collection.
 expected_result: Agents can detect linked-test evidence in one lean read without paying the token cost of the detailed payload.
 actual_result: "Standard output returns the exact count, token-budget gates pass, and focused plus full coverage verifies the projection."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-3esl28,related,"2026-07-25T00:15:31.271Z",null,null
-  pm-usfg,related,"2026-07-25T00:15:31.271Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:01:03.885Z",null,null
+dependencies[3]{id,kind,created_at}:
+  pm-3esl28,related,"2026-07-25T00:15:31.271Z"
+  pm-usfg,related,"2026-07-25T00:15:31.271Z"
+  pm-mpbb,implements,"2026-07-26T17:01:03.885Z"
 comments[3]{created_at,author,text}:
   "2026-07-25T00:15:31.271Z",codex-root,"Duplicate check: searched all statuses for GH-683, standard projection tests_count, omitted linked-test evidence, and the completed notes_count contract. pm-3esl28 is adjacent shipped lineage for notes only; this residual tests_count field is distinct and was not previously tracked."
   "2026-07-25T02:02:11.889Z","harness:codex","Evidence: linked-test execution now propagates an explicit portable source_workspace_root while keeping the tracker and global PM roots sandboxed. Installed tarball acceptance successfully ran a real linked test from an anonymous temporary consumer."
   "2026-07-25T02:02:49.839Z","harness:codex","Correction to the immediately preceding evidence comment: this item owns tests_count. Evidence: standard pm get exposes tests_count while continuing to omit the tests collection; focused, token-budget, packed-consumer, and full coverage gates pass."
 files[2]{path,scope,note}:
-  src/cli/commands/get.ts,project,Standard projection test count
-  tests/unit/commands/get-append-command.spec.ts,project,Standard projection test count
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/get-append-command.spec.ts,project,240
+  src/cli/commands/query/get.ts,project,Standard projection test count
+  tests/unit/commands/query/get-append-command.spec.ts,project,Standard projection test count
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/get-append-command.spec.ts,project,240,"harness:codex","2026-09-22T05:12:02.526Z",local_mutation,refactor/cli-command-domains-export-gate
 close_reason: "Merged in PR #693 as main commit 3a0c570c: lean standard get projection exposes tests_count without embedding the test collection; token and full coverage gates pass."
 body: ""

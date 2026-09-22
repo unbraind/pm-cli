@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-hooks",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:11.494Z"
-updated_at: "2026-09-19T08:40:56.634Z"
+updated_at: "2026-09-22T05:02:41.507Z"
 deadline: "2026-03-13T23:02:11.494Z"
 closed_at: "2026-03-04T12:45:59.355Z"
 assignee: steve
@@ -81,13 +81,13 @@ learnings[1]{created_at,author,text}:
 files[25]{path,scope,note}:
   PRD.md,project,align hook lifecycle milestone wording with search onRead call-site expansion
   README.md,project,docs-first afterCommand failure-path contract clarification
-  src/cli/commands/activity.ts,project,activity command onRead hook dispatch
-  src/cli/commands/gc.ts,project,dispatch onRead/onWrite hooks for cache gc paths
-  src/cli/commands/health.ts,project,dispatch onRead hooks for required directory checks
-  src/cli/commands/history.ts,project,history command onRead hook dispatch
+  src/cli/commands/governance/gc.ts,project,dispatch onRead/onWrite hooks for cache gc paths
+  src/cli/commands/governance/health.ts,project,dispatch onRead hooks for required directory checks
+  src/cli/commands/history/activity.ts,project,activity command onRead hook dispatch
+  src/cli/commands/history/history.ts,project,history command onRead hook dispatch
+  src/cli/commands/query/search.ts,project,dispatch onRead hooks for search corpus reads
+  src/cli/commands/query/stats.ts,project,dispatch onRead hooks for history scans
   src/cli/commands/reindex.ts,project,invoke onIndex hook call site
-  src/cli/commands/search.ts,project,dispatch onRead hooks for search corpus reads
-  src/cli/commands/stats.ts,project,dispatch onRead hooks for history scans
   src/cli/main.ts,project,command lifecycle hook invocation
   src/core/extensions/index.ts,project,extension runtime exports
   src/core/extensions/loader.ts,project,extension runtime and activation pipeline

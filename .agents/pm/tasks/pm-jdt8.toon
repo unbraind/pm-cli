@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[9]: "area:config","area:workflow",code,docs,"milestone:7",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-08T14:33:25.586Z"
-updated_at: "2026-09-19T08:40:36.575Z"
+updated_at: "2026-09-22T05:09:04.726Z"
 deadline: "2026-03-09T14:33:25.586Z"
 closed_at: "2026-03-08T15:05:36.555Z"
 assignee: maintainer-agent
@@ -59,12 +59,11 @@ notes[1]{created_at,author,text}:
   "2026-03-08T14:33:25.586Z",maintainer-agent,Plan update docs first then add settings storage and config command wiring then run focused and full regression checks.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:32:05.404Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[13]{path,scope,note}:
+files[12]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,authoritative config contract update
   README.md,project,public config command documentation
-  src/cli/commands/config.ts,project,config command implementation
-  src/cli/commands/index.ts,project,export config command
+  src/cli/commands/workspace/config.ts,project,config command implementation
   src/cli/main.ts,project,config command wiring
   src/core/shared/constants.ts,project,settings defaults include workflow definition-of-done
   src/core/store/settings.ts,project,settings schema persistence update

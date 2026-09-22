@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-05-23T03:43:24.111Z"
-updated_at: "2026-09-19T08:41:56.055Z"
+updated_at: "2026-09-22T05:12:15.119Z"
 closed_at: "2026-05-23T05:36:08.929Z"
 author: claude-code-agent
 release: v2026.5.23
@@ -52,8 +52,8 @@ comments[8]{created_at,author,text}:
   "2026-05-23T05:36:06.008Z",codex-review-fixer,"Closeout evidence: PR #45 merged to main as merge commit 37a035aa93e3c026477677d854523fd8f068a9e0 after final head b3f6d2d7 was green across CI, Docs, CodeRabbit, and Sourcery. Local main fast-forwarded to origin/main."
 files[7]{path,scope,note}:
   CHANGELOG.md,project,PR45 user-facing warning name update
-  src/cli/commands/search.ts,project,"PR45 review: rename degraded semantic warning to vector-match condition"
-  src/cli/commands/update.ts,project,"PR45 review: prune stale blocked_by edges on scalar set"
+  src/cli/commands/lifecycle/update.ts,project,"PR45 review: prune stale blocked_by edges on scalar set"
+  src/cli/commands/query/search.ts,project,"PR45 review: rename degraded semantic warning to vector-match condition"
   src/core/item/parse.ts,project,"PR45 review: cmd alias comma continuation"
   tests/unit/search-command.spec.ts,project,PR45 regression for vector no-match degraded warning
   tests/unit/test-command.spec.ts,project,PR45 regression for cmd comma alias

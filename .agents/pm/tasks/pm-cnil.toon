@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:testing",code,"milestone:6",pm-cli,"priority:1",tests
 created_at: "2026-03-06T21:31:15.657Z"
-updated_at: "2026-09-19T08:40:01.774Z"
+updated_at: "2026-09-22T05:04:06.339Z"
 deadline: "2026-03-08T18:00:00.000Z"
 closed_at: "2026-03-06T21:47:10.881Z"
 assignee: maintainer-agent
@@ -58,7 +58,7 @@ files[5]{path,scope,note}:
   AGENTS.md,project,agent workflow note for timeout-aware test-all dedupe
   PRD.md,project,authoritative test-all dedupe timeout contract
   README.md,project,document timeout conflict resolution in test-all dedupe
-  src/cli/commands/test-all.ts,project,dedupe key and timeout selection logic
+  src/cli/commands/test/test-all.ts,project,dedupe key and timeout selection logic
   tests/unit/test-all-command.spec.ts,project,coverage for timeout-variant dedupe
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/test-all-command.spec.ts,project,1200,targeted command coverage

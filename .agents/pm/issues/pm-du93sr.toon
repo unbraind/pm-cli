@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",context,diagnostics,token-budget
 created_at: "2026-07-26T11:26:47.669Z"
-updated_at: "2026-09-06T12:59:38.386Z"
+updated_at: "2026-09-22T05:16:27.597Z"
 closed_at: "2026-09-06T12:59:37.800Z"
 completed_at: "2026-09-06T12:59:37.800Z"
 author: "harness:claude-code"
@@ -76,18 +76,9 @@ files[7]{path,scope,note}:
   src/sdk/governance/health.ts,project,Check-only verdict projection with explicit full evidence restore
   tests/integration/health-diagnostic-guidance.integration.spec.ts,project,Implementation and verification of pm-du93sr
   tests/unit/sdk/health-check-only-contract.spec.ts,project,Verdict-first check-only contract spec shipped with PR 829
-tests[2]:
-  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/unit/commands/health-command.spec.ts
-    scope: project
-    timeout_seconds: 240
-  - command: node scripts/run-tests.mjs test -- tests/integration/health-diagnostic-guidance.integration.spec.ts tests/unit/sdk/health-check-only-contract.spec.ts
-    scope: project
-    timeout_seconds: 240
-    provenance:
-      author: "harness:codex"
-      created_at: "2026-09-06T10:29:29.708Z"
-      source_kind: local_mutation
-      source_ref: feat/health-verdicts-and-recurrence-lineages
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/health-diagnostic-guidance.integration.spec.ts tests/unit/sdk/health-check-only-contract.spec.ts,project,240,"harness:codex","2026-09-06T10:29:29.708Z",local_mutation,feat/health-verdicts-and-recurrence-lineages
+  node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/unit/commands/governance/health-command.spec.ts,project,240,"harness:codex","2026-09-22T05:16:27.479Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[2]:
   - run_id: test-local-mtppcw4k-5yyzux
     kind: test

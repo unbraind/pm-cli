@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:create","area:parser",external-audit,pm-cli
 created_at: "2026-04-04T08:23:37.509Z"
-updated_at: "2026-09-19T08:40:45.135Z"
+updated_at: "2026-09-22T05:03:02.755Z"
 deadline: "2026-04-10T08:23:37.509Z"
 closed_at: "2026-04-04T08:40:13.389Z"
 author: codex-agent
@@ -58,7 +58,7 @@ comments[2]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-04-04T08:23:37.509Z",codex-agent,Implement validation at create log-seed boundary rather than broad parser breaking changes.
 files[1]{path,scope,note}:
-  src/cli/commands/create.ts,project,feature implementation surface
+  src/cli/commands/lifecycle/create.ts,project,feature implementation surface
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/parse-utils.spec.ts,project,600,feature regression coverage
 docs[1]{path,scope,note}:

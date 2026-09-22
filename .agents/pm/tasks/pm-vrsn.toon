@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: context-parity,external-audit,implementation,linked-tests
 created_at: "2026-04-04T12:43:04.119Z"
-updated_at: "2026-09-19T08:42:05.742Z"
+updated_at: "2026-09-22T05:01:58.097Z"
 deadline: "2026-04-11T12:43:04.119Z"
 closed_at: "2026-04-07T19:28:37.172Z"
 author: codex-agent
@@ -68,8 +68,8 @@ notes[1]{created_at,author,text}:
   "2026-04-04T12:43:04.119Z",codex-agent,Keep default mode backward compatible; all strict behavior must be opt-in.
 files[10]{path,scope,note}:
   src/cli/commands/completion.ts,project,override-linked-pm-context completion parity
-  src/cli/commands/test-all.ts,project,context-parity-implementation
-  src/cli/commands/test.ts,project,context-parity-implementation
+  src/cli/commands/test/test-all.ts,project,context-parity-implementation
+  src/cli/commands/test/test.ts,project,context-parity-implementation
   src/cli/main.ts,project,context-parity-implementation
   src/sdk/cli-contracts.ts,project,context-parity-implementation
   tests/integration/release-readiness-runtime.spec.ts,project,context-parity-implementation

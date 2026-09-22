@@ -1081,7 +1081,6 @@ export const PRIVATE_SDK_IMPORT_ALLOWLIST = new Set([
   "src/sdk/cli-contracts/runtime-contracts.ts",
   "src/sdk/extension/scaffold.ts",
   "src/sdk/extension/shared.ts",
-  "src/sdk/lifecycle/lifecycle-transitions.ts",
 ]);
 
 /** Resolve SDK modules reachable through published export declarations. */

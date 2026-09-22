@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { runPlan } from "../../../src/cli/commands/plan.js";
+import { runPlan } from "../../../src/cli/commands/lifecycle/plan.js";
 import { PM_TOOL_ACTION_PARAMETER_CONTRACTS } from "../../../src/sdk/cli-contracts.js";
 import { _testOnlyTestCommand } from "../../../src/sdk/test/execution.js";
 import { createRelationshipKindRegistry } from "../../../src/sdk/relationships.js";
@@ -68,7 +68,7 @@ describe("agent contract correctness", () => {
           "--learning",
           "text=creation learning",
           "--file",
-          "path=src/cli/commands/plan.ts,scope=project",
+          "path=src/cli/commands/lifecycle/plan.ts,scope=project",
           "--doc",
           "path=docs/SDK.md,scope=project",
           "--test",
@@ -122,7 +122,7 @@ describe("agent contract correctness", () => {
         learnings: expect.arrayContaining([
           expect.objectContaining({ text: "creation learning" }),
         ]),
-        files: [{ path: "src/cli/commands/plan.ts", scope: "project" }],
+        files: [{ path: "src/cli/commands/lifecycle/plan.ts", scope: "project" }],
         docs: [{ path: "docs/SDK.md", scope: "project" }],
         tests: [
           {

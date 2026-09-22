@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-26T12:13:36.253Z"
-updated_at: "2026-07-26T20:56:01.842Z"
+updated_at: "2026-09-22T05:10:47.465Z"
 closed_at: "2026-07-26T20:55:58.954Z"
 author: "harness:codex"
 acceptance_criteria: "CLI, MCP, and typed SDK consumers can list existing duplicate clusters without creating an item; output is bounded and deterministic; cluster provenance and canonical merge/close guidance reuse existing duplicate governance."
@@ -14,12 +14,12 @@ parent: pm-usfg
 resolution: "Bounded duplicate-cluster discovery shipped across CLI, MCP, PmClient, and public SDK."
 expected_result: Agents can discover existing duplicate clusters without creating items and receive deterministic bounded remediation guidance.
 actual_result: All-status/status/since/threshold/limit discovery returns deterministic canonical clusters and safe close commands through every public transport.
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-2i12ti,discovered_from,"2026-07-26T12:13:36.253Z",null,null
-  pm-4ri6,related,"2026-07-26T12:13:36.253Z",null,null
-  pm-2i12ti,implements,"2026-07-26T19:12:08.511Z",null,null
-  pm-jmld,implements,"2026-07-26T19:12:08.511Z",null,null
-  pm-usfg,implements,"2026-07-26T19:12:08.511Z",null,null
+dependencies[5]{id,kind,created_at}:
+  pm-2i12ti,discovered_from,"2026-07-26T12:13:36.253Z"
+  pm-4ri6,related,"2026-07-26T12:13:36.253Z"
+  pm-2i12ti,implements,"2026-07-26T19:12:08.511Z"
+  pm-jmld,implements,"2026-07-26T19:12:08.511Z"
+  pm-usfg,implements,"2026-07-26T19:12:08.511Z"
 comments[8]{created_at,author,text}:
   "2026-07-26T12:13:36.253Z","harness:codex","Duplicate check 2026-07-26: searched all statuses for GH-739, existing duplicate clusters, findDuplicateClusters CLI, and batch duplicate sweep. Closed pm-2i12ti supplies the batch primitive, pm-4ri6 covers create-time advice, and pm-jmld covers merge execution; none exposes the requested read workflow, so this is the canonical surface child."
   "2026-07-26T19:42:55.554Z","harness:codex","Evidence: shipped bounded all-status duplicate discovery through CLI, MCP action contracts, PmClient, and top-level SDK helpers. Results provide deterministic canonical IDs, compact similarity summaries, cluster limits/status/since filters, and safe close guidance. Completion/contracts snapshots and a real temporary-tracker integration test are included. Fresh installed CLI acceptance found one two-item cluster. Linked tests passed; full coverage and static gates are green."
@@ -33,7 +33,7 @@ files[16]{path,scope,note}:
   CHANGELOG.md,project,pm-changelog 2026.7.26 generated release evidence
   sdk/public-surface.json,project,acknowledged additive core-command tuple surface
   src/cli/commands/completion.ts,project,shell completion surface
-  src/cli/commands/duplicates.ts,project,CLI compatibility adapter
+  src/cli/commands/query/duplicates.ts,project,CLI compatibility adapter
   src/cli/register-operations.ts,project,duplicates command registration
   src/sdk/cli-contracts/enum-contracts.ts,project,canonical core-command availability
   src/sdk/cli-contracts/flag-contracts.ts,project,repeatable list status contract
@@ -43,12 +43,12 @@ files[16]{path,scope,note}:
   src/sdk/runtime.ts,project,PmClient and action dispatch
   tests/fixtures/contracts/full.json,project,regenerated action availability contract
   tests/integration/duplicates-command.integration.spec.ts,project,end-to-end CLI behavior
-  tests/unit/commands/completion-command.spec.ts,project,repeatable zsh completion proof
-  tests/unit/commands/contracts-command.spec.ts,project,CLI command-path mapping regression
+  tests/unit/commands/workspace/completion-command.spec.ts,project,repeatable zsh completion proof
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,CLI command-path mapping regression
   tests/unit/sdk/sdk-index.spec.ts,project,scalar MCP status and string limit regressions
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/integration/duplicates-command.integration.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/commands/completion-command.spec.ts,project,300
-  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts tests/unit/commands/contracts-command.spec.ts tests/integration/duplicates-command.integration.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,300
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/duplicates-command.integration.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/commands/workspace/completion-command.spec.ts,project,300,"harness:codex","2026-09-22T05:10:47.422Z",local_mutation,refactor/cli-command-domains-export-gate
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts tests/unit/commands/workspace/contracts-command.spec.ts tests/integration/duplicates-command.integration.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,300,"harness:codex","2026-09-22T05:10:47.422Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms27drzl-9pgh64,test,passed,"2026-07-26T19:40:32.477Z","2026-07-26T19:40:47.985Z","2026-07-26T19:40:47.985Z",1,0,0
   test-local-ms2904pp-yitmee,test,passed,"2026-07-26T20:25:46.588Z","2026-07-26T20:26:10.525Z","2026-07-26T20:26:10.525Z",2,0,0

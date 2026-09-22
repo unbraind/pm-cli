@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-09T22:12:19.846Z"
-updated_at: "2026-08-10T09:08:03.204Z"
+updated_at: "2026-09-22T05:09:00.739Z"
 closed_at: "2026-08-10T09:01:33.510Z"
 completed_at: "2026-08-10T09:01:33.510Z"
 author: "harness:codex"
@@ -44,10 +44,10 @@ files[11]{path,scope,note}:
   src/sdk/lifecycle/update.ts,project,update dependency enforcement
   tests/fixtures/contracts/full.json,project,Generated exact CLI and SDK contract snapshot
   tests/helpers/itemFactory.ts,project,Default-validation test factory contract
-  tests/unit/commands/lossless-mutation-contracts.spec.ts,project,cross-surface regression coverage
+  tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts,project,cross-surface regression coverage
   tests/unit/core/search/search-cache.spec.ts,project,Explicit dangling-edge fixture opt-in
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/lossless-mutation-contracts.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts,project,240,"harness:codex","2026-09-22T05:09:00.692Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[3]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,agent-safe dependency workflow
   docs/COMMANDS.md,project,operator dependency semantics

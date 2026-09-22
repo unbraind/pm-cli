@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:create","area:parser",external-audit,pm-cli
 created_at: "2026-04-04T08:23:25.627Z"
-updated_at: "2026-09-19T08:40:57.842Z"
+updated_at: "2026-09-22T05:02:39.039Z"
 deadline: "2026-04-11T08:23:25.627Z"
 closed_at: "2026-04-04T08:40:23.764Z"
 author: codex-agent
@@ -76,7 +76,7 @@ comments[2]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-04-04T08:23:25.627Z",codex-agent,Implement as additive validation focused on log-seed fields to avoid breaking unrelated parser contracts.
 files[1]{path,scope,note}:
-  src/cli/commands/create.ts,project,primary implementation surface
+  src/cli/commands/lifecycle/create.ts,project,primary implementation surface
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,project,240,targeted create parser regression
 docs[1]{path,scope,note}:

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:list",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:02:09.324Z"
-updated_at: "2026-09-19T08:41:07.576Z"
+updated_at: "2026-09-22T05:02:24.481Z"
 deadline: "2026-03-03T23:02:09.324Z"
 closed_at: "2026-02-18T18:45:00.201Z"
 assignee: steve
@@ -59,7 +59,7 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:33:11.052Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
-  src/cli/commands/list.ts,project,list command filtering and output contract
+  src/cli/commands/query/list.ts,project,list command filtering and output contract
   src/core/store/item-store.ts,project,item retrieval and ordering behavior
   tests/unit/list-command.spec.ts,project,list filter validation and normalization cases
   tests/unit/list-sort-branches.spec.ts,project,unit coverage for deterministic ordering branches

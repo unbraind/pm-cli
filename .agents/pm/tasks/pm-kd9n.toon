@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[7]: agents,audit,dogfood,package-first,performance,sdk,telemetry
 created_at: "2026-05-31T10:09:36.633Z"
-updated_at: "2026-09-19T08:40:40.165Z"
+updated_at: "2026-09-22T05:00:19.534Z"
 closed_at: "2026-05-31T18:36:25.673Z"
 author: codex-audit-20260531
 acceptance_criteria: "Changes are committed, pushed to a descriptive PR, AI review window is observed, valid feedback is addressed, checks are green, and main is verified after merge."
@@ -50,11 +50,11 @@ files[30]{path,scope,note}:
   scripts/release/sentry-telemetry-gate.mjs,project,portable telemetry command and sentry-cli fallback
   src/cli/argv-utils.ts,project,preserve flag order for retry guidance
   src/cli/bootstrap-args.ts,project,classify singular list aliases separately from typos
-  src/cli/commands/contracts.ts,project,nested package contracts and optional availability
   src/cli/commands/extension/doctor.ts,project,actionable package/extension collision remediation
   src/cli/commands/extension/scaffold.ts,project,installable package scaffold shape
-  src/cli/commands/get.ts,project,standard default get projection
-  src/cli/commands/health.ts,project,surface collision remediation in health triage
+  src/cli/commands/governance/health.ts,project,surface collision remediation in health triage
+  src/cli/commands/query/get.ts,project,standard default get projection
+  src/cli/commands/workspace/contracts.ts,project,nested package contracts and optional availability
   src/cli/help-content.ts,project,subcommand help and get projection guidance
   src/cli/main.ts,project,mutating typo retry guard
   src/cli/register-list-query.ts,project,get help default projection

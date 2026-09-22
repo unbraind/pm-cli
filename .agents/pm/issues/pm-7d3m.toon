@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: ci,cross-platform,pm-cli,release,tests
 created_at: "2026-05-01T10:01:56.427Z"
-updated_at: "2026-09-19T08:39:38.745Z"
+updated_at: "2026-09-22T05:00:40.087Z"
 deadline: "2026-05-02T10:01:56.427Z"
 closed_at: "2026-05-01T10:49:44.392Z"
 author: codex-release-agent
@@ -27,14 +27,14 @@ comments[4]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-05-01T10:01:56.427Z",codex-release-agent,Do not move or republish v2026.5.1 for test-only CI hardening after release publication.
 files[8]{path,scope,note}:
+  scripts/run-tests.mjs,project,direct Vitest entry avoids nested pnpm shell path on Windows
+  src/cli/commands/annotations/files.ts,project,canonical containment for discovered file paths
+  src/cli/commands/governance/validate.ts,project,canonical workspace-root containment for validate
   tests/integration/cli.integration.spec.ts,project,macOS file discovery count failure
-  tests/unit/validate-command.spec.ts,project,macOS tracker-root path alias failure
   tests/integration/run-tests-script.integration.spec.ts,project,Windows targeted filter path failure
   tests/unit/files-docs-command.spec.ts,project,Windows original path spelling failure
   tests/unit/test-command.spec.ts,project,Windows shell quoting and signal fixture failures
-  src/cli/commands/files.ts,project,canonical containment for discovered file paths
-  src/cli/commands/validate.ts,project,canonical workspace-root containment for validate
-  scripts/run-tests.mjs,project,direct Vitest entry avoids nested pnpm shell path on Windows
+  tests/unit/validate-command.spec.ts,project,macOS tracker-root path alias failure
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/run-tests-script.integration.spec.ts tests/unit/files-docs-command.spec.ts tests/unit/test-command.spec.ts tests/unit/validate-command.spec.ts,project,360,failed CI suites
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:

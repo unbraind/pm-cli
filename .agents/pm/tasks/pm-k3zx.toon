@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:test-command",code,"milestone:root",pm-cli,"priority:1",tests
 created_at: "2026-03-04T18:43:55.776Z"
-updated_at: "2026-09-19T08:40:39.307Z"
+updated_at: "2026-09-22T05:03:17.522Z"
 deadline: "2026-03-06T23:59:00.000Z"
 closed_at: "2026-03-04T19:08:10.665Z"
 assignee: cursor-maintainer
@@ -64,7 +64,7 @@ files[5]{path,scope,note}:
   AGENTS.md,project,docs-first recursion guard clarification
   PRD.md,project,docs-first recursion guard clarification
   README.md,project,docs-first recursion guard clarification
-  src/cli/commands/test.ts,project,recursive invocation detection logic
+  src/cli/commands/test/test.ts,project,recursive invocation detection logic
   tests/unit/test-command.spec.ts,project,regression coverage for recursion variants
 tests[2]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,project,1800,full coverage gate

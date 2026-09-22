@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[1]: gh-triage-2026-06-12
 created_at: "2026-06-12T16:05:05.652Z"
-updated_at: "2026-09-19T08:41:42.652Z"
+updated_at: "2026-09-22T05:12:24.667Z"
 closed_at: "2026-06-16T12:30:31.053Z"
 author: maintainer-agent
 release: v2026.6.16
@@ -80,17 +80,34 @@ files[10]{path,scope,note}:
   tests/helpers/temp.ts,project,Retry EBUSY/ENOTEMPTY/EPERM temp-dir cleanup for Windows CI stability
   tests/unit/cli/cli-main-errors.spec.ts,project,Make extension snapshot cache assertion robust across ENOTDIR platform behavior
   tests/unit/cli/structure-exports.spec.ts,project,Use pathToFileURL for portable file URL generation
-  tests/unit/commands/files-docs-command.spec.ts,project,Normalize expected absolute path key across platforms
-  tests/unit/commands/reindex-command.spec.ts,project,Normalize warning path separators in assertion
-  tests/unit/commands/test-runs-command.spec.ts,project,Relax resource snapshot assertions when metrics unavailable
+  tests/unit/commands/annotations/files-docs-command.spec.ts,project,Normalize expected absolute path key across platforms
+  tests/unit/commands/query/reindex-command.spec.ts,project,Normalize warning path separators in assertion
+  tests/unit/commands/test/test-runs-command.spec.ts,project,Relax resource snapshot assertions when metrics unavailable
   tests/unit/core/telemetry/telemetry-runtime.spec.ts,project,Normalize telemetry flush runner path separators
   tests/unit/extensions/extension-command.spec.ts,project,Compare resolved file URL package roots via realpath
-tests[6]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs coverage,project,1800
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/test-runs-command.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/files-docs-command.spec.ts tests/unit/commands/reindex-command.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/cli/structure-exports.spec.ts,project,300
-  pnpm build,project,240
-  "pnpm quality:static",project,240
-  "pnpm security:scan",project,240
-  pnpm typecheck,project,240
+tests[6]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 1800
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm security:scan"
+    scope: project
+    timeout_seconds: 240
+  - command: pnpm typecheck
+    scope: project
+    timeout_seconds: 240
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/test/test-runs-command.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/annotations/files-docs-command.spec.ts tests/unit/commands/query/reindex-command.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/cli/structure-exports.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:12:24.595Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 close_reason: Merged in PR #246 with linked implementation + verification evidence; no remaining blockers in this scope.
 body: ""

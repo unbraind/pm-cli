@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: architecture,"area:plan","area:sdk"
 created_at: "2026-07-05T05:09:13.638Z"
-updated_at: "2026-07-26T17:17:23.168Z"
+updated_at: "2026-09-22T05:19:33.428Z"
 closed_at: "2026-07-11T14:11:24.830Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -18,16 +18,16 @@ release: v2026.7.12
 resolution: implemented
 expected_result: pm plan create/steps/deps/decisions/discoveries/validate/materialize callable via typed PmClient without CLI shell-out
 actual_result: "PmClient.plan(...) facade shipped in PR#512 with contracts, docs/SDK.md, 100% coverage; tarball consumer verified init→materialize"
-dependencies[9]{id,kind,created_at,author,source_kind}:
-  pm-qd2h,related,"2026-07-10T21:31:11.790Z",null,null
-  pm-ypha,related,"2026-07-10T21:31:11.790Z",null,null
-  pm-zwpp,related,"2026-07-10T21:31:11.790Z",null,null
-  pm-98cz,related,"2026-07-26T17:17:22.939Z",null,null
-  pm-pmmv,related,"2026-07-26T17:17:22.939Z",null,null
-  pm-usfg,implements,"2026-07-26T17:17:22.939Z",null,null
-  pm-v7dj,related,"2026-07-26T17:17:22.939Z",null,null
-  pm-w89s,related,"2026-07-26T17:17:22.939Z",null,null
-  pm-z5nb,related,"2026-07-26T17:17:22.939Z",null,null
+dependencies[9]{id,kind,created_at}:
+  pm-qd2h,related,"2026-07-10T21:31:11.790Z"
+  pm-ypha,related,"2026-07-10T21:31:11.790Z"
+  pm-zwpp,related,"2026-07-10T21:31:11.790Z"
+  pm-98cz,related,"2026-07-26T17:17:22.939Z"
+  pm-pmmv,related,"2026-07-26T17:17:22.939Z"
+  pm-usfg,implements,"2026-07-26T17:17:22.939Z"
+  pm-v7dj,related,"2026-07-26T17:17:22.939Z"
+  pm-w89s,related,"2026-07-26T17:17:22.939Z"
+  pm-z5nb,related,"2026-07-26T17:17:22.939Z"
 comments[5]{created_at,author,text}:
   "2026-07-11T12:02:18.272Z",codex-root,"Evidence: public SDK now exports plan contracts and PmClient façade methods for every plan subcommand. Focused plan/SDK/contracts suites pass; typecheck, zero-duplication, static quality, token-budget, docs, and contracts snapshot gates pass. Packed-tarball temp consumer initialized a tracker, created a two-step plan, materialized a Task, and verified enriched title/type/parent/tags/from_step output. Full coverage run was contaminated by an accidental concurrent duplicate and surfaced pre-existing date-version sync assertions; all functional SDK/plan tests passed, and the unrelated assertions are fixed under pm-pmmv. Full clean coverage rerun remains required before closure."
   "2026-07-11T13:26:32.667Z",codex-root,"Final evidence: public SDK exposes every typed plan workflow primitive; governed materialization preserves required custom fields and returns confirmation-rich projections. Final installed-tarball temp consumer created/reordered/annotated/materialized a three-step plan. Full coverage passed 271 files / 5,541 tests / exact 100/100/100/100; lint, static quality, contracts, docs, security, health, history drift, and generator sync gates pass."
@@ -38,14 +38,23 @@ notes[2]{created_at,author,text}:
   "2026-07-10T21:30:53.590Z",maintainer-agent,"Implementation slicing 2026-07-10 (grounded in current src state). Already public — do NOT redo: the pm_plan MCP surface and generic plan action dispatch; profile *planning* (planProfileApplication from core/profile/profile-plan.ts) is a different domain and already exported. The actual gap: the ENTIRE plan workflow lives in src/cli/commands/plan.ts (1,796 lines) — there is no src/core/plan module at all, making this the largest single-module promotion left in the epic besides test.ts. Plan is also the agent-harness surface (Codex/Claude/Cursor-style planning), so primitive-level promotion is what makes SDK-embedded planning harnesses possible without shelling out. Suggested slices: S1 plan document model + step lifecycle primitives (~90m) — create with stepTitle, step transitions, plan read model. S2 plan annotation primitives (~60m) — dependencies/decisions/discoveries; shapes should mirror the pm-zwpp S1 annotation kernel — coordinate so plan does not grow a second annotation engine. S3 validation + materialization primitives (~60m) — materialize creates real items and MUST consume the shipped lifecycle primitives (pm-98cz) rather than private paths; this is the primitive-level fix site for pm-qd2h / GH-452 (materialize dead-ends on required-on-create custom fields) and pm-ypha / GH-453 (materialize --json omits title/type/parent) — coordinate with both, do not duplicate their fixes. S4 typed PmClient facades + SDK reference docs/tests (~30m), result shapes matching runAction oracle. Order: strictly S1 -> S2 -> S3 -> S4 (each layer consumes the previous one)."
   "2026-07-11T16:00:54.527Z",maintainer-agent,"PR #512 merged (squash 9f8545e2, 2026-07-11). Final review round resolved two CodeRabbit findings in 02394a09: (1) plan action `field` contract aligned to the string-or-array anyOf shape shared by file/test/doc (matches PlanCommandOptions.field + toSpecArray; fixture regenerated); (2) --field keys colliding with reserved materialize keys (title/description/type/parent/tags/author/message/dep) now reject with EXIT_CODE.USAGE + regression test. All 11 review threads resolved; CodeRabbit/Gemini/Greptile clean; all CI gates green."
 files[5]{path,scope,note}:
-  src/cli/commands/plan.ts,project,governed materialization and enriched result projection
+  src/cli/commands/lifecycle/plan.ts,project,governed materialization and enriched result projection
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,plan field tool schema contract
   src/sdk/cli-contracts/tool-schema.ts,project,plan optional parameter and schema version
   src/sdk/runtime.ts,project,typed public plan workflow primitives
   tests/fixtures/contracts/full.json,project,generated contract snapshot
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/plan-command.spec.ts tests/unit/sdk/sdk-context-primitives.spec.ts,project,300
-  node scripts/run-tests.mjs test -- tests/unit/sdk/action-schema-parity.spec.ts,project,180
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/action-schema-parity.spec.ts
+    scope: project
+    timeout_seconds: 180
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/plan-command.spec.ts tests/unit/sdk/sdk-context-primitives.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:19:33.332Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 docs[1]{path,scope,note}:
   docs/SDK.md,project,public plan workflow SDK guide
 close_reason: Resolved the public plan field schema gap with parity coverage and regenerated contracts.

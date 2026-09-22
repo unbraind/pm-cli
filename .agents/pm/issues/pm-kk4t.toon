@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: linked-tests,observability,pm-cli,sentry,testing
 created_at: "2026-05-11T22:23:58.787Z"
-updated_at: "2026-09-19T08:40:40.977Z"
+updated_at: "2026-09-22T05:00:17.336Z"
 closed_at: "2026-05-11T22:31:07.792Z"
 author: codex-agent
 estimated_minutes: 30
@@ -22,7 +22,7 @@ comments[2]{created_at,author,text}:
   "2026-05-11T22:23:58.787Z",codex-agent,"Duplicate check before create: pm search PM-CLI-P ENOENT copyIntoSandboxIfPresent linked test sandbox --limit 10 found older closed linked-test sandbox work but no open issue for the new Sentry PM-CLI-P regression."
   "2026-05-11T22:30:40.812Z",codex-agent,"Evidence: fixed Sentry PM-CLI-P by treating ENOENT during linked-test sandbox seed copy as a benign missing-source race after the preflight; pnpm build passed; PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts passed (34 tests); pm test pm-kk4t --run --progress passed; full coverage passed at 100% statements/branches/functions/lines across 91 files and 1284 tests."
 files[1]{path,scope,note}:
-  src/cli/commands/test.ts,project,linked-test sandbox ENOENT race guard
+  src/cli/commands/test/test.ts,project,linked-test sandbox ENOENT race guard
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,project,900
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:

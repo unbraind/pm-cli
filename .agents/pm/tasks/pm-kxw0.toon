@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:observability","area:telemetry",audit,living-map,pm-cli
 created_at: "2026-05-31T19:22:09.300Z"
-updated_at: "2026-09-19T08:40:41.978Z"
+updated_at: "2026-09-22T05:03:10.029Z"
 closed_at: "2026-05-31T19:51:39.875Z"
 author: maintainer-agent
 acceptance_criteria: "Domain audited read-only across code+docs+tests; existing pm coverage mapped via search; genuine gaps, forward work, improvements, ADRs, and agent/user stories proposed (dedup-checked); work-log + key decisions recorded in pm on this task."
@@ -25,8 +25,8 @@ learnings[2]{created_at,author,text}:
   "2026-05-31T19:28:00.271Z",audit-telemetry-agent,"Telemetry event schema is pinned at schema_version=1 (runtime.ts:25) with no migration path or version-negotiation in ingest endpoint — if server-side parsing evolves, old queued events will silently mismatch. Gap: no ADR or forward-compat story for schema_version>1."
   "2026-05-31T19:28:02.987Z",audit-telemetry-agent,"health.ts remediation strings are only present inside checks[name=extensions].details.triage.remediation; all other check types (telemetry, integrity, history_drift, vectorization) emit only warning-code strings with no machine-readable fix_command map. Agents must infer remediation from codes. Gap: structured remediation_map per warning-code across all check types."
 files[7]{path,scope}:
-  src/cli/commands/health.ts,project
-  src/cli/commands/validate.ts,project
+  src/cli/commands/governance/health.ts,project
+  src/cli/commands/governance/validate.ts,project
   src/core/sentry/helpers.ts,project
   src/core/sentry/instrument.ts,project
   src/core/telemetry/consent.ts,project

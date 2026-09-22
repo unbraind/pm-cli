@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:health","area:history",integrity,pm-cli
 created_at: "2026-04-01T14:42:07.975Z"
-updated_at: "2026-09-19T08:39:41.757Z"
+updated_at: "2026-09-22T05:04:50.387Z"
 deadline: "2026-04-10T14:42:07.975Z"
 closed_at: "2026-04-01T15:09:12.918Z"
 assignee: codex-agent
@@ -60,7 +60,7 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:35:11.999Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
-  src/cli/commands/health.ts,project,history drift check implementation
+  src/cli/commands/governance/health.ts,project,history drift check implementation
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,project,2400,targeted health regression
 docs[1]{path,scope,note}:

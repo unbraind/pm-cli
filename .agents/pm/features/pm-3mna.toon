@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: architecture,"area:config","area:schema","area:sdk"
 created_at: "2026-07-05T04:54:11.971Z"
-updated_at: "2026-07-26T17:03:13.732Z"
+updated_at: "2026-09-22T05:25:21.570Z"
 closed_at: "2026-07-15T04:45:34.862Z"
 author: maintainer-agent
 estimated_minutes: 360
@@ -18,19 +18,19 @@ release: v2026.7.15
 resolution: Completed
 expected_result: Public typed SDK owns universal schema/config/profile/init/template/extension customization primitives while CLI compatibility and behavior remain stable.
 actual_result: "SDK now owns the promoted engines, CLI modules are compatibility adapters, runtime and MCP consume SDK boundaries, and packed external consumption plus exact 100% coverage passed."
-dependencies[12]{id,kind,created_at,author,source_kind}:
-  pm-69nl,related,"2026-07-10T17:32:56.925Z",null,null
-  pm-7n5a,related,"2026-07-26T17:03:13.462Z",null,null
-  pm-87bu,related,"2026-07-26T17:03:13.462Z",null,null
-  pm-cbwg,related,"2026-07-26T17:03:13.462Z",null,null
-  pm-d4ns,related,"2026-07-26T17:03:13.462Z",null,null
-  pm-lodl,related,"2026-07-26T17:03:13.462Z",null,null
-  pm-m4iu,related,"2026-07-26T17:03:13.462Z",null,null
-  pm-muhw,related,"2026-07-26T17:03:13.462Z",null,null
-  pm-oxrw,related,"2026-07-26T17:03:13.462Z",null,null
-  pm-usfg,implements,"2026-07-26T17:03:13.462Z",null,null
-  pm-w89s,related,"2026-07-26T17:03:13.462Z",null,null
-  pm-zwpp,related,"2026-07-26T17:03:13.462Z",null,null
+dependencies[12]{id,kind,created_at}:
+  pm-69nl,related,"2026-07-10T17:32:56.925Z"
+  pm-7n5a,related,"2026-07-26T17:03:13.462Z"
+  pm-87bu,related,"2026-07-26T17:03:13.462Z"
+  pm-cbwg,related,"2026-07-26T17:03:13.462Z"
+  pm-d4ns,related,"2026-07-26T17:03:13.462Z"
+  pm-lodl,related,"2026-07-26T17:03:13.462Z"
+  pm-m4iu,related,"2026-07-26T17:03:13.462Z"
+  pm-muhw,related,"2026-07-26T17:03:13.462Z"
+  pm-oxrw,related,"2026-07-26T17:03:13.462Z"
+  pm-usfg,implements,"2026-07-26T17:03:13.462Z"
+  pm-w89s,related,"2026-07-26T17:03:13.462Z"
+  pm-zwpp,related,"2026-07-26T17:03:13.462Z"
 comments[23]{created_at,author,text}:
   "2026-07-07T20:44:47.549Z",codex-agent,"Implementation start: bundled with pm-zwpp, pm-oxrw, pm-m4iu, pm-cbwg, pm-w89s, and pm-usfg. Live duplicate/context check found no closed schema/config/profile SDK primitive completion; prior read/lifecycle/package primitives remain separate shipped or in-progress domains."
   "2026-07-07T22:45:27.701Z",claude-code-agent,"Evidence: post-review docs/API cleanup keeps package authors on the correct context-management primitive shapes: linked file/doc adds use string arrays and top-level note, while SchemaResult documents the generic schema customization result union. Verified through docs gate, typecheck, focused SDK tests, and packed installed SDK proof."
@@ -61,20 +61,18 @@ notes[3]{created_at,author,text}:
   "2026-07-12T08:43:59.620Z",codex-root,"Execution rule from user escalation (23rd recurrence): this active delivery lane must not stop at partial implementation, local verification, commit, PR creation, pending checks, or pending bot review. Continue through the requested green reviewed PR, merge, merged-head/release/Sentry/telemetry proof, tracker closure, claim release, and return to main; only a genuine exhausted blocker permits stopping."
 learnings[1]{created_at,author,text}:
   "2026-07-14T20:19:48.566Z",codex-root,"Moving a CLI command engine into the SDK must also migrate its lint baseline, residual test mocks, and runtime imports; keeping a tiny CLI re-export preserves compatibility while the SDK becomes the single implementation owner."
-files[44]{path,scope,note}:
+files[42]{path,scope,note}:
   .deepsource.toml,project,Declare the repository ESM module system so DeepSource parses shipped .mjs quality gates correctly
   eslint-suppressions.json,project,Remove stale CLI schema suppressions after SDK extraction and lint cleanup
   package.json,project,Pin mandatory static quality script to exact current suppression and coverage pragma totals without exposing the ESM gate to a known external parser defect
   scripts/release/sdk-import-boundary-baseline.json,project,schema CLI private-core edges removed from ratchet baseline
   scripts/release/static-quality-gate.mjs,project,Ratchet ESLint suppressions budget from 174 to 170 after schema CLI suppressions are eliminated
   src/cli/bootstrap-args.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
-  src/cli/commands/config.ts,project,CLI compatibility re-export over SDK config engine
-  src/cli/commands/index.ts,project,Compatibility export for SDK-owned guidance primitives
-  src/cli/commands/init-agent-guidance.ts,project,CLI compatibility re-export over SDK guidance engine
-  src/cli/commands/init.ts,project,CLI compatibility re-export over SDK init engine
-  src/cli/commands/profile.ts,project,CLI compatibility re-export over SDK profile engine
-  src/cli/commands/schema.ts,project,presentation compatibility re-export over SDK schema engine
-  src/cli/commands/validate.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  src/cli/commands/governance/validate.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  src/cli/commands/workspace/config.ts,project,CLI compatibility re-export over SDK config engine
+  src/cli/commands/workspace/init.ts,project,CLI compatibility re-export over SDK init engine
+  src/cli/commands/workspace/profile.ts,project,CLI compatibility re-export over SDK profile engine
+  src/cli/commands/workspace/schema.ts,project,presentation compatibility re-export over SDK schema engine
   src/cli/main.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
   src/sdk/cli-contracts/flag-contracts.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
   src/sdk/cli-program.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
@@ -94,11 +92,11 @@ files[44]{path,scope,note}:
   tests/unit/cli/argv-utils.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
   tests/unit/cli/bootstrap-args.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
   tests/unit/cli/cli-main-errors.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
-  tests/unit/commands/claim-command.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
-  tests/unit/commands/config-command.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
-  tests/unit/commands/get-append-command.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
-  tests/unit/commands/init-command.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
-  tests/unit/commands/templates-command.spec.ts,project,SDK-owned template engine coverage
+  tests/unit/commands/lifecycle/claim-command.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  tests/unit/commands/query/get-append-command.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  tests/unit/commands/workspace/config-command.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  tests/unit/commands/workspace/init-command.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
+  tests/unit/commands/workspace/templates-command.spec.ts,project,SDK-owned template engine coverage
   tests/unit/extensions/extension-command.spec.ts,project,Review hardening for SDK-owned extension install lease timing
   tests/unit/helpers/withTempPmPath.spec.ts,project,Review hardening and exact behavior coverage for SDK customization promotion
   tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,MCP direct SDK config ownership coverage
@@ -116,16 +114,26 @@ tests[6]:
   - command: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts
     scope: project
     timeout_seconds: 300
-  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/commands/config-command.spec.ts tests/integration/profile-command.integration.spec.ts tests/unit/commands/init-command.spec.ts
-    scope: project
-    timeout_seconds: 300
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts
     scope: project
     timeout_seconds: 120
     pm_context_mode: tracker
-  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts tests/unit/commands/schema-command.spec.ts
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/commands/workspace/config-command.spec.ts tests/integration/profile-command.integration.spec.ts tests/unit/commands/workspace/init-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:22:02.620Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-context-primitives.spec.ts tests/unit/commands/workspace/schema-command.spec.ts
     scope: project
     timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:22:02.620Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrl3gn11-idibzy,test,passed,"2026-07-14T20:18:03.384Z","2026-07-14T20:18:58.069Z","2026-07-14T20:18:58.069Z",3,0,0
   test-local-mrlaxat5-upcjvh,test,passed,"2026-07-14T23:47:35.763Z","2026-07-14T23:47:52.697Z","2026-07-14T23:47:52.697Z",1,0,0

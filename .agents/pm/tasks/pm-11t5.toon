@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:test-command",code,"milestone:3",pm-cli,"priority:1",tests
 created_at: "2026-03-05T11:05:52.887Z"
-updated_at: "2026-09-19T08:39:14.434Z"
+updated_at: "2026-09-22T05:06:10.817Z"
 deadline: "2026-03-06T23:59:00.000Z"
 closed_at: "2026-03-05T11:30:16.075Z"
 assignee: cursor-maintainer
@@ -65,7 +65,7 @@ files[5]{path,scope,note}:
   AGENTS.md,project,docs-first recursive launcher examples
   PRD.md,project,docs-first recursive launcher contract update
   README.md,project,docs-first recursive launcher examples
-  src/cli/commands/test.ts,project,recursive launcher detection
+  src/cli/commands/test/test.ts,project,recursive launcher detection
   tests/unit/test-command.spec.ts,project,regression coverage for pnpm dlx and npm exec
 tests[2]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,project,1800,full coverage gate

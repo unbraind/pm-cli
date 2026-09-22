@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,context-efficiency,list,pm-cli,token-budget
 created_at: "2026-05-17T05:50:01.041Z"
-updated_at: "2026-09-19T08:39:54.771Z"
+updated_at: "2026-09-22T05:13:34.540Z"
 deadline: "2026-05-24T05:50:01.041Z"
 closed_at: "2026-05-17T14:25:48.008Z"
 author: claude-code-agent
@@ -29,7 +29,7 @@ comments[2]{created_at,author,text}:
   "2026-05-17T14:25:44.935Z",codex-agent,"Verification evidence 2026-05-17: reran list default/--full closeout checks after claiming item. Passing commands: node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/contracts-command.spec.ts (28 tests); node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t 'filters list' (1 passed); node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts -t 'documents list/search projection exclusivity guidance' (1 passed). Current dogfood harness also passed with list contract coverage included."
 files[8]{path,scope,note}:
   scripts/dogfood-package-first.mjs,project,dogfood asserts list contracts include --full
-  src/cli/commands/list.ts,project,list projection supports explicit --full
+  src/cli/commands/query/list.ts,project,list projection supports explicit --full
   src/cli/register-list-query.ts,project,list command defaults to brief unless include-body/projection flags
   src/cli/registration-helpers.ts,project,normalizeListOptions forwards full projection flag
   src/sdk/cli-contracts.ts,project,list flag contracts include --full and action schema optional field

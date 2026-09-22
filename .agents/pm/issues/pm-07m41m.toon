@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-17T22:03:34.213Z"
-updated_at: "2026-09-17T22:29:35.945Z"
+updated_at: "2026-09-22T05:06:29.739Z"
 closed_at: "2026-09-17T22:19:52.248Z"
 completed_at: "2026-09-17T22:19:52.248Z"
 author: "harness:codex"
@@ -28,7 +28,7 @@ learnings[1]{created_at,author,text}:
   "2026-09-17T22:19:51.492Z","harness:codex","A telemetry transport request is a batch boundary, not a command-completion boundary. Acceptance must acknowledge start-only batches and await actual completion under one deadline, including request-body reads; missing completion must still fail."
 files[4]{path,scope,note}:
   scripts/release/packed-first-run.mjs,project,Wait for actual completion across detached delivery batches
-  tests/unit/commands/next-command.spec.ts,project,Document real fixture helpers in the reviewed acceptance tranche
+  tests/unit/commands/query/next-command.spec.ts,project,Document real fixture helpers in the reviewed acceptance tranche
   tests/unit/scripts/release/context-eval-gate.spec.ts,project,Document isolated gate-loading test seam
   tests/unit/scripts/release/packed-first-run.spec.ts,project,Real two-request collector and missing-completion negative control
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:

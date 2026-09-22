@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:health","area:observability","area:telemetry",reliability
 created_at: "2026-06-07T10:04:16.896Z"
-updated_at: "2026-09-19T08:40:31.248Z"
+updated_at: "2026-09-22T05:12:53.685Z"
 closed_at: "2026-06-09T22:47:16.319Z"
 author: audit-observability-agent
 acceptance_criteria: "- Health telemetry check warns `telemetry_queue_high_retries:<count>` when any queue entry has attempts >= TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS - 3 (i.e. 12+).\n- Remediation registry entry: `telemetry_queue_high_retries` → `pm telemetry flush` + summary about endpoint reachability.\n- The warning is advisory (does not flip ok:false per existing advisory policy).\n- Unit test for the threshold boundary."
@@ -23,7 +23,7 @@ comments[2]{created_at,author,text}:
   "2026-06-09T22:05:15.690Z",codex-active-pm-cycle-20260610,"Duplicate-check evidence (active large-PR cycle 2026-06-10): pm context/search/list-open/list-in-progress plus targeted queries over coverage/reindex/settings/telemetry confirm this item is the canonical open lineage for its scope and is now claimed for implementation."
   "2026-06-09T22:47:15.926Z",codex-active-pm-cycle-20260610,Health telemetry check now reports high-retry queue entries approaching max attempts and provides actionable remediation guidance.
 files[3]{path,scope,note}:
-  src/cli/commands/health.ts,project,telemetry high-retry warning surfaced with queue threshold details
+  src/cli/commands/governance/health.ts,project,telemetry high-retry warning surfaced with queue threshold details
   src/core/diagnostics/remediation.ts,project,added remediation entry for telemetry_queue_high_retries
   src/core/telemetry/runtime.ts,project,exported max queue attempts constant for health thresholding
 tests[1]{command,scope,timeout_seconds}:

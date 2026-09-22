@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:metadata","area:update",close-reason,pm-cli,ux
 created_at: "2026-04-03T09:33:47.173Z"
-updated_at: "2026-09-19T08:40:45.429Z"
+updated_at: "2026-09-22T05:03:01.329Z"
 deadline: "2026-04-09T09:33:47.173Z"
 closed_at: "2026-04-03T09:58:04.963Z"
 author: codex-agent
@@ -52,7 +52,7 @@ comments[1]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-04-03T09:33:47.173Z",codex-agent,Will change update runtime plus schema/contract/help/completion/wrapper surfaces.
 files[1]{path,scope,note}:
-  src/cli/commands/update.ts,project,primary runtime logic
+  src/cli/commands/lifecycle/update.ts,project,primary runtime logic
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,project,7200,targeted update regression
 docs[1]{path,scope,note}:

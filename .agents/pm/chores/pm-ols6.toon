@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: code-quality,dedup,ownership
 created_at: "2026-05-22T18:54:47.501Z"
-updated_at: "2026-09-19T08:40:53.169Z"
+updated_at: "2026-09-22T05:22:36.652Z"
 closed_at: "2026-05-24T01:58:32.235Z"
 author: codex-duplicate-audit
 acceptance_criteria: "A shared helper owns the assignee-conflict recognition and PmCliError wrapping; comments, notes, learnings, and release/claim audit override paths keep their current user-facing guidance; tests cover at least one command-specific message and one pass-through non-conflict error; pnpm build and targeted command tests pass."
@@ -26,10 +26,10 @@ comments[5]{created_at,author,text}:
   "2026-05-24T01:58:26.554Z",codex-active-work,"Final verification evidence: shared ownership conflict wrapper is covered by focused ownership tests plus final release gate. node scripts/release/run-gates.mjs passed with 105 files / 1583 tests / 100 percent coverage, secret scan, compatibility, package dogfood, and required Sentry/telemetry gate (critical=0 high=2, telemetry error rate=2.94, missing error-code rows=0)."
 files[5]{path,scope,note}:
   src/cli/commands/annotation-command.ts,project,shared ownership conflict wrapper
-  src/cli/commands/claim.ts,project,duplicated conflict guidance
-  src/cli/commands/comments.ts,project,duplicated conflict guidance
-  src/cli/commands/learnings.ts,project,duplicated conflict guidance
-  src/cli/commands/notes.ts,project,duplicated conflict guidance
+  src/cli/commands/annotations/comments.ts,project,duplicated conflict guidance
+  src/cli/commands/annotations/learnings.ts,project,duplicated conflict guidance
+  src/cli/commands/annotations/notes.ts,project,duplicated conflict guidance
+  src/cli/commands/lifecycle/claim.ts,project,duplicated conflict guidance
 tests[1]{command,scope,timeout_seconds}:
   PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/notes-learnings-command.spec.ts tests/integration/help-runtime.spec.ts --reporter=dot,project,240
 close_reason: "Implemented shared ownership conflict guidance wrapper and verified command-specific guidance through focused tests, manual dogfood, and full release gate."

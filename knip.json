@@ -1,0 +1,25 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/cli.ts",
+    "src/cli/public.ts",
+    "src/mcp/server.ts",
+    "src/mcp/http-server.ts",
+    "src/sdk/index.ts",
+    "src/sdk/authoring.ts",
+    "src/sdk/contracts.ts",
+    "src/sdk/core.ts",
+    "src/sdk/governance.ts",
+    "src/sdk/graph.ts",
+    "src/sdk/merge.ts",
+    "src/sdk/query.ts",
+    "src/sdk/runtime.ts",
+    "src/sdk/testing.ts",
+    "packages/pm-*/extensions/*/index.ts",
+    "docs/examples/*/index.ts",
+    "scripts/release/static-quality-gate.mts"
+  ],
+  "project": ["src/**/*.ts", "packages/**/*.ts", "tests/**/*.ts", "scripts/**/*.{mjs,mts}", "docs/examples/**/*.ts"],
+  "include": ["exports", "types"],
+  "ignoreExportsUsedInFile": true
+}

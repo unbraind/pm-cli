@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: correctness,review,testing
 created_at: "2026-09-17T17:43:29.009Z"
-updated_at: "2026-09-17T18:09:03.834Z"
+updated_at: "2026-09-22T05:14:53.431Z"
 closed_at: "2026-09-17T18:09:03.119Z"
 completed_at: "2026-09-17T18:09:03.119Z"
 author: "harness:codex"
@@ -33,10 +33,10 @@ files[6]{path,scope,note}:
   scripts/check-secrets-lib.mjs,project,Review grammar regression and documented scanner contract
   src/sdk/mutation-guard.ts,project,Review grammar regression and documented scanner contract
   src/sdk/test/json-path.ts,project,Review grammar regression and documented scanner contract
-  tests/unit/commands/test-command.spec.ts,project,Review grammar regression and documented scanner contract
+  tests/unit/commands/test/test-command.spec.ts,project,Review grammar regression and documented scanner contract
   tests/unit/sdk/test/json-path-security.spec.ts,project,Review grammar regression and documented scanner contract
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/test/json-path-security.spec.ts tests/unit/commands/test-command.spec.ts,project,240,"harness:codex","2026-09-17T17:48:43.105Z",local_mutation,fix/shared-secret-policy-safe-paths
+  node scripts/run-tests.mjs test -- tests/unit/sdk/test/json-path-security.spec.ts tests/unit/commands/test/test-command.spec.ts,project,240,"harness:codex","2026-09-22T05:14:53.297Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]:
   - run_id: test-local-mu5ufhlc-guwbps
     kind: test

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts",context-management,data-quality,scale
 created_at: "2026-08-03T06:26:13.535Z"
-updated_at: "2026-08-03T23:02:14.167Z"
+updated_at: "2026-09-22T05:09:28.110Z"
 closed_at: "2026-08-03T22:25:51.073Z"
 completed_at: "2026-08-03T22:25:51.073Z"
 author: "harness:claude-code"
@@ -45,9 +45,9 @@ files[5]{path,scope,note}:
   src/sdk/query/list.ts,project,Effective status receipt
   src/sdk/query/search-rendering.ts,project,Search all-status receipt
   tests/integration/cli.integration.spec.ts,project,Bare-list lifecycle regression gate
-  tests/unit/commands/search-command.spec.ts,project,Default scope regression
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/list-command.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,240,Lifecycle scope and CLI registration gate
+  tests/unit/commands/query/search-command.spec.ts,project,Default scope regression
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/list-command.spec.ts tests/unit/commands/query/search-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,240,"harness:codex","2026-09-22T05:09:27.972Z",local_mutation,refactor/cli-command-domains-export-gate,Lifecycle scope and CLI registration gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msdso858-h2d8az,test,passed,"2026-08-03T22:22:01.340Z","2026-08-03T22:22:15.356Z","2026-08-03T22:22:15.356Z",1,0,0
 docs[2]{path,scope,note}:

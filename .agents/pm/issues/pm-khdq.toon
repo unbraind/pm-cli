@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: concurrency,data-loss,robustness
 created_at: "2026-07-03T13:25:30.308Z"
-updated_at: "2026-09-08T05:57:01.478Z"
+updated_at: "2026-09-22T05:16:00.438Z"
 closed_at: "2026-07-24T13:34:55.976Z"
 author: claude-code-agent
 estimated_minutes: 150
@@ -42,8 +42,8 @@ comments[3]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-07-20T02:36:15.849Z",maintainer-agent,"PR#617 (pm-pibw) shipped two mitigations that bound but do not close this TOCTOU: configurable ids.token_length (4-12, birthday-bound table in MERGE_SAFETY.md) shrinks the collision window probabilistically, and validate --check-storage-integrity now detects duplicate ids across type folders/formats deterministically after the fact. The residual owned here is the local allocation race itself: generateItemId probes existence before writeCreatedItem takes the per-id lock, so a same-process-window duplicate still silently overwrites. Fix direction unchanged: atomic reserve (create the id lock/placeholder at generation time) + idExists covering extension type folders."
 files[3]{path,scope,note}:
-  src/cli/commands/copy.ts,project,Locked copy collision guard
-  src/cli/commands/create.ts,project,Locked create collision authority
+  src/cli/commands/lifecycle/copy.ts,project,Locked copy collision guard
+  src/cli/commands/lifecycle/create.ts,project,Locked create collision authority
   src/core/item/id.ts,project,Extension-aware allocation primitive and optional locked-write fast path
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/core/item/id-generation.spec.ts tests/integration/copy-command.spec.ts,project,240

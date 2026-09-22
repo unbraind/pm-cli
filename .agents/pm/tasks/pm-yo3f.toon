@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: agent-ux,audit,ecosystem,github,observability,sdk
 created_at: "2026-06-07T08:15:35.100Z"
-updated_at: "2026-09-19T08:43:09.978Z"
+updated_at: "2026-09-22T04:59:56.359Z"
 closed_at: "2026-06-07T08:58:16.304Z"
 author: codex-broad-ecosystem-audit-20260607
 parent: pm-doxj
@@ -48,7 +48,7 @@ files[15]{path,scope,note}:
   src/cli/bootstrap-args.ts,project,global --pm-path alias parsing and protected value-consuming normalization
   src/cli/commands/completion.ts,project,completion scripts surface --pm-path while retaining --path
   src/cli/commands/extension/scaffold.ts,project,align package scaffold comment with dependency-light generated shape
-  src/cli/commands/init.ts,project,workspace-root tracker-path guardrail for init
+  src/cli/commands/workspace/init.ts,project,workspace-root tracker-path guardrail for init
   src/cli/main.ts,project,global --pm-path option registration and clarified --path help
   src/cli/register-setup.ts,project,init --force escape hatch for explicit root-level tracker storage
   src/cli/registration-helpers.ts,project,resolve preferred pmPath commander option into GlobalOptions.path

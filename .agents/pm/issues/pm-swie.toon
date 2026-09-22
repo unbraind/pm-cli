@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,consistency,dogfood,tests
 created_at: "2026-05-23T04:17:38.412Z"
-updated_at: "2026-09-19T08:41:37.151Z"
+updated_at: "2026-09-22T05:12:26.455Z"
 closed_at: "2026-05-23T09:32:00.729Z"
 author: claude-code-agent
 acceptance_criteria: "pm update --test and pm create --test accept cmd as an alias for command and reject unknown structured keys with a clear error, matching pm test --add; regression tests added; no agent-blocking for bare commands."
@@ -33,9 +33,9 @@ comments[11]{created_at,author,text}:
   "2026-05-23T09:37:04.953Z",codex-linked-test-specialist,"Specialist review 2026-05-23: reused closed child pm-swie under active parent pm-rnpb; did not create a duplicate item. Reviewed current linked-test parsing changes around src/cli/commands/linked-test-entry.ts, create/test parser reuse, create/update/test parser tests, and contracts spec changes. Decision: no further code change from this specialist; current parser behavior covers --add/--test cmd alias, unknown structured-key rejection, command/cmd conflict rejection, and bare commands containing equals, including uppercase structured keys in the current tests/helper. Verification passed: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/test-command.spec.ts --reporter=dot => 3 files passed, 144 tests passed; PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts --reporter=dot => 1 file passed, 17 tests passed. Remaining risk: src/cli/commands/linked-test-entry.ts is still untracked in git status, so commit prep must include it with the imports."
   "2026-05-23T09:39:16.111Z",codex-extensive-audit,"Implementation polish 2026-05-23: shared linked-test structured parser now canonicalizes accepted key names case-insensitively before validation, aligning normalization with the already case-insensitive structured-entry detector. Regression coverage now exercises uppercase CMD/SCOPE for create --test, update --test, and pm test --add while preserving unknown-key rejection and bare command behavior."
 files[6]{path,scope,note}:
-  src/cli/commands/create.ts,project,shared create/update linked-test parser hardening
+  src/cli/commands/lifecycle/create.ts,project,shared create/update linked-test parser hardening
   src/cli/commands/linked-test-entry.ts,project,shared structured linked-test parser for create/update/test
-  src/cli/commands/test.ts,project,shared linked-test parser now reused by pm test --add
+  src/cli/commands/test/test.ts,project,shared linked-test parser now reused by pm test --add
   tests/unit/create-command.spec.ts,project,create --test cmd alias and unknown-key regressions
   tests/unit/test-command.spec.ts,project,pm test --add parser parity regression coverage
   tests/unit/update-command.spec.ts,project,update --test cmd alias and unknown-key regressions

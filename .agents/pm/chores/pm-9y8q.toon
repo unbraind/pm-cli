@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: annotations,code-quality,commands,dedup
 created_at: "2026-05-22T18:59:53.812Z"
-updated_at: "2026-09-19T08:39:48.995Z"
+updated_at: "2026-09-22T05:13:45.912Z"
 closed_at: "2026-05-24T01:58:30.355Z"
 author: codex-duplication-audit
 acceptance_criteria: "comments/notes/learnings share one command core for item resolution, append/list modes, author/message handling, and output rendering; resource-specific behavior remains explicit through adapters; existing comments, notes, and learnings tests pass; pnpm build passes."
@@ -27,9 +27,9 @@ comments[5]{created_at,author,text}:
   "2026-05-24T01:58:24.675Z",codex-active-work,"Final verification evidence: node scripts/release/run-gates.mjs --json --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 passed. Gate covered build, typecheck, docs-skills, static quality, coverage 105 files / 1583 tests / 100 percent statements branches functions lines, version policy 2026.5.23, secret scan, npx packed-package smoke, package-first dogfood 84 workflows, npm pack dry-run, compatibility check from base 2026.5.18, and required Sentry/telemetry gate with Sentry critical=0 high=2 total=2 and telemetry finish_error_rate_pct=2.94, failures_without_error_code_rows=0."
 files[6]{path,scope,note}:
   src/cli/commands/annotation-command.ts,project,shared annotation command core
-  src/cli/commands/comments.ts,project,annotation command clone
-  src/cli/commands/learnings.ts,project,annotation command clone
-  src/cli/commands/notes.ts,project,annotation command clone
+  src/cli/commands/annotations/comments.ts,project,annotation command clone
+  src/cli/commands/annotations/learnings.ts,project,annotation command clone
+  src/cli/commands/annotations/notes.ts,project,annotation command clone
   tests/unit/comments-command.spec.ts,project,helper edge coverage for shared annotation core
   vitest.config.ts,project,coverage include contract for shared annotation core
 tests[2]{command,scope,timeout_seconds}:

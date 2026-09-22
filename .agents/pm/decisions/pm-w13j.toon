@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: adr,"area:ci","area:tests",coverage
 created_at: "2026-06-09T22:05:03.764Z"
-updated_at: "2026-09-19T08:42:24.428Z"
+updated_at: "2026-09-22T05:25:19.637Z"
 closed_at: "2026-06-16T07:23:51.189Z"
 author: codex-active-pm-cycle-20260610
 parent: pm-m2u1
@@ -206,37 +206,36 @@ comments[176]{created_at,author,text}:
 files[103]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,pm-changelog latest package reinstall timestamp from changelog check
   src/cli.ts,project,Tiny _testOnly seam for direct CLI startup helper coverage
-  src/cli/commands/activity.ts,project,small-command helper coverage seam
-  src/cli/commands/aggregate.ts,project,wave15 command-surface test-only exports for aggregate helper coverage
-  src/cli/commands/close-many.ts,project,Added test-only helper exports for focused close-many coverage
-  src/cli/commands/config.ts,project,wave8 helper exports for config normalization coverage
-  src/cli/commands/context.ts,project,Added test-only helper exports for focused context command coverage
-  src/cli/commands/contracts.ts,project,wave9 command coverage test-only helper export
-  src/cli/commands/create.ts,project,wave8 helper exports for create missing-option example coverage
+  src/cli/commands/annotations/files.ts,project,file discovery helper coverage seam
   src/cli/commands/dedupe-audit.ts,project,command wave2 dedupe-audit test-only helper coverage
   src/cli/commands/event-validation-messages.ts,project,wave19 coordinator negative event-duration normalization coverage
-  src/cli/commands/extension.ts,project,pre-existing test-only helper export used by extension command coverage lane
   src/cli/commands/extension/bundled-catalog.ts,project,wave16 package catalog helper test-only exports for coverage
+  src/cli/commands/extension/extension.ts,project,pre-existing test-only helper export used by extension command coverage lane
   src/cli/commands/extension/install-sources.ts,project,wave3 test-only install-source seams
-  src/cli/commands/files.ts,project,file discovery helper coverage seam
-  src/cli/commands/get.ts,project,"Gemini review follow-up: defensive child status rollup guard"
-  src/cli/commands/health.ts,project,wave18 query-validation test-only health helper exports for coverage
-  src/cli/commands/history-redact.ts,project,Added test-only helper exports for focused history-redact coverage
-  src/cli/commands/init-agent-guidance.ts,project,command modules A agent-guidance helper coverage
-  src/cli/commands/init.ts,project,command wave2 init helper coverage and package-summary null guard
+  src/cli/commands/governance/health.ts,project,wave18 query-validation test-only health helper exports for coverage
+  src/cli/commands/history/activity.ts,project,small-command helper coverage seam
+  src/cli/commands/history/history-redact.ts,project,Added test-only helper exports for focused history-redact coverage
+  src/cli/commands/history/restore.ts,project,wave20 mutation-contracts test-only restore replay helper exports
+  src/cli/commands/lifecycle/close-many.ts,project,Added test-only helper exports for focused close-many coverage
+  src/cli/commands/lifecycle/create.ts,project,wave8 helper exports for create missing-option example coverage
+  src/cli/commands/lifecycle/update-many.ts,project,wave15 command-surface test-only exports for update-many preview planning coverage
+  src/cli/commands/lifecycle/update.ts,project,minimal test-only helper exports for update coverage
   src/cli/commands/linked-test-parsers.ts,project,wave19 mutation-contracts test-only helper export for JSON linked-test parser coverage
-  src/cli/commands/list.ts,project,Added test-only helper exports for focused list command coverage
   src/cli/commands/normalize.ts,project,wave6 covered command target via aggregate spec
+  src/cli/commands/query/aggregate.ts,project,wave15 command-surface test-only exports for aggregate helper coverage
+  src/cli/commands/query/context.ts,project,Added test-only helper exports for focused context command coverage
+  src/cli/commands/query/get.ts,project,"Gemini review follow-up: defensive child status rollup guard"
+  src/cli/commands/query/list.ts,project,Added test-only helper exports for focused list command coverage
+  src/cli/commands/query/search.ts,project,wave16 query-validation test-only helper exports for coverage
+  src/cli/commands/query/stats.ts,project,stats helper coverage seam
   src/cli/commands/reindex.ts,project,command modules A reindex helper coverage
-  src/cli/commands/restore.ts,project,wave20 mutation-contracts test-only restore replay helper exports
-  src/cli/commands/schema.ts,project,wave16 schema author helper export for coverage
-  src/cli/commands/search.ts,project,wave16 query-validation test-only helper exports for coverage
-  src/cli/commands/stats.ts,project,stats helper coverage seam
   src/cli/commands/templates.ts,project,command modules A coverage helper export
-  src/cli/commands/test.ts,project,wave16 linked-test helper exports for coverage
-  src/cli/commands/update-many.ts,project,wave15 command-surface test-only exports for update-many preview planning coverage
-  src/cli/commands/update.ts,project,minimal test-only helper exports for update coverage
-  src/cli/commands/upgrade.ts,project,Added test-only helper exports for focused upgrade command coverage
+  src/cli/commands/test/test.ts,project,wave16 linked-test helper exports for coverage
+  src/cli/commands/workspace/config.ts,project,wave8 helper exports for config normalization coverage
+  src/cli/commands/workspace/contracts.ts,project,wave9 command coverage test-only helper export
+  src/cli/commands/workspace/init.ts,project,command wave2 init helper coverage and package-summary null guard
+  src/cli/commands/workspace/schema.ts,project,wave16 schema author helper export for coverage
+  src/cli/commands/workspace/upgrade.ts,project,Added test-only helper exports for focused upgrade command coverage
   src/cli/help-json-payload.ts,project,help JSON policy helper seam for focused coverage
   src/cli/main.ts,project,Tiny _testOnly seam for CLI main bootstrap and telemetry helper coverage
   src/cli/registration-helpers.ts,project,Tiny _testOnly export for mutation-result id collector coverage
@@ -254,14 +253,15 @@ files[103]{path,scope,note}:
   src/core/test/background-runs.ts,project,coverage wave3 background run helper test surface
   src/mcp/server.ts,project,wave15 MCP test-only helper exports for option normalization coverage
   src/sdk/cli-contracts.ts,project,wave5 SDK contract test-only seam for provider schema fallback coverage
+  src/sdk/init-agent-guidance.ts,project,command modules A agent-guidance helper coverage
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,MCP server native action and error-path coverage
   tests/integration/mcp-handshake.spec.ts,project,MCP server request and transport coverage
   tests/integration/release-readiness-runtime.spec.ts,project,aligned release-readiness contract with all-src ratchet coverage thresholds
   tests/unit/aggregate-command.spec.ts,project,aggregate numeric aggregation and parser branch coverage
   tests/unit/cli-main-errors.spec.ts,project,help-json-payload bootstrap JSON help coverage
   tests/unit/close-command.spec.ts,project,close-many direct coverage for rollback apply skip and failed rows
+  tests/unit/commands/governance/telemetry-command.spec.ts,project,telemetry-flush entrypoint coverage
   tests/unit/commands/register-commands.spec.ts,project,"Added register-mutation dispatcher coverage for plan,history redaction/repair/compact,and schema command action closures"
-  tests/unit/commands/telemetry-command.spec.ts,project,telemetry-flush entrypoint coverage
   tests/unit/config-command.spec.ts,project,"Focused config command coverage for context,nested settings,lifecycle and governance branches"
   tests/unit/context-command.spec.ts,project,Added context helper branch coverage
   tests/unit/contracts-command.spec.ts,project,wave9 contracts command helper coverage
@@ -325,9 +325,6 @@ tests[143]:
     scope: project
     timeout_seconds: 240
   - command: node scripts/run-tests.mjs test -- tests/unit/cli-main-errors.spec.ts
-    scope: project
-    timeout_seconds: 240
-  - command: node scripts/run-tests.mjs test -- tests/unit/cli-main-errors.spec.ts tests/unit/commands/telemetry-command.spec.ts tests/unit/search-cache.spec.ts
     scope: project
     timeout_seconds: 240
   - command: node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/templates-command.spec.ts tests/unit/upgrade-command.spec.ts
@@ -404,10 +401,6 @@ tests[143]:
     scope: project
     timeout_seconds: 300
     note: command modules A targeted coverage probe thresholds disabled
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- tests/integration/mcp-handshake.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/extension-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/unit/sdk-index.spec.ts --coverage.enabled true --coverage.include='src/mcp/server.ts' --coverage.include='src/mcp/tool-definitions.ts' --coverage.include='src/core/extensions/extension-policy.ts' --coverage.include='src/core/extensions/extension-hook-runtime.ts' --coverage.include='src/core/extensions/loader.ts' --coverage.include='src/core/extensions/extension-capability-aliases.ts' --coverage.include='src/core/extensions/runtime-registrations.ts' --coverage.include='src/core/extensions/item-fields.ts' --coverage.include='src/cli/commands/extension.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/cli/commands/extension/managed-state.ts' --coverage.include='src/cli/commands/extension/shared.ts' --coverage.include='src/cli/extension-command-options.ts' --coverage.include='src/sdk/cli-contracts.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=coverage/ext-mcp-sdk-codex --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 240
-    note: targeted lane coverage probe with thresholds disabled and unique reports dir
   - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- tests/integration/mcp-handshake.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/extension-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/sdk-index.spec.ts --coverage.enabled true --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-ext-mcp-wave5-probe --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
     scope: project
     timeout_seconds: 300
@@ -427,26 +420,6 @@ tests[143]:
   - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- tests/unit/cli-main-errors.spec.ts tests/unit/registration-helpers.spec.ts --coverage.enabled true --coverage.include='src/cli/help-json-payload.ts' --coverage.include='src/cli/commander-usage.ts' --coverage.include='src/cli/guide-topics.ts' --coverage.include='src/cli/bootstrap-args.ts' --coverage.include='src/cli/error-guidance.ts' --coverage.include='src/cli/registration-helpers.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-cli-helpers-wave8 --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
     scope: project
     timeout_seconds: 300
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- tests/unit/create-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/init-command.spec.ts tests/unit/config-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/context-command.spec.ts tests/unit/history-repair-command.spec.ts tests/unit/dedupe-audit-command.spec.ts tests/unit/linked-test-parsers.spec.ts tests/unit/commands/telemetry-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/create.ts' --coverage.include='src/cli/commands/schema.ts' --coverage.include='src/cli/commands/init.ts' --coverage.include='src/cli/commands/config.ts' --coverage.include='src/cli/commands/search.ts' --coverage.include='src/cli/commands/context.ts' --coverage.include='src/cli/commands/history-repair.ts' --coverage.include='src/cli/commands/dedupe-audit.ts' --coverage.include='src/cli/commands/linked-test-parsers.ts' --coverage.include='src/cli/commands/telemetry.ts' --coverage.reporter=text --coverage.reporter=json --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-command-wave2-final --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 300
-    note: command wave2 targeted coverage probe thresholds disabled unique dir cleaned after run
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- tests/unit/extension-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/extension.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-extension-command-wave10 --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 300
-    note: wave10 extension-command targeted coverage probe; generated reports dir removed after run
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/unit/extension-command.spec.ts --coverage.enabled true --coverage.include='src/core/extensions/loader.ts' --coverage.include='src/core/extensions/extension-policy.ts' --coverage.include='src/cli/commands/extension.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.reporter=text --coverage.reporter=json --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-extension-wave11-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 300
-    note: wave11 targeted extension-platform coverage probe thresholds disabled; generated report dir removed
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- tests/unit/update-command.spec.ts tests/unit/context-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/list-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/update.ts' --coverage.include='src/cli/commands/context.ts' --coverage.include='src/cli/commands/contracts.ts' --coverage.include='src/cli/commands/list.ts' --coverage.include='src/cli/commands/reindex.ts' --coverage.include='src/cli/commands/schema.ts' --coverage.include='src/cli/commands/test.ts' --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 300
-    note: wave10 targeted command-surface coverage probe thresholds disabled
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- tests/unit/update-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/create-command.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/context-command.spec.ts tests/unit/list-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/update.ts' --coverage.include='src/cli/commands/search.ts' --coverage.include='src/cli/commands/create.ts' --coverage.include='src/cli/commands/config.ts' --coverage.include='src/cli/commands/contracts.ts' --coverage.include='src/cli/commands/context.ts' --coverage.include='src/cli/commands/list.ts' --coverage.include='src/cli/commands/reindex.ts' --coverage.include='src/cli/commands/schema.ts' --coverage.include='src/cli/commands/test.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-command-core-wave11-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 300
-    note: wave11 targeted command-core coverage probe thresholds disabled; generated report dir removed
   - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts
     scope: project
     timeout_seconds: 240
@@ -531,10 +504,6 @@ tests[143]:
     scope: project
     timeout_seconds: 300
     note: wave19 mutation-contracts command-tail focused suite
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/create-command.spec.ts tests/unit/config-command.spec.ts tests/unit/update-command.spec.ts tests/unit/aggregate-command.spec.ts tests/unit/close-command.spec.ts tests/unit/init-command.spec.ts tests/unit/upgrade-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/linked-test-parsers.spec.ts tests/unit/history-activity-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/contracts.ts' --coverage.include='src/cli/commands/create.ts' --coverage.include='src/cli/commands/config.ts' --coverage.include='src/cli/commands/update.ts' --coverage.include='src/cli/commands/aggregate.ts' --coverage.include='src/cli/commands/close-many.ts' --coverage.include='src/cli/commands/init.ts' --coverage.include='src/cli/commands/upgrade.ts' --coverage.include='src/cli/commands/update-many.ts' --coverage.include='src/cli/commands/history-redact.ts' --coverage.include='src/cli/commands/restore.ts' --coverage.include='src/cli/commands/linked-test-parsers.ts' --coverage.include='src/cli/register-mutation.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=json --coverage.reportsDirectory=.tmp/coverage-wave20-mutation-contracts-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 360
-    note: wave20 mutation-contracts targeted coverage probe thresholds disabled
   - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/create-command.spec.ts tests/unit/config-command.spec.ts tests/unit/update-command.spec.ts tests/unit/history-activity-command.spec.ts
     scope: project
     timeout_seconds: 240
@@ -550,18 +519,10 @@ tests[143]:
     scope: project
     timeout_seconds: 240
     note: wave16 create/update required focused suite
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/create.ts' --coverage.include='src/cli/commands/update.ts' --coverage.reporter=text --coverage.reporter=json --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-wave16-create-update --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 300
-    note: wave16 create/update targeted coverage probe; generated report removed
   - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/aggregate-command.spec.ts tests/unit/close-command.spec.ts tests/unit/init-command.spec.ts tests/unit/upgrade-command.spec.ts
     scope: project
     timeout_seconds: 300
     note: wave17 command mutation/config focused lane suite
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/aggregate-command.spec.ts tests/unit/close-command.spec.ts tests/unit/init-command.spec.ts tests/unit/upgrade-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/create.ts' --coverage.include='src/cli/commands/update.ts' --coverage.include='src/cli/commands/config.ts' --coverage.include='src/cli/commands/contracts.ts' --coverage.include='src/cli/commands/update-many.ts' --coverage.include='src/cli/commands/aggregate.ts' --coverage.include='src/cli/commands/close-many.ts' --coverage.include='src/cli/commands/init.ts' --coverage.include='src/cli/commands/upgrade.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-wave17-mutation-config-linked --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 300
-    note: wave17 thresholds-disabled targeted coverage probe; generated report removed
   - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts
     scope: project
     timeout_seconds: 240
@@ -578,22 +539,10 @@ tests[143]:
     scope: project
     timeout_seconds: 240
     note: wave18 extension-platform focused lane suite
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/extension.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/core/extensions/loader.ts' --coverage.include='src/core/extensions/extension-policy.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=json --coverage.reportsDirectory=.tmp/coverage-wave18-extension-platform-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 300
-    note: wave18 extension-platform targeted coverage probe thresholds disabled; report dir removed
   - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts
     scope: project
     timeout_seconds: 300
     note: wave19 extension/MCP focused suite
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/extension.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/core/extensions/loader.ts' --coverage.include='src/core/extensions/extension-policy.ts' --coverage.include='src/mcp/server.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=json --coverage.reportsDirectory=.tmp/coverage-wave19-extension-mcp --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 360
-    note: wave19 extension/MCP scoped coverage probe thresholds disabled; generated report removed
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/extension.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/core/extensions/loader.ts' --coverage.include='src/core/extensions/extension-policy.ts' --coverage.include='src/mcp/server.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=json --coverage.reportsDirectory=.tmp/coverage-wave20-extension-mcp --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 300
-    note: wave20 extension/MCP targeted coverage probe thresholds disabled
   - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/search-cache.spec.ts tests/unit/context-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/create-command.spec.ts tests/unit/config-command.spec.ts tests/unit/update-command.spec.ts tests/unit/aggregate-command.spec.ts tests/unit/close-command.spec.ts tests/unit/init-command.spec.ts tests/unit/upgrade-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/linked-test-parsers.spec.ts tests/unit/history-activity-command.spec.ts tests/unit/determinism.spec.ts tests/unit/parse-utils.spec.ts tests/unit/telemetry-observability.spec.ts tests/unit/telemetry-runtime.spec.ts tests/unit/item-store.spec.ts tests/unit/settings-store.spec.ts tests/unit/test-runs-command.spec.ts tests/unit/item-record.spec.ts tests/unit/output.spec.ts tests/unit/cli-main-errors.spec.ts tests/unit/core-item-lock-coverage.spec.ts tests/unit/shared-helpers.spec.ts tests/unit/sdk-index.spec.ts
     scope: project
     timeout_seconds: 360
@@ -618,22 +567,10 @@ tests[143]:
     scope: project
     timeout_seconds: 300
     note: wave11 focused extension-platform verification
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/unit/extension-command.spec.ts --coverage.enabled true --coverage.include='src/core/extensions/loader.ts' --coverage.include='src/cli/commands/extension.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.reporter=text --coverage.reporter=json --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-wave12-extension-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 300
-    note: wave12 targeted extension coverage probe thresholds disabled; generated report removed after run
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/unit/extension-command.spec.ts --coverage.enabled true --coverage.include='src/core/extensions/loader.ts' --coverage.include='src/cli/commands/extension.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.reporter=text --coverage.reporter=json --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-wave15-extension --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 300
-    note: wave15 targeted extension coverage probe; generated report removed
   - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/unit/extension-command.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts
     scope: project
     timeout_seconds: 300
     note: wave16 extension/MCP required focused suite
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/unit/extension-command.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts --coverage.enabled true --coverage.include='src/core/extensions/loader.ts' --coverage.include='src/core/extensions/extension-policy.ts' --coverage.include='src/cli/commands/extension.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.include='src/mcp/server.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-wave17-extension-mcp-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 300
-    note: wave17 targeted extension/MCP coverage probe thresholds disabled; generated report removed
   - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/search-cache.spec.ts tests/unit/item-store.spec.ts
     scope: project
     timeout_seconds: 240
@@ -697,26 +634,6 @@ tests[143]:
     scope: project
     timeout_seconds: 300
     note: wave16 command query/validation focused suite
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/context-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/search.ts' --coverage.include='src/cli/commands/context.ts' --coverage.include='src/cli/commands/reindex.ts' --coverage.include='src/cli/commands/schema.ts' --coverage.include='src/cli/commands/test.ts' --coverage.include='src/cli/commands/health.ts' --coverage.include='src/cli/commands/validate.ts' --coverage.reporter=text --coverage.reporter=json --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-wave16-command-query-validation --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 300
-    note: wave16 targeted coverage probe thresholds disabled; generated report removed
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/context-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/search.ts' --coverage.include='src/cli/commands/context.ts' --coverage.include='src/cli/commands/reindex.ts' --coverage.include='src/cli/commands/schema.ts' --coverage.include='src/cli/commands/test.ts' --coverage.include='src/cli/commands/health.ts' --coverage.include='src/cli/commands/validate.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=json --coverage.reportsDirectory=.tmp/coverage-wave18-query-validation-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 360
-    note: wave18 query-validation targeted coverage probe thresholds disabled; generated report removed
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/context-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/search.ts' --coverage.include='src/cli/commands/context.ts' --coverage.include='src/cli/commands/reindex.ts' --coverage.include='src/cli/commands/schema.ts' --coverage.include='src/cli/commands/test.ts' --coverage.include='src/cli/commands/health.ts' --coverage.include='src/cli/commands/validate.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=json --coverage.reportsDirectory=.tmp/coverage-wave19-query-validation-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 360
-    note: wave19 query-validation targeted coverage probe thresholds disabled; generated reports removed
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/context-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/search.ts' --coverage.include='src/cli/commands/context.ts' --coverage.include='src/cli/commands/reindex.ts' --coverage.include='src/cli/commands/schema.ts' --coverage.include='src/cli/commands/test.ts' --coverage.include='src/cli/commands/health.ts' --coverage.include='src/cli/commands/validate.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=json --coverage.reportsDirectory=.tmp/coverage-wave20-query-validation-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 360
-    note: wave20 query-validation targeted coverage probe thresholds disabled; generated reports removed
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/context-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/search.ts' --coverage.include='src/cli/commands/context.ts' --coverage.include='src/cli/commands/reindex.ts' --coverage.include='src/cli/commands/schema.ts' --coverage.include='src/cli/commands/test.ts' --coverage.include='src/cli/commands/health.ts' --coverage.include='src/cli/commands/validate.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-wave17-command-query-validation --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 300
-    note: wave17 targeted command query/validation coverage probe thresholds disabled; generated report removed
   - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/shared-helpers.spec.ts
     scope: project
     timeout_seconds: 240
@@ -795,10 +712,6 @@ tests[143]:
     scope: project
     timeout_seconds: 300
     note: wave12 Worker D required focused command suite
-  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/unit/create-command.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/context-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/list-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/update.ts' --coverage.include='src/cli/commands/create.ts' --coverage.include='src/cli/commands/config.ts' --coverage.include='src/cli/commands/contracts.ts' --coverage.include='src/cli/commands/context.ts' --coverage.include='src/cli/commands/search.ts' --coverage.include='src/cli/commands/list.ts' --coverage.include='src/cli/commands/reindex.ts' --coverage.include='src/cli/commands/schema.ts' --coverage.include='src/cli/commands/test.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-wave12-command-d-after-search --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
-    scope: project
-    timeout_seconds: 300
-    note: wave12 Worker D targeted command coverage probe; generated report removed
   - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/unit/create-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/context-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/config-command.spec.ts tests/unit/list-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/aggregate-command.spec.ts
     scope: project
     timeout_seconds: 300
@@ -839,6 +752,203 @@ tests[143]:
   - command: pnpm typecheck
     scope: project
     timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli-main-errors.spec.ts tests/unit/commands/governance/telemetry-command.spec.ts tests/unit/search-cache.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- tests/integration/mcp-handshake.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/extension-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/unit/sdk-index.spec.ts --coverage.enabled true --coverage.include='src/mcp/server.ts' --coverage.include='src/mcp/tool-definitions.ts' --coverage.include='src/core/extensions/extension-policy.ts' --coverage.include='src/core/extensions/extension-hook-runtime.ts' --coverage.include='src/core/extensions/loader.ts' --coverage.include='src/core/extensions/extension-capability-aliases.ts' --coverage.include='src/core/extensions/runtime-registrations.ts' --coverage.include='src/core/extensions/item-fields.ts' --coverage.include='src/cli/commands/extension/extension.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/cli/commands/extension/managed-state.ts' --coverage.include='src/cli/commands/extension/shared.ts' --coverage.include='src/cli/extension-command-options.ts' --coverage.include='src/sdk/cli-contracts.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=coverage/ext-mcp-sdk-codex --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: targeted lane coverage probe with thresholds disabled and unique reports dir
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- tests/unit/create-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/init-command.spec.ts tests/unit/config-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/context-command.spec.ts tests/unit/history-repair-command.spec.ts tests/unit/dedupe-audit-command.spec.ts tests/unit/linked-test-parsers.spec.ts tests/unit/commands/governance/telemetry-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/lifecycle/create.ts' --coverage.include='src/cli/commands/workspace/schema.ts' --coverage.include='src/cli/commands/workspace/init.ts' --coverage.include='src/cli/commands/workspace/config.ts' --coverage.include='src/cli/commands/query/search.ts' --coverage.include='src/cli/commands/query/context.ts' --coverage.include='src/cli/commands/history/history-repair.ts' --coverage.include='src/cli/commands/dedupe-audit.ts' --coverage.include='src/cli/commands/linked-test-parsers.ts' --coverage.include='src/cli/commands/governance/telemetry.ts' --coverage.reporter=text --coverage.reporter=json --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-command-wave2-final --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: command wave2 targeted coverage probe thresholds disabled unique dir cleaned after run
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- tests/unit/extension-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/extension/extension.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-extension-command-wave10 --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave10 extension-command targeted coverage probe; generated reports dir removed after run
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/unit/extension-command.spec.ts --coverage.enabled true --coverage.include='src/core/extensions/loader.ts' --coverage.include='src/core/extensions/extension-policy.ts' --coverage.include='src/cli/commands/extension/extension.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.reporter=text --coverage.reporter=json --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-extension-wave11-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave11 targeted extension-platform coverage probe thresholds disabled; generated report dir removed
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- tests/unit/update-command.spec.ts tests/unit/context-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/list-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/lifecycle/update.ts' --coverage.include='src/cli/commands/query/context.ts' --coverage.include='src/cli/commands/workspace/contracts.ts' --coverage.include='src/cli/commands/query/list.ts' --coverage.include='src/cli/commands/reindex.ts' --coverage.include='src/cli/commands/workspace/schema.ts' --coverage.include='src/cli/commands/test/test.ts' --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave10 targeted command-surface coverage probe thresholds disabled
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- tests/unit/update-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/create-command.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/context-command.spec.ts tests/unit/list-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/lifecycle/update.ts' --coverage.include='src/cli/commands/query/search.ts' --coverage.include='src/cli/commands/lifecycle/create.ts' --coverage.include='src/cli/commands/workspace/config.ts' --coverage.include='src/cli/commands/workspace/contracts.ts' --coverage.include='src/cli/commands/query/context.ts' --coverage.include='src/cli/commands/query/list.ts' --coverage.include='src/cli/commands/reindex.ts' --coverage.include='src/cli/commands/workspace/schema.ts' --coverage.include='src/cli/commands/test/test.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-command-core-wave11-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave11 targeted command-core coverage probe thresholds disabled; generated report dir removed
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/create-command.spec.ts tests/unit/config-command.spec.ts tests/unit/update-command.spec.ts tests/unit/aggregate-command.spec.ts tests/unit/close-command.spec.ts tests/unit/init-command.spec.ts tests/unit/upgrade-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/linked-test-parsers.spec.ts tests/unit/history-activity-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/workspace/contracts.ts' --coverage.include='src/cli/commands/lifecycle/create.ts' --coverage.include='src/cli/commands/workspace/config.ts' --coverage.include='src/cli/commands/lifecycle/update.ts' --coverage.include='src/cli/commands/query/aggregate.ts' --coverage.include='src/cli/commands/lifecycle/close-many.ts' --coverage.include='src/cli/commands/workspace/init.ts' --coverage.include='src/cli/commands/workspace/upgrade.ts' --coverage.include='src/cli/commands/lifecycle/update-many.ts' --coverage.include='src/cli/commands/history/history-redact.ts' --coverage.include='src/cli/commands/history/restore.ts' --coverage.include='src/cli/commands/linked-test-parsers.ts' --coverage.include='src/cli/register-mutation.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=json --coverage.reportsDirectory=.tmp/coverage-wave20-mutation-contracts-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 360
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave20 mutation-contracts targeted coverage probe thresholds disabled
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/lifecycle/create.ts' --coverage.include='src/cli/commands/lifecycle/update.ts' --coverage.reporter=text --coverage.reporter=json --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-wave16-create-update --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave16 create/update targeted coverage probe; generated report removed
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/aggregate-command.spec.ts tests/unit/close-command.spec.ts tests/unit/init-command.spec.ts tests/unit/upgrade-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/lifecycle/create.ts' --coverage.include='src/cli/commands/lifecycle/update.ts' --coverage.include='src/cli/commands/workspace/config.ts' --coverage.include='src/cli/commands/workspace/contracts.ts' --coverage.include='src/cli/commands/lifecycle/update-many.ts' --coverage.include='src/cli/commands/query/aggregate.ts' --coverage.include='src/cli/commands/lifecycle/close-many.ts' --coverage.include='src/cli/commands/workspace/init.ts' --coverage.include='src/cli/commands/workspace/upgrade.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-wave17-mutation-config-linked --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave17 thresholds-disabled targeted coverage probe; generated report removed
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/extension/extension.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/core/extensions/loader.ts' --coverage.include='src/core/extensions/extension-policy.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=json --coverage.reportsDirectory=.tmp/coverage-wave18-extension-platform-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave18 extension-platform targeted coverage probe thresholds disabled; report dir removed
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/extension/extension.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/core/extensions/loader.ts' --coverage.include='src/core/extensions/extension-policy.ts' --coverage.include='src/mcp/server.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=json --coverage.reportsDirectory=.tmp/coverage-wave19-extension-mcp --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 360
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave19 extension/MCP scoped coverage probe thresholds disabled; generated report removed
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/extension/extension.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/core/extensions/loader.ts' --coverage.include='src/core/extensions/extension-policy.ts' --coverage.include='src/mcp/server.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=json --coverage.reportsDirectory=.tmp/coverage-wave20-extension-mcp --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave20 extension/MCP targeted coverage probe thresholds disabled
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/unit/extension-command.spec.ts --coverage.enabled true --coverage.include='src/core/extensions/loader.ts' --coverage.include='src/cli/commands/extension/extension.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.reporter=text --coverage.reporter=json --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-wave12-extension-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave12 targeted extension coverage probe thresholds disabled; generated report removed after run
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/unit/extension-command.spec.ts --coverage.enabled true --coverage.include='src/core/extensions/loader.ts' --coverage.include='src/cli/commands/extension/extension.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.reporter=text --coverage.reporter=json --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-wave15-extension --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave15 targeted extension coverage probe; generated report removed
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/unit/runtime-registrations.spec.ts tests/unit/extension-command.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts --coverage.enabled true --coverage.include='src/core/extensions/loader.ts' --coverage.include='src/core/extensions/extension-policy.ts' --coverage.include='src/cli/commands/extension/extension.ts' --coverage.include='src/cli/commands/extension/doctor.ts' --coverage.include='src/cli/commands/extension/install-sources.ts' --coverage.include='src/cli/commands/extension/bundled-catalog.ts' --coverage.include='src/mcp/server.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-wave17-extension-mcp-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave17 targeted extension/MCP coverage probe thresholds disabled; generated report removed
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/context-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/query/search.ts' --coverage.include='src/cli/commands/query/context.ts' --coverage.include='src/cli/commands/reindex.ts' --coverage.include='src/cli/commands/workspace/schema.ts' --coverage.include='src/cli/commands/test/test.ts' --coverage.include='src/cli/commands/governance/health.ts' --coverage.include='src/cli/commands/governance/validate.ts' --coverage.reporter=text --coverage.reporter=json --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-wave16-command-query-validation --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave16 targeted coverage probe thresholds disabled; generated report removed
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/context-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/query/search.ts' --coverage.include='src/cli/commands/query/context.ts' --coverage.include='src/cli/commands/reindex.ts' --coverage.include='src/cli/commands/workspace/schema.ts' --coverage.include='src/cli/commands/test/test.ts' --coverage.include='src/cli/commands/governance/health.ts' --coverage.include='src/cli/commands/governance/validate.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=json --coverage.reportsDirectory=.tmp/coverage-wave18-query-validation-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 360
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave18 query-validation targeted coverage probe thresholds disabled; generated report removed
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/context-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/query/search.ts' --coverage.include='src/cli/commands/query/context.ts' --coverage.include='src/cli/commands/reindex.ts' --coverage.include='src/cli/commands/workspace/schema.ts' --coverage.include='src/cli/commands/test/test.ts' --coverage.include='src/cli/commands/governance/health.ts' --coverage.include='src/cli/commands/governance/validate.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=json --coverage.reportsDirectory=.tmp/coverage-wave19-query-validation-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 360
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave19 query-validation targeted coverage probe thresholds disabled; generated reports removed
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/context-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/query/search.ts' --coverage.include='src/cli/commands/query/context.ts' --coverage.include='src/cli/commands/reindex.ts' --coverage.include='src/cli/commands/workspace/schema.ts' --coverage.include='src/cli/commands/test/test.ts' --coverage.include='src/cli/commands/governance/health.ts' --coverage.include='src/cli/commands/governance/validate.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=json --coverage.reportsDirectory=.tmp/coverage-wave20-query-validation-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 360
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave20 query-validation targeted coverage probe thresholds disabled; generated reports removed
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/context-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/query/search.ts' --coverage.include='src/cli/commands/query/context.ts' --coverage.include='src/cli/commands/reindex.ts' --coverage.include='src/cli/commands/workspace/schema.ts' --coverage.include='src/cli/commands/test/test.ts' --coverage.include='src/cli/commands/governance/health.ts' --coverage.include='src/cli/commands/governance/validate.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-wave17-command-query-validation --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave17 targeted command query/validation coverage probe thresholds disabled; generated report removed
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/unit/create-command.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/context-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/list-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/schema-command.spec.ts tests/unit/test-command.spec.ts --coverage.enabled true --coverage.include='src/cli/commands/lifecycle/update.ts' --coverage.include='src/cli/commands/lifecycle/create.ts' --coverage.include='src/cli/commands/workspace/config.ts' --coverage.include='src/cli/commands/workspace/contracts.ts' --coverage.include='src/cli/commands/query/context.ts' --coverage.include='src/cli/commands/query/search.ts' --coverage.include='src/cli/commands/query/list.ts' --coverage.include='src/cli/commands/reindex.ts' --coverage.include='src/cli/commands/workspace/schema.ts' --coverage.include='src/cli/commands/test/test.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=.tmp/coverage-wave12-command-d-after-search --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:01:55.365Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: wave12 Worker D targeted command coverage probe; generated report removed
 docs[3]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,clarified semantic/hybrid --full reindex guidance from review
   docs/ARCHITECTURE.md,project,testing architecture section now states all-src coverage governance

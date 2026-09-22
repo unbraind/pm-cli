@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,packages,pm-cli,scope,token-efficiency
 created_at: "2026-05-16T23:06:37.341Z"
-updated_at: "2026-09-19T08:40:50.963Z"
+updated_at: "2026-09-22T05:02:51.619Z"
 closed_at: "2026-05-16T23:26:24.727Z"
 author: codex-agent
 acceptance_criteria: files/docs/test linked-resource commands accept entries without scope=project and persist project scope by default; help/contracts/examples stop requiring scope=project for project-local commands; package install/manage flows still allow explicit project/global scope where meaningful; backwards compatibility preserves existing scope=project inputs; focused tests and temp-project dogfood cover the simplified UX.
@@ -26,7 +26,7 @@ comments[4]{created_at,author,text}:
   "2026-05-16T23:26:22.207Z",codex-agent,"Final evidence: isolated temp-project dogfood passed 44 workflows using omitted scope for files/docs/test links; linked pm test passed with 167 focused regressions; static quality and secret scan passed; full release gate passed with build, typecheck, docs/skills, static quality, 1313 tests at 100 percent coverage, version policy, secret scan, npx smoke, npm pack, compatibility, Sentry critical=0/high=0/total=0, telemetry finish_error_rate_pct=2.29 and missing error-code rows=0. pm health telemetry re-check succeeded after inline flush; only known history drift remains under pm-xk39."
 files[7]{path,scope,note}:
   scripts/dogfood-package-first.mjs,project,dogfood-omitted-scope-linked-resources
-  src/cli/commands/create.ts,project,create-example-default-project-scope
+  src/cli/commands/lifecycle/create.ts,project,create-example-default-project-scope
   src/cli/help-content.ts,project,help-examples-drop-redundant-scope
   src/sdk/cli-contracts.ts,project,scope-metadata-documents-default
   tests/unit/create-command.spec.ts,project,create-seed-default-scope-regression

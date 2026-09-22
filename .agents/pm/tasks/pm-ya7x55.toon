@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:contracts",grammar,simplification
 created_at: "2026-08-02T15:03:08.302Z"
-updated_at: "2026-08-18T17:50:10.652Z"
+updated_at: "2026-09-22T05:07:56.420Z"
 closed_at: "2026-08-18T17:50:09.792Z"
 completed_at: "2026-08-18T17:50:09.792Z"
 author: "harness:claude-code"
@@ -62,7 +62,7 @@ files[26]{path,scope,note}:
   scripts/agent-token-surface-baseline.json,project,Generated discovery ratchets for the five newly governed workspace snapshot paths
   scripts/release/command-grammar-gate.mjs,project,Executable positional grammar assurance
   sdk/public-surface.json,project,Governed public SDK surface snapshot
-  src/cli/commands/contracts.ts,project,Renders the contract surface agents read for exact argument shapes
+  src/cli/commands/workspace/contracts.ts,project,Renders the contract surface agents read for exact argument shapes
   src/cli/help-json-payload.ts,project,Structured live Commander help used by the independent executable census
   src/cli/register-mutation.ts,project,Live Commander positional spellings for create and plan
   src/cli/register-operations.ts,project,Workspace snapshot action registration consumes the shared SDK action vocabulary
@@ -78,20 +78,44 @@ files[26]{path,scope,note}:
   tests/integration/profile-command.integration.spec.ts,project,Profile subcommand recovery compatibility
   tests/unit/cli/cli-main-errors.spec.ts,project,Root structured-help built-in command coverage
   tests/unit/cli/help-command-path-resolution.spec.ts,project,Hidden and visible command help census behavior
-  tests/unit/commands/contracts-command.spec.ts,project,Precise workspace snapshot positional and flag projections
   tests/unit/commands/register-commands.spec.ts,project,Registered action behavior compatibility
-  tests/unit/commands/schema-command.spec.ts,project,Schema required subcommand recovery compatibility
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Precise workspace snapshot positional and flag projections
+  tests/unit/commands/workspace/schema-command.spec.ts,project,Schema required subcommand recovery compatibility
   tests/unit/scripts/release/command-grammar-gate.spec.ts,project,Grammar gate negative-control coverage
   tests/unit/sdk/action-schema-parity.spec.ts,project,Runtime action vocabulary parity with positional contracts
   tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,Positive and negative positional contract coverage
-tests[7]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- contracts,project,300
-  node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,project,240
-  node scripts/run-tests.mjs coverage,project,600
-  node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/cli/help-command-path-resolution.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,project,300
-  "pnpm quality:token-surface",project,240
-  node scripts/run-tests.mjs test -- tests/integration/positional-action-contracts.integration.spec.ts tests/integration/profile-command.integration.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/commands/schema-command.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts tests/unit/cli/help-command-path-resolution.spec.ts,project,300
+tests[7]:
+  - command: node scripts/run-tests.mjs test -- contracts
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 600
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm quality:token-surface"
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/workspace/contracts-command.spec.ts tests/unit/cli/help-command-path-resolution.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:07:56.372Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+  - command: node scripts/run-tests.mjs test -- tests/integration/positional-action-contracts.integration.spec.ts tests/integration/profile-command.integration.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/commands/workspace/schema-command.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts tests/unit/cli/help-command-path-resolution.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:07:56.372Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msyarhlx-y05tsx,test,passed,"2026-08-18T06:43:48.539Z","2026-08-18T06:44:04.196Z","2026-08-18T06:44:04.196Z",1,0,0
 docs[2]{path,scope,note}:

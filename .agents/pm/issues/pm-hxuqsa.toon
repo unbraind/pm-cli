@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-05T21:28:26.924Z"
-updated_at: "2026-08-10T12:02:26.328Z"
+updated_at: "2026-09-22T05:08:55.588Z"
 closed_at: "2026-08-06T07:26:02.866Z"
 completed_at: "2026-08-06T07:26:02.866Z"
 author: "harness:codex"
@@ -26,8 +26,8 @@ comments[4]{created_at,author,text}:
   "2026-08-06T07:25:39.605Z","harness:codex","Exact-head delivery evidence: PR #916 head fea4ba930cd0d1e42766510a3c4088942c2716f3 passed every hosted runner/check, including merged exact coverage, static/docstrings, Windows, compatibility, smokes, CodeQL, Trivy, TruffleHog, Semgrep, Codecov, benchmarks, and platform runtimes. Sourcery's architecture guide and Codecov/CodSpeed reports had no actionable findings and were acknowledged with contextual replies. CodeRabbit and the formal Sourcery review were rate/quota limited; each artifact was down-voted and replied to, and is recorded as a limitation rather than approval. Greptile produced no review artifact after repeated exact-head triggers."
 files[2]{path,scope,note}:
   src/sdk/lifecycle/plan.ts,project,Atomic Plan lifecycle ownership sequencing
-  tests/unit/commands/plan-lifecycle-regressions.spec.ts,project,Strict cross-owner and rollback regressions
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/plan-lifecycle-regressions.spec.ts,project,240
+  tests/unit/commands/lifecycle/plan-lifecycle-regressions.spec.ts,project,Strict cross-owner and rollback regressions
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/plan-lifecycle-regressions.spec.ts,project,240,"harness:codex","2026-09-22T05:08:55.556Z",local_mutation,refactor/cli-command-domains-export-gate
 close_reason: "Restored atomic strict-governance cross-owner seeded Plan creation and proved complete commit, rollback, retry, and same-owner behavior."
 body: ""

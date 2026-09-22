@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: architecture,pm-cli,refactor,release-readiness
 created_at: "2026-02-17T23:37:26.647Z"
-updated_at: "2026-09-19T08:39:17.973Z"
+updated_at: "2026-09-22T05:09:36.851Z"
 deadline: "2026-02-21T23:37:26.647Z"
 closed_at: "2026-02-18T21:55:12.550Z"
 assignee: cursor-agent
@@ -106,27 +106,26 @@ notes[1]{created_at,author,text}:
   "2026-04-01T20:34:43.863Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:45.505Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[46]{path,scope,note}:
+files[45]{path,scope,note}:
   src/cli.ts,project,Stable bin wrapper that delegates to src/cli/main.ts
-  src/cli/commands/activity.ts,project,import-boundary migration candidate
-  src/cli/commands/append.ts,project,import-boundary migration candidate
-  src/cli/commands/claim.ts,project,import-boundary migration candidate
-  src/cli/commands/comments.ts,project,import-boundary migration candidate
-  src/cli/commands/create.ts,project,import-boundary migration candidate
-  src/cli/commands/docs.ts,project,import-boundary migration candidate
-  src/cli/commands/files.ts,project,import-boundary migration candidate
-  src/cli/commands/gc.ts,project,import-boundary migration to core modules
-  src/cli/commands/get.ts,project,import-boundary migration candidate
-  src/cli/commands/health.ts,project,import-boundary migration to core modules
-  src/cli/commands/history.ts,project,import-boundary migration candidate
-  src/cli/commands/index.ts,project,CLI command boundary bridge
-  src/cli/commands/init.ts,project,import-boundary migration to core modules
-  src/cli/commands/list.ts,project,List limit support for deterministic filtering
-  src/cli/commands/restore.ts,project,import-boundary migration candidate
-  src/cli/commands/stats.ts,project,import-boundary migration to core modules
-  src/cli/commands/test-all.ts,project,Cross-item linked test orchestration command
-  src/cli/commands/test.ts,project,import-boundary migration candidate
-  src/cli/commands/update.ts,project,import-boundary migration candidate
+  src/cli/commands/annotations/comments.ts,project,import-boundary migration candidate
+  src/cli/commands/annotations/docs.ts,project,import-boundary migration candidate
+  src/cli/commands/annotations/files.ts,project,import-boundary migration candidate
+  src/cli/commands/governance/gc.ts,project,import-boundary migration to core modules
+  src/cli/commands/governance/health.ts,project,import-boundary migration to core modules
+  src/cli/commands/history/activity.ts,project,import-boundary migration candidate
+  src/cli/commands/history/history.ts,project,import-boundary migration candidate
+  src/cli/commands/history/restore.ts,project,import-boundary migration candidate
+  src/cli/commands/lifecycle/append.ts,project,import-boundary migration candidate
+  src/cli/commands/lifecycle/claim.ts,project,import-boundary migration candidate
+  src/cli/commands/lifecycle/create.ts,project,import-boundary migration candidate
+  src/cli/commands/lifecycle/update.ts,project,import-boundary migration candidate
+  src/cli/commands/query/get.ts,project,import-boundary migration candidate
+  src/cli/commands/query/list.ts,project,List limit support for deterministic filtering
+  src/cli/commands/query/stats.ts,project,import-boundary migration to core modules
+  src/cli/commands/test/test-all.ts,project,Cross-item linked test orchestration command
+  src/cli/commands/test/test.ts,project,import-boundary migration candidate
+  src/cli/commands/workspace/init.ts,project,import-boundary migration to core modules
   src/cli/main.ts,project,New CLI wiring entrypoint with expanded commands
   src/core/fs/fs-utils.ts,project,Core boundary wrapper
   src/core/fs/index.ts,project,Core namespace export

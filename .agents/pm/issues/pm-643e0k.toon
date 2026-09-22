@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:sdk",dependency-integrity,extensions,health
 created_at: "2026-08-13T22:03:33.719Z"
-updated_at: "2026-08-15T04:00:03.432Z"
+updated_at: "2026-09-22T05:08:11.779Z"
 closed_at: "2026-08-15T04:00:02.665Z"
 completed_at: "2026-08-15T04:00:02.665Z"
 author: "harness:codex"
@@ -35,8 +35,8 @@ files[5]{path,scope,note}:
   src/sdk/governance/extension-host-version.ts,project,Host and extension dependency census primitive
   src/sdk/governance/health.ts,project,Extension health integration
   tests/unit/sdk/extension-host-version-health.spec.ts,project,Npm pnpm and dedupe fixtures
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/extension-host-version-health.spec.ts tests/unit/commands/health-command.spec.ts,project,240,Npm pnpm mismatch and health integration
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/extension-host-version-health.spec.ts tests/unit/commands/governance/health-command.spec.ts,project,240,"harness:codex","2026-09-22T05:08:11.725Z",local_mutation,refactor/cli-command-domains-export-gate,Npm pnpm mismatch and health integration
 test_runs[2]:
   - run_id: test-local-mstq5576-7dudm0
     kind: test

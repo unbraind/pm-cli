@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,context,token-efficiency
 created_at: "2026-07-18T10:08:38.673Z"
-updated_at: "2026-07-26T17:05:39.517Z"
+updated_at: "2026-09-22T05:21:38.725Z"
 closed_at: "2026-07-18T12:14:13.006Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -18,11 +18,11 @@ release: v2026.7.19
 resolution: fixed
 expected_result: Agenda events for focus items already present in context carry only item references and event-specific fields; standalone agenda items retain full action context.
 actual_result: Context emits reference_only agenda rows for listed focus IDs while preserving full CalendarRow payloads elsewhere and deriving summaries from full events.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-6vfg,related,"2026-07-18T10:08:38.673Z",null,null
-  pm-gdi7,related,"2026-07-18T10:08:38.673Z",null,null
-  pm-nilh,related,"2026-07-18T10:08:38.673Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:05:39.218Z",null,null
+dependencies[4]{id,kind,created_at}:
+  pm-6vfg,related,"2026-07-18T10:08:38.673Z"
+  pm-gdi7,related,"2026-07-18T10:08:38.673Z"
+  pm-nilh,related,"2026-07-18T10:08:38.673Z"
+  pm-mpbb,implements,"2026-07-26T17:05:39.218Z"
 comments[5]{created_at,author,text}:
   "2026-07-18T10:52:24.720Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
   "2026-07-18T11:33:23.138Z",maintainer-agent,"Verification evidence: focused installed CLI coverage confirms agenda entries already represented in focus collections emit compact reference_only events instead of duplicated item payloads."
@@ -32,10 +32,10 @@ comments[5]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-07-18T11:37:38.974Z",maintainer-agent,"Context payloads should reference focus items already present in the same response and retain only event-specific fields, preserving information while reducing tokens."
 files[2]{path,scope,note}:
-  src/cli/commands/context.ts,project,Emit compact agenda references for focus items already present in context
+  src/cli/commands/query/context.ts,project,Emit compact agenda references for focus items already present in context
   tests/unit/commands/agent-ux-feedback-wave.spec.ts,project,Cross-command installed CLI regression bundle
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/sdk/graph/mutation-advisory.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/cli/extension-command-help.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/sdk/graph/mutation-advisory.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/cli/extension-command-help.spec.ts,project,240,"harness:codex","2026-09-22T05:21:38.550Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrqajv5q-omxywi,test,passed,"2026-07-18T11:36:06.515Z","2026-07-18T11:36:16.766Z","2026-07-18T11:36:16.766Z",1,0,0
 docs[2]{path,scope,note}:

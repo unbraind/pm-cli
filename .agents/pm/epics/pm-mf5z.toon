@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: custom-types,extensions,governance,linked-tests,pm-cli
 created_at: "2026-04-03T22:53:12.919Z"
-updated_at: "2026-09-19T08:40:46.590Z"
+updated_at: "2026-09-22T05:00:13.775Z"
 deadline: "2026-04-17T22:53:12.919Z"
 closed_at: "2026-04-03T23:47:08.958Z"
 author: codex-agent
@@ -73,7 +73,7 @@ comments[3]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-04-03T22:53:12.919Z",codex-agent,Implement docs-first with unit integration and regression verification.
 files[1]{path,scope,note}:
-  src/cli/commands/test.ts,project,primary linked-test runtime surface
+  src/cli/commands/test/test.ts,project,primary linked-test runtime surface
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,project,2400,linked-test runtime regression
 docs[1]{path,scope,note}:

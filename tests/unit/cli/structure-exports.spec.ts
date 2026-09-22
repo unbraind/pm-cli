@@ -3,7 +3,6 @@ import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import * as cliCommands from "../../../src/cli/commands/index.js";
 import * as coreFs from "../../../src/core/fs/fs-utils.js";
 import * as coreFsIndex from "../../../src/core/fs/index.js";
 import * as coreHistory from "../../../src/core/history/history.js";
@@ -34,16 +33,6 @@ import {
 } from "../../../src/core/packages/root.js";
 
 describe("module boundaries export surface", () => {
-  it("re-exports CLI command handlers", () => {
-    expect(typeof cliCommands.runInit).toBe("function");
-    expect(typeof cliCommands.runCreate).toBe("function");
-    expect(typeof cliCommands.runDelete).toBe("function");
-    expect(typeof cliCommands.runList).toBe("function");
-    expect(typeof cliCommands.runSearch).toBe("function");
-    expect(typeof cliCommands.runReindex).toBe("undefined");
-    expect(typeof cliCommands.runTestAll).toBe("function");
-  });
-
   it("re-exports core namespaces", () => {
     expect(typeof coreFs.ensureDir).toBe("function");
     expect(typeof coreFsIndex.ensureDir).toBe("function");

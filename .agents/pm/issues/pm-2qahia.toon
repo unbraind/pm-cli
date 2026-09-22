@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: "area:history","area:sdk",compatibility,context-integrity,github-1135,regression
 created_at: "2026-08-28T08:13:08.155Z"
-updated_at: "2026-08-31T10:27:42.488Z"
+updated_at: "2026-09-22T05:00:57.855Z"
 closed_at: "2026-08-31T10:27:41.941Z"
 completed_at: "2026-08-31T10:27:41.941Z"
 author: "harness:codex"
@@ -80,7 +80,7 @@ files[22]{path,scope,note}:
   src/sdk/merge/three-way.ts,project,Union merge boundary now synthesizes one continuous epoch-2 hash surface
   tests/fixtures/contracts/full.json,project,Generated contract snapshot for version-skew remediation entries
   tests/integration/remediation-registry.spec.ts,project,Registry regression for health and validate version-skew warnings
-  tests/unit/commands/health-command.spec.ts,project,Bulk remediation preserves non-repairable version-skew upgrade guidance
+  tests/unit/commands/governance/health-command.spec.ts,project,Bulk remediation preserves non-repairable version-skew upgrade guidance
   tests/unit/core/history/drift-scan.spec.ts,project,History capability skew coverage
   tests/unit/core/history/history-hash-version.spec.ts,project,History hash epoch compatibility coverage
   tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery

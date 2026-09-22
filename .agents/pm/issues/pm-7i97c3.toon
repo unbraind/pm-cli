@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:contracts",simplification
 created_at: "2026-08-01T09:46:45.146Z"
-updated_at: "2026-08-13T18:51:00.369Z"
+updated_at: "2026-09-22T05:08:21.676Z"
 closed_at: "2026-08-13T18:50:59.261Z"
 completed_at: "2026-08-13T18:50:59.261Z"
 author: "harness:claude-code"
@@ -61,11 +61,11 @@ files[16]{path,scope,note}:
   src/sdk/cli-contracts/runtime-contracts.ts,project,"COMMAND_INTENTS map at :594 and the silent summarizeCommandIntent fallback at :2429"
   src/sdk/read-output-contracts.ts,project,accurate unbounded migration hints and registered flag catalog
   tests/fixtures/contracts/full.json,project,runtime contract snapshot captures exact intent and format budgets
-  tests/unit/commands/contracts-command.spec.ts,project,placeholder refusal and exact-path coverage
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,placeholder refusal and exact-path coverage
   tests/unit/sdk/read-output-contracts.spec.ts,project,alias guidance and phantom-flag refusal regressions
   tests/unit/sdk/sdk-subpath-entrypoints.spec.ts,project,public read surface cardinality
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/contracts-command.spec.ts,project,240,"harness:codex","2026-09-22T05:08:21.627Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msrs0dyd-gg8iws,test,passed,"2026-08-13T17:12:17.726Z","2026-08-13T17:12:29.605Z","2026-08-13T17:12:29.605Z",1,0,0
 docs[1]{path,scope,note}:

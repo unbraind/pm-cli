@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: external-audit,ids,pm-cli,validation
 created_at: "2026-04-26T08:38:37.889Z"
-updated_at: "2026-09-19T08:40:18.360Z"
+updated_at: "2026-09-22T05:03:44.012Z"
 closed_at: "2026-04-26T08:42:26.508Z"
 author: codex-agent
 estimated_minutes: 90
@@ -28,8 +28,8 @@ comments[2]{created_at,author,text}:
   "2026-04-26T08:38:37.889Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'pm-undefined parent dependency' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no active item tracks undefined placeholder acceptance in create/update parent and dependency parsing."
   "2026-04-26T08:42:24.409Z",codex-agent,"Implemented validation guards in create/update parent+dependency parsing to reject undefined placeholder tokens; added regression coverage in create/update unit suites. Evidence: pnpm build passed and node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts passed (2 files, 77 tests)."
 files[5]{path,scope,note}:
-  src/cli/commands/create.ts,project,Reject undefined dependency IDs during create
-  src/cli/commands/update.ts,project,Reject undefined dependency IDs during update and dep-remove
+  src/cli/commands/lifecycle/create.ts,project,Reject undefined dependency IDs during create
+  src/cli/commands/lifecycle/update.ts,project,Reject undefined dependency IDs during update and dep-remove
   src/core/item/parent-reference-policy.ts,project,Reject placeholder parent tokens including undefined
   tests/unit/create-command.spec.ts,project,Regression tests for create parent/dep placeholder rejection
   tests/unit/update-command.spec.ts,project,Regression tests for update parent/dep placeholder rejection

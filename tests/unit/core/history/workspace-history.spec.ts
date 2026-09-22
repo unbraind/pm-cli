@@ -20,14 +20,14 @@ import {
   WORKSPACE_HISTORY_ID,
 } from "../../../../src/core/history/workspace-history.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
-import { runHistory } from "../../../../src/cli/commands/history.js";
-import { runActivity } from "../../../../src/cli/commands/activity.js";
+import { runHistory } from "../../../../src/cli/commands/history/history.js";
+import { runActivity } from "../../../../src/cli/commands/history/activity.js";
 import { scanHistoryDrift } from "../../../../src/core/history/drift-scan.js";
 import {
   readSettings,
   writeSettings,
 } from "../../../../src/core/store/settings.js";
-import { runExtension } from "../../../../src/cli/commands/extension.js";
+import { runExtension } from "../../../../src/cli/commands/extension/extension.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { parseJsonErrorEnvelope } from "../../../helpers/jsonErrorEnvelope.js";
 import { runWithReproducibleExecution } from "../../../../src/core/reproducibility/context.js";

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: agent-ux,"area:cli","area:mcp","area:sdk",contracts,output-contract,projection,token-efficiency
 created_at: "2026-08-24T15:08:27.572Z"
-updated_at: "2026-08-24T17:59:24.116Z"
+updated_at: "2026-09-22T05:07:40.710Z"
 closed_at: "2026-08-24T16:39:33.996Z"
 completed_at: "2026-08-24T16:39:33.996Z"
 author: "harness:codex"
@@ -40,9 +40,9 @@ files[5]{path,scope,note}:
   src/sdk/cli-contracts/runtime-contracts.ts,project,Runtime discovery contract
   src/sdk/read-output-contracts.ts,project,Canonical per-command projection mode registry
   tests/fixtures/contracts/full.json,project,Generated runtime contract snapshot
-  tests/unit/commands/contracts-projection-modes.spec.ts,project,Per-command discovery and union-scope controls
+  tests/unit/commands/workspace/contracts-projection-modes.spec.ts,project,Per-command discovery and union-scope controls
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-projection-modes.spec.ts,project,240,"harness:codex","2026-08-24T15:20:34.864Z",local_mutation,codex/read-output-projection-snapshots
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/contracts-projection-modes.spec.ts,project,240,"harness:codex","2026-09-22T05:07:40.640Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]:
   - run_id: test-local-mt7g5aog-c7hiix
     kind: test

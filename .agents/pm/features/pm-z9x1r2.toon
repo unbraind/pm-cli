@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:cli","area:sdk",author,identity,provenance,token-efficiency
 created_at: "2026-07-24T23:45:04.396Z"
-updated_at: "2026-07-31T06:27:58.014Z"
+updated_at: "2026-09-22T05:10:05.291Z"
 closed_at: "2026-07-25T02:36:59.000Z"
 author: maintainer-agent
 estimated_minutes: 900
@@ -48,23 +48,32 @@ files[18]{path,scope,note}:
   docs/AGENT_RUNTIME_PRIMITIVES.md,project,Harness identity and runtime primitive documentation or verification
   docs/MUTATION_INTEGRITY.md,project,Harness identity and runtime primitive documentation or verification
   README.md,project,Harness identity and runtime primitive documentation or verification
-  src/cli/commands/close.ts,project,Shared harness resolver parity for close mutations
-  src/cli/commands/plan.ts,project,SDK boundary author resolution parity
-  src/cli/commands/update.ts,project,Shared harness resolver parity for update mutations
+  src/cli/commands/lifecycle/close.ts,project,Shared harness resolver parity for close mutations
+  src/cli/commands/lifecycle/plan.ts,project,SDK boundary author resolution parity
+  src/cli/commands/lifecycle/update.ts,project,Shared harness resolver parity for update mutations
   src/core/history/history.ts,project,Harness identity and immutable provenance implementation
   src/core/shared/author.ts,project,Harness identity and immutable provenance implementation
   src/sdk/index.ts,project,Harness identity and runtime primitive documentation or verification
   src/sdk/init.ts,project,Harness identity and immutable provenance implementation
   src/sdk/runtime.ts,project,Harness identity and runtime primitive documentation or verification
   src/types.ts,project,Harness identity and immutable provenance implementation
-  tests/unit/commands/claim-command.spec.ts,project,Harness identity and runtime primitive documentation or verification
+  tests/unit/commands/lifecycle/claim-command.spec.ts,project,Harness identity and runtime primitive documentation or verification
   tests/unit/core/shared/shared-helpers.spec.ts,project,Harness identity and runtime primitive documentation or verification
   tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Harness identity and immutable provenance implementation
   tests/unit/sdk/author-attribution.spec.ts,project,Harness identity and runtime primitive documentation or verification
   tests/unit/sdk/test-all-author.spec.ts,project,Existing author-parity coverage this feature extends with harness-resolved identity and author_source provenance
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/core/shared/shared-helpers.spec.ts,project,240
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/core/shared/shared-helpers.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:10:05.220Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 docs[4]{path,scope,note}:
   AGENTS.md,project,Agent author detection guidance
   docs/AGENT_RUNTIME_PRIMITIVES.md,project,Agent author detection guidance

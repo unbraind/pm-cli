@@ -23,7 +23,7 @@ export { normalizeStatusToken } from "./status-token.js";
  * - A same-status no-op (from === to) is ALWAYS allowed.
  *
  * This module is intentionally dependency-light and fully unit-testable; the
- * CLI enforcement point (src/cli/commands/update.ts) is the only consumer.
+ * CLI enforcement point (src/cli/commands/lifecycle/update.ts) is the only consumer.
  */
 
 export interface NormalizedTypeWorkflow {

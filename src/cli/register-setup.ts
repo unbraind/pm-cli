@@ -27,15 +27,15 @@ import {
 import {
   runExtension,
   type ExtensionCommandResult,
-} from "./commands/extension.js";
+} from "./commands/extension/extension.js";
 import { SCAFFOLD_CAPABILITIES } from "./commands/extension/scaffold.js";
 import {
   renderExtensionDescribeMarkdown,
   type ExtensionDescribeResult,
 } from "./commands/extension/describe.js";
-import { runConfig } from "./commands/config.js";
-import { runInit, summarizeInitResult } from "./commands/init.js";
-import { runUpgrade } from "./commands/upgrade.js";
+import { runConfig } from "./commands/workspace/config.js";
+import { runInit, summarizeInitResult } from "./commands/workspace/init.js";
+import { runUpgrade } from "./commands/workspace/upgrade.js";
 
 type ExtensionSubcommandAction =
   | "init"

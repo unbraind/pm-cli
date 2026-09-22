@@ -27,7 +27,7 @@ import {
   runSchemaAddStatus,
   runSchemaAddType,
 } from "../../../src/sdk/schema.js";
-import { runCreate } from "../../../src/cli/commands/create.js";
+import { runCreate } from "../../../src/cli/commands/lifecycle/create.js";
 import type { ItemMetadata } from "../../../src/types/index.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 import { readHistoryEntries } from "../../../src/core/history/read.js";

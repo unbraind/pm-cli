@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: developer-experience,metadata,refactor,toon,vocabulary
 created_at: "2026-07-12T20:24:28.207Z"
-updated_at: "2026-08-04T15:47:12.703Z"
+updated_at: "2026-09-22T05:25:09.749Z"
 closed_at: "2026-07-13T08:56:20.378Z"
 author: codex-frontmatter-vocabulary
 estimated_minutes: 240
@@ -32,7 +32,7 @@ comments[11]{created_at,author,text}:
   "2026-07-12T22:03:42.532Z",codex-gpt5,"Hosted current-head CI follow-up: all Linux/macOS build, coverage, static, typecheck, compatibility, smoke, docs, security, CodeQL, Codecov, and Greptile gates passed. Windows alone exposed a platform-specific test fixture using a hard-coded file URL; changed the direct-execution test to derive URLs with node:pathToFileURL for POSIX and Windows paths. Focused Windows-relevant suites pass 14/14 and quality:static passes."
   "2026-07-12T22:35:32.161Z",codex-gpt5,"Final bot inventory follow-up on head 5fe950f6: found and triaged five previously unresolved CodeRabbit threads. Accepted reaction enum validation and two duplicated-word findings; declined two requests to add work-item IDs inside existing public docs because those files are already linked via pm docs and inline tracker references are required for newly created docs. Reacted according to usefulness, replied individually, resolved all five threads, and acknowledged/reacted to every previously unhandled bot comment/review. Verification: review helper 100% coverage (90 statements, 67 branches, 11 functions, 79 lines), quality:static passed, contracts:check passed, git diff --check passed."
   "2026-08-04T15:47:12.703Z","harness:codex","Context hygiene 2026-08-04: pm-j8z6 removed stale current-state links to ignored local telemetry/operations artifacts. Historical outcome and release attribution remain unchanged; public tracked evidence now points only to repository-owned files."
-files[632]{path,scope,note}:
+files[631]{path,scope,note}:
   .gitignore,project,Renamed runtime cache ignore path
   packages/pm-beads/extensions/beads/index.ts,project,Package runtime metadata rename
   packages/pm-beads/extensions/beads/runtime-loader.ts,project,Package runtime metadata rename
@@ -109,86 +109,82 @@ files[632]{path,scope,note}:
   src/cli/argv-utils.ts,project,TOON metadata API rename
   src/cli/bootstrap-args.ts,project,TOON metadata API rename
   src/cli/commander-usage.ts,project,TOON metadata API rename
-  src/cli/commands/activity.ts,project,TOON metadata API rename
-  src/cli/commands/aggregate.ts,project,TOON metadata API rename
-  src/cli/commands/append.ts,project,TOON metadata API rename
+  src/cli/commands/annotations/comments.ts,project,TOON metadata API rename
+  src/cli/commands/annotations/docs.ts,project,TOON metadata API rename
+  src/cli/commands/annotations/files.ts,project,TOON metadata API rename
+  src/cli/commands/annotations/learnings.ts,project,TOON metadata API rename
+  src/cli/commands/annotations/notes.ts,project,TOON metadata API rename
   src/cli/commands/calendar.ts,project,TOON metadata API rename
-  src/cli/commands/claim.ts,project,TOON metadata API rename
-  src/cli/commands/close-many.ts,project,TOON metadata API rename
-  src/cli/commands/close.ts,project,TOON metadata API rename
   src/cli/commands/comments-audit.ts,project,TOON metadata API rename
-  src/cli/commands/comments.ts,project,TOON metadata API rename
   src/cli/commands/completion.ts,project,TOON metadata API rename
-  src/cli/commands/config.ts,project,TOON metadata API rename
-  src/cli/commands/context.ts,project,TOON metadata API rename
-  src/cli/commands/contracts.ts,project,TOON metadata API rename
-  src/cli/commands/copy.ts,project,TOON metadata API rename
-  src/cli/commands/create.ts,project,TOON metadata API rename
   src/cli/commands/dedupe-audit.ts,project,TOON metadata API rename
   src/cli/commands/dedupe-merge.ts,project,TOON metadata API rename
-  src/cli/commands/delete.ts,project,TOON metadata API rename
-  src/cli/commands/deps.ts,project,TOON metadata API rename
-  src/cli/commands/docs.ts,project,TOON metadata API rename
-  src/cli/commands/eval.ts,project,TOON metadata API rename
   src/cli/commands/event-validation-messages.ts,project,TOON metadata API rename
-  src/cli/commands/extension.ts,project,TOON metadata API rename
   src/cli/commands/extension/bundled-catalog.ts,project,TOON metadata API rename
   src/cli/commands/extension/describe.ts,project,TOON metadata API rename
   src/cli/commands/extension/doctor.ts,project,TOON metadata API rename
+  src/cli/commands/extension/extension.ts,project,TOON metadata API rename
   src/cli/commands/extension/install-sources.ts,project,TOON metadata API rename
   src/cli/commands/extension/managed-state.ts,project,TOON metadata API rename
   src/cli/commands/extension/scaffold.ts,project,TOON metadata API rename
   src/cli/commands/extension/shared.ts,project,TOON metadata API rename
-  src/cli/commands/files.ts,project,TOON metadata API rename
-  src/cli/commands/focus.ts,project,TOON metadata API rename
-  src/cli/commands/gc.ts,project,TOON metadata API rename
-  src/cli/commands/get.ts,project,TOON metadata API rename
+  src/cli/commands/governance/gc.ts,project,TOON metadata API rename
+  src/cli/commands/governance/health.ts,project,TOON metadata API rename
+  src/cli/commands/governance/telemetry.ts,project,TOON metadata API rename
+  src/cli/commands/governance/validate.ts,project,TOON metadata API rename
   src/cli/commands/guide.ts,project,TOON metadata API rename
-  src/cli/commands/health.ts,project,TOON metadata API rename
-  src/cli/commands/history-compact.ts,project,TOON metadata API rename
-  src/cli/commands/history-redact.ts,project,TOON metadata API rename
-  src/cli/commands/history-repair.ts,project,TOON metadata API rename
-  src/cli/commands/history.ts,project,TOON metadata API rename
-  src/cli/commands/index.ts,project,TOON metadata API rename
-  src/cli/commands/init-agent-guidance.ts,project,TOON metadata API rename
-  src/cli/commands/init.ts,project,TOON metadata API rename
+  src/cli/commands/history/activity.ts,project,TOON metadata API rename
+  src/cli/commands/history/history-compact.ts,project,TOON metadata API rename
+  src/cli/commands/history/history-redact.ts,project,TOON metadata API rename
+  src/cli/commands/history/history-repair.ts,project,TOON metadata API rename
+  src/cli/commands/history/history.ts,project,TOON metadata API rename
+  src/cli/commands/history/restore.ts,project,TOON metadata API rename
   src/cli/commands/item-filter-options.ts,project,TOON metadata API rename
-  src/cli/commands/learnings.ts,project,TOON metadata API rename
   src/cli/commands/legacy-none-tokens.ts,project,TOON metadata API rename
-  src/cli/commands/lifecycle-transitions.ts,project,TOON metadata API rename
+  src/cli/commands/lifecycle/append.ts,project,TOON metadata API rename
+  src/cli/commands/lifecycle/claim.ts,project,TOON metadata API rename
+  src/cli/commands/lifecycle/close-many.ts,project,TOON metadata API rename
+  src/cli/commands/lifecycle/close.ts,project,TOON metadata API rename
+  src/cli/commands/lifecycle/copy.ts,project,TOON metadata API rename
+  src/cli/commands/lifecycle/create.ts,project,TOON metadata API rename
+  src/cli/commands/lifecycle/delete.ts,project,TOON metadata API rename
+  src/cli/commands/lifecycle/focus.ts,project,TOON metadata API rename
+  src/cli/commands/lifecycle/plan.ts,project,TOON metadata API rename
+  src/cli/commands/lifecycle/update-many.ts,project,TOON metadata API rename
+  src/cli/commands/lifecycle/update.ts,project,TOON metadata API rename
   src/cli/commands/linked-artifacts.ts,project,TOON metadata API rename
   src/cli/commands/linked-test-entry.ts,project,TOON metadata API rename
   src/cli/commands/linked-test-parsers.ts,project,TOON metadata API rename
   src/cli/commands/list-filter-shared.ts,project,TOON metadata API rename
-  src/cli/commands/list.ts,project,TOON metadata API rename
   src/cli/commands/metadata-normalizers.ts,project,TOON metadata API rename
   src/cli/commands/mutation-command-options.ts,project,TOON metadata API rename
-  src/cli/commands/next.ts,project,TOON metadata API rename
   src/cli/commands/normalize.ts,project,TOON metadata API rename
-  src/cli/commands/notes.ts,project,TOON metadata API rename
-  src/cli/commands/plan.ts,project,TOON metadata API rename
-  src/cli/commands/profile.ts,project,TOON metadata API rename
+  src/cli/commands/query/aggregate.ts,project,TOON metadata API rename
+  src/cli/commands/query/context.ts,project,TOON metadata API rename
+  src/cli/commands/query/deps.ts,project,TOON metadata API rename
+  src/cli/commands/query/eval.ts,project,TOON metadata API rename
+  src/cli/commands/query/get.ts,project,TOON metadata API rename
+  src/cli/commands/query/list.ts,project,TOON metadata API rename
+  src/cli/commands/query/next.ts,project,TOON metadata API rename
+  src/cli/commands/query/search.ts,project,TOON metadata API rename
+  src/cli/commands/query/stats.ts,project,TOON metadata API rename
   src/cli/commands/recurrence-parsers.ts,project,TOON metadata API rename
   src/cli/commands/reindex.ts,project,TOON metadata API rename
   src/cli/commands/repeatable-metadata-parsers.ts,project,TOON metadata API rename
-  src/cli/commands/restore.ts,project,TOON metadata API rename
-  src/cli/commands/scheduling-shortcuts.ts,project,TOON metadata API rename
-  src/cli/commands/schema.ts,project,TOON metadata API rename
   src/cli/commands/search-pagination.ts,project,TOON metadata API rename
   src/cli/commands/search-rendering.ts,project,TOON metadata API rename
-  src/cli/commands/search.ts,project,TOON metadata API rename
   src/cli/commands/shared-unset-fields.ts,project,TOON metadata API rename
-  src/cli/commands/stats.ts,project,TOON metadata API rename
-  src/cli/commands/telemetry.ts,project,TOON metadata API rename
   src/cli/commands/templates.ts,project,TOON metadata API rename
-  src/cli/commands/test-all.ts,project,TOON metadata API rename
-  src/cli/commands/test-runs.ts,project,TOON metadata API rename
-  src/cli/commands/test.ts,project,TOON metadata API rename
   src/cli/commands/test/linked-command-detection.ts,project,TOON metadata API rename
-  src/cli/commands/update-many.ts,project,TOON metadata API rename
-  src/cli/commands/update.ts,project,TOON metadata API rename
-  src/cli/commands/upgrade.ts,project,TOON metadata API rename
-  src/cli/commands/validate.ts,project,TOON metadata API rename
+  src/cli/commands/test/test-all.ts,project,TOON metadata API rename
+  src/cli/commands/test/test-runs.ts,project,TOON metadata API rename
+  src/cli/commands/test/test.ts,project,TOON metadata API rename
+  src/cli/commands/workspace/config.ts,project,TOON metadata API rename
+  src/cli/commands/workspace/contracts.ts,project,TOON metadata API rename
+  src/cli/commands/workspace/init.ts,project,TOON metadata API rename
+  src/cli/commands/workspace/profile.ts,project,TOON metadata API rename
+  src/cli/commands/workspace/schema.ts,project,TOON metadata API rename
+  src/cli/commands/workspace/upgrade.ts,project,TOON metadata API rename
   src/cli/error-guidance.ts,project,TOON metadata API rename
   src/cli/extension-command-help.ts,project,TOON metadata API rename
   src/cli/extension-command-options.ts,project,TOON metadata API rename
@@ -352,10 +348,13 @@ files[632]{path,scope,note}:
   src/sdk/dependency-flag-validation.ts,project,TOON metadata API rename
   src/sdk/errors.ts,project,TOON metadata API rename
   src/sdk/index.ts,project,TOON metadata API rename
+  src/sdk/init-agent-guidance.ts,project,TOON metadata API rename
+  src/sdk/lifecycle/lifecycle-transitions.ts,project,TOON metadata API rename
   src/sdk/package-import-adapters.ts,project,TOON metadata API rename
   src/sdk/package-runtime-options.ts,project,TOON metadata API rename
   src/sdk/pagination.ts,project,TOON metadata API rename
   src/sdk/runtime.ts,project,TOON metadata API rename
+  src/sdk/scheduling-shortcuts.ts,project,TOON metadata API rename
   src/sdk/start-task-status.ts,project,TOON metadata API rename
   src/sdk/testing.ts,project,TOON metadata API rename
   src/sdk/workspace-contracts-cache.ts,project,TOON metadata API rename
@@ -430,66 +429,66 @@ files[632]{path,scope,note}:
   tests/unit/cli/register-list-query.spec.ts,project,Test terminology migration
   tests/unit/cli/registration-helpers.spec.ts,project,Test terminology migration
   tests/unit/cli/structure-exports.spec.ts,project,Test terminology migration
-  tests/unit/commands/aggregate-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/calendar-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/calendar-toon-renderer.spec.ts,project,Test terminology migration
-  tests/unit/commands/claim-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/close-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/close-many-branch.spec.ts,project,Test terminology migration
-  tests/unit/commands/comments-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/completion-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/config-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/config-key-aliases-search.spec.ts,project,Test terminology migration
-  tests/unit/commands/content-governance-filter-resolvers.spec.ts,project,Test terminology migration
-  tests/unit/commands/context-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/context-relevance-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/contracts-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/create-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/dedupe-audit-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/dedupe-merge-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/delete-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/deps-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/eval-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/files-docs-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/focus-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/gc-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/get-append-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/guide-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/health-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/history-activity-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/history-repair-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/init-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/legacy-none-tokens.spec.ts,project,Test terminology migration
-  tests/unit/commands/lifecycle-transitions.spec.ts,project,Test terminology migration
-  tests/unit/commands/linked-command-detection.spec.ts,project,Test terminology migration
-  tests/unit/commands/linked-test-entry.spec.ts,project,Test terminology migration
-  tests/unit/commands/linked-test-parsers.spec.ts,project,Test terminology migration
-  tests/unit/commands/list-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/list-sort-branches.spec.ts,project,Test terminology migration
-  tests/unit/commands/metadata-governance-commands.spec.ts,project,Test terminology migration
-  tests/unit/commands/next-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/normalize-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/notes-learnings-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/plan-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/query-pagination.spec.ts,project,Test terminology migration
-  tests/unit/commands/recurrence-parsers.spec.ts,project,Test terminology migration
+  tests/unit/commands/annotations/comments-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/annotations/files-docs-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/annotations/notes-learnings-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/governance/content-governance-filter-resolvers.spec.ts,project,Test terminology migration
+  tests/unit/commands/governance/dedupe-audit-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/governance/dedupe-merge-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/governance/gc-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/governance/health-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/governance/metadata-governance-commands.spec.ts,project,Test terminology migration
+  tests/unit/commands/governance/normalize-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/governance/telemetry-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/governance/validate-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/history/history-activity-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/history/history-repair-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/history/restore-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/lifecycle/claim-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/lifecycle/close-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/lifecycle/close-many-branch.spec.ts,project,Test terminology migration
+  tests/unit/commands/lifecycle/create-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/lifecycle/delete-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/lifecycle/focus-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/lifecycle/legacy-none-tokens.spec.ts,project,Test terminology migration
+  tests/unit/commands/lifecycle/lifecycle-transitions.spec.ts,project,Test terminology migration
+  tests/unit/commands/lifecycle/plan-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/lifecycle/recurrence-parsers.spec.ts,project,Test terminology migration
+  tests/unit/commands/lifecycle/scheduling-shortcuts.spec.ts,project,Test terminology migration
+  tests/unit/commands/lifecycle/update-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/lifecycle/update-many-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/query/aggregate-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/query/calendar-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/query/calendar-toon-renderer.spec.ts,project,Test terminology migration
+  tests/unit/commands/query/context-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/query/context-relevance-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/query/deps-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/query/eval-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/query/get-append-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/query/list-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/query/list-sort-branches.spec.ts,project,Test terminology migration
+  tests/unit/commands/query/next-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/query/query-pagination.spec.ts,project,Test terminology migration
+  tests/unit/commands/query/reindex-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/query/search-bm25.spec.ts,project,Test terminology migration
+  tests/unit/commands/query/search-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/query/stats-command.spec.ts,project,Test terminology migration
   tests/unit/commands/register-commands.spec.ts,project,Test terminology migration
-  tests/unit/commands/reindex-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/restore-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/scheduling-shortcuts.spec.ts,project,Test terminology migration
-  tests/unit/commands/schema-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/search-bm25.spec.ts,project,Test terminology migration
-  tests/unit/commands/search-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/stats-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/telemetry-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/templates-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/test-all-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/test-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/test-runs-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/update-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/update-many-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/upgrade-command.spec.ts,project,Test terminology migration
-  tests/unit/commands/validate-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/test/linked-command-detection.spec.ts,project,Test terminology migration
+  tests/unit/commands/test/linked-test-entry.spec.ts,project,Test terminology migration
+  tests/unit/commands/test/linked-test-parsers.spec.ts,project,Test terminology migration
+  tests/unit/commands/test/test-all-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/test/test-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/test/test-runs-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/workspace/completion-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/workspace/config-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/workspace/config-key-aliases-search.spec.ts,project,Test terminology migration
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/workspace/guide-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/workspace/init-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/workspace/schema-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/workspace/templates-command.spec.ts,project,Test terminology migration
+  tests/unit/commands/workspace/upgrade-command.spec.ts,project,Test terminology migration
   tests/unit/core/checkpoint/checkpoint-gc.spec.ts,project,Test terminology migration
   tests/unit/core/config/config-positional-value.spec.ts,project,Test terminology migration
   tests/unit/core/config/nested-settings.spec.ts,project,Test terminology migration

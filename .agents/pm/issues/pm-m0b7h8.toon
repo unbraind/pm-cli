@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: agent-ux,"area:cli","area:sdk",contracts,linked-tests,lossless-mutation,safety,token-efficiency
 created_at: "2026-08-11T20:50:17.622Z"
-updated_at: "2026-08-11T22:24:04.466Z"
+updated_at: "2026-09-22T05:08:31.763Z"
 closed_at: "2026-08-11T22:24:03.826Z"
 completed_at: "2026-08-11T22:24:03.826Z"
 author: "harness:codex"
@@ -49,9 +49,9 @@ files[10]{path,scope,note}:
   src/sdk/completion.ts,project,Shell completion parity
   src/sdk/test/execution.ts,project,Lossless selectors removed count and stable index removal
   tests/fixtures/contracts/full.json,project,Generated runtime contract snapshot
-  tests/unit/commands/test-command.spec.ts,project,Delimiter index and zero-match coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,1200
+  tests/unit/commands/test/test-command.spec.ts,project,Delimiter index and zero-match coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/commands/workspace/contracts-command.spec.ts tests/unit/commands/workspace/completion-command.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,1200,"harness:codex","2026-09-22T05:08:31.726Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msp621ks-ckrlr9,test,passed,"2026-08-11T21:21:56.916Z","2026-08-11T21:22:22.972Z","2026-08-11T21:22:22.972Z",1,0,0
   test-local-msp85lvf-q59e9i,test,passed,"2026-08-11T22:20:42.399Z","2026-08-11T22:21:08.475Z","2026-08-11T22:21:08.475Z",1,0,0

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "gh:743",linked-tests,merge-driver,packages,release-gates,sandbox
 created_at: "2026-07-26T13:15:17.183Z"
-updated_at: "2026-07-27T11:13:06.564Z"
+updated_at: "2026-09-22T05:10:38.836Z"
 closed_at: "2026-07-27T11:13:03.757Z"
 author: "harness:codex"
 estimated_minutes: 90
@@ -36,8 +36,8 @@ files[6]{path,scope,note}:
   src/sdk/merge/install.ts,project,Explicit tracker path precedence over linked-source fallback
   src/sdk/test/execution.ts,project,Sandbox-safe protected source tracker coordinates for linked lifecycle commands
   src/sdk/test/parsers.ts,project,Sandbox-safe protected source tracker coordinates for linked lifecycle commands
-  tests/unit/commands/linked-test-parsers.spec.ts,project,Sandbox-safe protected source tracker coordinates for linked lifecycle commands
-  tests/unit/commands/test-command.spec.ts,project,Sandbox-safe protected source tracker coordinates for linked lifecycle commands
+  tests/unit/commands/test/linked-test-parsers.spec.ts,project,Sandbox-safe protected source tracker coordinates for linked lifecycle commands
+  tests/unit/commands/test/test-command.spec.ts,project,Sandbox-safe protected source tracker coordinates for linked lifecycle commands
   tests/unit/sdk/merge-safety.spec.ts,project,Explicit path and protected source fallback acceptance
 tests[2]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts,project,240,Explicit tracker precedence and linked-source fallback acceptance

@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: packages,pm-cli,refactor,sdk,templates
 created_at: "2026-05-14T06:05:23.576Z"
-updated_at: "2026-09-19T08:39:18.472Z"
+updated_at: "2026-09-22T05:00:53.408Z"
 closed_at: "2026-05-14T10:11:02.112Z"
 author: codex-agent
 acceptance_criteria: pm-templates package is TypeScript-authored and installable; installed package handles templates commands through dynamic command registration; SDK exposes needed stable helpers without internal deep imports; core fallback remains compatible; focused tests and temp-project dogfood pass.
@@ -35,11 +35,12 @@ comments[11]{created_at,author,text}:
   "2026-05-14T10:11:00.586Z",codex-package-refactor,"Final verification 2026-05-14: hard extraction of templates remains green with no core fallback in create --template, plus full coverage, package smoke, package-first dogfood, and release gates (docs/static quality/telemetry/sentry)."
 files[14]{path,scope,note}:
   packages/pm-templates/extensions/templates/index.ts,project,templates package command registration
+  packages/pm-templates/extensions/templates/package.json,project,Exact artifact link for the package or gate delivered by this canonical item
   packages/pm-templates/extensions/templates/runtime.js,project,generated runtime parity for deterministic loader and repeatable options
   packages/pm-templates/extensions/templates/runtime.ts,project,templates package runtime via public SDK
   packages/pm-templates/package.json,project,first-party templates package manifest
   scripts/dogfood-package-first.mjs,project,package-first temp-project dogfood covers templates package commands
-  src/cli/commands/create.ts,project,create template resolution now dispatches through installed templates command handler
+  src/cli/commands/lifecycle/create.ts,project,create template resolution now dispatches through installed templates command handler
   src/cli/commands/templates.ts,project,repeatable template options accept single-value CLI entries
   src/sdk/runtime.ts,project,export readFileIfExists for package runtimes
   tests/integration/cli.integration.spec.ts,project,install-all expectation includes templates package
@@ -47,7 +48,6 @@ files[14]{path,scope,note}:
   tests/unit/extension-command.spec.ts,project,bundled package alias/catalog/install-all coverage
   tests/unit/package-manifest.spec.ts,project,first-party package manifest and import hygiene coverage
   tests/unit/templates-command.spec.ts,project,installed package templates behavior
-  packages/pm-templates/extensions/templates/package.json,project,Exact artifact link for the package or gate delivered by this canonical item
 tests[3]:
   - command: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts
     scope: project

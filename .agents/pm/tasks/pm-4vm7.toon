@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: audit,hardening,pm-cli,quality,release-readiness
 created_at: "2026-04-01T21:49:02.011Z"
-updated_at: "2026-09-19T08:39:28.456Z"
+updated_at: "2026-09-22T05:00:50.293Z"
 deadline: "2026-04-03T21:49:02.011Z"
 closed_at: "2026-04-12T16:00:51.161Z"
 author: codex-agent
@@ -61,11 +61,11 @@ files[17]{path,scope,note}:
   CHANGELOG.md,project,align versioning statement with calendar version policy
   package.json,project,fix repository metadata and include community docs in npm package files
   src/cli/commands/calendar.ts,project,propagate list warnings into calendar result
-  src/cli/commands/config.ts,project,surface settings-read warnings in config results
-  src/cli/commands/context.ts,project,merge list and calendar warnings into context output
-  src/cli/commands/health.ts,project,include settings/list read warnings in health output
-  src/cli/commands/list.ts,project,propagate item listing warnings to result
-  src/cli/commands/search.ts,project,propagate list warnings into search result
+  src/cli/commands/governance/health.ts,project,include settings/list read warnings in health output
+  src/cli/commands/query/context.ts,project,merge list and calendar warnings into context output
+  src/cli/commands/query/list.ts,project,propagate item listing warnings to result
+  src/cli/commands/query/search.ts,project,propagate list warnings into search result
+  src/cli/commands/workspace/config.ts,project,surface settings-read warnings in config results
   src/cli/main.ts,project,emit settings read warning tokens before write gate
   src/core/lock/lock.ts,project,deterministic warning token on stale lock conflicts
   src/core/store/item-store.ts,project,collect warnings while skipping unreadable items

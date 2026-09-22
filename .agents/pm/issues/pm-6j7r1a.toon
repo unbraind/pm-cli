@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-experience,cli,core
 created_at: "2026-07-28T02:52:59.859Z"
-updated_at: "2026-08-16T12:15:26.137Z"
+updated_at: "2026-09-22T05:17:11.418Z"
 closed_at: "2026-07-30T07:18:50.895Z"
 completed_at: "2026-07-30T07:18:50.895Z"
 author: "harness:claude-code"
@@ -36,13 +36,13 @@ comments[7]{created_at,author,text}:
   "2026-07-30T07:40:06.226Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/822 carries the cohesive SDK/CLI self-describing context-contract bundle. Initial implementation commit e1fabaa97; final exact-head checks and review evidence will be recorded in the PR because post-review tracker mutations would create a new unreviewed Git tree."
   "2026-08-13T08:50:41.778Z","harness:claude-code","Re-measured 2026-08-13. Root help renders 86 command spellings; contracts carries 72 canonical commands; root help is 14,163 bytes and all-command help across the canonical 72 is 163,385 bytes (~40,850 tokens).\n\nThe gap is now 14 spellings, not the previously recorded 14-of-89 against 75 — the population moved because two earlier entries turned out to be rendering artifacts rather than surface. context|ctx and package|packages are single canonical commands printed with their alias joined by a pipe, so they should never have been counted as separate spellings. The real 14: the seven list-* forms (list-open, list-in-progress, list-blocked, list-closed, list-canceled, list-draft, list-all), the four history-* forms (history-author-acknowledge, history-compact, history-redact, history-repair), plus extension, install and pm.\n\nNew evidence for the disposition this item is waiting on. For the seven list-* forms the canonical replacement is not a proposal — it is shipped, documented and in use: 'pm list --status <status>' returns the same result and --status accepts 'all'. Verified this session on the live tracker. So for the single largest family on the surface, consolidation is complete in the implementation and in the contracts layer, and stale only in the layer an agent reads to discover what exists.\n\nThat reframes the fix. This is not 'discovery is impossible for 14 commands' needing new contract entries; for at least 7 of the 14 it is 'discovery advertises a pre-consolidation spelling whose replacement already ships'. Rendering root help from the canonical set and listing legacy spellings once on a single alias line takes root help from 86 entries to 72 with no behaviour change, no deprecation of anything an agent can invoke, and no dependency on any grammar ruling still open on pm-pbyu.\n\nCaveat recorded so this is not overclaimed: this reduces reading cost only. It does not reduce how many spellings are individually defensible for one intent — for orienting alone, context, next, todos, list with a status filter, stats, activity, aggregate, search and focus each remain correct. That is a grammar question and stays open. Reading cost and choosing cost are different quantities and should be tracked separately. Full measurement recorded as a note on pm-n7rr."
 files[4]{path,scope,note}:
-  src/cli/commands/contracts.ts,project,Alias-complete command enumeration
+  src/cli/commands/workspace/contracts.ts,project,Alias-complete command enumeration
   tests/fixtures/contracts/full.json,project,Alias-complete generated contract snapshot
   tests/integration/contract-command-enumeration.integration.spec.ts,project,Gate rendered help enumerated contracts and resolvable flag rows as equal sets
-  tests/unit/commands/contracts-command.spec.ts,project,Resolvable alias enumeration regression coverage
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/integration/contract-command-enumeration.integration.spec.ts,project,240
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Resolvable alias enumeration regression coverage
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/contracts-command.spec.ts,project,240,"harness:codex","2026-09-22T05:17:11.351Z",local_mutation,refactor/cli-command-domains-export-gate
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/contracts-command.spec.ts tests/integration/contract-command-enumeration.integration.spec.ts,project,240,"harness:codex","2026-09-22T05:17:11.351Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms76evqh-kxh3uq,test,passed,"2026-07-30T07:12:10.564Z","2026-07-30T07:12:30.761Z","2026-07-30T07:12:30.761Z",2,0,0
 close_reason: "Closed command-contract enumeration over every resolvable core spelling and compatibility alias, with an executable help-versus-enumeration-versus-resolution equality gate."

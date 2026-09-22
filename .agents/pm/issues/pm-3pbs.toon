@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: activity,agent-ux,cli,dogfood,history,token-efficiency
 created_at: "2026-05-20T20:32:36.067Z"
-updated_at: "2026-09-19T08:39:22.927Z"
+updated_at: "2026-09-22T05:14:21.801Z"
 closed_at: "2026-05-20T22:09:19.406Z"
 author: claude-code-agent
 acceptance_criteria: pm history supports a compact projection; default verbosity of activity/history is reduced (or compact is the default) with full patches available behind an explicit flag; existing specs updated; build + 100% coverage green.
@@ -28,8 +28,8 @@ files[17]{path,scope,note}:
   docs/ARCHITECTURE.md,project,Clarify full history verification example
   docs/COMMANDS.md,project,Document compact default and explicit full history output
   src/cli/commands/completion.ts,project,Expose history compact in shell completion
-  src/cli/commands/gc.ts,project,Clear vectorization ledger and local vector snapshot with embeddings scope
-  src/cli/commands/history.ts,project,Add compact history projection
+  src/cli/commands/governance/gc.ts,project,Clear vectorization ledger and local vector snapshot with embeddings scope
+  src/cli/commands/history/history.ts,project,Add compact history projection
   src/cli/extension-command-options.ts,project,Validate loose extension command options against registered flags
   src/cli/help-content.ts,project,Prefer compact history example in help
   src/cli/main.ts,project,Reject unsupported flags for dynamic extension commands with advertised flag schemas

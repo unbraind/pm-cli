@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-20T12:59:34.645Z"
-updated_at: "2026-09-20T14:52:54.604Z"
+updated_at: "2026-09-22T05:01:03.847Z"
 closed_at: "2026-09-20T14:48:31.908Z"
 completed_at: "2026-09-20T14:48:31.908Z"
 author: "harness:codex"
@@ -51,13 +51,13 @@ files[9]{path,scope,note}:
   src/sdk/completion/bash.ts,project,Literal Bash prefix matcher shared by all completion routes
   tests/integration/ci-workflow-contract.spec.ts,project,Required macOS completion step and prebuilt execution contract
   tests/integration/completion-package-wire.integration.spec.ts,project,Actual installed helper plain-word and JSON transport acceptance
-  tests/unit/commands/completion-command.spec.ts,project,Completion rendering contract compatibility
+  tests/unit/commands/workspace/completion-command.spec.ts,project,Completion rendering contract compatibility
   tests/unit/packages/guide-shell-runtime.spec.ts,project,Canonical and alias renderer protocol regression
   tests/unit/sdk/history-author-completion.spec.ts,project,Preserve unique history-author flags with literal matcher renderer
   tests/unit/sdk/security/completion-search-boundaries.spec.ts,project,88 native Bash source locale and prefix cases
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts tests/unit/commands/completion-command.spec.ts,project,240,"harness:codex","2026-09-20T13:06:43.839Z",local_mutation,fix/shell-portability-validation
   node scripts/run-tests.mjs test -- tests/integration/completion-package-wire.integration.spec.ts tests/unit/packages/guide-shell-runtime.spec.ts tests/unit/sdk/history-author-completion.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240,"harness:codex","2026-09-20T13:27:01.876Z",local_mutation,fix/shell-portability-validation
+  node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts tests/unit/commands/workspace/completion-command.spec.ts,project,240,"harness:codex","2026-09-22T05:01:03.698Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[3]:
   - run_id: test-local-mu9v3aaw-ivsgas
     kind: test

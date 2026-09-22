@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:config","area:history","area:storage",audit-trail,pm-cli
 created_at: "2026-07-06T23:08:35.037Z"
-updated_at: "2026-09-08T05:57:23.744Z"
+updated_at: "2026-09-22T05:15:53.193Z"
 closed_at: "2026-07-23T19:10:48.024Z"
 author: maintainer-agent
 estimated_minutes: 300
@@ -72,7 +72,7 @@ comments[6]{created_at,author,text}:
   "2026-07-25T22:10:01.900Z","harness:opencode","Enrichment disclosure: typed-edge additions (verifies pm-w7ccmv; related pm-9yfo/pm-3z0k/pm-u14c/pm-9j2r3b) were applied 2026-07-25 against stale roadmap prose that listed this item as open work; live status was closed 2026-07-23. The edges are semantically correct — this delivered workspace audit stream is a core component of the provable-history invariant named on pm-doxj — so per the superseding-event rule they are retained rather than reverted, and this disclosure records the process deviation. Impact: one terminal item re-enters the changelog updated_at bucket. Lesson: verify live status before every mutation, even when prose in a trusted item describes the target as active."
 files[15]{path,scope,note}:
   CHANGELOG.md,project,Package-generated closeout entry
-  src/cli/commands/history.ts,project,Workspace audit stream implementation and command coverage
+  src/cli/commands/history/history.ts,project,Workspace audit stream implementation and command coverage
   src/core/history/drift-scan.ts,project,Workspace audit stream implementation and command coverage
   src/core/history/workspace-history.ts,project,Workspace audit stream implementation and command coverage
   src/core/store/settings.ts,project,Workspace audit stream implementation and command coverage
@@ -83,12 +83,21 @@ files[15]{path,scope,note}:
   src/sdk/runtime-primitives.ts,project,Workspace audit stream implementation and command coverage
   src/sdk/schema.ts,project,Workspace audit stream implementation and command coverage
   src/sdk/templates.ts,project,Workspace audit stream implementation and command coverage
-  tests/unit/commands/init-command.spec.ts,project,Initialization lock-hook contract coverage
+  tests/unit/commands/workspace/init-command.spec.ts,project,Initialization lock-hook contract coverage
   tests/unit/core/history/drift-scan.spec.ts,project,Workspace drift-cache and inaccessible-stream regression coverage
   tests/unit/core/history/workspace-history.spec.ts,project,Workspace audit stream implementation and command coverage
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs coverage,project,300
-  node scripts/run-tests.mjs test -- tests/unit/core/history/workspace-history.spec.ts tests/unit/commands/history-activity-command.spec.ts tests/unit/core/history/drift-scan.spec.ts,project,300
+tests[2]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/history/workspace-history.spec.ts tests/unit/commands/history/history-activity-command.spec.ts tests/unit/core/history/drift-scan.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:15:52.999Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/CONFIGURATION.md,project,Workspace history and governance configuration reference
   docs/SDK.md,project,Race-safe workspace singleton transaction contract

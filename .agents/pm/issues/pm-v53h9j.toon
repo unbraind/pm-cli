@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:sdk",context-management,token-efficiency
 created_at: "2026-09-17T19:26:35.525Z"
-updated_at: "2026-09-17T21:47:15.922Z"
+updated_at: "2026-09-22T05:06:32.154Z"
 closed_at: "2026-09-17T21:28:38.255Z"
 completed_at: "2026-09-17T21:28:38.255Z"
 author: "harness:codex"
@@ -84,9 +84,9 @@ files[5]{path,scope,note}:
   sdk/public-surface.json,project,Reviewed additive optional ready-budget receipt on NextResult
   src/sdk/query/next-ready-budget.ts,project,Rendered selection accounting and explicit omission receipts
   src/sdk/query/next.ts,project,SDK-owned budget enforcement and delivered-row attribution
-  tests/unit/commands/next-command.spec.ts,project,TDD regression with real isolated CLI and SDK reads
+  tests/unit/commands/query/next-command.spec.ts,project,TDD regression with real isolated CLI and SDK reads
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts tests/unit/commands/context-relevance-command.spec.ts,project,240,"harness:codex","2026-09-17T19:39:59.584Z",local_mutation,fix/next-budget-context-quality
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/next-command.spec.ts tests/unit/commands/query/context-relevance-command.spec.ts,project,240,"harness:codex","2026-09-22T05:06:32.102Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[3]:
   - run_id: test-local-mu5y5hfn-lr0o1u
     kind: test

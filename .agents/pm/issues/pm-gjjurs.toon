@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,context-efficiency,output-contracts,row-contract,token-budget
 created_at: "2026-08-10T22:59:34.849Z"
-updated_at: "2026-08-11T11:02:40.692Z"
+updated_at: "2026-09-22T05:08:39.333Z"
 closed_at: "2026-08-11T11:02:00.603Z"
 completed_at: "2026-08-11T11:02:00.603Z"
 author: "harness:codex"
@@ -63,7 +63,7 @@ files[30]{path,scope,note}:
   tests/fixtures/contracts/full.json,project,generated CLI SDK MCP contract proof
   tests/integration/release-readiness-runtime.spec.ts,project,release readiness validates compact contracts
   tests/unit/cli/bootstrap-args.spec.ts,project,global flag parsing coverage
-  tests/unit/commands/completion-command.spec.ts,project,completion surface coverage
+  tests/unit/commands/workspace/completion-command.spec.ts,project,completion surface coverage
   tests/unit/scripts/release/context-intent-calibration-gate.spec.ts,project,calibration regression coverage
   tests/unit/sdk/context-efficient-read-primitives.spec.ts,project,default suppression and explicit restoration TDD
   tests/unit/sdk/read-contract-integrity.spec.ts,project,final envelope receipt integrity coverage

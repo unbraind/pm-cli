@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import * as fsUtils from "../../../../src/core/fs/fs-utils.js";
-import { runGraph } from "../../../../src/cli/commands/graph.js";
+import { runGraph } from "../../../../src/cli/commands/query/graph.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import {

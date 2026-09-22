@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:contracts","area:health",review
 created_at: "2026-06-11T23:05:29.745Z"
-updated_at: "2026-09-19T08:40:30.059Z"
+updated_at: "2026-09-22T05:12:54.857Z"
 closed_at: "2026-06-11T23:37:20.524Z"
 author: codex-sdk-cli-continuation
 acceptance_criteria: All actionable bot comments are fixed or explicitly obsolete; contracts snapshot updated; focused tests and final gates pass; review agents are re-triggered after push.
@@ -22,9 +22,9 @@ comments[3]{created_at,author,text}:
   "2026-06-11T23:25:43.740Z",codex-sdk-cli-continuation,"Follow-up review note: Gemini latest-head comment about missing EXIT_CODE import in src/cli/register-mutation.ts is obsolete on current head 83d1813d: the file already imports EXIT_CODE from ../core/shared/constants.js at the top. Verified with pnpm build and node scripts/run-tests.mjs test -- tests/unit/history-repair-command.spec.ts tests/unit/commands/register-commands.spec.ts tests/integration/cli.integration.spec.ts (3 files, 118 tests)."
   "2026-06-11T23:37:20.189Z",codex-sdk-cli-continuation,"Follow-up review fix: addressed Gemini dead-code comment by removing individual prune_file_link/prune_doc_link mutation branches from applyValidateFix; prune fixes are always handled by applyValidateFixes batching, and any bypass now throws an explicit unsupported non-batched fix kind error. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts (64 tests)."
 files[11]{path,scope,note}:
-  src/cli/commands/health.ts,project,Fail open locks health scan with warning details
-  src/cli/commands/plan.ts,project,Defensive plan step normalization for MCP-style inputs
-  src/cli/commands/validate.ts,project,Safe prune path filtering
+  src/cli/commands/governance/health.ts,project,Fail open locks health scan with warning details
+  src/cli/commands/governance/validate.ts,project,Safe prune path filtering
+  src/cli/commands/lifecycle/plan.ts,project,Defensive plan step normalization for MCP-style inputs
   src/core/validate/stale-file-classification.ts,project,Windows separator basename matching
   src/sdk/cli-contracts.ts,project,Strict action schema primitives and docs list contract
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,SDK list parameter metadata

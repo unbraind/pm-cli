@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-10T07:03:54.985Z"
-updated_at: "2026-08-10T09:08:04.122Z"
+updated_at: "2026-09-22T05:08:57.278Z"
 closed_at: "2026-08-10T09:01:36.676Z"
 completed_at: "2026-08-10T09:01:36.676Z"
 author: "harness:codex"
@@ -36,9 +36,9 @@ comments[4]{created_at,author,text}:
 files[3]{path,scope,note}:
   src/sdk/generated-error-code-catalog.ts,project,generated structured error catalog
   src/sdk/lifecycle/create.ts,project,structured type coercion warnings
-  tests/unit/commands/lossless-mutation-contracts.spec.ts,project,JSON success and failure regression coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/lossless-mutation-contracts.spec.ts,project,240
+  tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts,project,JSON success and failure regression coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts,project,240,"harness:codex","2026-09-22T05:08:57.236Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[1]{path,scope,note}:
   docs/SDK.md,project,structured SDK warning contract
 close_reason: "Implemented and exact-head verified in PR #961: type coercion and mutation diagnostics remain parseable structured success/failure envelopes, generated catalogs are current, manual CLI acceptance passes, and hosted plus local coverage gates are green."

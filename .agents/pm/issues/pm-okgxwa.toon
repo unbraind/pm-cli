@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli",context,observability,scale,token-efficiency
 created_at: "2026-07-26T10:54:37.857Z"
-updated_at: "2026-08-14T12:57:47.667Z"
+updated_at: "2026-09-22T05:08:16.723Z"
 closed_at: "2026-08-14T12:57:46.988Z"
 completed_at: "2026-08-14T12:57:46.988Z"
 author: "harness:claude-code"
@@ -41,9 +41,9 @@ comments[2]{created_at,author,text}:
   "2026-08-14T12:57:45.589Z","harness:codex","Final verification: ranking explanations now contain only served item IDs plus candidate_count and omitted_count. The same two-row request over 100- and 10,000-candidate workspaces returns identical explanations except bounded counter growth; evaluation, token-surface, and exact coverage gates pass."
 files[2]{path,scope,note}:
   src/sdk/query/context.ts,project,Answer-sized ranking explanation projection
-  tests/unit/commands/context-relevance-command.spec.ts,project,Explanation cardinality and omission accounting proof
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/context-relevance-command.spec.ts,project,240
+  tests/unit/commands/query/context-relevance-command.spec.ts,project,Explanation cardinality and omission accounting proof
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/context-relevance-command.spec.ts,project,240,"harness:codex","2026-09-22T05:08:16.678Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mssvdmy5-uhxpqm,test,passed,"2026-08-14T11:34:18.611Z","2026-08-14T11:34:32.813Z","2026-08-14T11:34:32.813Z",1,0,0
 docs[1]{path,scope,note}:

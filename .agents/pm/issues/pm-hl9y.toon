@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:health","area:init","area:schema","github:284"
 created_at: "2026-06-18T13:16:38.873Z"
-updated_at: "2026-09-19T08:40:24.695Z"
+updated_at: "2026-09-22T05:13:02.178Z"
 closed_at: "2026-06-18T13:45:25.654Z"
 author: codex-sdk-cli-continuation
 parent: pm-8jdc
@@ -26,13 +26,24 @@ comments[7]{created_at,author,text}:
   "2026-06-18T13:30:46.221Z",codex-implementation,"Implementation link: bundled with pm-5oti in this PR because both are current agent-facing reliability issues found during the requested GH/pm continuation sweep."
   "2026-06-18T13:45:11.294Z",codex-implementation,"Evidence: focused schema/init/health tests passed (144 tests), linked pm test --run passed in sandbox, manual temp smoke proved Type folder creation and ShowType init repair, full coverage passed at 100/100/100/100."
 files[3]{path,scope,note}:
-  src/cli/commands/schema.ts,project,Scaffold storage folders when schema item-type mutations register custom types
-  tests/unit/commands/init-command.spec.ts,project,Regression coverage for init repairing schema-defined type folders
-  tests/unit/commands/schema-command.spec.ts,project,Regression coverage for schema add/apply/infer custom type folder health
-tests[3]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs coverage,project,300
-  node scripts/run-tests.mjs test -- tests/unit/commands/schema-command.spec.ts tests/unit/commands/init-command.spec.ts tests/unit/commands/health-command.spec.ts,project,240
-  pnpm typecheck,project,240
+  src/cli/commands/workspace/schema.ts,project,Scaffold storage folders when schema item-type mutations register custom types
+  tests/unit/commands/workspace/init-command.spec.ts,project,Regression coverage for init repairing schema-defined type folders
+  tests/unit/commands/workspace/schema-command.spec.ts,project,Regression coverage for schema add/apply/infer custom type folder health
+tests[3]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 300
+  - command: pnpm typecheck
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/workspace/schema-command.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/unit/commands/governance/health-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:13:02.133Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mqjjvue1-m69ngn,test,passed,"2026-06-18T13:42:47.943Z","2026-06-18T13:43:26.618Z","2026-06-18T13:43:26.618Z",2,0,0
 close_reason: "Fixed GH-284 by scaffolding custom type storage folders during schema add/apply/infer flows and verified init repairs missing schema-defined type folders; focused tests, manual temp smoke, linked pm tests, typecheck, and full 100% coverage passed."

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:history","area:storage",durability,immutability
 created_at: "2026-08-02T15:01:30.323Z"
-updated_at: "2026-09-04T22:58:35.475Z"
+updated_at: "2026-09-22T05:07:08.601Z"
 closed_at: "2026-09-04T22:58:34.907Z"
 completed_at: "2026-09-04T22:58:34.907Z"
 author: "harness:claude-code"
@@ -46,15 +46,15 @@ comments[11]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-09-04T20:42:34.026Z","harness:codex",Compaction must preserve both durable addressing and historical hash surfaces. Valid field-frozen epoch-1/early-epoch-2 records can fail if redundantly checked with the current hash algorithm; retain record contents and seal the checkpoint using its verified historical endpoints.
 files[9]{path,scope,note}:
+  sdk/public-surface.json,project,Explicit nullable legacy-version SDK migration with compatibility rationale
   src/core/history/projection.ts,project,"Resolves a version number or timestamp to a recorded entry; version resolution is index-relative so it silently rebases after compaction,while timestamp resolution correctly refuses with history_target_out_of_range"
-  src/sdk/history-compact.ts,project,Writes the synthetic baseline entry and prunes the stream; the baseline carries only a free-text message and no structured version offset
   src/core/history/version-address.ts,project,Durable ordinal mapping and legacy refusal
+  src/sdk/history-compact.ts,project,Writes the synthetic baseline entry and prunes the stream; the baseline carries only a free-text message and no structured version offset
   src/sdk/history-read.ts,project,Nullable legacy version result
   src/sdk/query/get.ts,project,Physical claim-state cutoff
   src/sdk/query/history.ts,project,Explicit physical and durable coordinates
   tests/integration/history-compact-command.spec.ts,project,Restore original retained address after compaction
-  tests/unit/commands/get-append-command.spec.ts,project,Use durable retained checkpoint address in read regression
-  sdk/public-surface.json,project,Explicit nullable legacy-version SDK migration with compatibility rationale
+  tests/unit/commands/query/get-append-command.spec.ts,project,Use durable retained checkpoint address in read regression
 tests[2]:
   - command: node scripts/run-tests.mjs test -- history-compact
     scope: project

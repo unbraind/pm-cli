@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:observability","area:sdk","area:storage",error-taxonomy,gate,recurrence
 created_at: "2026-08-08T08:00:22.880Z"
-updated_at: "2026-09-18T16:58:22.702Z"
+updated_at: "2026-09-22T04:59:28.809Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "One shared primitive translates host filesystem and resource errno faults into declared PmCliError refusals with a bounded operation label, recovery guidance, and no path disclosure; Every awaited filesystem call site in core and sdk either routes through that primitive or carries a recorded waiver naming why the raw fault is correct; A CI gate fails when a new unguarded filesystem call site is added, so the family cannot silently regrow; The declared codes resolve in the generated error catalog, and a negative control proves a non-errno fault still propagates as a defect rather than being swallowed as environment noise"
@@ -163,16 +163,13 @@ files[20]{path,scope,note}:
   src/sdk/workspace-snapshot.ts,project,Snapshot create and restore stages consume the shared boundary while preserving stable codes
   tests/fixtures/contracts/full.json,project,Generated CLI contract snapshot for typed archive refusal
   tests/integration/extension-host-faults.integration.spec.ts,project,Capacity classification and real permission-denied rollback boundaries
-  tests/unit/commands/test-command.spec.ts,project,Portable numeric capacity-fault fixture at linked-test sandbox boundary
+  tests/unit/commands/test/test-command.spec.ts,project,Portable numeric capacity-fault fixture at linked-test sandbox boundary
   tests/unit/extensions/extension-command.spec.ts,project,Preserve stale lock ownership while expecting typed host permission fault
   tests/unit/extensions/extension-install-security.spec.ts,project,Registry archive link and missing-artifact negative controls
   tests/unit/sdk/host-environment-errors.spec.ts,project,All errno classes redaction recovery and non-errno negative controls
   tests/unit/sdk/workspace-snapshot.spec.ts,project,Snapshot integration coverage for compatible shared-boundary codes
 tests[5]:
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/sdk/workspace-snapshot.spec.ts
-    scope: project
-    timeout_seconds: 240
-  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/commands/test-command.spec.ts
     scope: project
     timeout_seconds: 240
   - command: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-security.spec.ts
@@ -199,6 +196,14 @@ tests[5]:
       created_at: "2026-09-06T05:02:19.554Z"
       source_kind: local_mutation
       source_ref: feat/receipt-recovery-and-extension-contracts
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/commands/test/test-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T04:59:28.743Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[8]:
   - run_id: test-local-msk8hb2h-vcmjua
     kind: test

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: bare-core,coverage,packages,tests
 created_at: "2026-07-12T19:55:15.063Z"
-updated_at: "2026-09-08T05:36:38.117Z"
+updated_at: "2026-09-22T05:06:45.466Z"
 closed_at: "2026-07-13T04:48:52.552Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -40,17 +40,18 @@ files[53]{path,scope,note}:
   packages/pm-governance-audit/extensions/governance-audit/runtime-utils.ts,project,CodeRabbit typed package service contract
   packages/pm-governance-audit/extensions/governance-audit/runtime.ts,project,CodeRabbit runtime adapter simplification
   packages/pm-governance-audit/extensions/governance-audit/sdk.ts,project,Audit extraction implementation contract or verification coverage
+  scripts/release/audit-package-boundary.mjs,project,Exact artifact link for the package or gate delivered by this canonical item
   scripts/reviews/pr-review-loop.mjs,project,reusable no-poll review inventory and acknowledgement workflow
-  src/cli/commands/claim.ts,project,bot-review generic release contract cleanup
-  src/cli/commands/comments.ts,project,bot-review append-only bypass enforcement
+  src/cli/commands/annotations/comments.ts,project,bot-review append-only bypass enforcement
+  src/cli/commands/annotations/docs.ts,project,Audit extraction implementation contract or verification coverage
+  src/cli/commands/annotations/files.ts,project,Audit extraction implementation contract or verification coverage
+  src/cli/commands/annotations/learnings.ts,project,Audit extraction implementation contract or verification coverage
+  src/cli/commands/annotations/notes.ts,project,Audit extraction implementation contract or verification coverage
   src/cli/commands/completion.ts,project,bot-review completion repair
-  src/cli/commands/docs.ts,project,Audit extraction implementation contract or verification coverage
-  src/cli/commands/files.ts,project,Audit extraction implementation contract or verification coverage
-  src/cli/commands/learnings.ts,project,Audit extraction implementation contract or verification coverage
+  src/cli/commands/lifecycle/claim.ts,project,bot-review generic release contract cleanup
+  src/cli/commands/lifecycle/update-many.ts,project,Audit extraction implementation contract or verification coverage
+  src/cli/commands/lifecycle/update.ts,project,bot-review package bypass policy mapping
   src/cli/commands/linked-artifacts.ts,project,Audit extraction implementation contract or verification coverage
-  src/cli/commands/notes.ts,project,Audit extraction implementation contract or verification coverage
-  src/cli/commands/update-many.ts,project,Audit extraction implementation contract or verification coverage
-  src/cli/commands/update.ts,project,bot-review package bypass policy mapping
   src/cli/error-guidance.ts,project,Audit extraction implementation contract or verification coverage
   src/cli/main.ts,project,Greptile P1 parser-derived option handoff fix
   src/cli/register-mutation.ts,project,Audit extraction implementation contract or verification coverage
@@ -68,24 +69,23 @@ files[53]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,Audit extraction implementation contract or verification coverage
   tests/unit/cli/cli-main-errors.spec.ts,project,Wrapped core action parser option regression coverage
   tests/unit/cli/registration-helpers.spec.ts,project,Audit extraction implementation contract or verification coverage
-  tests/unit/commands/claim-command.spec.ts,project,Audit extraction implementation contract or verification coverage
-  tests/unit/commands/comments-command.spec.ts,project,migrated package and bare-core coverage
-  tests/unit/commands/completion-command.spec.ts,project,migrated package and bare-core coverage
-  tests/unit/commands/contracts-command.spec.ts,project,migrated package and bare-core coverage
-  tests/unit/commands/dedupe-audit-command.spec.ts,project,migrated package and bare-core coverage
-  tests/unit/commands/dedupe-merge-command.spec.ts,project,migrated package and bare-core coverage
-  tests/unit/commands/files-docs-command.spec.ts,project,Audit extraction implementation contract or verification coverage
-  tests/unit/commands/normalize-command.spec.ts,project,migrated package and bare-core coverage
-  tests/unit/commands/notes-learnings-command.spec.ts,project,Audit extraction implementation contract or verification coverage
+  tests/unit/commands/annotations/comments-command.spec.ts,project,migrated package and bare-core coverage
+  tests/unit/commands/annotations/files-docs-command.spec.ts,project,Audit extraction implementation contract or verification coverage
+  tests/unit/commands/annotations/notes-learnings-command.spec.ts,project,Audit extraction implementation contract or verification coverage
+  tests/unit/commands/governance/dedupe-audit-command.spec.ts,project,migrated package and bare-core coverage
+  tests/unit/commands/governance/dedupe-merge-command.spec.ts,project,migrated package and bare-core coverage
+  tests/unit/commands/governance/normalize-command.spec.ts,project,migrated package and bare-core coverage
+  tests/unit/commands/lifecycle/claim-command.spec.ts,project,Audit extraction implementation contract or verification coverage
+  tests/unit/commands/lifecycle/update-command.spec.ts,project,Audit extraction implementation contract or verification coverage
+  tests/unit/commands/lifecycle/update-many-command.spec.ts,project,Audit extraction implementation contract or verification coverage
   tests/unit/commands/register-commands.spec.ts,project,Audit extraction implementation contract or verification coverage
-  tests/unit/commands/update-command.spec.ts,project,Audit extraction implementation contract or verification coverage
-  tests/unit/commands/update-many-command.spec.ts,project,Audit extraction implementation contract or verification coverage
+  tests/unit/commands/workspace/completion-command.spec.ts,project,migrated package and bare-core coverage
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,migrated package and bare-core coverage
   tests/unit/core/telemetry/telemetry-runtime.spec.ts,project,Audit extraction implementation contract or verification coverage
   tests/unit/extensions/builtin-extension-entrypoints.spec.ts,project,migrated package and bare-core coverage
   tests/unit/packages/governance-audit-runtime.spec.ts,project,migrated package and bare-core coverage
   tests/unit/scripts/release/audit-package-boundary.spec.ts,project,"PR#536 audit-package-boundary gate spec (was orphaned: on disk, unlinked)"
   tests/unit/sdk/sdk-context-primitives.spec.ts,project,Audit extraction implementation contract or verification coverage
-  scripts/release/audit-package-boundary.mjs,project,Exact artifact link for the package or gate delivered by this canonical item
 tests[3]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,project,1200,100 percent literal all-src coverage gate
   node scripts/run-tests.mjs test,project,900,full sandboxed test suite

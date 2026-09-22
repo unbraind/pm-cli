@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ergonomics,cli,contracts,discovery,gate
 created_at: "2026-07-28T22:30:34.396Z"
-updated_at: "2026-08-16T12:15:26.811Z"
+updated_at: "2026-09-22T05:17:07.782Z"
 closed_at: "2026-07-29T06:29:03.883Z"
 completed_at: "2026-07-29T06:29:03.883Z"
 author: "harness:claude-code"
@@ -32,12 +32,12 @@ comments[2]{created_at,author,text}:
   "2026-07-29T06:26:32.320Z","harness:codex","PR #809 review evidence: invalid-JSON contract snapshot failures now include the captured stdout/stderr needed to diagnose stream contamination. Focused tests, strict contracts, and full 100% coverage pass."
 files[5]{path,scope,note}:
   scripts/contracts-snapshot.mjs,project,Rendered-help subset gate
-  src/cli/commands/contracts.ts,project,Workspace command contracts and rendered-surface parity
+  src/cli/commands/workspace/contracts.ts,project,Workspace command contracts and rendered-surface parity
   src/sdk/cli-contracts/enum-contracts.ts,project,Core command catalog
-  tests/unit/commands/contracts-command.spec.ts,project,Workspace contract paths
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Workspace contract paths
   tests/unit/scripts/contracts-snapshot.spec.ts,project,Negative parity fixture
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/scripts/contracts-snapshot.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/contracts-command.spec.ts tests/unit/scripts/contracts-snapshot.spec.ts,project,240,"harness:codex","2026-09-22T05:17:07.695Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[2]:
   - run_id: test-local-ms5o5wnm-cjb9qe
     kind: test

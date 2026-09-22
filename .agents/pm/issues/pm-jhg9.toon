@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-15T17:30:28.900Z"
-updated_at: "2026-07-26T17:17:28.389Z"
+updated_at: "2026-09-22T05:11:26.564Z"
 closed_at: "2026-07-15T17:50:28.811Z"
 author: codex-root
 acceptance_criteria: "Linked-test reference extraction skips every recognized value-bearing option before the single item positional, preserves boolean and inline-value forms, avoids classifying pm-shaped option values as the item, and has exact regression coverage."
@@ -15,10 +15,10 @@ release: v2026.7.15
 resolution: "The SDK parser now uses command-specific and global option arity to locate the single item positional; the redundant CLI import and obsolete suppression were removed, and the strict suppression budget was reduced to 158."
 expected_result: "Valid item-referencing commands retain their item ID when value-bearing flags appear before it, including pm-shaped option values, with all analyzers and exact coverage green."
 actual_result: "Greptile reproductions now return the intended item ID, DeepScan defect 230752438 is eliminated, focused tests pass 109 assertions across parser and release contracts, packed-package validation is clean, and the full 5,736-test suite is 100/100/100/100."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-demq,related,"2026-07-15T17:30:28.900Z",null,null
-  pm-oxrw,related,"2026-07-15T17:30:28.900Z",null,null
-  pm-oxrw,implements,"2026-07-26T17:17:28.112Z",null,null
+dependencies[3]{id,kind,created_at}:
+  pm-demq,related,"2026-07-15T17:30:28.900Z"
+  pm-oxrw,related,"2026-07-15T17:30:28.900Z"
+  pm-oxrw,implements,"2026-07-26T17:17:28.112Z"
 comments[3]{created_at,author,text}:
   "2026-07-15T17:30:28.900Z",codex-root,"Duplicate check: searched all statuses for linked command value flags positional item format limit; no existing item describes this final hosted Greptile finding. Canonical lineage is the closed SDK governance feature pm-oxrw and the review correction belongs to PR #568."
   "2026-07-15T17:38:17.054Z",codex-root,"Review evidence: hosted Greptile correctly reproduced value-bearing flags before item positionals on c2d00316. DeepScan public API defect 230752438 reports the only new issue as UNUSED_IMPORT for extractReferencedPmItemIdsFromCommand in src/cli/commands/test.ts; it is already re-exported directly and the local import is redundant. Both findings are actionable in this item."
@@ -29,14 +29,25 @@ files[8]{path,scope,note}:
   eslint-suppressions.json,project,Prune obsolete no-unused-vars suppression after DeepScan cleanup
   package.json,project,Run static quality at the exact 158-suppression baseline
   scripts/release/static-quality-gate.mjs,project,Ratchet exported ESLint suppression baseline from 159 to 158
-  src/cli/commands/test.ts,project,Remove redundant SDK parser import reported by exact-head DeepScan
+  src/cli/commands/test/test.ts,project,Remove redundant SDK parser import reported by exact-head DeepScan
   src/sdk/test/linked-command-detection.ts,project,SDK linked-command parser correction
   tests/integration/release-automation-contract.spec.ts,project,Release gate command ratchet contract
   tests/integration/release-readiness-runtime.spec.ts,project,Runtime release gate command ratchet contract
-  tests/unit/commands/linked-command-detection.spec.ts,project,Focused value-flag regression matrix
-tests[2]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,240,Suppression budget and release command contract regressions
-  node scripts/run-tests.mjs test -- tests/unit/commands/linked-command-detection.spec.ts tests/unit/commands/test-command.spec.ts,project,240,Linked-command parser focused and integration regressions
+  tests/unit/commands/test/linked-command-detection.spec.ts,project,Focused value-flag regression matrix
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: Suppression budget and release command contract regressions
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/test/linked-command-detection.spec.ts tests/unit/commands/test/test-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:11:26.488Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: Linked-command parser focused and integration regressions
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrmdl29e-gmttk3,test,passed,"2026-07-15T17:49:32.383Z","2026-07-15T17:50:06.770Z","2026-07-15T17:50:06.770Z",2,0,0
 close_reason: "Fixed the hosted Greptile value-flag parser regression and DeepScan defect 230752438, added exhaustive command-contract tests, ratcheted ESLint suppressions to 158, passed packed-package acceptance and 5,736-test exact 100/100/100/100 coverage."

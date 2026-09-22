@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: agent-ux,"area:cli","area:lifecycle",living-map
 created_at: "2026-05-31T19:43:36.545Z"
-updated_at: "2026-09-19T08:40:45.312Z"
+updated_at: "2026-09-22T05:22:44.339Z"
 closed_at: "2026-06-06T10:41:25.238Z"
 author: maintainer-agent
 acceptance_criteria: "pm copy <id> [--title] [--status open] copies type/priority/desc/body/tags/parent/assignee/etc.; resets id/status/timestamps/close fields; history notes source; MCP contract."
@@ -21,10 +21,9 @@ dependencies[1]{id,kind,created_at}:
 comments[2]{created_at,author,text}:
   "2026-06-06T10:40:48.149Z",codex-5-3,"Evidence: added pm copy command with lifecycle field reset, source-id history suffix, MCP pm_copy tool wiring, enum/contracts, completion surfaces, and dedicated unit coverage. Verified via node scripts/run-tests.mjs test -- tests/unit/copy-command.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/release-readiness-runtime.spec.ts and manual sandbox copy+close flow."
   "2026-06-06T11:31:14.964Z",codex-5-3,"Post-close follow-up on PR #120: wired MCP runAction copy path to honor top-level title/message/author args, added fish completion --force parity for pm copy, and validated with targeted tests plus full coverage (100%). Commit dc016aa4."
-files[8]{path,scope,note}:
+files[7]{path,scope,note}:
   src/cli/commands/completion.ts,project,Add copy command completion surfaces
-  src/cli/commands/copy.ts,project,Add copy command implementation with lifecycle reset semantics
-  src/cli/commands/index.ts,project,Export runCopy and associated types
+  src/cli/commands/lifecycle/copy.ts,project,Add copy command implementation with lifecycle reset semantics
   src/cli/register-mutation.ts,project,Register copy command and mutation wiring
   src/mcp/server.ts,project,Expose pm_copy narrow MCP tool and copy action routing
   src/sdk/cli-contracts.ts,project,Add copy flag contracts and action schema

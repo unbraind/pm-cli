@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-10T08:53:16.326Z"
-updated_at: "2026-09-19T08:43:15.404Z"
+updated_at: "2026-09-22T05:12:04.555Z"
 closed_at: "2026-06-10T14:13:32.033Z"
 author: maintainer-agent
 parent: pm-mpbb
@@ -54,13 +54,13 @@ comments[26]{created_at,author,text}:
   "2026-07-22T20:16:35.104Z",codex-sdk-boundary-20260722,"Corrective GitHub provenance mapping for the append-only record: GH-193 -> pm-z9e9 (https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-z9e9.toon); GH-165 -> pm-z9e9 (https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-z9e9.toon). The corresponding GitHub issues contain the same direct tracker URL."
 files[38]{path,scope,note}:
   src/cli/bootstrap-args.ts,project,global id-only bootstrap parsing
-  src/cli/commands/aggregate.ts,project,aggregate completion metrics
-  src/cli/commands/close.ts,project,duplicate-aware close metadata
   src/cli/commands/completion.ts,project,shell completions for test add-json and selectors
-  src/cli/commands/context.ts,project,context completion stats and recent/unparented sections
-  src/cli/commands/create.ts,project,strict parent reference default escape hatch
+  src/cli/commands/lifecycle/close.ts,project,duplicate-aware close metadata
+  src/cli/commands/lifecycle/create.ts,project,strict parent reference default escape hatch
   src/cli/commands/linked-test-parsers.ts,project,"--add-json linked-test parser"
-  src/cli/commands/test.ts,project,linked-test JSON add and run selectors
+  src/cli/commands/query/aggregate.ts,project,aggregate completion metrics
+  src/cli/commands/query/context.ts,project,context completion stats and recent/unparented sections
+  src/cli/commands/test/test.ts,project,linked-test JSON add and run selectors
   src/cli/main.ts,project,global id-only CLI option
   src/cli/register-list-query.ts,project,aggregate --completion registration
   src/cli/register-mutation.ts,project,duplicate close option wiring

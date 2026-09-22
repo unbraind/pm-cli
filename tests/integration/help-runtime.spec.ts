@@ -211,7 +211,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(textHelp.stderr).toContain("pm --help");
       expect(textHelp.stderr).toContain("Recovery bundle:");
       expect(textHelp.stderr).toContain("attempted_command: pm beads --help");
-      expect(textHelp.stderr).toContain("pm install beads");
+      expect(textHelp.stderr).toContain("pm package install beads --project");
       expect(textHelp.stderr).not.toContain("pm todos --help");
 
       const jsonHelp = context.runCli(["beads", "--help", "--json"]);
@@ -221,10 +221,11 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(envelope.title).toContain("Unknown command beads");
       expect(envelope.exit_code).toBe(2);
       expect(envelope.examples).toBeDefined();
-      expect(envelope.examples?.[0]).toBe("pm --help --all");
-      expect(
-        envelope.examples?.some((example) => example.includes("beads")),
-      ).toBe(false);
+      expect(envelope.examples).toEqual([
+        "pm package install beads --project",
+        "pm beads --help",
+        "pm --help --all",
+      ]);
       expect(
         envelope.examples?.some((example) => example.includes("todos")),
       ).toBe(false);

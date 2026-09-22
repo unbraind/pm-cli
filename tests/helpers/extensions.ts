@@ -99,10 +99,6 @@ export function writeTestExtensionSync(options: WriteTestExtensionOptions): Writ
   return fixture;
 }
 
-export function defaultTestExtensionEntrySource(): string {
-  return DEFAULT_ENTRY_SOURCE;
-}
-
 /** In-memory extension module descriptor for {@link activateSyntheticExtensions}. */
 export interface SyntheticExtension {
   name: string;

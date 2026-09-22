@@ -14,12 +14,6 @@ import {
   DEFAULT_COMPACT_SEARCH_FIELDS,
   listSearchProjectionFields,
 } from "./projection-contracts.js";
-export {
-  DEFAULT_COMPACT_SEARCH_FIELDS,
-  SEARCH_HIT_FIELD_KEYS,
-  SEARCH_ITEM_FIELD_KEYS,
-  listSearchProjectionFields,
-} from "./projection-contracts.js";
 
 /** Documents the search options payload exchanged by command, SDK, and package integrations. */
 export interface SearchOptions extends SharedItemFilterOptions {

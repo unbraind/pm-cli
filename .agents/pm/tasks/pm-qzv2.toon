@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:sdk",context-management,"github:107"
 created_at: "2026-06-04T07:10:14.882Z"
-updated_at: "2026-09-19T08:41:07.436Z"
+updated_at: "2026-09-22T05:12:28.421Z"
 closed_at: "2026-06-04T07:19:29.127Z"
 author: codex-sdk-continuation
 parent: pm-ugqx
@@ -35,8 +35,8 @@ comments[15]{created_at,author,text}:
   "2026-06-04T09:44:23.574Z",codex-sdk-continuation,"Codex JSON-mode follow-up: normal afterCommand warning surfacing is now suppressed when --json is active so JSON error stderr remains parseable; profile diagnostics remain profile-scoped."
   "2026-06-04T10:06:14.111Z",codex-sdk-continuation,"Merge closeout: PR #109 merged to main as 98899d0a after final 20-minute review loop; GitHub issue #107 closed with merged PR evidence. Main checkout is clean and changelog check remains unchanged with pm-changelog@2026.6.4."
 files[8]{path,scope,note}:
-  src/cli/commands/create.ts,project,Record create mutations in afterCommand affected context
-  src/cli/commands/restore.ts,project,Record restore mutations in afterCommand affected context
+  src/cli/commands/history/restore.ts,project,Record restore mutations in afterCommand affected context
+  src/cli/commands/lifecycle/create.ts,project,Record create mutations in afterCommand affected context
   src/cli/main.ts,project,Pass affected item snapshots into afterCommand hooks
   src/core/extensions/extension-types.ts,project,Expose additive AfterCommandAffectedItem SDK context type
   src/core/extensions/index.ts,project,Collect and clear per-command afterCommand affected item snapshots

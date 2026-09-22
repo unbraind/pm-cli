@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-27T22:01:29.279Z"
-updated_at: "2026-07-28T00:12:14.539Z"
+updated_at: "2026-09-22T05:10:31.722Z"
 closed_at: "2026-07-28T00:12:11.290Z"
 author: "harness:codex"
 acceptance_criteria: Health treats absent empty type folders as reconstructable layout rather than tracker corruption; Missing directories that imply lost tracked state still fail closed; Fresh-clone and pending-merge-decision tests prove material signals remain prominent; Public SDK health and CLI projections remain aligned
@@ -31,7 +31,7 @@ comments[5]{created_at,author,text}:
   "2026-07-28T00:12:07.529Z","harness:codex","Review round 1 terminal verification: focused SDK/CLI/history regressions, typecheck, lint, zero-duplicate/static quality, and full sandboxed coverage pass. Exact final suite is 380 files and 6,437 tests at 100% statements (44,702/44,702), branches (31,811/31,811), functions (9,149/9,149), and lines (43,418/43,418)."
 files[2]{path,scope,note}:
   src/sdk/governance/health.ts,project,Fresh clone directory semantics
-  tests/unit/commands/init-command.spec.ts,project,Fresh-clone optional directory acceptance
+  tests/unit/commands/workspace/init-command.spec.ts,project,Fresh-clone optional directory acceptance
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/context-integrity-primitives.spec.ts,project,240
 docs[1]{path,scope,note}:

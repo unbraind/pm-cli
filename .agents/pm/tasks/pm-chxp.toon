@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:cli",code-quality,codefactor,tech-debt
 created_at: "2026-07-02T06:39:46.062Z"
-updated_at: "2026-09-19T08:40:01.569Z"
+updated_at: "2026-09-22T05:13:15.679Z"
 closed_at: "2026-07-02T08:14:22.595Z"
 author: claude-code-agent
 parent: pm-92if
@@ -26,12 +26,12 @@ files[23]{path,scope,note}:
   tests/helpers/packageRuntime.ts,project,New shared package-runtime spec scaffolding helper
   tests/helpers/pmWorkspace.ts,project,New shared task-document workspace helpers for test/test-all specs
   tests/integration/cli.integration.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
-  tests/unit/commands/dedupe-audit-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
-  tests/unit/commands/dedupe-merge-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
-  tests/unit/commands/search-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
-  tests/unit/commands/test-all-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
-  tests/unit/commands/test-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
-  tests/unit/commands/test-runs-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/commands/governance/dedupe-audit-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/commands/governance/dedupe-merge-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/commands/query/search-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/commands/test/test-all-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/commands/test/test-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
+  tests/unit/commands/test/test-runs-command.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
   tests/unit/core/extensions/activation-summary.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
   tests/unit/core/extensions/capability-usage.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers
   tests/unit/core/history/drift-scan.spec.ts,project,Clone-bearing spec deduplicated via shared/file-local helpers

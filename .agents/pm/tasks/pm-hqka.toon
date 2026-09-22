@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:lifecycle",audit,living-map,pm-cli
 created_at: "2026-05-31T19:22:07.863Z"
-updated_at: "2026-09-19T08:40:25.711Z"
+updated_at: "2026-09-22T05:03:36.426Z"
 closed_at: "2026-05-31T19:51:36.929Z"
 author: maintainer-agent
 acceptance_criteria: "Domain audited read-only across code+docs+tests; existing pm coverage mapped via search; genuine gaps, forward work, improvements, ADRs, and agent/user stories proposed (dedup-checked); work-log + key decisions recorded in pm on this task."
@@ -29,6 +29,6 @@ learnings[4]{created_at,author,text}:
   "2026-05-31T19:30:32.127Z",audit-cli-agent,pm history shows the full event stream for an item but does not compute per-entry field diffs (before/after for each changed field). Agents diagnosing 'what exactly changed in this update' must reconstruct diffs manually from consecutive snapshots.
 files[2]{path,scope}:
   "src/cli/commands/close.ts,src/cli/commands/list.ts,src/cli/commands/context.ts,src/core/shared/constants.ts",project
-  src/cli/commands/update-many.ts,project
+  src/cli/commands/lifecycle/update-many.ts,project
 close_reason: Domain audit complete; findings synthesized into the forward living map (open backlog) and ADR log; no duplicates created.
 body: ""

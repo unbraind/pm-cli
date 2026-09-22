@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: bug,compatibility,github,item-format,migration,pm-cli
 created_at: "2026-05-05T18:05:26.674Z"
-updated_at: "2026-09-19T08:42:25.889Z"
+updated_at: "2026-09-22T04:59:57.590Z"
 deadline: "2026-05-06T18:05:26.674Z"
 closed_at: "2026-05-05T21:56:05.781Z"
 author: codex-release-agent
@@ -32,10 +32,10 @@ comments[3]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-05-05T18:05:26.674Z",codex-release-agent,"GitHub issue #20 reports pm config project set item-format --format toon failing with Invalid item front matter: missing JSON front matter when md files include YAML frontmatter,then blocking pm create/update/config until manual cleanup."
 files[6]{path,scope,note}:
+  scripts/release/compatibility-check.mjs,project,mixed-frontmatter compatibility fixture
+  src/cli/commands/workspace/config.ts,project,settings write after successful migration
   src/core/item/item-format.ts,project,json_markdown yaml wrapper parsing
   src/core/store/item-format-migration.ts,project,recoverable migration skip warnings
-  src/cli/commands/config.ts,project,settings write after successful migration
-  scripts/release/compatibility-check.mjs,project,mixed-frontmatter compatibility fixture
   tests/unit/item-format-migration.spec.ts,project,migration regression coverage
   tests/unit/item-format-validation.spec.ts,project,format parser regression coverage
 tests[2]{command,scope,timeout_seconds,note}:

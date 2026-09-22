@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",simplification
 created_at: "2026-07-05T05:08:52.089Z"
-updated_at: "2026-09-09T17:39:14.490Z"
+updated_at: "2026-09-22T05:15:33.259Z"
 closed_at: "2026-09-09T17:39:13.521Z"
 completed_at: "2026-09-09T17:39:13.521Z"
 author: maintainer-agent
@@ -75,13 +75,13 @@ files[27]{path,scope,note}:
   tests/integration/help-runtime.spec.ts,project,Namespace discovery compatibility and release verification
   tests/integration/release-readiness-runtime.spec.ts,project,Namespace discovery compatibility and release verification
   tests/unit/cli/command-namespaces.spec.ts,project,Shared native namespace contracts and verification
-  tests/unit/commands/completion-command.spec.ts,project,Namespace discovery compatibility and release verification
-  tests/unit/commands/contracts-command.spec.ts,project,Namespace discovery compatibility and release verification
+  tests/unit/commands/workspace/completion-command.spec.ts,project,Namespace discovery compatibility and release verification
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Namespace discovery compatibility and release verification
   tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,Shared native namespace contracts and verification
   tests/unit/sdk/contracts-full-projection.spec.ts,project,Namespace discovery compatibility and release verification
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/cli/command-namespaces.spec.ts tests/unit/sdk/cli-contracts tests/integration/context-ops-namespace.integration.spec.ts,project,240,"harness:codex","2026-09-09T04:24:14.680Z",local_mutation,feat/context-ops-command-namespaces
-  node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts,project,240,"harness:codex","2026-09-09T17:17:21.899Z",local_mutation,feat/context-ops-command-namespaces
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/completion-command.spec.ts,project,240,"harness:codex","2026-09-22T05:15:33.103Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[3]:
   - run_id: test-local-mttn7b8b-r62xzt
     kind: test

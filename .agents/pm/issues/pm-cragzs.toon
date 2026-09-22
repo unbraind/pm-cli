@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,gh-711,governance,relationships
 created_at: "2026-07-25T15:23:57.781Z"
-updated_at: "2026-07-29T01:02:44.340Z"
+updated_at: "2026-09-22T05:10:16.862Z"
 closed_at: "2026-07-29T01:02:40.379Z"
 completed_at: "2026-07-29T01:02:40.379Z"
 author: "harness:codex"
@@ -28,7 +28,7 @@ comments[2]{created_at,author,text}:
   "2026-07-25T15:23:57.781Z","harness:codex","Duplicate check: searched every tracker status for GH-711, allow missing parent, strict parent_reference, and update parent parity; no canonical item exists. Related lineage: pm-p9hw established create parent semantics and pm-usfg owns SDK-first mutation parity."
   "2026-07-29T01:01:41.288Z","harness:codex","Delivery evidence: update now supports --allow-missing-parent consistently across Commander, CLI contracts, typed SDK input, runtime hoisting, MCP schema, and generated contract snapshots. The linked 140-test update/MCP suite passed; isolated strict-preset acceptance persisted a forward parent and emitted the explicit validation warning."
 files[12]{path,scope,note}:
-  src/cli/commands/update.ts,project,allow missing parent parity across CLI SDK MCP and tests
+  src/cli/commands/lifecycle/update.ts,project,allow missing parent parity across CLI SDK MCP and tests
   src/cli/register-mutation.ts,project,allow missing parent parity across CLI SDK MCP and tests
   src/sdk/cli-contracts/commander-mutation-options.ts,project,allow missing parent parity across CLI SDK MCP and tests
   src/sdk/cli-contracts/flag-contracts.ts,project,allow missing parent parity across CLI SDK MCP and tests
@@ -39,9 +39,9 @@ files[12]{path,scope,note}:
   src/sdk/runtime-input.ts,project,allow missing parent parity across CLI SDK MCP and tests
   tests/fixtures/contracts/full.json,project,generated allow-missing-parent CLI MCP and tool contracts
   tests/integration/mcp-handshake.spec.ts,project,allow missing parent parity across CLI SDK MCP and tests
-  tests/unit/commands/update-command.spec.ts,project,allow missing parent parity across CLI SDK MCP and tests
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts tests/integration/mcp-handshake.spec.ts,project,300
+  tests/unit/commands/lifecycle/update-command.spec.ts,project,allow missing parent parity across CLI SDK MCP and tests
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/update-command.spec.ts tests/integration/mcp-handshake.spec.ts,project,300,"harness:codex","2026-09-22T05:10:16.814Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms5cvu7p-vitgbc,test,passed,"2026-07-29T00:37:51.562Z","2026-07-29T00:38:07.286Z","2026-07-29T00:38:07.286Z",1,0,0
 close_reason: Update missing-parent parity implemented and verified

@@ -29,21 +29,21 @@ import {
   runMergeInstall,
   runMergeReconcile,
   runMergeReceiptEvidenceReport,
-} from "./commands/merge.js";
-import { runAppend } from "./commands/append.js";
-import { runClose } from "./commands/close.js";
+} from "./commands/workspace/merge.js";
+import { runAppend } from "./commands/lifecycle/append.js";
+import { runClose } from "./commands/lifecycle/close.js";
 import { runCloseTask } from "../sdk/lifecycle/task-composition.js";
-import { runCloseMany } from "./commands/close-many.js";
-import { runCopy } from "./commands/copy.js";
-import { runCreate } from "./commands/create.js";
-import { runDelete } from "./commands/delete.js";
-import { runDeps } from "./commands/deps.js";
-import { runDocs } from "./commands/docs.js";
-import { runFiles, runFilesDiscover } from "./commands/files.js";
-import { runFocus } from "./commands/focus.js";
-import * as profileModule from "./commands/profile.js";
-import { runUpdate } from "./commands/update.js";
-import { runUpdateMany } from "./commands/update-many.js";
+import { runCloseMany } from "./commands/lifecycle/close-many.js";
+import { runCopy } from "./commands/lifecycle/copy.js";
+import { runCreate } from "./commands/lifecycle/create.js";
+import { runDelete } from "./commands/lifecycle/delete.js";
+import { runDeps } from "./commands/query/deps.js";
+import { runDocs } from "./commands/annotations/docs.js";
+import { runFiles, runFilesDiscover } from "./commands/annotations/files.js";
+import { runFocus } from "./commands/lifecycle/focus.js";
+import * as profileModule from "./commands/workspace/profile.js";
+import { runUpdate } from "./commands/lifecycle/update.js";
+import { runUpdateMany } from "./commands/lifecycle/update-many.js";
 import {
   createStdinTokenResolver,
   preserveMutationStdinTokenFields,
@@ -54,7 +54,7 @@ import { itemDocumentToMutationOptions } from "../sdk/structured-mutations.js";
 import { registerStructuredMutationCommands } from "./register-structured-mutation.js";
 import { registerHistoryMaintenanceCommands } from "./register-history-maintenance.js";
 import { registerHistoryAuthorAcknowledgeCommand } from "./register-history-author.js";
-import { PLAN_SUBCOMMANDS, runPlan } from "./commands/plan.js";
+import { PLAN_SUBCOMMANDS, runPlan } from "./commands/lifecycle/plan.js";
 import { registerAnnotationCommands } from "./register-annotations.js";
 import { registerFilesLookupCommand } from "./register-files-lookup.js";
 import { isPureSnakeCaseAlias } from "./schema-registration-helpers.js";

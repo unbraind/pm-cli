@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: "area:contracts",bug,gh-issue
 created_at: "2026-07-06T08:03:09.036Z"
-updated_at: "2026-07-26T17:18:29.758Z"
+updated_at: "2026-09-22T05:11:22.449Z"
 closed_at: "2026-07-23T19:10:49.814Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -18,9 +18,9 @@ release: v2026.7.24
 resolution: Separated extension policy modes from governance workflow enforcement modes and proved every advertised workflow token through the validator.
 expected_result: Governance contract enum values are accepted verbatim by pm config set.
 actual_result: Contract drift regression and regenerated snapshot pass.
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-xwah,related,"2026-07-14T17:05:17.472Z",null,null
-  pm-5k4v,implements,"2026-07-26T17:18:29.560Z",null,null
+dependencies[2]{id,kind,created_at}:
+  pm-xwah,related,"2026-07-14T17:05:17.472Z"
+  pm-5k4v,implements,"2026-07-26T17:18:29.560Z"
 comments[5]{created_at,author,text}:
   "2026-07-23T17:15:37.118Z",claude-code-agent,"Implementation start 2026-07-23: actively fixing the canonical GH-449 contract-drift item inside the schema/config customization acceptance surface; no standalone duplicate created."
   "2026-07-23T19:00:16.265Z",claude-code-agent,"Implementation evidence: governance contracts now expose workflow_enforcement_modes separately from extension policy_modes, every advertised workflow token is executed through the real config validator, and the generated contract snapshot is current."
@@ -29,12 +29,21 @@ comments[5]{created_at,author,text}:
   "2026-07-23T20:21:55.649Z",claude-code-agent,"Merged-head evidence: PR #660 merged as a894a8ba21df4cca220bd348b6d86dc495449ea5. The shipped governance implementation exercises all four configured policy domains through real setters, with SDK, CLI, MCP, runtime-contract, completion, documentation, and acceptance coverage. Exact review inventory was clean and merged-main workflows passed. Item remains closed and unclaimed."
 files[4]{path,scope,note}:
   CHANGELOG.md,project,Package-generated closeout entry
-  src/cli/commands/contracts.ts,project,Governance contract namespace and executable-mode drift regression
+  src/cli/commands/workspace/contracts.ts,project,Governance contract namespace and executable-mode drift regression
   tests/fixtures/contracts/full.json,project,Governance contract namespace and executable-mode drift regression
-  tests/unit/commands/contracts-command.spec.ts,project,Governance contract namespace and executable-mode drift regression
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/integration/release-automation-contract.spec.ts,project,300
-  "pnpm contracts:check",project,120
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Governance contract namespace and executable-mode drift regression
+tests[2]:
+  - command: "pnpm contracts:check"
+    scope: project
+    timeout_seconds: 120
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/workspace/contracts-command.spec.ts tests/integration/release-automation-contract.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:11:22.403Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 docs[1]{path,scope,note}:
   docs/CONFIGURATION.md,project,Governance workflow mode contract clarification
 close_reason: Resolved GH-449 governance contract mode drift with executable enum coverage.

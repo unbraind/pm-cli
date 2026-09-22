@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: ci,cross-platform,nightly,test-quality,windows
 created_at: "2026-07-28T10:29:33.965Z"
-updated_at: "2026-08-13T12:19:45.520Z"
+updated_at: "2026-09-22T05:17:14.990Z"
 closed_at: "2026-08-13T12:19:44.847Z"
 completed_at: "2026-08-13T12:19:44.847Z"
 author: "harness:claude-code"
@@ -63,20 +63,47 @@ learnings[3]{created_at,author,text}:
 files[9]{path,scope,note}:
   .github/workflows/ci.yml,project,Coverage shard keeps human reporter beside mergeable blob
   src/core/history/drift-cache.ts,project,Stable cross-platform diagnostics and native path expectations
+  tests/unit/commands/governance/validate-command.spec.ts,project,Platform-native tracker cache path
   tests/unit/commands/register-commands.spec.ts,project,Platform-native retry command quoting
-  tests/unit/commands/validate-command.spec.ts,project,Platform-native tracker cache path
   tests/unit/core/workspace/gitignore.spec.ts,project,Windows-safe managed gitignore permission-contract assertion
   tests/unit/packages/guide-shell-runtime.spec.ts,project,Stable cross-platform diagnostics and native path expectations
   tests/unit/sdk/context-integrity-primitives.spec.ts,project,Stable cross-platform diagnostics and native path expectations
   tests/unit/sdk/merge-safety.spec.ts,project,Stable cross-platform diagnostics and native path expectations
   tests/unit/sdk/workspace-snapshot.spec.ts,project,Windows-safe server cleanup without masking listen failures
-tests[6]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/sdk/context-integrity-primitives.spec.ts tests/unit/packages/guide-shell-runtime.spec.ts tests/unit/sdk/merge-safety.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-snapshot.spec.ts,project,300
-  node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-snapshot.spec.ts tests/unit/commands/test-command.spec.ts,project,120
-  node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/commands/validate-command.spec.ts,project,300
-  node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts,project,300
+tests[6]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/context-integrity-primitives.spec.ts tests/unit/packages/guide-shell-runtime.spec.ts tests/unit/sdk/merge-safety.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-snapshot.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-snapshot.spec.ts tests/unit/commands/test/test-command.spec.ts
+    scope: project
+    timeout_seconds: 120
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:17:14.865Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/commands/governance/validate-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:17:14.865Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/governance/validate-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:17:14.865Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms66harf-rn2h9v,test,passed,"2026-07-29T14:26:17.499Z","2026-07-29T14:26:37.370Z","2026-07-29T14:26:37.370Z",1,0,0
   test-local-ms6fau8t-2cu9ab,test,passed,"2026-07-29T18:32:42.126Z","2026-07-29T18:33:32.573Z","2026-07-29T18:33:32.573Z",3,0,0

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: extensions,install,robustness,sentry
 created_at: "2026-05-24T13:13:42.077Z"
-updated_at: "2026-09-19T08:40:25.931Z"
+updated_at: "2026-09-22T05:03:35.361Z"
 closed_at: "2026-05-24T13:20:44.529Z"
 author: codex-changelog-ci
 acceptance_criteria: Concurrent installs of the same project extension do not surface raw EEXIST; package doctor remains clean; regression coverage proves the race handling.
@@ -21,7 +21,7 @@ comments[2]{created_at,author,text}:
   "2026-05-24T13:20:40.158Z",codex-changelog-ci,"Evidence: reproduced Sentry PM-CLI-X as a concurrent same-target pm install race. Added serialized extension install lock around destination copy + managed-state update, retained copy retry for transient filesystem races, verified two simultaneous node dist/cli.js install npm:pm-changelog --project processes both exit 0, package doctor is clean, pnpm changelog:pm:check passed, static quality passed, focused extension unit tests passed, focused release automation/readiness tests passed."
   "2026-05-24T13:36:42.402Z",codex-changelog-ci,"Review response: accepted CodeRabbit nitpick and removed the unreachable throw after copy retry loop; focused extension/release tests still pass."
 files[2]{path,scope,note}:
-  src/cli/commands/extension.ts,project,Retry extension destination copy after concurrent install EEXIST/ENOTEMPTY/ENOENT races
+  src/cli/commands/extension/extension.ts,project,Retry extension destination copy after concurrent install EEXIST/ENOTEMPTY/ENOENT races
   tests/unit/extension-command.spec.ts,project,Regression coverage for retried install copy race
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts,project,300,Focused extension install race regression

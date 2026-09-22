@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: context-management,data-quality,governance,schema,standards,validation
 created_at: "2026-07-26T10:01:01.886Z"
-updated_at: "2026-09-09T01:11:19.233Z"
+updated_at: "2026-09-22T05:15:38.343Z"
 closed_at: "2026-09-09T01:11:18.564Z"
 completed_at: "2026-09-09T01:11:18.564Z"
 author: "harness:opencode"
@@ -71,7 +71,7 @@ files[8]{path,scope,note}:
   src/core/policy/workflow-policy.ts,project,Exclude operation-scoped requirements from state-only evaluation
   src/sdk/governance/validate.ts,project,Counts-first-validation-integration
   src/sdk/governance/workflow-completeness.ts,project,Shared-completeness-evaluation
-  tests/unit/commands/validate-command.spec.ts,project,Default validation includes declarative completeness checks
+  tests/unit/commands/governance/validate-command.spec.ts,project,Default validation includes declarative completeness checks
   tests/unit/sdk/author-attribution.spec.ts,project,History warnings must not invalidate the item completeness scan
   tests/unit/sdk/policy/workflow-completeness.spec.ts,project,Completeness-negative-control
   tests/unit/sdk/policy/workflow-policy.spec.ts,project,State scans and real mutations retain distinct operation semantics

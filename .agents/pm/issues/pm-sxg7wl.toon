@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:health","area:history","area:sdk",cache-integrity,context-integrity,github-1148
 created_at: "2026-08-29T00:20:31.873Z"
-updated_at: "2026-08-29T16:28:01.660Z"
+updated_at: "2026-09-22T05:07:25.196Z"
 closed_at: "2026-08-29T16:28:01.043Z"
 completed_at: "2026-08-29T16:28:01.043Z"
 author: "harness:codex"
@@ -47,10 +47,10 @@ learnings[2]{created_at,author,text}:
 files[4]{path,scope,note}:
   src/core/history/drift-scan.ts,project,Versioned history-drift cache capability fence and content-hash confirmation state
   src/sdk/governance/health.ts,project,SDK-owned authoritative cached-corruption confirmation and diagnostics
-  tests/unit/commands/health-command.spec.ts,project,End-to-end health regression for stale metadata false corruption and genuine drift retention
+  tests/unit/commands/governance/health-command.spec.ts,project,End-to-end health regression for stale metadata false corruption and genuine drift retention
   tests/unit/core/history/drift-scan.spec.ts,project,Unit coverage for cache schema capability invalidation and stat-compatible stale rows
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts,project,300,"harness:codex","2026-08-29T00:27:16.453Z",local_mutation,feat/sdk-context-integrity-recovery
+  node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/governance/health-command.spec.ts,project,300,"harness:codex","2026-09-22T05:07:25.159Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[6]:
   - run_id: test-local-mtdn5t85-y3ex07
     kind: test

@@ -7,7 +7,7 @@ import { runIsolatedRegressionControl } from "./isolated-regression-control.mjs"
 const controls = {
   "claim-receipts": {
     sourcePath: "src/sdk/lifecycle/mcp-actions.ts",
-    testPath: "tests/unit/commands/claim-receipts.spec.ts",
+    testPath: "tests/unit/commands/lifecycle/claim-receipts.spec.ts",
     testName: "shares MCP projection",
     before: 'return projectMutationResult(result, {\n    changedFields,\n    compactEnvelope: changedFields === "compact" && !idOnly,',
     after: 'return projectMutationResult(result, {\n    changedFields,\n    compactEnvelope: false,',

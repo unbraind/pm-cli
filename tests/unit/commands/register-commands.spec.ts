@@ -37,91 +37,91 @@ vi.mock("../../../src/cli/registration-helpers.js", async (importOriginal) => {
   return { ...actual, invalidateSearchCachesForMutation };
 });
 
-vi.mock("../../../src/cli/commands/list.js", () => ({ runList: vi.fn() }));
-vi.mock("../../../src/cli/commands/aggregate.js", () => ({
+vi.mock("../../../src/cli/commands/query/list.js", () => ({ runList: vi.fn() }));
+vi.mock("../../../src/cli/commands/query/aggregate.js", () => ({
   runAggregate: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/context.js", () => ({
+vi.mock("../../../src/cli/commands/query/context.js", () => ({
   runContext: vi.fn(),
   resolveContextOutputFormat: vi.fn(),
   renderContextMarkdown: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/search.js", () => ({ runSearch: vi.fn() }));
-vi.mock("../../../src/cli/commands/get.js", () => ({ runGet: vi.fn() }));
-vi.mock("../../../src/cli/commands/history.js", () => ({
+vi.mock("../../../src/cli/commands/query/search.js", () => ({ runSearch: vi.fn() }));
+vi.mock("../../../src/cli/commands/query/get.js", () => ({ runGet: vi.fn() }));
+vi.mock("../../../src/cli/commands/history/history.js", () => ({
   runHistory: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/activity.js", () => ({
+vi.mock("../../../src/cli/commands/history/activity.js", () => ({
   runActivity: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/test.js", () => ({ runTest: vi.fn() }));
-vi.mock("../../../src/cli/commands/test-all.js", () => ({
+vi.mock("../../../src/cli/commands/test/test.js", () => ({ runTest: vi.fn() }));
+vi.mock("../../../src/cli/commands/test/test-all.js", () => ({
   runTestAll: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/test-runs.js", () => ({
+vi.mock("../../../src/cli/commands/test/test-runs.js", () => ({
   runStartBackgroundRun: vi.fn(),
   runTestRunsWorker: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/telemetry.js", () => ({
+vi.mock("../../../src/cli/commands/governance/telemetry.js", () => ({
   runTelemetry: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/stats.js", () => ({ runStats: vi.fn() }));
-vi.mock("../../../src/cli/commands/duplicates.js", () => ({
+vi.mock("../../../src/cli/commands/query/stats.js", () => ({ runStats: vi.fn() }));
+vi.mock("../../../src/cli/commands/query/duplicates.js", () => ({
   runDuplicates: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/health.js", () => ({ runHealth: vi.fn() }));
-vi.mock("../../../src/cli/commands/validate.js", () => ({
+vi.mock("../../../src/cli/commands/governance/health.js", () => ({ runHealth: vi.fn() }));
+vi.mock("../../../src/cli/commands/governance/validate.js", () => ({
   runValidate: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/gc.js", () => ({ runGc: vi.fn() }));
-vi.mock("../../../src/cli/commands/merge.js", () => ({
+vi.mock("../../../src/cli/commands/governance/gc.js", () => ({ runGc: vi.fn() }));
+vi.mock("../../../src/cli/commands/workspace/merge.js", () => ({
   MERGE_DRIVER_ARTIFACT_VALUES: ["item", "history", "relationship", "json"],
   runMergeDriver: vi.fn(),
   runMergeInstall: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/contracts.js", () => ({
+vi.mock("../../../src/cli/commands/workspace/contracts.js", () => ({
   runContracts: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/claim.js", () => lifecyclePrimitives);
-vi.mock("../../../src/cli/commands/create.js", () => ({ runCreate: vi.fn() }));
-vi.mock("../../../src/cli/commands/copy.js", () => ({ runCopy: vi.fn() }));
-vi.mock("../../../src/cli/commands/focus.js", () => ({ runFocus: vi.fn() }));
-vi.mock("../../../src/cli/commands/update.js", () => lifecyclePrimitives);
-vi.mock("../../../src/cli/commands/update-many.js", () => ({
+vi.mock("../../../src/cli/commands/lifecycle/claim.js", () => lifecyclePrimitives);
+vi.mock("../../../src/cli/commands/lifecycle/create.js", () => ({ runCreate: vi.fn() }));
+vi.mock("../../../src/cli/commands/lifecycle/copy.js", () => ({ runCopy: vi.fn() }));
+vi.mock("../../../src/cli/commands/lifecycle/focus.js", () => ({ runFocus: vi.fn() }));
+vi.mock("../../../src/cli/commands/lifecycle/update.js", () => lifecyclePrimitives);
+vi.mock("../../../src/cli/commands/lifecycle/update-many.js", () => ({
   runUpdateMany: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/close.js", () => lifecyclePrimitives);
+vi.mock("../../../src/cli/commands/lifecycle/close.js", () => lifecyclePrimitives);
 // Lifecycle composition now lives in the SDK; share the primitive spies so
 // registration tests continue checking normalized options and operation order.
 vi.mock("../../../src/sdk/lifecycle/claim.js", () => lifecyclePrimitives);
 vi.mock("../../../src/sdk/lifecycle/update.js", () => lifecyclePrimitives);
 vi.mock("../../../src/sdk/lifecycle/close.js", () => lifecyclePrimitives);
-vi.mock("../../../src/cli/commands/close-many.js", () => ({
+vi.mock("../../../src/cli/commands/lifecycle/close-many.js", () => ({
   runCloseMany: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/delete.js", () => ({ runDelete: vi.fn() }));
-vi.mock("../../../src/cli/commands/append.js", () => ({ runAppend: vi.fn() }));
-vi.mock("../../../src/cli/commands/restore.js", () => ({
+vi.mock("../../../src/cli/commands/lifecycle/delete.js", () => ({ runDelete: vi.fn() }));
+vi.mock("../../../src/cli/commands/lifecycle/append.js", () => ({ runAppend: vi.fn() }));
+vi.mock("../../../src/cli/commands/history/restore.js", () => ({
   runRestore: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/plan.js", () => ({
+vi.mock("../../../src/cli/commands/lifecycle/plan.js", () => ({
   PLAN_SUBCOMMANDS: ["create", "show", "reorder-step", "decision"],
   runPlan: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/history-redact.js", () => ({
+vi.mock("../../../src/cli/commands/history/history-redact.js", () => ({
   runHistoryRedact: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/history-repair.js", () => ({
+vi.mock("../../../src/cli/commands/history/history-repair.js", () => ({
   assertHistoryRepairTarget: vi.fn(),
   runHistoryRepair: vi.fn(),
   runHistoryRepairAll: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/history-compact.js", () => ({
+vi.mock("../../../src/cli/commands/history/history-compact.js", () => ({
   assertHistoryCompactTarget: vi.fn(),
   runHistoryCompact: vi.fn(),
   runHistoryCompactBulk: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/schema.js", () => ({
+vi.mock("../../../src/cli/commands/workspace/schema.js", () => ({
   SCHEMA_SUBCOMMANDS: [
     "add-type",
     "remove-type",
@@ -168,7 +168,7 @@ vi.mock("../../../src/cli/commands/schema.js", () => ({
   formatSchemaShowStatusHuman: vi.fn(() => "schema status"),
   formatSchemaEvolutionMigrationHuman: vi.fn(() => "schema migration"),
 }));
-vi.mock("../../../src/cli/commands/profile.js", () => ({
+vi.mock("../../../src/cli/commands/workspace/profile.js", () => ({
   PROFILE_SUBCOMMANDS: ["list", "show", "apply", "lint"],
   runProfileList: vi.fn(() => ({ action: "list" })),
   runProfileShow: vi.fn(() => ({ action: "show" })),
@@ -184,28 +184,28 @@ vi.mock("../../../src/cli/commands/profile.js", () => ({
   formatProfileApplyHuman: vi.fn(() => "profile apply"),
   formatProfileLintHuman: vi.fn(() => "profile lint"),
 }));
-vi.mock("../../../src/cli/commands/comments.js", () => ({
+vi.mock("../../../src/cli/commands/annotations/comments.js", () => ({
   runComments: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/notes.js", () => ({ runNotes: vi.fn() }));
-vi.mock("../../../src/cli/commands/learnings.js", () => ({
+vi.mock("../../../src/cli/commands/annotations/notes.js", () => ({ runNotes: vi.fn() }));
+vi.mock("../../../src/cli/commands/annotations/learnings.js", () => ({
   runLearnings: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/files.js", () => ({
+vi.mock("../../../src/cli/commands/annotations/files.js", () => ({
   runFiles: vi.fn(),
   runFilesDiscover: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/docs.js", () => ({ runDocs: vi.fn() }));
-vi.mock("../../../src/cli/commands/deps.js", () => ({ runDeps: vi.fn() }));
-vi.mock("../../../src/cli/commands/init.js", () => ({
+vi.mock("../../../src/cli/commands/annotations/docs.js", () => ({ runDocs: vi.fn() }));
+vi.mock("../../../src/cli/commands/query/deps.js", () => ({ runDeps: vi.fn() }));
+vi.mock("../../../src/cli/commands/workspace/init.js", () => ({
   runInit: vi.fn(),
   summarizeInitResult: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/config.js", () => ({ runConfig: vi.fn() }));
-vi.mock("../../../src/cli/commands/extension.js", () => ({
+vi.mock("../../../src/cli/commands/workspace/config.js", () => ({ runConfig: vi.fn() }));
+vi.mock("../../../src/cli/commands/extension/extension.js", () => ({
   runExtension: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/upgrade.js", () => ({
+vi.mock("../../../src/cli/commands/workspace/upgrade.js", () => ({
   runUpgrade: vi.fn(),
 }));
 
@@ -224,61 +224,61 @@ import {
   registerCommanderOptionContracts,
 } from "../../../src/cli/register-mutation.js";
 import { registerSetupCommands } from "../../../src/cli/register-setup.js";
-import { runList } from "../../../src/cli/commands/list.js";
-import { runAggregate } from "../../../src/cli/commands/aggregate.js";
+import { runList } from "../../../src/cli/commands/query/list.js";
+import { runAggregate } from "../../../src/cli/commands/query/aggregate.js";
 import {
   renderContextMarkdown,
   resolveContextOutputFormat,
   runContext,
-} from "../../../src/cli/commands/context.js";
-import { runSearch } from "../../../src/cli/commands/search.js";
-import { runGet } from "../../../src/cli/commands/get.js";
-import { runHistory } from "../../../src/cli/commands/history.js";
-import { runActivity } from "../../../src/cli/commands/activity.js";
-import { runTest } from "../../../src/cli/commands/test.js";
-import { runTestAll } from "../../../src/cli/commands/test-all.js";
+} from "../../../src/cli/commands/query/context.js";
+import { runSearch } from "../../../src/cli/commands/query/search.js";
+import { runGet } from "../../../src/cli/commands/query/get.js";
+import { runHistory } from "../../../src/cli/commands/history/history.js";
+import { runActivity } from "../../../src/cli/commands/history/activity.js";
+import { runTest } from "../../../src/cli/commands/test/test.js";
+import { runTestAll } from "../../../src/cli/commands/test/test-all.js";
 import {
   runStartBackgroundRun,
   runTestRunsWorker,
-} from "../../../src/cli/commands/test-runs.js";
-import { runTelemetry } from "../../../src/cli/commands/telemetry.js";
-import { runStats } from "../../../src/cli/commands/stats.js";
-import { runDuplicates } from "../../../src/cli/commands/duplicates.js";
-import { runHealth } from "../../../src/cli/commands/health.js";
-import { runValidate } from "../../../src/cli/commands/validate.js";
-import { runGc } from "../../../src/cli/commands/gc.js";
+} from "../../../src/cli/commands/test/test-runs.js";
+import { runTelemetry } from "../../../src/cli/commands/governance/telemetry.js";
+import { runStats } from "../../../src/cli/commands/query/stats.js";
+import { runDuplicates } from "../../../src/cli/commands/query/duplicates.js";
+import { runHealth } from "../../../src/cli/commands/governance/health.js";
+import { runValidate } from "../../../src/cli/commands/governance/validate.js";
+import { runGc } from "../../../src/cli/commands/governance/gc.js";
 import {
   runMergeDriver,
   runMergeInstall,
-} from "../../../src/cli/commands/merge.js";
-import { runContracts } from "../../../src/cli/commands/contracts.js";
+} from "../../../src/cli/commands/workspace/merge.js";
+import { runContracts } from "../../../src/cli/commands/workspace/contracts.js";
 import {
   runClaim,
   runClaimNext,
   runRelease,
-} from "../../../src/cli/commands/claim.js";
-import { runCreate } from "../../../src/cli/commands/create.js";
-import { runCopy } from "../../../src/cli/commands/copy.js";
-import { runFocus } from "../../../src/cli/commands/focus.js";
-import { runUpdate } from "../../../src/cli/commands/update.js";
-import { runUpdateMany } from "../../../src/cli/commands/update-many.js";
-import { runClose } from "../../../src/cli/commands/close.js";
-import { runCloseMany } from "../../../src/cli/commands/close-many.js";
-import { runDelete } from "../../../src/cli/commands/delete.js";
-import { runAppend } from "../../../src/cli/commands/append.js";
-import { runRestore } from "../../../src/cli/commands/restore.js";
-import { runPlan } from "../../../src/cli/commands/plan.js";
-import { runHistoryRedact } from "../../../src/cli/commands/history-redact.js";
+} from "../../../src/cli/commands/lifecycle/claim.js";
+import { runCreate } from "../../../src/cli/commands/lifecycle/create.js";
+import { runCopy } from "../../../src/cli/commands/lifecycle/copy.js";
+import { runFocus } from "../../../src/cli/commands/lifecycle/focus.js";
+import { runUpdate } from "../../../src/cli/commands/lifecycle/update.js";
+import { runUpdateMany } from "../../../src/cli/commands/lifecycle/update-many.js";
+import { runClose } from "../../../src/cli/commands/lifecycle/close.js";
+import { runCloseMany } from "../../../src/cli/commands/lifecycle/close-many.js";
+import { runDelete } from "../../../src/cli/commands/lifecycle/delete.js";
+import { runAppend } from "../../../src/cli/commands/lifecycle/append.js";
+import { runRestore } from "../../../src/cli/commands/history/restore.js";
+import { runPlan } from "../../../src/cli/commands/lifecycle/plan.js";
+import { runHistoryRedact } from "../../../src/cli/commands/history/history-redact.js";
 import {
   assertHistoryRepairTarget,
   runHistoryRepair,
   runHistoryRepairAll,
-} from "../../../src/cli/commands/history-repair.js";
+} from "../../../src/cli/commands/history/history-repair.js";
 import {
   assertHistoryCompactTarget,
   runHistoryCompact,
   runHistoryCompactBulk,
-} from "../../../src/cli/commands/history-compact.js";
+} from "../../../src/cli/commands/history/history-compact.js";
 import {
   formatSchemaAddStatusHuman,
   formatSchemaAddTypeHuman,
@@ -308,7 +308,7 @@ import {
   runSchemaShow,
   runSchemaShowStatus,
   runSchemaEvolutionMigration,
-} from "../../../src/cli/commands/schema.js";
+} from "../../../src/cli/commands/workspace/schema.js";
 import {
   formatProfileApplyHuman,
   formatProfileLintHuman,
@@ -318,20 +318,20 @@ import {
   runProfileLint,
   runProfileList,
   runProfileShow,
-} from "../../../src/cli/commands/profile.js";
-import { runComments } from "../../../src/cli/commands/comments.js";
-import { runNotes } from "../../../src/cli/commands/notes.js";
-import { runLearnings } from "../../../src/cli/commands/learnings.js";
-import { runFiles, runFilesDiscover } from "../../../src/cli/commands/files.js";
-import { runDocs } from "../../../src/cli/commands/docs.js";
-import { runDeps } from "../../../src/cli/commands/deps.js";
+} from "../../../src/cli/commands/workspace/profile.js";
+import { runComments } from "../../../src/cli/commands/annotations/comments.js";
+import { runNotes } from "../../../src/cli/commands/annotations/notes.js";
+import { runLearnings } from "../../../src/cli/commands/annotations/learnings.js";
+import { runFiles, runFilesDiscover } from "../../../src/cli/commands/annotations/files.js";
+import { runDocs } from "../../../src/cli/commands/annotations/docs.js";
+import { runDeps } from "../../../src/cli/commands/query/deps.js";
 import {
   runInit,
   summarizeInitResult,
-} from "../../../src/cli/commands/init.js";
-import { runConfig } from "../../../src/cli/commands/config.js";
-import { runExtension } from "../../../src/cli/commands/extension.js";
-import { runUpgrade } from "../../../src/cli/commands/upgrade.js";
+} from "../../../src/cli/commands/workspace/init.js";
+import { runConfig } from "../../../src/cli/commands/workspace/config.js";
+import { runExtension } from "../../../src/cli/commands/extension/extension.js";
+import { runUpgrade } from "../../../src/cli/commands/workspace/upgrade.js";
 import {
   EXIT_CODE,
   SETTINGS_DEFAULTS,

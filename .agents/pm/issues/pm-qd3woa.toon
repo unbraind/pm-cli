@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",contracts,github-report,plan
 created_at: "2026-07-21T20:58:16.027Z"
-updated_at: "2026-07-26T17:23:51.635Z"
+updated_at: "2026-09-22T05:11:09.148Z"
 closed_at: "2026-07-22T18:05:30.036Z"
 author: codex-relationship-backfill-20260721
 acceptance_criteria: Plan creation forwards every applicable type-required create field through the public SDK; recovery suggests only flags accepted by the active command path; strict and progressive profiles have CLI/SDK/MCP parity; regression and contract tests pass
@@ -22,12 +22,12 @@ affected_version: 2026.7.21
 component: plan-sdk-cli-contract
 regression: false
 customer_impact: Agents cannot use the governed plan workflow in strict projects without dropping to a multi-command workaround.
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-3rjo,related,"2026-07-21T20:58:16.027Z",null,null
-  pm-4bzq,related,"2026-07-21T20:58:16.027Z",null,null
-  pm-je50,related,"2026-07-21T20:58:16.027Z",null,null
-  pm-qmjx,related,"2026-07-21T20:58:16.027Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:23:51.346Z",null,null
+dependencies[5]{id,kind,created_at}:
+  pm-3rjo,related,"2026-07-21T20:58:16.027Z"
+  pm-4bzq,related,"2026-07-21T20:58:16.027Z"
+  pm-je50,related,"2026-07-21T20:58:16.027Z"
+  pm-qmjx,related,"2026-07-21T20:58:16.027Z"
+  pm-mpbb,implements,"2026-07-26T17:23:51.346Z"
 comments[9]{created_at,author,text}:
   "2026-07-21T20:58:16.027Z",codex-relationship-backfill-20260721,"Duplicate check 2026-07-21: searched every pm status for GH-635,plan create strict required fields,and recovery-required Plan metadata. No exact owner exists; closed pm-je50 is the shipped plan-SDK lineage,while pm-qmjx/pm-4bzq/pm-3rjo cover adjacent help and recovery behavior."
   "2026-07-22T16:31:07.109Z",codex-root,"Implementation start 2026-07-22: canonical all-status lineage and full metadata reviewed. This item is active in one broad SDK-backed contract correctness PR spanning strict Plan creation, registry-aware Plan relationship promotion, non-interactive linked-test execution, and unambiguous deletion outcomes. GitHub intake, public SDK/CLI/MCP parity, focused regression coverage, isolated installed-package dogfood, and exact 100/100/100/100 verification are in scope."
@@ -42,15 +42,15 @@ files[10]{path,scope,note}:
   eslint-suppressions.json,project,retired obsolete Plan complexity suppression
   package.json,project,pinned stricter static-quality budget
   scripts/release/static-quality-gate.mts,project,lowered suppression ratchet
-  src/cli/commands/plan.ts,project,shared Plan create mutation metadata
+  src/cli/commands/lifecycle/plan.ts,project,shared Plan create mutation metadata
   src/cli/register-mutation.ts,project,Commander contract registration
   src/sdk/cli-contracts/flag-contracts.ts,project,advertised CLI flag contract
   src/sdk/cli-contracts/tool-schema.ts,project,MCP action schema parity
   tests/fixtures/contracts/full.json,project,generated contract snapshot
   tests/integration/release-automation-contract.spec.ts,project,quality ratchet contract
   tests/unit/sdk/agent-contract-correctness.spec.ts,project,strict Plan contract regression
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-contract-correctness.spec.ts tests/unit/commands/plan-command.spec.ts,project,300
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-contract-correctness.spec.ts tests/unit/commands/lifecycle/plan-command.spec.ts,project,300,"harness:codex","2026-09-22T05:11:09.100Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrwbwimr-zfoje7,test,passed,"2026-07-22T17:00:32.058Z","2026-07-22T17:00:43.731Z","2026-07-22T17:00:43.731Z",1,0,0
 docs[3]{path,scope,note}:

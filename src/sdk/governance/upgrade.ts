@@ -101,6 +101,8 @@ export interface UpgradeCliResult {
   target: string;
   /** Value that configures or reports command for this contract. */
   command: string[];
+  /** Package-owned command migrations relevant to this CLI upgrade plan or outcome. */
+  migration_guidance?: string[];
   /** Value that configures or reports before version for this contract. */
   before_version?: string;
   /** Value that configures or reports after version for this contract. */
@@ -250,10 +252,6 @@ async function defaultCommandRunner(
   }
 }
 
-async function readCurrentVersion(): Promise<string | undefined> {
-  return resolvePmCliVersion(import.meta.url, ["../../.."]);
-}
-
 function resolveTag(options: UpgradeCommandOptions): string {
   return typeof options.tag === "string" && options.tag.trim().length > 0
     ? options.tag.trim()
@@ -279,7 +277,7 @@ async function upgradeCli(
   if (options.repair === true) {
     command.push("--force");
   }
-  const beforeVersion = await readCurrentVersion();
+  const beforeVersion = await resolvePmCliVersion(import.meta.url, ["../../.."]);
   const planned: UpgradeCliResult = {
     requested: true,
     status: "planned",
@@ -287,6 +285,9 @@ async function upgradeCli(
     target,
     command,
     before_version: beforeVersion,
+    ...(packageName === DEFAULT_CLI_PACKAGE ? {
+      migration_guidance: ["Calendar scheduling commands are package-owned. If calendar is absent, run pm package install calendar --project; use pm calendar meet, pm calendar event, or pm calendar remind."],
+    } : {}),
     repair: options.repair === true,
   };
   if (dryRun) {

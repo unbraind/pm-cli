@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: automation,governance,ownership,pm-cli
 created_at: "2026-04-04T21:55:27.146Z"
-updated_at: "2026-09-19T08:40:44.357Z"
+updated_at: "2026-09-22T05:12:46.681Z"
 deadline: "2026-04-25T21:55:27.146Z"
 closed_at: "2026-04-06T18:47:59.214Z"
 author: codex-agent
@@ -51,8 +51,8 @@ notes[1]{created_at,author,text}:
   "2026-04-04T21:55:27.146Z",codex-agent,Design should separate planning and execution phases and require explicit operator confirmation before any forced mutation batch.
 files[11]{path,scope,note}:
   src/cli/commands/completion.ts,project,update-completion-flags-for-transactional-collections
-  src/cli/commands/create.ts,project,exported-seed-parsers-reused-by-update
-  src/cli/commands/update.ts,project,transactional-update-collections
+  src/cli/commands/lifecycle/create.ts,project,exported-seed-parsers-reused-by-update
+  src/cli/commands/lifecycle/update.ts,project,transactional-update-collections
   src/cli/error-guidance.ts,project,ownership conflict and override UX anchor
   src/cli/main.ts,project,update-flags-for-comment-note-learning-file-test-doc
   src/core/item/type-registry.ts,project,update-command-option-policy-keys

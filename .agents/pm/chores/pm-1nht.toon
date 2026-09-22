@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-05-22T15:44:32.363Z"
-updated_at: "2026-09-19T08:39:16.183Z"
+updated_at: "2026-09-22T05:14:31.706Z"
 closed_at: "2026-05-22T19:31:35.397Z"
 author: maintainer-agent
 parent: pm-rnpb
@@ -21,7 +21,7 @@ comments[3]{created_at,author,text}:
   "2026-05-22T19:25:17.430Z",codex-validate-worker-20260522,"Evidence: focused regression passed: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/contracts-command.spec.ts (57 tests). Manual isolated temp-project smoke passed using node dist/cli.js: validate --check-resolution now returns ok=true and has_warnings=true for warning-only missing resolution; validate --check-resolution --strict-exit still exits non-zero as expected."
   "2026-05-22T19:36:30.855Z",codex-validate-worker-20260522,"Evidence update: first full release gate exposed two stale integration expectations for validate warning-only ok semantics. Updated tests/integration/cli.integration.spec.ts to assert ok=true plus has_warnings=true while strict-exit/fail-on-warn still exit 1. Focused integration rerun passed: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t 'supports close validation modes and standalone validate command|records telemetry classifications for strict-exit runtime and parse failures' (2 passed, 71 skipped)."
 files[6]{path,scope,note}:
-  src/cli/commands/validate.ts,project,separate validate ok from warnings and compact diagnostic ID lists
+  src/cli/commands/governance/validate.ts,project,separate validate ok from warnings and compact diagnostic ID lists
   src/cli/register-operations.ts,project,wire validate verbose diagnostics and strict warning exit
   src/sdk/cli-contracts.ts,project,expose verboseDiagnostics validate contract
   tests/integration/cli.integration.spec.ts,project,integration coverage for validate has_warnings strict-exit semantics

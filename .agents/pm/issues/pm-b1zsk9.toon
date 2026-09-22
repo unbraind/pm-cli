@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-25T02:06:36.319Z"
-updated_at: "2026-07-29T01:43:35.998Z"
+updated_at: "2026-09-22T05:17:59.662Z"
 closed_at: "2026-07-29T01:43:32.905Z"
 completed_at: "2026-07-29T01:43:32.905Z"
 author: unknown
@@ -32,9 +32,9 @@ files[4]{path,scope,note}:
   src/cli/register-list-query.ts,project,multi-value tag filtering contracts implementation and regression proof
   src/cli/registration-helpers.ts,project,multi-value tag filtering contracts implementation and regression proof
   src/sdk/query/list.ts,project,multi-value tag filtering contracts implementation and regression proof
-  tests/unit/commands/list-command.spec.ts,project,multi-value tag filtering contracts implementation and regression proof
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/list-command.spec.ts,project,240
+  tests/unit/commands/query/list-command.spec.ts,project,multi-value tag filtering contracts implementation and regression proof
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/list-command.spec.ts,project,240,"harness:codex","2026-09-22T05:17:59.498Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms5cv0nt-v157t1,test,passed,"2026-07-29T00:37:17.120Z","2026-07-29T00:37:28.986Z","2026-07-29T00:37:28.986Z",1,0,0
   test-local-ms5f7ogg-bjudx8,test,passed,"2026-07-29T01:43:07.309Z","2026-07-29T01:43:18.929Z","2026-07-29T01:43:18.929Z",1,0,0

@@ -46,6 +46,14 @@ src/
     schema/
       registration.ts
     commands/
+      annotations/
+      history/
+      lifecycle/
+      query/
+      workspace/
+      governance/
+      test/
+      extension/
     help-content.ts
     error-guidance.ts
     extension-command-options.ts
@@ -273,10 +281,10 @@ applies:
 1. **Commander registration** — register the command/flag in the relevant
    `src/cli/register-*.ts` family module (`register-setup`, `register-list-query`,
    `register-mutation`, `register-operations`).
-2. **Command module** — implement the handler under `src/cli/commands/` and add
-   it to the `src/cli/commands/index.ts` barrel. The static orphan-modules gate
-   fails on a command module that only the dynamic dispatcher imports, so the
-   barrel export is mandatory.
+2. **SDK operation** — implement domain behavior in `src/sdk/` and expose it
+   through the appropriate published SDK entrypoint. Register the CLI adapter
+   directly in its command family. Private command barrels are unnecessary;
+   executable consumers and published entrypoints establish module reachability.
 3. **Flag contracts** — declare flags in `src/sdk/cli-contracts.ts` (the
    `*_FLAG_CONTRACTS` registries). Use `list: true` only for comma-list
    accumulation flags, never for Commander `collect` repeatable flags. Flags that
@@ -299,6 +307,25 @@ applies:
 
 Verify the end-to-end surface with `pm contracts --command <name> --json`,
 `pm help <name> --json`, and the matching MCP tool listing.
+
+## Private Export and Directory Boundaries
+
+Command adapters and their specs are grouped by domain under
+`src/cli/commands/` and `tests/unit/commands/`. Registration stays in the
+CLI family modules; domain behavior stays in the SDK. The removed private
+command barrel is not a package entrypoint.
+
+`pnpm quality:exports` runs Knip with zero allowed unused values or types,
+then executes an isolated negative control that introduces both kinds of dead
+export. The configured entrypoints are published SDK/bin sources, package
+activation modules, executable examples, and the invoked static-gate module.
+Only externally consumed entrypoint exports and declarations used inside their
+own module are retained without an internal importer. There is no directory-wide
+SDK ignore rule. Explicit public migration re-exports remain available to
+package authors; the SDK surface snapshot separately guards their signatures.
+
+Tracked by [pm-f4yn](../.agents/pm/tasks/pm-f4yn.toon) and
+[pm-kb5h](../.agents/pm/chores/pm-kb5h.toon).
 
 ## SDK-First Boundary
 

@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[6]: "area:search",config,living-map,post-v0.1,roadmap,vector-store
 created_at: "2026-05-31T19:44:23.905Z"
-updated_at: "2026-09-19T08:41:54.116Z"
+updated_at: "2026-09-22T05:22:23.774Z"
 closed_at: "2026-06-06T12:27:21.609Z"
 author: maintainer-agent
 acceptance_criteria: "Optional vector_store.collection_name (non-empty, default pm_items) wired through Qdrant target+LanceDB table; validator+PRD 13.4+README+tests."
@@ -29,8 +29,8 @@ comments[8]{created_at,author,text}:
   "2026-06-06T13:36:20.224Z",codex-search-vector-bundle,"Fourth follow-up after latest bot review: clamped cosine similarity outputs to the mathematically valid [-1,1] range before rerank normalization to guard precision anomalies while retaining existing non-finite intermediate protection. Re-verified with node scripts/run-tests.mjs test -- tests/integration/search-relevance.spec.ts tests/unit/search-command.spec.ts plus full gates node scripts/run-tests.mjs coverage && pnpm quality:static && pnpm audit --prod && pnpm changelog:pm:check (all passing, coverage unchanged at 100%)."
   "2026-06-06T13:50:18.649Z",codex-search-vector-bundle,"Fifth follow-up after latest bot review: added defensive hardening for relevance/provider edges by (1) lowercasing simple singular/plural normalization inputs, (2) capping resolved rerank top_k at 200, (3) precomputing query L2 norm for rerank cosine scoring to avoid repeated per-candidate norm work, and (4) truncating sanitized vector collection names to 128 chars in both settings normalization and runtime store resolution. Added/updated regression coverage in tests/integration/search-relevance.spec.ts, tests/unit/settings-store.spec.ts, and tests/unit/vector-store-adapter.spec.ts. Full verification rerun passed: node scripts/run-tests.mjs coverage, pnpm quality:static, pnpm audit --prod, pnpm changelog:pm:check (all green at 100% coverage)."
 files[20]{path,scope,note}:
-  src/cli/commands/config.ts,project,Search/vector bundle implementation and verification
-  src/cli/commands/search.ts,project,Search/vector bundle implementation and verification
+  src/cli/commands/query/search.ts,project,Search/vector bundle implementation and verification
+  src/cli/commands/workspace/config.ts,project,Search/vector bundle implementation and verification
   src/cli/register-setup.ts,project,Search/vector bundle implementation and verification
   src/core/config/nested-settings.ts,project,Search/vector bundle implementation and verification
   src/core/extensions/extension-types.ts,project,Search/vector bundle implementation and verification

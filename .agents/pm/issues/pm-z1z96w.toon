@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:merge","area:sdk",context-integrity,github-1144,merge-receipts,multi-agent
 created_at: "2026-08-28T21:25:58.746Z"
-updated_at: "2026-08-29T17:11:07.732Z"
+updated_at: "2026-09-22T05:07:22.656Z"
 closed_at: "2026-08-29T17:11:07.105Z"
 completed_at: "2026-08-29T17:11:07.105Z"
 author: "harness:codex"
@@ -49,14 +49,14 @@ files[7]{path,scope,note}:
   src/sdk/history-repair.ts,project,durable hash proof
   src/sdk/merge/reconcile.ts,project,proof-gated settlement
   tests/integration/merge-receipt-health-classification.integration.spec.ts,project,Durable merge receipt acceptance coverage
-  tests/unit/commands/merge-reconcile-command.spec.ts,project,CLI proof-gated reconciliation coverage
+  tests/unit/commands/workspace/merge-reconcile-command.spec.ts,project,CLI proof-gated reconciliation coverage
   tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
   tests/unit/sdk/history-repair-version-contract.spec.ts,project,Durable and forged receipt recovery guidance regression
   tests/unit/sdk/merge-reconcile.spec.ts,project,SDK proof-gated reconciliation coverage
 tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/regressions/context-integrity-recovery.spec.ts,project,240,"harness:codex","2026-08-28T21:54:02.378Z",local_mutation,feat/sdk-context-integrity-recovery,connected context integrity regression suite
   node scripts/run-tests.mjs test -- tests/unit/sdk/merge-reconcile.spec.ts,project,240,"harness:codex","2026-08-28T21:54:09.102Z",local_mutation,feat/sdk-context-integrity-recovery,merge receipt proof and settlement coverage
-  node scripts/run-tests.mjs test -- tests/unit/commands/merge-reconcile-command.spec.ts,project,240,"harness:codex","2026-08-29T13:12:31.003Z",local_mutation,feat/sdk-context-integrity-recovery,CLI negative control keeps mismatched hash-only receipts pending
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/merge-reconcile-command.spec.ts,project,240,"harness:codex","2026-09-22T05:07:22.601Z",local_mutation,refactor/cli-command-domains-export-gate,CLI negative control keeps mismatched hash-only receipts pending
 test_runs[6]:
   - run_id: test-local-mtdky5po-vi0l6l
     kind: test

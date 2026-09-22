@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[7]: agent-ux,audit,ci,ecosystem,package-first,sdk,telemetry
 created_at: "2026-06-02T15:13:31.225Z"
-updated_at: "2026-09-19T08:40:40.261Z"
+updated_at: "2026-09-22T05:00:18.480Z"
 closed_at: "2026-06-02T15:40:02.823Z"
 author: codex-audit-20260602
 parent: pm-doxj
@@ -62,7 +62,7 @@ files[6]{path,scope,note}:
   package.json,project,Patch dependency update from latest-main audit
   pnpm-lock.yaml,project,Lockfile refresh for patch dependency update
   scripts/release/sentry-telemetry-gate.mjs,project,Ignore expected handled validation negative-path Sentry issues
-  src/cli/commands/contracts.ts,project,Unknown command contracts recovery context
+  src/cli/commands/workspace/contracts.ts,project,Unknown command contracts recovery context
   tests/integration/release-automation-contract.spec.ts,project,Guard expected handled validation Sentry allowlist
   tests/unit/contracts-command.spec.ts,project,Regression coverage for contracts unknown_command context
 tests[11]{command,scope,timeout_seconds}:

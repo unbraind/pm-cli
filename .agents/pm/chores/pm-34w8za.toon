@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: "area:quality","area:sdk",history,refactor,simplification
 created_at: "2026-07-25T21:38:53.550Z"
-updated_at: "2026-09-07T15:51:22.519Z"
+updated_at: "2026-09-22T05:23:39.736Z"
 closed_at: "2026-09-07T15:51:21.957Z"
 completed_at: "2026-09-07T15:51:21.957Z"
 author: "harness:claude-code"
@@ -110,15 +110,15 @@ files[20]{path,scope,note}:
   src/sdk/index.ts,project,Public SDK exports
   src/sdk/lifecycle/restore.ts,project,Recovery snapshot and drift gate
   src/sdk/ownership-source.ts,project,Guard best-effort history path evaluation
-  tests/unit/commands/history-repair-command.spec.ts,project,Reader failure boundary regression
+  tests/unit/commands/history/history-repair-command.spec.ts,project,Reader failure boundary regression
   tests/unit/sdk/claim-public-surface.spec.ts,project,Unsafe history ID ownership fallback regression
   tests/unit/sdk/history/maintenance.spec.ts,project,Transaction failure and persistence coverage
 tests[5]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/history/maintenance.spec.ts tests/unit/commands/history-repair-command.spec.ts tests/integration/history-compact-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,project,600,"harness:codex","2026-09-07T10:03:29.246Z",local_mutation,feat/history-maintenance-sdk-command-grammar
   pnpm exec jscpd src/core/history src/sdk/history src/sdk/history-redact.ts src/sdk/history-repair.ts src/sdk/history-compact.ts src/sdk/history-read.ts src/sdk/lifecycle/restore.ts src/sdk/lifecycle/copy.ts --min-lines 12 --min-tokens 60 --mode strict --format typescript --reporters console --silent,project,120,"harness:codex","2026-09-07T10:08:43.422Z",local_mutation,feat/history-maintenance-sdk-command-grammar
-  node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/history-rewrite.spec.ts tests/unit/commands/restore-command.spec.ts,project,600,"harness:codex","2026-09-07T10:18:05.997Z",local_mutation,feat/history-maintenance-sdk-command-grammar
   node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts,project,240,"harness:codex","2026-09-07T14:42:33.366Z",local_mutation,feat/history-maintenance-sdk-command-grammar
   node scripts/run-tests.mjs test -- tests/unit/sdk/claim-public-surface.spec.ts,project,240,"harness:codex","2026-09-07T15:36:13.972Z",local_mutation,feat/history-maintenance-sdk-command-grammar
+  node scripts/run-tests.mjs test -- tests/unit/sdk/history/maintenance.spec.ts tests/unit/commands/history/history-repair-command.spec.ts tests/integration/history-compact-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,project,600,"harness:codex","2026-09-22T05:23:39.644Z",local_mutation,refactor/cli-command-domains-export-gate
+  node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/history-rewrite.spec.ts tests/unit/commands/history/restore-command.spec.ts,project,600,"harness:codex","2026-09-22T05:23:39.644Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[4]:
   - run_id: test-local-mtr3zfid-8u976c
     kind: test

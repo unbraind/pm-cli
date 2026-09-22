@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:contracts","area:extensions",dedupe,governance-audit,regression
 created_at: "2026-08-01T20:20:19.401Z"
-updated_at: "2026-09-05T18:34:28.323Z"
+updated_at: "2026-09-22T05:07:02.677Z"
 closed_at: "2026-09-05T18:34:27.829Z"
 completed_at: "2026-09-05T18:34:27.829Z"
 author: "harness:codex"
@@ -73,10 +73,10 @@ files[5]{path,scope,note}:
   packages/pm-governance-audit/extensions/governance-audit/dedupe-audit.ts,project,SDK status filter parity and per-call workflow isolation
   packages/pm-governance-audit/extensions/governance-audit/index.ts,project,Discoverable all-status and cluster limit contracts
   packages/pm-governance-audit/extensions/governance-audit/sdk.ts,project,Public SDK filter imports
-  tests/unit/commands/dedupe-audit-command.spec.ts,project,Package duplicate discovery regression
-  tests/unit/commands/dedupe-status-contract.spec.ts,project,Custom status filter regression
+  tests/unit/commands/governance/dedupe-audit-command.spec.ts,project,Package duplicate discovery regression
+  tests/unit/commands/governance/dedupe-status-contract.spec.ts,project,Custom status filter regression
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/dedupe-status-contract.spec.ts tests/unit/commands/dedupe-audit-command.spec.ts,project,240,"harness:codex","2026-09-05T16:31:49.042Z",local_mutation,feat/context-integrity-and-discoverable-governance
+  node scripts/run-tests.mjs test -- tests/unit/commands/governance/dedupe-status-contract.spec.ts tests/unit/commands/governance/dedupe-audit-command.spec.ts,project,240,"harness:codex","2026-09-22T05:07:02.634Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[2]:
   - run_id: test-local-mton3npx-1g52w3
     kind: test

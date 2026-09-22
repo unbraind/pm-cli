@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: audit-2026-06-13,health,history,performance
 created_at: "2026-06-12T22:47:21.538Z"
-updated_at: "2026-09-19T08:40:00.375Z"
+updated_at: "2026-09-22T05:13:18.934Z"
 closed_at: "2026-06-19T22:58:06.093Z"
 author: audit-quality-agent
 parent: pm-y7sc
@@ -22,19 +22,45 @@ comments[4]{created_at,author,text}:
   "2026-06-19T22:58:00.092Z",codex-sdk-cli-20260620,"Evidence: implemented cacheHitVerification option in src/core/history/drift-scan.ts, kept strict default for validate/history-repair, opted pm health into metadata cache hits, bumped drift cache version to 3, and exposed health details.cache_hit_verification=metadata. Verification: focused drift/health/validate/repair tests passed; pm test --run passed 3/3 linked tests; pnpm build passed; node scripts/run-tests.mjs coverage passed 100/100/100/100 (4697 tests); pnpm quality:static passed; pnpm audit found no vulnerabilities; pnpm security:scan found no secrets; pnpm contracts:check passed; pnpm changelog:pm:check passed before close; temp dir smoke init/create/health/validate passed; npm run dogfood:package-first passed 87 commands; Sentry/telemetry gate passed with 0 critical/high and telemetry error rate 1.81%. Dependency note: commander@15 not upgraded because it requires Node >=22.12.0 while package.json supports >=20; @types/node@26 left unchanged to avoid raising compile surface beyond supported Node line."
   "2026-06-19T23:06:47.730Z",codex-sdk-cli-20260620,"Review follow-up: addressed CodeRabbit quality nits on PR #308 by deriving the health cache mode from a single const, documenting the metadata-mode unreadable-after-stat trade-off, and renaming the metadata-mode regression to make the intentional content-reread bypass explicit. Verification after follow-up: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/health-command.spec.ts passed (61 tests)."
 files[4]{path,scope,note}:
-  src/cli/commands/health.ts,project,Use metadata-only drift-cache hits for warm pm health scans and expose diagnostic detail
+  src/cli/commands/governance/health.ts,project,Use metadata-only drift-cache hits for warm pm health scans and expose diagnostic detail
   src/core/history/drift-scan.ts,project,Add explicit drift-cache hit verification mode with strict default and metadata fast path
-  tests/unit/commands/health-command.spec.ts,project,Assert health reports the metadata cache-hit verification mode
+  tests/unit/commands/governance/health-command.spec.ts,project,Assert health reports the metadata cache-hit verification mode
   tests/unit/core/history/drift-scan.spec.ts,project,Cover strict content-hash cache validation and health metadata-only cache hits
-tests[8]{command,scope,timeout_seconds}:
-  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort --sentry-window-days 14 --max-critical 0 --max-high 0,project,120
-  node scripts/run-tests.mjs coverage,project,600
-  node scripts/run-tests.mjs test -- tests/unit/commands/health-command.spec.ts,project,180
-  node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts tests/unit/commands/history-repair-command.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts,project,120
-  "npm run dogfood:package-first",project,180
-  "pnpm quality:static",project,120
-  "pnpm security:scan",project,120
+tests[8]:
+  - command: node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort --sentry-window-days 14 --max-critical 0 --max-high 0
+    scope: project
+    timeout_seconds: 120
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 600
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/history/drift-scan.spec.ts
+    scope: project
+    timeout_seconds: 120
+  - command: "npm run dogfood:package-first"
+    scope: project
+    timeout_seconds: 180
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 120
+  - command: "pnpm security:scan"
+    scope: project
+    timeout_seconds: 120
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/governance/health-command.spec.ts
+    scope: project
+    timeout_seconds: 180
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:13:18.850Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/governance/validate-command.spec.ts tests/unit/commands/history/history-repair-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:13:18.850Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mqlivftw-uxqk24,test,passed,"2026-06-19T22:49:08.586Z","2026-06-19T22:50:40.484Z","2026-06-19T22:50:40.484Z",3,0,0
 close_reason: "Implemented split history drift cache-hit verification: pm health now uses metadata-only warm cache hits while validate/history-repair retain strict content-hash verification; verified with focused tests, full coverage, static/security/contracts/changelog gates, temp smoke, package dogfood, and Sentry/telemetry gate."

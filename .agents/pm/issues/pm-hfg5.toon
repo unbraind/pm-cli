@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",token-efficiency
 created_at: "2026-07-07T15:24:51.495Z"
-updated_at: "2026-07-26T17:15:26.683Z"
+updated_at: "2026-09-22T05:19:58.182Z"
 closed_at: "2026-07-10T20:32:44.317Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -18,21 +18,21 @@ release: v2026.7.11
 resolution: Removed the recommended row from the ready tail while preserving evaluation and ranking semantics.
 expected_result: "pm next emits one canonical recommended object without duplicating it as ready[0]."
 actual_result: ready begins after the recommendation and SDK context evaluation treats recommended plus ready as the served ranking.
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-9rxu,related,"2026-07-26T17:15:26.475Z",null,null
-  pm-a9mc,related,"2026-07-26T17:15:26.475Z",null,null
-  pm-gdi7,related,"2026-07-26T17:15:26.475Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:15:26.475Z",null,null
-  pm-nilh,related,"2026-07-26T17:15:26.475Z",null,null
-  pm-w89s,related,"2026-07-26T17:15:26.475Z",null,null
+dependencies[6]{id,kind,created_at}:
+  pm-9rxu,related,"2026-07-26T17:15:26.475Z"
+  pm-a9mc,related,"2026-07-26T17:15:26.475Z"
+  pm-gdi7,related,"2026-07-26T17:15:26.475Z"
+  pm-mpbb,implements,"2026-07-26T17:15:26.475Z"
+  pm-nilh,related,"2026-07-26T17:15:26.475Z"
+  pm-w89s,related,"2026-07-26T17:15:26.475Z"
 comments[2]{created_at,author,text}:
   "2026-07-10T17:51:54.495Z",codex-root,"Implementation start: active in the broad atomic work-selection and agent recovery PR. Live all-status duplicate check, full item metadata, closed prerequisite lineage, GitHub issues, security alerts, dependency audit, release state, and Sentry issue surface were reviewed before claiming. This item shares CLI/SDK contracts, recovery envelopes, and end-to-end verification with the seven sibling items in the bundle."
   "2026-07-10T20:32:31.559Z",codex-wide-pm-sdk,"Verification: pnpm release:gates passed build/typecheck/static/docstring ratchets/docs/context/security, 100/100/100/100 coverage with 5,524 tests, packed npx smoke, and 88-command package dogfood; isolated installed-tarball acceptance created two items, atomically claimed one, accepted comments --body, detected one dangling dependency, and imported PmClient. Live Sentry/telemetry: 0 blocking critical/high, 0.34% finish error rate, zero missing error-code rows. pm health: all 7 checks ok; history drift: 0 across 1,709 items."
 files[2]{path,scope,note}:
-  src/cli/commands/next.ts,project,shared agent work-selection envelope
+  src/cli/commands/query/next.ts,project,shared agent work-selection envelope
   src/core/item/actionability.ts,project,shared dependency-aware readiness primitive
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/next-command.spec.ts,project,240,"harness:codex","2026-09-22T05:19:57.969Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,agent-facing command contract
   docs/SDK.md,project,SDK context primitive contract

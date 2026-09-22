@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:meta",pm-cli,release,release-readiness
 created_at: "2026-02-17T23:36:55.193Z"
-updated_at: "2026-09-19T08:40:54.478Z"
+updated_at: "2026-09-22T05:00:11.276Z"
 deadline: "2026-03-03T23:36:55.193Z"
 closed_at: "2026-03-04T14:29:01.729Z"
 assignee: cursor-agent
@@ -147,8 +147,8 @@ files[12]{path,scope,note}:
   README.md,project,runtime linked-test safety contract update
   scripts/install.ps1,project,installer post-install pm availability verification
   scripts/install.sh,project,installer post-install pm availability verification
-  src/cli/commands/claim.ts,project,claim release metadata plumbing
-  src/cli/commands/test.ts,project,runtime linked-test safety hardening
+  src/cli/commands/lifecycle/claim.ts,project,claim release metadata plumbing
+  src/cli/commands/test/test.ts,project,runtime linked-test safety hardening
   src/cli/main.ts,project,reindex help contract alignment
   tests/integration/help-runtime.spec.ts,project,help contract regression for reindex description
   tests/integration/release-readiness-runtime.spec.ts,project,global flag parity contract

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: "area:commands","area:history",pm-cli
 created_at: "2026-04-01T15:27:15.596Z"
-updated_at: "2026-09-19T08:39:16.631Z"
+updated_at: "2026-09-22T05:06:06.524Z"
 deadline: "2026-04-06T15:27:15.596Z"
 closed_at: "2026-04-01T21:14:40.118Z"
 author: cursor-agent
@@ -58,10 +58,10 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:30:46.901Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[11]{path,scope,note}:
-  src/cli/commands/activity.ts,project,enforce policy across existing item streams
-  src/cli/commands/health.ts,project,enforce policy prior to drift checks
-  src/cli/commands/history.ts,project,enforce policy for item history reads
-  src/cli/commands/stats.ts,project,enforce policy before history totals
+  src/cli/commands/governance/health.ts,project,enforce policy prior to drift checks
+  src/cli/commands/history/activity.ts,project,enforce policy across existing item streams
+  src/cli/commands/history/history.ts,project,enforce policy for item history reads
+  src/cli/commands/query/stats.ts,project,enforce policy before history totals
   src/core/history/history-stream-policy.ts,project,new strict-vs-auto policy helper
   src/core/history/history.ts,project,core helper integration anchor
   src/core/store/item-store.ts,project,enforce policy for mutate/delete existing items

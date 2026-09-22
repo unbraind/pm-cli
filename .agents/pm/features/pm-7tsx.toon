@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[7]: "area:search","area:semantic",hybrid,living-map,post-v0.1,roadmap,tuning
 created_at: "2026-05-31T19:44:23.445Z"
-updated_at: "2026-09-19T08:39:40.912Z"
+updated_at: "2026-09-22T05:23:05.072Z"
 closed_at: "2026-06-06T12:27:22.024Z"
 author: maintainer-agent
 acceptance_criteria: "search.rerank{enabled,model,top_k} and search.query_expansion{enabled,provider} blocks; opt-in, degrade gracefully offline; filters output flags; provider abstraction; mock-provider tests; no regression to keyword/hybrid."
@@ -35,8 +35,8 @@ comments[14]{created_at,author,text}:
   "2026-06-06T14:19:43.455Z",codex-search-vector-bundle,"Final review-loop medium-fix follow-up: normalized stop-word checks with lowercase tokens in deterministic query expansion and made rerank corpus metadata access defensive via optional chaining to tolerate malformed documents. Verification rerun: node scripts/run-tests.mjs coverage; pnpm quality:static; pnpm changelog:pm:check (all green with 100% coverage)."
   "2026-06-06T14:25:50.408Z",codex-search-vector-bundle,"Latest follow-up: improved inflection symmetry for ss/sses words in deterministic query expansion (e.g., class/classes, process/processes, address/addresses) and added integration coverage for these variants. Verification rerun: node scripts/run-tests.mjs coverage; pnpm quality:static; pnpm changelog:pm:check (all passing, 100% coverage retained)."
 files[20]{path,scope,note}:
-  src/cli/commands/config.ts,project,Search/vector bundle implementation and verification
-  src/cli/commands/search.ts,project,Search/vector bundle implementation and verification
+  src/cli/commands/query/search.ts,project,Search/vector bundle implementation and verification
+  src/cli/commands/workspace/config.ts,project,Search/vector bundle implementation and verification
   src/cli/register-setup.ts,project,Search/vector bundle implementation and verification
   src/core/config/nested-settings.ts,project,Search/vector bundle implementation and verification
   src/core/extensions/extension-types.ts,project,Search/vector bundle implementation and verification

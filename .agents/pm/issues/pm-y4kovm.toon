@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:ci","area:sdk",error-taxonomy,nightly,portability,windows
 created_at: "2026-08-17T05:20:21.101Z"
-updated_at: "2026-08-17T05:24:45.373Z"
+updated_at: "2026-09-22T05:08:01.765Z"
 closed_at: "2026-08-17T05:22:04.820Z"
 completed_at: "2026-08-17T05:22:04.820Z"
 author: "harness:codex"
@@ -36,10 +36,10 @@ comments[3]{created_at,author,text}:
   "2026-08-17T05:24:45.373Z","harness:codex","Delivery: PR #1050 (https://github.com/unbraind/pm-cli/pull/1050), commit 8937ac7c8, carries the portable runtime lookup and cross-platform negative controls. Hosted Windows Node 24, coverage, security, and review-bot results remain the merge criteria."
 files[3]{path,scope,note}:
   src/sdk/environment/host-environment-errors.ts,project,Exclude platform-missing errno constants from numeric lookup
-  tests/unit/commands/test-command.spec.ts,project,Portable linked-test sandbox numeric capacity-fault negative control
+  tests/unit/commands/test/test-command.spec.ts,project,Portable linked-test sandbox numeric capacity-fault negative control
   tests/unit/sdk/host-environment-errors.spec.ts,project,Portable SDK numeric capacity-fault negative control
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/commands/test-command.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/commands/test/test-command.spec.ts,project,240,"harness:codex","2026-09-22T05:08:01.697Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mswscw7u-b0hemh,test,passed,"2026-08-17T05:20:41.409Z","2026-08-17T05:21:04.026Z","2026-08-17T05:21:04.026Z",1,0,0
 docs[1]{path,scope,note}:

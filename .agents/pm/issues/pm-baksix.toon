@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:merge",diagnostics,"github:1104"
 created_at: "2026-08-24T15:23:02.991Z"
-updated_at: "2026-08-31T12:05:38.066Z"
+updated_at: "2026-09-22T05:07:17.863Z"
 closed_at: "2026-08-31T12:05:10.269Z"
 completed_at: "2026-08-31T12:05:10.269Z"
 author: "harness:codex"
@@ -43,7 +43,7 @@ learnings[3]{created_at,author,text}:
   "2026-08-31T12:03:51.098Z","harness:codex",Public contract fixtures must include newly always-emitted compatibility fields even when test assertions do not inspect them; structural fidelity prevents adapters from silently drifting from SDK output.
 files[19]{path,scope,note}:
   sdk/public-surface.json,project,Generated public pending-receipt error surface
-  src/cli/commands/merge.ts,project,Thin CLI compatibility adapter for SDK merge primitives
+  src/cli/commands/workspace/merge.ts,project,Thin CLI compatibility adapter for SDK merge primitives
   src/cli/register-mutation.ts,project,Fail-closed merge report exit semantics
   src/core/diagnostics/remediation.ts,project,Receipt-aware remediation
   src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated public error-code contract

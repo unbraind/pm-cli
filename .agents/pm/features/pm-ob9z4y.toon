@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: ci-gate,context-management,graph,measurement-ratchet,tracker-governance
 created_at: "2026-08-10T12:12:23.720Z"
-updated_at: "2026-08-20T22:08:26.878Z"
+updated_at: "2026-09-22T05:07:53.687Z"
 closed_at: "2026-08-20T21:47:17.202Z"
 completed_at: "2026-08-20T21:47:17.202Z"
 author: "harness:claude-code"
@@ -57,7 +57,7 @@ files[9]{path,scope,note}:
   sdk/public-surface.json,project,Records optional partitions on public measurement and verdict receipts.
   src/sdk/governance/assurance.ts,project,Adds the single-pass prose-to-edge parity census and exact subject partitions.
   tests/fixtures/contracts/full.json,project,Publishes the source kind through generated contracts.
-  tests/unit/commands/contracts-command.spec.ts,project,Pins the authoritative CLI assurance source vocabulary.
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Pins the authoritative CLI assurance source vocabulary.
   tests/unit/scripts/graph-adapter-scale.spec.ts,project,Covers the million-item prose-edge benchmark harness and failure paths.
   tests/unit/sdk/assurance.spec.ts,project,Verifies partition propagation through public measurement and verdict receipts.
   tests/unit/sdk/governance/assurance-relationship-sources.spec.ts,project,Covers prose surfaces scalar links exemptions deduplication partitions and cost.

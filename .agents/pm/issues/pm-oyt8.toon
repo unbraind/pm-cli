@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: 2026-04-25,dogfood,lancedb,pm-cli,regression,search
 created_at: "2026-04-25T16:53:33.854Z"
-updated_at: "2026-09-19T08:40:55.158Z"
+updated_at: "2026-09-22T05:00:09.753Z"
 deadline: "2026-04-26T16:54:55.870Z"
 closed_at: "2026-04-25T17:01:08.859Z"
 author: codex-agent
@@ -29,7 +29,7 @@ comments[2]{created_at,author,text}:
   "2026-04-25T16:53:33.854Z",codex-agent,"Duplicate-check evidence for net-new issue scope: pm search 'lancedb dimension mismatch' --mode keyword --limit 10 returned only closed historical work (no active/open item tracking this current runtime failure)."
   "2026-04-25T17:01:07.516Z",codex-agent,"Remediation complete: search query path now skips stale LanceDB vectors with mismatched dimensions instead of hard-failing; verified by unit coverage updates and successful default hybrid search in the real tracker after reindex."
 files[2]{path,scope,note}:
-  src/cli/commands/search.ts,project,search mode execution path
+  src/cli/commands/query/search.ts,project,search mode execution path
   src/core/search/vector-stores.ts,project,LanceDB adapter and vector dimension handling
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,project,600,search command regression

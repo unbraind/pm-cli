@@ -2062,6 +2062,14 @@
       ],
       "package_version": "2026.9.18",
       "reason": "GraphAuditResult gains only optional truncated receipt metadata; existing callers and constructed values remain compatible"
+    },
+    {
+      "changes": [
+        "signature ./sdk:UpgradeCliResult",
+        "signature ./sdk/governance:UpgradeCliResult"
+      ],
+      "package_version": "2026.9.21",
+      "reason": "Add optional UpgradeCliResult.migration_guidance to explain package-owned calendar recovery; existing fields and consumers remain compatible."
     }
   ],
   "entrypoints": {
@@ -19736,7 +19744,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "UpgradeCliResult",
-          "signature": "export interface UpgradeCliResult { requested: boolean; status: \"planned\" | \"updated\" | \"failed\" | \"skipped\"; package: string; target: string; command: string[]; before_version?: string; after_version?: string; repair: boolean; reason?: string; error?: string; }"
+          "signature": "export interface UpgradeCliResult { requested: boolean; status: \"planned\" | \"updated\" | \"failed\" | \"skipped\"; package: string; target: string; command: string[]; migration_guidance?: string[]; before_version?: string; after_version?: string; repair: boolean; reason?: string; error?: string; }"
         },
         {
           "classification": "supported",
@@ -27410,7 +27418,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "UpgradeCliResult",
-          "signature": "export interface UpgradeCliResult { requested: boolean; status: \"planned\" | \"updated\" | \"failed\" | \"skipped\"; package: string; target: string; command: string[]; before_version?: string; after_version?: string; repair: boolean; reason?: string; error?: string; }"
+          "signature": "export interface UpgradeCliResult { requested: boolean; status: \"planned\" | \"updated\" | \"failed\" | \"skipped\"; package: string; target: string; command: string[]; migration_guidance?: string[]; before_version?: string; after_version?: string; repair: boolean; reason?: string; error?: string; }"
         },
         {
           "classification": "supported",

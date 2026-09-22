@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: history,pm-cli,privacy,redaction,security
 created_at: "2026-05-03T13:34:41.813Z"
-updated_at: "2026-09-19T08:42:50.810Z"
+updated_at: "2026-09-22T05:09:12.481Z"
 closed_at: "2026-05-25T12:28:42.077Z"
 author: codex-audit
 acceptance_criteria: A supported pm command can redact configured literals/patterns from item files and history streams; history drift validation remains meaningful after redaction; redaction operations are themselves auditable; secret scans can include history streams without false failures from known private operations paths.
@@ -94,7 +94,7 @@ notes[1]{created_at,author,text}:
   "2026-05-17T12:23:36.671Z",codex-agent,"history-redact uses deterministic replay + hash recomputation for every entry, then appends a no-op history_redact audit marker to keep the operation itself discoverable in history output."
 learnings[1]{created_at,author,text}:
   "2026-05-17T12:23:38.188Z",codex-agent,"Release security scans flag concrete /home examples even in docs/contracts examples; prefer [redacted_path_prefix] placeholders in public command docs and schema examples."
-files[39]{path,scope,note}:
+files[38]{path,scope,note}:
   .agents/pm/chores/pm-tq1.toon,project,item-test-command-redaction-local-package-path
   .agents/pm/epics/pm-54d.toon,project,epic-comment-redaction-global-install-path
   .agents/pm/extensions/.managed-extensions.json,project,managed-extension-source-location-redaction
@@ -117,12 +117,11 @@ files[39]{path,scope,note}:
   .agents/pm/tasks/pm-mb4n.toon,project,item-comment-redaction-host-user-literal
   scripts/dogfood-package-first.mjs,project,reusable history-redact dogfood coverage
   src/cli/commands/completion.ts,project,completion-surface-history-redact
-  src/cli/commands/contracts.ts,project,contracts-core-flag-resolution
-  src/cli/commands/health.ts,project,health detects full history chain drift
-  src/cli/commands/history-redact.ts,project,audited-history-redaction-command
-  src/cli/commands/history.ts,project,structured history chain verification diagnostics
-  src/cli/commands/index.ts,project,history-redact-export-surface
-  src/cli/commands/validate.ts,project,validate detects full history chain drift
+  src/cli/commands/governance/health.ts,project,health detects full history chain drift
+  src/cli/commands/governance/validate.ts,project,validate detects full history chain drift
+  src/cli/commands/history/history-redact.ts,project,audited-history-redaction-command
+  src/cli/commands/history/history.ts,project,structured history chain verification diagnostics
+  src/cli/commands/workspace/contracts.ts,project,contracts-core-flag-resolution
   src/cli/register-mutation.ts,project,history-redact-command-registration
   src/mcp/server.ts,project,mcp-action-routing-history-redact
   src/sdk/cli-contracts.ts,project,tool-actions-flags-schema-history-redact

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-19T17:41:53.086Z"
-updated_at: "2026-09-19T18:13:34.040Z"
+updated_at: "2026-09-22T05:01:09.674Z"
 closed_at: "2026-09-19T18:13:33.357Z"
 completed_at: "2026-09-19T18:13:33.357Z"
 author: "harness:codex"
@@ -35,10 +35,10 @@ learnings[1]{created_at,author,text}:
 files[4]{path,scope,note}:
   src/sdk/completion/bash.ts,project,Escape both generated-source and compgen wordlist expansion boundaries
   src/sdk/query/search/lexical.ts,project,Normalize all matching scores without variadic argument limits
-  tests/unit/commands/completion-command.spec.ts,project,Require quoted dynamic wordlist boundary in generated scripts
+  tests/unit/commands/workspace/completion-command.spec.ts,project,Require quoted dynamic wordlist boundary in generated scripts
   tests/unit/sdk/security/completion-search-boundaries.spec.ts,project,Real Bash expansion and large-corpus input-boundary regressions
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/core/search/search-cache.spec.ts,project,240,"harness:codex","2026-09-19T17:54:22.143Z",local_mutation,refactor/search-query-cli-domains
+  node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts tests/unit/commands/workspace/completion-command.spec.ts tests/unit/core/search/search-cache.spec.ts,project,240,"harness:codex","2026-09-22T05:01:09.602Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[2]:
   - run_id: test-local-mu8ogpi7-ltdu3h
     kind: test

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-28T11:30:00.319Z"
-updated_at: "2026-07-28T16:31:03.357Z"
+updated_at: "2026-09-22T05:10:26.148Z"
 closed_at: "2026-07-28T16:28:02.857Z"
 author: "harness:codex"
 estimated_minutes: 120
@@ -29,9 +29,9 @@ comments[3]{created_at,author,text}:
   "2026-07-28T16:27:21.378Z","harness:codex","Implementation evidence: default health now treats extensions, locks, and search as clone-optional while history and schema remain required; strict directory policy still reports optional omissions. Focused PM-linked health run passed 56 tests; fresh temporary-clone manual acceptance passed; full coverage passed 6,468 tests at 100/100/100/100."
 files[2]{path,scope,note}:
   src/sdk/governance/health.ts,project,clone-optional directory contract
-  tests/unit/commands/health-command.spec.ts,project,fresh-clone health regression coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/health-command.spec.ts,project,240
+  tests/unit/commands/governance/health-command.spec.ts,project,fresh-clone health regression coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/governance/health-command.spec.ts,project,240,"harness:codex","2026-09-22T05:10:26.110Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms4v9rmo-xrrc6w,test,passed,"2026-07-28T16:24:41.317Z","2026-07-28T16:25:04.033Z","2026-07-28T16:25:04.033Z",1,0,0
 docs[2]{path,scope,note}:

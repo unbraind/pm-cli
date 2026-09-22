@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: governance,history,immutable-record
 created_at: "2026-07-06T23:19:12.124Z"
-updated_at: "2026-09-10T20:48:04.413Z"
+updated_at: "2026-09-22T05:23:26.505Z"
 closed_at: "2026-09-10T20:46:00.267Z"
 completed_at: "2026-09-10T20:46:00.267Z"
 author: maintainer-agent
@@ -104,7 +104,7 @@ files[35]{path,scope,note}:
   tests/fixtures/contracts/full.json,project,Implementation and regression evidence for named history digests and detached proofs
   tests/integration/history-attestation-cli.integration.spec.ts,project,Implementation and regression evidence for named history digests and detached proofs
   tests/unit/cli/history-attestation.spec.ts,project,Real Commander proof output quiet receipts failed verification and bootstrap operand boundaries
-  tests/unit/commands/completion-command.spec.ts,project,All shell attestation discovery regression
+  tests/unit/commands/workspace/completion-command.spec.ts,project,All shell attestation discovery regression
   tests/unit/sdk/action-schema-parity.spec.ts,project,Additive schema version expectation
   tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,Hidden alias inventory
   tests/unit/sdk/contracts-full-projection.spec.ts,project,Attestation legacy alias projection

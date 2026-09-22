@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-09-12T20:05:06.266Z"
+updated_at: "2026-09-22T04:59:42.732Z"
 reminders[1]{at,text}:
   "2026-08-30T06:00:00.000Z",Verify the next eligible daily cut contains main 57d4a074 or a descendant and advances tag GitHub Release npm npx bunx analyzers Sentry telemetry and queue evidence then rearm
 author: maintainer-agent
@@ -279,10 +279,10 @@ files[20]{path,scope,note}:
   scripts/release/run-release-pipeline.mjs,project,consume and forward the protected-main policy token only to the gate orchestrator
   scripts/release/sentry-telemetry-gate.mjs,project,Ignore expected handled apply-failure CommandError and expose blocking issue IDs
   scripts/release/verify-published-release.mjs,project,Verify public registry surfaces with empty credentials and isolated npm/Bun caches
-  src/cli/commands/create.ts,project,Harden explicit create --id validation after Greptile found trailing-dash IDs were accepted
+  src/cli/commands/lifecycle/create.ts,project,Harden explicit create --id validation after Greptile found trailing-dash IDs were accepted
   tests/integration/ci-workflow-contract.spec.ts,project,assert auto-release issue resolution workflow contract
   tests/integration/release-automation-contract.spec.ts,project,Contract assertion preventing run-gates from drifting back to raw static-quality defaults
-  tests/unit/commands/create-command.spec.ts,project,Regression coverage rejects prefixed and shorthand explicit IDs ending in a dash
+  tests/unit/commands/lifecycle/create-command.spec.ts,project,Regression coverage rejects prefixed and shorthand explicit IDs ending in a dash
   tests/unit/scripts/release/hosted-analysis-gate.spec.ts,project,Adversarial identical-tree and mixed exact analyzer evidence regression coverage
   tests/unit/scripts/release/run-gates.spec.ts,project,"Regression coverage for release gate invoking pnpm quality:static"
   tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,Regression coverage for updated sentry gate output/classification
@@ -307,10 +307,6 @@ tests[18]:
   - command: node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts
     scope: project
     timeout_seconds: 240
-  - command: node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/scripts/release/run-gates.spec.ts tests/integration/release-automation-contract.spec.ts
-    scope: project
-    timeout_seconds: 240
-    note: Focused release-gate and explicit-id regression coverage
   - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/hosted-analysis-gate.spec.ts tests/unit/scripts/release/run-gates.spec.ts tests/integration/release-automation-contract.spec.ts
     scope: project
     timeout_seconds: 240
@@ -354,6 +350,15 @@ tests[18]:
       source_kind: local_mutation
       source_ref: codex/npm-oidc-publish-fix
     note: Trusted-publisher token-isolation workflow contracts
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/scripts/release/run-gates.spec.ts tests/integration/release-automation-contract.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T04:59:42.656Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: Focused release-gate and explicit-id regression coverage
 test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mqw0pnxi-coga1f,test,passed,"2026-06-27T07:07:41.177Z","2026-06-27T07:07:45.894Z","2026-06-27T07:07:45.894Z",3,0,0
   test-local-mqwzntpx-bck9yj,test,passed,"2026-06-27T23:25:38.329Z","2026-06-27T23:26:06.645Z","2026-06-27T23:26:06.645Z",7,0,0

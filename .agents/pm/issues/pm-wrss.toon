@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,json-envelope,token-efficiency
 created_at: "2026-07-19T03:41:53.393Z"
-updated_at: "2026-07-26T17:28:57.180Z"
+updated_at: "2026-09-22T05:18:50.744Z"
 closed_at: "2026-07-21T09:26:28.273Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -18,14 +18,30 @@ release: v2026.7.22
 resolution: Made list pagination keys stable and omitted unset filter echoes from the serialized result envelope.
 expected_result: "Every list JSON result carries total, has_more, truncated, and next_cursor without null-heavy filter bloat."
 actual_result: Stable keys pass runtime ordering coverage and the measured list-json budget dropped from 1307 to 828 bytes.
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-cfed,related,"2026-07-19T03:41:53.393Z",null,null
-  pm-fgih,related,"2026-07-19T03:41:53.393Z",null,null
-  pm-gdi7,related,"2026-07-19T03:41:53.393Z",null,null
-  pm-nilh,related,"2026-07-19T03:41:53.393Z",null,null
-  pm-topu,related,"2026-07-21T07:32:57.375Z",codex-root-20260721,null
-  pm-zwya,related,"2026-07-21T07:32:57.375Z",codex-root-20260721,null
-  pm-mpbb,implements,"2026-07-26T17:28:56.797Z",null,null
+dependencies[7]:
+  - id: pm-cfed
+    kind: related
+    created_at: "2026-07-19T03:41:53.393Z"
+  - id: pm-fgih
+    kind: related
+    created_at: "2026-07-19T03:41:53.393Z"
+  - id: pm-gdi7
+    kind: related
+    created_at: "2026-07-19T03:41:53.393Z"
+  - id: pm-nilh
+    kind: related
+    created_at: "2026-07-19T03:41:53.393Z"
+  - id: pm-topu
+    kind: related
+    created_at: "2026-07-21T07:32:57.375Z"
+    author: codex-root-20260721
+  - id: pm-zwya
+    kind: related
+    created_at: "2026-07-21T07:32:57.375Z"
+    author: codex-root-20260721
+  - id: pm-mpbb
+    kind: implements
+    created_at: "2026-07-26T17:28:56.797Z"
 comments[6]{created_at,author,text}:
   "2026-07-21T07:33:02.759Z",codex-root-20260721,"Evidence: every list envelope now carries total/has_more/truncated/next_cursor; unset filter echoes are omitted. Updated measured list-json budget fell from 1307 to 828 bytes (36.6% reduction) while the stable non-truncated keys remained present."
   "2026-07-21T07:45:24.338Z",codex-root-20260721,"Post-close verification correction: updated the lifecycle integration contract to assert that unset include_body is absent rather than serialized as null; the full 76-test CLI integration suite passes."
@@ -38,10 +54,21 @@ files[5]{path,scope,note}:
   src/sdk/query/list.ts,project,Stable lean list result envelope
   tests/integration/cli.integration.spec.ts,project,Lean filter omission integration expectation
   tests/integration/release-readiness-runtime.spec.ts,project,Deterministic stable key ordering
-  tests/unit/commands/list-command.spec.ts,project,Envelope and null omission coverage
-tests[2]{command,scope,timeout_seconds,note}:
-  node scripts/release/token-budget-gate.mjs,project,240,Token budget regression gate
-  node scripts/run-tests.mjs test -- tests/unit/commands/list-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,600,Stable envelope and runtime ordering
+  tests/unit/commands/query/list-command.spec.ts,project,Envelope and null omission coverage
+tests[2]:
+  - command: node scripts/release/token-budget-gate.mjs
+    scope: project
+    timeout_seconds: 240
+    note: Token budget regression gate
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/query/list-command.spec.ts tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:18:50.622Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: Stable envelope and runtime ordering
 test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mruc7r9p-pzbmyv,test,passed,"2026-07-21T07:33:36.944Z","2026-07-21T07:33:55.789Z","2026-07-21T07:33:55.789Z",2,0,0
   test-local-mrudlbw7-8wldaj,test,passed,"2026-07-21T08:12:08.158Z","2026-07-21T08:12:28.663Z","2026-07-21T08:12:28.663Z",2,0,0

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",context-management
 created_at: "2026-06-27T20:44:06.865Z"
-updated_at: "2026-09-19T08:39:47.792Z"
+updated_at: "2026-09-22T05:13:51.324Z"
 closed_at: "2026-06-27T20:55:06.227Z"
 author: codex-implementation
 parent: pm-mpbb
@@ -24,16 +24,12 @@ comments[4]{created_at,author,text}:
   "2026-06-27T20:58:24.548Z",codex,"PR review follow-up: Gemini identified a redundant closeout tree traversal in pm next recommendation reasoning; applying the equivalent concreteReady.length check and rerunning focused verification before pushing."
   "2026-06-27T20:59:32.758Z",codex,"PR review evidence: applied Gemini suggestion to reuse concreteReady.length for closeout recommendation rationale instead of recomputing descendants. Verification passed after the change: focused next/actionability tests 24/24, pnpm build, pnpm typecheck, and linked pm test run 3/3 including pnpm contracts:check."
 files[5]{path,scope,note}:
-  src/cli/commands/next.ts,project,Hide completed-container closeout rows while concrete leaf work exists
+  CHANGELOG.md,project,Package-owned changelog generation after closing item
+  src/cli/commands/query/next.ts,project,Hide completed-container closeout rows while concrete leaf work exists
   src/mcp/tool-definitions.ts,project,Align MCP pm_next description with closeout-row projection
   tests/fixtures/contracts/full.json,project,Refresh pm_next MCP contract description
-  tests/unit/commands/next-command.spec.ts,project,Regression coverage for hiding completed-container ready rows until closeout only
-  CHANGELOG.md,project,Package-owned changelog generation after closing item
+  tests/unit/commands/query/next-command.spec.ts,project,Regression coverage for hiding completed-container ready rows until closeout only
 tests[3]:
-  - command: node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts tests/unit/core/item/actionability.spec.ts
-    scope: project
-    timeout_seconds: 300
-    note: Focused pm next/actionability regression tests
   - command: pnpm build
     scope: project
     timeout_seconds: 300
@@ -43,6 +39,15 @@ tests[3]:
     timeout_seconds: 300
     pm_context_mode: tracker
     note: Contract snapshot remains current in real tracker context
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/query/next-command.spec.ts tests/unit/core/item/actionability.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:13:51.279Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: Focused pm next/actionability regression tests
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mqwu82l8-fgaar0,test,passed,"2026-06-27T20:53:32.784Z","2026-06-27T20:53:53.564Z","2026-06-27T20:53:53.564Z",3,0,0
   test-local-mqwuf7c5-vso5v6,test,passed,"2026-06-27T20:59:05.088Z","2026-06-27T20:59:26.309Z","2026-06-27T20:59:26.309Z",3,0,0

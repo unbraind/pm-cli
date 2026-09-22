@@ -2,25 +2,88 @@ id: pm-f4yn
 title: Prune src/cli/commands/index.ts barrel dead re-exports and adopt knip as a dead-export gate
 description: "2026-07-04 code-quality sweep: the commands barrel re-exports ~60 runtime symbols + ~80 types that no consumer imports via the barrel (package.json exports never exposes it; only ., ./sdk*, ./cli). knip reports 115 unused exports + 239 unused exported types repo-wide (SDK public surface needs an ignore-list). One-time sweep confirmed+fixed 2026-07-04: 57 dead loader.ts imports, 7 dead export keywords (calendar/list/http-client/fix-planning/doctor). Adopt knip (or ts-prune) with an SDK allowlist as a CI gate so the class stays extinct."
 type: Task
-status: open
+status: closed
 priority: 3
 tags[2]: "area:quality",ci
 created_at: "2026-07-04T08:32:10.926Z"
-updated_at: "2026-09-08T13:33:42.037Z"
+updated_at: "2026-09-22T06:46:49.807Z"
+closed_at: "2026-09-22T06:43:32.467Z"
+completed_at: "2026-09-22T06:43:32.467Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: Dead re-exports pruned from the commands barrel; knip runs in static gates with a zero-findings baseline.
 parent: pm-92if
 risk: low
 confidence: medium
-expected_result: Dead re-exports are pruned from the commands barrel and knip runs in the static gates with a zero-findings baseline.
-dependencies[6]{id,kind,created_at}:
-  pm-fb3i,related,"2026-07-14T17:05:10.764Z"
-  pm-92if,related,"2026-07-24T23:53:25.605Z"
-  pm-dvwm,related,"2026-07-24T23:53:25.605Z"
-  pm-kb5h,related,"2026-07-24T23:53:25.605Z"
-  pm-usfg,related,"2026-07-24T23:53:25.605Z"
-  pm-92if,implements,"2026-07-26T05:55:33.524Z"
+resolution: "Removed the unused private command barrel, three redundant SDK forwarding shims and dead private exports. Knip 6.37.0 is mandatory in static quality with explicit public SDK/bin entrypoints and real positive/negative controls."
+expected_result: No dead private export findings and no removed public SDK contracts.
+actual_result: Knip and its real unused-value/type negative controls pass; public SDK entries are retained. Full repository tests and exact 100-percent coverage pass; review and hosted checks remain the merge gates.
+dependencies[6]:
+  - id: pm-fb3i
+    kind: related
+    created_at: "2026-07-14T17:05:10.764Z"
+  - id: pm-dvwm
+    kind: related
+    created_at: "2026-07-24T23:53:25.605Z"
+  - id: pm-usfg
+    kind: related
+    created_at: "2026-07-24T23:53:25.605Z"
+  - id: pm-92if
+    kind: implements
+    created_at: "2026-07-26T05:55:33.524Z"
+  - id: pm-kb5h
+    kind: verifies
+    created_at: "2026-09-22T05:06:16.199Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-z3ez
+    kind: related
+    created_at: "2026-09-22T06:24:17.530Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[5]{created_at,author,text}:
+  "2026-09-22T04:54:15.712Z","harness:codex","Live implementation: configured Knip 6.37.0 with explicit published SDK/bin source entrypoints, removed the unused private CLI barrel and stale MCP mock, pruned unconsumed private re-exports and helper types. Public migration contracts remain explicitly marked public; no blanket SDK exclusion. Current typecheck and focused 12-test regression pass. GitHub intake: zero open PRs and zero open dependency/code/secret alerts; issue #1246 already links pm-z3ez. Gate negative controls and broader validation are in progress."
+  "2026-09-22T05:09:45.855Z","harness:codex","The mandatory quality:exports gate passes against the real repository and its seeded unused private value/type negative control. Published SDK/bin entrypoints are explicit, with no blanket SDK ignore. Linked test execution and complete static gates are being recorded before delivery."
+  "2026-09-22T05:13:53.532Z","harness:codex","The existing orphan-module gate exposed three additional unused compatibility shims after the barrel removal: lifecycle transitions, scheduling shortcuts, and init agent guidance. Removed those private shims and directed their existing tests to SDK owners; no gate suppression added. Public package paths and runtime behavior remain stable."
+  "2026-09-22T05:23:06.308Z","harness:codex","Public SDK surface snapshot passed with zero classified changes. Knip 6.37.0 supports Node ^20.19 or >=22.12, compatible with this package minimum >=22.18 and hosted Node 22/24 gates. All 54 tests for the removed shim owners pass after direct SDK imports."
+  "2026-09-22T06:43:30.140Z","harness:codex","Final repository coverage passed: 725 files and 9192 tests; statements 64834/64834, branches 49506/49506, functions 13467/13467, lines 62037/62037. All exact thresholds remain 100 percent. Typecheck, ESLint, zero-clone scans, 100-percent module/export/member documentation, structural/static contracts, graph composition and record integrity passed. Temporary Node/Bun lifecycle and packed npm/npx/bunx consumers passed. Local import/transport timing is documented separately because unchanged main also exceeds budgets on this host; hosted gates and reviews are still required before merge."
 notes[1]{created_at,author,text}:
   "2026-07-25T21:16:59.000Z","harness:claude-code","Live knip census 2026-07-25 (evening ecosystem review), knip 6.29.0, no repo knip config present, run as `npx knip --reporter compact` against the working tree at dist build 2026.7.25. This is the baseline this item's gate would ratchet.\n\nTotals: 45 unused exports · 63 unused exported types · 3 duplicate exports · 14 unused files · 1 unlisted dependency · 1 unlisted binary. Combined dead-ish symbol surface 111.\n\nTwenty-three of the unused exports/types sit under src/sdk, i.e. on the public surface, which is why this census matters to pm-38bskj (SDK surface shape) and not only to dead-code hygiene: pruning here shrinks the published API before pm-e6tm5c freezes whatever shape exists.\n\nIMPORTANT interpretation caveat before anyone deletes from this list. Without a knip config declaring the published SDK subpaths as entrypoints, \"unused\" means \"no INTERNAL consumer\", not \"no consumer\". The clearest example in the output is src/sdk/merge/index.ts reporting mergeHistoryStreams, mergeItemDocuments and mergeJsonDocuments as unused — those are the core public merge primitives that external packages are meant to call. Same for the seven merge types on the same line. So the first deliverable of this item is the config (entrypoints = the eleven package.json exports subpaths plus dist/cli.js and dist/mcp/server.js), and only the residue after that config is a real burn-down list.\n\nSame caveat on the 14 \"unused files\": they include plugins/pm-claude/scripts/pm-mcp-server.mjs and plugins/pm-codex/scripts/pm-mcp-server.mjs (generated MCP wrappers, invoked by plugin manifests), the three docs/examples entrypoints, tests/types/*.test-d.ts (type-level tests run by a separate tsconfig), tests/helpers/cliWorkerBridge.worker.mjs (loaded by worker_threads at runtime) and vitest.bench.config.ts (referenced by the bench script and the CodSpeed workflow). All six categories are reachable through mechanisms knip cannot see statically and must be declared, not deleted.\n\nGenuinely actionable without further analysis: the 3 duplicate exports — flag-contracts.ts exports MEET_FLAG_CONTRACTS/EVENT_FLAG_CONTRACTS and a six-name EXTENSION_*_FLAG_CONTRACTS group as aliases of the same values, and types.ts exports BUILTIN_ITEM_TYPE_VALUES and ITEM_TYPE_VALUES as duplicates. Also flagged: @codspeed/vitest-plugin and @types/node reported as unused devDependencies (@types/node is a deliberate runtime dependency per docs/SDK.md, so that one is a config gap), `vite` imported by vitest.config.ts but unlisted, and the `ollama` binary referenced from src/core/search/semantic-defaults.ts but undeclared."
+learnings[1]{created_at,author,text}:
+  "2026-09-22T05:14:37.271Z","harness:codex","Reachability should start at published package entrypoints and actual executable consumers. A private barrel can hide orphan shims; check dead exports and orphan modules together, then keep a real seeded negative control and SDK signature snapshot."
+files[14]{path,scope,note}:
+  knip.json,project,Remove dead private exports and enforce public-entrypoint-aware reachability
+  package.json,project,Remove dead private exports and enforce public-entrypoint-aware reachability
+  pnpm-lock.yaml,project,Remove dead private exports and enforce public-entrypoint-aware reachability
+  scripts/release/static-quality-gate.mts,project,Remove stale private lifecycle exception after deleting unused CLI shim
+  src/core/config/positional-value.ts,project,Remove dead private exports and enforce public-entrypoint-aware reachability
+  src/core/shared/item-metadata-contract.ts,project,Remove dead private exports and enforce public-entrypoint-aware reachability
+  src/sdk/extension/shared.ts,project,Remove dead private exports and enforce public-entrypoint-aware reachability
+  src/sdk/query/search-contracts.ts,project,Remove dead private exports and enforce public-entrypoint-aware reachability
+  src/sdk/schema.ts,project,Remove dead private exports and enforce public-entrypoint-aware reachability
+  tests/helpers/extensions.ts,project,Remove dead private exports and enforce public-entrypoint-aware reachability
+  tests/helpers/releaseContracts.ts,project,Keep independent mandatory release-script contract aligned with the new export gate
+  tests/unit/cli/structure-exports.spec.ts,project,Remove dead private exports and enforce public-entrypoint-aware reachability
+  tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,Remove dead private exports and enforce public-entrypoint-aware reachability
+  tests/unit/scripts/release/dead-exports.spec.ts,project,Remove dead private exports and enforce public-entrypoint-aware reachability
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  "pnpm quality:exports",project,240,"harness:codex","2026-09-22T05:06:21.140Z",local_mutation,refactor/cli-command-domains-export-gate
+test_runs[1]:
+  - run_id: test-local-muc7pyau-vls7y3
+    kind: test
+    status: passed
+    started_at: "2026-09-22T05:06:57.273Z"
+    finished_at: "2026-09-22T05:07:22.470Z"
+    recorded_at: "2026-09-22T05:07:22.470Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:exports",schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Latest pm-changelog generated reviewed delivery entries
+  docs/ARCHITECTURE.md,project,Document public entrypoints and mandatory dead-export negative control
+close_reason: Implementation and local verification complete; closure is included in the reviewed delivery.
 body: "## Context\n2026-07-04 code-quality sweep: src/cli/commands/index.ts re-exports ~60 runtime symbols + ~80 types that nothing imports via the barrel (package.json exports only exposes ., ./sdk*, ./cli). knip reports 115 unused exports + 239 unused exported types repo-wide. A one-time manual sweep on 2026-07-04 already removed 57 dead loader.ts imports and 7 dead export keywords — this item is about keeping the class extinct.\n\n## Approach\n1. Prune the commands barrel to what's actually consumed (grep each symbol; the SDK/public surface is exempt).\n2. Adopt knip (preferred over ts-prune) with an allowlist for the intentional SDK public surface, wired as a CI static gate alongside the existing suppression/LOC gates.\nRisk to watch: the SDK allowlist must be curated, not blanket — otherwise the gate is decorative.\n\n## Definition of done\nBarrel exports only consumed symbols; knip gate green in CI and failing on a seeded dead export; allowlist documented (why each entry is public surface)."

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-05-22T15:44:26.189Z"
-updated_at: "2026-09-19T08:40:07.909Z"
+updated_at: "2026-09-22T05:03:56.899Z"
 closed_at: "2026-05-23T13:07:36.090Z"
 author: maintainer-agent
 parent: pm-rnpb
@@ -27,7 +27,7 @@ comments[8]{created_at,author,text}:
   "2026-05-23T12:52:18.303Z",claude-code-agent,"Second review pass (commit e1d615a2): CodeRabbit refilled and posted 9 + Codex re-reviewed. Fixed all valid findings: removed no-op --message from schema add-type (CLI/contracts/completions/docs); added coerceAliasArray to guard malformed persisted aliases (non-array / non-string) in upsert + collision checks; escape/quote type name in invalid-type hint and success line via escapeForDoubleQuotes. Coverage 100% (102 files / 1528 tests), static parity + check-secrets clean, manual dogfood 7/7. The 5 CodeRabbit '.agents/pm/** direct edit' comments are the known recurring false positive (records are pm-generated and committed as the tracked workflow requires; health/validate ok, hash chain intact) and the vitest include+exclude note is intentional convention (matches create.ts/update.ts). Watching new CI + re-review window before merge."
   "2026-05-23T13:07:26.814Z",claude-code-agent,"MERGED 2026-05-23T13:06Z: PR #49 squash-merged into main as 7ef3c3b7 with all GitHub checks green (Build foundation, Docs, Test ubuntu+macOS Node 20, Gates static/typecheck/coverage/compat/smokes; CodeRabbit pass; Sourcery skipping). Back on main branch. Two full AI-review rounds addressed (Gemini + Codex + refilled CodeRabbit, 13 inline comments): all valid findings fixed across commits 5dc11c56/7505a47e/e1d615a2; .agents/pm direct-edit comments were false positives. Feature complete: parts (a) merge already shipped, (b) pm schema add-type and (c) discoverable invalid-type hint now live. Closing pm-e1va."
 files[4]{path,scope,note}:
-  src/cli/commands/schema.ts,project,pm schema add-type command runner (governance/lock/atomic write/JSON envelope)
+  src/cli/commands/workspace/schema.ts,project,pm schema add-type command runner (governance/lock/atomic write/JSON envelope)
   src/core/schema/item-types-file.ts,project,"Pure logic: parse/upsert/serialize types.json + invalid-type hint helpers (100% covered)"
   tests/unit/item-types-file.spec.ts,project,100% coverage of the pure-logic module
   tests/unit/schema-command.spec.ts,project,Integration test for schema add-type + discoverable hint

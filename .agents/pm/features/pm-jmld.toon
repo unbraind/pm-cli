@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: backlog,cli,dedupe
 created_at: "2026-06-10T09:00:57.022Z"
-updated_at: "2026-09-19T08:40:37.504Z"
+updated_at: "2026-09-22T05:22:53.426Z"
 closed_at: "2026-06-19T00:59:40.397Z"
 author: maintainer-agent
 parent: pm-mpbb
@@ -31,11 +31,11 @@ files[8]{path,scope,note}:
   src/cli/commands/dedupe-merge.ts,project,core guided duplicate merge runtime
   src/sdk/runtime.ts,project,SDK runtime export for dedupe merge
   tests/fixtures/contracts/full.json,project,contract snapshot update
-  tests/unit/commands/dedupe-merge-command.spec.ts,project,dedupe merge command regression tests
+  tests/unit/commands/governance/dedupe-merge-command.spec.ts,project,dedupe merge command regression tests
   tests/unit/extensions/builtin-extension-entrypoints.spec.ts,project,builtin package entrypoint coverage
   tests/unit/packages/governance-audit-runtime.spec.ts,project,package runtime regression tests
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/dedupe-merge-command.spec.ts tests/unit/packages/governance-audit-runtime.spec.ts tests/unit/extensions/builtin-extension-entrypoints.spec.ts tests/unit/commands/contracts-command.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/governance/dedupe-merge-command.spec.ts tests/unit/packages/governance-audit-runtime.spec.ts tests/unit/extensions/builtin-extension-entrypoints.spec.ts tests/unit/commands/workspace/contracts-command.spec.ts,project,240,"harness:codex","2026-09-22T05:22:53.350Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mqk6y80n-1n4z3d,test,passed,"2026-06-19T00:28:27.714Z","2026-06-19T00:29:08.759Z","2026-06-19T00:29:08.759Z",1,0,0
   test-local-mqk78ore-h6co0a,test,passed,"2026-06-19T00:36:30.904Z","2026-06-19T00:37:17.018Z","2026-06-19T00:37:17.018Z",1,0,0

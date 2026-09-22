@@ -1,9 +1,9 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { runGraph } from "../../src/cli/commands/graph.js";
-import { runHealth } from "../../src/cli/commands/health.js";
-import { runValidate } from "../../src/cli/commands/validate.js";
+import { runGraph } from "../../src/cli/commands/query/graph.js";
+import { runHealth } from "../../src/cli/commands/governance/health.js";
+import { runValidate } from "../../src/cli/commands/governance/validate.js";
 import { clearItemMetadataEnvelopeMemo } from "../../src/core/store/item-metadata-cache.js";
 import type { GraphAnalyzeResult } from "../../src/sdk/graph/run.js";
 import { createTaskFixture } from "../helpers/createTaskFixture.js";

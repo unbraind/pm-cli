@@ -1,0 +1,4529 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import type { ItemMetadata } from "../../../../src/types.js";
+import {
+  EXIT_CODE,
+  SETTINGS_DEFAULTS,
+} from "../../../../src/core/shared/constants.js";
+import { serializeItemDocument } from "../../../../src/core/item/item-format.js";
+import { runSearch } from "../../../../src/cli/commands/query/search.js";
+import { readJsonFixture } from "../../../helpers/fixtures.js";
+
+const {
+  pathExistsMock,
+  readSettingsMock,
+  listAllItemMetadataMock,
+  readFileMock,
+  realpathMock,
+  statMock,
+  opendirMock,
+  runActiveOnReadHooksMock,
+  spawnSyncMock,
+} = vi.hoisted(() => ({
+  pathExistsMock: vi.fn<() => Promise<boolean>>(),
+  readSettingsMock: vi.fn<() => Promise<{ id_prefix: string }>>(),
+  listAllItemMetadataMock: vi.fn<() => Promise<ItemMetadata[]>>(),
+  readFileMock:
+    vi.fn<(targetPath: string, encoding: string) => Promise<string>>(),
+  realpathMock: vi.fn<(targetPath: string) => Promise<string>>(),
+  statMock: vi.fn(),
+  opendirMock: vi.fn(),
+  runActiveOnReadHooksMock: vi.fn<() => Promise<string[]>>(),
+  spawnSyncMock: vi.fn(),
+}));
+let activeExtensionRegistrations: Record<string, unknown> | null = null;
+
+const SEARCH_TRACKER_ROOTS = new Set(
+  [
+    "/tmp/not-init",
+    "/tmp/pm-search",
+    "/tmp/pm-search-hooks",
+    "/tmp/pm-search-realpath-fail",
+    "/tmp/pm-search-symlink",
+  ].map((root) => path.resolve(root)),
+);
+
+/** Install platform-resolved filesystem doubles for every search tracker fixture. */
+function mockReadableSearchTrackerRoots(): void {
+  statMock.mockImplementation(async (targetPath: string) => {
+    if (SEARCH_TRACKER_ROOTS.has(path.resolve(targetPath))) {
+      return { isDirectory: () => true, mode: 0o755 };
+    }
+    throw Object.assign(new Error("missing"), { code: "ENOENT" });
+  });
+  opendirMock.mockResolvedValue({ close: vi.fn(async () => {}) });
+}
+
+function createExtensionRegistrations(): Record<string, unknown> {
+  return {
+    commands: [],
+    flags: [],
+    item_fields: [],
+    item_types: [],
+    migrations: [],
+    importers: [],
+    exporters: [],
+    search_providers: [],
+    vector_store_adapters: [],
+  };
+}
+
+vi.mock("../../../../src/core/fs/fs-utils.js", () => ({
+  pathExists: pathExistsMock,
+}));
+
+vi.mock("../../../../src/core/store/settings.js", () => ({
+  readSettings: readSettingsMock,
+}));
+
+vi.mock("../../../../src/core/store/item-store.js", () => ({
+  listAllItemMetadata: listAllItemMetadataMock,
+}));
+
+vi.mock("../../../../src/core/extensions/index.js", () => ({
+  runActiveOnReadHooks: runActiveOnReadHooksMock,
+  hasActiveOnReadHooks: () => false,
+  getActiveExtensionRegistrations: () => activeExtensionRegistrations,
+}));
+
+vi.mock("node:fs/promises", () => ({
+  default: {
+    readFile: readFileMock,
+    realpath: realpathMock,
+    stat: statMock,
+    opendir: opendirMock,
+  },
+}));
+
+vi.mock("node:child_process", () => ({
+  spawnSync: spawnSyncMock,
+}));
+
+interface KeywordCorpusFixture {
+  match_scenario: {
+    query: string;
+    matching_overrides: Partial<ItemMetadata> & Pick<ItemMetadata, "id">;
+    non_matching_overrides: Partial<ItemMetadata> & Pick<ItemMetadata, "id">;
+  };
+}
+
+const keywordCorpusFixture = readJsonFixture<KeywordCorpusFixture>(
+  "search",
+  "keyword-corpus.json",
+);
+
+function makeItemMetadata(
+  overrides: Partial<ItemMetadata> & Pick<ItemMetadata, "id">,
+): ItemMetadata {
+  return {
+    id: overrides.id,
+    title: overrides.title ?? overrides.id,
+    description: overrides.description ?? "",
+    type: overrides.type ?? "Task",
+    status: overrides.status ?? "open",
+    priority: overrides.priority ?? 1,
+    tags: overrides.tags ?? [],
+    created_at: overrides.created_at ?? "2026-02-18T00:00:00.000Z",
+    updated_at: overrides.updated_at ?? "2026-02-18T00:00:00.000Z",
+    deadline: overrides.deadline,
+    assignee: overrides.assignee,
+    author: overrides.author,
+    estimated_minutes: overrides.estimated_minutes,
+    acceptance_criteria: overrides.acceptance_criteria,
+    dependencies: overrides.dependencies,
+    comments: overrides.comments,
+    notes: overrides.notes,
+    learnings: overrides.learnings,
+    reminders: overrides.reminders,
+    events: overrides.events,
+    files: overrides.files,
+    tests: overrides.tests,
+    docs: overrides.docs,
+    close_reason: overrides.close_reason,
+    parent: overrides.parent,
+    sprint: overrides.sprint,
+    release: overrides.release,
+  };
+}
+
+function serializeDocument(itemMetadata: ItemMetadata, body: string): string {
+  return `${JSON.stringify(itemMetadata, null, 2)}\n\n${body}`;
+}
+
+function makeDefaultSettings() {
+  return structuredClone(SETTINGS_DEFAULTS);
+}
+
+function resolveFetchTarget(url: unknown): string {
+  if (typeof url === "string") {
+    return url;
+  }
+  if (url instanceof URL) {
+    return url.toString();
+  }
+  if (typeof url === "object" && url !== null && "url" in url) {
+    const maybeUrl = (url as { url?: unknown }).url;
+    if (typeof maybeUrl === "string") {
+      return maybeUrl;
+    }
+  }
+  throw new TypeError(`Unexpected fetch target type: ${typeof url}`);
+}
+
+function parseJsonBody<T>(body: unknown): T {
+  if (typeof body !== "string") {
+    throw new TypeError(
+      `Expected string request body but received ${typeof body}`,
+    );
+  }
+  return JSON.parse(body) as T;
+}
+
+function makeSemanticSearchSettings(overrides: Record<string, unknown> = {}): {
+  id_prefix: string;
+} {
+  return {
+    providers: {
+      openai: {
+        base_url: "https://api.example.test/v1",
+        model: "text-embedding-3-small",
+        api_key: "",
+      },
+    },
+    vector_store: {
+      qdrant: {
+        url: "https://qdrant.example.test:6333",
+        api_key: "",
+      },
+    },
+    ...overrides,
+  } as unknown as { id_prefix: string };
+}
+
+function makeJsonResponse(payload: unknown): Response {
+  return {
+    ok: true,
+    status: 200,
+    statusText: "OK",
+    json: async () => payload,
+    text: async () => "",
+  } as unknown as Response;
+}
+
+function makeEmbeddingAndVectorSearchFetch(options: {
+  embedding?: number[];
+  vectorResult: Array<{ id: string; score: number }>;
+}): typeof globalThis.fetch {
+  return (async (url: unknown) => {
+    const target = resolveFetchTarget(url);
+    if (target.endsWith("/v1/embeddings")) {
+      return makeJsonResponse({
+        data: [{ embedding: options.embedding ?? [0.9, 0.1] }],
+      });
+    }
+    if (target.endsWith("/collections/pm_items/points/search")) {
+      return makeJsonResponse({ result: options.vectorResult });
+    }
+    throw new Error(`Unexpected fetch target: ${target}`);
+  }) as typeof globalThis.fetch;
+}
+
+function mockOllamaAutoDetectAvailable(): void {
+  readSettingsMock.mockResolvedValue(
+    makeDefaultSettings() as unknown as { id_prefix: string },
+  );
+  spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
+    if (args[0] === "--version") {
+      return {
+        status: 0,
+        stdout: "ollama version is 0.0.0",
+        stderr: "",
+      };
+    }
+    if (args[0] === "list") {
+      return {
+        status: 0,
+        stdout: "NAME ID SIZE MODIFIED\nqwen3-embedding:0.6b abc 380 MB now\n",
+        stderr: "",
+      };
+    }
+    return {
+      status: 1,
+      stdout: "",
+      stderr: "",
+    };
+  });
+}
+
+function seedSingleTokenItem(
+  overrides: Partial<ItemMetadata> & Pick<ItemMetadata, "id">,
+): void {
+  const item = makeItemMetadata(overrides);
+  listAllItemMetadataMock.mockResolvedValue([item]);
+  readFileMock.mockResolvedValue(serializeDocument(item, "token body"));
+}
+
+function setupExtensionVectorAdapterScenario(options: {
+  id: string;
+  title: string;
+  vectorStore?: Record<string, unknown>;
+  query: () => unknown;
+}): void {
+  const item = makeItemMetadata({ id: options.id, title: options.title });
+  listAllItemMetadataMock.mockResolvedValue([item]);
+  readFileMock.mockResolvedValue(serializeDocument(item, "semantic body"));
+  readSettingsMock.mockResolvedValue(
+    makeSemanticSearchSettings({
+      vector_store: options.vectorStore ?? { adapter: "ext-vector" },
+    }),
+  );
+  activeExtensionRegistrations = createExtensionRegistrations();
+  (
+    activeExtensionRegistrations.vector_store_adapters as Array<
+      Record<string, unknown>
+    >
+  ).push({
+    layer: "project",
+    name: "vector-ext",
+    definition: { name: "ext-vector" },
+    runtime_definition: { name: "ext-vector", query: options.query },
+  });
+}
+
+describe("runSearch", () => {
+  it("rejects count mode combined with a continuation cursor", async () => {
+    await expect(
+      runSearch(
+        "auth",
+        { count: true, after: "cursor" },
+        { path: "/tmp/pm-search" },
+      ),
+    ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+  });
+
+  beforeEach(() => {
+    pathExistsMock.mockReset();
+    readSettingsMock.mockReset();
+    listAllItemMetadataMock.mockReset();
+    readFileMock.mockReset();
+    realpathMock.mockReset();
+    statMock.mockReset();
+    opendirMock.mockReset();
+    runActiveOnReadHooksMock.mockReset();
+    spawnSyncMock.mockReset();
+    activeExtensionRegistrations = null;
+
+    pathExistsMock.mockResolvedValue(true);
+    readSettingsMock.mockResolvedValue({ id_prefix: "pm-" });
+    listAllItemMetadataMock.mockResolvedValue([]);
+    realpathMock.mockImplementation(async (targetPath) => targetPath);
+    mockReadableSearchTrackerRoots();
+    runActiveOnReadHooksMock.mockResolvedValue([]);
+    spawnSyncMock.mockReturnValue({
+      status: 1,
+      stdout: "",
+      stderr: "",
+    });
+  });
+
+  it("fails when tracker is not initialized", async () => {
+    pathExistsMock.mockResolvedValueOnce(false);
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+    await expect(
+      runSearch("token", {}, { path: "/tmp/not-init" }),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.NOT_FOUND,
+    });
+  });
+
+  it("resolves an explicit project root into its initialized nested tracker", async () => {
+    const projectRoot = mkdtempSync(
+      path.join(os.tmpdir(), "pm-search-project-root-"),
+    );
+    const trackerRoot = path.join(projectRoot, ".agents", "pm");
+    const normalizedTrackerRoot = path.resolve(trackerRoot);
+    mkdirSync(trackerRoot, { recursive: true });
+    writeFileSync(path.join(trackerRoot, "settings.json"), "{}\n", "utf8");
+    SEARCH_TRACKER_ROOTS.add(normalizedTrackerRoot);
+
+    try {
+      const result = await runSearch("token", {}, { path: projectRoot });
+
+      expect(result.count).toBe(0);
+      expect(readSettingsMock).toHaveBeenCalledWith(normalizedTrackerRoot);
+      expect(listAllItemMetadataMock).toHaveBeenCalledWith(
+        normalizedTrackerRoot,
+        "toon",
+        expect.any(Object),
+        [],
+        undefined,
+      );
+    } finally {
+      SEARCH_TRACKER_ROOTS.delete(normalizedTrackerRoot);
+      rmSync(projectRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("applies active content and governance-missing filters in the search predicate (kept vs excluded)", async () => {
+    // Two items both match the keyword query so both reach the filter predicate.
+    // One carries notes + reviewer (governance-present), the other carries neither.
+    const withNotes: ItemMetadata = {
+      ...makeItemMetadata({
+        id: "pm-search-filter-rich",
+        title: "token rich",
+        description: "token rich description",
+        tags: ["token"],
+        notes: [
+          {
+            author: "a",
+            created_at: "2026-02-18T00:00:00.000Z",
+            text: "a note",
+          },
+        ],
+      }),
+      // makeItemMetadata does not copy reviewer; attach it explicitly so the
+      // serialized document carries governance-present metadata.
+      reviewer: "rev",
+    };
+    const bare = makeItemMetadata({
+      id: "pm-search-filter-bare",
+      title: "token bare",
+      description: "token bare description",
+      tags: ["token"],
+    });
+    listAllItemMetadataMock.mockResolvedValue([withNotes, bare]);
+    readFileMock.mockImplementation(async (targetPath: string) => {
+      if (targetPath.includes("pm-search-filter-rich")) {
+        return serializeDocument(withNotes, "token body");
+      }
+      return serializeDocument(bare, "token body");
+    });
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+
+    // Content filter active: --has-notes keeps the noted item, excludes the bare one.
+    const hasNotes = await runSearch(
+      "token",
+      { hasNotes: true },
+      { path: "/tmp/pm-search" },
+    );
+    expect(hasNotes.items.map((hit) => hit.item.id)).toEqual([
+      "pm-search-filter-rich",
+    ]);
+
+    // Governance-missing filter active: --filter-reviewer-missing keeps the bare item,
+    // excludes the one carrying a reviewer.
+    const reviewerMissing = await runSearch(
+      "token",
+      { filterReviewerMissing: true },
+      { path: "/tmp/pm-search" },
+    );
+    expect(reviewerMissing.items.map((hit) => hit.item.id)).toEqual([
+      "pm-search-filter-bare",
+    ]);
+  });
+
+  it("matches exact and short item IDs as first-class search hits", async () => {
+    const target = makeItemMetadata({
+      id: "pm-fk49",
+      title: "Game Engine & Core Architecture",
+      description: "No literal id token in content",
+    });
+    const other = makeItemMetadata({
+      id: "pm-other",
+      title: "fk49 mentioned elsewhere",
+      description: "This item should rank below the exact id match",
+    });
+    listAllItemMetadataMock.mockResolvedValue([other, target]);
+    readFileMock.mockImplementation(async (targetPath: string) => {
+      if (targetPath.includes("pm-fk49")) {
+        return serializeDocument(target, "body without lookup token");
+      }
+      return serializeDocument(other, "fk49 body mention");
+    });
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+
+    const exact = await runSearch("pm-fk49", {}, { path: "/tmp/pm-search" });
+    expect(exact.items[0]?.item.id).toBe("pm-fk49");
+    expect(exact.items[0]?.matched_fields).toEqual(["id"]);
+
+    const short = await runSearch("fk49", {}, { path: "/tmp/pm-search" });
+    expect(short.items[0]?.item.id).toBe("pm-fk49");
+    expect(short.items[0]?.matched_fields).toEqual(["id"]);
+
+    const customIdTarget = makeItemMetadata({
+      id: "custom-fk49",
+      title: "Custom prefix item",
+      description: "No literal id token in content",
+    });
+    readSettingsMock.mockResolvedValue({
+      ...makeDefaultSettings(),
+      id_prefix: "custom-",
+    } as never);
+    listAllItemMetadataMock.mockResolvedValue([customIdTarget]);
+    readFileMock.mockResolvedValue(
+      serializeDocument(customIdTarget, "body without lookup token"),
+    );
+    const custom = await runSearch("fk49", {}, { path: "/tmp/pm-search" });
+    expect(custom.items[0]?.item.id).toBe("custom-fk49");
+    expect(custom.items[0]?.matched_fields).toEqual(["id"]);
+  });
+
+  it("ranks exact dashed ID matches above items that only mention the ID (GH-295)", async () => {
+    const target = makeItemMetadata({
+      id: "pm-jxyj",
+      title: "Target item",
+      description: "No exact id mention in description",
+      comments: [
+        {
+          author: "a",
+          created_at: "2026-02-18T00:00:00.000Z",
+          text: "pm-jxyj self reference",
+        },
+      ],
+    });
+    const descriptionMention = makeItemMetadata({
+      id: "pm-mention-description",
+      title: "Mention elsewhere",
+      description: "pm-jxyj pm-jxyj pm-jxyj",
+    });
+    const commentMention = makeItemMetadata({
+      id: "pm-mention-comment",
+      title: "Comment mention",
+      comments: [
+        {
+          author: "a",
+          created_at: "2026-02-18T00:00:00.000Z",
+          text: "pm-jxyj pm-jxyj",
+        },
+      ],
+    });
+    listAllItemMetadataMock.mockResolvedValue([
+      descriptionMention,
+      commentMention,
+      target,
+    ]);
+    readFileMock.mockImplementation(async (targetPath: string) => {
+      if (targetPath.includes("pm-jxyj"))
+        return serializeDocument(target, "body without lookup token");
+      if (targetPath.includes("pm-mention-description"))
+        return serializeDocument(descriptionMention, "body");
+      return serializeDocument(commentMention, "body");
+    });
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+    const result = await runSearch(
+      "pm-jxyj",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
+
+    expect(result.items[0]?.item.id).toBe("pm-jxyj");
+    expect(result.items[0]?.matched_fields).toEqual(["id"]);
+    expect(result.items[0]?.score).toBeGreaterThan(result.items[1]?.score ?? 0);
+  });
+
+  it("ranks semantic/hybrid search with the offline BM25 provider and warns on auto-fallback (pm-75k9)", async () => {
+    const dbDoc = makeItemMetadata({
+      id: "pm-db",
+      title: "database connection pool leak under load",
+    });
+    const retryDoc = makeItemMetadata({
+      id: "pm-retry",
+      title: "exponential backoff retry http client",
+    });
+    const migrationDoc = makeItemMetadata({
+      id: "pm-mig",
+      title: "database migration plan",
+    });
+    listAllItemMetadataMock.mockResolvedValue([dbDoc, retryDoc, migrationDoc]);
+    readFileMock.mockImplementation(async (targetPath: string) => {
+      if (targetPath.includes("pm-db")) return serializeDocument(dbDoc, "");
+      if (targetPath.includes("pm-retry"))
+        return serializeDocument(retryDoc, "");
+      return serializeDocument(migrationDoc, "");
+    });
+    const bm25Settings = { ...makeDefaultSettings(), id_prefix: "pm-" };
+    bm25Settings.search = { ...bm25Settings.search, provider: "bm25" };
+    const autoSettings = { ...makeDefaultSettings(), id_prefix: "pm-" };
+    autoSettings.search = { ...autoSettings.search, provider: "auto" };
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+
+    readSettingsMock.mockResolvedValueOnce(bm25Settings as never);
+    const semantic = await runSearch(
+      "database connection",
+      { mode: "semantic" },
+      { path: "/tmp/pm-search" },
+    );
+    const semanticItems = semantic.items as Array<{
+      item: { id: string };
+      matched_fields?: string[];
+    }>;
+    expect(semantic.mode).toBe("semantic");
+    expect(semanticItems.map((hit) => hit.item.id)).toContain("pm-db");
+    expect(
+      semanticItems.every((hit) => hit.matched_fields?.includes("bm25")),
+    ).toBe(true);
+
+    readSettingsMock.mockResolvedValueOnce(bm25Settings as never);
+    const hybrid = await runSearch(
+      "database connection",
+      { mode: "hybrid" },
+      { path: "/tmp/pm-search" },
+    );
+    const hybridItems = hybrid.items as Array<{
+      item: { id: string };
+      matched_fields?: string[];
+    }>;
+    expect(hybrid.mode).toBe("hybrid");
+    expect(
+      hybridItems.some((hit) => hit.matched_fields?.includes("bm25")),
+    ).toBe(true);
+
+    readSettingsMock.mockResolvedValueOnce(autoSettings as never);
+    const auto = await runSearch(
+      "database connection",
+      { mode: "semantic" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(auto.warnings).toContain(
+      "search_semantic_offline_bm25:no_embedding_provider:using_lexical_bm25",
+    );
+  });
+
+  it("resolves search max-results and score-threshold fallbacks deterministically", async () => {
+    const {
+      resolveSearchMaxResults,
+      resolveSearchScoreThreshold,
+      resolveHybridSemanticWeight,
+    } = await import("../../../../src/cli/commands/query/search.js");
+    expect(resolveSearchMaxResults({ search: { max_results: 7.9 } })).toBe(7);
+    expect(resolveSearchMaxResults({ search: { max_results: 0 } })).toBe(50);
+    expect(resolveSearchMaxResults({ search: { max_results: "bad" } })).toBe(
+      50,
+    );
+    expect(
+      resolveSearchScoreThreshold({ search: { score_threshold: 0.42 } }),
+    ).toBe(0.42);
+    expect(
+      resolveSearchScoreThreshold({ search: { score_threshold: Number.NaN } }),
+    ).toBe(0);
+    expect(
+      resolveSearchScoreThreshold({ search: { score_threshold: "bad" } }),
+    ).toBe(0);
+    expect(
+      resolveHybridSemanticWeight({ search: { hybrid_semantic_weight: 0.2 } }),
+    ).toBe(0.2);
+    expect(
+      resolveHybridSemanticWeight({ search: { hybrid_semantic_weight: -0.1 } }),
+    ).toBe(0.7);
+    expect(
+      resolveHybridSemanticWeight({ search: { hybrid_semantic_weight: 1.1 } }),
+    ).toBe(0.7);
+    expect(
+      resolveHybridSemanticWeight({
+        search: { hybrid_semantic_weight: "bad" },
+      }),
+    ).toBe(0.7);
+  });
+
+  it("applies per-query semantic-weight override for hybrid mode and warns on invalid override", async () => {
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+    const semanticSearchSettings = {
+      search: {
+        hybrid_semantic_weight: 0.2,
+      },
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        qdrant: {
+          url: "https://qdrant.example.test:6333",
+          api_key: "",
+        },
+      },
+    } as unknown as { id_prefix: string };
+
+    readSettingsMock.mockResolvedValueOnce(semanticSearchSettings);
+    const validOverride = await runSearch(
+      "token",
+      { mode: "hybrid", semanticWeight: "0.9" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(validOverride.mode).toBe("hybrid");
+    expect(validOverride.filters).toMatchObject({
+      hybrid_semantic_weight: 0.9,
+    });
+    expect(validOverride.warnings).toBeUndefined();
+
+    readSettingsMock.mockResolvedValueOnce(semanticSearchSettings);
+    const invalidOverride = await runSearch(
+      "token",
+      { mode: "hybrid", semanticWeight: "not-a-number" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(invalidOverride.mode).toBe("hybrid");
+    expect(invalidOverride.filters).toMatchObject({
+      hybrid_semantic_weight: 0.2,
+    });
+    expect(invalidOverride.warnings).toContain(
+      "search_hybrid_semantic_weight_override_invalid:using_settings_default",
+    );
+  });
+
+  it("validates query, mode, and filter inputs", async () => {
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+
+    await expect(
+      runSearch("   ", {}, { path: "/tmp/pm-search" }),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    const keywordDefaultNoSemantic = await runSearch(
+      "token",
+      {},
+      { path: "/tmp/pm-search" },
+    );
+    expect(keywordDefaultNoSemantic.mode).toBe("keyword");
+    expect(keywordDefaultNoSemantic.count).toBe(0);
+    // Explicit semantic/hybrid with no embedding provider degrades to keyword
+    // search (never blocks the agent) and reports a fallback warning.
+    const semanticUnconfigured = await runSearch(
+      "token",
+      { mode: "semantic" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(semanticUnconfigured.mode).toBe("keyword");
+    expect(semanticUnconfigured.warnings).toContain(
+      "search_semantic_fallback:error:using_keyword_mode",
+    );
+    const hybridUnconfigured = await runSearch(
+      "token",
+      { mode: "hybrid" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(hybridUnconfigured.mode).toBe("keyword");
+    expect(hybridUnconfigured.warnings).toContain(
+      "search_hybrid_fallback:error:using_keyword_mode",
+    );
+    readSettingsMock.mockResolvedValueOnce({
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+    } as unknown as { id_prefix: string });
+    // Provider present but no vector store also degrades instead of failing.
+    const semanticNoVector = await runSearch(
+      "token",
+      { mode: "semantic" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(semanticNoVector.mode).toBe("keyword");
+    expect(semanticNoVector.warnings).toContain(
+      "search_semantic_fallback:error:using_keyword_mode",
+    );
+    const openAiSemanticSettings = {
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        qdrant: {
+          url: "https://qdrant.example.test:6333",
+          api_key: "",
+        },
+      },
+    } as unknown as { id_prefix: string };
+    readSettingsMock.mockResolvedValueOnce(openAiSemanticSettings);
+    const defaultKeywordNoItems = await runSearch(
+      "token",
+      {},
+      { path: "/tmp/pm-search" },
+    );
+    expect(defaultKeywordNoItems.mode).toBe("keyword");
+    expect(defaultKeywordNoItems.count).toBe(0);
+    readSettingsMock.mockResolvedValueOnce(openAiSemanticSettings);
+    const semanticNoItems = await runSearch(
+      "token",
+      { mode: "semantic" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(semanticNoItems.mode).toBe("semantic");
+    expect(semanticNoItems.count).toBe(0);
+    readSettingsMock.mockResolvedValueOnce(openAiSemanticSettings);
+    const explicitKeywordNoItems = await runSearch(
+      "token",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(explicitKeywordNoItems.mode).toBe("keyword");
+    expect(explicitKeywordNoItems.count).toBe(0);
+    readSettingsMock.mockResolvedValueOnce({
+      providers: {
+        ollama: {
+          base_url: "http://localhost:11434",
+          model: "nomic-embed-text",
+        },
+      },
+      vector_store: {
+        lancedb: {
+          path: "/tmp/lance db",
+        },
+      },
+    } as unknown as { id_prefix: string });
+    const hybridNoItems = await runSearch(
+      "token",
+      { mode: "hybrid" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(hybridNoItems.mode).toBe("hybrid");
+    expect(hybridNoItems.count).toBe(0);
+    readSettingsMock.mockResolvedValueOnce(openAiSemanticSettings);
+    const flexibleDateFilter = await runSearch(
+      "token",
+      { mode: "keyword", deadlineBefore: "2026-02-21T00-00Z" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(flexibleDateFilter.count).toBe(0);
+    expect(flexibleDateFilter.filters).toMatchObject({
+      deadline_before: "2026-02-21T00-00Z",
+    });
+    readSettingsMock.mockResolvedValueOnce(openAiSemanticSettings);
+    const monthRelativeFilter = await runSearch(
+      "token",
+      { mode: "keyword", deadlineBefore: "+1m" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(monthRelativeFilter.count).toBe(0);
+    expect(typeof monthRelativeFilter.filters.deadline_before).toBe("string");
+    await expect(
+      runSearch("token", { mode: "bad-mode" }, { path: "/tmp/pm-search" }),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(
+      runSearch("token", { type: "NotAType" }, { path: "/tmp/pm-search" }),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(
+      runSearch("token", { priority: "8" }, { path: "/tmp/pm-search" }),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(
+      runSearch("token", { priority: "1.5" }, { path: "/tmp/pm-search" }),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(
+      runSearch(
+        "token",
+        { deadlineBefore: "not-a-deadline" },
+        { path: "/tmp/pm-search" },
+      ),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(
+      runSearch("token", { limit: "-1" }, { path: "/tmp/pm-search" }),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+  });
+
+  it("keeps the SDK default keyword-first even when Ollama auto-defaults are available", async () => {
+    mockOllamaAutoDetectAvailable();
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+    const result = await runSearch("token", {}, { path: "/tmp/pm-search" });
+    expect(result.mode).toBe("keyword");
+    expect(result.count).toBe(0);
+  });
+
+  it("does not invoke implicit Ollama semantic execution for default search", async () => {
+    mockOllamaAutoDetectAvailable();
+    seedSingleTokenItem({
+      id: "pm-ollama-auto-fallback",
+      title: "token title",
+      description: "token description",
+      tags: ["token"],
+    });
+
+    const fetchMock = vi.fn(async () => {
+      throw new Error("connect ECONNREFUSED 127.0.0.1:11434");
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const implicitResult = await runSearch(
+        "token",
+        {},
+        { path: "/tmp/pm-search" },
+      );
+      expect(implicitResult.mode).toBe("keyword");
+      expect(implicitResult.count).toBe(1);
+      expect(implicitResult.items[0].item.id).toBe("pm-ollama-auto-fallback");
+      expect(implicitResult.warnings).toBeUndefined();
+      expect(fetchMock).not.toHaveBeenCalled();
+      // Explicit hybrid with an unreachable embedding backend degrades to keyword.
+      const hybridFallback = await runSearch(
+        "token",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(hybridFallback.mode).toBe("keyword");
+      expect(hybridFallback.count).toBe(1);
+      expect(
+        hybridFallback.warnings?.some((warning) =>
+          warning.startsWith("search_hybrid_fallback:"),
+        ),
+      ).toBe(true);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("keeps default search keyword-first when auto semantic execution would time out", async () => {
+    mockOllamaAutoDetectAvailable();
+    seedSingleTokenItem({
+      id: "pm-ollama-timeout-fallback",
+      title: "token timeout",
+      description: "token timeout description",
+      tags: ["token"],
+    });
+
+    const fetchMock = vi.fn(async () => {
+      throw new Error("Embedding request timed out after 8000ms");
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const implicitResult = await runSearch(
+        "token",
+        {},
+        { path: "/tmp/pm-search" },
+      );
+      expect(implicitResult.mode).toBe("keyword");
+      expect(implicitResult.count).toBe(1);
+      expect(implicitResult.warnings).toBeUndefined();
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("keeps default search keyword-first for configured semantic providers", async () => {
+    readSettingsMock.mockResolvedValue(makeSemanticSearchSettings());
+    seedSingleTokenItem({
+      id: "pm-configured-timeout-fallback",
+      title: "token configured timeout",
+      description: "token timeout description",
+      tags: ["token"],
+    });
+
+    const fetchMock = vi.fn(async () => {
+      throw new Error("Embedding request timed out after 8000ms");
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const implicitResult = await runSearch(
+        "token",
+        {},
+        { path: "/tmp/pm-search" },
+      );
+      expect(implicitResult.mode).toBe("keyword");
+      expect(implicitResult.count).toBe(1);
+      expect(implicitResult.warnings).toBeUndefined();
+      expect(fetchMock).not.toHaveBeenCalled();
+      // Explicit hybrid with a timing-out embedding backend degrades to keyword.
+      const hybridFallback = await runSearch(
+        "token",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(hybridFallback.mode).toBe("keyword");
+      expect(hybridFallback.count).toBe(1);
+      expect(
+        hybridFallback.warnings?.some((warning) =>
+          warning.startsWith("search_hybrid_fallback:"),
+        ),
+      ).toBe(true);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("runs a bare search in hybrid mode when the stored settings name the active provider and reports mode_source (pm-n8a6e7)", async () => {
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({ search: { provider: "openai" } }),
+    );
+    seedSingleTokenItem({
+      id: "pm-auto-hybrid",
+      title: "token auto hybrid",
+      description: "token description",
+      tags: ["token"],
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = makeEmbeddingAndVectorSearchFetch({
+      vectorResult: [{ id: "pm-auto-hybrid", score: 0.9 }],
+    });
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const auto = await runSearch("token", {}, { path: "/tmp/pm-search" });
+      expect(auto.mode).toBe("hybrid");
+      expect(auto.mode_source).toBe("auto");
+      expect(auto.items.map((entry) => entry.item.id)).toContain("pm-auto-hybrid");
+
+      const explicit = await runSearch(
+        "token",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(explicit.mode).toBe("semantic");
+      expect(explicit.mode_source).toBe("explicit");
+      // Compact responses omit the source when the caller chose the mode.
+      const explicitCompact = await runSearch(
+        "token",
+        { mode: "semantic", compact: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(explicitCompact.mode).toBe("semantic");
+      expect(explicitCompact.mode_source).toBeUndefined();
+
+      const countOnly = await runSearch(
+        "token",
+        { count: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(countOnly.count_only).toBe(true);
+      expect(countOnly.mode).toBe("hybrid");
+      expect(countOnly.mode_source).toBe("auto");
+
+      // Compact responses omit the source for the documented auto default.
+      const compactCount = await runSearch(
+        "token",
+        { count: true, compact: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(compactCount.mode).toBe("hybrid");
+      expect(compactCount.mode_source).toBeUndefined();
+
+      const compactHits = await runSearch(
+        "token",
+        { compact: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(compactHits.mode).toBe("hybrid");
+      expect(compactHits.mode_source).toBeUndefined();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("pins a bare search to keyword when search.default_mode is concrete and never contacts the provider (pm-n8a6e7)", async () => {
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({
+        search: { provider: "openai", default_mode: "keyword" },
+      }),
+    );
+    seedSingleTokenItem({
+      id: "pm-pinned-keyword",
+      title: "token pinned",
+      description: "token description",
+      tags: ["token"],
+    });
+    const fetchMock = vi.fn(async () => {
+      throw new Error("provider must not be called for a pinned keyword default");
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const pinned = await runSearch("token", {}, { path: "/tmp/pm-search" });
+      expect(pinned.mode).toBe("keyword");
+      expect(pinned.mode_source).toBe("settings");
+      expect(pinned.count).toBe(1);
+      expect(fetchMock).not.toHaveBeenCalled();
+      // A pinned mode is the one surprising case, so compact output keeps it.
+      const pinnedCompact = await runSearch(
+        "token",
+        { compact: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(pinnedCompact.mode_source).toBe("settings");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("degrades an auto hybrid default to keyword hits with a fallback warning when the provider fails (pm-n8a6e7)", async () => {
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({ search: { provider: "openai" } }),
+    );
+    seedSingleTokenItem({
+      id: "pm-auto-fallback",
+      title: "token auto fallback",
+      description: "token description",
+      tags: ["token"],
+    });
+    const fetchMock = vi.fn(async () => {
+      throw new Error("connect ECONNREFUSED embedding backend");
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const degraded = await runSearch("token", {}, { path: "/tmp/pm-search" });
+      expect(degraded.mode).toBe("keyword");
+      expect(degraded.mode_source).toBe("auto");
+      expect(degraded.count).toBe(1);
+      expect(
+        degraded.warnings?.some((warning) =>
+          warning.startsWith("search_hybrid_fallback:"),
+        ),
+      ).toBe(true);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("returns deterministic empty semantic and hybrid results for limit=0 without embedding/vector requests", async () => {
+    const semanticSettings = makeSemanticSearchSettings();
+    const indexedItem = makeItemMetadata({
+      id: "pm-limit-zero",
+      title: "token title",
+      description: "token description",
+      tags: ["token"],
+    });
+
+    readSettingsMock.mockResolvedValue(semanticSettings);
+    listAllItemMetadataMock.mockResolvedValue([indexedItem]);
+    readFileMock.mockImplementation(async (targetPath) => {
+      if (targetPath.endsWith("pm-limit-zero.md")) {
+        return serializeDocument(indexedItem, "token body");
+      }
+      throw new Error(`Unexpected path: ${targetPath}`);
+    });
+
+    const fetchMock = vi.fn(async () => {
+      throw new Error(
+        "fetch should not be called for limit=0 semantic/hybrid search",
+      );
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const semanticResult = await runSearch(
+        "token",
+        { mode: "semantic", limit: "0" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(semanticResult.mode).toBe("semantic");
+      expect(semanticResult.count).toBe(0);
+      expect(semanticResult.items).toEqual([]);
+      expect(semanticResult.filters).toMatchObject({ limit: "0" });
+
+      const hybridResult = await runSearch(
+        "token",
+        { mode: "hybrid", limit: "0" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(hybridResult.mode).toBe("hybrid");
+      expect(hybridResult.count).toBe(0);
+      expect(hybridResult.items).toEqual([]);
+      expect(hybridResult.filters).toMatchObject({ limit: "0" });
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("executes a configured extension search provider for semantic mode", async () => {
+    const extensionItem = makeItemMetadata({
+      id: "pm-ext-provider",
+      title: "extension provider item",
+    });
+    listAllItemMetadataMock.mockResolvedValue([extensionItem]);
+    readFileMock.mockResolvedValue(
+      serializeDocument(extensionItem, "extension body"),
+    );
+    readSettingsMock.mockResolvedValue({
+      search: {
+        provider: "ext-provider",
+      },
+    } as unknown as { id_prefix: string });
+    activeExtensionRegistrations = createExtensionRegistrations();
+    (
+      activeExtensionRegistrations.search_providers as Array<
+        Record<string, unknown>
+      >
+    ).push({
+      layer: "project",
+      name: "provider-ext",
+      definition: {
+        name: "ext-provider",
+        query: () => [{ id: "pm-ext-provider", score: 0.91 }],
+      },
+      runtime_definition: {
+        name: "ext-provider",
+        query: () => [{ id: "pm-ext-provider", score: 0.91 }],
+      },
+    });
+
+    const fetchMock = vi.fn(async () => {
+      throw new Error(
+        "fetch should not be called when extension provider handles semantic search",
+      );
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "extension",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(result.mode).toBe("semantic");
+      expect(result.count).toBe(1);
+      expect(result.items[0].item.id).toBe("pm-ext-provider");
+      expect(result.items[0].matched_fields).toEqual(["provider:ext-provider"]);
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("degrades to keyword when an extension provider throws and built-in fallback is unavailable", async () => {
+    const extensionItem = makeItemMetadata({
+      id: "pm-ext-provider-error",
+      title: "extension provider item",
+    });
+    listAllItemMetadataMock.mockResolvedValue([extensionItem]);
+    readFileMock.mockResolvedValue(
+      serializeDocument(extensionItem, "extension body"),
+    );
+    readSettingsMock.mockResolvedValue({
+      search: {
+        provider: "ext-provider",
+      },
+    } as unknown as { id_prefix: string });
+    activeExtensionRegistrations = createExtensionRegistrations();
+    (
+      activeExtensionRegistrations.search_providers as Array<
+        Record<string, unknown>
+      >
+    ).push({
+      layer: "project",
+      name: "provider-ext",
+      definition: {
+        name: "ext-provider",
+      },
+      runtime_definition: {
+        name: "ext-provider",
+        query: () => {
+          throw "provider failed";
+        },
+      },
+    });
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+    const result = await runSearch(
+      "extension",
+      { mode: "semantic" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(result.mode).toBe("keyword");
+    expect(result.count).toBe(1);
+    expect(
+      result.warnings?.some((warning) =>
+        warning.startsWith("search_semantic_fallback:"),
+      ),
+    ).toBe(true);
+  });
+
+  it("supports extension vector adapter queries for semantic mode", async () => {
+    setupExtensionVectorAdapterScenario({
+      id: "pm-vector-adapter",
+      title: "vector extension",
+      query: () => [{ id: "pm-vector-adapter", score: 0.87 }],
+    });
+
+    const fetchMock = vi.fn(async (url: unknown) => {
+      if (!String(url).includes("/v1/embeddings")) {
+        throw new Error(`Unexpected fetch target: ${String(url)}`);
+      }
+      return makeJsonResponse({ data: [{ index: 0, embedding: [0.1, 0.2] }] });
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "vector",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(result.mode).toBe("semantic");
+      expect(result.count).toBe(1);
+      expect(result.items[0].item.id).toBe("pm-vector-adapter");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("resolves auto to hybrid when a configured provider pairs with an extension vector adapter and no built-in store (pm-n8a6e7)", async () => {
+    setupExtensionVectorAdapterScenario({
+      id: "pm-adapter-auto",
+      title: "vector extension auto",
+      query: () => [{ id: "pm-adapter-auto", score: 0.91 }],
+    });
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({
+        search: { provider: "openai" },
+        vector_store: { adapter: "ext-vector" },
+      }),
+    );
+    const fetchMock = vi.fn(async (url: unknown) => {
+      if (!String(url).includes("/v1/embeddings")) {
+        throw new Error(`Unexpected fetch target: ${String(url)}`);
+      }
+      return makeJsonResponse({ data: [{ index: 0, embedding: [0.1, 0.2] }] });
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch("vector", {}, { path: "/tmp/pm-search" });
+      expect(result.mode).toBe("hybrid");
+      expect(result.mode_source).toBe("auto");
+      expect(result.items.map((entry) => entry.item.id)).toContain("pm-adapter-auto");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("warns that semantic results are effectively lexical when vector matching contributes no hits", async () => {
+    setupExtensionVectorAdapterScenario({
+      id: "pm-empty-corpus",
+      title: "vector extension",
+      // Empty vector matches: the query runs successfully but vector ranking
+      // contributes nothing for this query/filter set.
+      query: () => [],
+    });
+
+    const fetchMock = vi.fn(async (url: unknown) => {
+      if (!String(url).includes("/v1/embeddings")) {
+        throw new Error(`Unexpected fetch target: ${String(url)}`);
+      }
+      return makeJsonResponse({ data: [{ index: 0, embedding: [0.1, 0.2] }] });
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      // Semantic: ran without error, but no vector matches => mode stays semantic,
+      // a degraded warning flags the lexical fallback, and the (now genuinely
+      // lexical) keyword hits are returned so the agent still gets results.
+      const semanticResult = await runSearch(
+        "vector",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(semanticResult.mode).toBe("semantic");
+      expect(semanticResult.warnings).toContain(
+        "search_semantic_degraded:no_vector_matches:results_are_lexical",
+      );
+      expect(semanticResult.count).toBe(1);
+      expect(semanticResult.items[0].item.id).toBe("pm-empty-corpus");
+
+      // Hybrid still surfaces keyword hits but flags the degraded semantic stage.
+      const hybridResult = await runSearch(
+        "vector",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(hybridResult.mode).toBe("hybrid");
+      expect(hybridResult.warnings).toContain(
+        "search_hybrid_degraded:no_vector_matches:results_are_lexical",
+      );
+      expect(hybridResult.count).toBe(1);
+      expect(hybridResult.items[0].item.id).toBe("pm-empty-corpus");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("does not warn about degraded vector matching when semantic matches exist", async () => {
+    setupExtensionVectorAdapterScenario({
+      id: "pm-corpus-present",
+      title: "vector extension",
+      query: () => [{ id: "pm-corpus-present", score: 0.87 }],
+    });
+
+    const fetchMock = vi.fn(async (url: unknown) => {
+      if (!String(url).includes("/v1/embeddings")) {
+        throw new Error(`Unexpected fetch target: ${String(url)}`);
+      }
+      return makeJsonResponse({ data: [{ index: 0, embedding: [0.1, 0.2] }] });
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "vector",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(result.mode).toBe("semantic");
+      expect(result.count).toBe(1);
+      expect(result.warnings ?? []).not.toContain(
+        "search_semantic_degraded:no_vector_matches:results_are_lexical",
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("warns and uses the built-in vector store when an extension vector adapter query fails", async () => {
+    setupExtensionVectorAdapterScenario({
+      id: "pm-vector-fallback",
+      title: "vector extension fallback",
+      vectorStore: {
+        adapter: "ext-vector",
+        qdrant: {
+          url: "https://qdrant.example.test:6333",
+          api_key: "",
+        },
+      },
+      query: () => {
+        throw new Error("adapter unavailable");
+      },
+    });
+
+    const fetchMock = vi.fn(async (url: unknown) => {
+      const target = resolveFetchTarget(url);
+      if (target.endsWith("/v1/embeddings")) {
+        return makeJsonResponse({
+          data: [{ index: 0, embedding: [0.1, 0.2] }],
+        });
+      }
+      if (target.endsWith("/collections/pm_items/points/search")) {
+        return makeJsonResponse({
+          result: [{ id: "pm-vector-fallback", score: 0.91 }],
+        });
+      }
+      throw new Error(`Unexpected fetch target: ${target}`);
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "vector",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(result.mode).toBe("semantic");
+      expect(result.items[0].item.id).toBe("pm-vector-fallback");
+      expect(result.warnings).toContain(
+        "search_vector_adapter_failed:ext-vector:using_builtin",
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("degrades to keyword when extension vector adapter query fails without built-in fallback", async () => {
+    setupExtensionVectorAdapterScenario({
+      id: "pm-vector-adapter-fail",
+      title: "vector extension fail",
+      query: () => {
+        throw new Error("vector adapter failed");
+      },
+    });
+
+    const fetchMock = vi.fn(async () =>
+      makeJsonResponse({ data: [{ index: 0, embedding: [0.1, 0.2] }] }),
+    );
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "vector",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(result.mode).toBe("keyword");
+      expect(result.count).toBe(1);
+      expect(
+        result.warnings?.some((warning) =>
+          warning.startsWith("search_semantic_fallback:"),
+        ),
+      ).toBe(true);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("matches every keyword corpus field and applies metadata filters", async () => {
+    const matching = makeItemMetadata(
+      keywordCorpusFixture.match_scenario.matching_overrides,
+    );
+    const nonMatch = makeItemMetadata(
+      keywordCorpusFixture.match_scenario.non_matching_overrides,
+    );
+    const query = keywordCorpusFixture.match_scenario.query;
+
+    listAllItemMetadataMock.mockResolvedValueOnce([nonMatch, matching]);
+    readFileMock.mockImplementation(async (targetPath) => {
+      if (targetPath.endsWith("pm-match.md")) {
+        return serializeDocument(matching, "bodytoken");
+      }
+      if (targetPath.endsWith("pm-non-match.md")) {
+        return serializeDocument(nonMatch, "different");
+      }
+      throw new Error(`Unexpected path: ${targetPath}`);
+    });
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+    const result = await runSearch(
+      query,
+      {
+        mode: "keyword",
+        type: "Task",
+        tag: "tagtoken",
+        priority: "2",
+        deadlineBefore: "2026-02-21T00:00:00.000Z",
+        deadlineAfter: "2026-02-19T00:00:00.000Z",
+        limit: "1.9",
+      },
+      { path: "/tmp/pm-search" },
+    );
+
+    expect(result.mode).toBe("keyword");
+    expect(result.query).toBe(query);
+    expect(result.count).toBe(1);
+    expect(result.items[0].item.id).toBe("pm-match");
+    expect(result.items[0].matched_fields).toEqual([
+      "body",
+      "comments",
+      "dependencies",
+      "description",
+      "learnings",
+      "notes",
+      "status",
+      "tags",
+      "title",
+    ]);
+    expect(result.filters).toMatchObject({
+      mode: "keyword",
+      type: "Task",
+      tag: "tagtoken",
+      priority: "2",
+      deadline_before: "2026-02-21T00:00:00.000Z",
+      deadline_after: "2026-02-19T00:00:00.000Z",
+      limit: "1.9",
+    });
+
+    const calendarHeavy = makeItemMetadata({
+      id: "pm-calendar",
+      title: "calendar workflow",
+      reminders: [
+        { at: "2026-02-18T09:00:00.000Z", text: "agent reminder token" },
+      ],
+      events: [
+        {
+          start_at: "2026-02-18T10:00:00.000Z",
+          end_at: "2026-02-18T11:00:00.000Z",
+          title: "roadmap sync token",
+          description: "calendar event description token",
+          location: "room-token",
+          all_day: true,
+        },
+        {
+          start_at: "2026-02-18T12:00:00.000Z",
+          title: "regular event token",
+          all_day: false,
+        },
+      ],
+    });
+    listAllItemMetadataMock.mockResolvedValueOnce([calendarHeavy]);
+    readFileMock.mockResolvedValueOnce(serializeDocument(calendarHeavy, ""));
+    readFileMock.mockResolvedValueOnce(serializeDocument(calendarHeavy, ""));
+    const calendarSearch = await runSearch(
+      "roadmap reminder room-token all day",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(calendarSearch.count).toBe(1);
+    expect(calendarSearch.items[0].item.id).toBe("pm-calendar");
+    expect(calendarSearch.items[0].matched_fields).toEqual([
+      "events",
+      "reminders",
+    ]);
+
+    listAllItemMetadataMock.mockResolvedValue([matching]);
+    readFileMock.mockResolvedValue(serializeDocument(matching, "bodytoken"));
+
+    const wrongType = await runSearch(
+      "titletoken",
+      { type: "Issue" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(wrongType.count).toBe(0);
+    expect(wrongType.items).toEqual([]);
+
+    const normalizedType = await runSearch(
+      "titletoken",
+      { type: "task" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(normalizedType.count).toBe(1);
+    expect(normalizedType.items[0].item.id).toBe("pm-match");
+
+    const wrongPriority = await runSearch(
+      "titletoken",
+      { priority: "0" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(wrongPriority.count).toBe(0);
+
+    const deadlineBeforeMiss = await runSearch(
+      "titletoken",
+      { deadlineBefore: "2026-02-19T00:00:00.000Z" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(deadlineBeforeMiss.count).toBe(0);
+
+    const deadlineAfterMiss = await runSearch(
+      "titletoken",
+      { deadlineAfter: "2026-02-21T00:00:00.000Z" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(deadlineAfterMiss.count).toBe(0);
+  });
+
+  it("keeps keyword search readable for malformed legacy array fields", async () => {
+    const malformed = {
+      ...makeItemMetadata({
+        id: "pm-legacy-malformed",
+        title: "legacy malformed item",
+        description: "contains stabletoken",
+      }),
+      tags: undefined,
+      status: undefined,
+      comments: undefined,
+      notes: undefined,
+      learnings: undefined,
+      dependencies: undefined,
+    } as unknown as ItemMetadata;
+
+    listAllItemMetadataMock.mockResolvedValueOnce([malformed]);
+    readFileMock.mockResolvedValueOnce(serializeDocument(malformed, ""));
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+    const result = await runSearch(
+      "stabletoken",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
+
+    expect(result.count).toBe(1);
+    expect(result.items[0].item.id).toBe("pm-legacy-malformed");
+    expect(result.items[0].matched_fields).toEqual(["description"]);
+  });
+
+  it("executes semantic and hybrid search modes with deterministic ranking", async () => {
+    const semanticTop = makeItemMetadata({
+      id: "pm-sem-top",
+      title: "tok alpha",
+      updated_at: "2026-02-18T00:02:00.000Z",
+      priority: 1,
+    });
+    const semanticAndLexical = makeItemMetadata({
+      id: "pm-sem-lex",
+      title: "tok tok beta",
+      updated_at: "2026-02-18T00:01:00.000Z",
+      priority: 1,
+    });
+    const lexicalOnly = makeItemMetadata({
+      id: "pm-lex-only",
+      title: "tok tok tok gamma",
+      updated_at: "2026-02-18T00:03:00.000Z",
+      priority: 0,
+    });
+    const semanticDropped = makeItemMetadata({
+      id: "pm-sem-drop",
+      title: "no lexical hit",
+      updated_at: "2026-02-18T00:04:00.000Z",
+      priority: 2,
+    });
+    const docs = [
+      semanticTop,
+      semanticAndLexical,
+      lexicalOnly,
+      semanticDropped,
+    ];
+    listAllItemMetadataMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "semantic body");
+    });
+    readSettingsMock.mockResolvedValue({
+      search: {
+        max_results: 2,
+        hybrid_semantic_weight: 0.2,
+      },
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        qdrant: {
+          url: "https://qdrant.example.test:6333",
+          api_key: "",
+        },
+      },
+    } as unknown as { id_prefix: string });
+
+    const originalFetch = globalThis.fetch;
+    const fetchCalls: string[] = [];
+    let queryCallCount = 0;
+    globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+      const target = resolveFetchTarget(url);
+      fetchCalls.push(target);
+      if (target.endsWith("/v1/embeddings")) {
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({ data: [{ embedding: [0.9, 0.1] }] }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      if (target.endsWith("/collections/pm_items/points/search")) {
+        queryCallCount += 1;
+        const body = parseJsonBody<{ limit?: number }>(init?.body);
+        expect(body.limit).toBe(queryCallCount === 1 ? 2 : 3);
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({
+            result: [
+              { id: "pm-sem-top", score: 0.91 },
+              { id: "pm-sem-top", score: 0.9 },
+              { id: "pm-sem-lex", score: 0.58 },
+              { id: "pm-missing", score: 0.7 },
+              { id: "pm-sem-drop", score: 0.5 },
+            ],
+          }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      throw new Error(`Unexpected fetch target: ${target}`);
+    }) as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+
+      const semanticResult = await runSearch(
+        "tok",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(semanticResult.mode).toBe("semantic");
+      expect(semanticResult.items.map((entry) => entry.item.id)).toEqual([
+        "pm-sem-top",
+        "pm-sem-lex",
+      ]);
+      expect(
+        semanticResult.items.every((entry) =>
+          entry.matched_fields.includes("semantic"),
+        ),
+      ).toBe(true);
+
+      const hybridResult = await runSearch(
+        "tok",
+        { mode: "hybrid", includeLinked: true, limit: "3" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(hybridResult.mode).toBe("hybrid");
+      expect(hybridResult.items.map((entry) => entry.item.id)).toEqual([
+        "pm-lex-only",
+        "pm-sem-lex",
+        "pm-sem-top",
+      ]);
+      expect(hybridResult.items[0]?.matched_fields).toContain("title");
+      expect(hybridResult.items[1]?.matched_fields).toContain("semantic");
+      expect(hybridResult.items[2]?.matched_fields).toContain("semantic");
+      expect(hybridResult.filters).toMatchObject({
+        hybrid_semantic_weight: 0.2,
+      });
+      expect(fetchCalls).toEqual([
+        "https://api.example.test/v1/embeddings",
+        "https://qdrant.example.test:6333/collections/pm_items/points/search",
+        "https://api.example.test/v1/embeddings",
+        "https://qdrant.example.test:6333/collections/pm_items/points/search",
+      ]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("expands semantic queries when search.query_expansion is enabled", async () => {
+    const docA = makeItemMetadata({
+      id: "pm-qe-a",
+      title: "project alpha",
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    const docB = makeItemMetadata({
+      id: "pm-qe-b",
+      title: "project beta",
+      updated_at: "2026-02-18T00:02:00.000Z",
+    });
+    const docs = [docA, docB];
+    listAllItemMetadataMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "query expansion body");
+    });
+    readSettingsMock.mockResolvedValue({
+      search: {
+        max_results: 5,
+        query_expansion: {
+          enabled: true,
+          provider: "openai",
+        },
+      },
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        qdrant: {
+          url: "https://qdrant.example.test:6333",
+          api_key: "",
+        },
+      },
+    } as unknown as { id_prefix: string });
+
+    const originalFetch = globalThis.fetch;
+    let queryCallCount = 0;
+    globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+      const target = resolveFetchTarget(url);
+      if (target.endsWith("/v1/embeddings")) {
+        const body = parseJsonBody<{ input?: string | string[] }>(init?.body);
+        const inputs = Array.isArray(body.input)
+          ? body.input
+          : [body.input ?? ""];
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({
+            data: inputs.map((_entry, index) => ({
+              index,
+              embedding: [index + 1, 0.1],
+            })),
+          }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      if (target.endsWith("/collections/pm_items/points/search")) {
+        queryCallCount += 1;
+        const callIndex = queryCallCount;
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({
+            result:
+              callIndex === 1
+                ? [{ id: "pm-qe-a", score: 0.5 }]
+                : callIndex === 2
+                  ? [{ id: "pm-qe-b", score: 0.9 }]
+                  : [],
+          }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      throw new Error(`Unexpected fetch target: ${target}`);
+    }) as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "project status",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(result.mode).toBe("semantic");
+      expect(result.items.map((entry) => entry.item.id)).toEqual([
+        "pm-qe-b",
+        "pm-qe-a",
+      ]);
+      expect(result.filters).toMatchObject({
+        query_expansion_enabled: true,
+        query_expansion_provider: "openai",
+      });
+      expect(queryCallCount).toBeGreaterThan(1);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("warns when configured query-expansion provider is unavailable", async () => {
+    const doc = makeItemMetadata({
+      id: "pm-qe-fallback",
+      title: "release notes",
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    listAllItemMetadataMock.mockResolvedValue([doc]);
+    readFileMock.mockResolvedValue(serializeDocument(doc, "fallback body"));
+    readSettingsMock.mockResolvedValue({
+      search: {
+        query_expansion: {
+          enabled: true,
+          provider: "ext-missing-provider",
+        },
+      },
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        qdrant: {
+          url: "https://qdrant.example.test:6333",
+          api_key: "",
+        },
+      },
+    } as unknown as { id_prefix: string });
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+      const target = resolveFetchTarget(url);
+      if (target.endsWith("/v1/embeddings")) {
+        const body = parseJsonBody<{ input?: string | string[] }>(init?.body);
+        const inputs = Array.isArray(body.input)
+          ? body.input
+          : [body.input ?? ""];
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({
+            data: inputs.map((_entry, index) => ({
+              index,
+              embedding: [0.7 + index, 0.2],
+            })),
+          }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      if (target.endsWith("/collections/pm_items/points/search")) {
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({
+            result: [{ id: "pm-qe-fallback", score: 0.8 }],
+          }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      throw new Error(`Unexpected fetch target: ${target}`);
+    }) as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "release",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(result.mode).toBe("semantic");
+      expect(result.warnings).toContain(
+        "search_query_expansion_provider_unavailable:ext-missing-provider:using_builtin",
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("reranks hybrid candidates when search.rerank is enabled", async () => {
+    const docA = makeItemMetadata({
+      id: "pm-rerank-a",
+      title: "tok alpha",
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    const docB = makeItemMetadata({
+      id: "pm-rerank-b",
+      title: "tok beta",
+      updated_at: "2026-02-18T00:02:00.000Z",
+    });
+    const docs = [docA, docB];
+    listAllItemMetadataMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "rerank body");
+    });
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({
+        search: {
+          max_results: 5,
+          rerank: {
+            enabled: true,
+            model: "rerank-model-v1",
+            top_k: 2,
+          },
+        },
+      }),
+    );
+
+    const originalFetch = globalThis.fetch;
+    let embeddingCallCount = 0;
+    globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+      const target = resolveFetchTarget(url);
+      if (target.endsWith("/v1/embeddings")) {
+        embeddingCallCount += 1;
+        if (embeddingCallCount === 1) {
+          return makeJsonResponse({ data: [{ embedding: [1, 0] }] });
+        }
+        const body = parseJsonBody<{
+          model?: string;
+          input?: string | string[];
+        }>(init?.body);
+        const rerankInputs = Array.isArray(body.input)
+          ? body.input
+          : [body.input ?? ""];
+        expect(body.model).toBe("rerank-model-v1");
+        expect(rerankInputs).toHaveLength(3);
+        return makeJsonResponse({
+          data: [
+            { index: 0, embedding: [1, 0] },
+            { index: 1, embedding: [0, 1] },
+            { index: 2, embedding: [1, 0] },
+          ],
+        });
+      }
+      if (target.endsWith("/collections/pm_items/points/search")) {
+        return makeJsonResponse({
+          result: [
+            { id: "pm-rerank-a", score: 0.95 },
+            { id: "pm-rerank-b", score: 0.9 },
+          ],
+        });
+      }
+      throw new Error(`Unexpected fetch target: ${target}`);
+    }) as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "tok",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(result.mode).toBe("hybrid");
+      expect(result.items[0]?.item.id).toBe("pm-rerank-b");
+      expect(result.items[0]?.matched_fields).toContain("rerank");
+      expect(result.filters).toMatchObject({
+        rerank_enabled: true,
+        rerank_model: "rerank-model-v1",
+        rerank_top_k: 2,
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("keeps reranked candidates ahead of non-reranked candidates", async () => {
+    const docA = makeItemMetadata({
+      id: "pm-rerank-priority-a",
+      title: "tok alpha",
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    const docB = makeItemMetadata({
+      id: "pm-rerank-priority-b",
+      title: "tok beta",
+      updated_at: "2026-02-18T00:02:00.000Z",
+    });
+    const docs = [docA, docB];
+    listAllItemMetadataMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "rerank priority body");
+    });
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({
+        search: {
+          max_results: 5,
+          rerank: {
+            enabled: true,
+            model: "rerank-model-v1",
+            top_k: 1,
+          },
+        },
+      }),
+    );
+
+    const originalFetch = globalThis.fetch;
+    let embeddingCallCount = 0;
+    globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+      const target = resolveFetchTarget(url);
+      if (target.endsWith("/v1/embeddings")) {
+        embeddingCallCount += 1;
+        if (embeddingCallCount === 1) {
+          return makeJsonResponse({ data: [{ embedding: [1, 0] }] });
+        }
+        const body = parseJsonBody<{ input?: string | string[] }>(init?.body);
+        const rerankInputs = Array.isArray(body.input)
+          ? body.input
+          : [body.input ?? ""];
+        expect(rerankInputs).toHaveLength(2);
+        return makeJsonResponse({
+          data: [
+            { index: 0, embedding: [1, 0] },
+            { index: 1, embedding: [0, 1] },
+          ],
+        });
+      }
+      if (target.endsWith("/collections/pm_items/points/search")) {
+        return makeJsonResponse({
+          result: [
+            { id: "pm-rerank-priority-a", score: 0.95 },
+            { id: "pm-rerank-priority-b", score: 0.9 },
+          ],
+        });
+      }
+      throw new Error(`Unexpected fetch target: ${target}`);
+    }) as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "tok",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(result.mode).toBe("hybrid");
+      expect(result.items.map((entry) => entry.item.id)).toEqual([
+        "pm-rerank-priority-a",
+        "pm-rerank-priority-b",
+      ]);
+      expect(result.items[0]?.matched_fields).toContain("rerank");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("falls back to hybrid scores when rerank embeddings fail", async () => {
+    const docA = makeItemMetadata({
+      id: "pm-rerank-fail-a",
+      title: "tok alpha",
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    const docB = makeItemMetadata({
+      id: "pm-rerank-fail-b",
+      title: "tok beta",
+      updated_at: "2026-02-18T00:02:00.000Z",
+    });
+    const docs = [docA, docB];
+    listAllItemMetadataMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "rerank fallback body");
+    });
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({
+        search: {
+          rerank: {
+            enabled: true,
+            model: "rerank-model-v1",
+            top_k: 2,
+          },
+        },
+      }),
+    );
+
+    const originalFetch = globalThis.fetch;
+    let embeddingCallCount = 0;
+    globalThis.fetch = (async (url: unknown) => {
+      const target = resolveFetchTarget(url);
+      if (target.endsWith("/v1/embeddings")) {
+        embeddingCallCount += 1;
+        if (embeddingCallCount === 1) {
+          return makeJsonResponse({ data: [{ embedding: [1, 0] }] });
+        }
+        throw new Error("rerank provider unavailable");
+      }
+      if (target.endsWith("/collections/pm_items/points/search")) {
+        return makeJsonResponse({
+          result: [
+            { id: "pm-rerank-fail-a", score: 0.9 },
+            { id: "pm-rerank-fail-b", score: 0.8 },
+          ],
+        });
+      }
+      throw new Error(`Unexpected fetch target: ${target}`);
+    }) as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "tok",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(result.mode).toBe("hybrid");
+      expect(result.warnings).toContain(
+        "search_rerank_failed:using_hybrid_scores",
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("handles hybrid normalization when score maps are empty or uniform", async () => {
+    const itemA = makeItemMetadata({
+      id: "pm-hybrid-a",
+      title: "same",
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    const itemB = makeItemMetadata({
+      id: "pm-hybrid-b",
+      title: "same",
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+    listAllItemMetadataMock.mockResolvedValue([itemA, itemB]);
+    readFileMock.mockImplementation(async (targetPath) => {
+      if (targetPath.endsWith("pm-hybrid-a.md")) {
+        return serializeDocument(itemA, "body");
+      }
+      if (targetPath.endsWith("pm-hybrid-b.md")) {
+        return serializeDocument(itemB, "body");
+      }
+      throw new Error(`Unexpected path: ${targetPath}`);
+    });
+    readSettingsMock.mockResolvedValue({
+      search: {
+        max_results: 3,
+      },
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        qdrant: {
+          url: "https://qdrant.example.test:6333",
+          api_key: "",
+        },
+      },
+    } as unknown as { id_prefix: string });
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+      const target = resolveFetchTarget(url);
+      if (target.endsWith("/v1/embeddings")) {
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({ data: [{ embedding: [1, 0] }] }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      if (target.endsWith("/collections/pm_items/points/search")) {
+        const body = parseJsonBody<{ limit?: number }>(init?.body);
+        expect(body.limit).toBe(3);
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({
+            result: [
+              { id: "pm-hybrid-a", score: 1 },
+              { id: "pm-hybrid-b", score: 1 },
+            ],
+          }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      throw new Error(`Unexpected fetch target: ${target}`);
+    }) as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const uniformScores = await runSearch(
+        "same",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(uniformScores.count).toBe(2);
+      expect(uniformScores.items.map((entry) => entry.item.id)).toEqual([
+        "pm-hybrid-a",
+        "pm-hybrid-b",
+      ]);
+
+      const emptyKeywordScores = await runSearch(
+        "vectoronly",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(emptyKeywordScores.count).toBe(2);
+      expect(
+        emptyKeywordScores.items.every((entry) =>
+          entry.matched_fields.includes("semantic"),
+        ),
+      ).toBe(true);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("applies hybrid --limit after fusion without shrinking the vector candidate window", async () => {
+    const semanticOnlyTop = makeItemMetadata({
+      id: "pm-semantic-top",
+      title: "tok",
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    const fusedTop = makeItemMetadata({
+      id: "pm-fused-top",
+      title: "tok tok tok tok",
+      updated_at: "2026-02-18T00:02:00.000Z",
+    });
+    const tail = makeItemMetadata({
+      id: "pm-tail",
+      title: "tok tail",
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+    const docs = [semanticOnlyTop, fusedTop, tail];
+    listAllItemMetadataMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "hybrid limit body");
+    });
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({
+        search: {
+          max_results: 3,
+          hybrid_semantic_weight: 0.7,
+        },
+      }),
+    );
+
+    const originalFetch = globalThis.fetch;
+    const vectorLimits: number[] = [];
+    globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+      const target = resolveFetchTarget(url);
+      if (target.endsWith("/v1/embeddings")) {
+        return makeJsonResponse({ data: [{ embedding: [1, 0] }] });
+      }
+      if (target.endsWith("/collections/pm_items/points/search")) {
+        const body = parseJsonBody<{ limit?: number }>(init?.body);
+        vectorLimits.push(body.limit ?? 0);
+        return makeJsonResponse({
+          result: [
+            { id: "pm-semantic-top", score: 0.99 },
+            { id: "pm-fused-top", score: 0.98 },
+            { id: "pm-tail", score: 0.1 },
+          ].slice(0, body.limit),
+        });
+      }
+      throw new Error(`Unexpected fetch target: ${target}`);
+    }) as typeof globalThis.fetch;
+
+    try {
+      const result = await runSearch(
+        "tok",
+        { mode: "hybrid", limit: "1" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(result.mode).toBe("hybrid");
+      expect(result.count).toBe(1);
+      // total is the sortable hybrid hit count before final output truncation:
+      // pm-tail has a vector hit but drops below the mode-aware score threshold.
+      expect(result.total).toBe(2);
+      expect(result.items.map((entry) => entry.item.id)).toEqual([
+        "pm-fused-top",
+      ]);
+      expect(result.filters.limit).toBe("1");
+      expect(result.next_cursor).toBeTypeOf("string");
+
+      const continued = await runSearch(
+        "tok",
+        { mode: "hybrid", limit: "1", after: result.next_cursor },
+        { path: "/tmp/pm-search" },
+      );
+      expect(continued.items.map((entry) => entry.item.id)).toEqual([
+        "pm-semantic-top",
+      ]);
+      expect(vectorLimits).toEqual([3, 3]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("applies score_threshold as a mode-aware minimum score filter", async () => {
+    const thresholdStrong = makeItemMetadata({
+      id: "pm-threshold-strong",
+      title: "tok tok tok",
+      updated_at: "2026-02-18T00:02:00.000Z",
+      priority: 1,
+    });
+    const thresholdWeak = makeItemMetadata({
+      id: "pm-threshold-weak",
+      title: "tok",
+      updated_at: "2026-02-18T00:01:00.000Z",
+      priority: 1,
+    });
+    const docs = [thresholdStrong, thresholdWeak];
+    listAllItemMetadataMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "threshold body");
+    });
+
+    const semanticSettings = {
+      search: {
+        max_results: 5,
+        score_threshold: 0.7,
+      },
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        qdrant: {
+          url: "https://qdrant.example.test:6333",
+          api_key: "",
+        },
+      },
+    } as unknown as { id_prefix: string };
+
+    readSettingsMock
+      .mockResolvedValueOnce({
+        search: {
+          score_threshold: 100,
+        },
+      } as unknown as { id_prefix: string })
+      .mockResolvedValueOnce(semanticSettings)
+      .mockResolvedValueOnce({
+        ...semanticSettings,
+        search: {
+          max_results: 5,
+          score_threshold: 0.5,
+        },
+      } as unknown as { id_prefix: string });
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+      const target = resolveFetchTarget(url);
+      if (target.endsWith("/v1/embeddings")) {
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({ data: [{ embedding: [0.9, 0.1] }] }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      if (target.endsWith("/collections/pm_items/points/search")) {
+        const body = parseJsonBody<{ limit?: number }>(init?.body);
+        expect(body.limit).toBe(5);
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({
+            result: [
+              { id: "pm-threshold-strong", score: 0.91 },
+              { id: "pm-threshold-weak", score: 0.58 },
+            ],
+          }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      throw new Error(`Unexpected fetch target: ${target}`);
+    }) as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+
+      const keywordResult = await runSearch(
+        "tok",
+        { mode: "keyword" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(keywordResult.mode).toBe("keyword");
+      expect(keywordResult.items.map((entry) => entry.item.id)).toEqual([
+        "pm-threshold-strong",
+      ]);
+      expect(keywordResult.filters).toMatchObject({ score_threshold: 100 });
+
+      const semanticResult = await runSearch(
+        "tok",
+        { mode: "semantic" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(semanticResult.mode).toBe("semantic");
+      expect(semanticResult.items.map((entry) => entry.item.id)).toEqual([
+        "pm-threshold-strong",
+      ]);
+      expect(semanticResult.filters).toMatchObject({ score_threshold: 0.7 });
+
+      const hybridResult = await runSearch(
+        "tok",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(hybridResult.mode).toBe("hybrid");
+      expect(hybridResult.items.map((entry) => entry.item.id)).toEqual([
+        "pm-threshold-strong",
+      ]);
+      expect(hybridResult.filters).toMatchObject({ score_threshold: 0.5 });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("includes linked docs/files/tests content when include-linked is enabled", async () => {
+    const previousGlobalPath = process.env.PM_GLOBAL_PATH;
+    const globalRoot = "/tmp/pm-search-global";
+    process.env.PM_GLOBAL_PATH = globalRoot;
+    try {
+      const linkedOnlyMatch = makeItemMetadata({
+        id: "pm-linked-only",
+        title: "No keyword in core fields",
+        description: "No linked token here",
+        tags: ["search"],
+        files: [
+          { path: "docs/linked-project.md", scope: "project" },
+          { path: "docs/linked-project.md", scope: "project" },
+          { path: "docs/missing.md", scope: "project" },
+          { path: ".", scope: "project" },
+        ],
+        docs: [{ path: "linked-global.md", scope: "global" }],
+        tests: [
+          { command: "node --version", scope: "project" },
+          { path: "tests/linked-test.md", scope: "project" },
+        ],
+      });
+
+      listAllItemMetadataMock.mockResolvedValue([linkedOnlyMatch]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-linked-only.md")) {
+          return serializeDocument(linkedOnlyMatch, "body without keyword");
+        }
+        if (
+          targetPath === path.resolve(process.cwd(), "docs/linked-project.md")
+        ) {
+          return "linkedtoken from project file";
+        }
+        if (targetPath === path.resolve(globalRoot, "linked-global.md")) {
+          return "linkedtoken from global doc";
+        }
+        if (
+          targetPath === path.resolve(process.cwd(), "tests/linked-test.md")
+        ) {
+          return "linkedtoken from linked test";
+        }
+        throw new Error(`ENOENT: ${targetPath}`);
+      });
+
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+
+      const withoutLinked = await runSearch(
+        "linkedtoken",
+        {},
+        { path: "/tmp/pm-search" },
+      );
+      expect(withoutLinked.count).toBe(0);
+      expect(withoutLinked.filters).toMatchObject({ include_linked: false });
+
+      const withLinked = await runSearch(
+        "linkedtoken",
+        { includeLinked: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(withLinked.count).toBe(1);
+      expect(withLinked.items[0].item.id).toBe("pm-linked-only");
+      expect(withLinked.items[0].matched_fields).toEqual(["linked_content"]);
+      expect(withLinked.filters).toMatchObject({ include_linked: true });
+
+      const noLinkedEntries = makeItemMetadata({
+        id: "pm-no-linked-entries",
+        title: "still no keyword",
+      });
+      listAllItemMetadataMock.mockResolvedValue([noLinkedEntries]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-no-linked-entries.md")) {
+          return serializeDocument(noLinkedEntries, "body without keyword");
+        }
+        throw new Error(`ENOENT: ${targetPath}`);
+      });
+
+      const includeLinkedNoEntries = await runSearch(
+        "linkedtoken",
+        { includeLinked: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(includeLinkedNoEntries.count).toBe(0);
+      expect(includeLinkedNoEntries.filters).toMatchObject({
+        include_linked: true,
+      });
+    } finally {
+      if (previousGlobalPath === undefined) {
+        delete process.env.PM_GLOBAL_PATH;
+      } else {
+        process.env.PM_GLOBAL_PATH = previousGlobalPath;
+      }
+    }
+  });
+
+  it("ignores include-linked paths that resolve outside allowed roots", async () => {
+    const previousGlobalPath = process.env.PM_GLOBAL_PATH;
+    const globalRoot = "/tmp/pm-search-containment-global";
+    process.env.PM_GLOBAL_PATH = globalRoot;
+    try {
+      const containedItem = makeItemMetadata({
+        id: "pm-linked-contained",
+        title: "No keyword in core fields",
+        files: [{ path: "../escape-project.md", scope: "project" }],
+        docs: [{ path: "../escape-global.md", scope: "global" }],
+      });
+      const escapedProjectPath = path.resolve(
+        process.cwd(),
+        "../escape-project.md",
+      );
+      const escapedGlobalPath = path.resolve(globalRoot, "../escape-global.md");
+
+      listAllItemMetadataMock.mockResolvedValue([containedItem]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-linked-contained.md")) {
+          return serializeDocument(containedItem, "body without token");
+        }
+        if (
+          targetPath === escapedProjectPath ||
+          targetPath === escapedGlobalPath
+        ) {
+          return "escapetoken";
+        }
+        throw new Error(`ENOENT: ${targetPath}`);
+      });
+
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "escapetoken",
+        { includeLinked: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(result.count).toBe(0);
+      expect(readFileMock).not.toHaveBeenCalledWith(escapedProjectPath, "utf8");
+      expect(readFileMock).not.toHaveBeenCalledWith(escapedGlobalPath, "utf8");
+      expect(runActiveOnReadHooksMock).not.toHaveBeenCalledWith({
+        path: escapedProjectPath,
+        scope: "project",
+      });
+      expect(runActiveOnReadHooksMock).not.toHaveBeenCalledWith({
+        path: escapedGlobalPath,
+        scope: "global",
+      });
+    } finally {
+      if (previousGlobalPath === undefined) {
+        delete process.env.PM_GLOBAL_PATH;
+      } else {
+        process.env.PM_GLOBAL_PATH = previousGlobalPath;
+      }
+    }
+  });
+
+  it("ignores include-linked paths whose symlink realpath escapes allowed roots", async () => {
+    const previousGlobalPath = process.env.PM_GLOBAL_PATH;
+    const globalRoot = "/tmp/pm-search-symlink-global";
+    process.env.PM_GLOBAL_PATH = globalRoot;
+    try {
+      const symlinkItem = makeItemMetadata({
+        id: "pm-linked-symlink-escape",
+        title: "No keyword in core fields",
+        files: [{ path: "docs/project-link.md", scope: "project" }],
+        docs: [{ path: "docs/global-link.md", scope: "global" }],
+      });
+      const projectLinkedPath = path.resolve(
+        process.cwd(),
+        "docs/project-link.md",
+      );
+      const globalLinkedPath = path.resolve(globalRoot, "docs/global-link.md");
+      const escapedProjectRealpath = path.resolve(
+        process.cwd(),
+        "../project-realpath-escape.md",
+      );
+      const escapedGlobalRealpath = path.resolve(
+        globalRoot,
+        "../global-realpath-escape.md",
+      );
+
+      listAllItemMetadataMock.mockResolvedValue([symlinkItem]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-linked-symlink-escape.md")) {
+          return serializeDocument(symlinkItem, "body without token");
+        }
+        if (
+          targetPath === projectLinkedPath ||
+          targetPath === globalLinkedPath
+        ) {
+          return "symlinktoken";
+        }
+        throw new Error(`ENOENT: ${targetPath}`);
+      });
+      realpathMock.mockImplementation(async (targetPath) => {
+        if (targetPath === projectLinkedPath) {
+          return escapedProjectRealpath;
+        }
+        if (targetPath === globalLinkedPath) {
+          return escapedGlobalRealpath;
+        }
+        return targetPath;
+      });
+
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "symlinktoken",
+        { includeLinked: true },
+        { path: "/tmp/pm-search-symlink" },
+      );
+      expect(result.count).toBe(0);
+      for (const [linkedPath, scope] of [
+        [projectLinkedPath, "project"],
+        [globalLinkedPath, "global"],
+      ] as const) {
+        expect(readFileMock).not.toHaveBeenCalledWith(linkedPath, "utf8");
+        expect(runActiveOnReadHooksMock).not.toHaveBeenCalledWith({
+          path: linkedPath,
+          scope,
+        });
+      }
+    } finally {
+      if (previousGlobalPath === undefined) {
+        delete process.env.PM_GLOBAL_PATH;
+      } else {
+        process.env.PM_GLOBAL_PATH = previousGlobalPath;
+      }
+    }
+  });
+
+  it("skips include-linked entries when containment root or linked realpath resolution fails", async () => {
+    const previousGlobalPath = process.env.PM_GLOBAL_PATH;
+    const globalRoot = "/tmp/pm-search-realpath-fail-global";
+    process.env.PM_GLOBAL_PATH = globalRoot;
+    try {
+      const realpathFailureItem = makeItemMetadata({
+        id: "pm-linked-realpath-fail",
+        title: "No keyword in core fields",
+        files: [{ path: "docs/project-link.md", scope: "project" }],
+        docs: [{ path: "docs/global-link.md", scope: "global" }],
+      });
+      const projectLinkedPath = path.resolve(
+        process.cwd(),
+        "docs/project-link.md",
+      );
+      const globalLinkedPath = path.resolve(globalRoot, "docs/global-link.md");
+
+      listAllItemMetadataMock.mockResolvedValue([realpathFailureItem]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-linked-realpath-fail.md")) {
+          return serializeDocument(realpathFailureItem, "body without token");
+        }
+        if (
+          targetPath === projectLinkedPath ||
+          targetPath === globalLinkedPath
+        ) {
+          return "realpathfailtoken";
+        }
+        throw new Error(`ENOENT: ${targetPath}`);
+      });
+      realpathMock.mockImplementation(async (targetPath) => {
+        if (targetPath === process.cwd()) {
+          throw new Error("project root realpath failed");
+        }
+        if (targetPath === globalLinkedPath) {
+          throw new Error("linked path realpath failed");
+        }
+        return targetPath;
+      });
+
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "realpathfailtoken",
+        { includeLinked: true },
+        { path: "/tmp/pm-search-realpath-fail" },
+      );
+      expect(result.count).toBe(0);
+      expect(readFileMock).not.toHaveBeenCalledWith(projectLinkedPath, "utf8");
+      expect(readFileMock).not.toHaveBeenCalledWith(globalLinkedPath, "utf8");
+      expect(runActiveOnReadHooksMock).not.toHaveBeenCalledWith({
+        path: projectLinkedPath,
+        scope: "project",
+      });
+      expect(runActiveOnReadHooksMock).not.toHaveBeenCalledWith({
+        path: globalLinkedPath,
+        scope: "global",
+      });
+    } finally {
+      if (previousGlobalPath === undefined) {
+        delete process.env.PM_GLOBAL_PATH;
+      } else {
+        process.env.PM_GLOBAL_PATH = previousGlobalPath;
+      }
+    }
+  });
+
+  it("dispatches read hooks for item and linked content paths", async () => {
+    const previousGlobalPath = process.env.PM_GLOBAL_PATH;
+    const globalRoot = "/tmp/pm-search-hooks-global";
+    process.env.PM_GLOBAL_PATH = globalRoot;
+    try {
+      const hookedItem = makeItemMetadata({
+        id: "pm-hooked",
+        title: "Hooked item",
+        files: [{ path: "docs/hook-project.md", scope: "project" }],
+        docs: [{ path: "hook-global.md", scope: "global" }],
+      });
+
+      listAllItemMetadataMock.mockResolvedValue([hookedItem]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-hooked.md")) {
+          return serializeDocument(hookedItem, "body without hooktoken");
+        }
+        if (
+          targetPath === path.resolve(process.cwd(), "docs/hook-project.md")
+        ) {
+          return "hooktoken from project";
+        }
+        if (targetPath === path.resolve(globalRoot, "hook-global.md")) {
+          return "hooktoken from global";
+        }
+        throw new Error(`ENOENT: ${targetPath}`);
+      });
+
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "hooktoken",
+        { includeLinked: true },
+        { path: "/tmp/pm-search-hooks" },
+      );
+      expect(result.count).toBe(1);
+
+      expect(runActiveOnReadHooksMock).toHaveBeenCalledWith({
+        path: path.resolve("/tmp/pm-search-hooks", "tasks", "pm-hooked.md"),
+        scope: "project",
+      });
+      expect(runActiveOnReadHooksMock).toHaveBeenCalledWith({
+        path: path.resolve(process.cwd(), "docs/hook-project.md"),
+        scope: "project",
+      });
+      expect(runActiveOnReadHooksMock).toHaveBeenCalledWith({
+        path: path.resolve(globalRoot, "hook-global.md"),
+        scope: "global",
+      });
+    } finally {
+      if (previousGlobalPath === undefined) {
+        delete process.env.PM_GLOBAL_PATH;
+      } else {
+        process.env.PM_GLOBAL_PATH = previousGlobalPath;
+      }
+    }
+  });
+
+  it("sorts by score, terminal state, priority, updated_at, then id", async () => {
+    const scoreTop = makeItemMetadata({
+      id: "pm-score-top",
+      title: "hittok hittok",
+      priority: 4,
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    const priorityFirst = makeItemMetadata({
+      id: "pm-priority",
+      title: "hittok",
+      priority: 0,
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    const updatedNew = makeItemMetadata({
+      id: "pm-updated-new",
+      title: "hittok",
+      priority: 1,
+      updated_at: "2026-02-18T00:06:00.000Z",
+    });
+    const updatedOld = makeItemMetadata({
+      id: "pm-updated-old",
+      title: "hittok",
+      priority: 1,
+      updated_at: "2026-02-18T00:05:00.000Z",
+    });
+    const idA = makeItemMetadata({
+      id: "pm-id-a",
+      title: "hittok",
+      priority: 1,
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+    const idB = makeItemMetadata({
+      id: "pm-id-b",
+      title: "hittok",
+      priority: 1,
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+    const terminal = makeItemMetadata({
+      id: "pm-terminal",
+      title: "hittok",
+      status: "closed",
+      priority: 0,
+      updated_at: "2026-02-18T00:10:00.000Z",
+    });
+    const noHit = makeItemMetadata({
+      id: "pm-no-hit",
+      title: "different",
+      priority: 1,
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+
+    const allItems = [
+      idB,
+      terminal,
+      priorityFirst,
+      noHit,
+      updatedOld,
+      updatedNew,
+      scoreTop,
+      idA,
+    ];
+    listAllItemMetadataMock.mockResolvedValueOnce(allItems);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = allItems.find((item) =>
+        targetPath.endsWith(`${item.id}.md`),
+      );
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      const body = match.id === "pm-no-hit" ? "no-match-body" : "hittok";
+      return serializeDocument(match, body);
+    });
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+    const result = await runSearch("hittok", {}, { path: "/tmp/pm-search" });
+
+    expect(result.items.map((entry) => entry.item.id)).toEqual([
+      "pm-score-top",
+      "pm-priority",
+      "pm-updated-new",
+      "pm-updated-old",
+      "pm-id-a",
+      "pm-id-b",
+      "pm-terminal",
+    ]);
+  });
+
+  it("applies deterministic exact-title token boost in keyword ranking", async () => {
+    const exactTokenTitle = makeItemMetadata({
+      id: "pm-exact-token",
+      title: "token",
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+    const substringTitle = makeItemMetadata({
+      id: "pm-substring-token",
+      title: "tokenized",
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+
+    const allItems = [substringTitle, exactTokenTitle];
+    listAllItemMetadataMock.mockResolvedValueOnce(allItems);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = allItems.find((item) =>
+        targetPath.endsWith(`${item.id}.md`),
+      );
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "no token in body");
+    });
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+    const result = await runSearch(
+      "token",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
+
+    expect(result.items.map((entry) => entry.item.id)).toEqual([
+      "pm-exact-token",
+      "pm-substring-token",
+    ]);
+    expect(result.items[0]?.score).toBeGreaterThan(result.items[1]?.score ?? 0);
+  });
+
+  it("supports --title-exact filtering for query/title parity", async () => {
+    const exactTitle = makeItemMetadata({
+      id: "pm-title-exact",
+      title: "Cross-Epic Realism Dependency Council",
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+    const nearMatch = makeItemMetadata({
+      id: "pm-title-near",
+      title: "Cross-Epic Realism Governance Council",
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+
+    const allItems = [nearMatch, exactTitle];
+    listAllItemMetadataMock.mockResolvedValueOnce(allItems);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = allItems.find((item) =>
+        targetPath.endsWith(`${item.id}.md`),
+      );
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "cross-epic realism dependency council");
+    });
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+    const result = await runSearch(
+      "Cross-Epic Realism Dependency Council",
+      { mode: "keyword", titleExact: true },
+      { path: "/tmp/pm-search" },
+    );
+
+    expect(result.filters).toMatchObject({ title_exact: true });
+    expect(result.items.map((entry) => entry.item.id)).toEqual([
+      "pm-title-exact",
+    ]);
+  });
+
+  it("supports --phrase-exact filtering for normalized phrase matches", async () => {
+    const phraseInBody = makeItemMetadata({
+      id: "pm-phrase-body",
+      title: "Scheduling note",
+      description: "Contains full phrase in body only",
+    });
+    const tokenOnly = makeItemMetadata({
+      id: "pm-token-only",
+      title: "Cross-Epic Council",
+      description: "Contains related tokens but no exact phrase",
+    });
+
+    const allItems = [tokenOnly, phraseInBody];
+    listAllItemMetadataMock.mockResolvedValueOnce(allItems);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = allItems.find((item) =>
+        targetPath.endsWith(`${item.id}.md`),
+      );
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      if (match.id === "pm-phrase-body") {
+        return serializeDocument(
+          match,
+          "Planning uses the Cross-Epic Realism Dependency Council cadence.",
+        );
+      }
+      return serializeDocument(
+        match,
+        "cross-epic realism dependency details exist but council keyword is detached and phrase is broken",
+      );
+    });
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+    const result = await runSearch(
+      "Cross-Epic Realism Dependency Council",
+      { mode: "keyword", phraseExact: true },
+      { path: "/tmp/pm-search" },
+    );
+
+    expect(result.filters).toMatchObject({ phrase_exact: true });
+    expect(result.items.map((entry) => entry.item.id)).toEqual([
+      "pm-phrase-body",
+    ]);
+  });
+
+  it("boosts exact long-phrase title matches above partial lexical overlap noise", async () => {
+    const exactTitle = makeItemMetadata({
+      id: "pm-long-phrase-exact-title",
+      title: "Cross-Epic Realism Dependency Council",
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+    const noisyPartial = makeItemMetadata({
+      id: "pm-long-phrase-noise",
+      title: "Operational cadence sync",
+      description: [
+        Array.from({ length: 9 }, () => "cross-epic").join(" "),
+        Array.from({ length: 9 }, () => "realism").join(" "),
+        Array.from({ length: 9 }, () => "dependency").join(" "),
+        Array.from({ length: 9 }, () => "council").join(" "),
+      ].join(" "),
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+
+    const allItems = [noisyPartial, exactTitle];
+    listAllItemMetadataMock.mockResolvedValueOnce(allItems);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = allItems.find((item) =>
+        targetPath.endsWith(`${item.id}.md`),
+      );
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "no exact phrase in body");
+    });
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+    const result = await runSearch(
+      "Cross-Epic Realism Dependency Council",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
+
+    expect(result.items[0]?.item.id).toBe("pm-long-phrase-exact-title");
+    expect(result.items[0]?.score).toBeGreaterThan(result.items[1]?.score ?? 0);
+  });
+
+  it("keeps a title owner above an omnibus item with repeated annotation terms", async () => {
+    const owner = makeItemMetadata({
+      id: "pm-owner",
+      title: "alpha beta gamma",
+    });
+    const omnibus = makeItemMetadata({
+      id: "pm-omnibus",
+      title: "Programme rollup",
+      comments: [
+        {
+          author: "agent",
+          created_at: "2026-02-18T00:00:00.000Z",
+          text: Array.from({ length: 50 }, () => "alpha beta gamma").join(" "),
+        },
+      ],
+    });
+    listAllItemMetadataMock.mockResolvedValue([omnibus, owner]);
+    readFileMock.mockImplementation(async (targetPath) =>
+      serializeDocument(
+        targetPath.endsWith("pm-owner.md") ? owner : omnibus,
+        "unrelated body",
+      ),
+    );
+
+    const result = await runSearch(
+      "alpha beta gamma",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(result.items[0]?.item.id).toBe("pm-owner");
+  });
+
+  it("resolves search tuning parameters from settings", async () => {
+    const { resolveSearchTuning } =
+      await import("../../../../src/cli/commands/query/search.js");
+    const defaultTuning = resolveSearchTuning({});
+    expect(defaultTuning.title_weight).toBe(48);
+
+    const customTuning = resolveSearchTuning({
+      search: {
+        tuning: {
+          title_weight: 42,
+          body_weight: -1,
+          tags_weight: "not-a-num",
+        },
+      },
+    });
+    expect(customTuning.title_weight).toBe(42);
+    expect(customTuning.body_weight).toBe(1);
+    expect(customTuning.tags_weight).toBe(6);
+  });
+
+  it("applies multi-factor tuning weights to influence ranking", async () => {
+    const titleHit = makeItemMetadata({
+      id: "pm-tuning-title",
+      title: "tunetoken",
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+    const bodyHit = makeItemMetadata({
+      id: "pm-tuning-body",
+      title: "different",
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+
+    const allItems = [titleHit, bodyHit];
+    listAllItemMetadataMock.mockResolvedValue(allItems);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = allItems.find((item) =>
+        targetPath.endsWith(`${item.id}.md`),
+      );
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(
+        match,
+        match.id === "pm-tuning-body" ? "tunetoken tunetoken" : "no token here",
+      );
+    });
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+
+    readSettingsMock.mockResolvedValueOnce({ id_prefix: "pm-" });
+    const defaultResult = await runSearch(
+      "tunetoken",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(defaultResult.items[0]?.item.id).toBe("pm-tuning-title");
+
+    readSettingsMock.mockResolvedValueOnce({
+      id_prefix: "pm-",
+      search: {
+        tuning: {
+          title_weight: 1,
+          title_exact_bonus: 0,
+          body_weight: 20,
+        },
+      },
+    } as unknown as { id_prefix: string });
+    const tunedResult = await runSearch(
+      "tunetoken",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(tunedResult.items[0]?.item.id).toBe("pm-tuning-body");
+  });
+
+  it("falls back to alternate item format path when preferred file is missing", async () => {
+    const fallbackItem = makeItemMetadata({
+      id: "pm-fallback-format",
+      title: "Fallback format title",
+      description: "Preferred TOON file missing",
+    });
+    listAllItemMetadataMock.mockResolvedValue([fallbackItem]);
+    readSettingsMock.mockResolvedValue({
+      id_prefix: "pm-",
+      item_format: "toon",
+    } as unknown as { id_prefix: string });
+    readFileMock.mockImplementation(async (targetPath) => {
+      if (targetPath.endsWith(".toon")) {
+        throw new Error("ENOENT preferred format");
+      }
+      if (targetPath.endsWith(".md")) {
+        return serializeDocument(fallbackItem, "fallback body");
+      }
+      throw new Error(`Unexpected path: ${targetPath}`);
+    });
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+    const result = await runSearch(
+      "fallback",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(result.items[0]?.item.id).toBe("pm-fallback-format");
+    expect(runActiveOnReadHooksMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: expect.stringMatching(/pm-fallback-format\.md$/),
+      }),
+    );
+  });
+
+  it("falls back from json_markdown preference to TOON item file when markdown path is missing", async () => {
+    const fallbackItem = makeItemMetadata({
+      id: "pm-fallback-toon",
+      title: "Fallback toon title",
+      description: "Preferred markdown file missing",
+    });
+    listAllItemMetadataMock.mockResolvedValue([fallbackItem]);
+    readSettingsMock.mockResolvedValue({
+      id_prefix: "pm-",
+      item_format: "json_markdown",
+    } as unknown as { id_prefix: string });
+    readFileMock.mockImplementation(async (targetPath) => {
+      if (targetPath.endsWith(".md")) {
+        throw new Error("ENOENT preferred markdown");
+      }
+      if (targetPath.endsWith(".toon")) {
+        return serializeItemDocument(
+          {
+            metadata: fallbackItem,
+            body: "fallback toon body",
+          },
+          { format: "toon" },
+        );
+      }
+      throw new Error(`Unexpected path: ${targetPath}`);
+    });
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+    const result = await runSearch(
+      "fallback",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(result.items[0]?.item.id).toBe("pm-fallback-toon");
+    expect(runActiveOnReadHooksMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: expect.stringMatching(/pm-fallback-toon\.toon$/),
+      }),
+    );
+  });
+
+  it("supports compact/full/fields projections and validates projection flags", async () => {
+    const projectedItem = makeItemMetadata({
+      id: "pm-projection",
+      title: "Projection title token",
+      status: "in_progress",
+      priority: 2,
+      type: "Task",
+      updated_at: "2026-02-18T00:03:00.000Z",
+    });
+    listAllItemMetadataMock.mockResolvedValue([projectedItem]);
+    readFileMock.mockResolvedValue(
+      serializeDocument(projectedItem, "projection token body"),
+    );
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+
+    const fullResult = await runSearch(
+      "token",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(fullResult.projection).toEqual({
+      mode: "full",
+      fields: null,
+    });
+    expect(fullResult.items[0]).toMatchObject({
+      item: {
+        id: "pm-projection",
+      },
+      matched_fields: expect.arrayContaining(["title"]),
+    });
+
+    const compactResult = await runSearch(
+      "token",
+      { mode: "keyword", compact: true },
+      { path: "/tmp/pm-search" },
+    );
+    expect(
+      (compactResult as Record<string, unknown>).projection,
+    ).toBeUndefined();
+    expect((compactResult as Record<string, unknown>).now).toBeUndefined();
+    expect(compactResult.items[0]).toMatchObject({
+      id: "pm-projection",
+      title: "Projection title token",
+      status: "in_progress",
+      type: "Task",
+      priority: 2,
+      score: expect.any(Number),
+      matched_fields: expect.arrayContaining(["title"]),
+    });
+    expect(
+      (compactResult.items[0] as Record<string, unknown>).item,
+    ).toBeUndefined();
+
+    const fieldResult = await runSearch(
+      "token",
+      { mode: "keyword", fields: "id,score,item.title,item.status" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(fieldResult.projection).toEqual({
+      mode: "fields",
+      fields: ["id", "score", "item.title", "item.status"],
+    });
+    const projected = fieldResult.items[0] as Record<string, unknown>;
+    expect(projected.id).toBe("pm-projection");
+    expect(typeof projected.score).toBe("number");
+    expect(projected["item.title"]).toBe("Projection title token");
+    expect(projected["item.status"]).toBe("in_progress");
+    const { _testOnlySearchCommand } =
+      await import("../../../../src/sdk/query/search.js");
+    expect(() =>
+      _testOnlySearchCommand.validateSearchProjectionFields(
+        { mode: "fields", fields: ["custom_signal"] },
+        {
+          definitions: [
+            { key: "custom_signal", metadata_key: "custom_signal" },
+          ],
+        } as never,
+      ),
+    ).not.toThrow();
+
+    await expect(
+      runSearch(
+        "token",
+        { mode: "keyword", fields: "id,titel" },
+        { path: "/tmp/pm-search" },
+      ),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+      message: expect.stringContaining(
+        "Unknown search --fields value(s): titel",
+      ),
+    });
+
+    await expect(
+      runSearch(
+        "token",
+        { mode: "keyword", compact: true, full: true },
+        { path: "/tmp/pm-search" },
+      ),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(
+      runSearch(
+        "token",
+        { mode: "keyword", fields: " , " },
+        { path: "/tmp/pm-search" },
+      ),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+  });
+
+  it("filters the keyword corpus by --status before the query and echoes the raw value", async () => {
+    const openHit = makeItemMetadata({
+      id: "pm-status-open",
+      title: "statustoken open work",
+      description: "statustoken open description",
+      status: "open",
+    });
+    const closedHit = makeItemMetadata({
+      id: "pm-status-closed",
+      title: "statustoken closed work",
+      description: "statustoken closed description",
+      status: "closed",
+    });
+    const docs = [openHit, closedHit];
+    listAllItemMetadataMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "statustoken body");
+    });
+
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+
+    // --status open excludes the closed item via the open workflow-group alias.
+    const openResult = await runSearch(
+      "statustoken",
+      { mode: "keyword", status: "open" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(openResult.count).toBe(1);
+    expect(openResult.items[0].item.id).toBe("pm-status-open");
+    expect(openResult.filters.status).toBe("open");
+
+    // --status closed returns only the closed item via the closed alias.
+    const closedResult = await runSearch(
+      "statustoken",
+      { mode: "keyword", status: "closed" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(closedResult.count).toBe(1);
+    expect(closedResult.items[0].item.id).toBe("pm-status-closed");
+    expect(closedResult.filters.status).toBe("closed");
+
+    // No --status leaves the corpus unfiltered and echoes null.
+    const noStatus = await runSearch(
+      "statustoken",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(noStatus.count).toBe(2);
+    expect(noStatus.filters.status).toBe("all");
+
+    // --status all is an explicit no-op status filter for duplicate discovery
+    // across open/closed/canceled/custom lifecycle buckets.
+    const allStatus = await runSearch(
+      "statustoken",
+      { mode: "keyword", status: "all" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(allStatus.count).toBe(2);
+    expect(allStatus.items.map((hit) => hit.item.id).sort()).toEqual([
+      "pm-status-closed",
+      "pm-status-open",
+    ]);
+    expect(allStatus.filters.status).toBe("all");
+
+    const upperAllStatus = await runSearch(
+      "statustoken",
+      { mode: "keyword", status: " ALL " },
+      { path: "/tmp/pm-search" },
+    );
+    expect(upperAllStatus.count).toBe(2);
+    expect(upperAllStatus.filters.status).toBe("all");
+  });
+
+  it("rejects an unrecognized --status token strictly with a did-you-mean hint", async () => {
+    const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+    await expect(
+      runSearch(
+        "statustoken",
+        { mode: "keyword", status: "opne" },
+        { path: "/tmp/pm-search" },
+      ),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+      message: expect.stringContaining('Invalid --status value "opne"'),
+    });
+    await expect(
+      runSearch(
+        "statustoken",
+        { mode: "keyword", status: "opne" },
+        { path: "/tmp/pm-search" },
+      ),
+    ).rejects.toThrow(/Did you mean "open"\?/);
+  });
+
+  // GH-281 (pm-oqgf): exact full-ID / short-ID matches must rank #1 in EVERY
+  // mode, not just keyword. In semantic & hybrid mode a high-semantic body
+  // mention used to out-rank the exact-ID target because the keyword
+  // contribution is capped by hybrid_semantic_weight.
+  it("forces an exact full-ID match to rank #1 in hybrid mode over a higher-semantic competitor", async () => {
+    const target = makeItemMetadata({
+      id: "pm-fk49",
+      title: "Game Engine Core Architecture",
+      description: "No literal id token in content",
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    // Competitor carries a far stronger semantic score AND a literal body
+    // mention of the target id, so under the default 0.7 semantic weight it
+    // would out-rank the exact-id target without the GH-281 guarantee.
+    const rival = makeItemMetadata({
+      id: "pm-rival",
+      title: "pm-fk49 mentioned in the title and body",
+      description: "pm-fk49 appears here too",
+      updated_at: "2026-02-18T00:02:00.000Z",
+    });
+    const docs = [rival, target];
+    listAllItemMetadataMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath: string) => {
+      const match = docs.find((item) => targetPath.includes(item.id));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(
+        match,
+        match.id === "pm-rival"
+          ? "pm-fk49 body mention pm-fk49"
+          : "body without lookup token",
+      );
+    });
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({
+        search: {
+          // Default weight: keyword contribution caps at 0.3 — pre-fix the rival wins.
+          hybrid_semantic_weight: 0.7,
+        },
+      }),
+    );
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = makeEmbeddingAndVectorSearchFetch({
+      vectorResult: [
+        { id: "pm-rival", score: 0.99 },
+        { id: "pm-fk49", score: 0.05 },
+      ],
+    });
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const hybrid = await runSearch(
+        "pm-fk49",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(hybrid.mode).toBe("hybrid");
+      expect(hybrid.items[0]?.item.id).toBe("pm-fk49");
+      expect(hybrid.items[0]?.matched_fields).toEqual(["id"]);
+      // The competitor is still present, just ranked below the exact-id target.
+      expect(hybrid.items.map((entry) => entry.item.id)).toContain("pm-rival");
+      expect(hybrid.items[0]!.score).toBeGreaterThan(hybrid.items[1]!.score);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("ranks full-ID above short-ID when both are exact matches in hybrid mode, both above a higher-semantic rival", async () => {
+    // Query "fk49" exactly matches TWO items: item "fk49" matches as a FULL id
+    // (score 1000) and item "pm-fk49" matches as a SHORT id (prefix "pm-"
+    // stripped → "fk49", score 900). The full-ID band slot must rank above the
+    // short-ID band slot, and both must out-rank the higher-semantic rival.
+    const fullIdMatch = makeItemMetadata({
+      id: "fk49",
+      title: "full id exact target",
+      description: "no id token here",
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    const shortIdMatch = makeItemMetadata({
+      id: "pm-fk49",
+      title: "short id exact target",
+      description: "no id token here",
+      updated_at: "2026-02-18T00:01:30.000Z",
+    });
+    const rival = makeItemMetadata({
+      id: "pm-rival",
+      title: "fk49 fk49 fk49 in title",
+      description: "fk49 body mention",
+      updated_at: "2026-02-18T00:02:00.000Z",
+    });
+    const docs = [rival, fullIdMatch, shortIdMatch];
+    listAllItemMetadataMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath: string) => {
+      const match = docs.find((item) => targetPath.includes(item.id));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(
+        match,
+        match.id === "pm-rival" ? "fk49 fk49 body" : "no lookup token",
+      );
+    });
+    readSettingsMock.mockResolvedValue(
+      makeSemanticSearchSettings({
+        id_prefix: "pm-",
+        search: { hybrid_semantic_weight: 0.7 },
+      }),
+    );
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = makeEmbeddingAndVectorSearchFetch({
+      vectorResult: [
+        { id: "pm-rival", score: 0.99 },
+        { id: "pm-fk49", score: 0.02 },
+      ],
+    });
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const hybrid = await runSearch(
+        "fk49",
+        { mode: "hybrid" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(hybrid.mode).toBe("hybrid");
+      // Full id ("fk49") above short id ("pm-fk49"); both above the rival.
+      expect(hybrid.items.slice(0, 2).map((entry) => entry.item.id)).toEqual([
+        "fk49",
+        "pm-fk49",
+      ]);
+      expect(hybrid.items[0]?.matched_fields).toEqual(["id"]);
+      expect(hybrid.items[1]?.matched_fields).toEqual(["id"]);
+      expect(hybrid.items[0]!.score).toBeGreaterThan(hybrid.items[1]!.score);
+      expect(hybrid.items[1]!.score).toBeGreaterThan(hybrid.items[2]!.score);
+      expect(hybrid.items.map((entry) => entry.item.id)).toContain("pm-rival");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("forces an exact full-ID match to rank #1 in semantic mode even with no vector hit and a raised --min-score", async () => {
+    const target = makeItemMetadata({
+      id: "pm-fk49",
+      title: "semantic exact target",
+      description: "no id token here",
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    const rival = makeItemMetadata({
+      id: "pm-rival",
+      title: "unrelated heading",
+      description: "unrelated",
+      updated_at: "2026-02-18T00:02:00.000Z",
+    });
+    const docs = [rival, target];
+    listAllItemMetadataMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath: string) => {
+      const match = docs.find((item) => targetPath.includes(item.id));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "semantic body");
+    });
+    readSettingsMock.mockResolvedValue(makeSemanticSearchSettings());
+
+    const originalFetch = globalThis.fetch;
+    // Only the rival carries a vector hit; the exact-id target has none, so
+    // pre-fix it would be absent from a pure-semantic result entirely.
+    globalThis.fetch = makeEmbeddingAndVectorSearchFetch({
+      vectorResult: [{ id: "pm-rival", score: 0.99 }],
+    });
+
+    try {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      // --min-score above the reserved band's lower neighbors must not drop the
+      // exact-id hit (threshold exemption).
+      const semantic = await runSearch(
+        "pm-fk49",
+        { mode: "semantic", minScore: "5" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(semantic.mode).toBe("semantic");
+      expect(semantic.items[0]?.item.id).toBe("pm-fk49");
+      expect(semantic.items[0]?.matched_fields).toEqual(["id"]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+describe("classifyImplicitSemanticFallbackReason", () => {
+  it("classifies timeouts from message and from a nested cause code", async () => {
+    const { classifyImplicitSemanticFallbackReason } =
+      await import("../../../../src/cli/commands/query/search.js");
+    expect(
+      classifyImplicitSemanticFallbackReason(
+        new Error("Embedding request timed out after 30000ms"),
+      ),
+    ).toBe("timeout");
+    const etimedout = new Error("fetch failed");
+    (etimedout as Error & { cause?: unknown }).cause = { code: "ETIMEDOUT" };
+    expect(classifyImplicitSemanticFallbackReason(etimedout)).toBe("timeout");
+  });
+
+  it("classifies undici 'fetch failed' connection errors via error.cause.code", async () => {
+    const { classifyImplicitSemanticFallbackReason } =
+      await import("../../../../src/cli/commands/query/search.js");
+    // undici surfaces ECONNREFUSED as a generic 'fetch failed' message with the
+    // real syscall code on cause.code — must be labelled connection, not error.
+    const refused = new Error("fetch failed");
+    (refused as Error & { cause?: unknown }).cause = { code: "ECONNREFUSED" };
+    expect(classifyImplicitSemanticFallbackReason(refused)).toBe("connection");
+
+    const reset = new Error("fetch failed");
+    (reset as Error & { cause?: unknown }).cause = { code: "ECONNRESET" };
+    expect(classifyImplicitSemanticFallbackReason(reset)).toBe("connection");
+
+    // Bare "fetch failed" with no cause still degrades to connection.
+    expect(
+      classifyImplicitSemanticFallbackReason(new Error("fetch failed")),
+    ).toBe("connection");
+  });
+
+  it("falls back to error for unrelated failures and walks bounded cause depth", async () => {
+    const { classifyImplicitSemanticFallbackReason, collectErrorCauseCodes } =
+      await import("../../../../src/cli/commands/query/search.js");
+    expect(
+      classifyImplicitSemanticFallbackReason(
+        new Error("No embedding provider configured"),
+      ),
+    ).toBe("error");
+    // Nested cause chain: the deep ENOTFOUND is still found within the depth budget.
+    const deep = new Error("outer");
+    (deep as Error & { cause?: unknown }).cause = {
+      message: "mid",
+      cause: { code: "ENOTFOUND" },
+    };
+    expect(classifyImplicitSemanticFallbackReason(deep)).toBe("connection");
+    expect(collectErrorCauseCodes(deep)).toContain("enotfound");
+    expect(collectErrorCauseCodes("plain string")).toBe("");
+  });
+
+  // GH-181 / pm-cstl / pm-13nx: match-mode, all-terms coverage ranking, default
+  // keyword limit + total, --count, --min-score override, and list filter parity.
+  describe("keyword relevance control and filter parity", () => {
+    function makeBody(itemMetadata: ItemMetadata, body: string): string {
+      return serializeDocument(itemMetadata, body);
+    }
+
+    it("ranks all-terms coverage above partial matches in default (or) mode and surfaces matched_all_terms only internally", async () => {
+      const allTerms = makeItemMetadata({
+        id: "pm-all",
+        title: "alpha beta gamma",
+      });
+      const partial = makeItemMetadata({
+        id: "pm-partial",
+        title: "alpha only",
+      });
+      listAllItemMetadataMock.mockResolvedValueOnce([partial, allTerms]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-all.md")) return makeBody(allTerms, "body");
+        if (targetPath.endsWith("pm-partial.md"))
+          return makeBody(partial, "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "alpha beta gamma",
+        { mode: "keyword", full: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(result.count).toBe(2);
+      expect(result.items[0].item.id).toBe("pm-all");
+      expect(result.items[1].item.id).toBe("pm-partial");
+      expect(result.filters.match_mode).toBe("or");
+      // matched_all_terms is an internal ranking signal — never projected into rows.
+      expect("matched_all_terms" in result.items[0]).toBe(false);
+    });
+
+    it("hard-filters with --match-mode and (every distinct token must match)", async () => {
+      const allTerms = makeItemMetadata({
+        id: "pm-all",
+        title: "alpha beta gamma",
+      });
+      const partial = makeItemMetadata({
+        id: "pm-partial",
+        title: "alpha only",
+      });
+      listAllItemMetadataMock.mockResolvedValue([partial, allTerms]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-all.md")) return makeBody(allTerms, "body");
+        if (targetPath.endsWith("pm-partial.md"))
+          return makeBody(partial, "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const andResult = await runSearch(
+        "alpha beta gamma",
+        { matchMode: "and" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(andResult.count).toBe(1);
+      expect(andResult.items[0].item.id).toBe("pm-all");
+      expect(andResult.filters.match_mode).toBe("and");
+    });
+
+    it("requires a contiguous phrase with --match-mode exact", async () => {
+      const phrase = makeItemMetadata({
+        id: "pm-phrase",
+        title: "alpha beta gamma",
+      });
+      const scattered = makeItemMetadata({
+        id: "pm-scattered",
+        title: "alpha gamma beta",
+      });
+      listAllItemMetadataMock.mockResolvedValue([phrase, scattered]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-phrase.md"))
+          return makeBody(phrase, "body");
+        if (targetPath.endsWith("pm-scattered.md"))
+          return makeBody(scattered, "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const exact = await runSearch(
+        "alpha beta gamma",
+        { matchMode: "exact" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(exact.count).toBe(1);
+      expect(exact.items[0].item.id).toBe("pm-phrase");
+    });
+
+    it("rejects an invalid --match-mode value", async () => {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      await expect(
+        runSearch("token", { matchMode: "nope" }, { path: "/tmp/pm-search" }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+
+    it("applies the default keyword limit (max_results) and reports total when truncating", async () => {
+      const items = Array.from({ length: 5 }, (_, index) =>
+        makeItemMetadata({ id: `pm-k${index}`, title: "alpha" }),
+      );
+      listAllItemMetadataMock.mockResolvedValue(items);
+      readFileMock.mockImplementation(async (targetPath) => {
+        const match = items.find((item) =>
+          targetPath.endsWith(`${item.id}.md`),
+        );
+        if (match) return makeBody(match, "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      readSettingsMock.mockResolvedValue({
+        id_prefix: "pm-",
+        search: { max_results: 2 },
+      } as unknown as {
+        id_prefix: string;
+      });
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const limited = await runSearch(
+        "alpha",
+        { mode: "keyword" },
+        { path: "/tmp/pm-search" },
+      );
+      // No --limit → falls back to max_results=2; total reflects the 5 matches.
+      expect(limited.count).toBe(2);
+      expect(limited.total).toBe(5);
+    });
+
+    it("returns only the count with --count and omits hit rows", async () => {
+      const items = Array.from({ length: 3 }, (_, index) =>
+        makeItemMetadata({ id: `pm-c${index}`, title: "alpha" }),
+      );
+      listAllItemMetadataMock.mockResolvedValue(items);
+      readFileMock.mockImplementation(async (targetPath) => {
+        const match = items.find((item) =>
+          targetPath.endsWith(`${item.id}.md`),
+        );
+        if (match) return makeBody(match, "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const counted = await runSearch(
+        "alpha",
+        { mode: "keyword", count: true, full: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(counted.count_only).toBe(true);
+      expect(counted.count).toBe(3);
+      expect(counted.total).toBe(3);
+      expect(counted.items).toEqual([]);
+      // Compact-summary count-only path.
+      const compactCounted = await runSearch(
+        "alpha",
+        { mode: "keyword", count: true, compact: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(compactCounted.count_only).toBe(true);
+      expect(compactCounted.count).toBe(3);
+      expect(compactCounted.items).toEqual([]);
+
+      const fieldsCounted = await runSearch(
+        "alpha",
+        { mode: "keyword", count: true, fields: "id,score" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(fieldsCounted.projection).toEqual({
+        mode: "fields",
+        fields: ["id", "score"],
+      });
+
+      const zeroLimitedCounted = await runSearch(
+        "alpha",
+        { mode: "keyword", count: true, limit: "0", full: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(zeroLimitedCounted.count_only).toBe(true);
+      expect(zeroLimitedCounted.count).toBe(3);
+      expect(zeroLimitedCounted.total).toBe(3);
+      expect(zeroLimitedCounted.items).toEqual([]);
+    });
+
+    it("keeps the count-only shape when --count matches nothing (empty-result path)", async () => {
+      listAllItemMetadataMock.mockResolvedValue([
+        makeItemMetadata({ id: "pm-none", title: "alpha" }),
+      ]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-none.md"))
+          return makeBody(
+            makeItemMetadata({ id: "pm-none", title: "alpha" }),
+            "body",
+          );
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      // No token matches "zzznomatch" -> filteredDocuments empty -> emptySearchResult path.
+      const verbose = await runSearch(
+        "zzznomatch",
+        { mode: "keyword", count: true, full: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(verbose.count_only).toBe(true);
+      expect(verbose.count).toBe(0);
+      expect(verbose.total).toBe(0);
+      expect(verbose.items).toEqual([]);
+      const compact = await runSearch(
+        "zzznomatch",
+        { mode: "keyword", count: true, compact: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(compact.count_only).toBe(true);
+      expect(compact.total).toBe(0);
+      expect(compact.items).toEqual([]);
+    });
+
+    it("applies --min-score as a per-query override of the persistent threshold", async () => {
+      const item = makeItemMetadata({ id: "pm-min", title: "alpha" });
+      listAllItemMetadataMock.mockResolvedValue([item]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-min.md")) return makeBody(item, "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const dropped = await runSearch(
+        "alpha",
+        { mode: "keyword", minScore: "1000" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(dropped.count).toBe(0);
+      expect(dropped.filters.score_threshold).toBe(1000);
+      const kept = await runSearch(
+        "alpha",
+        { mode: "keyword", minScore: "0" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(kept.count).toBe(1);
+      expect(kept.filters.score_threshold).toBe(0);
+    });
+
+    it("rejects an invalid --min-score value", async () => {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      await expect(
+        runSearch("token", { minScore: "-1" }, { path: "/tmp/pm-search" }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runSearch(
+          "token",
+          { minScore: "not-a-number" },
+          { path: "/tmp/pm-search" },
+        ),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+
+    it("applies pm list filter parity (updated/created windows, assignee, sprint, release, parent)", async () => {
+      const target = makeItemMetadata({
+        id: "pm-target",
+        title: "alpha",
+        assignee: "alice",
+        sprint: "S1",
+        release: "R1",
+        parent: "pm-epic",
+        created_at: "2026-03-01T00:00:00.000Z",
+        updated_at: "2026-03-10T00:00:00.000Z",
+      });
+      const other = makeItemMetadata({
+        id: "pm-other",
+        title: "alpha",
+        assignee: "bob",
+        sprint: "S2",
+        release: "R2",
+        parent: "pm-other-epic",
+        created_at: "2026-01-01T00:00:00.000Z",
+        updated_at: "2026-01-02T00:00:00.000Z",
+      });
+      listAllItemMetadataMock.mockResolvedValue([target, other]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-target.md"))
+          return makeBody(target, "body");
+        if (targetPath.endsWith("pm-other.md")) return makeBody(other, "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const byAssignee = await runSearch(
+        "alpha",
+        { mode: "keyword", assignee: "alice" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(byAssignee.count).toBe(1);
+      expect(byAssignee.items[0].item.id).toBe("pm-target");
+      expect(byAssignee.filters.assignee).toBe("alice");
+
+      const bySprintRelease = await runSearch(
+        "alpha",
+        { mode: "keyword", sprint: "S1", release: "R1", parent: "pm-epic" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(bySprintRelease.count).toBe(1);
+      expect(bySprintRelease.items[0].item.id).toBe("pm-target");
+
+      const byUpdatedWindow = await runSearch(
+        "alpha",
+        {
+          mode: "keyword",
+          updatedAfter: "2026-02-01T00:00:00.000Z",
+          createdAfter: "2026-02-01T00:00:00.000Z",
+        },
+        { path: "/tmp/pm-search" },
+      );
+      expect(byUpdatedWindow.count).toBe(1);
+      expect(byUpdatedWindow.items[0].item.id).toBe("pm-target");
+
+      const byUpdatedBefore = await runSearch(
+        "alpha",
+        {
+          mode: "keyword",
+          updatedBefore: "2026-02-01T00:00:00.000Z",
+          createdBefore: "2026-02-01T00:00:00.000Z",
+        },
+        { path: "/tmp/pm-search" },
+      );
+      expect(byUpdatedBefore.count).toBe(1);
+      expect(byUpdatedBefore.items[0].item.id).toBe("pm-other");
+    });
+
+    it("rejects --assignee none/null (matching pm list)", async () => {
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      await expect(
+        runSearch("token", { assignee: "none" }, { path: "/tmp/pm-search" }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+
+    it("echoes new filters and match_mode in the compact filter summary", async () => {
+      const item = makeItemMetadata({
+        id: "pm-cf",
+        title: "alpha",
+        assignee: "alice",
+        sprint: "S1",
+      });
+      listAllItemMetadataMock.mockResolvedValue([item]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-cf.md")) return makeBody(item, "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const compact = await runSearch(
+        "alpha",
+        {
+          mode: "keyword",
+          compact: true,
+          matchMode: "and",
+          assignee: "alice",
+          sprint: "S1",
+        },
+        { path: "/tmp/pm-search" },
+      );
+      expect(compact.filters).toMatchObject({
+        match_mode: "and",
+        assignee: "alice",
+        sprint: "S1",
+      });
+
+      const compactAllStatus = await runSearch(
+        "alpha",
+        { mode: "keyword", compact: true, status: " ALL " },
+        { path: "/tmp/pm-search" },
+      );
+      expect(compactAllStatus.filters.status).toBe("all");
+
+      const compactWarning = await runSearch(
+        "alpha status:closed",
+        { mode: "keyword", compact: true, status: "open" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(compactWarning.warnings).toEqual([
+        "search_inline_filter_ignored:status:flag_takes_precedence",
+      ]);
+    });
+  });
+});
+
+describe("inline query syntax and highlighting (GH-157)", () => {
+  function makeDoc(
+    overrides: Partial<ItemMetadata> & Pick<ItemMetadata, "id">,
+    body = "",
+  ): { metadata: ItemMetadata; body: string } {
+    return { metadata: makeItemMetadata(overrides), body };
+  }
+
+  describe("parseInlineQueryFilters", () => {
+    it("extracts recognized field:value tokens, keeps colon-bearing values, and returns the residual query", async () => {
+      const { _testOnlySearchCommand } =
+        await import("../../../../src/cli/commands/query/search.js");
+      const result = _testOnlySearchCommand.parseInlineQueryFilters(
+        "auth tag:area:search status:open relevance",
+      );
+      expect(result.residualQuery).toBe("auth relevance");
+      expect(result.inlineFilters).toEqual({
+        tag: "area:search",
+        status: "open",
+      });
+    });
+
+    it("captures the first occurrence per field and leaves later duplicates plus unknown prefixes in the residual", async () => {
+      const { _testOnlySearchCommand } =
+        await import("../../../../src/cli/commands/query/search.js");
+      const result = _testOnlySearchCommand.parseInlineQueryFilters(
+        "type:Task type:Bug foo:bar plain status:",
+      );
+      // First type wins; the duplicate, the unknown field, the bare word, and the
+      // empty-valued token all fall through to the residual query.
+      expect(result.inlineFilters).toEqual({ type: "Task" });
+      expect(result.residualQuery).toBe("type:Bug foo:bar plain status:");
+    });
+
+    it("returns an empty filter set for a query with no inline tokens", async () => {
+      const { _testOnlySearchCommand } =
+        await import("../../../../src/cli/commands/query/search.js");
+      const result =
+        _testOnlySearchCommand.parseInlineQueryFilters("just plain words");
+      expect(result.inlineFilters).toEqual({});
+      expect(result.residualQuery).toBe("just plain words");
+    });
+  });
+
+  describe("applyInlineQueryFilters", () => {
+    it("applies an inline value only when the flag is unset and never mutates the input", async () => {
+      const { _testOnlySearchCommand } =
+        await import("../../../../src/cli/commands/query/search.js");
+      const warnings: string[] = [];
+      const options = { priority: "2" } as Record<string, unknown>;
+      const merged = _testOnlySearchCommand.applyInlineQueryFilters(
+        options,
+        { tag: "area:search", priority: "1" },
+        warnings,
+      );
+      expect(merged.tag).toBe("area:search");
+      // Explicit flag wins; the conflicting inline token is recorded, not silent.
+      expect(merged.priority).toBe("2");
+      expect(warnings).toEqual([
+        "search_inline_filter_ignored:priority:flag_takes_precedence",
+      ]);
+      expect(options).toEqual({ priority: "2" });
+    });
+  });
+
+  describe("markTokenRuns", () => {
+    it("wraps case-insensitive matches and escapes regex metacharacters in tokens", async () => {
+      const { _testOnlySearchCommand } =
+        await import("../../../../src/cli/commands/query/search.js");
+      expect(
+        _testOnlySearchCommand.markTokenRuns("Auth and AUTH", ["auth"]),
+      ).toBe("«Auth» and «AUTH»");
+      // A token carrying regex-special characters must match literally.
+      expect(_testOnlySearchCommand.markTokenRuns("c++ and c++", ["c++"])).toBe(
+        "«c++» and «c++»",
+      );
+    });
+
+    it("returns the text unchanged when there are no non-empty tokens", async () => {
+      const { _testOnlySearchCommand } =
+        await import("../../../../src/cli/commands/query/search.js");
+      expect(_testOnlySearchCommand.markTokenRuns("unchanged", [""])).toBe(
+        "unchanged",
+      );
+    });
+
+    it("prefers the longest token so a prefix token does not shadow a longer match", async () => {
+      const { _testOnlySearchCommand } =
+        await import("../../../../src/cli/commands/query/search.js");
+      // "auth" is a prefix of "authority"; length-descending ordering must mark
+      // the full "authority" rather than «auth»ority.
+      expect(
+        _testOnlySearchCommand.markTokenRuns("authority check", [
+          "auth",
+          "authority",
+        ]),
+      ).toBe("«authority» check");
+    });
+  });
+
+  describe("highlightFieldSnippet", () => {
+    it("returns null for empty text and for text with no token match", async () => {
+      const { _testOnlySearchCommand } =
+        await import("../../../../src/cli/commands/query/search.js");
+      expect(
+        _testOnlySearchCommand.highlightFieldSnippet("", ["auth"]),
+      ).toBeNull();
+      expect(
+        _testOnlySearchCommand.highlightFieldSnippet("nothing here", [
+          "auth",
+          "",
+        ]),
+      ).toBeNull();
+    });
+
+    it("wraps the match without ellipsis when the field fits the window", async () => {
+      const { _testOnlySearchCommand } =
+        await import("../../../../src/cli/commands/query/search.js");
+      expect(
+        _testOnlySearchCommand.highlightFieldSnippet("Fix auth login bug", [
+          "auth",
+        ]),
+      ).toBe("Fix «auth» login bug");
+    });
+
+    it("anchors the window on the earliest matching token across the token set", async () => {
+      const { _testOnlySearchCommand } =
+        await import("../../../../src/cli/commands/query/search.js");
+      // "alpha" is listed first but appears later than "beta"; the window must
+      // anchor on the earliest match (beta) regardless of token order.
+      expect(
+        _testOnlySearchCommand.highlightFieldSnippet("zzz beta yyy alpha", [
+          "alpha",
+          "beta",
+        ]),
+      ).toBe("zzz «beta» yyy «alpha»");
+    });
+
+    it("windows long text around the first match with leading and trailing ellipsis", async () => {
+      const { _testOnlySearchCommand } =
+        await import("../../../../src/cli/commands/query/search.js");
+      const long = `${"x".repeat(80)} needle ${"y".repeat(80)}`;
+      const snippet = _testOnlySearchCommand.highlightFieldSnippet(long, [
+        "needle",
+      ]);
+      expect(snippet).not.toBeNull();
+      expect(snippet?.startsWith("…")).toBe(true);
+      expect(snippet?.endsWith("…")).toBe(true);
+      expect(snippet).toContain("«needle»");
+    });
+
+    it("keeps a match longer than the context radius intact", async () => {
+      const { _testOnlySearchCommand } =
+        await import("../../../../src/cli/commands/query/search.js");
+      const token = "n".repeat(80);
+      const snippet = _testOnlySearchCommand.highlightFieldSnippet(
+        `${"x".repeat(80)}${token}${"y".repeat(80)}`,
+        [token],
+      );
+      expect(snippet).toContain(`«${token}»`);
+    });
+
+    it("removes every internal ranking signal from full projections", async () => {
+      const { _testOnlySearchCommand } =
+        await import("../../../../src/cli/commands/query/search.js");
+      expect(
+        _testOnlySearchCommand.projectSearchHits(
+          [
+            {
+              item: makeItemMetadata({ id: "pm-exact" }),
+              score: 1,
+              matched_fields: ["id"],
+              matched_all_terms: true,
+              exact_id_match: true,
+            },
+          ],
+          { mode: "full", fields: [] },
+        ),
+      ).toEqual([
+        {
+          item: makeItemMetadata({ id: "pm-exact" }),
+          score: 1,
+          matched_fields: ["id"],
+        },
+      ]);
+    });
+  });
+
+  describe("buildHitHighlights", () => {
+    it("emits snippets for matched document fields in order and skips synthetic and unmatched fields", async () => {
+      const { _testOnlySearchCommand } =
+        await import("../../../../src/cli/commands/query/search.js");
+      const document = makeDoc(
+        { id: "pm-hl", title: "Auth flow", tags: ["area:auth"] },
+        "auth body",
+      );
+      const highlights = _testOnlySearchCommand.buildHitHighlights(
+        document,
+        // "semantic" is synthetic (no document field), "description" has no match.
+        ["description", "semantic", "tags", "title"],
+        ["auth"],
+      );
+      expect(highlights).toEqual([
+        { field: "tags", snippet: "area:«auth»" },
+        { field: "title", snippet: "«Auth» flow" },
+      ]);
+    });
+  });
+
+  describe("runSearch wiring", () => {
+    beforeEach(() => {
+      pathExistsMock.mockReset();
+      readSettingsMock.mockReset();
+      listAllItemMetadataMock.mockReset();
+      readFileMock.mockReset();
+      realpathMock.mockReset();
+      statMock.mockReset();
+      opendirMock.mockReset();
+      runActiveOnReadHooksMock.mockReset();
+      spawnSyncMock.mockReset();
+      activeExtensionRegistrations = null;
+      pathExistsMock.mockResolvedValue(true);
+      readSettingsMock.mockResolvedValue({ id_prefix: "pm-" });
+      realpathMock.mockImplementation(async (targetPath) => targetPath);
+      mockReadableSearchTrackerRoots();
+      runActiveOnReadHooksMock.mockResolvedValue([]);
+      spawnSyncMock.mockReturnValue({ status: 1, stdout: "", stderr: "" });
+    });
+
+    function seedAuthCorpus(): void {
+      const authItem = makeItemMetadata({
+        id: "pm-lgn1",
+        title: "Fix auth login bug",
+        description: "auth handling",
+        tags: ["area:auth"],
+      });
+      const searchItem = makeItemMetadata({
+        id: "pm-rnk2",
+        title: "Improve auth in search",
+        description: "auth ranking",
+        tags: ["area:search"],
+      });
+      listAllItemMetadataMock.mockResolvedValue([authItem, searchItem]);
+      readFileMock.mockImplementation(async (targetPath: string) =>
+        targetPath.includes("pm-lgn1")
+          ? serializeDocument(authItem, "auth body")
+          : serializeDocument(searchItem, "auth body"),
+      );
+    }
+
+    it("parses an inline tag token from the query string and applies it as a filter", async () => {
+      seedAuthCorpus();
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "auth tag:area:auth",
+        {},
+        { path: "/tmp/pm-search" },
+      );
+      expect(result.query).toBe("auth");
+      expect(result.filters).toMatchObject({ tag: "area:auth" });
+      expect(
+        result.items.map((hit) => (hit as { item: ItemMetadata }).item.id),
+      ).toEqual(["pm-lgn1"]);
+    });
+
+    it("lets an explicit flag win over a conflicting inline token and warns", async () => {
+      seedAuthCorpus();
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "auth tag:area:search",
+        { tag: "area:auth" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(result.filters).toMatchObject({ tag: "area:auth" });
+      expect(result.warnings).toContain(
+        "search_inline_filter_ignored:tag:flag_takes_precedence",
+      );
+    });
+
+    it("rejects a query whose inline tokens consume every search term", async () => {
+      seedAuthCorpus();
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      await expect(
+        runSearch("tag:area:auth", {}, { path: "/tmp/pm-search" }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+
+    it("attaches per-field highlights on full hits when --highlight is set", async () => {
+      seedAuthCorpus();
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "auth",
+        { full: true, highlight: true },
+        { path: "/tmp/pm-search" },
+      );
+      const first = result.items[0] as {
+        highlights?: Array<{ field: string; snippet: string }>;
+      };
+      expect(
+        first.highlights?.some(
+          (entry) =>
+            entry.field === "title" &&
+            entry.snippet.toLowerCase().includes("«auth»"),
+        ),
+      ).toBe(true);
+    });
+
+    it("adds highlights to the compact projection field set and echoes it", async () => {
+      seedAuthCorpus();
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "auth",
+        { compact: true, highlight: true },
+        { path: "/tmp/pm-search" },
+      );
+      const first = result.items[0] as Record<string, unknown>;
+      expect(first).toHaveProperty("highlights");
+    });
+
+    it("does not duplicate highlights in an explicit --fields projection that already requests it", async () => {
+      seedAuthCorpus();
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "auth",
+        { fields: "id,highlights", highlight: true },
+        { path: "/tmp/pm-search" },
+      );
+      const verbose = result as { projection?: { fields: string[] | null } };
+      expect(verbose.projection?.fields).toEqual(["id", "highlights"]);
+    });
+
+    it("omits highlights entirely when --highlight is not set", async () => {
+      seedAuthCorpus();
+      const { runSearch } = await import("../../../../src/cli/commands/query/search.js");
+      const result = await runSearch(
+        "auth",
+        { full: true },
+        { path: "/tmp/pm-search" },
+      );
+      const first = result.items[0] as Record<string, unknown>;
+      expect(first).not.toHaveProperty("highlights");
+    });
+  });
+});

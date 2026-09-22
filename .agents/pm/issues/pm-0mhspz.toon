@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:schema",customization
 created_at: "2026-07-25T21:12:41.727Z"
-updated_at: "2026-08-30T22:27:18.171Z"
+updated_at: "2026-09-22T05:07:20.025Z"
 closed_at: "2026-08-30T22:27:17.437Z"
 completed_at: "2026-08-30T22:27:17.437Z"
 author: "harness:claude-code"
@@ -35,6 +35,7 @@ learnings[2]{created_at,author,text}:
   "2026-08-30T22:26:26.434Z","harness:codex",Public query metadata must report the caller's explicit selector even when an internal lifecycle bucket is also present; bounded diagnostic samples must always carry an unbounded total plus truncation receipt.
 files[24]{path,scope,note}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  sdk/public-surface.json,project,Reviewed lifecycle list and runtime registry SDK signature surface
   src/cli/register-list-query.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
   src/cli/register-operations.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
   src/core/schema/runtime-schema.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
@@ -43,23 +44,22 @@ files[24]{path,scope,note}:
   src/sdk/governance.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
   src/sdk/governance/health.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
   src/sdk/governance/status-role-diagnostics.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  src/sdk/governance/validate-normalization.ts,project,Extracted validation normalization keeps lifecycle diagnostics within repository architecture limits
   src/sdk/governance/validate.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
   src/sdk/query/context.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
   src/sdk/query/list.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
   src/sdk/schema.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
   tests/integration/lifecycle-workspace-position.integration.spec.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
-  tests/unit/commands/schema-command.spec.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  tests/integration/mcp-handshake.spec.ts,project,Lifecycle role diagnostic registration health and MCP contract coverage
+  tests/unit/cli/register-list-query.spec.ts,project,Lifecycle alias to SDK bucket adapter coverage
+  tests/unit/commands/governance/health-command.spec.ts,project,Lifecycle role diagnostic registration health and MCP contract coverage
+  tests/unit/commands/query/list-command.spec.ts,project,Public SDK lifecycle bucket selection coverage
+  tests/unit/commands/workspace/schema-command.spec.ts,project,Lifecycle role enforcement diagnostics query semantics and regression coverage
+  tests/unit/core/schema/item-types-file.spec.ts,project,Lifecycle role diagnostic registration health and MCP contract coverage
   tests/unit/sdk/governance/status-role-diagnostics.spec.ts,project,Lifecycle role diagnostic registration health and MCP contract coverage
   tests/unit/sdk/governance/status-role-registration.spec.ts,project,Lifecycle role diagnostic registration health and MCP contract coverage
-  tests/unit/commands/health-command.spec.ts,project,Lifecycle role diagnostic registration health and MCP contract coverage
-  tests/unit/core/schema/item-types-file.spec.ts,project,Lifecycle role diagnostic registration health and MCP contract coverage
-  tests/integration/mcp-handshake.spec.ts,project,Lifecycle role diagnostic registration health and MCP contract coverage
-  sdk/public-surface.json,project,Reviewed lifecycle list and runtime registry SDK signature surface
-  tests/unit/cli/register-list-query.spec.ts,project,Lifecycle alias to SDK bucket adapter coverage
-  tests/unit/commands/list-command.spec.ts,project,Public SDK lifecycle bucket selection coverage
-  src/sdk/governance/validate-normalization.ts,project,Extracted validation normalization keeps lifecycle diagnostics within repository architecture limits
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/status-role-diagnostics.spec.ts tests/unit/sdk/governance/status-role-registration.spec.ts tests/unit/commands/schema-command.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/cli/register-list-query.spec.ts,project,2400,"harness:codex","2026-08-30T19:53:37.289Z",local_mutation,feat/workspace-position-lifecycle-context,"Lifecycle role registration, diagnostics, health, context, and list selection"
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/status-role-diagnostics.spec.ts tests/unit/sdk/governance/status-role-registration.spec.ts tests/unit/commands/workspace/schema-command.spec.ts tests/unit/commands/governance/health-command.spec.ts tests/unit/commands/query/list-command.spec.ts tests/unit/cli/register-list-query.spec.ts,project,2400,"harness:codex","2026-09-22T05:07:19.931Z",local_mutation,refactor/cli-command-domains-export-gate,"Lifecycle role registration, diagnostics, health, context, and list selection"
 test_runs[3]:
   - run_id: test-local-mtg8a09t-ipuu0z
     kind: test

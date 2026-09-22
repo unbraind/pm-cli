@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cli,gh-issue,multi-agent
 created_at: "2026-07-11T16:07:09.068Z"
-updated_at: "2026-07-26T17:01:18.436Z"
+updated_at: "2026-09-22T05:22:12.869Z"
 closed_at: "2026-07-11T19:28:34.786Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -18,24 +18,24 @@ release: v2026.7.12
 resolution: ready rows preserve the recommendation comparator order and expose rank.
 expected_result: Consumers can trust and reconstruct next queue ordering.
 actual_result: p1 recommendation is followed deterministically by p2 and p3 rows with ranks.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-fjxm,related,"2026-07-11T16:07:23.510Z",null,null
-  pm-4k6b,related,"2026-07-26T17:01:18.180Z",null,null
-  pm-g543,related,"2026-07-26T17:01:18.180Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:01:18.180Z",null,null
+dependencies[4]{id,kind,created_at}:
+  pm-fjxm,related,"2026-07-11T16:07:23.510Z"
+  pm-4k6b,related,"2026-07-26T17:01:18.180Z"
+  pm-g543,related,"2026-07-26T17:01:18.180Z"
+  pm-mpbb,implements,"2026-07-26T17:01:18.180Z"
 comments[3]{created_at,author,text}:
   "2026-07-11T18:21:05.510Z",codex-root,"Implementation start: active in one broad PR because GH-509 candidate filters/race walking, GH-513 ready ranking, and decision-needed separation share the public SDK actionability engine, claim transaction, CLI/MCP contracts, and fleet-worker verification. Live all-status search and full item/dependency/comment history confirmed no duplicate lineage; only these three items are active."
   "2026-07-11T18:28:47.856Z",codex-root,"Implementation checkpoint: recommended and ready now share one ordered projection with explicit one-based ranks; regression coverage proves p1 recommended followed by p2 then p3 regardless of creation order."
   "2026-07-11T19:28:27.543Z",codex-root,"Final evidence: focused command/SDK suites pass; full repository coverage passes 5550/5550 at exact 100% statements, branches, functions, and lines; pnpm lint passes ESLint, zero jscpd clones, static quality, 100% docstrings, and token-budget gates; contracts, docs/skills, secret scan, and dependency audit pass. Fresh packed-package temp workspace proves filtered rank 1 selection and bounded atomic claim return the same task."
 files[6]{path,scope,note}:
-  src/cli/commands/claim.ts,project,bounded atomic candidate walk
-  src/cli/commands/next.ts,project,shared ranked actionability and decision separation contract
+  src/cli/commands/lifecycle/claim.ts,project,bounded atomic candidate walk
+  src/cli/commands/query/next.ts,project,shared ranked actionability and decision separation contract
   src/cli/register-operations.ts,project,CLI option forwarding
   src/sdk/cli-contracts/tool-schema.ts,project,MCP and SDK action schema
   src/sdk/runtime.ts,project,public SDK claimNext primitive
   tests/fixtures/contracts/full.json,project,generated contract snapshot
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/next-command.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,240,"harness:codex","2026-09-22T05:22:12.807Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,CLI fleet-worker contract
   docs/SDK.md,project,SDK selection primitive documentation

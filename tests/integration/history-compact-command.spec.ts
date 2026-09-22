@@ -1,12 +1,12 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { runHistory } from "../../src/cli/commands/history.js";
+import { runHistory } from "../../src/cli/commands/history/history.js";
 import {
   assertHistoryCompactTarget,
   runHistoryCompact,
   runHistoryCompactBulk,
-} from "../../src/cli/commands/history-compact.js";
+} from "../../src/cli/commands/history/history-compact.js";
 import * as fsUtilsModule from "../../src/core/fs/fs-utils.js";
 import * as replayModule from "../../src/core/history/replay.js";
 import * as historyRewriteModule from "../../src/core/history/history-rewrite.js";

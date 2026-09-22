@@ -11,9 +11,9 @@ import {
   type GlobalOptions,
 } from "../sdk/runtime-primitives.js";
 import { renderPmCommand } from "../sdk/command-line.js";
-import { runComments } from "./commands/comments.js";
-import { runLearnings } from "./commands/learnings.js";
-import { runNotes } from "./commands/notes.js";
+import { runComments } from "./commands/annotations/comments.js";
+import { runLearnings } from "./commands/annotations/learnings.js";
+import { runNotes } from "./commands/annotations/notes.js";
 import {
   addHiddenOption,
   getGlobalOptions,

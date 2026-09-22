@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:tests",environment-parity,linked-tests,regression
 created_at: "2026-08-04T09:30:07.005Z"
-updated_at: "2026-08-22T23:27:13.232Z"
+updated_at: "2026-09-22T05:07:46.302Z"
 closed_at: "2026-08-22T23:27:12.437Z"
 completed_at: "2026-08-22T23:27:12.437Z"
 author: "harness:codex"
@@ -71,14 +71,14 @@ files[31]{path,scope,note}:
   tests/integration/linked-test-context-trust.integration.spec.ts,project,linked-test execution context contract
   tests/unit/cli/register-operations.spec.ts,project,CLI workspace-context adapter branch coverage
   tests/unit/cli/registration-helpers.spec.ts,project,test-all adapter forwarding and refusal coverage
-  tests/unit/commands/deps-command.spec.ts,project,linked-test execution context contract
-  tests/unit/commands/get-append-command.spec.ts,project,linked-test execution context contract
-  tests/unit/commands/update-command.spec.ts,project,linked-test execution context contract
+  tests/unit/commands/lifecycle/update-command.spec.ts,project,linked-test execution context contract
+  tests/unit/commands/query/deps-command.spec.ts,project,linked-test execution context contract
+  tests/unit/commands/query/get-append-command.spec.ts,project,linked-test execution context contract
   tests/unit/scripts/flag-lexicon-gate.spec.ts,project,linked-test execution context contract
 tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
-  node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/commands/get-append-command.spec.ts tests/unit/commands/update-command.spec.ts,project,300,"harness:codex","2026-08-22T17:47:46.207Z",local_mutation,codex/linked-test-context-trust,Context execution persistence and CLI coverage
   node scripts/run-tests.mjs test -- tests/unit/cli/register-operations.spec.ts,project,240,"harness:codex","2026-08-22T18:10:30.834Z",local_mutation,codex/linked-test-context-trust,CLI adapter workspace-context forwarding coverage
   node scripts/run-tests.mjs test -- tests/unit/cli/registration-helpers.spec.ts,project,240,"harness:codex","2026-08-22T22:48:27.456Z",local_mutation,codex/linked-test-context-trust,test-all workspace and trust adapter coverage
+  node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/commands/query/get-append-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts,project,300,"harness:codex","2026-09-22T05:07:46.258Z",local_mutation,refactor/cli-command-domains-export-gate,Context execution persistence and CLI coverage
 test_runs[3]:
   - run_id: test-local-mt4o9a95-hyhgge
     kind: test

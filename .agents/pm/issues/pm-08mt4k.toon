@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:sdk",context-management,relationships
 created_at: "2026-07-25T17:53:10.100Z"
-updated_at: "2026-09-05T07:15:07.980Z"
+updated_at: "2026-09-22T05:07:06.749Z"
 closed_at: "2026-09-05T07:15:07.353Z"
 completed_at: "2026-09-05T07:15:07.353Z"
 author: "harness:claude-code"
@@ -102,7 +102,7 @@ files[24]{path,scope,note}:
   src/sdk/query/context.ts,project,Connected SDK and CLI execution contract delivery
   src/sdk/query/next.ts,project,Connected SDK and CLI execution contract delivery
   src/types.ts,project,Connected SDK and CLI execution contract delivery
-  tests/unit/commands/next-command.spec.ts,project,Exact downstream identity preservation without repeated rationale IDs
+  tests/unit/commands/query/next-command.spec.ts,project,Exact downstream identity preservation without repeated rationale IDs
   tests/unit/core/item/actionability.spec.ts,project,Connected SDK and CLI execution contract delivery
   tests/unit/sdk/execution/execution-roles.spec.ts,project,Connected SDK and CLI execution contract delivery
 tests[2]:

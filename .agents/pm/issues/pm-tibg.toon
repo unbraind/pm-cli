@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: health,performance,ux
 created_at: "2026-05-16T14:36:57.787Z"
-updated_at: "2026-09-19T08:41:41.928Z"
+updated_at: "2026-09-22T05:02:13.063Z"
 closed_at: "2026-05-16T14:50:39.414Z"
 author: claude-code-agent
 parent: pm-jrjt
@@ -17,6 +17,6 @@ actual_result: "Health supports skip/full flags, MCP guidance documents them, an
 dependencies[1]{id,kind,created_at}:
   pm-jrjt,implements,"2026-07-26T17:26:19.895Z"
 files[1]{path,scope}:
-  src/cli/commands/health.ts,project
+  src/cli/commands/governance/health.ts,project
 close_reason: "Fixed: added --skip-integrity, --skip-drift, --skip-vectors, --full flags to pm health. Fast path (all three skip flags) runs in ~800ms vs 5-7s cold-cache full run. MCP pm_health description updated with option hints. 2 new tests added."
 body: ""

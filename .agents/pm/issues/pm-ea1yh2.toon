@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-27T23:17:20.508Z"
-updated_at: "2026-08-28T12:52:29.239Z"
+updated_at: "2026-09-22T05:07:29.726Z"
 closed_at: "2026-08-28T12:52:28.560Z"
 completed_at: "2026-08-28T12:52:28.560Z"
 author: "harness:codex"
@@ -84,9 +84,9 @@ files[26]{path,scope,note}:
   src/sdk/runtime-input.ts,project,Flat MCP annotation ifAbsent normalization with nested precedence
   src/sdk/runtime.ts,project,Documented public PmClient annotation methods
   tests/fixtures/contracts/full.json,project,Generated command and MCP contract snapshot
-  tests/unit/commands/comments-command.spec.ts,project,SDK CLI concurrency and history regression coverage
-  tests/unit/commands/completion-command.spec.ts,project,Shell completion regression coverage
-  tests/unit/commands/notes-learnings-command.spec.ts,project,Text JSON note and learning retry regression coverage
+  tests/unit/commands/annotations/comments-command.spec.ts,project,SDK CLI concurrency and history regression coverage
+  tests/unit/commands/annotations/notes-learnings-command.spec.ts,project,Text JSON note and learning retry regression coverage
+  tests/unit/commands/workspace/completion-command.spec.ts,project,Shell completion regression coverage
   tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,MCP transport parity regression coverage
   tests/unit/scripts/flag-lexicon-gate.spec.ts,project,Canonical flag inventory regression coverage
   tests/unit/sdk/action-schema-parity.spec.ts,project,CLI SDK MCP annotation schema parity regression coverage
@@ -118,14 +118,14 @@ tests[4]:
       created_at: "2026-08-28T00:08:30.426Z"
       source_kind: local_mutation
       source_ref: feat/agent-transcript-recovery-contracts
-  - command: node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/mcp/mcp-server-branch-residual.spec.ts tests/unit/sdk/read-contract-integrity.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/scripts/flag-lexicon-gate.spec.ts
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/annotations/comments-command.spec.ts tests/unit/commands/annotations/notes-learnings-command.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/commands/workspace/completion-command.spec.ts tests/unit/mcp/mcp-server-branch-residual.spec.ts tests/unit/sdk/read-contract-integrity.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/scripts/flag-lexicon-gate.spec.ts
     scope: project
     timeout_seconds: 300
     provenance:
       author: "harness:codex"
-      created_at: "2026-08-28T09:49:06.071Z"
+      created_at: "2026-09-22T05:07:29.681Z"
       source_kind: local_mutation
-      source_ref: feat/agent-transcript-recovery-contracts
+      source_ref: refactor/cli-command-domains-export-gate
     note: "Exact-head annotation concurrency,shared CLI mutation classification,and nested MCP forwarding regression bundle"
 test_runs[17]:
   - run_id: test-local-mtc662mi-0l08h9

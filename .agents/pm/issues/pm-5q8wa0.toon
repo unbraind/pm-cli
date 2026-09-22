@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-12T00:20:30.191Z"
-updated_at: "2026-08-12T02:34:14.317Z"
+updated_at: "2026-09-22T05:08:29.292Z"
 closed_at: "2026-08-12T02:34:13.633Z"
 completed_at: "2026-08-12T02:34:13.633Z"
 author: "harness:codex"
@@ -29,10 +29,19 @@ comments[4]{created_at,author,text}:
 files[3]{path,scope,note}:
   src/sdk/governance/health.ts,project,Classify immutable invalid-provenance aggregates as advisory without hiding them
   tests/integration/provenance-value-health.integration.spec.ts,project,Exercise real history storage and advisory health verdict
-  tests/unit/commands/health-command.spec.ts,project,Preserve unit-level advisory warning semantics
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/integration/provenance-value-health.integration.spec.ts tests/unit/commands/health-command.spec.ts,project,240
-  node scripts/run-tests.mjs coverage,project,600
+  tests/unit/commands/governance/health-command.spec.ts,project,Preserve unit-level advisory warning semantics
+tests[2]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 600
+  - command: node scripts/run-tests.mjs test -- tests/integration/provenance-value-health.integration.spec.ts tests/unit/commands/governance/health-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:08:29.133Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mspe8aou-18oew3,test,passed,"2026-08-12T01:05:50.589Z","2026-08-12T01:11:11.646Z","2026-08-12T01:11:11.646Z",2,0,0
 docs[1]{path,scope,note}:

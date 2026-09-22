@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","milestone:5",pm-cli,roadmap
 created_at: "2026-03-07T14:01:18.992Z"
-updated_at: "2026-09-19T08:40:45.540Z"
+updated_at: "2026-09-22T05:12:45.857Z"
 deadline: "2026-03-10T21:36:41.713Z"
 closed_at: "2026-03-07T21:51:23.977Z"
 assignee: maintainer-agent
@@ -55,7 +55,7 @@ learnings[1]{created_at,author,text}:
 files[4]{path,scope,note}:
   PRD.md,project,milestone hook lifecycle checklist update
   README.md,project,hook lifecycle contract update
-  src/cli/commands/init.ts,project,init directory bootstrap hook dispatch
+  src/cli/commands/workspace/init.ts,project,init directory bootstrap hook dispatch
   tests/unit/init-command.spec.ts,project,init hook dispatch regression coverage
 tests[2]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,project,5400,coverage gate

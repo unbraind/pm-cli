@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: enforcement,graph,measurement-ratchet,ordering,tracker-governance
 created_at: "2026-08-10T12:11:08.571Z"
-updated_at: "2026-08-20T22:10:08.700Z"
+updated_at: "2026-09-22T05:07:52.870Z"
 closed_at: "2026-08-20T21:47:14.380Z"
 completed_at: "2026-08-20T21:47:14.380Z"
 author: "harness:claude-code"
@@ -54,7 +54,7 @@ files[6]{path,scope,note}:
   sdk/public-surface.json,project,Records the widened public SDK contracts.
   src/sdk/governance/assurance.ts,project,Adds dependency-kind provenance predicates and propagates assurance result partitions.
   tests/fixtures/contracts/full.json,project,Publishes prose_edge_gap in the generated command contract.
-  tests/unit/commands/contracts-command.spec.ts,project,Pins the authoritative CLI assurance source vocabulary.
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Pins the authoritative CLI assurance source vocabulary.
   tests/unit/sdk/governance/assurance-relationship-sources.spec.ts,project,Covers exact prefix present and missing provenance selectors plus rejection paths.
 tests[2]{command,scope,timeout_seconds}:
   "pnpm quality:static",project,1200

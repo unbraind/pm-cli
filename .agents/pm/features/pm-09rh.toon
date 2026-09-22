@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:extensions","area:sdk",authoring,dx,living-map
 created_at: "2026-06-23T20:36:02.668Z"
-updated_at: "2026-09-19T08:39:12.061Z"
+updated_at: "2026-09-22T05:06:20.292Z"
 closed_at: "2026-06-23T23:51:27.129Z"
 author: claude-code-agent
 parent: pm-ugqx
@@ -30,7 +30,7 @@ comments[5]{created_at,author,text}:
   "2026-06-24T00:11:17.155Z",codex,"Evidence update after closeout review on head 8b105e20: addressed fresh Gemini feedback by surfacing multiple blueprint deactivate failures with AggregateError, adding a compile-time hook-key coverage guard for mergeExtensionBlueprints, and expanding TypeScript package scaffold .gitignore to include source-map and declaration build artifacts (*.js.map, *.d.ts, *.d.ts.map). Verification: focused suite passed (4 files, 215 tests); node scripts/run-tests.mjs coverage passed literal 100/100/100/100 (31044/31044 statements, 24168/24168 branches, 5285/5285 functions, 29798/29798 lines; 4989 tests); pnpm release:gates passed with docs/skills, static quality, version check, security scan, packed npx smoke, telemetry best-effort, and package-first dogfood (88 commands; semantic dogfood skipped because PM_DOGFOOD_SEMANTIC not set)."
 files[8]{path,scope,note}:
   scripts/dogfood-package-first.mjs,project,"review follow-up: null-safe spawnSync failure formatting"
-  src/cli/commands/extension.ts,project,"review follow-up: standalone TypeScript scaffold next-step installs @types/node"
+  src/cli/commands/extension/extension.ts,project,"review follow-up: standalone TypeScript scaffold next-step installs @types/node"
   src/cli/commands/extension/scaffold.ts,project,"review follow-up: recursive TS scaffold config,wildcard ignored outputs,@types install guidance"
   src/sdk/compose.ts,project,"review follow-up: best-effort modular blueprint teardown"
   tests/unit/extensions/extension-command.spec.ts,project,regression coverage for scaffold install and ignore guidance

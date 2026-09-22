@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:sdk",custom-fields,extensions,github-issue
 created_at: "2026-06-02T15:55:03.159Z"
-updated_at: "2026-09-19T08:41:06.552Z"
+updated_at: "2026-09-22T05:02:25.851Z"
 closed_at: "2026-06-02T22:19:38.945Z"
 author: codex-gpt5
 parent: pm-8jdc
@@ -21,8 +21,8 @@ comments[3]{created_at,author,text}:
   "2026-06-02T22:02:45.759Z",codex-sdk-lane-20260602,"SDK/custom-item-fields lane final: recommend minimal implementation: keep repeatable --field <name=value> on create/update contracts, add field?: string[] options, normalize/read it in registration-helpers, parse/coerce only active registerItemFields names, merge parsed fields into create frontMatter before applyRegisteredItemFieldDefaultsAndValidation, apply update values in mutateItem with changed_fields and stable equality, add tool/MCP param + docs/examples. Current partial work also needs PmCliErrorContext.known_fields fixed or moved into nextSteps/recovery."
   "2026-06-02T22:19:38.564Z",codex-broad-audit-20260602,"Evidence: implemented repeatable pm create/update --field name=value for active registerItemFields declarations; values are typed/coerced, undeclared fields reject with extension_item_field_unknown, contracts/tool schemas/docs updated. Passed linked test: node scripts/run-tests.mjs test -- tests/unit/extensions-item-fields.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts (135 tests)."
 files[11]{path,scope,note}:
-  src/cli/commands/create.ts,project,Persist declared extension item fields on create
-  src/cli/commands/update.ts,project,Persist declared extension item fields on update
+  src/cli/commands/lifecycle/create.ts,project,Persist declared extension item fields on create
+  src/cli/commands/lifecycle/update.ts,project,Persist declared extension item fields on update
   src/cli/registration-helpers.ts,project,Normalize repeatable --field options
   src/core/extensions/item-fields.ts,project,Parse and validate declared extension item fields from --field
   src/sdk/cli-contracts.ts,project,Expose --field in CLI flag contracts

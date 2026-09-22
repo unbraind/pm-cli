@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: aggregation,"area:cli","area:query",governance,output-contract
 created_at: "2026-08-13T14:27:59.356Z"
-updated_at: "2026-09-07T08:32:31.273Z"
+updated_at: "2026-09-22T05:16:25.183Z"
 closed_at: "2026-09-07T08:32:30.765Z"
 completed_at: "2026-09-07T08:32:30.765Z"
 author: "harness:claude-code"
@@ -48,12 +48,12 @@ files[12]{path,scope,note}:
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,Connected SDK implementation and regression coverage
   src/sdk/query/aggregate.ts,project,Connected SDK implementation and regression coverage
   tests/fixtures/contracts/full.json,project,Implementation and release regression evidence
-  tests/unit/commands/aggregate-command.spec.ts,project,Reviewed contract and implementation coverage
-  tests/unit/commands/aggregate-set-members.spec.ts,project,Connected SDK implementation and regression coverage
-  tests/unit/commands/contracts-command.spec.ts,project,Exact compact discovery description expectation accompanying preserved transcript token budget
+  tests/unit/commands/query/aggregate-command.spec.ts,project,Reviewed contract and implementation coverage
+  tests/unit/commands/query/aggregate-set-members.spec.ts,project,Connected SDK implementation and regression coverage
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Exact compact discovery description expectation accompanying preserved transcript token budget
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/aggregate-set-members.spec.ts,project,240,"harness:codex","2026-09-07T06:24:15.839Z",local_mutation,feat/lifecycle-coverage-set-aggregation-scheduling
-  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts,project,240,"harness:codex","2026-09-07T07:43:59.086Z",local_mutation,feat/lifecycle-coverage-set-aggregation-scheduling
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/aggregate-set-members.spec.ts,project,240,"harness:codex","2026-09-22T05:16:24.728Z",local_mutation,refactor/cli-command-domains-export-gate
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/contracts-command.spec.ts,project,240,"harness:codex","2026-09-22T05:16:24.728Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[3]:
   - run_id: test-local-mtqwt2ls-n1pc4b
     kind: test

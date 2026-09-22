@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: agent-ux,"area:cli","area:schema",pm-cli
 created_at: "2026-03-31T23:47:27.635Z"
-updated_at: "2026-09-19T08:41:08.004Z"
+updated_at: "2026-09-22T05:00:05.849Z"
 deadline: "2026-05-09T17:05:53.410Z"
 closed_at: "2026-04-27T21:29:13.664Z"
 author: codex-agent
@@ -102,31 +102,31 @@ files[51]{path,scope,note}:
   docs/EXTENSIONS.md,project,registerItemTypes extension API docs
   PRD.md,project,dynamic type requirements and config contracts
   README.md,project,custom type/options usage documentation
-  src/cli/commands/activity.ts,project,schema-aware list loading in activity views
+  src/cli/commands/annotations/comments.ts,project,schema-aware item reads
+  src/cli/commands/annotations/docs.ts,project,schema-aware item/doc linkage reads
+  src/cli/commands/annotations/files.ts,project,schema-aware item/file linkage reads
+  src/cli/commands/annotations/learnings.ts,project,schema-aware item reads
+  src/cli/commands/annotations/notes.ts,project,schema-aware item reads
   src/cli/commands/calendar.ts,project,calendar loading uses schema-aware item parsing
-  src/cli/commands/claim.ts,project,terminal-status helper refactor for full branch coverage parity
-  src/cli/commands/comments.ts,project,schema-aware item reads
   src/cli/commands/completion.ts,project,type discovery completion entries
-  src/cli/commands/config.ts,project,item-format migration call now passes runtime schema
-  src/cli/commands/context.ts,project,runtime status-aware context semantics
-  src/cli/commands/contracts.ts,project,runtime schema and dynamic field contracts
-  src/cli/commands/create.ts,project,create canonicalization/serialization now receives runtime schema
-  src/cli/commands/deps.ts,project,schema-aware list loading
-  src/cli/commands/docs.ts,project,schema-aware item/doc linkage reads
-  src/cli/commands/files.ts,project,schema-aware item/file linkage reads
-  src/cli/commands/get.ts,project,schema-aware item reads for get
-  src/cli/commands/health.ts,project,health integrity parse checks now use runtime schema
-  src/cli/commands/history.ts,project,schema-aware item hash verification reads
-  src/cli/commands/init.ts,project,runtime schema scaffold file creation and hook paths
-  src/cli/commands/learnings.ts,project,schema-aware item reads
-  src/cli/commands/list.ts,project,list loading uses schema-aware item parsing
-  src/cli/commands/notes.ts,project,schema-aware item reads
+  src/cli/commands/governance/health.ts,project,health integrity parse checks now use runtime schema
+  src/cli/commands/history/activity.ts,project,schema-aware list loading in activity views
+  src/cli/commands/history/history.ts,project,schema-aware item hash verification reads
+  src/cli/commands/history/restore.ts,project,restore canonicalization now schema-aware
+  src/cli/commands/lifecycle/claim.ts,project,terminal-status helper refactor for full branch coverage parity
+  src/cli/commands/lifecycle/create.ts,project,create canonicalization/serialization now receives runtime schema
+  src/cli/commands/query/context.ts,project,runtime status-aware context semantics
+  src/cli/commands/query/deps.ts,project,schema-aware list loading
+  src/cli/commands/query/get.ts,project,schema-aware item reads for get
+  src/cli/commands/query/list.ts,project,list loading uses schema-aware item parsing
+  src/cli/commands/query/search.ts,project,search document loading now passes runtime schema to parsing
+  src/cli/commands/query/stats.ts,project,schema-aware list loading for stats
   src/cli/commands/reindex.ts,project,reindex document load uses schema-aware parsing
-  src/cli/commands/restore.ts,project,restore canonicalization now schema-aware
-  src/cli/commands/search.ts,project,search document loading now passes runtime schema to parsing
-  src/cli/commands/stats.ts,project,schema-aware list loading for stats
-  src/cli/commands/test-all.ts,project,schema-aware list loading for test-all
-  src/cli/commands/test.ts,project,schema-aware read path for linked tests
+  src/cli/commands/test/test-all.ts,project,schema-aware list loading for test-all
+  src/cli/commands/test/test.ts,project,schema-aware read path for linked tests
+  src/cli/commands/workspace/config.ts,project,item-format migration call now passes runtime schema
+  src/cli/commands/workspace/contracts.ts,project,runtime schema and dynamic field contracts
+  src/cli/commands/workspace/init.ts,project,runtime schema scaffold file creation and hook paths
   src/cli/main.ts,project,type-aware help/introspection surface
   src/core/item/item-format.ts,project,runtime TOON metadata validation and schema policy enforcement
   src/core/item/type-registry.ts,project,required and type-option discoverability

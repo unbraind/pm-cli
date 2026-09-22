@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: agent-ux,docs,pm-cli,progressive-disclosure,skills
 created_at: "2026-05-09T15:01:04.019Z"
-updated_at: "2026-09-19T08:39:28.825Z"
+updated_at: "2026-09-22T05:09:08.060Z"
 closed_at: "2026-05-16T20:47:33.458Z"
 author: codex-agent
 acceptance_criteria: guide-shell package docs are explicit about installation; docs+skills stay progressive-disclosure; stale-docs gate enforces guide-shell prerequisites; focused docs/help tests pass.
@@ -21,7 +21,7 @@ comments[3]{created_at,author,text}:
   "2026-05-09T15:01:04.019Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search docs skills guide --limit 10,pm list-open --limit 20,and pm list-in-progress --limit 20. Existing similar docs efforts were already closed,so this request needs a new dedicated task under pm-rnpb."
   "2026-05-09T15:45:24.435Z",codex-agent,"Workstreams complete: docs routed through pm guide topics; added agentskills-compliant bundles (pm-developer, pm-user, pm-extensions, pm-sdk) plus harness matrix; implemented scripts/release/docs-skills-gate.mjs and wired quality:docs-skills + run-gates step. Verification: focused regression suite (165 tests) passed; docs-skills gate passed; full release gates passed with --skip-telemetry-sentry; baseline run without skip failed only on external Sentry high-issue threshold (2 highs, telemetry ok)."
   "2026-05-16T20:47:15.072Z",codex-agent,"Evidence 2026-05-16: fixed GitHub issue #29 by making guide-shell installation explicit before every public/skill pm guide workflow and by tightening docs-skills gate to require the guide-shell prerequisite. Verification passed: focused guide/docs tests (31 tests), docs-skills gate, pm --help --explain smoke, isolated package-enabled calendar guide smoke, and full release gate with required Sentry/telemetry."
-files[40]:
+files[39]:
   - path: .agents/skills/HARNESS_COMPATIBILITY.md
     scope: project
   - path: .agents/skills/pm-developer/references/COMMAND_PLAYBOOK.md
@@ -86,15 +86,12 @@ files[40]:
   - path: src/cli/commands/completion.ts
     scope: project
     note: guide completion wiring
-  - path: src/cli/commands/contracts.ts
-    scope: project
-    note: guide flag contracts mapping
   - path: src/cli/commands/guide.ts
     scope: project
     note: guide command implementation
-  - path: src/cli/commands/index.ts
+  - path: src/cli/commands/workspace/contracts.ts
     scope: project
-    note: guide command exports
+    note: guide flag contracts mapping
   - path: src/cli/guide-topics.ts
     scope: project
     note: guide topic registry

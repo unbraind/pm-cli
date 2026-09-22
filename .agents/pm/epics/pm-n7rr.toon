@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: agent-ux,"area:cli","area:contracts",refactor,simplification
 created_at: "2026-07-05T04:51:21.783Z"
-updated_at: "2026-09-12T20:05:04.668Z"
+updated_at: "2026-09-22T04:59:33.166Z"
 author: maintainer-agent
 estimated_minutes: 2400
 acceptance_criteria: Top-level command list fits one help screen (~15 nouns); every pre-existing command spelling still works (hidden alias shims + deprecation notice); contracts/MCP/completions/docs regenerated with zero feature regression; agent token cost of 'pm --help' + contracts measurably reduced; all existing tests pass unchanged (aliases keep old spellings valid)
@@ -275,11 +275,11 @@ learnings[5]{created_at,author,text}:
   "2026-07-31T06:28:26.668Z","harness:claude-code","A published self-description that returns nothing is more expensive than no self-description. Four read surfaces emit the universal jq selector with an empty row_keys, so the documented extraction one-liner exits zero with an empty stream that is indistinguishable from a legitimate empty result. An absent contract is paid for once, when the agent notices and special-cases it. A false one is paid for on every call, silently, and the agent never learns to look further. Any surface the product adds to describe itself must be gated as executable, or it increases orientation cost while appearing to reduce it."
   "2026-08-01T10:01:00.587Z","harness:claude-code","The machine-readable surface and the human help surface are already consolidated to different degrees, and measuring the wrong one understates the progress: pm contracts --summary canonicalizes 88 command spellings to 76 canonical entries today, while pm --help still lists all 88. Any 'how many commands does pm have' claim must say which surface it counted, because the two answers differ by 12 and will keep diverging as canonicalization lands ahead of help-rendering."
 files[3]{path,scope,note}:
-  src/cli/commands/contracts.ts,project,contracts summary implementation
-  src/cli/commands/list.ts,project,list shorthand implementation
+  src/cli/commands/query/list.ts,project,list shorthand implementation
+  src/cli/commands/workspace/contracts.ts,project,contracts summary implementation
   src/sdk/cli-contracts/flag-contracts.ts,project,flag contract updates
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/contracts-command.spec.ts tests/unit/commands/query/list-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,240,"harness:codex","2026-09-22T04:59:33.059Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[3]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Adds token-minimal agent retrieval entries for the new primitives
   docs/COMMANDS.md,project,Documents list recency shorthands and contracts summary retrieval primitive

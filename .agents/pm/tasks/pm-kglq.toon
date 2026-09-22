@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:calendar","area:output",code,pm-cli
 created_at: "2026-03-31T21:28:33.277Z"
-updated_at: "2026-09-19T08:40:40.663Z"
+updated_at: "2026-09-22T05:03:14.254Z"
 deadline: "2026-05-09T17:10:36.266Z"
 closed_at: "2026-04-27T17:44:19.021Z"
 author: codex-agent
@@ -79,12 +79,12 @@ learnings[2]{created_at,author,text}:
   "2026-04-27T17:44:15.321Z",codex-agent,"For CSV-style recurrence fields, error guidance should explicitly mention pipe-delimited multi-value syntax to prevent repeated malformed retries."
 files[8]{path,scope,note}:
   src/cli/commands/calendar.ts,project,markdown renderer and format resolution
-  src/cli/commands/context.ts,project,context agenda now consumes CalendarRow type naming
+  src/cli/commands/query/context.ts,project,context agenda now consumes CalendarRow type naming
   src/cli/main.ts,project,calendar output switch logic
+  src/core/item/parse.ts,project,event CSV parse guidance now includes recurrence delimiter hint
   src/core/output/command-aware.ts,project,calendar summary highlights for agents
   tests/unit/calendar-command.spec.ts,project,output precedence tests
   tests/unit/context-command.spec.ts,project,context agenda regression coverage alongside calendar output checks
-  src/core/item/parse.ts,project,event CSV parse guidance now includes recurrence delimiter hint
   tests/unit/parse-utils.spec.ts,project,coverage for recurrence delimiter guidance in malformed --event payloads
 tests[3]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts,project,300,calendar/context agent-format regression bundle

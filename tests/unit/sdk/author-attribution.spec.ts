@@ -30,8 +30,8 @@ import {
   parseBootstrapGlobalOptions,
   stripGlobalBootstrapTokens,
 } from "../../../src/cli/bootstrap-args.js";
-import { runHealth } from "../../../src/cli/commands/health.js";
-import { runValidate } from "../../../src/cli/commands/validate.js";
+import { runHealth } from "../../../src/cli/commands/governance/health.js";
+import { runValidate } from "../../../src/cli/commands/governance/validate.js";
 import { appendWorkspaceAuditEvent } from "../../../src/core/history/workspace-history.js";
 
 const tempRoots: string[] = [];

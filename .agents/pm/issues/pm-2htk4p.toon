@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: compatibility,format-version,github,history-integrity
 created_at: "2026-08-11T08:34:09.403Z"
-updated_at: "2026-08-11T16:29:52.249Z"
+updated_at: "2026-09-22T05:08:35.348Z"
 closed_at: "2026-08-11T16:21:49.080Z"
 completed_at: "2026-08-11T16:21:49.080Z"
 author: "harness:codex"
@@ -47,8 +47,8 @@ files[10]{path,scope,note}:
   tests/unit/core/history/drift-scan.spec.ts,project,epoch-aware drift cache coverage
   tests/unit/core/history/history-hash-version.spec.ts,project,cross-epoch fixtures and refusal coverage
   tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Updates exact history-entry assertions for the explicit current hash epoch
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/core/history/history-hash-version.spec.ts tests/unit/core/history/history-replay.spec.ts tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/history-repair-command.spec.ts,project,300
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/history/history-hash-version.spec.ts tests/unit/core/history/history-replay.spec.ts tests/unit/core/history/drift-scan.spec.ts tests/unit/commands/history/history-repair-command.spec.ts,project,300,"harness:codex","2026-09-22T05:08:35.305Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msov8xyi-dmqdxk,test,passed,"2026-08-11T16:19:37.796Z","2026-08-11T16:19:49.098Z","2026-08-11T16:19:49.098Z",1,0,0
 docs[3]{path,scope,note}:

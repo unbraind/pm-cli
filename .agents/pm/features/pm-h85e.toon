@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: agent-experience,"area:cli",context,extensions,gh-issue
 created_at: "2026-07-06T21:09:04.826Z"
-updated_at: "2026-09-08T05:56:53.844Z"
+updated_at: "2026-09-22T05:23:30.729Z"
 closed_at: "2026-08-03T19:40:19.423Z"
 completed_at: "2026-08-03T19:40:19.423Z"
 author: maintainer-agent
@@ -66,12 +66,21 @@ files[12]{path,scope,note}:
   tests/fixtures/contracts/full.json,project,CLI SDK and MCP contract snapshot for no-extension-health
   tests/integration/release-readiness-runtime.spec.ts,project,Release-readiness context health contract
   tests/unit/cli/registration-helpers.spec.ts,project,Negated option normalization coverage
-  tests/unit/commands/context-command.spec.ts,project,Markdown health rendering coverage
-  tests/unit/commands/context-extension-health.spec.ts,project,Healthy degraded bounded and opt-out coverage
+  tests/unit/commands/query/context-command.spec.ts,project,Markdown health rendering coverage
+  tests/unit/commands/query/context-extension-health.spec.ts,project,Healthy degraded bounded and opt-out coverage
   tests/unit/commands/register-commands.spec.ts,project,CLI-level no-extension-health coverage
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/context-extension-health.spec.ts tests/unit/commands/context-command.spec.ts,project,240
-  "pnpm run contracts:check",project,240
+tests[2]:
+  - command: "pnpm run contracts:check"
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/query/context-extension-health.spec.ts tests/unit/commands/query/context-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:23:30.660Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msdktcjm-xp7zgw,test,passed,"2026-08-03T18:42:07.299Z","2026-08-03T18:42:17.410Z","2026-08-03T18:42:17.410Z",1,0,0
   test-local-msdlo4f2-r7j7kv,test,passed,"2026-08-03T19:05:56.476Z","2026-08-03T19:06:13.214Z","2026-08-03T19:06:13.214Z",2,0,0

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: cli-grammar,consolidation,ops
 created_at: "2026-08-05T18:07:55.312Z"
-updated_at: "2026-09-09T16:51:34.760Z"
+updated_at: "2026-09-22T05:15:35.743Z"
 closed_at: "2026-09-09T16:51:34.029Z"
 completed_at: "2026-09-09T16:51:34.029Z"
 author: "harness:claude-code"
@@ -62,8 +62,8 @@ files[27]{path,scope,note}:
   tests/integration/help-runtime.spec.ts,project,Namespace discovery compatibility and release verification
   tests/integration/release-readiness-runtime.spec.ts,project,Namespace discovery compatibility and release verification
   tests/unit/cli/command-namespaces.spec.ts,project,Shared native namespace contracts and verification
-  tests/unit/commands/completion-command.spec.ts,project,Namespace discovery compatibility and release verification
-  tests/unit/commands/contracts-command.spec.ts,project,Namespace discovery compatibility and release verification
+  tests/unit/commands/workspace/completion-command.spec.ts,project,Namespace discovery compatibility and release verification
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Namespace discovery compatibility and release verification
   tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,Shared native namespace contracts and verification
   tests/unit/sdk/contracts-full-projection.spec.ts,project,Namespace discovery compatibility and release verification
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:

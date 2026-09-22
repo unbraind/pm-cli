@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,aggregate,cli,gh-issue,validation
 created_at: "2026-07-12T18:52:48.595Z"
-updated_at: "2026-07-26T17:08:09.130Z"
+updated_at: "2026-09-22T05:21:15.940Z"
 closed_at: "2026-07-13T15:32:51.854Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -18,29 +18,29 @@ release: v2026.7.14
 resolution: Resolved by validating aggregate numeric fields against built-ins plus runtime schema number definitions.
 expected_result: Typos fail fast and registered numeric custom fields remain fully aggregatable.
 actual_result: "estimated_minutez returns usage exit 2; built-in and custom sum/avg/null cases pass unit, acceptance, and installed-package proof."
-dependencies[10]{id,kind,created_at,author,source_kind}:
-  pm-bvns,related,"2026-07-12T18:52:48.595Z",null,null
-  pm-45mb,related,"2026-07-26T17:08:08.891Z",null,null
-  pm-7je0,related,"2026-07-26T17:08:08.891Z",null,null
-  pm-chyh,related,"2026-07-26T17:08:08.891Z",null,null
-  pm-hno5,related,"2026-07-26T17:08:08.891Z",null,null
-  pm-jh9t,related,"2026-07-26T17:08:08.891Z",null,null
-  pm-kj4k,related,"2026-07-26T17:08:08.891Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:08:08.891Z",null,null
-  pm-p9sc,related,"2026-07-26T17:08:08.891Z",null,null
-  pm-zazb,related,"2026-07-26T17:08:08.891Z",null,null
+dependencies[10]{id,kind,created_at}:
+  pm-bvns,related,"2026-07-12T18:52:48.595Z"
+  pm-45mb,related,"2026-07-26T17:08:08.891Z"
+  pm-7je0,related,"2026-07-26T17:08:08.891Z"
+  pm-chyh,related,"2026-07-26T17:08:08.891Z"
+  pm-hno5,related,"2026-07-26T17:08:08.891Z"
+  pm-jh9t,related,"2026-07-26T17:08:08.891Z"
+  pm-kj4k,related,"2026-07-26T17:08:08.891Z"
+  pm-mpbb,implements,"2026-07-26T17:08:08.891Z"
+  pm-p9sc,related,"2026-07-26T17:08:08.891Z"
+  pm-zazb,related,"2026-07-26T17:08:08.891Z"
 comments[2]{created_at,author,text}:
   "2026-07-13T14:32:22.547Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
   "2026-07-13T15:32:38.650Z",codex-sdk-contracts-20260713,"Evidence: aggregate validates built-in and runtime-registered numeric fields, rejects estimated_minutez with usage exit 2, retains valid sum/avg/null semantics, and supports custom number fields. Unit, acceptance, full coverage, and installed-package typo proof passed."
 learnings[1]{created_at,author,text}:
   "2026-07-13T15:28:10.863Z",codex-sdk-contracts-20260713,Extensible numeric aggregation can remain fail-fast by deriving its allowed field domain from built-ins plus runtime schema fields whose declared type is number.
 files[3]{path,scope,note}:
-  src/cli/commands/aggregate.ts,project,schema-aware numeric field validation
+  src/cli/commands/query/aggregate.ts,project,schema-aware numeric field validation
   tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,typo rejection acceptance coverage
-  tests/unit/commands/aggregate-command.spec.ts,project,built-in custom and unknown field coverage
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/aggregate-command.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/commands/aggregate-command.spec.ts tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,240
+  tests/unit/commands/query/aggregate-command.spec.ts,project,built-in custom and unknown field coverage
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/aggregate-command.spec.ts,project,240,"harness:codex","2026-09-22T05:21:15.778Z",local_mutation,refactor/cli-command-domains-export-gate
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/aggregate-command.spec.ts tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,240,"harness:codex","2026-09-22T05:21:15.778Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
   test-all-local-mrjdn0i2-0w3w16,test-all,passed,"2026-07-13T15:28:19.236Z","2026-07-13T15:29:21.514Z","2026-07-13T15:29:21.514Z",2,0,0,1,2
 close_reason: Implemented schema-aware aggregate numeric-field validation for built-ins and custom number fields; GH-526 will close on PR merge.
