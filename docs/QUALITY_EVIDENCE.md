@@ -40,7 +40,10 @@ and refuses regression. Do not round the score when updating the baseline.
 
 Both `pnpm quality:static` and the existing required hosted static job run the
 partition, as do nightly and release static validation. The runner rejects
-command-line mutation overrides. Extending the partition requires adding the
+command-line mutation policy overrides. The static chain uses `--prebuilt` to
+reuse its completed build while still acquiring the build lease and rejecting
+an incomplete generation; standalone mutation runs retain their default build.
+Extending the partition requires adding the
 module and its behavioral tests together, measuring runtime, and reviewing every
 survivor. Gate unit tests inject report/engine boundaries to prove failure paths;
 the actual Stryker execution is an additional required gate.

@@ -18,14 +18,18 @@ let activeChild;
 let execution;
 let interrupted = false;
 
-/** Validate the requested test mode before allocating disposable tracker roots. */
+/** Validate the mode and consume only the mutation build-reuse flag before allocating tracker roots. */
 function resolveMode(argv) {
   const mode = (argv[2] ?? "test").toLowerCase();
   if (!(mode in MODE_TO_VITEST_ARGS)) {
     return { ok: false, mode };
   }
 
-  return { ok: true, mode };
+  const args = argv.slice(3);
+  if (args[0] === "--") args.shift();
+  const prebuilt = mode === "mutation" && args[0] === "--prebuilt";
+  if (prebuilt) args.shift();
+  return { ok: true, mode, args, prebuilt };
 }
 
 /** Await process closure, retaining operation errors until the child stops using its workspace. */
@@ -184,15 +188,13 @@ async function run() {
     "vitest",
     "vitest.mjs",
   );
-  const passthroughArgs = process.argv.slice(3);
-  const normalizedVitestArgs =
-    passthroughArgs[0] === "--" ? passthroughArgs.slice(1) : passthroughArgs;
+  const normalizedVitestArgs = resolved.args;
   // CLI reporter selection replaces the config list (including in coverage
   // shards), so retain the contract gate beside every explicitly chosen reporter.
   if (normalizedVitestArgs.some((arg) => arg === "--reporter" || arg.startsWith("--reporter="))) {
     normalizedVitestArgs.push(`--reporter=${path.join(process.cwd(), "scripts", "mcp-contract-reporter.mts")}`);
   }
-  const skipBuild = process.env.PM_RUN_TESTS_SKIP_BUILD === "1";
+  const skipBuild = resolved.prebuilt || process.env.PM_RUN_TESTS_SKIP_BUILD === "1";
 
   try {
     const baseEnv = {
