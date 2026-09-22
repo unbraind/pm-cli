@@ -226,4 +226,52 @@ describe("SDK query pagination", () => {
       }),
     ).toEqual({ rows: [], has_more: false });
   });
+  it("rejects invalid transport bytes and enforces the inclusive cursor length boundary", () => {
+    const payload = { version: 1, fingerprint: "fp", after_id: "a" };
+    const cursor = Buffer.from(JSON.stringify(payload)).toString("base64url");
+    expect(decodeQueryCursorEnvelope(`  ${cursor}  `)).toEqual(payload);
+    // Buffer accepts junk around base64url; the public envelope must reject it.
+    for (const malformed of [`!${cursor}`, `${cursor}!`, 42, "", "bm90LWpzb24"]) {
+      expect(() => decodeQueryCursorEnvelope(malformed)).toThrow("Query cursor is malformed.");
+    }
+    const lengthBound = { ...payload, after_id: "a".repeat(3026) };
+    const atLimit = Buffer.from(JSON.stringify(lengthBound)).toString("base64url");
+    expect(atLimit).toHaveLength(4096);
+    expect(decodeQueryCursorEnvelope(atLimit)).toEqual(lengthBound);
+    const tooLong = Buffer.from(JSON.stringify({ ...lengthBound, after_id: lengthBound.after_id + "a" })).toString("base64url");
+    expect(() => decodeQueryCursorEnvelope(tooLong)).toThrow("Query cursor is malformed.");
+  });
+
+  it("keeps refusal metadata and rejects JSON values that are not cursor envelopes", () => {
+    let refusal: unknown;
+    try { decodeQueryCursorEnvelope("!"); } catch (error) { refusal = error; }
+    expect(refusal).toBeInstanceOf(PmCliError);
+    expect(refusal).toMatchObject({ context: {
+      code: "invalid_query_cursor",
+      nextSteps: ["Repeat the original query without --after to obtain a fresh cursor."],
+    } });
+    const payload = { version: 1, fingerprint: "fp", after_id: "a" };
+    for (const invalid of [null, 7, "string", [], { ...payload, fingerprint: 2 }, { ...payload, after_id: 2 }, { ...payload, after_id: ["a"] }, { ...payload, snapshot: 1 }, { ...payload, snapshot: ["x"] }]) {
+      expect(() => decodeQueryCursorEnvelope(Buffer.from(JSON.stringify(invalid)).toString("base64url"))).toThrow("Query cursor version or payload is unsupported.");
+    }
+    expect(() => decodeQueryCursor(encodeQueryCursor("old", "a"), "new")).toThrow("Query cursor does not match the current filters, sort, or query (old != new).");
+  });
+
+  it("emits the actual last row and position across consecutive one-row and three-row pages", () => {
+    const rows = ["a", "b", "c", "d"];
+    for (const limit of [1, 3]) {
+      const page = paginateQueryRows(rows, { fingerprint: "fp", limit, readId: (id) => id });
+      expect(decodeQueryCursorState(page.next_cursor, "fp")).toEqual({ after_id: rows[limit - 1], after_index: limit - 1 });
+    }
+    expect(resolveQueryCursorStart(rows, encodeQueryCursor("fp", "a"), "fp", (id) => id)).toBe(1);
+    expect(createQueryFingerprint("list", {})).toHaveLength(24);
+    expect(decodeQueryCursorState(encodeQueryCursor("fp", "a"), "fp")).toStrictEqual({ after_id: "a" });
+    expect(paginateQueryRows([undefined, "a"], { fingerprint: "fp", limit: 1, readId: () => "missing" })).toStrictEqual({ rows: [undefined], has_more: true });
+    expect(selectCursorSemanticOptions({ "Stryker was here": 1 }, [{ flag: "--limit", cursor_semantics: "presentation" }])).toEqual({ "Stryker was here": 1 });
+    expect(selectCursorSemanticOptions({ "prefix-Value": 1, prefixvalue: 2 }, [{ flag: "prefix--value", cursor_semantics: "presentation" }])).toEqual({ prefixvalue: 2 });
+    // Separating the command from the JSON contract prevents concatenation collisions.
+    expect(createQueryFingerprint("x1", 2)).not.toBe(createQueryFingerprint("x", 12));
+    expect(selectCursorSemanticOptions({ limit: 1, strykerWasHere: 2 }, [{ flag: "--limit", cursor_semantics: "presentation" }])).toEqual({ strykerWasHere: 2 });
+  });
+
 });

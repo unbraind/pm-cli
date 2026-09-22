@@ -1,25 +1,25 @@
 /**
  * @module sdk/cli-contracts/commander-types
  *
- * Defines SDK command-contract metadata for Commander Types.
+ * Maps Commander option aliases to SDK fields and preserves precedence when normalizing CLI input.
  */
 /** Describes aliases accepted by Commander option registration contracts. */
 export interface CommanderOptionAliasContract {
-  /** Value that configures or reports target for this contract. */
+  /** Canonical SDK option key receiving the selected alias value. */
   target: string;
-  /** Value that configures or reports keys for this contract. */
+  /** Commander option keys in precedence order; the first matching value wins. */
   keys: readonly string[];
 }
 
-/** Documents the commander option registration contract payload exchanged by command, SDK, and package integrations. */
+/** Declares Commander registration syntax and how its parsed values map to SDK options. */
 export interface CommanderOptionRegistrationContract extends CommanderOptionAliasContract {
-  /** Value that configures or reports option for this contract. */
+  /** Commander flag syntax, including short aliases and argument placeholders. */
   option: string;
-  /** Value that configures or reports description for this contract. */
+  /** Human-readable flag help displayed by Commander. */
   description: string;
-  /** Value that configures or reports required for this contract. */
+  /** Whether Commander requires this option to be supplied. */
   required?: boolean;
-  /** Value that configures or reports repeatable for this contract. */
+  /** Whether repeated occurrences accumulate values instead of replacing the previous value. */
   repeatable?: boolean;
   /** Inputs that customize the alias operation. */
   aliasOptions?: Array<{
@@ -166,7 +166,7 @@ export const ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasCon
     { target: "limit", keys: ["limit"] },
   ];
 
-/** Implements read first string from commander options for the public runtime surface of this module. */
+/** Return the first string-valued alias in declared precedence order, including an explicitly empty string. */
 export function readFirstStringFromCommanderOptions(
   options: Record<string, unknown>,
   contract: CommanderOptionAliasContract,
@@ -180,7 +180,7 @@ export function readFirstStringFromCommanderOptions(
   return undefined;
 }
 
-/** Implements read first value from commander options for the public runtime surface of this module. */
+/** Return the first own alias property, preserving explicitly undefined values and ignoring inherited properties. */
 export function readFirstValueFromCommanderOptions(
   options: Record<string, unknown>,
   contract: CommanderOptionAliasContract,
@@ -193,7 +193,7 @@ export function readFirstValueFromCommanderOptions(
   return undefined;
 }
 
-/** Implements read string array from commander options for the public runtime surface of this module. */
+/** Concatenate string entries from all array-valued aliases in declaration order; return undefined when none remain. */
 export function readStringArrayFromCommanderOptions(
   options: Record<string, unknown>,
   contract: CommanderOptionAliasContract,

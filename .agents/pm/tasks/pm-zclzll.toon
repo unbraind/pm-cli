@@ -2,11 +2,13 @@ id: pm-zclzll
 title: "Mutation-testing gate: prove the 100 percent coverage suite actually detects defects, with a ratcheted mutation score on SDK core"
 description: "Add mutation testing for the SDK core so nominal 100 percent coverage is proven to detect behavioral defects, with a ratcheted score and explicit survivor ownership."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[6]: "area:sdk",ci,defect-detection,mutation-testing,quality-gate,testing
 created_at: "2026-07-24T23:46:02.748Z"
-updated_at: "2026-09-08T13:32:07.638Z"
+updated_at: "2026-09-22T14:57:57.224Z"
+closed_at: "2026-09-22T14:57:56.325Z"
+completed_at: "2026-09-22T14:57:56.325Z"
 author: maintainer-agent
 estimated_minutes: 1200
 acceptance_criteria: "A mutation-testing run produces a reproducible score for the SDK core module set in CI; The score is ratcheted: regressions fail, improvements move the floor, matching the existing suppressions-ratchet discipline; Runtime is bounded — incremental or partitioned execution keeps the gate inside the nightly budget rather than the pull-request budget if necessary; Surviving mutants are triaged with either a new assertion or a written equivalent-mutant waiver; no blanket ignores"
@@ -19,12 +21,11 @@ why_now: "The coverage ADR settled the coverage question; the next honest questi
 parent: pm-u9d0
 risk: medium
 confidence: medium
-expected_result: "A reproducible mutation score for SDK core runs in CI within the nightly budget, ratcheted so regressions fail and improvements raise the floor."
+resolution: "Required isolated mutation checks cover pagination and dependency provenance, reject unexplained survivors and stale waivers, ratchet complete scope and score, retain reports, and reuse the validated static build without dropping lease safety."
+expected_result: "A reproducible bounded SDK mutation gate detects behavioral defects without suppressing mutants or weakening coverage, and runs on required CI/release paths without a redundant static-chain build."
+actual_result: "Real engine: 330 mutants, 323 assertion kills, seven owned equivalents, no unowned survivors/errors/timeouts. Exact all-source 100/100/100/100 coverage was measured; review-fix runner coverage remains 100/100/100/100 with 95 focused tests passing. First PR head has 37 passing hosted checks; revised-head checks and review remain the merge gate."
 dependencies[9]:
   - id: pm-0yi7
-    kind: related
-    created_at: "2026-07-24T23:46:02.748Z"
-  - id: pm-92if
     kind: related
     created_at: "2026-07-24T23:46:02.748Z"
   - id: pm-9rgaal
@@ -51,6 +52,82 @@ dependencies[9]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-notes[1]{created_at,author,text}:
+  - id: pm-dvwm
+    kind: related
+    created_at: "2026-09-22T13:50:52.406Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[15]{created_at,author,text}:
+  "2026-09-22T13:27:10.205Z","harness:codex","All-status orientation recovered 2795 complete item records and 67658 full history events without omissions. Canonical mutation-testing owner reused alongside pm-dvwm for a connected test/documentation-quality tranche. GitHub has no open PRs or dependency, code-scanning, or secret-scanning alerts; issue 1246 already links its canonical onboarding owner. No unrelated item claimed."
+  "2026-09-22T13:40:46.625Z","harness:codex","Mutation-driven assertions raised the measured partition from 275/330 killed after correct existing-test selection to 322/330 killed (97.57575757575758 percent). Eight remaining mutations are behaviorally equivalent and individually explained by exact identity, source, replacement, and owner. No mutants excluded. Focused 75-test run passes; dependency audit has zero vulnerabilities. Full all-source coverage and hosted verification remain pending."
+  "2026-09-22T13:48:49.095Z","harness:codex",Graph verification caught the newly added generic related edge exceeding the no-growth ceiling. Removing that incidental co-delivery edge; existing implements and verifies lineage already explains this gate without inventing a semantic dependency on documentation cleanup.
+  "2026-09-22T13:49:08.000Z","harness:codex","Independent acceptance passed 18 commands each under Node 26.9.0 and Bun in external temporary project/global trackers: init, hierarchical typed create, claim/update, comments/notes/learnings, get/list/search/context, graph ancestors, atomic close/release, strict history verification, and resolution/history validation. Production Sentry/required telemetry gate passed: zero critical/high issues, 2.05 percent error rate, zero failures lacking error codes. Registry audit reports no vulnerabilities. Evidence logs remain ignored locally."
+  "2026-09-22T13:50:56.819Z","harness:codex","The graph gate also preserves prose-to-edge completeness. Retained the factual co-delivery cross-reference and refined the older generic link to the quality epic into implements: this task now delivers the epic's local quality parity and regression prevention gate. Related-edge total stays at the existing ceiling without inventing a dependency between the two gates."
+  "2026-09-22T13:59:46.192Z","harness:codex","Full-suite first pass: 9221 tests passed and two release-contract assertions correctly rejected the old static command expectation. Updated their shared expected contract to require both new gates. No coverage report was produced on that failed test pass, so no 100 percent claim is made. Packed npm/npx/bunx package smoke passed; concurrent package dogfood timed out waiting for the long coverage lease and will be rerun after contention clears."
+  "2026-09-22T14:02:51.437Z","harness:codex","Release command contracts now pass, and the three new gate modules have exact focused coverage of 142/142 statements, 107/107 branches, 21/21 functions, and 105/105 lines. New negative controls cover attached parameter tags and attempts to introduce filler budgets for previously clean files. Package-first dogfood passed on the uncontended rerun. Full all-source coverage remains a separate pending rerun."
+  "2026-09-22T14:05:33.776Z","harness:codex",The repository static gate rejected the expanded sandbox runner at complexity 19 against the mandatory ceiling 16. Separated validation-stage dispatch from temporary-root/build lifecycle without changing process or cleanup ordering; both functions now satisfy the original ceiling. No suppression or budget increase introduced.
+  "2026-09-22T14:17:36.214Z","harness:codex","All-source exact coverage passed with zero uncovered counts: 65025/65025 statements, 49627/49627 branches, 13494/13494 functions, 62184/62184 lines. The six-worker run passed 9223 tests but timed out two existing executable gates (refusal closure and scale benchmark), which passed in the earlier four-worker run. Those tests are rerunning alone with original timeouts; full coverage is not being conflated with an all-green test run."
+  "2026-09-22T14:20:16.006Z","harness:codex","Survivor review correction: a direct runtime experiment disproved the proposed Date.parse trim equivalence. Whitespace-padded ISO timestamps can parse to NaN without trim, so that waiver was invalid. Removed it, changed the existing provider timestamp assertion to a padded ISO timestamp with a deterministic fallback clock, and raised the expected floor to 323/330. This is a real assertion-strength gap, not an equivalent mutant. Actual mutation rerun is required before accepting the new score."
+  "2026-09-22T14:22:40.799Z","harness:codex","Final targeted rerun passed all 17 tests across refusal-closure and scale-benchmark suites at their original timeouts. The real prebuilt mutation run passed in 42 seconds: 330 total, 323 killed, seven exact equivalents, zero uncovered/timeout/error mutants, score 97.87878787878788. Date trimming is now asserted rather than waived. Full all-source exact coverage remains 100/100/100/100; no source behavior, coverage exclusion or timeout budget was weakened."
+  "2026-09-22T14:30:18.682Z","harness:codex","Static verification passed repository quality, exact docstring coverage, zero duplication, package/SDK boundaries, grammar/flags, refusal closure, token budgets, tracker context, gate registry and surface freshness. The local Node 26.9 import-cost gate remains slightly over budget (core 430/423 ms, governance 329/327 ms, merge 239/226 ms) on isolated retry. Executable TypeScript AST comparison proves both touched SDK files are unchanged from main. Budgets remain unchanged; checking the CI Node 24 runtime and remaining independent gates before hosted verification."
+  "2026-09-22T14:32:01.531Z","harness:codex","Local performance limitation retained: import and CLI transport timing budgets still fail on this workstation, including a Node 24 probe. No budget was raised, no passing sample was selected, and no blanket green static claim is made. The touched SDK executable ASTs are unchanged; hosted Node 24 timing gates remain mandatory before merge. All functional retries, exact four-metric source coverage, mutation partition, dependency/security inventories, package acceptance, typecheck and documentation coverage have passed."
+  "2026-09-22T14:51:15.665Z","harness:codex","PR https://github.com/unbraind/pm-cli/pull/1290 first head 2bf2bc870 passed all 37 passing checks (three expected neutral/skipped results); hosted import and transport budgets passed unchanged, confirming the local timing limitation. CodeRabbit reported 100 percent touched-function docstrings and one actionable redundant-build improvement. Sourcery was quota-limited; Greptile and Gemini did not respond during the bounded review wait. Reusing this canonical owner for the review fix. Use a runner prebuilt flag so package scripts stay portable instead of adding a POSIX-only environment assignment."
+  "2026-09-22T14:57:55.520Z","harness:codex","Review evidence for PR https://github.com/unbraind/pm-cli/pull/1290: first reviewed head 2bf2bc8704d6ecd816c88dfc195d18ec1976234e passed all 37 active hosted checks, including unchanged import and transport timing budgets. CodeRabbit identified a redundant build in the static mutation chain. TDD reproduced rejection of a portable prebuilt argument, then added mutation-only --prebuilt handling with the existing build lease and incomplete-generation guard. 95 focused runner and release-contract tests pass; runner coverage is exactly 100/100/100/100 (100 statements, 58 branches, 14 functions, 90 lines). The real prebuilt mutation run still kills 323/330 mutants with seven exact equivalents and zero gate failures. ESLint, complexity and docstring ratchets pass. Sourcery and cubic explicitly exhausted free review quotas; Greptile and Gemini supplied no review within the bounded first round. These are unavailable evidence, not approvals. The revised head will receive a fresh blocking review/check cycle before merge."
+notes[3]{created_at,author,text}:
   "2026-07-25T07:13:38.584Z","harness:claude-code","Coverage-pragma density measured 2026-07-25, relevant to whether the 100% literal all-src number proves defect detection. 465 v8/c8/istanbul ignore pragmas exist across src, scripts and packages against the static-quality-gate ceiling MAX_COVERAGE_IGNORE_PRAGMAS = 496, i.e. 94% of the budget is consumed. They concentrate in exactly the largest and most complex files: src/sdk/governance/validate.ts 65, src/cli/main.ts 51, src/cli/commands/create.ts 37, src/sdk/governance/health.ts 25, src/sdk/extension.ts 24, src/sdk/test/execution.ts 22, src/cli/commands/contracts.ts 22, src/sdk/query/search.ts 21, src/sdk/history-redact.ts 21. vitest.config.ts excludes only src/**/*.d.ts, so the 100% figure is genuine for everything not pragma-excluded — which makes the pragma set, not the config, the real coverage boundary. A mutation score computed over SDK core should treat these regions explicitly: they are the places where surviving mutants are most likely and least visible. The ceiling is also a ceiling only, not a ratchet, so the count can grow to 496 without any gate reacting."
+  "2026-09-22T13:42:38.171Z","harness:codex","Engine configuration is development-only Stryker 10.0.0 with the installed Vitest 4.1.11 adapter. Initial partition uses two SDK correctness boundaries and all mutants, with no ignore directives or mutator exclusions. Full SDK mutation expansion is future work; all-source coverage remains mandatory independently."
+  "2026-09-22T14:11:16.717Z","harness:codex","Execution controls override the declarative engine configuration: in-place mutation, incremental reuse, static-mutant skipping, external configuration loading, and blanket excluded mutation operators are disabled. Unit controls deliberately supply those unsafe settings and verify the effective engine options; the required real mutation run independently measures actual assertion strength."
+learnings[2]{created_at,author,text}:
+  "2026-09-22T13:42:39.613Z","harness:codex","A covered transport-refusal branch is not evidence that its lexical guard is asserted: Node Buffer accepts junk around base64url and JSON parsing can still succeed. Assert invalid-byte refusal independently from payload validation."
+  "2026-09-22T14:20:18.529Z","harness:codex",Do not infer runtime equivalence from API familiarity. Date.parse accepts some padded legacy dates but rejects padded ISO timestamps; experimentally test waiver claims with the actual supported input family before retaining them.
+files[18]{path,scope,note}:
+  .github/workflows/ci.yml,project,PR-base ratchets and retained mutation evidence
+  package.json,project,Required static gate and pinned mutation framework
+  pnpm-lock.yaml,project,Audited development dependency resolution
+  scripts/release/gate-registry.json,project,Canonical mandatory quality gate inventory
+  scripts/release/mutation-score.mjs,project,Exact source and survivor evidence verification
+  scripts/release/sdk-mutation-baseline.json,project,Exact equivalent survivor evidence and score floor
+  scripts/release/sdk-mutation.json,project,Explicit complete mutation partition and engine policy
+  scripts/release/sdk-mutation.mjs,project,Isolated mutation execution and reviewed scope ratchet
+  scripts/run-tests.mjs,project,Shared sandbox lifecycle for mutation workers
+  src/sdk/pagination.ts,project,Document private cursor conversion and refusal helpers
+  tests/helpers/releaseContracts.ts,project,Required release/static gate command contract includes both new gates
+  tests/unit/regressions/context-integrity-recovery.spec.ts,project,Move resolver test without duplicating it
+  tests/unit/scripts/release/mutation-score.spec.ts,project,Fail-closed report controls
+  tests/unit/scripts/release/sdk-mutation.spec.ts,project,Isolated engine boundary and baseline negative controls
+  tests/unit/scripts/run-tests.spec.ts,project,Mutation lifecycle and override refusal
+  tests/unit/sdk/dependency-provenance.spec.ts,project,Consolidated provider-contract assertions
+  tests/unit/sdk/pagination.spec.ts,project,Mutation-driven cursor behavioral assertions
+  vitest.mutation.config.ts,project,Bounded SDK behavioral partition
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs mutation,project,600,"harness:codex","2026-09-22T13:40:43.372Z",local_mutation,feat/sdk-mutation-docstring-gates,Full SDK mutation partition with exact survivor triage
+test_runs[2]:
+  - run_id: test-local-mucqpr92-47st0l
+    kind: test
+    status: passed
+    started_at: "2026-09-22T13:52:08.534Z"
+    finished_at: "2026-09-22T13:59:06.038Z"
+    recorded_at: "2026-09-22T13:59:06.038Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs mutation,schema,schema,source,local_source_ref
+  - run_id: test-local-mucrl7r2-c1btj7
+    kind: test
+    status: passed
+    started_at: "2026-09-22T14:22:41.584Z"
+    finished_at: "2026-09-22T14:23:33.755Z"
+    recorded_at: "2026-09-22T14:23:33.755Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs mutation,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Generated delivery entry owned by the latest pm-changelog package
+  docs/QUALITY_EVIDENCE.md,project,Mutation scope and equivalent survivor policy
+  docs/TESTING.md,project,Required test-strength gate routing
+close_reason: "Implemented and verified the bounded SDK mutation gate, score/equivalence ratchet, required CI integration and portable static-chain build reuse; delivery continues through PR 1290 review."
 body: "## Problem\nThe repository enforces literal 100 percent all-source coverage. That gate proves every line and branch was executed by the suite. It does not prove any of them were asserted on. A test that calls a function and ignores the result contributes full coverage and zero defect detection.\n\n## Approach\nIntroduce mutation testing scoped first to the SDK core — the surface with the strongest correctness obligations and the most downstream consumers — then extend outward. Treat the score exactly like the existing static-quality ratchets: a floor that only moves up.\n\n## Cost control\nMutation testing is expensive. Scope by module, run incrementally against changed files on pull requests and fully on the nightly schedule, and keep the pull-request path fast.\n\n## Boundary\nNot a replacement for the coverage gate. Not a rewrite of the suite. Surviving-mutant triage produces assertions, not deleted tests."

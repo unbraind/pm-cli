@@ -48,6 +48,7 @@ export interface QueryCursorPage<T> {
   next_cursor?: string;
 }
 
+/** Convert flag spellings to the camel-case keys used by parsed SDK options. */
 function optionKeyForFlag(flag: string): string {
   return flag
     .replace(/^--/u, "")
@@ -110,6 +111,7 @@ export function encodeQueryCursor(
   ).toString("base64url");
 }
 
+/** Attach the stable refusal code and a fresh-query recovery step to cursor errors. */
 function invalidCursor(message: string): PmCliError {
   return new PmCliError(message, EXIT_CODE.USAGE, {
     code: "invalid_query_cursor",

@@ -177,6 +177,14 @@ quality:static`: every `src/**/*.ts` source file needs a module TSDoc block,
 every exported declaration needs a non-module TSDoc block, and known generated
 boilerplate summaries are rejected.
 
+## Test Strength and Documentation Content
+
+The required static gate also runs [SDK mutation testing and the documentation
+content ratchet](QUALITY_EVIDENCE.md), tracked by
+[pm-zclzll](../.agents/pm/tasks/pm-zclzll.toon) and
+[pm-dvwm](../.agents/pm/chores/pm-dvwm.toon). These add behavioral and content
+checks while retaining exact 100/100/100/100 coverage and all docstring floors.
+
 ## TOON Storage Round-Trip Gate
 
 History-only lifecycle reconstruction and recovery contracts are described in

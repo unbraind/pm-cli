@@ -322,6 +322,8 @@ jobs:
 
       - name: Run static + secret + version gates
         if: matrix.gate == 'static'
+        env:
+          PM_QUALITY_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
           pnpm version:check
           pnpm changelog:pm:check
@@ -330,6 +332,14 @@ jobs:
           pnpm security:scan
           pnpm lint
           node scripts/release/package-artifact-gate.mjs
+
+      - name: Retain SDK mutation evidence
+        if: always() && matrix.gate == 'static'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: sdk-mutation-evidence
+          path: .cache/mutation/*.json
+          if-no-files-found: warn
 
       - name: Enforce discovery and answer token budgets
         if: matrix.gate == 'static'

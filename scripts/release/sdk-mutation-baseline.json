@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "owner": "pm-zclzll",
+  "files": [
+    "src/sdk/dependency-provenance.ts",
+    "src/sdk/pagination.ts"
+  ],
+  "minimumScore": 97.87878787878788,
+  "equivalentMutants": [
+    {
+      "identity": "c0dd21b6b1034fe0d6ce8078c3bd3bbd15fba15605981d10d7c2c38faeb3ec3d",
+      "file": "src/sdk/dependency-provenance.ts",
+      "line": 146,
+      "replacement": "{}",
+      "reason": "The supports filter treats both undefined from an empty catch block and explicit false as falsy, so a throwing provider is excluded in either case.",
+      "owner": "pm-zclzll"
+    },
+    {
+      "identity": "ec036e14d42f78f5ded932cafece48a173dd0a4aa7a9aa022a5d0826c64484df",
+      "file": "src/sdk/dependency-provenance.ts",
+      "line": 158,
+      "replacement": "false",
+      "reason": "Rejected PromiseSettledResult objects have no value; the remaining runtime result validator rejects undefined, so both forms skip exactly the same rejected providers.",
+      "owner": "pm-zclzll"
+    },
+    {
+      "identity": "ce69792ce5a828f7919564a540a761186f51e3108af75fecd756dc9c6785201d",
+      "file": "src/sdk/dependency-provenance.ts",
+      "line": 180,
+      "replacement": "\"Stryker was here!\"",
+      "reason": "For absent checkedAt, both the empty string and Stryker placeholder parse to NaN and select the same injected or system clock.",
+      "owner": "pm-zclzll"
+    },
+    {
+      "identity": "2a75bc61dd38ee526050ce7afa70009a380f989c1fcef332fb0859cb45e0ccef",
+      "file": "src/sdk/pagination.ts",
+      "line": 108,
+      "replacement": "false",
+      "reason": "JSON.stringify omits object properties whose values are undefined, so unconditional insertion of absent after_index produces identical serialized bytes.",
+      "owner": "pm-zclzll"
+    },
+    {
+      "identity": "7db6d04e4f86b4e3a30486207cbc7f3b3f3eab28bc93dbac4f1b2e59ba01d2cc",
+      "file": "src/sdk/pagination.ts",
+      "line": 109,
+      "replacement": "false",
+      "reason": "JSON.stringify omits object properties whose values are undefined, so unconditional insertion of absent snapshot produces identical serialized bytes.",
+      "owner": "pm-zclzll"
+    },
+    {
+      "identity": "87adb0ec41b78a5d2cb62dfdc34a27040d98640d0b36daa15150c6475b63c497",
+      "file": "src/sdk/pagination.ts",
+      "line": 126,
+      "replacement": "false",
+      "reason": "Inputs arrive from JSON.parse. Null and arrays remain separately rejected; string, number and boolean primitives cannot carry the required version and fields, so the remaining checks reject them.",
+      "owner": "pm-zclzll"
+    },
+    {
+      "identity": "5db6034ac13884584638e01fd7bd2343111f8d497bd6094c6210bf7242021f97",
+      "file": "src/sdk/pagination.ts",
+      "line": 152,
+      "replacement": "false",
+      "reason": "The anchored base64url pattern requires at least one character. Removing the separate zero-length check still rejects every empty cursor with the same error.",
+      "owner": "pm-zclzll"
+    }
+  ]
+}
