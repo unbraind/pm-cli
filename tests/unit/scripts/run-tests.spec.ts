@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createScriptHarness } from "../../helpers/scriptModule";
 
-const harness = createScriptHarness(["../../../scripts/build-lease.mjs"]);
+const harness = createScriptHarness(["../../../scripts/build-lease.mjs", "../../../scripts/temp-lifecycle.mjs"]);
 
 const mkdtempMock = vi.fn(async () => "/tmp/pm-run-tests-spec");
 const rmMock = vi.fn(async () => undefined);
@@ -24,7 +24,7 @@ function closeChild(
 /** Emit an asynchronous spawn error to exercise runner failure reporting and cleanup. */
 function errorChild(error: unknown): never {
   const child = new EventEmitter();
-  queueMicrotask(() => child.emit("error", error));
+  queueMicrotask(() => { child.emit("error", error); child.emit("close", -1, null); });
   return child as never;
 }
 
@@ -37,6 +37,60 @@ function mockFsPromises() {
 }
 
 describe("run-tests", () => {
+  it.each(["close", "error", "idle", "timeout", "cleanup-error"])("settles %s interruption before releasing its workspace", async (mode) => {
+    mockFsPromises();
+    process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
+    process.argv = ["node", "scripts/run-tests.mjs", "coverage"];
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    let shutdown: () => Promise<void> = async () => {};
+    const release = vi.fn();
+    vi.doMock("../../../scripts/temp-lifecycle.mjs", () => ({
+      registerTempCleanup: (_root: string, options: { shutdown: () => Promise<void> }) => {
+        shutdown = options.shutdown;
+        return release;
+      },
+    }));
+    let ready: () => void = () => {};
+    const spawned = new Promise<void>((resolve) => { ready = resolve; });
+    const child = Object.assign(new EventEmitter(), {
+      kill: vi.fn(() => {
+        if (mode === "close" || mode === "cleanup-error") queueMicrotask(() => child.emit("close", null, "SIGTERM"));
+        if (mode === "error") queueMicrotask(() => child.emit("error", new Error("stopped")));
+        return true;
+      }),
+    });
+    const spawn = vi.fn(() => { ready(); return child; });
+    vi.doMock("node:child_process", () => ({ spawn }));
+    const run = harness.importModule("scripts/run-tests.mjs");
+    await spawned;
+    const runResult = mode === "cleanup-error" ? expect(run).rejects.toThrow("cleanup denied") : run;
+    if (mode === "cleanup-error") rmMock.mockRejectedValueOnce(new Error("cleanup denied"));
+    if (mode === "idle") {
+      child.emit("close", 0, null);
+      // The runner resumes only after the shutdown flag has closed admission.
+    }
+    if (mode === "timeout" || mode === "error") vi.useFakeTimers();
+    try {
+      const stopping = shutdown();
+      if (mode === "timeout" || mode === "error") {
+        const rejection = expect(stopping).rejects.toThrow("workspace retained");
+        await vi.advanceTimersByTimeAsync(5000);
+        await rejection;
+        expect(rmMock).not.toHaveBeenCalled();
+        expect(release).not.toHaveBeenCalled();
+        child.emit("close", 0, null);
+      } else {
+        await stopping;
+      }
+      await runResult;
+      expect(spawn).toHaveBeenCalledTimes(1);
+      expect(rmMock).toHaveBeenCalled();
+      expect(release).toHaveBeenCalledTimes(mode === "cleanup-error" ? 0 : 1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("refuses prebuilt consumers after an incomplete generation", async () => {
     const spawn = vi.fn(() => closeChild(0));
     vi.doMock("node:child_process", () => ({ spawn }));

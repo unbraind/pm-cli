@@ -338,6 +338,7 @@ describe("dogfood-package-first", () => {
     vi.doMock("node:child_process", () => ({ spawnSync }));
     const rmSync = mockFs();
     delete process.env.PM_DOGFOOD_SEMANTIC;
+    process.env.PM_TELEMETRY_DISABLED = "0";
     process.argv = ["node", "scripts/dogfood-package-first.mjs"];
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
@@ -352,6 +353,13 @@ describe("dogfood-package-first", () => {
     expect(payload.semantic_dogfood.attempted).toBe(false);
     expect(payload.semantic_dogfood.skipped_reason).toContain("PM_DOGFOOD_SEMANTIC not set");
     expect(payload.commands).toBeGreaterThan(20);
+    for (const call of spawnSync.mock.calls) {
+      expect(call).toEqual([
+        expect.any(String),
+        expect.any(Array),
+        expect.objectContaining({ env: expect.objectContaining({ PM_TELEMETRY_DISABLED: "1" }) }),
+      ]);
+    }
     expect(rmSync).toHaveBeenCalled();
   });
 

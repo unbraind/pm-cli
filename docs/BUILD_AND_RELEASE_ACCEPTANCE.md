@@ -37,8 +37,12 @@ concurrent validation.
 ## Owned temporary workspaces
 
 Package smoke, external-package smoke, package-first dogfood, contract snapshots,
-and plugin MCP smoke register their temporary roots with the shared lifecycle
-helper. Normal completion releases the registration after cleanup. Synchronous
+plugin MCP smoke, and the sandboxed test runner register their temporary roots
+with the shared lifecycle helper. Release preparation, installed-agent and
+published-package verification, compatibility checks, isolated regression
+controls, context evaluation, intent calibration, refusal probes, and the point
+and context read benchmarks also register their owned roots. Normal completion
+releases the registration after cleanup. Synchronous
 workspaces also clean on process exit, including uncaught failure. SIGINT and
 SIGTERM run registered cleanup before returning exit codes 130 and 143.
 
@@ -47,6 +51,23 @@ waits for its MCP child to close before removing its workspace; shutdown failure
 retains the directory and reports its path. An abrupt exit cannot await that
 shutdown, so it also retains asynchronous workspaces. Explicit keep-temp modes
 do not register cleanup. No cleanup scans or deletes unrelated temporary roots.
+
+The test runner stops its active build or test child on interruption, closes
+admission to later stages, and waits up to five seconds for the runner to settle.
+That wait includes release of its build lease and ordinary cleanup. If the child
+does not stop, the workspace is retained and its location is reported. A signal
+must never remove files still being used by a test process. Real subprocess
+regressions exercise both build-enabled and prebuilt execution, alongside
+installer failures that call `process.exit` and therefore bypass `finally`.
+
+Package-first dogfood disables telemetry for its synthetic child commands so
+detached flush workers cannot recreate the workspace after cleanup. Dedicated
+telemetry acceptance and the live Sentry/telemetry gate verify delivery.
+
+Release-note integration fixtures own their changelog, generator location, and
+Git lookup directory. Both a dated-only changelog and an Unreleased section are
+tested against the same real over-budget tracker. Release preparation can
+therefore regenerate the checkout changelog without changing test inputs.
 
 These handlers cannot run after SIGKILL, power loss, or Windows forced process
 termination. Native signal acceptance runs on Unix; callback and normal-exit

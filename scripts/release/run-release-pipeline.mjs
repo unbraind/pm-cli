@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { registerTempCleanup } from "../temp-lifecycle.mjs";
 import { Buffer } from "node:buffer";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { mkdirSync } from "node:fs";
@@ -330,6 +331,7 @@ function maybeSkipForSameDayRelease(tagsToday, todayKey, outputJson) {
 /** Generate the canonical dated changelog before the release tag exists. */
 function prepareReleaseChangelog(params) {
   const generatedChangelogDir = mkdtempSync(path.join(tmpdir(), "pm-cli-release-"));
+  const releaseCleanup = registerTempCleanup(generatedChangelogDir);
   const generatedChangelogPath = path.join(generatedChangelogDir, `changelog-${params.targetVersion.replaceAll(".", "-")}.md`);
   try {
     runCommand(process.execPath, ["dist/cli.js", "install", "npm:pm-changelog", "--project"]);
@@ -369,6 +371,7 @@ function prepareReleaseChangelog(params) {
     return { prepared: true, generatedChangelogPath };
   } finally {
     rmSync(generatedChangelogDir, { recursive: true, force: true });
+    releaseCleanup();
   }
 }
 

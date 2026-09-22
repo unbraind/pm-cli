@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { registerTempCleanup } from "../temp-lifecycle.mjs";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
@@ -12,6 +13,7 @@ const repository = fileURLToPath(new URL("../../", import.meta.url));
 /** Execute one real regression against disposable source, optionally replacing one exact unsafe invariant. */
 export async function runIsolatedRegressionControl({ sourcePath, testPath, testName, before, after, extraPaths = [] }, negativeControl) {
   const root = await mkdtemp(path.join(tmpdir(), "pm-regression-control-"));
+  const releaseCleanup = registerTempCleanup(root);
   try {
     for (const entry of ["src", "scripts", "packages", "config", "package.json", "tsconfig.json", "vitest.config.ts", ...extraPaths]) {
       await cp(path.join(repository, entry), path.join(root, entry), { recursive: true });
@@ -39,5 +41,6 @@ export async function runIsolatedRegressionControl({ sourcePath, testPath, testN
     return { negative_control: negativeControl, exit_code: result.status, output: result.stdout + result.stderr };
   } finally {
     await rm(root, { recursive: true, force: true });
+    releaseCleanup();
   }
 }

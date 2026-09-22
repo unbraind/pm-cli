@@ -3,6 +3,7 @@
  * generator creates valid item/history files; each tier reads the same Epic id.
  * Run after build: node scripts/bench/point-read-costs.mjs 100 10000 100000.
  */
+import { registerTempCleanup } from "../temp-lifecycle.mjs";
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
@@ -25,6 +26,7 @@ export async function measurePointReadCosts(sizes = [100], iterations = 10) {
   let identity;
   for (const itemCount of sizes) {
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-point-read-costs-"));
+    const releaseCleanup = registerTempCleanup(root);
     try {
       const manifest = await generateSyntheticWorkspace({ workspaceRoot: path.join(root, "workspace"), itemCount });
       const client = new PmClient({ pmRoot: manifest.pm_root, noExtensions: true });
@@ -54,6 +56,7 @@ export async function measurePointReadCosts(sizes = [100], iterations = 10) {
       reports.push({ item_count: itemCount, item_id: manifest.sample_ids.get, iterations, timings, ordinary_metadata_enumerations: ordinaryEnumerations, explicit_metadata_work: measured.work, explicit_children_ms: performance.now() - started, explicit_children_scanned: explicit.children.scanned });
     } finally {
       await rm(root, { recursive: true, force: true });
+      releaseCleanup();
     }
   }
   return reports;

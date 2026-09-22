@@ -4,6 +4,7 @@
  * Metadata analysis excludes filesystem ingestion; receipts measure actual ledger
  * writes under contention. All feedback stays in disposable temporary storage.
  */
+import { registerTempCleanup } from "../temp-lifecycle.mjs";
 import assert from "node:assert/strict";
 import { mkdtemp, rm, stat } from "node:fs/promises";
 import os from "node:os";
@@ -29,6 +30,7 @@ export async function measureContextReadCosts(sizes = [1000], iterations = 10, c
     assert.deepEqual(filtered.clusters, oracle.clusters, "Prefix filtering lost exhaustive evidence");
     assert.equal(duplicates.cost.scored_pairs, Math.floor(size / 2));
     const pmRoot = await mkdtemp(path.join(os.tmpdir(), "pm-context-read-costs-"));
+    const releaseCleanup = registerTempCleanup(pmRoot);
     try {
       const rows = items.map(({ id }, index) => ({ id, rank: index + 1, included: index < 10 }));
       const receipts = [];
@@ -65,6 +67,7 @@ export async function measureContextReadCosts(sizes = [1000], iterations = 10, c
       });
     } finally {
       await rm(pmRoot, { recursive: true, force: true });
+      releaseCleanup();
     }
   }
   return reports;

@@ -1,0 +1,94 @@
+id: pm-xjy565
+title: Extend owned workspace cleanup across release gates and interruptible test runners
+description: "Deliver the remaining eleven selected release and measurement entrypoints under pm-p5u6: test runner, release preparation, installed-agent acceptance, published verification, compatibility, isolated regression control, context evaluation, intent calibration, refusal closure, point-read costs and context-read costs. The runner stops its child and settles the build lease before signal cleanup. Other packed and large benchmark producers retain their separate shutdown work in the parent."
+type: Task
+status: closed
+priority: 2
+tags: []
+created_at: "2026-09-22T09:47:18.391Z"
+updated_at: "2026-09-22T10:55:49.830Z"
+closed_at: "2026-09-22T10:55:49.059Z"
+completed_at: "2026-09-22T10:55:49.059Z"
+author: "harness:codex"
+acceptance_criteria: All eleven named entrypoints register their owned roots and unregister after normal cleanup; keep-temp is preserved; actual installer refusals remove roots; test interrupts stop stage admission and release build leases; unresponsive children retain evidence; regression negative controls fail when lifecycle registration is removed
+parent: pm-p5u6
+resolution: "Registered owned roots across release gates and measurements. Test interruption closes stage admission and waits for child close plus lease release; errors alone cannot release workspaces, and shutdown timeout retains evidence."
+expected_result: Only stopped children permit cleanup; all eleven named entrypoints preserve keep-temp and unrelated files.
+actual_result: 47 linked regressions pass including real subprocess interruption and installer refusals; error-only regression failed before correction and passes afterward. Full first-head hosted coverage and security checks passed; final head remains subject to required CI.
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-14dnbh,discovered_from,"2026-09-22T09:47:18.391Z","harness:codex","cli:create:dep",detected
+  pm-p5u6,implements,"2026-09-22T09:47:18.391Z","harness:codex","cli:create:dep",detected
+  pm-ygli86,verifies,"2026-09-22T09:47:18.391Z","harness:codex","cli:create:dep",detected
+  pm-e9zh,verifies,"2026-09-22T10:46:29.406Z","harness:codex","cli:update:dep",detected
+  pm-lq10y3,verifies,"2026-09-22T10:46:29.406Z","harness:codex","cli:update:dep",detected
+comments[12]{created_at,author,text}:
+  "2026-09-22T09:47:18.391Z","harness:codex","Duplicate check: complete 2791-item all-status corpus and full pm-p5u6 and pm-14dnbh records reviewed. Existing child covers five smoke and contract entrypoints. This distinct delivery owns eleven remaining named entrypoints; implementation was actively claimed on the canonical parent before edits."
+  "2026-09-22T09:49:35.495Z","harness:codex","Behavioral verification: real installed npm and Bun refusals plus published-verifier refusal remove owned roots and preserve an unrelated sentinel. A disposable-source negative control removing installed-verifier lifecycle registration makes both npm and Bun regressions fail on retained directories; unchanged control passes. Real SIGTERM tests prove child shutdown and lease release for both build-enabled and prebuilt runners. Unit tests also cover child close, spawn error, idle-stage admission and timeout retention."
+  "2026-09-22T09:58:23.575Z","harness:codex","Validation: first full coverage run passed 9201/9202 tests; governance-read-performance cold validate took 11747ms against the unchanged 10000ms ceiling while other heavyweight checks shared the host. No threshold or test retry change is planned. Repeat the complete gate after static checks finish to distinguish contention from a reproducible regression. Required live Sentry/telemetry gate passed: zero recent blocking Sentry issues, 2.02% finish error rate and zero missing error-code rows. Temporary-directory CLI lifecycle plus complete SDK enumeration passed."
+  "2026-09-22T10:02:37.662Z","harness:codex","Acceptance: packed npx and bunx smoke passed for nine packages; package-first dogfood passed 89 commands, including SDK-backed package scaffolding, TypeScript typecheck, installation, invocation, graph/plan lifecycle, history verification and linked tests. Compatibility against published 2026.9.21 passed with two realistic linked items preserved, valid history/health and no migration warnings. All three owned temp roots were removed. Optional semantic-provider dogfood was explicitly skipped because it was not configured for this run."
+  "2026-09-22T10:04:04.507Z","harness:codex","Correction to acceptance cleanup evidence: compatibility root is absent, but post-run filesystem inspection found the dogfood root recreated with only global/settings.json and global/runtime/telemetry/state.json. The command itself passed without a cleanup warning; detached telemetry work can outlive cleanup. Investigating this observed lifecycle gap before final verification; the earlier all-roots-removed statement is superseded."
+  "2026-09-22T10:13:18.786Z","harness:codex","Tracker verification: current history hashes match all three active delivery records; full validate with resolution/history-drift checks returns ok=true with 170 existing missing-resolution warnings. Health summary returns ok=true with no warnings. No historical resolution was fabricated. The complete graph gate caught two newly added incidental related links; they were removed while retaining typed implementation/discovery/incident/verification lineage, and all thresholds remain unchanged."
+  "2026-09-22T10:14:51.723Z","harness:codex","Resolution-warning lineage verified against full live pm-e9zh: that chore completed its evidence-backed recovery and explicitly retained 170 records whose original evidence was unrecoverable. The current missing-field coordinates exactly equal its recorded residual list; this is an unchanged documented residual, not unfinished pm-e9zh work or a reason to fabricate backfill."
+  "2026-09-22T10:20:56.279Z","harness:codex","Local static gate evidence: source/lint/duplicates/contracts/docs and full graph assertions passed. SDK import-cost rerun passed all ten entrypoints. CLI transport timing then exceeded get/next/create/claim ceilings on an eight-CPU host with load 8.82 and several unrelated desktop processes using substantial CPU. Thresholds and measured budgets are unchanged; this local timing result remains a limitation for the hosted exact-head static gate to resolve. Full coverage now uses four workers without retries or exclusions to reduce competing test load."
+  "2026-09-22T10:35:40.383Z","harness:codex","Final source verification: all 9202 tests passed with exact 100/100/100/100 coverage. PM-linked regressions, build, typecheck, source/lint/duplicate/contracts/docs gates, packed npx/bunx, previous-version compatibility and real temporary-project CLI/SDK acceptance passed. The live Sentry/telemetry reliability gate passed. Local cold-start timing failures under host contention are preserved in pm-xjy565; the unchanged hosted static gate must pass before merge. Closure is part of the reviewed delivery; publication and merged-head verification are separate checks."
+  "2026-09-22T10:47:19.525Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1288 — implementation, linked evidence, typed relationships and package-generated changelog are reviewed together; merge remains gated on final hosted checks and review resolution."
+  "2026-09-22T10:54:33.986Z","harness:codex","Pre-merge TDD: CodeRabbit thread 4070802985 reproduced premature settlement on an error-only child. The strengthened interruption case fails because shutdown resolves before its 5-second retention deadline. Reopened this same unshipped delivery rather than creating duplicate work; Node child-process documentation confirms errors can report failed signals without termination."
+  "2026-09-22T10:55:48.299Z","harness:codex","Review correction: runChild stores error events but waits for close before clearing active ownership or settling execution. The unchanged five-second shutdown deadline now retains an error-only live child; the strengthened test failed before the fix. The full linked suite passes all 47 cases, including real build-enabled/prebuilt interruption and installer refusal. First hosted head passed full coverage and all security, compatibility, platform, and telemetry checks; its static failure was precisely four missing typed prose relationships, now corrected without threshold changes."
+learnings[1]{created_at,author,text}:
+  "2026-09-22T10:00:56.339Z","harness:codex","Signal cleanup of an asynchronous test runner must wait for its entire execution to settle, including build lease release, and close admission to later stages. If the child cannot stop by the bounded deadline, preserve the owned root rather than deleting files still in use."
+files[14]{path,scope,note}:
+  scripts/run-tests.mjs,project,Release validation implementation and regression proof
+  scripts/bench/context-read-costs.mjs,project,Release validation implementation and regression proof
+  scripts/bench/point-read-costs.mjs,project,Release validation implementation and regression proof
+  scripts/release/compatibility-check.mjs,project,Release validation implementation and regression proof
+  scripts/release/context-eval-gate.mjs,project,Release validation implementation and regression proof
+  scripts/release/context-intent-calibration-gate.mjs,project,Release validation implementation and regression proof
+  scripts/release/isolated-regression-control.mjs,project,Release validation implementation and regression proof
+  scripts/release/refusal-closure-gate.mjs,project,Release validation implementation and regression proof
+  scripts/release/run-release-pipeline.mjs,project,Release validation implementation and regression proof
+  scripts/release/verify-installed-agent-session.mjs,project,Release validation implementation and regression proof
+  scripts/release/verify-published-release.mjs,project,Release validation implementation and regression proof
+  tests/unit/scripts/run-tests.spec.ts,project,Release validation implementation and regression proof
+  tests/integration/test-runner-interruption.integration.spec.ts,project,Release validation implementation and regression proof
+  tests/integration/release-workspace-cleanup.integration.spec.ts,project,Release validation implementation and regression proof
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/unit/scripts/temp-lifecycle.spec.ts tests/integration/test-runner-interruption.integration.spec.ts tests/integration/release-workspace-cleanup.integration.spec.ts,project,240,"harness:codex","2026-09-22T09:48:42.448Z",local_mutation,fix/release-validation-workspace-lifecycle
+test_runs[3]:
+  - run_id: test-local-muci587r-1dhsgh
+    kind: test
+    status: passed
+    started_at: "2026-09-22T09:59:03.435Z"
+    finished_at: "2026-09-22T09:59:11.319Z"
+    recorded_at: "2026-09-22T09:59:11.319Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/unit/scripts/temp-lifecycle.spec.ts tests/integration/test-runner-interruption.integration.spec.ts tests/integration/release-workspace-cleanup.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muck4qq6-zcs3wa
+    kind: test
+    status: failed
+    started_at: "2026-09-22T10:54:34.733Z"
+    finished_at: "2026-09-22T10:54:47.886Z"
+    recorded_at: "2026-09-22T10:54:47.886Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/unit/scripts/temp-lifecycle.spec.ts tests/integration/test-runner-interruption.integration.spec.ts tests/integration/release-workspace-cleanup.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muck5gu5-2i3715
+    kind: test
+    status: passed
+    started_at: "2026-09-22T10:55:12.674Z"
+    finished_at: "2026-09-22T10:55:21.725Z"
+    recorded_at: "2026-09-22T10:55:21.725Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/unit/scripts/temp-lifecycle.spec.ts tests/integration/test-runner-interruption.integration.spec.ts tests/integration/release-workspace-cleanup.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned delivery changelog
+  docs/BUILD_AND_RELEASE_ACCEPTANCE.md,project,Owned-root guarantees and fixture isolation
+close_reason: Delivered eleven owned-root entrypoints and corrected pre-merge child-error termination proof
+body: ""

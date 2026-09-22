@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { registerTempCleanup } from "../temp-lifecycle.mjs";
 import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -666,6 +667,7 @@ function verifyMissingBinControl(label, args, tempRoot, publicRegistryEnv) {
 
 function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
   const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-cli-published-verify-"));
+  const releaseCleanup = registerTempCleanup(tempRoot);
   try {
     const npmUserConfig = path.join(tempRoot, "npmrc-public");
     writeFileSync(npmUserConfig, "", "utf8");
@@ -891,6 +893,7 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
     };
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
+    releaseCleanup();
   }
 }
 

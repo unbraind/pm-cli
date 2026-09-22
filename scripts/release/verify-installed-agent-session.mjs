@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { registerTempCleanup } from "../temp-lifecycle.mjs";
 import {
   mkdtempSync,
   mkdirSync,
@@ -353,6 +354,7 @@ function main() {
   }
   const { version, manager, previousVersion, globalInstall } = acceptanceOptions(flags);
   const root = mkdtempSync(path.join(tmpdir(), "pm-cli-installed-acceptance-"));
+  const releaseCleanup = registerTempCleanup(root);
   try {
     const npmUserConfig = path.join(root, "npmrc-public");
     writeFileSync(npmUserConfig, "", "utf8");
@@ -394,6 +396,7 @@ function main() {
     }
   } finally {
     rmSync(root, { recursive: true, force: true });
+    releaseCleanup();
   }
 }
 

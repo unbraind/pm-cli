@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { copyFile, mkdir, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { expect, it } from "vitest";
@@ -29,12 +30,23 @@ it("summarizes complete release evidence when the workspace exceeds the default 
     expect(bounded.code).toBe(0);
     expect(bounded.json).toMatchObject({ truncated: true, total: 128 });
 
-    const notes = await executeFile(process.execPath, [
-      path.resolve("scripts/generate-release-notes.mjs"), "--version", "9999.1.1",
-      "--from", "refs/tags/pm-no-such-fixture-release",
-    ], { env: context.env, encoding: "utf8", timeout: 90_000 });
-    expect(notes.stdout).toContain("Closed pm items in release window: 1");
-    expect(notes.stdout).toContain(closedId);
-    expect(notes.stdout).not.toContain("summary skipped");
+    // Own every release input: preparation may remove the checkout's Unreleased
+    // section, and its real tags must never constrain this synthetic window.
+    const scriptsRoot = path.join(context.tempRoot, "scripts");
+    await mkdir(scriptsRoot);
+    const generator = path.join(scriptsRoot, "generate-release-notes.mjs");
+    await copyFile(path.resolve("scripts/generate-release-notes.mjs"), generator);
+    await symlink(path.resolve("dist"), path.join(context.tempRoot, "dist"), "junction");
+    for (const heading of ["9999.1.1", "Unreleased"]) {
+      await writeFile(path.join(context.tempRoot, "CHANGELOG.md"), `# Changelog\n\n## [${heading}]\n\n- Fixture release.\n`);
+      const notes = await executeFile(process.execPath, [
+        generator, "--version", "9999.1.1",
+        "--from", "refs/tags/pm-no-such-fixture-release",
+      ], { cwd: context.tempRoot, env: context.env, encoding: "utf8", timeout: 90_000 });
+      expect(notes.stdout).toContain("Closed pm items in release window: 1");
+      expect(notes.stdout).toContain(closedId);
+      expect(notes.stdout).toContain("Fixture release.");
+      expect(notes.stdout).not.toContain("summary skipped");
+    }
   });
 }, 120_000);
