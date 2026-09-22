@@ -123,7 +123,7 @@
     "lint:complexity:baseline": "eslint . --suppress-rule complexity --suppress-rule sonarjs/cognitive-complexity",
     "lint:duplicates": "jscpd --config .jscpd.json && jscpd --config .jscpd.source.json && jscpd --config .jscpd.tables.json",
     "lint:codefactor": "pnpm quality:static",
-    "quality:static": "pnpm quality:exports && pnpm lint:eslint && pnpm lint:duplicates && pnpm build && node scripts/contracts-snapshot.mjs --check && node scripts/generate-agent-capability-surfaces.mjs --check && node scripts/generate-error-code-catalog.mjs --check && node scripts/release/repository-assurance.mjs repository-static-quality --trigger ci --json && node scripts/release/audit-package-boundary.mjs && node scripts/release/package-sdk-contract-parity.mjs && node scripts/release/surface-replication-gate.mjs && node scripts/release/command-grammar-gate.mjs && node scripts/release/flag-invocation-parity.mjs && node scripts/release/flag-lexicon-gate.mjs && node scripts/release/refusal-closure-gate.mjs && node scripts/release/agent-task-token-gate.mjs && pnpm quality:mcp-deprecations && node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded && node scripts/release/gate-registry.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check && node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded",
+    "quality:static": "pnpm quality:docstrings && pnpm quality:exports && pnpm lint:eslint && pnpm lint:duplicates && pnpm build && node scripts/contracts-snapshot.mjs --check && node scripts/generate-agent-capability-surfaces.mjs --check && node scripts/generate-error-code-catalog.mjs --check && node scripts/release/repository-assurance.mjs repository-static-quality --trigger ci --json && node scripts/release/audit-package-boundary.mjs && node scripts/release/package-sdk-contract-parity.mjs && node scripts/release/surface-replication-gate.mjs && node scripts/release/command-grammar-gate.mjs && node scripts/release/flag-invocation-parity.mjs && node scripts/release/flag-lexicon-gate.mjs && node scripts/release/refusal-closure-gate.mjs && node scripts/release/agent-task-token-gate.mjs && pnpm quality:mcp-deprecations && node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded && node scripts/release/gate-registry.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check && node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded && pnpm quality:mutation",
     "quality:exports": "knip --no-config-hints && node scripts/run-tests.mjs test -- tests/unit/scripts/release/dead-exports.spec.ts",
     "quality:command-grammar": "pnpm build && node scripts/release/command-grammar-gate.mjs && node scripts/release/flag-invocation-parity.mjs && node scripts/release/flag-lexicon-gate.mjs",
     "quality:recovery-closure": "pnpm build && node scripts/release/refusal-closure-gate.mjs",
@@ -188,7 +188,10 @@
     "sentry:inject": "sentry-cli sourcemaps inject dist/",
     "sentry:upload": "sentry-cli sourcemaps upload --org unbrained --project pm-cli --release \"pm-cli@$npm_package_version\" --validate dist/",
     "build:sentry": "pnpm build && pnpm sentry:inject && pnpm sentry:upload",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build",
+    "quality:docstrings": "node --input-type=module --eval \"import { main } from './scripts/release/docstring-quality.mjs'; console.log(JSON.stringify(main()));\"",
+    "quality:docstrings:update": "node --input-type=module --eval \"import { main } from './scripts/release/docstring-quality.mjs'; console.log(JSON.stringify(main(['--update'])));\"",
+    "quality:mutation": "node scripts/run-tests.mjs mutation"
   },
   "keywords": [
     "cli",
@@ -223,6 +226,8 @@
     "@eslint/js": "^10.0.1",
     "@modelcontextprotocol/ext-apps": "2.0.0",
     "@sentry/cli": "^3.8.0",
+    "@stryker-mutator/core": "10.0.0",
+    "@stryker-mutator/vitest-runner": "10.0.0",
     "@types/node": "^26.6.2",
     "@types/npm-package-arg": "^6.1.4",
     "@vitest/coverage-v8": "^4.1.11",

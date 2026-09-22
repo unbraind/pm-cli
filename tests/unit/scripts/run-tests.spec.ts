@@ -175,6 +175,32 @@ describe("run-tests", () => {
     expect(spawn).toHaveBeenCalledTimes(skipBuild === "1" ? 1 : 2);
   });
 
+  it.each([[0, "0"], [1, "0"], [0, "1"], [1, "1"]] as const)("propagates mutation exit %s with skip-build=%s", async (code, skipBuild) => {
+    const spawn = vi.fn(() => closeChild(code));
+    if (skipBuild === "0") spawn.mockImplementationOnce(() => closeChild(0));
+    vi.doMock("node:child_process", () => ({ spawn }));
+    mockFsPromises();
+    process.env.PM_RUN_TESTS_SKIP_BUILD = skipBuild;
+    process.argv = ["node", "scripts/run-tests.mjs", "mutation"];
+    await harness.importModule("scripts/run-tests.mjs");
+    expect(spawn).toHaveBeenCalledTimes(skipBuild === "1" ? 1 : 2);
+    expect(spawn.mock.calls.at(-1)?.[1]).toContain('--input-type=module');
+    expect(spawn.mock.calls.at(-1)?.[2]?.env).toMatchObject({ PM_MUTATION_TEMP_ROOT: "/tmp/pm-run-tests-spec", PM_TELEMETRY_DISABLED: "1", PM_AGENT_PROBES: "0" });
+    expect(process.exitCode).toBe(code);
+  });
+
+  it("refuses mutation policy overrides before spawning", async () => {
+    const spawn = vi.fn(() => closeChild(0));
+    vi.doMock("node:child_process", () => ({ spawn }));
+    mockFsPromises();
+    process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
+    process.argv = ["node", "scripts/run-tests.mjs", "mutation", "--mutate", "empty"];
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await harness.importModule("scripts/run-tests.mjs");
+    expect(spawn).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(1);
+  });
+
   it("rejects an unknown mode with exit code 2 and never spawns", async () => {
     const spawn = vi.fn(() => closeChild(0));
     vi.doMock("node:child_process", () => ({ spawn }));

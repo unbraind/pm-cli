@@ -286,7 +286,7 @@
       },
       {
         "id": "static-quality-gate",
-        "gates": ["documentation", "static-quality", "tracker-context-quality"],
+        "gates": ["documentation", "static-quality", "tracker-context-quality", "sdk-mutation-strength", "docstring-content"],
         "executable": { "command": "pnpm", "args": ["quality:static"] },
         "skip_policy": "forbidden"
       },
@@ -407,6 +407,49 @@
     ]
   },
   "gates": [
+    {
+      "id": "sdk-mutation-strength",
+      "owner": "pm-zclzll",
+      "pipelines": [
+        "ci.yml#gates",
+        "nightly.yml#nightly",
+        "release.yml#release"
+      ],
+      "failure_taxonomy": [
+        "surviving_mutant",
+        "mutation_evidence_invalid",
+        "mutation_score_regressed"
+      ],
+      "bypass": {
+        "allowed": false,
+        "audit": "Every declared module is mutated in an isolated source copy; only exact reviewed equivalent-mutant waivers are accepted."
+      },
+      "negative_control": {
+        "test": "tests/unit/scripts/release/mutation-score.spec.ts",
+        "assertion": "requires killed mutants and rejects surviving, uncovered, ignored and errored mutants"
+      }
+    },
+    {
+      "id": "docstring-content",
+      "owner": "pm-dvwm",
+      "pipelines": [
+        "ci.yml#gates",
+        "nightly.yml#nightly",
+        "release.yml#release"
+      ],
+      "failure_taxonomy": [
+        "docstring_filler_growth",
+        "docstring_baseline_inflation"
+      ],
+      "bypass": {
+        "allowed": false,
+        "audit": "Per-file filler counts must match the baseline and may never grow against the PR base."
+      },
+      "negative_control": {
+        "test": "tests/unit/scripts/release/docstring-quality.spec.ts",
+        "assertion": "rejects growth, stale ceilings and baseline inflation without trading between files"
+      }
+    },
     {
       "id": "mcp-option-contracts",
       "owner": "pm-v0s2rm",

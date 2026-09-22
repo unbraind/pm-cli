@@ -1,0 +1,14 @@
+{
+  "configFile": false,
+  "mutate": ["src/sdk/pagination.ts", "src/sdk/dependency-provenance.ts"],
+  "testRunner": "vitest",
+  "vitest": { "configFile": "vitest.mutation.config.ts", "related": false },
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "ignorePatterns": [".agents/**", ".cache/**", ".codex/**", ".claude/**", ".gemini/**", "coverage/**", "dist/**", "scripts/prod/**"],
+  "concurrency": 4,
+  "timeoutMS": 2000,
+  "timeoutFactor": 1.5,
+  "reporters": ["clear-text", "json"],
+  "thresholds": { "high": 100, "low": 100, "break": 0 },
+  "incremental": false
+}

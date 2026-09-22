@@ -10,6 +10,7 @@ import { registerTempCleanup } from "./temp-lifecycle.mjs";
 
 const MODE_TO_VITEST_ARGS = {
   test: [],
+  mutation: [],
   coverage: ["--coverage"],
   "coverage-shard": ["--coverage"],
 };
@@ -89,6 +90,63 @@ function assertExternalTemporaryDirectory() {
   }
 }
 
+/** Execute validation while its caller retains the build lease and isolated tracker environment. */
+async function runValidation(mode, normalizedVitestArgs, env, vitestEntry) {
+  if (existsSync(path.join(process.cwd(), ".cache", "build-incomplete"))) {
+    throw new Error("Incomplete dist generation; run pnpm build before prebuilt validation.");
+  }
+  if (mode === "mutation") {
+    if (normalizedVitestArgs.length > 0) throw new Error("Mutation policy cannot be overridden with runner arguments.");
+    process.exitCode = await runChild(process.execPath, [
+      "--input-type=module", "--eval",
+      'import { main } from "./scripts/release/sdk-mutation.mjs"; console.log(JSON.stringify(await main()));',
+    ], env);
+    return;
+  }
+  const vitestExitCode = await runChild(
+    process.execPath,
+    [
+      vitestEntry,
+      "run",
+      ...MODE_TO_VITEST_ARGS[mode],
+      ...normalizedVitestArgs,
+    ],
+    env,
+  );
+
+  if (mode !== "coverage") {
+    process.exitCode = vitestExitCode;
+    return;
+  }
+
+  const coverageGateExitCode = await runChild(
+    process.execPath,
+    [
+      path.join(
+        process.cwd(),
+        "scripts",
+        "release",
+        "coverage-threshold-gate.mjs",
+      ),
+    ],
+    env,
+  );
+  if (vitestExitCode !== 0 && coverageGateExitCode !== 0) {
+    console.error(
+      "Test execution and exact coverage both failed (combined verdict).",
+    );
+    process.exitCode = 3;
+  } else if (vitestExitCode !== 0) {
+    console.error("Test execution failed; exact coverage still passed.");
+    process.exitCode = 1;
+  } else if (coverageGateExitCode !== 0) {
+    console.error("Tests passed; exact coverage failed.");
+    process.exitCode = 2;
+  } else {
+    process.exitCode = 0;
+  }
+}
+
 /**
  * Build and execute the requested Vitest mode in disposable tracker roots.
  *
@@ -100,7 +158,7 @@ async function run() {
   const resolved = resolveMode(process.argv);
   if (!resolved.ok) {
     console.error(
-      `Invalid mode "${resolved.mode}". Use "test", "coverage", or "coverage-shard".`,
+      `Invalid mode "${resolved.mode}". Use "test", "coverage", "coverage-shard", or "mutation".`,
     );
     process.exitCode = 2;
     return;
@@ -142,6 +200,7 @@ async function run() {
       PM_PATH: pmPath,
       PM_GLOBAL_PATH: pmGlobalPath,
       PM_SENTRY_DISABLED: "1",
+      ...(resolved.mode === "mutation" ? { PM_MUTATION_TEMP_ROOT: tempRoot, PM_TELEMETRY_DISABLED: "1", PM_AGENT_PROBES: "0" } : {}),
     };
     delete baseEnv.PM_CLI_PACKAGE_ROOT;
     delete baseEnv.PM_SOURCE_PM_PATH;
@@ -156,53 +215,9 @@ async function run() {
       }
     }
 
-    await withBuildLease(process.cwd(), async (lease) => {
-      if (existsSync(path.join(process.cwd(), ".cache", "build-incomplete"))) {
-        throw new Error("Incomplete dist generation; run pnpm build before prebuilt validation.");
-      }
-      const vitestExitCode = await runChild(
-        process.execPath,
-        [
-          vitestEntry,
-          "run",
-          ...MODE_TO_VITEST_ARGS[resolved.mode],
-          ...normalizedVitestArgs,
-        ],
-        { ...baseEnv, PM_BUILD_CONSUMER_LEASE: lease },
-      );
-
-      if (resolved.mode !== "coverage") {
-        process.exitCode = vitestExitCode;
-        return;
-      }
-
-      const coverageGateExitCode = await runChild(
-        process.execPath,
-        [
-          path.join(
-            process.cwd(),
-            "scripts",
-            "release",
-            "coverage-threshold-gate.mjs",
-          ),
-        ],
-        { ...baseEnv, PM_BUILD_CONSUMER_LEASE: lease },
-      );
-      if (vitestExitCode !== 0 && coverageGateExitCode !== 0) {
-        console.error(
-          "Test execution and exact coverage both failed (combined verdict).",
-        );
-        process.exitCode = 3;
-      } else if (vitestExitCode !== 0) {
-        console.error("Test execution failed; exact coverage still passed.");
-        process.exitCode = 1;
-      } else if (coverageGateExitCode !== 0) {
-        console.error("Tests passed; exact coverage failed.");
-        process.exitCode = 2;
-      } else {
-        process.exitCode = 0;
-      }
-    }, { inherited: process.env.PM_BUILD_CONSUMER_LEASE });
+    await withBuildLease(process.cwd(), (lease) => runValidation(
+      resolved.mode, normalizedVitestArgs, { ...baseEnv, PM_BUILD_CONSUMER_LEASE: lease }, vitestEntry,
+    ), { inherited: process.env.PM_BUILD_CONSUMER_LEASE });
 
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

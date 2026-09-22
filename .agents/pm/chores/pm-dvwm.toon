@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[5]: "area:docs",code-quality,docstrings,maintainability,token-efficiency
 created_at: "2026-07-19T04:07:16.881Z"
-updated_at: "2026-09-20T15:13:27.805Z"
+updated_at: "2026-09-22T14:23:33.531Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Census script or lint rule flags the known filler templates (Implements X for the public runtime surface of this module; Value that configures or reports X for this contract; Provides CLI runtime support for X; payload exchanged by command, SDK, and package integrations) and the count is ratcheted down, not up; Touched-file burn-down policy documented so gate-mandated docstrings added going forward must carry real information (what the value means, units, invariants) or use @inheritDoc/type-level docs; Static-gate docstring coverage stays at 100 percent throughout - the fix is content quality, never coverage relaxation"
@@ -42,7 +42,7 @@ dependencies[6]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[4]:
+comments[7]:
   - created_at: "2026-09-13T16:15:21.639Z"
     author: "harness:codex"
     text: "Continuation observation: runtime-contracts.ts still contains generic interface/member filler despite coverage gates. The command-discovery tranche improves the modified module and function documentation with concrete visibility and assembly semantics, but does not implement the repository-wide filler census or ratchet owned here. Reuse this canonical owner for that remaining work; no duplicate item created."
@@ -56,13 +56,27 @@ comments[4]:
   - created_at: "2026-09-20T15:13:26.783Z"
     author: "harness:codex"
     text: "Documentation-only verification passed: linked build, repository ESLint and repository-static-quality assurance. Named-callable AST census is 49/49 across the three touched modules, and comment-stripped syntax trees are unchanged from the 9150-test, exact-four-metric-100-percent implementation head. The broader repository filler census and ratchet remain unfinished; releasing this owner back to open after the scoped improvements."
-files[3]{path,scope,note}:
+  - created_at: "2026-09-22T13:40:48.353Z"
+    author: "harness:codex"
+    text: "AST census found 4192 filler comments in 210 files. Ten Commander contract comments now describe alias precedence, value presence, and accumulation semantics; remaining baseline is 4182 in 209 files. Exact per-file counts and PR-base comparisons prohibit growth and stale ceilings. Broader replacement debt remains explicit rather than being presented as zero."
+  - created_at: "2026-09-22T13:49:09.610Z"
+    author: "harness:codex"
+    text: "Latest pm-changelog 2026.9.18 installed through the package lifecycle; generated changelog check is unchanged before item closeout. Documentation content enforcement now complements existing 100 percent docstring coverage; replacement debt is explicitly 4182 remaining comments, not a claim of complete semantic documentation."
+  - created_at: "2026-09-22T14:23:31.474Z"
+    author: "harness:codex"
+    text: "Completed this delivery's census, no-growth ratchet, touched-declaration policy, and ten semantic comment replacements. Source/export/member docstring coverage remains 100 percent (646/646, 4876/4876, 8819/8819 in the static census). The broader replacement title still has 4182 filler comments in 209 files, so this canonical item remains open; releasing ownership rather than claiming the entire cleanup complete."
+files[7]{path,scope,note}:
   packages/pm-guide-shell/extensions/guide-shell/runtime.ts,project,Semantic contracts for every named callable in the reviewed module
+  scripts/release/docstring-quality-baseline.json,project,File-level filler debt cannot grow or retain stale headroom
+  scripts/release/docstring-quality.mjs,project,AST documentation content census and file-level ratchet
   scripts/release/surface-replication-gate.mjs,project,Semantic contracts for every named callable in the reviewed module
+  src/sdk/cli-contracts/commander-types.ts,project,Replace ten filler comments with semantic contracts
   src/sdk/completion/bash.ts,project,Semantic contracts for every named callable in the reviewed module
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  tests/unit/scripts/release/docstring-quality.spec.ts,project,AST and real-Git baseline negative controls
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   pnpm build,project,300,"harness:codex","2026-09-20T15:08:13.893Z",local_mutation,fix/shell-portability-validation,Documentation-only source build
-test_runs[1]:
+  "pnpm quality:docstrings",project,120,"harness:codex","2026-09-22T13:40:44.856Z",local_mutation,feat/sdk-mutation-docstring-gates,AST filler inventory and exact file-level baseline
+test_runs[2]:
   - run_id: test-local-mu9ybc3z-w1b0ua
     kind: test
     status: passed
@@ -74,4 +88,18 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       pnpm build,schema,schema,source,local_source_ref
+  - run_id: test-local-mucqd9z1-8htjy8
+    kind: test
+    status: passed
+    started_at: "2026-09-22T13:49:11.191Z"
+    finished_at: "2026-09-22T13:49:23.773Z"
+    recorded_at: "2026-09-22T13:49:23.773Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:docstrings",schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/QUALITY_EVIDENCE.md,project,Touched-declaration burn-down and baseline governance
+  docs/TESTING.md,project,Documentation content gate routing
 body: "The 100 percent docstring gates (source/exported/member) incentivized mass template docstrings that satisfy coverage while carrying zero information: grep counts 622 'Implements X for the public runtime surface of this module', 2,945 'Value that configures or reports X for this contract' across 135 files, plus 543 'Provides CLI runtime support for X'/'payload exchanged by command, SDK, and package integrations' variants - about 4,100 filler lines. Cost: inflated file length (the 3400-LOC gate deliberately excludes comment lines, but agents reading files still pay the tokens), noise for agent context assembly, and docs that answer nothing (example: ExtensionCommandArgumentHelpDescriptor.name documented as 'Value that configures or reports name for this contract'). This is content-quality simplification under pm-n7rr; distinct from pm-fb3i (coverage floors) and pm-gvnj (DeepSource docs category)."
