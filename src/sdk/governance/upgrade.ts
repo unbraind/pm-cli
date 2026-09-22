@@ -277,7 +277,7 @@ async function upgradeCli(
   if (options.repair === true) {
     command.push("--force");
   }
-  const beforeVersion = await resolvePmCliVersion(import.meta.url, ["../../.."]);
+  const beforeVersion = resolvePmCliVersion(import.meta.url, ["../../.."]);
   const planned: UpgradeCliResult = {
     requested: true,
     status: "planned",
