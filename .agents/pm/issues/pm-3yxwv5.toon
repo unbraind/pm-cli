@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-29T04:41:16.972Z"
-updated_at: "2026-08-03T00:48:12.517Z"
+updated_at: "2026-09-22T05:09:30.133Z"
 closed_at: "2026-08-03T00:47:53.506Z"
 completed_at: "2026-08-03T00:47:53.506Z"
 author: "harness:claude-code"
@@ -36,10 +36,10 @@ files[7]{path,scope,note}:
   src/core/store/settings.ts,project,Sparse deterministic vocabulary persistence
   src/sdk/history-provenance.ts,project,Versioned read-time legacy identity vocabulary
   src/types.ts,project,Public vocabulary settings contract
-  tests/unit/commands/history-activity-command.spec.ts,project,Real stream vocabulary acceptance
+  tests/unit/commands/history/history-activity-command.spec.ts,project,Real stream vocabulary acceptance
   tests/unit/sdk/history-provenance.spec.ts,project,Immutable alias interpretation and residual summary
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/history-provenance.spec.ts tests/unit/commands/history-activity-command.spec.ts tests/unit/core/store/settings-sparse-persistence.spec.ts,project,300
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/history-provenance.spec.ts tests/unit/commands/history/history-activity-command.spec.ts tests/unit/core/store/settings-sparse-persistence.spec.ts,project,300,"harness:codex","2026-09-22T05:09:30.051Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/AGENT_PROVENANCE_ADR.md,project,Historical identity disposition
   docs/AGENT_RUNTIME_PRIMITIVES.md,project,Versioned vocabulary operator guidance

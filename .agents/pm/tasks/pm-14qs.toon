@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:search",pm-cli,runtime
 created_at: "2026-04-01T02:17:16.030Z"
-updated_at: "2026-09-19T08:39:14.859Z"
+updated_at: "2026-09-22T05:06:09.782Z"
 deadline: "2026-04-10T02:17:16.030Z"
 closed_at: "2026-04-01T03:02:00.801Z"
 assignee: codex-agent
@@ -58,7 +58,7 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:23:49.095Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
-  src/cli/commands/search.ts,project,provider and adapter runtime selection
+  src/cli/commands/query/search.ts,project,provider and adapter runtime selection
   src/core/extensions/runtime-registrations.ts,project,runtime search/vector registration resolvers
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/reindex-command.spec.ts,project,2400,search provider runtime regression

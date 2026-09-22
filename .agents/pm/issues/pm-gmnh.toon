@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agents,health,telemetry,ux
 created_at: "2026-05-01T18:59:34.597Z"
-updated_at: "2026-09-19T08:40:19.673Z"
+updated_at: "2026-09-22T05:13:04.320Z"
 closed_at: "2026-05-01T19:18:02.283Z"
 author: maintainer-agent
 release: v2026.5.2
@@ -35,7 +35,7 @@ dependencies[5]:
 comments[1]{created_at,author,text}:
   "2026-05-01T19:17:54.388Z",cursor-agent,"Fix applied: telemetry_queue_pending warning now only fires when (1) last_failed_flush_at > last_successful_flush_at (active failure), (2) no last_successful_flush_at exists (never-flushed), or (3) queue entries >= 500 (high-water mark). Normal transient draining now shows queue_draining:true in details without flipping ok to false. Added new test for active-failure case (26/26 health tests pass). Build: clean."
 files[2]{path,scope,note}:
-  src/cli/commands/health.ts,project,"smarter telemetry queue warning: only warn on active failure,never-flushed,or high-water mark"
+  src/cli/commands/governance/health.ts,project,"smarter telemetry queue warning: only warn on active failure,never-flushed,or high-water mark"
   tests/unit/health-command.spec.ts,project,updated draining test + new active-failure test
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,project,120,health unit tests

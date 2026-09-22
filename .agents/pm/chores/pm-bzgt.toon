@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: audit-2026-06-13,dedup,history,refactor
 created_at: "2026-06-12T22:47:32.675Z"
-updated_at: "2026-09-19T08:39:58.972Z"
+updated_at: "2026-09-22T05:13:22.014Z"
 closed_at: "2026-06-16T12:30:25.921Z"
 author: audit-quality-agent
 parent: pm-y7sc
@@ -21,13 +21,13 @@ comments[2]{created_at,author,text}:
   "2026-06-16T11:10:22.325Z",codex-sdk-cli-consolidation-20260616,"Evidence: extracted executeHistoryRewrite in core/history/history-rewrite.ts and switched history-redact/repair/compact to the shared orchestration while preserving per-command rollback/hook behavior. Verified with focused history unit/integration tests."
   "2026-06-16T12:30:25.507Z",codex-sdk-cli-consolidation-20260616,"Merged via PR #246 (Consolidate SDK/CLI core primitives, UX diagnostics, and release reliability). Post-review follow-up commits addressed bot feedback; CI gates are green including strict coverage 100/100/100/100 and CodeQL/compat/smoke checks."
 files[6]{path,scope,note}:
-  src/cli/commands/history-compact.ts,project,Route history-compact lock/verify/ownership flow through executeHistoryRewrite
-  src/cli/commands/history-redact.ts,project,Route history-redact lock/verify/ownership flow through executeHistoryRewrite
-  src/cli/commands/history-repair.ts,project,Route history-repair lock/verify/ownership flow through executeHistoryRewrite
+  src/cli/commands/history/history-compact.ts,project,Route history-compact lock/verify/ownership flow through executeHistoryRewrite
+  src/cli/commands/history/history-redact.ts,project,Route history-redact lock/verify/ownership flow through executeHistoryRewrite
+  src/cli/commands/history/history-repair.ts,project,Route history-repair lock/verify/ownership flow through executeHistoryRewrite
   src/core/history/history-rewrite.ts,project,Add shared executeHistoryRewrite orchestration helper
-  tests/unit/commands/history-repair-command.spec.ts,project,Adapt rollback-without-snapshot branch coverage to shared helper
+  tests/unit/commands/history/history-repair-command.spec.ts,project,Adapt rollback-without-snapshot branch coverage to shared helper
   tests/unit/core/history/history-rewrite.spec.ts,project,Add executeHistoryRewrite unit coverage
-tests[1]{command,scope,timeout_seconds}:
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/core/history/history-rewrite.spec.ts tests/unit/commands/history-activity-command.spec.ts tests/unit/commands/history-repair-command.spec.ts tests/integration/history-compact-command.spec.ts,project,1800
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/core/history/history-rewrite.spec.ts tests/unit/commands/history/history-activity-command.spec.ts tests/unit/commands/history/history-repair-command.spec.ts tests/integration/history-compact-command.spec.ts,project,1800,"harness:codex","2026-09-22T05:13:21.878Z",local_mutation,refactor/cli-command-domains-export-gate
 close_reason: Merged in PR #246 with linked implementation + verification evidence; no remaining blockers in this scope.
 body: ""

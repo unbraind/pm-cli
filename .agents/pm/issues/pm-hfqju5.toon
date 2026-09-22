@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: concurrency,github,package-exports,sdk
 created_at: "2026-08-11T08:33:49.248Z"
-updated_at: "2026-08-11T16:29:51.797Z"
+updated_at: "2026-09-22T05:08:36.211Z"
 closed_at: "2026-08-11T16:21:47.737Z"
 completed_at: "2026-08-11T16:21:47.737Z"
 author: "harness:codex"
@@ -43,8 +43,8 @@ files[6]{path,scope,note}:
   src/sdk/index.ts,project,top-level SDK lifecycle predicate export
   src/sdk/lifecycle/claim.ts,project,Implements bundle-safe structural recognition for the public already-claimed predicate
   tests/unit/sdk/claim-public-surface.spec.ts,project,supported entrypoint and predicate behavior coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/claim-public-surface.spec.ts tests/unit/commands/claim-command.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/claim-public-surface.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts,project,240,"harness:codex","2026-09-22T05:08:36.172Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msov8ow7-dfc8dk,test,passed,"2026-08-11T16:19:25.680Z","2026-08-11T16:19:37.351Z","2026-08-11T16:19:37.351Z",1,0,0
 docs[2]{path,scope,note}:

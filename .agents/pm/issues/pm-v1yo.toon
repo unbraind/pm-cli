@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ux,extensions,github
 created_at: "2026-07-18T07:14:14.667Z"
-updated_at: "2026-07-26T17:27:31.416Z"
+updated_at: "2026-09-22T05:10:58.774Z"
 closed_at: "2026-07-18T12:14:06.245Z"
 author: codex-sdk-vcs-20260718
 estimated_minutes: 240
@@ -18,10 +18,10 @@ release: v2026.7.19
 resolution: fixed
 expected_result: Extension aliases and nested command grafts that collide with core-owned paths are rejected with actionable owner diagnostics while canonical core actions remain intact.
 actual_result: "Collision paths are filtered before registration, ownership-rich warnings identify both owners, direct canonical metadata augmentation remains intentional, and non-colliding extension commands continue to dispatch."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-iqq0,related,"2026-07-18T07:14:14.667Z",null,null
-  pm-ju83,related,"2026-07-18T07:14:14.667Z",null,null
-  pm-usfg,implements,"2026-07-26T17:27:31.167Z",null,null
+dependencies[3]{id,kind,created_at}:
+  pm-iqq0,related,"2026-07-18T07:14:14.667Z"
+  pm-ju83,related,"2026-07-18T07:14:14.667Z"
+  pm-usfg,implements,"2026-07-26T17:27:31.167Z"
 comments[7]{created_at,author,text}:
   "2026-07-18T07:14:14.667Z",codex-sdk-vcs-20260718,"Duplicate check 2026-07-18: exact all-status title search returned zero; AND search across extension command collision/alias/exporter terms found only unrelated closed lineage. Created from https://github.com/unbraind/pm-cli/issues/585 under universal SDK epic pm-usfg with graph and declarative-extension relations; left open and unclaimed because this PR does not implement it."
   "2026-07-18T10:52:12.291Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
@@ -37,8 +37,8 @@ files[4]{path,scope,note}:
   src/cli/main.ts,project,Preserve core dispatch and emit actionable collision ownership warnings
   tests/unit/cli/extension-command-help.spec.ts,project,Core-prefix and extension-owned path regression coverage
   tests/unit/commands/agent-ux-feedback-wave.spec.ts,project,Cross-command installed CLI regression bundle
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/sdk/graph/mutation-advisory.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/cli/extension-command-help.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/sdk/graph/mutation-advisory.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/cli/extension-command-help.spec.ts,project,240,"harness:codex","2026-09-22T05:10:58.742Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrqaiyml-508pkl,test,passed,"2026-07-18T11:35:24.507Z","2026-07-18T11:35:34.605Z","2026-07-18T11:35:34.605Z",1,0,0
 docs[2]{path,scope,note}:

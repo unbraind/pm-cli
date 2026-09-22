@@ -5,7 +5,7 @@
  */
 import type { Command } from "commander";
 import { EXIT_CODE, PmCliError } from "../sdk/runtime-primitives.js";
-import { runActivity } from "./commands/activity.js";
+import { runActivity } from "./commands/history/activity.js";
 import {
   collect,
   getGlobalOptions,

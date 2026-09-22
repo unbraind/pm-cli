@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:cli","area:lifecycle",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:10.452Z"
-updated_at: "2026-09-08T13:24:30.687Z"
+updated_at: "2026-09-22T04:59:40.689Z"
 author: maintainer-agent
 estimated_minutes: 960
 acceptance_criteria: Never-block error contract holds across the command surface (recovery bundle with next steps on every failure path); agent-UX review findings closed or waived.
@@ -60,11 +60,11 @@ notes[6]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-07-25T06:32:04.787Z","harness:claude-code","A capability can ship, close, and still be dark if the paths that were supposed to consume it were never migrated. Harness author detection shipped with full history provenance while six presentation-layer sites kept their own private precedence helpers, so every created item was still stamped 'unknown'. When a primitive lands, the closing evidence should enumerate its consumers, not only its own tests."
 files[3]{path,scope,note}:
-  src/cli/commands/contracts.ts,project,contracts summary implementation
-  src/cli/commands/list.ts,project,list shorthand implementation
+  src/cli/commands/query/list.ts,project,list shorthand implementation
+  src/cli/commands/workspace/contracts.ts,project,contracts summary implementation
   src/sdk/cli-contracts/flag-contracts.ts,project,flag contract updates
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/contracts-command.spec.ts tests/unit/commands/query/list-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,240,"harness:codex","2026-09-22T04:59:40.643Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[3]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Adds token-minimal agent retrieval entries for the new primitives
   docs/COMMANDS.md,project,Documents list recency shorthands and contracts summary retrieval primitive

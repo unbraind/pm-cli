@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:history","area:restore",github-intake,history-integrity,projection-contract,recovery,regression
 created_at: "2026-09-04T18:24:40.888Z"
-updated_at: "2026-09-04T22:58:36.603Z"
+updated_at: "2026-09-22T05:07:07.744Z"
 closed_at: "2026-09-04T22:58:36.076Z"
 completed_at: "2026-09-04T22:58:36.076Z"
 author: "harness:claude-code"
@@ -76,8 +76,8 @@ files[26]{path,scope,note}:
   tests/unit/scripts/flag-lexicon-gate.spec.ts,project,Exact expanded reviewed flag inventory
   tests/unit/sdk/action-schema-parity.spec.ts,project,Salvage mode schema contract regression
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/commands/restore-command.spec.ts tests/unit/commands/history-repair-command.spec.ts,project,300,"harness:codex","2026-09-04T19:58:40.497Z",local_mutation,feat/history-durability-recovery
   node scripts/run-tests.mjs test -- tests/unit/scripts/finalize-build.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,300,"harness:codex","2026-09-04T21:37:51.066Z",local_mutation,feat/history-durability-recovery
+  node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/commands/history/restore-command.spec.ts tests/unit/commands/history/history-repair-command.spec.ts,project,300,"harness:codex","2026-09-22T05:07:07.683Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[3]:
   - run_id: test-local-mtnfyug3-tnahtb
     kind: test

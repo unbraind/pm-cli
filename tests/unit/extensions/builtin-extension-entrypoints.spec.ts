@@ -17,7 +17,7 @@ import type {
   ServiceOverride,
 } from "../../../src/core/extensions/loader.js";
 import { activateExtensions } from "../../../src/core/extensions/loader.js";
-import { runInit } from "../../../src/cli/commands/init.js";
+import { runInit } from "../../../src/cli/commands/workspace/init.js";
 import {
   assertRegisteredExporter,
   assertRegisteredHook,

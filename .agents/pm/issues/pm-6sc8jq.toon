@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:governance","area:graph",external-blocker,github-report,truthfulness
 created_at: "2026-08-04T08:43:47.536Z"
-updated_at: "2026-08-04T12:24:57.205Z"
+updated_at: "2026-09-22T05:09:21.867Z"
 closed_at: "2026-08-04T12:24:56.632Z"
 completed_at: "2026-08-04T12:24:56.632Z"
 author: "harness:codex"
@@ -37,8 +37,8 @@ files[3]{path,scope,note}:
   src/sdk/dependency-provenance.ts,project,External provenance alias
   src/sdk/graph/governance.ts,project,Actionable external blocker remediation
   src/sdk/graph/remediation.ts,project,Graph repair plan guidance
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/dependency-provenance-command.spec.ts tests/unit/sdk/dependency-provenance.spec.ts tests/unit/sdk/graph/assembly-governance.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/dependency-provenance-command.spec.ts tests/unit/sdk/dependency-provenance.spec.ts tests/unit/sdk/graph/assembly-governance.spec.ts,project,240,"harness:codex","2026-09-22T05:09:21.819Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msekqnu9-iwklma,test,passed,"2026-08-04T11:27:49.248Z","2026-08-04T11:27:58.257Z","2026-08-04T11:27:58.257Z",1,0,0
 docs[1]{path,scope,note}:

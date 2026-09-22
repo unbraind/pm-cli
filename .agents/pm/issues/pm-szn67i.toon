@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk","pr:957",recovery,review-followup
 created_at: "2026-08-09T22:41:16.367Z"
-updated_at: "2026-08-10T01:55:13.186Z"
+updated_at: "2026-09-22T05:09:02.446Z"
 closed_at: "2026-08-10T01:55:12.639Z"
 completed_at: "2026-08-10T01:55:12.639Z"
 author: "harness:codex"
@@ -51,10 +51,10 @@ files[5]{path,scope,note}:
   src/sdk/agent/command-recovery.ts,project,Terminator-safe missing-option recovery
   src/sdk/agent/item-addressing.ts,project,Exact nested item-address alias contract
   src/sdk/lifecycle/close.ts,project,Tracker-scoped strict-close recovery
-  tests/unit/commands/close-command.spec.ts,project,Selected-tracker strict-close regression
+  tests/unit/commands/lifecycle/close-command.spec.ts,project,Selected-tracker strict-close regression
   tests/unit/sdk/agent-command-primitives.spec.ts,project,Recovery and nested alias regressions
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-command-primitives.spec.ts tests/unit/commands/close-command.spec.ts,project,300
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-command-primitives.spec.ts tests/unit/commands/lifecycle/close-command.spec.ts,project,300,"harness:codex","2026-09-22T05:09:02.410Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msme2f3s-kc6j4f,test,passed,"2026-08-09T22:43:03.223Z","2026-08-09T22:43:18.904Z","2026-08-09T22:43:18.904Z",1,0,0
 close_reason: "Recovery inserts missing options before terminators, nested item aliases resolve only for declared command forms, and strict-close retries preserve the selected tracker path; focused, full, coverage, static, and cross-cwd acceptance evidence remains complete."

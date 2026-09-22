@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: 2026-04-25,config,dogfood,pm-cli,policy,ux
 created_at: "2026-04-25T16:54:10.382Z"
-updated_at: "2026-09-19T08:39:47.259Z"
+updated_at: "2026-09-22T05:04:32.288Z"
 deadline: "2026-04-27T16:54:59.140Z"
 closed_at: "2026-04-25T17:05:34.181Z"
 author: codex-agent
@@ -23,7 +23,7 @@ comments[2]{created_at,author,text}:
   "2026-04-25T16:54:10.382Z",codex-agent,"Duplicate-check evidence: pm search 'config strict_error policy naming' --mode keyword --limit 10 surfaced historical and adjacent work but no active/open item dedicated to this current dogfood UX gap."
   "2026-04-25T17:05:31.340Z",codex-agent,"Implementation complete: added strict alias support for sprint/parent policy config values, enabled definition-of-done --clear-criteria reset semantics, expanded config list metadata flags, and added/ran targeted config regression tests."
 files[4]{path,scope,note}:
-  src/cli/commands/config.ts,project,config set policy handling and messaging
+  src/cli/commands/workspace/config.ts,project,config set policy handling and messaging
   src/core/item/parent-reference-policy.ts,project,policy alias normalization for strict
   src/core/item/sprint-release-format.ts,project,policy alias normalization for strict
   tests/unit/config-command.spec.ts,project,config policy and clear-criteria regression coverage

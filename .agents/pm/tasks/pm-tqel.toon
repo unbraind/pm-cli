@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:history",simplification
 created_at: "2026-07-05T04:53:05.215Z"
-updated_at: "2026-09-07T22:43:18.682Z"
+updated_at: "2026-09-22T05:06:54.425Z"
 closed_at: "2026-09-07T22:33:28.184Z"
 completed_at: "2026-09-07T22:33:28.184Z"
 author: maintainer-agent
@@ -131,17 +131,17 @@ files[33]{path,scope,note}:
   tests/integration/history-namespace.integration.spec.ts,project,Native CLI parity and privacy acceptance
   tests/unit/cli/argv-utils.spec.ts,project,Required sensitive option values are always redacted
   tests/unit/cli/history-registration-selection.spec.ts,project,Reject loading unrelated registration families for legacy history maintenance
-  tests/unit/commands/completion-command.spec.ts,project,History maintenance and native command delivery
-  tests/unit/commands/contracts-command.spec.ts,project,History SDK and command compatibility verification
+  tests/unit/commands/workspace/completion-command.spec.ts,project,History maintenance and native command delivery
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,History SDK and command compatibility verification
   tests/unit/scripts/refusal-closure-gate.spec.ts,project,History SDK and command compatibility verification
   tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,History maintenance and native command delivery
   tests/unit/sdk/cli-contracts/history-namespace-completion.spec.ts,project,History maintenance and native command delivery
   tests/unit/sdk/contracts-full-projection.spec.ts,project,History SDK and command compatibility verification
   tests/unit/sdk/output-contracts.spec.ts,project,Native and legacy history transcript output and exit contract parity
 tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/history-namespace-completion.spec.ts tests/integration/history-namespace.integration.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,600,"harness:codex","2026-09-07T10:03:30.715Z",local_mutation,feat/history-maintenance-sdk-command-grammar
   node scripts/run-tests.mjs test -- tests/unit/cli/history-registration-selection.spec.ts,project,240,"harness:codex","2026-09-07T11:21:18.869Z",local_mutation,feat/history-maintenance-sdk-command-grammar
   node scripts/run-tests.mjs test -- tests/unit/sdk/output-contracts.spec.ts,project,240,"harness:codex","2026-09-07T21:10:58.485Z",local_mutation,feat/history-maintenance-sdk-command-grammar
+  node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/history-namespace-completion.spec.ts tests/integration/history-namespace.integration.spec.ts tests/unit/commands/workspace/completion-command.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,600,"harness:codex","2026-09-22T05:06:54.385Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[12]:
   - run_id: test-local-mtr3yu7j-1wa2b0
     kind: test

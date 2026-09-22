@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: "area:search","area:security",code,docs,"milestone:4",pm-cli,"priority:1",tests
 created_at: "2026-03-04T20:55:49.857Z"
-updated_at: "2026-09-19T08:41:02.326Z"
+updated_at: "2026-09-22T05:02:31.242Z"
 deadline: "2026-03-05T20:55:49.000Z"
 closed_at: "2026-03-04T21:07:35.177Z"
 assignee: maintainer-agent
@@ -68,7 +68,7 @@ learnings[1]{created_at,author,text}:
 files[4]{path,scope,note}:
   PRD.md,project,docs-first security behavior update
   README.md,project,docs-first include-linked hardening note
-  src/cli/commands/search.ts,project,contain linked reads to allowed roots
+  src/cli/commands/query/search.ts,project,contain linked reads to allowed roots
   tests/unit/search-command.spec.ts,project,regression coverage for traversal containment
 tests[2]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,project,2400,full coverage gate

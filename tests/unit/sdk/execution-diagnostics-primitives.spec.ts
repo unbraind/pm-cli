@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { runEval as runCliEval } from "../../../src/cli/commands/eval.js";
-import { runStats as runCliStats } from "../../../src/cli/commands/stats.js";
-import { runList as runCliList } from "../../../src/cli/commands/list.js";
-import { runSearch as runCliSearch } from "../../../src/cli/commands/search.js";
-import { runTelemetry as runCliTelemetry } from "../../../src/cli/commands/telemetry.js";
-import { runTestAll as runCliTestAll } from "../../../src/cli/commands/test-all.js";
+import { runEval as runCliEval } from "../../../src/cli/commands/query/eval.js";
+import { runStats as runCliStats } from "../../../src/cli/commands/query/stats.js";
+import { runList as runCliList } from "../../../src/cli/commands/query/list.js";
+import { runSearch as runCliSearch } from "../../../src/cli/commands/query/search.js";
+import { runTelemetry as runCliTelemetry } from "../../../src/cli/commands/governance/telemetry.js";
+import { runTestAll as runCliTestAll } from "../../../src/cli/commands/test/test-all.js";
 import {
   runStartBackgroundRun as runCliStartBackgroundRun,
   runTestRunsList as runCliTestRunsList,
   runTestRunsWorker as runCliTestRunsWorker,
-} from "../../../src/cli/commands/test-runs.js";
-import { runTest as runCliTest } from "../../../src/cli/commands/test.js";
+} from "../../../src/cli/commands/test/test-runs.js";
+import { runTest as runCliTest } from "../../../src/cli/commands/test/test.js";
 import {
   LINKED_TEST_PM_CONTEXT_MODE_VALUES,
   TELEMETRY_SUBCOMMANDS,

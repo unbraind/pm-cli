@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-context,github,merge-safety
 created_at: "2026-08-11T08:33:30.091Z"
-updated_at: "2026-08-11T16:29:51.345Z"
+updated_at: "2026-09-22T05:08:37.193Z"
 closed_at: "2026-08-11T16:21:46.413Z"
 completed_at: "2026-08-11T16:21:46.413Z"
 author: "harness:codex"
@@ -44,8 +44,8 @@ files[7]{path,scope,note}:
   src/sdk/merge/three-way.ts,project,truthful requested preference on stable item merge results
   tests/unit/sdk/merge-direction-contract.spec.ts,project,direction convergence and retained decision coverage
   tests/unit/sdk/merge-receipts.spec.ts,project,new and legacy receipt compatibility coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-direction-contract.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts,project,300
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-direction-contract.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/commands/workspace/merge-reconcile-command.spec.ts,project,300,"harness:codex","2026-09-22T05:08:37.140Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msov8fi8-ubppyt,test,passed,"2026-08-11T16:19:08.787Z","2026-08-11T16:19:25.184Z","2026-08-11T16:19:25.184Z",1,0,0
 docs[3]{path,scope,note}:

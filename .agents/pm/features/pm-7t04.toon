@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,bootstrap,docs,init,pm-cli
 created_at: "2026-05-17T08:58:01.020Z"
-updated_at: "2026-09-19T08:39:40.735Z"
+updated_at: "2026-09-22T05:25:13.685Z"
 closed_at: "2026-05-17T10:24:19.569Z"
 author: codex-agent
 acceptance_criteria: pm init detects missing core pm guidance in AGENTS.md and/or CLAUDE.md; TTY init asks before modifying files; approval writes idempotent marked guidance; decline persists project state so future init runs do not ask; explicit pm init option can add guidance later; non-interactive runs do not block; settings/schema/contracts/help/docs/tests cover the behavior.
@@ -81,6 +81,7 @@ learnings[2]{created_at,author,text}:
   "2026-05-17T08:58:01.020Z",codex-agent,Reuse the existing TTY-only init wizard pattern and project settings persistence instead of creating a second prompt store. Keep context-file edits idempotent with stable markers so repeated init runs are safe.
   "2026-05-17T10:13:51.103Z",codex-agent,"For release-readiness coverage gates, any newly added source file should be reflected in uncovered-files allowlists immediately to avoid false gate failures during end-to-end validation."
 files[23]{path,scope,note}:
+  AGENTS.md,project,compact progressive-disclosure agent entrypoint
   docs/AGENT_GUIDE.md,project,Agent bootstrap guidance checks
   docs/COMMANDS.md,project,Init guidance mode command reference
   docs/QUICKSTART.md,project,Init guidance lifecycle docs
@@ -88,13 +89,13 @@ files[23]{path,scope,note}:
   plugins/pm-codex/README.md,project,Codex automation hint for options.agentGuidance
   scripts/dogfood-package-first.mjs,project,dogfood assertions for init guidance lifecycle
   src/cli/commands/completion.ts,project,Bash/zsh/fish completion updates
-  src/cli/commands/init-agent-guidance.ts,project,New guidance detector and writer module
-  src/cli/commands/init.ts,project,init detection prompt and write orchestration
+  src/cli/commands/workspace/init.ts,project,init detection prompt and write orchestration
   src/cli/help-content.ts,project,init help guidance
   src/cli/register-setup.ts,project,init option wiring
   src/core/shared/constants.ts,project,settings defaults for guidance state
   src/core/store/settings.ts,project,agent guidance persistence schema
   src/sdk/cli-contracts.ts,project,init action contract options
+  src/sdk/init-agent-guidance.ts,project,New guidance detector and writer module
   src/types.ts,project,PmSettings agent guidance types
   tests/integration/cli.integration.spec.ts,project,init status/skip/add integration coverage
   tests/integration/release-readiness-runtime.spec.ts,project,runtime ordering and uncovered-files guard update
@@ -103,7 +104,6 @@ files[23]{path,scope,note}:
   tests/unit/init-command.spec.ts,project,Guidance mode unit coverage
   tests/unit/sdk-index.spec.ts,project,sdk action optional key coverage
   tests/unit/settings-store.spec.ts,project,settings key order and schema coverage
-  AGENTS.md,project,compact progressive-disclosure agent entrypoint
 tests[10]{command,scope,timeout_seconds,note}:
   node scripts/check-secrets.mjs,project,600,Tracked-file secret scan
   node scripts/dogfood-package-first.mjs,project,1200,Temp-directory package-first dogfood

@@ -3,8 +3,8 @@ import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { runHealth } from "../../../src/cli/commands/health.js";
-import { runValidate } from "../../../src/cli/commands/validate.js";
+import { runHealth } from "../../../src/cli/commands/governance/health.js";
+import { runValidate } from "../../../src/cli/commands/governance/validate.js";
 import {
   resolveCanonicalTrackerRoot,
   scanTrackedRuntimeCache,

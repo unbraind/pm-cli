@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:cli","area:sdk",context-integrity,linked-resources,mutation-contract,ux
 created_at: "2026-08-12T01:40:00.500Z"
-updated_at: "2026-08-12T09:06:05.704Z"
+updated_at: "2026-09-22T05:08:25.846Z"
 closed_at: "2026-08-12T09:05:30.052Z"
 completed_at: "2026-08-12T09:05:30.052Z"
 author: "harness:codex"
@@ -48,9 +48,9 @@ files[6]{path,scope,note}:
   src/sdk/index.ts,project,Public SDK export for conflict primitive
   src/sdk/linked-artifacts.ts,project,Atomic normalized add/remove conflict guard
   tests/fixtures/contracts/full.json,project,Generated runtime error contract
-  tests/unit/commands/files-docs-command.spec.ts,project,Files docs migration no-write and packed export coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/files-docs-command.spec.ts,project,240
+  tests/unit/commands/annotations/files-docs-command.spec.ts,project,Files docs migration no-write and packed export coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/annotations/files-docs-command.spec.ts,project,240,"harness:codex","2026-09-22T05:08:25.817Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mspu0spf-bexnyc,test,passed,"2026-08-12T08:32:52.719Z","2026-08-12T08:33:15.603Z","2026-08-12T08:33:15.603Z",1,0,0
 docs[2]{path,scope,note}:

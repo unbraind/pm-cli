@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts","area:mcp",conformance-gap,multi-agent
 created_at: "2026-07-30T09:14:08.293Z"
-updated_at: "2026-08-01T19:38:09.945Z"
+updated_at: "2026-09-22T05:25:08.207Z"
 closed_at: "2026-08-01T19:38:08.943Z"
 completed_at: "2026-08-01T19:38:08.943Z"
 author: "harness:claude-code"
@@ -41,9 +41,8 @@ comments[6]{created_at,author,text}:
   "2026-08-01T18:58:28.617Z","harness:codex","Changelog evidence: pm-changelog 2026.8.1 generated CHANGELOG.md from the closed tracker state and changelog:pm:check reported unchanged."
   "2026-08-01T19:12:10.131Z","harness:codex","Review findings accepted for scheduling schema deduplication, event descriptor parity, plan reorder input parity, reminder-time documentation, numeric event limits, and complete parity disposition tests."
   "2026-08-01T19:38:04.171Z","harness:codex","Review-resolution evidence: deduplicated scheduling schemas, aligned event cursor/filter/limit descriptors, restored canonical plan reorder typing, added reminder-specific time metadata, accepted numeric-string event limits, and strengthened complete missing/waived/stale parity controls. Generated contracts are current; full coverage is exact 100/100/100/100."
-files[19]{path,scope,note}:
+files[18]{path,scope,note}:
   sdk/public-surface.json,project,reviewed additive action and SDK export surface
-  src/cli/commands/scheduling-shortcuts.ts,project,CLI compatibility re-export for SDK-owned scheduling
   src/mcp/server.ts,project,server consumes schema-owned narrow action map
   src/mcp/tool-definitions.ts,project,"TOOLS,NARROW_TOOL_ACTIONS and the 86-entry pm_run action enum are declared here independently of the CLI contract table"
   src/sdk/cli-contracts.ts,project,PM_CORE_COMMAND_NAMES declares the 70 contracted CLI command names the MCP enum does not derive from

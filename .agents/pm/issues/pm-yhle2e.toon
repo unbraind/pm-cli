@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:graph","area:sdk",context-integrity,external-references,github-1146,github-1147
 created_at: "2026-08-28T21:25:57.770Z"
-updated_at: "2026-08-29T17:11:05.184Z"
+updated_at: "2026-09-22T05:07:23.473Z"
 closed_at: "2026-08-29T17:11:04.536Z"
 completed_at: "2026-08-29T17:11:04.536Z"
 author: "harness:codex"
@@ -71,7 +71,7 @@ files[10]{path,scope,note}:
   src/sdk/dependency-provenance.ts,project,public SDK export
   src/sdk/graph/assembly.ts,project,external graph nodes
   src/sdk/query/next.ts,project,agent-facing blocker context
-  tests/unit/commands/validate-command.spec.ts,project,External dependency validation classification coverage
+  tests/unit/commands/governance/validate-command.spec.ts,project,External dependency validation classification coverage
   tests/unit/core/item/actionability.spec.ts,project,External locator case preservation and graph classification review regression
   tests/unit/regressions/context-integrity-recovery.spec.ts,project,Cross-surface regression and exact-coverage evidence for the context recovery delivery
   tests/unit/sdk/dependency-provenance.spec.ts,project,Case-distinct external graph identity regression

@@ -29,17 +29,17 @@ import {
 } from "../sdk/mutation-events.js";
 import { registerHistoryActivityCommand } from "./register-history-activity.js";
 import { registerHistoryMaintenanceCommands } from "./register-history-maintenance.js";
-import { runAggregate } from "./commands/aggregate.js";
+import { runAggregate } from "./commands/query/aggregate.js";
 import {
   renderContextMarkdown,
   runContext,
   resolveContextOutputFormat,
-} from "./commands/context.js";
-import { runEval } from "./commands/eval.js";
-import { runGet } from "./commands/get.js";
-import { runGraph } from "./commands/graph.js";
-import { runHistory } from "./commands/history.js";
-import { runList } from "./commands/list.js";
+} from "./commands/query/context.js";
+import { runEval } from "./commands/query/eval.js";
+import { runGet } from "./commands/query/get.js";
+import { runGraph } from "./commands/query/graph.js";
+import { runHistory } from "./commands/history/history.js";
+import { runList } from "./commands/query/list.js";
 import {
   LIST_COMMAND_DEFAULT_PROJECTIONS,
   type ListCommandName,
@@ -48,8 +48,8 @@ import {
   renderNextMarkdown,
   runNext,
   resolveNextOutputFormat,
-} from "./commands/next.js";
-import { runSearch } from "./commands/search.js";
+} from "./commands/query/next.js";
+import { runSearch } from "./commands/query/search.js";
 import type { ItemStatus } from "../types/index.js";
 import {
   addHiddenOption,

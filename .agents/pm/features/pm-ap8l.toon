@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:docs","area:files","area:ux",external-audit,pm-cli
 created_at: "2026-04-01T16:22:26.127Z"
-updated_at: "2026-09-19T08:39:51.802Z"
+updated_at: "2026-09-22T05:04:23.578Z"
 deadline: "2026-04-17T11:57:38.765Z"
 closed_at: "2026-04-03T14:12:49.965Z"
 author: cursor-agent
@@ -68,9 +68,9 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:36:25.559Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[8]{path,scope,note}:
   README.md,project,metadata-audit-linked-context
-  src/cli/commands/docs.ts,project,linked doc parity for migration/validation
-  src/cli/commands/files.ts,project,bulk migration and linked file listing
-  src/cli/commands/health.ts,project,linked path validation diagnostics
+  src/cli/commands/annotations/docs.ts,project,linked doc parity for migration/validation
+  src/cli/commands/annotations/files.ts,project,bulk migration and linked file listing
+  src/cli/commands/governance/health.ts,project,linked path validation diagnostics
   src/cli/main.ts,project,new command wiring for linked path audit
   src/sdk/cli-contracts.ts,project,files/docs migrate-validate-audit contract surfaces
   tests/integration/release-readiness-runtime.spec.ts,project,coverage include allowlist updates for new additive modules

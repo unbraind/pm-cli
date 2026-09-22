@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:migrations","area:store",code,pm-cli
 created_at: "2026-03-31T23:48:22.551Z"
-updated_at: "2026-09-19T08:41:29.796Z"
+updated_at: "2026-09-22T05:02:19.637Z"
 deadline: "2026-04-07T23:48:22.551Z"
 closed_at: "2026-04-01T00:27:34.211Z"
 assignee: codex-agent
@@ -59,8 +59,8 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:24:24.846Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[5]{path,scope,note}:
-  src/cli/commands/health.ts,project,health validates configured type folders
-  src/cli/commands/init.ts,project,init creates configured type folders
+  src/cli/commands/governance/health.ts,project,health validates configured type folders
+  src/cli/commands/workspace/init.ts,project,init creates configured type folders
   src/core/store/item-format-migration.ts,project,migration respects dynamic type folders
   src/core/store/item-store.ts,project,mutateItem relocation logic
   src/core/store/paths.ts,project,dynamic type folder resolution

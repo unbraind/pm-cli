@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,context-efficiency,output-contracts,token-budget
 created_at: "2026-08-10T22:59:19.233Z"
-updated_at: "2026-08-11T16:29:50.425Z"
+updated_at: "2026-09-22T05:08:38.281Z"
 closed_at: "2026-08-11T16:21:44.095Z"
 completed_at: "2026-08-11T16:21:44.095Z"
 author: "harness:codex"
@@ -45,8 +45,8 @@ files[7]{path,scope,note}:
   src/sdk/query/get.ts,project,source-aware get materiality evidence
   tests/unit/scripts/smoke-codex-plugin-mcp.spec.ts,project,"Covers lean,stale,and id-less MCP create envelope behavior"
   tests/unit/sdk/output-projection.spec.ts,project,empty and material omission receipt coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts tests/unit/commands/get-append-command.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts,project,240,"harness:codex","2026-09-22T05:08:38.234Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msov7t6v-l7e3p7,test,passed,"2026-08-11T16:18:44.617Z","2026-08-11T16:18:56.263Z","2026-08-11T16:18:56.263Z",1,0,0
 docs[2]{path,scope,note}:

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:cli","area:packages","area:sdk",pm-cli
 created_at: "2026-06-21T20:35:07.534Z"
-updated_at: "2026-09-19T08:40:49.842Z"
+updated_at: "2026-09-22T05:12:39.038Z"
 closed_at: "2026-06-21T21:21:51.910Z"
 author: claude-code-agent
 parent: pm-ugqx
@@ -24,23 +24,40 @@ comments[4]{created_at,author,text}:
   "2026-06-21T21:29:46.737Z",claude-code-agent,"Reviewer follow-up: Gemini noted that non-init --capability validation should reject any present flag, not only non-empty strings. Updated runExtension to check options.capability !== undefined for non-init actions and added a regression assertion for capability: \"\" on explore. Verification: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts; pnpm build && pnpm contracts:check; git diff --check."
 files[11]{path,scope,note}:
   src/cli/commands/completion.ts,project,surface --capability in shell completions
-  src/cli/commands/extension.ts,project,validate --capability is init-only and include scaffold capability in init result
+  src/cli/commands/extension/extension.ts,project,validate --capability is init-only and include scaffold capability in init result
   src/cli/commands/extension/scaffold.ts,project,generate commands/hooks capability starter scaffolds and sample SDK tests
   src/cli/help-content.ts,project,document hook-capability init examples in concise help
   src/cli/register-setup.ts,project,wire --capability through package/extension init commands
   src/sdk/cli-contracts.ts,project,advertise --capability in lifecycle command flag contracts
   tests/fixtures/contracts/full.json,project,refresh generated command contract snapshot
-  tests/unit/commands/completion-command.spec.ts,project,cover completion exposure for --capability
-  tests/unit/commands/contracts-command.spec.ts,project,cover command contract exposure for --capability
+  tests/unit/commands/workspace/completion-command.spec.ts,project,cover completion exposure for --capability
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,cover command contract exposure for --capability
   tests/unit/extensions/extension-command.spec.ts,project,"cover commands/hooks scaffold variants,invalid capabilities,and init-only guard"
   tests/unit/sdk/sdk-index.spec.ts,project,cover SDK flag contract routing for package/extension init
-tests[6]{command,scope,timeout_seconds}:
-  "manual temp smoke: pm init,pm package init ./hook-package --capability hooks,npm install local checkout,npm test,pm install ./hook-package,pm package doctor --detail deep --trace,pm hook-package ping",project,300
-  node scripts/run-tests.mjs coverage,project,600
-  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,300
-  "pnpm build && pnpm contracts:check",project,120
-  "pnpm quality:static",project,120
-  "pnpm security:scan",project,120
+tests[6]:
+  - command: "manual temp smoke: pm init,pm package init ./hook-package --capability hooks,npm install local checkout,npm test,pm install ./hook-package,pm package doctor --detail deep --trace,pm hook-package ping"
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 600
+  - command: "pnpm build && pnpm contracts:check"
+    scope: project
+    timeout_seconds: 120
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 120
+  - command: "pnpm security:scan"
+    scope: project
+    timeout_seconds: 120
+  - command: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/workspace/completion-command.spec.ts tests/unit/commands/workspace/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/cli/cli-main-errors.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:12:38.990Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/EXTENSIONS.md,project,document package init --capability hooks starter workflow
   docs/SDK.md,project,document generated hook starter SDK testing helpers

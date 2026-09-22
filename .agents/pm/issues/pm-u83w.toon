@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,extensions,packages,pm-cli,privacy
 created_at: "2026-05-16T21:56:54.403Z"
-updated_at: "2026-09-19T08:41:48.712Z"
+updated_at: "2026-09-22T05:02:08.450Z"
 closed_at: "2026-05-16T22:38:17.298Z"
 author: maintainer-agent
 acceptance_criteria: "pm install <builtin-name> persists source as {kind: 'builtin', name: ...} or relative-to-repo path; secret scan no longer flags managed-extensions.json after install; teams can share extension setup via committed tracker."
@@ -21,7 +21,7 @@ comments[2]{created_at,author,text}:
   "2026-05-16T22:29:49.704Z",codex-audit,"Implementation update: bundled package alias installs now persist managed source records as builtin aliases instead of local absolute package roots, while explicit filesystem package paths still persist as local sources. Dogfood passed 44 workflows after the change; linked focused package install test passed through pm test."
   "2026-05-16T22:37:34.724Z",codex-audit,"Evidence: implemented portable builtin managed source records for bundled package alias installs, preserving local source records for explicit filesystem package paths. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts (47 tests); focused package install integration/unit subset; post-change dogfood passed 44 workflows; release gate passed with 1309 tests at 100 percent coverage, secret scan, npx/npm-pack/compatibility, and Sentry/telemetry gate."
 files[2]{path,scope,note}:
-  src/cli/commands/extension.ts,project,builtin package install source persisted without local absolute paths
+  src/cli/commands/extension/extension.ts,project,builtin package install source persisted without local absolute paths
   tests/unit/extension-command.spec.ts,project,regression for portable builtin managed source records
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts,project,300

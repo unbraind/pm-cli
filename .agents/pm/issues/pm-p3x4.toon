@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: agent-ux,cli,token-efficiency
 created_at: "2026-07-10T10:48:01.400Z"
-updated_at: "2026-07-29T14:33:09.611Z"
+updated_at: "2026-09-22T05:23:55.588Z"
 closed_at: "2026-07-29T14:30:23.322Z"
 completed_at: "2026-07-29T14:30:23.322Z"
 author: maintainer-agent
@@ -26,12 +26,12 @@ comments[3]{created_at,author,text}:
   "2026-07-29T14:21:31.410Z","harness:codex","Implementation evidence: compact activity omits the inactive activity key instead of emitting activity: []; streaming selects the active collection safely; CLI/MCP regression coverage and full 6510-test exact-coverage gate passed."
   "2026-07-29T14:33:09.610Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/811 at implementation head 51478084e; description links canonical PM records and records exact coverage, packed-consumer, security, changelog, and same-day release-guard evidence."
 files[4]{path,scope,note}:
-  src/cli/commands/activity.ts,project,Remove inactive activity decoy key
+  src/cli/commands/history/activity.ts,project,Remove inactive activity decoy key
   src/cli/registration-helpers.ts,project,Stream active activity collection safely
   tests/unit/cli/registration-helpers.spec.ts,project,Activity stream missing-key boundary coverage
-  tests/unit/commands/history-activity-command.spec.ts,project,Activity projection regression coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/history-activity-command.spec.ts tests/unit/cli/registration-helpers.spec.ts,project,120
+  tests/unit/commands/history/history-activity-command.spec.ts,project,Activity projection regression coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/history/history-activity-command.spec.ts tests/unit/cli/registration-helpers.spec.ts,project,120,"harness:codex","2026-09-22T05:23:55.435Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms66gmpv-tcp207,test,passed,"2026-07-29T14:25:55.593Z","2026-07-29T14:26:06.211Z","2026-07-29T14:26:06.211Z",1,0,0
 docs[1]{path,scope,note}:

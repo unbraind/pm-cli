@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: history-integrity,linked-tests,regression,tracker-context
 created_at: "2026-08-24T22:37:40.571Z"
-updated_at: "2026-08-25T08:01:21.390Z"
+updated_at: "2026-09-22T05:07:38.737Z"
 closed_at: "2026-08-25T07:33:32.514Z"
 completed_at: "2026-08-25T07:33:32.514Z"
 author: "harness:codex"
@@ -60,9 +60,9 @@ comments[10]:
     text: "Merged delivery evidence: PR #1113 merged to main as 74632a9ceb246cabcdb37f52b943af2dd45c7a84. Exact-main CI run 32823719285 passed release-analyzer provenance, build, Windows Node 24, four coverage shards plus the exact aggregate gate, typecheck, compatibility, smokes, and static assurance. Exact-main CodeQL 32823719216, Security 32823719166, Docs 32823719193, OSSF 32823719210, and CodSpeed 32823719238 all passed. GitHub issue #1109 closed via the merged PR."
 files[2]{path,scope,note}:
   src/sdk/test/execution.ts,project,Tracker-mode sandbox seeding implementation implicated by GH-1109
-  tests/unit/commands/test-command.spec.ts,project,Existing tracker-context sandbox regression suite and destination for focused coverage
+  tests/unit/commands/test/test-command.spec.ts,project,Existing tracker-context sandbox regression suite and destination for focused coverage
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts,project,240,"harness:codex","2026-08-24T22:38:48.050Z",local_mutation,codex/gh-1109-tracker-intake
+  node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts,project,240,"harness:codex","2026-09-22T05:07:38.615Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[3]:
   - run_id: test-local-mt8a3dwx-l8jyqu
     kind: test

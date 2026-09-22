@@ -1,6 +1,6 @@
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { runExtension } from "../../src/cli/commands/extension.js";
+import { runExtension } from "../../src/cli/commands/extension/extension.js";
 import { writeTestExtension } from "../helpers/extensions.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 

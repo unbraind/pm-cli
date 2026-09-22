@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: install,packages,pm-cli,sdk,upgrade
 created_at: "2026-05-11T21:40:03.472Z"
-updated_at: "2026-09-19T08:39:57.197Z"
+updated_at: "2026-09-22T05:00:31.950Z"
 closed_at: "2026-05-11T22:31:18.000Z"
 author: codex-agent
 estimated_minutes: 120
@@ -24,17 +24,17 @@ comments[4]{created_at,author,text}:
   "2026-05-11T22:09:24.630Z",codex-agent,"Evidence update: tightened pm upgrade usage validation for --cli-only with package targets, rebuilt with pnpm build, verified upgrade contracts via node dist/cli.js contracts --command upgrade --flags-only --json, and reran focused suite: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/upgrade-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/beads-command.spec.ts tests/unit/todos-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts (8 files, 100 tests passed)."
   "2026-05-11T22:30:50.145Z",codex-agent,"Final evidence: pm upgrade is exposed in CLI, SDK contracts, MCP pm_run, help, guide, and docs; managed package upgrades dry-run against recorded sources and CLI self-upgrade plans npm install -g @unbrained/pm-cli@latest. Verification passed: pnpm build; pnpm typecheck; static quality gate; docs-skills gate; security scan; compatibility check; npm pack --dry-run; pnpm smoke:npx; Codex MCP smoke; Claude plugin smoke; full coverage 91 files/1284 tests at 100%; package doctor project ok with zero project-installed extensions."
 files[11]{path,scope,note}:
-  src/cli/commands/upgrade.ts,project,pm upgrade implementation
+  src/cli/commands/workspace/contracts.ts,project,package subaction availability and upgrade flags
+  src/cli/commands/workspace/upgrade.ts,project,pm upgrade implementation
   src/cli/register-setup.ts,project,upgrade command registration
   src/mcp/server.ts,project,native pm_run upgrade action
   src/sdk/cli-contracts.ts,project,upgrade action and flag contracts
-  tests/unit/upgrade-command.spec.ts,project,upgrade command coverage
-  src/cli/commands/contracts.ts,project,package subaction availability and upgrade flags
-  tests/unit/contracts-command.spec.ts,project,upgrade and package availability contracts
-  vitest.config.ts,project,coverage include alignment for upgrade command
-  tests/unit/builtin-extension-entrypoints.spec.ts,project,package-root builtin entrypoint tests
   tests/unit/beads-command.spec.ts,project,beads package runtime import
+  tests/unit/builtin-extension-entrypoints.spec.ts,project,package-root builtin entrypoint tests
+  tests/unit/contracts-command.spec.ts,project,upgrade and package availability contracts
   tests/unit/todos-extension.spec.ts,project,todos package runtime import
+  tests/unit/upgrade-command.spec.ts,project,upgrade command coverage
+  vitest.config.ts,project,coverage include alignment for upgrade command
 tests[2]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/upgrade-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,900,focused upgrade package contract tests
   node scripts/run-tests.mjs test -- tests/unit/upgrade-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/beads-command.spec.ts tests/unit/todos-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,900,focused upgrade and package-root externalization tests

@@ -290,12 +290,12 @@
       "count": 1
     }
   },
-  "tests/unit/commands/contracts-command.spec.ts": {
+  "tests/unit/commands/workspace/contracts-command.spec.ts": {
     "complexity": {
       "count": 4
     }
   },
-  "tests/unit/commands/health-command.spec.ts": {
+  "tests/unit/commands/governance/health-command.spec.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
@@ -303,17 +303,17 @@
       "count": 1
     }
   },
-  "tests/unit/commands/init-command.spec.ts": {
+  "tests/unit/commands/workspace/init-command.spec.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
-  "tests/unit/commands/test-all-command.spec.ts": {
+  "tests/unit/commands/test/test-all-command.spec.ts": {
     "complexity": {
       "count": 1
     }
   },
-  "tests/unit/commands/test-command.spec.ts": {
+  "tests/unit/commands/test/test-command.spec.ts": {
     "complexity": {
       "count": 3
     }

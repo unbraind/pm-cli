@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: concurrency,context-management,scale
 created_at: "2026-07-30T17:02:11.546Z"
-updated_at: "2026-09-05T14:10:48.568Z"
+updated_at: "2026-09-22T05:07:03.507Z"
 closed_at: "2026-09-05T14:10:48.069Z"
 completed_at: "2026-09-05T14:10:48.069Z"
 author: "harness:claude-code"
@@ -51,15 +51,6 @@ files[7]{path,scope,note}:
   tests/unit/sdk/context/read-cost-bounds.spec.ts,project,Bounded SDK context read implementation and verification
   tests/unit/sdk/context/usage-ledger.spec.ts,project,Bounded SDK context read implementation and verification
 tests[2]:
-  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/context tests/unit/sdk/context-packing-usage.spec.ts tests/unit/sdk/similarity.spec.ts tests/unit/commands/get-append-command.spec.ts
-    scope: project
-    timeout_seconds: 240
-    provenance:
-      author: "harness:codex"
-      created_at: "2026-09-05T09:24:23.853Z"
-      source_kind: local_mutation
-      source_ref: feat/scalable-context-reads-and-duplicate-discovery
-    note: Exact recall and bounded read regressions
   - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/integration/reproducible-process.integration.spec.ts tests/unit/scripts/context-read-costs.spec.ts
     scope: project
     timeout_seconds: 240
@@ -68,6 +59,15 @@ tests[2]:
       created_at: "2026-09-05T10:56:04.217Z"
       source_kind: local_mutation
       source_ref: feat/scalable-context-reads-and-duplicate-discovery
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/context tests/unit/sdk/context-packing-usage.spec.ts tests/unit/sdk/similarity.spec.ts tests/unit/commands/query/get-append-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:07:03.452Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: Exact recall and bounded read regressions
 test_runs[1]:
   - run_id: test-local-mtoaamu6-e36r17
     kind: test

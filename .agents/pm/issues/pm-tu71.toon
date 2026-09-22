@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: bug,gh-issue,health,never-block
 created_at: "2026-07-06T08:03:12.192Z"
-updated_at: "2026-08-07T14:58:54.270Z"
+updated_at: "2026-09-22T05:09:13.255Z"
 closed_at: "2026-08-07T14:58:53.785Z"
 completed_at: "2026-08-07T14:58:53.785Z"
 author: maintainer-agent
@@ -38,10 +38,10 @@ learnings[1]{created_at,author,text}:
 files[4]{path,scope,note}:
   src/sdk/governance/health.ts,project,explicit vector refresh provider boundary
   src/sdk/runtime.ts,project,health transport option parity
+  tests/unit/commands/governance/health-command.spec.ts,project,explicit refresh behavior coverage
   tests/unit/sdk/health-vector-boundary.spec.ts,project,hanging provider boundary regression
-  tests/unit/commands/health-command.spec.ts,project,explicit refresh behavior coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/health-vector-boundary.spec.ts tests/unit/commands/health-command.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/health-vector-boundary.spec.ts tests/unit/commands/governance/health-command.spec.ts,project,240,"harness:codex","2026-09-22T05:09:13.212Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[1]{path,scope,note}:
   docs/SDK_CONTEXT_INTEGRITY.md,project,provider-safe health semantics
 close_reason: "Made vector refresh explicit and kept default health provider-free and non-blocking, with hanging-provider proof; exact-head 100% coverage and all release gates pass."

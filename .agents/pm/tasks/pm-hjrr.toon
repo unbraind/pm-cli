@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: diagnostics,extensions,external-audit,implementation
 created_at: "2026-04-04T12:43:31.599Z"
-updated_at: "2026-09-19T08:40:24.526Z"
+updated_at: "2026-09-22T05:03:37.869Z"
 deadline: "2026-04-11T12:43:31.599Z"
 closed_at: "2026-04-05T19:29:28.180Z"
 author: codex-agent
@@ -58,7 +58,7 @@ notes[1]{created_at,author,text}:
   "2026-04-04T12:43:31.599Z",codex-agent,Doctor output must expose normalized warning/error codes and actionable remediation commands.
 files[9]{path,scope,note}:
   src/cli/commands/completion.ts,project,extension doctor strict-exit completion parity
-  src/cli/commands/extension.ts,project,extension-doctor-implementation
+  src/cli/commands/extension/extension.ts,project,extension-doctor-implementation
   src/cli/help-content.ts,project,extension-doctor-implementation
   src/cli/main.ts,project,extension-doctor-implementation
   src/sdk/cli-contracts.ts,project,extension-doctor-implementation

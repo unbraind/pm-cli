@@ -2669,9 +2669,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           createdId,
           "--json",
           "--test",
-          "command=node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts,scope=project",
+          "command=node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/update-command.spec.ts,scope=project",
           "--test",
-          "command=node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts,scope=project",
+          "command=node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/create-command.spec.ts,scope=project",
           "--author",
           "integration-test",
           "--message",
@@ -2688,7 +2688,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "--json",
           "--replace-tests",
           "--test",
-          "command=node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts,scope=project",
+          "command=node scripts/run-tests.mjs test -- tests/unit/commands/governance/validate-command.spec.ts,scope=project",
           "--author",
           "integration-test",
           "--message",
@@ -2700,7 +2700,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect((replaceResult.json as { changed_fields: string[] }).changed_fields).toContain("tests");
       expect((replaceResult.json as { item: { tests?: Array<Record<string, unknown>> } }).item.tests).toEqual([
         expect.objectContaining({
-          command: "node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts",
+          command: "node scripts/run-tests.mjs test -- tests/unit/commands/governance/validate-command.spec.ts",
           scope: "project",
           provenance: expect.objectContaining({
             author: "integration-test",

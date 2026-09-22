@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",consistency,filters
 created_at: "2026-07-15T06:25:23.773Z"
-updated_at: "2026-08-03T23:02:14.661Z"
+updated_at: "2026-09-22T05:17:34.812Z"
 closed_at: "2026-08-03T22:25:52.899Z"
 completed_at: "2026-08-03T22:25:52.899Z"
 author: maintainer-agent
@@ -41,8 +41,8 @@ files[11]{path,scope,note}:
   tests/fixtures/contracts/full.json,project,Generated CLI contract snapshot
   tests/integration/cli.integration.spec.ts,project,CLI compatibility coverage for filter contract
   tests/unit/sdk/multi-value-filters.spec.ts,project,Public parser unit coverage
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/multi-value-filters.spec.ts tests/integration/query-filter-contract.spec.ts tests/unit/commands/aggregate-command.spec.ts tests/unit/commands/update-many-command.spec.ts,project,240,SDK and cross-surface OR-filter gate
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/multi-value-filters.spec.ts tests/integration/query-filter-contract.spec.ts tests/unit/commands/query/aggregate-command.spec.ts tests/unit/commands/lifecycle/update-many-command.spec.ts,project,240,"harness:codex","2026-09-22T05:17:34.728Z",local_mutation,refactor/cli-command-domains-export-gate,SDK and cross-surface OR-filter gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msdsoigy-aawm9a,test,passed,"2026-08-03T22:22:15.778Z","2026-08-03T22:22:28.738Z","2026-08-03T22:22:28.738Z",1,0,0
 docs[1]{path,scope,note}:

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:sdk",health,output-contract
 created_at: "2026-09-06T05:48:07.109Z"
-updated_at: "2026-09-06T14:44:19.955Z"
+updated_at: "2026-09-22T05:06:56.629Z"
 closed_at: "2026-09-06T14:44:19.403Z"
 completed_at: "2026-09-06T14:44:19.403Z"
 author: "harness:codex"
@@ -39,7 +39,7 @@ files[6]{path,scope,note}:
   tests/unit/sdk/governance/health-verdict-authority.spec.ts,project,Real Git fixture and CLI strict verdict regression
   tests/unit/sdk/health-finding-contract.spec.ts,project,Unknown warning fallback remains blocking with explicit owner
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/health-verdict-authority.spec.ts tests/unit/sdk/health-finding-contract.spec.ts tests/unit/commands/health-command.spec.ts,project,240,"harness:codex","2026-09-06T10:37:25.092Z",local_mutation,feat/health-verdicts-and-recurrence-lineages
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/health-verdict-authority.spec.ts tests/unit/sdk/health-finding-contract.spec.ts tests/unit/commands/governance/health-command.spec.ts,project,240,"harness:codex","2026-09-22T05:06:56.544Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[3]:
   - run_id: test-local-mtppavjg-sv1jy2
     kind: test

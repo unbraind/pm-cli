@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,cli,token-efficiency
 created_at: "2026-05-23T17:07:40.015Z"
-updated_at: "2026-09-19T08:40:16.897Z"
+updated_at: "2026-09-22T05:13:05.410Z"
 closed_at: "2026-05-23T18:16:13.074Z"
 author: claude-code-agent
 release: v2026.5.24
@@ -37,7 +37,7 @@ files[13]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,agent guide priority alias docs
   docs/COMMANDS.md,project,agent-facing priority and templates docs
   src/cli/commands/completion.ts,project,delete dry-run shell completion
-  src/cli/commands/delete.ts,project,"L10 default-safety implementation: delete preview"
+  src/cli/commands/lifecycle/delete.ts,project,"L10 default-safety implementation: delete preview"
   src/cli/help-content.ts,project,L10 detailed gc help
   src/cli/register-mutation.ts,project,L10 command registration for delete dry-run
   src/cli/register-operations.ts,project,L10 gc default-safety help

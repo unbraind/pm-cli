@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: context,relevance,scale,token-efficiency
 created_at: "2026-07-06T23:50:39.960Z"
-updated_at: "2026-07-27T12:52:05.141Z"
+updated_at: "2026-09-22T05:10:35.812Z"
 closed_at: "2026-07-13T19:56:00.971Z"
 author: codex-agent
 estimated_minutes: 360
@@ -64,8 +64,8 @@ learnings[1]{created_at,author,text}:
 files[15]{path,scope,note}:
   eslint-suppressions.json,project,Removed obsolete suppressions
   scripts/release/static-quality-gate.mjs,project,Strict suppression ratchet updated for cleaner implementation
-  src/cli/commands/context.ts,project,Context packing and propensity integration
-  src/cli/commands/next.ts,project,Next packing and propensity integration
+  src/cli/commands/query/context.ts,project,Context packing and propensity integration
+  src/cli/commands/query/next.ts,project,Next packing and propensity integration
   src/cli/main.ts,project,Central mutation outcome feedback capture
   src/core/extensions/index.ts,project,Affected-item capture independent of installed hooks
   src/sdk/context-packing.ts,project,Public deterministic token-budget packer
@@ -74,15 +74,30 @@ files[15]{path,scope,note}:
   src/sdk/index.ts,project,Public SDK barrel exports
   tests/context-eval/baseline.json,project,Committed quality baseline
   tests/context-eval/golden-scenarios.json,project,Token-budget and packing quality corpus
-  tests/unit/commands/context-relevance-command.spec.ts,project,CLI packing and feedback acceptance coverage
+  tests/unit/commands/query/context-relevance-command.spec.ts,project,CLI packing and feedback acceptance coverage
   tests/unit/extensions/extensions-runtime.spec.ts,project,Core and extension hook outcome capture coverage
   tests/unit/sdk/context-packing-usage.spec.ts,project,Packer and feedback regression coverage
-tests[5]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/commands/context-relevance-command.spec.ts tests/unit/commands/context-command.spec.ts tests/unit/commands/next-command.spec.ts,project,240
-  "pnpm benchmark:scale:check",project,180
-  "pnpm dogfood:package-first",project,360
-  "pnpm quality:context-eval",project,180
-  "pnpm test:coverage",project,360
+tests[5]:
+  - command: "pnpm benchmark:scale:check"
+    scope: project
+    timeout_seconds: 180
+  - command: "pnpm dogfood:package-first"
+    scope: project
+    timeout_seconds: 360
+  - command: "pnpm quality:context-eval"
+    scope: project
+    timeout_seconds: 180
+  - command: "pnpm test:coverage"
+    scope: project
+    timeout_seconds: 360
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/commands/query/context-relevance-command.spec.ts tests/unit/commands/query/context-command.spec.ts tests/unit/commands/query/next-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:10:35.767Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrjmii5g-oiffqh,test,failed,"2026-07-13T19:31:51.595Z","2026-07-13T19:36:45.412Z","2026-07-13T19:36:45.413Z",3,2,0
   test-local-mrjmmizu-aigcxc,test,passed,"2026-07-13T19:37:02.158Z","2026-07-13T19:39:53.130Z","2026-07-13T19:39:53.130Z",1,0,0

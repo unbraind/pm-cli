@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: codefactor,gh-582,quality
 created_at: "2026-07-18T05:45:02.428Z"
-updated_at: "2026-07-26T17:31:22.988Z"
+updated_at: "2026-09-22T05:24:05.092Z"
 closed_at: "2026-07-21T09:54:21.275Z"
 author: maintainer-agent
 estimated_minutes: 45
@@ -18,12 +18,12 @@ release: v2026.7.22
 resolution: Extracted output-mode validation and result rendering from runRegisteredListCommand into documented helpers.
 expected_result: The reported Complex Method clears while list behavior and the repository complexity policy remain unchanged.
 actual_result: List registration/list command suites and repo-wide ESLint pass with no new suppression.
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-2gvp,related,"2026-07-18T05:45:02.428Z",null,null
-  pm-j8vq,related,"2026-07-18T05:45:02.428Z",null,null
-  pm-pfqi,related,"2026-07-18T05:45:02.428Z",null,null
-  pm-92if,implements,"2026-07-26T17:31:22.743Z",null,null
-  pm-wrss,related,"2026-07-26T17:31:22.743Z",null,null
+dependencies[5]{id,kind,created_at}:
+  pm-2gvp,related,"2026-07-18T05:45:02.428Z"
+  pm-j8vq,related,"2026-07-18T05:45:02.428Z"
+  pm-pfqi,related,"2026-07-18T05:45:02.428Z"
+  pm-92if,implements,"2026-07-26T17:31:22.743Z"
+  pm-wrss,related,"2026-07-26T17:31:22.743Z"
 comments[7]{created_at,author,text}:
   "2026-07-21T07:33:05.193Z",codex-root-20260721,"Evidence: runRegisteredListCommand now delegates non-trivial output-mode validation and rendering to documented helpers; list registration and list command suites pass with no suppression added."
   "2026-07-21T09:10:32.464Z",codex-root-20260721,"Hosted review remediation: csv/table list rendering now records the structured active command result before writing tabular output, preserving extension afterCommand visibility across every output mode. The registration suite asserts the active result."
@@ -36,9 +36,20 @@ files[3]{path,scope,note}:
   src/cli/register-list-query.ts,project,Extracted rendering-mode resolution and result rendering
   tests/unit/cli/register-list-query.spec.ts,project,List registration behavior regression suite
   tests/unit/commands/register-commands.spec.ts,project,Registration-level pre-query validation expectation
-tests[2]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/cli/register-list-query.spec.ts tests/unit/commands/list-command.spec.ts,project,600,List registration and command regression coverage
-  node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts,project,600,Full registration call-order regression
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts
+    scope: project
+    timeout_seconds: 600
+    note: Full registration call-order regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/register-list-query.spec.ts tests/unit/commands/query/list-command.spec.ts
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:24:04.962Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: List registration and command regression coverage
 test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mruc8n1a-gz3x5j,test,passed,"2026-07-21T07:34:28.281Z","2026-07-21T07:34:36.958Z","2026-07-21T07:34:36.958Z",1,0,0
   test-local-mrufpf7a-9raihh,test,passed,"2026-07-21T09:11:28.481Z","2026-07-21T09:11:38.806Z","2026-07-21T09:11:38.806Z",1,0,0

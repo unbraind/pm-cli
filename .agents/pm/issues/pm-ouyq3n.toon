@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: graph,ontology,recurrence
 created_at: "2026-08-03T20:34:50.941Z"
-updated_at: "2026-08-16T16:08:21.412Z"
+updated_at: "2026-09-22T05:08:05.634Z"
 closed_at: "2026-08-16T16:08:20.660Z"
 completed_at: "2026-08-16T16:08:20.660Z"
 author: "harness:claude-code"
@@ -53,13 +53,10 @@ files[15]{path,scope,note}:
   src/sdk/relationships.ts,project,Publish and validate temporal relationship semantics
   src/types.ts,project,Admit recurrence across dependency and plan-step SDK types
   tests/fixtures/contracts/full.json,project,Publish recurrence in generated CLI contracts
-  tests/unit/commands/lossless-mutation-contracts.spec.ts,project,Exercise valid equal reverse and bulk recurrence mutations
+  tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts,project,Exercise valid equal reverse and bulk recurrence mutations
   tests/unit/sdk/relationships.spec.ts,project,Prove validation traversal impact community and non-ordering recurrence semantics
 tests[4]:
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/relationships.spec.ts
-    scope: project
-    timeout_seconds: 240
-  - command: node scripts/run-tests.mjs test -- tests/unit/commands/lossless-mutation-contracts.spec.ts
     scope: project
     timeout_seconds: 240
   - command: "pnpm quality:tracker-measurements"
@@ -69,6 +66,14 @@ tests[4]:
   - command: "pnpm contracts:check"
     scope: project
     timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:08:05.587Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[6]:
   - run_id: test-all-local-msvu9oiu-8i6e0l
     kind: test-all

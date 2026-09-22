@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,compatibility,extensions,github-1032,manifest,sdk,validation
 created_at: "2026-08-15T15:26:48.504Z"
-updated_at: "2026-08-16T08:57:45.410Z"
+updated_at: "2026-09-22T05:08:08.365Z"
 closed_at: "2026-08-16T08:57:44.529Z"
 completed_at: "2026-08-16T08:57:44.529Z"
 author: "harness:codex"
@@ -58,7 +58,7 @@ files[14]{path,scope,note}:
   src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated public no_version_bounds_declared error contract
   tests/fixtures/contracts/full.json,project,Full runtime contract snapshot including generated manifest diagnostics
   tests/helpers/extensions.ts,project,Review-hardening regression coverage for independent manifest bounds diagnostics
-  tests/unit/commands/health-command.spec.ts,project,Review-hardening regression coverage for independent manifest bounds diagnostics
+  tests/unit/commands/governance/health-command.spec.ts,project,Review-hardening regression coverage for independent manifest bounds diagnostics
   tests/unit/sdk/extension-manifest-schema-contract.spec.ts,project,SDK and loader schema regression
   tests/unit/sdk/sdk-compose.spec.ts,project,Review-hardening regression coverage for independent manifest bounds diagnostics
   tests/unit/sdk/sdk-index.spec.ts,project,Review-hardening regression coverage for independent manifest bounds diagnostics

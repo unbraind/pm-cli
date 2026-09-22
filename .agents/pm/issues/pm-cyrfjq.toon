@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: agent-ux,"area:cli","area:contracts",output-contract,scripting,token-efficiency
 created_at: "2026-07-26T05:43:39.360Z"
-updated_at: "2026-07-29T14:33:08.940Z"
+updated_at: "2026-09-22T05:17:55.920Z"
 closed_at: "2026-07-29T14:30:17.449Z"
 completed_at: "2026-07-29T14:30:17.449Z"
 author: "harness:claude-code"
@@ -34,14 +34,14 @@ comments[3]{created_at,author,text}:
   "2026-07-29T14:30:11.910Z","harness:codex","Required surface sweep evidence: graph impact --summary omits affected while the full shape emits it; context depth tiers expose one section vocabulary plus sections_included rather than parallel decoy collections; health brief/summary/full retain one checks collection and now disclose omissions or explicit completeness; validate default/verbose retain one checks collection with no inactive detail array. Activity/history were the only declared mode-paired duplicate-collection offenders and are covered from the shared declaration."
   "2026-07-29T14:33:08.939Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/811 at implementation head 51478084e; description links canonical PM records and records exact coverage, packed-consumer, security, changelog, and same-day release-guard evidence."
 files[5]{path,scope,note}:
-  src/cli/commands/activity.ts,project,Emits only the active full or compact activity collection
-  src/cli/commands/history.ts,project,Emits only the active full or compact history collection
+  src/cli/commands/history/activity.ts,project,Emits only the active full or compact activity collection
+  src/cli/commands/history/history.ts,project,Emits only the active full or compact history collection
   src/sdk/output-projection.ts,project,Shared mode-paired output declarations
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,MCP compact activity conformance
-  tests/unit/commands/history-activity-command.spec.ts,project,Mode-paired row-key conformance
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/history-activity-command.spec.ts,project,300
-  node scripts/run-tests.mjs test -- tests/unit/commands/history-activity-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts,project,120
+  tests/unit/commands/history/history-activity-command.spec.ts,project,Mode-paired row-key conformance
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/history/history-activity-command.spec.ts,project,300,"harness:codex","2026-09-22T05:17:55.801Z",local_mutation,refactor/cli-command-domains-export-gate
+  node scripts/run-tests.mjs test -- tests/unit/commands/history/history-activity-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts,project,120,"harness:codex","2026-09-22T05:17:55.801Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms66ge2a-8jdqs6,test,passed,"2026-07-29T14:25:31.082Z","2026-07-29T14:25:54.994Z","2026-07-29T14:25:54.994Z",2,0,0
 docs[1]{path,scope,note}:

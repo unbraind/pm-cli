@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:ci","area:sdk",assurance,configurability,enforcement
 created_at: "2026-08-10T20:56:25.997Z"
-updated_at: "2026-08-11T02:29:58.485Z"
+updated_at: "2026-09-22T05:08:44.600Z"
 closed_at: "2026-08-11T02:29:57.960Z"
 completed_at: "2026-08-11T02:29:57.960Z"
 author: "harness:claude-code"
@@ -61,19 +61,36 @@ files[25]{path,scope,note}:
   tests/integration/assurance-cli.integration.spec.ts,project,"CLI registry,gate,dry-run,and durable verdict acceptance coverage"
   tests/integration/assurance-runtime.integration.spec.ts,project,"PmClient,standalone SDK,and MCP action parity coverage"
   tests/unit/cli/register-assurance.spec.ts,project,Commander registration and option-forwarding coverage
-  tests/unit/commands/contracts-command.spec.ts,project,Packed-contract regression proving assurance is a core command with complete flags
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Packed-contract regression proving assurance is a core command with complete flags
   tests/unit/scripts/release/gate-registry.spec.ts,project,Regression coverage for renamed display steps and missing or unregistered jobs
   tests/unit/sdk/action-schema-parity.spec.ts,project,Shrinking-only bidirectional CLI and SDK action-contract ratchet
   tests/unit/sdk/assurance-action-concurrency.spec.ts,project,TDD proof that registry and workspace reads start concurrently
   tests/unit/sdk/assurance-action.spec.ts,project,Transport-neutral action normalization and CRUD error coverage
   tests/unit/sdk/contracts-full-projection.spec.ts,project,Strict assurance schema metadata regression coverage
-tests[6]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/cli/register-assurance.spec.ts tests/integration/assurance-cli.integration.spec.ts tests/integration/assurance-runtime.integration.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/cli/register-assurance.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/integration/assurance-cli.integration.spec.ts tests/integration/assurance-runtime.integration.spec.ts,project,360
-  "pnpm contracts:check && pnpm sdk:surface:check && pnpm quality:token-surface",project,600
-  node scripts/run-tests.mjs coverage,project,1200
-  node scripts/run-tests.mjs test -- tests/unit/scripts/release/gate-registry.spec.ts tests/unit/sdk/assurance-action.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts,project,300
-  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance-action-concurrency.spec.ts tests/unit/sdk/assurance-action.spec.ts,project,300
+tests[6]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/register-assurance.spec.ts tests/integration/assurance-cli.integration.spec.ts tests/integration/assurance-runtime.integration.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm contracts:check && pnpm sdk:surface:check && pnpm quality:token-surface"
+    scope: project
+    timeout_seconds: 600
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 1200
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/gate-registry.spec.ts tests/unit/sdk/assurance-action.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/assurance-action-concurrency.spec.ts tests/unit/sdk/assurance-action.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/register-assurance.spec.ts tests/unit/commands/workspace/contracts-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/integration/assurance-cli.integration.spec.ts tests/integration/assurance-runtime.integration.spec.ts
+    scope: project
+    timeout_seconds: 360
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:08:44.557Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[6]:
   - run_id: test-local-msnt36xh-r8zt19
     kind: test

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-07T22:30:37.538Z"
-updated_at: "2026-09-08T21:30:02.783Z"
+updated_at: "2026-09-22T05:15:40.529Z"
 closed_at: "2026-09-08T20:41:36.422Z"
 completed_at: "2026-09-08T20:41:36.422Z"
 author: "harness:codex"
@@ -109,7 +109,7 @@ files[25]{path,scope,note}:
   src/sdk/index.ts,project,Public planning SDK exports
   src/sdk/runtime-input.ts,project,Install dry-run contract and exact generated surface baselines
   tests/fixtures/contracts/full.json,project,Install dry-run contract and exact generated surface baselines
-  tests/unit/commands/contracts-command.spec.ts,project,Install dry-run contract and exact generated surface baselines
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Install dry-run contract and exact generated surface baselines
   tests/unit/extensions/extension-copy-safety.spec.ts,project,Second-round regression and independent mutation-control evidence
   tests/unit/extensions/extension-install-dry-run.spec.ts,project,Real directory and packed archive acceptance
   tests/unit/extensions/extension-install-plan.spec.ts,project,Bounded filesystem planning controls

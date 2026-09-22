@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-05T19:06:23.505Z"
-updated_at: "2026-09-06T08:29:05.958Z"
+updated_at: "2026-09-22T05:16:29.550Z"
 closed_at: "2026-09-06T08:26:22.076Z"
 completed_at: "2026-09-06T08:26:22.076Z"
 author: "harness:codex"
@@ -84,7 +84,7 @@ files[7]{path,scope,note}:
   src/sdk/lifecycle-policy.ts,project,SDK recovery implementation and executable regression evidence
   src/sdk/lifecycle/close.ts,project,Existing implementation boundary to reproduce and improve
   tests/integration/close-history-evidence.integration.spec.ts,project,SDK recovery implementation and executable regression evidence
-  tests/unit/commands/close-command.spec.ts,project,Existing regression suite to extend; no new regression is claimed
+  tests/unit/commands/lifecycle/close-command.spec.ts,project,Existing regression suite to extend; no new regression is claimed
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/close-history-evidence.integration.spec.ts,project,240,"harness:codex","2026-09-05T20:44:34.659Z",local_mutation,feat/receipt-recovery-and-extension-contracts
 test_runs[3]:

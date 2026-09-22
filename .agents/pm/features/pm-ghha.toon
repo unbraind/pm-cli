@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:body","area:update",feature,pm-cli
 created_at: "2026-04-02T11:44:56.845Z"
-updated_at: "2026-09-19T08:40:19.328Z"
+updated_at: "2026-09-22T05:03:43.097Z"
 deadline: "2026-04-07T11:44:56.845Z"
 closed_at: "2026-04-02T11:59:16.627Z"
 author: codex-agent
@@ -62,7 +62,7 @@ comments[2]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-04-02T11:44:56.845Z",codex-agent,"Tasks split runtime,contracts/tests,and docs/release evidence."
 files[1]{path,scope,note}:
-  src/cli/commands/update.ts,project,update body runtime surface
+  src/cli/commands/lifecycle/update.ts,project,update body runtime surface
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts,project,2400,update body regression coverage
 docs[1]{path,scope,note}:

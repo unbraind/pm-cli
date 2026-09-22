@@ -16,14 +16,14 @@ import {
   assertHistoryCompactTarget,
   runHistoryCompact,
   runHistoryCompactBulk,
-} from "./commands/history-compact.js";
-import { runHistoryRedact } from "./commands/history-redact.js";
+} from "./commands/history/history-compact.js";
+import { runHistoryRedact } from "./commands/history/history-redact.js";
 import {
   assertHistoryRepairTarget,
   runHistoryRepair,
   runHistoryRepairAll,
-} from "./commands/history-repair.js";
-import { runRestore } from "./commands/restore.js";
+} from "./commands/history/history-repair.js";
+import { runRestore } from "./commands/history/restore.js";
 import {
   collect,
   getGlobalOptions,

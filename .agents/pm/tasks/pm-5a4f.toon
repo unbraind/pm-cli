@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: pagination,pm-cli,test-all,wave9
 created_at: "2026-04-07T08:09:59.994Z"
-updated_at: "2026-09-19T08:39:30.279Z"
+updated_at: "2026-09-22T05:05:34.594Z"
 closed_at: "2026-04-07T08:42:18.731Z"
 author: codex-agent
 estimated_minutes: 60
@@ -23,7 +23,7 @@ comments[2]{created_at,author,text}:
   "2026-04-07T08:42:17.148Z",codex-agent,"Completed Wave 8/9 test-all blast-radius controls: added --limit/--offset filtering before linked-test execution while preserving deterministic ID ordering and existing status filtering semantics. Wired new flags through main CLI command parsing, managed background command argument forwarding, contracts/schema, completion (bash/zsh/fish), Pi wrapper mapping, and help examples. Added runtime validation for non-negative integer limit/offset plus pagination regression coverage and help/contracts parity tests. Verification passed: node scripts/run-tests.mjs test -- tests/unit/test-all-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts."
 files[9]{path,scope,note}:
   src/cli/commands/completion.ts,project,test-all-limit-offset-completion-parity
-  src/cli/commands/test-all.ts,project,test-all-limit-offset-selection-runtime
+  src/cli/commands/test/test-all.ts,project,test-all-limit-offset-selection-runtime
   src/cli/help-content.ts,project,test-all-pagination-help-examples
   src/cli/main.ts,project,test-all-limit-offset-cli-and-background-wiring
   src/sdk/cli-contracts.ts,project,test-all-limit-offset-contract-and-schema-parity

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-06-12T15:18:13.660Z"
-updated_at: "2026-09-19T08:41:42.391Z"
+updated_at: "2026-09-22T05:02:10.772Z"
 closed_at: "2026-06-12T15:24:17.422Z"
 author: codex-sdk-cli-continuation
 parent: pm-mpbb
@@ -24,7 +24,7 @@ comments[6]{created_at,author,text}:
   "2026-06-12T15:24:11.410Z",codex-sdk-cli-continuation,"Sub-agent findings integrated: GitHub/release sidecar confirmed no open PRs, #201 as current report, healthy Auto Release/Release on main, no Dependabot/CodeQL alerts. Implementation explorer confirmed the create.ts missing-required branch, main.ts recovery wrapper, error-guidance normalization, shared recovery type, and unit/integration test seams; no sub-agent edited files."
   "2026-06-12T15:33:45.653Z",codex-sdk-cli-continuation,"Review follow-up: Gemini flagged non-string recovery array entries as a possible runtime crash. Added defensive string filtering for compact recovery arrays and unit coverage in tests/unit/error-guidance.spec.ts."
 files[7]{path,scope,note}:
-  src/cli/commands/create.ts,project,Strict create missing-field errors emit compact recovery payload
+  src/cli/commands/lifecycle/create.ts,project,Strict create missing-field errors emit compact recovery payload
   src/cli/error-guidance.ts,project,JSON/display recovery normalization renders compact missing-field keys
   src/cli/main.ts,project,PmCliError recovery wrapper preserves compact mode unless --explain is requested
   src/core/shared/errors.ts,project,Recovery payload type adds compact missing-field metadata

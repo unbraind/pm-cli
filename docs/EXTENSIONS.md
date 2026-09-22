@@ -398,7 +398,7 @@ pm package upgrade todos --dry-run
 pm package upgrade --cli-only --repair
 ```
 
-CLI/SDK upgrades use `npm install -g @unbrained/pm-cli@<tag>`. Managed package upgrades reuse the source recorded at install time, including registry, GitHub, local, and first-party package sources.
+CLI/SDK upgrades use `npm install -g @unbrained/pm-cli@<tag>`. Managed package upgrades reuse the source recorded at install time, including registry, GitHub, local, and first-party package sources. Canonical CLI upgrade receipts include `cli.migration_guidance`, including dry-run plans. Scheduling lives in the optional calendar package: install it with `pm package install calendar --project`, then use `pm calendar meet`, `pm calendar event`, or `pm calendar remind`. Legacy `meet`, `event`, and `remind` shortcuts remain usable after installation; before installation, both text and JSON errors identify the owning package and the install command. An upgrade does not install optional workflows automatically. Tracked by [pm-o3fh](../.agents/pm/tasks/pm-o3fh.toon).
 
 ## Automation Patterns
 

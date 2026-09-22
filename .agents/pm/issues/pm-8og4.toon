@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: "area:sdk",code-scanning,security
 created_at: "2026-07-17T05:29:01.651Z"
-updated_at: "2026-07-26T17:07:45.759Z"
+updated_at: "2026-09-22T05:21:20.279Z"
 closed_at: "2026-07-17T09:56:07.579Z"
 author: maintainer-agent
 estimated_minutes: 30
@@ -18,15 +18,15 @@ release: v2026.7.18
 resolution: fixed
 expected_result: "Trailing-dash prefix normalization is linear-time for adversarial workspace settings, preserves normal linked-command detection, and CodeQL alert 27 closes on the default branch."
 actual_result: "Merged PR #577 replaced the polynomial trailing-dash regex with a linear backward scan, preserved linked-command detection for canonical and adversarial prefixes, and GitHub CodeQL alert 27 is fixed on default-branch commit 98d820520685e3c678275476ffe756e291aa5eaa."
-dependencies[8]{id,kind,created_at,author,source_kind}:
-  pm-t8e9,related,"2026-07-17T05:29:01.651Z",null,null
-  pm-003j,related,"2026-07-26T17:07:45.461Z",null,null
-  pm-0yi7,related,"2026-07-26T17:07:45.461Z",null,null
-  pm-2d7k,related,"2026-07-26T17:07:45.461Z",null,null
-  pm-gnzh,related,"2026-07-26T17:07:45.461Z",null,null
-  pm-obq2,related,"2026-07-26T17:07:45.461Z",null,null
-  pm-qwoy,implements,"2026-07-26T17:07:45.461Z",null,null
-  pm-rrt1,related,"2026-07-26T17:07:45.461Z",null,null
+dependencies[8]{id,kind,created_at}:
+  pm-t8e9,related,"2026-07-17T05:29:01.651Z"
+  pm-003j,related,"2026-07-26T17:07:45.461Z"
+  pm-0yi7,related,"2026-07-26T17:07:45.461Z"
+  pm-2d7k,related,"2026-07-26T17:07:45.461Z"
+  pm-gnzh,related,"2026-07-26T17:07:45.461Z"
+  pm-obq2,related,"2026-07-26T17:07:45.461Z"
+  pm-qwoy,implements,"2026-07-26T17:07:45.461Z"
+  pm-rrt1,related,"2026-07-26T17:07:45.461Z"
 comments[6]{created_at,author,text}:
   "2026-07-17T06:12:23.138Z",maintainer-agent,"Fix evidence 2026-07-17: replaced idPrefix.trim().toLowerCase().replace(/-+$/, \"\") with a linear index scan trimming trailing dashes in extractReferencedPmItemIdsFromCommand (src/sdk/test/linked-command-detection.ts). Regression spec covers canonical \"PM--\" trimming, all-dash prefixes rejecting every id, a benign 64-dash decorated prefix still matching, and the pathological 50k-dash-run-plus-tail prefix that previously backtracked quadratically (pre-fix the assertion could not complete inside the suite timeout). Also extended the deps value-bearing flag set with --direction/--kind so linked-command item-reference parsing stays correct for the new flags. Alert 27 closure on the default branch to be verified after merge."
   "2026-07-17T06:16:04.041Z",codex-root,"Handoff accepted by codex-root: preserving the linear-time prefix normalization fix and completing security gates, review convergence, merge, and default-branch alert verification."
@@ -36,8 +36,8 @@ comments[6]{created_at,author,text}:
   "2026-07-17T09:56:06.591Z",maintainer-agent,"Merged-head closeout evidence: PR #577 merged as 98d820520685e3c678275476ffe756e291aa5eaa. Default-branch CodeQL run 29571406419 completed successfully, and GitHub code-scanning alert 27 reports state=fixed with fixed_at=2026-07-17T09:54:06Z. All PR checks were green; final review inventory at head 178494f7 had zero unresolved threads and zero unreacted bot comments, reviews, or inline comments after evidence replies. Merged main rebuilt and installed as pm 2026.7.17."
 files[1]{path,scope,note}:
   src/sdk/test/linked-command-detection.ts,project,linear index-scan trailing-dash trim replacing /-+$/ (CodeQL alert 27)
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/linked-command-detection.spec.ts,project,120
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/test/linked-command-detection.spec.ts,project,120,"harness:codex","2026-09-22T05:21:20.000Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrojpp34-k4ngcb,test,passed,"2026-07-17T06:17:01.314Z","2026-07-17T06:17:13.024Z","2026-07-17T06:17:13.024Z",1,0,0
   test-local-mrorj5wd-y4ysyk,test,passed,"2026-07-17T09:55:48.571Z","2026-07-17T09:56:05.149Z","2026-07-17T09:56:05.149Z",1,0,0

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,diagnostics,extensions,gh-issue,packages
 created_at: "2026-07-06T21:08:26.415Z"
-updated_at: "2026-09-19T08:39:34.079Z"
+updated_at: "2026-09-22T05:14:03.809Z"
 closed_at: "2026-07-07T09:44:13.522Z"
 author: maintainer-agent
 estimated_minutes: 180
@@ -39,7 +39,7 @@ comments[10]{created_at,author,text}:
   "2026-07-07T12:35:06.378Z",codex-agent,"Evidence update: addressed Gemini's partial-policy fallback feedback on PR #479. buildExtensionPolicyDetails now defaults missing mode/trust_mode scalar values when extensions.policy is partial, while preserving configured scalar values and normalized lists. Added regression coverage for mode-only and trust_mode-only partial policy objects. Verification: focused extension helper test passed; full extension command/loader slice passed (225 tests); pnpm quality:static passed; pnpm changelog:pm:check passed with pm-changelog 2026.7.6; full node scripts/run-tests.mjs coverage passed with 5451 tests and 100/100/100/100."
 files[13]{path,scope,note}:
   src/cli/commands/completion.ts,project,shell completions advertise isolated doctor flags
-  src/cli/commands/extension.ts,project,doctor isolation runtime behavior and isolation metadata
+  src/cli/commands/extension/extension.ts,project,doctor isolation runtime behavior and isolation metadata
   src/cli/help-content.ts,project,doctor help explains isolated package smoke-test recipe
   src/cli/register-setup.ts,project,CLI flag parsing and help registration for isolated doctor
   src/core/extensions/extension-types.ts,project,loader option contract for isolated global discovery

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-07T22:36:19.239Z"
-updated_at: "2026-09-08T10:50:58.454Z"
+updated_at: "2026-09-22T05:15:45.796Z"
 closed_at: "2026-09-08T10:50:57.824Z"
 completed_at: "2026-09-08T10:50:57.824Z"
 author: "harness:codex"
@@ -44,15 +44,15 @@ files[14]{path,scope,note}:
   src/sdk/lifecycle/mcp-actions.ts,project,MCP claim projection adapter
   src/sdk/runtime.ts,project,Shared adapter dispatch preserves typed full SDK calls
   tests/integration/release-readiness-runtime.spec.ts,project,Explicit full claim reads and additive mutation receipt contract
-  tests/unit/commands/claim-command.spec.ts,project,Actual idempotent and skipped ownership deltas
-  tests/unit/commands/claim-receipts.spec.ts,project,Large metadata CLI MCP and typed SDK receipts
+  tests/unit/commands/lifecycle/claim-command.spec.ts,project,Actual idempotent and skipped ownership deltas
+  tests/unit/commands/lifecycle/claim-receipts.spec.ts,project,Large metadata CLI MCP and typed SDK receipts
   tests/unit/core/output/mutation-projection.spec.ts,project,Ownership evidence survives shared projection
   tests/unit/scripts/lifecycle-evidence-control.spec.ts,project,Second-round regression and independent mutation-control evidence
   tests/unit/sdk/execution/execution-roles.spec.ts,project,Explicit full claim reads and additive mutation receipt contract
 tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/output/mutation-projection.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,project,300,"harness:codex","2026-09-07T22:36:19.239Z",local_mutation,feat/history-maintenance-sdk-command-grammar
-  node scripts/run-tests.mjs test -- tests/unit/commands/claim-command.spec.ts tests/unit/commands/claim-receipts.spec.ts tests/unit/core/output/mutation-projection.spec.ts,project,240,"harness:codex","2026-09-08T08:00:38.631Z",local_mutation,feat/package-planning-update-health-claim-receipts
   node scripts/run-tests.mjs test -- tests/unit/scripts/lifecycle-evidence-control.spec.ts,project,240,"harness:codex","2026-09-08T10:33:30.416Z",local_mutation,feat/package-planning-update-health-claim-receipts
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/commands/lifecycle/claim-receipts.spec.ts tests/unit/core/output/mutation-projection.spec.ts,project,240,"harness:codex","2026-09-22T05:15:45.577Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[2]:
   - run_id: test-local-mtsf9abx-ar8psb
     kind: test

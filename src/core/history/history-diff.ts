@@ -43,7 +43,7 @@ export interface HistoryDiffValueEntry {
 }
 
 // ---------------------------------------------------------------------------
-// JSON-Pointer helpers (ported from src/cli/commands/history.ts so the
+// JSON-Pointer helpers (ported from src/cli/commands/history/history.ts so the
 // orchestrator can replace the private copy there with an import from here).
 // ---------------------------------------------------------------------------
 

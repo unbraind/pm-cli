@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: contracts,extensions,help,pm-cli,tests
 created_at: "2026-04-06T09:49:17.322Z"
-updated_at: "2026-09-19T08:41:36.738Z"
+updated_at: "2026-09-22T05:02:16.859Z"
 closed_at: "2026-04-06T11:20:54.030Z"
 author: codex-agent
 estimated_minutes: 60
@@ -22,7 +22,7 @@ comments[2]{created_at,author,text}:
   "2026-04-06T09:49:17.322Z",codex-agent,"Duplicate-check evidence: dedupe command set run immediately before create and no open/in_progress/blocked duplicate found for this scope."
   "2026-04-06T11:02:05.598Z",codex-agent,"Implemented extension command metadata capture and surfaced it in runtime help + help JSON payloads, while merging active extension command/action schemas into pm contracts with extension source metadata. Verification: targeted extension help/contracts suites and full-suite/coverage passes."
 files[8]{path,scope,note}:
-  src/cli/commands/contracts.ts,project,runtime extension command/action schema merging into contracts output
+  src/cli/commands/workspace/contracts.ts,project,runtime extension command/action schema merging into contracts output
   src/cli/main.ts,project,dynamic extension help descriptor ingestion and JSON help metadata merge
   src/core/extensions/loader.ts,project,registerCommand metadata normalization and runtime registration tracking
   src/sdk/cli-contracts.ts,project,extension/list/search contract parity adjustments

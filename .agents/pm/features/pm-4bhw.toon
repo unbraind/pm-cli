@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: contracts,extensions,external-audit,help,pm-cli
 created_at: "2026-04-06T09:48:52.264Z"
-updated_at: "2026-09-19T08:39:25.229Z"
+updated_at: "2026-09-22T05:05:42.822Z"
 closed_at: "2026-04-06T15:41:58.073Z"
 author: codex-agent
 estimated_minutes: 60
@@ -23,7 +23,7 @@ comments[3]{created_at,author,text}:
   "2026-04-06T14:39:39.155Z",codex-agent,"Seven-issue hardening follow-up kickoff: duplicate-check evidence refreshed via pm search \"extension subcommand help discoverability\" --limit 10 and pm search \"contracts schema-only action create required dep comment note learning file test doc\" --limit 10 plus global sweeps; reusing this feature for extension subcommands + contracts create-required parity."
   "2026-04-06T15:40:30.741Z",codex-agent,"Implemented extension action subcommands (install/uninstall/explore/manage/doctor/adopt/adopt-all/activate/deactivate) while keeping legacy lifecycle flags backward compatible. Added contracts x-create-required-options metadata for type-aware create requirements (strict/progressive), refreshed help examples, and verified with targeted/runtime/full test+coverage gates."
 files[7]{path,scope,note}:
-  src/cli/commands/contracts.ts,project,create contract type-aware required options metadata
+  src/cli/commands/workspace/contracts.ts,project,create contract type-aware required options metadata
   src/cli/help-content.ts,project,extension subcommand help discoverability and create guidance refresh
   src/cli/main.ts,project,extension action subcommands with legacy flag compatibility
   src/sdk/cli-contracts.ts,project,deps/release/update contract parity updates

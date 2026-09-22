@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[11]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,sentry,telemetry
 created_at: "2026-05-08T23:20:45.388Z"
-updated_at: "2026-09-19T08:40:45.074Z"
+updated_at: "2026-09-22T05:00:14.732Z"
 deadline: "2026-05-09T23:20:45.388Z"
 closed_at: "2026-05-09T10:49:15.008Z"
 author: codex-audit
@@ -28,16 +28,16 @@ comments[7]{created_at,author,text}:
   "2026-05-09T00:20:38.871Z",codex-audit,"Verification evidence: focused tests passed for embedding-batches/reindex/test/test-all and release-readiness-runtime; pnpm typecheck passed; pnpm build passed; node scripts/run-tests.mjs coverage passed 1219/1219 with 100% statements/branches/functions/lines; pnpm quality:static passed; node scripts/check-secrets.mjs passed; npm pack --dry-run passed; pnpm smoke:npx passed; compatibility-check.mjs --json passed; pm validate --check-resolution --check-history-drift passed; pm health --check-only reports ok with Ollama + LanceDB active and zero stale vectors."
   "2026-05-09T10:48:59.847Z",codex-audit,"CI follow-up: Windows Node 20 failed tests/unit/reindex-command.spec.ts because the truncation regression passed a 50k body through a CLI argument. Reduced the fixture body to 1k characters, which still exceeds the semantic 200-character truncation cap and avoids Windows command-line limits. Verification: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts passed 10/10; node scripts/check-secrets.mjs passed; git diff --check passed."
 files[10]{path,scope,note}:
+  CHANGELOG.md,project,unreleased audit fix notes
   src/cli/commands/reindex.ts,project,semantic corpus truncation for Ollama reindex reliability
-  src/cli/commands/test-all.ts,project,agent JSON ok field for pm test-all
-  src/cli/commands/test.ts,project,agent JSON ok field for pm test
+  src/cli/commands/test/test-all.ts,project,agent JSON ok field for pm test-all
+  src/cli/commands/test/test.ts,project,agent JSON ok field for pm test
   src/core/search/embedding-batches.ts,project,Ollama embedding batch payload cap and timeout split
+  tests/integration/release-readiness-runtime.spec.ts,project,runtime JSON key-order contract for ok fields
   tests/unit/embedding-batches.spec.ts,project,embedding timeout and payload cap regressions
   tests/unit/reindex-command.spec.ts,project,semantic corpus truncation regression
   tests/unit/test-all-command.spec.ts,project,pm test-all ok field regression
   tests/unit/test-command.spec.ts,project,pm test ok field regression
-  CHANGELOG.md,project,unreleased audit fix notes
-  tests/integration/release-readiness-runtime.spec.ts,project,runtime JSON key-order contract for ok fields
 tests[6]{command,scope,timeout_seconds,note}:
   node scripts/check-secrets.mjs,project,120,tracked secret scan
   node scripts/run-tests.mjs coverage,project,600,full coverage gate

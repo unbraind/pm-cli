@@ -30,7 +30,7 @@ describe("scripts/run-tests.mjs", () => {
       const cleanOutput = combinedOutput.replace(/\x1b\[[0-9;]*m/g, "");
       const normalizedOutput = cleanOutput.replace(/\\/g, "/");
       expect(normalizedOutput).toContain("tests/unit/core/item/status-normalization.spec.ts");
-      expect(normalizedOutput).not.toContain("tests/unit/commands/health-command.spec.ts");
+      expect(normalizedOutput).not.toContain("tests/unit/commands/governance/health-command.spec.ts");
       expect(cleanOutput).toMatch(/Test Files\s+1 passed/);
     },
     120_000,

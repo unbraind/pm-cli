@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:core","area:tests",code,"milestone:next",pm-cli,"priority:1",tests
 created_at: "2026-03-05T10:25:48.247Z"
-updated_at: "2026-09-19T08:39:40.232Z"
+updated_at: "2026-09-22T05:05:07.549Z"
 deadline: "2026-03-06T23:59:00.000Z"
 closed_at: "2026-03-05T10:46:26.375Z"
 assignee: cursor-maintainer
@@ -61,7 +61,7 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:19.799Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
-  src/cli/commands/create.ts,project,explicit unset tracking fix
+  src/cli/commands/lifecycle/create.ts,project,explicit unset tracking fix
   tests/unit/create-command.spec.ts,project,coverage for explicit unset metadata
 tests[3]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,project,7200,full sandbox coverage gate

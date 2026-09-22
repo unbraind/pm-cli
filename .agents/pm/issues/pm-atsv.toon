@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,cli,consistency,dogfood,errors
 created_at: "2026-05-20T20:29:51.062Z"
-updated_at: "2026-09-19T08:39:52.793Z"
+updated_at: "2026-09-22T05:04:20.541Z"
 closed_at: "2026-05-20T20:30:20.784Z"
 author: claude-code-agent
 acceptance_criteria: "pm append accepts positional [text] and --text alias (and rejects multiple sources with a clear message); invalid scope errors enumerate valid scopes (project, global) with the default; pm docs and pm test accept --list; unknown-command guidance scores edit-distance typos and emits an explicit 'Did you mean: <cmd>?'; all changes covered by regression tests; build + 100% coverage stay green."
@@ -19,8 +19,8 @@ dependencies[1]{id,kind,created_at}:
   pm-rnpb,implements,"2026-07-26T17:09:33.053Z"
 files[5]{path,scope,note}:
   src/cli/commander-usage.ts,project,scoreCommandPathMatch levenshtein tier + Did-you-mean nextStep
-  src/cli/commands/docs.ts,project,scope error enumerates valid scopes
-  src/cli/commands/files.ts,project,scope error enumerates valid scopes
+  src/cli/commands/annotations/docs.ts,project,scope error enumerates valid scopes
+  src/cli/commands/annotations/files.ts,project,scope error enumerates valid scopes
   src/cli/register-mutation.ts,project,"append positional [text] + --text alias; docs --list flag"
   src/cli/register-operations.ts,project,test --list flag
 tests[4]{command,scope,note}:

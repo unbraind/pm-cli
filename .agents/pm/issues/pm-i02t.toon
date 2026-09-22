@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",context-management,query
 created_at: "2026-06-20T00:12:19.204Z"
-updated_at: "2026-09-19T08:40:26.659Z"
+updated_at: "2026-09-22T05:12:58.466Z"
 closed_at: "2026-06-20T00:31:02.653Z"
 author: codex-sdk-cli-continuation
 parent: pm-mpbb
@@ -27,20 +27,45 @@ comments[4]{created_at,author,text}:
   "2026-06-20T00:50:27.593Z",codex-sdk-cli-continuation,"Review follow-up evidence: addressed CodeRabbit feedback by avoiding redundant re-tokenization inside parseStatusFilterCsv and normalizing pm search filter echoes so status=ALL/whitespace serializes as filters.status=all like list. Added compact search regression for the normalized all echo. Verification passed: focused status/search/list tests (149), full coverage 4699 tests with 100/100/100/100."
 files[9]{path,scope,note}:
   CHANGELOG.md,project,Package-owned changelog regenerated after closing pm-i02t.
-  src/cli/commands/list.ts,project,List --status all disables active-only terminal exclusion and echoes all.
+  src/cli/commands/query/list.ts,project,List --status all disables active-only terminal exclusion and echoes all.
   src/cli/register-list-query.ts,project,CLI help text documents all status sentinel for list/search filters.
   src/core/item/status-filter.ts,project,Shared status filter parser accepts standalone all as no lifecycle restriction.
   src/mcp/tool-definitions.ts,project,MCP tool descriptions document all status sentinel for agents.
   tests/fixtures/contracts/full.json,project,Regenerated contract snapshot after status filter help/MCP description changes.
-  tests/unit/commands/list-command.spec.ts,project,List regression for --status all overriding active-only default filtering.
-  tests/unit/commands/search-command.spec.ts,project,Command-level regression proving search --status all keeps all statuses.
+  tests/unit/commands/query/list-command.spec.ts,project,List regression for --status all overriding active-only default filtering.
+  tests/unit/commands/query/search-command.spec.ts,project,Command-level regression proving search --status all keeps all statuses.
   tests/unit/core/item/status-normalization.spec.ts,project,Parser regressions for standalone all and mixed all rejection.
-tests[5]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,project,700,Full repo coverage proof after list/search --status all fixes.
-  node scripts/run-tests.mjs test -- tests/unit/core/item/status-normalization.spec.ts tests/unit/commands/search-command.spec.ts,project,240,Focused parser and search regressions for --status all.
-  node scripts/run-tests.mjs test -- tests/unit/core/item/status-normalization.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/list-command.spec.ts,project,300,Focused parser/search/list regressions for --status all.
-  "pnpm changelog:pm:check",project,180,Package-owned changelog freshness check with pm-changelog.
-  "pnpm contracts:check && pnpm quality:static",project,120,Contract snapshot and static/docstring quality gate.
+tests[5]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 700
+    note: Full repo coverage proof after list/search --status all fixes.
+  - command: "pnpm changelog:pm:check"
+    scope: project
+    timeout_seconds: 180
+    note: Package-owned changelog freshness check with pm-changelog.
+  - command: "pnpm contracts:check && pnpm quality:static"
+    scope: project
+    timeout_seconds: 120
+    note: Contract snapshot and static/docstring quality gate.
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/item/status-normalization.spec.ts tests/unit/commands/query/search-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:12:58.413Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: Focused parser and search regressions for --status all.
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/item/status-normalization.spec.ts tests/unit/commands/query/search-command.spec.ts tests/unit/commands/query/list-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:12:58.413Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: Focused parser/search/list regressions for --status all.
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,Command reference documents duplicate-check --status all usage.
 close_reason: "Implemented and verified --status all lifecycle-wide search/list behavior with docs, contracts, focused tests, full 100% coverage, and temp-dir smoke evidence."

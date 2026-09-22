@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[2]: "area:type-safety",refactor
 created_at: "2026-06-07T17:04:16.950Z"
-updated_at: "2026-09-19T08:41:52.150Z"
+updated_at: "2026-09-22T05:12:18.693Z"
 closed_at: "2026-06-19T23:34:15.675Z"
 author: maintainer-agent
 parent: pm-o2kc
@@ -34,13 +34,26 @@ comments[4]{created_at,author,text}:
   "2026-06-19T23:33:32.845Z",codex-implementation,"Validation note: pm validate --check-resolution --check-history-drift passed history_drift=ok across 1309 items; resolution check reported pre-existing missing resolution metadata on 214 already-closed items. No history drift found."
   "2026-06-19T23:34:15.452Z",codex-implementation,"Sentry/telemetry evidence: telemetry status enabled with last successful flush at 2026-06-19T23:33:40.195Z; sentry-telemetry-gate passed for unbrained/pm-cli over 14 days with critical=0, high=0, blocking_short_ids=[] and telemetry ok (finish_error_rate_pct=1.78, failures_without_error_code_rows=0). Direct 24h Sentry issue list returned no rows."
 files[3]{path,scope,note}:
-  src/cli/commands/plan.ts,project,Use mutateItem's typed metadata return instead of ItemMetadata double-casts.
-  src/cli/commands/restore.ts,project,Route restore replay metadata through typed replay converters.
+  src/cli/commands/history/restore.ts,project,Route restore replay metadata through typed replay converters.
+  src/cli/commands/lifecycle/plan.ts,project,Use mutateItem's typed metadata return instead of ItemMetadata double-casts.
   src/core/history/replay.ts,project,Centralize replay-to-item conversion for typed history restore/replay callers.
-tests[4]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs coverage,project,900
-  node scripts/run-tests.mjs test -- tests/unit/core/history/history-replay.spec.ts tests/unit/commands/restore-command.spec.ts tests/unit/commands/plan-command.spec.ts tests/unit/extensions/extension-loader.spec.ts,project,240
-  pnpm build,project,240
-  "pnpm quality:static",project,240
+tests[4]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 900
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/history/history-replay.spec.ts tests/unit/commands/history/restore-command.spec.ts tests/unit/commands/lifecycle/plan-command.spec.ts tests/unit/extensions/extension-loader.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:12:18.649Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 close_reason: "Implemented typed mutation/replay cleanup: plan now consumes mutateItem's typed metadata return directly; restore uses centralized replay-to-item conversion; no as unknown as ItemMetadata casts remain in plan/restore/replay. Verified focused tests, build, static quality/docstring gate, contracts, full 100/100/100/100 coverage, temp-dir restore smoke, changelog check, version/security checks, GitHub/Sentry/telemetry signals."
 body: ""

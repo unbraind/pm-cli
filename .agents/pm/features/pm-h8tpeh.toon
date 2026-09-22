@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:ci","area:sdk",assurance,contracts,recovery
 created_at: "2026-08-13T21:18:07.562Z"
-updated_at: "2026-08-22T06:44:27.996Z"
+updated_at: "2026-09-22T05:07:48.237Z"
 closed_at: "2026-08-22T06:44:24.406Z"
 completed_at: "2026-08-22T06:44:24.406Z"
 author: "harness:claude-code"
@@ -136,7 +136,7 @@ files[40]{path,scope,note}:
   tests/integration/tracker-preflight.integration.spec.ts,project,SDK CLI and MCP structured recovery parity
   tests/unit/cli/cli-main-reentrancy.spec.ts,project,CLI raw-argument provenance and reentrant invocation coverage
   tests/unit/cli/error-guidance.spec.ts,project,Structured recovery reference output coverage
-  tests/unit/commands/test-command.spec.ts,project,Proves command and context persist in canonical test-run history.
+  tests/unit/commands/test/test-command.spec.ts,project,Proves command and context persist in canonical test-run history.
   tests/unit/core/item/item-format-validation.spec.ts,project,Proves persisted execution provenance normalization.
   tests/unit/scripts/refusal-closure-gate.spec.ts,project,Executable recovery reachability negative controls
   tests/unit/sdk/agent/refusal-corpus-contracts.spec.ts,project,Derived obligation scorer proof

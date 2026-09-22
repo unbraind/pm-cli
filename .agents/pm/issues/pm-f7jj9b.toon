@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:extensions",identity,migration,pm-beads,source-preservation
 created_at: "2026-08-02T14:11:08.877Z"
-updated_at: "2026-08-27T05:04:10.307Z"
+updated_at: "2026-09-22T05:07:34.834Z"
 closed_at: "2026-08-27T05:04:09.719Z"
 completed_at: "2026-08-27T05:04:09.719Z"
 author: "harness:codex"
@@ -39,7 +39,7 @@ files[9]{path,scope,note}:
   src/core/item/item-format.ts,project,Case-preserved source identity implementation and regression proof
   src/core/store/item-store.ts,project,Case-preserved source identity implementation and regression proof
   tests/fixtures/beads/backup-v0.62/issues.jsonl,project,Case-preserved source identity implementation and regression proof
-  tests/unit/commands/dependency-provenance-command.spec.ts,project,Case-preserved external relationship behavior
+  tests/unit/commands/query/dependency-provenance-command.spec.ts,project,Case-preserved external relationship behavior
   tests/unit/core/item/core-item-lock-coverage.spec.ts,project,Case-preserved source identity implementation and regression proof
   tests/unit/core/store/item-store.spec.ts,project,Exact mixed-case and hash shorthand lookup coverage
   tests/unit/packages/beads-command.spec.ts,project,Case-preserved source identity implementation and regression proof

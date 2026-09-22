@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli",dependencies,github-issue
 created_at: "2026-06-02T15:51:49.839Z"
-updated_at: "2026-09-19T08:40:05.789Z"
+updated_at: "2026-09-22T05:04:01.355Z"
 closed_at: "2026-06-02T15:56:31.929Z"
 author: codex-gpt5
 parent: pm-mpbb
@@ -20,8 +20,8 @@ comments[3]{created_at,author,text}:
   "2026-06-02T15:59:26.567Z",codex-gpt5,"Static gate follow-up: moved the CLI regression into tests/integration/dependency-alias.integration.spec.ts so tests/integration/cli.integration.spec.ts stays below the file-length threshold."
   "2026-06-02T16:05:10.950Z",codex-gpt5,"Final verification evidence: node scripts/release/run-gates.mjs --telemetry-mode best-effort passed on the final tree after dependency updates and the focused integration-file split. Coverage gate reported 136 files, 2096 tests, 100% coverage."
 files[6]{path,scope,note}:
-  src/cli/commands/create.ts,project,Accept dependency type alias for create --dep.
-  src/cli/commands/update.ts,project,Accept dependency type alias for update --dep and --dep-remove.
+  src/cli/commands/lifecycle/create.ts,project,Accept dependency type alias for create --dep.
+  src/cli/commands/lifecycle/update.ts,project,Accept dependency type alias for update --dep and --dep-remove.
   tests/integration/cli.integration.spec.ts,project,CLI integration coverage for GitHub #98.
   tests/integration/dependency-alias.integration.spec.ts,project,Dedicated CLI regression for GitHub #98 without growing the large integration file.
   tests/unit/create-command.spec.ts,project,Regression coverage for create --dep type alias.

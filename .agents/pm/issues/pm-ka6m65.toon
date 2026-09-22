@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: "area:packages","area:sdk","source:github"
 created_at: "2026-07-31T21:29:44.851Z"
-updated_at: "2026-08-01T05:40:28.126Z"
+updated_at: "2026-09-22T05:17:40.389Z"
 closed_at: "2026-08-01T05:28:08.746Z"
 completed_at: "2026-08-01T05:28:08.746Z"
 author: "harness:codex"
@@ -30,8 +30,17 @@ files[5]{path,scope,note}:
   packages/pm-todos/extensions/todos/runtime.ts,project,named SDK imports replace namespace coupling
   tests/unit/extensions/builtin-extension-entrypoints.spec.ts,project,status and resume author-hint contract regression
   tests/unit/scripts/release/package-sdk-contract-parity.spec.ts,project,package SDK contract gate
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/release/package-sdk-contract-parity.mjs,project,300
-  node scripts/run-tests.mjs test -- tests/unit/extensions/builtin-extension-entrypoints.spec.ts tests/unit/packages/beads-command.spec.ts tests/unit/packages/todos-extension.spec.ts tests/unit/commands/test-runs-command.spec.ts,project,300
+tests[2]:
+  - command: node scripts/release/package-sdk-contract-parity.mjs
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/extensions/builtin-extension-entrypoints.spec.ts tests/unit/packages/beads-command.spec.ts tests/unit/packages/todos-extension.spec.ts tests/unit/commands/test/test-runs-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:17:40.298Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 close_reason: GH847 first-party package SDK contract findings are implemented and verified
 body: ""

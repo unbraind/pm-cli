@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: agent-ux,dedup,health,history,integrity,pm-cli
 created_at: "2026-05-22T20:27:05.482Z"
-updated_at: "2026-09-19T08:39:42.367Z"
+updated_at: "2026-09-22T05:00:38.055Z"
 closed_at: "2026-05-22T21:16:19.586Z"
 author: claude-code-agent
 parent: pm-rnpb
@@ -27,8 +27,8 @@ comments[4]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-05-22T20:51:53.029Z",claude-code-agent,"Agents (including sub-agents) must never quote literal secret-pattern example strings (private-key markers, /home/<user>/ paths, real IPs) into pm comments/notes: scripts/check-secrets.mjs scans tracked pm history+item files and will fail the release gate on those literals. Describe patterns abstractly instead. Use audited history-redact to scrub if it happens."
 files[2]{path,scope,note}:
+  src/cli/commands/history/history-repair.ts,project,audited re-anchor command
   src/core/history/replay.ts,project,shared replay/patch+reanchor module (pm-pjs5)
-  src/cli/commands/history-repair.ts,project,audited re-anchor command
 tests[2]{command,scope,note}:
   node scripts/run-tests.mjs coverage,project,full gate 1457 tests; replay.ts 100%
   pnpm exec vitest run tests/unit/history-replay.spec.ts tests/unit/history-repair-command.spec.ts,project,focused replay+command tests

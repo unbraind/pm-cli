@@ -26,20 +26,20 @@ import {
   WORKSPACE_SNAPSHOT_ACTIONS,
 } from "../sdk/workspace-snapshot.js";
 import { readWorkspacePosition } from "../sdk/governance/workspace-position.js";
-import { runClaim, runClaimNext, runRelease } from "./commands/claim.js";
-import { runContracts } from "./commands/contracts.js";
-import { runDuplicates } from "./commands/duplicates.js";
-import { runGc } from "./commands/gc.js";
-import { runHealth } from "./commands/health.js";
-import { runStats } from "./commands/stats.js";
-import { runTelemetry } from "./commands/telemetry.js";
-import { runTest } from "./commands/test.js";
-import { runTestAll } from "./commands/test-all.js";
+import { runClaim, runClaimNext, runRelease } from "./commands/lifecycle/claim.js";
+import { runContracts } from "./commands/workspace/contracts.js";
+import { runDuplicates } from "./commands/query/duplicates.js";
+import { runGc } from "./commands/governance/gc.js";
+import { runHealth } from "./commands/governance/health.js";
+import { runStats } from "./commands/query/stats.js";
+import { runTelemetry } from "./commands/governance/telemetry.js";
+import { runTest } from "./commands/test/test.js";
+import { runTestAll } from "./commands/test/test-all.js";
 import {
   runStartBackgroundRun,
   runTestRunsWorker,
-} from "./commands/test-runs.js";
-import { runValidate } from "./commands/validate.js";
+} from "./commands/test/test-runs.js";
+import { runValidate } from "./commands/governance/validate.js";
 import {
   buildBackgroundTestAllCommandArgs,
   applyActiveCommandResultService,

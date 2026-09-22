@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli",concurrency,identity,multi-agent,provenance
 created_at: "2026-07-25T21:37:44.433Z"
-updated_at: "2026-07-26T17:30:48.707Z"
+updated_at: "2026-09-22T05:10:51.791Z"
 closed_at: "2026-07-26T13:59:00.839Z"
 claim_principal: "harness:codex#96ff8a24670431caf98d1225"
 author: "harness:claude-code"
@@ -18,17 +18,17 @@ confidence: high
 resolution: Automatic claims now compare a privacy-safe session-derived instance principal and history records that hashed instance.
 expected_result: Same-harness agents without PM_AUTHOR are distinct claim principals and durable mutations are attributable without exposing session IDs.
 actual_result: Packed consumer session B is refused with already_claimed_by after session A claims; focused regressions cover provenance and force semantics.
-dependencies[10]{id,kind,created_at,author,source_kind}:
-  pm-03pq3o,related,"2026-07-25T21:37:44.433Z",null,null
-  pm-3oqjnc,related,"2026-07-25T21:37:44.433Z",null,null
-  pm-szv11n,implements,"2026-07-25T21:37:44.433Z",null,null
-  pm-w8q4,related,"2026-07-25T21:37:44.433Z",null,null
-  pm-z9x1r2,related,"2026-07-25T21:37:44.433Z",null,null
-  pm-dj98,implements,"2026-07-26T17:30:48.486Z",null,null
-  pm-gw6uyq,related,"2026-07-26T17:30:48.486Z",null,null
-  pm-itsjf0,related,"2026-07-26T17:30:48.486Z",null,null
-  pm-u14c,related,"2026-07-26T17:30:48.486Z",null,null
-  pm-xc68,related,"2026-07-26T17:30:48.486Z",null,null
+dependencies[10]{id,kind,created_at}:
+  pm-03pq3o,related,"2026-07-25T21:37:44.433Z"
+  pm-3oqjnc,related,"2026-07-25T21:37:44.433Z"
+  pm-szv11n,implements,"2026-07-25T21:37:44.433Z"
+  pm-w8q4,related,"2026-07-25T21:37:44.433Z"
+  pm-z9x1r2,related,"2026-07-25T21:37:44.433Z"
+  pm-dj98,implements,"2026-07-26T17:30:48.486Z"
+  pm-gw6uyq,related,"2026-07-26T17:30:48.486Z"
+  pm-itsjf0,related,"2026-07-26T17:30:48.486Z"
+  pm-u14c,related,"2026-07-26T17:30:48.486Z"
+  pm-xc68,related,"2026-07-26T17:30:48.486Z"
 comments[6]{created_at,author,text}:
   "2026-07-26T11:46:17.291Z","harness:codex","Start evidence 2026-07-26: selected after live all-status review of 2,081 items (1,780 closed, 288 open, 13 canceled; zero pre-existing in-progress), full item metadata and shipped lineage review, and GitHub/security/dependency inventory. This item is actively implemented in the cohesive public SDK plus safe agent-fleet PR; container epics and unrelated backlog remain open and unclaimed."
   "2026-07-26T12:43:31.406Z","harness:codex","Acceptance evidence: automatic same-harness ownership now uses a privacy-safe session-derived claim principal while preserving stable human authors; history stores only the hashed agent instance and never the raw session. Focused claim/provenance suites pass, static/API gates pass, and a packed unrelated consumer proved synthetic Codex session A claims successfully while session B receives already_claimed_by without PM_AUTHOR."
@@ -39,7 +39,7 @@ comments[6]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-07-26T11:29:37.917Z","harness:claude-code","End-to-end proof that the non-unique identity survives a branch merge, executed 2026-07-26 in an isolated sandbox tracker.\n\nSetup: one shared Task, two branches. Agent A added a comment and set priority 1. Agent B added a comment and added a tag. Both branches ran the same pm build under the same harness with no PM_AUTHOR anywhere, which is the mandated configuration.\n\nThe merge itself is correct and worth stating plainly, because it is the half that works: git merge auto-merged both the .toon item and the .jsonl history stream, and the merged item carried priority 1 from A, tag multi-agent from B, and both comments in timestamp order. Field-aware merge loses nothing.\n\nWhat it cannot do is say who did what. Both comments merged as author 'harness:claude-code'. Every one of the five history entries in the merged stream reads author harness:claude-code, author_source detected, agent_harness claude-code, with no further identity field of any kind. The merged artifact is the textbook multi-agent scenario this item describes, and after it completes the two agents are byte-identical in the record.\n\nThis upgrades the item's claim from a same-machine claim collision to a cross-branch attribution loss: the identity is not merely non-unique for mutual exclusion at claim time, it is non-unique in the durable record that outlives the merge. A reviewer reading the merged history has no way to attribute either comment, and pm-gw6uyq's per-agent analytics would see one agent.\n\nMethod is reproducible in about 30 seconds: sandbox PM_PATH, pm init, pm merge install, create one item, branch twice, mutate on each, merge. The full env census and the descriptor-side cause are on pm-itsjf0."
 files[11]{path,scope,note}:
-  src/cli/commands/claim.ts,project,Session-distinct atomic claims
+  src/cli/commands/lifecycle/claim.ts,project,Session-distinct atomic claims
   src/core/history/history.ts,project,Agent instance provenance
   src/core/item/item-format.ts,project,Claim principal normalization
   src/core/shared/author.ts,project,Privacy-safe agent instance and claim principal
@@ -48,10 +48,10 @@ files[11]{path,scope,note}:
   src/sdk/runtime-primitives.ts,project,Public runtime seam for privacy-safe claim principal resolution
   src/types.ts,project,Typed claim and history provenance
   tests/fixtures/sdk/public-surface.json,project,Public agent-instance and claim-principal SDK contract
-  tests/unit/commands/claim-command.spec.ts,project,Same-harness concurrency regression
+  tests/unit/commands/lifecycle/claim-command.spec.ts,project,Same-harness concurrency regression
   tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Agent fingerprint provenance coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/claim-command.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts tests/unit/sdk/author-attribution.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts tests/unit/sdk/author-attribution.spec.ts,project,240,"harness:codex","2026-09-22T05:10:51.746Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,Package-generated release history
 close_reason: Completed privacy-safe agent-instance claim exclusion and provenance; hosted lint correction plus exact 100% full coverage verified.

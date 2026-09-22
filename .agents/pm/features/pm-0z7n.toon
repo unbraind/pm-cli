@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:contracts",simplification
 created_at: "2026-07-05T04:53:04.314Z"
-updated_at: "2026-08-17T22:26:45.729Z"
+updated_at: "2026-09-22T05:08:00.113Z"
 closed_at: "2026-08-17T22:26:45.044Z"
 completed_at: "2026-08-17T22:26:45.044Z"
 author: maintainer-agent
@@ -40,7 +40,7 @@ files[17]{path,scope,note}:
   src/sdk/cli-contracts/tool-schema.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
   src/sdk/completion.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
   tests/integration/mcp-handshake.spec.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
-  tests/unit/commands/config-key-aliases-search.spec.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
+  tests/unit/commands/workspace/config-key-aliases-search.spec.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
   tests/unit/core/config/nested-settings.spec.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
   tests/unit/core/store/settings-store.spec.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.
   tests/unit/core/store/settings-validator.spec.ts,project,Provides typed hidden alias compatibility across CLI SDK contracts MCP and settings.

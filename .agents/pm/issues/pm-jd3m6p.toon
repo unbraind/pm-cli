@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:ci","area:graph","area:sdk",review-finding,security,token-efficiency
 created_at: "2026-07-28T13:20:28.829Z"
-updated_at: "2026-07-28T14:05:31.154Z"
+updated_at: "2026-09-22T05:10:27.775Z"
 closed_at: "2026-07-28T14:05:09.445Z"
 author: "harness:codex"
 acceptance_criteria: "A token budget smaller than the minimum context envelope terminates and returns the smallest disclosed result; Tree, graph, and context embedded rendered-token values reach a stable fixed point rather than relying on a fixed number of passes; Nightly checkout uses persist-credentials false and workflow contracts remain green; Drift-cache prevalidation distinguishes invalid paths from filesystem and unknown failures with tests; The activity token-surface baseline is intentionally regenerated and the smoke gate passes"
@@ -42,11 +42,20 @@ files[6]{path,scope,note}:
   scripts/agent-token-surface-baseline.json,project,Intentional activity help contract ratchet
   src/core/history/drift-cache.ts,project,Stable root prevalidation failure classification
   src/sdk/dependencies.ts,project,Deterministic minimum-envelope progress and fixed-point rendered token accounting
-  tests/unit/commands/deps-command.spec.ts,project,Unsatisfiable budget and exact rendered accounting regressions
+  tests/unit/commands/query/deps-command.spec.ts,project,Unsatisfiable budget and exact rendered accounting regressions
   tests/unit/sdk/context-integrity-primitives.spec.ts,project,Filesystem and unknown prevalidation classification regressions
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/deps-command.spec.ts tests/unit/sdk/context-integrity-primitives.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240
-  "pnpm quality:token-surface",project,240
+tests[2]:
+  - command: "pnpm quality:token-surface"
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/sdk/context-integrity-primitives.spec.ts tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:10:27.739Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms4pz9e3-atij8l,test,failed,"2026-07-28T13:52:25.427Z","2026-07-28T13:56:55.755Z","2026-07-28T13:56:55.755Z",1,2,0
   test-local-ms4q53db-84nqgr,test,failed,"2026-07-28T13:57:37.973Z","2026-07-28T14:01:27.887Z","2026-07-28T14:01:27.887Z",0,1,0

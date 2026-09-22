@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: "area:ci","area:tests",cross-platform,flake,windows
 created_at: "2026-06-23T12:18:09.377Z"
-updated_at: "2026-09-19T08:39:19.036Z"
+updated_at: "2026-09-22T05:23:24.459Z"
 closed_at: "2026-06-27T14:23:51.646Z"
 author: claude-code-agent
 parent: pm-u9d0
@@ -55,15 +55,37 @@ files[6]{path,scope,note}:
   .github/workflows/docs.yml,project,ensure required Docs and Skills check is present on every PR
   src/core/fs/fs-utils.ts,project,retry transient Windows atomic-rename failures for background-run record writes
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,keep MCP upgrade routing coverage dry-run and network-free
-  tests/unit/commands/test-runs-command.spec.ts,project,avoid Windows Vitest worker self-termination in background-run signal tests
+  tests/unit/commands/test/test-runs-command.spec.ts,project,avoid Windows Vitest worker self-termination in background-run signal tests
   tests/unit/core/fs/fs-utils.spec.ts,project,cover Windows EPERM rename retry for writeFileAtomic
-tests[6]{command,scope,timeout_seconds}:
-  "node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts -t \"surfaces MCP error paths for required args, config, schema, and extension actions\"",project,240
-  node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/runtime-loaders.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/test-runs-command.spec.ts,project,300
-  node scripts/run-tests.mjs test -- tests/unit/commands/test-runs-command.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/core/fs/fs-utils.spec.ts,project,240
-  "pnpm quality:docs-links",project,240
-  "pnpm quality:docs-skills",project,240
+tests[6]:
+  - command: "node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts -t \"surfaces MCP error paths for required args, config, schema, and extension actions\""
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/fs/fs-utils.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm quality:docs-links"
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm quality:docs-skills"
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/runtime-loaders.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/test/test-runs-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:23:24.177Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/test/test-runs-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:23:24.177Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[18]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mqurniq9-fx696l,test,failed,"2026-06-26T10:01:26.687Z","2026-06-26T10:06:23.121Z","2026-06-26T10:06:23.121Z",3,1,0
   test-local-mqurqgbn-vwfs16,test,passed,"2026-06-26T10:08:07.476Z","2026-06-26T10:08:39.971Z","2026-06-26T10:08:39.971Z",3,0,0

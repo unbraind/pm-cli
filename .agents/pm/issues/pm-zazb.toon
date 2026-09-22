@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,cli,dependencies,dogfood,validation
 created_at: "2026-07-10T11:10:11.237Z"
-updated_at: "2026-09-08T05:33:31.977Z"
+updated_at: "2026-09-22T05:16:11.147Z"
 closed_at: "2026-07-10T13:18:58.128Z"
 author: maintainer-agent
 estimated_minutes: 45
@@ -66,21 +66,21 @@ comments[2]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-07-10T11:46:41.973Z",maintainer-agent,"Additional instance found 2026-07-10: transitive graph under pm-ec8s carries a pre-existing dangling related-edge to nonexistent pm-0wm0 (surfaced via pm deps missing_count) - the write-time existence check in this item's AC would have caught it at the source."
 files[5]:
-  - path: src/cli/commands/create.ts
+  - path: src/cli/commands/lifecycle/create.ts
     scope: project
     note: Validate create dependency seeds before id normalization
-  - path: "src/cli/commands/create.ts:dependency flag parsing entry"
+  - path: "src/cli/commands/lifecycle/create.ts:dependency flag parsing entry"
     scope: project
-  - path: src/cli/commands/update.ts
+  - path: src/cli/commands/lifecycle/update.ts
     scope: project
     note: Validate update dependency additions before id normalization
-  - path: "src/cli/commands/update.ts:dependency flag parsing entry"
+  - path: "src/cli/commands/lifecycle/update.ts:dependency flag parsing entry"
     scope: project
   - path: src/sdk/dependency-flag-validation.ts
     scope: project
     note: Shared malformed dependency shorthand guard for create/update
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/sdk/sdk-compose.spec.ts tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/cli/registration-helpers.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/sdk/sdk-compose.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/cli/registration-helpers.spec.ts,project,240,"harness:codex","2026-09-22T05:16:10.949Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,CLI behavior and validation guidance
   docs/SDK.md,project,SDK/package-author contract guidance

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ergonomics,bulk-ops,composability
 created_at: "2026-08-01T13:04:26.421Z"
-updated_at: "2026-08-24T09:19:21.298Z"
+updated_at: "2026-09-22T05:07:42.714Z"
 closed_at: "2026-08-24T09:19:20.658Z"
 completed_at: "2026-08-24T09:19:20.658Z"
 author: "harness:claude-code"
@@ -83,8 +83,8 @@ files[36]{path,scope,note}:
   tests/integration/structured-mutation-io.integration.spec.ts,project,Real-process stdin-json literal sentinel regression
   tests/types/typed-action-inputs.test-d.ts,project,Public numeric bulk-ID compatibility type proof
   tests/unit/cli/structured-mutation-registration.spec.ts,project,Description whitespace stdin regression
-  tests/unit/commands/create-command.spec.ts,project,Create lifecycle literal sentinel regression
-  tests/unit/commands/update-command.spec.ts,project,Update lifecycle literal sentinel regression
+  tests/unit/commands/lifecycle/create-command.spec.ts,project,Create lifecycle literal sentinel regression
+  tests/unit/commands/lifecycle/update-command.spec.ts,project,Update lifecycle literal sentinel regression
   tests/unit/core/io/bulk-ids-input.spec.ts,project,Bulk ID source parser unit coverage
   tests/unit/core/item/parse-utils.spec.ts,project,One-time and field-scoped stdin literal policy unit coverage
   tests/unit/scripts/release/surface-replication-gate.spec.ts,project,Receipt trigger vocabulary regression
@@ -95,9 +95,9 @@ files[36]{path,scope,note}:
 tests[5]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/integration/command-exit-effect-contract.spec.ts tests/unit/core/io/bulk-ids-input.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts,project,240,"harness:codex","2026-08-23T20:53:23.588Z",local_mutation,codex/bulk-input-composability-contracts
   node scripts/run-tests.mjs test -- tests/unit/sdk/runtime/history-mcp.spec.ts,project,240,"harness:codex","2026-08-23T21:34:40.467Z",local_mutation,codex/bulk-input-composability-contracts
-  node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,project,240,"harness:codex","2026-08-24T02:45:33.676Z",local_mutation,codex/bulk-input-composability-contracts
-  node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/core/item/parse-utils.spec.ts tests/unit/commands/update-many-command.spec.ts,project,240,"harness:codex","2026-08-24T03:42:48.805Z",local_mutation,codex/bulk-input-composability-contracts
-  node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/integration/bulk-input-composability.integration.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts tests/integration/mcp-handshake.spec.ts,project,240,"harness:codex","2026-08-24T04:19:44.656Z",local_mutation,codex/bulk-input-composability-contracts
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,project,240,"harness:codex","2026-09-22T05:07:42.665Z",local_mutation,refactor/cli-command-domains-export-gate
+  node scripts/run-tests.mjs test -- tests/integration/bulk-input-composability.integration.spec.ts tests/unit/core/item/parse-utils.spec.ts tests/unit/commands/lifecycle/update-many-command.spec.ts,project,240,"harness:codex","2026-09-22T05:07:42.665Z",local_mutation,refactor/cli-command-domains-export-gate
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts tests/integration/bulk-input-composability.integration.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts tests/integration/mcp-handshake.spec.ts,project,240,"harness:codex","2026-09-22T05:07:42.665Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[10]:
   - run_id: test-local-mt6bsrc6-w425yw
     kind: test

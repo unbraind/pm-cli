@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:search-keyword",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:02:10.065Z"
-updated_at: "2026-09-19T08:40:59.691Z"
+updated_at: "2026-09-22T05:09:18.208Z"
 deadline: "2026-04-15T11:57:42.084Z"
 closed_at: "2026-04-03T14:12:51.848Z"
 author: steve
@@ -62,12 +62,11 @@ notes[2]{created_at,author,text}:
   "2026-04-03T11:59:54.046Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:33:08.541Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[13]{path,scope,note}:
+files[12]{path,scope,note}:
   PRD.md,project,Docs-first update for milestone/command matrix
   README.md,project,Docs-first update for command surface
   src/cli/commands/completion.ts,project,tag completion exposure
-  src/cli/commands/index.ts,project,Export search command runner
-  src/cli/commands/search.ts,project,Keyword search implementation
+  src/cli/commands/query/search.ts,project,Keyword search implementation
   src/cli/main.ts,project,CLI command registration
   src/sdk/cli-contracts.ts,project,completion/search contract alignment for additive flags
   tests/integration/cli.integration.spec.ts,project,CLI smoke coverage for search command

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:plan",atomicity,gh-issue,multi-agent
 created_at: "2026-07-25T00:58:27.692Z"
-updated_at: "2026-07-26T17:08:08.133Z"
+updated_at: "2026-09-22T05:11:50.259Z"
 closed_at: "2026-07-25T15:27:14.045Z"
 author: codex-root
 estimated_minutes: 300
@@ -16,15 +16,15 @@ release: v2026.7.26
 resolution: Seeded cross-owner Plan creation validates first and persists one complete Plan state.
 expected_result: Seeded cross-owner Plan creation validates first and persists one complete Plan state.
 actual_result: "Seeded cross-owner Plan creation validates first and persists one complete Plan state. Verification: linked tests, full coverage, static/security gates, and packed consumer passed."
-dependencies[8]{id,kind,created_at,author,source_kind}:
-  pm-8t5x,related,"2026-07-25T00:58:27.692Z",null,null
-  pm-je50,related,"2026-07-25T00:58:27.692Z",null,null
-  pm-bgcu,related,"2026-07-25T06:27:23.713Z",null,null
-  pm-bxdlfa,related,"2026-07-25T06:27:23.713Z",null,null
-  pm-v7dj,discovered_from,"2026-07-25T07:16:02.353Z",null,null
-  pm-2tan,related,"2026-07-26T17:08:07.932Z",null,null
-  pm-bzmeaa,related,"2026-07-26T17:08:07.932Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:08:07.932Z",null,null
+dependencies[8]{id,kind,created_at}:
+  pm-8t5x,related,"2026-07-25T00:58:27.692Z"
+  pm-je50,related,"2026-07-25T00:58:27.692Z"
+  pm-bgcu,related,"2026-07-25T06:27:23.713Z"
+  pm-bxdlfa,related,"2026-07-25T06:27:23.713Z"
+  pm-v7dj,discovered_from,"2026-07-25T07:16:02.353Z"
+  pm-2tan,related,"2026-07-26T17:08:07.932Z"
+  pm-bzmeaa,related,"2026-07-26T17:08:07.932Z"
+  pm-mpbb,implements,"2026-07-26T17:08:07.932Z"
 comments[4]{created_at,author,text}:
   "2026-07-25T00:58:27.692Z",codex-root,"Duplicate check: searched all statuses for GH-688, seeded plan ownership conflict, partial Plan creation, atomic plan create, and cross-owner steps. Closed pm-v7dj/pm-je50 own the base workflow and pm-8t5x owns atomic claim behavior, but none owns transactional seeded Plan creation; this is the canonical residual issue."
   "2026-07-25T07:16:05.161Z","harness:claude-code","Governance repair (ecosystem review 2026-07-25): this item and pm-bxdlfa were the two rows behind validate's active_terminal_parent warning — both hung off pm-v7dj, closed since the pm plan delivery wave. Active work under a terminal parent is invisible to outcome-milestone reachability (pm-bzmeaa) and to capability-epic rollups. Re-parented to pm-mpbb, the established home for pm plan command-surface items (pm-2tan precedent), with a discovered_from edge back to pm-v7dj so the delivery lineage survives. pm-v7dj itself was not mutated."
@@ -33,10 +33,10 @@ comments[4]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-07-25T15:26:16.717Z","harness:codex","Validate every Plan seed before create and defer ownership assignment until the complete Plan-specific state can be committed, otherwise cross-owner enforcement can strand partial execution context."
 files[2]{path,scope,note}:
-  src/cli/commands/plan.ts,project,Atomic seeded Plan initialization
-  tests/unit/commands/plan-lifecycle-regressions.spec.ts,project,Cross-owner and failure atomicity proof
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/plan-lifecycle-regressions.spec.ts,project,300,Seeded Plan atomicity regressions
+  src/cli/commands/lifecycle/plan.ts,project,Atomic seeded Plan initialization
+  tests/unit/commands/lifecycle/plan-lifecycle-regressions.spec.ts,project,Cross-owner and failure atomicity proof
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/plan-lifecycle-regressions.spec.ts,project,300,"harness:codex","2026-09-22T05:11:50.101Z",local_mutation,refactor/cli-command-domains-export-gate,Seeded Plan atomicity regressions
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
   test-all-local-ms0hg2mq-ht8qkn,test-all,passed,"2026-07-25T14:46:58.826Z","2026-07-25T14:47:41.196Z","2026-07-25T14:47:41.196Z",1,0,0,1,1
   test-all-local-ms0hmkck-1a8mcc,test-all,passed,"2026-07-25T14:52:01.706Z","2026-07-25T14:52:35.986Z","2026-07-25T14:52:35.986Z",1,0,0,1,1

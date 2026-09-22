@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-29T04:40:18.469Z"
-updated_at: "2026-08-03T00:48:11.875Z"
+updated_at: "2026-09-22T05:09:31.260Z"
 closed_at: "2026-08-03T00:47:51.428Z"
 completed_at: "2026-08-03T00:47:51.428Z"
 author: "harness:claude-code"
@@ -53,8 +53,8 @@ files[15]{path,scope,note}:
   src/sdk/query/activity.ts,project,Activity provenance query
   src/sdk/query/history.ts,project,History provenance query
   tests/fixtures/contracts/full.json,project,Generated CLI MCP contract snapshot
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/history-provenance.spec.ts tests/unit/sdk/mutation-events.spec.ts tests/unit/commands/history-activity-command.spec.ts tests/unit/commands/completion-command.spec.ts,project,300
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/history-provenance.spec.ts tests/unit/sdk/mutation-events.spec.ts tests/unit/commands/history/history-activity-command.spec.ts tests/unit/commands/workspace/completion-command.spec.ts,project,300,"harness:codex","2026-09-22T05:09:31.127Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/AGENT_PROVENANCE_ADR.md,project,Patch-free historical context contract
   docs/AGENT_RUNTIME_PRIMITIVES.md,project,CLI SDK MCP usage examples

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:linked-ops",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:02:09.505Z"
-updated_at: "2026-09-19T08:40:41.862Z"
+updated_at: "2026-09-22T05:03:11.019Z"
 deadline: "2026-03-03T23:02:09.505Z"
 closed_at: "2026-02-18T02:01:02.336Z"
 assignee: steve
@@ -61,8 +61,8 @@ learnings[1]{created_at,author,text}:
 files[5]{path,scope,note}:
   AGENTS.md,project,align command recipe timeout key wording
   README.md,project,align linked test seed examples
-  src/cli/commands/create.ts,project,normalize test seed timeout alias on create path
-  src/cli/commands/test.ts,project,accept timeout alias in linked test seed parser
+  src/cli/commands/lifecycle/create.ts,project,normalize test seed timeout alias on create path
+  src/cli/commands/test/test.ts,project,accept timeout alias in linked test seed parser
   tests/integration/cli.integration.spec.ts,project,assert timeout alias accepted in create test seed
 tests[2]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,project,600,full coverage regression gate

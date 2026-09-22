@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: agent-ux,pm-cli,update-many
 created_at: "2026-04-26T20:17:06.781Z"
-updated_at: "2026-09-19T08:41:46.010Z"
+updated_at: "2026-09-22T05:22:31.600Z"
 deadline: "2026-05-03T20:17:06.781Z"
 closed_at: "2026-04-26T21:19:51.626Z"
 author: audit-agent
@@ -39,9 +39,9 @@ comments[2]{created_at,author,text}:
   "2026-04-26T21:19:37.962Z",codex-agent,Improved update-many no-mutation validation text to include actionable mutation flag examples (status/priority/type/tags/description/body/deadline/estimate/assignee/dependency/log/linkage/replace/clear options) so dry-run/filter-only invocations have immediate remediation guidance.
   "2026-04-26T21:19:48.163Z",codex-agent,"Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/update-many-command.spec.ts passed (8 tests)."
 files[3]{path,scope,note}:
-  src/cli/commands/update-many.ts,project,missing-mutation validation now lists actionable mutation flag examples
-  tests/unit/update-many-command.spec.ts,project,coverage for no-mutation guidance message tokens
   CHANGELOG.md,project,unreleased note for update-many guidance improvement
+  src/cli/commands/lifecycle/update-many.ts,project,missing-mutation validation now lists actionable mutation flag examples
+  tests/unit/update-many-command.spec.ts,project,coverage for no-mutation guidance message tokens
 tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/update-many-command.spec.ts,tests/unit/update-many-command.spec.ts,project,300,verify update-many actionable no-mutation guidance
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:

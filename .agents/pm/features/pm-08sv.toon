@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:config","area:extensions","area:schema",living-map,pm-cli,sdk
 created_at: "2026-06-29T09:01:56.236Z"
-updated_at: "2026-09-19T08:39:11.811Z"
+updated_at: "2026-09-22T05:06:21.468Z"
 closed_at: "2026-06-29T13:38:57.165Z"
 author: claude-code-agent
 parent: pm-ugqx
@@ -31,7 +31,7 @@ comments[3]{created_at,author,text}:
 files[7]{path,scope,note}:
   CHANGELOG.md,project,pm-changelog regenerated after feature closeout
   packages/pm-kanban/extensions/kanban/index.ts,project,first-party kanban profile dogfood
-  src/cli/commands/profile.ts,project,profile list/show/apply surfaces extension profile sources
+  src/cli/commands/workspace/profile.ts,project,profile list/show/apply surfaces extension profile sources
   src/core/extensions/loader.ts,project,registerProfile loader gate and validation
   src/core/profile/profile-presets.ts,project,merged builtin and extension profile catalog
   src/sdk/compose.ts,project,declarative profile blueprint support

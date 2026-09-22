@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: 2026-04-26,dogfood,external-audit,pm-cli,stabilization
 created_at: "2026-04-26T00:29:45.075Z"
-updated_at: "2026-09-19T08:40:46.044Z"
+updated_at: "2026-09-22T05:02:58.191Z"
 closed_at: "2026-04-26T13:28:04.234Z"
 author: codex-agent
 estimated_minutes: 480
@@ -86,8 +86,10 @@ notes[2]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-04-26T00:30:25.789Z",codex-agent,Extension authoring ergonomics still require explicit ESM packaging type module for scratch extensions; capability gating correctly blocks registerCommand when commands capability is absent and surfaces activation diagnostics in extension doctor and health.
 files[12]{path,scope,note}:
-  src/cli/commands/create.ts,project,Create dependency placeholder validation
-  src/cli/commands/update.ts,project,Update dependency placeholder validation
+  .gitignore,project,audit security ignore rule updated
+  AGENTS.md,project,strict create guidance corrected from audit finding
+  src/cli/commands/lifecycle/create.ts,project,Create dependency placeholder validation
+  src/cli/commands/lifecycle/update.ts,project,Update dependency placeholder validation
   src/core/item/parent-reference-policy.ts,project,Parent placeholder token validation hardened
   src/core/telemetry/runtime.ts,project,Add PM_TELEMETRY_DISABLED gate for deterministic test CLI runs
   tests/helpers/withTempPmPath.ts,project,Disable telemetry pipeline in sandbox helper environments
@@ -96,8 +98,6 @@ files[12]{path,scope,note}:
   tests/unit/create-command.spec.ts,project,Create regression coverage for placeholder token rejection
   tests/unit/telemetry-runtime.spec.ts,project,Assert PM_TELEMETRY_DISABLED short-circuits telemetry collection
   tests/unit/update-command.spec.ts,project,Update regression coverage for placeholder token rejection
-  AGENTS.md,project,strict create guidance corrected from audit finding
-  .gitignore,project,audit security ignore rule updated
 tests[4]{command,scope,timeout_seconds,note}:
   git check-ignore -v .env .agents/pm/search/TELEMETRY.md .agents/pm/runtime/telemetry/events.jsonl,project,120,audit ignore verification
   node scripts/run-tests.mjs coverage,project,1800,Post-fix full coverage gate sweep

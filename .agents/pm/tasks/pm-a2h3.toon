@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: agent-ux,"area:cli",data-quality
 created_at: "2026-07-06T13:25:37.830Z"
-updated_at: "2026-07-26T17:08:51.799Z"
+updated_at: "2026-09-22T05:24:32.810Z"
 closed_at: "2026-07-12T09:49:48.452Z"
 author: maintainer-agent
 estimated_minutes: 150
@@ -18,13 +18,13 @@ release: v2026.7.13
 resolution: fixed
 expected_result: "notes/learnings support edit/delete with full repair parity to comments across CLI, MCP, SDK, help, completions, and history operations"
 actual_result: "PR#524 promoted the annotation kernel to the public SDK; notes/learnings edit/delete shipped with ownership recovery, pagination, and one-based orchestration; verified via packaged install flow"
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-vcu7,related,"2026-07-06T13:26:07.450Z",null,null
-  pm-yql1,related,"2026-07-06T13:26:07.450Z",null,null
-  pm-9y8q,related,"2026-07-26T17:08:51.632Z",null,null
-  pm-doxj,related,"2026-07-26T17:08:51.632Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:08:51.632Z",null,null
-  pm-zwpp,related,"2026-07-26T17:08:51.632Z",null,null
+dependencies[6]{id,kind,created_at}:
+  pm-vcu7,related,"2026-07-06T13:26:07.450Z"
+  pm-yql1,related,"2026-07-06T13:26:07.450Z"
+  pm-9y8q,related,"2026-07-26T17:08:51.632Z"
+  pm-doxj,related,"2026-07-26T17:08:51.632Z"
+  pm-mpbb,implements,"2026-07-26T17:08:51.632Z"
+  pm-zwpp,related,"2026-07-26T17:08:51.632Z"
 comments[2]{created_at,author,text}:
   "2026-07-12T08:42:59.270Z",codex-root,"Implementation start: bundled with pm-zwpp annotation-kernel promotion so comments, notes, and learnings share one public SDK primitive and consistent add/stdin/file/edit/delete semantics."
   "2026-07-12T09:49:46.530Z",codex-root,"Evidence: notes and learnings now share the public SDK annotation kernel and support mutually exclusive --add/--stdin/--file input plus 1-based --edit/--delete, ownership guidance, edited_at timestamps, and distinct history operations. Focused 104-test suite passed; all six unrelated full-coverage saturation failures passed in an isolated 170-test rerun; installed packed-tarball proof imported @unbrained/pm-cli/sdk and exercised packaged notes/learnings add/edit/delete successfully."
@@ -32,14 +32,14 @@ notes[1]{created_at,author,text}:
   "2026-07-12T08:44:01.711Z",codex-root,"Execution rule from user escalation (23rd recurrence): this active delivery lane must not stop at partial implementation, local verification, commit, PR creation, pending checks, or pending bot review. Continue through the requested green reviewed PR, merge, merged-head/release/Sentry/telemetry proof, tracker closure, claim release, and return to main; only a genuine exhausted blocker permits stopping."
 files[7]{path,scope,note}:
   src/cli/commands/annotation-command.ts,project,shared machinery to make edit/delete facet-generic
-  src/cli/commands/comments.ts,project,"reference implementation: edit/delete + stdin/file input sources"
-  src/cli/commands/learnings.ts,project,needs edit/delete parity
-  src/cli/commands/notes.ts,project,needs edit/delete parity
+  src/cli/commands/annotations/comments.ts,project,"reference implementation: edit/delete + stdin/file input sources"
+  src/cli/commands/annotations/learnings.ts,project,needs edit/delete parity
+  src/cli/commands/annotations/notes.ts,project,needs edit/delete parity
   src/cli/register-mutation.ts,project,notes and learnings CLI edit/delete/stdin/file wiring
   src/sdk/annotations.ts,project,public shared annotation input/edit/delete kernel
   src/sdk/cli-contracts/tool-schema.ts,project,MCP/action annotation repair flags
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/notes-learnings-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,180
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/annotations/notes-learnings-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,180,"harness:codex","2026-09-22T05:24:32.701Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[1]{path,scope,note}:
   docs/SDK.md,project,public annotation kernel and repair semantics
 close_reason: "Delivered notes/learnings repair parity across SDK, CLI, MCP contracts, help, completions, tests, and installed-package proof."

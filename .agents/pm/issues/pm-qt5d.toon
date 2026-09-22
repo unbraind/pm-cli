@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,dogfood,extensions,path-safety
 created_at: "2026-07-04T11:25:59.083Z"
-updated_at: "2026-07-26T17:24:18.962Z"
+updated_at: "2026-09-22T05:19:06.954Z"
 closed_at: "2026-07-10T05:53:43.858Z"
 author: claude-code-agent
 estimated_minutes: 90
@@ -18,17 +18,17 @@ release: v2026.7.10
 resolution: Threaded the resolved init tracker root into bundled package installation.
 expected_result: Explicit target installs write only beneath the requested tracker root.
 actual_result: Integration and packed temp proof leave the caller tracker extension tree byte-empty while installing 11 target packages.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-b3e9,related,"2026-07-26T17:24:18.758Z",null,null
-  pm-hosd,related,"2026-07-26T17:24:18.758Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:24:18.758Z",null,null
-  pm-r0m4,related,"2026-07-26T17:24:18.758Z",null,null
+dependencies[4]{id,kind,created_at}:
+  pm-b3e9,related,"2026-07-26T17:24:18.758Z"
+  pm-hosd,related,"2026-07-26T17:24:18.758Z"
+  pm-mpbb,implements,"2026-07-26T17:24:18.758Z"
+  pm-r0m4,related,"2026-07-26T17:24:18.758Z"
 comments[3]{created_at,author,text}:
   "2026-07-04T11:25:59.083Z",claude-code-agent,"Duplicate check before creation: searched all statuses for 'install pm-path project scope writes cwd tracker', 'package install --pm-path --project', and 'with-packages bundled package install tracker path'. Closest hits were closed pm-r0m4 (CJS type:module activation), closed pm-hosd (init --with-packages), and open pm-b3e9 (pre-install command hints); none track explicit --pm-path project install writing into the caller workspace tracker."
   "2026-07-04T11:42:53.708Z",claude-code-agent,"Evidence: created as follow-up only after explicit all-status duplicate checks. The current branch cleaned accidental local .agents/pm/extensions output from manual dogfood and does not implement this path-safety fix; acceptance remains open for a targeted regression."
   "2026-07-10T05:53:26.634Z",codex-root-20260709,"Verification evidence 2026-07-10: full sandbox suite passed 270 files / 5,505 tests with exact 100% statements, branches, functions, and lines. pm test-all over the seven active items passed 8 linked commands with 0 failures and 1 duplicate-safe skip. pnpm typecheck, contracts:check, lint (ESLint + 0 jscpd clones + static quality/token budget), docs-skills, context-eval, security scan, and audit all passed. Live CodeFactor reports A+ and 0 issues. Fresh packed npm install at /tmp/pm-cli-sdk-path-proof-XIsSsh activated 11 bundled packages in a path-target tracker, left caller extension files at zero, and passed CLI/SDK context plus isolated doctor with zero blocking failures. pm health is clean and history drift is zero."
 files[2]{path,scope,note}:
-  src/cli/commands/init.ts,project,Propagate effective tracker root into bundled package installation
+  src/cli/commands/workspace/init.ts,project,Propagate effective tracker root into bundled package installation
   tests/integration/init-path-guard.integration.spec.ts,project,Caller tracker byte-safety around path-target package install
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/integration/init-path-guard.integration.spec.ts,project,300,Path-scoped package installation regression

@@ -4,7 +4,7 @@
  * Search relevance evaluation primitives (pm-u8n5). Implements the standard
  * offline ranking metrics — nDCG@k, MRR@k, precision@k, recall@k — over a
  * human-curated golden-query set, plus the loader/validator for that set. The
- * `pm eval` command (src/cli/commands/eval.ts) runs each golden query through
+ * `pm eval` command (src/cli/commands/query/eval.ts) runs each golden query through
  * the live retrieval path and feeds the ranked ids here, so relevance
  * regressions from corpus changes, hybrid-weight changes, or provider swaps are
  * measurable and gateable in CI.

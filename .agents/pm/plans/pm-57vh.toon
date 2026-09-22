@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: context-management,living-map,manual-inspection,pm-cli,tracker-governance
 created_at: "2026-06-25T04:44:17.429Z"
-updated_at: "2026-09-19T08:39:29.704Z"
+updated_at: "2026-09-22T05:00:47.871Z"
 closed_at: "2026-06-25T05:40:56.628Z"
 author: codex-pm-ecosystem-audit-20260625
 estimated_minutes: 420
@@ -69,9 +69,20 @@ comments[5]{created_at,author,text}:
   "2026-06-25T05:40:56.192Z",codex-ecosystem-auditor,"PR review/check evidence: PR #361 opened at https://github.com/unbraind/pm-cli/pull/361. GitHub checks all green on d4f26218: Build foundation, Docs and Skills, CodeQL, compat, coverage, smokes, static, typecheck, Windows regression, and runtime smokes passed; CodeRabbit status passed and comment says no actionable comments were generated. Gemini Code Assist reported daily quota exhausted twice; Sourcery reported weekly diff-character quota exhausted; Codex connector replied that a Codex account/GitHub connector setup is required, so those produced no actionable review findings to fix."
 files[1]{path,scope,note}:
   .agents/pm,project,"Tracker normalization,sub-agent lane evidence,and new backlog items recorded through pm CLI"
-tests[3]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/aggregate-command.spec.ts tests/unit/commands/stats-command.spec.ts,project,240
-  pm stats --storage --json,project,120
-  pnpm build,project,240
+tests[3]:
+  - command: pm stats --storage --json
+    scope: project
+    timeout_seconds: 120
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/query/aggregate-command.spec.ts tests/unit/commands/query/stats-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:00:47.816Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 close_reason: "PM ecosystem audit, backlog normalization, reliability fixes, local gates, PR checks, and available AI review loop completed."
 body: "Scope: inspect the current pm-cli tracker as a living context map, verify the capability epic taxonomy, add or refine only non-duplicated actionable items, and record evidence through pm comments/files/tests/docs. Philosophy: project management = context management. Boundaries: use pm CLI mutations only; keep public docs free of private runbook details; do not hand-edit .agents/pm files."

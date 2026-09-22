@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: agent-ux,cli,error-recovery
 created_at: "2026-07-20T03:19:23.954Z"
-updated_at: "2026-07-27T08:44:20.442Z"
+updated_at: "2026-09-22T05:24:01.569Z"
 closed_at: "2026-07-27T08:18:11.924Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -31,7 +31,7 @@ comments[6]{created_at,author,text}:
   "2026-07-27T08:41:49.153Z","harness:codex","Verification evidence: full release gate reached the hosted-only boundary after 6452 tests at 100/100/100/100, packed npm smoke, and 88-command dogfood passed."
   "2026-07-27T08:44:20.440Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/767 at implementation head ab7f41a33. PR description links this canonical PM item and the corresponding GitHub issue; exact-head hosted checks and reviews are pending."
 files[3]{path,scope,note}:
-  src/cli/commands/close.ts,project,Structured close redirect recovery
+  src/cli/commands/lifecycle/close.ts,project,Structured close redirect recovery
   src/cli/main.ts,project,Contract-scoped recovery derivation
   tests/integration/help-runtime.spec.ts,project,Graph scope recovery regression
 tests[2]{command,scope,timeout_seconds}:

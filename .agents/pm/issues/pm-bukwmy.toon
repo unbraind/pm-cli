@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-08T05:41:23.494Z"
-updated_at: "2026-09-08T07:22:02.040Z"
+updated_at: "2026-09-22T05:06:40.428Z"
 closed_at: "2026-09-08T07:09:27.039Z"
 completed_at: "2026-09-08T07:09:27.039Z"
 author: "harness:codex"
@@ -34,7 +34,7 @@ files[6]{path,scope,note}:
   tests/unit/sdk/mcp/skills.spec.ts,project,Portable temporary MCP socket fixture
   tests/unit/sdk/sdk-universal-tool-entry-success.spec.ts,project,Portable temporary SDK exemplar
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/unit/core/search/vector-store-adapter.spec.ts tests/unit/sdk/sdk-universal-tool-entry-success.spec.ts tests/unit/sdk/mcp/skills.spec.ts tests/unit/core/store/store-paths.spec.ts tests/integration/legacy-merge-receipt-history.integration.spec.ts tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts,project,240,"harness:codex","2026-09-08T06:10:39.760Z",local_mutation,main
+  node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/unit/core/search/vector-store-adapter.spec.ts tests/unit/sdk/sdk-universal-tool-entry-success.spec.ts tests/unit/sdk/mcp/skills.spec.ts tests/unit/core/store/store-paths.spec.ts tests/integration/legacy-merge-receipt-history.integration.spec.ts tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/commands/workspace/merge-reconcile-command.spec.ts,project,240,"harness:codex","2026-09-22T05:06:40.383Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[3]:
   - run_id: test-local-mtsa3yrw-3dorhq
     kind: test

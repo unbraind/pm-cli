@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",bug
 created_at: "2026-07-07T15:15:06.845Z"
-updated_at: "2026-09-08T05:33:31.455Z"
+updated_at: "2026-09-22T05:16:13.499Z"
 closed_at: "2026-07-10T15:31:56.354Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -43,8 +43,8 @@ files[4]{path,scope,note}:
   src/sdk/cli-contracts/commander-mutation-options.ts,project,Declare acceptance criteria repeatable for create/update
   src/sdk/cli-contracts/flag-contracts.ts,project,Expose repeatable acceptance criteria in runtime contracts
   tests/fixtures/contracts/full.json,project,Fresh-build runtime contract snapshot for repeatable Commander aliases
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/sdk/sdk-compose.spec.ts tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/cli/registration-helpers.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/sdk/sdk-compose.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/cli/registration-helpers.spec.ts,project,240,"harness:codex","2026-09-22T05:16:13.237Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,CLI behavior and validation guidance
   docs/SDK.md,project,SDK/package-author contract guidance

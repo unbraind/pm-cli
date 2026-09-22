@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: calendar,dependabot,github,pm-cli,recurrence,security
 created_at: "2026-04-03T17:22:39.406Z"
-updated_at: "2026-09-19T08:40:28.308Z"
+updated_at: "2026-09-22T05:00:22.745Z"
 deadline: "2026-04-13T17:22:39.406Z"
 closed_at: "2026-04-03T17:46:38.448Z"
 author: codex-agent
@@ -66,7 +66,7 @@ files[11]{path,scope,note}:
   .github/workflows/release.yml,project,gh-findings-remediation-change
   package.json,project,gh-findings-remediation-change
   pnpm-lock.yaml,project,gh-findings-remediation-change
-  src/cli/commands/test.ts,project,gh-findings-remediation-change
+  src/cli/commands/test/test.ts,project,gh-findings-remediation-change
   tests/integration/ci-workflow-contract.spec.ts,project,gh-findings-remediation-change
   tests/integration/cli.integration.spec.ts,project,gh-findings-remediation-change
   tests/integration/run-tests-script.integration.spec.ts,project,gh-findings-remediation-change

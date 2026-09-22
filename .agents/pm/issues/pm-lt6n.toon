@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: ci,tests,windows
 created_at: "2026-07-04T08:11:35.792Z"
-updated_at: "2026-09-19T08:40:43.914Z"
+updated_at: "2026-09-22T05:12:48.540Z"
 closed_at: "2026-07-06T21:52:27.334Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -31,9 +31,9 @@ notes[3]{created_at,author,text}:
   "2026-07-04T10:38:37.025Z",maintainer-agent,"2026-07-04 verification: platform-tolerant assertions pass in the full fast suite (5336/5336) on Linux; the EACCES|EPERM / EISDIR|EPERM alternations keep POSIX coverage while accepting Windows Node 24 EPERM. Windows confirmation will come from the next nightly after push (GH-427 stays open until then)."
   "2026-07-04T18:47:08.092Z",maintainer-agent,"Platform-tolerant assertions (EACCES|EPERM, EISDIR|EPERM) landed on main via PR #428 head. Remaining: confirm next windows-latest Node 24 nightly is green, then close this item and GH-427."
 files[2]{path,scope,note}:
-  tests/unit/commands/restore-command.spec.ts,project,Windows Node 24 EPERM-compatible filesystem assertions
+  tests/unit/commands/history/restore-command.spec.ts,project,Windows Node 24 EPERM-compatible filesystem assertions
   tests/unit/core/history/history-rewrite.spec.ts,project,Windows Node 24 EPERM-compatible directory write assertion
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/restore-command.spec.ts tests/unit/core/history/history-rewrite.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/history/restore-command.spec.ts tests/unit/core/history/history-rewrite.spec.ts,project,240,"harness:codex","2026-09-22T05:12:48.488Z",local_mutation,refactor/cli-command-domains-export-gate
 close_reason: Fixed by PR #430 (Windows-tolerant error-code assertions + lock/claim hardening); verified by green 2026-07-06 Nightly Validation and GH-427 closed as completed.
 body: "## Context\nTracks GH-427. Nightly Validation run 28698219516 (2026-07-04, windows-latest / Node 24): 4 failures, all POSIX-only error-code assertions.\n\n- restore-command.spec: expects code EACCES after chmod 0o444 on the history file; Windows Node 24 raises EPERM opening a read-only file for append.\n- history-rewrite.spec: expects EISDIR writing to a directory path; Windows raises EPERM.\n\n## Approach\nPlatform-tolerant assertions: accept EACCES|EPERM and EISDIR|EPERM respectively (match on a set, not equality). Precedent: PR#365 Windows fixes and the 2026-07-04 GH-427 EPERM fix noted in the ecosystem audit — check whether that partial fix already covers some of the 4 and only patch the remainder. The windows-regression CI job is the oracle; nightly re-run green closes GH-427.\n\n## Definition of done\nAll 4 specs pass on windows-latest Node 24 nightly; no weakening on POSIX (still asserts the specific POSIX code there or the set matcher documents why); GH-427 closed with the green run linked."

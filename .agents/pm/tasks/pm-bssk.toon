@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: code-quality,codefactor,complexity,duplication
 created_at: "2026-07-02T15:11:04.147Z"
-updated_at: "2026-09-19T08:39:57.926Z"
+updated_at: "2026-09-22T05:25:24.532Z"
 closed_at: "2026-07-02T15:51:17.668Z"
 author: claude-code-agent
 parent: pm-92if
@@ -35,12 +35,11 @@ comments[10]{created_at,author,text}:
   "2026-07-02T17:44:08.592Z",claude-code-agent,"Verification follow-up: node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts passed locally after adding the explicit linked test entry (1 file, 25 tests)."
 files[17]{path,scope,note}:
   scripts/release/greptile-review-gate.mjs,project,residual CodeFactor complexity refactor target
-  src/cli/commands/create.ts,project,residual CodeFactor complexity refactor target
   src/cli/commands/extension/shared.ts,project,residual CodeFactor complexity refactor target
-  src/cli/commands/health.ts,project,residual CodeFactor complexity refactor target
-  src/cli/commands/init-agent-guidance.ts,project,residual CodeFactor complexity refactor target
-  src/cli/commands/next.ts,project,residual CodeFactor complexity refactor target
-  src/cli/commands/profile.ts,project,residual CodeFactor complexity refactor target
+  src/cli/commands/governance/health.ts,project,residual CodeFactor complexity refactor target
+  src/cli/commands/lifecycle/create.ts,project,residual CodeFactor complexity refactor target
+  src/cli/commands/query/next.ts,project,residual CodeFactor complexity refactor target
+  src/cli/commands/workspace/profile.ts,project,residual CodeFactor complexity refactor target
   src/cli/error-guidance.ts,project,residual CodeFactor complexity refactor target
   src/cli/extension-command-help.ts,project,residual CodeFactor complexity refactor target
   src/cli/help-json-payload.ts,project,residual CodeFactor complexity refactor target
@@ -49,16 +48,36 @@ files[17]{path,scope,note}:
   src/core/search/corpus.ts,project,residual CodeFactor complexity refactor target
   src/core/shared/serialization.ts,project,residual CodeFactor complexity refactor target
   src/sdk/compose.ts,project,residual CodeFactor complexity refactor target
+  src/sdk/init-agent-guidance.ts,project,residual CodeFactor complexity refactor target
   tests/unit/cli/error-guidance.spec.ts,project,covers error guidance fallback branch after complexity refactor
-  tests/unit/commands/health-command.spec.ts,project,covers health detail summarizer branch paths after complexity refactor
-tests[7]{command,scope,timeout_seconds}:
-  git diff --check,project,60
-  node scripts/run-tests.mjs coverage,project,900
-  node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts,project,120
-  node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/init-command.spec.ts tests/unit/commands/next-command.spec.ts tests/unit/commands/profile-command.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,360
-  pnpm lint,project,300
-  "pnpm quality:static",project,240
-  pnpm typecheck,project,300
+  tests/unit/commands/governance/health-command.spec.ts,project,covers health detail summarizer branch paths after complexity refactor
+tests[7]:
+  - command: git diff --check
+    scope: project
+    timeout_seconds: 60
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 900
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts
+    scope: project
+    timeout_seconds: 120
+  - command: pnpm lint
+    scope: project
+    timeout_seconds: 300
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 240
+  - command: pnpm typecheck
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/governance/health-command.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/unit/commands/query/next-command.spec.ts tests/unit/commands/profile-command.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/sdk/sdk-index.spec.ts
+    scope: project
+    timeout_seconds: 360
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:13:24.780Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mr3okrv1-wihhb3,test,passed,"2026-07-02T15:44:11.677Z","2026-07-02T15:50:11.725Z","2026-07-02T15:50:11.725Z",6,0,0
 close_reason: Refactored residual CodeFactor complexity hotspots and verified repo quality gates

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-10T17:24:09.633Z"
-updated_at: "2026-08-10T12:02:37.858Z"
+updated_at: "2026-09-22T05:08:52.018Z"
 closed_at: "2026-07-10T21:12:00.734Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -42,11 +42,11 @@ comments[4]{created_at,author,text}:
   "2026-07-10T20:52:24.944Z",codex-wide-pm-sdk,"Greptile follow-up resolved: the second fixture used unsupported dependency kind relates_to, so its update command did not persist. Replaced it with a valid blocked_by edge; focused validate suite passes 88/88 and now proves two distinct dangling rows survive sorting and deduplication."
   "2026-07-10T21:11:57.482Z",codex-wide-pm-sdk,"Review evidence: parent dangling-reference rows now emit the directly runnable pm update <id> --unset parent remediation while dependency rows retain --replace-deps. Focused validation and full 100% coverage passed."
 files[3]{path,scope,note}:
-  src/cli/commands/next.ts,project,shared agent work-selection envelope
-  src/cli/commands/validate.ts,project,dangling dependency diagnostic
+  src/cli/commands/governance/validate.ts,project,dangling dependency diagnostic
+  src/cli/commands/query/next.ts,project,shared agent work-selection envelope
   src/core/item/actionability.ts,project,shared dependency-aware readiness primitive
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/core/item/actionability.spec.ts tests/unit/commands/validate-command.spec.ts tests/unit/commands/next-command.spec.ts,project,300
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/item/actionability.spec.ts tests/unit/commands/governance/validate-command.spec.ts tests/unit/commands/query/next-command.spec.ts,project,300,"harness:codex","2026-09-22T05:08:51.931Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,agent-facing command contract
   docs/SDK.md,project,SDK context primitive contract

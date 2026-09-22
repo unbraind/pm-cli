@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: audit,dogfood,"milestone:0",pm-cli
 created_at: "2026-05-01T22:37:48.560Z"
-updated_at: "2026-09-19T08:41:29.284Z"
+updated_at: "2026-09-22T05:00:01.884Z"
 closed_at: "2026-05-01T23:09:34.858Z"
 author: audit-agent
 release: v2026.5.2
@@ -55,13 +55,13 @@ files[56]:
   - path: src/cli.ts
     scope: project
     note: lazy Sentry init on startup
-  - path: src/cli/commands/health.ts
+  - path: src/cli/commands/governance/health.ts
+    scope: project
+    note: dedup toNonEmptyString
+  - path: src/cli/commands/governance/validate.ts
     scope: project
     note: dedup toNonEmptyString
   - path: src/cli/commands/normalize.ts
-    scope: project
-    note: dedup toNonEmptyString
-  - path: src/cli/commands/validate.ts
     scope: project
     note: dedup toNonEmptyString
   - path: src/cli/error-guidance.ts

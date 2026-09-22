@@ -550,7 +550,7 @@ and all clear/replace operations stay restricted or use their dedicated commands
 ```bash
 pm update <id> \
   --comment "Audit evidence: reproduced in staging" \
-  --file "path=src/cli/commands/update.ts,scope=project,note=audit evidence" \
+  --file "path=src/cli/commands/lifecycle/update.ts,scope=project,note=audit evidence" \
   --doc "path=docs/COMMANDS.md,scope=project,note=user-facing behavior" \
   --message "Append audit evidence"
 ```

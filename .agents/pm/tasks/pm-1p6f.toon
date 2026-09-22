@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[7]: "area:workflow",code,docs,"milestone:7",pm-cli,"priority:0",tests
 created_at: "2026-03-08T13:07:26.852Z"
-updated_at: "2026-09-19T08:39:16.316Z"
+updated_at: "2026-09-22T05:00:55.053Z"
 deadline: "2026-03-09T13:07:26.852Z"
 closed_at: "2026-03-08T13:24:08.088Z"
 assignee: maintainer-agent
@@ -57,8 +57,8 @@ files[14]{path,scope,note}:
   AGENTS.md,project,all-fields templates include unblock note
   PRD.md,project,promote unblock_note schema and flag contracts
   README.md,project,document create and update unblock note flags
-  src/cli/commands/create.ts,project,create command parsing and explicit unsets
-  src/cli/commands/update.ts,project,update command parsing and mutation
+  src/cli/commands/lifecycle/create.ts,project,create command parsing and explicit unsets
+  src/cli/commands/lifecycle/update.ts,project,update command parsing and mutation
   src/cli/main.ts,project,add create and update option aliases
   src/core/item/item-format.ts,project,normalization and serialization
   src/core/shared/constants.ts,project,canonical key order

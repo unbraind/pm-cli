@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ux,gh-issue,testing
 created_at: "2026-07-06T10:19:54.550Z"
-updated_at: "2026-09-19T08:39:34.681Z"
+updated_at: "2026-09-22T05:05:22.345Z"
 closed_at: "2026-07-06T10:54:29.016Z"
 author: codex-agent
 parent: pm-oslr
@@ -19,14 +19,29 @@ dependencies[1]{id,kind,created_at}:
 comments[1]{created_at,author,text}:
   "2026-07-06T10:54:22.072Z",codex-agent,"Evidence: GH-463 linked tracker-read mismatch hint now recommends --auto-pm-context first; docs/TESTING.md explains auto PM context routing. Verification passed: focused linked-test suites, pnpm typecheck, pnpm lint, node scripts/run-tests.mjs coverage at 100/100/100/100, security scan, npm audit, pm-changelog check, Sentry/telemetry gate, and installed-package temp project confirmed default schema mismatch includes --auto-pm-context while --auto-pm-context runs tracker mode and passes."
 files[2]{path,scope,note}:
-  src/cli/commands/test.ts,project,GH-463 mismatch hint now suggests --auto-pm-context first
-  tests/unit/commands/test-command.spec.ts,project,Regression expectation for auto context mismatch hint
-tests[5]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs coverage,project,420
-  node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts tests/unit/commands/test-all-command.spec.ts,project,240
-  "pnpm changelog:pm:check",project,240
-  pnpm lint,project,240
-  pnpm typecheck,project,240
+  src/cli/commands/test/test.ts,project,GH-463 mismatch hint now suggests --auto-pm-context first
+  tests/unit/commands/test/test-command.spec.ts,project,Regression expectation for auto context mismatch hint
+tests[5]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 420
+  - command: "pnpm changelog:pm:check"
+    scope: project
+    timeout_seconds: 240
+  - command: pnpm lint
+    scope: project
+    timeout_seconds: 240
+  - command: pnpm typecheck
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts tests/unit/commands/test/test-all-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:05:22.154Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mr92n4f7-inh6do,test,passed,"2026-07-06T10:21:46.489Z","2026-07-06T10:22:46.819Z","2026-07-06T10:22:46.819Z",2,0,0
 docs[1]{path,scope,note}:

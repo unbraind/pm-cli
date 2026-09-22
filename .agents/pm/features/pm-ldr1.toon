@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: "area:search",gh-157,ux
 created_at: "2026-06-14T17:41:14.917Z"
-updated_at: "2026-09-19T08:40:42.898Z"
+updated_at: "2026-09-22T05:22:45.839Z"
 closed_at: "2026-06-18T21:57:52.776Z"
 author: maintainer-agent
 parent: pm-ydp6
@@ -21,6 +21,6 @@ comments[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-06-18T21:57:51.814Z",claude-code-agent,"Inline field:value search syntax lives in TWO complementary layers: (a) bootstrap parseBareKeyValueToken rewrites UNQUOTED argv tokens (tag:x -> --tag x) for ALL flags, generically, before commander; (b) runSearch parseInlineQueryFilters handles the in-query-STRING case (quoted multi-word CLI queries + the pm_search MCP path) for the 4 documented fields tag/status/type/priority. They never conflict (different inputs) and both yield identical applied filters. A lone inline token on the CLI hits commander's 'missing keywords' (bootstrap consumed the only positional); via MCP it hits runSearch's explicit empty-residual USAGE error."
 files[1]{path,scope,note}:
-  src/cli/commands/search.ts,project,inline parser + highlighter + shared field builders
+  src/cli/commands/query/search.ts,project,inline parser + highlighter + shared field builders
 close_reason: "Shipped inline field:value query syntax (tag/status/type/priority) + --highlight matched-text snippets; full contract/MCP/completions/docs wiring; 100% coverage. Closes GH-157 remainder."
 body: "## Context\n\nPR #238 shipped the bulk of GH-157 (default score threshold via --min-score, exact phrase via --match-mode exact, --count mode, relevance ranking). Two asks remain:\n\n1. **Structured inline query syntax**: parse `tag:domain:game status:open` tokens inside the query string as filters (complement to keyword/semantic). The equivalent --tag/--status flags already exist; this is the inline-token parsing sugar.\n2. **Matched-text highlighting**: highlight the matching substring within each matched field in output. matched_fields is already surfaced; per-field text highlighting is not.\n\n## Acceptance criteria\n\n- [ ] Inline `field:value` tokens (tag:, status:, type:, priority:) parsed out of the query and applied as filters; remaining tokens used for keyword/semantic match\n- [ ] Documented precedence when both inline token and explicit flag are provided\n- [ ] Optional --highlight to emit matched spans per field (off by default for token efficiency)\n- [ ] Contracts/MCP/completions/docs updated\n- [ ] Tests + 100% coverage of new logic\n\n## Evidence\n- GH-157 (open); PR #238 shipped the threshold/exact/count parts"

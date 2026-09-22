@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-31T10:41:38.295Z"
-updated_at: "2026-07-31T13:33:40.207Z"
+updated_at: "2026-09-22T05:09:58.249Z"
 closed_at: "2026-07-31T12:54:11.001Z"
 completed_at: "2026-07-31T12:54:11.001Z"
 author: "harness:codex"
@@ -35,16 +35,16 @@ comments[6]{created_at,author,text}:
   "2026-07-31T13:33:40.207Z","harness:codex","Final review remediation: CodeRabbit identified that --limit parsing could occur after note_add when structured event filters suppressed the storage-layer limit. Moved limit validation ahead of every awaited mutation and added a regression proving an invalid filtered limit persists nothing. Focused notes suite passes 29/29 and focused ESLint passes; full exact-head gates will run before republish."
 files[9]{path,scope,note}:
   sdk/public-surface.json,project,public structured event error surface
-  src/cli/commands/notes.ts,project,merge-safe structured event CLI encoding and filtering
+  src/cli/commands/annotations/notes.ts,project,merge-safe structured event CLI encoding and filtering
   src/cli/register-mutation.ts,project,CLI and SDK action registration for structured notes
   src/sdk/annotations.ts,project,typed structured annotation append and query primitives
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,action-scoped event metadata descriptions
   src/sdk/cli-contracts/tool-schema.ts,project,MCP structured event conflict constraints
   src/sdk/generated-error-code-catalog.ts,project,generated immutable event diagnostic catalog
   tests/fixtures/contracts/full.json,project,generated notes action contract snapshot
-  tests/unit/commands/notes-learnings-command.spec.ts,project,structured event mutation and validation regressions
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/notes-learnings-command.spec.ts tests/unit/sdk/sdk-context-primitives.spec.ts,project,240
+  tests/unit/commands/annotations/notes-learnings-command.spec.ts,project,structured event mutation and validation regressions
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/annotations/notes-learnings-command.spec.ts tests/unit/sdk/sdk-context-primitives.spec.ts,project,240,"harness:codex","2026-09-22T05:09:58.201Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,structured event workflow and scalar append concurrency warning
   docs/SDK.md,project,SDK structured context event examples

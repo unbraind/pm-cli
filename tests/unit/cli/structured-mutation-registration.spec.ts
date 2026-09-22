@@ -36,10 +36,10 @@ vi.mock("../../../src/sdk/item-transaction.js", async (importOriginal) => {
   };
 });
 
-vi.mock("../../../src/cli/commands/create.js", () => ({
+vi.mock("../../../src/cli/commands/lifecycle/create.js", () => ({
   runCreate: mocks.runCreate,
 }));
-vi.mock("../../../src/cli/commands/update.js", () => ({
+vi.mock("../../../src/cli/commands/lifecycle/update.js", () => ({
   runUpdate: mocks.runUpdate,
 }));
 vi.mock("../../../src/sdk/lifecycle/reopen.js", () => ({

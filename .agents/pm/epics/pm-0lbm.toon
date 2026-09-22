@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:cli","area:contracts",body,json,list,pm-cli
 created_at: "2026-03-31T19:36:37.724Z"
-updated_at: "2026-09-19T08:39:13.171Z"
+updated_at: "2026-09-22T05:06:14.641Z"
 deadline: "2026-04-03T19:36:37.724Z"
 closed_at: "2026-03-31T19:45:52.281Z"
 assignee: codex-agent
@@ -84,7 +84,7 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:26:03.336Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
-  src/cli/commands/list.ts,project,primary list payload command
+  src/cli/commands/query/list.ts,project,primary list payload command
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test,project,3600,full regression
 docs[1]{path,scope,note}:

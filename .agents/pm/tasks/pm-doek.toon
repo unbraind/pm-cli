@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:health",follow-up,pm-cli
 created_at: "2026-04-03T22:00:05.513Z"
-updated_at: "2026-09-19T08:40:06.345Z"
+updated_at: "2026-09-22T05:13:13.043Z"
 deadline: "2026-04-10T22:00:05.513Z"
 closed_at: "2026-04-05T22:42:27.686Z"
 author: codex-agent
@@ -53,8 +53,8 @@ comments[15]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-04-03T22:00:05.513Z",codex-agent,No new command surface; improve manage and health diagnostics only.
 files[6]{path,scope,note}:
-  src/cli/commands/extension.ts,project,manage diagnostics summary
-  src/cli/commands/health.ts,project,extension health triage summary
+  src/cli/commands/extension/extension.ts,project,manage diagnostics summary
+  src/cli/commands/governance/health.ts,project,extension health triage summary
   src/cli/help-content.ts,project,help alignment for triage and validate examples
   src/sdk/cli-contracts.ts,project,extension-manage-status-contract
   tests/unit/extension-command.spec.ts,project,manage/explore triage regression tests

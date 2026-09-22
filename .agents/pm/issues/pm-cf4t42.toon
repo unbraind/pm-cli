@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-03T18:06:41.043Z"
-updated_at: "2026-09-04T10:53:28.047Z"
+updated_at: "2026-09-22T05:07:11.674Z"
 closed_at: "2026-09-04T06:43:11.161Z"
 completed_at: "2026-09-04T06:43:11.161Z"
 author: "harness:codex"
@@ -48,7 +48,7 @@ files[11]{path,scope,note}:
   tests/integration/legacy-merge-receipt-history.integration.spec.ts,project,Prove preview apply audit and green health in a temporary tracker
   tests/integration/merge-receipt-health-classification.integration.spec.ts,project,Verify bounded missing-reference health diagnostics
   tests/integration/remediation-registry.spec.ts,project,Require the state-progressing remediation command
-  tests/unit/commands/merge-reconcile-command.spec.ts,project,Verify trusted receipt settlement with domain-separated merged-field proof
+  tests/unit/commands/workspace/merge-reconcile-command.spec.ts,project,Verify trusted receipt settlement with domain-separated merged-field proof
   tests/unit/sdk/governance/merge-receipt-history.spec.ts,project,Prove exact pre-durable disposition classification
   tests/unit/sdk/merge-reconcile.spec.ts,project,Cover health preflight and expanded reconciliation result
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:

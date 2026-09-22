@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,history,item-types,plan,planning,pm-cli,search
 created_at: "2026-05-17T08:49:41.571Z"
-updated_at: "2026-09-19T08:40:36.189Z"
+updated_at: "2026-09-22T05:03:22.647Z"
 closed_at: "2026-05-17T13:03:56.913Z"
 author: codex-agent
 acceptance_criteria: Plan is a built-in item type; --type plan resolves to Plan; Plan uses normal item storage/history; Plan appears in contracts/help/completion/list/context/stats; search indexes plan-specific fields; focused tests and sandboxed dogfood pass.
@@ -30,8 +30,8 @@ comments[4]{created_at,author,text}:
   "2026-05-17T13:03:55.061Z",claude-code-agent,"Implementation evidence: added Plan to BUILTIN_ITEM_TYPE_VALUES + TYPE_TO_FOLDER + PM_OPTIONAL_TYPE_SUBDIRS; added typed plan metadata (PlanMode/PlanStep/PlanDecision/PlanDiscovery/PlanValidationCheck/PlanStepLink/etc.) to types.ts; added FRONT_MATTER_KEY_ORDER plan_* slots; added plan_* normalizers to item-format.ts so plan_steps round-trip to disk preserves canonical hash; extended buildSearchCorpus to include plan corpus; added buildPlanFlatCorpus used by keyword search; updated shared-constants-errors test + stats test fixtures. Smoke: pm create --type plan resolves to Plan, file written under .agents/pm/plans/."
 files[17]{path,scope,note}:
   src/cli/commands/completion.ts,project,Plan completion support
-  src/cli/commands/create.ts,project,Plan create support
-  src/cli/commands/update.ts,project,Plan metadata update support
+  src/cli/commands/lifecycle/create.ts,project,Plan create support
+  src/cli/commands/lifecycle/update.ts,project,Plan metadata update support
   src/cli/help-content.ts,project,Plan help guidance
   src/cli/help-json-payload.ts,project,Plan help JSON/runtime schema guidance
   src/core/item/item-format.ts,project,Plan metadata serialization

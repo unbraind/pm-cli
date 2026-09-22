@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,health,output-contract,recovery
 created_at: "2026-08-13T22:03:57.836Z"
-updated_at: "2026-08-15T03:01:44.402Z"
+updated_at: "2026-09-22T05:08:12.588Z"
 closed_at: "2026-08-15T03:01:43.618Z"
 completed_at: "2026-08-15T03:01:43.618Z"
 author: "harness:codex"
@@ -36,8 +36,8 @@ files[7]{path,scope,note}:
   src/sdk/governance/health.ts,project,Self indexing findings and exact failure causes
   tests/integration/release-readiness-runtime.spec.ts,project,release-readiness health key ordering
   tests/unit/sdk/health-finding-contract.spec.ts,project,Severity ownership remediation and projection coverage
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/health-finding-contract.spec.ts tests/unit/commands/health-command.spec.ts,project,240,Full brief summary verdict and finding parity
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/health-finding-contract.spec.ts tests/unit/commands/governance/health-command.spec.ts,project,240,"harness:codex","2026-09-22T05:08:12.538Z",local_mutation,refactor/cli-command-domains-export-gate,Full brief summary verdict and finding parity
 test_runs[2]:
   - run_id: test-local-mstq5m8s-g4g3gz
     kind: test

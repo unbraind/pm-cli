@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ux,"area:cli",simplification
 created_at: "2026-07-05T04:53:04.736Z"
-updated_at: "2026-08-17T22:26:47.913Z"
+updated_at: "2026-09-22T05:07:59.160Z"
 closed_at: "2026-08-17T22:26:46.593Z"
 completed_at: "2026-08-17T22:26:46.593Z"
 author: maintainer-agent
@@ -66,15 +66,24 @@ files[23]{path,scope,note}:
   tests/integration/workspace-snapshot-cli.integration.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
   tests/unit/cli/error-guidance.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
   tests/unit/cli/register-list-query.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
-  tests/unit/commands/completion-command.spec.ts,project,Proves generated completions expose only the canonical list command.
-  tests/unit/commands/contracts-command.spec.ts,project,Covers explicit deprecated action selection without losing the requested alias contract.
   tests/unit/commands/register-commands.spec.ts,project,Consolidates lifecycle list variants into canonical list filters with parity coverage.
+  tests/unit/commands/workspace/completion-command.spec.ts,project,Proves generated completions expose only the canonical list command.
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Covers explicit deprecated action selection without losing the requested alias contract.
   tests/unit/sdk/action-schema-parity.spec.ts,project,Proves fixed lifecycle actions cannot accept ignored status or all selectors.
   tests/unit/sdk/cli-contracts/runtime-alias-surface.spec.ts,project,Tests alias metadata without reading the real tracker or mutating global tables.
   tests/unit/sdk/sdk-index.spec.ts,project,"Verifies public SDK flag routing for canonical,all-status,and fixed lifecycle commands."
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/query-filter-contract.spec.ts tests/integration/scripting-contract.spec.ts tests/integration/workspace-snapshot-cli.integration.spec.ts tests/unit/cli/register-list-query.spec.ts,project,360
-  node scripts/run-tests.mjs test -- tests/unit/commands/completion-command.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/cli-contracts/runtime-alias-surface.spec.ts,project,300
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/query-filter-contract.spec.ts tests/integration/scripting-contract.spec.ts tests/integration/workspace-snapshot-cli.integration.spec.ts tests/unit/cli/register-list-query.spec.ts
+    scope: project
+    timeout_seconds: 360
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/workspace/completion-command.spec.ts tests/unit/commands/workspace/contracts-command.spec.ts tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/cli-contracts/runtime-alias-surface.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:07:59.115Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 docs[7]{path,scope,note}:
   AGENTS.md,project,Uses canonical active-list agent guidance.
   docs/AGENT_GUIDE.md,project,Routes agent workflows through canonical list filters.

@@ -3,7 +3,7 @@ import type { Command } from "commander";
 import { stringArrayOption } from "../option-values.js";
 import { WORKFLOW_POLICY_ACTIONS } from "../../sdk/cli-contracts/enum-contracts.js";
 import { EXIT_CODE, PmCliError, createUnknownSubcommandError, type GlobalOptions } from "../../sdk/runtime-primitives.js";
-import * as schemaModule from "../commands/schema.js";
+import * as schemaModule from "../commands/workspace/schema.js";
 import { looksLikeSchemaSubcommandTypo, parseSchemaOrderOption } from "../schema-registration-helpers.js";
 import { addHiddenOption, collect, formatHookWarnings, getGlobalOptions, printError, printResult, readOptionString, writeStdout } from "../registration-helpers.js";
 

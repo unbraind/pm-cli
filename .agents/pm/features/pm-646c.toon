@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",composability
 created_at: "2026-07-06T21:25:25.697Z"
-updated_at: "2026-07-26T17:05:12.065Z"
+updated_at: "2026-09-22T05:21:44.559Z"
 closed_at: "2026-07-23T21:19:10.451Z"
 author: maintainer-agent
 estimated_minutes: 300
@@ -18,14 +18,30 @@ release: v2026.7.24
 resolution: Implemented and verified
 expected_result: "Line-oriented list, search, and context output is contract-complete, composable, and EPIPE-safe."
 actual_result: Public serializeNdjsonRows and CLI NDJSON adapters emit independently parseable row objects with no wrapper or trailing summary; packed CLI and SDK acceptance passed.
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-m9xv,related,"2026-07-06T21:26:29.755Z",null,null
-  pm-a9mc,related,"2026-07-23T21:01:38.700Z",claude-code-agent,null
-  pm-ishm,related,"2026-07-23T21:01:38.700Z",claude-code-agent,null
-  pm-cfed,related,"2026-07-26T17:05:11.853Z",null,null
-  pm-dfg0,related,"2026-07-26T17:05:11.853Z",null,null
-  pm-gygna8,related,"2026-07-26T17:05:11.853Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:05:11.853Z",null,null
+dependencies[7]:
+  - id: pm-m9xv
+    kind: related
+    created_at: "2026-07-06T21:26:29.755Z"
+  - id: pm-a9mc
+    kind: related
+    created_at: "2026-07-23T21:01:38.700Z"
+    author: claude-code-agent
+  - id: pm-ishm
+    kind: related
+    created_at: "2026-07-23T21:01:38.700Z"
+    author: claude-code-agent
+  - id: pm-cfed
+    kind: related
+    created_at: "2026-07-26T17:05:11.853Z"
+  - id: pm-dfg0
+    kind: related
+    created_at: "2026-07-26T17:05:11.853Z"
+  - id: pm-gygna8
+    kind: related
+    created_at: "2026-07-26T17:05:11.853Z"
+  - id: pm-mpbb
+    kind: implements
+    created_at: "2026-07-26T17:05:11.853Z"
 comments[5]{created_at,author,text}:
   "2026-07-23T20:33:32.220Z",claude-code-agent,"Implementation start 2026-07-23: actively deliver the shared bounded/streamable read projection surface across pm-gygna8, pm-a9mc, pm-ishm, and pm-646c. Scope includes public SDK contracts, thin CLI/MCP wiring, deterministic bounds, token-efficient projections, pipeline behavior, docs, contracts, focused regressions, exact coverage, and packed/manual consumer proof. All-status duplicate review reused these canonical items and their closed prerequisites; no parallel implementation item was created."
   "2026-07-23T21:01:49.652Z",claude-code-agent,"Implementation evidence: public serializeNdjsonRows plus list/search/context --format ndjson now emit row-only streams; CLI and SDK tests pass and generated contracts are current."
@@ -33,7 +49,7 @@ comments[5]{created_at,author,text}:
   "2026-07-23T21:19:07.192Z",claude-code-agent,"Final verification evidence: full sandboxed repository coverage passed 349 files / 6,189 tests at exact Statements 42,435/42,435, Branches 30,059/30,059, Functions 8,645/8,645, Lines 41,245/41,245. Typecheck, ESLint, zero-duplication, static quality, 100% docstrings, package boundary, token budgets, docs/skills, contracts, context evaluation, linked tests, and packed consumer acceptance also passed."
   "2026-07-23T22:03:06.957Z",claude-code-agent,"Review-round evidence: hardened serializeNdjsonRows against Date/custom toJSON projections that serialize to string, undefined, null, or arrays; only JSON object rows are emitted. Added regressions and restored exact 100/100/100/100 coverage."
 files[6]{path,scope,note}:
-  src/cli/commands/context.ts,project,context NDJSON format contract
+  src/cli/commands/query/context.ts,project,context NDJSON format contract
   src/cli/register-list-query.ts,project,list/search/context NDJSON adapters
   src/sdk/cli-contracts/flag-contracts.ts,project,runtime flag contracts
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,MCP parameter parity

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-experience,"area:cli",errors,gh-issue,schema
 created_at: "2026-07-06T21:09:17.588Z"
-updated_at: "2026-08-09T22:09:42.173Z"
+updated_at: "2026-09-22T05:17:29.687Z"
 closed_at: "2026-08-09T22:09:41.564Z"
 completed_at: "2026-08-09T22:09:41.564Z"
 author: maintainer-agent
@@ -27,8 +27,8 @@ learnings[1]{created_at,author,text}:
   "2026-08-09T22:09:40.872Z","harness:codex",Structured validation errors should carry schema field names and expected types so agents can recover without a separate schema lookup.
 files[1]{path,scope,note}:
   src/sdk/lifecycle/create.ts,project,Typed required custom-field recovery
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts,project,240,Typed required custom-field recovery
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/create-command.spec.ts,project,240,"harness:codex","2026-09-22T05:17:29.630Z",local_mutation,refactor/cli-command-domains-export-gate,Typed required custom-field recovery
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,Required field type guidance
 close_reason: Typed custom-field recovery is implemented and verified.

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: cli,data-integrity,gh-issue,validation
 created_at: "2026-07-13T08:57:49.715Z"
-updated_at: "2026-07-26T17:06:36.031Z"
+updated_at: "2026-09-22T05:21:33.902Z"
 closed_at: "2026-07-13T16:59:54.555Z"
 author: maintainer-agent
 estimated_minutes: 45
@@ -18,15 +18,15 @@ release: v2026.7.14
 resolution: Resolved with shared trim-then-require title validation used by create and update.
 expected_result: Empty and whitespace-only titles fail before persistence with the required-title usage error.
 actual_result: Create and update reject blank titles with exit 2 while legacy malformed fixture reads remain covered.
-dependencies[8]{id,kind,created_at,author,source_kind}:
-  pm-jh9t,related,"2026-07-13T15:28:04.596Z",null,null
-  pm-45mb,related,"2026-07-26T17:06:35.827Z",null,null
-  pm-96vo,related,"2026-07-26T17:06:35.827Z",null,null
-  pm-chyh,related,"2026-07-26T17:06:35.827Z",null,null
-  pm-hno5,related,"2026-07-26T17:06:35.827Z",null,null
-  pm-kj4k,related,"2026-07-26T17:06:35.827Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:06:35.827Z",null,null
-  pm-p9sc,related,"2026-07-26T17:06:35.827Z",null,null
+dependencies[8]{id,kind,created_at}:
+  pm-jh9t,related,"2026-07-13T15:28:04.596Z"
+  pm-45mb,related,"2026-07-26T17:06:35.827Z"
+  pm-96vo,related,"2026-07-26T17:06:35.827Z"
+  pm-chyh,related,"2026-07-26T17:06:35.827Z"
+  pm-hno5,related,"2026-07-26T17:06:35.827Z"
+  pm-kj4k,related,"2026-07-26T17:06:35.827Z"
+  pm-mpbb,implements,"2026-07-26T17:06:35.827Z"
+  pm-p9sc,related,"2026-07-26T17:06:35.827Z"
 comments[4]{created_at,author,text}:
   "2026-07-13T14:32:12.252Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
   "2026-07-13T15:32:36.175Z",codex-sdk-contracts-20260713,"Evidence: create and update now share trim-then-require title validation. Empty and whitespace-only titles fail with usage exit 2 before persistence; legacy malformed fixtures remain readable through explicit fixture rewriting. Focused and full coverage gates passed."
@@ -35,12 +35,21 @@ comments[4]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-07-13T16:59:53.577Z",codex-sdk-contracts-20260713,"Distinguish omitted required input from present-but-blank input: the former benefits from command-specific missing-option recovery, while the latter needs reusable invalid-value guidance across create and update."
 files[3]{path,scope,note}:
-  src/cli/commands/create.ts,project,shared nonblank title validation
-  src/cli/commands/update.ts,project,update title validation
+  src/cli/commands/lifecycle/create.ts,project,shared nonblank title validation
+  src/cli/commands/lifecycle/update.ts,project,update title validation
   tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,create and update rejection coverage
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/commands/focus-command.spec.ts,project,240
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/sdk-cli-contract-integrity.integration.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:21:33.793Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
   test-all-local-mrjdn0i2-0w3w16,test-all,passed,"2026-07-13T15:28:19.236Z","2026-07-13T15:28:57.654Z","2026-07-13T15:28:57.654Z",2,0,0,1,2
   test-all-local-mrjgvws3-9qmdsa,test-all,passed,"2026-07-13T16:59:13.188Z","2026-07-13T16:59:33.541Z","2026-07-13T16:59:33.541Z",2,0,0,1,2

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:config","area:schema",bootstrap,living-map
 created_at: "2026-05-31T19:45:40.268Z"
-updated_at: "2026-09-19T08:39:16.024Z"
+updated_at: "2026-09-22T05:14:34.916Z"
 closed_at: "2026-06-03T05:16:18.676Z"
 author: maintainer-agent
 acceptance_criteria: pm init --type-preset <preset> idempotently registers the preset's types; composes with --preset/--defaults; InitResult.registered_type_preset; docs+tests; no-preset behavior unchanged.
@@ -24,7 +24,7 @@ comments[3]{created_at,author,text}:
   "2026-06-03T05:32:00.427Z",codex-main,"Review follow-up: addressed CodeRabbit feedback by asserting preset folder creation and adding init verbose/type-preset contract coverage. Existing implementation already scaffolded preset folders through readSettings after schema write; test now locks that behavior. Verification: pnpm build and focused tests passed after patch."
 files[5]{path,scope,note}:
   src/cli/commands/completion.ts,project,completion updates for init type preset
-  src/cli/commands/init.ts,project,init type preset registration and result summary
+  src/cli/commands/workspace/init.ts,project,init type preset registration and result summary
   src/cli/register-setup.ts,project,init --type-preset CLI flag
   src/sdk/cli-contracts.ts,project,init typePreset action/flag contract
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,typePreset parameter metadata

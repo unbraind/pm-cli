@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts","area:sdk",conformance-gap,error-contract
 created_at: "2026-07-30T09:13:24.981Z"
-updated_at: "2026-07-30T11:30:54.100Z"
+updated_at: "2026-09-22T05:10:09.311Z"
 closed_at: "2026-07-30T11:24:31.743Z"
 completed_at: "2026-07-30T11:24:31.743Z"
 author: "harness:claude-code"
@@ -39,7 +39,7 @@ comments[4]{created_at,author,text}:
   "2026-07-30T11:24:20.240Z","harness:codex","Closure evidence: every declared built-in command/intent pair executes; field groups map explicitly to legal command options; invalid intent input produces one unknown_context_intent usage envelope and executable suggestion. Full release suite passed all local gates, packed smoke, and 88-command dogfood; its only pre-push stop was the hosted DeepScan status that can exist only after push."
   "2026-07-30T11:30:54.100Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/829 reviews cohesive SDK context budgets, universal row contracts, bounded graph/health diagnostics, quality ratchets, and exact-head commit e53544cd1."
 files[5]{path,scope,note}:
-  src/cli/commands/context.ts,project,section-domain validator that rejects the intent before the intent validator runs
+  src/cli/commands/query/context.ts,project,section-domain validator that rejects the intent before the intent validator runs
   src/core/output/output.ts,project,CLI rendering applies the same intent contract as SDK dispatch
   src/core/shared/constants.ts,project,the ten legal --section values are DEFAULT_SETTINGS.context.sections at lines 418 to 429
   src/sdk/context-intent-contracts.ts,project,line 281 assigns contract included_field_groups straight into projected.section

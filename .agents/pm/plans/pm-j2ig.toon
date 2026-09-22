@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli",bulk-ops,living-map,query
 created_at: "2026-06-04T15:24:46.355Z"
-updated_at: "2026-09-19T08:40:35.569Z"
+updated_at: "2026-09-22T05:03:27.022Z"
 closed_at: "2026-06-04T20:12:36.677Z"
 author: maintainer-agent
 parent: pm-mpbb
@@ -55,12 +55,12 @@ files[21]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,pm-changelog latest install metadata refreshed during changelog verification.
   package.json,project,Dependency verification confirmed commander remains 14.0.3 to preserve advertised Node 20 support.
   pnpm-lock.yaml,project,Lockfile refreshed during dependency verification; commander remains 14.0.3 for Node 20 compatibility.
-  src/cli/commands/close-many.ts,project,"New close-many bulk close primitive with dry-run,checkpoint,rollback,terminal skip,and runClose semantics."
   src/cli/commands/completion.ts,project,"Second review follow-up: clarify ISO/relative date completion descriptions."
-  src/cli/commands/list.ts,project,Date-window and explicit-id filters for context retrieval.
-  src/cli/commands/search.ts,project,Search status filter parity for context queries.
-  src/cli/commands/update-many.ts,project,Explicit --ids targeting and shared filter plumbing for bulk mutation.
-  src/cli/commands/update.ts,project,"Third review follow-up: count runtime update/update_many fields before runUpdate no-op guard so batch runtime fields actually apply."
+  src/cli/commands/lifecycle/close-many.ts,project,"New close-many bulk close primitive with dry-run,checkpoint,rollback,terminal skip,and runClose semantics."
+  src/cli/commands/lifecycle/update-many.ts,project,Explicit --ids targeting and shared filter plumbing for bulk mutation.
+  src/cli/commands/lifecycle/update.ts,project,"Third review follow-up: count runtime update/update_many fields before runUpdate no-op guard so batch runtime fields actually apply."
+  src/cli/commands/query/list.ts,project,Date-window and explicit-id filters for context retrieval.
+  src/cli/commands/query/search.ts,project,Search status filter parity for context queries.
   src/cli/register-list-query.ts,project,"Second review follow-up: expose list --ids registration."
   src/cli/register-mutation.ts,project,"Second review follow-up: clarify close-many reason requirement for dry-run/apply."
   src/cli/registration-helpers.ts,project,"Second review follow-up: normalize list --ids from CLI options."

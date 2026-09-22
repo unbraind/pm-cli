@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:search","area:semantic",audit,living-map,pm-cli
 created_at: "2026-05-31T19:22:08.438Z"
-updated_at: "2026-09-19T08:40:22.745Z"
+updated_at: "2026-09-22T05:03:38.789Z"
 closed_at: "2026-05-31T19:51:38.052Z"
 author: maintainer-agent
 acceptance_criteria: "Domain audited read-only across code+docs+tests; existing pm coverage mapped via search; genuine gaps, forward work, improvements, ADRs, and agent/user stories proposed (dedup-checked); work-log + key decisions recorded in pm on this task."
@@ -29,7 +29,7 @@ learnings[4]{created_at,author,text}:
   "2026-05-31T19:31:42.844Z",audit-search-agent,"LanceDB adapter uses brute-force in-process cosine similarity (O(n) linear scan over all vectors in the snapshot Map). For large corpora this becomes the dominant query cost. The natural upgrade path is ANN indexing (e.g. HNSW), but that requires either native LanceDB bindings (currently avoided — snapshot is pure JSON) or a new adapter. pm-ss1d (bundling) remains the prerequisite for native deps."
   "2026-05-31T19:31:48.582Z",audit-search-agent,"pm search has no --status filter. It loads all-status items then applyFilters() supports --type, --tag, --priority, --deadline-before/after only. This means 'pm search foo' includes closed items by default. Adding --status parity with pm list (CSV, 'open', 'closed', 'canceled' aliases) is a genuine forward gap with agent usability value."
 files[5]{path,scope}:
-  src/cli/commands/search.ts,project
+  src/cli/commands/query/search.ts,project
   src/core/search/background-refresh.ts,project
   src/core/search/corpus.ts,project
   src/core/search/providers.ts,project

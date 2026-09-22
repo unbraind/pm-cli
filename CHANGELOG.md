@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- GH-1284: release notes must read complete tracker evidence beyond default output budgets ([pm-svxdsx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-svxdsx.toon))
 - Fix smoke and contract workspace cleanup on exits and interrupts ([pm-14dnbh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-14dnbh.toon))
 
 ### Security
@@ -12,6 +13,8 @@
 
 ### Other
 
+- Repair calendar shortcut package discovery and upgrade migration guidance ([pm-o3fh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-o3fh.toon))
+- Prune src/cli/commands/index.ts barrel dead re-exports and adopt knip as a dead-export gate ([pm-f4yn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-f4yn.toon))
 - Diagnose abandoned build leases before the full acquisition timeout ([pm-63i8nr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-63i8nr.toon))
 
 ## 2026.9.21 - 2026-09-21
@@ -88,7 +91,6 @@
 - Serialize the complete build pipeline so overlapping validation cannot consume partially rewritten dist artifacts ([pm-cxc4jc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cxc4jc.toon))
 - Released-artifact acceptance: the exact published tarball is installed clean and driven through a scripted agent session before the release is advertised ([pm-ygli86](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ygli86.toon))
 - Verify explicit calendar duration in package-first dogfood ([pm-d9bg0i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-d9bg0i.toon))
-- Move meet/event/remind calendar shortcuts from core surface into the builtin-calendar package as create sugar ([pm-o3fh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-o3fh.toon))
 - ADR: Require explicit minute and month units for event durations ([pm-j1vw3a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-j1vw3a.toon))
 - Context judgment corpus: small, real-shaped, scale, and returning-agent continuity scenarios for pm context/next ([pm-lixy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lixy.toon))
 - Refresh Sentry 10.75 and CLI 3.8 with Unicorn 75 compatibility proof ([pm-1wypwu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-1wypwu.toon))

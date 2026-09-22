@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,bootstrap,init,pm-cli,settings
 created_at: "2026-05-17T08:59:31.342Z"
-updated_at: "2026-09-19T08:39:45.224Z"
+updated_at: "2026-09-22T05:25:16.527Z"
 closed_at: "2026-05-17T10:09:41.214Z"
 author: codex-agent
 acceptance_criteria: pm init asks once in interactive mode when guidance is missing; yes writes guidance; no records project-level decline; future default init runs do not ask after decline; pm init --agent-guidance add writes guidance even after decline; non-interactive init never waits for input; result payload includes deterministic guidance status for JSON/TOON output.
@@ -35,11 +35,11 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-05-17T10:09:39.380Z",codex-agent,Keeping ask/add/skip/status as one value flag avoids interactive ambiguity and keeps MCP/tool payloads deterministic.
 files[8]{path,scope,note}:
-  src/cli/commands/init-agent-guidance.ts,project,TTY prompt handling and declined-state behavior
-  src/cli/commands/init.ts,project,approval flow and result payload
+  src/cli/commands/workspace/init.ts,project,approval flow and result payload
   src/cli/register-setup.ts,project,agent guidance option parsing
   src/core/shared/constants.ts,project,agent guidance defaults
   src/core/store/settings.ts,project,decline persistence
+  src/sdk/init-agent-guidance.ts,project,TTY prompt handling and declined-state behavior
   src/types.ts,project,agent guidance setting type
   tests/integration/cli.integration.spec.ts,project,Integration coverage for status/skip/add flows
   tests/unit/init-command.spec.ts,project,TTY approval decline tests

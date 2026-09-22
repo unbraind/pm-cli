@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,cli,concurrency
 created_at: "2026-07-04T19:20:15.349Z"
-updated_at: "2026-07-27T12:52:06.640Z"
+updated_at: "2026-09-22T05:18:09.290Z"
 closed_at: "2026-07-10T21:11:58.702Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -50,11 +50,11 @@ comments[4]{created_at,author,text}:
   "2026-07-10T20:32:29.986Z",codex-wide-pm-sdk,"Verification: pnpm release:gates passed build/typecheck/static/docstring ratchets/docs/context/security, 100/100/100/100 coverage with 5,524 tests, packed npx smoke, and 88-command package dogfood; isolated installed-tarball acceptance created two items, atomically claimed one, accepted comments --body, detected one dangling dependency, and imported PmClient. Live Sentry/telemetry: 0 blocking critical/high, 0.34% finish error rate, zero missing error-code rows. pm health: all 7 checks ok; history drift: 0 across 1,709 items."
   "2026-07-10T21:11:56.435Z",codex-wide-pm-sdk,"Review evidence: fixed all claim-next findings. --if-available now advances skipped held candidates and returns a non-failing skip only when all are held; explicit --author controls both ranking and mutation; id plus --next is rejected; zsh flags moved from update to claim. Focused suites passed and full coverage is 100/100/100/100 with 5,528 tests."
 files[3]{path,scope,note}:
-  src/cli/commands/claim.ts,project,atomic ranked claim composition
-  src/cli/commands/next.ts,project,shared agent work-selection envelope
+  src/cli/commands/lifecycle/claim.ts,project,atomic ranked claim composition
+  src/cli/commands/query/next.ts,project,shared agent work-selection envelope
   src/core/item/actionability.ts,project,shared dependency-aware readiness primitive
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/claim-command.spec.ts tests/unit/commands/next-command.spec.ts,project,300
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/commands/query/next-command.spec.ts,project,300,"harness:codex","2026-09-22T05:18:09.196Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,agent-facing command contract
   docs/SDK.md,project,SDK context primitive contract

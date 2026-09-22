@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:cli","area:graph","area:sdk","area:tests",changelog-exclude,pr-983,review-hardening
 created_at: "2026-08-11T22:48:17.505Z"
-updated_at: "2026-08-12T02:34:10.204Z"
+updated_at: "2026-09-22T05:08:30.152Z"
 closed_at: "2026-08-12T02:34:09.592Z"
 completed_at: "2026-08-12T02:34:09.592Z"
 author: "harness:codex"
@@ -50,9 +50,9 @@ files[24]{path,scope,note}:
   tests/fixtures/contracts/full.json,project,PR #983 exact-head review hardening
   tests/unit/cli/cli-main-errors.spec.ts,project,PR #983 exact-head review hardening
   tests/unit/cli/error-guidance.spec.ts,project,PR #983 exact-head review hardening
-  tests/unit/commands/health-command.spec.ts,project,PR #983 exact-head review hardening
+  tests/unit/commands/governance/health-command.spec.ts,project,PR #983 exact-head review hardening
+  tests/unit/commands/governance/validate-command.spec.ts,project,PR #983 exact-head review hardening
   tests/unit/commands/register-commands.spec.ts,project,PR #983 exact-head review hardening
-  tests/unit/commands/validate-command.spec.ts,project,PR #983 exact-head review hardening
   tests/unit/scripts/generate-error-code-catalog.spec.ts,project,PR #983 exact-head review hardening
   tests/unit/sdk/assurance-runtime.spec.ts,project,PR #983 exact-head review hardening
   tests/unit/sdk/assurance.spec.ts,project,PR #983 exact-head review hardening

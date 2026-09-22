@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: classification,diagnostics,linked-tests
 created_at: "2026-04-04T10:10:34.411Z"
-updated_at: "2026-09-19T08:39:25.954Z"
+updated_at: "2026-09-22T05:05:41.539Z"
 deadline: "2026-04-11T10:10:34.411Z"
 closed_at: "2026-04-04T11:40:09.915Z"
 author: codex-agent
@@ -44,8 +44,8 @@ dependencies[1]{id,kind,created_at}:
 comments[1]{created_at,author,text}:
   "2026-04-04T11:39:55.278Z",codex-agent,"Evidence: pnpm build passed; node scripts/run-tests.mjs test passed (844 tests); node scripts/run-tests.mjs coverage passed (branches 91.02%); PM linked-test sweep passed via pm test-all --status in_progress (linked_tests=3 failed=0, failure categories all zero)."
 files[3]{path,scope,note}:
-  src/cli/commands/test-all.ts,project,aggregate failure categories
-  src/cli/commands/test.ts,project,failure classification and env precedence
+  src/cli/commands/test/test-all.ts,project,aggregate failure categories
+  src/cli/commands/test/test.ts,project,failure classification and env precedence
   src/core/output/command-aware.ts,project,classification highlights
 close_reason: implemented linked-test failure classification and verified with full test/coverage sweeps
 body: "Scope context: Issue2 Task: Structured linked-test failure classification\n\nExecution intent: This task is tracked under pm-9dp3 with component linked-test-runtime.\n\nCompletion signal: Linked test run_results and test-all aggregates classify failures (including infra_collision vs assertion_failure) for deterministic triage.\n\nGovernance intent: Linked test reliability. Maintain linked files/tests/docs and evidence comments so future agents can reuse this record as authoritative context."

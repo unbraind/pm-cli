@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: external-audit,governance,pm-cli,query-surfaces
 created_at: "2026-04-06T12:40:25.542Z"
-updated_at: "2026-09-19T08:40:38.076Z"
+updated_at: "2026-09-22T05:03:18.573Z"
 closed_at: "2026-04-27T20:08:57.174Z"
 author: codex-agent
 estimated_minutes: 60
@@ -33,11 +33,11 @@ comments[10]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-04-06T12:40:25.542Z",codex-agent,Implement command surfaces additively and keep existing defaults stable for current users.
 files[9]{path,scope,note}:
-  src/cli/commands/aggregate.ts,project,aggregate grouped-count command
+  src/cli/commands/annotations/comments.ts,project,ownership conflict remediation guidance
   src/cli/commands/comments-audit.ts,project,expanded governance filters
-  src/cli/commands/comments.ts,project,ownership conflict remediation guidance
-  src/cli/commands/health.ts,project,health vector refresh controls
-  src/cli/commands/list.ts,project,list projection and sorting controls
+  src/cli/commands/governance/health.ts,project,health vector refresh controls
+  src/cli/commands/query/aggregate.ts,project,aggregate grouped-count command
+  src/cli/commands/query/list.ts,project,list projection and sorting controls
   src/cli/main.ts,project,command registrations and option normalization
   src/sdk/cli-contracts.ts,project,contracts schema and flag surfaces
   tests/integration/aggregate-dedupe.integration.spec.ts,project,integration regression for group-by shape

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-26T01:00:17.799Z"
-updated_at: "2026-07-29T01:02:36.840Z"
+updated_at: "2026-09-22T05:10:19.440Z"
 closed_at: "2026-07-29T01:02:33.592Z"
 completed_at: "2026-07-29T01:02:33.592Z"
 author: "harness:codex"
@@ -31,9 +31,9 @@ comments[3]{created_at,author,text}:
 files[3]{path,scope,note}:
   src/cli/register-setup.ts,project,mutation guard configuration discovery implementation and regression proof
   src/sdk/config.ts,project,mutation guard configuration discovery implementation and regression proof
-  tests/unit/commands/config-key-aliases-search.spec.ts,project,mutation guard configuration discovery implementation and regression proof
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/config-key-aliases-search.spec.ts,project,240
+  tests/unit/commands/workspace/config-key-aliases-search.spec.ts,project,mutation guard configuration discovery implementation and regression proof
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-key-aliases-search.spec.ts,project,240,"harness:codex","2026-09-22T05:10:19.401Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms5cvhh3-b5ij79,test,passed,"2026-07-29T00:37:42.351Z","2026-07-29T00:37:50.775Z","2026-07-29T00:37:50.775Z",1,0,0
 docs[1]{path,scope,note}:

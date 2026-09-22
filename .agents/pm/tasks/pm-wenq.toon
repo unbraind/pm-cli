@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: agent-ux,cli,governance,quality
 created_at: "2026-07-10T10:34:42.049Z"
-updated_at: "2026-09-01T04:33:34.430Z"
+updated_at: "2026-09-22T05:23:41.763Z"
 closed_at: "2026-09-01T04:33:33.553Z"
 completed_at: "2026-09-01T04:33:33.553Z"
 author: maintainer-agent
@@ -82,9 +82,9 @@ files[4]{path,scope,note}:
   tests/integration/close-history-evidence.integration.spec.ts,project,Immutable close-event evidence ordering regression
   tests/integration/reopen-contract.integration.spec.ts,project,Generic CLI reopen lifecycle regression
 tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
-  node scripts/run-tests.mjs test -- tests/integration/close-history-evidence.integration.spec.ts tests/unit/commands/init-command.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts,project,240,"harness:codex","2026-08-31T22:41:03.522Z",local_mutation,feat/progressive-capability-discovery,Atomic history and generated guidance contract
-  node scripts/run-tests.mjs test -- tests/unit/commands/close-command.spec.ts tests/integration/cli.integration.spec.ts,project,300,"harness:codex","2026-09-01T02:59:24.915Z",local_mutation,feat/progressive-capability-discovery,Warn strict and complete-field acceptance coverage
-  node scripts/run-tests.mjs test -- tests/integration/reopen-contract.integration.spec.ts tests/unit/sdk/recovery/reopen.spec.ts tests/unit/commands/update-command.spec.ts,project,300,"harness:codex","2026-09-01T04:00:33.872Z",local_mutation,feat/progressive-capability-discovery,Review round 15 terminal-evidence clearing contract
+  node scripts/run-tests.mjs test -- tests/integration/close-history-evidence.integration.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts,project,240,"harness:codex","2026-09-22T05:23:41.685Z",local_mutation,refactor/cli-command-domains-export-gate,Atomic history and generated guidance contract
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/close-command.spec.ts tests/integration/cli.integration.spec.ts,project,300,"harness:codex","2026-09-22T05:23:41.685Z",local_mutation,refactor/cli-command-domains-export-gate,Warn strict and complete-field acceptance coverage
+  node scripts/run-tests.mjs test -- tests/integration/reopen-contract.integration.spec.ts tests/unit/sdk/recovery/reopen.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts,project,300,"harness:codex","2026-09-22T05:23:41.685Z",local_mutation,refactor/cli-command-domains-export-gate,Review round 15 terminal-evidence clearing contract
 test_runs[4]:
   - run_id: test-local-mthui3mv-k2s2po
     kind: test

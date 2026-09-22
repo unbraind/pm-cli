@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: cli,code-quality,dedup
 created_at: "2026-05-22T19:16:14.504Z"
-updated_at: "2026-09-19T08:42:49.037Z"
+updated_at: "2026-09-22T05:22:21.938Z"
 closed_at: "2026-05-24T01:20:37.767Z"
 author: codex-duplicate-audit
 acceptance_criteria: One shared helper owns mutation author resolution; command modules consume it without behavior changes; PM_AUTHOR/settings.author_default/unknown fallback semantics stay covered by focused command tests; pnpm build passes.
@@ -23,10 +23,10 @@ comments[3]{created_at,author,text}:
   "2026-05-24T01:29:17.055Z",codex-ownership-specialist,"Investigation note: ownership/author-helper specialist explorer pass starting. Scope: inspect mutation author resolution and ownership conflict guidance across append/comments/notes/learnings/files/docs/delete/history-redact/claim plus shared CLI helpers; no file edits."
   "2026-05-24T01:30:36.447Z",codex-ownership-specialist,"Investigation finding: author helper already exists at src/core/shared/author.ts with stable precedence explicit --author, PM_AUTHOR, settings.author_default, trimmed non-empty, then unknown. Proposed follow-up is adoption-only: replace remaining local toAuthor/selectAuthor/resolveAuthor clones in close/update/create/plan/test/schema/history-repair with the shared helper, without changing CLI output. For mutation commands inspected here, append/comments/notes/learnings/files/docs/delete/history-redact/claim already import the shared helper."
 files[5]{path,scope,note}:
-  src/cli/commands/append.ts,project,resolveAuthor clone
-  src/cli/commands/comments.ts,project,resolveAuthor clone
-  src/cli/commands/files.ts,project,resolveAuthor clone
-  src/cli/commands/delete.ts,project,toAuthor clone
-  src/cli/commands/history-redact.ts,project,toAuthor clone
+  src/cli/commands/annotations/comments.ts,project,resolveAuthor clone
+  src/cli/commands/annotations/files.ts,project,resolveAuthor clone
+  src/cli/commands/history/history-redact.ts,project,toAuthor clone
+  src/cli/commands/lifecycle/append.ts,project,resolveAuthor clone
+  src/cli/commands/lifecycle/delete.ts,project,toAuthor clone
 close_reason: "Extracted resolveAuthor to src/core/shared/author.ts, eliminated 10+ duplicate copies. Merged via PR #55."
 body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[7]: agent-ux,audit,ci,ecosystem,package-first,sdk,telemetry
 created_at: "2026-06-01T20:57:09.204Z"
-updated_at: "2026-09-19T08:43:13.187Z"
+updated_at: "2026-09-22T04:59:55.290Z"
 closed_at: "2026-06-01T23:00:21.564Z"
 author: codex-audit-20260601
 release: v2026.6.2
@@ -62,11 +62,11 @@ files[18]{path,scope,note}:
   scripts/bundle-cli.mjs,project,Avoid deleting live bundle during rebuilds in shared local checkouts
   scripts/dogfood-package-first.mjs,project,Dogfood new get --depth brief contract
   scripts/release/sentry-telemetry-gate.mjs,project,Ignore expected handled CLI error issues in release Sentry threshold gate while reporting counts
-  src/cli/commands/get.ts,project,Make get --depth brief omit body/linked/claim_state for lower-token agent reads
-  src/cli/commands/test.ts,project,Use stable equality for linked-test JSON assertions
-  src/cli/commands/update-many.ts,project,Use stable equality for update-many no-op detection
-  src/cli/commands/update.ts,project,Use stable equality for runtime field update no-op detection
-  src/cli/commands/validate.ts,project,Lower default validate diagnostic sample while preserving verbose diagnostics
+  src/cli/commands/governance/validate.ts,project,Lower default validate diagnostic sample while preserving verbose diagnostics
+  src/cli/commands/lifecycle/update-many.ts,project,Use stable equality for update-many no-op detection
+  src/cli/commands/lifecycle/update.ts,project,Use stable equality for runtime field update no-op detection
+  src/cli/commands/query/get.ts,project,Make get --depth brief omit body/linked/claim_state for lower-token agent reads
+  src/cli/commands/test/test.ts,project,Use stable equality for linked-test JSON assertions
   src/cli/main.ts,project,Do not capture expected handled CLI failures as Sentry exceptions by default
   src/core/schema/runtime-field-filters.ts,project,Use stable equality for object-valued runtime filters
   src/core/shared/serialization.ts,project,Add primitive-safe stable equality helper for runtime comparisons

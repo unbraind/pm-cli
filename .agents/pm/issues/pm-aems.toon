@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: bug,gh-issue,search,vectorization
 created_at: "2026-07-06T08:03:11.720Z"
-updated_at: "2026-09-19T08:39:50.912Z"
+updated_at: "2026-09-22T05:13:42.117Z"
 closed_at: "2026-07-06T09:26:59.273Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -27,11 +27,11 @@ comments[3]{created_at,author,text}:
   "2026-07-06T09:26:35.423Z",codex-agent,"Evidence: removed implicit fallback to qwen3-embedding when ollama list does not report an installed embedding model; health vectorization details now expose auto_ollama_defaults_skipped_reason=no_installed_embedding_model and remediation 'ollama pull qwen3-embedding:0.6b' or explicit config. Linked test passed; full coverage passed 264 files / 5436 tests / 100% statements branches functions lines; security scan and audit clean."
   "2026-07-06T09:52:59.534Z",codex-agent,"Review follow-up: applied Cubic/Gemini remediation wording improvement so health tells users to configure providers.ollama.model explicitly, with search.embedding_model framed as an optional override. Focused tests passed after the change: semantic-defaults, search-provider-store-selection, and health-command (93/93), plus pnpm typecheck."
 files[3]{path,scope,note}:
-  src/cli/commands/health.ts,project,Surface skipped Ollama auto-default reason and exact remediation in vectorization health details
+  src/cli/commands/governance/health.ts,project,Surface skipped Ollama auto-default reason and exact remediation in vectorization health details
   src/core/search/semantic-defaults.ts,project,Require installed embedding model discovery before applying Ollama auto-defaults
   tests/unit/core/search/semantic-defaults.spec.ts,project,Regression coverage for missing/non-embedding/header-only ollama list outputs
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/core/search/semantic-defaults.spec.ts tests/unit/commands/health-command.spec.ts,project,180,Ollama auto-default missing-model and health detail regression coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/core/search/semantic-defaults.spec.ts tests/unit/commands/governance/health-command.spec.ts,project,180,"harness:codex","2026-09-22T05:13:42.013Z",local_mutation,refactor/cli-command-domains-export-gate,Ollama auto-default missing-model and health detail regression coverage
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mr90dkm9-qssxn2,test,passed,"2026-07-06T09:18:14.257Z","2026-07-06T09:19:22.018Z","2026-07-06T09:19:22.018Z",1,0,0
 close_reason: Fixed Ollama auto-default model selection so health does not pick unavailable embedding models

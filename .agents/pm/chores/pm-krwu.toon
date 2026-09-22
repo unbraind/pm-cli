@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: all-source,"area:tests",coverage,lane-a
 created_at: "2026-06-14T17:58:46.759Z"
-updated_at: "2026-07-26T17:18:46.608Z"
+updated_at: "2026-09-22T05:11:20.251Z"
 closed_at: "2026-07-11T22:26:45.360Z"
 author: codex-all-source-coverage-20260614
 parent: pm-xau3
@@ -14,8 +14,8 @@ release: v2026.7.12
 resolution: fixed
 expected_result: "Repository-wide coverage gate back at literal 100/100/100/100 with meaningful (non-placeholder) specs for the uncovered src/core, src/mcp and src/sdk branches"
 actual_result: "Exact 100/100/100/100 restored and verified across 5,552 tests via PR#517; new SDK and claim-next conflict branches carry meaningful regression coverage"
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-xau3,implements,"2026-07-26T17:18:46.381Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-xau3,implements,"2026-07-26T17:18:46.381Z"
 comments[10]{created_at,author,text}:
   "2026-06-14T18:51:32.468Z",lane-a-subagent-20260614,"Lane A src-coverage evidence update.\n\nWhat changed:\n- Extended `tests/unit/commands/register-commands.spec.ts` to cover additional register-operation and register-setup edge paths without adding new spec files:\n  - dependency-failed exit behavior when linked-test runs set `fail_on_skipped_triggered`\n  - extension/package lifecycle routing for adopt/adopt-all/activate/deactivate\n  - package install path normalization when no explicit target is provided\n  - doctor strict-exit behavior when summary status is `ok`\n- Extended `tests/integration/mcp-handshake.spec.ts` to cover malformed `inputSchema.required` fallback handling in `buildMcpToolContracts`.\n\nVerification run:\n1) `node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/integration/mcp-handshake.spec.ts`\n   - PASS: 2 files, 69 tests.\n2) `CI=1 node scripts/run-tests.mjs coverage -- --coverage.thresholds.lines=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.statements=0`\n   - PASS: 158 files, 3388 tests.\n\nMeasured `src/**/*.ts` coverage delta (full-suite probe, thresholds disabled):\n- lines: 97.99% -> 98.00% (covered +4)\n- branches: 91.63% -> 91.64% (covered +1)\n- functions: 97.69% -> 97.78% (covered +4)\n- statements: 97.72% -> 97.74% (covered +4)\n\nTargeted file deltas:\n- `src/cli/register-setup.ts`: lines 92.17% -> 95.65%, functions 77.77% -> 88.88%\n- `src/mcp/tool-definitions.ts`: branches 66.66% -> 100%"
   "2026-06-14T21:06:44.629Z",lane-a-wave2-subagent-20260614,"Lane A wave2 strict all-source push (targeted hotspot branch lift).\n\nWhat changed:\n- Extended tests/unit/commands/register-commands.spec.ts with expanded option-path coverage for test/test-all/stats/health/validate/contracts, plus docs mutation and close fallback branches.\n- Extended tests/unit/schema-command.spec.ts with add-type/add-status human-format branch tests, case-insensitive alias show coverage, and wrapped non-Error parser/remover failure coverage.\n- Extended tests/unit/history-activity-command.spec.ts with history-redact type-path migration coverage (task -> custom type folder move).\n- Extended tests/unit/history-repair-command.spec.ts with unknown-author fallback/default-message coverage and rollback branch when history snapshot is unavailable.\n\nVerification:\n1) PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/schema-command.spec.ts tests/unit/history-activity-command.spec.ts tests/unit/history-repair-command.spec.ts\n   - PASS: 4 files, 146 tests.\n2) PM_RUN_TESTS_SKIP_BUILD=1 pnpm exec vitest run tests/unit/commands/register-commands.spec.ts tests/unit/schema-command.spec.ts tests/unit/runtime-schema-command-flags.spec.ts tests/unit/history-activity-command.spec.ts tests/unit/history-repair-command.spec.ts tests/unit/history-rewrite.spec.ts --coverage.enabled true --coverage.include='src/cli/register-mutation.ts' --coverage.include='src/cli/register-operations.ts' --coverage.include='src/cli/commands/schema.ts' --coverage.include='src/cli/commands/history-redact.ts' --coverage.include='src/cli/commands/history-repair.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=coverage/lane-a-wave2-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0\n   - PASS: 6 files, 172 tests.\n\nTargeted branch coverage deltas (before -> after):\n- src/cli/register-mutation.ts: 68.26% -> 70.98% (+2.72)\n- src/cli/register-operations.ts: 68.00% -> 80.00% (+12.00)\n- src/cli/commands/schema.ts: 71.50% -> 73.57% (+2.07)\n- src/cli/commands/history-redact.ts: 76.42% -> 77.14% (+0.72)\n- src/cli/commands/history-repair.ts: 79.41% -> 83.82% (+4.41)"
@@ -47,19 +47,58 @@ files[19]{path,scope,note}:
   tests/unit/telemetry-runtime-residual.spec.ts,project,"Added telemetry retry,lock,and fallback branch tests"
   tests/unit/telemetry-runtime.spec.ts,project,Telemetry helper/retry/lock/primitive-error branch coverage cases
   tests/unit/test-runs-command.spec.ts,project,Added background worker fallback and log-tail branch tests
-tests[12]{command,scope,timeout_seconds}:
-  CI=1 node scripts/run-tests.mjs coverage -- --coverage.thresholds.lines=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.statements=0,project,1800
-  node scripts/run-tests.mjs coverage -- --coverage.enabled true --coverage.provider v8 --coverage.reporter json --coverage.reporter text --coverage.reportsDirectory .vitest-coverage/pm-krwu-full-finalpass --coverage.include src/core/extensions/extension-policy.ts --coverage.include src/core/extensions/loader.ts --coverage.include src/core/history/history.ts --coverage.include src/core/item/item-format.ts --coverage.include src/core/item/parse.ts --coverage.include src/core/item/type-registry.ts --coverage.include src/core/output/output.ts --coverage.include src/core/schema/runtime-schema.ts --coverage.include src/core/search/cache.ts --coverage.include src/core/search/semantic-defaults.ts --coverage.include src/core/store/front-matter-cache.ts --coverage.include src/core/store/item-store.ts --coverage.include src/core/store/settings.ts --coverage.include src/core/telemetry/runtime.ts --coverage.include src/core/test/background-runs.ts --coverage.include src/mcp/server.ts --coverage.include src/sdk/cli-contracts.ts --retry=2,project,7200
-  node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/integration/mcp-handshake.spec.ts,project,900
-  node scripts/run-tests.mjs test -- tests/unit/mcp-server-branch-residual.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/plugins/pm-mcp-server.spec.ts,project,1800
-  node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts tests/unit/telemetry-observability.spec.ts tests/unit/telemetry-consent.spec.ts tests/unit/commands/telemetry-command.spec.ts,project,1800
-  node scripts/run-tests.mjs test -- tests/unit/test-runs-command.spec.ts,project,1800
-  node scripts/run-tests.mjs test -- tests/unit/test-runs-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/mcp-server-branch-residual.spec.ts tests/unit/extension-command.spec.ts,project,2400
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/schema-command.spec.ts tests/unit/history-activity-command.spec.ts tests/unit/history-repair-command.spec.ts,project,1200
-  PM_RUN_TESTS_SKIP_BUILD=1 pnpm exec vitest run --coverage.enabled true --coverage.reporter=text --coverage.reporter=json --coverage.reportsDirectory=.vitest-coverage/pm-krwu-final --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0 --coverage.include=src/core/extensions/extension-policy.ts --coverage.include=src/core/extensions/loader.ts --coverage.include=src/core/history/history.ts --coverage.include=src/core/item/item-format.ts --coverage.include=src/core/item/parse.ts --coverage.include=src/core/item/type-registry.ts --coverage.include=src/core/output/output.ts --coverage.include=src/core/schema/runtime-schema.ts --coverage.include=src/core/search/cache.ts --coverage.include=src/core/search/semantic-defaults.ts --coverage.include=src/core/store/front-matter-cache.ts --coverage.include=src/core/store/item-store.ts --coverage.include=src/core/store/settings.ts --coverage.include=src/core/telemetry/runtime.ts --coverage.include=src/core/test/background-runs.ts --coverage.include=src/mcp/server.ts --coverage.include=src/sdk/cli-contracts.ts,project,3600
-  PM_RUN_TESTS_SKIP_BUILD=1 pnpm exec vitest run tests/unit/commands/register-commands.spec.ts tests/unit/schema-command.spec.ts tests/unit/runtime-schema-command-flags.spec.ts tests/unit/history-activity-command.spec.ts tests/unit/history-repair-command.spec.ts tests/unit/history-rewrite.spec.ts --coverage.enabled true --coverage.include='src/cli/register-mutation.ts' --coverage.include='src/cli/register-operations.ts' --coverage.include='src/cli/commands/schema.ts' --coverage.include='src/cli/commands/history-redact.ts' --coverage.include='src/cli/commands/history-repair.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=coverage/lane-a-wave2-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0,project,1800
-  PM_RUN_TESTS_SKIP_BUILD=1 pnpm exec vitest run tests/unit/telemetry-runtime.spec.ts tests/unit/telemetry-runtime-residual.spec.ts tests/unit/commands/telemetry-command.spec.ts tests/unit/config-command.spec.ts tests/integration/telemetry-env-var-docs.spec.ts tests/integration/release-readiness-runtime.spec.ts --coverage.enabled true --coverage.reporter=text --coverage.reporter=json --coverage.reportsDirectory=.vitest-coverage/telemetry-wave2 --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0 --coverage.include=src/core/telemetry/runtime.ts,project,1500
-  PM_RUN_TESTS_SKIP_BUILD=1 pnpm exec vitest run tests/unit/test-runs-command.spec.ts --coverage.enabled true --coverage.reporter=text --coverage.reporter=json --coverage.reportsDirectory=.vitest-coverage/background-wave3 --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0 --coverage.include=src/core/test/background-runs.ts,project,900
+tests[12]:
+  - command: CI=1 node scripts/run-tests.mjs coverage -- --coverage.thresholds.lines=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.statements=0
+    scope: project
+    timeout_seconds: 1800
+  - command: node scripts/run-tests.mjs coverage -- --coverage.enabled true --coverage.provider v8 --coverage.reporter json --coverage.reporter text --coverage.reportsDirectory .vitest-coverage/pm-krwu-full-finalpass --coverage.include src/core/extensions/extension-policy.ts --coverage.include src/core/extensions/loader.ts --coverage.include src/core/history/history.ts --coverage.include src/core/item/item-format.ts --coverage.include src/core/item/parse.ts --coverage.include src/core/item/type-registry.ts --coverage.include src/core/output/output.ts --coverage.include src/core/schema/runtime-schema.ts --coverage.include src/core/search/cache.ts --coverage.include src/core/search/semantic-defaults.ts --coverage.include src/core/store/front-matter-cache.ts --coverage.include src/core/store/item-store.ts --coverage.include src/core/store/settings.ts --coverage.include src/core/telemetry/runtime.ts --coverage.include src/core/test/background-runs.ts --coverage.include src/mcp/server.ts --coverage.include src/sdk/cli-contracts.ts --retry=2
+    scope: project
+    timeout_seconds: 7200
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/integration/mcp-handshake.spec.ts
+    scope: project
+    timeout_seconds: 900
+  - command: node scripts/run-tests.mjs test -- tests/unit/mcp-server-branch-residual.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/plugins/pm-mcp-server.spec.ts
+    scope: project
+    timeout_seconds: 1800
+  - command: node scripts/run-tests.mjs test -- tests/unit/test-runs-command.spec.ts
+    scope: project
+    timeout_seconds: 1800
+  - command: node scripts/run-tests.mjs test -- tests/unit/test-runs-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/mcp-server-branch-residual.spec.ts tests/unit/extension-command.spec.ts
+    scope: project
+    timeout_seconds: 2400
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/schema-command.spec.ts tests/unit/history-activity-command.spec.ts tests/unit/history-repair-command.spec.ts
+    scope: project
+    timeout_seconds: 1200
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 pnpm exec vitest run --coverage.enabled true --coverage.reporter=text --coverage.reporter=json --coverage.reportsDirectory=.vitest-coverage/pm-krwu-final --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0 --coverage.include=src/core/extensions/extension-policy.ts --coverage.include=src/core/extensions/loader.ts --coverage.include=src/core/history/history.ts --coverage.include=src/core/item/item-format.ts --coverage.include=src/core/item/parse.ts --coverage.include=src/core/item/type-registry.ts --coverage.include=src/core/output/output.ts --coverage.include=src/core/schema/runtime-schema.ts --coverage.include=src/core/search/cache.ts --coverage.include=src/core/search/semantic-defaults.ts --coverage.include=src/core/store/front-matter-cache.ts --coverage.include=src/core/store/item-store.ts --coverage.include=src/core/store/settings.ts --coverage.include=src/core/telemetry/runtime.ts --coverage.include=src/core/test/background-runs.ts --coverage.include=src/mcp/server.ts --coverage.include=src/sdk/cli-contracts.ts
+    scope: project
+    timeout_seconds: 3600
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 pnpm exec vitest run tests/unit/test-runs-command.spec.ts --coverage.enabled true --coverage.reporter=text --coverage.reporter=json --coverage.reportsDirectory=.vitest-coverage/background-wave3 --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0 --coverage.include=src/core/test/background-runs.ts
+    scope: project
+    timeout_seconds: 900
+  - command: node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts tests/unit/telemetry-observability.spec.ts tests/unit/telemetry-consent.spec.ts tests/unit/commands/governance/telemetry-command.spec.ts
+    scope: project
+    timeout_seconds: 1800
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:11:20.197Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 pnpm exec vitest run tests/unit/commands/register-commands.spec.ts tests/unit/schema-command.spec.ts tests/unit/runtime-schema-command-flags.spec.ts tests/unit/history-activity-command.spec.ts tests/unit/history-repair-command.spec.ts tests/unit/history-rewrite.spec.ts --coverage.enabled true --coverage.include='src/cli/register-mutation.ts' --coverage.include='src/cli/register-operations.ts' --coverage.include='src/cli/commands/workspace/schema.ts' --coverage.include='src/cli/commands/history/history-redact.ts' --coverage.include='src/cli/commands/history/history-repair.ts' --coverage.reporter=text --coverage.reporter=json-summary --coverage.reportsDirectory=coverage/lane-a-wave2-after --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0
+    scope: project
+    timeout_seconds: 1800
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:11:20.197Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 pnpm exec vitest run tests/unit/telemetry-runtime.spec.ts tests/unit/telemetry-runtime-residual.spec.ts tests/unit/commands/governance/telemetry-command.spec.ts tests/unit/config-command.spec.ts tests/integration/telemetry-env-var-docs.spec.ts tests/integration/release-readiness-runtime.spec.ts --coverage.enabled true --coverage.reporter=text --coverage.reporter=json --coverage.reportsDirectory=.vitest-coverage/telemetry-wave2 --coverage.thresholds.lines 0 --coverage.thresholds.branches 0 --coverage.thresholds.functions 0 --coverage.thresholds.statements 0 --coverage.include=src/core/telemetry/runtime.ts
+    scope: project
+    timeout_seconds: 1500
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:11:20.197Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[10]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mqfvl0tc-o1a6c3,test,failed,"2026-06-15T23:43:42.749Z","2026-06-15T23:59:52.416Z","2026-06-15T23:59:52.416Z",4,3,0
   test-local-mqfvnei6-v4cay6,test,passed,"2026-06-16T00:00:19.365Z","2026-06-16T00:01:43.470Z","2026-06-16T00:01:43.470Z",1,0,0

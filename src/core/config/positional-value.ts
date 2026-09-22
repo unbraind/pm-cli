@@ -10,9 +10,6 @@
  * good error messages.
  */
 
-/** The typed flag a positional value routes to. */
-export type ConfigPositionalFlag = "format" | "policy" | "criterion";
-
 /** Successful routing of a positional value to a single-value typed flag. */
 export interface ConfigPositionalScalarRouted {
   /** Value that configures or reports routable for this contract. */

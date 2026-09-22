@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,onboarding,small-scale,token-efficiency
 created_at: "2026-07-06T23:36:18.776Z"
-updated_at: "2026-09-15T11:39:06.704Z"
+updated_at: "2026-09-22T05:14:58.645Z"
 closed_at: "2026-09-15T10:42:26.887Z"
 completed_at: "2026-09-15T10:42:26.887Z"
 author: maintainer-agent
@@ -69,9 +69,9 @@ files[10]{path,scope,note}:
   tests/unit/cli/first-run-error-display.spec.ts,project,Red-to-green three-line initialization recovery tests
   tests/unit/sdk/environment/tracker-preflight.spec.ts,project,Platform-aware shell quoting retains tokenized recovery and escapes shell variables
 tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/integration/scratch-lifecycle.integration.spec.ts tests/unit/commands/init-command.spec.ts,project,240,"harness:codex","2026-09-15T09:06:33.747Z",local_mutation,feat/bounded-item-reads-scratch-workflows
   node scripts/run-tests.mjs test -- tests/unit/cli/first-run-error-display.spec.ts tests/integration/help-runtime.spec.ts,project,240,"harness:codex","2026-09-15T09:24:15.131Z",local_mutation,feat/bounded-item-reads-scratch-workflows
   pnpm typecheck,project,240,"harness:codex","2026-09-15T09:40:00.602Z",local_mutation,feat/bounded-item-reads-scratch-workflows
+  node scripts/run-tests.mjs test -- tests/integration/scratch-lifecycle.integration.spec.ts tests/unit/commands/workspace/init-command.spec.ts,project,240,"harness:codex","2026-09-22T05:14:58.455Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[2]:
   - run_id: test-local-mu2i6pq6-djni2b
     kind: test

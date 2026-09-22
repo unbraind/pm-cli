@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: architecture,"area:sdk","area:telemetry","area:test"
 created_at: "2026-07-05T05:09:19.981Z"
-updated_at: "2026-07-26T17:22:18.595Z"
+updated_at: "2026-09-22T05:24:19.560Z"
 closed_at: "2026-07-16T06:42:57.356Z"
 author: maintainer-agent
 estimated_minutes: 300
@@ -18,14 +18,14 @@ release: v2026.7.17
 resolution: "shipped: execution/diagnostics SDK family (runList/runSearch/runEval/runStats/runTelemetry/runTest/runTestAll + test-run lifecycle) public via PR#573; CLI commands are identity-preserving re-export shells; boundary baseline 62/538 -> 51/412; suppressions 158 -> 157"
 expected_result: "All execution and diagnostics primitives (linked-test running, test-run lifecycle, eval harness, telemetry/stats) callable from the public SDK with typed exports, CLI parity preserved, boundary ratchet reduced"
 actual_result: "PR#573 merged: typed SDK APIs live, CLI thin compat exports with reference-identity tests, boundary 51 sources/412 edges, suppressions 157, exact 100% coverage 5738 tests, packed-tarball public-SDK proof (list=1, search=1, eval nDCG=1)"
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-atfm,related,"2026-07-10T21:31:12.222Z",null,null
-  pm-55ra,related,"2026-07-26T17:22:18.304Z",null,null
-  pm-lodl,related,"2026-07-26T17:22:18.304Z",null,null
-  pm-oxrw,related,"2026-07-26T17:22:18.304Z",null,null
-  pm-usfg,implements,"2026-07-26T17:22:18.304Z",null,null
-  pm-w89s,related,"2026-07-26T17:22:18.304Z",null,null
-  pm-zwpp,related,"2026-07-26T17:22:18.304Z",null,null
+dependencies[7]{id,kind,created_at}:
+  pm-atfm,related,"2026-07-10T21:31:12.222Z"
+  pm-55ra,related,"2026-07-26T17:22:18.304Z"
+  pm-lodl,related,"2026-07-26T17:22:18.304Z"
+  pm-oxrw,related,"2026-07-26T17:22:18.304Z"
+  pm-usfg,implements,"2026-07-26T17:22:18.304Z"
+  pm-w89s,related,"2026-07-26T17:22:18.304Z"
+  pm-zwpp,related,"2026-07-26T17:22:18.304Z"
 comments[4]{created_at,author,text}:
   "2026-07-16T05:59:51.443Z",codex-wide-sdk-20260716,"Implementation start 2026-07-16: promote linked-test parsing/execution, test-all orchestration, background run lifecycle, search eval, telemetry, and stats into SDK-owned modules; retain thin CLI compatibility exports and verify the packed public SDK surface."
   "2026-07-16T06:10:45.946Z",codex-wide-sdk-20260716,"Implementation checkpoint: promoted test execution, batch execution, persisted test-run workers, linked-test parsing, eval, telemetry, and stats into SDK-owned modules; retained thin CLI compatibility exports; exposed the typed primitives through the public SDK barrel and runtime."
@@ -39,14 +39,14 @@ files[25]{path,scope,note}:
   eslint-suppressions.json,project,Remove obsolete CLI-path complexity suppression after inlining one-use assertion helper
   package.json,project,Strict suppression ratchet follows SDK ownership promotion
   scripts/release/static-quality-gate.mjs,project,Strict suppression ratchet follows SDK ownership promotion
-  src/cli/commands/eval.ts,project,SDK execution and diagnostics ownership promotion
+  src/cli/commands/governance/telemetry.ts,project,SDK execution and diagnostics ownership promotion
   src/cli/commands/linked-test-entry.ts,project,SDK execution and diagnostics ownership promotion
   src/cli/commands/linked-test-parsers.ts,project,SDK execution and diagnostics ownership promotion
-  src/cli/commands/stats.ts,project,SDK execution and diagnostics ownership promotion
-  src/cli/commands/telemetry.ts,project,SDK execution and diagnostics ownership promotion
-  src/cli/commands/test-all.ts,project,SDK execution and diagnostics ownership promotion
-  src/cli/commands/test-runs.ts,project,SDK execution and diagnostics ownership promotion
-  src/cli/commands/test.ts,project,SDK execution and diagnostics ownership promotion
+  src/cli/commands/query/eval.ts,project,SDK execution and diagnostics ownership promotion
+  src/cli/commands/query/stats.ts,project,SDK execution and diagnostics ownership promotion
+  src/cli/commands/test/test-all.ts,project,SDK execution and diagnostics ownership promotion
+  src/cli/commands/test/test-runs.ts,project,SDK execution and diagnostics ownership promotion
+  src/cli/commands/test/test.ts,project,SDK execution and diagnostics ownership promotion
   src/sdk/eval.ts,project,SDK execution and diagnostics ownership promotion
   src/sdk/index.ts,project,SDK execution and diagnostics ownership promotion
   src/sdk/runtime.ts,project,SDK execution and diagnostics ownership promotion
@@ -61,11 +61,24 @@ files[25]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,Strict suppression ratchet follows SDK ownership promotion
   tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,MCP ownership-boundary mock parity after SDK promotion
   tests/unit/sdk/execution-diagnostics-primitives.spec.ts,project,SDK execution and diagnostics ownership promotion
-tests[4]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs coverage,project,1200
-  node scripts/run-tests.mjs test -- tests/unit/sdk/execution-diagnostics-primitives.spec.ts tests/unit/commands/linked-test-parsers.spec.ts tests/unit/commands/linked-test-entry.spec.ts tests/unit/commands/test-runs-command.spec.ts tests/unit/commands/test-command.spec.ts tests/unit/commands/test-all-command.spec.ts tests/unit/commands/telemetry-command.spec.ts tests/unit/commands/eval-command.spec.ts tests/unit/commands/stats-command.spec.ts,project,300
-  "pnpm quality:static",project,300
-  "pnpm release:gates",project,1200
+tests[4]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 1200
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 300
+  - command: "pnpm release:gates"
+    scope: project
+    timeout_seconds: 1200
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/execution-diagnostics-primitives.spec.ts tests/unit/commands/test/linked-test-parsers.spec.ts tests/unit/commands/test/linked-test-entry.spec.ts tests/unit/commands/test/test-runs-command.spec.ts tests/unit/commands/test/test-command.spec.ts tests/unit/commands/test/test-all-command.spec.ts tests/unit/commands/governance/telemetry-command.spec.ts tests/unit/commands/query/eval-command.spec.ts tests/unit/commands/query/stats-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:24:19.454Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/SDK_PRIMITIVE_INVENTORY.md,project,Ownership inventory update
   docs/SDK.md,project,Public execution and diagnostics SDK contracts

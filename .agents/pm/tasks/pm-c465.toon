@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:learnings","area:notes","area:tests",external-audit,pm-cli
 created_at: "2026-04-01T16:22:47.797Z"
-updated_at: "2026-09-19T08:39:59.875Z"
+updated_at: "2026-09-22T05:04:07.567Z"
 deadline: "2026-04-06T16:22:47.797Z"
 closed_at: "2026-04-06T23:42:47.422Z"
 author: cursor-agent
@@ -64,9 +64,9 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:36:16.361Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[13]{path,scope,note}:
+  src/cli/commands/annotations/learnings.ts,project,new learnings command implementation
+  src/cli/commands/annotations/notes.ts,project,new notes command implementation
   src/cli/commands/completion.ts,project,shell completion parity for notes/learnings
-  src/cli/commands/learnings.ts,project,new learnings command implementation
-  src/cli/commands/notes.ts,project,new notes command implementation
   src/cli/help-content.ts,project,help narratives for notes/learnings
   src/cli/main.ts,project,CLI registration and write-gate support for notes/learnings
   src/core/output/command-aware.ts,project,command-aware summary and next-step updates

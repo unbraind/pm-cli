@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: context,long-horizon,scale
 created_at: "2026-07-06T23:26:29.415Z"
-updated_at: "2026-09-08T05:33:31.274Z"
+updated_at: "2026-09-22T05:16:17.860Z"
 closed_at: "2026-07-23T07:56:31.740Z"
 author: maintainer-agent
 estimated_minutes: 720
@@ -29,14 +29,14 @@ comments[2]{created_at,author,text}:
   "2026-07-23T07:56:29.276Z",claude-code-agent,"Completion evidence 2026-07-23: delivered deterministic cursor-bound epoch, quarter, and nearest-epic workspace-memory rollups as rebuildable SDK artifacts; small workspaces skip at the 10k threshold; context and search surface compact budgeted records with drill-down IDs; malformed/stale artifacts rebuild from source. Tests prove deterministic regeneration, source/history immutability, selection/search projection behavior, skip behavior, and integration. Full release verification passed exact 100/100/100/100 coverage and the installed external-consumer proof."
   "2026-07-23T08:06:34.837Z",claude-code-agent,"PR evidence 2026-07-23: the indexed-read, workspace-memory, cursor-contract, compact-get, SDK-documentation, and linear-time security tranche is published for hosted checks and review at https://github.com/unbraind/pm-cli/pull/655 (implementation commit 89e1417f)."
 files[6]{path,scope,note}:
-  src/cli/commands/context.ts,project,Token-bounded automatic context memory
+  src/cli/commands/query/context.ts,project,Token-bounded automatic context memory
   src/sdk/query/search-contracts.ts,project,extracted SDK search input and tuning contracts
   src/sdk/query/search.ts,project,Automatic matching historical rollups in search
   src/sdk/workspace-memory.ts,project,Cursor-bound epoch and epic workspace memory SDK
-  tests/unit/commands/workspace-memory-command-integration.spec.ts,project,context and search memory integration coverage
+  tests/unit/commands/workspace/workspace-memory-command-integration.spec.ts,project,context and search memory integration coverage
   tests/unit/sdk/workspace-memory.spec.ts,project,workspace memory persistence and retrieval coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-memory.spec.ts tests/unit/commands/context-command.spec.ts tests/unit/commands/search-command.spec.ts,project,300
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-memory.spec.ts tests/unit/commands/query/context-command.spec.ts tests/unit/commands/query/search-command.spec.ts,project,300,"harness:codex","2026-09-22T05:16:17.723Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[3]{path,scope,note}:
   docs/CONTEXT_RELEVANCE.md,project,Historical memory relevance contract
   docs/PERFORMANCE.md,project,Large-workspace memory threshold and fallback

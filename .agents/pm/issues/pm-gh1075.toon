@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: ci,github,nightly,node24,windows
 created_at: "2026-08-21T05:42:10.609Z"
-updated_at: "2026-09-08T05:56:46.292Z"
+updated_at: "2026-09-22T05:06:44.661Z"
 closed_at: "2026-08-21T16:11:11.671Z"
 completed_at: "2026-08-21T16:11:11.671Z"
 author: "harness:codex"
@@ -32,12 +32,23 @@ comments[6]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-08-21T16:11:11.010Z","harness:codex","Cross-platform command tests that mock fail-closed filesystem preflight must normalize fixture roots through node:path and exercise both direct tracker-root and explicit project-root-to-.agents/pm resolution. Real git-composition acceptance tests need an explicit CI-platform time budget while keeping assertions unchanged."
 files[2]{path,scope,note}:
-  tests/unit/commands/search-command.spec.ts,project,Resolve every tracker fixture path through the host path implementation and share readable-root mocks across nested search suites
+  tests/unit/commands/query/search-command.spec.ts,project,Resolve every tracker fixture path through the host path implementation and share readable-root mocks across nested search suites
   tests/unit/sdk/context-integrity-primitives.spec.ts,project,Give the real git merge-driver composition acceptance test an explicit Windows-safe time budget
-tests[3]{command,scope,timeout_seconds}:
-  TMPDIR=/var/tmp node scripts/run-tests.mjs test -- tests/unit/commands/search-command.spec.ts tests/unit/sdk/context-integrity-primitives.spec.ts,project,180
-  TMPDIR=/var/tmp node scripts/run-tests.mjs coverage,project,900
-  "TMPDIR=/var/tmp pnpm quality:static",project,900
+tests[3]:
+  - command: TMPDIR=/var/tmp node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 900
+  - command: "TMPDIR=/var/tmp pnpm quality:static"
+    scope: project
+    timeout_seconds: 900
+  - command: TMPDIR=/var/tmp node scripts/run-tests.mjs test -- tests/unit/commands/query/search-command.spec.ts tests/unit/sdk/context-integrity-primitives.spec.ts
+    scope: project
+    timeout_seconds: 180
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:06:44.620Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 close_reason: "Resolved and proven on hosted Windows: Nightly run 32500201496 passed the full five-job matrix, PR #1079 exact-head checks passed, focused verification passes 2 files / 99 tests, and all CodeRabbit findings were handled with append-only PM evidence."
 escape_class: nightly_regression
 gate_evidence:

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,gh-293,gh-294,gh-295,gh-296
 created_at: "2026-06-19T06:13:24.173Z"
-updated_at: "2026-09-19T08:43:12.835Z"
+updated_at: "2026-09-22T05:01:20.659Z"
 closed_at: "2026-06-19T06:39:07.277Z"
 author: codex-agent
 parent: pm-mpbb
@@ -34,13 +34,13 @@ comments[7]{created_at,author,text}:
 files[7]{path,scope,note}:
   src/cli/bootstrap-args.ts,project,Accept create --tags multi-value argv normalization
   src/cli/commands/linked-artifacts.ts,project,Split bare comma-separated linked file/doc add paths
-  src/cli/commands/search.ts,project,Normalize dashed IDs for exact-ID search ranking
+  src/cli/commands/query/search.ts,project,Normalize dashed IDs for exact-ID search ranking
   tests/unit/cli/bootstrap-args.spec.ts,project,GH-294 regression coverage
-  tests/unit/commands/files-docs-command.spec.ts,project,GH-296 regression coverage
+  tests/unit/commands/annotations/files-docs-command.spec.ts,project,GH-296 regression coverage
+  tests/unit/commands/query/search-command.spec.ts,project,GH-295 regression coverage
   tests/unit/commands/register-commands.spec.ts,project,GH-293 regression coverage
-  tests/unit/commands/search-command.spec.ts,project,GH-295 regression coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/files-docs-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,300
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/unit/commands/query/search-command.spec.ts tests/unit/commands/annotations/files-docs-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,300,"harness:codex","2026-09-22T05:01:20.614Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mqkjfg94-ya47qr,test,passed,"2026-06-19T06:18:00.505Z","2026-06-19T06:18:27.976Z","2026-06-19T06:18:27.976Z",1,0,0
 close_reason: "Merged PR #298 fixing GH-293..296 parser/search regressions; local and remote gates passed, manual temp smoke passed, and linked GitHub issues closed."

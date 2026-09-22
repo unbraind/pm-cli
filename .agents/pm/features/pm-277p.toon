@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:completion","area:store",pm-cli
 created_at: "2026-03-31T23:47:46.436Z"
-updated_at: "2026-09-19T08:39:17.211Z"
+updated_at: "2026-09-22T05:06:05.460Z"
 deadline: "2026-04-10T23:47:46.436Z"
 closed_at: "2026-04-01T00:28:41.091Z"
 assignee: codex-agent
@@ -59,8 +59,8 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:24:14.089Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
-  src/cli/commands/create.ts,project,per-type create requirements and type-options
-  src/cli/commands/update.ts,project,type-option updates and type-transition validation
+  src/cli/commands/lifecycle/create.ts,project,per-type create requirements and type-options
+  src/cli/commands/lifecycle/update.ts,project,type-option updates and type-transition validation
   src/cli/main.ts,project,type-aware command contract
   src/core/store/item-store.ts,project,type-aware routing and safe type moves
 tests[1]{command,scope,timeout_seconds,note}:

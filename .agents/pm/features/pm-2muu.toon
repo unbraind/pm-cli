@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ux,concurrency,locking
 created_at: "2026-07-03T13:25:02.684Z"
-updated_at: "2026-09-19T08:39:19.223Z"
+updated_at: "2026-09-22T05:06:00.496Z"
 closed_at: "2026-07-05T05:04:27.839Z"
 author: claude-code-agent
 estimated_minutes: 180
@@ -53,11 +53,11 @@ comments[20]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-07-04T19:01:03.112Z",maintainer-agent,"In-flight implementation (uncommitted, 2026-07-04): acquireLock gained a bounded jittered wait loop — waits up to locks.wait_ms (default 3000, settings key locks_wait_ms, PM_LOCK_WAIT_MS env override, 0 = pre-existing fail-fast) with exponential backoff 25→200ms + jitter; stale-lock removals capped at 3; lock_conflict error now carries recovery.retry_after_ms=250 hint (new PmCliErrorRecoveryPayload field). wait_ms threaded through restore + history-rewrite acquireLock call sites; settings validator/defaults/types/nested-settings descriptor added. Remaining: docs (CONFIGURATION.md), contracts:update if flag surface changed, parallel-mutation stress evidence per AC."
 files[21]{path,scope,note}:
-  src/cli/commands/copy.ts,project,passes configured locks.wait_ms to copy lock acquisition
-  src/cli/commands/create.ts,project,passes configured locks.wait_ms to create lock acquisition
-  src/cli/commands/profile.ts,project,passes configured locks.wait_ms to profile schema lock acquisition
+  src/cli/commands/lifecycle/copy.ts,project,passes configured locks.wait_ms to copy lock acquisition
+  src/cli/commands/lifecycle/create.ts,project,passes configured locks.wait_ms to create lock acquisition
   src/cli/commands/reindex.ts,project,passes configured locks.wait_ms to reindex lock acquisition
-  src/cli/commands/schema.ts,project,passes configured locks.wait_ms to schema mutation locks
+  src/cli/commands/workspace/profile.ts,project,passes configured locks.wait_ms to profile schema lock acquisition
+  src/cli/commands/workspace/schema.ts,project,passes configured locks.wait_ms to schema mutation locks
   src/cli/error-guidance.ts,project,Renders lock retry_after_ms recovery hints so bounded lock conflicts are machine-actionable
   src/core/config/nested-settings.ts,project,locks_wait_ms settings descriptor
   src/core/lock/lock.ts,project,bounded jittered lock wait + retry_after_ms recovery hint
@@ -69,17 +69,47 @@ files[21]{path,scope,note}:
   tests/integration/release-automation-contract.spec.ts,project,"quality:static threshold contract now pins 13.655 local CodeFactor parity ratchet"
   tests/integration/release-readiness-runtime.spec.ts,project,release-readiness contract now pins 13.655 local CodeFactor parity ratchet
   tests/unit/cli/error-guidance.spec.ts,project,Covers retry_after_ms recovery normalization and display output
-  tests/unit/commands/config-key-aliases-search.spec.ts,project,dotted locks.wait_ms config alias coverage
-  tests/unit/commands/create-command.spec.ts,project,Gemini review regression for create command option own-property lookup
+  tests/unit/commands/lifecycle/create-command.spec.ts,project,Gemini review regression for create command option own-property lookup
+  tests/unit/commands/workspace/config-key-aliases-search.spec.ts,project,dotted locks.wait_ms config alias coverage
   tests/unit/core/config/nested-settings.spec.ts,project,dotted descriptor path normalization regression for SEARCH.QUERY-EXPANSION.ENABLED
   tests/unit/core/item/core-item-lock-coverage.spec.ts,project,acquireLock wait/backoff coverage
   tests/unit/core/store/settings-validator.spec.ts,project,negative locks.wait_ms validation coverage
-tests[5]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,project,600,repo-wide 100 percent coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/commands/claim-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/scripts/release/static-quality-gate.spec.ts,project,240,"Review response regression set for claim no-op,lock wait parsing/conflict payloads,error recovery rendering,and static gate parity"
-  node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts,project,240,Gemini current-head create option own-property regression
-  node scripts/run-tests.mjs test -- tests/unit/core/store/settings-validator.spec.ts tests/unit/commands/config-key-aliases-search.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts,project,240,focused lock config claim and lock coverage
-  pm installed-package temp smoke for locks.wait_ms and claim if-available and health,project,120,manual isolated installed-package smoke
+tests[5]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 600
+    note: repo-wide 100 percent coverage gate
+  - command: pm installed-package temp smoke for locks.wait_ms and claim if-available and health
+    scope: project
+    timeout_seconds: 120
+    note: manual isolated installed-package smoke
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/scripts/release/static-quality-gate.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:06:00.449Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: "Review response regression set for claim no-op,lock wait parsing/conflict payloads,error recovery rendering,and static gate parity"
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/create-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:06:00.449Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: Gemini current-head create option own-property regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/store/settings-validator.spec.ts tests/unit/commands/workspace/config-key-aliases-search.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:06:00.449Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+    note: focused lock config claim and lock coverage
 docs[1]{path,scope,note}:
   docs/CONFIGURATION.md,project,document locks_wait_ms and PM_LOCK_WAIT_MS configuration
 close_reason: fixed

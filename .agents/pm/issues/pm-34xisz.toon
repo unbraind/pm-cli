@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:contracts","area:sdk",extensions,token-efficiency
 created_at: "2026-09-12T08:56:50.560Z"
-updated_at: "2026-09-13T17:15:18.503Z"
+updated_at: "2026-09-22T05:15:07.898Z"
 closed_at: "2026-09-13T17:15:17.889Z"
 completed_at: "2026-09-13T17:15:17.889Z"
 author: "harness:codex"
@@ -34,15 +34,15 @@ files[5]:
   - path: src/sdk/cli-contracts/runtime-contracts.ts
     scope: project
     note: Registration tier is dropped during dynamic contract assembly
+  - path: tests/fixtures/contracts/full.json
+    scope: project
+  - path: tests/unit/commands/workspace/contracts-command.spec.ts
+    scope: project
   - path: tests/unit/sdk/contracts-full-projection.spec.ts
     scope: project
     note: Extend real package projection tests with arbitrary internal and standard tiers
-  - path: tests/unit/commands/contracts-command.spec.ts
-    scope: project
-  - path: tests/fixtures/contracts/full.json
-    scope: project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/commands/contracts-command.spec.ts,project,240,"harness:codex","2026-09-13T16:09:18.258Z",local_mutation,feat/sdk-command-discovery-governance
+  node scripts/run-tests.mjs test -- tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/commands/workspace/contracts-command.spec.ts,project,240,"harness:codex","2026-09-22T05:15:07.754Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]:
   - run_id: test-local-mu014jvz-sp6ogc
     kind: test

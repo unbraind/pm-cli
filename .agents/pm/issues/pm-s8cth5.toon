@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:test-command",regression,sandbox-safety,trust
 created_at: "2026-08-29T15:17:13.352Z"
-updated_at: "2026-08-30T16:17:26.354Z"
+updated_at: "2026-09-22T05:07:20.872Z"
 closed_at: "2026-08-30T15:28:07.959Z"
 completed_at: "2026-08-30T15:28:07.959Z"
 author: "harness:codex"
@@ -54,7 +54,7 @@ files[7]{path,scope,note}:
   src/sdk/index.ts,project,public SDK export
   src/sdk/test/execution.ts,project,SDK-owned capability classification and intake policy
   tests/fixtures/contracts/full.json,project,CLI help contract snapshot
-  tests/unit/commands/test-command.spec.ts,project,intake acceptance and runtime isolation coverage
+  tests/unit/commands/test/test-command.spec.ts,project,intake acceptance and runtime isolation coverage
   tests/unit/sdk/linked-command-identity.spec.ts,project,capability-equivalence and intake regression
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/linked-command-identity.spec.ts,project,240,"harness:codex","2026-08-30T14:50:10.904Z",local_mutation,feat/sdk-execution-boundary-reliability,direct shell-wrapped package-manager and non-Node intake

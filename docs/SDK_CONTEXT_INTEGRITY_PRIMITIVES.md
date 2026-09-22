@@ -87,7 +87,7 @@ artifact in a fresh temporary project:
 
 ```bash
 pnpm build
-node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts
+node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts
 ```
 
 ## Workspace relocation diagnostics

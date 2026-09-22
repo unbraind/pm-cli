@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCommandAliasSurface } from "../../../../src/cli/commands/contracts.js";
+import { buildCommandAliasSurface } from "../../../../src/cli/commands/workspace/contracts.js";
 import { PM_COMMAND_ALIAS_CONTRACTS } from "../../../../src/sdk/cli-contracts.js";
 
 describe("runtime command alias surface defenses", () => {

@@ -387,7 +387,13 @@ git push origin v<version>
   `sentry-injected` packlist budget over the exact publishable bytes, and only
   then optional Sentry release metadata/upload/finalization and the npx tarball
   smoke test
-- generated release notes from changelog plus sanitized tracker metadata
+- generated release notes from changelog plus sanitized tracker metadata. The
+  tracker read projects only release-relevant fields and explicitly removes row
+  and token limits. The generator validates the completeness receipt before
+  summarizing; partial, unreadable, or malformed input produces a visible warning
+  instead of claiming no items closed. The regression suite exercises a real
+  workspace exceeding the default JSON budget. Tracked by
+  [pm-svxdsx](../.agents/pm/issues/pm-svxdsx.toon).
 - artifact uploads
 - `npm publish --access public --provenance --tag latest`, skipped on retry
   only when the exact version is anonymously visible from a fresh npm cache.

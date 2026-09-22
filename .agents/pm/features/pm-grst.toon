@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:extensions","area:health","area:state","milestone:extension-manager",pm-cli
 created_at: "2026-04-03T16:16:38.574Z"
-updated_at: "2026-09-19T08:40:20.447Z"
+updated_at: "2026-09-22T05:03:41.966Z"
 deadline: "2026-04-13T16:16:38.574Z"
 closed_at: "2026-04-03T22:17:42.164Z"
 author: codex-agent
@@ -51,7 +51,7 @@ comments[4]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-04-03T16:16:38.574Z",codex-agent,"Will include settings state updates,metadata persistence,and manage/explore/health output details."
 files[1]{path,scope,note}:
-  src/cli/commands/health.ts,project,extension diagnostics surface
+  src/cli/commands/governance/health.ts,project,extension diagnostics surface
 tests[1]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/integration/cli.integration.spec.ts,project,3600,state and diagnostics regression
 docs[1]{path,scope,note}:

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:history","area:merge","area:sdk",gh-issue,multi-agent,token-efficiency
 created_at: "2026-07-23T04:52:48.714Z"
-updated_at: "2026-07-26T17:20:27.099Z"
+updated_at: "2026-09-22T05:11:14.580Z"
 closed_at: "2026-07-23T05:34:03.760Z"
 author: claude-code-agent
 acceptance_criteria: "Public reconciliation results classify every candidate event as net-lossy or net-lossless using field semantics and final on-disk state, discarded_authors and recovery guidance include only effective loss, append-only union fields retain attribution and avoid loss warnings, genuinely lossy GH-603 behavior remains loud, CLI SDK and documentation use truthful terminology, real git branch acceptance covers driver union and lossy resolution, focused and full coverage remain 100 percent"
@@ -18,17 +18,17 @@ resolution: History reconciliation now partitions all changed fields/events/auth
 expected_result: "Append-only unions and deterministic reorderings remain visible without false data-loss alarms, while scalar replacement/removal remains loud."
 actual_result: "SDK/command tests, exact coverage, and an installed two-branch Git merge prove both notes survive with zero false discard warnings/events and strict history validation passes."
 affected_version: 2026.7.22
-dependencies[10]{id,kind,created_at,author,source_kind}:
-  pm-9q2t,related,"2026-07-23T04:52:48.714Z",null,null
-  pm-g5sx,discovered_from,"2026-07-23T04:52:48.714Z",null,null
-  pm-gpo7,related,"2026-07-23T04:52:48.714Z",null,null
-  pm-mfkv92,related,"2026-07-23T04:52:48.714Z",null,null
-  pm-wc1r,related,"2026-07-23T04:52:48.714Z",null,null
-  pm-3esl28,related,"2026-07-23T04:53:28.251Z",null,null
-  pm-ds3b,verifies,"2026-07-23T04:53:28.251Z",null,null
-  pm-k9t17l,related,"2026-07-23T04:53:28.251Z",null,null
-  pm-h90s,related,"2026-07-26T17:20:26.796Z",null,null
-  pm-o2kc,implements,"2026-07-26T17:20:26.796Z",null,null
+dependencies[10]{id,kind,created_at}:
+  pm-9q2t,related,"2026-07-23T04:52:48.714Z"
+  pm-g5sx,discovered_from,"2026-07-23T04:52:48.714Z"
+  pm-gpo7,related,"2026-07-23T04:52:48.714Z"
+  pm-mfkv92,related,"2026-07-23T04:52:48.714Z"
+  pm-wc1r,related,"2026-07-23T04:52:48.714Z"
+  pm-3esl28,related,"2026-07-23T04:53:28.251Z"
+  pm-ds3b,verifies,"2026-07-23T04:53:28.251Z"
+  pm-k9t17l,related,"2026-07-23T04:53:28.251Z"
+  pm-h90s,related,"2026-07-26T17:20:26.796Z"
+  pm-o2kc,implements,"2026-07-26T17:20:26.796Z"
 comments[8]{created_at,author,text}:
   "2026-07-23T04:52:48.714Z",claude-code-agent,"Duplicate check 2026-07-23: all-status searches for GH-646,merge reconcile discarded events/authors,history repair discard union field,and the GH-603/GH-623 lineage found closed canonical merge work pm-g5sx,pm-gpo7,pm-mfkv92,pm-wc1r,and pm-9q2t,but no item owns the complementary false-positive/net-lossless classification defect. Created this canonical leaf without reopening completed merge safety items."
   "2026-07-23T04:53:30.151Z",claude-code-agent,"GitHub linkage evidence: canonical pm item posted on GH-646 at https://github.com/unbraind/pm-cli/issues/646#issuecomment-5054564363. Active bundle shares the truthful-context lifecycle acceptance surface with pm-3esl28, pm-k9t17l, and rolling SDK reference pm-ds3b."
@@ -41,8 +41,8 @@ comments[8]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/sdk/history-repair.ts,project,Loss-aware reconciliation classification
   tests/unit/sdk/history-repair-reconciliation.spec.ts,project,Lossy and union-preserved classification coverage
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/history-repair-reconciliation.spec.ts tests/unit/commands/history-repair-command.spec.ts,project,240,Reconciliation unit and command acceptance
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/history-repair-reconciliation.spec.ts tests/unit/commands/history/history-repair-command.spec.ts,project,240,"harness:codex","2026-09-22T05:11:14.461Z",local_mutation,refactor/cli-command-domains-export-gate,Reconciliation unit and command acceptance
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrx2rgfv-d676hd,test,passed,"2026-07-23T05:32:22.559Z","2026-07-23T05:32:37.243Z","2026-07-23T05:32:37.243Z",1,0,0
 docs[2]{path,scope,note}:

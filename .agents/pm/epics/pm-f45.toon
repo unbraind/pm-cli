@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:search",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:01:11.736Z"
-updated_at: "2026-09-19T08:40:14.022Z"
+updated_at: "2026-09-22T05:00:26.906Z"
 deadline: "2026-03-07T23:01:11.736Z"
 closed_at: "2026-03-04T15:27:21.685Z"
 assignee: steve
@@ -74,8 +74,8 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:31:03.874Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[8]{path,scope,note}:
+  src/cli/commands/query/search.ts,project,search command entrypoint
   src/cli/commands/reindex.ts,project,reindex command entrypoint
-  src/cli/commands/search.ts,project,search command entrypoint
   src/core/search/providers.ts,project,embedding provider abstraction
   src/core/search/vector-stores.ts,project,vector store abstraction
   tests/unit/embedding-provider.spec.ts,project,provider tests

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: decisions,multi-agent,next,workflow
 created_at: "2026-07-11T03:00:06.909Z"
-updated_at: "2026-08-10T12:02:24.013Z"
+updated_at: "2026-09-22T05:17:25.685Z"
 closed_at: "2026-07-11T20:35:20.074Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -51,14 +51,14 @@ comments[7]{created_at,author,text}:
   "2026-07-11T20:06:37.902Z",codex-root,"Review fix implemented: includeDecisions moves Decisions into the claimable queue instead of duplicating them in decision_needed; regression assertion passes."
   "2026-07-11T20:35:16.203Z",codex-root,"Final review evidence: Decision rows are excluded from held_by_others by default and remain exclusive to decision_needed; opt-in restores claim ownership filtering. Changelog wording now states default exclusion and authorized opt-in. Focused 294 tests and strict lint/static gates pass."
 files[6]{path,scope,note}:
-  src/cli/commands/claim.ts,project,bounded atomic candidate walk
-  src/cli/commands/next.ts,project,shared ranked actionability and decision separation contract
+  src/cli/commands/lifecycle/claim.ts,project,bounded atomic candidate walk
+  src/cli/commands/query/next.ts,project,shared ranked actionability and decision separation contract
   src/cli/register-operations.ts,project,CLI option forwarding
   src/sdk/cli-contracts/tool-schema.ts,project,MCP and SDK action schema
   src/sdk/runtime.ts,project,public SDK claimNext primitive
   tests/fixtures/contracts/full.json,project,generated contract snapshot
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/next-command.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/next-command.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,240,"harness:codex","2026-09-22T05:17:25.600Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,CLI fleet-worker contract
   docs/SDK.md,project,SDK selection primitive documentation

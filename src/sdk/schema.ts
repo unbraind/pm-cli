@@ -14,7 +14,6 @@ import { refreshMergeAttributeFenceIfInstalled } from "./merge/install.js";
 import {
   assertAliasesAvailable,
   assertTypeFolderAvailable,
-  buildInvalidTypeHint,
   escapeForDoubleQuotes,
   normalizeAddTypeInput,
   parseItemTypesFile,
@@ -109,15 +108,23 @@ export type SchemaSubcommand = (typeof SCHEMA_SUBCOMMANDS)[number];
 
 export {
   formatSchemaEvolutionMigrationHuman,
-  planSchemaEvolutionMigration,
   runSchemaEvolutionMigration,
-  type PlanSchemaEvolutionMigrationOptions,
   type RunSchemaEvolutionMigrationOptions,
+  type SchemaEvolutionMigrationRequest,
+  type SchemaEvolutionMigrationResult,
+} from "./schema-migration.js";
+
+/**
+ * Planning-only migration contracts exposed by the published SDK for package
+ * authors. The CLI executes migrations but does not consume these exports.
+ * @public
+ */
+export {
+  planSchemaEvolutionMigration,
+  type PlanSchemaEvolutionMigrationOptions,
   type SchemaEvolutionFieldChange,
   type SchemaEvolutionItemPlan,
   type SchemaEvolutionMigrationPlan,
-  type SchemaEvolutionMigrationRequest,
-  type SchemaEvolutionMigrationResult,
 } from "./schema-migration.js";
 
 const SCHEMA_TYPES_LOCK_ID = "schema-types";
@@ -2448,8 +2455,6 @@ export function formatSchemaInferTypesHuman(
 
 /* c8 ignore stop */
 
-/** Re-export so register-mutation can surface the hint in usage examples without importing the core module directly. */
-export { buildInvalidTypeHint };
 export type {
   RuntimeFieldDefinition,
   RuntimeFieldValueSchema,

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: dependencies,external-audit,pm-cli,update
 created_at: "2026-04-06T14:39:14.605Z"
-updated_at: "2026-09-19T08:41:42.138Z"
+updated_at: "2026-09-22T05:02:11.924Z"
 closed_at: "2026-04-06T15:41:59.183Z"
 author: codex-agent
 estimated_minutes: 60
@@ -23,7 +23,7 @@ comments[3]{created_at,author,text}:
   "2026-04-06T14:39:41.542Z",codex-agent,"Execution started under seven-issue hardening plan: this net-new child tracks atomic dependency replacement mode implementation, tests, docs, and parity surfaces."
   "2026-04-06T15:40:50.575Z",codex-agent,"Implemented pm update --replace-deps for one-step atomic dependency replacement. Added guardrails (--replace-deps requires --dep, disallows --dep-remove combination, preserves clear/add semantics), wired CLI/contracts/Pi parity, and validated via targeted and full test+coverage gates."
 files[5]{path,scope,note}:
-  src/cli/commands/update.ts,project,atomic dependency replacement validation and mutation logic
+  src/cli/commands/lifecycle/update.ts,project,atomic dependency replacement validation and mutation logic
   src/cli/main.ts,project,"--replace-deps CLI wiring"
   src/sdk/cli-contracts.ts,project,replaceDeps schema and contracts parity
   tests/integration/cli.integration.spec.ts,project,integration coverage for replace-deps flow

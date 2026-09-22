@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:sdk",context,extensions,gh-issue,relevance
 created_at: "2026-07-14T12:42:02.602Z"
-updated_at: "2026-07-26T17:24:27.387Z"
+updated_at: "2026-09-22T05:11:07.134Z"
 closed_at: "2026-07-14T14:02:04.156Z"
 author: codex-root
 estimated_minutes: 120
@@ -24,10 +24,10 @@ release: v2026.7.15
 resolution: Public buildItemContextRelevanceCandidates is exported and shared by pm context and pm next with documented deterministic metadata signals.
 expected_result: Extensions can reproduce built-in context candidate derivation from @unbrained/pm-cli/sdk without subprocesses or deep imports.
 actual_result: "SDK, CLI parity, exact coverage, linked-test, and packed-consumer proofs all pass."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-4k6b,related,"2026-07-14T12:42:02.602Z",null,null
-  pm-h3no,related,"2026-07-14T12:42:02.602Z",null,null
-  pm-3hps,implements,"2026-07-26T17:24:27.159Z",null,null
+dependencies[3]{id,kind,created_at}:
+  pm-4k6b,related,"2026-07-14T12:42:02.602Z"
+  pm-h3no,related,"2026-07-14T12:42:02.602Z"
+  pm-3hps,implements,"2026-07-26T17:24:27.159Z"
 comments[7]{created_at,author,text}:
   "2026-07-14T12:42:02.602Z",codex-root,"Duplicate check 2026-07-14: all-status searches for ContextRelevanceCandidate, signal builder, and GH-558 found the broad pm-3hps feature store and shipped scorer pm-h3no, but no item owns promotion of the existing CLI builder; this child records GitHub #558 without duplicating the larger index-backed store."
   "2026-07-14T12:42:11.944Z",codex-root,"GitHub provenance: https://github.com/unbraind/pm-cli/issues/558 documents the missing public signal builder and the pm-brief subprocess workaround. Canonical implementation lineage is pm-3hps -> pm-4k6b with shipped scorer contract pm-h3no."
@@ -37,11 +37,11 @@ comments[7]{created_at,author,text}:
   "2026-07-14T13:24:27.893Z",codex-root,"Acceptance correction evidence: options now accept caller-derived semanticSimilarity and emit canonical semantic_similarity values. Focused 16-test parity, typecheck, lint, zero clones, static/docstring, package boundary, token budget, full 287-file/5,687-test exact 100/100/100/100 coverage, and a freshly repacked installed consumer asserting semantic_similarity=0.95 all pass."
   "2026-07-14T14:02:02.211Z",codex-gpt5,"Review-round evidence for PR #559 and GH-558: fixed Greptile's compact-timestamp recency finding by routing updated_at through the shared strict timestamp resolver with a fixed invalid clock, preserving deterministic rejection of relative/now values. Regression cases cover compact YYYYMMDD, ISO, malformed, and non-string runtime data; full coverage is exact 100/100/100/100."
 files[3]{path,scope,note}:
-  src/cli/commands/context.ts,project,thin context consumer
-  src/cli/commands/next.ts,project,thin next consumer
+  src/cli/commands/query/context.ts,project,thin context consumer
+  src/cli/commands/query/next.ts,project,thin next consumer
   src/sdk/context-relevance.ts,project,public canonical item signal derivation
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/context-relevance.spec.ts tests/unit/commands/context-relevance-command.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-relevance.spec.ts tests/unit/commands/query/context-relevance-command.spec.ts,project,240,"harness:codex","2026-09-22T05:11:06.985Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrkoet9q-mgdu7j,test,passed,"2026-07-14T13:17:27.074Z","2026-07-14T13:17:38.606Z","2026-07-14T13:17:38.606Z",1,0,0
 docs[1]{path,scope,note}:

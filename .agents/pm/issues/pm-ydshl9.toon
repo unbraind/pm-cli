@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",performance,scale,token-efficiency
 created_at: "2026-07-27T04:06:26.179Z"
-updated_at: "2026-09-05T13:32:21.166Z"
+updated_at: "2026-09-22T05:07:05.486Z"
 closed_at: "2026-09-05T13:23:48.931Z"
 completed_at: "2026-09-05T13:23:48.931Z"
 author: "harness:claude-code"
@@ -56,12 +56,12 @@ files[9]{path,scope,note}:
   src/core/store/item-store.ts,project,Real metadata enumeration work measurement and source-consistent SDK verification
   src/sdk/query.ts,project,Public metadata work measurement export for package consumers
   src/sdk/query/get.ts,project,Bounded SDK context read implementation and verification
-  tests/unit/commands/get-append-command.spec.ts,project,Bounded SDK context read implementation and verification
+  tests/unit/commands/query/get-append-command.spec.ts,project,Bounded SDK context read implementation and verification
   tests/unit/scripts/point-read-costs.spec.ts,project,Implementation contract and verification evidence for bounded context delivery
   tests/unit/sdk/context/read-cost-bounds.spec.ts,project,Bounded SDK context read implementation and verification
   vitest.config.ts,project,Real metadata enumeration work measurement and source-consistent SDK verification
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/context tests/unit/sdk/context-packing-usage.spec.ts tests/unit/sdk/similarity.spec.ts tests/unit/commands/get-append-command.spec.ts,project,240,"harness:codex","2026-09-05T09:24:25.344Z",local_mutation,feat/scalable-context-reads-and-duplicate-discovery,Exact recall and bounded read regressions
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context tests/unit/sdk/context-packing-usage.spec.ts tests/unit/sdk/similarity.spec.ts tests/unit/commands/query/get-append-command.spec.ts,project,240,"harness:codex","2026-09-22T05:07:05.432Z",local_mutation,refactor/cli-command-domains-export-gate,Exact recall and bounded read regressions
 test_runs[1]:
   - run_id: test-local-mtoa9s05-yc0hmk
     kind: test

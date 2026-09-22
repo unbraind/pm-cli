@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",gh-issue,multi-agent
 created_at: "2026-07-06T08:03:06.673Z"
-updated_at: "2026-07-26T17:11:21.398Z"
+updated_at: "2026-09-22T05:20:45.096Z"
 closed_at: "2026-07-15T04:45:36.902Z"
 author: maintainer-agent
 estimated_minutes: 150
@@ -18,11 +18,11 @@ release: v2026.7.15
 resolution: Completed
 expected_result: "Every mutation can receive strict global author attribution, fresh init persists a stable default, and recent unknown history emits actionable advisory diagnostics."
 actual_result: "Global --author, scoped PM_AUTHOR restoration, init author_default, public attribution scanner, and health/validate remediation shipped and passed installed-package acceptance."
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-u14c,related,"2026-07-14T17:05:04.337Z",null,null
-  pm-3mna,related,"2026-07-26T17:11:21.136Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:11:21.136Z",null,null
-  pm-xh0y,related,"2026-07-26T17:11:21.136Z",null,null
+dependencies[4]{id,kind,created_at}:
+  pm-u14c,related,"2026-07-14T17:05:04.337Z"
+  pm-3mna,related,"2026-07-26T17:11:21.136Z"
+  pm-mpbb,implements,"2026-07-26T17:11:21.136Z"
+  pm-xh0y,related,"2026-07-26T17:11:21.136Z"
 comments[10]{created_at,author,text}:
   "2026-07-14T22:56:36.829Z",codex-root,"Implementation start 2026-07-15: bundled with pm-3mna because global author attribution, init author_default, config persistence, and health/validate remediation share the same workspace-customization primitives. Live GH-444 and all-status duplicate lineage confirmed this is canonical."
   "2026-07-14T23:44:01.801Z",unknown,"Verification evidence 2026-07-15: final all-source coverage passed 291 files / 5,708 tests at exact 100% (36,925 statements, 26,508 branches, 7,449 functions, 36,040 lines). Packed clean-install proof confirms global --author precedence for init/create/comments, non-empty init author_default, exported SDK program/scanner primitives, and advisory non-blocking unknown-author health/validate diagnostics. Release readiness passed all code/package/security gates and stops only on separately tracked external Sentry highs; live telemetry is healthy at 0.34% errors with complete error codes."
@@ -36,8 +36,8 @@ comments[10]{created_at,author,text}:
   "2026-07-15T04:45:31.700Z",codex-root,"Final delivery evidence on PR #565 head 4d3795d0: global --author is strict, non-greedy, centrally handled, scoped/restored, represented correctly in contracts/completion, and proven across init/create/comments. Fresh init persists a stable author_default; SDK history scanning feeds advisory health/validate remediation without blocking healthy operation. Packed installed-package acceptance and exact 100/100/100/100 coverage pass; hosted exact-head review has Greptile 5/5, CodeRabbit complete, zero unresolved threads, and all repository-owned checks green."
 files[27]{path,scope,note}:
   src/cli/bootstrap-args.ts,project,Invocation-wide author parsing
-  src/cli/commands/health.ts,project,Advisory provenance health diagnostic
-  src/cli/commands/validate.ts,project,Advisory provenance validation diagnostic
+  src/cli/commands/governance/health.ts,project,Advisory provenance health diagnostic
+  src/cli/commands/governance/validate.ts,project,Advisory provenance validation diagnostic
   src/cli/main.ts,project,Author lifecycle integration
   src/cli/registration-helpers.ts,project,Global author option propagation
   src/core/diagnostics/remediation.ts,project,Actionable author remediation
@@ -55,16 +55,25 @@ files[27]{path,scope,note}:
   tests/unit/cli/argv-utils.spec.ts,project,Author attribution review hardening and fallback coverage
   tests/unit/cli/bootstrap-args.spec.ts,project,Author attribution review hardening and fallback coverage
   tests/unit/cli/cli-main-errors.spec.ts,project,Central author override error handling regression
-  tests/unit/commands/claim-command.spec.ts,project,Author attribution review hardening and fallback coverage
-  tests/unit/commands/completion-command.spec.ts,project,Author placeholder completion regression
-  tests/unit/commands/get-append-command.spec.ts,project,Author attribution review hardening and fallback coverage
+  tests/unit/commands/lifecycle/claim-command.spec.ts,project,Author attribution review hardening and fallback coverage
+  tests/unit/commands/query/get-append-command.spec.ts,project,Author attribution review hardening and fallback coverage
+  tests/unit/commands/workspace/completion-command.spec.ts,project,Author placeholder completion regression
   tests/unit/helpers/withTempPmPath.spec.ts,project,Author attribution review hardening and fallback coverage
   tests/unit/packages/beads-command.spec.ts,project,Author attribution review hardening and fallback coverage
   tests/unit/packages/todos-extension.spec.ts,project,Author attribution review hardening and fallback coverage
   tests/unit/sdk/author-attribution.spec.ts,project,Author precedence scanner and advisory coverage
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs coverage,project,600
-  node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/validate-command.spec.ts tests/unit/cli/bootstrap-args.spec.ts,project,300
+tests[2]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 600
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/commands/governance/health-command.spec.ts tests/unit/commands/governance/validate-command.spec.ts tests/unit/cli/bootstrap-args.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:20:44.912Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrlaxud9-4bcttj,test,passed,"2026-07-14T23:47:56.720Z","2026-07-14T23:48:18.045Z","2026-07-14T23:48:18.045Z",1,0,0
 docs[1]{path,scope,note}:

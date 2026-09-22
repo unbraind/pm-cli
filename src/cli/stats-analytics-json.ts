@@ -4,7 +4,7 @@
  * Validates the compact JSON adapter used to keep the agent-facing stats CLI
  * contract bounded while preserving the fully typed SDK and MCP primitives.
  */
-import type { StatsCommandOptions } from "./commands/stats.js";
+import type { StatsCommandOptions } from "./commands/query/stats.js";
 import { EXIT_CODE, PmCliError } from "../sdk/runtime-primitives.js";
 
 const STATS_ANALYTICS_JSON_FIELDS = new Map<

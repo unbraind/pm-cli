@@ -6,7 +6,7 @@ status: closed
 priority: 4
 tags[3]: completion,config-driven,schema
 created_at: "2026-05-31T05:42:14.222Z"
-updated_at: "2026-09-19T08:41:02.692Z"
+updated_at: "2026-09-22T05:24:36.548Z"
 closed_at: "2026-05-31T08:07:23.596Z"
 author: claude-code-agent
 release: v2026.6.1
@@ -38,7 +38,7 @@ files[10]{path,scope,note}:
   packages/pm-guide-shell/extensions/guide-shell/runtime.js,project,shipped guide-shell helper implementations
   packages/pm-guide-shell/extensions/guide-shell/runtime.ts,project,runtime status/type helper implementations
   src/cli/commands/completion.ts,project,runtime status/type completion resolvers
-  src/cli/commands/contracts.ts,project,package-owned helper command hints
+  src/cli/commands/workspace/contracts.ts,project,package-owned helper command hints
   src/core/telemetry/consent.ts,project,skip telemetry prompt for completion helpers
   src/core/telemetry/observability.ts,project,classify completion helpers as setup commands
   tests/unit/completion-command.spec.ts,project,focused runtime completion coverage

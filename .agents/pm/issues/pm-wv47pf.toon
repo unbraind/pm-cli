@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[2]: context-management,data-quality
 created_at: "2026-07-30T17:02:34.169Z"
-updated_at: "2026-09-02T04:29:56.662Z"
+updated_at: "2026-09-22T05:16:33.983Z"
 closed_at: "2026-09-02T04:29:56.057Z"
 completed_at: "2026-09-02T04:29:56.057Z"
 author: "harness:claude-code"
@@ -62,12 +62,12 @@ files[17]{path,scope,note}:
   src/sdk/runtime.ts,project,Post-egress context usage delivery receipt implementation
   tests/integration/context-usage-egress.integration.spec.ts,project,CLI and PmClient exact delivered-row acceptance coverage
   tests/unit/cli/recovery-context-usage.spec.ts,project,Touch preservation after feedback failure
-  tests/unit/commands/context-relevance-command.spec.ts,project,SDK host delivery finalization feedback coverage
+  tests/unit/commands/query/context-relevance-command.spec.ts,project,SDK host delivery finalization feedback coverage
   tests/unit/core/output/output.spec.ts,project,Quiet suppressed and custom-renderer egress coverage
   tests/unit/sdk/context-packing-usage.spec.ts,project,Serving delivery correlation validation and affinity coverage
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs coverage,project,1800,"harness:codex","2026-09-01T13:29:42.961Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Repo-wide exact coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/core/output/output.spec.ts tests/unit/cli/recovery-context-usage.spec.ts tests/unit/commands/context-relevance-command.spec.ts tests/integration/context-usage-egress.integration.spec.ts,project,300,"harness:codex","2026-09-01T17:14:49.473Z",local_mutation,feat/substantive-context-signals-delivery-receipts,Exact post-egress delivery correlation and degradation regression suite
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/core/output/output.spec.ts tests/unit/cli/recovery-context-usage.spec.ts tests/unit/commands/query/context-relevance-command.spec.ts tests/integration/context-usage-egress.integration.spec.ts,project,300,"harness:codex","2026-09-22T05:16:33.806Z",local_mutation,refactor/cli-command-domains-export-gate,Exact post-egress delivery correlation and degradation regression suite
 test_runs[10]:
   - run_id: test-local-mtixh4rs-ojr1r0
     kind: test

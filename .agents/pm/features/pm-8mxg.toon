@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:extensions","area:packages","area:sdk",dx,pm-cli
 created_at: "2026-06-24T18:26:57.582Z"
-updated_at: "2026-09-19T08:39:44.604Z"
+updated_at: "2026-09-22T05:13:54.385Z"
 closed_at: "2026-06-24T18:45:52.691Z"
 author: claude-code-agent
 goal: project management = context management
@@ -29,7 +29,7 @@ learnings[1]{created_at,author,text}:
 files[6]{path,scope}:
   docs/SDK.md,project
   src/cli/commands/completion.ts,project
-  src/cli/commands/extension.ts,project
+  src/cli/commands/extension/extension.ts,project
   src/cli/commands/extension/scaffold.ts,project
   src/cli/register-setup.ts,project
   src/sdk/cli-contracts.ts,project

@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: cognitive-memory,context,relevance,sdk-first
 created_at: "2026-07-07T06:50:19.358Z"
-updated_at: "2026-07-26T17:27:22.347Z"
+updated_at: "2026-09-22T05:24:16.172Z"
 closed_at: "2026-07-13T19:56:02.425Z"
 author: maintainer-agent
 estimated_minutes: 600
@@ -18,19 +18,19 @@ release: v2026.7.14
 resolution: Delivered privacy-minimal served-then-touched feedback primitives and usage-affinity ranking across SDK and CLI.
 expected_result: Useful served items strengthen future agent context while ignored and unseen work remains explorable without item-history mutation.
 actual_result: "Inline serving/read/mutation capture, bounded ledger, decay/exploration, opt-out, scorer attribution, five-scenario golden proof, temp acceptance, and exact 100% coverage pass."
-dependencies[12]{id,kind,created_at,author,source_kind}:
-  pm-3hps,related,"2026-07-07T06:50:19.358Z",null,null
-  pm-atfm,related,"2026-07-07T06:50:19.358Z",null,null
-  pm-vvib,related,"2026-07-07T06:50:19.358Z",null,null
-  pm-55ra,related,"2026-07-13T19:27:48.396Z",null,null
-  pm-4k6b,implements,"2026-07-26T17:27:22.047Z",null,null
-  pm-5qmm,related,"2026-07-26T17:27:22.047Z",null,null
-  pm-7zs0,related,"2026-07-26T17:27:22.047Z",null,null
-  pm-h3no,related,"2026-07-26T17:27:22.047Z",null,null
-  pm-i7i4,related,"2026-07-26T17:27:22.047Z",null,null
-  pm-ksv2,related,"2026-07-26T17:27:22.047Z",null,null
-  pm-qwoy,related,"2026-07-26T17:27:22.047Z",null,null
-  pm-wfvq,related,"2026-07-26T17:27:22.047Z",null,null
+dependencies[12]{id,kind,created_at}:
+  pm-3hps,related,"2026-07-07T06:50:19.358Z"
+  pm-atfm,related,"2026-07-07T06:50:19.358Z"
+  pm-vvib,related,"2026-07-07T06:50:19.358Z"
+  pm-55ra,related,"2026-07-13T19:27:48.396Z"
+  pm-4k6b,implements,"2026-07-26T17:27:22.047Z"
+  pm-5qmm,related,"2026-07-26T17:27:22.047Z"
+  pm-7zs0,related,"2026-07-26T17:27:22.047Z"
+  pm-h3no,related,"2026-07-26T17:27:22.047Z"
+  pm-i7i4,related,"2026-07-26T17:27:22.047Z"
+  pm-ksv2,related,"2026-07-26T17:27:22.047Z"
+  pm-qwoy,related,"2026-07-26T17:27:22.047Z"
+  pm-wfvq,related,"2026-07-26T17:27:22.047Z"
 comments[7]{created_at,author,text}:
   "2026-07-13T18:17:05.362Z",codex-root,"Progress evidence: privacy-minimal derived usage ledger, propensity logging, central mutation-touch capture, decayed affinity scorer signal, retention/opt-out controls, and focused 79-test suite green."
   "2026-07-13T19:55:49.495Z",codex-root,"Completion evidence: delivered a privacy-minimal workspace-local derived JSONL ledger with bounded retention/compaction, zero-I/O opt-out, propensity rows (profile/rank/inclusion), inline context/next serving, get/claim/mutation/close touches, per-author decay and exploration floor, usage_affinity scorer explanations, and core-only post-command capture. The committed pm-atfm corpus now includes served-then-used versus served-and-ignored and proves the used item ranks first while unseen exploration candidates remain; all five scenarios score 1.0 on NDCG, reciprocal rank, required recall, continuity, and token adherence. Focused 82-test linked suite passes; shared full suite passes 5,623 tests at exact 100/100/100/100; package-first dogfood passed 88 commands; fresh manual and packed-SDK temp acceptance passed. GitHub security/dependency and live Sentry/release findings were appended to canonical pm-qwoy, pm-7zs0, pm-wfvq, and pm-ksv2 without duplicate items or claims."
@@ -48,9 +48,9 @@ files[19]{path,scope,note}:
   eslint-suppressions.json,project,Removed obsolete suppressions
   scripts/release/context-eval-gate.mjs,project,Seeds implicit usage judgments in the mandatory quality harness
   scripts/release/static-quality-gate.mjs,project,Strict suppression ratchet updated for cleaner implementation
-  src/cli/commands/context.ts,project,Context packing and propensity integration
-  src/cli/commands/get.ts,project,Inline served-then-read outcome capture
-  src/cli/commands/next.ts,project,Next packing and propensity integration
+  src/cli/commands/query/context.ts,project,Context packing and propensity integration
+  src/cli/commands/query/get.ts,project,Inline served-then-read outcome capture
+  src/cli/commands/query/next.ts,project,Next packing and propensity integration
   src/cli/main.ts,project,Central mutation outcome feedback capture
   src/core/extensions/command-hook-context.ts,project,Core-only post-command context for outcome capture
   src/core/extensions/index.ts,project,Affected-item capture independent of installed hooks
@@ -60,16 +60,31 @@ files[19]{path,scope,note}:
   src/sdk/index.ts,project,Public SDK barrel exports
   tests/context-eval/baseline.json,project,Five-scenario context quality baseline
   tests/context-eval/golden-scenarios.json,project,Served-and-used versus served-and-ignored golden scenario
-  tests/unit/commands/context-relevance-command.spec.ts,project,Served-and-read plus served-and-mutated ranking scenarios
+  tests/unit/commands/query/context-relevance-command.spec.ts,project,Served-and-read plus served-and-mutated ranking scenarios
   tests/unit/extensions/extensions-runtime.spec.ts,project,Core and extension hook outcome capture coverage
   tests/unit/scripts/release/context-eval-gate.spec.ts,project,Usage-feedback corpus validation and error-path coverage
   tests/unit/sdk/context-packing-usage.spec.ts,project,Packer and feedback regression coverage
-tests[5]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/commands/context-relevance-command.spec.ts tests/unit/commands/context-command.spec.ts tests/unit/commands/next-command.spec.ts,project,240
-  "pnpm benchmark:scale:check",project,180
-  "pnpm dogfood:package-first",project,360
-  "pnpm quality:context-eval",project,180
-  "pnpm test:coverage",project,360
+tests[5]:
+  - command: "pnpm benchmark:scale:check"
+    scope: project
+    timeout_seconds: 180
+  - command: "pnpm dogfood:package-first"
+    scope: project
+    timeout_seconds: 360
+  - command: "pnpm quality:context-eval"
+    scope: project
+    timeout_seconds: 180
+  - command: "pnpm test:coverage"
+    scope: project
+    timeout_seconds: 360
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/context-packing-usage.spec.ts tests/unit/sdk/context-relevance.spec.ts tests/unit/commands/query/context-relevance-command.spec.ts tests/unit/commands/query/context-command.spec.ts tests/unit/commands/query/next-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:24:16.106Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrjn1p94-p4ntxt,test,passed,"2026-07-13T19:51:28.755Z","2026-07-13T19:51:41.080Z","2026-07-13T19:51:41.080Z",1,0,0
   test-local-mrjn1sw0-gsvxl6,test,passed,"2026-07-13T19:51:41.621Z","2026-07-13T19:51:45.792Z","2026-07-13T19:51:45.792Z",1,0,0

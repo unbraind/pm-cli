@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[3]: context,relevance,scale
 created_at: "2026-07-06T23:18:52.486Z"
-updated_at: "2026-09-12T20:05:02.571Z"
+updated_at: "2026-09-22T04:59:34.890Z"
 author: maintainer-agent
 estimated_minutes: 960
 acceptance_criteria: SDK exposes a documented pluggable context-scoring interface with the built-in multi-signal scorer as default; pm context/pm next accept a token-budget bound and pack results by score with graceful projection degradation; json output can include a per-signal score breakdown; ranking is deterministic for a fixed workspace state; hot path stays index-backed (no full scan) and meets pm-9rxu latency targets on the 100k and 1M benchmark workspaces; on small workspaces default ordering remains stable (golden tests); extension can replace the scorer end-to-end (exemplar test)
@@ -384,8 +384,8 @@ learnings[1]{created_at,author,text}:
   "2026-07-21T15:56:04.292Z",codex-tracker-governance,"Graph-aware context needs separate meanings for an actionable active isolate and a historical knowledge orphan. The 2026-07-21 graph had zero active isolates but many historical components or orphans; ranking should surface the former as governance risk while using the latter only when relevance, analogy, or diversity justifies their token cost."
 files[18]{path,scope,note}:
   src/cli/after-command-context-usage.ts,project,Observable post-egress feedback failure
-  src/cli/commands/context.ts,project,Adaptive scorer integration in context assembly
-  src/cli/commands/next.ts,project,Adaptive scorer integration in next-work assembly
+  src/cli/commands/query/context.ts,project,Adaptive scorer integration in context assembly
+  src/cli/commands/query/next.ts,project,Adaptive scorer integration in next-work assembly
   src/cli/register-list-query.ts,project,public context and next flags
   src/cli/registration-helpers.ts,project,typed option normalization
   src/sdk/cli-contracts/commander-types.ts,project,Commander aliases
@@ -397,14 +397,11 @@ files[18]{path,scope,note}:
   src/sdk/context-usage.ts,project,Normalized serve identity integrity
   tests/fixtures/contracts/full.json,project,generated public contract snapshot
   tests/unit/cli/recovery-context-usage.spec.ts,project,Observable feedback failure with preserved touches
-  tests/unit/commands/context-relevance-command.spec.ts,project,context and next integration coverage
+  tests/unit/commands/query/context-relevance-command.spec.ts,project,context and next integration coverage
   tests/unit/commands/register-commands.spec.ts,project,CLI option forwarding coverage
   tests/unit/sdk/context-packing-usage.spec.ts,project,Normalized serve identity negative control
   tests/unit/sdk/context-relevance.spec.ts,project,Regression coverage for unknown runtime keys and canonical metrics
 tests[4]:
-  - command: node scripts/run-tests.mjs test -- tests/unit/commands/context-relevance-command.spec.ts tests/unit/commands/register-commands.spec.ts
-    scope: project
-    timeout_seconds: 300
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/context-relevance.spec.ts
     scope: project
     timeout_seconds: 240
@@ -420,6 +417,14 @@ tests[4]:
       created_at: "2026-09-01T20:11:22.802Z"
       source_kind: local_mutation
       source_ref: feat/substantive-context-signals-delivery-receipts
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/query/context-relevance-command.spec.ts tests/unit/commands/register-commands.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T04:59:34.772Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[2]:
   - run_id: test-all-local-mreilef6-55k1ab
     kind: test-all

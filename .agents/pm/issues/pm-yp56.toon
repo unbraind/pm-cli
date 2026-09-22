@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,cli,silent-failure
 created_at: "2026-07-18T10:08:09.956Z"
-updated_at: "2026-07-26T17:30:28.541Z"
+updated_at: "2026-09-22T05:18:25.961Z"
 closed_at: "2026-07-18T12:14:16.630Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -18,10 +18,10 @@ release: v2026.7.19
 resolution: fixed
 expected_result: A comment command with --message but no real comment text exits non-zero and names valid text sources; --message remains a history label when content exists.
 actual_result: "List-mode comment resolution now rejects --message with usage guidance for positional text, --add, --stdin, or --file while valid mutations remain unchanged."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-45mb,related,"2026-07-18T10:08:09.956Z",null,null
-  pm-gdi7,related,"2026-07-18T10:08:09.956Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:30:28.269Z",null,null
+dependencies[3]{id,kind,created_at}:
+  pm-45mb,related,"2026-07-18T10:08:09.956Z"
+  pm-gdi7,related,"2026-07-18T10:08:09.956Z"
+  pm-mpbb,implements,"2026-07-26T17:30:28.269Z"
 comments[6]{created_at,author,text}:
   "2026-07-18T10:52:33.104Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
   "2026-07-18T10:53:15.089Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
@@ -32,10 +32,10 @@ comments[6]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-07-18T11:37:39.665Z",maintainer-agent,Mutation-label options must never silently turn an otherwise empty annotation command into a successful list operation; fail with concrete text-input recovery.
 files[2]{path,scope,note}:
-  src/cli/commands/comments.ts,project,Reject --message without a real comment text source
+  src/cli/commands/annotations/comments.ts,project,Reject --message without a real comment text source
   tests/unit/commands/agent-ux-feedback-wave.spec.ts,project,Cross-command installed CLI regression bundle
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/sdk/graph/mutation-advisory.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/cli/extension-command-help.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/agent-ux-feedback-wave.spec.ts tests/unit/sdk/graph/mutation-advisory.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/cli/extension-command-help.spec.ts,project,240,"harness:codex","2026-09-22T05:18:25.790Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrqakcop-2xjtd3,test,passed,"2026-07-18T11:36:27.803Z","2026-07-18T11:36:39.481Z","2026-07-18T11:36:39.481Z",1,0,0
 docs[2]{path,scope,note}:

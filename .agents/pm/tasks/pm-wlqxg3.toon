@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: ci,durability,history,integrity,provable-history,testing
 created_at: "2026-07-25T12:32:18.439Z"
-updated_at: "2026-09-04T21:58:10.399Z"
+updated_at: "2026-09-22T05:07:09.689Z"
 closed_at: "2026-09-04T21:05:51.080Z"
 completed_at: "2026-09-04T21:05:51.080Z"
 author: "harness:claude-code"
@@ -132,8 +132,8 @@ files[2]{path,scope,note}:
   tests/integration/history-durability.integration.spec.ts,project,Sandbox durability regressions and replay acceptance
   tests/integration/history-maintenance-replay.integration.spec.ts,project,Every-version independent patch fold across real redaction and divergent Git merge
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts tests/unit/sdk/history-read-primitives.spec.ts,project,300,"harness:codex","2026-09-04T19:59:13.967Z",local_mutation,feat/history-durability-recovery
   node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts,project,300,"harness:codex","2026-09-04T20:24:50.185Z",local_mutation,feat/history-durability-recovery
+  node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/unit/commands/workspace/merge-reconcile-command.spec.ts tests/unit/sdk/history-read-primitives.spec.ts,project,300,"harness:codex","2026-09-22T05:07:09.622Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]:
   - run_id: test-local-mtnfcrcv-xk1zxv
     kind: test

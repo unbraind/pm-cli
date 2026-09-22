@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:cli","area:sdk",author,context,defect,relevance
 created_at: "2026-07-25T06:16:22.783Z"
-updated_at: "2026-08-05T06:39:38.466Z"
+updated_at: "2026-09-22T05:09:17.653Z"
 closed_at: "2026-07-25T11:58:44.562Z"
 author: unknown
 estimated_minutes: 240
@@ -52,16 +52,16 @@ comments[5]{created_at,author,text}:
   "2026-08-05T06:39:38.466Z","harness:codex","Regression follow-up 2026-08-05: packed pm item mutate acceptance found the new structured adapter bypassed tracker author_default with a literal unknown fallback. Active pm-o8z748 now consumes live settings through canonical resolveAuthor; focused and packed regression evidence is attached there."
 files[9]{path,scope,note}:
   src/cli/after-command-context-usage.ts,project,Typed after-command usage attribution and telemetry boundary
-  src/cli/commands/context.ts,project,Context usage attribution
-  src/cli/commands/copy.ts,project,Canonical copy attribution
-  src/cli/commands/create.ts,project,Canonical create attribution
-  src/cli/commands/next.ts,project,Caller ownership attribution
+  src/cli/commands/lifecycle/copy.ts,project,Canonical copy attribution
+  src/cli/commands/lifecycle/create.ts,project,Canonical create attribution
+  src/cli/commands/query/context.ts,project,Context usage attribution
+  src/cli/commands/query/next.ts,project,Caller ownership attribution
   src/cli/main.ts,project,After-command usage attribution
   src/core/shared/author.ts,project,Canonical author environment and harness resolver seam
   src/sdk/context-usage.ts,project,Typed usage validation contract
   tests/unit/cli/recovery-context-usage.spec.ts,project,Canonical author and usage-hook recovery coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts tests/unit/commands/create-command.spec.ts tests/integration/copy-command.spec.ts tests/unit/commands/next-command.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/sdk/context-packing-usage.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/integration/copy-command.spec.ts tests/unit/commands/query/next-command.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,240,"harness:codex","2026-09-22T05:09:17.607Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms0abkij-4ffwu5,test,passed,"2026-07-25T11:27:07.361Z","2026-07-25T11:27:31.483Z","2026-07-25T11:27:31.483Z",1,0,0
 docs[5]{path,scope,note}:

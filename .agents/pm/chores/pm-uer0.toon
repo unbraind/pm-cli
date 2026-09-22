@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: code-quality,concurrency,history,locking
 created_at: "2026-05-22T21:06:47.968Z"
-updated_at: "2026-09-19T08:41:51.447Z"
+updated_at: "2026-09-22T05:22:25.753Z"
 closed_at: "2026-05-25T10:55:02.750Z"
 author: claude-code-agent
 parent: pm-rnpb
@@ -24,9 +24,9 @@ comments[5]{created_at,author,text}:
   "2026-05-25T10:22:51.401Z",codex-reliability-agent,"PR #67 includes the lock-window hardening implementation and regression coverage. Waiting required >=15 minute AI review window, then applying any bot feedback before merge/closure."
   "2026-05-25T10:47:22.601Z",codex-reliability-agent,"Addressed P1 concurrency feedback by capturing historyRawBeforeLock before parsing history entries in history-repair, eliminating the stale-compute/new-snapshot ordering gap. Focused lock-window regression passed."
 files[6]{path,scope,note}:
-  src/cli/commands/history-redact.ts,project,lock-window snapshot verification before write
-  src/cli/commands/history-repair.ts,project,lock-window snapshot verification before write
-  src/cli/commands/restore.ts,project,lock-window snapshot verification before write
+  src/cli/commands/history/history-redact.ts,project,lock-window snapshot verification before write
+  src/cli/commands/history/history-repair.ts,project,lock-window snapshot verification before write
+  src/cli/commands/history/restore.ts,project,lock-window snapshot verification before write
   tests/unit/history-activity-command.spec.ts,project,history-redact stale snapshot conflict regression
   tests/unit/history-repair-command.spec.ts,project,history-repair stale snapshot conflict regression
   tests/unit/restore-command.spec.ts,project,restore stale snapshot conflict regression

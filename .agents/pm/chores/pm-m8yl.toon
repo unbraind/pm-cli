@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: code-quality,codefactor,eslint,maintainability
 created_at: "2026-06-26T13:32:34.362Z"
-updated_at: "2026-09-19T08:40:45.630Z"
+updated_at: "2026-09-22T05:12:45.188Z"
 closed_at: "2026-06-26T15:46:31.862Z"
 author: claude-code-agent
 acceptance_criteria: "CodeFactor reports 0 unsafe-optional-chaining (\"Optional chaining with invalid undefined usage\") findings; full coverage suite stays green at 100%; pnpm typecheck passes."
@@ -25,19 +25,39 @@ comments[5]{created_at,author,text}:
   "2026-06-26T16:55:11.213Z",codex,"Review follow-up: applied Gemini guard-order feedback by checking summaryDetails and verboseDetails before assertions and removing optional reads after narrowing. Verification passed: node scripts/run-tests.mjs test -- tests/unit/commands/health-command.spec.ts (52 tests), pnpm typecheck, and pnpm quality:static."
 files[9]{path,scope,note}:
   tests/integration/profile-command.integration.spec.ts,project,Prevent future unsafe optional-chain cast findings
-  tests/unit/commands/get-append-command.spec.ts,project,CodeFactor unsafe optional-chain assertion rewrite
-  tests/unit/commands/health-command.spec.ts,project,CodeFactor unsafe optional-chain assertion rewrite
-  tests/unit/commands/recurrence-parsers.spec.ts,project,Prevent future unsafe optional-chain cast findings
+  tests/unit/commands/governance/health-command.spec.ts,project,CodeFactor unsafe optional-chain assertion rewrite
+  tests/unit/commands/lifecycle/recurrence-parsers.spec.ts,project,Prevent future unsafe optional-chain cast findings
+  tests/unit/commands/query/get-append-command.spec.ts,project,CodeFactor unsafe optional-chain assertion rewrite
   tests/unit/core/search/corpus-fields.spec.ts,project,CodeFactor no-useless-spread cleanup
   tests/unit/docs-examples/policy-restricted-extension.spec.ts,project,CodeFactor unsafe optional-chain assertion rewrite
   tests/unit/docs-examples/starter-extension.spec.ts,project,CodeFactor unsafe optional-chain assertion rewrite
   tests/unit/extensions/extension-command.spec.ts,project,CodeFactor unsafe optional-chain assertion rewrite
   tests/unit/extensions/extension-loader.spec.ts,project,CodeFactor unsafe optional-chain assertion rewrite
-tests[5]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs coverage,project,600
-  node scripts/run-tests.mjs test -- tests/integration/profile-command.integration.spec.ts tests/unit/commands/recurrence-parsers.spec.ts,project,180
-  node scripts/run-tests.mjs test -- tests/unit/core/search/corpus-fields.spec.ts tests/unit/extensions/extension-command.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/get-append-command.spec.ts tests/unit/docs-examples/starter-extension.spec.ts tests/unit/docs-examples/policy-restricted-extension.spec.ts,project,240
-  "pnpm quality:static",project,240
-  pnpm typecheck,project,240
+tests[5]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 600
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 240
+  - command: pnpm typecheck
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/integration/profile-command.integration.spec.ts tests/unit/commands/lifecycle/recurrence-parsers.spec.ts
+    scope: project
+    timeout_seconds: 180
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:12:45.072Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/search/corpus-fields.spec.ts tests/unit/extensions/extension-command.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/unit/commands/governance/health-command.spec.ts tests/unit/commands/query/get-append-command.spec.ts tests/unit/docs-examples/starter-extension.spec.ts tests/unit/docs-examples/policy-restricted-extension.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:12:45.072Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 close_reason: Removed CodeFactor unsafe optional chaining and no-useless-spread findings with regression coverage and release-gate evidence.
 body: ""

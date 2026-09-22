@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   runMergeReconcile: vi.fn(),
 }));
 
-vi.mock("../../../src/cli/commands/merge.js", () => ({
+vi.mock("../../../src/cli/commands/workspace/merge.js", () => ({
   MERGE_DRIVER_ARTIFACT_VALUES: ["history"],
   runMergeDriver: mocks.runMergeDriver,
   runMergeInstall: mocks.runMergeInstall,

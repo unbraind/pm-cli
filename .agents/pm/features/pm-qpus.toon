@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:schema",pm-cli
 created_at: "2026-06-07T07:18:14.259Z"
-updated_at: "2026-09-19T08:41:05.859Z"
+updated_at: "2026-09-22T05:12:31.211Z"
 closed_at: "2026-06-07T08:11:00.395Z"
 author: codex-schema-show-status-20260607
 parent: pm-8jdc
@@ -22,11 +22,10 @@ comments[5]{created_at,author,text}:
   "2026-06-07T07:55:00.510Z",codex-schema-show-status-20260607,"Verification evidence: pnpm build; node scripts/run-tests.mjs test -- tests/unit/schema-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/mcp-handshake.spec.ts (55 passed); pnpm contracts:update + pnpm contracts:check; pnpm changelog:pm + pnpm changelog:pm:check; pnpm release:gates (2540 tests, 100% coverage, static/docs/security/smoke gates passed). Manual temp-dir smoke passed at /tmp/tmp.EWFMSbmb1D using node dist/cli.js: init -> schema add-status review -> schema show-status review/in_review/open -> create+update status -> schema remove-status review -> show-status review expected unknown_status failure -> schema show Task."
   "2026-06-07T07:55:00.828Z",codex-schema-show-status-20260607,"GitHub/Sentry triage 2026-06-07: gh issue list open = none, gh pr list open = none, dependabot/code-scanning/secret-scanning open alerts all empty ([]). Sentry telemetry gate passed in best-effort mode: critical=0, high=0, finish_error_rate_pct=1.88, missing_error_code_rows=0. Dependency review: commander 15 remains blocked by engines (node >=22.12) while repo supports node >=20. Updated managed pm-changelog extension to latest available npm version 2026.6.7 during changelog verification."
   "2026-06-07T08:11:00.034Z",codex-schema-show-status-20260607,"Follow-up after bot feedback: refactored SchemaStatusSummary construction into shared helper in src/cli/commands/schema.ts; no additional functional drift. PR #141 merged to main (merge commit 3a519a4f72ac47d65b47561620e1ae3865d9665d)."
-files[10]{path,scope,note}:
+files[9]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Track pm-changelog upgrade to latest available version
   docs/COMMANDS.md,project,Document schema show-status usage and JSON output
-  src/cli/commands/index.ts,project,Export show-status command helpers
-  src/cli/commands/schema.ts,project,Add show-status runtime and formatting
+  src/cli/commands/workspace/schema.ts,project,Add show-status runtime and formatting
   src/cli/register-mutation.ts,project,Wire show-status subcommand dispatch/help/output
   src/mcp/server.ts,project,Add MCP schema show-status parity
   src/sdk/cli-contracts.ts,project,Require schema name for show-status contract path

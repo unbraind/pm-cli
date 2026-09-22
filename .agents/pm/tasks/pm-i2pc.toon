@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: item-store,item-tracking,linked-tests,pm-cli
 created_at: "2026-04-04T19:06:59.641Z"
-updated_at: "2026-09-19T08:40:27.534Z"
+updated_at: "2026-09-22T05:03:33.278Z"
 deadline: "2026-04-13T19:06:59.641Z"
 closed_at: "2026-04-04T20:22:41.244Z"
 author: codex-agent
@@ -44,8 +44,8 @@ comments[2]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-04-04T19:06:59.641Z",codex-agent,Includes type/schema updates and mutation-time bounded retention behavior.
 files[5]{path,scope,note}:
-  src/cli/commands/test-all.ts,project,bulk run summary tracking and warnings
-  src/cli/commands/test.ts,project,single-item run summary tracking and warnings
+  src/cli/commands/test/test-all.ts,project,bulk run summary tracking and warnings
+  src/cli/commands/test/test.ts,project,single-item run summary tracking and warnings
   src/core/item/item-format.ts,project,test_runs normalization and deterministic ordering
   src/core/test/item-test-run-tracking.ts,project,bounded tracked run summary persistence
   src/types.ts,project,item test run summary and settings typing

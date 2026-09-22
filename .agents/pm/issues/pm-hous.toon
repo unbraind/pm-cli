@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: dx,gh-issue,init,onboarding
 created_at: "2026-07-11T18:01:34.472Z"
-updated_at: "2026-07-26T17:15:47.150Z"
+updated_at: "2026-09-22T05:19:45.630Z"
 closed_at: "2026-07-24T13:35:00.288Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -18,11 +18,11 @@ release: v2026.7.25
 resolution: Canonical ignore ownership now pairs with health/validate Git-index detection and an exact index-only remediation for all clone-local tracker artifact classes.
 expected_result: Init ignores runtime artifacts and already-tracked cache files are diagnosed without deleting local data.
 actual_result: "Packed proof detected the indexed cache, emitted a safe command, preserved the local file, and cleared validation after index removal."
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-69nl,related,"2026-07-11T18:02:06.291Z",null,null
-  pm-4det,related,"2026-07-26T17:15:46.874Z",null,null
-  pm-4uqm,related,"2026-07-26T17:15:46.874Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:15:46.874Z",null,null
+dependencies[4]{id,kind,created_at}:
+  pm-69nl,related,"2026-07-11T18:02:06.291Z"
+  pm-4det,related,"2026-07-26T17:15:46.874Z"
+  pm-4uqm,related,"2026-07-26T17:15:46.874Z"
+  pm-mpbb,implements,"2026-07-26T17:15:46.874Z"
 comments[9]{created_at,author,text}:
   "2026-07-11T23:05:12.110Z",codex-root,"Implementation start: selected after live all-status duplicate checks, full metadata/comments/notes/learnings review, GitHub issue/PR/security/dependency inspection, and SDK-first frontier reconciliation. This item is actively edited in the broad schema/config/profile/init SDK promotion bundle; unrelated open items remain unclaimed."
   "2026-07-11T23:15:35.696Z",codex-root,"Progress evidence: implemented and SDK-exported an idempotent fenced .gitignore primitive; pm init applies it in workspace-discovery, explicit workspace, and .agents/pm tracker-path layouts; repair/idempotence/unit/integration and packed-consumer proof pass. Remaining acceptance work: add health/validate detection for already-tracked cache files before closing."
@@ -37,7 +37,7 @@ notes[2]{created_at,author,text}:
   "2026-07-12T06:11:43.742Z",maintainer-agent,"PR#520 (merged 2026-07-12) shipped AC halves 1-2: SDK primitives ensurePmGitignore/getPmGitignoreBlock (src/sdk/workspace.ts, re-exported via runtime) + pm init writes/repairs the fenced ignore block at the workspace root in discovered/explicit/tracker-path modes with updated:gitignore:<path> warning; docs/SDK.md + docs/AGENT_GUIDE.md updated. REMAINING scope (why this stays open): AC half 3 — pm validate or pm health warning when tracked .agents/pm runtime/search cache files already exist in git (git rm --cached remediation hint); grep confirms no validate/health implementation on main. Optional: init/getting-started docs coverage beyond AGENT_GUIDE."
   "2026-07-13T09:18:15.456Z",maintainer-agent,"Scope extension (pass #77, 2026-07-13): the fenced ignore block MUST also cover .agents/pm/locks/ — concrete failure: review pass #76's commit (67ccbcf4) accidentally committed .agents/pm/locks/reindex.lock (a live-pid runtime lock) because this repo's .gitignore covered runtime/ and search/ but not locks/. The tracked-cache health warning (AC half 3) should likewise flag tracked lock files. Our own repo's .gitignore gets the locks/ line directly this pass (hygiene fix, pass #77 commit); pm init's fenced block owns it for user repos."
 files[9]{path,scope,note}:
-  src/cli/commands/init.ts,project,Apply ignore primitive from all workspace-aware init modes
+  src/cli/commands/workspace/init.ts,project,Apply ignore primitive from all workspace-aware init modes
   src/core/diagnostics/remediation.ts,project,Machine-executable tracked-cache remediation registry entries
   src/sdk/governance/health.ts,project,Health integrity warning and structured tracked-cache details
   src/sdk/governance/tracked-runtime-cache.ts,project,Shared read-only Git index scan for tracked clone-local tracker artifacts
@@ -46,10 +46,26 @@ files[9]{path,scope,note}:
   src/sdk/workspace.ts,project,Public workspace customization primitive
   tests/integration/init-path-guard.integration.spec.ts,project,Workspace init integration coverage
   tests/unit/core/workspace/gitignore.spec.ts,project,Create repair and idempotence coverage
-tests[3]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/unit/core/workspace/gitignore.spec.ts,project,300
-  node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/init-path-guard.integration.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/sdk/tracked-runtime-cache.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/validate-command.spec.ts,project,240
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/init-path-guard.integration.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/workspace/init-command.spec.ts tests/unit/core/workspace/gitignore.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:19:45.536Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/tracked-runtime-cache.spec.ts tests/unit/commands/governance/health-command.spec.ts tests/unit/commands/governance/validate-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:19:45.536Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Document init cache ignore and tracked-cache remediation
   docs/MERGE_SAFETY.md,project,Index-only removal workflow and runtime-directory policy

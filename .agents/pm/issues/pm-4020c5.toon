@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-25T20:40:06.211Z"
-updated_at: "2026-09-08T05:57:10.430Z"
+updated_at: "2026-09-22T05:15:58.390Z"
 closed_at: "2026-08-08T23:25:11.846Z"
 completed_at: "2026-08-08T23:25:11.846Z"
 author: "harness:claude-code"
@@ -67,8 +67,8 @@ files[12]{path,scope,note}:
   tests/fixtures/contracts/full.json,project,Full contracts snapshot includes relationship ontology
   tests/integration/release-readiness-runtime.spec.ts,project,Deterministic deps diagnostic key-order contract
   tests/unit/sdk/contracts-full-projection.spec.ts,project,Full contracts relationship ontology assertion
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/relationships.spec.ts tests/unit/sdk/graph/assembly-governance.spec.ts tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/commands/deps-command.spec.ts tests/unit/sdk/graph/run.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts,project,300,Canonicalization contracts observability and CLI persistence
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/relationships.spec.ts tests/unit/sdk/graph/assembly-governance.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/commands/query/deps-command.spec.ts tests/unit/sdk/graph/run.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts,project,300,"harness:codex","2026-09-22T05:15:58.213Z",local_mutation,refactor/cli-command-domains-export-gate,Canonicalization contracts observability and CLI persistence
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mskzdlmu-453lep,test,passed,"2026-08-08T23:03:57.464Z","2026-08-08T23:04:20.166Z","2026-08-08T23:04:20.166Z",1,0,0
 docs[2]{path,scope,note}:

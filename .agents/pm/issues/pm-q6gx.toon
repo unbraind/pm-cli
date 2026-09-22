@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-experience,"area:cli",data-integrity,deps,gh-issue
 created_at: "2026-07-08T22:46:10.625Z"
-updated_at: "2026-09-08T05:33:31.682Z"
+updated_at: "2026-09-22T05:06:50.335Z"
 closed_at: "2026-07-09T17:03:17.454Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -28,11 +28,11 @@ comments[4]{created_at,author,text}:
   "2026-07-09T17:03:16.899Z",claude-code-agent,"Verification: update --blocked-by now preserves existing blocked_by dependency edges while appending resolved new blockers and deduplicating repeats; focused update-command tests passed, manual temp PM_PATH proof showed two blocker edges and latest scalar blocker, full coverage passed 5480 tests at 100/100/100/100, and the CI static sequence passed."
   "2026-07-09T17:41:40.488Z",claude-code-agent,"Review-loop evidence: addressed Greptile P1 blocker graph finding by preserving existing blocked_by dependency edges when a new --blocked-by value is unresolved; added regression coverage for valid edge followed by unresolved blocker typo. Focused tests, lint/static, token-budget gate, and full coverage (5481 tests, 100/100/100/100) passed."
 files[3]{path,scope,note}:
-  src/cli/commands/update.ts,project,Append resolved blocked_by dependency edges instead of replacing prior blockers
+  src/cli/commands/lifecycle/update.ts,project,Append resolved blocked_by dependency edges instead of replacing prior blockers
   src/sdk/cli-contracts/commander-mutation-options.ts,project,Expose additive blocked_by edge semantics in SDK command contracts
-  tests/unit/commands/update-command.spec.ts,project,"Regression coverage for append,dedupe,clear blocked_by dependency semantics"
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts,project,300
+  tests/unit/commands/lifecycle/update-command.spec.ts,project,"Regression coverage for append,dedupe,clear blocked_by dependency semantics"
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/update-command.spec.ts,project,300,"harness:codex","2026-09-22T05:06:50.254Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,Document latest scalar plus full blocker graph behavior
 close_reason: "Fixed GH-484 by preserving the full blocker dependency graph while keeping blocked_by scalar compatibility; verified with focused tests, manual temp PM_PATH proof, full coverage, and CI static gates."

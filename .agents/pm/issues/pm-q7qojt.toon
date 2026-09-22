@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-28T11:30:12.179Z"
-updated_at: "2026-08-10T15:58:52.279Z"
+updated_at: "2026-09-22T05:08:46.295Z"
 closed_at: "2026-07-28T16:27:55.507Z"
 author: "harness:codex"
 estimated_minutes: 120
@@ -34,11 +34,20 @@ files[7]{path,scope,note}:
   src/sdk/cli-contracts/flag-contracts.ts,project,truthful public flag vocabulary
   tests/integration/workspace-snapshot-cli.integration.spec.ts,project,in-process list migration acceptance
   tests/unit/cli/registration-helpers.spec.ts,project,normalization regression coverage
-  tests/unit/commands/list-command.spec.ts,project,list behavior coverage
+  tests/unit/commands/query/list-command.spec.ts,project,list behavior coverage
   tests/unit/commands/register-commands.spec.ts,project,registered migration error coverage
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/cli/registration-helpers.spec.ts tests/unit/commands/list-command.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/integration/workspace-snapshot-cli.integration.spec.ts,project,240
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/integration/workspace-snapshot-cli.integration.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/registration-helpers.spec.ts tests/unit/commands/query/list-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:08:46.227Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms4v99i5-idzehm,test,passed,"2026-07-28T16:24:13.146Z","2026-07-28T16:24:40.541Z","2026-07-28T16:24:40.541Z",2,0,0
 docs[1]{path,scope,note}:

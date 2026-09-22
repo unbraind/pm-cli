@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: "area:cli","area:docs","area:schema",code,"milestone:8",pm-cli,"priority:0",tests
 created_at: "2026-03-08T10:34:28.069Z"
-updated_at: "2026-09-19T08:41:29.548Z"
+updated_at: "2026-09-22T05:00:00.650Z"
 deadline: "2026-03-09T10:34:28.069Z"
 closed_at: "2026-03-08T10:58:56.682Z"
 assignee: maintainer-agent
@@ -57,8 +57,8 @@ files[12]{path,scope,note}:
   AGENTS.md,project,all-flags template includes issue metadata options
   PRD.md,project,docs-first issue metadata schema+flag contract
   README.md,project,create/update issue metadata contract
-  src/cli/commands/create.ts,project,parse issue metadata flags
-  src/cli/commands/update.ts,project,update issue metadata flags
+  src/cli/commands/lifecycle/create.ts,project,parse issue metadata flags
+  src/cli/commands/lifecycle/update.ts,project,update issue metadata flags
   src/cli/main.ts,project,create/update option wiring
   src/core/item/item-format.ts,project,issue metadata normalization and validation
   src/core/shared/constants.ts,project,front matter key order update

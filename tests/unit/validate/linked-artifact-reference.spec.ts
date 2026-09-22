@@ -19,7 +19,7 @@ describe("isRemoteLinkedArtifactReference", () => {
   });
 
   it("treats relative and absolute local paths as not remote", () => {
-    expect(isRemoteLinkedArtifactReference("src/cli/commands/validate.ts")).toBe(false);
+    expect(isRemoteLinkedArtifactReference("src/cli/commands/governance/validate.ts")).toBe(false);
     expect(isRemoteLinkedArtifactReference("./README.md")).toBe(false);
     expect(isRemoteLinkedArtifactReference("/dev/null")).toBe(false);
     expect(isRemoteLinkedArtifactReference("docs/design/spec.md")).toBe(false);

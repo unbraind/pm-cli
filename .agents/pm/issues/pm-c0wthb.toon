@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:storage",data-loss,merge,multi-agent
 created_at: "2026-07-25T21:13:05.285Z"
-updated_at: "2026-07-27T00:28:50.859Z"
+updated_at: "2026-09-22T05:10:45.329Z"
 closed_at: "2026-07-27T00:28:48.594Z"
 author: "harness:claude-code"
 estimated_minutes: 300
@@ -17,11 +17,11 @@ confidence: high
 resolution: "Installed merge drivers now pin absolute Node and CLI paths, receive Git's %P item path, persist auditable decisions, and are verified by health/validate plus an adversarial packed-consumer merge."
 expected_result: "Clone-local merge drivers remain executable in minimal PATH environments, receive the real Git item path, and fail closed when their installed command configuration drifts."
 actual_result: "The installed driver used an unresolved pm command and a literal item-path placeholder, so an unavailable PATH could bypass field-aware merging and no audit surfaced the stale configuration."
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-76dnfg,related,"2026-07-25T21:13:05.285Z",null,null
-  pm-9j2r3b,related,"2026-07-25T21:13:05.285Z",null,null
-  pm-i4fx,related,"2026-07-25T21:13:05.285Z",null,null
-  pm-szv11n,implements,"2026-07-26T05:49:37.645Z",null,null
+dependencies[4]{id,kind,created_at}:
+  pm-76dnfg,related,"2026-07-25T21:13:05.285Z"
+  pm-9j2r3b,related,"2026-07-25T21:13:05.285Z"
+  pm-i4fx,related,"2026-07-25T21:13:05.285Z"
+  pm-szv11n,implements,"2026-07-26T05:49:37.645Z"
 comments[11]{created_at,author,text}:
   "2026-07-26T11:46:19.959Z","harness:codex","Start evidence 2026-07-26: selected after live all-status review of 2,081 items (1,780 closed, 288 open, 13 canceled; zero pre-existing in-progress), full item metadata and shipped lineage review, and GitHub/security/dependency inventory. This item is actively implemented in the cohesive public SDK plus safe agent-fleet PR; container epics and unrelated backlog remain open and unclaimed."
   "2026-07-26T12:47:21.417Z","harness:codex","Partial implementation evidence: merge install now writes the absolute current Node executable plus the absolute host dist/cli.js, shell-quotes both, and fresh-init/merge suites prove clone-local config no longer depends on bare pm being on PATH. The separate validate/health resolvability audit and adversarial two-branch conformance clauses remain outstanding, so this item stays active through PR review and must return to open rather than close."
@@ -40,7 +40,7 @@ files[5]{path,scope,note}:
   src/sdk/merge/driver.ts,project,clone-local decision receipt production
   src/sdk/merge/index.ts,project,public merge SDK exports
   src/sdk/merge/install.ts,project,Absolute merge driver executable resolution
-  tests/unit/commands/init-command.spec.ts,project,Fresh init absolute merge-driver regression
+  tests/unit/commands/workspace/init-command.spec.ts,project,Fresh init absolute merge-driver regression
   tests/unit/sdk/merge-safety.spec.ts,project,Clone-local driver contract regression
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts,project,240

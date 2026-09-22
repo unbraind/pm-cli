@@ -15,7 +15,6 @@ import { createDefaultExtensionGovernancePolicy } from "../../../src/core/extens
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
-const COMMANDS_MODULE = "../../../src/cli/commands/index.js";
 const CONFIG_SDK_MODULE = "../../../src/sdk/config.js";
 const DEPENDENCIES_SDK_MODULE = "../../../src/sdk/dependencies.js";
 const GRAPH_RUN_SDK_MODULE = "../../../src/sdk/graph/run.js";
@@ -59,7 +58,6 @@ const PM_MCP_META_KEYS = {
   protocolVersion: "io.modelcontextprotocol/protocolVersion",
 } as const;
 
-type CommandModule = typeof import("../../../src/cli/commands/index.js");
 const INITIAL_PM_PACKAGE_ROOT = process.env.PM_CLI_PACKAGE_ROOT;
 
 // pm-zumn: every native action now runs inside the extension activation cycle.
@@ -144,13 +142,6 @@ async function importServerWithCommandMocks(
 ) {
   await vi.resetModules();
   applyAdditionalMocks?.();
-  vi.doMock(COMMANDS_MODULE, async () => {
-    const actual = await vi.importActual<CommandModule>(COMMANDS_MODULE);
-    return {
-      ...actual,
-      ...commandMocks,
-    };
-  });
   vi.doMock(DEPENDENCIES_SDK_MODULE, () => ({ runDeps: commandMocks.runDeps }));
   vi.doMock(GRAPH_RUN_SDK_MODULE, async () => {
     const actual =
@@ -274,7 +265,6 @@ async function importServerWithCommandMocks(
 describe("mcp server branch residual coverage", () => {
   afterEach(async () => {
     vi.restoreAllMocks();
-    vi.doUnmock(COMMANDS_MODULE);
     vi.doUnmock(CONFIG_SDK_MODULE);
     vi.doUnmock(DEPENDENCIES_SDK_MODULE);
     vi.doUnmock(QUERY_GET_SDK_MODULE);

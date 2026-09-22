@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-11T13:20:57.763Z"
-updated_at: "2026-09-11T13:45:57.583Z"
+updated_at: "2026-09-22T05:15:20.356Z"
 closed_at: "2026-09-11T13:45:57.028Z"
 completed_at: "2026-09-11T13:45:57.028Z"
 author: "harness:codex"
@@ -39,7 +39,7 @@ files[3]{path,scope,note}:
   tests/unit/sdk/merge-reconcile.spec.ts,project,Require tracker-root discovery and settlement instead of obsolete cwd fallback
   tests/unit/sdk/merge/reconcile-workspace-isolation.spec.ts,project,Real two-workspace regression
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/merge/reconcile-workspace-isolation.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts tests/integration/legacy-merge-receipt-history.integration.spec.ts,project,240,"harness:codex","2026-09-11T13:21:16.245Z",local_mutation,fix/item-identity-and-merge-conformance
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge/reconcile-workspace-isolation.spec.ts tests/unit/commands/workspace/merge-reconcile-command.spec.ts tests/integration/legacy-merge-receipt-history.integration.spec.ts,project,240,"harness:codex","2026-09-22T05:15:20.155Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]:
   - run_id: test-local-mtx04osk-17b6sl
     kind: test

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: data-integrity,gh-551,relationships
 created_at: "2026-07-14T10:18:53.997Z"
-updated_at: "2026-07-26T17:26:33.731Z"
+updated_at: "2026-09-22T05:11:02.334Z"
 closed_at: "2026-07-21T10:14:18.200Z"
 author: codex-gpt5
 estimated_minutes: 180
@@ -18,11 +18,21 @@ release: v2026.7.22
 resolution: Added public dependency provenance primitives and source_kind-aware create/update/graph behavior for external IDs.
 expected_result: Cross-workspace dependency IDs remain lossless and graph validation distinguishes external targets from dangling local references.
 actual_result: "Global IDs round-trip through create, graph, update removal, and get with missing_nodes equal to zero."
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-ju83,related,"2026-07-14T10:18:53.997Z",codex-gpt5,null
-  pm-is1a,related,"2026-07-16T05:45:21.008Z",null,null
-  pm-mfkv92,related,"2026-07-21T07:32:58.237Z",codex-root-20260721,null
-  pm-96h7,implements,"2026-07-26T17:26:33.477Z",null,null
+dependencies[4]:
+  - id: pm-ju83
+    kind: related
+    created_at: "2026-07-14T10:18:53.997Z"
+    author: codex-gpt5
+  - id: pm-is1a
+    kind: related
+    created_at: "2026-07-16T05:45:21.008Z"
+  - id: pm-mfkv92
+    kind: related
+    created_at: "2026-07-21T07:32:58.237Z"
+    author: codex-root-20260721
+  - id: pm-96h7
+    kind: implements
+    created_at: "2026-07-26T17:26:33.477Z"
 comments[8]{created_at,author,text}:
   "2026-07-14T10:18:53.997Z",codex-gpt5,"Duplicate check 2026-07-14: pm search GH-551 --status all returned no item. This is related to the active relationship registry lineage pm-ju83 but is not implemented in the current in-memory graph primitive bundle. Source: https://github.com/unbraind/pm-cli/issues/551"
   "2026-07-21T07:33:03.401Z",codex-root-20260721,"Evidence: create and update now share public normalizeDependencySeedId semantics; source_kind=global preserves foreign IDs, removes with the same selector, materializes external graph nodes, and yields missing_nodes=0 instead of a dangling local reference."
@@ -33,15 +43,15 @@ comments[8]{created_at,author,text}:
   "2026-07-21T09:15:15.946Z",codex-root-20260721,"Exact remediation-head proof: all 332 test files and 6053 tests pass; coverage is 100% statements (40688/40688), branches (28623/28623), functions (8264/8264), and lines (39582/39582)."
   "2026-07-21T10:13:37.936Z",codex-root-20260721,"Hosted CodeRabbit remediation: canonical title now describes the delivered behavior so pm-changelog produces an affirmative release entry instead of defect wording."
 files[6]{path,scope,note}:
-  src/cli/commands/create.ts,project,Create seed source_kind support
-  src/cli/commands/update.ts,project,Update add and remove source_kind support
+  src/cli/commands/lifecycle/create.ts,project,Create seed source_kind support
+  src/cli/commands/lifecycle/update.ts,project,Update add and remove source_kind support
   src/sdk/dependency-provenance.ts,project,Public external dependency identity primitive
   src/sdk/graph/assembly.ts,project,External endpoint graph materialization
-  tests/unit/commands/dependency-provenance-command.spec.ts,project,Cross-workspace round-trip acceptance test
+  tests/unit/commands/query/dependency-provenance-command.spec.ts,project,Cross-workspace round-trip acceptance test
   tests/unit/sdk/dependency-provenance.spec.ts,project,Direct public provenance and external-node coverage
-tests[2]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/dependency-provenance-command.spec.ts,project,240,Create graph update and get round trip
-  node scripts/run-tests.mjs test -- tests/unit/sdk/dependency-provenance.spec.ts tests/unit/commands/dependency-provenance-command.spec.ts,project,600,SDK primitive and CLI cross-workspace round trip
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/dependency-provenance-command.spec.ts,project,240,"harness:codex","2026-09-22T05:11:02.299Z",local_mutation,refactor/cli-command-domains-export-gate,Create graph update and get round trip
+  node scripts/run-tests.mjs test -- tests/unit/sdk/dependency-provenance.spec.ts tests/unit/commands/query/dependency-provenance-command.spec.ts,project,600,"harness:codex","2026-09-22T05:11:02.299Z",local_mutation,refactor/cli-command-domains-export-gate,SDK primitive and CLI cross-workspace round trip
 test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mruc7x83-oac0yb,test,passed,"2026-07-21T07:33:56.274Z","2026-07-21T07:34:03.507Z","2026-07-21T07:34:03.507Z",1,0,0
   test-local-mrucyrl2-pcbn9k,test,passed,"2026-07-21T07:54:41.666Z","2026-07-21T07:54:55.910Z","2026-07-21T07:54:55.910Z",2,0,0

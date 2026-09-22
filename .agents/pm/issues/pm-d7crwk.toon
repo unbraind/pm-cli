@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:git","area:governance","area:sdk",code-review,cross-platform
 created_at: "2026-07-24T14:25:01.527Z"
-updated_at: "2026-07-26T17:11:45.885Z"
+updated_at: "2026-09-22T05:11:42.477Z"
 closed_at: "2026-07-24T14:54:05.658Z"
 author: codex-root-agent
 estimated_minutes: 180
@@ -20,13 +20,13 @@ resolution: Implemented and verified all exact-head workspace-integrity review f
 expected_result: "Literal Git paths, bounded diagnostics, recoverable init, typed merge-root failures, and canonical migration identities pass local and hosted exact-head verification."
 actual_result: "All requested behaviors implemented; 6,225-test full suite is 100/100/100/100; CI and 7/7 review threads are green/resolved at c5975965."
 component: SDK workspace integrity and governance
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-1w3ljt,related,"2026-07-24T14:25:23.928Z",null,null
-  pm-hcrmye,related,"2026-07-24T14:25:23.928Z",null,null
-  pm-hous,related,"2026-07-24T14:25:23.928Z",null,null
-  pm-lvd647,related,"2026-07-24T14:25:23.928Z",null,null
-  pm-s79kel,related,"2026-07-24T14:25:23.928Z",null,null
-  pm-usfg,implements,"2026-07-26T17:11:45.641Z",null,null
+dependencies[6]{id,kind,created_at}:
+  pm-1w3ljt,related,"2026-07-24T14:25:23.928Z"
+  pm-hcrmye,related,"2026-07-24T14:25:23.928Z"
+  pm-hous,related,"2026-07-24T14:25:23.928Z"
+  pm-lvd647,related,"2026-07-24T14:25:23.928Z"
+  pm-s79kel,related,"2026-07-24T14:25:23.928Z"
+  pm-usfg,implements,"2026-07-26T17:11:45.641Z"
 comments[3]{created_at,author,text}:
   "2026-07-24T14:25:24.655Z",codex-root-agent,"Duplicate-check evidence: searched all statuses for CodeRabbit, literal Git pathspec, canonical migration scope, and merge-fence install recovery. Existing items own the original feature slices but are closed/released (except the separate performance regression pm-hcrmye); none owns this cross-cutting exact-head review remediation. PR thread IDs: PRRT_kwDORSgRDc6Tk2WL, PRRT_kwDORSgRDc6Tk2WQ, PRRT_kwDORSgRDc6Tk2Wg, PRRT_kwDORSgRDc6Tk2Wu, PRRT_kwDORSgRDc6Tk2W5, plus tracker-language thread PRRT_kwDORSgRDc6Tk2Vt."
   "2026-07-24T14:47:55.298Z",codex-root-agent,"Implementation evidence: exact-head review remediation now uses Git :(literal) pathspecs for both scans and shell-safe cleanup commands; bounds tracked-runtime diagnostic samples while preserving counts/remediation; makes fresh-init merge-fence failure recoverable only for typed PmCliError paths while propagating unexpected failures; converts inaccessible merge roots to typed merge_root_not_found SDK errors; and derives automatic schema-migration IDs from the canonical tracker realpath. Regression coverage includes bracket/apostrophe tracker roots, config-lock recovery, typed/unexpected init failures, inaccessible roots, bounded health details, and symlink/junction-stable migration identity. Local gates: focused 133-test suite passed; pnpm typecheck passed; pnpm lint/static quality/package boundary/token budget passed; docstring coverage 100/100/100; full sandbox coverage passed 355 files and 6,225 tests at statements 42,747/42,747, branches 30,329/30,329, functions 8,707/8,707, lines 41,549/41,549. Hosted exact-head CI and bot thread resolution remain before closure."
@@ -37,13 +37,13 @@ files[10]{path,scope,note}:
   src/sdk/init.ts,project,Recoverable fresh merge-fence installation
   src/sdk/merge/install.ts,project,Typed invalid-root SDK errors
   src/sdk/schema-migration.ts,project,Canonical derived migration scope
-  tests/unit/commands/health-command.spec.ts,project,Bounded diagnostic projection regression
-  tests/unit/commands/init-command.spec.ts,project,Merge fence recovery regression
+  tests/unit/commands/governance/health-command.spec.ts,project,Bounded diagnostic projection regression
+  tests/unit/commands/workspace/init-command.spec.ts,project,Merge fence recovery regression
   tests/unit/sdk/merge-safety.spec.ts,project,Typed invalid-root regression
   tests/unit/sdk/schema-migration.spec.ts,project,Alias-stable migration identity regression
   tests/unit/sdk/tracked-runtime-cache.spec.ts,project,Literal metacharacter root regression
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/tracked-runtime-cache.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/init-command.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/sdk/schema-migration.spec.ts,project,300
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/tracked-runtime-cache.spec.ts tests/unit/commands/governance/health-command.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/sdk/schema-migration.spec.ts,project,300,"harness:codex","2026-09-22T05:11:42.430Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrz21wgn-hekbv2,test,passed,"2026-07-24T14:47:55.916Z","2026-07-24T14:48:17.303Z","2026-07-24T14:48:17.303Z",1,0,0
 close_reason: "CodeRabbit review hardening delivered at c5975965 with exact 100/100/100/100 local coverage, green hosted CI run 30102585369, and all 7 review threads resolved and acknowledged."

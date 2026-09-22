@@ -38,7 +38,7 @@ import {
   resolveSearchTuning,
   runSearch,
   type SearchOptions,
-} from "../../../../src/cli/commands/search.js";
+} from "../../../../src/cli/commands/query/search.js";
 import { setActiveExtensionHooks, setActiveExtensionRegistrations } from "../../../../src/core/extensions/index.js";
 import { createEmptyExtensionRegistrationRegistry } from "../../../../src/core/extensions/loader.js";
 import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";

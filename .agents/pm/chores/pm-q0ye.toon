@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: code-quality,codefactor,eslint,maintainability
 created_at: "2026-06-26T13:32:43.674Z"
-updated_at: "2026-09-19T08:41:01.713Z"
+updated_at: "2026-09-22T05:12:32.904Z"
 closed_at: "2026-06-26T15:04:32.609Z"
 author: claude-code-agent
 acceptance_criteria: "CodeFactor reports 0 findings for no-thenable, no-useless-spread, and no-useless-length-check; the cli-contracts.ts `then` rename (if applied) does NOT break the contracts snapshot (pnpm contracts:check) or any SDK consumer; full coverage suite + typecheck green."
@@ -35,25 +35,63 @@ comments[15]{created_at,author,text}:
   "2026-06-26T14:53:54.448Z",codex-gpt5,"Review response follow-up for PR #378: addressed the current-head Gemini suggestion by typing the defensively deduplicated metadata-required field list as readonly while preserving the duplicate-count guard requested by cubic. Verification passed: targeted Unicorn reproduction targeted_findings=0, node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts tests/unit/commands/contracts-command.spec.ts passed 2 files / 123 tests, pnpm quality:static passed, and pnpm typecheck passed."
   "2026-06-26T15:04:25.399Z",codex-gpt5,"Merge evidence: PR #378 merged to main at 80fa02f4a80d896198639cd992ecee45c7fb364e on 2026-06-26T15:03:53Z. Final PR head 2b4d29f82e83f6e78e5260c8941790e5a9f1591f had all required GitHub checks green, CodeFactor/CodeRabbit/Hound/Sourcery/Codecov/Cubic green, and zero unresolved review threads. Post-merge main verification: pm health --check-only --summary --json passed and pnpm typecheck passed. Prior evidence on this item includes local pnpm release:gates with literal 100/100/100/100 coverage, targeted Unicorn reproduction with zero findings, isolated temp PM_PATH/PM_GLOBAL_PATH SDK package authoring/install smoke, changelog check with latest pm-changelog 2026.6.20, security scan/audit clean, and Sentry/telemetry gate passing with Sentry critical=0 high=0 total=0 and telemetry finish_error_rate_pct=0.67."
 files[5]{path,scope,note}:
-  src/cli/commands/validate.ts,project,Remove redundant spread when deriving validate metadata-required field support
+  src/cli/commands/governance/validate.ts,project,Remove redundant spread when deriving validate metadata-required field support
   src/cli/main.ts,project,Remove redundant activation command length check before some()
   src/core/test/background-runs.ts,project,Stabilize strict coverage for Linux /proc resource snapshot race fallback
   src/sdk/cli-contracts.ts,project,Avoid thenable-like JSON Schema source objects while preserving emitted SDK schema contracts
-  tests/unit/commands/contracts-command.spec.ts,project,Keep contract expectations aligned with analyzer-safe JSON Schema then members
-tests[14]{command,scope,timeout_seconds}:
-  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,project,120
-  node scripts/run-tests.mjs coverage,project,360
-  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/commands/validate-command.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,180
-  node scripts/run-tests.mjs test -- tests/unit/commands/test-runs-command.spec.ts tests/unit/core/search/background-refresh.spec.ts,project,120
-  pm health --check-only --summary --json,project,120
-  pm validate --check-resolution --check-history-drift --json,project,120
-  pnpm audit --audit-level low,project,120
-  pnpm build,project,120
-  "pnpm changelog:pm:check",project,120
-  "pnpm contracts:check",project,120
-  "pnpm quality:static",project,120
-  "pnpm release:gates",project,900
-  "pnpm security:scan",project,120
-  pnpm typecheck,project,120
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Keep contract expectations aligned with analyzer-safe JSON Schema then members
+tests[14]:
+  - command: node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort
+    scope: project
+    timeout_seconds: 120
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 360
+  - command: pm health --check-only --summary --json
+    scope: project
+    timeout_seconds: 120
+  - command: pm validate --check-resolution --check-history-drift --json
+    scope: project
+    timeout_seconds: 120
+  - command: pnpm audit --audit-level low
+    scope: project
+    timeout_seconds: 120
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 120
+  - command: "pnpm changelog:pm:check"
+    scope: project
+    timeout_seconds: 120
+  - command: "pnpm contracts:check"
+    scope: project
+    timeout_seconds: 120
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 120
+  - command: "pnpm release:gates"
+    scope: project
+    timeout_seconds: 900
+  - command: "pnpm security:scan"
+    scope: project
+    timeout_seconds: 120
+  - command: pnpm typecheck
+    scope: project
+    timeout_seconds: 120
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/workspace/contracts-command.spec.ts tests/unit/commands/governance/validate-command.spec.ts tests/unit/cli/cli-main-errors.spec.ts
+    scope: project
+    timeout_seconds: 180
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:12:32.815Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/test/test-runs-command.spec.ts tests/unit/core/search/background-refresh.spec.ts
+    scope: project
+    timeout_seconds: 120
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:12:32.815Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 close_reason: "Closed after PR #378 merged to main at 80fa02f4a80d896198639cd992ecee45c7fb364e. The work cleared the targeted SDK/CLI maintainability findings, preserved contract output, documented review resolutions, passed local and hosted gates including literal 100/100/100/100 coverage, completed isolated temp-dir SDK/package dogfood, and passed post-merge pm health plus pnpm typecheck on main."
 body: ""

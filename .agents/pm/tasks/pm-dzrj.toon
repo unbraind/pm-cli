@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:terminal","area:tests",code,compatibility,pm-cli
 created_at: "2026-04-01T12:00:06.349Z"
-updated_at: "2026-09-19T08:40:07.598Z"
+updated_at: "2026-09-22T05:03:58.234Z"
 deadline: "2026-04-08T12:00:06.349Z"
 closed_at: "2026-04-04T20:22:36.288Z"
 author: cursor-agent
@@ -68,9 +68,9 @@ learnings[1]{created_at,author,text}:
 files[11]{path,scope,note}:
   src/cli/commands/completion.ts,project,shell completion flags for progress options
   src/cli/commands/reindex.ts,project,phase progress emission for reindex
-  src/cli/commands/test-all.ts,project,propagate progress option to linked test runner
-  src/cli/commands/test-runs.ts,project,test-runs lifecycle command handlers
-  src/cli/commands/test.ts,project,runLinkedTests implementation
+  src/cli/commands/test/test-all.ts,project,propagate progress option to linked test runner
+  src/cli/commands/test/test-runs.ts,project,test-runs lifecycle command handlers
+  src/cli/commands/test/test.ts,project,runLinkedTests implementation
   src/cli/main.ts,project,progress flags for test/test-all/reindex
   src/core/store/paths.ts,project,runtime test-run storage path helpers
   src/core/test/background-runs.ts,project,background registry worker lifecycle

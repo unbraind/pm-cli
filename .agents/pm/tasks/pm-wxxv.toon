@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: contracts,packages,pm-cli,sdk
 created_at: "2026-05-12T19:46:36.014Z"
-updated_at: "2026-09-19T08:42:41.124Z"
+updated_at: "2026-09-22T05:01:45.865Z"
 closed_at: "2026-05-13T19:10:21.326Z"
 author: codex-agent
 acceptance_criteria: Static SDK core actions no longer imply optional first-party package commands are always core; installed package commands remain discoverable through runtime contracts; MCP/action availability parity is documented or tested; focused SDK/contracts/package tests pass.
@@ -35,7 +35,7 @@ files[9]{path,scope,note}:
   packages/pm-beads/extensions/beads/index.ts,project,use public SDK type imports in first-party package entrypoint
   packages/pm-todos/extensions/todos/index.ts,project,use public SDK type imports in first-party package entrypoint
   scripts/dogfood-package-first.mjs,project,expanded package install/upgrade dogfood matrix
-  src/cli/commands/contracts.ts,project,derive optional actions only from active extension contracts
+  src/cli/commands/workspace/contracts.ts,project,derive optional actions only from active extension contracts
   src/mcp/server.ts,project,MCP pm_run dispatches installed package actions
   src/sdk/cli-contracts.ts,project,remove optional package actions from static SDK schema
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,MCP dynamic package action regression

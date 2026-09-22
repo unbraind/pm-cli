@@ -12,30 +12,30 @@ import {
   vi,
 } from "vitest";
 
-vi.mock("../../../src/cli/commands/get.js", () => ({ runGet: vi.fn() }));
-vi.mock("../../../src/cli/commands/history.js", () => ({
+vi.mock("../../../src/cli/commands/query/get.js", () => ({ runGet: vi.fn() }));
+vi.mock("../../../src/cli/commands/history/history.js", () => ({
   runHistory: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/activity.js", () => ({
+vi.mock("../../../src/cli/commands/history/activity.js", () => ({
   runActivity: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/search.js", () => ({ runSearch: vi.fn() }));
-vi.mock("../../../src/cli/commands/eval.js", () => ({ runEval: vi.fn() }));
-vi.mock("../../../src/cli/commands/aggregate.js", () => ({
+vi.mock("../../../src/cli/commands/query/search.js", () => ({ runSearch: vi.fn() }));
+vi.mock("../../../src/cli/commands/query/eval.js", () => ({ runEval: vi.fn() }));
+vi.mock("../../../src/cli/commands/query/aggregate.js", () => ({
   runAggregate: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/context.js", () => ({
+vi.mock("../../../src/cli/commands/query/context.js", () => ({
   runContext: vi.fn(),
   resolveContextOutputFormat: vi.fn(),
   renderContextMarkdown: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/next.js", () => ({
+vi.mock("../../../src/cli/commands/query/next.js", () => ({
   runNext: vi.fn(),
   resolveNextOutputFormat: vi.fn(),
   renderNextMarkdown: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/list.js", () => ({ runList: vi.fn() }));
-vi.mock("../../../src/cli/commands/graph.js", () => ({ runGraph: vi.fn() }));
+vi.mock("../../../src/cli/commands/query/list.js", () => ({ runList: vi.fn() }));
+vi.mock("../../../src/cli/commands/query/graph.js", () => ({ runGraph: vi.fn() }));
 vi.mock("../../../src/sdk/mutation-events.js", () => ({
   listMutationEvents: vi.fn(),
   subscribeMutationEventBatches: vi.fn(),
@@ -61,24 +61,24 @@ import {
   _testOnlyRegisterListQuery,
   registerListQueryCommands,
 } from "../../../src/cli/register-list-query.js";
-import { runGet } from "../../../src/cli/commands/get.js";
-import { runHistory } from "../../../src/cli/commands/history.js";
-import { runActivity } from "../../../src/cli/commands/activity.js";
-import { runSearch } from "../../../src/cli/commands/search.js";
-import { runEval } from "../../../src/cli/commands/eval.js";
-import { runAggregate } from "../../../src/cli/commands/aggregate.js";
+import { runGet } from "../../../src/cli/commands/query/get.js";
+import { runHistory } from "../../../src/cli/commands/history/history.js";
+import { runActivity } from "../../../src/cli/commands/history/activity.js";
+import { runSearch } from "../../../src/cli/commands/query/search.js";
+import { runEval } from "../../../src/cli/commands/query/eval.js";
+import { runAggregate } from "../../../src/cli/commands/query/aggregate.js";
 import {
   renderContextMarkdown,
   resolveContextOutputFormat,
   runContext,
-} from "../../../src/cli/commands/context.js";
+} from "../../../src/cli/commands/query/context.js";
 import {
   renderNextMarkdown,
   resolveNextOutputFormat,
   runNext,
-} from "../../../src/cli/commands/next.js";
-import { runList } from "../../../src/cli/commands/list.js";
-import { runGraph } from "../../../src/cli/commands/graph.js";
+} from "../../../src/cli/commands/query/next.js";
+import { runList } from "../../../src/cli/commands/query/list.js";
+import { runGraph } from "../../../src/cli/commands/query/graph.js";
 import {
   listMutationEvents,
   subscribeMutationEventBatches,

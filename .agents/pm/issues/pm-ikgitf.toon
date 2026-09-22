@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-12T21:08:30.124Z"
-updated_at: "2026-09-12T22:41:43.531Z"
+updated_at: "2026-09-22T05:06:36.878Z"
 closed_at: "2026-09-12T22:24:24.651Z"
 completed_at: "2026-09-12T22:24:24.651Z"
 author: "harness:codex"
@@ -46,8 +46,8 @@ files[15]{path,scope,note}:
   src/core/telemetry/runtime.ts,project,Capture and flush honor consent
   src/sdk/governance/health.ts,project,Respect consent during endpoint diagnostics
   src/sdk/telemetry.ts,project,Expose effective and configured enablement
-  tests/unit/commands/health-command.spec.ts,project,Probe consent regressions
-  tests/unit/commands/telemetry-command.spec.ts,project,Effective enablement regression
+  tests/unit/commands/governance/health-command.spec.ts,project,Probe consent regressions
+  tests/unit/commands/governance/telemetry-command.spec.ts,project,Effective enablement regression
   tests/unit/core/sentry/instrument.spec.ts,project,No Sentry import under opt-out
   tests/unit/core/sentry/sentry-helpers.spec.ts,project,Explicit test-environment capture fixture
   tests/unit/core/telemetry/telemetry-consent.spec.ts,project,Restore inherited host opt-out after intentional prompt fixtures

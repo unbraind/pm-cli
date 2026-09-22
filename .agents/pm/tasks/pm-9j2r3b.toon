@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-25T20:40:33.139Z"
-updated_at: "2026-07-31T14:23:59.324Z"
+updated_at: "2026-09-22T05:09:56.154Z"
 closed_at: "2026-07-27T00:28:49.685Z"
 author: "harness:claude-code"
 estimated_minutes: 480
@@ -44,11 +44,11 @@ learnings[1]{created_at,author,text}:
 files[5]{path,scope,note}:
   src/sdk/history-repair.ts,project,audited merge_reconcile history event context
   src/sdk/merge/reconcile.ts,project,receipt-aware history reconciliation workflow
-  tests/unit/commands/history-repair-command.spec.ts,project,structured audit context coverage
-  tests/unit/commands/merge-reconcile-command.spec.ts,project,end-to-end replay-addressable merge event proof
+  tests/unit/commands/history/history-repair-command.spec.ts,project,structured audit context coverage
+  tests/unit/commands/workspace/merge-reconcile-command.spec.ts,project,end-to-end replay-addressable merge event proof
   tests/unit/sdk/merge-reconcile.spec.ts,project,reconciliation success preview and isolation coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-reconcile.spec.ts tests/unit/commands/merge-reconcile-command.spec.ts tests/unit/commands/history-repair-command.spec.ts,project,300
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-reconcile.spec.ts tests/unit/commands/workspace/merge-reconcile-command.spec.ts tests/unit/commands/history/history-repair-command.spec.ts,project,300,"harness:codex","2026-09-22T05:09:56.098Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms2g8lt7-pc57aq,test,passed,"2026-07-26T23:48:32.482Z","2026-07-26T23:48:43.243Z","2026-07-26T23:48:43.243Z",1,0,0
   test-local-ms2hnfeo-aqmkga,test,passed,"2026-07-27T00:28:04.320Z","2026-07-27T00:28:14.400Z","2026-07-27T00:28:14.400Z",1,0,0

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cli,github-issue,init
 created_at: "2026-07-14T19:04:33.488Z"
-updated_at: "2026-07-26T17:21:18.619Z"
+updated_at: "2026-09-22T05:19:19.466Z"
 closed_at: "2026-07-14T21:03:31.606Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -18,10 +18,10 @@ release: v2026.7.15
 resolution: completed
 expected_result: Dependabot release PR is verified and init exposes a stable canonical project-id prefix contract that rejects path-shaped values across supported platforms.
 actual_result: "Verified the release dependency update and delivered canonical --id-prefix with --prefix compatibility, structured conflicts/errors, docs/contracts/completions, external packed proof, and cross-platform path rejection at exact 100/100/100/100 coverage."
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-3mna,related,"2026-07-14T19:04:33.488Z",null,null
-  pm-kl19,related,"2026-07-14T19:04:33.488Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:21:18.353Z",null,null
+dependencies[3]{id,kind,created_at}:
+  pm-3mna,related,"2026-07-14T19:04:33.488Z"
+  pm-kl19,related,"2026-07-14T19:04:33.488Z"
+  pm-mpbb,implements,"2026-07-26T17:21:18.353Z"
 comments[6]{created_at,author,text}:
   "2026-07-14T19:25:01.765Z",codex-gpt5,"Implementation start 2026-07-14: bundled with pm-3mna because init prefix input is part of the same public workspace-customization contract. Scope includes conflict validation, help/contracts/completions/docs, CLI regression tests, and installed temp-workspace proof."
   "2026-07-14T19:41:01.717Z",codex-gpt5,"Progress evidence: init now accepts --id-prefix with --prefix alias, preserves positional compatibility, accepts normalized equivalent dual inputs, and rejects empty/conflicting values deterministically. Help/contracts/completions/docs and focused regression coverage are green."
@@ -33,15 +33,24 @@ learnings[1]{created_at,author,text}:
   "2026-07-14T20:19:51.329Z",codex-root,"Commander stores the canonical property from the long flag declaration, so --prefix, --id-prefix <value> forwards through options.idPrefix; resolving positional and flag forms in one normalizer keeps compatibility and conflict behavior deterministic."
 files[7]{path,scope,note}:
   src/cli/commands/completion.ts,project,bash zsh and fish completion exposure
-  src/cli/commands/init.ts,project,normalizes flag and positional prefixes with explicit conflict errors
+  src/cli/commands/workspace/init.ts,project,normalizes flag and positional prefixes with explicit conflict errors
   src/cli/register-setup.ts,project,Commander registration and typed option forwarding
   src/sdk/cli-contracts/flag-contracts.ts,project,canonical id-prefix flag contract and prefix alias
   tests/fixtures/contracts/full.json,project,governed command contract snapshot
   tests/integration/init-path-guard.integration.spec.ts,project,flag positional equivalence empty input and conflict regression coverage
-  tests/unit/commands/completion-command.spec.ts,project,completion contract assertions for every shell
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/integration/init-path-guard.integration.spec.ts tests/unit/commands/completion-command.spec.ts,project,240
-  "pnpm contracts:check",project,120
+  tests/unit/commands/workspace/completion-command.spec.ts,project,completion contract assertions for every shell
+tests[2]:
+  - command: "pnpm contracts:check"
+    scope: project
+    timeout_seconds: 120
+  - command: node scripts/run-tests.mjs test -- tests/integration/init-path-guard.integration.spec.ts tests/unit/commands/workspace/completion-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:19:19.386Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrl3e90h-30v3ii,test,failed,"2026-07-14T20:16:48.338Z","2026-07-14T20:17:06.593Z","2026-07-14T20:17:06.593Z",1,1,0
   test-local-mrl3fgcc-myd5up,test,passed,"2026-07-14T20:17:43.222Z","2026-07-14T20:18:02.748Z","2026-07-14T20:18:02.748Z",2,0,0

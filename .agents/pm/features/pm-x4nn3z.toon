@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[7]: agent-ux,"area:cli","area:contracts",diagnostics,error-contract,scripting,simplification
 created_at: "2026-07-26T06:02:22.287Z"
-updated_at: "2026-08-07T19:58:09.655Z"
+updated_at: "2026-09-22T05:17:33.353Z"
 closed_at: "2026-08-07T17:58:21.512Z"
 completed_at: "2026-08-07T17:58:21.512Z"
 author: "harness:claude-code"
@@ -82,7 +82,7 @@ files[17]{path,scope,note}:
   scripts/error-code-stability.json,project,Stable-code compatibility ledger
   scripts/generate-error-code-catalog.mjs,project,Catalog drift generator and gate
   sdk/public-surface.json,project,Reviewed additive SDK surface snapshot
-  src/cli/commands/contracts.ts,project,contracts table that must gain the error-code catalog tier
+  src/cli/commands/workspace/contracts.ts,project,contracts table that must gain the error-code catalog tier
   src/cli/error-guidance.ts,project,error code declarations; 195 distinct codes across src
   src/sdk/contracts.ts,project,Lightweight error catalog exports
   src/sdk/error-code-catalog.ts,project,Public error vocabulary primitive

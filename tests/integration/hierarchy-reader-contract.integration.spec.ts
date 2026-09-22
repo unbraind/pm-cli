@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { runGet } from "../../src/cli/commands/get.js";
-import { runGraph } from "../../src/cli/commands/graph.js";
-import { runList } from "../../src/cli/commands/list.js";
+import { runGet } from "../../src/cli/commands/query/get.js";
+import { runGraph } from "../../src/cli/commands/query/graph.js";
+import { runList } from "../../src/cli/commands/query/list.js";
 import { BUILTIN_RELATIONSHIP_KINDS } from "../../src/sdk/relationship-kinds/contract.js";
 import type { GraphTraversalResult } from "../../src/sdk/graph/run.js";
 import { createTaskFixture } from "../helpers/createTaskFixture.js";

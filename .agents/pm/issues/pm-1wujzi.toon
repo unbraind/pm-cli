@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: agent-ux,"area:cli","area:sdk",concurrency,scale
 created_at: "2026-08-01T09:46:07.928Z"
-updated_at: "2026-09-08T13:32:05.496Z"
+updated_at: "2026-09-22T04:59:37.978Z"
 author: "harness:claude-code"
 estimated_minutes: 900
 acceptance_criteria: Collection reads filter and project occupancy without one history fold per item; occupancy is served from maintained derived state; an occupancy-interval read returns claim intervals with holder identity and mutation-during-hold; fleet-wide occupancy query cost is independent of history length; pm-4k6b entry (24) peer-conditioning and pm-3oqjnc allocation both consume the same surface
@@ -38,7 +38,7 @@ dependencies[17]{id,kind,created_at,author,source_kind,author_source}:
   pm-plwm,related,"2026-08-01T09:56:40.964Z","harness:claude-code","cli:update:dep",detected
   pm-tuadp2,related,"2026-08-01T09:56:40.964Z","harness:claude-code","cli:update:dep",detected
 files[2]{path,scope,note}:
-  src/cli/commands/list.ts,project,the 69-flag collection surface that has no claim-aware filter or projection
+  src/cli/commands/query/list.ts,project,the 69-flag collection surface that has no claim-aware filter or projection
   src/sdk/query/get.ts,project,resolveClaimStateContext folds one item history stream into claim_state; the only occupancy reader
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/query,project,240

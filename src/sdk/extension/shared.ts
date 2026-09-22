@@ -10,13 +10,12 @@ import { isPathWithinDirectory } from "../../core/fs/path-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import {
-  DEFAULT_EXTENSION_PRIORITY,
   isCanonicalPathWithinDirectory,
   parseExtensionManifestDocument,
   type ExtensionManifest,
 } from "../../core/extensions/loader.js";
 
-export { DEFAULT_EXTENSION_PRIORITY, isCanonicalPathWithinDirectory };
+export { isCanonicalPathWithinDirectory };
 
 /** Documents the validated extension directory payload exchanged by command, SDK, and package integrations. */
 export interface ValidatedExtensionDirectory {

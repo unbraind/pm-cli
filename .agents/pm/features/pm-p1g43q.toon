@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: "area:search",ci,context,quality,relevance,scale
 created_at: "2026-07-25T06:19:47.451Z"
-updated_at: "2026-09-08T14:02:33.096Z"
+updated_at: "2026-09-22T04:59:44.828Z"
 author: unknown
 estimated_minutes: 720
 acceptance_criteria: "A labelled query and relevance-judgment set exists over the real corpus and over generated corpora at multiple scales, reusing the context harness scenario shapes rather than defining a parallel methodology; Recall and precision targets are declared per corpus scale and per query class (identifier, exact phrase, conceptual, cross-lingual-free), and are measured by a repeatable command; CI fails when measured quality regresses below the declared targets, in the same way the latency gate fails on regression; The hybrid weighting is tuned against the judgment set and the chosen value is recorded with its measurement, superseding the constant chosen by decision alone; Results are published in a form the public benchmark can consume, so external claims and internal gates share one number"
@@ -76,10 +76,19 @@ notes[1]{created_at,author,text}:
   "2026-09-08T13:26:14.152Z","harness:claude-code","Golden-set measurement 2026-09-08 on the live 2719-item workspace (pm eval --k 10, five queries in search/eval-queries.json, qwen3-embedding:0.6b through Ollama, 2719 of 2719 items embedded). Aggregate nDCG / MRR / precision / recall: hybrid 0.8244 / 0.90 / 0.14 / 0.8364; keyword 0.7451 / 0.80 / 0.18 / 0.8727; semantic 0.7890 / 0.85 / 0.12 / 0.8182. Every mode passes the eval's own threshold, which is the point this item makes: the fifth query (\"workspace snapshot restore history durability provenance reproducible episodes\", eleven relevant ids) scores nDCG 0.2025 and recall 0.1818 in hybrid, 0.4636 / 0.3636 in keyword and 0.0948 / 0.0909 in semantic, and the macro average hides it completely. A retrieval quality contract needs per-query floors (or a worst-query bound) beside the macro average, and the fifth query is the first regression fixture for it. Recorded while shipping pm-n8a6e7, which makes hybrid the bare-search default on this workspace, so the aggregate above is now what a bare pm search delivers."
 files[2]{path,scope,note}:
   src/sdk/query/search-contracts.ts,project,measured lexical title weighting resilient to annotation corpus growth
-  tests/unit/commands/search-command.spec.ts,project,omnibus annotation negative control and tuning regression coverage
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/release/retrieval-eval-gate.mjs,project,300
-  node scripts/run-tests.mjs test -- tests/unit/commands/search-command.spec.ts,project,300
+  tests/unit/commands/query/search-command.spec.ts,project,omnibus annotation negative control and tuning regression coverage
+tests[2]:
+  - command: node scripts/release/retrieval-eval-gate.mjs
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/query/search-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T04:59:44.775Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msabf643-wov6v8,test,passed,"2026-08-01T11:55:50.126Z","2026-08-01T11:56:00.818Z","2026-08-01T11:56:00.818Z",2,0,0
 docs[1]{path,scope,note}:

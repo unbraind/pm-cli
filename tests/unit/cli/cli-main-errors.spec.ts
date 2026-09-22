@@ -4499,7 +4499,7 @@ describe("CLI Commander usage recovery helpers", () => {
     expect(noSourceGuidance?.unknownCommandNextSteps?.[0]).not.toContain("orphan");
 
     const optionalGuidance = buildUnknownCommandGuidanceFromRuntime("unknown command 'cal'", program, descriptors);
-    expect(optionalGuidance?.unknownCommandNextSteps).toContain("If this command comes from an optional package, install it with: pm install calendar");
+    expect(optionalGuidance?.unknownCommandNextSteps).toContain('"cal" is provided by the "calendar" package. Install it with: pm package install calendar --project. Command after installation: pm cal.');
 
     const tiedRankGuidance = buildUnknownCommandGuidanceFromRuntime(
       "unknown command 'sta subcommand'",

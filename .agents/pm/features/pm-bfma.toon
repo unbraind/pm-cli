@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: agent-experience,"area:cli",gh-issue,token-efficiency
 created_at: "2026-07-06T21:08:59.641Z"
-updated_at: "2026-07-26T17:10:12.998Z"
+updated_at: "2026-09-22T05:24:28.922Z"
 closed_at: "2026-07-08T17:09:36.777Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -18,8 +18,8 @@ release: v2026.7.9
 resolution: Implemented list recency window shorthands for agent retrieval.
 expected_result: "Agents can use pm list --today or --recent instead of hand-building updated-after timestamps, with help/contracts/completions/docs coverage."
 actual_result: "pm list --today and --recent work through CLI and source tests, echo active filters, reject conflicting updated-at windows, and pass packed-install proof."
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-mpbb,implements,"2026-07-26T17:10:12.813Z",null,null
+dependencies[1]{id,kind,created_at}:
+  pm-mpbb,implements,"2026-07-26T17:10:12.813Z"
 comments[9]{created_at,author,text}:
   "2026-07-08T16:41:51.468Z",claude-code-agent,"Implementation evidence: added pm list --today and --recent shorthands, conflict validation against --updated-after, filter echo metadata, Commander/completion/SDK contract/MCP parameter wiring, and focused list-command coverage."
   "2026-07-08T17:07:58.019Z",claude-code-agent,"Verification evidence: full coverage passed at 100/100/100/100 (5462 tests), lint/static/docs/contracts gates passed, and packed-install temp proof passed in /tmp/pm-agent-ux-proof-TYSgf1 for pm list --today, pm list --recent, pm contracts --summary, and SDK runAction({action:'contracts', options:{summary:true}})."
@@ -31,11 +31,11 @@ comments[9]{created_at,author,text}:
   "2026-07-08T19:38:59.833Z",claude-code-agent,"Review evidence update: addressed Greptile pushed-review schema/runtime mismatch by adding action-schema mutual-exclusion rules for list today/recent/updatedAfter windows across list variants. Verification passed: focused tests (81 tests), CI-equivalent static sequence, and full coverage 100/100/100/100 (5466 tests)."
   "2026-07-08T20:07:38.223Z",claude-code-agent,"Review evidence update: addressed final value-sensitive schema feedback by making schema mutual exclusion conditional on selected boolean values, adding completion summary intent, and rejecting bare '-' short extension flags. Verification passed: focused tests (81 tests), CI-equivalent static sequence, and full coverage 100/100/100/100 (5466 tests)."
 files[3]{path,scope,note}:
-  src/cli/commands/contracts.ts,project,contracts summary implementation
-  src/cli/commands/list.ts,project,list shorthand implementation
+  src/cli/commands/query/list.ts,project,list shorthand implementation
+  src/cli/commands/workspace/contracts.ts,project,contracts summary implementation
   src/sdk/cli-contracts/flag-contracts.ts,project,flag contract updates
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/commands/list-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/contracts-command.spec.ts tests/unit/commands/query/list-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,240,"harness:codex","2026-09-22T05:24:28.770Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[3]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Adds token-minimal agent retrieval entries for the new primitives
   docs/COMMANDS.md,project,Documents list recency shorthands and contracts summary retrieval primitive

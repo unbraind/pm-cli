@@ -2,7 +2,7 @@ import path from "node:path";
 import { writeFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { buildExtensionDescribeResult, renderExtensionDescribeMarkdown } from "../../../src/cli/commands/extension/describe.js";
-import { runExtension } from "../../../src/cli/commands/extension.js";
+import { runExtension } from "../../../src/cli/commands/extension/extension.js";
 import { activateExtensions } from "../../../src/core/extensions/loader.js";
 import type {
   ExtensionActivationResult,

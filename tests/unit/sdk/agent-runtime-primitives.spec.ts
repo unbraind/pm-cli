@@ -27,8 +27,8 @@ import {
   runWithWorkspaceHarnessSignalDescriptors,
 } from "../../../src/core/shared/author.js";
 import { EMPTY_CANONICAL_DOCUMENT } from "../../../src/core/shared/constants.js";
-import { runClose } from "../../../src/cli/commands/close.js";
-import { runUpdate } from "../../../src/cli/commands/update.js";
+import { runClose } from "../../../src/cli/commands/lifecycle/close.js";
+import { runUpdate } from "../../../src/cli/commands/lifecycle/update.js";
 import {
   _testOnlyValidateCommand,
   runValidate,

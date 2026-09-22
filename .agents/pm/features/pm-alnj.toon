@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-experience,"area:search",gh-issue,token-efficiency
 created_at: "2026-07-06T21:09:28.492Z"
-updated_at: "2026-09-19T08:39:51.516Z"
+updated_at: "2026-09-22T05:13:39.599Z"
 closed_at: "2026-07-07T08:32:30.788Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -29,11 +29,11 @@ comments[6]{created_at,author,text}:
   "2026-07-07T08:32:30.144Z",claude-code-agent,"Merge evidence: PR #478 (https://github.com/unbraind/pm-cli/pull/478) merged to main at commit 54f9145d. GitHub checks were green: CI build/runtime/coverage/static/typecheck/compat/smokes/Windows, CodeQL, CodeFactor, Greptile Review, CodeRabbit, Cubic, Codecov patch, Hound, semgrep, ShellCheck, PSScriptAnalyzer, Trivy, actionlint. Bot review threads were answered with code/test references and resolved before merge."
   "2026-07-07T08:34:55.311Z",claude-code-agent,"Post-merge closeout evidence: pnpm changelog:pm regenerated CHANGELOG.md with pm-changelog 2026.7.6 and pnpm changelog:pm:check passed; pnpm build passed; pm health --check-only --summary --json passed with telemetry/extensions/storage/locks ok; Sentry telemetry gate passed with 0 critical/high issues in the 14-day window and telemetry finish_error_rate_pct=0.58 with no missing error-code rows."
 files[3]{path,scope,note}:
-  src/cli/commands/search.ts,project,Keep hybrid semantic candidate window at max_results before final --limit truncation
-  tests/unit/commands/search-command.spec.ts,project,Cover hybrid --limit after fusion with a full vector candidate window
+  src/cli/commands/query/search.ts,project,Keep hybrid semantic candidate window at max_results before final --limit truncation
+  tests/unit/commands/query/search-command.spec.ts,project,Cover hybrid --limit after fusion with a full vector candidate window
   tests/unit/core/search/search-cache.spec.ts,project,Pin max_results in extension fallback test after hybrid candidate-window fix
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/core/search/search-cache.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/context-command.spec.ts tests/unit/cli/registration-helpers.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/search/search-cache.spec.ts tests/unit/commands/query/search-command.spec.ts tests/unit/commands/query/context-command.spec.ts tests/unit/cli/registration-helpers.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,240,"harness:codex","2026-09-22T05:13:39.528Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mracflvb-s4rsbb,test,passed,"2026-07-07T07:44:15.033Z","2026-07-07T07:44:38.519Z","2026-07-07T07:44:38.519Z",1,0,0
   test-local-mracp7fk-4wjxkt,test,passed,"2026-07-07T07:51:29.950Z","2026-07-07T07:52:06.368Z","2026-07-07T07:52:06.368Z",1,0,0

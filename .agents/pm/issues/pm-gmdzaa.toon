@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts",scale,simplification,token-efficiency
 created_at: "2026-07-27T04:18:05.625Z"
-updated_at: "2026-07-27T15:44:10.066Z"
+updated_at: "2026-09-22T05:10:34.203Z"
 closed_at: "2026-07-27T14:00:52.106Z"
 author: "harness:claude-code"
 estimated_minutes: 240
@@ -43,13 +43,13 @@ comments[6]{created_at,author,text}:
   "2026-07-27T14:59:27.994Z","harness:codex","Greptile review correction: contracts discovery now derives the ladder from the canonical SDK constant and uses explicit per-command bootstrap flags that prioritize pagination, token bounds, and routing rather than positional truncation. The public authoring helper now rejects non-positive, fractional, and non-finite token ceilings. Focused SDK/contracts/ratchet tests pass 65/65; ESLint, static quality, SDK snapshot, token budget, and 95-surface ratchet pass."
   "2026-07-27T15:44:10.066Z","harness:codex","Greptile final review correction: extended bounded bootstrap discovery to every core command with relevant pagination/projection controls using a semantic priority list, while preserving explicit selections for primary agent-loop commands. Verified activity exposes limit/compact/full and history exposes limit/compact/full/format. Focused contracts tests pass 45/45; updated both measured token manifests through their package-owned scripts; static quality and 95-surface ratchet pass."
 files[4]{path,scope,note}:
-  src/cli/commands/contracts.ts,project,bounded default discovery projection with full opt-in
+  src/cli/commands/workspace/contracts.ts,project,bounded default discovery projection with full opt-in
   src/sdk/cli-contracts/agent-output-contracts.ts,project,Canonical validated SDK output budget primitives
-  tests/unit/commands/contracts-command.spec.ts,project,Summary-first default and explicit full discovery compatibility coverage
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Summary-first default and explicit full discovery compatibility coverage
   tests/unit/sdk/agent-output-contracts.spec.ts,project,Invalid package-authored budget regression coverage
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/scripts/contracts-snapshot.spec.ts,project,240
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/contracts-command.spec.ts,project,240,"harness:codex","2026-09-22T05:10:34.163Z",local_mutation,refactor/cli-command-domains-export-gate
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/contracts-command.spec.ts tests/unit/scripts/contracts-snapshot.spec.ts,project,240,"harness:codex","2026-09-22T05:10:34.163Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms3an7cb-cutuo5,test,passed,"2026-07-27T13:59:33.420Z","2026-07-27T13:59:52.811Z","2026-07-27T13:59:52.811Z",2,0,0
 close_reason: "Shipped summary-first bounded cold-start discovery with explicit full/scoped compatibility and output-policy routing; measured a 91% default payload reduction and verified packed npm, SDK, npx, and bunx consumption."

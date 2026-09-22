@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:packages","area:sdk",github-deps
 created_at: "2026-06-22T07:37:43.033Z"
-updated_at: "2026-09-19T08:40:35.907Z"
+updated_at: "2026-09-22T05:03:24.701Z"
 closed_at: "2026-06-22T08:00:22.966Z"
 author: codex-sdk-cli-continuation
 parent: pm-ugqx
@@ -42,16 +42,35 @@ files[16]{path,scope,note}:
   src/cli/commands/extension/scaffold.ts,project,Add importers-capability scaffold runtime and generated SDK sample tests
   src/cli/help-content.ts,project,Advertise importers package/extension scaffold examples
   tests/integration/ci-workflow-contract.spec.ts,project,Keep release workflow pinned action contract current
-  tests/unit/commands/completion-command.spec.ts,project,Cover importers completion value
+  tests/unit/commands/workspace/completion-command.spec.ts,project,Cover importers completion value
   tests/unit/extensions/extension-command.spec.ts,project,Cover importers package and extension scaffolds
-tests[7]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs coverage,project,900
-  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240
-  pm validate --check-resolution --check-history-drift,project,300
-  pnpm build,project,240
-  "pnpm quality:docs-skills",project,300
-  "pnpm quality:static",project,300
-  "pnpm release:gates",project,900
+tests[7]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 900
+  - command: pm validate --check-resolution --check-history-drift
+    scope: project
+    timeout_seconds: 300
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm quality:docs-skills"
+    scope: project
+    timeout_seconds: 300
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 300
+  - command: "pnpm release:gates"
+    scope: project
+    timeout_seconds: 900
+  - command: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/workspace/completion-command.spec.ts tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:03:24.660Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,Release changelog updated by pm-changelog after closure
   docs/EXTENSIONS.md,project,Document importers scaffold in package authoring flow

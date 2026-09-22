@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:packages","area:sdk","area:search",pm-cli
 created_at: "2026-06-21T21:48:10.194Z"
-updated_at: "2026-09-19T08:41:00.894Z"
+updated_at: "2026-09-22T05:12:34.607Z"
 closed_at: "2026-06-21T22:04:07.870Z"
 author: codex-implementation
 parent: pm-ugqx
@@ -32,11 +32,20 @@ files[5]{path,scope,note}:
   src/cli/commands/completion.ts,project,Expose search scaffold capability in shell completions
   src/cli/commands/extension/scaffold.ts,project,Add search-capability package/extension scaffold generator
   src/cli/help-content.ts,project,Document search scaffold in concise command help
-  tests/unit/commands/completion-command.spec.ts,project,Cover search capability zsh completion
+  tests/unit/commands/workspace/completion-command.spec.ts,project,Cover search capability zsh completion
   tests/unit/extensions/extension-command.spec.ts,project,Cover search-capability scaffold output
-tests[2]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs coverage,project,600
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,300
+tests[2]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 600
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/workspace/completion-command.spec.ts tests/unit/commands/workspace/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:12:34.576Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/EXTENSIONS.md,project,Document package init --capability search workflow
   docs/SDK.md,project,Document generated search starter SDK testing helpers

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,cli,dogfood,health,token-efficiency
 created_at: "2026-05-20T20:32:43.298Z"
-updated_at: "2026-09-19T08:40:49.090Z"
+updated_at: "2026-09-22T05:12:41.123Z"
 closed_at: "2026-05-21T17:41:14.275Z"
 author: claude-code-agent
 acceptance_criteria: A summary/one-line health mode returns ok + per-check status + warning_count in a few lines; --skip-* flags omit their sections from output; brief projection size measurably reduced; specs + 100% coverage green.
@@ -23,7 +23,7 @@ comments[3]{created_at,author,text}:
   "2026-05-21T17:53:33.799Z",codex-gpt5,"PR review follow-up 2026-05-21: addressed valid reviewer feedback for health --summary by adding the action-schema optional parameter, adding Fish completion for the health summary flag, and simplifying the health summary/check-only fast-path expression. Focused validation passed: pnpm build && PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/health-command.spec.ts tests/integration/release-readiness-runtime.spec.ts (4 files, 169 tests)."
 files[8]{path,scope,note}:
   src/cli/commands/completion.ts,project,health --summary shell completion
-  src/cli/commands/health.ts,project,health summary projection and omitted skipped checks
+  src/cli/commands/governance/health.ts,project,health summary projection and omitted skipped checks
   src/cli/register-operations.ts,project,health --summary CLI flag wiring
   src/sdk/cli-contracts.ts,project,health --summary contract flag
   tests/integration/release-readiness-runtime.spec.ts,project,runtime help flag regression

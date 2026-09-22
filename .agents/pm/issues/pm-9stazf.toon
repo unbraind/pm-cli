@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-08-04T09:19:57.972Z"
-updated_at: "2026-08-07T15:48:52.264Z"
+updated_at: "2026-09-22T05:09:10.630Z"
 closed_at: "2026-08-07T15:48:51.551Z"
 completed_at: "2026-08-07T15:48:51.551Z"
 author: "harness:codex"
@@ -52,13 +52,24 @@ files[16]{path,scope,note}:
   src/sdk/learnings.ts,project,typed learning receipt surface
   src/sdk/notes.ts,project,typed note receipt surface
   src/sdk/runtime.ts,project,MCP annotation option normalization
-  tests/unit/commands/comments-command.spec.ts,project,comment full-history CLI coverage
-  tests/unit/commands/notes-learnings-command.spec.ts,project,note and learning full-history CLI coverage
+  tests/unit/commands/annotations/comments-command.spec.ts,project,comment full-history CLI coverage
+  tests/unit/commands/annotations/notes-learnings-command.spec.ts,project,note and learning full-history CLI coverage
   tests/unit/sdk/read-contract-integrity.spec.ts,project,bounded mutation receipt stress coverage
-tests[3]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,300
-  node scripts/run-tests.mjs test -- tests/unit/sdk/read-contract-integrity.spec.ts tests/integration/sdk-context-integrity.integration.spec.ts,project,240
-  node scripts/run-tests.mjs test -- tests/unit/sdk/read-contract-integrity.spec.ts tests/unit/commands/comments-command.spec.ts tests/unit/commands/notes-learnings-command.spec.ts,project,300
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/read-contract-integrity.spec.ts tests/integration/sdk-context-integrity.integration.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/read-contract-integrity.spec.ts tests/unit/commands/annotations/comments-command.spec.ts tests/unit/commands/annotations/notes-learnings-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T05:09:10.590Z"
+      source_kind: local_mutation
+      source_ref: refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msj4cerh-cqrmdq,test,passed,"2026-08-07T15:47:09.263Z","2026-08-07T15:47:50.333Z","2026-08-07T15:47:50.333Z",3,0,0
 docs[1]{path,scope,note}:

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:graph","area:sdk",measurement,output,token-efficiency
 created_at: "2026-07-26T17:14:58.548Z"
-updated_at: "2026-08-01T13:13:49.909Z"
+updated_at: "2026-09-22T05:09:42.096Z"
 closed_at: "2026-07-28T11:53:44.414Z"
 author: "harness:claude-code"
 estimated_minutes: 240
@@ -42,10 +42,10 @@ files[5]{path,scope,note}:
   CHANGELOG.md,project,Package-owned generated release narrative
   src/core/output/output.ts,project,Exact emitted JSON and TOON dependency accounting
   src/sdk/dependencies.ts,project,Exact emitted JSON and TOON dependency accounting
-  tests/unit/commands/deps-command.spec.ts,project,Exact emitted JSON and TOON dependency accounting
+  tests/unit/commands/query/deps-command.spec.ts,project,Exact emitted JSON and TOON dependency accounting
   tests/unit/core/output/output.spec.ts,project,Exact emitted JSON and TOON dependency accounting
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/deps-command.spec.ts tests/unit/core/output/output.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/core/output/output.spec.ts,project,240,"harness:codex","2026-09-22T05:09:41.976Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,Exact dependency transport accounting
   docs/SDK.md,project,Exact dependency transport accounting

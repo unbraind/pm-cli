@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,extensions,gh-issue,sdk
 created_at: "2026-07-10T12:15:30.786Z"
-updated_at: "2026-09-08T05:33:32.141Z"
+updated_at: "2026-09-22T05:16:06.803Z"
 closed_at: "2026-07-10T15:56:42.255Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -53,8 +53,8 @@ comments[5]{created_at,author,text}:
   "2026-07-10T15:56:41.401Z",codex-root,"Final Greptile alias-order evidence: parseLooseCommandOptions now records non-enumerable per-occurrence provenance and extension list coercion consumes that sequence, preserving interleaved canonical/short argv order before CSV flattening. Regression verifies -t alpha,beta, --tag gamma, -t delta becomes alpha,beta,gamma,delta. Dynamic registration complexity was reduced below the mandatory CodeFactor threshold without suppressions. Focused 133 tests, strict lint/type/static gates, and full 5514-test coverage pass at 100/100/100/100."
 files[1]{path,scope,note}:
   src/cli/extension-command-options.ts,project,Accumulate mixed repeated long/short list flag occurrences before CSV coercion
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/sdk/sdk-compose.spec.ts tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/cli/registration-helpers.spec.ts,project,240
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/sdk/sdk-compose.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/cli/registration-helpers.spec.ts,project,240,"harness:codex","2026-09-22T05:16:06.703Z",local_mutation,refactor/cli-command-domains-export-gate
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,CLI behavior and validation guidance
   docs/SDK.md,project,SDK/package-author contract guidance

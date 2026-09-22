@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: docs,marketplace,npm,packages,pm-cli
 created_at: "2026-05-11T17:59:04.701Z"
-updated_at: "2026-09-19T08:39:17.460Z"
+updated_at: "2026-09-22T05:14:29.626Z"
 closed_at: "2026-05-13T18:09:33.685Z"
 author: codex-agent
 acceptance_criteria: Package metadata fields are documented; package list/catalog command or generated artifact exists; npm keywords and public docs support package discovery.
@@ -28,7 +28,7 @@ files[16]{path,scope,note}:
   packages/pm-beads/package.json,project,first-party package catalog metadata
   packages/pm-todos/package.json,project,first-party package catalog metadata
   scripts/dogfood-package-first.mjs,project,package catalog dogfood coverage
-  src/cli/commands/extension.ts,project,package catalog lifecycle action
+  src/cli/commands/extension/extension.ts,project,package catalog lifecycle action
   src/cli/register-setup.ts,project,package catalog command registration
   src/core/packages/manifest.ts,project,package catalog metadata contract
   src/mcp/server.ts,project,MCP package catalog routing

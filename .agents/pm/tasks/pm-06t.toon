@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:commands",core,"milestone:1",pm-cli
 created_at: "2026-02-17T23:02:08.240Z"
-updated_at: "2026-09-19T08:39:11.736Z"
+updated_at: "2026-09-22T05:09:38.185Z"
 deadline: "2026-02-23T23:02:08.240Z"
 closed_at: "2026-02-22T17:15:46.781Z"
 assignee: steve
@@ -73,20 +73,19 @@ notes[1]{created_at,author,text}:
   "2026-04-01T20:34:17.459Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:18.607Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[18]{path,scope,note}:
+files[17]{path,scope,note}:
   AGENTS.md,project,create repeatable seed requirement note
   PRD.md,project,core vs roadmap command list update
   README.md,project,command matrix updated for close
   src/cli.ts,project,command registration and global flags
-  src/cli/commands/claim.ts,project,session ownership commands
-  src/cli/commands/close.ts,project,compat re-export for close command
-  src/cli/commands/comments.ts,project,comments mutation and listing
-  src/cli/commands/create.ts,project,create rollback and session-aware lock usage
-  src/cli/commands/docs.ts,project,linked docs tracking command
-  src/cli/commands/files.ts,project,linked file tracking command
-  src/cli/commands/index.ts,project,export runClose
-  src/cli/commands/test.ts,project,linked test tracking and optional execution
-  src/cli/commands/update.ts,project,update command implementation
+  src/cli/commands/annotations/comments.ts,project,comments mutation and listing
+  src/cli/commands/annotations/docs.ts,project,linked docs tracking command
+  src/cli/commands/annotations/files.ts,project,linked file tracking command
+  src/cli/commands/lifecycle/claim.ts,project,session ownership commands
+  src/cli/commands/lifecycle/close.ts,project,compat re-export for close command
+  src/cli/commands/lifecycle/create.ts,project,create rollback and session-aware lock usage
+  src/cli/commands/lifecycle/update.ts,project,update command implementation
+  src/cli/commands/test/test.ts,project,linked test tracking and optional execution
   src/cli/main.ts,project,register close command
   tests/integration/cli.integration.spec.ts,project,exercise close command in lifecycle
   tests/integration/release-readiness-runtime.spec.ts,project,doc/help command alignment contract

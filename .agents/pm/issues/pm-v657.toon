@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: agent-ux,"area:contracts","area:extensions",governance-audit,token-efficiency
 created_at: "2026-07-13T21:36:43.602Z"
-updated_at: "2026-07-28T10:03:24.047Z"
+updated_at: "2026-09-22T05:24:00.048Z"
 closed_at: "2026-07-28T04:15:22.972Z"
 author: codex-root
 estimated_minutes: 90
@@ -62,8 +62,8 @@ files[4]{path,scope,note}:
   packages/pm-governance-audit/extensions/governance-audit/index.ts,project,declare canonical row-limit contract and legacy alias
   packages/pm-governance-audit/extensions/governance-audit/runtime.ts,project,normalize row-limit runtime field
   tests/integration/release-readiness-runtime.spec.ts,project,installed governance package help contract for row limit
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/packages/governance-audit-runtime.spec.ts,project,300,independent item and row limit coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/annotations/comments-command.spec.ts tests/unit/packages/governance-audit-runtime.spec.ts,project,300,"harness:codex","2026-09-22T05:23:59.934Z",local_mutation,refactor/cli-command-domains-export-gate,independent item and row limit coverage
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms45598x-sm9t05,test,passed,"2026-07-28T04:13:29.507Z","2026-07-28T04:13:43.569Z","2026-07-28T04:13:43.569Z",1,0,0
 docs[1]{path,scope,note}:

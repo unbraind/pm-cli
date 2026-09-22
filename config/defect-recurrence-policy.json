@@ -508,7 +508,7 @@
       },
       "checks": {
         "local": [
-          "node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts tests/unit/sdk/linked-command-identity.spec.ts"
+          "node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts tests/unit/sdk/linked-command-identity.spec.ts"
         ],
         "hosted": [
           "CI / Gates (coverage)"
@@ -650,7 +650,7 @@
       },
       "checks": {
         "local": [
-          "node scripts/run-tests.mjs test -- tests/unit/sdk/health-verdict-authority.spec.ts tests/unit/sdk/health-finding-contract.spec.ts tests/unit/commands/health-command.spec.ts"
+          "node scripts/run-tests.mjs test -- tests/unit/sdk/health-verdict-authority.spec.ts tests/unit/sdk/health-finding-contract.spec.ts tests/unit/commands/governance/health-command.spec.ts"
         ],
         "hosted": [
           "CI / Gates (coverage)",
@@ -715,7 +715,7 @@
       },
       "checks": {
         "local": [
-          "node scripts/run-tests.mjs test -- tests/unit/commands/reindex-command.spec.ts tests/unit/core/search/semantic-defaults.spec.ts"
+          "node scripts/run-tests.mjs test -- tests/unit/commands/query/reindex-command.spec.ts tests/unit/core/search/semantic-defaults.spec.ts"
         ],
         "hosted": [
           "CI / Gates (coverage)"
@@ -747,7 +747,7 @@
       },
       "checks": {
         "local": [
-          "node scripts/run-tests.mjs test -- tests/unit/core/telemetry tests/unit/commands/telemetry-command.spec.ts"
+          "node scripts/run-tests.mjs test -- tests/unit/core/telemetry tests/unit/commands/governance/telemetry-command.spec.ts"
         ],
         "hosted": [
           "CI / Gates (coverage)"
@@ -793,7 +793,7 @@
       },
       "checks": {
         "local": [
-          "node scripts/run-tests.mjs test -- tests/unit/sdk/query/search-default-mode.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/config-key-aliases-search.spec.ts"
+          "node scripts/run-tests.mjs test -- tests/unit/sdk/query/search-default-mode.spec.ts tests/unit/commands/query/search-command.spec.ts tests/unit/commands/workspace/config-key-aliases-search.spec.ts"
         ],
         "hosted": [
           "CI / Gates (coverage)"

@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: calendar,code-quality,dedup,recurrence
 created_at: "2026-05-22T19:16:52.926Z"
-updated_at: "2026-09-19T08:40:45.915Z"
+updated_at: "2026-09-22T05:22:42.697Z"
 closed_at: "2026-05-24T08:06:11.773Z"
 author: codex-duplicate-audit
 acceptance_criteria: "One shared recurrence weekday ordering helper is exported from the appropriate item/time module; item serialization, create/update parsing, and calendar expansion use it; recurrence ordering behavior stays covered; focused recurrence/calendar tests and pnpm build pass."
@@ -26,9 +26,9 @@ comments[5]{created_at,author,text}:
   "2026-05-24T07:00:14.691Z",claude-code-agent,"COORDINATOR VERIFIED 2026-05-24: combined gate green, static gate passed. Dogfooded recurrence weekday sort/dedup on BOTH create (fri|mon|wed -> mon,wed,fri) and update (sun|sat|sun -> sat,sun) plus calendar week expansion — shared weekdayOrderIndex helper behaves identically across all sites."
   "2026-05-24T07:02:48.096Z",claude-code-agent,Submitted in PR #58 (branch recover-unreadable-toon-items-and-dedup-core-helpers).
 files[4]{path,scope,note}:
-  src/core/item/item-format.ts,project,weekdayOrderIndex clone
-  src/cli/commands/create.ts,project,weekdayOrderIndex clone
-  src/cli/commands/update.ts,project,weekdayOrderIndex clone
   src/cli/commands/calendar.ts,project,weekdayOrderIndex clone
+  src/cli/commands/lifecycle/create.ts,project,weekdayOrderIndex clone
+  src/cli/commands/lifecycle/update.ts,project,weekdayOrderIndex clone
+  src/core/item/item-format.ts,project,weekdayOrderIndex clone
 close_reason: "Closed after merged PR #58 (501fb16f) landed the shared recurrence weekday ordering helper, focused tests, manual dogfood evidence, and green GitHub checks; tracker item had remained open after merge."
 body: ""

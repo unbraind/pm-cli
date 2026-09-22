@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:ollama","area:search","area:semantic",compatibility,pm-cli
 created_at: "2026-04-01T13:06:35.523Z"
-updated_at: "2026-09-19T08:42:31.232Z"
+updated_at: "2026-09-22T05:01:50.235Z"
 deadline: "2026-04-08T13:06:35.523Z"
 closed_at: "2026-04-01T13:24:41.867Z"
 assignee: codex-agent
@@ -62,8 +62,8 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:22:04.921Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[5]{path,scope,note}:
+  src/cli/commands/query/search.ts,project,default mode resolution and fallback
   src/cli/commands/reindex.ts,project,reindex runtime defaults integration
-  src/cli/commands/search.ts,project,default mode resolution and fallback
   src/cli/main.ts,project,search help text contract
   src/core/search/providers.ts,project,provider auto-detection helpers
   src/core/search/semantic-defaults.ts,project,auto Ollama semantic defaults resolver

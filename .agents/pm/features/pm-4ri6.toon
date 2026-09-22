@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: data-quality,dedupe,multi-agent,sdk-first
 created_at: "2026-07-07T06:49:49.719Z"
-updated_at: "2026-07-26T17:04:09.226Z"
+updated_at: "2026-09-22T05:21:50.298Z"
 closed_at: "2026-07-24T22:23:07.422Z"
 author: maintainer-agent
 estimated_minutes: 480
@@ -18,32 +18,32 @@ release: v2026.7.25
 resolution: completed
 expected_result: "Create and copy expose bounded SDK-backed duplicate governance with off, advisory, and strict modes while governance-audit reuses the same scorer."
 actual_result: "Installed CLI and SDK proof returned advisory matches and enforced explicit bypass behavior; contracts, MCP, docs, scale budgets, and exact coverage passed."
-dependencies[10]{id,kind,created_at,author,source_kind}:
-  pm-4n1a,related,"2026-07-07T06:49:49.719Z",null,null
-  pm-jmld,related,"2026-07-07T06:49:49.719Z",null,null
-  pm-khdq,related,"2026-07-07T06:49:49.719Z",null,null
-  pm-33cw,implements,"2026-07-26T17:04:09.017Z",null,null
-  pm-801d,related,"2026-07-26T17:04:09.017Z",null,null
-  pm-cu1i,related,"2026-07-26T17:04:09.017Z",null,null
-  pm-muhw,related,"2026-07-26T17:04:09.017Z",null,null
-  pm-psy1,related,"2026-07-26T17:04:09.017Z",null,null
-  pm-ydp6,related,"2026-07-26T17:04:09.017Z",null,null
-  pm-z436,related,"2026-07-26T17:04:09.017Z",null,null
+dependencies[10]{id,kind,created_at}:
+  pm-4n1a,related,"2026-07-07T06:49:49.719Z"
+  pm-jmld,related,"2026-07-07T06:49:49.719Z"
+  pm-khdq,related,"2026-07-07T06:49:49.719Z"
+  pm-33cw,implements,"2026-07-26T17:04:09.017Z"
+  pm-801d,related,"2026-07-26T17:04:09.017Z"
+  pm-cu1i,related,"2026-07-26T17:04:09.017Z"
+  pm-muhw,related,"2026-07-26T17:04:09.017Z"
+  pm-psy1,related,"2026-07-26T17:04:09.017Z"
+  pm-ydp6,related,"2026-07-26T17:04:09.017Z"
+  pm-z436,related,"2026-07-26T17:04:09.017Z"
 comments[3]{created_at,author,text}:
   "2026-07-24T20:08:26.657Z",claude-code-agent,"Evidence: shared normalize/tokenize/Jaccard/exact-issue-code scorer now powers both create/copy governance and pm-governance-audit; persistent SQLite FTS supplies bounded candidates when warm, with metadata fallback when explicitly enabled without an index. Minimal/default presets remain zero-overhead off; strict preset enforces, and advisory/strict/threshold/limit are discoverable config leaves. CLI and SDK tests pass, including explicit --allow-duplicate and copy-source exclusion."
   "2026-07-24T22:21:50.343Z",claude-code-agent,"Acceptance evidence: clean packed-package proof enabled advisory governance through the public config key, created a duplicate, surfaced likely_duplicates with the canonical item id, and read two ranked matches through @unbrained/pm-cli/sdk. Full release coverage is exact 100/100/100/100. The shared index-first scorer is used by create, copy, and governance-audit; CLI/MCP contracts and docs are updated."
   "2026-07-24T22:26:07.373Z",claude-code-agent,"Delivery PR: https://github.com/unbraind/pm-cli/pull/684"
 files[8]{path,scope,note}:
   packages/pm-governance-audit/extensions/governance-audit/dedupe-audit.ts,project,Shared scorer reuse
-  src/cli/commands/copy.ts,project,Copy advisory with source exclusion
-  src/cli/commands/create.ts,project,Create advisory and strict enforcement
+  src/cli/commands/lifecycle/copy.ts,project,Copy advisory with source exclusion
+  src/cli/commands/lifecycle/create.ts,project,Create advisory and strict enforcement
   src/core/config/nested-settings.ts,project,Discoverable duplicate governance settings
   src/core/store/item-metadata-query-index.ts,project,Persistent FTS candidate retrieval
   src/sdk/similarity-scoring.ts,project,Dependency-light shared deterministic scoring
   src/sdk/similarity.ts,project,Index-first bounded similarity query and governance enforcement
   tests/unit/sdk/similarity.spec.ts,project,SDK CLI config and strict bypass regression coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/similarity.spec.ts tests/unit/core/item/item-metadata-query-index.spec.ts tests/unit/commands/dedupe-audit-command.spec.ts tests/unit/packages/governance-audit-runtime.spec.ts,project,300
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/similarity.spec.ts tests/unit/core/item/item-metadata-query-index.spec.ts tests/unit/commands/governance/dedupe-audit-command.spec.ts tests/unit/packages/governance-audit-runtime.spec.ts,project,300,"harness:codex","2026-09-22T05:21:50.107Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrzia7c2-xrtlo5,test,passed,"2026-07-24T22:22:22.283Z","2026-07-24T22:22:38.498Z","2026-07-24T22:22:38.498Z",1,0,0
 docs[3]{path,scope,note}:

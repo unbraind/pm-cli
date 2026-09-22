@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: agent-ux,cli,docs,dogfood,polish
 created_at: "2026-05-20T20:33:06.671Z"
-updated_at: "2026-09-19T08:39:31.472Z"
+updated_at: "2026-09-22T05:23:13.908Z"
 closed_at: "2026-05-25T10:10:41.861Z"
 author: claude-code-agent
 acceptance_criteria: Each listed sub-item is either fixed with a regression test or explicitly declined with rationale; no change drops coverage below 100%; doc/validator drift (L6) resolved; default-safety inconsistencies (L10) reviewed.
@@ -44,14 +44,14 @@ comments[20]{created_at,author,text}:
 files[26]{path,scope,note}:
   packages/pm-calendar/extensions/calendar/index.js,project,compiled calendar package entry kept in sync
   packages/pm-calendar/extensions/calendar/index.ts,project,calendar positional view support
-  src/cli/commands/close.ts,project,close validation warns on active children
   src/cli/commands/completion.ts,project,calendar include scheduled completion alignment
-  src/cli/commands/contracts.ts,project,extension action schema aliases and flag metadata
-  src/cli/commands/create.ts,project,compact create changed_fields and event end recovery
   src/cli/commands/event-validation-messages.ts,project,shared event validation UX text added from PR review feedback
-  src/cli/commands/gc.ts,project,gc reindex install guidance
-  src/cli/commands/health.ts,project,health reports PM_NO_TELEMETRY alias
-  src/cli/commands/update.ts,project,dependency kind recovery lists allowed values
+  src/cli/commands/governance/gc.ts,project,gc reindex install guidance
+  src/cli/commands/governance/health.ts,project,health reports PM_NO_TELEMETRY alias
+  src/cli/commands/lifecycle/close.ts,project,close validation warns on active children
+  src/cli/commands/lifecycle/create.ts,project,compact create changed_fields and event end recovery
+  src/cli/commands/lifecycle/update.ts,project,dependency kind recovery lists allowed values
+  src/cli/commands/workspace/contracts.ts,project,extension action schema aliases and flag metadata
   src/cli/main.ts,project,dynamic extension command action arg handling
   src/cli/register-setup.ts,project,config action shorthand for agent UX
   src/core/telemetry/runtime.ts,project,PM_NO_TELEMETRY opt-out alias

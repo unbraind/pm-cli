@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:sdk",extensions,github-intake,type-safety
 created_at: "2026-07-30T11:27:55.105Z"
-updated_at: "2026-07-30T23:31:06.566Z"
+updated_at: "2026-09-22T05:10:08.279Z"
 closed_at: "2026-07-30T22:52:33.658Z"
 completed_at: "2026-07-30T22:52:33.658Z"
 author: "harness:codex"
@@ -35,7 +35,7 @@ learnings[1]{created_at,author,text}:
   "2026-07-30T22:51:25.723Z","harness:codex",Extension authoring inputs need closed known-property contracts; forward compatibility belongs in explicit namespaced metadata rather than open index signatures that erase compiler feedback.
 files[9]{path,scope,note}:
   sdk/public-surface.json,project,acknowledged closed SDK authoring contract surface
-  src/cli/commands/contracts.ts,project,typed extension flag contracts
+  src/cli/commands/workspace/contracts.ts,project,typed extension flag contracts
   src/cli/extension-command-help.ts,project,closed flag help contracts
   src/cli/extension-command-options.ts,project,explicit loose flag contract
   src/core/extensions/extension-types.ts,project,closed SDK authoring contracts

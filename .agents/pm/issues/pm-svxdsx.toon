@@ -1,0 +1,58 @@
+id: pm-svxdsx
+title: "GH-1284: release notes must read complete tracker evidence beyond default output budgets"
+description: "GitHub issue #1284 demonstrates that scripts/generate-release-notes.mjs consumes one budget-truncated list-all JSON page and falsely reports no closed work. Request complete input and reject incomplete or malformed receipts before summarizing. This is the repository GitHub release-notes consumer, not the separately maintained pm-changelog generator."
+type: Issue
+status: closed
+priority: 1
+tags[3]: output-contract,release,token-efficiency
+created_at: "2026-09-22T05:28:42.055Z"
+updated_at: "2026-09-22T06:48:40.701Z"
+closed_at: "2026-09-22T06:43:35.862Z"
+completed_at: "2026-09-22T06:43:35.862Z"
+author: "harness:codex"
+acceptance_criteria: A real depth-heavy temporary tracker exceeds the default JSON budget but release evidence remains complete; truncated or malformed input is visibly refused; existing release-window semantics remain intact
+parent: pm-5t33or
+resolution: "Release-note generation requests minimal complete tracker input with explicit unbounded row/token limits and validates completeness before summarizing. Partial, malformed or unreadable input emits a visible warning."
+expected_result: A tracker exceeding default output budgets must retain release evidence and never produce a confident empty summary from partial input.
+actual_result: The real 128-item regression and malformed-receipt controls pass; the historical release window produced 15 closed items. All 9192 tests and exact 100-percent repository coverage pass.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,implements,"2026-09-22T05:28:42.055Z","harness:codex","cli:create:dep",detected
+  pm-hybj,discovered_from,"2026-09-22T05:28:42.055Z","harness:codex","cli:create:dep",detected
+  pm-s2h0mq,incident_from,"2026-09-22T05:28:42.055Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-09-22T05:28:42.055Z","harness:codex","Duplicate check: complete 2790-item all-status corpus plus live release-notes searches and open/in-progress lists found no matching reader defect. pm-hybj is a closed SDK-shadowing/changelog propagation issue; pm-s2h0mq delivered default budgets. Source: https://github.com/unbraind/pm-cli/issues/1284"
+  "2026-09-22T05:46:11.336Z","harness:codex","Evidence: the real 128-item tracker regression failed before the change with an incorrect empty release summary and now passes. All 26 release-note tests pass, including partial, unreadable, and malformed receipts. A minimal-field unbounded read replaces the default-budget list-all call; incomplete evidence produces a visible warning. Historical release-note generation was also exercised against the actual tracker."
+  "2026-09-22T06:33:42.177Z","harness:codex","Final focused verification: the linked release-note regression passes against real isolated tracker storage and malformed/partial receipt controls. The repository release-note generator recovered 15 closed items for the historical 2026.9.18 window instead of an empty section. The complete changed-boundary suite reached exact 100-percent statement, branch, function and line coverage. Full repository coverage and hosted delivery gates remain separate pending receipts."
+  "2026-09-22T06:43:31.539Z","harness:codex","Final repository coverage passed: 725 files and 9192 tests; statements 64834/64834, branches 49506/49506, functions 13467/13467, lines 62037/62037. All exact thresholds remain 100 percent. Typecheck, ESLint, zero-clone scans, 100-percent module/export/member documentation, structural/static contracts, graph composition and record integrity passed. Temporary Node/Bun lifecycle and packed npm/npx/bunx consumers passed. Local import/transport timing is documented separately because unchanged main also exceeds budgets on this host; hosted gates and reviews are still required before merge."
+  "2026-09-22T06:48:40.700Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1286 — command-domain organization, mandatory private-export gate, package recovery and complete release evidence. Source implementation and local verification are committed; exact-head hosted checks and external review determine merge readiness."
+files[3]{path,scope,note}:
+  scripts/generate-release-notes.mjs,project,Complete minimal machine input and fail-closed truncation receipts
+  tests/integration/release-notes-completeness.integration.spec.ts,project,Real SDK-seeded workspace larger than the default read page
+  tests/unit/scripts/generate-release-notes.spec.ts,project,Malformed and truncated receipt regression controls
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/generate-release-notes.spec.ts tests/integration/release-notes-completeness.integration.spec.ts,project,240,"harness:codex","2026-09-22T05:46:07.234Z",local_mutation,refactor/cli-command-domains-export-gate
+test_runs[1]:
+  - run_id: test-local-mucam8ew-3hqsy0
+    kind: test
+    status: passed
+    started_at: "2026-09-22T06:27:50.584Z"
+    finished_at: "2026-09-22T06:28:27.800Z"
+    recorded_at: "2026-09-22T06:28:27.800Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/release-notes-completeness.integration.spec.ts tests/unit/scripts/generate-release-notes.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/generate-release-notes.spec.ts tests/integration/release-notes-completeness.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,Document recovery and complete machine-consumer input
+close_reason: Implementation and local verification complete; closure is included in the reviewed delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: release-notes-complete-input
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/generate-release-notes.spec.ts tests/integration/release-notes-completeness.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/scripts/generate-release-notes.spec.ts tests/integration/release-notes-completeness.integration.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: CI coverage gate,CI static quality gate
+  owner: pm-svxdsx
+body: ""

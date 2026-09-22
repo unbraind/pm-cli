@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[2]: governance,validate
 created_at: "2026-07-10T21:38:29.741Z"
-updated_at: "2026-07-26T17:05:34.442Z"
+updated_at: "2026-09-22T05:21:42.576Z"
 closed_at: "2026-07-14T07:46:33.846Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -18,24 +18,24 @@ release: v2026.7.15
 resolution: Lifecycle dependency-cycle detection now traverses ordering relationship kinds only.
 expected_result: Related edges never create cycle warnings; blocked_by cycles still do.
 actual_result: Registry-driven validation excludes associative edges and retains ordering cycles.
-dependencies[9]{id,kind,created_at,author,source_kind}:
-  pm-i4ef,related,"2026-07-10T21:38:29.741Z",null,null
-  pm-2ler,related,"2026-07-10T21:41:04.483Z",null,null
-  pm-33cw,implements,"2026-07-26T17:05:34.263Z",null,null
-  pm-4k6b,related,"2026-07-26T17:05:34.263Z",null,null
-  pm-5566,related,"2026-07-26T17:05:34.263Z",null,null
-  pm-atfm,related,"2026-07-26T17:05:34.263Z",null,null
-  pm-dfg0,related,"2026-07-26T17:05:34.263Z",null,null
-  pm-oslr,related,"2026-07-26T17:05:34.263Z",null,null
-  pm-z436,related,"2026-07-26T17:05:34.263Z",null,null
+dependencies[9]{id,kind,created_at}:
+  pm-i4ef,related,"2026-07-10T21:38:29.741Z"
+  pm-2ler,related,"2026-07-10T21:41:04.483Z"
+  pm-33cw,implements,"2026-07-26T17:05:34.263Z"
+  pm-4k6b,related,"2026-07-26T17:05:34.263Z"
+  pm-5566,related,"2026-07-26T17:05:34.263Z"
+  pm-atfm,related,"2026-07-26T17:05:34.263Z"
+  pm-dfg0,related,"2026-07-26T17:05:34.263Z"
+  pm-oslr,related,"2026-07-26T17:05:34.263Z"
+  pm-z436,related,"2026-07-26T17:05:34.263Z"
 comments[2]{created_at,author,text}:
   "2026-07-10T21:53:12.392Z",maintainer-agent,"Third live encounter, 2026-07-10 pass: encoding the docstring-wave execution order (gate pm-5566 blocked_by its 7 fill slices) could NOT simply add blocked_by edges, because each slice already held a related edge to pm-5566 and a related + reverse-blocked_by pair trips this false-positive cycle check. Workaround applied: replaced the 7 advisory related edges with the blocked_by edges instead of keeping both. Cost of this defect is now recurring: every ordering repair against an existing related edge needs an edge swap instead of an additive change."
   "2026-07-14T07:46:28.649Z",codex-gpt5-root,"Evidence: lifecycle dependency graph now includes only registry-declared ordering kinds; related/related_to associative edges are excluded while blocks/blocked_by stay cycle-bearing. Focused validate suite passed 88 tests and full repository suite passed 5664 tests."
 files[2]{path,scope,note}:
-  src/cli/commands/validate.ts,project,cycle validation consumes ordering semantics from public SDK registry
-  tests/unit/commands/validate-command.spec.ts,project,associative-edge false-cycle regression coverage
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts,project,180
+  src/cli/commands/governance/validate.ts,project,cycle validation consumes ordering semantics from public SDK registry
+  tests/unit/commands/governance/validate-command.spec.ts,project,associative-edge false-cycle regression coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/governance/validate-command.spec.ts,project,180,"harness:codex","2026-09-22T05:21:42.509Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mrkckvig-tjmcfh,test,passed,"2026-07-14T07:46:12.483Z","2026-07-14T07:46:26.057Z","2026-07-14T07:46:26.057Z",1,0,0
 close_reason: Ordering-only cycle detection implemented and regression-verified; associative related edges no longer create false lifecycle cycles.

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: dedupe,governance,pm-cli,reporting
 created_at: "2026-04-04T17:53:51.723Z"
-updated_at: "2026-09-19T08:39:39.755Z"
+updated_at: "2026-09-22T05:13:56.891Z"
 deadline: "2026-04-18T17:53:51.723Z"
 closed_at: "2026-04-06T13:29:18.848Z"
 author: codex-agent
@@ -56,7 +56,7 @@ notes[1]{created_at,author,text}:
   "2026-04-04T17:53:51.723Z",codex-agent,Initial governance pass required custom scripts for similarity clustering and canonical mapping across 9 duplicate families.
 files[4]{path,scope,note}:
   src/cli/commands/dedupe-audit.ts,project,dedupe cluster reporting command
-  src/cli/commands/search.ts,project,existing similarity/search surface for extension
+  src/cli/commands/query/search.ts,project,existing similarity/search surface for extension
   src/core/shared/text-normalization.ts,project,shared token similarity utilities
   src/sdk/cli-contracts.ts,project,contracts parity for dedupe action
 tests[2]{command,scope,timeout_seconds,note}:

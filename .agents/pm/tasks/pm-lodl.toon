@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: analysis,architecture,"area:cli","area:sdk"
 created_at: "2026-07-05T04:54:08.709Z"
-updated_at: "2026-09-19T08:40:43.670Z"
+updated_at: "2026-09-22T05:09:25.062Z"
 closed_at: "2026-07-05T05:51:24.084Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -35,9 +35,8 @@ comments[2]{created_at,author,text}:
   "2026-07-05T05:51:00.434Z",claude-code-agent,"Evidence: added docs/SDK_PRIMITIVE_INVENTORY.md as the checked-in SDK-first command-family inventory for parent pm-usfg. It records the current boundary baseline, maps command families to SDK promotion lanes (lifecycle, query/read, annotations/links, schema/config/profile/init, governance/maintenance, history, plan, execution/diagnostics), and documents the ratchet workflow for reducing private src/core imports as primitives move into src/sdk. Verification passed: pm linked typecheck, full coverage 263 files / 5411 tests at 100/100/100/100, pnpm lint, docs/skills gate, and isolated temp-project dogfood."
 notes[1]{created_at,author,text}:
   "2026-07-05T05:10:02.572Z",maintainer-agent,"Audit 2026-07-05 (second pass): promotion partition now has 8 families (pm-98cz lifecycle, pm-rjqr reads, pm-zwpp facets+append, pm-oxrw governance, pm-3mna workspace config, pm-4a7m history maintenance, pm-je50 plan, pm-oslr execution/diagnostics). This inventory's deliverable should confirm every command's core calls land in exactly one family, and flag any remainder as new promotion items."
-files[3]{path,scope,note}:
+files[2]{path,scope,note}:
   scripts/release/sdk-import-boundary-baseline.json,project,Machine-readable exact module-level CLI/MCP to core import map
-  src/cli/commands/index.ts,project,Command handler barrel — enumeration source for the CLI-to-core call-graph inventory
   src/sdk/index.ts,project,Current public SDK barrel — the inventory measures the gap between this surface and what src/cli/commands consumes
 tests[1]{command,scope,timeout_seconds}:
   pnpm typecheck,project,240

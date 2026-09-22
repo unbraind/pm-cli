@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: compatibility,history,provenance,recovery
 created_at: "2026-08-13T22:04:10.579Z"
-updated_at: "2026-08-15T04:00:05.569Z"
+updated_at: "2026-09-22T05:08:10.921Z"
 closed_at: "2026-08-15T04:00:04.812Z"
 completed_at: "2026-08-15T04:00:04.812Z"
 author: "harness:codex"
@@ -44,8 +44,8 @@ files[11]{path,scope,note}:
   tests/fixtures/contracts/full.json,project,Generated runtime contract snapshot
   tests/unit/sdk/provenance-health.spec.ts,project,Bounded health regression coverage
   tests/unit/sdk/provenance-normalization-contract.spec.ts,project,Privacy and temporary tracker acceptance
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/provenance-normalization-contract.spec.ts tests/unit/sdk/provenance-health.spec.ts tests/unit/commands/history-repair-command.spec.ts,project,240,Privacy safe dry run apply and history verification
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/provenance-normalization-contract.spec.ts tests/unit/sdk/provenance-health.spec.ts tests/unit/commands/history/history-repair-command.spec.ts,project,240,"harness:codex","2026-09-22T05:08:10.878Z",local_mutation,refactor/cli-command-domains-export-gate,Privacy safe dry run apply and history verification
 test_runs[4]:
   - run_id: test-local-mstq4e9k-isesau
     kind: test

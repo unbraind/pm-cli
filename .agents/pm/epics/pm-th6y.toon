@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: perf,quality,sdk,session-2026-05-27
 created_at: "2026-05-27T16:46:49.712Z"
-updated_at: "2026-09-19T08:41:41.696Z"
+updated_at: "2026-09-22T05:12:25.547Z"
 closed_at: "2026-05-29T15:45:55.285Z"
 author: maintainer-agent
 release: v2026.5.30
@@ -100,9 +100,9 @@ files[21]{path,scope,note}:
   scripts/bundle-cli.mjs,project,"Audit performance fix: shipped esbuild core bundling"
   scripts/dogfood-package-first.mjs,project,"CI follow-up: retry/warn temp cleanup around telemetry flush race"
   src/cli/commands/completion.ts,project,Surface get depth full alias in shell completions
-  src/cli/commands/extension.ts,project,"Sentry/package hardening: staged self-nesting extension installs"
+  src/cli/commands/extension/extension.ts,project,"Sentry/package hardening: staged self-nesting extension installs"
   src/cli/commands/extension/install-sources.ts,project,Normalize npm package file aliases before npm pack for Windows-safe installs
-  src/cli/commands/get.ts,project,Accept get --depth full as agent-friendly deep alias
+  src/cli/commands/query/get.ts,project,Accept get --depth full as agent-friendly deep alias
   src/cli/register-list-query.ts,project,Expose get depth full alias in CLI help
   src/mcp/server.ts,project,Document get depth alias for MCP agents
   tests/integration/cli.integration.spec.ts,project,Windows-safe packed npm package extension install regression

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: github,macos,nightly,path-canonicalization
 created_at: "2026-08-01T07:55:14.379Z"
-updated_at: "2026-08-10T12:02:35.397Z"
+updated_at: "2026-09-22T05:08:53.732Z"
 closed_at: "2026-08-01T07:59:05.253Z"
 completed_at: "2026-08-01T07:59:05.253Z"
 author: "harness:codex"
@@ -22,9 +22,9 @@ comments[3]{created_at,author,text}:
   "2026-08-01T07:59:00.062Z","harness:codex","Evidence: nightly run 30687922326 failed only because macOS reported the same temp tracker as /private/var while the test retained its /var spelling. The regression now resolves pmRoot and nestedRoot with realpath before asserting current discovery and ancestor recovery provenance. The linked init command suite passes 36/36; full lint/static quality, zero-clone, token/calibration, SDK surface/import-cost/transport, and secret gates pass. PR #850 exact-head macOS runtime smoke is green."
   "2026-08-01T08:07:10.584Z","harness:codex","Evidence update: the PR's Windows regression exposed a second filesystem-alias form (the runner returned an 8.3 tracker path while realpath returned the long path). The regression now validates tracker identity by realpath for both current and ancestor discovery while preserving and asserting the user-facing suggested path spelling. Focused init suite: 36/36 passed. Package-owned changelog generation installed pm-changelog 2026.8.1 and recorded this fix."
 files[1]{path,scope,note}:
-  tests/unit/commands/init-command.spec.ts,project,GH-851 macOS discovery provenance regression
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts,project,300
+  tests/unit/commands/workspace/init-command.spec.ts,project,GH-851 macOS discovery provenance regression
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/init-command.spec.ts,project,300,"harness:codex","2026-09-22T05:08:53.691Z",local_mutation,refactor/cli-command-domains-export-gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msa2vofs-n9ir9r,test,passed,"2026-08-01T07:56:39.145Z","2026-08-01T07:56:54.520Z","2026-08-01T07:56:54.520Z",1,0,0
 docs[1]{path,scope,note}:

@@ -1,0 +1,91 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.resetModules();
+});
+
+describe("close-many branch coverage", () => {
+  it("coerces non-string item titles to empty strings in dry-run plans", async () => {
+    const trackerRoot = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-close-many-branch-"),
+    );
+    vi.doMock("../../../../src/core/fs/fs-utils.js", () => ({
+      pathExists: vi.fn(async () => true),
+    }));
+    vi.doMock("../../../../src/core/store/paths.js", () => ({
+      resolvePmRoot: vi.fn(() => trackerRoot),
+      getSettingsPath: vi.fn(() => path.join(trackerRoot, "settings.json")),
+    }));
+    vi.doMock("../../../../src/core/store/settings.js", () => ({
+      readSettings: vi.fn(async () => ({
+        author_default: "tester",
+        item_format: "toon",
+        id_prefix: "pm",
+        governance: {
+          require_close_reason: true,
+          close_validation_default: "warn",
+        },
+        schema: {},
+      })),
+    }));
+    vi.doMock("../../../../src/core/schema/runtime-schema.js", () => ({
+      resolveRuntimeStatusRegistry: vi.fn(() => ({
+        close_status: "closed",
+        terminal_statuses: new Set(["closed", "done", "canceled"]),
+      })),
+    }));
+    vi.doMock("../../../../src/core/extensions/index.js", () => ({
+      getActiveExtensionRegistrations: vi.fn(() => []),
+    }));
+    vi.doMock("../../../../src/core/item/type-registry.js", () => ({
+      resolveItemTypeRegistry: vi.fn(() => ({
+        type_to_folder: new Map<string, string>(),
+      })),
+    }));
+    vi.doMock("../../../../src/core/store/item-store.js", () => ({
+      listAllItemMetadataLight: vi.fn(async () => []),
+    }));
+    vi.doMock("../../../../src/core/item/status.js", () => ({
+      isTerminalStatus: vi.fn(
+        (status: string, registry: { terminal_statuses: Set<string> }) =>
+          registry.terminal_statuses.has(status),
+      ),
+    }));
+    vi.doMock("../../../../src/sdk/query/list.js", () => ({
+      runList: vi.fn(async () => ({
+        items: [{ id: "pm-1", title: 123, status: "open" }],
+        filters: { ids: "pm-1" },
+      })),
+    }));
+    vi.doMock("../../../../src/core/checkpoint/mutation-checkpoint.js", () => ({
+      createCheckpointId: vi.fn(() => "checkpoint-1"),
+      loadMutationCheckpoint: vi.fn(),
+      restoreCheckpointItems: vi.fn(),
+      writeMutationCheckpoint: vi.fn(),
+    }));
+    try {
+      const { runCloseMany } =
+        await import("../../../../src/sdk/lifecycle/close-many.js");
+      const result = await runCloseMany(
+        {
+          list: { ids: "pm-1" },
+          reason: "dry-run branch",
+          dryRun: true,
+        },
+        { path: trackerRoot },
+      );
+
+      expect(result.mode).toBe("dry_run");
+      expect(result.item_plans?.[0]?.title).toBe("");
+    } finally {
+      await fs.rm(trackerRoot, {
+        recursive: true,
+        force: true,
+      });
+    }
+  });
+});

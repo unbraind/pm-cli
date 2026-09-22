@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: extensions,external-audit,pm-cli,sdk
 created_at: "2026-04-25T23:06:27.563Z"
-updated_at: "2026-09-19T08:39:15.344Z"
+updated_at: "2026-09-22T05:06:08.554Z"
 closed_at: "2026-04-27T17:55:19.852Z"
 author: audit-agent
 estimated_minutes: 120
@@ -34,7 +34,7 @@ learnings[1]{created_at,author,text}:
 files[5]{path,scope,note}:
   docs/examples/starter-extension/package.json,project,reference dependency wiring for @unbrained/pm-cli sdk imports
   docs/SDK.md,project,sdk quick-start now clarifies public sdk contract usage
-  src/cli/commands/extension.ts,project,extension install/manage runtime behavior
+  src/cli/commands/extension/extension.ts,project,extension install/manage runtime behavior
   src/core/extensions/loader.ts,project,module load and import resolution path
   tests/unit/extension-command.spec.ts,project,doctor load-failure regression covering sdk-dependency and module-mode diagnostics
 tests[1]{command,scope,timeout_seconds,note}:

@@ -3,7 +3,7 @@ import {
   GRAPH_SUBCOMMAND_VALUES,
   parseGraphSubcommand,
   runGraph,
-} from "../../../../src/cli/commands/graph.js";
+} from "../../../../src/cli/commands/query/graph.js";
 import type {
   GraphAnalyzeResult,
   GraphArticulationResult,

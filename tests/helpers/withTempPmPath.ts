@@ -2,7 +2,7 @@ import { mkdtemp, realpath, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { runInit } from "../../src/cli/commands/init.js";
+import { runInit } from "../../src/cli/commands/workspace/init.js";
 import { parseBootstrapCommandName } from "../../src/sdk/cli-bootstrap.js";
 import {
   runDirectDistCli,
