@@ -24,7 +24,7 @@ function closeChild(
 /** Emit an asynchronous spawn error to exercise runner failure reporting and cleanup. */
 function errorChild(error: unknown): never {
   const child = new EventEmitter();
-  queueMicrotask(() => child.emit("error", error));
+  queueMicrotask(() => { child.emit("error", error); child.emit("close", -1, null); });
   return child as never;
 }
 
@@ -68,12 +68,11 @@ describe("run-tests", () => {
     if (mode === "idle") {
       child.emit("close", 0, null);
       // The runner resumes only after the shutdown flag has closed admission.
-      await Promise.resolve();
     }
-    if (mode === "timeout") vi.useFakeTimers();
+    if (mode === "timeout" || mode === "error") vi.useFakeTimers();
     try {
       const stopping = shutdown();
-      if (mode === "timeout") {
+      if (mode === "timeout" || mode === "error") {
         const rejection = expect(stopping).rejects.toThrow("workspace retained");
         await vi.advanceTimersByTimeAsync(5000);
         await rejection;

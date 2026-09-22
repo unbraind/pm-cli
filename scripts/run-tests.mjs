@@ -17,6 +17,7 @@ let activeChild;
 let execution;
 let interrupted = false;
 
+/** Validate the requested test mode before allocating disposable tracker roots. */
 function resolveMode(argv) {
   const mode = (argv[2] ?? "test").toLowerCase();
   if (!(mode in MODE_TO_VITEST_ARGS)) {
@@ -26,6 +27,7 @@ function resolveMode(argv) {
   return { ok: true, mode };
 }
 
+/** Await process closure, retaining operation errors until the child stops using its workspace. */
 function runChild(command, args, env) {
   if (interrupted) return Promise.reject(new Error("Test execution interrupted before the next stage."));
   return new Promise((resolve, reject) => {
@@ -35,11 +37,19 @@ function runChild(command, args, env) {
       stdio: "inherit",
     });
     activeChild = child;
-    child.on("error", reject);
+    let failure;
+    // Failed signals can emit error while the process remains alive. Even a
+    // failed spawn emits close, so neither case may release the workspace early.
+    child.on("error", (error) => { failure = { error }; });
     child.on("close", (code, signal) => {
+      activeChild = undefined;
+      if (failure) {
+        reject(failure.error);
+        return;
+      }
       resolve(signal ? 1 : (code ?? 1));
     });
-  }).finally(() => { activeChild = undefined; });
+  });
 }
 
 /** Stop the active stage before cleanup; an unresponsive child retains its workspace. */
@@ -61,6 +71,7 @@ async function stopActiveChild() {
   }
 }
 
+/** Reject scratch directories whose ancestry could expose the real workspace tracker to tests. */
 function assertExternalTemporaryDirectory() {
   const relative = path.relative(
     realpathSync(process.cwd()),

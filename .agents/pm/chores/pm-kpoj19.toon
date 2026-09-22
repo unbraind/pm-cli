@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-22T10:32:00.245Z"
-updated_at: "2026-09-22T10:38:00.474Z"
+updated_at: "2026-09-22T10:47:21.333Z"
 closed_at: "2026-09-22T10:37:59.557Z"
 completed_at: "2026-09-22T10:37:59.557Z"
 author: "harness:codex"
@@ -15,14 +15,16 @@ parent: pm-u9d0
 resolution: Updated fast-check to 4.10.2 and tsx to 4.23.15 with regenerated peer snapshots and no dependency-policy bypass.
 expected_result: "No eligible compatible patch remains while the Node floor, peer contracts and supply-chain settings remain intact."
 actual_result: "Both exact patches pass installation, 30 fuzz/property tests, typecheck, source-quality execution and source CLI launch; audit reports zero vulnerabilities."
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-k47gdd,recurs_from,"2026-09-22T10:32:00.245Z","harness:codex","cli:create:dep",detected
   pm-lq10y3,discovered_from,"2026-09-22T10:32:00.245Z","harness:codex","cli:create:dep",detected
   pm-u9d0,implements,"2026-09-22T10:32:00.245Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+  pm-mwdout,discovered_from,"2026-09-22T10:46:33.061Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
   "2026-09-22T10:32:00.245Z","harness:codex","Duplicate check: all-status searches for exact 4.10.2 and 4.23.15 found only prior intake comments on pm-mwdout and this delivery. Full closed pm-mwdout and pm-k47gdd records distinguish earlier shipped action/tsx updates from this newly admitted patch pair. Disposable pnpm 11.10.0 install succeeds with the existing workspace configuration and both package engines retain Node >=22.18 support."
   "2026-09-22T10:33:58.650Z","harness:codex","Admission proof: disposable project pins this repository packageManager pnpm@11.10.0 and copies its complete pnpm-workspace.yaml without modification. Exact fast-check 4.10.2 and tsx 4.23.15 resolution succeeds. Their published Node requirements are >=12.17 and >=18 respectively, within the supported >=22.18 floor. Wait for the current coverage process to exit before replacing installed dependencies."
   "2026-09-22T10:37:57.741Z","harness:codex","Implementation and acceptance: fast-check 4.10.2 and tsx 4.23.15 installed under pnpm 11.10.0 without policy exceptions. Lockfile changes include their expected peer snapshots and Vite reusing already-present picomatch 4.0.7. All 30 linked fuzz/property tests pass; typecheck and the TypeScript source-quality gate pass; tsx 4.23.15 executes the source CLI version command. Audit: zero vulnerabilities across 422 dependencies. The preceding unchanged-source full run passed 9202 tests at exact 100/100/100/100; final hosted coverage on this lockfile is required before merge."
+  "2026-09-22T10:47:21.333Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1288 — implementation, linked evidence, typed relationships and package-generated changelog are reviewed together; merge remains gated on final hosted checks and review resolution."
 files[2]{path,scope,note}:
   package.json,project,Compatible development patch requirements
   pnpm-lock.yaml,project,Resolved development patch graph

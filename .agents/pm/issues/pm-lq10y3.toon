@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-22T09:38:49.636Z"
-updated_at: "2026-09-22T10:35:38.570Z"
+updated_at: "2026-09-22T10:47:18.700Z"
 closed_at: "2026-09-22T10:35:37.303Z"
 completed_at: "2026-09-22T10:35:37.303Z"
 author: "harness:codex"
@@ -15,14 +15,16 @@ parent: pm-e70zh5
 resolution: "The integration fixture owns dated-only and Unreleased changelogs, generator location and Git lookup directory while retaining the real over-budget tracker."
 expected_result: Release preparation can rewrite the checkout changelog without changing integration-test inputs or dropping release evidence.
 actual_result: Both owned changelog variants pass the real 128-item completeness regression and the full coverage suite.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-svxdsx,incident_from,"2026-09-22T09:38:49.636Z","harness:codex","cli:create:dep",detected
   pm-u9d0,implements,"2026-09-22T09:38:49.636Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+  pm-z3ez,verifies,"2026-09-22T10:46:28.305Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
   "2026-09-22T09:38:49.636Z","harness:codex","Duplicate check: live 2791-item all-status export and full pm-svxdsx history inspected. The closed item fixed tracker truncation; this distinct escaped test-isolation regression is evidenced by GH-1287 and scheduled run 35702036265."
   "2026-09-22T09:41:44.429Z","harness:codex","Regression proof: the scheduled gate failed before repair with no changelog section for version 9999.1.1. The corrected integration fixture copies the real generator into its owned root and supplies versioned-only and Unreleased changelogs. The real SDK-created 128-item completeness test passes for both inputs without touching the repository changelog."
   "2026-09-22T09:51:39.666Z","harness:codex","GitHub intake 2026-09-22: no open PRs; GH-1287 links to this item and GH-1246 already links to pm-z3ez. Dependabot, code-scanning and secret-scanning APIs return zero open alerts; pnpm audit reports zero known vulnerabilities. Latest pm-changelog 2026.9.18 is installed through its package-owned path. fast-check 4.10.2 and tsx 4.23.15 are within the three-day Dependabot cooldown; TypeScript 7, Vitest 5 and npm-package-arg 14 remain assigned to their existing compatibility migration items."
   "2026-09-22T10:35:35.047Z","harness:codex","Final source verification: all 9202 tests passed with exact 100/100/100/100 coverage. PM-linked regressions, build, typecheck, source/lint/duplicate/contracts/docs gates, packed npx/bunx, previous-version compatibility and real temporary-project CLI/SDK acceptance passed. The live Sentry/telemetry reliability gate passed. Local cold-start timing failures under host contention are preserved in pm-xjy565; the unchanged hosted static gate must pass before merge. Closure is part of the reviewed delivery; publication and merged-head verification are separate checks."
+  "2026-09-22T10:47:18.700Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1288 — implementation, linked evidence, typed relationships and package-generated changelog are reviewed together; merge remains gated on final hosted checks and review resolution."
 learnings[1]{created_at,author,text}:
   "2026-09-22T10:00:55.447Z","harness:codex","Release integration tests must own changelog content and the Git lookup directory, because release preparation legitimately replaces Unreleased with a dated section. A complete tracker fixture alone does not isolate release evidence."
 files[1]{path,scope,note}:

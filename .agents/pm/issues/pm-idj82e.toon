@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-22T10:05:21.251Z"
-updated_at: "2026-09-22T10:35:49.750Z"
+updated_at: "2026-09-22T10:47:20.304Z"
 closed_at: "2026-09-22T10:35:48.605Z"
 completed_at: "2026-09-22T10:35:48.605Z"
 author: "harness:codex"
@@ -19,10 +19,11 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-14dnbh,incident_from,"2026-09-22T10:05:21.251Z","harness:codex","cli:create:dep",detected
   pm-p5u6,implements,"2026-09-22T10:05:21.251Z","harness:codex","cli:create:dep",detected
   pm-xjy565,discovered_from,"2026-09-22T10:05:21.251Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-09-22T10:05:21.251Z","harness:codex","Duplicate check: full all-status corpus and keyword/hybrid dogfood telemetry cleanup searches inspected. Closed pm-14dnbh added synchronous cleanup but did not prevent detached workers from recreating roots. This distinct observed defect has a preserved reproduction from the current 89-command acceptance run."
   "2026-09-22T10:08:28.660Z","harness:codex","TDD and real acceptance evidence: the existing success-path regression failed before implementation when PM_TELEMETRY_DISABLED=0 was inherited. After explicitly disabling telemetry for synthetic child commands, all 39 unit cases pass and the real 89-command package-first journey passes with its temporary root absent after process completion. Production telemetry is verified separately by the required live gate; no production setting is changed."
   "2026-09-22T10:35:46.313Z","harness:codex","Final source verification: all 9202 tests passed with exact 100/100/100/100 coverage. PM-linked regressions, build, typecheck, source/lint/duplicate/contracts/docs gates, packed npx/bunx, previous-version compatibility and real temporary-project CLI/SDK acceptance passed. The live Sentry/telemetry reliability gate passed. Local cold-start timing failures under host contention are preserved in pm-xjy565; the unchanged hosted static gate must pass before merge. Closure is part of the reviewed delivery; publication and merged-head verification are separate checks."
+  "2026-09-22T10:47:20.304Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1288 — implementation, linked evidence, typed relationships and package-generated changelog are reviewed together; merge remains gated on final hosted checks and review resolution."
 files[2]{path,scope,note}:
   scripts/dogfood-package-first.mjs,project,Prevent detached telemetry in synthetic acceptance
   tests/unit/scripts/dogfood-package-first.spec.ts,project,Regression forces parent telemetry enabled and checks every child

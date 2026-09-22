@@ -15,8 +15,8 @@
 
 ### Other
 
-- Refresh fast-check and tsx patches under unchanged dependency policy ([pm-kpoj19](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-kpoj19.toon))
 - Extend owned workspace cleanup across release gates and interruptible test runners ([pm-xjy565](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xjy565.toon))
+- Refresh fast-check and tsx patches under unchanged dependency policy ([pm-kpoj19](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-kpoj19.toon))
 - Repair calendar shortcut package discovery and upgrade migration guidance ([pm-o3fh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-o3fh.toon))
 - Prune src/cli/commands/index.ts barrel dead re-exports and adopt knip as a dead-export gate ([pm-f4yn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-f4yn.toon))
 - Diagnose abandoned build leases before the full acquisition timeout ([pm-63i8nr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-63i8nr.toon))
