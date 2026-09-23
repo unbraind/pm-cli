@@ -38,6 +38,10 @@ function writeRuntime(root: string, installedVersion = version) {
   return { server, cli, version: installedVersion };
 }
 
+function stagingRoot(args: string[], options?: { env?: NodeJS.ProcessEnv }): string {
+  return options?.env?.PM_PLUGIN_STAGING_ROOT ?? args[args.indexOf("--prefix") + 1];
+}
+
 afterEach(async () => {
   if (originalPluginData === undefined) delete process.env.PLUGIN_DATA;
   else process.env.PLUGIN_DATA = originalPluginData;
@@ -68,8 +72,8 @@ describe.each([
 
   it("installs into staging and publishes a complete version directory", async () => {
     const { pluginRoot, dataRoot } = await fixture();
-    const installer = vi.fn((_command: string, args: string[]) => {
-      writeRuntime(args[args.indexOf("--prefix") + 1]);
+    const installer = vi.fn((_command: string, args: string[], options: { env?: NodeJS.ProcessEnv }) => {
+      writeRuntime(stagingRoot(args, options));
       return { status: 0, stderr: "" };
     });
     const runtime = await resolveRuntime({ pluginRoot, installer });
@@ -79,7 +83,7 @@ describe.each([
       version,
     });
     expect(installer).toHaveBeenCalledOnce();
-    expect(installer.mock.calls[0]?.[1]).toContain(`@unbrained/pm-cli@${version}`);
+    expect(installer.mock.calls[0]?.[1].join(" ")).toContain(`@unbrained/pm-cli@${version}`);
     expect((await readdir(dataRoot)).filter((entry) => entry.startsWith(".install-"))).toEqual([]);
     expect(existsSync(runtime.server)).toBe(true);
   });
@@ -108,8 +112,8 @@ describe.each([
   it("refuses stale or incomplete cache entries before reinstalling", async () => {
     const { pluginRoot, dataRoot } = await fixture();
     writeRuntime(path.join(dataRoot, `v${version}`), "2026.9.21");
-    const installer = vi.fn((_command: string, args: string[]) => {
-      writeRuntime(args[args.indexOf("--prefix") + 1]);
+    const installer = vi.fn((_command: string, args: string[], options: { env?: NodeJS.ProcessEnv }) => {
+      writeRuntime(stagingRoot(args, options));
       return { status: 0, stderr: "" };
     });
     await expect(resolveRuntime({ pluginRoot, installer })).rejects.toThrow("is incomplete; remove that directory and retry");
@@ -118,8 +122,8 @@ describe.each([
 
   it("does not conceal a rename failure behind an incomplete concurrent cache", async () => {
     const { pluginRoot, dataRoot } = await fixture();
-    const installer = vi.fn((_command: string, args: string[]) => {
-      writeRuntime(args[args.indexOf("--prefix") + 1]);
+    const installer = vi.fn((_command: string, args: string[], options: { env?: NodeJS.ProcessEnv }) => {
+      writeRuntime(stagingRoot(args, options));
       mkdirSync(path.join(dataRoot, `v${version}`), { recursive: true });
       writeFileSync(path.join(dataRoot, `v${version}`, "incomplete"), "marker");
       return { status: 0, stderr: "" };
@@ -131,8 +135,8 @@ describe.each([
     const { root, pluginRoot, dataRoot } = await fixture();
     delete process.env.PLUGIN_DATA;
     process.env.CLAUDE_PLUGIN_DATA = dataRoot;
-    const installer = vi.fn((_command: string, args: string[]) => {
-      writeRuntime(args[args.indexOf("--prefix") + 1]);
+    const installer = vi.fn((_command: string, args: string[], options: { env?: NodeJS.ProcessEnv }) => {
+      writeRuntime(stagingRoot(args, options));
       return { status: 0, stderr: "" };
     });
     await expect(resolveRuntime({ pluginRoot, installer })).resolves.toMatchObject({ version });
@@ -147,8 +151,8 @@ describe.each([
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-plugin-default-root-"));
     roots.push(root);
     process.env.PLUGIN_DATA = root;
-    const installer = vi.fn((_command: string, args: string[]) => {
-      writeRuntime(args[args.indexOf("--prefix") + 1]);
+    const installer = vi.fn((_command: string, args: string[], options: { env?: NodeJS.ProcessEnv }) => {
+      writeRuntime(stagingRoot(args, options));
       return { status: 0, stderr: "" };
     });
     await expect(resolveRuntime({ installer })).resolves.toMatchObject({ version });
@@ -158,8 +162,8 @@ describe.each([
     const { pluginRoot, dataRoot } = await fixture();
     const expected = { ...writeRuntime(path.join(dataRoot, `v${version}`)) };
     await rm(path.join(dataRoot, `v${version}`), { recursive: true });
-    const installer = vi.fn((_command: string, args: string[]) => {
-      writeRuntime(args[args.indexOf("--prefix") + 1]);
+    const installer = vi.fn((_command: string, args: string[], options: { env?: NodeJS.ProcessEnv }) => {
+      writeRuntime(stagingRoot(args, options));
       writeRuntime(path.join(dataRoot, `v${version}`));
       return { status: 0, stderr: "" };
     });

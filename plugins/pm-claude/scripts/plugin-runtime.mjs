@@ -37,12 +37,19 @@ async function installRuntime(dataRoot, version, installer) {
   if (existing) return existing;
   const stagingRoot = await mkdtemp(path.join(dataRoot, `.install-${version}-`));
   try {
-    const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-    const result = installer(
-      npm,
-      ["install", "--prefix", stagingRoot, "--no-save", "--ignore-scripts", "--no-audit", "--no-fund", "--package-lock=false", `${packageName}@${version}`],
-      { encoding: "utf8", timeout: 120000, stdio: ["ignore", "pipe", "pipe"] },
-    );
+    const args = ["install", "--prefix", stagingRoot, "--no-save", "--ignore-scripts", "--no-audit", "--no-fund", "--package-lock=false", `${packageName}@${version}`];
+    const windows = process.platform === "win32";
+    // The command text contains only fixed tokens and a validated version.
+    // Put the caller-selected path in the child environment so cmd.exe never
+    // parses path metacharacters as command syntax.
+    const command = windows ? process.env.ComSpec || "cmd.exe" : "npm";
+    const commandArgs = windows
+      ? ["/d", "/v:off", "/s", "/c", `"npm.cmd ${args.map((arg) => arg === stagingRoot ? '"%PM_PLUGIN_STAGING_ROOT%"' : arg).join(" ")}"`]
+      : args;
+    const result = installer(command, commandArgs, {
+      encoding: "utf8", timeout: 120000, stdio: ["ignore", "pipe", "pipe"],
+      ...(windows ? { windowsVerbatimArguments: true, env: { ...process.env, PM_PLUGIN_STAGING_ROOT: stagingRoot } } : {}),
+    });
     if (result.error || result.status !== 0 || !(await installedRuntime(stagingRoot, version))) {
       throw new Error(`Cannot install ${packageName}@${version}: ${result.error?.message || result.stderr?.trim() || "incomplete package"}`);
     }

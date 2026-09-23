@@ -44,8 +44,8 @@ async function fixture() {
     name: "race-plugin", version, dependencies: { "@unbrained/pm-cli": version },
   }));
   process.env.PLUGIN_DATA = path.join(root, "data");
-  hooks.install.mockImplementation((_command: string, args: string[]) => {
-    const staging = args[args.indexOf("--prefix") + 1];
+  hooks.install.mockImplementation((_command: string, args: string[], options: { env?: NodeJS.ProcessEnv }) => {
+    const staging = options.env?.PM_PLUGIN_STAGING_ROOT ?? args[args.indexOf("--prefix") + 1];
     const packageRoot = path.join(staging, "node_modules", "@unbrained", "pm-cli");
     mkdirSync(path.join(packageRoot, "dist", "mcp"), { recursive: true });
     writeFileSync(path.join(packageRoot, "package.json"), JSON.stringify({ version }));
@@ -69,17 +69,26 @@ describe.each([
   ["Claude", resolveClaudeRuntime],
   ["Codex", resolveCodexRuntime],
 ])("%s plugin cache publication", (_name, resolveRuntime) => {
-  it("selects the Windows npm command through the default installer", async () => {
+  it("runs Windows npm.cmd through cmd.exe with the staging path outside the command text", async () => {
     const { pluginRoot } = await fixture();
     Object.defineProperty(process, "platform", { configurable: true, value: "win32" });
     await expect(resolveRuntime({ pluginRoot })).resolves.toMatchObject({ version });
-    expect(hooks.install).toHaveBeenCalledWith("npm.cmd", expect.any(Array), expect.any(Object));
+    const [command, args, options] = hooks.install.mock.calls[0];
+    expect(command).toBe(process.env.ComSpec || "cmd.exe");
+    expect(args.slice(0, 4)).toEqual(["/d", "/v:off", "/s", "/c"]);
+    expect(args[4]).toContain('"%PM_PLUGIN_STAGING_ROOT%"');
+    expect(args[4]).toContain(`@unbrained/pm-cli@${version}`);
+    expect(args[4]).not.toContain(options.env.PM_PLUGIN_STAGING_ROOT);
+    expect(options).toMatchObject({
+      windowsVerbatimArguments: true,
+      env: { PM_PLUGIN_STAGING_ROOT: expect.stringContaining(".install-") },
+    });
   });
 
   it("rejects a runtime removed after atomic cache publication", async () => {
     const { pluginRoot } = await fixture();
     hooks.dropPublished = true;
     await expect(resolveRuntime({ pluginRoot })).rejects.toThrow("is incomplete; remove that directory and retry");
-    expect(hooks.install).toHaveBeenCalledWith(process.platform === "win32" ? "npm.cmd" : "npm", expect.any(Array), expect.any(Object));
+    expect(hooks.install).toHaveBeenCalledWith("npm", expect.any(Array), expect.any(Object));
   });
 });
