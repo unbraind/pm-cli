@@ -4,9 +4,10 @@
 
 ### Fixed
 
+- Claude plugin: marketplace installs fall back to npx @latest, not the advertised native MCP server ([pm-l9wl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-l9wl.toon))
+- Windows copied agent plugins cannot install pinned runtime through npm.cmd ([pm-d6fd85](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-d6fd85.toon))
 - Nightly coverage, quality, and Windows tests exceed serial job budgets ([pm-ul9rye](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ul9rye.toon))
 - GH-1291: Windows nightly release cleanup fixture includes Node compile cache ([pm-puf5rq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-puf5rq.toon))
-- Claude plugin: marketplace installs fall back to npx @latest, not the advertised native MCP server ([pm-l9wl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-l9wl.toon))
 
 ### Other
 

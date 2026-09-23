@@ -2,26 +2,32 @@ id: pm-d6fd85
 title: Windows copied agent plugins cannot install pinned runtime through npm.cmd
 description: "CodeRabbit review on PR #1292 found that the new generated Claude/Codex plugin resolver calls spawnSync(\"npm.cmd\") without a Windows command processor. Node 24 cannot execute .cmd directly, so a copied plugin with an empty cache cannot complete its first pinned install on Windows. Preserve exact-version, atomic, offline behavior and prove actual Windows command transport in the required regression job."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: mcp,plugin-runtime,review-feedback,windows
 created_at: "2026-09-23T21:28:11.224Z"
-updated_at: "2026-09-23T21:47:55.150Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#0be07b94b7b44e4ec913bc03"
+updated_at: "2026-09-23T22:04:11.987Z"
+closed_at: "2026-09-23T22:03:02.822Z"
+completed_at: "2026-09-23T22:03:02.822Z"
 author: "harness:codex"
 acceptance_criteria: A copied Claude or Codex plugin with an empty cache installs its exact matching pm-cli runtime on Windows Node 24 through a safely bounded npm.cmd invocation; staging paths with spaces and shell metacharacters are preserved; generated launchers remain byte-identical; a native Windows regression exercises the command transport and required PR checks pass.
 parent: pm-z3ez
 severity: high
+resolution: "Routed Windows npm.cmd through cmd.exe with fixed command text, environment-carried staging root, verbatim argument handling, generated launcher parity and a required native Windows integration test."
+expected_result: "A copied plugin with an empty cache installs the matching runtime on Windows Node 24 even when its data path contains spaces and shell metacharacters, then reuses it offline."
+actual_result: "PR #1292 run 35924635377 passed both real Windows command-processor cases, the adjacent race suite, static, exact coverage, smokes and all required checks."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-arax,incident_from,"2026-09-23T21:28:11.224Z","harness:codex","cli:create:dep",detected
   pm-l9wl,discovered_from,"2026-09-23T21:28:11.224Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-23T21:28:11.224Z","harness:codex","Duplicate check: all-status searches for Windows plugin npm.cmd, in-process Claude plugin and launcher showed pm-arax closed the earlier extension npm command issue and pm-l9wl closed the copied Claude plugin defect; neither covers this newly generated plugin resolver Windows first-install transport. Reuse pm-z3ez agent-distribution parent and link both historical causes. Review evidence: PR #1292 CodeRabbit inline thread at templates/agent-plugins/plugin-runtime.mjs."
   "2026-09-23T21:28:30.768Z","harness:codex","Node official child_process documentation for current and Node 22 says Windows .cmd/.bat cannot be launched directly; use cmd.exe as a child. The prior pm-arax extension fix already had a review follow-up for the same shell requirement. The plugin resolver remains standalone inside copied marketplace caches, so this repair belongs in its shared generated template and a native Windows regression."
   "2026-09-23T21:31:21.848Z","harness:codex","TDD red: before the resolver change, both Claude and Codex simulated-Windows command tests failed because the default installer received npm.cmd directly instead of cmd.exe. Implemented a fixed npm command string via cmd.exe /d /v:off /s /c with windowsVerbatimArguments and passed the staging root through the child environment; regenerated both plugin copies. Focused resolver tests now pass 28/28 on Linux. Added a native Windows integration test with a real .cmd shim and a staging path containing spaces, ampersand and percent, required in the Windows regression job. Hosted proof pending."
   "2026-09-23T21:36:50.541Z","harness:codex","Local focused PM linked-test run passed 43 assertions; the two real command-processor cases are correctly skipped on Linux and required in Windows CI. pnpm typecheck, pnpm security:scan, pnpm smoke:plugin-cache, and generated-wrapper byte parity pass. The native Windows acceptance still needs hosted execution before closure."
   "2026-09-23T21:47:55.150Z","harness:codex","Hosted PR #1292 run 35923549944 reached the new native Windows transport test. Both Claude and Codex real cmd.exe/npm.cmd shim cases passed with spaces, ampersand and percent in the staging path. The Windows job failed only because the adjacent simulated race test still expected Linux npm on Windows; corrected that expectation. The static gate failed its orphaned-path ceiling because the new integration test was committed before its PM file link; this push includes the linked PM item. No product command transport failure was observed."
+  "2026-09-23T22:03:01.499Z","harness:codex","Hosted acceptance: PR #1292 run 35924635377 at dcbd12fd7c47fdc51d13335a50117f811d01c9fe passed Windows regression, static, exact coverage, smokes and all required checks. The new real Windows command-processor integration ran both Claude and Codex cases with a staging path containing spaces, ampersand and percent; the corrected Windows race assertions passed. Earlier run 35923549944 had already passed the two real transport cases but failed the old Linux-only assertion, now fixed. Static orphan negative control is restored by the committed PM file link."
+learnings[1]{created_at,author,text}:
+  "2026-09-23T22:03:02.174Z","harness:codex","A Windows npm.cmd shim needs cmd.exe; invoking the .cmd file directly from Node child_process is not portable. Keep the command processor text limited to fixed flags and validated package version, pass caller-controlled paths through the child environment, disable delayed expansion, and run a native Windows transport fixture in a required PR job."
 files[8]{path,scope,note}:
   .github/workflows/ci.yml,project,Require native Windows transport regression before merge
   plugins/pm-claude/scripts/plugin-runtime.mjs,project,Generated Claude pinned runtime resolver
@@ -45,4 +51,15 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/plugins/plugin-runtime-races.spec.ts tests/unit/plugins/plugin-runtime.spec.ts tests/integration/plugins/plugin-runtime-win32.integration.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated Windows plugin first-install fix entry using pm-changelog 2026.9.23
+close_reason: Copied Claude and Codex pinned runtime first installs pass the native Windows transport regression and all exact-head PR checks
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-d6fd85
+  gate_id: windows-copied-plugin-first-install-transport
+  negative_control: "Before the fix, both simulated Windows tests failed because the resolver invoked npm.cmd directly; Node Windows .cmd executables require cmd.exe"
+  local_checks[5]: PM linked-test 43 passed with 2 Windows-only cases skipped on Linux,pnpm typecheck,"pnpm security:scan","pnpm smoke:plugin-cache",generated wrapper parity
+  hosted_checks[2]: "PR #1292 run 35924635377 Windows regression: both native cmd.exe transport cases plus race suite passed","PR #1292 run 35924635377 static, coverage and smokes passed"
 body: ""
