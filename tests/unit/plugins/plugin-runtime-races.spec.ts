@@ -80,6 +80,6 @@ describe.each([
     const { pluginRoot } = await fixture();
     hooks.dropPublished = true;
     await expect(resolveRuntime({ pluginRoot })).rejects.toThrow("is incomplete; remove that directory and retry");
-    expect(hooks.install).toHaveBeenCalledWith("npm", expect.any(Array), expect.any(Object));
+    expect(hooks.install).toHaveBeenCalledWith(process.platform === "win32" ? "npm.cmd" : "npm", expect.any(Array), expect.any(Object));
   });
 });

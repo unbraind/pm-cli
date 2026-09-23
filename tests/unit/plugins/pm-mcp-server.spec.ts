@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type * as FsPromises from "node:fs/promises";
@@ -55,16 +56,17 @@ afterEach(() => {
 
 describe("cached plugin MCP launchers", () => {
   it("starts an explicit local server without a shell", async () => {
-    process.env.PM_CLI_MCP_SERVER = "/tmp/explicit-pm-server.js";
+    const target = path.join(os.tmpdir(), "explicit-pm-server.js");
+    process.env.PM_CLI_MCP_SERVER = target;
     for (const script of scripts) {
-      const { spawn } = await launch(script, (candidate) => candidate === process.env.PM_CLI_MCP_SERVER);
-      expect(spawn).toHaveBeenCalledWith(process.execPath, ["/tmp/explicit-pm-server.js"], expect.objectContaining({ stdio: "inherit" }));
+      const { spawn } = await launch(script, (candidate) => candidate === target);
+      expect(spawn).toHaveBeenCalledWith(process.execPath, [target], expect.objectContaining({ stdio: "inherit" }));
       expect(spawn.mock.calls[0]?.[2]).not.toHaveProperty("shell");
     }
   });
 
   it("accepts a file URL override", async () => {
-    const target = "/tmp/url-pm-server.js";
+    const target = path.join(os.tmpdir(), "url-pm-server.js");
     process.env.PM_CLI_MCP_SERVER = pathToFileURL(target).href;
     for (const script of scripts) {
       const { spawn } = await launch(script, (candidate) => candidate === target);
