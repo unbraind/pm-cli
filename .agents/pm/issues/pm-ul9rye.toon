@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: ci,nightly,quality-gates,timeout
 created_at: "2026-09-23T19:19:12.555Z"
-updated_at: "2026-09-23T19:44:57.591Z"
+updated_at: "2026-09-23T20:07:36.133Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#0be07b94b7b44e4ec913bc03"
 author: "harness:codex"
@@ -16,14 +16,16 @@ severity: high
 environment: GitHub Actions ubuntu-latest Node 24 Nightly Validation
 repro_steps: "Dispatch nightly.yml on branch 544c19398; inspect run 35905763390: Ubuntu Node 24 Test with coverage gate passes, Static quality gate is canceled at 20 minutes during mutation."
 expected_result: "Nightly coverage, static quality, and compatibility gates each complete and report independently within their job budgets."
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2zjs0g,discovered_from,"2026-09-23T19:19:12.555Z","harness:codex","cli:create:dep",detected
   pm-puf5rq,discovered_from,"2026-09-23T19:19:36.267Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+  pm-ehbb,verifies,"2026-09-23T20:07:03.684Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
   "2026-09-23T19:19:34.282Z","harness:codex","Duplicate check: searched all-status PM work for nightly timeout, Nightly Validation and coverage/static quality; pm-2zjs0g owns recurrence measurement and pm-ehbb completed alerting, but neither owns this serial Ubuntu Node 24 job-budget failure. Run 35905763390 passed coverage and reached mutation before the 20-minute cap canceled static. Reuse pm-u9d0 CI parent and link the discovery lineage."
   "2026-09-23T19:22:52.261Z","harness:codex","Implementation: split Nightly Validation Ubuntu Node 24 into a coverage matrix leg and a separate 20-minute quality job. The quality job retains version check, secret scan, fresh build, clone merge-driver setup, full static quality, compatibility gate and scheduled failure alert. Platform legs retain typecheck and full test/coverage. Workflow contract test 15/15, typecheck passed. The canceled run 35905763390 reached mutation after coverage before its serial budget expired; no assertion failure. Local static components after host-sensitive benchmark rechecks: SDK import cost 10/10, CLI transport floor 6/6, graph composition, record integrity, mutation 323 killed plus seven classified equivalent. Hosted all-job proof pending."
   "2026-09-23T19:43:23.483Z","harness:codex","Hosted Nightly run 35908978578 exposed the registry negative control: every platform test and the new quality job rejected unregistered nightly.yml#quality. This is the common cause of all six red jobs, not six platform defects. Updating the gate registry so quality owns static, mutation, docstring, compatibility, security and version checks while the existing matrix retains full coverage and platform tests."
   "2026-09-23T19:44:48.951Z","harness:codex","Registry fix: scripts/release/gate-registry.json now registers nightly.yml#quality for compilation, static quality, SDK mutation strength, docstring content, compatibility, security and release integrity. The nightly matrix keeps test coverage and platform contracts. The direct registry validator reports 16 registered gates and 24 enforced pipelines; focused gate-registry plus workflow-contract tests pass 24/24. This restores the fail-closed registry instead of bypassing it."
+  "2026-09-23T20:07:36.133Z","harness:codex","Nightly run 35911425813 at f42c11f7 passed Windows Node 24, macOS Node 24, Ubuntu 22/25, and Ubuntu Node 24 full coverage. Quality completed all earlier static checks and failed only graph-composition prose-edge-gaps-ceiling: 1237 observed versus 1236 bound. The new issue cited prior alerting item pm-ehbb in its duplicate check without a typed edge. Added verifies pm-ehbb because the workflow contract keeps scheduled alerting intact. Exact graph-composition assurance now passes at 1236/1236; no ceiling was raised or bypassed."
 files[3]{path,scope,note}:
   .github/workflows/nightly.yml,project,Run coverage and static quality in separate bounded jobs
   scripts/release/gate-registry.json,project,Register the independent nightly quality job against its enforced gates
