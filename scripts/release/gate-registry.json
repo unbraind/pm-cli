@@ -149,7 +149,7 @@
         "provider": "repository-quality/static-quality",
         "provider_args": [
           "--max-eslint-suppressions",
-          "108",
+          "107",
           "--max-coverage-ignore-pragmas",
           "477",
           "--min-docstring-coverage",
@@ -412,7 +412,7 @@
       "owner": "pm-zclzll",
       "pipelines": [
         "ci.yml#gates",
-        "nightly.yml#nightly",
+        "nightly.yml#quality",
         "release.yml#release"
       ],
       "failure_taxonomy": [
@@ -434,7 +434,7 @@
       "owner": "pm-dvwm",
       "pipelines": [
         "ci.yml#gates",
-        "nightly.yml#nightly",
+        "nightly.yml#quality",
         "release.yml#release"
       ],
       "failure_taxonomy": [
@@ -483,6 +483,7 @@
         "ci.yml#windows-regression",
         "docs.yml#docs",
         "nightly.yml#nightly",
+        "nightly.yml#quality",
         "release.yml#release"
       ],
       "failure_taxonomy": [
@@ -552,7 +553,7 @@
         "ci.yml#gates",
         "ci.yml#release-analyzer-readiness",
         "codspeed.yml#benchmarks",
-        "nightly.yml#nightly",
+        "nightly.yml#quality",
         "release.yml#release",
         "security.yml#actionlint",
         "security.yml#psscriptanalyzer",
@@ -607,7 +608,7 @@
       "owner": "pm-k6t4yb",
       "pipelines": [
         "ci.yml#gates",
-        "nightly.yml#nightly",
+        "nightly.yml#quality",
         "release.yml#release"
       ],
       "failure_taxonomy": [
@@ -689,7 +690,7 @@
       "owner": "pm-k6t4yb",
       "pipelines": [
         "codeql.yml#analyze",
-        "nightly.yml#nightly",
+        "nightly.yml#quality",
         "release.yml#release",
         "scorecard.yml#analysis",
         "security.yml#actionlint",
@@ -744,7 +745,7 @@
       "pipelines": [
         "auto-release.yml#auto-release",
         "ci.yml#release-analyzer-readiness",
-        "nightly.yml#nightly",
+        "nightly.yml#quality",
         "release.yml#release",
         "release.yml#advertise"
       ],

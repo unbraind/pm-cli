@@ -15,18 +15,19 @@ concurrency:
 
 jobs:
   nightly:
-    name: Nightly (${{ matrix.os }}, Node ${{ matrix.node }})
+    name: ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-latest, node: 22 }
-          - { os: ubuntu-latest, node: 24 }
-          - { os: ubuntu-latest, node: 25 }
-          - { os: macos-latest, node: 24 }
-          - { os: windows-latest, node: 24 }
+          - { os: ubuntu-latest, node: 22, label: "Nightly (ubuntu-latest, Node 22)" }
+          - { os: ubuntu-latest, node: 24, label: "Nightly (ubuntu-latest, Node 24)" }
+          - { os: ubuntu-latest, node: 25, label: "Nightly (ubuntu-latest, Node 25)" }
+          - { os: macos-latest, node: 24, label: "Nightly (macos-latest, Node 24)" }
+          - { os: windows-latest, node: 24, shard: 1, label: "Nightly (windows-latest, Node 24, shard 1/2)" }
+          - { os: windows-latest, node: 24, shard: 2, label: "Nightly (windows-latest, Node 24, shard 2/2)" }
 
     steps:
       - name: Checkout
@@ -67,24 +68,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Version policy check
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 24
-        run: pnpm version:check
-
-      - name: Secret leak scan
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 24
-        run: pnpm security:scan
-
       - name: Build
         run: pnpm build
-
-      # Bootstrap clone-local merge-driver configuration before the static
-      # tracker health/validation gate, matching CI and release fresh clones.
-      - name: Prepare tracker clone invariants
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 24
-        run: |
-          node dist/cli.js merge install --no-extensions
-          git diff --exit-code -- .gitattributes
 
       - name: Typecheck
         run: pnpm typecheck
@@ -95,20 +80,11 @@ jobs:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: pnpm test:coverage
 
-      - name: Static quality gate
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 24
-        run: pnpm quality:static
-
-      - name: Compatibility migration gate
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 24
-        timeout-minutes: 6
-        run: node scripts/release/compatibility-check.mjs --json
-
       - name: Test
         if: matrix.os != 'ubuntu-latest' || matrix.node != 24
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
-        run: pnpm test
+        run: pnpm test ${{ matrix.shard && format('-- --shard={0}/2', matrix.shard) || '' }}
 
       - name: Alert on scheduled nightly failure
         if: failure() && github.event_name == 'schedule'
@@ -116,7 +92,96 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           NIGHTLY_OS: ${{ matrix.os }}
-          NIGHTLY_NODE: ${{ matrix.node }}
+          NIGHTLY_NODE: ${{ matrix.shard && format('{0} shard {1}/2', matrix.node, matrix.shard) || matrix.node }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          NIGHTLY_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          title="Nightly Validation failed: ${NIGHTLY_OS} / Node ${NIGHTLY_NODE}"
+          existing_issue="$(gh issue list --state open --search "\"${title}\" in:title" --json number --jq '.[0].number // empty')"
+          body="Scheduled Nightly Validation failed for ${NIGHTLY_OS} / Node ${NIGHTLY_NODE}.
+
+          Run: ${RUN_URL}
+          Commit: ${NIGHTLY_SHA}
+
+          Investigate before trusting the next daily release."
+
+          if [[ -n "${existing_issue}" ]]; then
+            gh issue comment "${existing_issue}" --body "${body}"
+          else
+            gh issue create --title "${title}" --body "${body}"
+          fi
+
+  quality:
+    name: Nightly quality (ubuntu-latest, Node 24)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.10.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Restore exact TypeScript and Vitest caches
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .cache/tsbuildinfo
+            .cache/vitest
+          key: pm-cli-validation-cache-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts', 'scripts/*.mjs', 'scripts/**/*.mjs', 'scripts/*.mts', 'scripts/**/*.mts') }}
+
+      - name: Restore LanceDB cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .agents/pm/search/lancedb
+          key: pm-cli-observability-cache-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', '.agents/pm/settings.json', '.agents/pm/**/*.toon', '.agents/pm/**/*.md', 'src/**/*.ts', 'scripts/**/*.mjs', 'tests/**/*.ts') }}
+          restore-keys: |
+            pm-cli-observability-cache-${{ runner.os }}-node24-
+            pm-cli-observability-cache-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Version policy check
+        run: pnpm version:check
+
+      - name: Secret leak scan
+        run: pnpm security:scan
+
+      - name: Build
+        run: pnpm build
+
+      - name: Prepare tracker clone invariants
+        run: |
+          node dist/cli.js merge install --no-extensions
+          git diff --exit-code -- .gitattributes
+
+      - name: Static quality gate
+        run: pnpm quality:static
+
+      - name: Compatibility migration gate
+        timeout-minutes: 6
+        run: node scripts/release/compatibility-check.mjs --json
+
+      - name: Alert on scheduled nightly failure
+        if: failure() && github.event_name == 'schedule'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NIGHTLY_OS: ubuntu-latest
+          NIGHTLY_NODE: "24 quality"
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           NIGHTLY_SHA: ${{ github.sha }}
         run: |

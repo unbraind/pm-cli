@@ -57,6 +57,14 @@ function inSyncFiles(): Record<string, JsonValue> {
       name: "pm-codex",
       version: ROOT_VERSION,
     },
+    "plugins/pm-claude/package.json": {
+      name: "pm-claude-runtime", version: ROOT_VERSION,
+      dependencies: { "@unbrained/pm-cli": ROOT_VERSION },
+    },
+    "plugins/pm-codex/package.json": {
+      name: "pm-codex-runtime", version: ROOT_VERSION,
+      dependencies: { "@unbrained/pm-cli": ROOT_VERSION },
+    },
     ".claude-plugin/marketplace.json": {
       name: "pm",
       metadata: { version: ROOT_VERSION },
@@ -102,6 +110,9 @@ function driftedFiles(): Record<string, JsonValue> {
   ).plugins[2] = {
     version: "1.1.0",
   };
+  (files["plugins/pm-claude/package.json"] as {
+    dependencies: { "@unbrained/pm-cli": string };
+  }).dependencies["@unbrained/pm-cli"] = "2026.7.10";
   return files;
 }
 
@@ -188,6 +199,7 @@ describe("scripts/sync-versions: check mode", () => {
     expect(message).toContain(
       `.agents/plugins/marketplace.json plugins[2].version: 1.1.0 -> ${ROOT_VERSION}`,
     );
+    expect(message).toContain(`plugins/pm-claude/package.json dependencies.@unbrained/pm-cli: 2026.7.10 -> ${ROOT_VERSION}`);
     expect(message).toContain("pnpm version:sync");
     expect(result.writes).toEqual([]);
   });
@@ -206,7 +218,7 @@ describe("scripts/sync-versions: apply mode", () => {
     const writtenPaths = result.writes.map(
       (write) => write.path.split("/").slice(-1)[0],
     );
-    expect(result.writes).toHaveLength(4);
+    expect(result.writes).toHaveLength(5);
     expect(writtenPaths).toContain("package.json");
     expect(writtenPaths).toContain("marketplace.json");
     for (const write of result.writes) {

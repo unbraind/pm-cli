@@ -29,6 +29,7 @@ it.each([
         PM_VERIFY_SLEEP_MS: "0",
         PM_SENTRY_DISABLED: "1",
         PM_TELEMETRY_DISABLED: "1",
+        NODE_DISABLE_COMPILE_CACHE: "1",
       },
       timeout: 10_000,
     })).rejects.toMatchObject({ code: 1 });

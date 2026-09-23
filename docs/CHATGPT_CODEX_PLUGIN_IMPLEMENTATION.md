@@ -6,6 +6,8 @@ Tracked research: [pm-n28t](../.agents/pm/tasks/pm-n28t.toon). Future implementa
 Research date: **2026-07-11**. This page is a research and implementation plan. It does not record a completed
 plugin remediation, ChatGPT app deployment, or public plugin submission.
 
+Update for [pm-95d7](../.agents/pm/features/pm-95d7.toon): the Claude and Codex cached launchers now resolve a runtime pinned to the plugin version and reuse it offline after first installation. The remaining sections preserve the July research baseline and the separate ChatGPT app/public distribution plan; historical `@latest` findings below describe the pre-remediation state.
+
 ## Executive Conclusion
 
 The current `plugins/pm-codex` package is an actual native Codex plugin, but it is not yet a complete,

@@ -1,0 +1,80 @@
+id: pm-ul9rye
+title: "Nightly coverage, quality, and Windows tests exceed serial job budgets"
+description: "Manual Nightly Validation run 35905763390 at 544c19398 passed Windows Node 24 and three other platform legs, but Ubuntu Node 24 spent the 20-minute job budget running full coverage and static quality serially. The static gate reached the final mutation step before job cancellation, so the nightly result was red without an assertion failure. Preserve all gates while giving coverage and static independent bounded jobs."
+type: Issue
+status: closed
+priority: 1
+tags[4]: ci,nightly,quality-gates,timeout
+created_at: "2026-09-23T19:19:12.555Z"
+updated_at: "2026-09-23T21:08:53.311Z"
+closed_at: "2026-09-23T20:50:55.925Z"
+completed_at: "2026-09-23T20:50:55.925Z"
+author: "harness:codex"
+acceptance_criteria: "Ubuntu Node 24 coverage and static quality run in independent bounded jobs; Windows Node 24 runs the complete test suite across two independently bounded shards; all version, secret, typecheck, compatibility, tracker, alerting and other platform checks remain required; recurrence policy requires both Windows shards; a hosted nightly run passes every job under its declared timeout."
+parent: pm-u9d0
+severity: high
+environment: GitHub Actions ubuntu-latest Node 24 Nightly Validation
+repro_steps: "Dispatch nightly.yml on branch 544c19398; inspect run 35905763390: Ubuntu Node 24 Test with coverage gate passes, Static quality gate is canceled at 20 minutes during mutation."
+resolution: "Separated Ubuntu exact coverage and full static quality into independent jobs, registered the new quality job, split the complete Windows test suite into two shards, and required both shards in recurrence policy."
+expected_result: "Every nightly coverage, quality, platform, security, compatibility, tracker and alerting gate completes within its 20-minute job budget without lowering thresholds."
+actual_result: "Run 35917009573 passed all seven jobs at 0e1270bc5; longest Ubuntu coverage was 13m30s, quality 8m44s, Windows shards 10m15s and 11m58s. Registry and workflow tests passed 24/24."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2zjs0g,discovered_from,"2026-09-23T19:19:12.555Z","harness:codex","cli:create:dep",detected
+  pm-puf5rq,discovered_from,"2026-09-23T19:19:36.267Z","harness:codex","cli:update:dep",detected
+  pm-ehbb,verifies,"2026-09-23T20:07:03.684Z","harness:codex","cli:update:dep",detected
+comments[9]{created_at,author,text}:
+  "2026-09-23T19:19:34.282Z","harness:codex","Duplicate check: searched all-status PM work for nightly timeout, Nightly Validation and coverage/static quality; pm-2zjs0g owns recurrence measurement and pm-ehbb completed alerting, but neither owns this serial Ubuntu Node 24 job-budget failure. Run 35905763390 passed coverage and reached mutation before the 20-minute cap canceled static. Reuse pm-u9d0 CI parent and link the discovery lineage."
+  "2026-09-23T19:22:52.261Z","harness:codex","Implementation: split Nightly Validation Ubuntu Node 24 into a coverage matrix leg and a separate 20-minute quality job. The quality job retains version check, secret scan, fresh build, clone merge-driver setup, full static quality, compatibility gate and scheduled failure alert. Platform legs retain typecheck and full test/coverage. Workflow contract test 15/15, typecheck passed. The canceled run 35905763390 reached mutation after coverage before its serial budget expired; no assertion failure. Local static components after host-sensitive benchmark rechecks: SDK import cost 10/10, CLI transport floor 6/6, graph composition, record integrity, mutation 323 killed plus seven classified equivalent. Hosted all-job proof pending."
+  "2026-09-23T19:43:23.483Z","harness:codex","Hosted Nightly run 35908978578 exposed the registry negative control: every platform test and the new quality job rejected unregistered nightly.yml#quality. This is the common cause of all six red jobs, not six platform defects. Updating the gate registry so quality owns static, mutation, docstring, compatibility, security and version checks while the existing matrix retains full coverage and platform tests."
+  "2026-09-23T19:44:48.951Z","harness:codex","Registry fix: scripts/release/gate-registry.json now registers nightly.yml#quality for compilation, static quality, SDK mutation strength, docstring content, compatibility, security and release integrity. The nightly matrix keeps test coverage and platform contracts. The direct registry validator reports 16 registered gates and 24 enforced pipelines; focused gate-registry plus workflow-contract tests pass 24/24. This restores the fail-closed registry instead of bypassing it."
+  "2026-09-23T20:07:36.133Z","harness:codex","Nightly run 35911425813 at f42c11f7 passed Windows Node 24, macOS Node 24, Ubuntu 22/25, and Ubuntu Node 24 full coverage. Quality completed all earlier static checks and failed only graph-composition prose-edge-gaps-ceiling: 1237 observed versus 1236 bound. The new issue cited prior alerting item pm-ehbb in its duplicate check without a typed edge. Added verifies pm-ehbb because the workflow contract keeps scheduled alerting intact. Exact graph-composition assurance now passes at 1236/1236; no ceiling was raised or bypassed."
+  "2026-09-23T20:33:56.599Z","harness:codex","Hosted run 35913885011 passed independent Ubuntu coverage, quality, Ubuntu 22/25 and macOS jobs; Windows tests were still passing when its 20-minute job budget canceled. The prior Windows run 35911425813 passed the same full suite in 16m43s. Split only the Windows suite into two complete Vitest shards; retain both as concrete recurrence checks so coverage is not silently weakened."
+  "2026-09-23T20:35:31.371Z","harness:codex","Both Windows Vitest shard arguments are exercised locally: shard 1/2 ran workflow-contract 15/15 and shard 2/2 ran gate-registry 9/9. Full focused unsharded set passed 24/24; direct gate registry inventory certifies the two concrete Windows check names and all 24 registered workflow jobs. Recurrence policy versions increased for both affected families and require both Windows shards."
+  "2026-09-23T20:50:54.241Z","harness:codex","Final hosted proof: Nightly run 35917009573 at 0e1270bc5da2d1a890b7067c5a1e68abe48b9bb1 passed all seven jobs. Independent Ubuntu quality took 8m44s; Ubuntu Node 24 exact coverage took 13m30s; Windows shards took 10m15s and 11m58s. Ubuntu 22/25 and macOS also passed. The recurrence registry resolves both concrete Windows check names and the independent quality job; no 20-minute budget or gate threshold was raised."
+  "2026-09-23T21:08:53.311Z","harness:codex","PR #1292 CI static changelog check exposed a missing local release tag, not a changelog generator defect. The local branch initially lacked v2026.9.23 while CI fetch-depth 0 had it; fetching the PR merge ref brought in the tag. With identical item_count 2488, pm-changelog 2026.9.23 regenerated CHANGELOG.md with the missing 2026.9.23 heading. Fresh Node 24 worktree checked the pre-tag artifact as current, confirming tag inventory was the differentiator. Keep --all-release-tags output based on fetched release tags before final PR checks."
+learnings[1]{created_at,author,text}:
+  "2026-09-23T20:50:54.938Z","harness:codex","Keep long exact coverage and static quality in separate bounded hosted jobs, and shard the complete Windows suite when single-job runtime approaches the timeout. Fail-closed gate and recurrence inventories must be updated with every new concrete job/check name; missing registry entries should remain a red negative control."
+files[4]{path,scope,note}:
+  .github/workflows/nightly.yml,project,Run coverage and static quality in separate bounded jobs
+  scripts/release/gate-registry.json,project,Register the independent nightly quality job against its enforced gates
+  tests/integration/ci-workflow-contract.spec.ts,project,Assert required nightly gate partition and alerting
+  config/defect-recurrence-policy.json,project,Require both Windows nightly test shards for cross-platform recurrence evidence
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/gate-registry.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240,"harness:codex","2026-09-23T19:44:33.660Z",local_mutation,feat/version-coherent-agent-plugin-runtimes
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- --shard=1/2 tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/gate-registry.spec.ts,project,240,"harness:codex","2026-09-23T20:35:29.422Z",local_mutation,feat/version-coherent-agent-plugin-runtimes
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- --shard=2/2 tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/gate-registry.spec.ts,project,240,"harness:codex","2026-09-23T20:35:30.406Z",local_mutation,feat/version-coherent-agent-plugin-runtimes
+test_runs[2]:
+  - run_id: test-local-muehp307-67hv21
+    kind: test
+    status: passed
+    started_at: "2026-09-23T19:21:56.972Z"
+    finished_at: "2026-09-23T19:22:10.423Z"
+    recorded_at: "2026-09-23T19:22:10.423Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mueii6nr-yj2gpk
+    kind: test
+    status: passed
+    started_at: "2026-09-23T19:44:34.618Z"
+    finished_at: "2026-09-23T19:44:48.182Z"
+    recorded_at: "2026-09-23T19:44:48.182Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/gate-registry.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated closed nightly repair entry using pm-changelog 2026.9.23
+close_reason: Nightly full validation now passes all seven independently bounded jobs on run 35917009573
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-cli maintainers
+  gate_id: nightly-bounded-quality-coverage-and-windows-shards
+  negative_control: Nightly run 35905763390 canceled serial Ubuntu quality after coverage; run 35913885011 canceled unsharded Windows tests at 20 minutes
+  local_checks[4]: workflow contract and gate registry 24/24,Vitest shard 1/2 focused 15/15 and shard 2/2 focused 9/9,direct gate registry inventory,"pnpm quality:static"
+  hosted_checks[2]: Nightly run 35917009573 all seven jobs passed within 20 minutes,"Ubuntu exact coverage, independent quality, and both Windows shards green"
+body: ""

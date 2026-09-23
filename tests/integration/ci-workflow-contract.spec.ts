@@ -458,6 +458,8 @@ describe("GitHub workflow contract", () => {
       'PM_RUN_TESTS_SKIP_BUILD: "1"',
       "run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/unit/commands/test/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/core/extensions/activation-summary.spec.ts",
       'run: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t "installs runtime dependencies for packed npm package extensions"',
+      "name: Verify copied plugin first-install command transport",
+      "run: node scripts/run-tests.mjs test -- tests/integration/plugins/plugin-runtime-win32.integration.spec.ts tests/unit/plugins/plugin-runtime-races.spec.ts",
       "name: Run Windows history durability and recovery regressions",
       "run: node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts",
     ]);
@@ -475,7 +477,7 @@ describe("GitHub workflow contract", () => {
       ),
     );
     expectExactValidationCacheSteps(ciWorkflow, 3);
-    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(8);
+    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(9);
     expect(ciWorkflow).not.toMatch(/^\s*run: pnpm test\s*$/m);
     expect(ciWorkflow).not.toContain("Sandboxed PM regression");
 
@@ -609,6 +611,8 @@ describe("GitHub workflow contract", () => {
     const nightlyWorkflow = normalizeWorkflow(
       await readFile(nightlyPath, "utf8"),
     );
+    const platformJob = extractWorkflowJob(nightlyWorkflow, "nightly");
+    const qualityJob = extractWorkflowJob(nightlyWorkflow, "quality");
 
     expectContainsAll(nightlyWorkflow, [
       "schedule:",
@@ -619,11 +623,12 @@ describe("GitHub workflow contract", () => {
       "concurrency:",
       "cancel-in-progress: true",
       "matrix:",
-      "{ os: ubuntu-latest, node: 22 }",
-      "{ os: ubuntu-latest, node: 24 }",
-      "{ os: ubuntu-latest, node: 25 }",
-      "{ os: macos-latest, node: 24 }",
-      "{ os: windows-latest, node: 24 }",
+      'os: ubuntu-latest, node: 22, label: "Nightly (ubuntu-latest, Node 22)"',
+      'os: ubuntu-latest, node: 24, label: "Nightly (ubuntu-latest, Node 24)"',
+      'os: ubuntu-latest, node: 25, label: "Nightly (ubuntu-latest, Node 25)"',
+      'os: macos-latest, node: 24, label: "Nightly (macos-latest, Node 24)"',
+      'os: windows-latest, node: 24, shard: 1, label: "Nightly (windows-latest, Node 24, shard 1/2)"',
+      'os: windows-latest, node: 24, shard: 2, label: "Nightly (windows-latest, Node 24, shard 2/2)"',
       PINNED_ACTIONS.checkout,
       PINNED_ACTIONS.pnpmSetup,
       PINNED_PNPM_VERSION,
@@ -648,7 +653,7 @@ describe("GitHub workflow contract", () => {
       "run: pnpm quality:static",
       "run: node scripts/release/compatibility-check.mjs --json",
       "if: matrix.os != 'ubuntu-latest' || matrix.node != 24",
-      "run: pnpm test",
+      "run: pnpm test ${{ matrix.shard && format('-- --shard={0}/2', matrix.shard) || '' }}",
       "name: Alert on scheduled nightly failure",
       "if: failure() && github.event_name == 'schedule'",
       "GH_TOKEN: ${{ github.token }}",
@@ -660,15 +665,35 @@ describe("GitHub workflow contract", () => {
     expect(nightlyWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(
       2,
     );
-    expectExactValidationCacheSteps(nightlyWorkflow, 1);
+    expectExactValidationCacheSteps(nightlyWorkflow, 2);
+    expectContainsAll(platformJob, [
+      "timeout-minutes: 20",
+      "run: pnpm test:coverage",
+      "run: pnpm test",
+    ]);
+    expectContainsNone(platformJob, [
+      "run: pnpm quality:static",
+      "run: node scripts/release/compatibility-check.mjs --json",
+    ]);
+    expectContainsAll(qualityJob, [
+      "timeout-minutes: 20",
+      "node-version: 24",
+      "run: pnpm version:check",
+      "run: pnpm security:scan",
+      "run: pnpm quality:static",
+      "run: node scripts/release/compatibility-check.mjs --json",
+      'NIGHTLY_NODE: "24 quality"',
+    ]);
+    expectContainsNone(qualityJob, ["run: pnpm test:coverage"]);
     expect(
-      nightlyWorkflow.indexOf("node dist/cli.js merge install --no-extensions"),
-    ).toBeLessThan(nightlyWorkflow.indexOf("run: pnpm quality:static"));
+      qualityJob.indexOf("node dist/cli.js merge install --no-extensions"),
+    ).toBeLessThan(qualityJob.indexOf("run: pnpm quality:static"));
     expect(
       nightlyWorkflow.match(
         /node dist\/cli\.js merge install --no-extensions/g,
       ),
     ).toHaveLength(1);
+    expect(nightlyWorkflow.match(/name: Alert on scheduled nightly failure/g)).toHaveLength(2);
     expect(nightlyWorkflow).not.toContain("Sandboxed PM regression");
 
     expectContainsNone(nightlyWorkflow, PUBLISH_OR_RELEASE_PATTERNS);

@@ -24,7 +24,9 @@ pm-cli/ (repo root)
 │   │   └── session-start.mjs # Injects pm context at session start
 │   ├── agents/              # Subagent definitions (one .md per coordinator/triage/verification subagent)
 │   ├── scripts/
-│   │   └── pm-mcp-server.mjs # MCP server launcher (repo → npx fallback)
+│   │   ├── pm-mcp-server.mjs # MCP server launcher
+│   │   └── plugin-runtime.mjs # Exact-version runtime resolver
+│   ├── package.json         # Pinned pm-cli dependency
 │   └── README.md            # User-facing installation guide
 └── scripts/
     └── smoke-claude-plugin.mjs  # Full plugin smoke test (run in CI)
@@ -83,10 +85,10 @@ agent mutations do not need a hard-wired `PM_AUTHOR`.
 `plugins/pm-claude/scripts/pm-mcp-server.mjs` resolves the server in order:
 
 1. `PM_CLI_MCP_SERVER` env var (explicit override)
-2. `dist/mcp/server.js` walking up from the launcher (repo checkout)
-3. `npx -y --package=@unbrained/pm-cli@latest pm-mcp` (npm-installed fallback)
+2. `dist/mcp/server.js` at the matching repository root, when the checkout package and plugin versions agree
+3. The exact `@unbrained/pm-cli` version declared in the plugin's `package.json`, installed under the plugin data directory on first use
 
-This means the plugin works both from a repo checkout and from an npm-cached plugin install.
+The cached runtime is reused offline. It never resolves npm's moving `latest` tag. A first install needs npm access; an unavailable pinned release causes an explicit startup failure.
 
 ## Session Start Hook
 
@@ -94,7 +96,7 @@ This means the plugin works both from a repo checkout and from an npm-cached plu
 
 1. Checks for `.agents/pm/settings.json` in the current workspace.
 2. Exits silently if pm is not initialized.
-3. Runs `pm context --limit 5 --json` with a 5-second timeout.
+3. Runs `pm context --limit 5 --json` from the same pinned runtime as the MCP server, with a 15-second command timeout.
 4. Injects a compact status line into the session context.
 
 Example injection:
@@ -120,6 +122,15 @@ Verifies: plugin file structure, manifest name consistency, stateless MCP
 discovery for `2026-07-28`, 32 tools present, full workflow (init → create →
 claim → update → link files/docs/tests → get → context → search → validate →
 health), and session-start hook.
+
+The copied-cache smoke packs the current build, installs it under a temporary
+plugin data directory, copies both plugin bundles away from the checkout, and
+restarts their MCP launchers with npm unavailable:
+
+```bash
+pnpm build
+pnpm smoke:plugin-cache
+```
 
 ### MCP server smoke test
 
@@ -182,9 +193,9 @@ After installing the plugin:
 
 | pm-cli version | Plugin version | Claude Code version |
 |---------------|----------------|---------------------|
-| 2026.5.x+ | 1.x | Any current |
+| Exact same date-based version as the plugin | Exact same date-based version as pm-cli | Current supported Claude Code |
 
-The authoritative plugin version is `plugins/pm-claude/.claude-plugin/plugin.json`; this row stays on the `1.x` major line so it does not drift with each plugin release.
+The authoritative plugin version is `plugins/pm-claude/.claude-plugin/plugin.json`; `pnpm version:check` also verifies the pinned runtime dependency.
 
 The MCP server uses JSON-RPC 2.0 over stdio with canonical protocol version
 `2026-07-28`. A bounded legacy path remains for unversioned older hosts, with

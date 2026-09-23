@@ -19,11 +19,6 @@
       "count": 1
     }
   },
-  "scripts/gen-plugin-mcp-wrappers.mjs": {
-    "no-useless-assignment": {
-      "count": 1
-    }
-  },
   "scripts/generate-release-notes.mjs": {
     "sonarjs/cognitive-complexity": {
       "count": 1
@@ -290,21 +285,11 @@
       "count": 1
     }
   },
-  "tests/unit/commands/workspace/contracts-command.spec.ts": {
-    "complexity": {
-      "count": 4
-    }
-  },
   "tests/unit/commands/governance/health-command.spec.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
     "complexity": {
-      "count": 1
-    }
-  },
-  "tests/unit/commands/workspace/init-command.spec.ts": {
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
@@ -316,6 +301,16 @@
   "tests/unit/commands/test/test-command.spec.ts": {
     "complexity": {
       "count": 3
+    }
+  },
+  "tests/unit/commands/workspace/contracts-command.spec.ts": {
+    "complexity": {
+      "count": 4
+    }
+  },
+  "tests/unit/commands/workspace/init-command.spec.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
     }
   },
   "tests/unit/core/schema/runtime-field-values.spec.ts": {

@@ -17,7 +17,7 @@ codex plugin marketplace add .
 
 Restart Codex, then install **pm CLI** from the repo marketplace. The bundled MCP server starts through `plugins/pm-codex/scripts/pm-mcp-server.mjs`.
 
-For a published package install, keep `@unbrained/pm-cli` available through npm. The launcher uses the local repo build when present and falls back to `npx -y --package=@unbrained/pm-cli@latest pm-mcp` when the plugin is cached outside the repository.
+The launcher uses the local repo build when present. In a copied plugin cache it installs the exact `@unbrained/pm-cli` version declared in this plugin's `package.json` into the plugin data directory, then starts that server directly with Node. The runtime is reused offline after the first installation. If the pinned version is unavailable, startup fails with an install error instead of silently running a different release.
 
 ## Native Tools
 

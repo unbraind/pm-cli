@@ -4,7 +4,7 @@
   "families": [
     {
       "id": "boundary-format-drift",
-      "version": 2,
+      "version": 3,
       "title": "Externally produced path, slug, payload, and invocation format drift",
       "owner_item_id": "pm-0pzgit",
       "escape_class": "production_defect",
@@ -30,7 +30,8 @@
         ],
         "hosted": [
           "CI / Gates (static)",
-          "Nightly Validation / Nightly (windows-latest, Node 24)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 1/2)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 2/2)",
           "Nightly Validation / Nightly (macos-latest, Node 24)"
         ]
       },
@@ -49,7 +50,7 @@
     },
     {
       "id": "cross-platform-nightly-regression",
-      "version": 2,
+      "version": 3,
       "title": "Platform-specific runtime and filesystem regressions",
       "owner_item_id": "pm-2zjs0g",
       "escape_class": "nightly_regression",
@@ -77,7 +78,8 @@
           "node scripts/run-tests.mjs test -- tests/unit/scripts"
         ],
         "hosted": [
-          "Nightly Validation / Nightly (windows-latest, Node 24)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 1/2)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 2/2)",
           "Nightly Validation / Nightly (macos-latest, Node 24)"
         ]
       },

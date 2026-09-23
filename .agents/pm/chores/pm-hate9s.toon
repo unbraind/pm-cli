@@ -1,0 +1,35 @@
+id: pm-hate9s
+title: "Refresh compatible Sentry, jscpd, and TypeScript-ESLint patches for September 22"
+description: "Update the three registry-current compatible patches that passed the repository release-age window; preserve exact coverage, lint, telemetry, and packed-consumer behavior. Major Vitest, TypeScript, and npm-package-arg migrations retain their existing owners."
+type: Chore
+status: closed
+priority: 2
+tags[3]: dependencies,observability,quality
+created_at: "2026-09-22T20:42:00.422Z"
+updated_at: "2026-09-23T18:08:10.828Z"
+closed_at: "2026-09-23T18:06:25.765Z"
+completed_at: "2026-09-23T18:06:25.765Z"
+author: "harness:codex"
+acceptance_criteria: "Sentry 10.75.1, jscpd 5.3.1, and typescript-eslint 8.70.1 are pinned and locked with supported engines and zero known vulnerabilities; static quality, exact coverage, Sentry/telemetry tests, and package consumers pass"
+parent: pm-qwoy
+resolution: "Updated package and lockfile pins for Sentry 10.75.1, jscpd 5.3.1, and typescript-eslint 8.70.1 with explicit separate lineage for deferred incompatible major migrations"
+expected_result: "Compatible patches install cleanly while security, telemetry, coverage, static and packed package consumers remain healthy"
+actual_result: "Typecheck and ESLint passed, Sentry/telemetry gate reported zero critical/high findings, audit found zero known vulnerabilities, full 9,244-test suite reached exact 100/100/100/100 coverage, npx/bunx and package-first consumers passed"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1wypwu,discovered_from,"2026-09-22T20:44:10.475Z","harness:codex","cli:update:dep",detected
+  pm-do5b,discovered_from,"2026-09-23T17:33:16.764Z","harness:codex","cli:update:dep",detected
+  pm-fokyhh,discovered_from,"2026-09-23T17:33:16.764Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,discovered_from,"2026-09-23T17:33:16.764Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-22T20:42:00.422Z","harness:codex","Duplicate check: all-status and open/in-progress searches for the three exact patch versions found no existing owner. This follows closed Sentry refresh pm-1wypwu; incompatible major migrations remain pm-fokyhh, pm-do5b, and pm-ksr40d."
+  "2026-09-23T18:05:59.612Z","harness:codex","Evidence: Pinned @sentry/node 10.75.1, jscpd 5.3.1, and typescript-eslint 8.70.1 in package and lockfile without changing supported engines. Full 9,244-test suite passed at exact 100/100/100/100 coverage; typecheck, ESLint, Sentry/telemetry gate with zero critical/high findings, pnpm audit with zero known vulnerabilities, npx/bunx packed smoke across nine packages, and 89-command package-first dogfood passed. Current major-version migrations remain owned by pm-fokyhh, pm-do5b, and pm-ksr40d; semantic lineage links were added here."
+files[3]{path,scope,note}:
+  package.json,project,Compatible dependency declarations
+  pnpm-lock.yaml,project,Resolved compatible dependency graph
+  tests/unit/packages/package-manifest.spec.ts,project,Keep explicit Sentry pin assertion current
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/package-manifest.spec.ts tests/unit/core/sentry tests/unit/core/telemetry,project,300,"harness:codex","2026-09-22T20:44:12.846Z",local_mutation,main
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated compatible dependency refresh entry from pm-changelog
+close_reason: "Compatible Sentry, jscpd, and TypeScript-ESLint patches are pinned and validated without altering supported runtime engines"
+body: ""

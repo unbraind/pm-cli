@@ -6,7 +6,7 @@ import {
 } from "./plugin-mcp-smoke-harness.mjs";
 
 const repoRoot = process.cwd();
-const serverPath = path.join(repoRoot, "dist", "mcp", "server.js");
+const serverPath = path.join(repoRoot, "plugins", "pm-codex", "scripts", "pm-mcp-server.mjs");
 
 const { tmpRoot, request, callTool, dispose } = await startPluginMcpSmoke({
   serverPath,

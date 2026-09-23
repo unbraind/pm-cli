@@ -222,7 +222,7 @@ describe("pm package manifest model", () => {
 
     // Sentry 10.68.0 exposed transitive declarations that referenced missing
     // modules; the pinned release must pass the packed TS consumer gate.
-    expect(packageJson.dependencies?.["@sentry/node"]).toBe("10.75.0");
+    expect(packageJson.dependencies?.["@sentry/node"]).toBe("10.75.1");
   });
 
   it("reads package.json pm resources as a first-class manifest", async () => {
