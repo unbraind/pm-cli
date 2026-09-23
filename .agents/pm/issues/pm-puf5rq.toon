@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[5]: ci,gh-1291,nightly,temp-cleanup,windows
 created_at: "2026-09-23T18:24:56.022Z"
-updated_at: "2026-09-23T18:53:39.337Z"
+updated_at: "2026-09-23T19:22:51.413Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#0be07b94b7b44e4ec913bc03"
 author: "harness:codex"
@@ -14,10 +14,11 @@ acceptance_criteria: "The Windows Node 24 nightly release cleanup test distingui
 parent: pm-p5u6
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-xjy565,incident_from,"2026-09-23T18:24:56.022Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-09-23T18:24:56.022Z","harness:codex","Duplicate check: searched all-status PM records for GH-1291, release-workspace-cleanup, Node compile cache and Windows nightly; no item owns this exact September 23 run. Reusing open temp-footprint parent pm-p5u6 and linking the previously completed release-workspace delivery pm-xjy565. Source: https://github.com/unbraind/pm-cli/issues/1291 and https://github.com/unbraind/pm-cli/actions/runs/35841395212."
   "2026-09-23T18:25:29.116Z","harness:codex","Investigation: GH #1291 run 35841395212 at bd8942329b8aebbc7482ce6536135535968c0e1d has one failing test, tests/integration/release-workspace-cleanup.integration.spec.ts. The assertion expected only unrelated.txt but saw node-compile-cache under the fixture TEMP/TMP root. Node documentation states module.enableCompileCache without a directory defaults to os.tmpdir()/node-compile-cache, and NODE_DISABLE_COMPILE_CACHE=1 disables it. The directory is a runtime optimization, not an owned release workspace; the fixture should disable it for child processes while still refusing residual owned directories."
   "2026-09-23T18:53:39.337Z","harness:codex","Hosted Nightly Validation run 35903171778 at branch head b5cdf086 passed Ubuntu 22/24/25 and macOS 24. Windows Node 24 progressed past the original release-cleanup fixture but exposed six new plugin-test portability failures: the race assertion assumed npm rather than npm.cmd and two explicit launcher fixtures used POSIX /tmp paths. Updated tests to assert the platform-selected command and construct native absolute temporary paths. Focused local regression: 11/11 passed. Re-run hosted Windows before closing."
+  "2026-09-23T19:22:51.413Z","harness:codex","Hosted evidence: Nightly Validation run 35905763390 at 544c19398 completed Windows Node 24 successfully, including the release-workspace cleanup fixture and 9,243-test platform suite. Ubuntu Node 24 was independently canceled at the serial 20-minute job limit; tracked as pm-ul9rye, and its coverage/static gates are now being separated. Linked regression tests pass 3/3 cleanup and 11/11 plugin portability."
 files[3]{path,scope,note}:
   tests/integration/release-workspace-cleanup.integration.spec.ts,project,Isolate Node compile cache from release-owned root cleanup assertion
   tests/unit/plugins/plugin-runtime-races.spec.ts,project,Make npm command assertion follow the host platform
@@ -25,7 +26,7 @@ files[3]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/release-workspace-cleanup.integration.spec.ts,project,240,"harness:codex","2026-09-23T18:25:31.936Z",local_mutation,feat/version-coherent-agent-plugin-runtimes
   node scripts/run-tests.mjs test -- tests/unit/plugins/plugin-runtime-races.spec.ts tests/unit/plugins/pm-mcp-server.spec.ts,project,240,"harness:codex","2026-09-23T18:53:38.392Z",local_mutation,feat/version-coherent-agent-plugin-runtimes
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-muefpua0-ftedna
     kind: test
     status: passed
@@ -37,4 +38,16 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/release-workspace-cleanup.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muehph50-iwuoub
+    kind: test
+    status: passed
+    started_at: "2026-09-23T19:22:11.278Z"
+    finished_at: "2026-09-23T19:22:28.740Z"
+    recorded_at: "2026-09-23T19:22:28.740Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/release-workspace-cleanup.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/plugins/plugin-runtime-races.spec.ts tests/unit/plugins/pm-mcp-server.spec.ts,schema,schema,source,local_source_ref
 body: ""

@@ -609,6 +609,8 @@ describe("GitHub workflow contract", () => {
     const nightlyWorkflow = normalizeWorkflow(
       await readFile(nightlyPath, "utf8"),
     );
+    const platformJob = extractWorkflowJob(nightlyWorkflow, "nightly");
+    const qualityJob = extractWorkflowJob(nightlyWorkflow, "quality");
 
     expectContainsAll(nightlyWorkflow, [
       "schedule:",
@@ -660,15 +662,35 @@ describe("GitHub workflow contract", () => {
     expect(nightlyWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(
       2,
     );
-    expectExactValidationCacheSteps(nightlyWorkflow, 1);
+    expectExactValidationCacheSteps(nightlyWorkflow, 2);
+    expectContainsAll(platformJob, [
+      "timeout-minutes: 20",
+      "run: pnpm test:coverage",
+      "run: pnpm test",
+    ]);
+    expectContainsNone(platformJob, [
+      "run: pnpm quality:static",
+      "run: node scripts/release/compatibility-check.mjs --json",
+    ]);
+    expectContainsAll(qualityJob, [
+      "timeout-minutes: 20",
+      "node-version: 24",
+      "run: pnpm version:check",
+      "run: pnpm security:scan",
+      "run: pnpm quality:static",
+      "run: node scripts/release/compatibility-check.mjs --json",
+      'NIGHTLY_NODE: "24 quality"',
+    ]);
+    expectContainsNone(qualityJob, ["run: pnpm test:coverage"]);
     expect(
-      nightlyWorkflow.indexOf("node dist/cli.js merge install --no-extensions"),
-    ).toBeLessThan(nightlyWorkflow.indexOf("run: pnpm quality:static"));
+      qualityJob.indexOf("node dist/cli.js merge install --no-extensions"),
+    ).toBeLessThan(qualityJob.indexOf("run: pnpm quality:static"));
     expect(
       nightlyWorkflow.match(
         /node dist\/cli\.js merge install --no-extensions/g,
       ),
     ).toHaveLength(1);
+    expect(nightlyWorkflow.match(/name: Alert on scheduled nightly failure/g)).toHaveLength(2);
     expect(nightlyWorkflow).not.toContain("Sandboxed PM regression");
 
     expectContainsNone(nightlyWorkflow, PUBLISH_OR_RELEASE_PATTERNS);

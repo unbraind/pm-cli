@@ -1,0 +1,42 @@
+id: pm-ul9rye
+title: Nightly Ubuntu 24 serial coverage and static gates exceed job budget
+description: "Manual Nightly Validation run 35905763390 at 544c19398 passed Windows Node 24 and three other platform legs, but Ubuntu Node 24 spent the 20-minute job budget running full coverage and static quality serially. The static gate reached the final mutation step before job cancellation, so the nightly result was red without an assertion failure. Preserve all gates while giving coverage and static independent bounded jobs."
+type: Issue
+status: in_progress
+priority: 1
+tags[4]: ci,nightly,quality-gates,timeout
+created_at: "2026-09-23T19:19:12.555Z"
+updated_at: "2026-09-23T19:22:52.261Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#0be07b94b7b44e4ec913bc03"
+author: "harness:codex"
+acceptance_criteria: "The Ubuntu Node 24 nightly runs full coverage and static quality in independent bounded jobs; all existing version, secret, typecheck, compatibility, tracker, alerting and platform checks remain required; workflow contract tests assert the partition and a hosted nightly run passes every job under its declared timeout."
+parent: pm-u9d0
+severity: high
+environment: GitHub Actions ubuntu-latest Node 24 Nightly Validation
+repro_steps: "Dispatch nightly.yml on branch 544c19398; inspect run 35905763390: Ubuntu Node 24 Test with coverage gate passes, Static quality gate is canceled at 20 minutes during mutation."
+expected_result: "Nightly coverage, static quality, and compatibility gates each complete and report independently within their job budgets."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2zjs0g,discovered_from,"2026-09-23T19:19:12.555Z","harness:codex","cli:create:dep",detected
+  pm-puf5rq,discovered_from,"2026-09-23T19:19:36.267Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-23T19:19:34.282Z","harness:codex","Duplicate check: searched all-status PM work for nightly timeout, Nightly Validation and coverage/static quality; pm-2zjs0g owns recurrence measurement and pm-ehbb completed alerting, but neither owns this serial Ubuntu Node 24 job-budget failure. Run 35905763390 passed coverage and reached mutation before the 20-minute cap canceled static. Reuse pm-u9d0 CI parent and link the discovery lineage."
+  "2026-09-23T19:22:52.261Z","harness:codex","Implementation: split Nightly Validation Ubuntu Node 24 into a coverage matrix leg and a separate 20-minute quality job. The quality job retains version check, secret scan, fresh build, clone merge-driver setup, full static quality, compatibility gate and scheduled failure alert. Platform legs retain typecheck and full test/coverage. Workflow contract test 15/15, typecheck passed. The canceled run 35905763390 reached mutation after coverage before its serial budget expired; no assertion failure. Local static components after host-sensitive benchmark rechecks: SDK import cost 10/10, CLI transport floor 6/6, graph composition, record integrity, mutation 323 killed plus seven classified equivalent. Hosted all-job proof pending."
+files[2]{path,scope,note}:
+  .github/workflows/nightly.yml,project,Run coverage and static quality in separate bounded jobs
+  tests/integration/ci-workflow-contract.spec.ts,project,Assert required nightly gate partition and alerting
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,240,"harness:codex","2026-09-23T19:19:39.865Z",local_mutation,feat/version-coherent-agent-plugin-runtimes
+test_runs[1]:
+  - run_id: test-local-muehp307-67hv21
+    kind: test
+    status: passed
+    started_at: "2026-09-23T19:21:56.972Z"
+    finished_at: "2026-09-23T19:22:10.423Z"
+    recorded_at: "2026-09-23T19:22:10.423Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+body: ""
