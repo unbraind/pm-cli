@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: ci,nightly,quality-gates,timeout
 created_at: "2026-09-23T19:19:12.555Z"
-updated_at: "2026-09-23T20:52:42.689Z"
+updated_at: "2026-09-23T21:08:53.311Z"
 closed_at: "2026-09-23T20:50:55.925Z"
 completed_at: "2026-09-23T20:50:55.925Z"
 author: "harness:codex"
@@ -22,7 +22,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2zjs0g,discovered_from,"2026-09-23T19:19:12.555Z","harness:codex","cli:create:dep",detected
   pm-puf5rq,discovered_from,"2026-09-23T19:19:36.267Z","harness:codex","cli:update:dep",detected
   pm-ehbb,verifies,"2026-09-23T20:07:03.684Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-09-23T19:19:34.282Z","harness:codex","Duplicate check: searched all-status PM work for nightly timeout, Nightly Validation and coverage/static quality; pm-2zjs0g owns recurrence measurement and pm-ehbb completed alerting, but neither owns this serial Ubuntu Node 24 job-budget failure. Run 35905763390 passed coverage and reached mutation before the 20-minute cap canceled static. Reuse pm-u9d0 CI parent and link the discovery lineage."
   "2026-09-23T19:22:52.261Z","harness:codex","Implementation: split Nightly Validation Ubuntu Node 24 into a coverage matrix leg and a separate 20-minute quality job. The quality job retains version check, secret scan, fresh build, clone merge-driver setup, full static quality, compatibility gate and scheduled failure alert. Platform legs retain typecheck and full test/coverage. Workflow contract test 15/15, typecheck passed. The canceled run 35905763390 reached mutation after coverage before its serial budget expired; no assertion failure. Local static components after host-sensitive benchmark rechecks: SDK import cost 10/10, CLI transport floor 6/6, graph composition, record integrity, mutation 323 killed plus seven classified equivalent. Hosted all-job proof pending."
   "2026-09-23T19:43:23.483Z","harness:codex","Hosted Nightly run 35908978578 exposed the registry negative control: every platform test and the new quality job rejected unregistered nightly.yml#quality. This is the common cause of all six red jobs, not six platform defects. Updating the gate registry so quality owns static, mutation, docstring, compatibility, security and version checks while the existing matrix retains full coverage and platform tests."
@@ -31,6 +31,7 @@ comments[8]{created_at,author,text}:
   "2026-09-23T20:33:56.599Z","harness:codex","Hosted run 35913885011 passed independent Ubuntu coverage, quality, Ubuntu 22/25 and macOS jobs; Windows tests were still passing when its 20-minute job budget canceled. The prior Windows run 35911425813 passed the same full suite in 16m43s. Split only the Windows suite into two complete Vitest shards; retain both as concrete recurrence checks so coverage is not silently weakened."
   "2026-09-23T20:35:31.371Z","harness:codex","Both Windows Vitest shard arguments are exercised locally: shard 1/2 ran workflow-contract 15/15 and shard 2/2 ran gate-registry 9/9. Full focused unsharded set passed 24/24; direct gate registry inventory certifies the two concrete Windows check names and all 24 registered workflow jobs. Recurrence policy versions increased for both affected families and require both Windows shards."
   "2026-09-23T20:50:54.241Z","harness:codex","Final hosted proof: Nightly run 35917009573 at 0e1270bc5da2d1a890b7067c5a1e68abe48b9bb1 passed all seven jobs. Independent Ubuntu quality took 8m44s; Ubuntu Node 24 exact coverage took 13m30s; Windows shards took 10m15s and 11m58s. Ubuntu 22/25 and macOS also passed. The recurrence registry resolves both concrete Windows check names and the independent quality job; no 20-minute budget or gate threshold was raised."
+  "2026-09-23T21:08:53.311Z","harness:codex","PR #1292 CI static changelog check exposed a missing local release tag, not a changelog generator defect. The local branch initially lacked v2026.9.23 while CI fetch-depth 0 had it; fetching the PR merge ref brought in the tag. With identical item_count 2488, pm-changelog 2026.9.23 regenerated CHANGELOG.md with the missing 2026.9.23 heading. Fresh Node 24 worktree checked the pre-tag artifact as current, confirming tag inventory was the differentiator. Keep --all-release-tags output based on fetched release tags before final PR checks."
 learnings[1]{created_at,author,text}:
   "2026-09-23T20:50:54.938Z","harness:codex","Keep long exact coverage and static quality in separate bounded hosted jobs, and shard the complete Windows suite when single-job runtime approaches the timeout. Fail-closed gate and recurrence inventories must be updated with every new concrete job/check name; missing registry entries should remain a red negative control."
 files[4]{path,scope,note}:
