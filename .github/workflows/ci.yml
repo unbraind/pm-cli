@@ -386,6 +386,7 @@ jobs:
           pnpm smoke:npx
           pnpm dogfood:package-first
           node scripts/smoke-claude-plugin.mjs
+          pnpm smoke:plugin-cache
 
       - name: Verify test isolation inside a Claude Code host
         if: matrix.gate == 'smokes'

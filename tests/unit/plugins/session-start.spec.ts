@@ -1,8 +1,9 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const SESSION_START_PATH = "plugins/pm-claude/hooks/session-start.mjs";
+const RUNTIME_PATH = path.join(process.cwd(), "plugins/pm-claude/scripts/plugin-runtime.mjs");
 
 function cacheBustToken(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -19,9 +20,16 @@ function mockExit(): ReturnType<typeof vi.spyOn> {
   }) as never);
 }
 
+beforeEach(() => {
+  vi.doMock(RUNTIME_PATH, () => ({
+    resolvePluginRuntime: vi.fn(async () => ({ cli: "/tmp/pinned-pm-cli.js" })),
+  }));
+});
+
 afterEach(() => {
   vi.doUnmock("node:fs");
   vi.doUnmock("node:child_process");
+  vi.doUnmock(RUNTIME_PATH);
   vi.restoreAllMocks();
   vi.resetModules();
 });
@@ -30,7 +38,7 @@ describe("plugins/pm-claude session-start hook", () => {
   it("exits silently when pm is not initialized in the workspace", async () => {
     vi.doMock("node:fs", () => ({ existsSync: vi.fn(() => false) }));
     const exec = vi.fn();
-    vi.doMock("node:child_process", () => ({ execSync: exec }));
+    vi.doMock("node:child_process", () => ({ execFileSync: exec }));
     const exit = mockExit();
     await expect(importHook("noSettings")).rejects.toThrow("EXIT:0");
     expect(exec).not.toHaveBeenCalled();
@@ -40,7 +48,7 @@ describe("plugins/pm-claude session-start hook", () => {
   it("writes a tracker summary with top items when context is available", async () => {
     vi.doMock("node:fs", () => ({ existsSync: vi.fn(() => true) }));
     vi.doMock("node:child_process", () => ({
-      execSync: vi.fn(() =>
+      execFileSync: vi.fn(() =>
         JSON.stringify({
           summary: { in_progress: 1, open: 2, blocked: 1 },
           high_level: [{ id: "pm-1", title: "High", status: "open" }],
@@ -62,7 +70,7 @@ describe("plugins/pm-claude session-start hook", () => {
   it("writes a summary with no item lines when high/low level lists are absent (lines 31/38)", async () => {
     vi.doMock("node:fs", () => ({ existsSync: vi.fn(() => true) }));
     vi.doMock("node:child_process", () => ({
-      execSync: vi.fn(() =>
+      execFileSync: vi.fn(() =>
         // counts present but no high_level/low_level keys: exercises the `?? []`
         // defaults (line 31) and the falsy itemLines arm of the template (line 38)
         JSON.stringify({ summary: { in_progress: 2, open: 0, blocked: 0 } }),
@@ -84,7 +92,7 @@ describe("plugins/pm-claude session-start hook", () => {
     vi.doMock("node:fs", () => ({ existsSync: vi.fn(() => true) }));
     vi.doMock("node:child_process", () => ({
       // ctx is truthy but summary is absent: exercises `if (!summary) return null`
-      execSync: vi.fn(() => JSON.stringify({ high_level: [], low_level: [] })),
+      execFileSync: vi.fn(() => JSON.stringify({ high_level: [], low_level: [] })),
     }));
     const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     const exit = mockExit();
@@ -98,7 +106,7 @@ describe("plugins/pm-claude session-start hook", () => {
   it("emits nothing when all summary counts are zero", async () => {
     vi.doMock("node:fs", () => ({ existsSync: vi.fn(() => true) }));
     vi.doMock("node:child_process", () => ({
-      execSync: vi.fn(() =>
+      execFileSync: vi.fn(() =>
         JSON.stringify({ summary: { in_progress: 0, open: 0, blocked: 0 }, high_level: [], low_level: [] }),
       ),
     }));
@@ -114,7 +122,7 @@ describe("plugins/pm-claude session-start hook", () => {
   it("exits silently when the pm context subprocess fails", async () => {
     vi.doMock("node:fs", () => ({ existsSync: vi.fn(() => true) }));
     vi.doMock("node:child_process", () => ({
-      execSync: vi.fn(() => {
+      execFileSync: vi.fn(() => {
         throw new Error("npx failed");
       }),
     }));

@@ -27,6 +27,7 @@
     "**/node_modules/**",
     "src/core/extensions/extension-types.ts",
     "packages/pm-*/extensions/*/runtime-loader.ts",
-    "plugins/pm-*/scripts/pm-mcp-server.mjs"
+    "plugins/pm-*/scripts/pm-mcp-server.mjs",
+    "plugins/pm-*/scripts/plugin-runtime.mjs"
   ]
 }

@@ -46,6 +46,7 @@ const pluginFiles = [
   // Plugin manifests
   "plugins/pm-claude/.claude-plugin/plugin.json",
   "plugins/pm-claude/.mcp.json",
+  "plugins/pm-claude/package.json",
   // Skills (5 total)
   "plugins/pm-claude/skills/pm-workflow/SKILL.md",
   "plugins/pm-claude/skills/pm-developer/SKILL.md",
@@ -72,6 +73,7 @@ const pluginFiles = [
   "plugins/pm-claude/hooks/session-start.mjs",
   // Scripts and agents
   "plugins/pm-claude/scripts/pm-mcp-server.mjs",
+  "plugins/pm-claude/scripts/plugin-runtime.mjs",
   "plugins/pm-claude/README.md",
   "plugins/pm-claude/agents/pm-coordinator.md",
   "plugins/pm-claude/agents/pm-delivery-chain.md",

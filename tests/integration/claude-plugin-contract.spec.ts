@@ -217,7 +217,9 @@ describe("Claude Code plugin contract", () => {
     const hookContent = await readFile(path.join(pluginRoot, "hooks", "session-start.mjs"), "utf8");
     expect(hookContent).not.toContain("native.js");
     expect(hookContent).not.toContain("runNativePmAction");
-    expect(hookContent).toContain("npx");
+    expect(hookContent).toContain("resolvePluginRuntime");
+    expect(hookContent).toContain("execFileSync");
+    expect(hookContent).not.toContain("@latest");
     // Must NOT invoke pm CLI directly via execSync with bare 'pm' command
     expect(hookContent).not.toContain('"pm context"');
     expect(hookContent).not.toContain("'pm context'");

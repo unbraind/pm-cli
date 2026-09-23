@@ -29,6 +29,7 @@
     "**/dist/**",
     "**/node_modules/**",
     "packages/pm-*/extensions/*/runtime-loader.ts",
-    "plugins/pm-*/scripts/pm-mcp-server.mjs"
+    "plugins/pm-*/scripts/pm-mcp-server.mjs",
+    "plugins/pm-*/scripts/plugin-runtime.mjs"
   ]
 }

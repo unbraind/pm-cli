@@ -3,7 +3,7 @@
 pm-cli ships a repo-local Codex plugin at [`plugins/pm-codex`](../plugins/pm-codex/README.md).
 
 It is a real Codex plugin package: the repo marketplace installs it and Codex registers its skills and bundled
-MCP server. It is not yet a self-contained cached runtime or an Apps SDK-backed ChatGPT app. The official-source
+MCP server. Its cached runtime installs the exact version declared by the plugin manifest and works offline after that first install. It is not yet an Apps SDK-backed ChatGPT app. The official-source
 audit, verified gaps, and phased remediation plan are documented in
 [Native ChatGPT and Codex Plugin Implementation Plan](CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md).
 
@@ -25,18 +25,11 @@ Keep this page as the public docs router so the MCP tool/action list has one mai
 
 ## Current MCP Runtime Note
 
-The plugin launcher uses the local repository build when `dist/mcp/server.js` is present. When the plugin is cached outside the repo, it falls back to:
-
-```bash
-npx -y --package=@unbrained/pm-cli@latest pm-mcp
-```
-
-The fallback starts the package MCP server, not the `pm` CLI command. Tool calls import pm command modules and return JSON-compatible structured results.
-
-This is current behavior, not the target distribution contract. A normal cached install has no repository
-`dist/` ancestor, so it depends on npm availability and can run a newer server than the installed plugin. Track
-the self-contained, version-coherent runtime work under
+The plugin launcher uses the local repository build when `dist/mcp/server.js` is present. A copied plugin installs the exact `@unbrained/pm-cli` version in its `package.json` to persistent plugin data, then starts its `pm-mcp` server directly with Node. The installed runtime can be reused offline. Track the remaining native-plugin and ChatGPT app work under
 [pm-95d7](../.agents/pm/features/pm-95d7.toon).
+
+Run `pnpm build && pnpm smoke:plugin-cache` to verify both copied plugin
+bundles against a real packed install with npm unavailable at MCP startup.
 
 ## Safety
 

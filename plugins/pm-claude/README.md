@@ -11,7 +11,7 @@ Native pm CLI integration for Claude Code. Use pm project management tools direc
 | **14 slash commands** | Full lifecycle coverage — status, start, close, triage, audit, search, new, list, calendar, developer, planner, release, workflow, init |
 | **4 subagents** | `pm-coordinator` (batch/multi-item), `pm-triage-agent` (duplicate-safe item creation), `pm-verification-agent` (evidence + close readiness), and `pm-delivery-chain` (orchestrated delivery) |
 | **Hybrid TUI tracking** | pm items sync to Claude Code's task panel — pm is the persistent store, the task panel is the live session view |
-| **Session hook** | Injects active pm item summary at session start when pm is initialized (uses native modules, no CLI required) |
+| **Session hook** | Injects active pm item summary at session start using the same pinned pm-cli runtime as the MCP server |
 
 ## Installation
 
@@ -192,8 +192,9 @@ All skills and commands implement this pattern for every claimed item:
 
 ## Session Context Injection
 
-At session start, the hook runs the published `pm` CLI without requiring a global install:
-- Uses `npx --yes --package=@unbrained/pm-cli@latest pm context --limit 5 --json`
+At session start, the hook runs the plugin's exact-version `pm` CLI without requiring a global install:
+- Uses the version pinned in `plugins/pm-claude/package.json` and persisted in the plugin data directory
+- Reuses the installed runtime offline on later sessions
 - Injects a compact summary of in-progress/open/blocked items
 
 Example output:
@@ -215,8 +216,8 @@ Use pm_context tool or /pm-status for full details.
 
 ## Requirements
 
-- Node.js ≥ 20
-- pm CLI resolved automatically via local dist (in repo) or `npx --yes @unbrained/pm-cli@latest` (no global install needed)
+- Node.js ≥ 22.18.0
+- pm CLI resolved automatically from the plugin's pinned package installation (no global install needed)
 - Project initialized with `pm init` (or use `/pm-init`)
 
 ## Links

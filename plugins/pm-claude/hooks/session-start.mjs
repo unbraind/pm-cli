@@ -3,12 +3,13 @@
  * pm-cli Claude Code session-start hook.
  *
  * Injects a brief pm context summary into the session when pm is initialized
- * in the current workspace. Uses the published pm CLI through npx without
+ * in the current workspace. Uses the plugin's exact-version runtime without
  * requiring a global install. Exits silently if pm is not set up.
  */
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
+import { resolvePluginRuntime } from "../scripts/plugin-runtime.mjs";
 
 const workspace = process.cwd();
 const pmSettingsPath = join(workspace, ".agents", "pm", "settings.json");
@@ -40,10 +41,12 @@ function formatSummary(ctx) {
   );
 }
 
-function tryNpxContext() {
+async function readContext() {
   try {
-    const raw = execSync(
-      "npx -y --package=@unbrained/pm-cli@latest pm context --limit 5 --json",
+    const runtime = await resolvePluginRuntime();
+    const raw = execFileSync(
+      process.execPath,
+      [runtime.cli, "context", "--limit", "5", "--json"],
       {
         cwd: workspace,
         encoding: "utf-8",
@@ -58,7 +61,7 @@ function tryNpxContext() {
 }
 
 try {
-  const ctx = tryNpxContext();
+  const ctx = await readContext();
   if (!ctx) process.exit(0);
 
   const message = formatSummary(ctx);

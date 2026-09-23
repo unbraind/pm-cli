@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: apps-sdk,"area:plugins",chatgpt,codex,distribution,mcp,roadmap
 created_at: "2026-07-11T11:10:40.136Z"
-updated_at: "2026-07-26T05:59:22.788Z"
+updated_at: "2026-09-23T18:06:40.668Z"
 author: codex-native-plugin-research
 estimated_minutes: 720
 acceptance_criteria: "Cached marketplace installs load a self-contained MCP runtime whose version matches the installed plugin without an npx-at-latest startup dependency; only documented plugin components are shipped or claimed; manifest, marketplace, assets, legal metadata, skills, and MCP configuration validate against the then-current official OpenAI contract; cache-layout and fresh-session smokes prove skills and MCP tools load; the ChatGPT lane is resolved by an explicit architecture decision and, if selected, a reachable MCP app with exact tool schemas, output schemas, safety annotations, authentication/privacy controls, developer-mode proof, submission tests, and documented surface support; implementation starts only after explicit approval."
@@ -17,11 +17,58 @@ risk: high
 confidence: high
 expected_result: "pm-codex has an evidence-backed local Codex implementation and an explicit, independently validated path for any ChatGPT app or public plugin scope."
 component: plugins/pm-codex
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-z3ez,related,"2026-07-14T17:05:02.949Z",null,null
-  pm-l9wl,related,"2026-07-14T17:05:03.614Z",null,null
-  pm-doxj,implements,"2026-07-26T05:54:37.517Z",null,null
-  pm-5k4v,implements,"2026-07-26T05:59:22.555Z",null,null
-comments[1]{created_at,author,text}:
+dependencies[5]:
+  - id: pm-z3ez
+    kind: related
+    created_at: "2026-07-14T17:05:02.949Z"
+  - id: pm-l9wl
+    kind: related
+    created_at: "2026-07-14T17:05:03.614Z"
+  - id: pm-doxj
+    kind: implements
+    created_at: "2026-07-26T05:54:37.517Z"
+  - id: pm-5k4v
+    kind: implements
+    created_at: "2026-07-26T05:59:22.555Z"
+  - id: pm-z3ez
+    kind: implements
+    created_at: "2026-09-22T20:43:56.601Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[4]{created_at,author,text}:
   "2026-07-11T11:10:40.136Z",codex-native-plugin-research,"Duplicate-check evidence 2026-07-11: pm context, list-open, list-in-progress, and all-status searches for native codex plugin, pm-codex Apps SDK, ChatGPT Codex plugin official docs, Codex plugin npx fallback cache, and native ChatGPT plugin found the closed shipped lineage pm-0c9q/pm-d97r plus Claude-only pm-l9wl/pm-dudr, but no item covering current OpenAI plugin and Apps SDK alignment. This feature extends rather than reopens the completed May implementation."
+  "2026-09-23T05:26:46.285Z","harness:codex","Current official plugin packaging docs (checked 2026-09-23) prefer portable root plugin.json and mcp.json; the existing .codex-plugin/.mcp.json compatibility layout remains supported. This branch proves exact-version copied-cache MCP startup only. Portable layout, asset/skill validation, and any ChatGPT app or public submission remain under this existing feature, with no duplicate item created. Source: https://developers.openai.com/plugins/build/plugins"
+  "2026-09-23T05:27:27.302Z","harness:codex","Implementation evidence: copied Codex plugin cache loaded @unbrained/pm-cli@2026.9.22 from a real packed local install and served MCP discovery/tools/context with npm unavailable at startup. This completes the version-coherent runtime slice; portable manifest/skill validation and separate ChatGPT app scope remain on this feature. Full gates remain in progress."
+  "2026-09-23T18:06:02.060Z","harness:codex","Tranche evidence: Copied Codex plugin uses an exact @unbrained/pm-cli pin, private installed cache, native MCP launcher, and offline reuse; copied-cache acceptance and the full exact-coverage suite passed. The static PM_AUTHOR override was removed so runtime identity follows the host. Remaining official manifest/assets/skills and ChatGPT Apps SDK architecture and submission criteria remain open; this delivery does not claim a complete ChatGPT app."
+files[7]{path,scope,note}:
+  plugins/pm-codex/.mcp.json,project,Remove static author override
+  plugins/pm-codex/package.json,project,Exact runtime dependency for copied Codex plugin
+  plugins/pm-codex/scripts/plugin-runtime.mjs,project,Resolve and cache pinned CLI runtime
+  plugins/pm-codex/scripts/pm-mcp-server.mjs,project,Launch the native MCP server
+  scripts/smoke-codex-plugin-mcp.mjs,project,Exercise actual plugin launcher
+  templates/agent-plugins/pm-mcp-server.mjs,project,Guard local checkout resolution
+  tests/acceptance/plugin-cache-smoke.mjs,project,Copied Codex plugin exact pinned runtime offline acceptance
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/plugins/pm-mcp-server.spec.ts tests/unit/scripts/sync-versions.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T20:43:55.624Z"
+      source_kind: local_mutation
+      source_ref: main
+  - command: "pnpm smoke:plugin-cache"
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-23T05:24:10.605Z"
+      source_kind: local_mutation
+      source_ref: feat/version-coherent-agent-plugin-runtimes
+    note: Codex copied-cache offline proof
+docs[3]{path,scope,note}:
+  docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md,project,Record implemented runtime slice and remaining native alignment
+  docs/CODEX_PLUGIN.md,project,Document native plugin startup and version coherence
+  plugins/pm-codex/README.md,project,Explain pinned runtime
 body: ""

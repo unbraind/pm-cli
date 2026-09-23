@@ -32,6 +32,8 @@ const VERSION_PATTERN = /^([1-9]\d{3})\.([1-9]\d*)\.([1-9]\d*)(?:-([1-9]\d*))?$/
 const PLUGIN_MANIFESTS = [
   "plugins/pm-claude/.claude-plugin/plugin.json",
   "plugins/pm-codex/.codex-plugin/plugin.json",
+  "plugins/pm-claude/package.json",
+  "plugins/pm-codex/package.json",
 ];
 
 const MARKETPLACE_CATALOGS = [
@@ -84,6 +86,15 @@ function versionSlots(manifest) {
       read: () => manifest.metadata.version,
       write: (value) => {
         manifest.metadata.version = value;
+      },
+    });
+  }
+  if (typeof manifest.dependencies?.["@unbrained/pm-cli"] === "string") {
+    slots.push({
+      label: "dependencies.@unbrained/pm-cli",
+      read: () => manifest.dependencies["@unbrained/pm-cli"],
+      write: (value) => {
+        manifest.dependencies["@unbrained/pm-cli"] = value;
       },
     });
   }
