@@ -1,0 +1,48 @@
+id: pm-d6fd85
+title: Windows copied agent plugins cannot install pinned runtime through npm.cmd
+description: "CodeRabbit review on PR #1292 found that the new generated Claude/Codex plugin resolver calls spawnSync(\"npm.cmd\") without a Windows command processor. Node 24 cannot execute .cmd directly, so a copied plugin with an empty cache cannot complete its first pinned install on Windows. Preserve exact-version, atomic, offline behavior and prove actual Windows command transport in the required regression job."
+type: Issue
+status: in_progress
+priority: 1
+tags[4]: mcp,plugin-runtime,review-feedback,windows
+created_at: "2026-09-23T21:28:11.224Z"
+updated_at: "2026-09-23T21:47:55.150Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#0be07b94b7b44e4ec913bc03"
+author: "harness:codex"
+acceptance_criteria: A copied Claude or Codex plugin with an empty cache installs its exact matching pm-cli runtime on Windows Node 24 through a safely bounded npm.cmd invocation; staging paths with spaces and shell metacharacters are preserved; generated launchers remain byte-identical; a native Windows regression exercises the command transport and required PR checks pass.
+parent: pm-z3ez
+severity: high
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-arax,incident_from,"2026-09-23T21:28:11.224Z","harness:codex","cli:create:dep",detected
+  pm-l9wl,discovered_from,"2026-09-23T21:28:11.224Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-09-23T21:28:11.224Z","harness:codex","Duplicate check: all-status searches for Windows plugin npm.cmd, in-process Claude plugin and launcher showed pm-arax closed the earlier extension npm command issue and pm-l9wl closed the copied Claude plugin defect; neither covers this newly generated plugin resolver Windows first-install transport. Reuse pm-z3ez agent-distribution parent and link both historical causes. Review evidence: PR #1292 CodeRabbit inline thread at templates/agent-plugins/plugin-runtime.mjs."
+  "2026-09-23T21:28:30.768Z","harness:codex","Node official child_process documentation for current and Node 22 says Windows .cmd/.bat cannot be launched directly; use cmd.exe as a child. The prior pm-arax extension fix already had a review follow-up for the same shell requirement. The plugin resolver remains standalone inside copied marketplace caches, so this repair belongs in its shared generated template and a native Windows regression."
+  "2026-09-23T21:31:21.848Z","harness:codex","TDD red: before the resolver change, both Claude and Codex simulated-Windows command tests failed because the default installer received npm.cmd directly instead of cmd.exe. Implemented a fixed npm command string via cmd.exe /d /v:off /s /c with windowsVerbatimArguments and passed the staging root through the child environment; regenerated both plugin copies. Focused resolver tests now pass 28/28 on Linux. Added a native Windows integration test with a real .cmd shim and a staging path containing spaces, ampersand and percent, required in the Windows regression job. Hosted proof pending."
+  "2026-09-23T21:36:50.541Z","harness:codex","Local focused PM linked-test run passed 43 assertions; the two real command-processor cases are correctly skipped on Linux and required in Windows CI. pnpm typecheck, pnpm security:scan, pnpm smoke:plugin-cache, and generated-wrapper byte parity pass. The native Windows acceptance still needs hosted execution before closure."
+  "2026-09-23T21:47:55.150Z","harness:codex","Hosted PR #1292 run 35923549944 reached the new native Windows transport test. Both Claude and Codex real cmd.exe/npm.cmd shim cases passed with spaces, ampersand and percent in the staging path. The Windows job failed only because the adjacent simulated race test still expected Linux npm on Windows; corrected that expectation. The static gate failed its orphaned-path ceiling because the new integration test was committed before its PM file link; this push includes the linked PM item. No product command transport failure was observed."
+files[8]{path,scope,note}:
+  .github/workflows/ci.yml,project,Require native Windows transport regression before merge
+  plugins/pm-claude/scripts/plugin-runtime.mjs,project,Generated Claude pinned runtime resolver
+  plugins/pm-codex/scripts/plugin-runtime.mjs,project,Generated Codex pinned runtime resolver
+  templates/agent-plugins/plugin-runtime.mjs,project,Invoke Windows npm.cmd through cmd.exe with fixed command and staging root in child environment
+  tests/integration/ci-workflow-contract.spec.ts,project,Assert required Windows plugin transport regression and CI isolation contract
+  tests/integration/plugins/plugin-runtime-win32.integration.spec.ts,project,Run real Windows cmd.exe transport with a local npm.cmd shim and metacharacter-bearing staging path
+  tests/unit/plugins/plugin-runtime-races.spec.ts,project,Assert Windows command processor invocation and atomic behavior
+  tests/unit/plugins/plugin-runtime.spec.ts,project,Preserve cross-platform installer fixture contract
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/plugins/plugin-runtime-races.spec.ts tests/unit/plugins/plugin-runtime.spec.ts tests/integration/plugins/plugin-runtime-win32.integration.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,300,"harness:codex","2026-09-23T21:33:06.706Z",local_mutation,feat/version-coherent-agent-plugin-runtimes
+test_runs[1]:
+  - run_id: test-local-muemgoy3-8jdaa1
+    kind: test
+    status: passed
+    started_at: "2026-09-23T21:35:12.064Z"
+    finished_at: "2026-09-23T21:35:37.035Z"
+    recorded_at: "2026-09-23T21:35:37.035Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/plugins/plugin-runtime-races.spec.ts tests/unit/plugins/plugin-runtime.spec.ts tests/integration/plugins/plugin-runtime-win32.integration.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+body: ""
