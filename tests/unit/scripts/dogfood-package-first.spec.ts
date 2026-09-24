@@ -361,6 +361,7 @@ describe("dogfood-package-first", () => {
       for (const call of spawnSync.mock.calls) {
         // Compare the safe scalar only: a failed whole-call diff prints inherited credentials.
         expect(call[2]?.env?.PM_TELEMETRY_DISABLED).toBe("1");
+        expect(call[2]?.env?.PM_DOGFOOD_TEST_SENTINEL).toBe(sentinel);
       }
       const inheritedEnvironment = spawnSync.mock.calls[0]?.[2]?.env;
       expect(inheritedEnvironment?.PM_DOGFOOD_TEST_SENTINEL).toBe(sentinel);

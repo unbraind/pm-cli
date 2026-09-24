@@ -11,6 +11,9 @@ describe("GitHub workflow token permissions", () => {
     expect(auditWorkflowPermissions(workflow.replace("contents: read", "contents: write"), "example.yml")).toEqual([
       "example.yml: workflow permission contents: write exceeds read-only default",
     ]);
+    expect(auditWorkflowPermissions(workflow.replace("contents: read", "contnets: read"), "example.yml")).toEqual([
+      "example.yml: unknown workflow permission contnets",
+    ]);
     expect(auditWorkflowPermissions(workflow.replace("permissions:\n  contents: read\n", ""), "example.yml")).toEqual([
       "example.yml: declare explicit read-only workflow permissions",
     ]);
@@ -19,6 +22,9 @@ describe("GitHub workflow token permissions", () => {
   it("rejects OIDC at workflow scope and malformed or empty inventories", async () => {
     expect(auditWorkflowPermissions("permissions:\n  id-token: write\n", "oidc.yml")).toEqual([
       "oidc.yml: workflow permission id-token: write exceeds read-only default",
+    ]);
+    expect(auditWorkflowPermissions("permissions:\n  id-token: read\n", "oidc.yml")).toEqual([
+      "oidc.yml: workflow permission id-token: read exceeds read-only default",
     ]);
     expect(auditWorkflowPermissions("permissions: [broken\n", "broken.yml")[0]).toContain("invalid YAML");
     const root = await mkdtemp(path.join(tmpdir(), "pm-workflow-permissions-"));

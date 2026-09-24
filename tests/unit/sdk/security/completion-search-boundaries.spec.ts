@@ -48,7 +48,7 @@ describe("reviewed SDK input boundaries", () => {
 
   itOnPosix("decodes quoted and escaped prefixes without evaluating candidates", () => {
     const script = runCompletion("bash", ["Task", "Task'apostrophe", 'Task"double', "Task\\backslash", "Task`literal"]).script;
-    for (const [prefix, expected] of [["'Ta", "Task"], ['"Ta', "Task"], ["\\Ta", "Task"], ["'Task'\\''ap", "apostrophe"], ['"Task\\"do', "double"], ["Task\\\\ba", "backslash"], ['"Task\\ba', "backslash"], ["'Task`li", "literal"]]) {
+    for (const [prefix, expected] of [["'Ta", "Task"], ['"Ta', "Task"], ["\\Ta", "Task"], ['"Task\\"do', "double"], ["Task\\\\ba", "backslash"], ['"Task\\ba', "backslash"], ["'Task`li", "literal"], ["'Task'\\''ap", ""], ["'Ta''sk", ""], ['"Ta""sk', ""]]) {
       const result = spawnSync(process.env.PM_COMPLETION_TEST_BASH ?? "bash", ["--noprofile", "--norc"], {
         encoding: "utf8",
         env: { ...process.env, PM_TEST_PREFIX: prefix },
@@ -56,12 +56,30 @@ describe("reviewed SDK input boundaries", () => {
       });
       expect(result.status).toBe(0);
       expect(result.stderr).toBe("");
-      expect(result.stdout).toContain(expected);
+      if (expected) expect(result.stdout).toContain(expected);
+      else expect(result.stdout).toBe("\n");
     }
   });
 
   itOnPosix("preserves exact bytes after native Bash Tab and Enter in each insertion context", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-completion-pty-"));
+    const macPtyDriver = `import errno, os, pty, sys
+pid, fd = pty.fork()
+if pid == 0:
+    os.execvp(sys.argv[1], sys.argv[1:])
+os.write(fd, os.environ["PM_TEST_INPUT"].encode())
+while True:
+    try:
+        data = os.read(fd, 65536)
+    except OSError as error:
+        if error.errno == errno.EIO:
+            break
+        raise
+    if not data:
+        break
+    os.write(1, data)
+_, status = os.waitpid(pid, 0)
+sys.exit(os.waitstatus_to_exitcode(status))`;
     try {
       const source = path.join(root, "completion.bash");
       const sentinel = path.join(root, "executed");
@@ -70,13 +88,15 @@ describe("reviewed SDK input boundaries", () => {
         for (const prefix of ["'Ta", '"Ta', "\\Ta"]) {
           const input = `bind 'set enable-bracketed-paste off'\nsource '${source}'\npm() { printf 'ARG=<%s>\\n' "$@"; }\npm list --type ${prefix}\t\nexit\n`;
           const bash = process.env.PM_COMPLETION_TEST_BASH ?? "bash";
-          const args = process.platform === "darwin"
-            ? ["-q", "/dev/null", bash, "--noprofile", "--norc", "-i"]
-            : ["-qfec", `${bash} --noprofile --norc -i`, "/dev/null"];
-          const result = spawnSync("script", args, {
-            encoding: "utf8", input, timeout: 10_000,
-            env: { ...process.env, PM_SECRET: "EXPANDED_SECRET" },
-          });
+          const result = process.platform === "darwin" || process.env.PM_COMPLETION_TEST_PTY === "python"
+            ? spawnSync("python3", ["-c", macPtyDriver, bash, "--noprofile", "--norc", "-i"], {
+              encoding: "utf8", timeout: 10_000,
+              env: { ...process.env, PM_SECRET: "EXPANDED_SECRET", PM_TEST_INPUT: input },
+            })
+            : spawnSync("script", ["-qfec", `${bash} --noprofile --norc -i`, "/dev/null"], {
+              encoding: "utf8", input, timeout: 10_000,
+              env: { ...process.env, PM_SECRET: "EXPANDED_SECRET" },
+            });
           expect(result.status, `${prefix}: ${result.error ?? result.stderr}`).toBe(0);
           expect(result.stdout, prefix).toContain(`ARG=<list>`);
           expect(result.stdout, prefix).toContain(`ARG=<${candidate}>`);

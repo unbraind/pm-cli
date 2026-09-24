@@ -58,8 +58,10 @@ To test another installed Bash version, set `PM_COMPLETION_TEST_BASH` to its
 executable path. This is a test harness input, not a CLI configuration setting.
 The existing macOS runtime-smoke job pins `/bin/bash` so PATH cannot silently
 substitute a newer Homebrew Bash. It runs this regression before merge; Linux
-coverage runs the same matrix. Native Fish and Zsh acceptance remains in the
-required smoke gate.
+coverage runs the same matrix. The macOS test drives Bash through a Python 3
+pseudo terminal because BSD `script` requires terminal stdin; Linux uses
+`script`. Set `PM_COMPLETION_TEST_PTY=python` to exercise the macOS driver on
+Linux. Native Fish and Zsh acceptance remains in the required smoke gate.
 
 ## Replication diff collection
 

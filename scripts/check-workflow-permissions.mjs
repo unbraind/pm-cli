@@ -9,6 +9,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseDocument } from "yaml";
 
+// GitHub Actions workflow syntax: permissions available to GITHUB_TOKEN.
+const permissionScopes = new Set([
+  "actions", "artifact-metadata", "attestations", "checks", "code-quality",
+  "contents", "deployments", "discussions", "id-token", "issues",
+  "packages", "pages", "pull-requests", "security-events", "statuses",
+  "vulnerability-alerts",
+]);
+
 /** Audit one workflow's explicit default token permissions. */
 export function auditWorkflowPermissions(source, file) {
   const document = parseDocument(source, { uniqueKeys: true });
@@ -22,8 +30,10 @@ export function auditWorkflowPermissions(source, file) {
     return [`${file}: declare explicit read-only workflow permissions`];
   }
   return Object.entries(permissions)
-    .filter(([scope, access]) => access !== "read" && access !== "none" || scope === "id-token" && access !== "none")
-    .map(([scope, access]) => `${file}: workflow permission ${scope}: ${String(access)} exceeds read-only default`);
+    .filter(([scope, access]) => !permissionScopes.has(scope) || access !== "read" && access !== "none" || scope === "id-token" && access !== "none")
+    .map(([scope, access]) => !permissionScopes.has(scope)
+      ? `${file}: unknown workflow permission ${scope}`
+      : `${file}: workflow permission ${scope}: ${String(access)} exceeds read-only default`);
 }
 
 /** Audit every authored GitHub workflow, refusing an empty or unreadable inventory. */

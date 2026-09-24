@@ -6,25 +6,25 @@ status: closed
 priority: 1
 tags[4]: github-actions,least-privilege,scorecard,security
 created_at: "2026-07-14T22:40:26.943Z"
-updated_at: "2026-09-24T01:06:20.498Z"
-closed_at: "2026-09-24T01:06:19.699Z"
-completed_at: "2026-09-24T01:06:19.699Z"
+updated_at: "2026-09-24T01:47:56.323Z"
+closed_at: "2026-09-24T01:47:55.169Z"
+completed_at: "2026-09-24T01:47:55.169Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Every workflow under .github/workflows declares an explicit top-level permissions block (least privilege, job-level elevation only where required, matching the scorecard.yml/security.yml pattern); actionlint + Trivy misconfig green; next Scorecard run reports Token-Permissions 10"
 parent: pm-gnzh
 risk: low
 confidence: high
-resolution: Scope CodSpeed OIDC and Nightly issue writes to consuming jobs; register a blocking read-only workflow-default gate in static quality and the gate inventory.
-expected_result: "All workflow defaults are read-only, job elevations are explicit, negative control fails, Actionlint and security gates pass."
-actual_result: "Prior-main Scorecard Token-Permissions 10; Actionlint, bounded Trivy, tracked-secret scan, gate registry, and 11 focused registry/workflow tests pass; write-grant negative control exits 1. PR-head hosted checks remain pending."
+resolution: Reject unknown GitHub Actions token scopes and align release contract fixture with mandatory static gate.
+expected_result: Permission typos and workflow-wide write grants fail while valid read-only defaults pass across release checks.
+actual_result: "Workflow unit and release integration tests 59/59 passed, gate registry and static quality passed; hosted CI rerun pending."
 dependencies[5]{id,kind,created_at}:
   pm-5zca,related,"2026-07-15T06:29:47.248Z"
   pm-e02lgu,related,"2026-07-24T23:53:12.394Z"
   pm-qwoy,related,"2026-07-24T23:53:12.394Z"
   pm-u9d0,related,"2026-07-24T23:53:12.394Z"
   pm-gnzh,implements,"2026-07-26T05:55:36.532Z"
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-18T12:39:30.335Z",codex-gpt5,"GitHub report evidence 2026-07-18: open Scorecard TokenPermissionsID alerts #17 (auto-release.yml:34), #18 (codeql.yml:17), and #19 (release.yml:15), all high severity on refs/heads/main. These are canonicalized here; no duplicate item created."
   "2026-07-25T23:57:20.362Z","harness:codex","Implementation evidence: PR #718 now uses read-only top-level permissions in auto-release, Release, and CodeQL while granting each existing write scope only to its consuming job. Pinned actionlint 1.7.12 passed all workflows; Trivy HIGH/CRITICAL vulnerability, secret, and misconfiguration scan passed with zero findings. Final closure remains gated on the next main-branch Scorecard run reporting Token-Permissions 10."
   "2026-09-24T00:09:09.211Z","harness:codex","Live verification on main at abbe424343221168027c36af043264e73e5cc2dc: Scorecard run 35928177082 completed successfully on 2026-09-23. Its JSON check reports Token-Permissions score 10 with reason 'GitHub workflow tokens follow principle of least privilege'. GitHub code-scanning alerts 17, 18, and 19 for the three formerly affected workflows are fixed, not dismissed. The implementation and actionlint/Trivy evidence were already recorded for PR 718 in this item's prior comment; no duplicate work or workflow edit is needed."
@@ -32,9 +32,10 @@ comments[7]{created_at,author,text}:
   "2026-09-24T00:51:57.857Z","harness:codex","Final local verification: pinned actionlint v1.7.12 passed all GitHub workflows. Trivy HIGH/CRITICAL vulnerability, secret, and misconfiguration scan passed after excluding ignored runtime caches; no findings in the committed project surface. Workflow permissions gate and injected negative control passed their expected verdicts. Typecheck passed."
   "2026-09-24T01:06:05.769Z","harness:codex","Additional gate evidence: the first full static run reached graph composition and exposed one new generic related edge; it was changed to typed discovered_from provenance. The second run reached gate-registry and exposed the undeclared workflow script. The registered workflow-token-permissions gate now passes registry validation; its local-preflight mapping and negative-control fixture are explicit. The remaining static pipeline will be rerun on this state."
   "2026-09-24T01:06:18.922Z","harness:codex","Final registered-gate proof: node scripts/release/gate-registry.mjs passes with 17 owned gates and 24 enforced pipeline mappings; gate-registry and workflow-permissions focused suites pass 11/11; read-only workflow inventory passes; workflow-scope write negative control exits 1."
+  "2026-09-24T01:46:55.310Z","harness:codex","PR #1293 recurrence: validate workflow permission keys against current GitHub Actions GITHUB_TOKEN scope list, including code-quality and vulnerability-alerts; typo negative control added. Updated exact static-quality script fixture shared by release integration tests. Focused workflow and release integration tests passed."
 learnings[1]{created_at,author,text}:
   "2026-09-24T01:06:05.027Z","harness:codex","Repository gate inventory limits retained release scripts to a minority; a static workflow check belongs in scripts/ and is declared as a blocking local-preflight gate with explicit owner, taxonomy, bypass policy, and negative-control fixture. This preserves the assurance migration ratio."
-files[9]{path,scope,note}:
+files[10]{path,scope,note}:
   .github/workflows/auto-release.yml,project,Moves release-retry token elevation from workflow scope to the only job that needs it
   .github/workflows/codeql.yml,project,Scopes SARIF upload permission to the analysis job
   .github/workflows/codspeed.yml,project,Scope CodSpeed OIDC to benchmarks job
@@ -43,6 +44,7 @@ files[9]{path,scope,note}:
   package.json,project,Run token permission gate in static quality
   scripts/check-workflow-permissions.mjs,project,Reject workflow scope write grants
   scripts/release/gate-registry.json,project,Declare owner pipelines failure taxonomy bypass and negative control
+  tests/helpers/releaseContracts.ts,project,Keep exact release static-quality contract aligned with workflow permission gate
   tests/unit/scripts/release/workflow-permissions-gate.spec.ts,project,Exercise positive and negative workflow cases
 tests[4]:
   - command: "actionlint .github/workflows/*.yml && trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --exit-code 1 ."
@@ -74,7 +76,7 @@ tests[4]:
       source_ref: feat/bash-quoted-completion-and-shell-safety
 docs[1]{path,scope,note}:
   docs/DEFECT_RECURRENCE.md,project,Document workflow permission recurrence gate and negative control
-close_reason: Workflow token scopes and registered recurrence gate satisfy local acceptance
+close_reason: PR review workflow permission gate and release fixture corrected
 escape_class: scanner_finding
 gate_evidence:
   disposition: gate_added
