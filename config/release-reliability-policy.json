@@ -1,0 +1,9 @@
+{
+  "schema": "release-reliability-policy/1",
+  "window_days": 30,
+  "cron_hour_utc": 2,
+  "cron_minute_utc": 35,
+  "max_dispatch_delay_minutes": 60,
+  "max_failure_rate": 0.1,
+  "min_completed_runs": 7
+}

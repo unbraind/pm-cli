@@ -447,6 +447,10 @@ gh run watch <run-id> --exit-status
 
 ## Post-Release Verification
 
+Use the [rolling reliability report](RELEASE_RELIABILITY.md) as well as the
+latest release result. Its first-attempt denominator, explicit outcome receipts,
+and UTC dispatch policy preserve failures even after a recovery succeeds.
+
 ```bash
 npm view @unbrained/pm-cli@<version> version dist.integrity dist.unpackedSize --json
 npx --yes --package @unbrained/pm-cli@<version> -- pm --json --no-extensions contracts --summary
