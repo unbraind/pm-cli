@@ -1,4 +1,7 @@
 import { spawnSync } from "node:child_process";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runCompletion } from "../../../../src/sdk/completion.js";
 import { normalizeScoreMap } from "../../../../src/sdk/query/search/lexical.js";
@@ -43,17 +46,66 @@ describe("reviewed SDK input boundaries", () => {
     }
   });
 
-  itOnPosix("refuses quoted or escaped prefixes before completion initialization", () => {
-    const script = runCompletion("bash", ["Task"]).script;
-    for (const prefix of ["'", '"', "`", "\\"]) {
+  itOnPosix("decodes quoted and escaped prefixes without evaluating candidates", () => {
+    const script = runCompletion("bash", ["Task", "Task'apostrophe", 'Task"double', "Task\\backslash", "Task`literal"]).script;
+    for (const [prefix, expected] of [["'Ta", "Task"], ['"Ta', "Task"], ["\\Ta", "Task"], ['"Task\\"do', "double"], ["Task\\\\ba", "backslash"], ['"Task\\ba', "backslash"], ["'Task`li", "literal"], ["'Task'\\''ap", ""], ["'Ta''sk", ""], ['"Ta""sk', ""]]) {
       const result = spawnSync(process.env.PM_COMPLETION_TEST_BASH ?? "bash", ["--noprofile", "--norc"], {
         encoding: "utf8",
         env: { ...process.env, PM_TEST_PREFIX: prefix },
-        input: `${script}\n_init_completion() { cur=""; prev=--type; cword=3; }\nCOMP_WORDS=(pm list --type "$PM_TEST_PREFIX")\nCOMP_CWORD=3\nCOMPREPLY=(stale)\n_pm_completion\nprintf '%s' "\${COMPREPLY[*]}"\n`,
+        input: `${script}\n_init_completion() { cur=""; prev=--type; cword=3; }\nCOMP_WORDS=(pm list --type "$PM_TEST_PREFIX")\nCOMP_CWORD=3\nCOMPREPLY=(stale)\n_pm_completion\nprintf '%s\\n' "\${COMPREPLY[@]}"\n`,
       });
       expect(result.status).toBe(0);
       expect(result.stderr).toBe("");
-      expect(result.stdout).toBe("");
+      if (expected) expect(result.stdout).toContain(expected);
+      else expect(result.stdout).toBe("\n");
+    }
+  });
+
+  itOnPosix("preserves exact bytes after native Bash Tab and Enter in each insertion context", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-completion-pty-"));
+    const macPtyDriver = `import errno, os, pty, sys
+pid, fd = pty.fork()
+if pid == 0:
+    os.execvp(sys.argv[1], sys.argv[1:])
+os.write(fd, os.environ["PM_TEST_INPUT"].encode())
+while True:
+    try:
+        data = os.read(fd, 65536)
+    except OSError as error:
+        if error.errno == errno.EIO:
+            break
+        raise
+    if not data:
+        break
+    os.write(1, data)
+_, status = os.waitpid(pid, 0)
+sys.exit(os.waitstatus_to_exitcode(status))`;
+    try {
+      const source = path.join(root, "completion.bash");
+      const sentinel = path.join(root, "executed");
+      for (const candidate of [`Task'quote"$PM_SECRET$(touch\${IFS}${sentinel})\`id\`*!🚀`, "Task'", 'Task"', "Task\\"]) {
+        await writeFile(source, runCompletion("bash", [candidate]).script);
+        for (const prefix of ["'Ta", '"Ta', "\\Ta"]) {
+          const input = `bind 'set enable-bracketed-paste off'\nsource '${source}'\npm() { printf 'ARG=<%s>\\n' "$@"; }\npm list --type ${prefix}\t\nexit\n`;
+          const bash = process.env.PM_COMPLETION_TEST_BASH ?? "bash";
+          const result = process.platform === "darwin" || process.env.PM_COMPLETION_TEST_PTY === "python"
+            ? spawnSync("python3", ["-c", macPtyDriver, bash, "--noprofile", "--norc", "-i"], {
+              encoding: "utf8", timeout: 10_000,
+              env: { ...process.env, PM_SECRET: "EXPANDED_SECRET", PM_TEST_INPUT: input },
+            })
+            : spawnSync("script", ["-qfec", `${bash} --noprofile --norc -i`, "/dev/null"], {
+              encoding: "utf8", input, timeout: 10_000,
+              env: { ...process.env, PM_SECRET: "EXPANDED_SECRET" },
+            });
+          expect(result.status, `${prefix}: ${result.error ?? result.stderr}`).toBe(0);
+          expect(result.stdout, prefix).toContain(`ARG=<list>`);
+          expect(result.stdout, prefix).toContain(`ARG=<${candidate}>`);
+          expect(result.stdout, prefix).not.toContain("ARG=<EXPANDED_SECRET>");
+          await expect(readFile(sentinel)).rejects.toMatchObject({ code: "ENOENT" });
+        }
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
     }
   });
 

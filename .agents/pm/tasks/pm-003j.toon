@@ -2,31 +2,89 @@ id: pm-003j
 title: "Scorecard Token-Permissions (0→10): declare least-privilege top-level permissions in every GitHub workflow"
 description: Raise OpenSSF Scorecard Token-Permissions to 10 by declaring explicit least-privilege permissions in every workflow and limiting elevations to the jobs that require them.
 type: Task
-status: open
+status: closed
 priority: 1
 tags[4]: github-actions,least-privilege,scorecard,security
 created_at: "2026-07-14T22:40:26.943Z"
-updated_at: "2026-09-08T13:32:10.776Z"
+updated_at: "2026-09-24T02:22:47.412Z"
+closed_at: "2026-09-24T02:22:46.444Z"
+completed_at: "2026-09-24T02:22:46.444Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Every workflow under .github/workflows declares an explicit top-level permissions block (least privilege, job-level elevation only where required, matching the scorecard.yml/security.yml pattern); actionlint + Trivy misconfig green; next Scorecard run reports Token-Permissions 10"
 parent: pm-gnzh
 risk: low
 confidence: high
-expected_result: "Every workflow declares least-privilege top-level permissions with job-level elevation only where required, and Scorecard reports Token-Permissions at ten."
+resolution: Expose and exercise the workflow-permissions CLI entrypoint under normal and negative-control paths without changing CLI behavior.
+expected_result: Repository-wide and PR-patch coverage return to exact 100 percent while the workflow gate remains blocking.
+actual_result: "Full local run passed 9,248 tests and exact 100/100/100/100 source coverage; TypeScript, ESLint, gate registry, and focused release tests pass; hosted rerun pending."
 dependencies[5]{id,kind,created_at}:
   pm-5zca,related,"2026-07-15T06:29:47.248Z"
   pm-e02lgu,related,"2026-07-24T23:53:12.394Z"
   pm-qwoy,related,"2026-07-24T23:53:12.394Z"
   pm-u9d0,related,"2026-07-24T23:53:12.394Z"
   pm-gnzh,implements,"2026-07-26T05:55:36.532Z"
-comments[2]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-07-18T12:39:30.335Z",codex-gpt5,"GitHub report evidence 2026-07-18: open Scorecard TokenPermissionsID alerts #17 (auto-release.yml:34), #18 (codeql.yml:17), and #19 (release.yml:15), all high severity on refs/heads/main. These are canonicalized here; no duplicate item created."
   "2026-07-25T23:57:20.362Z","harness:codex","Implementation evidence: PR #718 now uses read-only top-level permissions in auto-release, Release, and CodeQL while granting each existing write scope only to its consuming job. Pinned actionlint 1.7.12 passed all workflows; Trivy HIGH/CRITICAL vulnerability, secret, and misconfiguration scan passed with zero findings. Final closure remains gated on the next main-branch Scorecard run reporting Token-Permissions 10."
-files[3]{path,scope,note}:
+  "2026-09-24T00:09:09.211Z","harness:codex","Live verification on main at abbe424343221168027c36af043264e73e5cc2dc: Scorecard run 35928177082 completed successfully on 2026-09-23. Its JSON check reports Token-Permissions score 10 with reason 'GitHub workflow tokens follow principle of least privilege'. GitHub code-scanning alerts 17, 18, and 19 for the three formerly affected workflows are fixed, not dismissed. The implementation and actionlint/Trivy evidence were already recorded for PR 718 in this item's prior comment; no duplicate work or workflow edit is needed."
+  "2026-09-24T00:40:18.064Z","harness:codex","Evidence: CodSpeed OIDC and Nightly issue-alert write grants now live only on consuming jobs. scripts/release/workflow-permissions-gate.mjs scans every workflow in quality:static; live inventory passes, injected workflow-scope contents: write negative control exits 1, and focused gate tests pass (2/2). Scorecard on prior main was Token-Permissions 10; hosted verification of this head remains pending."
+  "2026-09-24T00:51:57.857Z","harness:codex","Final local verification: pinned actionlint v1.7.12 passed all GitHub workflows. Trivy HIGH/CRITICAL vulnerability, secret, and misconfiguration scan passed after excluding ignored runtime caches; no findings in the committed project surface. Workflow permissions gate and injected negative control passed their expected verdicts. Typecheck passed."
+  "2026-09-24T01:06:05.769Z","harness:codex","Additional gate evidence: the first full static run reached graph composition and exposed one new generic related edge; it was changed to typed discovered_from provenance. The second run reached gate-registry and exposed the undeclared workflow script. The registered workflow-token-permissions gate now passes registry validation; its local-preflight mapping and negative-control fixture are explicit. The remaining static pipeline will be rerun on this state."
+  "2026-09-24T01:06:18.922Z","harness:codex","Final registered-gate proof: node scripts/release/gate-registry.mjs passes with 17 owned gates and 24 enforced pipeline mappings; gate-registry and workflow-permissions focused suites pass 11/11; read-only workflow inventory passes; workflow-scope write negative control exits 1."
+  "2026-09-24T01:46:55.310Z","harness:codex","PR #1293 recurrence: validate workflow permission keys against current GitHub Actions GITHUB_TOKEN scope list, including code-quality and vulnerability-alerts; typo negative control added. Updated exact static-quality script fixture shared by release integration tests. Focused workflow and release integration tests passed."
+  "2026-09-24T02:11:12.841Z","harness:codex","Hosted PR #1293 aggregate gate and Codecov patch failed at 99.98% global source coverage and 72% patch coverage. The missing source was the new workflow-permissions CLI entrypoint. Exported a directly testable entrypoint with injected workflow directory and negative-control flag; the focused coverage report now shows 25/25 lines, 29/29 branches, 8/8 functions, and 31/31 statements for the gate script. TypeScript, ESLint, 60 focused workflow/release tests, workflow inventory, and gate registry pass. Full global coverage rerun is in progress."
+  "2026-09-24T02:22:45.568Z","harness:codex","Final local recurrence proof: full sandbox coverage completed 733 passing test files and 9,248 passing tests; exact gate passed 65,081/65,081 statements, 49,701/49,701 branches, 13,495/13,495 functions, and 62,227/62,227 lines. The new workflow gate itself has 100% on all four measures. Hosted aggregate coverage and Codecov patch will verify the pushed head."
+learnings[1]{created_at,author,text}:
+  "2026-09-24T01:06:05.027Z","harness:codex","Repository gate inventory limits retained release scripts to a minority; a static workflow check belongs in scripts/ and is declared as a blocking local-preflight gate with explicit owner, taxonomy, bypass policy, and negative-control fixture. This preserves the assurance migration ratio."
+files[10]{path,scope,note}:
   .github/workflows/auto-release.yml,project,Moves release-retry token elevation from workflow scope to the only job that needs it
   .github/workflows/codeql.yml,project,Scopes SARIF upload permission to the analysis job
+  .github/workflows/codspeed.yml,project,Scope CodSpeed OIDC to benchmarks job
+  .github/workflows/nightly.yml,project,Scope issue alerts to nightly jobs
   .github/workflows/release.yml,project,Keeps publish/OIDC elevation job-scoped under read-only workflow defaults
-tests[1]{command,scope,timeout_seconds}:
-  "actionlint .github/workflows/*.yml && trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --exit-code 1 .",project,240
+  package.json,project,Run token permission gate in static quality
+  scripts/check-workflow-permissions.mjs,project,Reject workflow scope write grants
+  scripts/release/gate-registry.json,project,Declare owner pipelines failure taxonomy bypass and negative control
+  tests/helpers/releaseContracts.ts,project,Keep exact release static-quality contract aligned with workflow permission gate
+  tests/unit/scripts/release/workflow-permissions-gate.spec.ts,project,Exercise positive and negative workflow cases
+tests[4]:
+  - command: "actionlint .github/workflows/*.yml && trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --exit-code 1 ."
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/workflow-permissions-gate.spec.ts
+    scope: project
+    timeout_seconds: 120
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-24T00:39:42.361Z"
+      source_kind: local_mutation
+      source_ref: feat/bash-quoted-completion-and-shell-safety
+  - command: node scripts/check-workflow-permissions.mjs
+    scope: project
+    timeout_seconds: 30
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-24T01:06:04.322Z"
+      source_kind: local_mutation
+      source_ref: feat/bash-quoted-completion-and-shell-safety
+  - command: node scripts/release/gate-registry.mjs
+    scope: project
+    timeout_seconds: 60
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-24T01:06:04.322Z"
+      source_kind: local_mutation
+      source_ref: feat/bash-quoted-completion-and-shell-safety
+docs[1]{path,scope,note}:
+  docs/DEFECT_RECURRENCE.md,project,Document workflow permission recurrence gate and negative control
+close_reason: Coverage recurrence closed with fully exercised gate entrypoint
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_added
+  gate_id: workflow-token-permissions
+  negative_control: node scripts/check-workflow-permissions.mjs --negative-control
+  local_checks[3]: node scripts/check-workflow-permissions.mjs,node scripts/release/gate-registry.mjs,node scripts/run-tests.mjs test -- tests/unit/scripts/release/workflow-permissions-gate.spec.ts
+  hosted_checks[2]: "Nightly quality (ubuntu-latest, Node 24)",Scorecard analysis
+  owner: pm-003j
 body: ""

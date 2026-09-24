@@ -1,6 +1,6 @@
 # Defect Recurrence and Boundary Evidence
 
-Tracked by [pm-1qkivy](../.agents/pm/features/pm-1qkivy.toon), [pm-rtn5h6](../.agents/pm/tasks/pm-rtn5h6.toon), [pm-0pzgit](../.agents/pm/tasks/pm-0pzgit.toon), [pm-7c27ep](../.agents/pm/issues/pm-7c27ep.toon), and [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon).
+Tracked by [pm-1qkivy](../.agents/pm/features/pm-1qkivy.toon), [pm-rtn5h6](../.agents/pm/tasks/pm-rtn5h6.toon), [pm-0pzgit](../.agents/pm/tasks/pm-0pzgit.toon), [pm-7c27ep](../.agents/pm/issues/pm-7c27ep.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), and [pm-003j](../.agents/pm/tasks/pm-003j.toon).
 
 ## Agent Quick Context
 
@@ -191,6 +191,13 @@ The first command must pass. The negative control must exit `1` after replacing 
 adds a disconnected, unregistered recurrence pair and must also exit `1`. Focused provider modes are available as `--boundary-only`, `--evidence-only`, and `--policy-only`.
 
 `repository-defect-evidence-required` is part of the blocking `repository-static-quality` assurance composition. That makes local and CI behavior share the same provider result, assertion negative control, enforcement, and immutable verdict semantics.
+
+The static quality pipeline also runs `node scripts/check-workflow-permissions.mjs`.
+It parses every GitHub workflow and requires an explicit read-only default token;
+write scopes belong on jobs that use them. Run its `--negative-control` mode to
+confirm a workflow-scope `contents: write` grant exits with status 1. This
+protects the least-privilege workflow policy that [pm-003j](../.agents/pm/tasks/pm-003j.toon)
+tracks, even between Scorecard scans.
 
 The mandatory `gate-registry` check also compares each recurrence family's `checks.hosted` values with concrete names derived from the repository workflows. It expands static matrix axes and applies exclusions before inclusions according to [GitHub's matrix rules](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstrategymatrixinclude). Renamed or removed checks produce named findings. Runtime expressions, unnamed matrix jobs, and static expansions beyond 256 combinations cannot certify a required check name. The public SDK policy parser remains provider-neutral; this workflow binding belongs to the repository gate.
 

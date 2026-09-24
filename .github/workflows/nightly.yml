@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 concurrency:
   group: nightly-${{ github.workflow }}-${{ github.ref }}
@@ -16,6 +15,9 @@ concurrency:
 jobs:
   nightly:
     name: ${{ matrix.label }}
+    permissions:
+      contents: read
+      issues: write # Scheduled failure alert
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
@@ -114,6 +116,9 @@ jobs:
 
   quality:
     name: Nightly quality (ubuntu-latest, Node 24)
+    permissions:
+      contents: read
+      issues: write # Scheduled failure alert
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

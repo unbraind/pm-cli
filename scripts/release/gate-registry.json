@@ -286,7 +286,7 @@
       },
       {
         "id": "static-quality-gate",
-        "gates": ["documentation", "static-quality", "tracker-context-quality", "sdk-mutation-strength", "docstring-content"],
+        "gates": ["documentation", "static-quality", "workflow-token-permissions", "tracker-context-quality", "sdk-mutation-strength", "docstring-content"],
         "executable": { "command": "pnpm", "args": ["quality:static"] },
         "skip_policy": "forbidden"
       },
@@ -583,6 +583,20 @@
       "negative_control": {
         "test": "tests/unit/scripts/release/static-quality-gate.spec.ts",
         "assertion": "checkSdkImportBoundary fails closed on computed dynamic imports and require calls"
+      }
+    },
+    {
+      "id": "workflow-token-permissions",
+      "owner": "pm-003j",
+      "pipelines": ["ci.yml#gates", "nightly.yml#quality", "release.yml#release"],
+      "failure_taxonomy": ["workflow_default_write", "workflow_permissions_missing_or_invalid"],
+      "bypass": {
+        "allowed": false,
+        "audit": "Every workflow declares read-only defaults; job-scoped grants remain reviewable."
+      },
+      "negative_control": {
+        "test": "tests/unit/scripts/release/workflow-permissions-gate.spec.ts",
+        "assertion": "accepts job-scoped elevation and rejects workflow-scoped elevation"
       }
     },
     {

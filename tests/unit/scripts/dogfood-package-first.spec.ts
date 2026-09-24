@@ -290,7 +290,8 @@ function runDogfoodSpawn(command: string, args: string[], state: DogfoodSpawnSta
 
 function buildSpawnSync(overrides: Overrides = {}) {
   const state: DogfoodSpawnState = { planAddStepCount: 0, guidancePresent: false };
-  return vi.fn((command: string, args: string[]): SpawnResult => runDogfoodSpawn(command, args, state, overrides));
+  return vi.fn((command: string, args: string[], _options?: { env?: NodeJS.ProcessEnv }): SpawnResult =>
+    runDogfoodSpawn(command, args, state, overrides));
 }
 
 function mockFs(rmThrows = false, indexEmitted = true) {
@@ -334,6 +335,9 @@ describe("dogfood-package-first", () => {
   });
 
   it("runs the full success path (semantic skipped) and reports ok", async () => {
+    const previousSentinel = process.env.PM_DOGFOOD_TEST_SENTINEL;
+    const sentinel = "dogfood-fixture-secret-value";
+    process.env.PM_DOGFOOD_TEST_SENTINEL = sentinel;
     const spawnSync = buildSpawnSync();
     vi.doMock("node:child_process", () => ({ spawnSync }));
     const rmSync = mockFs();
@@ -342,25 +346,38 @@ describe("dogfood-package-first", () => {
     process.argv = ["node", "scripts/dogfood-package-first.mjs"];
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
-    await harness.importModule(SCRIPT);
+    try {
+      await harness.importModule(SCRIPT);
 
-    const payload = JSON.parse(String(logSpy.mock.calls.at(-1)?.[0] ?? "{}")) as {
-      ok: boolean;
-      semantic_dogfood: { attempted: boolean; skipped_reason: string };
-      commands: number;
-    };
-    expect(payload.ok).toBe(true);
-    expect(payload.semantic_dogfood.attempted).toBe(false);
-    expect(payload.semantic_dogfood.skipped_reason).toContain("PM_DOGFOOD_SEMANTIC not set");
-    expect(payload.commands).toBeGreaterThan(20);
-    for (const call of spawnSync.mock.calls) {
-      expect(call).toEqual([
-        expect.any(String),
-        expect.any(Array),
-        expect.objectContaining({ env: expect.objectContaining({ PM_TELEMETRY_DISABLED: "1" }) }),
-      ]);
+      const payload = JSON.parse(String(logSpy.mock.calls.at(-1)?.[0] ?? "{}")) as {
+        ok: boolean;
+        semantic_dogfood: { attempted: boolean; skipped_reason: string };
+        commands: number;
+      };
+      expect(payload.ok).toBe(true);
+      expect(payload.semantic_dogfood.attempted).toBe(false);
+      expect(payload.semantic_dogfood.skipped_reason).toContain("PM_DOGFOOD_SEMANTIC not set");
+      expect(payload.commands).toBeGreaterThan(20);
+      for (const call of spawnSync.mock.calls) {
+        // Compare the safe scalar only: a failed whole-call diff prints inherited credentials.
+        expect(call[2]?.env?.PM_TELEMETRY_DISABLED).toBe("1");
+        expect(call[2]?.env?.PM_DOGFOOD_TEST_SENTINEL).toBe(sentinel);
+      }
+      const inheritedEnvironment = spawnSync.mock.calls[0]?.[2]?.env;
+      expect(inheritedEnvironment?.PM_DOGFOOD_TEST_SENTINEL).toBe(sentinel);
+      let mismatchDiagnostic = "";
+      try {
+        expect(inheritedEnvironment?.PM_TELEMETRY_DISABLED).toBe("deliberate mismatch");
+      } catch (error) {
+        mismatchDiagnostic = String(error);
+      }
+      expect(mismatchDiagnostic).toContain("deliberate mismatch");
+      expect(mismatchDiagnostic).not.toContain(sentinel);
+      expect(rmSync).toHaveBeenCalled();
+    } finally {
+      if (previousSentinel === undefined) delete process.env.PM_DOGFOOD_TEST_SENTINEL;
+      else process.env.PM_DOGFOOD_TEST_SENTINEL = previousSentinel;
     }
-    expect(rmSync).toHaveBeenCalled();
   });
 
   it("runs the semantic probe when PM_DOGFOOD_SEMANTIC=1 and keeps the temp root", async () => {

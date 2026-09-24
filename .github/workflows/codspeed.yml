@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write # OpenID Connect authentication with CodSpeed
 
 concurrency:
   group: codspeed-${{ github.workflow }}-${{ github.ref }}
@@ -19,6 +18,9 @@ concurrency:
 jobs:
   benchmarks:
     name: Run benchmarks (Ubuntu 22.04, Node 24)
+    permissions:
+      contents: read
+      id-token: write # OpenID Connect authentication with CodSpeed
     # CodSpeed supports Ubuntu 22.04 and 24.04, but GitHub's rolling
     # ubuntu-latest pool can mix image revisions during a rollout. Pinning the
     # OS family keeps Valgrind/libc6-dbg installation on one stable baseline.
