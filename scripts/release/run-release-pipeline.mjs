@@ -17,6 +17,7 @@ import {
   runCommand,
   utcDateKey,
 } from "./utils.mjs";
+import { distributionManifestPaths } from "./version-manifests.mjs";
 import { isReleaseRelevantPath } from "./release-relevance.mjs";
 
 const releasePushToken = process.env.RELEASE_PUSH_TOKEN?.trim() ?? "";
@@ -408,17 +409,12 @@ function commitAndMaybePushRelease(targetVersion, tagName, author, push) {
     GIT_COMMITTER_NAME: author,
     GIT_COMMITTER_EMAIL: authorEmail,
   };
+  runCommand(process.execPath, ["scripts/sync-versions.mjs", "check"]);
   git([
     "add",
     "package.json",
     "CHANGELOG.md",
-    // Manifests stamped by scripts/sync-versions.mjs during release preparation.
-    "packages/*/package.json",
-    "plugins/pm-claude/.claude-plugin/plugin.json",
-    "plugins/pm-codex/.codex-plugin/plugin.json",
-    ".claude-plugin/marketplace.json",
-    "marketplace.json",
-    ".agents/plugins/marketplace.json",
+    ...distributionManifestPaths(repoRoot),
   ]);
   runCommand("git", [
     "commit",

@@ -20,27 +20,16 @@
  * release keeps all manifests in lockstep.
  */
 
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { distributionManifestPaths } from "./release/version-manifests.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 /** Mirrors scripts/release-version.mjs: YYYY.M.D with optional -N ordinal. */
 const VERSION_PATTERN = /^([1-9]\d{3})\.([1-9]\d*)\.([1-9]\d*)(?:-([1-9]\d*))?$/;
-
-const PLUGIN_MANIFESTS = [
-  "plugins/pm-claude/.claude-plugin/plugin.json",
-  "plugins/pm-codex/.codex-plugin/plugin.json",
-  "plugins/pm-claude/package.json",
-  "plugins/pm-codex/package.json",
-];
-
-const MARKETPLACE_CATALOGS = [
-  ".claude-plugin/marketplace.json",
-  "marketplace.json",
-  ".agents/plugins/marketplace.json",
-];
 
 function fail(message) {
   console.error(message);
@@ -49,18 +38,6 @@ function fail(message) {
 
 function readJson(relativePath) {
   return JSON.parse(readFileSync(path.join(repoRoot, relativePath), "utf8"));
-}
-
-/** Every workspace package manifest, discovered so new packages join the policy automatically. */
-function packageManifestPaths() {
-  return readdirSync(path.join(repoRoot, "packages"))
-    .map((entry) => path.join("packages", entry, "package.json"))
-    .filter((relativePath) => existsSync(path.join(repoRoot, relativePath)))
-    .sort();
-}
-
-function manifestPaths() {
-  return [...packageManifestPaths(), ...PLUGIN_MANIFESTS, ...MARKETPLACE_CATALOGS];
 }
 
 /**
@@ -119,7 +96,7 @@ function versionSlots(manifest) {
  */
 function syncManifests(rootVersion, mode) {
   const drift = [];
-  for (const relativePath of manifestPaths()) {
+  for (const relativePath of distributionManifestPaths(repoRoot)) {
     const manifest = readJson(relativePath);
     const stale = versionSlots(manifest).filter((slot) => slot.read() !== rootVersion);
     if (stale.length === 0) {

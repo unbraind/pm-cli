@@ -11,7 +11,7 @@ updates:
     # Keep bumps older than pnpm's supply-chain minimum-release-age check so
     # dependabot PRs don't fail CI install on freshly published versions.
     cooldown:
-      default-days: 3
+      default-days: 7
     groups:
       dev-dependencies:
         dependency-type: development
@@ -32,6 +32,9 @@ updates:
       time: "04:00"
       timezone: "UTC"
     open-pull-requests-limit: 5
+    # Keep the aging policy explicit for action tags as well as npm versions.
+    cooldown:
+      default-days: 7
     # Bump all actions in one PR: codeql-action init/analyze must move in
     # lockstep or the Analyze job fails on a config/runtime version mismatch.
     groups:
