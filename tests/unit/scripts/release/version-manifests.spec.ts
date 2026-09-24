@@ -30,6 +30,8 @@ describe("release manifest inventory (pm-t4prek)", () => {
     execFileSync("git", ["init", "--quiet"], options);
     execFileSync("git", ["config", "user.name", "Release fixture"], options);
     execFileSync("git", ["config", "user.email", "fixture@example.invalid"], options);
+    execFileSync("git", ["config", "core.autocrlf", "false"], options);
+    execFileSync("git", ["config", "core.eol", "lf"], options);
     execFileSync("git", ["add", "."], options);
     execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "Initial fixture"], options);
     writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "2026.9.24" }));

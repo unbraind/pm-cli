@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags: []
 created_at: "2026-09-24T08:32:19.516Z"
-updated_at: "2026-09-24T08:36:58.486Z"
+updated_at: "2026-09-24T08:47:20.559Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#b3f990a170e3e76542ccf300"
 author: "harness:codex"
@@ -16,10 +16,18 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-e70zh5,implements,"2026-09-24T08:32:19.516Z","harness:codex","cli:create:dep",detected
   pm-l9wl,discovered_from,"2026-09-24T08:32:19.516Z","harness:codex","cli:create:dep",detected
   pm-z3ez,verifies,"2026-09-24T08:32:19.516Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-09-24T08:32:19.516Z","harness:codex","Duplicate check: all-status searches for 1294 and plugin release version fixture found no owner of this staging omission; pm-l9wl is closed for the delivered exact-version resolver and stays closed. Live evidence: auto-release run 35971453730 and publish run 35973749511; failure reproduced from the committed manifest inventory."
   "2026-09-24T08:36:58.486Z","harness:codex","TDD evidence: the new staging regression failed with both runtime package.json paths absent (33 existing tests passed). Shared distribution inventory now drives sync and release git add; a fresh pre-commit version check refuses drift. Focused pipeline/sync/cooldown tests pass. Existing exact-tag recovery explicitly refuses changed source for unpublished immutable tags, so v2026.9.24 remains unchanged; next daily release can carry the reviewed correction."
-files[5]{path,scope,note}:
+  "2026-09-24T08:45:14.821Z","harness:codex","Live operational evidence: Sentry one-day window checked successfully with 0 critical/high issues; required telemetry gate passed at 0.43 percent errors and 0 failures lacking error codes. Independent freshness query at 08:43:47 UTC saw latest event 08:43:20 UTC and 190 events in 15 minutes; RabbitMQ events queue had 0 ready and 0 unacknowledged messages. These are live operational observations, not proof that unpublished v2026.9.24 reached consumers."
+  "2026-09-24T08:47:20.559Z","harness:codex","Temporary installed-artifact verification passed for copied Claude/Codex plugins with npm unavailable after cache population; npx and bunx packed-package smoke passed for corrected checkout version 2026.9.24 across 9 packages. This validates the local corrected tarball, not the existing immutable tag or npm publication."
+notes[1]{created_at,author,text}:
+  "2026-09-24T08:45:17.327Z","harness:codex","Release recovery boundary: preserve immutable v2026.9.24. Its unpublished source has stale plugin pins, and the current exact-tag recovery deliberately selects that source. Ship the fix on main; do not retag or publish changed source under that tag. Verify the next scheduled release separately."
+learnings[1]{created_at,author,text}:
+  "2026-09-24T08:39:40.978Z","harness:codex",A version synchronizer and release git-add allowlist must share one inventory. Working-tree validation cannot detect omitted staged artifacts; assert committed manifest bytes in a real temporary Git repository.
+files[7]{path,scope,note}:
+  plugins/pm-claude/package.json,project,Repair runtime pin omitted from release commit
+  plugins/pm-codex/package.json,project,Repair runtime pin omitted from release commit
   scripts/release/run-release-pipeline.mjs,project,Stage every synchronized manifest and check versions before commit
   scripts/release/version-manifests.mjs,project,Canonical distribution inventory shared by synchronization and staging
   scripts/sync-versions.mjs,project,Use shared manifest inventory
@@ -27,4 +35,14 @@ files[5]{path,scope,note}:
   tests/unit/scripts/release/version-manifests.spec.ts,project,Real temporary Git committed-artifact regression
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts tests/unit/scripts/release/version-manifests.spec.ts tests/unit/scripts/sync-versions.spec.ts,project,240,"harness:codex","2026-09-24T08:36:57.703Z",local_mutation,fix/graph-composition-assurance
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Committed release-artifact verification contract
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: release-integrity
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: Static quality gates,"Build, Test, Publish"
+  owner: pm-t4prek
 body: ""

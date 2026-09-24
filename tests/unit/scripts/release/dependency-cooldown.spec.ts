@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
@@ -7,6 +7,10 @@ import { auditDependencyCooldown, runIfMain } from "../../../../scripts/check-de
 const safe = "version: 2\nupdates:\n  - package-ecosystem: npm\n    cooldown:\n      default-days: 7\n  - package-ecosystem: github-actions\n    cooldown:\n      default-days: 7\n";
 
 describe("dependency update cooldown policy", () => {
+  it("keeps the live configuration governed", async () => {
+    expect(auditDependencyCooldown(await readFile(".github/dependabot.yml", "utf8"))).toEqual([]);
+  });
+
   it("requires an explicit minimum on every ecosystem and rejects dilution controls", () => {
     expect(auditDependencyCooldown(safe)).toEqual([]);
     expect(auditDependencyCooldown(safe.replaceAll("default-days: 7", "default-days: 14"))).toEqual([]);

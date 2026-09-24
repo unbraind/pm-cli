@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[7]: build-process,code-scanning,dependabot-missing-cooldown,medium,security,semgrep,true-positive
 created_at: "2026-07-06T18:56:34.427Z"
-updated_at: "2026-09-24T08:30:05.452Z"
+updated_at: "2026-09-24T08:46:44.548Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#b3f990a170e3e76542ccf300"
 author: codex-cli-agent
@@ -27,9 +27,34 @@ dependencies[4]{id,kind,created_at}:
   pm-qwoy,related,"2026-07-24T23:54:08.287Z"
   pm-tll8,related,"2026-07-24T23:54:08.287Z"
   pm-oz8u,implements,"2026-07-26T05:57:22.715Z"
-files[2]{path,scope,note}:
+comments[1]{created_at,author,text}:
+  "2026-09-24T08:44:42.439Z","harness:codex",The shared seven-day cooldown implementation covers GitHub Actions as well as npm. Fresh Semgrep p/ci scan reports zero findings. Mandatory static gate and registry wiring prevent ecosystem-specific omission; pm-gkut owns the shared gate code and negative controls.
+files[3]{path,scope,note}:
   .github/dependabot.yml,project,Explicit cooldown for both ecosystems
   package.json,project,Mandatory static gate wiring
+  tests/helpers/releaseContracts.ts,project,Update shared exact static gate contract with mandatory cooldown gate
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-cooldown.spec.ts,project,240,"harness:codex","2026-09-24T08:30:05.418Z",local_mutation,fix/graph-composition-assurance
+test_runs[1]:
+  - run_id: test-all-local-mufa4yhn-vf86m0
+    kind: test-all
+    status: failed
+    started_at: "2026-09-24T08:38:20.198Z"
+    finished_at: "2026-09-24T08:42:20.934Z"
+    recorded_at: "2026-09-24T08:42:20.934Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-cooldown.spec.ts,schema,schema,source,local_source_ref
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: dependency-cooldown
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-cooldown.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-cooldown.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: Static quality gates,"Build, Test, Publish"
+  owner: pm-dmo5
 body: "# Semgrep finding import\n\nSemgrep finding id: 874840451\nRule: package_managers.dependabot.dependabot-missing-cooldown.dependabot-missing-cooldown\nProduct: Code\nSeverity: Medium\nStatus: Open\nConfidence: High\nCategory: security\nIs Pro Rule: False\nSemgrep autotriage result: True positive\nSemgrep file risk tag: Build Process\nRepository: unbraind/pm-cli\nBranch: refs/heads/main\nCreated at: 2026-07-03 12:04:25.346159\nLast opened at: 2026-07-03 12:04:25.327857\n\nLinks:\n- Code: https://github.com/unbraind/pm-cli/blob/6f511706628f18743a00a1cfe851e8d1f492684e/.github/dependabot.yml#L23\n- Semgrep: https://semgrep.dev/orgs/unbrained/findings/874840451\n- Repository: https://github.com/unbraind/pm-cli\n\nRule description:\nThis Dependabot configuration does not set a cooldown period. Newly published packages can be malicious or unstable. Add a `cooldown` block with `default-days: 7` to each `package-ecosystem` entry under `updates` to wait 7 days before proposing updates to newly published package versions. Reference: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#cooldown\n\nImported from downloaded CSV:\nSemgrep_Code_Combined_Findings_2026_07_06.csv (local download, not committed)"

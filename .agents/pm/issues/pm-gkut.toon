@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[7]: build-process,code-scanning,dependabot-missing-cooldown,medium,security,semgrep,true-positive
 created_at: "2026-07-06T18:56:33.909Z"
-updated_at: "2026-09-24T08:30:04.635Z"
+updated_at: "2026-09-24T08:44:40.347Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#b3f990a170e3e76542ccf300"
 author: codex-cli-agent
@@ -25,9 +25,36 @@ component: .github/dependabot.yml
 dependencies[2]{id,kind,created_at}:
   pm-dmo5,related,"2026-07-14T17:05:00.388Z"
   pm-oz8u,implements,"2026-07-26T05:57:08.956Z"
-files[2]{path,scope,note}:
+comments[1]{created_at,author,text}:
+  "2026-09-24T08:44:40.347Z","harness:codex","Fresh Semgrep p/ci scan with 14 rules on .github/dependabot.yml: zero findings after explicit seven-day cooldowns for both ecosystems; the three-day configuration reproduced both findings. pnpm audit reports zero vulnerabilities across all severities. Gate negative controls reject missing, short, malformed and bypassed declarations, and live configuration/static wiring are tested."
+files[3]{path,scope,note}:
   scripts/check-dependency-cooldown.mjs,project,Fail-closed release-age enforcement
+  scripts/release/gate-registry.json,project,Register mandatory local and hosted cooldown policy and negative control
   tests/unit/scripts/release/dependency-cooldown.spec.ts,project,Negative controls for absent short and bypassed cooldowns
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-cooldown.spec.ts,project,240,"harness:codex","2026-09-24T08:30:04.601Z",local_mutation,fix/graph-composition-assurance
+test_runs[1]:
+  - run_id: test-all-local-mufa4yhn-vf86m0
+    kind: test-all
+    status: passed
+    started_at: "2026-09-24T08:38:20.198Z"
+    finished_at: "2026-09-24T08:42:21.106Z"
+    recorded_at: "2026-09-24T08:42:21.106Z"
+    passed: 0
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 1
+    executions[1]{command}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-cooldown.spec.ts
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Mandatory dependency aging negative controls
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: dependency-cooldown
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-cooldown.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-cooldown.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: Static quality gates,"Build, Test, Publish"
+  owner: pm-gkut
 body: "# Semgrep finding import\n\nSemgrep finding id: 874840452\nRule: package_managers.dependabot.dependabot-missing-cooldown.dependabot-missing-cooldown\nProduct: Code\nSeverity: Medium\nStatus: Open\nConfidence: High\nCategory: security\nIs Pro Rule: False\nSemgrep autotriage result: True positive\nSemgrep file risk tag: Build Process\nRepository: unbraind/pm-cli\nBranch: refs/heads/main\nCreated at: 2026-07-03 12:04:25.346215\nLast opened at: 2026-07-03 12:04:25.327889\n\nLinks:\n- Code: https://github.com/unbraind/pm-cli/blob/6f511706628f18743a00a1cfe851e8d1f492684e/.github/dependabot.yml#L3\n- Semgrep: https://semgrep.dev/orgs/unbrained/findings/874840452\n- Repository: https://github.com/unbraind/pm-cli\n\nRule description:\nThis Dependabot configuration does not set a cooldown period. Newly published packages can be malicious or unstable. Add a `cooldown` block with `default-days: 7` to each `package-ecosystem` entry under `updates` to wait 7 days before proposing updates to newly published package versions. Reference: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#cooldown\n\nImported from downloaded CSV:\nSemgrep_Code_Combined_Findings_2026_07_06.csv (local download, not committed)"

@@ -88,6 +88,20 @@ so PR-local CodeFactor maintainability annotations fail locally before commit or
 push. Existing legacy high-complexity test fixtures are tracked separately and
 must not be used as precedent for new changed production/script code.
 
+The same required static gate validates an explicit seven-day Dependabot
+cooldown for every updater, including npm and GitHub Actions. Missing values,
+shorter semver overrides, invalid YAML, and include/exclude bypasses fail the
+gate. Security updates retain GitHub's separate security-update behavior.
+The negative controls are tracked by [pm-gkut](../.agents/pm/issues/pm-gkut.toon)
+and [pm-dmo5](../.agents/pm/issues/pm-dmo5.toon).
+
+Release synchronization and commit staging share one distribution manifest
+inventory. The [pm-t4prek regression](../tests/unit/scripts/release/version-manifests.spec.ts)
+bumps versions in a temporary Git repository and reads the resulting commit to
+verify workspace versions and exact plugin runtime pins. The pipeline checks
+version consistency immediately before staging; tests of a prepared working
+tree alone cannot establish that the release commit contains those changes.
+
 `lint:duplicates` runs three zero-clone profiles: the broad repository profile,
 the production cross-format profile, and a supplemental long-table profile at
 28 lines / 80 tokens. The last profile detects the historical GH-508 normalizer
