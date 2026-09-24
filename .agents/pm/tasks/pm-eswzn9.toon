@@ -2,21 +2,36 @@ id: pm-eswzn9
 title: Support safe Bash completion inside quoted and escaped prefixes
 description: "Extend the conservative literal matcher with an explicit Readline insertion-context contract for single quotes, double quotes and escaped prefixes. Preserve accepted argument bytes without shell evaluation on Bash 3.2 and current Bash, including candidates with Unicode, apostrophes and shell metacharacters."
 type: Task
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-09-20T14:22:39.461Z"
-updated_at: "2026-09-20T14:23:18.860Z"
+updated_at: "2026-09-24T00:52:09.838Z"
+closed_at: "2026-09-24T00:52:09.010Z"
+completed_at: "2026-09-24T00:52:09.010Z"
 author: "harness:codex"
 acceptance_criteria: Real Tab-and-Enter acceptance across quoting contexts preserves exact argument bytes; adversarial candidates cannot execute or expand globs; no global Readline option changes; current safe unquoted completion remains compatible.
 parent: pm-7hx6
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Decode the current Readline word without evaluation and encode matches for single-quoted, double-quoted, and escaped insertion contexts; retain conservative refusal for ambiguous mixed segments."
+expected_result: Tab completion preserves candidate argument bytes and cannot execute candidate shell syntax.
+actual_result: "92 focused Bash security tests and 9,245 full coverage tests passed with 100/100/100/100 source coverage; temporary packed npm install and Node/Bun/npx/bunx smoke passed."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-7hx6,implements,"2026-09-20T14:23:18.589Z","harness:codex","cli:update:dep",detected
   pm-t6jl1f,discovered_from,"2026-09-20T14:23:18.589Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+  pm-26y269,discovered_from,"2026-09-24T00:13:23.042Z","harness:codex","cli:update:dep",detected
+  pm-t6jl1f,verifies,"2026-09-24T00:13:23.042Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
   "2026-09-20T14:22:39.461Z","harness:codex","Duplicate check: inspected the full all-status title census and open/in-progress inventories; Readline keyword search returned six unrelated historical items; completion history and current portability work contain no existing quoted-prefix implementation owner. This is an unclaimed UX follow-up for the deliberately conservative quoted-prefix boundary."
-files[1]{path,scope,note}:
+  "2026-09-24T00:13:27.755Z","harness:codex","TDD and native acceptance: the new quoted-prefix test failed before the implementation. The focused suite now passes 92/92; interactive Bash Tab-and-Enter in a temporary pseudo terminal preserves exact argument bytes for single-quoted, double-quoted, and escaped prefixes, including apostrophes, double quotes, dollar signs, command-substitution syntax, backticks, glob stars, exclamation marks, backslashes, and Unicode. The command-substitution sentinel remains absent. Existing unquoted data-boundary cases remain green."
+  "2026-09-24T00:50:36.365Z","harness:codex","Evidence: full sandbox coverage passed 732 test files and 9,245 tests (one file and two tests skipped), with 100% statements 65,050/65,050, branches 49,672/49,672, functions 13,487/13,487, and lines 62,202/62,202. Packed npm artifact installed in an isolated temporary project; init, guide-shell package installation, Bash completion generation/bash -n, create/get, Node, Bun, offline npx, and local bunx all passed at 2026.9.23. Focused interactive pseudo-terminal completion suite passed 92/92."
+notes[1]{created_at,author,text}:
+  "2026-09-24T00:13:26.413Z","harness:codex","Bash Readline completes a replacement word, not a dequoted value. The generated matcher decodes only COMP_WORDS[COMP_CWORD] without eval, then emits syntax for the open quote mode. Raw Readline filename quoting is unsafe for dollars and backticks. A literal exclamation mark in double quotes needs a single-quoted segment because backslash-exclamation retains the slash in accepted bytes."
+files[2]{path,scope,note}:
   src/sdk/completion/bash.ts,project,Future insertion-context implementation
+  tests/unit/sdk/security/completion-search-boundaries.spec.ts,project,Native Bash Tab-and-Enter literal insertion and adversarial candidate acceptance
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts,project,240,"harness:codex","2026-09-24T00:13:25.212Z",local_mutation,feat/bash-quoted-completion-and-shell-safety
 docs[1]{path,scope,note}:
   docs/VALIDATION_PORTABILITY.md,project,Current conservative quoted-prefix contract
+close_reason: Quoted and escaped Bash completion inserts literal candidates safely in native interactive tests and packed CLI acceptance
 body: ""

@@ -4,13 +4,19 @@
 
 ### Fixed
 
+- Dogfood test failure must not print inherited environment secrets ([pm-jiv3dw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jiv3dw.toon))
 - Claude plugin: marketplace installs fall back to npx @latest, not the advertised native MCP server ([pm-l9wl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-l9wl.toon))
 - Windows copied agent plugins cannot install pinned runtime through npm.cmd ([pm-d6fd85](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-d6fd85.toon))
 - Nightly coverage, quality, and Windows tests exceed serial job budgets ([pm-ul9rye](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ul9rye.toon))
 - GH-1291: Windows nightly release cleanup fixture includes Node compile cache ([pm-puf5rq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-puf5rq.toon))
 
+### Security
+
+- Scorecard Token-Permissions (0→10): declare least-privilege top-level permissions in every GitHub workflow ([pm-003j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-003j.toon))
+
 ### Other
 
+- Support safe Bash completion inside quoted and escaped prefixes ([pm-eswzn9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-eswzn9.toon))
 - Refresh compatible Sentry, jscpd, and TypeScript-ESLint patches for September 22 ([pm-hate9s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-hate9s.toon))
 
 ## 2026.9.23 - 2026-09-23

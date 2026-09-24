@@ -1,7 +1,8 @@
 # Completion portability and bounded replication checks
 
-Tracked by [pm-t6jl1f](../.agents/pm/issues/pm-t6jl1f.toon) and
-[pm-26y269](../.agents/pm/tasks/pm-26y269.toon).
+Tracked by [pm-t6jl1f](../.agents/pm/issues/pm-t6jl1f.toon),
+[pm-26y269](../.agents/pm/tasks/pm-26y269.toon), and
+[pm-eswzn9](../.agents/pm/tasks/pm-eswzn9.toon).
 
 ## Bash completion data boundary
 
@@ -13,10 +14,15 @@ elements to `COMPREPLY`. Candidates containing shell metacharacters or Unicode
 use portable single-quote syntax, including embedded quote escaping, so accepting
 a candidate and pressing Enter also preserves its literal argument value.
 
-Already quoted or backslash-escaped prefixes return no suggestions before optional
-completion initialization can remove their quoting. This conservative boundary
-avoids inserting an unquoted-context escape inside a different shell quoting
-context. Normal unquoted prefixes retain literal matching.
+The matcher decodes the current Readline word without evaluation. It recognizes
+open single quotes, open double quotes, and backslash-escaped prefixes. Each
+completion is encoded for its insertion context: apostrophes are split safely
+inside single quotes; dollar signs, backticks, backslashes, and double quotes
+are escaped inside double quotes; exclamation marks use a single-quoted segment
+so history expansion cannot change the accepted bytes. Unquoted prefixes keep
+the existing literal single-quote encoding for unsafe candidates. Mixed quoted
+segments whose replacement span is ambiguous, and prefixes containing typed
+backticks, still return no suggestions.
 
 The matcher never evaluates choices as shell programs. Dollar signs, backticks,
 quotes, backslashes, and wildcard characters remain literal. Unicode survives
@@ -37,9 +43,10 @@ and cache policy retain their existing contracts.
 `compgen -W` cannot safely serve as the data transport here: it performs another
 expansion pass, and Bash 3.2 does not round-trip the ANSI-C quoting emitted by
 `printf %q` for Unicode. Unquoted command-substitution arrays can additionally
-expand literal wildcard candidates into filenames. The regression executes the
-generated function and parses its accepted words with the real Bash parser,
-rather than inferring safety from source substrings.
+expand literal wildcard candidates into filenames. The regression checks the
+generated function and uses an interactive pseudo terminal to press Tab and
+Enter in each supported insertion context. It checks the accepted argument
+bytes and verifies that a command-substitution sentinel was not created.
 
 Run the focused native regression after building:
 
