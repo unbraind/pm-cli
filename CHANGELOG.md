@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Scheduled auto-release has a chronically high failure rate and no rolling measure, so a degraded pipeline reads as healthy one run at a time ([pm-e70zh5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e70zh5.toon))
+- Daily auto-release never runs in its declared window: all 84 scheduled runs fired 2.5-4 hours after the cron time, so the release clock is undocumented drift ([pm-44u3wt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-44u3wt.toon))
 - GH-1294: release commit omits synchronized plugin runtime manifests ([pm-t4prek](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t4prek.toon))
 - The related ceiling is pinned to the live count with block enforcement, so recording one associative sibling relation anywhere in the tracker fails CI while the share floor it duplicates would have allowed it ([pm-r3o7x4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r3o7x4.toon))
 

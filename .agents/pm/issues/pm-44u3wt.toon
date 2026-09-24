@@ -2,11 +2,13 @@ id: pm-44u3wt
 title: "Daily auto-release never runs in its declared window: all 84 scheduled runs fired 2.5-4 hours after the cron time, so the release clock is undocumented drift"
 description: "Measured 2026-07-27 against the live workflow history. auto-release.yml declares schedule cron \"35 2 * * *\" and has declared exactly that value in every commit that touched the file since 2026-06-24. The GitHub API reports 84 runs for event=schedule. Not one of them started inside the declared window. The twenty most recent scheduled starts range from 05:10:04Z to 06:29:57Z, clustering near 05:35Z, which is a systematic lag of roughly three hours rather than the few minutes of jitter the platform documents. The declared cron is therefore not a description of when the project releases; it is a value nothing has ever validated against observed behaviour. Two consequences follow. First, the same-day guard computes its date key at run time, not at scheduled time, so the boundary that enforces one automatic release per day is anchored to a drifting instant that no configuration states. Second, any operator reading the workflow file forms a false expectation of the release window, and the release-health reminder that asks whether the daily release happened has no declared instant to compare against."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: "area:release",ci,observability,reliability,scheduling
 created_at: "2026-07-27T04:05:01.742Z"
-updated_at: "2026-09-06T07:35:30.301Z"
+updated_at: "2026-09-24T13:32:41.851Z"
+closed_at: "2026-09-24T13:32:40.645Z"
+completed_at: "2026-09-24T13:32:40.645Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "The observed scheduled start time is measured against the declared cron and the divergence is reported rather than assumed to be jitter; The release window is expressed as a policy the project can assert, so a run that starts outside it is a detectable condition rather than an invisible one; The same-day release guard keys off an instant whose definition is stated in the workflow and does not silently move with platform scheduling lag; The release-health verification procedure names the window it expects, so a missing release is distinguishable from a late one"
@@ -20,18 +22,52 @@ confidence: high
 severity: medium
 environment: "GitHub Actions hosted runners, unbraind/pm-cli, workflow auto-release.yml, measured via the workflow runs API filtered to event=schedule"
 repro_steps: "Run: gh api \"repos/unbraind/pm-cli/actions/workflows/auto-release.yml/runs?event=schedule&per_page=100\" --jq \".workflow_runs[].created_at\" and compare every value against the cron literal in .github/workflows/auto-release.yml"
-expected_result: "Scheduled auto-release runs start within a small, stated tolerance of the declared cron window, or the divergence is surfaced"
-actual_result: "All 84 scheduled runs started 2.5 to 4 hours late; the declared 02:35Z window has never once been observed"
+resolution: "Added explicit nominal UTC clock, dispatch allowance, missing-run detection, separate queue timing, workflow parity test and operator documentation."
+expected_result: Late and missing scheduled runs are detectable against a stated clock without changing immutable daily tag behavior.
+actual_result: Focused exact-coverage and linked tests pass; live history correctly breaches the dispatch policy and the UTC execution-date tag guard remains unchanged.
 dependencies[5]{id,kind,created_at}:
   pm-7zs0,related,"2026-07-27T04:05:01.742Z"
   pm-k6t4yb,related,"2026-07-27T04:05:01.742Z"
   pm-u9d0,implements,"2026-07-27T04:05:01.742Z"
   pm-9gxi,related,"2026-07-27T04:21:28.511Z"
   pm-xp1xsw,implements,"2026-07-27T04:21:28.511Z"
-comments[5]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-31T06:14:41.159Z","harness:claude-code","Still live, verified 2026-07-31. Declared cron is \"35 2 * * *\" (02:35 UTC). Today's scheduled run created 05:50:49Z — 3h15m late. Last eleven scheduled runs all fired between 05:24:10Z and 06:05:09Z, i.e. the drift is stable at roughly three hours rather than intermittent, so the effective release clock is 05:30-06:05 UTC and no document says so."
   "2026-08-03T11:17:38.929Z","harness:codex","Current schedule evidence 2026-08-03: workflow declares cron 02:35 UTC; scheduled run 30788639874 started 05:57:42Z, a delay of about 3 hours 23 minutes, and succeeded. Functional release safety is intact, but the documented schedule-window and drift-SLO issue remains live."
   "2026-08-04T09:19:17.100Z","harness:codex","Fresh schedule evidence 2026-08-04: declared cron remains 02:35 UTC while scheduled Auto Release run 30880997668 started 05:32:20Z, about 2h57m late, and succeeded. Functional daily publication is healthy, but the declared-versus-observed release window remains materially different."
   "2026-08-15T13:57:03.009Z","harness:codex","Schedule-window evidence 2026-08-15: the workflow still declares cron 35 2 * * *, while the current scheduled run began at 03:19Z, roughly 44 minutes after the declared instant. This current sample does not match the historical 2.5-4 hour delay captured in the title, so that range must remain historical evidence rather than a universal forecast. The core gap remains: neither local nor hosted policy defines, measures, or alerts on an acceptable dispatch window. Track declared instant, observed start, queue delay, execution duration, and recovery start separately, with calendar/time-zone semantics explicit."
   "2026-09-06T07:35:30.301Z","harness:codex","Schedule evidence 2026-09-06: both local and remote main auto-release.yml declare 35 2 * * * (02:35 UTC). Today GitHub created scheduled Auto Release run 34018707399 at 07:16:32Z on 4f551f5d4a638bb0468af7d2e4d203790aae88ec, 4h41m32s after the declared instant. The workflow remains active and the run is executing the release pipeline. This is dispatch-delay evidence, not a successful-publication claim; preserve it separately from the terminal gate result and one-UTC-day tag invariant. No duplicate schedule item was created and this measurement does not claim implementation of the open policy/SLO criteria."
+  "2026-09-24T13:04:15.756Z","harness:codex","Implementation paired with pm-e70zh5: compare schedule-created and runner-start timestamps separately against the 02:35 UTC nominal occurrence, declare the allowed dispatch window and missing-run deadline, and retain execution-day semantics for the existing one-release-per-day guard. Historical cron association is an inferred nearest preceding occurrence because GitHub does not expose an authoritative scheduled timestamp."
+  "2026-09-24T13:14:30.260Z","harness:codex","Timing policy implementation distinguishes nominal 02:35 UTC occurrence, 60-minute dispatch allowance, queue delay, and latest overdue missing occurrence. A real 30-day GitHub census reports dispatch-window violations rather than treating historical multi-hour delays as healthy. Cron-policy parity and missing-run negative controls are included."
+  "2026-09-24T13:32:39.370Z","harness:codex","Verification: policy/cron parity, late dispatch, queue separation, missing schedule and insufficient sample negative controls pass. The unchanged release guard uses the UTC execution date; the reporting clock explicitly infers the nearest preceding 02:35 UTC occurrence with a 60-minute allowance. Real historical lag remains a policy violation, not a reason to fit thresholds to failures."
+learnings[1]{created_at,author,text}:
+  "2026-09-24T13:19:18.930Z","harness:codex","GitHub exposes creation and start timestamps, not an authoritative intended cron instant. Report nearest-preceding UTC occurrence as an inference and retain its greater-than-24-hour ambiguity; keep tag identity anchored to the documented execution day."
+files[2]{path,scope,note}:
+  config/release-reliability-policy.json,project,UTC schedule allowance and missing-run policy
+  scripts/release/release-reliability.mjs,project,Separate dispatch and queue timing
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-reliability.spec.ts,project,240,"harness:codex","2026-09-24T13:13:07.370Z",local_mutation,feat/release-reliability-and-schedule-policy
+test_runs[1]:
+  - run_id: test-local-mufkmo87-9vd0f3
+    kind: test
+    status: passed
+    started_at: "2026-09-24T13:31:54.365Z"
+    finished_at: "2026-09-24T13:32:02.983Z"
+    recorded_at: "2026-09-24T13:32:02.983Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-reliability.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/RELEASE_RELIABILITY.md,project,Nominal clock and execution-day distinction
+close_reason: Implemented measured UTC dispatch policy and independently enforced reporting with linked tests.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  gate_id: scheduled-release-reliability
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-reliability.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-reliability.spec.ts
+  hosted_checks[2]: Scheduled release reliability,Gates (coverage)
+  owner: pm-44u3wt
 body: ""

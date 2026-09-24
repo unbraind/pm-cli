@@ -2,7 +2,7 @@
 
 import { registerTempCleanup } from "../temp-lifecycle.mjs";
 import { Buffer } from "node:buffer";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -268,6 +268,10 @@ export function withReleasePushCredentials(gitOptions = {}, token = releasePushT
 }
 
 function writePipelineResult(result, outputJson, text) {
+  if (process.env.RELEASE_PIPELINE_OUTPUT) {
+    const reason = result.reason ?? (result.dry_run ? "dry_run" : "prepared");
+    appendFileSync(process.env.RELEASE_PIPELINE_OUTPUT, `pipeline_reason=${reason}\n`);
+  }
   if (outputJson) {
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     return;
@@ -535,11 +539,7 @@ export function runPipeline() {
     author,
   };
 
-  if (outputJson) {
-    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-  } else {
-    console.log(`Release pipeline completed for ${targetVersion}${dryRun ? " (dry run)" : ""}.`);
-  }
+  writePipelineResult(result, outputJson, `Release pipeline completed for ${targetVersion}${dryRun ? " (dry run)" : ""}.`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

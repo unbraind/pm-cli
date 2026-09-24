@@ -2,11 +2,13 @@ id: pm-e70zh5
 title: "Scheduled auto-release has a chronically high failure rate and no rolling measure, so a degraded pipeline reads as healthy one run at a time"
 description: "Measured 2026-07-27 from the workflow runs API. Across the full recorded history of event=schedule runs of auto-release.yml the conclusions are 52 success and 32 failure, a 38 percent failure rate, with failures on 2026-07-21, 2026-07-23 and 2026-07-24 inside the last week alone. Every control the project has is per-run: a failed scheduled run opens a blocker issue, closing that issue re-triggers the workflow, and the release-health reminder asks whether the most recent release tagged and published. None of these observes the rate. A pipeline that fails two days in three satisfies every existing check the day it succeeds, and the recovery path itself hides the signal, because the blocker issue is closed once the retry lands and the run history is the only remaining evidence. The gap is not a missing alert on a single failure; it is that reliability is not a tracked quantity, so no one can say whether the release automation is improving or degrading. The same 2026-07-27 window shows the sharper form of the problem: the daily release for the day was produced by two manual dispatches after a scheduled-path failure, and the still-pending scheduled run will find a release already cut and conclude skipped, which is indistinguishable in the run list from a healthy no-op."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: "area:release",ci,observability,reliability,slo
 created_at: "2026-07-27T04:05:41.511Z"
-updated_at: "2026-09-22T12:17:33.047Z"
+updated_at: "2026-09-24T13:32:43.884Z"
+closed_at: "2026-09-24T13:32:42.761Z"
+completed_at: "2026-09-24T13:32:42.761Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "Release automation reliability is expressed as a measured rate over a stated window, not as the conclusion of the latest run; A degradation in that rate is detectable without reading the raw run list, and the detection survives the blocker-issue recovery path closing its own evidence; A skipped run caused by the same-day guard is distinguishable in the reliability measure from a run that had nothing to release and from a run that failed; The measure names the failing stage, so a publish-step regression and a build-step regression are not aggregated into one opaque number"
@@ -20,9 +22,10 @@ confidence: high
 severity: medium
 environment: "GitHub Actions hosted runners, unbraind/pm-cli, workflow auto-release.yml and its downstream release.yml publish job"
 repro_steps: "Run: gh api \"repos/unbraind/pm-cli/actions/workflows/auto-release.yml/runs?event=schedule&per_page=100\" --jq \"[.workflow_runs[].conclusion]|group_by(.)|map({(.[0]):length})|add\""
-expected_result: Release automation reliability is observable as a rate with a threshold that fails when the pipeline degrades
-actual_result: "As measured 2026-09-08, complete schedule-event history spans 2026-05-04T05:49:52Z through 2026-09-08T07:23:50Z: 128 completed runs, 79 success and 49 failure (38.28125 percent failure). Trailing 30: 16 success, 14 failure; trailing 7: 2 success, 5 failure. Latest run 34199116643 failed at hosted-analysis-gate before publication. Issue/manual recovery and daily release availability are separate populations; this refresh does not implement the rolling SLO."
-dependencies[11]:
+resolution: "Added secret-free attempt receipts, complete read-only GitHub collection, first-attempt preservation, outcome/stage classification, versioned thresholds and independent hosted reporting."
+expected_result: Recovery cannot conceal original schedule failures; publication and skip outcomes remain distinct where evidence exists.
+actual_result: "51 focused tests and exact changed-module coverage pass; linked tests, package authoring and packed npx/bunx checks pass. Live census reports 13 failures among 30 originals and explicitly unknown historical success outcomes. Candidate hosted review is pending; historical reliability is intentionally red."
+dependencies[12]:
   - id: pm-44u3wt
     kind: related
     created_at: "2026-07-27T04:05:41.511Z"
@@ -50,25 +53,31 @@ dependencies[11]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-  - id: pm-q91qyd
-    kind: blocked_by
-    created_at: "2026-07-31T10:16:00.005Z"
-    author: "harness:codex"
-    source_kind: "cli:update:dep"
-    author_source: detected
   - id: pm-u1baah
     kind: related
     created_at: "2026-08-11T13:53:43.186Z"
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-  - id: pm-2ksptv
-    kind: blocked_by
-    created_at: "2026-09-08T13:16:56.527Z"
-    author: "harness:claude-code"
+  - id: pm-44u3wt
+    kind: verifies
+    created_at: "2026-09-24T13:14:31.615Z"
+    author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[23]{created_at,author,text}:
+  - id: pm-2ksptv
+    kind: discovered_from
+    created_at: "2026-09-24T13:19:14.531Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-q91qyd
+    kind: discovered_from
+    created_at: "2026-09-24T13:19:14.531Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[28]{created_at,author,text}:
   "2026-07-27T13:01:11.067Z","harness:claude-code","Observation 2026-07-27 on the denominator used to compute the failure rate.\n\nThe Auto Release workflow has three triggers and they produce wildly different run volumes. The schedule fires once a day, which is the 84 runs this item measures. The workflow_dispatch fires on demand. The issues trigger fires on every issue closure in the repository, and because there is no concurrency key that collapses them, closing several issues at once produces a burst of near-simultaneous runs: four runs within one second at 12:09:44Z today, six at 08:45 on 2026-07-26, five at 08:54 today with one of them cancelled.\n\nThey are all correctly filtered at job level by the if condition that restricts issues-triggered runs to the bot-authored blocker recovery, so they skip in seconds and cannot cut a release. Two things still follow. The workflow run history is dominated by runs that were never going to do anything, which makes the pipeline look far busier and far healthier than the scheduled path actually is, and any rate computed over all runs rather than over event equals schedule will be wrong by an order of magnitude. And one of today's burst runs shows conclusion cancelled rather than skipped, which is the cancel-in-progress pattern that this project has already learned masks red gates elsewhere.\n\nNeither changes the 32 of 84 scheduled figure this item owns, which was measured on the schedule event alone. Recording it so the denominator is not silently recomputed the easy way later."
   "2026-07-31T06:14:42.055Z","harness:claude-code","Rate sample refreshed 2026-07-31: of the last eleven completed scheduled Auto Release runs, three concluded failure (2026-07-21, 2026-07-23, 2026-07-24) — 27 percent. Consistent with the 32-of-84 lifetime figure. Today's run succeeded and published 2026.7.31; npm latest, npx direct, npx --package and bunx --bun all resolve and execute the published artifact under bun 1.3.11. One scheduled cut today, so the one-release-per-day property held on this run."
   "2026-08-01T09:53:05.449Z","harness:claude-code","Scheduled-run health sampled live 2026-08-01. The most recent scheduled Auto Release runs (30686302858 at 05:41:09Z today, 51s, success; 30607915788 at 2026-07-31T05:50:49Z, 20m50s, success) both completed, and the daily cut is landing: v2026.7.29 through v2026.8.1 exist as consecutive daily tags with matching GitHub releases. The window observation from pm-44u3wt still holds -- the 05:41 and 05:50 start times are hours after the declared cron -- and remains a separate defect from the failure rate this item measures. The point that motivates this item is unchanged and visible in the same listing: the workflow also fires on issues events, and those runs report conclusion 'skipped' while occupying the same run history as real scheduled attempts, so any rate computed over gh run list without partitioning by event conflates three populations (schedule, workflow_dispatch, issues) whose expected outcomes differ."
@@ -92,6 +101,11 @@ comments[23]{created_at,author,text}:
   "2026-09-18T11:18:05.937Z","harness:codex","Same-day automatic release guard verified from a clean committed checkout on 2026-09-18: run-release-pipeline --dry-run --json returned ok=true, skipped=true, reason=release_already_cut_today, and exactly one tags_today entry v2026.9.18. No second automatic version or tag was created."
   "2026-09-18T11:31:31.468Z","harness:codex","Issue recovery 35334606757 created the sole v2026.9.18 tag and Release 35336550780 successfully published npm 2026.9.18. Seven registry candidate/control jobs passed; macOS npm-local and Bun failed before harness invocation due empty-array nounset expansion, tracked and fixed under pm-q4avk2. Advertisement correctly remained blocked. Independent published-package verifier passed npm metadata, npx, bunx and MCP surfaces with GitHub advertisement intentionally checked separately. Original schedule and issue-recovery failures remain failures in reliability reporting. After reviewed merge, recover this same immutable tag from main; never republish or create a second version."
   "2026-09-22T12:17:33.047Z","harness:codex","Daily recovery observation 2026-09-22: scheduled attempt 35702036265 remains a coverage-gate failure in the 142-run schedule-only snapshot. Its release-evidence fixture regression was repaired in reviewed PR 1288; automatic issue recovery 35720126489 and downstream Release 35722348658 then succeeded, published the sole v2026.9.22 artifact, passed all nine registry acceptance jobs and advertised the stable release. Independent npm/npx/bunx verification and a real clean-worktree same-day refusal passed. This successful recovery does not implement the open rolling SLO or change the scheduled failure denominator."
+  "2026-09-24T13:04:15.127Z","harness:codex","Implement together pm-e70zh5 and pm-44u3wt: versioned per-attempt outcome receipts, a paginated schedule-only GitHub collector that retains first-attempt failures after reruns, rolling reliability and explicit UTC timing policy, separate completion-triggered reporting workflow, negative controls and temporary-directory replay. Historical receipts that do not exist remain explicitly unknown. Reporting never bypasses publication gates or creates tags. Existing issue 1294 links pm-t4prek; open issue 1246 links pm-z3ez; live GitHub dependabot/code/secret alert lists each returned zero. No open PRs. Full open-list census returned 225 rows with no pagination; in_progress was empty before claiming exactly these two items. Related nightly reliability and manual ordinal work remain open and unclaimed."
+  "2026-09-24T13:14:28.694Z","harness:codex","Live read-only GitHub collector completed a full 30-day schedule-only census: 30 first attempts, 13 failures, 17 successful runs with unavailable historical outcome receipts. Failed-step breakdown: 9 release-pipeline failures and 4 analyzer-preflight failures. Failure-rate and dispatch-window policy violations remain visible; successful recoveries did not change the denominator. Focused changed-module coverage passed exact 100/100/100/100 (340 statements, 261 branches, 59 functions, 311 lines) without new exclusions. Full repository gates are running."
+  "2026-09-24T13:19:12.865Z","harness:codex","Dependency review: pm-q91qyd owns reconciliation of declared versus delivered releases, and pm-2ksptv owns direct-main analyzer readiness. Their full live contracts are separate from measuring schedule attempts. Reclassify the two historical prerequisite edges as discovered_from so measurement can finish without falsely claiming either repair. The report explicitly avoids claiming publication from a success-only historical row and retains analyzer refusals as failures."
+  "2026-09-24T13:23:03.375Z","harness:codex","Verification scheduling evidence: concurrent full coverage held the shared build lease, so the linked focused command and package dogfood nested linked command timed out waiting for a rebuild. Preserve those failures; rerun them serially after the broad suite completes. This is not evidence that their assertions failed, and no timeout or gate is being weakened. Separate live Sentry one-day gate passed with zero critical/high issues; required telemetry gate passed at 2.03 percent finish errors and zero failures lacking error codes. Repository history validation covered 2801 items with zero drift; 170 historical resolution metadata advisories remain."
+  "2026-09-24T13:31:56.087Z","harness:codex","Verification: all 51 focused tests pass; exact coverage of the four changed release modules is 337/337 statements, 259/259 branches, 59/59 functions, 308/308 lines. Linked sandbox verification, package-first authoring dogfood, and packed npx/bunx smoke pass. Both unrelated full-suite timeout cases pass in isolation (28 tests); the initial full coverage run is not claimed green. Live read-only census contains 30 completed original scheduled attempts, 13 failures, and 17 historical successes without outcome receipts. Sentry has zero current unresolved findings and telemetry gate passes; these do not establish historical schedule health."
 notes[7]:
   - created_at: "2026-08-10T16:05:25.318Z"
     author: "harness:claude-code"
@@ -192,4 +206,56 @@ notes[7]:
       receipt_sha256: 1104002c9f26e2fba60893ba4fd719c94101988022c8a30f3dae8a65380d993f
       population_exclusions[2]: issues,workflow_dispatch
       scope: Point-in-time complete scheduled history. The release-evidence fixture fix and issue-triggered recovery do not implement the rolling reliability SLO or turn the scheduled failure into success.
+learnings[1]{created_at,author,text}:
+  "2026-09-24T13:19:17.405Z","harness:codex",A workflow run list exposes its latest attempt; a reliability denominator must retrieve attempt 1 after reruns or successful retries erase original failures. Pagination completeness and outcome evidence completeness are distinct claims.
+files[12]{path,scope,note}:
+  .github/workflows/auto-release.yml,project,Persist immutable attempt evidence
+  .github/workflows/release-reliability.yml,project,Independent operational threshold enforcement
+  config/release-reliability-policy.json,project,Explicit rolling reliability and timing targets
+  scripts/release/collect-release-reliability.mjs,project,Complete first-attempt GitHub census
+  scripts/release/gate-registry.json,project,Register operational reporting gate with negative control and hosted scope
+  scripts/release/release-observation.mjs,project,Secret-free per-attempt receipt
+  scripts/release/release-reliability.mjs,project,Pure rolling release reliability policy evaluator
+  scripts/release/run-release-pipeline.mjs,project,Structured skip outputs
+  tests/unit/scripts/release/collect-release-reliability.spec.ts,project,Pagination and attempt provenance controls
+  tests/unit/scripts/release/release-observation.spec.ts,project,Receipt privacy and outcome verification
+  tests/unit/scripts/release/release-reliability.spec.ts,project,Denominator and timing negative controls
+  tests/unit/scripts/release/run-release-pipeline.spec.ts,project,Skip and completion output transport
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-reliability.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts tests/unit/scripts/release/release-observation.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,project,240,"harness:codex","2026-09-24T13:13:06.181Z",local_mutation,feat/release-reliability-and-schedule-policy
+test_runs[2]:
+  - run_id: test-local-mufk6t5x-k44w7o
+    kind: test
+    status: failed
+    started_at: "2026-09-24T13:15:42.278Z"
+    finished_at: "2026-09-24T13:19:42.885Z"
+    recorded_at: "2026-09-24T13:19:42.885Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-reliability.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts tests/unit/scripts/release/release-observation.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mufkij55-o6k81d
+    kind: test
+    status: passed
+    started_at: "2026-09-24T13:28:32.386Z"
+    finished_at: "2026-09-24T13:28:49.769Z"
+    recorded_at: "2026-09-24T13:28:49.769Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-reliability.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts tests/unit/scripts/release/release-observation.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/RELEASE_RELIABILITY.md,project,Policy and reporting contract
+  docs/RELEASING.md,project,Release operator routing
+close_reason: Implemented original-attempt rolling release reliability and replayable outcome evidence with regression coverage.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  gate_id: scheduled-release-reliability
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-reliability.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-reliability.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: Scheduled release reliability,Gates (coverage)
+  owner: pm-e70zh5
 body: ""

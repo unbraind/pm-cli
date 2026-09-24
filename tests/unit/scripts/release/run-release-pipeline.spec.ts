@@ -318,6 +318,8 @@ describe("run-release-pipeline", () => {
 
   describe("full pipeline", () => {
     it("skips on no-changes-since-last-tag (json + text)", async () => {
+      const root = await harness.createTempRoot("pm-pipeline-output-");
+      process.env.RELEASE_PIPELINE_OUTPUT = path.join(root, "outputs");
       const runCommand = baseGitMock((command, args) => {
         if (command === "git" && args[0] === "rev-list") return { status: 0, stdout: "0\n", stderr: "" };
         return undefined;
@@ -329,6 +331,7 @@ describe("run-release-pipeline", () => {
       mod.runPipeline();
       const payload = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0] ?? "{}"));
       expect(payload.reason).toBe("no_changes_since_last_tag");
+      expect(fs.readFileSync(process.env.RELEASE_PIPELINE_OUTPUT, "utf8")).toBe("pipeline_reason=no_changes_since_last_tag\n");
 
       vi.resetModules();
       mockUtils(runCommand);
@@ -431,6 +434,7 @@ describe("run-release-pipeline", () => {
 
     it("dry-run with explicit version emits JSON result", async () => {
       const root = await harness.createTempRoot("pm-pipeline-dryjson-");
+      process.env.RELEASE_PIPELINE_OUTPUT = path.join(root, "outputs");
       fs.mkdirSync(path.join(root, "packages"), { recursive: true });
       fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "2026.6.13" }), "utf8");
       const runCommand = baseGitMock((command, args) => {
@@ -454,6 +458,7 @@ describe("run-release-pipeline", () => {
       expect(payload.dry_run).toBe(true);
       expect(payload.target_version).toBe("2026.6.15");
       expect(payload.gates.telemetry_mode).toBe("off");
+      expect(fs.readFileSync(process.env.RELEASE_PIPELINE_OUTPUT, "utf8")).toBe("pipeline_reason=dry_run\n");
     });
 
     it("dry-run text output identifies that no release mutation occurred", async () => {
@@ -471,6 +476,7 @@ describe("run-release-pipeline", () => {
 
     it("runs full non-dry-run path: changelog gen, commit, tag, push (json)", async () => {
       const root = await harness.createTempRoot("pm-pipeline-full-");
+      process.env.RELEASE_PIPELINE_OUTPUT = path.join(root, "outputs");
       fs.mkdirSync(path.join(root, "packages"), { recursive: true });
       fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "2026.6.13" }), "utf8");
 
@@ -519,6 +525,7 @@ describe("run-release-pipeline", () => {
       expect(payload.skipped).toBe(false);
       expect(payload.target_version).toBe("2026.6.15");
       expect(payload.pushed).toBe(true);
+      expect(fs.readFileSync(process.env.RELEASE_PIPELINE_OUTPUT, "utf8")).toBe("pipeline_reason=prepared\n");
       expect(gitCalls.find((c) => c[0] === "git" && c[1] === "add")).toEqual(expect.arrayContaining([
         "plugins/pm-claude/package.json", "plugins/pm-codex/package.json",
       ]));

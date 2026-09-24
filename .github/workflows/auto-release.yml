@@ -2,6 +2,9 @@ name: Auto Release
 
 on:
   schedule:
+    # Nominal UTC occurrence, not a guaranteed dispatch time. The separate
+    # reliability workflow asserts config/release-reliability-policy.json.
+    # Release identity remains the UTC execution day, never a backdated cron day.
     - cron: "35 2 * * *"
   issues:
     types:
@@ -346,7 +349,7 @@ jobs:
           fi
           PREVIOUS_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
           set +e
-          node scripts/release/run-release-pipeline.mjs "${args[@]}"
+          RELEASE_PIPELINE_OUTPUT="${GITHUB_OUTPUT}" node scripts/release/run-release-pipeline.mjs "${args[@]}"
           PIPELINE_STATUS=$?
           set -e
           if [[ "${PIPELINE_STATUS}" -ne 0 ]]; then
@@ -381,6 +384,25 @@ jobs:
           PUBLISHED_SHA="$(git rev-list -n 1 "${NEW_TAG}")"
           echo "published_tag=${NEW_TAG}" >> "${GITHUB_OUTPUT}"
           echo "published_sha=${PUBLISHED_SHA}" >> "${GITHUB_OUTPUT}"
+
+      - name: Record release attempt observation
+        if: always()
+        env:
+          RELEASE_OBSERVATION_PATH: ${{ runner.temp }}/release-observation.json
+          RELEASE_FAILURE_RECORD: ${{ runner.temp }}/release-failure-record.json
+          RELEASE_PIPELINE_REASON: ${{ steps.auto_release.outputs.pipeline_reason }}
+          RELEASE_PUBLISHED_TAG: ${{ steps.auto_release.outputs.published_tag }}
+          RELEASE_EXISTING_TAG: ${{ steps.retry_target.outputs.existing_tag }}
+        run: node --input-type=module -e 'import { writeReleaseObservation } from "./scripts/release/release-observation.mjs"; writeReleaseObservation();'
+
+      - name: Preserve release attempt observation
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-observation-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-observation.json
+          if-no-files-found: error
+          retention-days: 90
 
       - name: Resolve blocked scheduled auto-release issue
         if: success() && github.event_name == 'schedule' && steps.auto_release.outputs.published_tag

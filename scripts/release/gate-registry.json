@@ -397,6 +397,10 @@
     ],
     "hosted_only": [
       {
+        "gate": "scheduled-release-reliability",
+        "reason": "Measures the original scheduled GitHub attempts over a rolling window; historical operational debt must not block publication of its repair."
+      },
+      {
         "gate": "harness-environment-isolation",
         "reason": "Requires distinct clean Claude Code, Codex, and GitHub runner environments."
       },
@@ -407,6 +411,20 @@
     ]
   },
   "gates": [
+    {
+      "id": "scheduled-release-reliability",
+      "owner": "pm-e70zh5",
+      "pipelines": ["release-reliability.yml#report"],
+      "failure_taxonomy": ["scheduled_failure_rate", "dispatch_window", "missing_scheduled_run", "insufficient_completed_runs", "incomplete_census"],
+      "bypass": {
+        "allowed": false,
+        "audit": "Original scheduled failures remain failures after recovery; unknown outcomes and incomplete API reads cannot certify publication."
+      },
+      "negative_control": {
+        "test": "tests/unit/scripts/release/release-reliability.spec.ts",
+        "assertion": "keeps recovery triggers out of the scheduled denominator and names failures"
+      }
+    },
     {
       "id": "dependency-cooldown",
       "owner": "pm-gkut",
