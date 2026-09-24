@@ -9,8 +9,8 @@
 
 ### Security
 
-- Semgrep 874840451: Medium dependabot missing cooldown in .github/dependabot.yml\#L23 ([pm-dmo5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dmo5.toon))
 - Semgrep 874840452: Medium dependabot missing cooldown in .github/dependabot.yml\#L3 ([pm-gkut](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gkut.toon))
+- Semgrep 874840451: Medium dependabot missing cooldown in .github/dependabot.yml\#L23 ([pm-dmo5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dmo5.toon))
 
 ## 2026.9.24 - 2026-09-24
 

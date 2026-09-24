@@ -39,6 +39,7 @@ type PipelineModule = {
   runPipeline: () => void;
 };
 
+/** Isolate command execution and the clock while retaining real release flag parsing. */
 function mockUtils(runCommand: ReturnType<typeof vi.fn>, repoRoot?: string): void {
   vi.doMock("../../../../scripts/release/utils.mjs", async () => {
     const actual = await vi.importActual<typeof ReleaseUtils>(
@@ -56,6 +57,7 @@ function mockUtils(runCommand: ReturnType<typeof vi.fn>, repoRoot?: string): voi
   });
 }
 
+/** Supply a clean release candidate and allow each test to override only its relevant Git boundary. */
 function baseGitMock(overrides: (command: string, args: string[]) => unknown | undefined): ReturnType<typeof vi.fn> {
   return vi.fn((command: string, args: string[]) => {
     const custom = overrides(command, args);
@@ -473,8 +475,12 @@ describe("run-release-pipeline", () => {
       fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "2026.6.13" }), "utf8");
 
       const gitCalls: string[][] = [];
+      let rejectRuntimePin = false;
       const runCommand = vi.fn((command: string, args: string[]) => {
         gitCalls.push([command, ...args]);
+        if (rejectRuntimePin && args.join(" ") === "scripts/sync-versions.mjs check") {
+          throw new Error("Missing plugin runtime pin");
+        }
         if (command === "git" && args[0] === "status") return { status: 0, stdout: "", stderr: "" };
         if (command === "git" && args[0] === "describe") return { status: 0, stdout: "v2026.6.13\n", stderr: "" };
         if (command === "git" && args[0] === "rev-list") return { status: 0, stdout: "3\n", stderr: "" };
@@ -522,6 +528,11 @@ describe("run-release-pipeline", () => {
       expect(fs.existsSync(path.join(root, "CHANGELOG.md"))).toBe(true);
       expect(fs.readFileSync(path.join(root, "CHANGELOG.md"), "utf8"))
         .toBe("## 2026.6.15 - 2026-06-15\n\n- thing\n");
+      gitCalls.length = 0;
+      rejectRuntimePin = true;
+      expect(() => mod.runPipeline()).toThrow("Missing plugin runtime pin");
+      expect(gitCalls.some((call) => call[0] === "git" && ["add", "commit", "push"].includes(call[1]))).toBe(false);
+      expect(gitCalls).not.toContainEqual(["git", "tag", "v2026.6.15"]);
     });
 
     it("rebases and retargets the tag when release push sees origin/main advance", async () => {

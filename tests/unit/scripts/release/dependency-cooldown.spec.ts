@@ -11,19 +11,31 @@ describe("dependency update cooldown policy", () => {
     expect(auditDependencyCooldown(await readFile(".github/dependabot.yml", "utf8"))).toEqual([]);
   });
 
+  it("rejects removal of either governed updater and cooldowns beyond GitHub's maximum", () => {
+    for (const ecosystem of ["npm", "github-actions"]) {
+      expect(auditDependencyCooldown(safe.replace(`  - package-ecosystem: ${ecosystem}\n    cooldown:\n      default-days: 7\n`, "")))
+        .toContain(`dependabot.yml: required updater ${ecosystem} is missing`);
+    }
+    for (const field of ["default-days", "semver-major-days", "semver-minor-days", "semver-patch-days"]) {
+      const source = field === "default-days" ? safe : safe.replace("default-days: 7", `default-days: 7\n      ${field}: 7`);
+      expect(auditDependencyCooldown(source.replace(`${field}: 7`, `${field}: 90`))).toEqual([]);
+      expect(auditDependencyCooldown(source.replace(`${field}: 7`, `${field}: 91`))).not.toEqual([]);
+    }
+  });
+
   it("requires an explicit minimum on every ecosystem and rejects dilution controls", () => {
     expect(auditDependencyCooldown(safe)).toEqual([]);
     expect(auditDependencyCooldown(safe.replaceAll("default-days: 7", "default-days: 14"))).toEqual([]);
     for (const value of ["0", "6", "7.5", "null", '"7"']) {
       expect(auditDependencyCooldown(safe.replace("default-days: 7", `default-days: ${value}`))).toEqual([
-        "dependabot.yml: updates[0]: default-days must be an integer of at least 7",
+        "dependabot.yml: updates[0]: default-days must be an integer between 7 and 90",
       ]);
     }
     for (const field of ["semver-major-days", "semver-minor-days", "semver-patch-days"]) {
       expect(auditDependencyCooldown(safe.replace("default-days: 7", `default-days: 7\n      ${field}: 7`))).toEqual([]);
       for (const value of ["0", '"7"']) {
         expect(auditDependencyCooldown(safe.replace("default-days: 7", `default-days: 7\n      ${field}: ${value}`))).toEqual([
-          `dependabot.yml: updates[0]: ${field} must not bypass the seven-day minimum`,
+          `dependabot.yml: updates[0]: ${field} must be an integer between 7 and 90`,
         ]);
       }
     }
@@ -42,7 +54,7 @@ describe("dependency update cooldown policy", () => {
       expect(auditDependencyCooldown(source)).toEqual(["dependabot.yml: invalid YAML"]);
     }
     for (const source of ["updates: [null]", "updates: [{}]", "updates: [{cooldown: null}]"]) {
-      expect(auditDependencyCooldown(source)).toEqual(["dependabot.yml: updates[0]: default-days must be an integer of at least 7"]);
+      expect(auditDependencyCooldown(source)).toEqual(["dependabot.yml: required updater npm is missing", "dependabot.yml: required updater github-actions is missing", "dependabot.yml: updates[0]: default-days must be an integer between 7 and 90"]);
     }
   });
 

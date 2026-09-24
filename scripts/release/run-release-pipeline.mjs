@@ -399,6 +399,7 @@ function maybeSkipForEmptyGeneratedChangelog(params) {
   return true;
 }
 
+/** Validate and stage all synchronized manifests, then create and optionally publish release refs. */
 function commitAndMaybePushRelease(targetVersion, tagName, author, push) {
   const authorSlug = author.toLowerCase().replaceAll(/[^a-z0-9._-]/g, "-");
   /* c8 ignore next -- author always defaults to a non-empty slug; `|| "release-bot"` is a defensive fallback (parseFlags maps `--author ""` to the default) */

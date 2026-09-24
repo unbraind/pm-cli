@@ -6,9 +6,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseDocument } from "yaml";
 
-/** Accept only whole-day cooldowns meeting the reviewed seven-day aging policy. */
+/** Apply the seven-day policy within GitHub's supported maximum of ninety days. */
 function validCooldownDays(value) {
-  return Number.isInteger(value) && value >= 7;
+  return Number.isInteger(value) && value >= 7 && value <= 90;
 }
 
 /** Reject absent, bypassed, or shorter-than-policy updater cooldowns. */
@@ -17,16 +17,19 @@ export function auditDependencyCooldown(source) {
   if (document.errors.length > 0) return ["dependabot.yml: invalid YAML"];
   const updates = document.toJS()?.updates;
   if (!Array.isArray(updates) || updates.length === 0) return ["dependabot.yml: updates must be a nonempty array"];
-  const findings = [];
+  const ecosystems = new Set(updates.map((update) => update?.["package-ecosystem"]));
+  const findings = ["npm", "github-actions"]
+    .filter((ecosystem) => !ecosystems.has(ecosystem))
+    .map((ecosystem) => `dependabot.yml: required updater ${ecosystem} is missing`);
   for (const [index, update] of updates.entries()) {
     const cooldown = update?.cooldown;
     const label = `dependabot.yml: updates[${index}]`;
     if (!validCooldownDays(cooldown?.["default-days"])) {
-      findings.push(`${label}: default-days must be an integer of at least 7`);
+      findings.push(`${label}: default-days must be an integer between 7 and 90`);
     }
     for (const field of ["semver-major-days", "semver-minor-days", "semver-patch-days"]) {
       if (cooldown?.[field] !== undefined && !validCooldownDays(cooldown[field])) {
-        findings.push(`${label}: ${field} must not bypass the seven-day minimum`);
+        findings.push(`${label}: ${field} must be an integer between 7 and 90`);
       }
     }
     if (["include", "exclude"].some((field) => cooldown?.[field] !== undefined)) {

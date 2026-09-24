@@ -31,11 +31,13 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 /** Mirrors scripts/release-version.mjs: YYYY.M.D with optional -N ordinal. */
 const VERSION_PATTERN = /^([1-9]\d{3})\.([1-9]\d*)\.([1-9]\d*)(?:-([1-9]\d*))?$/;
 
+/** Emit an actionable policy refusal and stop before release staging can continue. */
 function fail(message) {
   console.error(message);
   process.exit(1);
 }
 
+/** Read one required distribution manifest relative to the checked-out repository. */
 function readJson(relativePath) {
   return JSON.parse(readFileSync(path.join(repoRoot, relativePath), "utf8"));
 }
@@ -98,6 +100,10 @@ function syncManifests(rootVersion, mode) {
   const drift = [];
   for (const relativePath of distributionManifestPaths(repoRoot)) {
     const manifest = readJson(relativePath);
+    if (relativePath.startsWith("plugins/") && relativePath.endsWith("/package.json") &&
+      (typeof manifest.version !== "string" || typeof manifest.dependencies?.["@unbrained/pm-cli"] !== "string")) {
+      fail(`${relativePath} requires a string version and an exact @unbrained/pm-cli runtime dependency.`);
+    }
     const stale = versionSlots(manifest).filter((slot) => slot.read() !== rootVersion);
     if (stale.length === 0) {
       continue;
