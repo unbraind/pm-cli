@@ -1,8 +1,8 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
-import { auditWorkflowDirectory, auditWorkflowPermissions } from "../../../../scripts/check-workflow-permissions.mjs";
+import { describe, expect, it, vi } from "vitest";
+import { auditWorkflowDirectory, auditWorkflowPermissions, runIfMain } from "../../../../scripts/check-workflow-permissions.mjs";
 
 describe("GitHub workflow token permissions", () => {
   it("accepts job-scoped elevation and rejects workflow-scoped elevation", () => {
@@ -36,6 +36,32 @@ describe("GitHub workflow token permissions", () => {
         "unsafe.yaml: workflow permission issues: write exceeds read-only default",
       ]);
     } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("runs the direct entrypoint with a safe inventory and its negative control", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "pm-workflow-entrypoint-"));
+    const previousExitCode = process.exitCode;
+    const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    try {
+      await writeFile(path.join(root, "safe.yml"), "permissions: read-all\n");
+      const entrypoint = path.resolve("scripts/check-workflow-permissions.mjs");
+      await runIfMain(undefined, root, false);
+      await runIfMain("not-the-entrypoint.mjs", root, false);
+      expect(stdout).not.toHaveBeenCalled();
+      expect(stderr).not.toHaveBeenCalled();
+      await runIfMain(entrypoint, root, false);
+      expect(process.exitCode).toBe(0);
+      expect(stdout).toHaveBeenCalledWith("Workflow permissions: read-only defaults verified\n");
+      await runIfMain(entrypoint, root, true);
+      expect(process.exitCode).toBe(1);
+      expect(stderr).toHaveBeenCalledWith("negative-control.yml: workflow permission contents: write exceeds read-only default\n");
+    } finally {
+      process.exitCode = previousExitCode;
+      stdout.mockRestore();
+      stderr.mockRestore();
       await rm(root, { recursive: true, force: true });
     }
   });

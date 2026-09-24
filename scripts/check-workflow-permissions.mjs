@@ -48,16 +48,24 @@ export async function auditWorkflowDirectory(workflowsRoot) {
 }
 
 /** Print a stable verdict and fail when a workflow has a broad token default. */
-async function main() {
-  const negativeControl = process.argv.includes("--negative-control");
+export async function main(workflowsRoot, negativeControl) {
   const findings = negativeControl
     ? auditWorkflowPermissions("name: Negative control\npermissions:\n  contents: write\njobs: {}\n", "negative-control.yml")
-    : await auditWorkflowDirectory(path.join(process.cwd(), ".github", "workflows"));
+    : await auditWorkflowDirectory(workflowsRoot);
   for (const finding of findings) process.stderr.write(`${finding}\n`);
   if (findings.length === 0) process.stdout.write("Workflow permissions: read-only defaults verified\n");
   process.exitCode = findings.length > 0 ? 1 : 0;
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
-  await main();
+/** Run only for direct CLI invocation while retaining a testable entrypoint boundary. */
+export async function runIfMain(candidate, workflowsRoot, negativeControl) {
+  if (candidate && fileURLToPath(import.meta.url) === path.resolve(candidate)) {
+    await main(workflowsRoot, negativeControl);
+  }
 }
+
+await runIfMain(
+  process.argv[1],
+  path.join(process.cwd(), ".github", "workflows"),
+  process.argv.includes("--negative-control"),
+);
