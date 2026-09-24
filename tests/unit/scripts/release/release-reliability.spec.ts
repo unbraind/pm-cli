@@ -15,6 +15,7 @@ const policy = {
 };
 const now = "2026-09-24T08:00:00Z";
 
+/** Build a first-attempt observation with explicit per-scenario overrides. */
 function run(id: number, overrides: Record<string, unknown> = {}) {
   return {
     id, run_attempt: 1, event: "schedule", status: "completed",
@@ -28,6 +29,10 @@ describe("release reliability", () => {
     const configured = JSON.parse(readFileSync("config/release-reliability-policy.json", "utf8"));
     const production = parseDocument(readFileSync(".github/workflows/auto-release.yml", "utf8"));
     expect(production.errors).toEqual([]);
+    const release = production.toJS() as { jobs: { "auto-release": { steps: Array<{ name: string; "continue-on-error"?: boolean }> } } };
+    const evidenceSteps = release.jobs["auto-release"].steps.filter((step) => ["Record release attempt observation", "Preserve release attempt observation"].includes(step.name));
+    expect(evidenceSteps).toHaveLength(2);
+    expect(evidenceSteps.every((step) => step["continue-on-error"] === true)).toBe(true);
     expect(production.getIn(["on", "schedule", 0, "cron"])).toBe(`${configured.cron_minute_utc} ${configured.cron_hour_utc} * * *`);
     const source = readFileSync(".github/workflows/release-reliability.yml", "utf8");
     const reporting = parseDocument(source);

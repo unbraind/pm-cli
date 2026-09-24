@@ -387,6 +387,7 @@ jobs:
 
       - name: Record release attempt observation
         if: always()
+        continue-on-error: true
         env:
           RELEASE_OBSERVATION_PATH: ${{ runner.temp }}/release-observation.json
           RELEASE_FAILURE_RECORD: ${{ runner.temp }}/release-failure-record.json
@@ -397,6 +398,7 @@ jobs:
 
       - name: Preserve release attempt observation
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-observation-${{ github.run_attempt }}

@@ -47,7 +47,9 @@ stdout, stderr, credentials and environment values are not archived. A confirmed
 publication, verified existing same-day release, unchanged source, tracker-only
 changes, and an empty changelog are distinct outcomes. Failed gates retain their
 structured stage; older failures fall back to failed job/step names from GitHub.
-Missing or expired success receipts are `unknown_success`, with
+Receipt writing and upload are non-blocking so an evidence-service outage cannot
+change publication success into a release blocker. Missing or expired success
+receipts are `unknown_success`, with
 `outcome_evidence_complete: false`; success alone does not prove publication.
 
 Reports retain the input policy, window, per-run observations, outcome counts,

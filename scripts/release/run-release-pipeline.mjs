@@ -267,6 +267,7 @@ export function withReleasePushCredentials(gitOptions = {}, token = releasePushT
   };
 }
 
+/** Emit the structured workflow reason and render the same result for JSON or human consumers. */
 function writePipelineResult(result, outputJson, text) {
   if (process.env.RELEASE_PIPELINE_OUTPUT) {
     const reason = result.reason ?? (result.dry_run ? "dry_run" : "prepared");
@@ -432,6 +433,11 @@ function commitAndMaybePushRelease(targetVersion, tagName, author, push) {
   }
 }
 
+/**
+ * Prepare a gated daily release from the CLI flags. Refuse unsafe working trees
+ * and duplicate daily tags, preserve explicit skip reasons, and stage the
+ * synchronized distribution manifests before optionally pushing immutable refs.
+ */
 export function runPipeline() {
   const { flags } = parseFlags(process.argv.slice(2));
   if (flags.get("help") || flags.get("h")) {
