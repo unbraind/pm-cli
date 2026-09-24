@@ -78,3 +78,30 @@ Readiness, `pm next`, context blocker summaries, `pm list-blocked`, downstream `
 `pm deps` returns `legacy_alias_counts` for the workspace. `pm graph audit` returns the same field beside canonical `profile.edges_by_kind` counts, `profile.edge_share_by_kind` composition ratios, and the `semantic_edges`/`semantic_edge_share` context-preservation census. The semantic census counts `discovered_from`, `incident_from`, `recurs_from`, `supersedes`, and `verifies` over all deduplicated directed edges. Empty objects and zero shares are explicit, not omitted. These diagnostics are read-only; terminal history remains untouched until an explicitly governed migration is requested.
 
 Assurance `dependency_kind` measurements canonicalize both the declaration and stored row before comparing. A declaration using `related` and one using the accepted `related_to` alias therefore measure the same edge population; alias debt remains separately observable through `legacy_alias_counts`.
+
+## Composition policy when adding relationships
+
+Tracked by [pm-r3o7x4](../.agents/pm/issues/pm-r3o7x4.toon).
+
+Choose the kind that states the actual relationship. Use `related` for honest
+association; never relabel it as evidence or ordering merely to pass a gate.
+This workspace enforces `profile.semantic_edge_share` over canonical,
+deduplicated directed edges in both graph-composition and tracker-context-quality.
+The raw association count and declared-row share remain diagnostics. Neither
+imposes a second blocking bound on otherwise healthy graph growth.
+
+Adding a provenance or verification edge cannot lower that composition ratio.
+Adding only association, hierarchy, implementation, or ordering edges can lower
+it; a mixed addition that increases semantic share passes the composition floor
+whenever its baseline passed. Ordering and hierarchy still have their own
+integrity constraints. Inspect the active workspace policy before bulk changes:
+
+```bash
+pm assurance show gate graph-composition
+pm assurance show assertion graph-semantic-edge-share-floor
+pm assurance run graph-composition --trigger ci --dry-run
+```
+
+The floor is a declared minimum, not a promise that every small dilution fails.
+Real growth is allowed above it; an associative-only pass crossing the floor is
+refused. Both terminal and active history contribute to the same denominator.

@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1294: release commit omits synchronized plugin runtime manifests ([pm-t4prek](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t4prek.toon))
+- The related ceiling is pinned to the live count with block enforcement, so recording one associative sibling relation anywhere in the tracker fails CI while the share floor it duplicates would have allowed it ([pm-r3o7x4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r3o7x4.toon))
+
+### Security
+
+- Semgrep 874840452: Medium dependabot missing cooldown in .github/dependabot.yml\#L3 ([pm-gkut](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gkut.toon))
+- Semgrep 874840451: Medium dependabot missing cooldown in .github/dependabot.yml\#L23 ([pm-dmo5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dmo5.toon))
+
 ## 2026.9.24 - 2026-09-24
 
 ### Fixed

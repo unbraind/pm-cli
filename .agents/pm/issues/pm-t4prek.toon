@@ -1,0 +1,106 @@
+id: pm-t4prek
+title: "GH-1294: release commit omits synchronized plugin runtime manifests"
+description: "The 2026-09-24 automatic pipeline synchronized plugin package.json files locally but commitAndMaybePushRelease staged an older independent manifest allowlist. Tag v2026.9.24 therefore contains root 2026.9.24 and plugin runtime pins 2026.9.23; the tag publish workflow failed six plugin tests and npm remains 2026.9.23. Unify the manifest inventory used by synchronization and Git staging, prove a bumped fixture commit contains all pins, and recover publication without moving or duplicating the existing tag."
+type: Issue
+status: closed
+priority: 0
+tags: []
+created_at: "2026-09-24T08:32:19.516Z"
+updated_at: "2026-09-24T09:17:46.501Z"
+closed_at: "2026-09-24T09:17:45.638Z"
+completed_at: "2026-09-24T09:17:45.638Z"
+author: "harness:codex"
+acceptance_criteria: One authoritative distribution manifest inventory drives sync and release staging; a temporary Git release fixture proves every changed version and exact runtime pin is committed; missing or stale plugin pins fail before tagging; current tag identity is preserved and recovery disposition is explicit; full coverage static and package acceptance pass
+parent: pm-u9d0
+resolution: "Share synchronization and staging inventory, repair both runtime pins, and refuse malformed plugin versions or absent/null/non-string runtime dependencies"
+expected_result: "All plugin versions and exact runtime pins are coherent before git add, commit, tag or push"
+actual_result: "54 linked release tests pass, including real Git artifact proof, invalid manifest matrices and pre-staging refusal. Current tag remains immutable and unpublished; GH-1294 retains next-release follow-up"
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-e70zh5,implements,"2026-09-24T08:32:19.516Z","harness:codex","cli:create:dep",detected
+  pm-l9wl,discovered_from,"2026-09-24T08:32:19.516Z","harness:codex","cli:create:dep",detected
+  pm-z3ez,verifies,"2026-09-24T08:32:19.516Z","harness:codex","cli:create:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-09-24T08:32:19.516Z","harness:codex","Duplicate check: all-status searches for 1294 and plugin release version fixture found no owner of this staging omission; pm-l9wl is closed for the delivered exact-version resolver and stays closed. Live evidence: auto-release run 35971453730 and publish run 35973749511; failure reproduced from the committed manifest inventory."
+  "2026-09-24T08:36:58.486Z","harness:codex","TDD evidence: the new staging regression failed with both runtime package.json paths absent (33 existing tests passed). Shared distribution inventory now drives sync and release git add; a fresh pre-commit version check refuses drift. Focused pipeline/sync/cooldown tests pass. Existing exact-tag recovery explicitly refuses changed source for unpublished immutable tags, so v2026.9.24 remains unchanged; next daily release can carry the reviewed correction."
+  "2026-09-24T08:45:14.821Z","harness:codex","Live operational evidence: Sentry one-day window checked successfully with 0 critical/high issues; required telemetry gate passed at 0.43 percent errors and 0 failures lacking error codes. Independent freshness query at 08:43:47 UTC saw latest event 08:43:20 UTC and 190 events in 15 minutes; RabbitMQ events queue had 0 ready and 0 unacknowledged messages. These are live operational observations, not proof that unpublished v2026.9.24 reached consumers."
+  "2026-09-24T08:47:20.559Z","harness:codex","Temporary installed-artifact verification passed for copied Claude/Codex plugins with npm unavailable after cache population; npx and bunx packed-package smoke passed for corrected checkout version 2026.9.24 across 9 packages. This validates the local corrected tarball, not the existing immutable tag or npm publication."
+  "2026-09-24T08:58:07.837Z","harness:codex","Verification: PR #1295 hosted coverage artifact from run 35977528916 has exact 100/100/100/100: lines 62249/62249, statements 65109/65109, functions 13498/13498, branches 49725/49725, zero skipped counters. Four linked item suites pass. Initial local broad run exposed two now-corrected script contract expectations and a load-related census timeout; all 64 focused rerun tests passed without loosening timeouts."
+  "2026-09-24T09:15:47.550Z","harness:codex","Validated CodeRabbit thread 4091860052: absent/null/non-string plugin runtime pins bypassed the optional slot census. New negative tests reproduced the defect. Both plugin package manifests now require string versions and runtime pins; ordinary drift remains synchronized and check rejects stale exact pins. The orchestration regression proves a version-check refusal occurs before git add, commit, tag or push."
+notes[1]{created_at,author,text}:
+  "2026-09-24T08:45:17.327Z","harness:codex","Release recovery boundary: preserve immutable v2026.9.24. Its unpublished source has stale plugin pins, and the current exact-tag recovery deliberately selects that source. Ship the fix on main; do not retag or publish changed source under that tag. Verify the next scheduled release separately."
+learnings[1]{created_at,author,text}:
+  "2026-09-24T08:39:40.978Z","harness:codex",A version synchronizer and release git-add allowlist must share one inventory. Working-tree validation cannot detect omitted staged artifacts; assert committed manifest bytes in a real temporary Git repository.
+files[8]{path,scope,note}:
+  plugins/pm-claude/package.json,project,Repair runtime pin omitted from release commit
+  plugins/pm-codex/package.json,project,Repair runtime pin omitted from release commit
+  scripts/release/run-release-pipeline.mjs,project,Stage every synchronized manifest and check versions before commit
+  scripts/release/version-manifests.mjs,project,Canonical distribution inventory shared by synchronization and staging
+  scripts/sync-versions.mjs,project,Use shared manifest inventory
+  tests/unit/scripts/release/run-release-pipeline.spec.ts,project,Regression for omitted runtime manifests
+  tests/unit/scripts/release/version-manifests.spec.ts,project,Real temporary Git committed-artifact regression
+  tests/unit/scripts/sync-versions.spec.ts,project,Missing null non-string runtime pin and manifest version negative controls
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts tests/unit/scripts/release/version-manifests.spec.ts tests/unit/scripts/sync-versions.spec.ts,project,240,"harness:codex","2026-09-24T08:36:57.703Z",local_mutation,fix/graph-composition-assurance
+test_runs[4]:
+  - run_id: test-all-local-mufa4yhn-vf86m0
+    kind: test-all
+    status: failed
+    started_at: "2026-09-24T08:38:20.198Z"
+    finished_at: "2026-09-24T08:50:21.848Z"
+    recorded_at: "2026-09-24T08:50:21.848Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts tests/unit/scripts/release/version-manifests.spec.ts tests/unit/scripts/sync-versions.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mufamyuj-ivr3ym
+    kind: test-all
+    status: passed
+    started_at: "2026-09-24T08:52:20.527Z"
+    finished_at: "2026-09-24T08:53:01.952Z"
+    recorded_at: "2026-09-24T08:53:01.952Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts tests/unit/scripts/release/version-manifests.spec.ts tests/unit/scripts/sync-versions.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mufbh5qv-b1kl0z
+    kind: test-all
+    status: passed
+    started_at: "2026-09-24T09:15:49.143Z"
+    finished_at: "2026-09-24T09:16:13.761Z"
+    recorded_at: "2026-09-24T09:16:13.761Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts tests/unit/scripts/release/version-manifests.spec.ts tests/unit/scripts/sync-versions.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mufbj789-r8jg7j
+    kind: test
+    status: passed
+    started_at: "2026-09-24T09:17:17.515Z"
+    finished_at: "2026-09-24T09:17:24.441Z"
+    recorded_at: "2026-09-24T09:17:24.441Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts tests/unit/scripts/release/version-manifests.spec.ts tests/unit/scripts/sync-versions.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Committed release-artifact verification contract
+close_reason: Release manifest correction strengthened against missing runtime pins before staging
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: release-integrity
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: Gates (static),"Build, Test, Publish"
+  owner: pm-t4prek
+body: ""

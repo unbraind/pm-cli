@@ -1,5 +1,7 @@
 import { Buffer } from "node:buffer";
 import path from "node:path";
+import * as fs from "node:fs";
+import type * as ReleaseUtils from "../../../../scripts/release/utils.mjs";
 import { describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../../helpers/scriptModule";
 
@@ -37,9 +39,10 @@ type PipelineModule = {
   runPipeline: () => void;
 };
 
+/** Isolate command execution and the clock while retaining real release flag parsing. */
 function mockUtils(runCommand: ReturnType<typeof vi.fn>, repoRoot?: string): void {
   vi.doMock("../../../../scripts/release/utils.mjs", async () => {
-    const actual = await vi.importActual<typeof import("../../../../scripts/release/utils.mjs")>(
+    const actual = await vi.importActual<typeof ReleaseUtils>(
       "../../../../scripts/release/utils.mjs",
     );
     return {
@@ -54,6 +57,7 @@ function mockUtils(runCommand: ReturnType<typeof vi.fn>, repoRoot?: string): voi
   });
 }
 
+/** Supply a clean release candidate and allow each test to override only its relevant Git boundary. */
 function baseGitMock(overrides: (command: string, args: string[]) => unknown | undefined): ReturnType<typeof vi.fn> {
   return vi.fn((command: string, args: string[]) => {
     const custom = overrides(command, args);
@@ -110,7 +114,6 @@ describe("run-release-pipeline", () => {
       const root = await harness.createTempRoot("pm-pipeline-changelog-");
       const withSection = path.join(root, "with.md");
       const empty = path.join(root, "empty.md");
-      const fs = await import("node:fs");
       fs.writeFileSync(withSection, "## [2026.6.15]\n\n- item\n", "utf8");
       fs.writeFileSync(empty, "# Changelog\n", "utf8");
       const mod = await harness.importModule<PipelineModule>(SCRIPT, "ensure");
@@ -305,7 +308,7 @@ describe("run-release-pipeline", () => {
 
     it("readPackageVersion reads version from package.json under repoRoot", async () => {
       const root = await harness.createTempRoot("pm-pipeline-pkg-");
-      const fs = await import("node:fs");
+      fs.mkdirSync(path.join(root, "packages"), { recursive: true });
       fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "2026.6.13" }), "utf8");
       mockUtils(vi.fn(() => ({ status: 0, stdout: "", stderr: "" })), root);
       const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
@@ -428,7 +431,7 @@ describe("run-release-pipeline", () => {
 
     it("dry-run with explicit version emits JSON result", async () => {
       const root = await harness.createTempRoot("pm-pipeline-dryjson-");
-      const fs = await import("node:fs");
+      fs.mkdirSync(path.join(root, "packages"), { recursive: true });
       fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "2026.6.13" }), "utf8");
       const runCommand = baseGitMock((command, args) => {
         if (command === "git" && args[0] === "rev-list") return { status: 0, stdout: "2\n", stderr: "" };
@@ -455,7 +458,7 @@ describe("run-release-pipeline", () => {
 
     it("dry-run text output identifies that no release mutation occurred", async () => {
       const root = await harness.createTempRoot("pm-pipeline-drytext-");
-      const fs = await import("node:fs");
+      fs.mkdirSync(path.join(root, "packages"), { recursive: true });
       fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "2026.6.13" }), "utf8");
       const runCommand = baseGitMock(() => undefined);
       mockUtils(runCommand, root);
@@ -468,12 +471,16 @@ describe("run-release-pipeline", () => {
 
     it("runs full non-dry-run path: changelog gen, commit, tag, push (json)", async () => {
       const root = await harness.createTempRoot("pm-pipeline-full-");
-      const fs = await import("node:fs");
+      fs.mkdirSync(path.join(root, "packages"), { recursive: true });
       fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "2026.6.13" }), "utf8");
 
       const gitCalls: string[][] = [];
+      let rejectRuntimePin = false;
       const runCommand = vi.fn((command: string, args: string[]) => {
         gitCalls.push([command, ...args]);
+        if (rejectRuntimePin && args.join(" ") === "scripts/sync-versions.mjs check") {
+          throw new Error("Missing plugin runtime pin");
+        }
         if (command === "git" && args[0] === "status") return { status: 0, stdout: "", stderr: "" };
         if (command === "git" && args[0] === "describe") return { status: 0, stdout: "v2026.6.13\n", stderr: "" };
         if (command === "git" && args[0] === "rev-list") return { status: 0, stdout: "3\n", stderr: "" };
@@ -512,12 +519,20 @@ describe("run-release-pipeline", () => {
       expect(payload.skipped).toBe(false);
       expect(payload.target_version).toBe("2026.6.15");
       expect(payload.pushed).toBe(true);
+      expect(gitCalls.find((c) => c[0] === "git" && c[1] === "add")).toEqual(expect.arrayContaining([
+        "plugins/pm-claude/package.json", "plugins/pm-codex/package.json",
+      ]));
       expect(payload.author).toBe("Release Bot!!");
       expect(gitCalls.some((c) => c[0] === "git" && c[1] === "commit")).toBe(true);
       expect(gitCalls.some((c) => c[0] === "git" && c[1] === "push")).toBe(true);
       expect(fs.existsSync(path.join(root, "CHANGELOG.md"))).toBe(true);
       expect(fs.readFileSync(path.join(root, "CHANGELOG.md"), "utf8"))
         .toBe("## 2026.6.15 - 2026-06-15\n\n- thing\n");
+      gitCalls.length = 0;
+      rejectRuntimePin = true;
+      expect(() => mod.runPipeline()).toThrow("Missing plugin runtime pin");
+      expect(gitCalls.some((call) => call[0] === "git" && ["add", "commit", "push"].includes(call[1]))).toBe(false);
+      expect(gitCalls).not.toContainEqual(["git", "tag", "v2026.6.15"]);
     });
 
     it("rebases and retargets the tag when release push sees origin/main advance", async () => {
@@ -721,7 +736,7 @@ describe("run-release-pipeline", () => {
 
     it("runs full non-dry-run path without push (text output)", async () => {
       const root = await harness.createTempRoot("pm-pipeline-nopush-");
-      const fs = await import("node:fs");
+      fs.mkdirSync(path.join(root, "packages"), { recursive: true });
       fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "2026.6.13" }), "utf8");
       const runCommand = vi.fn((command: string, args: string[]) => {
         if (command === "git" && args[0] === "status") return { status: 0, stdout: "", stderr: "" };
@@ -746,7 +761,7 @@ describe("run-release-pipeline", () => {
 
     it("fails non-dry-run when generated changelog section empty and explicit version given", async () => {
       const root = await harness.createTempRoot("pm-pipeline-emptyexplicit-");
-      const fs = await import("node:fs");
+      fs.mkdirSync(path.join(root, "packages"), { recursive: true });
       fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "2026.6.13" }), "utf8");
       const runCommand = vi.fn((command: string, args: string[]) => {
         if (command === "git" && args[0] === "status") return { status: 0, stdout: "", stderr: "" };
@@ -769,7 +784,7 @@ describe("run-release-pipeline", () => {
 
     it("skips when generated changelog section empty and no explicit version (json + text)", async () => {
       const root = await harness.createTempRoot("pm-pipeline-emptyskip-");
-      const fs = await import("node:fs");
+      fs.mkdirSync(path.join(root, "packages"), { recursive: true });
       fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "2026.6.13" }), "utf8");
 
       function makeRunCommand(): ReturnType<typeof vi.fn> {

@@ -2,11 +2,13 @@ id: pm-r3o7x4
 title: "The related ceiling is pinned to the live count with block enforcement, so recording one associative sibling relation anywhere in the tracker fails CI while the share floor it duplicates would have allowed it"
 description: "The raw related-edge ceiling is pinned to the observed count, so one legitimate associative link fails enforcement even when semantic composition improves. Govern associative growth by dilution ratio or explicit justified headroom, retain a negative control, and make addition-safe edge guidance discoverable before mutation."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,assurance,governance,graph,ratchet
 created_at: "2026-08-13T08:45:58.302Z"
-updated_at: "2026-09-08T13:32:42.643Z"
+updated_at: "2026-09-24T08:58:01.342Z"
+closed_at: "2026-09-24T08:58:00.280Z"
+completed_at: "2026-09-24T08:58:00.280Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "Associative edge growth is governed by a composition ratio, so an addition that raises semantic share can never fail the associative bound; Any retained raw count bound declares explicit headroom and a rationale for the headroom, so it is not pinned to the observation that created it; A negative control proves the bound still fails an associative-only dilution pass and passes a mixed pass that raises semantic share; The two overlapping declarations are reconciled into one enforced quantity with the other demoted to reporting, recorded as a disposition on the owning item; Guidance for filing an item states which kinds are addition-safe, so an agent does not discover the constraint by failing a gate"
@@ -19,11 +21,63 @@ why_now: "Hit immediately: filing four well-linked findings this session took re
 parent: pm-96h7
 risk: medium
 confidence: 95
-expected_result: "Associative edge growth is governed by a composition ratio with explicit headroom, so recording one legitimate related link never fails CI while dilution still does."
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+resolution: Replaced the raw association ceiling with canonical semantic-share enforcement; retained diagnostics and documented truthful relationship kinds.
+expected_result: Honest mixed graph growth passes; dilution below the floor fails across active and terminal items.
+actual_result: Sandbox negative controls and live graph-composition gate pass; new Decision reference is structurally linked.
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-1jzupz,implements,"2026-08-13T08:45:58.302Z","harness:claude-code","cli:create:dep",detected
   pm-96h7,implements,"2026-08-13T08:45:58.302Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-08-13T08:45:58.302Z","harness:claude-code","cli:create:dep",detected
   pm-mfvsng,verifies,"2026-08-13T08:45:58.302Z","harness:claude-code","cli:create:dep",detected
   pm-q6n8sj,discovered_from,"2026-08-13T08:45:58.302Z","harness:claude-code","cli:create:dep",detected
+  pm-4jqm,implements,"2026-09-24T08:54:34.558Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-24T08:24:38.157Z","harness:codex","Live reproduction: related-to-ceiling still blocks above 6053 even though canonical graph and declared-row semantic-share floors independently detect dilution. Implement the requested policy disposition by retaining the raw count as observation-only and enforcing the existing canonical graph semantic share in both graph-composition and tracker-context-quality. Keep declared-row semantic share diagnostic to avoid divergent denominator policies; do not change ordering-edge bounds. The accepted relationship ontology pm-4jqm already distinguishes truthful association from ordering and provenance."
+  "2026-09-24T08:44:38.811Z","harness:codex","Complete all-status PM CLI census: 2801 items (2499 closed, 225 open, 59 draft, 14 canceled, 4 actively in progress), no omitted rows or unreadable sources. All items have hierarchy or dependency links; no dangling local dependency IDs. Recorded rows include 2936 implements, 1013 discovered_from, 589 verifies, 98 supersedes, 106 recurs_from and 21 incident_from alongside association and ordering. No historical relations were fabricated to inflate depth. Manual isolated research workflow passed custom-field and typed-link lifecycle roundtrip."
+  "2026-09-24T08:54:36.697Z","harness:codex","The composition gate caught one newly mentioned Decision without a structured edge. Added the truthful implements link to the accepted relationship ontology; retained the existing prose-gap ceiling unchanged. Live canonical graph audit reports 13990 deduplicated directed edges, 1827 semantic edges (13.059 percent), no missing nodes, no isolated active nodes, and no ordering contradictions; only the seven pre-existing legacy hierarchy cases remain informational."
+  "2026-09-24T08:57:57.488Z","harness:codex","Verification: PR #1295 hosted coverage artifact from run 35977528916 has exact 100/100/100/100: lines 62249/62249, statements 65109/65109, functions 13498/13498, branches 49725/49725, zero skipped counters. Four linked item suites pass. Initial local broad run exposed two now-corrected script contract expectations and a load-related census timeout; all 64 focused rerun tests passed without loosening timeouts."
+learnings[1]{created_at,author,text}:
+  "2026-09-24T08:39:42.363Z","harness:codex",Use one canonical deduplicated graph ratio for composition enforcement. A raw associative count pinned to its observation makes honest context additions fail and incentivizes false relationship typing.
+files[1]{path,scope,note}:
+  tests/unit/sdk/governance/assurance-composition-policy.spec.ts,project,Sandbox CLI and SDK negative controls for composition growth
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/assurance-composition-policy.spec.ts,project,240,"harness:codex","2026-09-24T08:29:59.484Z",local_mutation,fix/graph-composition-assurance
+test_runs[2]:
+  - run_id: test-all-local-mufa4yhn-vf86m0
+    kind: test-all
+    status: failed
+    started_at: "2026-09-24T08:38:20.198Z"
+    finished_at: "2026-09-24T08:46:21.490Z"
+    recorded_at: "2026-09-24T08:46:21.490Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/assurance-composition-policy.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mufamyuj-ivr3ym
+    kind: test-all
+    status: passed
+    started_at: "2026-09-24T08:52:20.527Z"
+    finished_at: "2026-09-24T08:52:48.816Z"
+    recorded_at: "2026-09-24T08:52:48.816Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/assurance-composition-policy.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/DEPENDENCY_KIND_CONTRACT.md,project,Addition safety and canonical composition policy
+close_reason: Implementation and executable regression evidence complete; delivery proceeds through PR #1295
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: graph-composition
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/governance/assurance-composition-policy.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/governance/assurance-composition-policy.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: Gates (static),"Build, Test, Publish"
+  owner: pm-r3o7x4
 body: "## The two declarations\n\nBoth live in the same registry and both descend from pm-q6n8sj, which correctly identified that `related` was the largest edge population and the only unbounded one.\n\n```\nrelated-to-ceiling         edges-related               ceiling 6053   block   owner pm-q6n8sj\n  negative_control: 6053 pass / 6054 fail\n  authorization_decision: pm-4jqm\n\nsemantic-edge-share-floor  semantic-edge-share-permille  floor 79     block   owner pm-q6n8sj\n  negative_control: 79 pass / 78 fail\n```\n\nThe share floor is the one that expresses the intent. It fails exactly when the fraction of traversable edges falls, which is the dilution pm-q6n8sj set out to prevent. It is indifferent to how large the graph gets, which is the correct indifference.\n\nThe raw ceiling is pinned to the count observed when it was declared. Its negative control states that one more associative row than existed at that instant is a failure.\n\n## What that means in practice\n\nFiling four findings this session, each with the associative sibling context an item is supposed to carry, took `edges-related` from 6,053 to 6,063. Both `graph-composition` and `tracker-context-quality` went to `verdict: block`.\n\nSemantic share over the same edit went from 81.0 to 81.2 permille against a floor of 79. The edit the raw ceiling refused was an edit that improved the quantity the project says it cares about.\n\nRetyping those ten rows to `implements`, `verifies` and `discovered_from` cleared both gates and moved semantic edges from 836 to 849 and share to 70.0 permille of total edges by the audit's own basis. That outcome is good, and it is the outcome the share floor would have produced on its own. The raw ceiling contributed nothing except the failure.\n\n## Why the incentive is wrong, not just inconvenient\n\nWith the ceiling at zero headroom, an agent recording two genuinely-associated items has three options: leave the relation unrecorded, spell it as a semantic kind it does not deserve, or fail the build. The second is the cheapest and the most damaging, and it is the precise failure mode the operating rules already warn about — a cue names a relation's kind and object, never its subject, so lexical promotion of associative links to semantic ones has already been measured at precision zero out of eight.\n\nA bound whose cheapest compliant response is mislabelling is worse than no bound.\n\n## Addition safety by kind, as currently declared\n\n| kind | bound | adding an edge |\n|---|---|---|\n| implements | floor 2591 | always safe |\n| discovered_from | floor 474 | always safe |\n| verifies | floor 245 | always safe |\n| supersedes | floor 84 | always safe |\n| blocked_by | none declared | safe |\n| related | ceiling 6053 | fails at any addition |\n| blocks | ceiling 243 | fails at any addition |\n\nOnly the two ceiling-bounded kinds are addition-unsafe, and both are pinned to their observation. `blocks` has an independent and deliberate rationale on pm-c90tfh — fabricated ordering edges are the specific harm there — so the two cases should be dispositioned separately rather than as one policy.\n\n## Boundary\n\nThis is not a request to raise the number. Raising a pinned ratchet by hand is the erosion these declarations exist to catch. The repair is to enforce composition and demote the raw count to reporting."

@@ -22,6 +22,7 @@ interface WriteRecord {
   content: string;
 }
 
+/** Compare mocked manifest identities consistently across POSIX and Windows hosts. */
 function normalize(filePath: string): string {
   return filePath.split("\\").join("/");
 }
@@ -42,6 +43,7 @@ function resolveKey(
   return matches[0];
 }
 
+/** Model every supported manifest shape with coherent distribution versions and runtime pins. */
 function inSyncFiles(): Record<string, JsonValue> {
   return {
     "package.json": { name: "@unbrained/pm-cli", version: ROOT_VERSION },
@@ -89,6 +91,7 @@ function inSyncFiles(): Record<string, JsonValue> {
   };
 }
 
+/** Seed independent workspace, catalog, and runtime-pin drift for synchronization checks. */
 function driftedFiles(): Record<string, JsonValue> {
   const files = inSyncFiles();
   files["packages/pm-alpha/package.json"] = {
@@ -116,6 +119,7 @@ function driftedFiles(): Record<string, JsonValue> {
   return files;
 }
 
+/** Execute the real synchronizer against a controlled filesystem and capture all writes and refusals. */
 async function runSyncVersionsScenario(scenario: Scenario) {
   process.argv = ["node", "scripts/sync-versions.mjs", ...scenario.args];
 
@@ -245,6 +249,27 @@ describe("scripts/sync-versions: apply mode", () => {
 });
 
 describe("scripts/sync-versions: guard rails", () => {
+  it.each([undefined, null, 7])("rejects malformed runtime versions in apply mode %#", async (version) => {
+    const files = inSyncFiles();
+    files["plugins/pm-claude/package.json"].version = version;
+    const result = await runSyncVersionsScenario({ args: ["apply"], files, packageDirs: ["pm-alpha"] });
+    expect(result.failure).toEqual(new Error("EXIT:1"));
+    expect(result.errors.join("\n")).toContain("plugins/pm-claude/package.json");
+    expect(result.writes).toEqual([]);
+  });
+
+  it.each(["pm-claude", "pm-codex"].flatMap((plugin) =>
+    [undefined, null, {}, { "@unbrained/pm-cli": null }, { "@unbrained/pm-cli": 7 }]
+      .map((dependencies) => ({ plugin, dependencies })),
+  ))("rejects invalid runtime dependency declarations %#", async ({ plugin, dependencies }) => {
+    const files = inSyncFiles();
+    files[`plugins/${plugin}/package.json`] = { version: ROOT_VERSION, dependencies };
+    const result = await runSyncVersionsScenario({ args: ["check"], files, packageDirs: ["pm-alpha"] });
+    expect(result.failure).toEqual(new Error("EXIT:1"));
+    expect(result.errors.join("\n")).toContain(`plugins/${plugin}/package.json`);
+    expect(result.writes).toEqual([]);
+  });
+
   it("rejects unknown commands", async () => {
     const result = await runSyncVersionsScenario({
       args: ["bump"],

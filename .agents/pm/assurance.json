@@ -1117,7 +1117,7 @@
       },
       "floor": 79,
       "lifetime": "hold",
-      "enforcement": "block",
+      "enforcement": "observe",
       "negative_control": {
         "cases": [
           {
@@ -1129,7 +1129,8 @@
             "expected": "fail"
           }
         ]
-      }
+      },
+      "authorization_decision": "pm-4jqm"
     },
     {
       "id": "supersedes-floor",
@@ -1340,30 +1341,6 @@
         ]
       },
       "authorization_decision": "pm-dwj33e"
-    },
-    {
-      "id": "related-to-ceiling",
-      "measurement_id": "edges-related",
-      "owner_item_id": "pm-q6n8sj",
-      "scope": {
-        "kind": "all"
-      },
-      "lifetime": "hold",
-      "enforcement": "block",
-      "negative_control": {
-        "cases": [
-          {
-            "observed": 6053,
-            "expected": "pass"
-          },
-          {
-            "observed": 6054,
-            "expected": "fail"
-          }
-        ]
-      },
-      "ceiling": 6053,
-      "authorization_decision": "pm-4jqm"
     },
     {
       "id": "graph-isolated-active-zero",
@@ -2413,7 +2390,6 @@
       "assertion_ids": [
         "semantic-edge-share-floor",
         "graph-semantic-edge-share-floor",
-        "related-to-ceiling",
         "supersedes-floor",
         "discovered-from-floor",
         "verifies-floor",
@@ -2453,7 +2429,6 @@
         "graph-finding-legacy-ordering-storage-contradiction-zero",
         "blocks-total-ceiling",
         "blocks-ceiling",
-        "related-to-ceiling",
         "graph-isolated-active-zero",
         "graph-degree-leq-one-active-zero",
         "graph-articulation-points-ceiling",
@@ -2482,7 +2457,8 @@
         "graph-finding-missing-reference-terminal-ceiling",
         "graph-outcome-reachable-floor",
         "graph-outcome-unreachable-ceiling",
-        "graph-outcome-reachability-basis-points-floor"
+        "graph-outcome-reachability-basis-points-floor",
+        "graph-semantic-edge-share-floor"
       ],
       "triggers": [
         "ci",
