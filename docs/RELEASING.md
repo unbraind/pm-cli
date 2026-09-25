@@ -282,7 +282,11 @@ The automatic release commit is the sole non-identical-tree derivation. The
 gate requires one parent, the canonical release subject and body, an immutable
 `v<version>` tag resolving to the candidate, the complete expected manifest
 inventory, exact old-version to new-version substitutions in every manifest,
-and an exact `Unreleased` changelog-heading replacement. The package-generated
+and an exact `Unreleased` changelog-heading replacement. Fixed distribution
+paths come from the same inventory as version synchronization and staging.
+Plugin runtime package manifests are mandatory when present in the immutable
+parent tree; historical parents that predate those files remain verifiable.
+The package-generated
 replacement may be `## <version>` or the historical
 `## <version> - <YYYY-MM-DD>` form, with the date matching the calendar version.
 The complete heading must match and every other changelog byte must remain

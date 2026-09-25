@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Releases from the default branch are supported with analyzer evidence ([pm-u1baah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u1baah.toon))
+
 ## 2026.9.25 - 2026-09-25
 
 ### Fixed
@@ -350,7 +356,6 @@
 - Metadata index rebuilds and mutations repeatedly scan an unindexed FTS identity column ([pm-gtw5zh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gtw5zh.toon))
 - Read sessions emit invalid continuation identities from workspace activity rows ([pm-s8ybl9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s8ybl9.toon))
 - Scale fixtures silently omit unregistered Story items from metadata reads ([pm-fx80w2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fx80w2.toon))
-- Releases from the default branch are supported with analyzer evidence ([pm-u1baah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u1baah.toon))
 
 ### Other
 
