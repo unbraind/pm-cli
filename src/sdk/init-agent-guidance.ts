@@ -88,6 +88,7 @@ interface AgentGuidanceFileScan {
   exists: boolean;
   has_guidance: boolean;
   has_marker: boolean;
+  outdated?: boolean;
 }
 
 interface AgentGuidanceBlockRange {
@@ -198,7 +199,7 @@ function buildAgentGuidanceBlock(
     "## pm Workflow (Agent Quickstart)",
     "",
     '- Cold start with the measured canonical orientation: `pm context --limit 10 --for orient`; before item mutation, also run `pm search "<keywords>" --limit 10`, `pm list --status open --limit 20`, and `pm list --status in_progress --limit 20`.',
-    "- Claim and execute: `pm claim <id>` then `pm update <id> --status in_progress`.",
+    "- Claim and start atomically: `pm claim <id> --start`.",
     `- Link evidence while coding: \`pm files <id> --add ...\`, \`pm docs <id> --add ...\`, \`pm test <id> --add command="${projectTestCommand}"\`.`,
     '- Verify and close: `pm test <id> --run --progress`, then atomically record closure evidence with `pm close <id> "<reason>" --resolution "<what changed>" --expected "<expected outcome>" --actual "<observed outcome>" --validate-close warn`, then `pm release <id>`.',
     "- Author identity is automatic for supported agent harnesses; use `--author` only for an explicit override.",
@@ -402,10 +403,12 @@ function normalizeAgentGuidanceState(
   };
 }
 
+/** Read both supported instruction files and compare managed content with this project's current generated template. */
 async function scanGuidanceFiles(
   projectRoot: string,
 ): Promise<AgentGuidanceFileScan[]> {
   const scans: AgentGuidanceFileScan[] = [];
+  const testCommand = await resolveProjectTestCommand(projectRoot);
   for (const filename of AGENT_GUIDANCE_TARGET_FILENAMES) {
     const filePath = path.join(projectRoot, filename);
     const exists = await pathExists(filePath);
@@ -431,6 +434,7 @@ async function scanGuidanceFiles(
         hasMarker ||
         tokenHits.length >= AGENT_GUIDANCE_REQUIRED_TOKEN_THRESHOLD,
       has_marker: hasMarker,
+      outdated: hasMarker && upsertAgentGuidanceBlock(content, testCommand).changed,
     });
   }
   return scans;
@@ -703,7 +707,7 @@ async function applyAgentGuidanceMode(
   return flow;
 }
 
-/** Implements run init agent guidance for the public runtime surface of this module. */
+/** Inspect, offer or refresh managed guidance; preserve surrounding prose and return state for the caller's settings transaction. */
 export async function runInitAgentGuidance(
   options: RunInitAgentGuidanceOptions,
 ): Promise<RunInitAgentGuidanceResult> {
@@ -728,6 +732,13 @@ export async function runInitAgentGuidance(
     },
   );
 
+  if (options.mode === "add") {
+    for (const scan of scans.filter((entry) => entry.outdated)) {
+      const refreshed = await writeGuidanceFile(scan.file_path, projectRoot);
+      flow.applied ||= refreshed.changed;
+      flow.warnings.push(...refreshed.warnings);
+    }
+  }
   const stateUpdate = applyAgentGuidanceState(options.settings, flow.state);
   scans = await refreshGuidanceScansAfterApply(
     flow.applied,
@@ -735,6 +746,11 @@ export async function runInitAgentGuidance(
     projectRoot,
   );
 
+  const outdated = scans.filter((entry) => entry.outdated).map((entry) => toPortableRelativePath(projectRoot, entry.file_path));
+  if (outdated.length > 0) {
+    flow.warnings.push(`agent_guidance_outdated:${outdated.join(",")}`);
+    pushUnique(flow.nextSteps, "pm init --agent-guidance add");
+  }
   const summary = buildInitAgentGuidanceSummary({
     mode: options.mode,
     scans,

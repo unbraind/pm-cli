@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- GH-1306: Isolate merge driver installation and health across Git worktrees ([pm-c1dwbt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c1dwbt.toon))
+- GH-1305: Preserve workflow policy refusal evidence and actionable missing-field recovery ([pm-o5s22y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o5s22y.toon))
+- GH-1303: Canonical help and refreshable agent guidance ([pm-80k965](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-80k965.toon))
+- GH-1304: Deterministic release pipeline branch coverage across hosted environments ([pm-m2ai6c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m2ai6c.toon))
 - Scheduled auto-release has a chronically high failure rate and no rolling measure, so a degraded pipeline reads as healthy one run at a time ([pm-e70zh5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e70zh5.toon))
 - Daily auto-release never runs in its declared window: all 84 scheduled runs fired 2.5-4 hours after the cron time, so the release clock is undocumented drift ([pm-44u3wt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-44u3wt.toon))
 - GH-1294: release commit omits synchronized plugin runtime manifests ([pm-t4prek](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t4prek.toon))

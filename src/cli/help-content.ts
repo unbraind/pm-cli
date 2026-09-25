@@ -954,6 +954,27 @@ export const ROOT_HELP_BUNDLE: HelpBundle = {
   ],
 };
 
+// Apply the SDK alias contract to every example, including embedded linked-test
+// commands, and make compatibility help disclose migration before execution.
+const deprecatedHelpAliases = PM_COMMAND_ALIAS_CONTRACTS.filter((entry) => entry.lifecycle === "deprecated");
+for (const contract of deprecatedHelpAliases) {
+  // Every deprecated alias has a dedicated help bundle, checked by the alias matrix.
+  const bundle = HELP_BY_COMMAND_PATH[contract.alias];
+  HELP_BY_COMMAND_PATH[contract.alias] = {
+    ...bundle,
+    why: `Deprecated: use pm ${contract.canonical_argv.join(" ")}. ${bundle.why}`,
+  };
+}
+for (const bundle of [ROOT_HELP_BUNDLE, ...Object.values(HELP_BY_COMMAND_PATH)]) {
+  bundle.examples = bundle.examples.map((example) => {
+    for (const contract of deprecatedHelpAliases) {
+      const alias = contract.alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      example = example.replaceAll(new RegExp(`\\bpm ${alias}(?![\\w-])`, "g"), `pm ${contract.canonical_argv.join(" ")}`);
+    }
+    return example;
+  });
+}
+
 function resolveCanonicalHelpPath(commandPath: string | undefined): string {
   const normalized = normalizeHelpCommandPath(commandPath ?? "");
   if (!normalized) {

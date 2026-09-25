@@ -31,6 +31,9 @@ import {
 import { isPathOutsideRoot } from "../workspace.js";
 import { resolveSourceContextWritePolicy } from "../environment/source-context.js";
 
+import { gitWorkspaceEnvironment, resolveMergeDriverConfigScope } from "./worktree-config.js";
+import { discoverProjectRuntimeVersionPins } from "../environment/project-runtime-compatibility.js";
+
 const execFileAsync = promisify(execFile);
 
 /** Opening marker for the pm-owned merge-driver `.gitattributes` block. */
@@ -232,7 +235,7 @@ export async function findGitWorkspaceRoot(
     const { stdout } = await execFileAsync(
       "git",
       ["rev-parse", "--show-toplevel"],
-      { cwd, encoding: "utf8", windowsHide: true, timeout: 10_000 },
+      { cwd, env: gitWorkspaceEnvironment(), encoding: "utf8", windowsHide: true, timeout: 10_000 },
     );
     return await realpath(stdout.trim());
   } catch {
@@ -282,9 +285,26 @@ function readSingleQuotedArgument(
   return null;
 }
 
+/** Reject version-pin drift and sibling-worktree runtimes while accepting independent installations. */
+async function isMergeDriverWorkspaceCompatible(packageRoot: string, workspaceRoot: string, version: unknown): Promise<boolean> {
+  const exactPins = discoverProjectRuntimeVersionPins(workspaceRoot).filter((pin) => pin.constraint === "exact");
+  if (exactPins.some((pin) => pin.version !== version)) return false;
+  const driverWorkspace = await findGitWorkspaceRoot(packageRoot);
+  if (driverWorkspace !== null && driverWorkspace !== await realpath(workspaceRoot)) {
+    const commonDirectories = await Promise.all([driverWorkspace, workspaceRoot].map(async (cwd) => {
+      const result = await execFileAsync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd, env: gitWorkspaceEnvironment(), timeout: 10_000 });
+      return realpath(result.stdout.trim());
+    }));
+    if (commonDirectories[0] === commonDirectories[1]) return false;
+  }
+  return true;
+}
+
+/** Validate executable paths, the pm package identity, exact pins and worktree ownership without executing the configured driver. */
 async function isPortableMergeDriverCommand(
   configured: string,
   expectedSuffix: string,
+  workspaceRoot: string,
 ): Promise<boolean> {
   const nodeArgument = readSingleQuotedArgument(configured, 0);
   if (nodeArgument === null || configured[nodeArgument.nextOffset] !== " ") {
@@ -313,16 +333,12 @@ async function isPortableMergeDriverCommand(
     const packageRoot = path.dirname(path.dirname(cliArgument.value));
     const manifest = JSON.parse(
       await readFile(path.join(packageRoot, "package.json"), "utf8"),
-    ) as { name?: unknown; bin?: unknown };
-    const pmBin =
-      typeof manifest.bin === "object" &&
-      manifest.bin !== null &&
-      "pm" in manifest.bin
-        ? (manifest.bin as { pm?: unknown }).pm
-        : undefined;
+    ) as { name?: unknown; bin?: string | Record<string, unknown> | null; version?: unknown };
+    const pmBin = typeof manifest.bin === "string" ? manifest.bin : manifest.bin?.pm;
+    if (!(await isMergeDriverWorkspaceCompatible(packageRoot, workspaceRoot, manifest.version))) return false;
     return (
       manifest.name === "@unbrained/pm-cli" &&
-      (manifest.bin === "dist/cli.js" || pmBin === "dist/cli.js")
+      pmBin === "dist/cli.js"
     );
   } catch {
     return false;
@@ -548,19 +564,18 @@ export async function auditMergeAttributeFence(
 export async function auditMergeDriverConfiguration(
   workspaceRoot: string,
 ): Promise<MergeDriverConfigurationAuditResult> {
-  const cliCommand = await resolveMergeDriverCliCommand();
   const missingKeys: string[] = [];
   const driftedKeys: string[] = [];
   for (const definition of MERGE_DRIVER_DEFINITIONS) {
     const key = `merge.${definition.key}.driver`;
     const expectedSuffix = ` merge driver ${definition.artifact} "%O" "%A" "%B"${definition.itemPath === undefined ? "" : ` --item-path ${definition.itemPath}`}`;
-    const expected = `${cliCommand}${expectedSuffix}`;
     try {
       const { stdout } = await execFileAsync(
         "git",
-        ["config", "--local", "--get", key],
+        ["config", "--get", key],
         {
           cwd: workspaceRoot,
+          env: gitWorkspaceEnvironment(),
           encoding: "utf8",
           windowsHide: true,
           timeout: 10_000,
@@ -568,8 +583,7 @@ export async function auditMergeDriverConfiguration(
       );
       const configured = stdout.trim();
       if (
-        configured !== expected &&
-        !(await isPortableMergeDriverCommand(configured, expectedSuffix))
+        !(await isPortableMergeDriverCommand(configured, expectedSuffix, workspaceRoot))
       ) {
         driftedKeys.push(key);
       }
@@ -765,12 +779,14 @@ export async function installMergeFence(options: {
   }
   if (!dryRun) {
     try {
+      const configScope = await resolveMergeDriverConfigScope(canonicalWorkspaceRoot);
       for (const entry of gitConfigEntries) {
         await execFileAsync(
           "git",
-          ["config", "--local", entry.key, entry.value],
+          ["config", configScope, entry.key, entry.value],
           {
             cwd: canonicalWorkspaceRoot,
+            env: gitWorkspaceEnvironment(),
             encoding: "utf8",
             windowsHide: true,
             timeout: 10_000,

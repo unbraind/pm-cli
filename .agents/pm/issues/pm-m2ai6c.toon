@@ -1,0 +1,84 @@
+id: pm-m2ai6c
+title: "GH-1304: Deterministic release pipeline branch coverage across hosted environments"
+description: Scheduled run 36111244838 failed exact branch coverage at run-release-pipeline.mjs (125/126). Exercise the missing environmental branch deterministically while preserving exact coverage and daily-release guards.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-25T10:11:14.846Z"
+updated_at: "2026-09-25T11:08:41.057Z"
+closed_at: "2026-09-25T11:07:19.546Z"
+completed_at: "2026-09-25T11:07:19.546Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Scheduled run 36111244838 failed exact branch coverage at run-release-pipeline.mjs (125/126). Exercise the missing environmental branch deterministically while preserving exact coverage and daily-release guards.
+parent: pm-u9d0
+risk: medium
+confidence: high
+repro_steps: "https://github.com/unbraind/pm-cli/issues/1304"
+resolution: Release pipeline environment-independent coverage delivered
+expected_result: Scheduled release tests cover output and token branches regardless of inherited process environment.
+actual_result: Linked release tests pass; inherited-output coverage 197/197 statements 126/126 branches 33/33 functions 195/195 lines; nine-package npx and bunx smoke passes. Production publication is verified separately after review.
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-e70zh5,discovered_from,"2026-09-25T10:11:14.846Z","harness:codex","cli:create:dep",detected
+  pm-e70zh5,verifies,"2026-09-25T10:29:43.788Z","harness:codex","cli:update:dep",detected
+  pm-u9d0,implements,"2026-09-25T10:29:43.788Z","harness:codex","cli:update:dep",detected
+  pm-do5b,verifies,"2026-09-25T10:32:13.388Z","harness:codex","cli:update:dep",detected
+  pm-fokyhh,verifies,"2026-09-25T10:32:13.388Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,verifies,"2026-09-25T10:32:13.388Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-09-25T10:11:14.846Z","harness:codex","Duplicate check: complete live all-status 2801-item inventory and request-specific searches found no owner for GH-1304. Reuse pm-u9d0 and historical pm-e70zh5. Report: https://github.com/unbraind/pm-cli/issues/1304"
+  "2026-09-25T10:29:42.392Z","harness:codex","Live external inventory: no open PRs; GitHub Dependabot, code scanning and secret scanning each return zero open alerts; pnpm audit has zero advisories. Required Sentry/telemetry gate passes: zero recent high/critical Sentry issues (14 days), telemetry finish error rate 1.77%, zero failures missing error codes. Scheduled failure 36111244838 is reproduced by inherited RELEASE_PIPELINE_OUTPUT and covered by explicit test environment isolation. Latest pm-changelog 2026.9.23 is installed and activated; generation follows item closure."
+  "2026-09-25T10:30:18.244Z","harness:codex","Dependency inventory 2026-09-25: compatible latest greptile 3.5.4, jscpd 5.3.2, marked 18.0.14 and knip 6.38.0 were published September 22-23 and remain within the seven-day aging policy. Sentry 11.0.0 is also only two days old. Registry peer verification confirms existing major work: pm-do5b (TypeScript 7 excluded by typescript-eslint <6.1), pm-fokyhh (Vitest 5 excluded by CodSpeed ^3.2 || ^4), pm-ksr40d (npm-package-arg 14 requires a higher Node 22 floor than supported). No bypass or duplicate migration item added."
+  "2026-09-25T10:39:20.394Z","harness:codex","Freshness proof 2026-09-25 10:37 UTC: live telemetry database latest event was 9 seconds old and 446 events arrived in the last 15 minutes. This proves recent ingestion, not unsampled completeness of every action. The release workflow retains its once-daily UTC tag guard, serialized concurrency and bounded blocker-closure retry; no release-policy bypass was introduced."
+  "2026-09-25T10:42:29.985Z","harness:codex","Publication baseline remains distinct from repository version: latest public npm and GitHub Release are v2026.9.23; immutable v2026.9.24 Release run 35973749511 failed. Today scheduled preparation failed before a new tag at exact coverage. This tranche repairs that new environment-sensitive gate; it does not move the prior immutable tag or claim it was published."
+  "2026-09-25T10:49:16.707Z","harness:codex","Verification: release pipeline coverage with inherited RELEASE_PIPELINE_OUTPUT reaches 100% statements (197/197), branches (126/126), functions (33/33), and lines (195/195). Packed distribution smoke passed using npx and bunx across nine packages. Sentry has zero unresolved issues; the required telemetry gate passes at 1.77% finish error rate with zero failures missing codes. Live aggregate query observed a newest event six seconds old and 388 events in 15 minutes. These are current aggregate observations, not proof of every user action or publication of v2026.9.24."
+  "2026-09-25T11:07:18.541Z","harness:codex","Final local evidence: all four linked test commands passed sequentially with zero assertion failures or timeouts. Changed-source typecheck and ESLint pass. Hosted exact-head static and full coverage gates remain required before merge; prior full-run failure details were investigated and corrected without relaxing gates."
+notes[1]{created_at,author,text}:
+  "2026-09-25T10:32:13.388Z","harness:codex",The verification edges record fresh registry peer/engine checks of the canonical migration deferrals; they do not claim those migrations are implemented.
+learnings[1]{created_at,author,text}:
+  "2026-09-25T10:29:43.788Z","harness:codex",Release-unit-test environment must delete inherited workflow output and push-token variables before each case; otherwise hosted coverage differs and fixtures can write the production observation file.
+files[2]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog refresh receipt
+  tests/unit/scripts/release/run-release-pipeline.spec.ts,project,Implementation and regression evidence
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts,project,240,"harness:codex","2026-09-25T10:26:35.714Z",local_mutation,fix/agent-recovery-guidance-worktree-merges
+test_runs[2]:
+  - run_id: test-all-local-mugtyvtx-9s4amf
+    kind: test-all
+    status: passed
+    started_at: "2026-09-25T10:41:15.366Z"
+    finished_at: "2026-09-25T10:44:39.245Z"
+    recorded_at: "2026-09-25T10:44:39.245Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mugutesv-gwe1e3
+    kind: test-all
+    status: passed
+    started_at: "2026-09-25T11:04:59.516Z"
+    finished_at: "2026-09-25T11:06:12.722Z"
+    recorded_at: "2026-09-25T11:06:12.722Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated by latest pm-changelog from the four reviewed closure records
+close_reason: Release pipeline environment-independent coverage delivered
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: sandboxed-regression-tests
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: Gates (static),Gates (coverage)
+  owner: pm-m2ai6c
+body: ""

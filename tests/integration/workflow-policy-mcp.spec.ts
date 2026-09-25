@@ -37,7 +37,7 @@ describe("declarative policy MCP parity", () => {
       expect(runCli(["schema", "policy-mode", "invalid"]).code).not.toBe(0);
       const put = await handleRequest({ jsonrpc: "2.0", id: 1, method: "tools/call", params: {
         name: "pm_schema", arguments: { path: pmPath, subcommand: "policy-put", name: "evidence", definition: JSON.stringify({
-          id: "evidence", effect: "refuse", subject: { statuses: ["closed"] },
+          id: "evidence", description: "Close with observed evidence.", effect: "refuse", subject: { statuses: ["closed"] },
           rule: { kind: "require_fields", fields: ["actual_result"] },
         }) },
       } });
@@ -55,9 +55,13 @@ describe("declarative policy MCP parity", () => {
       expect(await client.workflowPolicy("policies")).toMatchObject({ policy_result: true, result: { enforcement: "refuse" } });
       await expect(handleRequest({ jsonrpc: "2.0", id: 2, method: "tools/call", params: {
         name: "pm_close", arguments: { path: pmPath, id: item.id, reason: "Completed" },
-      } })).rejects.toMatchObject({ code: "workflow_policy_refused" });
+      } })).rejects.toMatchObject({ code: "workflow_policy_refused", context: { policy_violations: [{ policy_id: "evidence", description: "Close with observed evidence.", missing_fields: ["actual_result"] }] } });
       await expect(client.close(item.id, "Completed")).rejects.toMatchObject({ code: "workflow_policy_refused" });
-      expect(runCli(["close", item.id, "Completed"]).status).not.toBe(0);
+      const refused = runCli(["close", item.id, "Completed", "--resolution", "Valid resolution", "--json"]);
+      expect(refused.code).not.toBe(0);
+      expect(JSON.parse(refused.stderr).refusal).toMatchObject({ surface: "policy:evidence", missing_fields: ["actual_result"], policies: [{ policy_id: "evidence", description: "Close with observed evidence." }] });
+      const human = runCli(["close", item.id, "Completed"]);
+      expect(human.stderr).toContain("actual_result");
       const accepted = await handleRequest({ jsonrpc: "2.0", id: 3, method: "tools/call", params: {
         name: "pm_close", arguments: { path: pmPath, id: item.id, reason: "Completed", options: { actualResult: "Verified on every transport" } },
       } });
