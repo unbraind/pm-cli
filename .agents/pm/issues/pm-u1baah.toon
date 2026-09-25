@@ -6,33 +6,37 @@ status: closed
 priority: 1
 tags[4]: "area:ci",gate,release,ux
 created_at: "2026-08-07T06:28:26.696Z"
-updated_at: "2026-09-05T08:19:48.248Z"
-closed_at: "2026-09-05T08:12:19.821Z"
-completed_at: "2026-09-05T08:12:19.821Z"
+updated_at: "2026-09-25T13:19:46.147Z"
+closed_at: "2026-09-25T13:18:02.689Z"
+completed_at: "2026-09-25T13:18:02.689Z"
 author: "harness:claude-code"
 estimated_minutes: 240
-acceptance_criteria: "The release pipeline reports, before it builds anything, whether the current head can satisfy the analyzer evidence requirement, and names the workflow rather than the missing external artifact when it cannot; A commit that reached the default branch without a pull request either has a declared path to analyzer evidence or is refused with that reason stated, and the choice is recorded as a decision; The precondition that a releasable commit arrives through a pull request is declared wherever the release contract is declared, not left to be discovered by a failed cut; A negative control proves an unanalyzed commit still cannot release, so declaring the precondition never becomes a way to skip the analyzers; Releasability of the default branch is continuously observable between release attempts, so a commit that cannot be released is reported when it lands rather than at the next scheduled cut"
+acceptance_criteria: "The release pipeline reports, before it builds anything, whether the current head can satisfy the analyzer evidence requirement, and names the workflow rather than the missing external artifact when it cannot; A commit that reached the default branch without a pull request either has a declared path to analyzer evidence or is refused with that reason stated, and the choice is recorded as a decision; The precondition that a releasable commit arrives through a pull request is declared wherever the release contract is declared, not left to be discovered by a failed cut; A negative control proves an unanalyzed commit still cannot release, so declaring the precondition never becomes a way to skip the analyzers; Releasability of the default branch is continuously observable between release attempts, so a commit that cannot be released is reported when it lands rather than at the next scheduled cut; Recognize every synchronized plugin runtime manifest from the immutable parent tree while retaining historical releases and refusing omitted or modified runtime pins"
 parent: pm-u9d0
 risk: high
 confidence: high
 severity: high
 environment: GitHub Actions main and release workflows
-repro_steps: "Run hosted-analysis-gate against immutable v2026.9.5 SHA 69092a748283ee69e69fb9aa2453db0f2d91addc: all 19 manifests exactly stamp the version, while package-generated CHANGELOG.md replaces ## Unreleased with ## 2026.9.5; the legacy dated-only comparison refuses that valid transform."
-resolution: "The deterministic release provenance checker accepts current undated and historical matching-date pm-changelog headings, requires an exact Unreleased heading line, and preserves byte-exact content and reviewed-parent requirements."
-expected_result: "Canonical generated releases pass provenance while incorrect versions, dates, partial headings and content changes fail closed."
-actual_result: 149 focused regressions and 8427 tests pass at exact 100/100/100/100; the immutable v2026.9.5 release resolves through its reviewed parent with zero analyzer findings.
-affected_version: through 2026.9.5
+repro_steps: Run hosted-analysis-gate against 299a3e663083af886eed8a98cdc748c8b80a9e21. Both plugin package.json paths are stamped correctly but absent from the validator inventory.
+resolution: "Use one fixed distribution inventory for stamping, staging and analyzer provenance, requiring runtime manifests from the immutable parent while retaining historical compatibility."
+expected_result: Canonical stamped release commits pass through reviewed-parent analyzer evidence; omitted manifests and altered pins fail closed.
+actual_result: "149 focused tests, selected linked tests, typechecking, docstrings and zero-clone checks pass; changed scripts have exact 100/100/100/100 coverage and live v2026.9.25 provenance passes. Hosted full coverage and main CI remain independent delivery evidence; local full run had two unchanged-suite timeouts."
+affected_version: 2026.9.25
 component: release automation analyzer provenance
 regression: true
 customer_impact: A valid automatically generated release commit blocks merged-source CI and prevents the release pipeline from completing even though its parent has successful required analyzer evidence.
-dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-23lmm5,related,"2026-08-07T06:28:26.696Z","harness:claude-code","cli:create:dep",detected
   pm-39cqqx,discovered_from,"2026-08-07T06:28:26.696Z","harness:claude-code","cli:create:dep",detected
   pm-e02lgu,related,"2026-08-07T06:28:26.696Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-07T06:28:26.696Z","harness:claude-code","cli:create:dep",detected
   pm-e70zh5,related,"2026-08-11T13:52:32.238Z","harness:claude-code","cli:update:dep",detected
   pm-q6n8sj,related,"2026-08-11T13:52:32.238Z","harness:claude-code","cli:update:dep",detected
-comments[45]{created_at,author,text}:
+  pm-e70zh5,implements,"2026-09-25T12:56:00.189Z","harness:codex","cli:update:dep",detected
+  pm-m2ai6c,verifies,"2026-09-25T12:56:00.189Z","harness:codex","cli:update:dep",detected
+  pm-t4prek,discovered_from,"2026-09-25T12:56:00.189Z","harness:codex","cli:update:dep",detected
+  pm-t4prek,verifies,"2026-09-25T12:56:00.189Z","harness:codex","cli:update:dep",detected
+comments[50]{created_at,author,text}:
   "2026-08-11T13:52:31.175Z","harness:claude-code","Reproduced in production on 2026-08-11, and it blocked the scheduled daily cut.\n\nSequence, all times UTC:\n\n- 04:02:48 the scheduled Auto Release run 31457243436 checked out main. HEAD was 3791ff12f74ff3f09c6062adca92ab8848d57ba7, a single-parent commit with no associated pull request.\n- 04:02:52 pull request 972 merged as 39d60f244779e8c4a451948988a0facbc48df824, four seconds after the checkout.\n- 04:09:37 hosted-analysis-gate refused with reason \"DeepScan status is missing for the exact commit\". The candidate carried exactly one commit status, codecov/patch, and no DeepScan or CodeFactor check run. Both fallbacks were unavailable: no second parent, and no pull request whose tree matched.\n- 04:09:38 blocker issue 973 opened. RECORDED_FAILURE_STAGE was hosted-analysis-gate, so the pm-x63izf fix reported the gate's own verdict rather than the preflight guess.\n- 04:12:23 blocker 973 closed, retry run 31457749989 started, checked out 39d60f24, and the same gate passed through the matching-pull-request fallback.\n- 04:21:18 v2026.8.11 tagged. npm shows 2026.8.11 as latest, and all three npx and bunx dispatch forms run it.\n\nSo the release succeeded only because the candidate changed between the two attempts. Nothing about 3791ff12 became releasable, and nothing ever will.\n\nPopulation measured the same day against the commits API rather than a subject-line heuristic: of the 103 commits on main since 2026-08-04, 37 have no associated pull request. That is 36 percent. main's HEAD at the time of measurement, 250b4030b4d246bdb6cb5f3ffb1fd1949be013c5, is one of them, so the default branch was sitting in an unreleasable state in the middle of an ordinary working day with no surface reporting it.\n\nThat last point is the half this item's acceptance criteria did not yet cover. AC1 requires the release pipeline to report releasability before it builds, which is a check inside a release attempt. Between attempts there is a window of up to 24 hours in which main is unreleasable and the only thing that will ever say so is tomorrow's 04:02 run. A new criterion has been added for that.\n"
   "2026-08-15T04:14:50.218Z","harness:codex","Production reproduction 2026-08-15: scheduled Auto Release run 31861502082 on main 592e5918 failed after exact coverage, packed npx, and package-first dogfood because DeepScan status was missing for the exact commit. Blocker GH-1017 is the live external report. PR #1016 is now merged at 26feeed14; no v2026.8.15 tag/package exists, so same-day uniqueness remains intact while this canonical item is actively fixed."
   "2026-08-15T04:19:42.982Z","harness:codex","Implementation evidence: hosted-analysis now emits a structured reviewed_pull_request_analyzer_evidence contract, succeeds for merge commit 26feeed14809 via identical-tree reviewed head e7e9b86afd7c, and explicitly refuses failed direct-main SHA 592e5918ca36 before build. Auto Release performs the check before toolchain setup; CI exposes Release analyzer readiness (main) on every product-relevant push. Focused unit/integration suite passed 79/79."
@@ -78,15 +82,25 @@ comments[45]{created_at,author,text}:
   "2026-09-05T08:06:22.389Z","harness:codex","Live read-only acceptance with the corrected checker passes immutable v2026.9.5 SHA 69092a748283ee69e69fb9aa2453db0f2d91addc as deterministic_release_transform, exact_or_identical=false, parent 4b693c5a0ac26265e7b738da1ab32150206048fe and reviewed analyzer head f7293276add7a10f0fec41e9275c4be5c047bee7. CodeFactor outstanding_annotations=0, DeepScan new_issues=0, strict protection verified. The original release-main CI correctly fails under the old checker; the production publishing workflow continues separately. No immutable tag or published bytes are changed by this correction."
   "2026-09-05T08:12:19.272Z","harness:codex","Final local source verification: canonical linked focused run passes 149 tests; canonical linked full coverage passes 8427 tests across 608 files at exact 100/100/100/100 (62223 statements, 47193 branches, 12921 functions, 59847 lines). Docs/skills, focused ESLint, and the live immutable-tag provenance control pass. Complete repository static quality and the new PR hosted review round remain required before merge."
   "2026-09-05T08:19:48.248Z","harness:codex","Complete pnpm quality:static and pnpm typecheck passed after closure and package-owned changelog regeneration. The reviewed correction includes the exact-line heading proof, 149 focused regressions, canonical 8427-test full coverage at exact 100/100/100/100, documentation and immutable-tag live acceptance. Hosted reviews/checks and merge remain the next independent proof."
-files[7]{path,scope,note}:
+  "2026-09-25T12:55:59.415Z","harness:codex","Live recurrence 2026-09-25: immutable v2026.9.25 at 299a3e663083af886eed8a98cdc748c8b80a9e21 published successfully via Auto Release 36131743095 and Release 36134069057, including all nine registry acceptance legs. npm/Bun eleven-step sessions and npx/bunx CLI/MCP checks pass. CI 36134068662 fails only analyzer readiness because its independent path allowlist omits the two plugin package manifests correctly stamped and staged by pm-t4prek. The same exact-SHA gate fails locally after publication, ruling out propagation. Reuse this canonical owner after all-status search and full metadata/history review; pm-2ksptv covers arbitrary direct-main analysis and remains separate. Preserve the immutable tag and published bytes."
+  "2026-09-25T12:59:07.388Z","harness:codex","real tagged Git fixtures reproduced current runtime-manifest refusal while the historical fixture and both tampering controls behaved correctly. Sharing the fixed distribution inventory preserves byte-exact version and runtime-pin proof; missing changed paths remain refused. This changes no analyzer verdict, branch requirement, release tag, package bytes, or same-day guard."
+  "2026-09-25T13:16:19.364Z","harness:codex","Verification: 149 focused tests and both selected linked test commands pass. Changed scripts are exact 100/100/100/100 (368 statements, 319 branches, 50 functions, 363 lines); typecheck, ESLint, docstrings and zero-clone checks pass. Live immutable v2026.9.25 now resolves as deterministic_release_transform to reviewed head 729b6b16952df6c48f8c3c9ce8d7b4e2efe8d72b with strict protection and zero analyzer findings. Local full coverage completed 9295 passing tests but timed out in two unchanged heavy suites (refusal closure and operation-source enumeration); isolated unchanged reruns and hosted full coverage remain required, without raising timeouts."
+  "2026-09-25T13:19:17.811Z","harness:codex","Both unchanged timeout suites pass in isolation with their original limits: 19 tests, including real refusal retries and complete operation-source enumeration. No timeout, coverage, or gate policy was loosened. Latest pm-changelog regenerated the follow-up entry; hosted whole-source coverage is still required before merge."
+  "2026-09-25T13:19:46.147Z","harness:codex","Correction to the preceding evidence count: the two isolated suites passed 11 tests (9 refusal-closure and 2 operation-source tests), not 19. The run completed in 154 seconds and retained the original test limits."
+learnings[1]{created_at,author,text}:
+  "2026-09-25T12:59:06.414Z","harness:codex",A deterministic-release validator is another consumer of the distribution inventory. Validate immutable parent paths rather than the current checkout so newly shipped manifests are required without rejecting historical releases predating those manifests.
+files[10]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Package-owned changelog installation receipt
   .github/workflows/auto-release.yml,project,Pre-build release analyzer readiness
   .github/workflows/ci.yml,project,Continuous main-branch release readiness observability
   scripts/release/gate-registry.json,project,Analyzer readiness ordered before expensive local gates
   scripts/release/hosted-analysis-gate.mjs,project,Fail-closed analyzer provenance and direct-main releasability contract
+  scripts/release/version-manifests.mjs,project,Share fixed distribution inventory with immutable analyzer validation
   tests/integration/release-automation-contract.spec.ts,project,Workflow ordering and continuous observability contract
   tests/unit/scripts/release/hosted-analysis-gate.spec.ts,project,Exact analyzer provenance positive and negative controls
   tests/unit/scripts/release/run-gates.spec.ts,project,Mandatory analyzer preflight ordering regressions
-tests[8]:
+  tests/unit/scripts/release/version-manifests.spec.ts,project,Real tagged Git repositories cover current historical omitted and modified plugin runtime manifests
+tests[9]:
   - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/hosted-analysis-gate.spec.ts tests/integration/release-automation-contract.spec.ts
     scope: project
     timeout_seconds: 240
@@ -123,7 +137,15 @@ tests[8]:
       created_at: "2026-08-23T01:41:07.122Z"
       source_kind: local_mutation
       source_ref: codex/release-derived-provenance
-test_runs[6]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/version-manifests.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-25T12:59:05.508Z"
+      source_kind: local_mutation
+      source_ref: fix/release-plugin-manifest-provenance
+test_runs[8]:
   - run_id: test-local-msxaw85b-umrnba
     kind: test
     status: passed
@@ -195,18 +217,40 @@ test_runs[6]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs coverage,schema,schema,source,legacy
+  - run_id: test-local-mugyx17z-6mvzwj
+    kind: test
+    status: passed
+    started_at: "2026-09-25T12:59:35.645Z"
+    finished_at: "2026-09-25T12:59:47.183Z"
+    recorded_at: "2026-09-25T12:59:47.183Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/hosted-analysis-gate.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,legacy
+  - run_id: test-local-mugyx80w-ni1s52
+    kind: test
+    status: passed
+    started_at: "2026-09-25T12:59:47.991Z"
+    finished_at: "2026-09-25T12:59:56.000Z"
+    recorded_at: "2026-09-25T12:59:56.000Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/version-manifests.spec.ts,schema,schema,source,local_source_ref
 docs[4]{path,scope,note}:
   AGENTS.md,project,Compact reviewed-delivery closeout guardrail
   CHANGELOG.md,project,Deterministic generated release closeout entry
   docs/AGENT_GUIDE.md,project,Agent workflow for post-merge evidence without direct-main mutation
   docs/RELEASING.md,project,Reviewed-PR arrival and direct-main refusal policy
-close_reason: Verified package-generated release heading compatibility with stricter exact-line proof and red/green regressions.
+close_reason: Shared distribution inventory and real tagged-repository regressions repair plugin-manifest provenance without altering immutable releases.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
   owner: pm-u1baah
   gate_id: reviewed-delivery-closeout-provenance
-  negative_control: node scripts/release/hosted-analysis-gate.mjs --repo unbraind/pm-cli --sha 2e5adcd980aecab7c96af95b7b5b1fd4f6d4ab1d --json
-  local_checks[2]: "pnpm quality:docs-skills",node scripts/run-tests.mjs test -- tests/unit/scripts/release/hosted-analysis-gate.spec.ts tests/integration/release-automation-contract.spec.ts
-  hosted_checks[3]: CI / Release analyzer readiness (main),DeepScan,CodeFactor
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/version-manifests.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/hosted-analysis-gate.spec.ts tests/unit/scripts/release/version-manifests.spec.ts tests/unit/scripts/sync-versions.spec.ts,pnpm typecheck,"pnpm quality:docstrings"
+  hosted_checks[4]: CI / Release analyzer readiness (main),Gates (coverage),DeepScan,CodeFactor
 body: ""

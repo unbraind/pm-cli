@@ -11,6 +11,7 @@
 import { spawnSync } from "node:child_process";
 
 import { commandFor, flagBool, flagString, parseFlags } from "./utils.mjs";
+import { FIXED_DISTRIBUTION_MANIFESTS } from "./version-manifests.mjs";
 
 const GH = commandFor("gh");
 const GIT = commandFor("git");
@@ -19,13 +20,11 @@ const SHA_PATTERN = /^[0-9a-f]{40}$/i;
 const STABLE_RELEASE_PATTERN = /^([1-9]\d{3})\.([1-9]\d*)\.([1-9]\d*)$/u;
 const RELEASE_COMMIT_BODY =
   "Automate daily release preparation with strict quality, compatibility, and reliability gates.";
-const FIXED_RELEASE_MANIFESTS = [
-  ".agents/plugins/marketplace.json",
-  ".claude-plugin/marketplace.json",
-  "marketplace.json",
+// Historical parents predate plugin package manifests; require them whenever
+// present in the immutable parent, while preserving the original minimum set.
+const REQUIRED_RELEASE_MANIFESTS = [
   "package.json",
-  "plugins/pm-claude/.claude-plugin/plugin.json",
-  "plugins/pm-codex/.codex-plugin/plugin.json",
+  ...FIXED_DISTRIBUTION_MANIFESTS.filter((filePath) => !filePath.endsWith("/package.json")),
 ];
 const WORKSPACE_MANIFEST_PATTERN = /^packages\/[^/]+\/package\.json$/u;
 const RELEASE_PRECONDITION = {
@@ -313,13 +312,14 @@ function readExpectedReleaseManifests(parentSha) {
     return null;
   }
   const trackedPaths = new Set(tracked.stdout.split(/\r?\n/u).filter(Boolean));
-  if (FIXED_RELEASE_MANIFESTS.some((filePath) => !trackedPaths.has(filePath))) {
+  if (REQUIRED_RELEASE_MANIFESTS.some((filePath) => !trackedPaths.has(filePath))) {
     return null;
   }
   return [...trackedPaths]
     .filter(
       (filePath) =>
-        FIXED_RELEASE_MANIFESTS.includes(filePath) ||
+        filePath === "package.json" ||
+        FIXED_DISTRIBUTION_MANIFESTS.includes(filePath) ||
         WORKSPACE_MANIFEST_PATTERN.test(filePath),
     )
     .sort();
