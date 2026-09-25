@@ -68,6 +68,7 @@ pm guide release --json
 - [History Algorithms and Detached Attestations](HISTORY_ATTESTATION.md) - named record digests, portable exact-byte proofs, and read-only verification.
 - [History-derived Governance Repair](HISTORY_GOVERNANCE_REPAIR.md) - verified closure timestamps and typed issue-code lineage.
 - [History Maintenance and Recovery](HISTORY_MAINTENANCE.md) - native history commands, permanent aliases, shared SDK transforms, and transactional recovery.
+- [Agent Recovery and Guidance](AGENT_RECOVERY_AND_GUIDANCE.md) - policy refusal evidence, canonical help, and managed instruction freshness.
 - [Declarative Workflow Policies](WORKFLOW_POLICIES.md) - portable lifecycle requirements, independent approvals, and completeness reports.
 - [Mutation Integrity](MUTATION_INTEGRITY.md) - shared CLI/SDK/MCP author, secret, append-only disposition, and stale-work guardrails.
 - [Agent Provenance ADR Amendment](AGENT_PROVENANCE_ADR.md) - extensible model, effort, role, and host provenance with privacy and compatibility boundaries.

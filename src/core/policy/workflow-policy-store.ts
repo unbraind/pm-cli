@@ -7,6 +7,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
+import { canonicalizeCommandOptionKey, commandOptionFlagLabel } from "../item/type-registry.js";
 import { isUtf8 } from "node:buffer";
 import { isFileMissingError } from "../fs/fs-utils.js";
 import { appendWorkspaceAuditEvent } from "../history/workspace-history.js";
@@ -159,11 +160,32 @@ export async function enforceWorkflowMutation(params: {
       throw error;
     }
   }
-  const summary = refused.slice(0, 3).map((decision) => `${decision.policy_id} (${decision.rule})`).join(", ");
+  const violations = refused.slice(0, 3).map((decision) => ({
+    policy_id: decision.policy_id,
+    rule: decision.rule,
+    description: document.policies.find((policy) => policy.id === decision.policy_id)!.description,
+    missing_fields: decision.missing_fields,
+  }));
+  const missing = [...new Set(violations.flatMap((decision) => decision.missing_fields))];
+  const summary = violations.map((decision) => `${decision.policy_id} (${decision.rule})`).join(", ");
   const remaining = refused.length > 3 ? ` and ${refused.length - 3} more` : "";
-  throw new PmCliError(`Workflow policy refused ${params.operation}: ${summary}${remaining}.`, EXIT_CODE.CONFLICT, {
+  const itemId = params.after?.metadata.id ?? params.before!.metadata.id;
+  const fieldSteps = missing.map((field) => {
+    if (params.before === null) return `Supply ${field} in the original ${params.operation} request, then retry; the item was not created.`;
+    const option = canonicalizeCommandOptionKey("update", field);
+    return option === undefined
+      ? `Supply ${field} using its declared SDK or package mutation contract, then retry.`
+      : `pm update ${itemId} ${commandOptionFlagLabel("update", option)} "<${field}>"`;
+  });
+  throw new PmCliError(`Workflow policy refused ${params.operation}: ${summary}${remaining}.${missing.length ? ` Missing: ${missing.join(", ")}.` : ""}`, EXIT_CODE.CONFLICT, {
     code: "workflow_policy_refused",
-    reason: refused.slice(0, 3).map((decision) => decision.policy_id).join(","),
-    nextSteps: [...new Set(refused.map((decision) => decision.remediation))].slice(0, 3),
+    reason: violations.map((decision) => decision.policy_id).join(","),
+    policy_violations: violations,
+    policy_violation_count: refused.length,
+    required: missing.length ? `Supply missing fields: ${missing.join(", ")}, then retry the refused mutation.` : "Satisfy the declared workflow policy before retrying.",
+    why: violations.map((decision) => decision.description).filter(Boolean).join(" ") || undefined,
+    recovery: { missing_required_fields: missing },
+    nextSteps: [...fieldSteps, ...new Set(refused.slice(0, 3).filter((decision) => decision.missing_fields.length === 0).map((decision) => decision.remediation)),
+      ...(refused.length > 3 ? [`Inspect all policies with pm schema policies before retrying ${params.operation}.`] : [])],
   });
 }

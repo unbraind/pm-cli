@@ -1,0 +1,86 @@
+id: pm-80k965
+title: "GH-1303: Canonical help and refreshable agent guidance"
+description: Root and alias help use canonical invocations and mark deprecated aliases. Generated guidance uses atomic claim --start. Health detects stale managed guidance and supplies an idempotent refresh command.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-25T10:11:04.745Z"
+updated_at: "2026-09-25T11:07:11.153Z"
+closed_at: "2026-09-25T11:07:09.811Z"
+completed_at: "2026-09-25T11:07:09.811Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Root and alias help use canonical invocations and mark deprecated aliases. Generated guidance uses atomic claim --start. Health detects stale managed guidance and supplies an idempotent refresh command.
+parent: pm-mpbb
+risk: medium
+confidence: high
+repro_steps: "https://github.com/unbraind/pm-cli/issues/1303"
+resolution: Canonical help and managed guidance freshness delivered
+expected_result: Deprecated help resolves to canonical commands and stale managed blocks refresh without overwriting user prose.
+actual_result: Linked SDK and real-CLI tests pass; temporary-project acceptance passes; repository managed guidance refreshed idempotently.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ka6d,discovered_from,"2026-09-25T10:11:04.745Z","harness:codex","cli:create:dep",detected
+  pm-ka6d,verifies,"2026-09-25T10:29:48.805Z","harness:codex","cli:update:dep",detected
+  pm-mpbb,implements,"2026-09-25T10:29:48.805Z","harness:codex","cli:update:dep",detected
+  pm-z3ez,implements,"2026-09-25T10:52:16.016Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-09-25T10:11:04.745Z","harness:codex","Duplicate check: complete live all-status 2801-item inventory and request-specific searches found no owner for GH-1303. Reuse pm-mpbb and historical pm-ka6d. Report: https://github.com/unbraind/pm-cli/issues/1303"
+  "2026-09-25T10:31:09.428Z","harness:codex","Regression evidence: pre-change canonical-help and managed-guidance tests failed; after implementation the help, managed-guidance, init, merge-safety and integrity cohort passed 67 tests. Refresh preserves prose outside both managed blocks and a second invocation is a no-op. Health inspection remains read-only and advisory."
+  "2026-09-25T10:51:19.818Z","harness:codex","Dogfood evidence: pm init --agent-guidance add refreshed this repository AGENTS.md to canonical atomic claiming and retained all surrounding operating rules. Handwritten CLAUDE.md remained unchanged. The eleven-step temporary CLI acceptance also verified read-only diagnostics, both managed targets, prose preservation and idempotent refresh."
+  "2026-09-25T10:52:03.327Z","harness:codex","Additional onboarding observation: re-running init in an existing populated workspace still suggests Create your first item. Keep broader first-run setup work with canonical pm-z3ez and GitHub #1246; this delivery only refreshes managed guidance and its diagnostics. No duplicate feature was created."
+  "2026-09-25T11:07:08.883Z","harness:codex","Final local evidence: all four linked test commands passed sequentially with zero assertion failures or timeouts. Changed-source typecheck and ESLint pass. Hosted exact-head static and full coverage gates remain required before merge; prior full-run failure details were investigated and corrected without relaxing gates."
+learnings[1]{created_at,author,text}:
+  "2026-09-25T10:29:48.805Z","harness:codex",Managed instruction freshness depends on generated content and the target project test command; comparing only marker versions misses content drift.
+files[8]{path,scope,note}:
+  .agents/pm/history/_workspace.jsonl,project,Immutable initialization settings history written by pm
+  .agents/pm/settings.json,project,Initialization records managed guidance state through the SDK
+  src/cli/help-content.ts,project,Implementation and regression evidence
+  src/sdk/governance/health.ts,project,Implementation and regression evidence
+  src/sdk/init-agent-guidance.ts,project,Implementation and regression evidence
+  tests/integration/help-runtime.spec.ts,project,Canonical package install example through real help rendering
+  tests/unit/cli/help-content.spec.ts,project,Implementation and regression evidence
+  tests/unit/sdk/governance/guidance-freshness.spec.ts,project,Implementation and regression evidence
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/unit/sdk/governance/guidance-freshness.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/help-runtime.spec.ts,project,240,"harness:codex","2026-09-25T10:35:45.825Z",local_mutation,fix/agent-recovery-guidance-worktree-merges
+test_runs[2]:
+  - run_id: test-all-local-mugtyvtx-9s4amf
+    kind: test-all
+    status: passed
+    started_at: "2026-09-25T10:41:15.366Z"
+    finished_at: "2026-09-25T10:44:18.710Z"
+    recorded_at: "2026-09-25T10:44:18.710Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/unit/sdk/governance/guidance-freshness.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/help-runtime.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mugutesv-gwe1e3
+    kind: test-all
+    status: passed
+    started_at: "2026-09-25T11:04:59.516Z"
+    finished_at: "2026-09-25T11:05:37.227Z"
+    recorded_at: "2026-09-25T11:05:37.227Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/unit/sdk/governance/guidance-freshness.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/help-runtime.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  AGENTS.md,project,Dogfood the managed guidance refresh while preserving repository operating rules
+  docs/AGENT_RECOVERY_AND_GUIDANCE.md,project,Public behavior and recovery contract
+  docs/README.md,project,Public behavior and recovery contract
+close_reason: Canonical help and managed guidance freshness delivered
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: sandboxed-regression-tests
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/unit/sdk/governance/guidance-freshness.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/help-runtime.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/unit/sdk/governance/guidance-freshness.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/help-runtime.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: Gates (static),Gates (coverage)
+  owner: pm-80k965
+body: ""

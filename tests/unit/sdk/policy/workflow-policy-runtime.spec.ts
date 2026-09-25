@@ -8,6 +8,8 @@ import { readSettings } from "../../../../src/core/store/settings.js";
 import { acquireLock } from "../../../../src/core/lock/lock.js";
 import { deleteItem } from "../../../../src/core/store/item-store.js";
 import { commitImportedItem } from "../../../../src/sdk/package-import-adapters.js";
+import { formatPmCliErrorForJson, formatPmCliErrorForDisplay } from "../../../../src/cli/error-guidance.js";
+import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { PmClient } from "../../../../src/sdk/runtime.js";
 import { runWorkflowPolicyAction } from "../../../../src/sdk/governance/workflow-policy.js";
 import { readWorkflowApprovals, readWorkflowPolicies, MAX_WORKFLOW_POLICY_BYTES } from "../../../../src/core/policy/workflow-policy-store.js";
@@ -19,7 +21,7 @@ describe("workspace workflow policy enforcement", () => {
       const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
       const global = { path: pmPath };
       await runWorkflowPolicyAction("policy-put", "complete", { definition: {
-        id: "complete", effect: "refuse", subject: { statuses: ["closed"] },
+        id: "complete", description: "Keep observed evidence before closing.", effect: "refuse", subject: { statuses: ["closed"] },
         rule: { kind: "require_fields", fields: ["actual_result"] },
       } }, global);
       const created = await client.create({ title: "Evidence contract", type: "Task" });
@@ -27,7 +29,22 @@ describe("workspace workflow policy enforcement", () => {
       await runWorkflowPolicyAction("policy-mode", "refuse", {}, global);
       const historyPath = path.join(pmPath, "history", `${id}.jsonl`);
       const before = await readFile(historyPath, "utf8");
-      await expect(client.close(id, "Verified")).rejects.toMatchObject({ code: "workflow_policy_refused" });
+      const refusal = await client.close(id, "Verified").catch((error: unknown) => error);
+      expect(refusal).toBeInstanceOf(PmCliError);
+      const error = refusal as PmCliError;
+      expect(error.context).toMatchObject({
+        policy_violations: [{ policy_id: "complete", rule: "require_fields", description: "Keep observed evidence before closing.", missing_fields: ["actual_result"] }],
+        recovery: { missing_required_fields: ["actual_result"] },
+      });
+      expect(error.message).toContain("actual_result");
+      expect(error.context.nextSteps?.join(" ")).toContain(`pm update ${id} --actual-result`);
+      const envelope = formatPmCliErrorForJson(error.message, error.exitCode, {
+        ...error.context, recovery: { ...error.context.recovery,
+          normalized_args: ["close", id, "Verified", "--resolution", "valid"], provided_fields: ["--resolution"] },
+      });
+      expect(envelope.refusal).toMatchObject({ surface: "policy:complete", missing_fields: ["actual_result"] });
+      expect(envelope.refusal).not.toHaveProperty("rejected_value");
+      expect(formatPmCliErrorForDisplay(error.message, error.context)).toContain("actual_result");
       expect(await readFile(historyPath, "utf8")).toBe(before);
       expect(await readFile(path.join(pmPath, "history", "_workspace.jsonl"), "utf8")).toContain('"op":"policy_refused"');
       const closed = await client.close(id, "Verified", { actualResult: "Acceptance passed" });
@@ -152,7 +169,9 @@ describe("workspace workflow policy enforcement", () => {
         rule: { kind: "require_fields", fields: ["body"] },
       } });
       await client.workflowPolicy("policy-mode", "refuse");
-      await expect(client.create({ title: "Missing source evidence" })).rejects.toMatchObject({ code: "workflow_policy_refused" });
+      await expect(client.create({ title: "Missing source evidence" })).rejects.toMatchObject({
+        code: "workflow_policy_refused", context: { nextSteps: ["Supply body in the original create request, then retry; the item was not created."] },
+      });
       const { item } = await client.create({ title: "Has evidence", body: "Original source" });
       const settings = await readSettings(pmPath);
       const imported = { ...item, id: "pm-imported" };
@@ -248,6 +267,24 @@ describe("workspace workflow policy enforcement", () => {
       await expect(client.create({ title: "Missing evidence" })).rejects.toThrow("and 1 more");
       const audit = await readFile(path.join(pmPath, "history", "_workspace.jsonl"), "utf8");
       expect(JSON.parse(audit.trim().split("\n").at(-1)!).context.workflow_policies).toHaveLength(4);
+    });
+  });
+
+  it("retains custom missing metadata without inventing a CLI flag", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
+      const { item } = await client.create({ title: "Custom evidence" });
+      await client.workflowPolicy("policy-put", "custom", { definition: {
+        id: "custom", effect: "refuse", rule: { kind: "require_fields", fields: ["review_context.result"] },
+      } });
+      await client.workflowPolicy("policy-mode", "refuse");
+      await expect(client.close(item.id, "Require custom evidence")).rejects.toMatchObject({
+        code: "workflow_policy_refused", context: {
+          policy_violation_count: 1,
+          recovery: { missing_required_fields: ["review_context.result"] },
+          nextSteps: ["Supply review_context.result using its declared SDK or package mutation contract, then retry."],
+        },
+      });
     });
   });
 

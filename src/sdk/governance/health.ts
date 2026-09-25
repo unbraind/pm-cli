@@ -3,6 +3,7 @@
  *
  * Implements the pm health command surface and its agent-facing runtime behavior.
  */
+import { runInitAgentGuidance } from "../init-agent-guidance.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveTelemetryEnvironmentPolicy } from "../../core/telemetry/policy.js";
@@ -337,6 +338,7 @@ function isAdvisoryHealthWarning(
   requireMergeDrivers = false,
 ): boolean {
   return (
+    warning.startsWith("agent_guidance_outdated:") ||
     warning.startsWith("telemetry_") ||
     warning.startsWith("history_stream_over_compact_threshold:") ||
     warning.startsWith("integrity_legacy_hierarchy_") ||
@@ -3177,7 +3179,7 @@ function buildHealthFindings(params: {
       details.remediation_map !== null
         ? (details.remediation_map as Record<string, unknown>)
         : {};
-    const remediation = remediationMap[code];
+    const remediation = code === "agent_guidance_outdated" ? "pm init --agent-guidance add" : remediationMap[code];
     const severity = isAdvisoryHealthWarning(
       warning,
       params.requireMergeDrivers,
@@ -3413,7 +3415,11 @@ export async function runHealth(
     resolveRuntimeStatusRegistry(settings.schema),
     items,
   );
+  const agentGuidance = await runInitAgentGuidance({
+    pm_root: pmRoot, cwd: process.cwd(), mode: "status", interactive: false, settings,
+  });
   const settingWarnings = [
+    ...agentGuidance.warnings.filter((warning) => warning.startsWith("agent_guidance_outdated:")),
     ...settingsValueWarnings,
     ...buildStatusRoleWarnings(statusRoleDiagnostics),
   ];

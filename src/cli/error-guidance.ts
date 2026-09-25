@@ -20,6 +20,8 @@ import { stripGlobalBootstrapTokens } from "../sdk/cli-bootstrap.js";
 import { resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
 
 interface GuidanceMessage {
+  policyViolations?: PmCliErrorContext["policy_violations"];
+  policyViolationCount?: number;
   itemId?: string;
   tombstone?: PmCliErrorContext["tombstone"];
   code: string;
@@ -48,6 +50,12 @@ export interface PmRefusalEnvelope {
   rejected_value?: string;
   /** Complete legal domain advertised by the refusal, when applicable. */
   legal_domain?: string[];
+  /** Required metadata paths from the displayed policy violations. */
+  missing_fields?: string[];
+  /** Policy identity, rule, rationale and missing fields, capped at three policies. */
+  policies?: PmCliErrorContext["policy_violations"];
+  /** Total violated policies, including any omitted from policies. */
+  policy_violation_count?: number;
   /** Process exit code paired with the refusal. */
   exit_code: number;
 }
@@ -707,6 +715,15 @@ function buildRefusalEnvelope(
   message: GuidanceMessage,
   exitCode: number,
 ): PmRefusalEnvelope {
+  if (message.policyViolations?.length) {
+    return {
+      surface: `policy:${message.policyViolations.map((policy) => policy.policy_id).join(",")}`,
+      policies: message.policyViolations,
+      policy_violation_count: message.policyViolationCount,
+      missing_fields: [...new Set(message.policyViolations.flatMap((policy) => policy.missing_fields))],
+      exit_code: exitCode,
+    };
+  }
   const normalizedArgs = message.recovery?.normalized_args ?? [];
   const candidateFlag = resolveRefusalCandidateFlag(message, normalizedArgs);
   const rejectedValue = resolveRefusalRejectedValue(
@@ -918,6 +935,8 @@ function applyPmCliErrorContext(
     examples,
     nextSteps,
     verificationErrors,
+    policyViolations: context.policy_violations,
+    policyViolationCount: context.policy_violation_count,
     flag: context.flag,
     value: context.value,
     unmatchedSelectors: context.unmatched_selectors,

@@ -51,18 +51,36 @@ shell quoting when it expands the placeholder. Receipt ingestion also removes
 one legacy matching quote pair so receipts written by older clone-local drivers
 remain reconcilable.
 `pm validate --check-storage-integrity` and `pm health` also compare every
-clone-local driver definition with the installed SDK. Exact commands remain the
-fast path. A command installed by another valid `@unbrained/pm-cli` package is
+effective driver definition with the installed SDK. A command installed by
+another valid `@unbrained/pm-cli` package is
 also accepted when its Node and `dist/cli.js` paths exist, its manifest owns the
-`pm` bin, and the driver arguments are semantically identical. This keeps
-copied worktrees and upgraded global installs healthy without accepting an
-arbitrary executable. A missing, malformed, or semantically stale definition is
+`pm` bin, the driver arguments are semantically identical, and its version
+matches any exact project runtime pins. A driver inside a sibling worktree of
+the same repository is rejected, even when that package is otherwise valid.
+Independent global installations remain supported. A missing, malformed, or semantically stale definition is
 reported even when the committed attribute fence is correct.
 Health and validation name `pm merge install` as the repair command for missing
 or drifted drivers. This upgrade behavior is tracked by
 [pm-rcjyft](../.agents/pm/issues/pm-rcjyft.toon).
 
 The installer publishes the shared `.gitattributes` fence only after the clone-local driver commands are configured. If the repository Git config is read-only or another Git process holds its lock, the command returns the stable `merge_git_config_unwritable` error with recovery guidance and leaves an absent fence absent. Use `pm merge install --dry-run --json` to inspect the contract in intentionally read-only workspaces.
+
+### Independent worktree runtimes
+
+Tracked by [pm-c1dwbt](../.agents/pm/issues/pm-c1dwbt.toon).
+
+Run `pm merge install` from each worktree with that worktree's intended pm
+installation. When installing in a linked worktree, the SDK enables Git's
+`extensions.worktreeConfig` and writes drivers with `git config --worktree`.
+Existing main-worktree drivers are preserved in its `config.worktree`; later
+installs cannot replace another worktree's runtime. Main-only `core.worktree`
+and `core.bare=true` settings migrate with their original scope. Ordinary
+clones retain local configuration until worktree isolation is needed.
+
+Health reads Git's effective configuration, including worktree overrides.
+Removing a sibling worktree does not remove a separately installed main driver.
+Use `pm merge install` in the affected worktree to repair stale, missing, or
+incompatible commands. A dry run changes neither configuration nor attributes.
 
 ### Fence coverage contract
 

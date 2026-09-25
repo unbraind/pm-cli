@@ -30,6 +30,13 @@
   "testing": {
     "record_results_to_items": true
   },
+  "agent_guidance": {
+    "prompt_completed": true,
+    "last_checked_files": [
+      "AGENTS.md",
+      "CLAUDE.md"
+    ]
+  },
   "item_types": {
     "definitions": []
   },

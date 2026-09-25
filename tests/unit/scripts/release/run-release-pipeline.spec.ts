@@ -2,7 +2,7 @@ import { Buffer } from "node:buffer";
 import path from "node:path";
 import * as fs from "node:fs";
 import type * as ReleaseUtils from "../../../../scripts/release/utils.mjs";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../../helpers/scriptModule";
 
 const harness = createScriptHarness([
@@ -74,6 +74,13 @@ function baseGitMock(overrides: (command: string, args: string[]) => unknown | u
 }
 
 describe("run-release-pipeline", () => {
+  beforeEach(() => {
+    // Each case owns its output file and synthetic credentials. Hosted workflow
+    // inputs must neither change coverage nor receive test-produced receipts.
+    delete process.env.RELEASE_PIPELINE_OUTPUT;
+    delete process.env.RELEASE_PUSH_TOKEN;
+    delete process.env.RELEASE_POLICY_TOKEN;
+  });
   describe("exported helpers", () => {
     it("covers usage()", async () => {
       const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});

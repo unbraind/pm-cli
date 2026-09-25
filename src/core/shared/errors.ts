@@ -64,6 +64,19 @@ export interface PmCliErrorContext {
     /** Durable version before deletion, or null when compaction lost the mapping. */
     last_materialized_version: number | null;
   };
+  /** Bounded policy violations explaining a refused mutation without item values. */
+  policy_violations?: Array<{
+    /** Stable declaration that refused the mutation. */
+    policy_id: string;
+    /** Requirement kind evaluated by the policy engine. */
+    rule: string;
+    /** Workspace-authored rationale, when declared. */
+    description?: string;
+    /** Required metadata paths absent from the proposed record. */
+    missing_fields: string[];
+  }>;
+  /** Total violations before the diagnostic's three-policy ceiling. */
+  policy_violation_count?: number;
   /** Exact filesystem path of the unreadable item document. */
   item_path?: string;
   /** Tracker-relative documents claiming the same item identity. */

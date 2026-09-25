@@ -58,27 +58,13 @@ On a fresh clone or worktree, also run `pm merge install` once: the committed `.
 For real repository tracking, do not override `PM_PATH`. If a script must target a tracker explicitly, prefer `--pm-path <repo>/.agents/pm`; `--path` is only a backward-compatible tracker-root alias, not a workspace/cwd flag. For tests and dogfood runs, use sandboxed `PM_PATH` and `PM_GLOBAL_PATH`; prefer `node scripts/run-tests.mjs ...` because it sets them automatically.
 
 <!-- pm-cli:agent-guidance:start:v1 -->
+## pm Workflow (Agent Quickstart)
 
-## pm Workflow Quickstart
-
-```bash
-pm context --limit 10 --for orient
-pm search "<request keywords>" --limit 10
-pm list --status open --limit 20
-pm list --status in_progress --limit 20
-pm create --create-mode progressive --title "..." --description "..." --type Task --status open
-pm claim <id>
-pm update <id> --status in_progress --message "Start implementation"
-pm files <id> --add path=<path>,scope=project,note="<why>"
-pm docs <id> --add path=<path>,scope=project,note="<why>"
-pm test <id> --add command="node scripts/run-tests.mjs test -- <target>",scope=project,timeout_seconds=240
-pm comments <id> "Evidence: <what changed and what passed>"
-pm test <id> --run --progress
-pm close <id> "<reason with evidence>" --resolution "<what changed>" --expected "<expected outcome>" --actual "<observed outcome>" --validate-close warn
-pm release <id>
-```
-
-Author identity is automatic; use `--author` only for an explicit override.
+- Cold start with the measured canonical orientation: `pm context --limit 10 --for orient`; before item mutation, also run `pm search "<keywords>" --limit 10`, `pm list --status open --limit 20`, and `pm list --status in_progress --limit 20`.
+- Claim and start atomically: `pm claim <id> --start`.
+- Link evidence while coding: `pm files <id> --add ...`, `pm docs <id> --add ...`, `pm test <id> --add command="node scripts/run-tests.mjs test"`.
+- Verify and close: `pm test <id> --run --progress`, then atomically record closure evidence with `pm close <id> "<reason>" --resolution "<what changed>" --expected "<expected outcome>" --actual "<observed outcome>" --validate-close warn`, then `pm release <id>`.
+- Author identity is automatic for supported agent harnesses; use `--author` only for an explicit override.
 
 <!-- pm-cli:agent-guidance:end -->
 
