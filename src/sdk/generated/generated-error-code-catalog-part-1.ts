@@ -1759,6 +1759,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
       "sdk/context-intent-contracts.ts",
       "sdk/governance/assurance-mutation-error.ts",
       "sdk/lifecycle/create.ts",
+      "sdk/runtime/schema-preview.ts",
     ],
     emitting_commands: ["*", "create"],
     canonical_code: "invalid_argument_value",

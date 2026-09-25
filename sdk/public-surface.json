@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1963,
+    "covered_symbols": 1973,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1964
+    "required_symbols": 1974
   },
   "breaking_acknowledgements": [
     {
@@ -2077,6 +2077,17 @@
       ],
       "package_version": "2026.9.24",
       "reason": "Add optional workflow policy diagnostics to PmCliErrorContext; existing consumer fields remain unchanged and no new field is required."
+    },
+    {
+      "changes": [
+        "signature ./sdk:EVAL_QUERY_SET_CONTRACT",
+        "signature ./sdk:EvalQueryReport",
+        "signature ./sdk:ReindexResult",
+        "signature ./sdk/governance:ReindexResult",
+        "signature ./sdk/runtime:ReindexResult"
+      ],
+      "package_version": "2026.9.25",
+      "reason": "Additive optional per-query floor violations and embedding execution receipts; query-set contract adds optional minimum metadata. Existing callers and query sets retain behavior."
     }
   ],
   "entrypoints": {
@@ -3096,6 +3107,12 @@
           "kind": "function",
           "name": "assertRelationshipGraphAdapterConformance",
           "signature": "(adapter: RelationshipGraphAdapter, options?: { workspace?: string; }) => Promise<RelationshipGraphAdapterConformanceReport> | calls: (adapter: RelationshipGraphAdapter, options?: { workspace?: string; }) => Promise<RelationshipGraphAdapterConformanceReport>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "assertSchemaPreviewSupported",
+          "signature": "(subcommand: string, dryRun: boolean) => void | calls: (subcommand: string, dryRun: boolean) => void"
         },
         {
           "classification": "supported",
@@ -6554,6 +6571,36 @@
           "signature": "(metadata: Pick<ItemMetadata, \"pm_format_version\">) => number | calls: (metadata: Pick<ItemMetadata, \"pm_format_version\">) => number"
         },
         {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "EmbeddingBatchExecutionOptions",
+          "signature": "export interface EmbeddingBatchExecutionOptions { onProgress?: (event: EmbeddingBatchProgressEvent) => void; maxRequestBytes?: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "EmbeddingBatchExecutionResult",
+          "signature": "export interface EmbeddingBatchExecutionResult { vectors: number[][]; warnings: string[]; receipt?: EmbeddingBatchReceipt; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "EmbeddingBatchProgressEvent",
+          "signature": "export interface EmbeddingBatchProgressEvent { batch_index: number; batch_total: number; batch_size: number; completed_inputs: number; total_inputs: number; attempt?: number; phase: \"start\" | \"complete\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "EmbeddingBatchReceipt",
+          "signature": "export interface EmbeddingBatchReceipt { provider: string; model: string; max_request_bytes: number; limit_source: \"caller\" | \"default\"; planned_batches: number; requests: number; successful_batches: number; split_batches: number; retries: number; batch_size_histogram: Record<string, number>; elapsed_ms: number; inputs_per_second: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "EmbeddingProviderConfig",
+          "signature": "export interface EmbeddingProviderConfig { name: EmbeddingProviderName; base_url: string; model: string; api_key?: string; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "emitTelemetryErrorEvent",
@@ -6704,10 +6751,16 @@
           "signature": "CliFlagContract[]"
         },
         {
+          "classification": "supported",
+          "kind": "value",
+          "name": "EVAL_METRIC_NAMES",
+          "signature": "readonly [\"ndcg\", \"mrr\", \"precision\", \"recall\"]"
+        },
+        {
           "classification": "advanced_export",
           "kind": "value",
           "name": "EVAL_QUERY_SET_CONTRACT",
-          "signature": "{ readonly schema: \"https://schema.unbrained.dev/pm/eval-query-set/v1\"; readonly accepted_top_level: readonly [\"array\", \"object\"]; readonly required_query_fields: readonly [\"query\", \"relevant_ids\"]; readonly optional_fields: readonly [\"mode\", \"description\"]; readonly modes: readonly [\"keyword\", \"semantic\", \"hybrid\"]; }"
+          "signature": "{ readonly schema: \"https://schema.unbrained.dev/pm/eval-query-set/v1\"; readonly accepted_top_level: readonly [\"array\", \"object\"]; readonly required_query_fields: readonly [\"query\", \"relevant_ids\"]; readonly optional_fields: readonly [\"mode\", \"description\", \"minimum\"]; readonly modes: readonly [\"keyword\", \"semantic\", \"hybrid\"]; }"
         },
         {
           "classification": "advanced_export",
@@ -6722,6 +6775,12 @@
           "signature": "\"https://schema.unbrained.dev/pm/eval-query-set/v1\""
         },
         {
+          "classification": "supported",
+          "kind": "type",
+          "name": "EvalMetricFloors",
+          "signature": "export type EvalMetricFloors = Partial<Record<typeof EVAL_METRIC_NAMES[number], number>>;"
+        },
+        {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "EvalOptions",
@@ -6731,7 +6790,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "EvalQueryReport",
-          "signature": "export interface EvalQueryReport { query: string; mode: EvalSearchMode; relevant_total: number; retrieved_relevant: number; ndcg: number; mrr: number; precision: number; recall: number; }"
+          "signature": "export interface EvalQueryReport { query: string; mode: EvalSearchMode; relevant_total: number; retrieved_relevant: number; ndcg: number; mrr: number; precision: number; recall: number; violations?: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -6774,6 +6833,12 @@
           "kind": "function",
           "name": "evaluateMeasurement",
           "signature": "(definition: AssuranceMeasurementDefinition, context: AssuranceEvaluationContext, definitions?: AssuranceMeasurementDefinition[]) => Promise<AssuranceMeasurementResult> | calls: (definition: AssuranceMeasurementDefinition, context: AssuranceEvaluationContext, definitions?: AssuranceMeasurementDefinition[]) => Promise<AssuranceMeasurementResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "evaluateMetricFloors",
+          "signature": "(metrics: Record<(typeof EVAL_METRIC_NAMES)[number], number>, floors: EvalMetricFloors) => string[] | calls: (metrics: Record<(typeof EVAL_METRIC_NAMES)[number], number>, floors: EvalMetricFloors) => string[]"
         },
         {
           "classification": "supported",
@@ -6842,7 +6907,7 @@
           "signature": "Readonly<Record<string, string>>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "executeEmbeddingBatchesWithRetry",
           "signature": "(provider: EmbeddingProviderConfig, settings: PmSettings, inputs: string[], options?: EmbeddingBatchExecutionOptions) => Promise<EmbeddingBatchExecutionResult> | calls: (provider: EmbeddingProviderConfig, settings: PmSettings, inputs: string[], options?: EmbeddingBatchExecutionOptions) => Promise<EmbeddingBatchExecutionResult>"
@@ -11438,6 +11503,12 @@
           "signature": "(value: unknown) => DefectRecurrencePolicy | calls: (value: unknown) => DefectRecurrencePolicy"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseEvalMetricFloors",
+          "signature": "(value: unknown) => EvalMetricFloors | calls: (value: unknown) => EvalMetricFloors"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "parseEvalQuerySet",
@@ -15287,7 +15358,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ReindexResult",
-          "signature": "export interface ReindexResult { ok: boolean; mode: ReindexMode; total_items: number; semantic: { enabled: boolean; stale_items: number; unchanged_items: number; embedded_items: number; vector_upserted: number; batches_completed: number; }; artifacts: { manifest: string; embeddings: string; }; warnings: string[]; generated_at: string; }"
+          "signature": "export interface ReindexResult { ok: boolean; mode: ReindexMode; total_items: number; semantic: { enabled: boolean; stale_items: number; unchanged_items: number; embedded_items: number; vector_upserted: number; batches_completed: number; batching?: EmbeddingBatchReceipt; }; artifacts: { manifest: string; embeddings: string; }; warnings: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -27155,7 +27226,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ReindexResult",
-          "signature": "export interface ReindexResult { ok: boolean; mode: ReindexMode; total_items: number; semantic: { enabled: boolean; stale_items: number; unchanged_items: number; embedded_items: number; vector_upserted: number; batches_completed: number; }; artifacts: { manifest: string; embeddings: string; }; warnings: string[]; generated_at: string; }"
+          "signature": "export interface ReindexResult { ok: boolean; mode: ReindexMode; total_items: number; semantic: { enabled: boolean; stale_items: number; unchanged_items: number; embedded_items: number; vector_upserted: number; batches_completed: number; batching?: EmbeddingBatchReceipt; }; artifacts: { manifest: string; embeddings: string; }; warnings: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -30273,15 +30344,69 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "EmbeddingBatchExecutionOptions",
+          "signature": "export interface EmbeddingBatchExecutionOptions { onProgress?: (event: EmbeddingBatchProgressEvent) => void; maxRequestBytes?: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "EmbeddingBatchExecutionResult",
+          "signature": "export interface EmbeddingBatchExecutionResult { vectors: number[][]; warnings: string[]; receipt?: EmbeddingBatchReceipt; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "EmbeddingBatchProgressEvent",
+          "signature": "export interface EmbeddingBatchProgressEvent { batch_index: number; batch_total: number; batch_size: number; completed_inputs: number; total_inputs: number; attempt?: number; phase: \"start\" | \"complete\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "EmbeddingBatchReceipt",
+          "signature": "export interface EmbeddingBatchReceipt { provider: string; model: string; max_request_bytes: number; limit_source: \"caller\" | \"default\"; planned_batches: number; requests: number; successful_batches: number; split_batches: number; retries: number; batch_size_histogram: Record<string, number>; elapsed_ms: number; inputs_per_second: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "EmbeddingProviderConfig",
+          "signature": "export interface EmbeddingProviderConfig { name: EmbeddingProviderName; base_url: string; model: string; api_key?: string; }"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "encodeQueryCursor",
           "signature": "(fingerprint: string, afterId: string, afterIndex?: number, snapshot?: string) => string | calls: (fingerprint: string, afterId: string, afterIndex?: number, snapshot?: string) => string"
         },
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "EVAL_METRIC_NAMES",
+          "signature": "readonly [\"ndcg\", \"mrr\", \"precision\", \"recall\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "EvalMetricFloors",
+          "signature": "export type EvalMetricFloors = Partial<Record<typeof EVAL_METRIC_NAMES[number], number>>;"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "evaluateContextRanking",
           "signature": "(input: ContextRankingEvaluationInput) => ContextRankingEvaluation | calls: (input: ContextRankingEvaluationInput) => ContextRankingEvaluation"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "evaluateMetricFloors",
+          "signature": "(metrics: Record<(typeof EVAL_METRIC_NAMES)[number], number>, floors: EvalMetricFloors) => string[] | calls: (metrics: Record<(typeof EVAL_METRIC_NAMES)[number], number>, floors: EvalMetricFloors) => string[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "executeEmbeddingBatchesWithRetry",
+          "signature": "(provider: EmbeddingProviderConfig, settings: PmSettings, inputs: string[], options?: EmbeddingBatchExecutionOptions) => Promise<EmbeddingBatchExecutionResult> | calls: (provider: EmbeddingProviderConfig, settings: PmSettings, inputs: string[], options?: EmbeddingBatchExecutionOptions) => Promise<EmbeddingBatchExecutionResult>"
         },
         {
           "classification": "supported",
@@ -30660,6 +30785,12 @@
           "kind": "function",
           "name": "parseContextSignalSnapshot",
           "signature": "(value: unknown) => ContextSignalSnapshot | null | calls: (value: unknown) => ContextSignalSnapshot | null"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseEvalMetricFloors",
+          "signature": "(value: unknown) => EvalMetricFloors | calls: (value: unknown) => EvalMetricFloors"
         },
         {
           "classification": "supported",
@@ -33221,7 +33352,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ReindexResult",
-          "signature": "export interface ReindexResult { ok: boolean; mode: ReindexMode; total_items: number; semantic: { enabled: boolean; stale_items: number; unchanged_items: number; embedded_items: number; vector_upserted: number; batches_completed: number; }; artifacts: { manifest: string; embeddings: string; }; warnings: string[]; generated_at: string; }"
+          "signature": "export interface ReindexResult { ok: boolean; mode: ReindexMode; total_items: number; semantic: { enabled: boolean; stale_items: number; unchanged_items: number; embedded_items: number; vector_upserted: number; batches_completed: number; batching?: EmbeddingBatchReceipt; }; artifacts: { manifest: string; embeddings: string; }; warnings: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",

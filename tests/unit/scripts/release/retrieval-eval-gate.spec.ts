@@ -17,12 +17,18 @@ const baseline = {
   minimum: { ndcg: 0.6, mrr: 0.5, precision: 0.1, recall: 0.7 },
 };
 
+const negativeReport = JSON.stringify({ passed: false, fail_under: 1, aggregate: { ndcg: 0.7 } });
+
 const report = {
   query_count: 2,
   aggregate: { ndcg: 0.7, mrr: 0.6, precision: 0.2, recall: 0.8 },
-  queries: [{ recall: 1 }, { recall: 0.5 }],
+  queries: [
+    { query: "easy", mode: "keyword", ndcg: 1, mrr: 1, precision: 0.1, recall: 1 },
+    { query: "hard", mode: "keyword", ndcg: 0.4, mrr: 0.2, precision: 0.3, recall: 0.5 },
+  ],
 };
 
+/** Emit one deterministic subprocess completion while preserving real stream behavior. */
 function completedChild(
   stdout: string,
   stderr: string,
@@ -78,6 +84,49 @@ describe("retrieval evaluation release gate", () => {
     ).toContain("query_count:missing");
   });
 
+  it("rejects hidden per-query regressions and missing or duplicate identities", () => {
+    const easy = { query: "easy", mode: "keyword", minimum: { recall: 1 } };
+    const guarded = { ...baseline, queries: [easy, { query: "hard", mode: "keyword", minimum: { recall: 0.6 } }] };
+    expect(evaluateRetrievalGate(report, { ...guarded, queries: [easy, { query: "hard", mode: "keyword", minimum: { recall: 0.4 } }] })).toEqual([]);
+    expect(evaluateRetrievalGate(report, guarded)).toContain("query:hard:recall:0.5<0.6");
+    expect(evaluateRetrievalGate({ ...report, queries: [] }, guarded)).toContain("query:hard:expected_one_result:received=0");
+    expect(evaluateRetrievalGate({ ...report, queries: [...report.queries, report.queries[1]] }, guarded)).toContain("query:hard:expected_one_result:received=2");
+    expect(evaluateRetrievalGate({ ...report, queries: undefined }, guarded)).toContain("query:hard:expected_one_result:received=0");
+  });
+
+  it("rejects extra identities and inconsistent declared counts even when every required floor passes", () => {
+    const guarded = { ...baseline, queries: report.queries.map((query) => ({ query: query.query, mode: query.mode, minimum: { recall: 0.4 } })) };
+    const extra = { ...report.queries[0], query: "unexpected" };
+    for (const queries of [[...report.queries, extra], [...report.queries, extra, extra]]) {
+      expect(evaluateRetrievalGate({ ...report, queries, query_count: queries.length }, guarded)).toContain("query:unexpected:unexpected_identity");
+    }
+    expect(evaluateRetrievalGate({ ...report, query_count: 3 }, guarded)).toContain("query_count:3!=rows:2");
+  });
+
+  it("retains missing query floors on updates and rejects malformed identities", async () => {
+    await withTempDir("pm-retrieval-query-ratchet-", async (tempRoot) => {
+      const baselinePath = path.join(tempRoot, "baseline.json");
+      const guarded = { ...baseline, queries: [{ query: "old", mode: "hybrid", minimum: { recall: 0.9 } }] };
+      await writeFile(baselinePath, JSON.stringify(guarded));
+      const options = { run: async () => ({ code: 0, stdout: JSON.stringify(report), stderr: "" }) };
+      await main(["--update", "--baseline", baselinePath], options);
+      await main(["--update", "--baseline", baselinePath], options);
+      const updated = JSON.parse(await readFile(baselinePath, "utf8"));
+      expect(updated.queries).toContainEqual(guarded.queries[0]);
+      expect(updated.queries).toHaveLength(3);
+      for (const queries of [undefined, [], [report.queries[0]]]) {
+        await expect(main(["--update", "--baseline", baselinePath], {
+          run: async () => ({ code: 0, stdout: JSON.stringify({ ...report, queries }), stderr: "" }),
+        })).rejects.toThrow("exactly query_count");
+      }
+      for (const queries of [[{ query: 1 }], [{ query: " " }], [{ query: "x", mode: "bad" }], [report.queries[0], report.queries[0]]]) {
+        await expect(main(["--update", "--baseline", baselinePath], {
+          run: async () => ({ code: 0, stdout: JSON.stringify({ ...report, queries, query_count: queries.length }), stderr: "" }),
+        })).rejects.toThrow(/Retrieval query|Duplicate retrieval/);
+      }
+    });
+  });
+
   it("runs the built CLI gate and its impossible-threshold negative control", async () => {
     const spawn = vi.fn(() => completedChild("{}", "", 0));
     await expect(
@@ -91,7 +140,7 @@ describe("retrieval evaluation release gate", () => {
     );
     await expect(
       main(["--negative-control"], {
-        run: async () => ({ code: 1, stdout: "", stderr: "rejected" }),
+        run: async () => ({ code: 1, stdout: negativeReport, stderr: "rejected" }),
       }),
     ).resolves.toEqual({
       ok: true,
@@ -102,6 +151,21 @@ describe("retrieval evaluation release gate", () => {
         spawn: () => completedChild("{}", "", null),
       }),
     ).resolves.toMatchObject({ code: 1, stdout: "{}" });
+  });
+
+  it("does not mistake infrastructure failure for a successful ranking negative control", async () => {
+    for (const result of [
+      { code: 1, stdout: "not JSON" },
+      { code: 1, stdout: "null" },
+      { code: 1, stdout: JSON.stringify({ passed: false, fail_under: 1, aggregate: { ndcg: -1 } }) },
+      { code: 2, stdout: negativeReport },
+      { code: 1, stdout: JSON.stringify({ passed: true }) },
+      { code: 1, stdout: JSON.stringify({ passed: false, fail_under: 0 }) },
+      { code: 1, stdout: JSON.stringify({ passed: false, fail_under: 1 }) },
+      { code: 1, stdout: JSON.stringify({ passed: false, fail_under: 1, aggregate: { ndcg: 1 } }) },
+    ]) {
+      await expect(main(["--negative-control"], { run: async () => result })).rejects.toThrow("negative control failed");
+    }
   });
 
   it("bounds subprocess duration and combined output", async () => {
@@ -236,24 +300,13 @@ describe("retrieval evaluation release gate", () => {
         }),
       }),
     ).rejects.toThrow("Retrieval evaluation gate failed");
-    await expect(
-      main([], {
-        run: async () => ({
-          code: 0,
-          stdout: JSON.stringify({
-            query_count: 5,
-            aggregate: {
-              ndcg: 0.7,
-              mrr: 0.7,
-              precision: 0.2,
-              recall: 0.9,
-            },
-            queries: [{ recall: 1 }, { recall: 0.5 }],
-          }),
-          stderr: "",
-        }),
-      }),
-    ).resolves.toMatchObject({ ok: true, updated: false });
+    await withTempDir("pm-retrieval-success-", async (tempRoot) => {
+      const baselinePath = path.join(tempRoot, "baseline.json");
+      await writeFile(baselinePath, JSON.stringify(baseline));
+      await expect(main(["--baseline", baselinePath], {
+        run: async () => ({ code: 0, stdout: JSON.stringify(report), stderr: "" }),
+      })).resolves.toMatchObject({ ok: true, updated: false });
+    });
     await withTempDir("pm-retrieval-invalid-update-", async (tempRoot) => {
       await expect(
         main(
@@ -296,7 +349,7 @@ describe("retrieval evaluation release gate", () => {
         argv: [process.execPath, scriptPath, "--negative-control"],
         mainOptions: {
           runOptions: {
-            spawn: () => completedChild("", "rejected", 1),
+            spawn: () => completedChild(negativeReport, "rejected", 1),
             pmPath: "/tmp/isolated-pm",
           },
         },

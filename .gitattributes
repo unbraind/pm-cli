@@ -14,6 +14,8 @@
 # pm-cli:merge-drivers:v2:start
 ".agents/pm/**/*.toon" merge=pm-item-toon
 ".agents/pm/**/*.md" merge=pm-item-markdown
+".agents/pm/changesets/*.toon" merge=pm-item-toon
+".agents/pm/changesets/*.md" merge=pm-item-markdown
 ".agents/pm/chores/*.toon" merge=pm-item-toon
 ".agents/pm/chores/*.md" merge=pm-item-markdown
 ".agents/pm/decisions/*.toon" merge=pm-item-toon

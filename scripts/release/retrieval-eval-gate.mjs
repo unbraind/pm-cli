@@ -7,6 +7,7 @@
  * parallel evaluator, checks a committed multi-metric baseline, and exposes an
  * executable negative control that must observe a non-zero CLI exit.
  */
+import { evaluateMetricFloors, parseEvalMetricFloors } from "../../dist/sdk/query.js";
 import { spawn } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -75,6 +76,7 @@ export async function runRetrievalEval(args, options = {}) {
   });
   const code = await new Promise((resolve, reject) => {
     let settled = false;
+    /** Settle once even when termination emits both an error and a close event. */
     const finish = (error, exitCode) => {
       if (settled) return;
       settled = true;
@@ -98,11 +100,43 @@ export async function runRetrievalEval(args, options = {}) {
   return { code, stdout, stderr };
 }
 
+/** Reject missing or out-of-domain scores before they can become persistent floors. */
 function finiteMetric(value, label) {
-  if (!Number.isFinite(value)) {
-    throw new TypeError(`Retrieval gate ${label} must be finite`);
+  if (!Number.isFinite(value) || value < 0 || value > 1) {
+    throw new TypeError(`Retrieval gate ${label} must be finite and in [0, 1]`);
   }
   return Number(value);
+}
+
+/** Keep every named query accountable even when the macro average improves. */
+function evaluateQueryFloors(report, baseline) {
+  const violations = [];
+  // Aggregate-only legacy baselines have no identity set to enforce.
+  if (!Array.isArray(baseline.queries)) return violations;
+  const queries = Array.isArray(report.queries) ? report.queries : [];
+  if (report.query_count !== queries.length) violations.push(`query_count:${report.query_count}!=rows:${queries.length}`);
+  if (queries.length !== baseline.queries.length) violations.push(`query_identities:${queries.length}!=baseline:${baseline.queries.length}`);
+  const expected = new Set(baseline.queries.map((floor) => JSON.stringify([floor.query, floor.mode])));
+  const indexed = new Map();
+  for (const query of queries) {
+    const key = JSON.stringify([query.query, query.mode]);
+    if (!expected.has(key)) violations.push(`query:${query.query}:unexpected_identity`);
+    const matches = indexed.get(key) ?? [];
+    if (matches.length > 0) violations.push(`query:${query.query}:duplicate_identity`);
+    matches.push(query);
+    indexed.set(key, matches);
+  }
+  for (const floor of baseline.queries) {
+    const matches = indexed.get(JSON.stringify([floor.query, floor.mode])) ?? [];
+    if (matches.length !== 1) {
+      violations.push(`query:${floor.query}:expected_one_result:received=${matches.length}`);
+      continue;
+    }
+    for (const violation of evaluateMetricFloors(matches[0], floor.minimum)) {
+      violations.push(`query:${floor.query}:${violation}`);
+    }
+  }
+  return violations;
 }
 
 /** Return actionable retrieval-gate violations for one eval report. */
@@ -138,10 +172,36 @@ export function evaluateRetrievalGate(report, baseline) {
   ) {
     violations.push("judgment_set:saturated_recall");
   }
+  violations.push(...evaluateQueryFloors(report, baseline));
   return violations;
 }
 
+/** Retain prior query identities and floors so missing rows cannot weaken a baseline refresh. */
+function ratchetQueryFloors(queries, previous) {
+  const floors = new Map(previous.map((entry) => [JSON.stringify([entry.query, entry.mode]), entry]));
+  const seen = new Set();
+  for (const query of queries) {
+    if (typeof query.query !== "string" || !query.query.trim() || !["keyword", "semantic", "hybrid"].includes(query.mode)) {
+      throw new TypeError("Retrieval query must declare text and a supported mode");
+    }
+    const key = JSON.stringify([query.query, query.mode]);
+    if (seen.has(key)) throw new TypeError(`Duplicate retrieval query: ${query.query}`);
+    seen.add(key);
+    const prior = floors.get(key);
+    const minimum = {};
+    for (const metric of ["ndcg", "mrr", "precision", "recall"]) {
+      minimum[metric] = Math.max(prior?.minimum?.[metric] ?? 0, Math.round((finiteMetric(query[metric], `query.${metric}`) - 0.02) * 10_000) / 10_000, 0);
+    }
+    floors.set(key, { query: query.query, mode: query.mode, minimum: parseEvalMetricFloors(minimum) });
+  }
+  return [...floors.values()];
+}
+
+/** Build a monotone baseline while preserving all previously governed query identities. */
 function baselineFromReport(report, previous) {
+  if (!Array.isArray(report.queries) || report.queries.length === 0 || report.queries.length !== report.query_count) {
+    throw new TypeError("Retrieval report must contain exactly query_count non-empty query rows");
+  }
   const previousMinimum = previous?.minimum ?? {};
   const minimum = {};
   for (const metric of ["ndcg", "mrr", "precision", "recall"]) {
@@ -158,9 +218,11 @@ function baselineFromReport(report, previous) {
       report.query_count,
     ),
     minimum,
+    queries: ratchetQueryFloors(report.queries, previous?.queries ?? []),
   };
 }
 
+/** Read the committed baseline; only first-time baseline creation may omit the file. */
 async function readBaseline(baselinePath, allowMissing) {
   try {
     return JSON.parse(await readFile(baselinePath, "utf8"));
@@ -178,6 +240,26 @@ async function readBaseline(baselinePath, allowMissing) {
   }
 }
 
+/** Require a real failed metric verdict, rather than accepting an unrelated process error. */
+function assertRankingNegativeControl(negative) {
+  let report;
+  try {
+    report = JSON.parse(negative.stdout);
+  } catch {
+    throw new Error("Retrieval eval negative control failed: no valid metric report; infrastructure failures are not ranking evidence");
+  }
+  if (
+    negative.code !== 1 ||
+    report?.passed !== false ||
+    report.fail_under !== 1 ||
+    !Number.isFinite(report.aggregate?.ndcg) ||
+    report.aggregate.ndcg < 0 ||
+    report.aggregate.ndcg >= 1
+  ) {
+    throw new Error("Retrieval eval negative control failed: expected exit 1 and a failed perfect-score metric verdict");
+  }
+}
+
 /** Run the enforced gate, refresh its baseline, or exercise its negative control. */
 export async function main(argv = process.argv.slice(2), options = {}) {
   const { flags } = parseFlags(argv);
@@ -191,11 +273,7 @@ export async function main(argv = process.argv.slice(2), options = {}) {
     ((args) => runRetrievalEval(args, options.runOptions));
   if (flags.has("negative-control")) {
     const negative = await runner(["--fail-under", "1"]);
-    if (negative.code === 0) {
-      throw new Error(
-        "Retrieval eval negative control failed: the CLI accepted a deliberately impossible perfect-score threshold",
-      );
-    }
+    assertRankingNegativeControl(negative);
     return { ok: true, negative_control: "seeded_ranking_regression" };
   }
   const baseline = await readBaseline(baselinePath, flags.has("update"));

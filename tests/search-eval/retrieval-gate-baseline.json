@@ -2,9 +2,61 @@
   "version": 1,
   "minimum_query_count": 5,
   "minimum": {
-    "ndcg": 0.6,
-    "mrr": 0.53,
-    "precision": 0.14,
-    "recall": 0.83
-  }
+    "ndcg": 0.7251,
+    "mrr": 0.78,
+    "precision": 0.16,
+    "recall": 0.8527
+  },
+  "queries": [
+    {
+      "query": "offline embedding fallback bm25 provider",
+      "mode": "keyword",
+      "minimum": {
+        "ndcg": 0.98,
+        "mrr": 0.98,
+        "precision": 0.08,
+        "recall": 0.98
+      }
+    },
+    {
+      "query": "search relevance evaluation ndcg mrr harness",
+      "mode": "keyword",
+      "minimum": {
+        "ndcg": 0.98,
+        "mrr": 0.98,
+        "precision": 0.18000000000000002,
+        "recall": 0.98
+      }
+    },
+    {
+      "query": "telemetry worker postgres reconnect ingestion stall",
+      "mode": "keyword",
+      "minimum": {
+        "ndcg": 0.6109,
+        "mrr": 0.48,
+        "precision": 0.08,
+        "recall": 0.98
+      }
+    },
+    {
+      "query": "item format version front-matter migration gating",
+      "mode": "keyword",
+      "minimum": {
+        "ndcg": 0.6109,
+        "mrr": 0.48,
+        "precision": 0.08,
+        "recall": 0.98
+      }
+    },
+    {
+      "query": "workspace snapshot restore history durability provenance reproducible episodes",
+      "mode": "keyword",
+      "minimum": {
+        "ndcg": 0.4436,
+        "mrr": 0.98,
+        "precision": 0.38,
+        "recall": 0.34359999999999996
+      }
+    }
+  ]
 }

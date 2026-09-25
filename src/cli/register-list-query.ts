@@ -708,6 +708,7 @@ async function runSearchAction(
   }
 }
 
+/** Render SDK evaluation evidence before refusing any failed aggregate or per-query threshold. */
 async function runEvalAction(
   options: Record<string, unknown>,
   command: Command,
@@ -735,7 +736,7 @@ async function runEvalAction(
   }
   if (!result.passed) {
     throw new PmCliError(
-      `Eval gate failed: aggregate nDCG@${result.k} ${result.aggregate.ndcg} is below --fail-under ${result.fail_under}`,
+      "Eval gate failed: one or more aggregate or per-query thresholds were not met; inspect the metric report",
       EXIT_CODE.GENERIC_FAILURE,
     );
   }

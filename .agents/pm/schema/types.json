@@ -1,6 +1,12 @@
 {
   "definitions": [
     {
+      "name": "Changeset",
+      "folder": "changesets",
+      "description": "Reviewed delivery record linking implemented work, verification evidence, and release history.",
+      "default_status": "open"
+    },
+    {
       "name": "Story",
       "folder": "stories",
       "aliases": [

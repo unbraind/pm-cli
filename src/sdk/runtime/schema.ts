@@ -3,6 +3,7 @@
  * Translates schema action arguments into SDK schema operations.
  */
 import { createUnknownSubcommandError } from "../agent/subcommand-recovery.js";
+import { assertSchemaPreviewSupported } from "./schema-preview.js";
 import { WORKFLOW_POLICY_ACTIONS,runWorkflowPolicyAction } from "../governance/workflow-policy.js";
 import {
   parseRuntimeInteger as parseMcpInteger,
@@ -224,6 +225,7 @@ function runMcpSchemaAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> | unknown {
   const schema = createMcpSchemaContext(ctx);
+  assertSchemaPreviewSupported(schema.subcommand, ctx.args.dryRun === true || ctx.options.dryRun === true);
   const policyAction = WORKFLOW_POLICY_ACTIONS.find((action) => action === schema.subcommand);
   if (policyAction) return runWorkflowPolicyAction(policyAction, schema.name, {
     definition: ctx.args.definition ?? ctx.options.definition,

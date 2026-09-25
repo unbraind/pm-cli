@@ -4,6 +4,7 @@ import { executeEmbeddingBatchesWithRetry } from "../../../../src/core/search/em
 import type { EmbeddingProviderConfig } from "../../../../src/core/search/providers.js";
 import type { PmSettings } from "../../../../src/types/index.js";
 
+/** Create isolated search settings so retry tests cannot mutate shared defaults. */
 function buildSettings(batchSize: number, retries: number): PmSettings {
   return {
     ...SETTINGS_DEFAULTS,
@@ -100,6 +101,7 @@ describe("executeEmbeddingBatchesWithRetry", () => {
     let attempts = 0;
     const settings = buildSettings(0, -1);
     settings.search.embedding_timeout_ms = 0;
+    settings.search.embedding_corpus_max_characters = 0;
     globalThis.fetch = (async () => {
       attempts += 1;
       return {
@@ -113,7 +115,7 @@ describe("executeEmbeddingBatchesWithRetry", () => {
 
     try {
       const result = await executeEmbeddingBatchesWithRetry(PROVIDER, settings, ["alpha"]);
-      expect(result.warnings).toEqual([]);
+      expect(result.warnings).toEqual(["search_embedding_corpus_max_characters_invalid:using_provider_default"]);
       expect(result.vectors).toEqual([[0.1, 0.2]]);
       expect(attempts).toBe(1);
     } finally {
@@ -155,7 +157,7 @@ describe("executeEmbeddingBatchesWithRetry", () => {
     }
   });
 
-  it("caps Ollama batch payload size before dispatching embeddings", async () => {
+  it("batches multiple rich Ollama inputs independently of the per-input corpus ceiling", async () => {
     const originalFetch = globalThis.fetch;
     const sizes: number[] = [];
     globalThis.fetch = (async (_url: unknown, init?: RequestInit) => {
@@ -178,7 +180,7 @@ describe("executeEmbeddingBatchesWithRetry", () => {
         ["a".repeat(2000), "b".repeat(2000), "c".repeat(1000)],
       );
       expect(result.vectors).toHaveLength(3);
-      expect(sizes).toEqual([1, 2]);
+      expect(sizes).toEqual([3]);
       expect(result.warnings).toEqual([]);
     } finally {
       globalThis.fetch = originalFetch;

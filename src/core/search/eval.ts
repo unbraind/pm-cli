@@ -14,6 +14,8 @@
  * graded-discount behavior of DCG (earlier hits are worth more).
  */
 
+import { parseEvalMetricFloors, type EvalMetricFloors } from "./eval-thresholds.js";
+
 /** Retrieval mode a golden query is evaluated under. Mirrors the `pm search` mode surface; omitting it on a query defers to the eval run's default mode. */
 export type EvalSearchMode = "keyword" | "semantic" | "hybrid";
 
@@ -29,7 +31,7 @@ export const EVAL_QUERY_SET_CONTRACT = {
   schema: EVAL_QUERY_SET_SCHEMA_ID,
   accepted_top_level: ["array", "object"],
   required_query_fields: ["query", "relevant_ids"],
-  optional_fields: ["mode", "description"],
+  optional_fields: ["mode", "description", "minimum"],
   modes: ["keyword", "semantic", "hybrid"],
 } as const;
 
@@ -55,6 +57,8 @@ export interface EvalQuery {
   mode?: EvalSearchMode;
   /** Value that configures or reports description for this contract. */
   description?: string;
+  /** Per-query floors applied before rounding, independently of the aggregate gate. */
+  minimum?: EvalMetricFloors;
 }
 
 /** A parsed, validated golden-query set. */
@@ -259,6 +263,7 @@ function parseEvalQueryEntry(raw: unknown, index: number): EvalQuery {
     relevant_ids?: unknown;
     mode?: unknown;
     description?: unknown;
+    minimum?: unknown;
   };
   const query = typeof entry.query === "string" ? entry.query.trim() : "";
   if (query.length === 0) {
@@ -301,6 +306,7 @@ function parseEvalQueryEntry(raw: unknown, index: number): EvalQuery {
   return {
     query,
     relevant_ids: relevantIds,
+    ...(entry.minimum === undefined ? {} : { minimum: parseEvalMetricFloors(entry.minimum) }),
     ...(entry.mode !== undefined ? { mode: entry.mode as EvalSearchMode } : {}),
     ...(typeof entry.description === "string" &&
     entry.description.trim().length > 0

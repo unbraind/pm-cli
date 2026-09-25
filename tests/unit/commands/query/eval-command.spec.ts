@@ -74,6 +74,18 @@ beforeEach(() => {
 });
 
 describe("runEval", () => {
+  it("fails a per-query floor even when the aggregate passes", async () => {
+    readFileMock.mockResolvedValue(JSON.stringify([
+      { query: "easy", relevant_ids: ["pm-a"] },
+      { query: "hard", relevant_ids: ["pm-b"], minimum: { recall: 0.5 } },
+    ]));
+    queueRankings(["pm-a"], ["pm-other"]);
+    const result = await runEval({ failUnder: 0.4 }, GLOBAL);
+    expect(result.aggregate.ndcg).toBe(0.5);
+    expect(result.passed).toBe(false);
+    expect(result.queries[1].violations).toEqual(["recall:0<0.5"]);
+  });
+
   it("evaluates the golden set, reporting per-query and aggregate metrics", async () => {
     readFileMock.mockResolvedValue(
       JSON.stringify([

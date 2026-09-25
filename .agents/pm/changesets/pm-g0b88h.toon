@@ -1,0 +1,135 @@
+id: pm-g0b88h
+title: "Bound embedding requests, enforce retrieval floors, and protect schema previews"
+description: "Deliver shared SDK batching and retrieval-quality primitives for pm-vjgqj5 and pm-p1g43q: encoded payload bounds, adaptive HTTP 413 splitting, execution receipts, per-query quality floors and fail-closed repository ratchets. Also deliver shared CLI and SDK/MCP schema preview admission for pm-s74dca and persist the Changeset type so clean-checkout changelogs are reproducible."
+type: Changeset
+status: closed
+priority: 1
+tags[3]: quality,sdk,search
+created_at: "2026-09-25T14:43:31.575Z"
+updated_at: "2026-09-25T17:08:59.548Z"
+closed_at: "2026-09-25T17:08:58.820Z"
+completed_at: "2026-09-25T17:08:58.820Z"
+author: "harness:codex"
+acceptance_criteria: Real loopback and Ollama batching preserve vector order and bounded payloads; individual retrieval regressions fail despite passing aggregate scores; invalid negative-control runs cannot count as gate evidence; public SDK contracts and docs are current.
+parent: pm-ydp6
+resolution: "Delivered bounded embedding execution, query-specific quality floors, safe shared schema previews and portable changelog records. Review corrections classify HTTP status before timeout text and validate the full named query identity set with linear lookup."
+expected_result: "Provider errors cannot spuriously split by message text; extra, missing or duplicate evaluation identities cannot bypass the quality gate; all original delivery contracts remain intact."
+actual_result: "Both review regressions failed before repair and pass afterward. All 42 focused tests and exact scoped coverage pass; real retrieval/negative-control, linked tests and static contract checks pass. Prior full hosted source coverage and every required gate passed at 14f94dcb5; the corrected head will be rerun and reviewed before merge. Broader scale criteria remain open."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-p1g43q,implements,"2026-09-25T14:43:31.575Z","harness:codex","cli:create:dep",detected
+  pm-vjgqj5,implements,"2026-09-25T14:43:31.575Z","harness:codex","cli:create:dep",detected
+  pm-m2ai6c,verifies,"2026-09-25T14:49:22.453Z","harness:codex","cli:update:dep",detected
+  pm-s74dca,implements,"2026-09-25T16:27:40.274Z","harness:codex","cli:update:dep",detected
+comments[22]{created_at,author,text}:
+  "2026-09-25T14:43:31.575Z","harness:codex","Duplicate check: live all-status keyword search for the exact delivery title returned zero matches; canonical issue pm-vjgqj5 and feature pm-p1g43q are reused. This Changeset records the shipped implementation rather than replacing their broader scale and tuning acceptance criteria."
+  "2026-09-25T14:45:07.834Z","harness:codex","Operational evidence: packed package smoke passed for npx and bunx across all 9 packages. Required-mode live Sentry/telemetry gate passed: Sentry access confirmed with 0 high/critical findings in the 14-day window; telemetry finish error rate 1.76 percent and 0 failure rows missing error codes. This verifies the aggregate reliability gate, not exhaustive per-action realtime completeness."
+  "2026-09-25T14:49:20.852Z","harness:codex","Release cross-check: scheduled Auto Release 36111244838 failed before publication on coverage, tracked by closed pm-m2ai6c and GH-1304/PR-1307. Recovery Auto Release 36131743095 succeeded and public GitHub Release plus npm latest both resolve to 2026.9.25. GH-1304 already contains its canonical pm link. No second release or tag rewrite was triggered by this work."
+  "2026-09-25T14:52:40.896Z","harness:codex","Verification caveat: the full local coverage run encountered unrelated wall-clock timeouts while the host was busy. Package-first dogfood also timed out waiting for its linked test build behind the full-suite build lease. Preserve these failed attempts; rerun the affected commands sequentially after the lease is released, with no threshold or timeout weakening."
+  "2026-09-25T14:54:20.302Z","harness:codex","Full-run result: 9,296 passing tests, 11 failures. Ten failures are timeouts; one actionable layout failure caught the new HTTP test making tests/integration exceed its 120-file cap. Moved the new test into tests/integration/search without changing the cap. Coverage was not emitted for this failed run, so no percentage claim is made."
+  "2026-09-25T14:56:08.698Z","harness:codex","Focused acceptance passes: 39 tests across real HTTP batching, evaluator and gate behavior. Scoped exact coverage for embedding-batches.ts, eval-thresholds.ts and retrieval-eval-gate.mjs is 267/267 statements, 213/213 branches, 37/37 functions and 253/253 lines. Docs links, TypeScript checking, real repository retrieval gate and its ranking negative control pass. This scoped result does not stand in for the required hosted full-source coverage gate."
+  "2026-09-25T14:58:34.556Z","harness:codex","Sequential rerun: all 225 tests in the ten previously failing suites pass with two workers, including the directory-cap contract, refusal closure, SDK snapshot and performance fixtures. The linked 39-test delivery command also passes. The original failed full-run evidence is retained; hosted full-source coverage is still required."
+  "2026-09-25T15:08:05.846Z","harness:codex","Package-boundary verification: importing executeEmbeddingBatchesWithRetry and evaluateMetricFloors from the public @unbrained/pm-cli/sdk/query export succeeds. The internal runtime-primitives path is not documented as public. Latest pm-changelog omitted active extension-owned Changesets; the actual repair is in pm-changelog PR 211 under pmc-k1oq, with 523 passing package tests. Main delivery changelog generation waits for that reviewed package repair."
+  "2026-09-25T15:19:57.585Z","harness:codex","Final local assurance: graph composition passes after linking the four ownership references introduced in the evidence note; record-integrity passes over 67,915 history entries. Mutation admission passes with 323 killed and 7 classified equivalent mutants out of 330. CLI transport latency fails locally without threshold changes; baseline comparison is in progress. The latest blank-input regression also rejects whitespace longer than the corpus limit before transport."
+  "2026-09-25T15:22:04.607Z","harness:codex","Unchanged-main comparison retained the same transport budgets and also fails locally: context 454>433 ms, next 486>440, create 450>398, claim 438>415. This is evidence of a baseline/host admission problem rather than proof of a patch regression; no budgets were changed. Package-first dogfood now completes successfully after serializing build consumers. A second full-source coverage run is executing with two workers and failure reports enabled."
+  "2026-09-25T15:22:56.804Z","harness:codex","Live operational readback: telemetry API reports healthy, syncStale=false and regenerationStale=false, with successful sync at 2026-09-25T15:20:11Z. The physical event queue has zero pending messages and one consumer; Postgres contains 22,779 events in the last 24 hours. Recent rows include this session comments command_start/command_finish at 15:22:04Z and stats start at 15:22:24Z. This confirms recent ingestion and queue health, not an exhaustive claim for every action."
+  "2026-09-25T15:39:52.135Z","harness:codex","External package repair shipped: pm-changelog PR 211 and release metadata PR 212 are merged; release workflow 36154309093 passed, including npm publication and Bun installation. Registry latest is 2026.9.25. Regeneration with that published version now includes the delivery Changeset in CHANGELOG.md with its durable changesets/pm-g0b88h.toon link. Greptile reported no remaining findings; CodeRabbit confirmed the evidence correction but its full rerun was quota-unavailable; Sourcery approved release metadata."
+  "2026-09-25T15:42:38.327Z","harness:codex","Full-source verification completed successfully: node scripts/run-tests.mjs coverage -- --maxWorkers=2 --coverage.reportOnFailure passed 9,307 tests across 743 passing files, with 2 existing skipped tests and 1 skipped file. Exact coverage gate passed: statements 65,427/65,427; branches 50,003/50,003; functions 13,559/13,559; lines 62,515/62,515. All four axes are exactly 100 percent with zero uncovered counts. The failed first run remains documented; no exclusion, coverage threshold, timeout, or assertion was weakened. Linked docstring and real retrieval-gate executions also pass."
+  "2026-09-25T15:44:30.261Z","harness:codex","Idle-host transport admission remains red locally: get 463>362 ms, next 460>440, create 410>398. The unchanged-main control also failed its committed budgets, so preserve both results and require hosted performance admission before merge. All other local static components completed, and no transport threshold was relaxed."
+  "2026-09-25T15:58:14.857Z","harness:codex","PR 1309 hosted changelog check failed because Changeset was registered only by an ignored local extension. A clean worktree with only the published changelog package reproduced exactly the missing four-line Changeset section. Persisted the delivery type through pm schema; this also refreshes the merge fence. During preview the CLI silently ignored --dry-run, now tracked separately as pm-s74dca."
+  "2026-09-25T16:04:25.019Z","harness:codex","PR 1309 first head 6fe831747 passed hosted full coverage, typecheck, compatibility, smoke, CodeFactor, DeepScan and CodSpeed (11 unchanged benchmarks). Static admission failed only at changelog reproducibility before subsequent checks. CodeRabbit and Sourcery explicitly reported quota limits; the Greptile GitHub app produced no review. These are unavailable review signals, not approval. The next revision persists the custom type and adds shared SDK preview admission."
+  "2026-09-25T16:07:49.242Z","harness:codex","The clean-worktree changelog now matches byte-for-byte after registering Changeset in tracked project schema. The shared schema-preview guard passes 185 tests, TypeScript, ESLint, docstrings, CLI contracts and graph assurance. Local Greptile was also attempted through the repository gate and explicitly returned skipped=true because its free-review quota is exhausted; no review approval is inferred."
+  "2026-09-25T16:28:17.760Z","harness:codex","Second revision adds schema preview safety under pm-s74dca and portable tracked Changeset registration. Full-source coverage is exactly 100/100/100/100: 65432 statements, 50009 branches, 13560 functions and 62520 lines. Its sole test failure was the SDK root directory cap; moving the guard into sdk/runtime resolves it, with 17 layout/integration checks and all 185 linked schema tests passing. Hosted exact-head admission and reviewer retriggers follow the push."
+  "2026-09-25T16:36:54.210Z","harness:codex","PR revision 271b2c740 passes hosted exact full-source coverage, all platform/package smokes, typecheck, security analyzers and changelog reproducibility. Static contracts correctly caught one missing generated error-code source location for the shared preview refusal. Regenerating the error-code catalog also requires rebuilding its full contract snapshot; both are being refreshed together. Review providers remain quota-unavailable; no actionable inline findings were returned."
+  "2026-09-25T16:48:05.351Z","harness:codex","Generated catalog and full contract snapshot now agree. Repository-static-quality assurance, full ESLint/knip/duplicate scans, package/SDK parity, command grammar and flag parity, refusal closure, agent token budgets, tracker context quality, gate registry and SDK import costs pass. Local transport timing remains red on this host under unchanged budgets; unchanged-main control failure is already recorded. Hosted revision 271b2c740 coverage artifact confirms 65432/65432 statements, 50009/50009 branches, 13560/13560 functions and 62520/62520 lines. The only source delta afterward is the generated error-code source-location entry."
+  "2026-09-25T17:03:26.401Z","harness:codex","Hosted head 14f94dcb5 passes every check including static performance admission. CodeRabbit completed its full review and reported two valid edge cases: non-413 HTTP errors containing timeout text trigger adaptive splitting, and unmatched extra query identities evade normal retrieval evaluation. Reopening this delivery to add red regressions and fix both; no new duplicate items are needed for these unmerged review findings."
+  "2026-09-25T17:08:58.089Z","harness:codex","CodeRabbit findings reproduced in red tests, then fixed: a real HTTP 500 timeout body now remains one request; malformed successful payloads also do not split. Named retrieval evaluation rejects extra/duplicate identities and inconsistent row counts using a linear index. All 42 focused tests pass; scoped exact coverage is 285 statements, 223 branches, 37 functions and 265 lines at 100 percent. Linked tests, real repository retrieval gate and ranking negative control, TypeScript, ESLint, docstrings, contracts, SDK snapshot, docs links and duplication scans pass. Added docstrings to touched helpers and documented the finite binary split bound plus caller-owned provider budget policy."
+learnings[1]{created_at,author,text}:
+  "2026-09-25T15:40:09.277Z","harness:codex",Transport payload limits must count encoded UTF-8 JSON independently of per-item truncation. Pair aggregate retrieval gates with named per-query floors and prove negative controls using actual metric verdicts. Package consumers must resolve active extension type registrations as well as configured types; a default closed-item regression catches omissions that open-only fixtures miss.
+files[14]{path,scope}:
+  .agents/pm/extensions/.managed-extensions.json,project
+  .agents/pm/schema/types.json,project
+  .gitattributes,project
+  scripts/release/docstring-quality-baseline.json,project
+  scripts/release/retrieval-eval-gate.mjs,project
+  sdk/public-surface.json,project
+  src/core/search/embedding-batches.ts,project
+  src/core/search/eval-thresholds.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/runtime/schema-preview.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/search/embedding-batch-http.spec.ts,project
+  tests/unit/core/search/eval-thresholds.spec.ts,project
+  tests/unit/scripts/release/retrieval-eval-gate.spec.ts,project
+tests[6]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/search/embedding-batch-http.spec.ts tests/unit/core/search/embedding-batches.spec.ts tests/unit/core/search/eval-thresholds.spec.ts tests/unit/commands/query/eval-command.spec.ts tests/unit/scripts/release/retrieval-eval-gate.spec.ts,project,300,"harness:codex","2026-09-25T14:54:34.076Z",local_mutation,feat/semantic-batching-retrieval-quality
+  node scripts/run-tests.mjs coverage -- --maxWorkers=2 --coverage.reportOnFailure,project,2400,"harness:codex","2026-09-25T15:40:08.427Z",local_mutation,feat/semantic-batching-retrieval-quality
+  "pnpm quality:docstrings",project,300,"harness:codex","2026-09-25T15:40:08.427Z",local_mutation,feat/semantic-batching-retrieval-quality
+  "pnpm dogfood:package-first",project,600,"harness:codex","2026-09-25T15:40:08.427Z",local_mutation,feat/semantic-batching-retrieval-quality
+  node scripts/release/retrieval-eval-gate.mjs,project,120,"harness:codex","2026-09-25T15:40:08.427Z",local_mutation,feat/semantic-batching-retrieval-quality
+  node scripts/release/coverage-threshold-gate.mjs,project,120,"harness:codex","2026-09-25T15:42:56.090Z",local_mutation,feat/semantic-batching-retrieval-quality
+test_runs[5]:
+  - run_id: test-local-muh35h1o-lvgfqd
+    kind: test
+    status: passed
+    started_at: "2026-09-25T14:56:09.596Z"
+    finished_at: "2026-09-25T14:58:19.404Z"
+    recorded_at: "2026-09-25T14:58:19.404Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/search/embedding-batch-http.spec.ts tests/unit/core/search/embedding-batches.spec.ts tests/unit/core/search/eval-thresholds.spec.ts tests/unit/commands/query/eval-command.spec.ts tests/unit/scripts/release/retrieval-eval-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muh4np14-ynbbzm
+    kind: test
+    status: passed
+    started_at: "2026-09-25T15:40:21.724Z"
+    finished_at: "2026-09-25T15:40:29.176Z"
+    recorded_at: "2026-09-25T15:40:29.176Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:docstrings",schema,schema,source,local_source_ref
+  - run_id: test-local-muh4prb7-tr8i4p
+    kind: test
+    status: passed
+    started_at: "2026-09-25T15:42:00.757Z"
+    finished_at: "2026-09-25T15:42:05.442Z"
+    recorded_at: "2026-09-25T15:42:05.442Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/retrieval-eval-gate.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-muh4qva9-dzi2nj
+    kind: test
+    status: passed
+    started_at: "2026-09-25T15:42:56.798Z"
+    finished_at: "2026-09-25T15:42:57.246Z"
+    recorded_at: "2026-09-25T15:42:57.246Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[4]{name,value,unit,threshold,recorded_at}:
+      coverage_branches,100,percent,100,"2026-09-25T15:42:57.246Z"
+      coverage_functions,100,percent,100,"2026-09-25T15:42:57.246Z"
+      coverage_lines,100,percent,100,"2026-09-25T15:42:57.246Z"
+      coverage_statements,100,percent,100,"2026-09-25T15:42:57.246Z"
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/coverage-threshold-gate.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-muh7sjl1-8uftep
+    kind: test
+    status: passed
+    started_at: "2026-09-25T17:08:03.255Z"
+    finished_at: "2026-09-25T17:08:14.245Z"
+    recorded_at: "2026-09-25T17:08:14.245Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/search/embedding-batch-http.spec.ts tests/unit/core/search/embedding-batches.spec.ts tests/unit/core/search/eval-thresholds.spec.ts tests/unit/commands/query/eval-command.spec.ts tests/unit/scripts/release/retrieval-eval-gate.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/SEARCH_QUALITY.md,project
+close_reason: Delivery and both actionable review findings implemented and verified.
+body: ""
