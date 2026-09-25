@@ -711,6 +711,7 @@ function resolveRefusalRejectedValue(
   );
 }
 
+/** Identify the actual refusal surface, prioritizing domain policy evidence over syntactically valid input flags. */
 function buildRefusalEnvelope(
   message: GuidanceMessage,
   exitCode: number,
@@ -895,6 +896,7 @@ function normalizeContextValue<Fallback extends string | undefined>(
     : fallback;
 }
 
+/** Merge SDK error evidence with CLI fallback guidance without discarding typed recovery or policy diagnostics. */
 function applyPmCliErrorContext(
   guidance: GuidanceMessage,
   rawMessage: string,

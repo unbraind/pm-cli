@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-25T10:11:12.057Z"
-updated_at: "2026-09-25T11:07:17.646Z"
-closed_at: "2026-09-25T11:07:16.500Z"
-completed_at: "2026-09-25T11:07:16.500Z"
+updated_at: "2026-09-25T11:31:42.389Z"
+closed_at: "2026-09-25T11:31:41.634Z"
+completed_at: "2026-09-25T11:31:41.634Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Installing drivers in one linked worktree must not redirect other worktrees to its pinned binary. Health rejects mismatched runtime paths and reinstall converges without losing existing repository configuration.
@@ -16,20 +16,22 @@ parent: pm-o2kc
 risk: medium
 confidence: high
 repro_steps: "https://github.com/unbraind/pm-cli/issues/1306"
-resolution: Worktree-local merge runtime installation and health delivered
-expected_result: Sibling worktrees retain independent merge runtimes and health identifies incompatible configured drivers.
-actual_result: Linked merge and integrity tests pass; real Git migration and yes/on scenarios pass; new module exact coverage; obsolete local drivers repaired through pm.
+resolution: Worktree merge installation isolates runtime and inherited Git locations
+expected_result: Explicit workspace selection controls Git discovery configuration and health even inside a foreign Git environment.
+actual_result: Linked merge tests passed; foreign-repository negative control fails before the fix and passes afterward. Real config-lock failure and retry preserve main settings; new module exact coverage.
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-w91mvg,discovered_from,"2026-09-25T10:11:12.057Z","harness:codex","cli:create:dep",detected
   pm-o2kc,implements,"2026-09-25T10:29:46.091Z","harness:codex","cli:update:dep",detected
   pm-w91mvg,verifies,"2026-09-25T10:29:46.091Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-09-25T10:11:12.057Z","harness:codex","Duplicate check: complete live all-status 2801-item inventory and request-specific searches found no owner for GH-1306. Reuse pm-o2kc and historical pm-w91mvg. Report: https://github.com/unbraind/pm-cli/issues/1306"
   "2026-09-25T10:31:10.830Z","harness:codex","Regression evidence: a real linked-worktree test failed before the fix because installing in the linked tree replaced the main driver. Three real-Git tests now pass: worktree isolation/removal, foreign sibling and exact-version drift, main-only core setting migration and unreadable config. New migration module focused coverage is exact 27/27 statements, 17/17 branches, 2/2 functions, 22/22 lines; broader repository coverage is running."
   "2026-09-25T10:54:25.715Z","harness:codex","Final configuration review against https://git-scm.com/docs/git-worktree#_configuration_file confirmed main-only core.bare/core.worktree migration. Boolean keys now use Git typed reads, preserving valid yes/on spellings as well as true. Real-Git regression assertions cover enabled yes and migration from core.bare=on."
   "2026-09-25T11:03:37.913Z","harness:codex","Live dogfood: health correctly detected five configured merge drivers pointing at an obsolete temporary checkout. Backed up clone-local Git configuration and ran pm merge install; all five drivers now reference the current checkout, with no .gitattributes change. This runtime configuration repair is local and is not a tracked host-specific runbook."
   "2026-09-25T11:05:03.943Z","harness:codex","Fresh-build regression passes all three real-Git worktree scenarios, including yes/on normalization. The new worktree configuration module has exact 100/100/100/100 coverage, with 21/21 branches. Earlier full-run failures loaded old source before edits made during that run; a clean rerun resolves those failures."
   "2026-09-25T11:07:15.578Z","harness:codex","Final local evidence: all four linked test commands passed sequentially with zero assertion failures or timeouts. Changed-source typecheck and ESLint pass. Hosted exact-head static and full coverage gates remain required before merge; prior full-run failure details were investigated and corrected without relaxing gates."
+  "2026-09-25T11:28:52.300Z","harness:codex","PR #1307 review finding reproduced with GIT_DIR GIT_WORK_TREE and GIT_COMMON_DIR pointing to a foreign temporary repository. Shared Git environment isolation now binds discovery installation configuration migration and audit to their explicit cwd, preserving unrelated environment. The real-repository negative control failed before the fix and passes afterward. Added lock-failure and retry migration coverage."
+  "2026-09-25T11:31:40.583Z","harness:codex","PR #1307 first head f41e99e5ccb018bc9d69951b11dfa7e04f41a6bf passed all hosted checks, including full-source 100/100/100/100 coverage (CI run 36127818526). CodeRabbit findings were reproduced and fixed; all active linked test commands pass on the revision. New head review and required gates remain the merge boundary."
 learnings[1]{created_at,author,text}:
   "2026-09-25T10:29:46.091Z","harness:codex",Git local configuration is shared by linked worktrees. Native worktree configuration must preserve main-only core settings and existing main drivers before isolating future installations.
 files[3]{path,scope,note}:
@@ -38,7 +40,7 @@ files[3]{path,scope,note}:
   tests/unit/sdk/merge/worktree-config.spec.ts,project,Implementation and regression evidence
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/sdk/context-integrity-primitives.spec.ts,project,240,"harness:codex","2026-09-25T10:26:33.277Z",local_mutation,fix/agent-recovery-guidance-worktree-merges
-test_runs[2]:
+test_runs[3]:
   - run_id: test-all-local-mugtyvtx-9s4amf
     kind: test-all
     status: passed
@@ -65,9 +67,22 @@ test_runs[2]:
     linked_tests: 1
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/sdk/context-integrity-primitives.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mugvpqez-wjgyyd
+    kind: test-all
+    status: passed
+    started_at: "2026-09-25T11:30:07.697Z"
+    finished_at: "2026-09-25T11:30:37.138Z"
+    recorded_at: "2026-09-25T11:30:37.138Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/sdk/context-integrity-primitives.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/MERGE_SAFETY.md,project,Public behavior and recovery contract
-close_reason: Worktree-local merge runtime installation and health delivered
+close_reason: Worktree merge installation isolates runtime and inherited Git locations
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

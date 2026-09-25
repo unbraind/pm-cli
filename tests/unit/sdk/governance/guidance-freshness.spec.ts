@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runInitAgentGuidance } from "../../../../src/sdk/init-agent-guidance.js";
@@ -7,6 +7,14 @@ import { runHealth } from "../../../../src/sdk/governance/health.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 describe("managed guidance freshness", () => {
+  it("keeps health available when an optional guidance path cannot be read", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await mkdir(path.join(path.dirname(path.dirname(pmPath)), "AGENTS.md"));
+      const health = await runHealth({ path: pmPath, noExtensions: true }, { summary: true, skipVectors: true });
+      expect(health.findings).toContainEqual(expect.objectContaining({ code: "agent_guidance_unreadable", severity: "advisory" }));
+      expect(health.checks).toContainEqual(expect.objectContaining({ name: "storage", ok: true }));
+    });
+  });
   it("diagnoses stale managed blocks read-only and refreshes both files without replacing user prose", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const root = path.dirname(path.dirname(pmPath));

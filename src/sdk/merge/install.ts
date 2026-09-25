@@ -31,7 +31,7 @@ import {
 import { isPathOutsideRoot } from "../workspace.js";
 import { resolveSourceContextWritePolicy } from "../environment/source-context.js";
 
-import { resolveMergeDriverConfigScope } from "./worktree-config.js";
+import { gitWorkspaceEnvironment, resolveMergeDriverConfigScope } from "./worktree-config.js";
 import { discoverProjectRuntimeVersionPins } from "../environment/project-runtime-compatibility.js";
 
 const execFileAsync = promisify(execFile);
@@ -235,7 +235,7 @@ export async function findGitWorkspaceRoot(
     const { stdout } = await execFileAsync(
       "git",
       ["rev-parse", "--show-toplevel"],
-      { cwd, encoding: "utf8", windowsHide: true, timeout: 10_000 },
+      { cwd, env: gitWorkspaceEnvironment(), encoding: "utf8", windowsHide: true, timeout: 10_000 },
     );
     return await realpath(stdout.trim());
   } catch {
@@ -292,7 +292,7 @@ async function isMergeDriverWorkspaceCompatible(packageRoot: string, workspaceRo
   const driverWorkspace = await findGitWorkspaceRoot(packageRoot);
   if (driverWorkspace !== null && driverWorkspace !== await realpath(workspaceRoot)) {
     const commonDirectories = await Promise.all([driverWorkspace, workspaceRoot].map(async (cwd) => {
-      const result = await execFileAsync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd });
+      const result = await execFileAsync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd, env: gitWorkspaceEnvironment(), timeout: 10_000 });
       return realpath(result.stdout.trim());
     }));
     if (commonDirectories[0] === commonDirectories[1]) return false;
@@ -300,6 +300,7 @@ async function isMergeDriverWorkspaceCompatible(packageRoot: string, workspaceRo
   return true;
 }
 
+/** Validate executable paths, the pm package identity, exact pins and worktree ownership without executing the configured driver. */
 async function isPortableMergeDriverCommand(
   configured: string,
   expectedSuffix: string,
@@ -574,6 +575,7 @@ export async function auditMergeDriverConfiguration(
         ["config", "--get", key],
         {
           cwd: workspaceRoot,
+          env: gitWorkspaceEnvironment(),
           encoding: "utf8",
           windowsHide: true,
           timeout: 10_000,
@@ -784,6 +786,7 @@ export async function installMergeFence(options: {
           ["config", configScope, entry.key, entry.value],
           {
             cwd: canonicalWorkspaceRoot,
+            env: gitWorkspaceEnvironment(),
             encoding: "utf8",
             windowsHide: true,
             timeout: 10_000,

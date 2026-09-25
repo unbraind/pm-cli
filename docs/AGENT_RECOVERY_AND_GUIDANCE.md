@@ -20,6 +20,8 @@ contract instead of receiving an invented CLI option. For example, a missing
 of the refused operation. Refusals preserve item state and record the policy
 refusal in workspace history. Creation and import refusals instead direct the
 caller to supply evidence in the original request, because no item was created.
+Generated update commands include a shell-quoted `--pm-path` to retain the
+refusing tracker even when an SDK caller works outside that project.
 
 See [Declarative Workflow Policies](WORKFLOW_POLICIES.md) for portable policy
 declarations and approval semantics.
@@ -42,3 +44,6 @@ The repair refreshes stale managed blocks in both `AGENTS.md` and `CLAUDE.md`,
 preserves all surrounding user instructions, and becomes a no-op after the
 first successful refresh. It does not replace handwritten guidance without
 managed markers. Status and health inspection do not rewrite these files.
+An unreadable guidance path produces an `agent_guidance_unreadable` advisory;
+health still reports the remaining checks and suggests inspecting file types
+and read permissions.

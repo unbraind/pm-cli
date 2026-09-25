@@ -76,6 +76,11 @@ Existing main-worktree drivers are preserved in its `config.worktree`; later
 installs cannot replace another worktree's runtime. Main-only `core.worktree`
 and `core.bare=true` settings migrate with their original scope. Ordinary
 clones retain local configuration until worktree isolation is needed.
+Git subprocesses discard inherited repository-location variables so an SDK
+caller's `GIT_DIR` cannot redirect installation or diagnosis to another clone.
+Configuration migration uses multiple Git writes: a failed write is reported,
+and rerunning `pm merge install` after resolving the config lock or permissions
+completes the migration while preserving values already copied for the main tree.
 
 Health reads Git's effective configuration, including worktree overrides.
 Removing a sibling worktree does not remove a separately installed main driver.

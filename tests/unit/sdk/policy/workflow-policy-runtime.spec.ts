@@ -38,6 +38,7 @@ describe("workspace workflow policy enforcement", () => {
       });
       expect(error.message).toContain("actual_result");
       expect(error.context.nextSteps?.join(" ")).toContain(`pm update ${id} --actual-result`);
+      expect(error.context.nextSteps?.join(" ")).toContain(`--pm-path ${pmPath}`);
       const envelope = formatPmCliErrorForJson(error.message, error.exitCode, {
         ...error.context, recovery: { ...error.context.recovery,
           normalized_args: ["close", id, "Verified", "--resolution", "valid"], provided_fields: ["--resolution"] },

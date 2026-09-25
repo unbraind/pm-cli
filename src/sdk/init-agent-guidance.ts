@@ -403,6 +403,7 @@ function normalizeAgentGuidanceState(
   };
 }
 
+/** Read both supported instruction files and compare managed content with this project's current generated template. */
 async function scanGuidanceFiles(
   projectRoot: string,
 ): Promise<AgentGuidanceFileScan[]> {
@@ -706,7 +707,7 @@ async function applyAgentGuidanceMode(
   return flow;
 }
 
-/** Implements run init agent guidance for the public runtime surface of this module. */
+/** Inspect, offer or refresh managed guidance; preserve surrounding prose and return state for the caller's settings transaction. */
 export async function runInitAgentGuidance(
   options: RunInitAgentGuidanceOptions,
 ): Promise<RunInitAgentGuidanceResult> {

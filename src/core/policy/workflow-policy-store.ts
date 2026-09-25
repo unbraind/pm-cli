@@ -7,6 +7,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
+import { renderPmCommand } from "../shared/command-line.js";
 import { canonicalizeCommandOptionKey, commandOptionFlagLabel } from "../item/type-registry.js";
 import { isUtf8 } from "node:buffer";
 import { isFileMissingError } from "../fs/fs-utils.js";
@@ -175,7 +176,7 @@ export async function enforceWorkflowMutation(params: {
     const option = canonicalizeCommandOptionKey("update", field);
     return option === undefined
       ? `Supply ${field} using its declared SDK or package mutation contract, then retry.`
-      : `pm update ${itemId} ${commandOptionFlagLabel("update", option)} "<${field}>"`;
+      : renderPmCommand(["update", itemId, commandOptionFlagLabel("update", option), `<${field}>`, "--pm-path", path.resolve(params.pmRoot)]);
   });
   throw new PmCliError(`Workflow policy refused ${params.operation}: ${summary}${remaining}.${missing.length ? ` Missing: ${missing.join(", ")}.` : ""}`, EXIT_CODE.CONFLICT, {
     code: "workflow_policy_refused",

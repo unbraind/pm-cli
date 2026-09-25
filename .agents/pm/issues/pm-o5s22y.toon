@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-25T10:11:07.630Z"
-updated_at: "2026-09-25T11:07:14.521Z"
-closed_at: "2026-09-25T11:07:13.469Z"
-completed_at: "2026-09-25T11:07:13.469Z"
+updated_at: "2026-09-25T11:31:39.753Z"
+closed_at: "2026-09-25T11:31:38.945Z"
+completed_at: "2026-09-25T11:31:38.945Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Policy refusals retain missing fields, policy identity and description through SDK CLI and MCP. Recovery identifies the policy instead of a valid parsed flag and names executable metadata corrections."
@@ -16,20 +16,22 @@ parent: pm-f05lsg
 risk: medium
 confidence: high
 repro_steps: "https://github.com/unbraind/pm-cli/issues/1305"
-resolution: Policy refusal diagnostics and actionable evidence recovery delivered
-expected_result: SDK CLI and MCP preserve policy identity and missing metadata while refusing invalid mutations atomically.
-actual_result: Linked policy SDK/MCP/CLI tests pass; policy store exact 100/100/100/100 coverage; temporary refusal and recovery acceptance passes.
+resolution: Policy refusal recovery preserves domain evidence and tracker selection
+expected_result: Recovery identifies missing fields and directs SDK CLI and MCP callers to the same refusing tracker.
+actual_result: Linked transport tests passed; missing-tracker negative control fails before the fix and passes afterward. Policy store remains exact 100/100/100/100 coverage.
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-htbetn,discovered_from,"2026-09-25T10:11:07.630Z","harness:codex","cli:create:dep",detected
   pm-f05lsg,implements,"2026-09-25T10:29:51.004Z","harness:codex","cli:update:dep",detected
   pm-htbetn,verifies,"2026-09-25T10:29:51.004Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-09-25T10:11:07.630Z","harness:codex","Duplicate check: complete live all-status 2801-item inventory and request-specific searches found no owner for GH-1305. Reuse pm-f05lsg and historical pm-htbetn. Report: https://github.com/unbraind/pm-cli/issues/1305"
   "2026-09-25T10:15:06.551Z","harness:codex","new SDK refusal assertions failed before implementation because missing_fields and policy identity were discarded. Implemented typed policy evidence, explicit policy surfaces, declared metadata flag recovery and human missing-field diagnostics; focused SDK and transport regression verification running."
   "2026-09-25T10:31:12.707Z","harness:codex","Architecture: retain domain evidence in the shared typed PmCliErrorContext, render only in the CLI adapter, and preserve MCP propagation from the same SDK path. No transport-specific policy evaluation or new optional package API is introduced. Added real CLI JSON/human and MCP parity assertions plus custom metadata recovery without invented flags."
   "2026-09-25T10:46:12.825Z","harness:codex","Final review: creation/import refusals now direct callers to supply evidence in the original request, because no item exists to update. Existing-item recovery still uses canonical flags or declared custom SDK contracts. Added assertions in the existing lifecycle and custom-field regression tests."
   "2026-09-25T11:05:02.054Z","harness:codex","Final regressions pass after correcting the custom-field test to exercise a lifecycle transition. Required-field policy deliberately permits unrelated title-only edits, so the test now refuses closure. The policy store has exact 100/100/100/100 focused coverage. One linked rerun timed out waiting for the exclusive build lease held by full coverage; tests are being rerun sequentially without changing timeouts."
   "2026-09-25T11:07:12.204Z","harness:codex","Final local evidence: all four linked test commands passed sequentially with zero assertion failures or timeouts. Changed-source typecheck and ESLint pass. Hosted exact-head static and full coverage gates remain required before merge; prior full-run failure details were investigated and corrected without relaxing gates."
+  "2026-09-25T11:28:50.996Z","harness:codex","PR #1307 review finding reproduced: suggested updates omitted the tracker selected by an off-cwd SDK caller. Recovery now uses the shared shell-safe command renderer with an absolute --pm-path. The new assertion failed before the fix and now passes. Policy descriptions are workspace-local schema data already readable by the same SDK/MCP principal; no separate policy-read permission boundary exists in this local runtime."
+  "2026-09-25T11:31:38.156Z","harness:codex","PR #1307 first head f41e99e5ccb018bc9d69951b11dfa7e04f41a6bf passed all hosted checks, including full-source 100/100/100/100 coverage (CI run 36127818526). CodeRabbit findings were reproduced and fixed; all active linked test commands pass on the revision. New head review and required gates remain the merge boundary."
 learnings[1]{created_at,author,text}:
   "2026-09-25T10:29:51.004Z","harness:codex",A valid parsed option is not the source of a policy refusal. Preserve policy identity and missing metadata at the SDK error boundary so every transport can explain the real recovery.
 files[6]{path,scope,note}:
@@ -41,7 +43,7 @@ files[6]{path,scope,note}:
   tests/unit/sdk/policy/workflow-policy-runtime.spec.ts,project,Implementation and regression evidence
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/policy/workflow-policy-runtime.spec.ts tests/integration/workflow-policy-mcp.spec.ts,project,240,"harness:codex","2026-09-25T10:26:31.536Z",local_mutation,fix/agent-recovery-guidance-worktree-merges
-test_runs[3]:
+test_runs[4]:
   - run_id: test-all-local-mugtyvtx-9s4amf
     kind: test-all
     status: passed
@@ -79,9 +81,22 @@ test_runs[3]:
     linked_tests: 1
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/policy/workflow-policy-runtime.spec.ts tests/integration/workflow-policy-mcp.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mugvpqez-wjgyyd
+    kind: test-all
+    status: passed
+    started_at: "2026-09-25T11:30:07.697Z"
+    finished_at: "2026-09-25T11:30:44.672Z"
+    recorded_at: "2026-09-25T11:30:44.672Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/policy/workflow-policy-runtime.spec.ts tests/integration/workflow-policy-mcp.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/AGENT_RECOVERY_AND_GUIDANCE.md,project,Public behavior and recovery contract
-close_reason: Policy refusal diagnostics and actionable evidence recovery delivered
+close_reason: Policy refusal recovery preserves domain evidence and tracker selection
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

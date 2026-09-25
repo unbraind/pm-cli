@@ -1,16 +1,37 @@
 import { execFileSync } from "node:child_process";
 import { mkdir, writeFile, rm } from "node:fs/promises";
-import { resolveMergeDriverConfigScope } from "../../../../src/sdk/merge/worktree-config.js";
+import { gitWorkspaceEnvironment, resolveMergeDriverConfigScope } from "../../../../src/sdk/merge/worktree-config.js";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { installMergeFence, auditMergeDriverConfiguration } from "../../../../src/sdk/merge/install.js";
+import { installMergeFence, auditMergeDriverConfiguration, findGitWorkspaceRoot } from "../../../../src/sdk/merge/install.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 describe("worktree-local merge drivers", () => {
+  it("binds discovery, installation and auditing to the requested repository despite inherited Git locations", async () => {
+    await withTempPmPath(async ({ tempRoot, pmPath }) => {
+      const foreign = path.join(tempRoot, "foreign");
+      await mkdir(foreign);
+      execFileSync("git", ["init", "-q"], { cwd: tempRoot, env: gitWorkspaceEnvironment() });
+      execFileSync("git", ["init", "-q"], { cwd: foreign, env: gitWorkspaceEnvironment() });
+      const original = { ...process.env };
+      try {
+        process.env.GIT_DIR = path.join(foreign, ".git");
+        process.env.GIT_WORK_TREE = foreign;
+        process.env.GIT_COMMON_DIR = path.join(foreign, ".git");
+        expect(gitWorkspaceEnvironment().PATH).toBe(original.PATH);
+        expect(await findGitWorkspaceRoot(tempRoot)).toBe(tempRoot);
+        await installMergeFence({ workspaceRoot: tempRoot, pmRoot: pmPath });
+        expect(await auditMergeDriverConfiguration(tempRoot)).toMatchObject({ status: "ok" });
+        expect(await auditMergeDriverConfiguration(foreign)).toMatchObject({ status: "missing" });
+      } finally {
+        process.env = original;
+      }
+    });
+  });
   it("preserves main drivers while installing and removing a linked worktree", async () => {
     await withTempPmPath(async ({ tempRoot, pmPath }) => {
       /** Run Git against an explicitly selected temporary worktree. */
-      const git = (cwd: string, args: string[]) => execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
+      const git = (cwd: string, args: string[]) => execFileSync("git", args, { cwd, env: gitWorkspaceEnvironment(), encoding: "utf8" }).trim();
       git(tempRoot, ["init", "-q"]);
       git(tempRoot, ["config", "user.name", "Test"]);
       git(tempRoot, ["config", "user.email", "test@example.invalid"]);
@@ -45,7 +66,7 @@ describe("worktree migration and runtime identity", () => {
   it("rejects foreign sibling drivers and incompatible project version pins", async () => {
     await withTempPmPath(async ({ tempRoot, pmPath }) => {
       /** Run isolated Git commands with bounded child lifetimes. */
-      const git = (cwd: string, args: string[]) => execFileSync("git", args, { cwd, encoding: "utf8", timeout: 10_000 }).trim();
+      const git = (cwd: string, args: string[]) => execFileSync("git", args, { cwd, env: gitWorkspaceEnvironment(), encoding: "utf8", timeout: 10_000 }).trim();
       git(tempRoot, ["init", "-q"]);
       git(tempRoot, ["config", "user.name", "Test"]);
       git(tempRoot, ["config", "user.email", "test@example.invalid"]);
@@ -72,13 +93,18 @@ describe("worktree migration and runtime identity", () => {
   it("preserves main-only settings when enabling worktree config and reports unreadable config", async () => {
     await withTempPmPath(async ({ tempRoot }) => {
       /** Run Git in the temporary migration repository. */
-      const git = (args: string[]) => execFileSync("git", args, { cwd: tempRoot, encoding: "utf8", timeout: 10_000 }).trim();
+      const git = (args: string[]) => execFileSync("git", args, { cwd: tempRoot, env: gitWorkspaceEnvironment(), encoding: "utf8", timeout: 10_000 }).trim();
       git(["init", "-q"]);
       git(["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "--allow-empty", "-qm", "base"]);
       const linked = path.join(tempRoot, "linked");
       git(["worktree", "add", "-qb", "linked", linked]);
       git(["config", "core.worktree", tempRoot]);
       git(["config", "core.bare", "on"]);
+      await writeFile(path.join(tempRoot, ".git/config.lock"), "held by another Git writer");
+      await expect(resolveMergeDriverConfigScope(linked)).rejects.toThrow();
+      expect(git(["config", "--local", "--get", "core.bare"])).toBe("on");
+      expect(git(["config", "--local", "--get", "core.worktree"])).toBe(tempRoot);
+      await rm(path.join(tempRoot, ".git/config.lock"));
       expect(await resolveMergeDriverConfigScope(linked)).toBe("--worktree");
       expect(git(["config", "--worktree", "--get", "core.worktree"])).toBe(tempRoot);
       expect(git(["config", "--worktree", "--get", "core.bare"])).toBe("true");

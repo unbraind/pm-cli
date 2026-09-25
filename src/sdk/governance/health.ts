@@ -338,7 +338,7 @@ function isAdvisoryHealthWarning(
   requireMergeDrivers = false,
 ): boolean {
   return (
-    warning.startsWith("agent_guidance_outdated:") ||
+    warning.startsWith("agent_guidance_") ||
     warning.startsWith("telemetry_") ||
     warning.startsWith("history_stream_over_compact_threshold:") ||
     warning.startsWith("integrity_legacy_hierarchy_") ||
@@ -3179,7 +3179,9 @@ function buildHealthFindings(params: {
       details.remediation_map !== null
         ? (details.remediation_map as Record<string, unknown>)
         : {};
-    const remediation = code === "agent_guidance_outdated" ? "pm init --agent-guidance add" : remediationMap[code];
+    const remediation = code === "agent_guidance_outdated" ? "pm init --agent-guidance add"
+      : code === "agent_guidance_unreadable" ? "Check AGENTS.md and CLAUDE.md read permissions and file types, then retry pm health."
+        : remediationMap[code];
     const severity = isAdvisoryHealthWarning(
       warning,
       params.requireMergeDrivers,
@@ -3367,7 +3369,7 @@ function projectHealthResult(
   };
 }
 
-/** Implements run health for the public runtime surface of this module. */
+/** Inspect tracker integrity and runtime configuration, keeping optional guidance and telemetry failures diagnostic. */
 export async function runHealth(
   global: GlobalOptions,
   options: RunHealthOptions = {},
@@ -3417,9 +3419,9 @@ export async function runHealth(
   );
   const agentGuidance = await runInitAgentGuidance({
     pm_root: pmRoot, cwd: process.cwd(), mode: "status", interactive: false, settings,
-  });
+  }).catch(() => ({ warnings: ["agent_guidance_unreadable:AGENTS.md,CLAUDE.md"] }));
   const settingWarnings = [
-    ...agentGuidance.warnings.filter((warning) => warning.startsWith("agent_guidance_outdated:")),
+    ...agentGuidance.warnings.filter((warning) => warning.startsWith("agent_guidance_")),
     ...settingsValueWarnings,
     ...buildStatusRoleWarnings(statusRoleDiagnostics),
   ];
