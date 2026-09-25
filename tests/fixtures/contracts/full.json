@@ -21784,7 +21784,8 @@
         "core/telemetry/observability.ts",
         "sdk/context-intent-contracts.ts",
         "sdk/governance/assurance-mutation-error.ts",
-        "sdk/lifecycle/create.ts"
+        "sdk/lifecycle/create.ts",
+        "sdk/runtime/schema-preview.ts"
       ],
       "stability": "stable"
     },

@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-25T15:57:47.833Z"
-updated_at: "2026-09-25T16:28:16.678Z"
-closed_at: "2026-09-25T16:28:15.863Z"
-completed_at: "2026-09-25T16:28:15.863Z"
+updated_at: "2026-09-25T16:40:55.684Z"
+closed_at: "2026-09-25T16:40:54.773Z"
+completed_at: "2026-09-25T16:40:54.773Z"
 author: "harness:codex"
 acceptance_criteria: "Unsupported add/remove/preset and shorthand dry-run calls exit with an actionable refusal without changing schema, history or Git merge attributes; supported migration and policy previews remain available; regression fails before the fix and quality gates pass."
 parent: pm-e1va
@@ -16,15 +16,15 @@ risk: medium
 confidence: high
 severity: high
 repro_steps: In an initialized temporary workspace run pm schema add-type Preview --dry-run; inspect schema/types.json and workspace history. The original CLI exits 0 and persists the type. Generic SDK runAction schema remove-type with dryRun=true likewise deletes an existing type.
-resolution: "Added shared SDK preview admission, retained supported migration/policy contracts, and covered CLI shorthand plus top-level/nested runtime options with real disposable-workspace regressions."
-expected_result: "Unsupported previews cannot change schema, history or merge attributes; supported previews remain read-only."
-actual_result: Red regressions reproduced CLI creation and SDK deletion. Linked 185-test verification and 17 layout/integration checks pass after the guard relocation; manual built-CLI/public-SDK acceptance preserves byte snapshots. Full-source coverage is exactly 100/100/100/100; its sole directory-cap failure is fixed and reverified.
+resolution: Refuse unsupported CLI and SDK/MCP schema previews before mutation; preserve supported migration/policy previews and strengthen real workspace regression coverage with typed defect evidence.
+expected_result: "Unsupported previews refuse without schema, history or merge-attribute writes, and terminal defect evidence is complete."
+actual_result: 185 focused schema tests and manual public SDK/CLI acceptance pass; hosted revision 271b2c740 has exact 100/100/100/100 coverage. The regression failed before both CLI and SDK fixes. Structured production-defect and gate-strengthened evidence now records this prevention mechanism.
 affected_version: 2026.9.25
 component: schema
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-e1va,implements,"2026-09-25T15:57:47.833Z","harness:codex","cli:create:dep",detected
   pm-g0b88h,discovered_from,"2026-09-25T15:57:47.833Z","harness:codex","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-09-25T15:57:47.833Z","harness:codex","Duplicate check: all-status keyword dry-run search returned 205 entries; no open matching schema preview owner exists. Closed custom-type lineage was read in full. Found while reproducing PR 1309 clean-checkout changelog drift."
   "2026-09-25T16:00:09.822Z","harness:codex","TDD regression failed before the patch: schema add-type Preview --dry-run exited 0 and wrote the type. The adapter now refuses unsupported dry-run combinations before SDK dispatch, including shorthand and infer-plus-apply; migration and workflow-policy previews remain supported. The integration fixture snapshots schema files, workspace history and merge attributes and checks a valid rename preview stays read-only."
   "2026-09-25T16:02:36.537Z","harness:codex",The same dropped preview flag also affected the generic SDK/MCP schema action. A second red regression proved remove-type with dryRun=true could delete the type. Moved admission to a shared SDK guard used by both transports; tests cover top-level and nested runtime options and preserve supported read/migration paths.
@@ -32,6 +32,7 @@ comments[7]{created_at,author,text}:
   "2026-09-25T16:22:47.595Z","harness:codex","Manual acceptance passed in a disposable workspace using the built CLI and the actual public @unbrained/pm-cli/sdk/runtime export. Unsupported CLI add-type and SDK remove-type previews refused; supported rename preview returned applied=false. Byte snapshots of schema files, workspace history and merge attributes stayed unchanged after each preview. The temporary workspace was removed."
   "2026-09-25T16:26:59.473Z","harness:codex","Full-source run executed 9,308 tests: 9,307 passed and one directory-cap contract failed; two platform-specific tests remained skipped. Exact coverage passed with zero uncovered counts: 65,432 statements, 50,009 branches, 13,560 functions and 62,520 lines. Moved the shared guard into the existing sdk/runtime directory to preserve the 120-file cap without changing behavior; focused layout/schema verification follows."
   "2026-09-25T16:28:15.031Z","harness:codex","After relocating the unchanged guard to sdk/runtime, all 15 directory/workflow contracts and both schema integration cases pass. The linked schema verification also passes all 185 tests. SDK surface and CLI contracts, ESLint, docstrings and documentation links pass; exact full-source coverage remains 100/100/100/100. No caps, exclusions or thresholds were weakened."
+  "2026-09-25T16:40:52.039Z","harness:codex",The full static pipeline caught missing structured escape classification and gate evidence on this new terminal defect. Classified the shipped preview mutation as production_defect and linked the real integration regression that failed before the fix. This preserves the defect-evidence ratchet; no waiver or grandfathering is used.
 files[6]{path,scope}:
   sdk/public-surface.json,project
   src/cli/schema/registration.ts,project
@@ -55,5 +56,13 @@ test_runs[1]:
       node scripts/run-tests.mjs test -- tests/integration/schema-customization.integration.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/commands/workspace/schema-command.spec.ts tests/unit/sdk/schema-migration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/SEARCH_QUALITY.md,project
-close_reason: Unsupported schema previews now refuse before dispatch in CLI and SDK/MCP.
+close_reason: Shared preview admission and structured recurrence evidence verified.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: sandboxed-regression-tests
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/schema-customization.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/schema-customization.integration.spec.ts,"pnpm quality:defect-evidence"
+  hosted_checks[2]: Gates (static),Gates (coverage)
+  owner: pm-s74dca
 body: ""

@@ -6,21 +6,21 @@ status: closed
 priority: 1
 tags[3]: quality,sdk,search
 created_at: "2026-09-25T14:43:31.575Z"
-updated_at: "2026-09-25T16:28:19.470Z"
-closed_at: "2026-09-25T16:28:18.634Z"
-completed_at: "2026-09-25T16:28:18.634Z"
+updated_at: "2026-09-25T16:48:06.780Z"
+closed_at: "2026-09-25T16:48:06.140Z"
+completed_at: "2026-09-25T16:48:06.140Z"
 author: "harness:codex"
 acceptance_criteria: Real loopback and Ollama batching preserve vector order and bounded payloads; individual retrieval regressions fail despite passing aggregate scores; invalid negative-control runs cannot count as gate evidence; public SDK contracts and docs are current.
 parent: pm-ydp6
-resolution: "Delivered bounded adaptive embedding requests and public SDK receipts, per-query retrieval floors and negative-control admission, shared safe schema preview dispatch, portable Changeset schema, and changelog generation with published upstream pm-changelog 2026.9.25."
-expected_result: "Bounded ordered embeddings, query-specific quality failures, mutation-free refused previews and reproducible clean-checkout changelog output."
-actual_result: "Real HTTP, Ollama, temporary CLI/public SDK, packed npx/bunx, retrieval, graph/history and operational checks pass. Exact full-source coverage is 100 on all axes; the sole latest directory-cap failure was fixed and focused reruns pass. Hosted checks must pass before merge; broader scale criteria remain open on canonical items and local transport budgets also fail on unchanged main."
+resolution: "Bounded adaptive embedding requests, per-query retrieval floors, shared mutation-free schema preview refusal, reproducible tracked Changeset schema and published upstream changelog integration; generated contracts and structured defect evidence are synchronized."
+expected_result: "Ordered bounded embeddings, per-query quality admission, safe preview refusal and clean-checkout reproducibility under mandatory gates."
+actual_result: "Hosted source coverage is exactly 100/100/100/100 and platform smokes pass. Local static constituents through SDK import costs pass after fixing generated catalog and defect evidence; transport latency fails on both this host patch and unchanged main without budget changes. Real HTTP, Ollama, temporary public SDK/CLI, npx/bunx and operational evidence is retained. Final hosted admission is required before merge."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-p1g43q,implements,"2026-09-25T14:43:31.575Z","harness:codex","cli:create:dep",detected
   pm-vjgqj5,implements,"2026-09-25T14:43:31.575Z","harness:codex","cli:create:dep",detected
   pm-m2ai6c,verifies,"2026-09-25T14:49:22.453Z","harness:codex","cli:update:dep",detected
   pm-s74dca,implements,"2026-09-25T16:27:40.274Z","harness:codex","cli:update:dep",detected
-comments[18]{created_at,author,text}:
+comments[20]{created_at,author,text}:
   "2026-09-25T14:43:31.575Z","harness:codex","Duplicate check: live all-status keyword search for the exact delivery title returned zero matches; canonical issue pm-vjgqj5 and feature pm-p1g43q are reused. This Changeset records the shipped implementation rather than replacing their broader scale and tuning acceptance criteria."
   "2026-09-25T14:45:07.834Z","harness:codex","Operational evidence: packed package smoke passed for npx and bunx across all 9 packages. Required-mode live Sentry/telemetry gate passed: Sentry access confirmed with 0 high/critical findings in the 14-day window; telemetry finish error rate 1.76 percent and 0 failure rows missing error codes. This verifies the aggregate reliability gate, not exhaustive per-action realtime completeness."
   "2026-09-25T14:49:20.852Z","harness:codex","Release cross-check: scheduled Auto Release 36111244838 failed before publication on coverage, tracked by closed pm-m2ai6c and GH-1304/PR-1307. Recovery Auto Release 36131743095 succeeded and public GitHub Release plus npm latest both resolve to 2026.9.25. GH-1304 already contains its canonical pm link. No second release or tag rewrite was triggered by this work."
@@ -39,9 +39,11 @@ comments[18]{created_at,author,text}:
   "2026-09-25T16:04:25.019Z","harness:codex","PR 1309 first head 6fe831747 passed hosted full coverage, typecheck, compatibility, smoke, CodeFactor, DeepScan and CodSpeed (11 unchanged benchmarks). Static admission failed only at changelog reproducibility before subsequent checks. CodeRabbit and Sourcery explicitly reported quota limits; the Greptile GitHub app produced no review. These are unavailable review signals, not approval. The next revision persists the custom type and adds shared SDK preview admission."
   "2026-09-25T16:07:49.242Z","harness:codex","The clean-worktree changelog now matches byte-for-byte after registering Changeset in tracked project schema. The shared schema-preview guard passes 185 tests, TypeScript, ESLint, docstrings, CLI contracts and graph assurance. Local Greptile was also attempted through the repository gate and explicitly returned skipped=true because its free-review quota is exhausted; no review approval is inferred."
   "2026-09-25T16:28:17.760Z","harness:codex","Second revision adds schema preview safety under pm-s74dca and portable tracked Changeset registration. Full-source coverage is exactly 100/100/100/100: 65432 statements, 50009 branches, 13560 functions and 62520 lines. Its sole test failure was the SDK root directory cap; moving the guard into sdk/runtime resolves it, with 17 layout/integration checks and all 185 linked schema tests passing. Hosted exact-head admission and reviewer retriggers follow the push."
+  "2026-09-25T16:36:54.210Z","harness:codex","PR revision 271b2c740 passes hosted exact full-source coverage, all platform/package smokes, typecheck, security analyzers and changelog reproducibility. Static contracts correctly caught one missing generated error-code source location for the shared preview refusal. Regenerating the error-code catalog also requires rebuilding its full contract snapshot; both are being refreshed together. Review providers remain quota-unavailable; no actionable inline findings were returned."
+  "2026-09-25T16:48:05.351Z","harness:codex","Generated catalog and full contract snapshot now agree. Repository-static-quality assurance, full ESLint/knip/duplicate scans, package/SDK parity, command grammar and flag parity, refusal closure, agent token budgets, tracker context quality, gate registry and SDK import costs pass. Local transport timing remains red on this host under unchanged budgets; unchanged-main control failure is already recorded. Hosted revision 271b2c740 coverage artifact confirms 65432/65432 statements, 50009/50009 branches, 13560/13560 functions and 62520/62520 lines. The only source delta afterward is the generated error-code source-location entry."
 learnings[1]{created_at,author,text}:
   "2026-09-25T15:40:09.277Z","harness:codex",Transport payload limits must count encoded UTF-8 JSON independently of per-item truncation. Pair aggregate retrieval gates with named per-query floors and prove negative controls using actual metric verdicts. Package consumers must resolve active extension type registrations as well as configured types; a default closed-item regression catches omissions that open-only fixtures miss.
-files[12]{path,scope}:
+files[14]{path,scope}:
   .agents/pm/extensions/.managed-extensions.json,project
   .agents/pm/schema/types.json,project
   .gitattributes,project
@@ -50,7 +52,9 @@ files[12]{path,scope}:
   sdk/public-surface.json,project
   src/core/search/embedding-batches.ts,project
   src/core/search/eval-thresholds.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
   src/sdk/runtime/schema-preview.ts,project
+  tests/fixtures/contracts/full.json,project
   tests/integration/search/embedding-batch-http.spec.ts,project
   tests/unit/core/search/eval-thresholds.spec.ts,project
   tests/unit/scripts/release/retrieval-eval-gate.spec.ts,project
@@ -114,5 +118,5 @@ test_runs[4]:
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/SEARCH_QUALITY.md,project
-close_reason: Implementation and verification evidence prepared for reviewed delivery in PR 1309.
+close_reason: Reviewed delivery evidence and generated contracts synchronized for PR 1309.
 body: ""
