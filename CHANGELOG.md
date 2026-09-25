@@ -9,6 +9,7 @@
 
 ### Other
 
+- Adapt OpenClaw test-audit skill to pm SDK and repository test governance ([pm-xvibt6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xvibt6.toon))
 - Bound embedding requests, enforce retrieval floors, and protect schema previews ([pm-g0b88h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/changesets/pm-g0b88h.toon))
 
 ## 2026.9.25 - 2026-09-25

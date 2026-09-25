@@ -24,6 +24,7 @@ it. `docs/COMMANDS.md` is ~29k tokens and `docs/SDK.md` is ~45k.
 | Skill                             | Use when                                              |
 | --------------------------------- | ------------------------------------------------------ |
 | [`pm-developer`](pm-developer/SKILL.md) | Changing code, docs, tests, or release gates      |
+| [`pm-test-audit`](pm-test-audit/SKILL.md) | Writing, reviewing, or auditing tests and their regression value |
 | [`pm-user`](pm-user/SKILL.md)     | Intake, triage, prioritization, planning, reporting    |
 | [`pm-extensions`](pm-extensions/SKILL.md) | Package and extension lifecycle and authoring  |
 | [`pm-sdk`](pm-sdk/SKILL.md)       | Integrations, embedding, and domain packs on the SDK   |

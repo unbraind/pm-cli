@@ -106,6 +106,9 @@ Always read the `omission_receipt` before treating a result as complete. See
 
 ## Verification Defaults
 
+For test authoring, review, or cleanup, apply [pm-test-audit](../pm-test-audit/SKILL.md)
+to preserve independent contracts while removing low-value duplication.
+
 ```bash
 pnpm build
 node scripts/run-tests.mjs test -- <targets>
