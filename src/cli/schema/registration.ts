@@ -2,7 +2,7 @@
 import type { Command } from "commander";
 import { stringArrayOption } from "../option-values.js";
 import { WORKFLOW_POLICY_ACTIONS } from "../../sdk/cli-contracts/enum-contracts.js";
-import { EXIT_CODE, PmCliError, createUnknownSubcommandError, type GlobalOptions } from "../../sdk/runtime-primitives.js";
+import { EXIT_CODE, PmCliError, assertSchemaPreviewSupported, createUnknownSubcommandError, type GlobalOptions } from "../../sdk/runtime-primitives.js";
 import * as schemaModule from "../commands/workspace/schema.js";
 import { looksLikeSchemaSubcommandTypo, parseSchemaOrderOption } from "../schema-registration-helpers.js";
 import { addHiddenOption, collect, formatHookWarnings, getGlobalOptions, printError, printResult, readOptionString, writeStdout } from "../registration-helpers.js";
@@ -307,6 +307,7 @@ async function runSchemaAction(
   const policyAction = WORKFLOW_POLICY_ACTIONS.find(
     (action) => action === normalizedSubcommand,
   );
+  assertSchemaPreviewSupported(normalizedSubcommand, options.dryRun === true);
   if (policyAction) {
     printResult(await schemaModule.runWorkflowPolicyAction(policyAction, name, {
       definition: options.definition,
@@ -462,7 +463,7 @@ export function registerSchemaCommand(program: Command): void {
     )
     .option(
       "--dry-run",
-      "Preview schema changes without writes",
+      "Preview rename/remap migrations and workflow-policy actions without writes",
     )
     .option("--author <value>", "Mutation author")
     .option("--force", "Force ownership/lock override")

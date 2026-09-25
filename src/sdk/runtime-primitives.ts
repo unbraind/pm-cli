@@ -6,6 +6,7 @@
  * reaching into private core modules, while higher-level consumers should
  * prefer the typed operations exported by the main SDK barrel.
  */
+export { assertSchemaPreviewSupported } from "./runtime/schema-preview.js";
 export {
   type MutationCheckpointItem,
   createCheckpointId,

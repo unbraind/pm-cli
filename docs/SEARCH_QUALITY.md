@@ -88,3 +88,20 @@ where the macro average passes while one query fails. These are transport and
 quality-contract proofs, not measured million-item model throughput, semantic
 ranking improvements, parallel scheduling, or durable partial-run resume.
 Those broader acceptance criteria remain tracked by the linked items.
+
+## Portable Delivery Evidence
+
+Workspace-owned custom types used by delivery records must be declared in the
+tracked project schema. An ignored local extension installation does not make
+its types available to a fresh CI checkout. This repository declares `Changeset`
+in `schema/types.json` through `pm schema add-type`, and verifies changelog output
+in a clean checkout with only the published changelog package installed.
+
+Schema `--dry-run` applies to rename/remap migrations and workflow-policy
+actions. Other schema operations refuse the flag before writing, through the
+shared SDK guard used by CLI and SDK/MCP dispatch. For example,
+`pm schema rename-type Spike --to Experiment --dry-run` previews a migration;
+`pm schema add-type Spike --dry-run` is refused. Adding a type is an explicit
+write operation. Tracked by [pm-s74dca](../.agents/pm/issues/pm-s74dca.toon).
+SDK hosts can reuse `assertSchemaPreviewSupported(subcommand, dryRun)` from
+`@unbrained/pm-cli/sdk` when dispatching built-in schema operations.

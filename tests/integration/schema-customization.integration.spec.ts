@@ -1,7 +1,9 @@
-import { writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
+import { runAction } from "../../src/sdk/runtime.js";
 
 /**
  * End-to-end coverage for the schema-customization lifecycle shipped in PR #106:
@@ -13,6 +15,37 @@ import { withTempPmPath } from "../helpers/withTempPmPath.js";
  * schema files, create/update enforcement, and removal stays correct.
  */
 describe("schema customization lifecycle", () => {
+  it("refuses unsupported preview flags without changing schema or history", async () => {
+    await withTempPmPath(async (context) => {
+      expect(context.runCli(["schema", "add-type", "Spike"]).code).toBe(0);
+      const files = [
+        ...["types", "statuses", "fields", "workflows"].map((name) => path.join(context.pmPath, "schema", `${name}.json`)),
+        path.join(context.pmPath, "history", "_workspace.jsonl"),
+        path.join(context.tempRoot, ".gitattributes"),
+      ];
+      const snapshot = () => Promise.all(files.map((file) => existsSync(file) ? readFile(file, "utf8") : null));
+      const before = await snapshot();
+      for (const args of [
+        ["add-type", "Preview"], ["Preview"], ["add-status", "review"],
+        ["add-field", "severity", "--type", "string"], ["remove-type", "Spike"],
+        ["remove-status", "open"], ["remove-field", "severity"], ["apply-preset", "agile"],
+        ["add-type", "--infer", "--apply"],
+      ]) {
+        const result = context.runCli(["schema", ...args, "--dry-run", "--json"]);
+        expect(result.code, args.join(" ")).toBe(2);
+        expect(JSON.parse(result.stderr)).toMatchObject({ code: "invalid_argument_value" });
+        expect(result.stderr).toContain("--dry-run");
+      }
+      for (const preview of [{ dryRun: true }, { options: { dryRun: true } }]) {
+        await expect(runAction({ action: "schema", path: context.pmPath, subcommand: "remove-type", name: "Spike", ...preview })).rejects.toThrow("--dry-run");
+      }
+      await expect(runAction({ action: "schema", path: context.pmPath, subcommand: "list" })).resolves.toMatchObject({ action: "list" });
+      await expect(runAction({ action: "schema", path: context.pmPath, subcommand: "rename-type", name: "Spike", to: "Experiment", dryRun: true })).resolves.toMatchObject({ applied: false });
+      expect(context.runCli(["schema", "rename-type", "Spike", "--to", "Experiment", "--dry-run", "--json"]).code).toBe(0);
+      expect(await snapshot()).toEqual(before);
+    });
+  });
+
   it("adds a custom type, enforces per-type workflows, then removes it with an items warning", async () => {
     await withTempPmPath(async (context) => {
       const addType = context.runCli(

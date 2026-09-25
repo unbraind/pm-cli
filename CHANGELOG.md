@@ -4,11 +4,12 @@
 
 ### Fixed
 
+- Refuse unsupported schema dry-run flags before mutation ([pm-s74dca](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s74dca.toon))
 - Releases from the default branch are supported with analyzer evidence ([pm-u1baah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u1baah.toon))
 
 ### Other
 
-- Bound embedding requests and enforce per-query retrieval floors ([pm-g0b88h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/changesets/pm-g0b88h.toon))
+- Bound embedding requests, enforce retrieval floors, and protect schema previews ([pm-g0b88h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/changesets/pm-g0b88h.toon))
 
 ## 2026.9.25 - 2026-09-25
 

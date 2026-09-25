@@ -3109,6 +3109,12 @@
           "signature": "(adapter: RelationshipGraphAdapter, options?: { workspace?: string; }) => Promise<RelationshipGraphAdapterConformanceReport> | calls: (adapter: RelationshipGraphAdapter, options?: { workspace?: string; }) => Promise<RelationshipGraphAdapterConformanceReport>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "assertSchemaPreviewSupported",
+          "signature": "(subcommand: string, dryRun: boolean) => void | calls: (subcommand: string, dryRun: boolean) => void"
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "ASSURANCE_ACTIONS",
