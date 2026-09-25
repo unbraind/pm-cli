@@ -38,6 +38,7 @@ pm guide release --json
 - [Context and Operations Namespaces](COMMAND_NAMESPACES.md) - native navigation, diagnostics, event streams, and compatibility aliases.
 - [CLI Scripting Contract](SCRIPTING.md) - exit codes, flat mutation receipts versus read envelopes, stdout/stderr boundaries, stable JSON fields, uniform OR filters, and shell composition recipes.
 - [Configuration](CONFIGURATION.md) - settings, storage formats, output, search, validation, and environment variables.
+- [Semantic Batching and Retrieval Quality](SEARCH_QUALITY.md) - independent request bounds, execution receipts, and per-query quality floors.
 - [Testing](TESTING.md) - sandbox-safe local tests and linked-test orchestration.
 - [Completion Portability and Bounded Replication Checks](VALIDATION_PORTABILITY.md) - literal Bash choices across versions and locales, and semantic Git diff collection.
 - [Build and Release Acceptance](BUILD_AND_RELEASE_ACCEPTANCE.md) - complete-build leases and cross-platform registry installation controls.

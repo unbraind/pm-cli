@@ -23,6 +23,7 @@ import {
   resolveSearchCorpusFields,
   resolveSemanticCorpusCharacterLimit,
   executeEmbeddingBatchesWithRetry,
+  type EmbeddingBatchReceipt,
   readVectorizationStatusLedger,
   writeVectorizationStatusLedger,
   REINDEX_LOCK_ID,
@@ -83,6 +84,8 @@ export interface ReindexResult {
     embedded_items: number;
     vector_upserted: number;
     batches_completed: number;
+    /** Actual built-in provider requests, splits, throughput, and byte ceiling. */
+    batching?: EmbeddingBatchReceipt;
   };
   /** Value that configures or reports artifacts for this contract. */
   artifacts: {
@@ -572,6 +575,7 @@ async function executeReindexEmbedding(
       },
     );
     semanticWarnings.push(...embeddingResult.warnings);
+    semanticSummary.batching = embeddingResult.receipt;
     vectors = embeddingResult.vectors;
     embeddingIdentity = buildVectorizationEmbeddingIdentity(
       activeEmbeddingProvider.name,

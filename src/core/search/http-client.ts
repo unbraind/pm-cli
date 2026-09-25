@@ -7,6 +7,19 @@ import { toErrorMessage } from "../shared/primitives.js";
 
 const DEFAULT_SEARCH_HTTP_TIMEOUT_MS = 30_000;
 
+/** HTTP failure with a status code that schedulers can classify without parsing provider text. */
+export class SearchHttpError extends Error {
+  /** HTTP status returned by the provider, retained independently of its response body. */
+  readonly status: number;
+
+  /** Preserve the existing user-facing message and the machine-readable HTTP status. */
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "SearchHttpError";
+    this.status = status;
+  }
+}
+
 /** Documents the search http response payload exchanged by command, SDK, and package integrations. */
 export interface SearchHttpResponse {
   /** Whether the operation completed without a blocking failure. */
@@ -134,8 +147,9 @@ export async function executeSearchJsonRequest<
     if (!response.ok) {
       const responseBody = await readFailedSearchHttpResponseBody(response);
       const detail = responseBody.length > 0 ? `: ${responseBody}` : "";
-      throw new Error(
+      throw new SearchHttpError(
         `${options.requestLabel} failed with status ${response.status} ${response.statusText}${detail}`,
+        response.status,
       );
     }
 

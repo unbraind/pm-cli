@@ -260,7 +260,13 @@ export {
   resolveSearchCorpusFields,
   resolveSemanticCorpusCharacterLimit,
 } from "../core/search/corpus.js";
-export { executeEmbeddingBatchesWithRetry } from "../core/search/embedding-batches.js";
+export {
+  executeEmbeddingBatchesWithRetry,
+  type EmbeddingBatchReceipt,
+  type EmbeddingBatchExecutionOptions,
+  type EmbeddingBatchExecutionResult,
+  type EmbeddingBatchProgressEvent,
+} from "../core/search/embedding-batches.js";
 export { resolveEmbeddingProviders } from "../core/search/providers.js";
 export { resolveSettingsWithSemanticRuntimeDefaults } from "../core/search/semantic-defaults.js";
 export {

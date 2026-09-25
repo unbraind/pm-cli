@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[8]: "area:search","area:semantic",batching,ollama,performance,qwen3,scale,vectorization
 created_at: "2026-08-28T20:35:34.770Z"
-updated_at: "2026-08-28T20:35:34.770Z"
+updated_at: "2026-09-25T15:19:56.157Z"
 deadline: "2026-12-31T00:00:00.000Z"
 author: "harness:codex"
 estimated_minutes: 480
@@ -19,10 +19,28 @@ environment: "pm 2026.8.28 with Ollama 0.32.1, qwen3-embedding:0.6b, LanceDB, em
 repro_steps: "Configure project semantic search for local Ollama qwen3-embedding:0.6b and LanceDB, then run pm reindex --mode semantic --full --progress --json. Observe 2,504 batches for 2,592 inputs and mostly batch size one."
 expected_result: "The provider uses efficient bounded multi-input requests up to an evidence-based byte or token budget, reports effective batching and throughput, and scales through resumable parallel or incremental work without sacrificing deterministic vector order."
 actual_result: "The 3,200-character per-request ceiling equals the 3,200-character per-item limit, reducing nearly every batch to one input despite configured batch size 32."
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-9rxu,implements,"2026-08-28T20:35:34.770Z","harness:codex","cli:create:dep",detected
   pm-a8zm,discovered_from,"2026-08-28T20:35:34.770Z","harness:codex","cli:create:dep",detected
   pm-i25f,recurs_from,"2026-08-28T20:35:34.770Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-i25f,verifies,"2026-09-25T14:35:07.928Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
   "2026-08-28T20:35:34.770Z","harness:codex","Duplicate check evidence: searched every status for Ollama embedding batch throughput one-item batches semantic reindex scale vectorization and million-item latency; pm-i25f only proves settings are consumed and no item owns the measured effective-throughput failure caused by equal per-item and per-request ceilings."
+  "2026-09-25T14:31:28.375Z","harness:codex","TDD evidence: the rich-input regression failed on the existing implementation (request sizes 1,2 instead of 3). The revised scheduler separates the per-input corpus ceiling from a bounded JSON request-byte ceiling, preserves ordering and duplicate positions, splits HTTP 413 or timeout failures, and exposes actual request/retry/split throughput receipts. Real loopback HTTP integration tests pass for 32 rich inputs, Unicode/escaping budgets, payload-too-large recovery and pre-dispatch refusal. Full acceptance and shipping verification remain pending."
+  "2026-09-25T14:39:17.096Z","harness:codex","Real-provider acceptance: local Ollama qwen3-embedding:0.6b embedded 32 synthetic rich inputs (each truncated to the existing 3,200-character corpus ceiling) into 32 ordered 1,024-dimensional vectors in one successful HTTP request. Receipt: planned_batches=1, requests=1, split_batches=0, retries=0, elapsed_ms=3103, inputs_per_second=10.31. This proves effective rich-input batching on the actual model; it is not a million-item throughput extrapolation."
+  "2026-09-25T14:58:50.792Z","harness:codex","Delivery is recorded by Changeset pm-g0b88h. The rich-input collapse is repaired and real-provider acceptance passes. Keep this canonical issue open for tokenizer-aware budgets, parallel/resume recovery, ETA and declared 100k/1M throughput/memory acceptance; those outcomes are not claimed by this PR."
+  "2026-09-25T15:04:16.040Z","harness:codex","Public-package boundary check caught a documentation/export mistake before review: runtime-primitives is an internal SDK barrel, not an exported package subpath. The batching function and its types are now exposed from the existing public sdk/query entrypoint, and the real HTTP integration test imports that barrel. The changelog omission is separately tracked and fixed in pm-changelog as pmc-k1oq."
+files[7]{path,scope}:
+  src/core/search/embedding-batches.ts,project
+  src/core/search/http-client.ts,project
+  src/sdk/governance/reindex.ts,project
+  src/sdk/query.ts,project
+  src/sdk/runtime-primitives.ts,project
+  tests/integration/search/embedding-batch-http.spec.ts,project
+  tests/unit/core/search/embedding-batches.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/search/embedding-batch-http.spec.ts tests/unit/core/search/embedding-batches.spec.ts,project,300,"harness:codex","2026-09-25T14:54:32.209Z",local_mutation,feat/semantic-batching-retrieval-quality
+docs[2]{path,scope}:
+  docs/README.md,project
+  docs/SEARCH_QUALITY.md,project
 body: ""

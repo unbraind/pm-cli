@@ -9,6 +9,7 @@
  * provider swaps (including the offline BM25 provider, pm-75k9) — fail the build
  * instead of silently degrading retrieval quality.
  */
+import { evaluateMetricFloors } from "../core/search/eval-thresholds.js";
 import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -26,7 +27,7 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { coercePositiveInteger } from "../core/shared/primitives.js";
-import {resolvePmRoot } from "../core/store/paths.js";
+import { resolvePmRoot } from "../core/store/paths.js";
 import { runSearch } from "./query/search.js";
 
 export {
@@ -51,7 +52,7 @@ const EVAL_QUERY_SET_ERROR_CONTEXT = {
   ],
 };
 
-/** Documents the eval command options payload exchanged by command, SDK, and package integrations. */
+/** Evaluation inputs shared by SDK hosts and the CLI adapter. */
 export interface EvalOptions {
   /** Default retrieval mode for queries that do not set their own (keyword|semantic|hybrid). */
   mode?: string;
@@ -67,42 +68,44 @@ export interface EvalOptions {
 
 /** Per-query relevance report row emitted by {@link runEval}. */
 export interface EvalQueryReport {
-  /** Value that configures or reports query for this contract. */
+  /** Original golden-query text used for retrieval. */
   query: string;
-  /** Value that configures or reports mode for this contract. */
+  /** Resolved retrieval mode after applying query and run defaults. */
   mode: EvalSearchMode;
-  /** Value that configures or reports relevant total for this contract. */
+  /** Number of unique items judged relevant to this query. */
   relevant_total: number;
-  /** Value that configures or reports retrieved relevant for this contract. */
+  /** Relevant items found within the ranking cutoff. */
   retrieved_relevant: number;
-  /** Value that configures or reports ndcg for this contract. */
+  /** Normalized discounted cumulative gain at the selected cutoff. */
   ndcg: number;
-  /** Value that configures or reports mrr for this contract. */
+  /** Reciprocal rank of the first relevant result, or zero when absent. */
   mrr: number;
-  /** Value that configures or reports precision for this contract. */
+  /** Fraction of positions at the selected cutoff containing relevant items. */
   precision: number;
-  /** Value that configures or reports recall for this contract. */
+  /** Fraction of judged relevant items retrieved at the selected cutoff. */
   recall: number;
+  /** Failed per-query floors, compared against unrounded scores. */
+  violations?: string[];
 }
 
-/** Documents the eval result payload exchanged by command, SDK, and package integrations. */
+/** Rounded ranking evidence and the verdict computed from unrounded metrics. */
 export interface EvalResult {
-  /** Value that configures or reports k for this contract. */
+  /** Maximum ranking positions scored for each query. */
   k: number;
   /** Number of query entries represented by this result. */
   query_count: number;
-  /** Value that configures or reports aggregate for this contract. */
+  /** Equal-weight macro averages across all evaluated queries. */
   aggregate: {
     ndcg: number;
     mrr: number;
     precision: number;
     recall: number;
   };
-  /** Value that configures or reports queries for this contract. */
+  /** Individual query scores and any failed declared floors. */
   queries: EvalQueryReport[];
   /** Present only when `--fail-under` was supplied. */
   fail_under?: number;
-  /** Whether the aggregate nDCG met the gate (always true when no gate is set). */
+  /** Whether every declared per-query floor and optional aggregate nDCG threshold passed. */
   passed: boolean;
 }
 
@@ -230,15 +233,6 @@ const loadEvalQuerySet = async (
     parseEvalQuerySetJson(await readEvalQuerySetFile(queriesPath), queriesPath),
   );
 
-/** Resolves the caller override or tracker-owned default golden-query path. */
-const resolveEvalQueriesPath = (
-  pmRoot: string,
-  queries: string | undefined,
-): string =>
-  queries
-    ? path.resolve(process.cwd(), queries)
-    : path.join(pmRoot, DEFAULT_EVAL_QUERIES_RELATIVE_PATH);
-
 /** Executes and scores one golden query without rounding its aggregate input. */
 const evaluateEvalQuery = async (
   evalQuery: EvalQuery,
@@ -264,6 +258,7 @@ const evaluateEvalQuery = async (
     metrics,
     report: {
       query: evalQuery.query,
+      ...(evalQuery.minimum === undefined ? {} : { violations: evaluateMetricFloors(metrics, evalQuery.minimum) }),
       mode,
       relevant_total: metrics.relevant_total,
       retrieved_relevant: metrics.retrieved_relevant,
@@ -294,7 +289,7 @@ const buildEvalResult = (
     },
     queries: reports,
     ...(failUnder !== undefined ? { fail_under: failUnder } : {}),
-    passed: failUnder === undefined || aggregate.ndcg >= failUnder,
+    passed: (failUnder === undefined || aggregate.ndcg >= failUnder) && reports.every((report) => (report.violations?.length ?? 0) === 0),
   };
 };
 
@@ -303,9 +298,9 @@ const buildEvalResult = (
  * (default `<pmRoot>/search/eval-queries.json`, overridable via `--queries`),
  * runs each query through {@link runSearch} at the resolved mode, scores the
  * returned ranking with the nDCG/MRR/precision/recall metrics, and macro-averages
- * across queries. When `--fail-under` is supplied, `passed` reflects whether the
- * aggregate nDCG@k cleared the threshold; the CLI layer maps a failed gate to a
- * non-zero exit code.
+ * across queries. `passed` requires every declared per-query minimum and, when
+ * supplied, the aggregate `--fail-under` threshold. The CLI maps any failed
+ * threshold to a non-zero exit code.
  */
 export const runEval = async (
   options: EvalOptions,
@@ -316,7 +311,9 @@ export const runEval = async (
   const k = parseEvalK(options.k);
   const defaultMode = parseEvalMode(options.mode);
   const failUnder = parseFailUnder(options.failUnder);
-  const queriesPath = resolveEvalQueriesPath(pmRoot, options.queries);
+  const queriesPath = options.queries
+    ? path.resolve(process.cwd(), options.queries)
+    : path.join(pmRoot, DEFAULT_EVAL_QUERIES_RELATIVE_PATH);
   const querySet = await loadEvalQuerySet(queriesPath);
 
   const reports: EvalQueryReport[] = [];

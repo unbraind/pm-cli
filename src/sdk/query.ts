@@ -69,7 +69,22 @@ export * from "./context-signal-store.js";
 export * from "./context-usage.js";
 export * from "./workspace-memory.js";
 export * from "./duplicates.js";
+export {
+  evaluateMetricFloors,
+  parseEvalMetricFloors,
+  EVAL_METRIC_NAMES,
+  type EvalMetricFloors,
+} from "../core/search/eval-thresholds.js";
 
 export { analyzeDuplicateItems, type DuplicateItemInput, type DuplicateItemsAnalysis } from "./similarity.js";
 
 export { measureItemMetadataReadWork, type ItemMetadataReadWork } from "../core/store/item-metadata-read-work.js";
+
+export {
+  executeEmbeddingBatchesWithRetry,
+  type EmbeddingBatchReceipt,
+  type EmbeddingBatchExecutionOptions,
+  type EmbeddingBatchExecutionResult,
+  type EmbeddingBatchProgressEvent,
+} from "../core/search/embedding-batches.js";
+export type { EmbeddingProviderConfig } from "../core/search/providers.js";
