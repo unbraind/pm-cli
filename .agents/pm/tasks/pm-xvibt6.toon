@@ -6,20 +6,21 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-09-25T17:56:48.617Z"
-updated_at: "2026-09-25T18:00:02.320Z"
-closed_at: "2026-09-25T17:59:31.279Z"
-completed_at: "2026-09-25T17:59:31.279Z"
+updated_at: "2026-09-25T18:15:49.431Z"
+closed_at: "2026-09-25T18:15:48.747Z"
+completed_at: "2026-09-25T18:15:48.747Z"
 author: "harness:codex"
 acceptance_criteria: Discoverable skill and bounded campaign reference; correct sandbox runner and PM lifecycle; upstream license preserved; build and documentation skill gates pass
 parent: pm-z3ez
-resolution: "Added pm-test-audit with bounded audit and campaign references, upstream provenance/license, and developer discovery links"
-expected_result: Repository-specific test-value guidance preserving sandbox safety and independent contracts
-actual_result: "Build, docs-skills gate, and explicit new-skill metadata/link/reachability validation passed"
+resolution: Added linked test-audit guidance with explicit per-command temporary tracker roots for negative controls
+expected_result: Pre-fix experiments cannot mutate repository trackers through ancestor discovery
+actual_result: Entrypoint and campaign require both temporary roots; rebuild and linked docs-skills gate passed
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-z3ez,implements,"2026-09-25T18:00:02.047Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-09-25T17:56:48.617Z","harness:codex","Duplicate check: all-status keyword searches for test-audit returned no items; exact test audit returned seven historical broader audits and agent skills located canonical parent pm-z3ez. This request adds reusable guidance and does not claim those completed audits as outstanding."
   "2026-09-25T17:59:30.446Z","harness:codex","Adapted upstream skill and campaign at e0d80000067d224e93af6107ed093a21e046879f, preserving MIT copyright. Added four-question authoring gate, contract/keeper evidence ledger, SDK versus transport ownership, public sdk/testing retention, isolated pre-fix controls, and prohibition on coverage denominator/gate weakening. Linked from developer workflow and skill index. Validation: pnpm build and docs-skills gate passed; explicit new-skill frontmatter, relative links, and reference reachability passed after correcting tracker path. This is guidance adaptation, not execution of a repository test-deletion campaign or a claim of fresh full-suite coverage."
+  "2026-09-25T18:15:48.126Z","harness:codex","PR 1310 first-head CI passed. CodeRabbit identified that pre-fix direct stateful CLI commands need explicit temporary PM_PATH and PM_GLOBAL_PATH even inside a worktree. Clarified both the entrypoint and campaign reference, while distinguishing intentional repository tracking from test mutations. Build and isolated linked docs-skills test passed again. The embedded SkillSpector cross-skill-access warning is not applicable to these public repository guidance links; no secret or private skill enumeration occurs."
 files[6]{path,scope}:
   .agents/skills/pm-developer/SKILL.md,project
   .agents/skills/pm-test-audit/LICENSE.txt,project
@@ -29,7 +30,7 @@ files[6]{path,scope}:
   .agents/skills/README.md,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   "pnpm quality:docs-skills",project,240,"harness:codex","2026-09-25T17:58:46.787Z",local_mutation,docs/pm-test-audit-skill
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-muh9mgmt-41c88k
     kind: test
     status: passed
@@ -41,7 +42,18 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "pnpm quality:docs-skills",schema,schema,source,local_source_ref
+  - run_id: test-local-muha75rg-0sg0xd
+    kind: test
+    status: passed
+    started_at: "2026-09-25T18:15:21.718Z"
+    finished_at: "2026-09-25T18:15:35.404Z"
+    recorded_at: "2026-09-25T18:15:35.404Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:docs-skills",schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   .agents/skills/pm-test-audit/SKILL.md,project
-close_reason: Repository test-audit skill implemented and documentation checks passed
+close_reason: Test-audit adaptation and review isolation clarification validated
 body: ""

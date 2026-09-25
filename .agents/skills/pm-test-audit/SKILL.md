@@ -60,8 +60,11 @@ node scripts/run-tests.mjs coverage
   workspace outside this checkout and its ancestor workspaces, with both
   `PM_PATH` and `PM_GLOBAL_PATH` isolated. Clean up only directories you created.
 - Do not edit source while a runner or build owns it. Negative controls and
-  pre-fix comparisons belong in an isolated copy/worktree, not a live checkout
-  used by another command. Change the intended condition; unrelated setup
+  pre-fix comparisons belong in an isolated copy/worktree with temporary
+  `PM_PATH` and `PM_GLOBAL_PATH` set for every direct stateful CLI command,
+  including linked-test metadata commands. A nested worktree alone does not
+  isolate tracker discovery. Keep these test roots separate from intentional
+  repository tracking below. Change the intended condition; unrelated setup
   failures do not establish regression sensitivity.
 - Keep canonical full-source coverage at **100/100/100/100**. Do not shrink the
   denominator, add ignore directives, lower gates, or duplicate assertions to

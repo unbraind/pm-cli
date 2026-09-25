@@ -25,7 +25,8 @@ Use only for an authorized broad sweep. Adapted from the upstream
    caps, thresholds, documentation requirements, or lint rules to pass.
 6. **Check preservation independently.** Revisit each removed contract against
    the keeper and current production boundary. Use targeted mutations or pre-fix
-   controls in an isolated copy to establish meaningful failure. Record exact
+   controls in an isolated copy with temporary `PM_PATH` and `PM_GLOBAL_PATH`
+   for every direct stateful CLI command to establish meaningful failure. Record exact
    changed bytes, failure reason, restoration, and passing rerun. Never mutate
    the working tree under a running test command.
 7. **Handle product defects explicitly.** Track a real defect separately within
