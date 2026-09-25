@@ -37,6 +37,14 @@ policy. A singleton failure terminates the operation; failed execution never
 returns a partial vector array. Sequential execution avoids creating a burst
 of concurrent requests against a local embedding model.
 
+HTTP status takes precedence over response text: a non-413 error containing
+the word "timeout" does not trigger splitting. For a planned batch of `n`
+positions, binary subdivision creates at most `2n - 1` request nodes, each
+with at most `scanner_max_batch_retries + 1` attempts. SDK hosts accepting
+untrusted workloads should constrain corpus size, retry settings and the
+caller-supplied byte ceiling to their provider budget; this primitive does not
+impose a universal account-level quota.
+
 `pm reindex` exposes `semantic.batching` for built-in providers:
 
 - `planned_batches` counts batches before adaptation;
@@ -75,7 +83,8 @@ aggregate-only behavior. The public query SDK exports `parseEvalMetricFloors`
 and `evaluateMetricFloors` for package-owned evaluations.
 
 The repository's `quality:retrieval-eval` gate also pins floors by query text
-and retrieval mode. Missing or duplicated required rows fail. Explicit
+and retrieval mode. Missing, unexpected or duplicated identities and mismatched
+declared row counts fail. Explicit
 `--update` refreshes never lower a prior floor or discard a missing required
 query. A baseline update is a reviewed policy change; it is not permission to
 change relevance judgments until a score turns green.

@@ -708,6 +708,7 @@ async function runSearchAction(
   }
 }
 
+/** Render SDK evaluation evidence before refusing any failed aggregate or per-query threshold. */
 async function runEvalAction(
   options: Record<string, unknown>,
   command: Command,

@@ -14,7 +14,8 @@ afterEach(async () => {
   })));
 });
 
-async function providerServer(maxInputs = 32) {
+/** Start a real provider endpoint that records payloads and can refuse dispatches. */
+async function providerServer(maxInputs = 32, failure?: { status: number; body: string }) {
   const requests: Array<{ bytes: number; inputs: string[] }> = [];
   const server = createServer(async (request, response) => {
     const chunks: Buffer[] = [];
@@ -22,6 +23,10 @@ async function providerServer(maxInputs = 32) {
     const body = Buffer.concat(chunks);
     const payload = JSON.parse(body.toString()) as { input: string[] };
     requests.push({ bytes: body.length, inputs: payload.input });
+    if (failure) {
+      response.writeHead(failure.status).end(failure.body);
+      return;
+    }
     if (payload.input.length > maxInputs) {
       response.writeHead(413).end("payload too large");
       return;
@@ -46,6 +51,18 @@ const settings = {
 };
 
 describe("embedding scheduling over real HTTP", () => {
+  it("does not split an HTTP failure merely because its body mentions timeout", async () => {
+    const { provider, requests } = await providerServer(32, { status: 500, body: "upstream timeout" });
+    await expect(executeEmbeddingBatchesWithRetry(provider, settings, ["alpha", "beta"])).rejects.toThrow("500");
+    expect(requests.map((request) => request.inputs)).toEqual([["alpha", "beta"]]);
+  });
+
+  it("does not split a successful HTTP response with an invalid embedding payload", async () => {
+    const { provider, requests } = await providerServer(32, { status: 200, body: '{"embeddings":[]}' });
+    await expect(executeEmbeddingBatchesWithRetry(provider, settings, ["alpha", "beta"])).rejects.toThrow("Ollama embedding response must include embedding or embeddings vectors");
+    expect(requests).toHaveLength(1);
+  });
+
   it("sends 32 rich inputs in one request and reports effective work", async () => {
     const { provider, requests } = await providerServer();
     const inputs = Array.from({ length: 32 }, (_, index) => String.fromCodePoint(65 + index).repeat(3200));

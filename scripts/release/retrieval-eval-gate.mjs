@@ -76,6 +76,7 @@ export async function runRetrievalEval(args, options = {}) {
   });
   const code = await new Promise((resolve, reject) => {
     let settled = false;
+    /** Settle once even when termination emits both an error and a close event. */
     const finish = (error, exitCode) => {
       if (settled) return;
       settled = true;
@@ -99,6 +100,7 @@ export async function runRetrievalEval(args, options = {}) {
   return { code, stdout, stderr };
 }
 
+/** Reject missing or out-of-domain scores before they can become persistent floors. */
 function finiteMetric(value, label) {
   if (!Number.isFinite(value) || value < 0 || value > 1) {
     throw new TypeError(`Retrieval gate ${label} must be finite and in [0, 1]`);
@@ -109,10 +111,23 @@ function finiteMetric(value, label) {
 /** Keep every named query accountable even when the macro average improves. */
 function evaluateQueryFloors(report, baseline) {
   const violations = [];
-  for (const floor of baseline.queries ?? []) {
-    const matches = Array.isArray(report.queries)
-      ? report.queries.filter((query) => query.query === floor.query && query.mode === floor.mode)
-      : [];
+  // Aggregate-only legacy baselines have no identity set to enforce.
+  if (!Array.isArray(baseline.queries)) return violations;
+  const queries = Array.isArray(report.queries) ? report.queries : [];
+  if (report.query_count !== queries.length) violations.push(`query_count:${report.query_count}!=rows:${queries.length}`);
+  if (queries.length !== baseline.queries.length) violations.push(`query_identities:${queries.length}!=baseline:${baseline.queries.length}`);
+  const expected = new Set(baseline.queries.map((floor) => JSON.stringify([floor.query, floor.mode])));
+  const indexed = new Map();
+  for (const query of queries) {
+    const key = JSON.stringify([query.query, query.mode]);
+    if (!expected.has(key)) violations.push(`query:${query.query}:unexpected_identity`);
+    const matches = indexed.get(key) ?? [];
+    if (matches.length > 0) violations.push(`query:${query.query}:duplicate_identity`);
+    matches.push(query);
+    indexed.set(key, matches);
+  }
+  for (const floor of baseline.queries) {
+    const matches = indexed.get(JSON.stringify([floor.query, floor.mode])) ?? [];
     if (matches.length !== 1) {
       violations.push(`query:${floor.query}:expected_one_result:received=${matches.length}`);
       continue;
@@ -182,6 +197,7 @@ function ratchetQueryFloors(queries, previous) {
   return [...floors.values()];
 }
 
+/** Build a monotone baseline while preserving all previously governed query identities. */
 function baselineFromReport(report, previous) {
   if (!Array.isArray(report.queries) || report.queries.length === 0 || report.queries.length !== report.query_count) {
     throw new TypeError("Retrieval report must contain exactly query_count non-empty query rows");
@@ -206,6 +222,7 @@ function baselineFromReport(report, previous) {
   };
 }
 
+/** Read the committed baseline; only first-time baseline creation may omit the file. */
 async function readBaseline(baselinePath, allowMissing) {
   try {
     return JSON.parse(await readFile(baselinePath, "utf8"));

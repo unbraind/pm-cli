@@ -194,7 +194,7 @@ function buildEmbeddingFailureMessage(
 
 /** Classify recoverable request-size failures without interpreting arbitrary HTTP response text. */
 function resolveSplitReason(error: unknown): "payload_too_large" | "timeout" | null {
-  if (error instanceof SearchHttpError && error.status === 413) return "payload_too_large";
+  if (error instanceof SearchHttpError) return error.status === 413 ? "payload_too_large" : null;
   return isEmbeddingTimeoutError(error) ? "timeout" : null;
 }
 

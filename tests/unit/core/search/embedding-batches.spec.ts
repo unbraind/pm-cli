@@ -4,6 +4,7 @@ import { executeEmbeddingBatchesWithRetry } from "../../../../src/core/search/em
 import type { EmbeddingProviderConfig } from "../../../../src/core/search/providers.js";
 import type { PmSettings } from "../../../../src/types/index.js";
 
+/** Create isolated search settings so retry tests cannot mutate shared defaults. */
 function buildSettings(batchSize: number, retries: number): PmSettings {
   return {
     ...SETTINGS_DEFAULTS,

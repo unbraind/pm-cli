@@ -496,6 +496,7 @@ function collectLedgerOrphanIds(
     .sort((left, right) => left.localeCompare(right));
 }
 
+/** Embed the selected corpus through extension or built-in providers, preserving cardinality and execution receipts. */
 async function executeReindexEmbedding(
   settings: PmSettings,
   requestedMode: "keyword" | "semantic" | "hybrid",

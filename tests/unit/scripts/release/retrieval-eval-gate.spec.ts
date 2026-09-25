@@ -28,6 +28,7 @@ const report = {
   ],
 };
 
+/** Emit one deterministic subprocess completion while preserving real stream behavior. */
 function completedChild(
   stdout: string,
   stderr: string,
@@ -84,12 +85,22 @@ describe("retrieval evaluation release gate", () => {
   });
 
   it("rejects hidden per-query regressions and missing or duplicate identities", () => {
-    const guarded = { ...baseline, queries: [{ query: "hard", mode: "keyword", minimum: { recall: 0.6 } }] };
-    expect(evaluateRetrievalGate(report, { ...guarded, queries: [{ query: "hard", mode: "keyword", minimum: { recall: 0.4 } }] })).toEqual([]);
+    const easy = { query: "easy", mode: "keyword", minimum: { recall: 1 } };
+    const guarded = { ...baseline, queries: [easy, { query: "hard", mode: "keyword", minimum: { recall: 0.6 } }] };
+    expect(evaluateRetrievalGate(report, { ...guarded, queries: [easy, { query: "hard", mode: "keyword", minimum: { recall: 0.4 } }] })).toEqual([]);
     expect(evaluateRetrievalGate(report, guarded)).toContain("query:hard:recall:0.5<0.6");
     expect(evaluateRetrievalGate({ ...report, queries: [] }, guarded)).toContain("query:hard:expected_one_result:received=0");
     expect(evaluateRetrievalGate({ ...report, queries: [...report.queries, report.queries[1]] }, guarded)).toContain("query:hard:expected_one_result:received=2");
     expect(evaluateRetrievalGate({ ...report, queries: undefined }, guarded)).toContain("query:hard:expected_one_result:received=0");
+  });
+
+  it("rejects extra identities and inconsistent declared counts even when every required floor passes", () => {
+    const guarded = { ...baseline, queries: report.queries.map((query) => ({ query: query.query, mode: query.mode, minimum: { recall: 0.4 } })) };
+    const extra = { ...report.queries[0], query: "unexpected" };
+    for (const queries of [[...report.queries, extra], [...report.queries, extra, extra]]) {
+      expect(evaluateRetrievalGate({ ...report, queries, query_count: queries.length }, guarded)).toContain("query:unexpected:unexpected_identity");
+    }
+    expect(evaluateRetrievalGate({ ...report, query_count: 3 }, guarded)).toContain("query_count:3!=rows:2");
   });
 
   it("retains missing query floors on updates and rejects malformed identities", async () => {
