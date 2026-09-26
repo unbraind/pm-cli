@@ -2,6 +2,7 @@
 import { mkdtempSync, readFileSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { dispatchDailyRelease, main } from "../../../../scripts/release/dispatch-daily-release.mjs";
 
@@ -17,7 +18,12 @@ beforeEach(() => {
   transport.mockImplementation((_cmd: string, args: string[]) => args[1]?.includes("/runs?")
     ? '[{"total_count":0,"workflow_runs":[]}]' : "[]");
 });
-afterEach(() => { transport.mockReset(); rmSync(root, { recursive: true, force: true }); });
+afterEach(() => {
+  transport.mockReset();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+  rmSync(root, { recursive: true, force: true });
+});
 
 describe("independent morning release dispatch", () => {
   it.each(["2026-09-27T02:45:00Z", "2026-12-01T03:45:00Z", "2026-03-29T02:45:00Z", "2026-10-25T03:45:00Z"])("uses Vienna wall time across seasons and DST: %s", (instant) => {
@@ -53,9 +59,16 @@ describe("independent morning release dispatch", () => {
     expect(existsSync(stateDirectory)).toBe(false);
   });
 
-  it.each(["[]", "{}", '[{"total_count":2,"workflow_runs":[]}]', '[{"total_count":2,"workflow_runs":[{"id":1},{"id":1}]}]'])("refuses incomplete workflow evidence: %s", (raw) => {
+  it.each(["[]", "{}", '[{"workflow_runs":[]}]', '[{"total_count":0,"workflow_runs":null}]', '[{"total_count":2,"workflow_runs":[]}]', '[{"total_count":2,"workflow_runs":[{"id":1},{"id":1}]}]'])("refuses incomplete workflow evidence: %s", (raw) => {
     transport.mockReturnValueOnce("[]").mockReturnValueOnce(raw);
     expect(() => dispatchDailyRelease({ stateDirectory, now })).toThrow("census");
+    expect(existsSync(stateDirectory)).toBe(false);
+  });
+
+  it("refuses a malformed tag response before examining runs or writing intent", () => {
+    transport.mockReturnValueOnce("{}");
+    expect(() => dispatchDailyRelease({ stateDirectory, now })).toThrow("Invalid tag census");
+    expect(transport).toHaveBeenCalledTimes(1);
     expect(existsSync(stateDirectory)).toBe(false);
   });
 
@@ -85,6 +98,27 @@ describe("independent morning release dispatch", () => {
     expect(() => main(["--state-dir", "relative"])).toThrow("absolute");
     for (const args of [[], ["--typo", stateDirectory], ["--state-dir", stateDirectory, "--force"]]) {
       expect(() => main(args)).toThrow("Usage");
+    }
+  });
+
+  it.each([true, false])("executes the actual CLI entrypoint with check=%s and preserves its exit/output contract", async (valid) => {
+    const script = fileURLToPath(new URL("../../../../scripts/release/dispatch-daily-release.mjs", import.meta.url));
+    const cliProcess = { ...process, argv: [process.execPath, script, "--state-dir", stateDirectory, valid ? "--check" : "--invalid"], exitCode: 0 };
+    vi.stubGlobal("process", cliProcess);
+    const output = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.resetModules();
+    await import("../../../../scripts/release/dispatch-daily-release.mjs");
+    expect(existsSync(stateDirectory)).toBe(false);
+    if (valid) {
+      expect(JSON.parse(output.mock.calls[0]?.[0] as string)).toMatchObject({ outcome: "would_dispatch", check: true });
+      expect(cliProcess.exitCode).toBe(0);
+      expect(error).not.toHaveBeenCalled();
+    } else {
+      expect(cliProcess.exitCode).toBe(1);
+      expect(error).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
+      expect(output).not.toHaveBeenCalled();
+      expect(transport).not.toHaveBeenCalled();
     }
   });
 });
