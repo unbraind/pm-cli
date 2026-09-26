@@ -191,6 +191,7 @@ export {
   type ValidateMutationServices,
 } from "./governance/validate.js";
 export { runExtension, type ExtensionCommandAction } from "./extension.js";
+export { inspectStaticExtensionInventory, type StaticExtensionInventoryEntry, type StaticExtensionInventoryError, type StaticExtensionInventoryResult } from "./extension/static-inventory.js";
 export {
   buildExtensionInstallPlan,
   planExtensionDirectoryCopy,

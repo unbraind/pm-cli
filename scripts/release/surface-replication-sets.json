@@ -639,11 +639,11 @@
     },
     {
       "path": "src/cli/register-setup.ts",
-      "expected_count": 6,
+      "expected_count": 7,
       "rule_ownership": "all_occurrences",
       "owner": "pm-0xmajx",
       "disposition": "transport_validation",
-      "reason": "Installation and shell setup arguments are not SDK domain mutations."
+      "reason": "Installation and shell setup arguments, including mutually exclusive static inventory scope flags, are CLI transport checks before SDK reads or mutations."
     },
     {
       "path": "src/cli/register-structured-mutation.ts",

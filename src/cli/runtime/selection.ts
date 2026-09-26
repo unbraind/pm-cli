@@ -21,6 +21,12 @@ import {
 
 const VERSION_FLAG_TOKENS = new Set(["--version", "-V"]);
 
+/** Recognize the read-only package inventory before extension bootstrap. */
+function isStaticExtensionInventoryInvocation(invocationArgv: string[]): boolean {
+  const tokens = stripGlobalBootstrapTokens(invocationArgv);
+  return ["package", "packages", "extension"].includes(tokens[0] ?? "") && tokens[1] === "inventory";
+}
+
 const SETUP_COMMAND_NAMES = new Set(["config", "extension", "init", "install", "package", "packages", "templates", "upgrade"]);
 
 /** Core read command names used to select the list/query registration family. */
@@ -199,6 +205,9 @@ function shouldAttachRichHelpTextForInvocation(invocationArgv: string[]): boolea
 
 /** Decide whether extension command paths must be registered for this invocation. */
 function shouldRegisterDynamicExtensionPaths(_rootProgram: Command, invocationArgv: string[]): boolean {
+  if (isStaticExtensionInventoryInvocation(invocationArgv)) {
+    return false;
+  }
   if (invocationRequestsVersion(invocationArgv)) {
     return false;
   }
@@ -299,4 +308,4 @@ function enforceExplicitRetryForFlagTypos(bootstrapInvocation: ReturnType<typeof
   );
 }
 
-export { CoreCommandRegistrationSelection,LIST_QUERY_COMMAND_NAMES,enforceExplicitRetryForFlagTypos,invocationRequestsVersion,resolveCoreCommandRegistrationSelection,shouldAttachRichHelpTextForInvocation,shouldRegisterDynamicExtensionPaths,shouldRegisterRuntimeSchemaFlags };
+export { CoreCommandRegistrationSelection,LIST_QUERY_COMMAND_NAMES,enforceExplicitRetryForFlagTypos,invocationRequestsVersion,isStaticExtensionInventoryInvocation,resolveCoreCommandRegistrationSelection,shouldAttachRichHelpTextForInvocation,shouldRegisterDynamicExtensionPaths,shouldRegisterRuntimeSchemaFlags };

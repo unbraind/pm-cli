@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 378
+- Catalog error codes: 384
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 359
-- Coverage fraction: 0.050265
+- Uncovered error codes: 365
+- Coverage fraction: 0.049479
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -96,6 +96,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `extension_mutation_guard_invalid_denial` | `extension_mutation_guard_invalid_denial` | uncovered | none | 0 |
 | `extension_mutation_guard_timed_out` | `extension_mutation_guard_timed_out` | uncovered | none | 0 |
 | `extension_update_health_partial_coverage` | `extension_update_health_partial_coverage` | uncovered | none | 0 |
+| `extensions_unreadable` | `extensions_unreadable` | uncovered | none | 0 |
 | `field_duplicate` | `field_duplicate` | uncovered | none | 0 |
 | `field_invalid` | `field_invalid` | uncovered | none | 0 |
 | `field_mcp_input_collision` | `field_mcp_input_collision` | uncovered | none | 0 |
@@ -189,7 +190,10 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `locks_stale_count` | `locks_stale_count` | uncovered | none | 0 |
 | `locks_unreadable` | `locks_unreadable` | uncovered | none | 0 |
 | `malformed_plan_step_evidence` | `malformed_plan_step_evidence` | uncovered | none | 0 |
+| `managed_state_invalid` | `managed_state_invalid` | uncovered | none | 0 |
+| `managed_state_unreadable` | `managed_state_unreadable` | uncovered | none | 0 |
 | `manifest_capabilities_absent` | `manifest_capabilities_absent` | uncovered | none | 0 |
+| `manifest_invalid` | `manifest_invalid` | uncovered | none | 0 |
 | `manifest_unknown_key` | `manifest_unknown_key` | executable | owned_state | 1 |
 | `mcp_annotation_file_unavailable` | `mcp_annotation_file_unavailable` | uncovered | none | 0 |
 | `mcp_stdin_unavailable` | `mcp_stdin_unavailable` | uncovered | none | 0 |
@@ -274,10 +278,12 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `retry_failed` | `retry_failed` | uncovered | none | 0 |
 | `schema_migration_input_required` | `schema_migration_input_required` | uncovered | none | 0 |
 | `semantic_spelling_collision` | `semantic_spelling_collision` | uncovered | none | 0 |
+| `settings_invalid` | `settings_invalid` | uncovered | none | 0 |
 | `settings_read_fs_error` | `settings_read_fs_error` | uncovered | none | 0 |
 | `settings_read_invalid_json` | `settings_read_invalid_json` | uncovered | none | 0 |
 | `settings_read_invalid_schema` | `settings_read_invalid_schema` | uncovered | none | 0 |
 | `settings_read_merge_failed` | `settings_read_merge_failed` | uncovered | none | 0 |
+| `settings_unreadable` | `settings_unreadable` | uncovered | none | 0 |
 | `stale_budget` | `stale_budget` | uncovered | none | 0 |
 | `stale_destination` | `stale_destination` | uncovered | none | 0 |
 | `stale_observed_signature` | `stale_observed_signature` | uncovered | none | 0 |

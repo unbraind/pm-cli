@@ -21307,6 +21307,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "extensions_unreadable",
+      "class": "generic_failure",
+      "code": "extensions_unreadable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Extensions unreadable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/static-inventory.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "field_duplicate",
       "class": "generic_failure",
       "code": "field_duplicate",
@@ -22920,6 +22937,40 @@
     },
     {
       "aliases": [],
+      "canonical_code": "managed_state_invalid",
+      "class": "usage",
+      "code": "managed_state_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Managed state invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/static-inventory.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "managed_state_unreadable",
+      "class": "generic_failure",
+      "code": "managed_state_unreadable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Managed state unreadable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/static-inventory.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "manifest_capabilities_absent",
       "class": "generic_failure",
       "code": "manifest_capabilities_absent",
@@ -22934,6 +22985,23 @@
         "sdk/compose.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "manifest_invalid",
+      "class": "usage",
+      "code": "manifest_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Manifest invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/static-inventory.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -24407,6 +24475,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "settings_invalid",
+      "class": "usage",
+      "code": "settings_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Settings invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/static-inventory.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "settings_read_fs_error",
       "class": "generic_failure",
       "code": "settings_read_fs_error",
@@ -24472,6 +24557,23 @@
         "core/diagnostics/remediation.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "settings_unreadable",
+      "class": "generic_failure",
+      "code": "settings_unreadable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Settings unreadable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/static-inventory.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -27537,6 +27639,14 @@
         "target": "package"
       },
       {
+        "command": "package inventory",
+        "disposition": "target_noun",
+        "noun": "package",
+        "owner": "pm-pbyu",
+        "reason": "",
+        "target": "package"
+      },
+      {
         "command": "package list",
         "disposition": "target_noun",
         "noun": "package",
@@ -27786,6 +27896,14 @@
       },
       {
         "command": "packages install",
+        "disposition": "consolidation",
+        "noun": "package",
+        "owner": "pm-tnud",
+        "reason": "",
+        "target": "package"
+      },
+      {
+        "command": "packages inventory",
         "disposition": "consolidation",
         "noun": "package",
         "owner": "pm-tnud",
@@ -29720,6 +29838,18 @@
         ]
       },
       {
+        "command": "package inventory",
+        "slots": [
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
         "command": "package list",
         "slots": []
       },
@@ -29980,6 +30110,18 @@
             "required": false,
             "value_kind": "string",
             "variadic": true
+          }
+        ]
+      },
+      {
+        "command": "packages inventory",
+        "slots": [
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
           }
         ]
       },

@@ -3,6 +3,24 @@
 Tracked by [pm-ig5cfe](../.agents/pm/issues/pm-ig5cfe.toon),
 [pm-495lkc](../.agents/pm/issues/pm-495lkc.toon), and
 [pm-miy5k6](../.agents/pm/issues/pm-miy5k6.toon).
+Static inventory is tracked by [pm-lhhnx9](../.agents/pm/issues/pm-lhhnx9.toon).
+
+## Read-only configured inventory
+
+Use `pm package inventory --project --json` (or `--global`) for a host GET route
+or agent read. Pass a name to receive an explicit `absent` row. The public SDK
+equivalent is `inspectStaticExtensionInventory({ pmRoot, scope, name })` from
+`@unbrained/pm-cli/sdk`. Both read settings, managed metadata, and manifests
+without importing package entrypoints, running hooks, checking for updates,
+adopting installs, or writing workspace files. An absent managed-state file is
+reported separately from an invalid one. `complete: false` and `errors` mean
+the list must not be treated as authoritative; the CLI also exits nonzero.
+
+`configured_enabled` is the effective saved enablement setting, while
+`runtime_active` is always `null`. The static read does not prove that a package
+will activate successfully. `pm package explore`, `manage`, `doctor`, and
+`describe` probe runtime state and may execute installed package code. Run
+those commands only when an activation probe is intended.
 
 ## Explicit Install-Source Identity
 

@@ -1,0 +1,22 @@
+id: pm-t05d8d
+title: Allow self-isolating linked package tests without inherited PM_PATH
+description: "A non-PM linked package test that initializes disposable SDK workspaces inherits the runner sandbox PM_PATH, so explicit cwd still resolves to a shared tracker and later fixtures fail. Provide a safe explicit context mode that omits inherited PM_PATH for self-isolating commands while keeping source workspace trust and default sandbox policy."
+type: Issue
+status: open
+priority: 1
+tags[5]: "area:sdk","area:test",context-management,gh-1318,packages
+created_at: "2026-09-26T20:34:16.625Z"
+updated_at: "2026-09-26T22:18:49.678Z"
+author: "harness:codex"
+acceptance_criteria: "An explicit linked-test context mode lets non-PM package commands create independent disposable SDK workspaces; default linked tests retain isolated PM_PATH; PM commands cannot bypass tracker isolation; source workspace trust remains enforced; CLI/SDK metadata and execution receipts expose requested and effective mode; focused, full coverage, and temporary package acceptance pass."
+parent: pm-ugqx
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-954h0o,verifies,"2026-09-26T20:34:16.625Z","harness:codex","cli:create:dep",detected
+  pm-alhqbz,verifies,"2026-09-26T20:34:16.625Z","harness:codex","cli:create:dep",detected
+  pm-e97jyf,discovered_from,"2026-09-26T20:34:16.625Z","harness:codex","cli:create:dep",detected
+  pm-6pij,verifies,"2026-09-26T22:18:49.388Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-26T20:34:16.625Z","harness:codex","Duplicate check 2026-09-26: all-status PM searches for GH-1318, inherited PM_PATH, self-isolating linked tests, and context mode found closed pm-e97jyf, pm-alhqbz, pm-954h0o, and pm-6pij. Those delivered source/tracker parity and nested-write protection but do not provide a no-inherited-PM_PATH mode. GitHub report: https://github.com/unbraind/pm-cli/issues/1318."
+notes[1]{created_at,author,text}:
+  "2026-09-26T20:39:23.664Z","harness:codex","Investigation 2026-09-26: linked-test runner currently injects sandbox PM_PATH for every child; parser, item serialization, import normalization, SDK/CLI help, and execution receipts all model schema|tracker|auto. A no-inherited-PM_PATH mode must refuse source working-directory execution: nested pm commands would otherwise rediscover the real source tracker. Safer design is an explicit mode paired with a disposable snapshot or isolated working directory; snapshot retains package files and binds .agents/pm to a sandbox tracker while explicit SDK init cwd can select a new temp tracker. Preserve protected env keys and clone trust checks. No source implementation or acceptance proof yet."
+body: ""

@@ -6,6 +6,10 @@
 
 - SDK complete-list receipt falsely reports legacy aliases for canonical helper ([pm-vf9iaf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vf9iaf.toon))
 
+### Security
+
+- Expose static extension inventory for hosted and agent reads ([pm-lhhnx9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lhhnx9.toon))
+
 ### Other
 
 - Consolidate workspace customization discovery and commands under workspace with permanent compatibility aliases ([pm-npr3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-npr3.toon))
