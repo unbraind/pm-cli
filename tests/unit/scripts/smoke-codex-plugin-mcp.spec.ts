@@ -38,6 +38,20 @@ function mockHarness(request: unknown, callTool: unknown) {
 }
 
 describe("smoke-codex-plugin-mcp", () => {
+  it.each([
+    ["missing server", { mcpServers: {} }],
+    ["non-stdio transport", { mcpServers: { "pm-mcp": { type: "http", command: "node", cwd: "./", args: ["scripts/pm-mcp-server.mjs"] } } }],
+    ["foreign executable", { mcpServers: { "pm-mcp": { type: "stdio", command: "npx", cwd: "./", args: ["scripts/pm-mcp-server.mjs"] } } }],
+    ["foreign working directory", { mcpServers: { "pm-mcp": { type: "stdio", command: "node", cwd: "../", args: ["scripts/pm-mcp-server.mjs"] } } }],
+    ["multiple arguments", { mcpServers: { "pm-mcp": { type: "stdio", command: "node", cwd: "./", args: ["scripts/pm-mcp-server.mjs", "extra"] } } }],
+    ["foreign launcher", { mcpServers: { "pm-mcp": { type: "stdio", command: "node", cwd: "./", args: ["scripts/other.mjs"] } } }],
+  ])("rejects a %s in the portable manifest", async (_label, manifest) => {
+    vi.doMock("node:fs/promises", () => ({
+      readFile: vi.fn(async () => JSON.stringify(manifest)),
+    }));
+    await expect(harness.importModule(SCRIPT)).rejects.toThrow(/Portable Codex MCP manifest/);
+  });
+
   it("runs the full MCP smoke workflow and logs success", async () => {
     const request = vi.fn(async (method: string) => {
       if (method === "server/discover") {

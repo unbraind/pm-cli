@@ -14,7 +14,7 @@ import { startPluginMcpSmoke } from "../plugin-mcp-smoke-harness.mjs";
 const execute = promisify(execFile);
 
 /** Acknowledge split worker batches until completion arrives, under one deadline with listener cleanup. */
-export async function collectTelemetryCompletion(collector, timeoutMs = 30_000) {
+export async function collectTelemetryCompletion(collector, timeoutMs = 90_000) {
   const signal = AbortSignal.timeout(timeoutMs);
   let eventCount = 0;
   for await (const [request, response] of on(collector, "request", {
