@@ -228,6 +228,7 @@ const RELEASE_MUTATION_FLAGS = toCompletionFlagString(resolveSubcommandFlagContr
 const CLAIM_MUTATION_FLAGS = toCompletionFlagString(resolveSubcommandFlagContractsForCommand("claim"));
 
 const COMMAND_COMPLETION_DESCRIPTIONS = [
+  ["workspace", "Workspace initialization, customization, state and snapshots"],
   ["init", "Initialize pm storage for the current workspace"],
   ["config", "Read or update pm settings"],
   ["package", "Manage package lifecycle operations"],

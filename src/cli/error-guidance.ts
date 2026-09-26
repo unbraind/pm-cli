@@ -17,7 +17,7 @@ import {
 import { renderPmCommand } from "./argv-utils.js";
 import { discoverNearbyPmRoot } from "../sdk/tracker-root-discovery.js";
 import { stripGlobalBootstrapTokens } from "../sdk/cli-bootstrap.js";
-import { resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
+import { findPmNamespacedCommand, resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
 
 interface GuidanceMessage {
   policyViolations?: PmCliErrorContext["policy_violations"];
@@ -725,7 +725,11 @@ function buildRefusalEnvelope(
       exit_code: exitCode,
     };
   }
-  const normalizedArgs = message.recovery?.normalized_args ?? [];
+  const invocationArgs = stripGlobalBootstrapTokens(message.recovery?.normalized_args ?? []);
+  const namespaced = findPmNamespacedCommand(invocationArgs);
+  const normalizedArgs = namespaced
+    ? [namespaced.alias, ...invocationArgs.slice(namespaced.canonical_argv.length)]
+    : invocationArgs;
   const candidateFlag = resolveRefusalCandidateFlag(message, normalizedArgs);
   const rejectedValue = resolveRefusalRejectedValue(
     message,
@@ -736,7 +740,7 @@ function buildRefusalEnvelope(
     surface:
       candidateFlag ??
       message.recovery?.missing?.[0] ??
-      inferCommandNameFromRecovery(message.recovery) ??
+      resolveRecoveryCommandName(normalizedArgs) ??
       "command",
     ...(rejectedValue !== undefined ? { rejected_value: rejectedValue } : {}),
     ...(message.recovery?.allowed_values?.length
@@ -1759,6 +1763,7 @@ function buildUnknownCommandGuidance(
   });
 }
 
+/** Explain a rejected positional action with its legal domain, canonical help path and any executable retry. */
 function buildUnknownSubcommandGuidance(
   context: CommanderGuidanceContext | undefined,
 ): GuidanceMessage | null {
@@ -1777,7 +1782,7 @@ function buildUnknownSubcommandGuidance(
     why: "Subcommands are single positional tokens; multi-word action names use hyphens.",
     examples: [
       ...(retryCommand ? [retryCommand] : []),
-      `pm ${commandPath} --help`,
+      `pm ${resolvePmCommandAlias(commandPath)?.canonical ?? commandPath} --help`,
     ],
     nextSteps: retryCommand
       ? [`Retry with the declared hyphenated action: ${retryCommand}`]

@@ -29,6 +29,7 @@ const SCOPED_COMMAND_NAMES = [
   ...PM_POSITIONAL_ACTION_CONTRACTS.map(({ command }) => command),
   "context next",
   "ops validate",
+  "workspace init",
 ];
 const CONTRACTS = {
   summary_toon: "SUMMARY-TOON",

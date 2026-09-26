@@ -55,6 +55,7 @@ const CORE_COMMANDS = new Set([
   "search",
   "update",
   "validate",
+  "workspace",
 ]);
 
 const STANDARD_COMMANDS = new Set([

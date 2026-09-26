@@ -5,12 +5,12 @@ import { EXIT_CODE } from "../../src/sdk/runtime-primitives.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("schema shorthand safety", () => {
-  it("refuses a lowercase unknown action without changing the custom-type registry", async () => {
+  it.each([["schema"], ["workspace", "schema"]])("refuses a lowercase unknown action through %j without changing the custom-type registry", async (...command) => {
     await withTempPmPath(async (context) => {
       const typesPath = path.join(context.pmPath, "schema", "types.json");
       const before = await readFile(typesPath, "utf8");
 
-      const result = context.runCli(["schema", "nonsense", "--json"]);
+      const result = context.runCli([...command, "nonsense", "--json"]);
 
       expect(result.code).toBe(EXIT_CODE.USAGE);
       expect(JSON.parse(result.stderr)).toMatchObject({

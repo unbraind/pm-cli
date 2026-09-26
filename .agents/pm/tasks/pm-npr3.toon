@@ -1,20 +1,24 @@
 id: pm-npr3
-title: "Map the workspace-customization family (init/config/schema/profile) in the target noun grammar: keep as distinct nouns or merge under one customization noun"
+title: Consolidate workspace customization discovery and commands under workspace with permanent compatibility aliases
 description: "Resolve how init, config, schema, and profile map into the simplified noun grammar so workspace customization stays discoverable without multiplying top-level commands."
 type: Task
-status: open
+status: closed
 priority: 3
 tags[3]: "area:cli","area:schema",cli-simplification
 created_at: "2026-07-06T21:57:44.898Z"
-updated_at: "2026-09-08T13:33:31.960Z"
+updated_at: "2026-09-26T12:21:16.589Z"
+closed_at: "2026-09-26T12:07:57.808Z"
+completed_at: "2026-09-26T12:07:57.808Z"
 author: maintainer-agent
 estimated_minutes: 180
-acceptance_criteria: "ADR pm-pbyu's grammar table gains an explicit mapping for init, config, schema, and profile (kept, merged, or verb-moved) with rationale; overlaps are resolved on paper (schema presets vs profile archetypes vs config keys); if any spelling moves, follow-up wiring items are filed under pm-n7rr with alias shims per pm-0z7n"
+acceptance_criteria: "ADR pm-pbyu's grammar table gains an explicit mapping for init, config, schema, and profile (kept, merged, or verb-moved) with rationale; overlaps are resolved on paper (schema presets vs profile archetypes vs config keys); if any spelling moves, follow-up wiring items are filed under pm-n7rr with alias shims per pm-0z7n; Implement the declared workspace init/config/schema/profile routes through the SDK alias registry with permanent root compatibility and persistent npm/Bun acceptance"
 parent: pm-n7rr
 risk: medium
 confidence: medium
-expected_result: "The grammar ADR maps init, config, schema and profile explicitly with rationale, and any moved spelling has a filed wiring item with an alias shim."
-dependencies[6]:
+resolution: "Consolidated workspace initialization/configuration/schema/profiles through permanent SDK-backed aliases, aligned discovery/completion/recovery and optional authoring contracts, corrected real package-first acceptance, and documented touched recovery and fixture functions."
+expected_result: "Preserve SDK/MCP identities, permanent legacy behavior, bounded canonical discovery and real package authoring while meeting required tests and addressing actionable review feedback."
+actual_result: "All registered hosted checks passed on fac50261e, including exact coverage, static/performance, security and package smokes. The documentation-only follow-up passed 88 focused tests and the unchanged docstring-quality gate. Real 89-command linked acceptance and npm/Bun installs passed. CodeRabbit found no actionable code/security issue; final-head hosted checks and review availability will be verified before merge."
+dependencies[7]:
   - id: pm-kl19
     kind: related
     created_at: "2026-07-25T06:29:17.322Z"
@@ -39,4 +43,109 @@ dependencies[6]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
+  - id: pm-dvwm
+    kind: implements
+    created_at: "2026-09-26T12:21:14.939Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[11]{created_at,author,text}:
+  "2026-09-26T09:58:16.773Z","harness:codex","four new workspace alias cases failed on baseline; implementation now keeps init/config/schema/profile as permanent compatibility spellings under workspace, preserving existing SDK operation names and command handlers."
+  "2026-09-26T10:12:46.370Z","harness:codex","Package acceptance passed from the actual npm tarball in fresh temporary npm and Bun projects. npx and bunx --bun exercised version, workspace init --defaults, custom Specimen schema creation, persistent item creation, config reads, profile listing and bounded orientation. Both project and global PM roots were isolated. Compact root-help regression failed before workspace promotion and passed afterward."
+  "2026-09-26T10:30:12.599Z","harness:codex","Full-suite regression evidence: 9320 tests passed and 22 failed before the final corrections. Existing tests exposed incorrect schema refusal identity after namespace normalization and missing workspace completion discovery. The corrected focused runs preserve the original rejected value and registry immutability, canonicalize executable recovery examples, and prove the complete 140-probe refusal corpus. No coverage denominator or threshold was reduced."
+  "2026-09-26T10:43:31.288Z","harness:codex","Token measurements: canonical context --for orient remains 1102 estimated tokens. The alternative contracts-plus-next protocol grows from 5180 to 5203 tokens (23 tokens); its step, protocol and composite baselines were regenerated with unchanged corpus and exact ceilings. Compact contract/root budgets are unchanged. The legacy init help budget is retained under workspace init; workspace help measures 1464 bytes. Opt-in full contracts measure 1332593 bytes, and that exact value replaces the prior 1323656 ceiling without adding headroom. These changes account for canonical relocation, permanent compatibility aliases and optional authoring contracts; no coverage exclusions or thresholds changed."
+  "2026-09-26T10:55:26.071Z","harness:codex","Local static validation passed through docstrings, exports, ESLint, duplicate detection, package/SDK parity, grammar/flag/refusal checks, agent task tokens, tracker context quality and public SDK surface verification. SDK import-cost timing initially exceeded two ceilings, then passed unchanged on isolated rerun. CLI transport timing remains over local ceilings (get 400/362ms, context 460/433ms, next 476/440ms, create 447/398ms, claim 442/415ms); host load averaged 19 on eight cores. Performance budgets are unchanged, and this local failure is not represented as a green full-static run. Full coverage is running separately; hosted exact-head CI will be recorded independently."
+  "2026-09-26T11:11:37.695Z","harness:codex","Second full run: 9342 tests passed, one stale recovery-help expectation failed, and two tests were skipped. Statements/functions/lines were 100 percent; branch coverage was 50067/50068. The missing branch is canonical help-path preservation, not a source defect: extended the existing recovery test to cover both legacy schema and already-canonical workspace schema paths, asserting the same executable canonical help example. Graph composition, record integrity (68104 history entries) and bounded SDK mutation controls passed. Full coverage is being rerun after this test-only correction."
+  "2026-09-26T11:29:09.257Z","harness:codex","Final local evidence: exact full-source coverage passed at 100/100/100/100: 65511 statements, 50068 branches, 13570 functions and 62579 lines, with zero uncovered counts. The full run had 9342 passing tests, two platform skips and one unrelated 30-second absence-tolerance repository-scan timeout; that complete 19-test file passed unchanged in 4.92 seconds on isolated retry. The current linked suite passed all 130 tests, and credential scanning found no tracked secrets. Existing local CLI latency failure remains documented and budgets unchanged; hosted full-suite/static CI and review are still required before merge."
+  "2026-09-26T11:48:37.096Z","harness:codex","PR #1314 first-head evidence (107989a86): hosted coverage, static/performance gates, packaged npx/bunx smoke, and all other checks passed except package-first dogfood, which still searched canonical discovery for init instead of workspace init. Updated its two flag probes and controlled fixtures while preserving real legacy init execution. Inlined three one-use single-line test helpers under the required test-audit policy. CodeRabbit skipped automatic review under its star policy; Sourcery full review is quota-limited. Every delivered first-round bot artifact was read, reacted to and acknowledged in one grouped artifact-specific response. Corrective head will explicitly request reviews."
+  "2026-09-26T11:53:18.120Z","harness:codex","Corrective validation passed: all 39 package-first orchestration unit tests, targeted ESLint, the real 89-command package-first journey, the same journey through pm linked-test execution, Claude plugin smoke (32 tools and protocol matrix), and plugin-cache smoke. The live semantic-provider probe is explicitly skipped unless configured. The only implementation change since the first hosted-green coverage/static head is canonical discovery lookup in the smoke script; runtime SDK/CLI source is unchanged."
+  "2026-09-26T12:07:56.498Z","harness:codex","Second hosted head fac50261e passed every registered check. CodeRabbit full review reported no actionable code/security issue but flagged touched-function documentation; inspected the diff and added purpose-specific docstrings to buildUnknownSubcommandGuidance, fullContractsPayload, handleContractsCommand and runDogfoodSpawn. All seven touched named function declarations now have documentation, and all 88 focused tests passed. The docstring-quality gate passes without baseline changes; its existing 4153 filler comments across 207 files remain the separate pm-dvwm campaign, not a claim of repository-wide high-quality documentation completion. New/edited bot artifacts were individually read and reacted to, with one grouped revision-specific acknowledgement."
+  "2026-09-26T12:21:16.588Z","harness:codex","Final-head static feedback identified one prose-to-edge gap introduced by naming the documentation-quality owner in the closeout note. Added a typed implements edge for the touched-declaration policy after reading the canonical owner; this does not claim its broader filler campaign complete. Graph bounds are unchanged. Runtime source remains identical apart from the reviewed docstring additions, and the latest hosted coverage and all non-static checks passed. CodeRabbit rerun is rate-limited, Sourcery is quota-limited and Greptile has supplied no review evidence."
+notes[1]{created_at,author,text}:
+  "2026-09-26T10:16:10.896Z","harness:codex","Operational checkpoint: dependency audit and GitHub Dependabot/code-scanning/secret-scanning inventories contain zero current findings; tracked-file credential scan passed. Sentry required gate passed with zero unresolved issues in its 14-day window; telemetry gate passed with 1.41 percent finish error rate and zero failures missing error codes. This is gate evidence, not proof that every user action is captured. Auto Release run 36228364743 published 2026.9.26; rolling reliability run 36232967007 remains red for 13 of 31 failed historical attempts and dispatch delay. Graph audit: 2809 nodes, 14036 edges, no isolated items or ordering cycles, 1473 without semantic edges. History integrity passed all 2809 records; 170 terminal records lack structured resolution fields. Existing graph and docstring debt remains outside this delivered grammar scope."
+learnings[2]{created_at,author,text}:
+  "2026-09-26T10:28:06.542Z","harness:codex","A command relocation must update discovery tiers, guide routes, completion expectations, refusal identities, positional census and token probes together. Use the existing schema persistence and refusal tests to expose incorrect namespace inference rather than rewriting their expected rejected value to match a regression."
+  "2026-09-26T11:52:01.500Z","harness:codex",Command-grammar migrations must run the real package-first dogfood journey as well as mocked orchestration tests. Literal discovery fixtures can drift together with the probe and still pass unit tests; the real CLI caught the stale init key. Keep legacy invocation proof while checking canonical discovery under workspace init.
+files[24]{path,scope}:
+  scripts/agent-token-surface-baseline.json,project
+  scripts/dogfood-package-first.mjs,project
+  src/cli/commander-usage.ts,project
+  src/cli/error-guidance.ts,project
+  src/sdk/agent-capability-contracts.ts,project
+  src/sdk/cli-contracts/command-aliases.ts,project
+  src/sdk/cli-contracts/grammar-contracts.ts,project
+  src/sdk/completion/shared.ts,project
+  src/sdk/guide-topics.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/closed-domain-recovery.integration.spec.ts,project
+  tests/integration/refusal-reachability.integration.spec.ts,project
+  tests/integration/schema-shorthand-safety.integration.spec.ts,project
+  tests/integration/workspace/customization-namespace.integration.spec.ts,project
+  tests/unit/cli/bootstrap-args.spec.ts,project
+  tests/unit/cli/command-namespaces.spec.ts,project
+  tests/unit/cli/subcommand-recovery-guidance.spec.ts,project
+  tests/unit/commands/workspace/completion-command.spec.ts,project
+  tests/unit/scripts/dogfood-package-first.spec.ts,project
+  tests/unit/scripts/measure-agent-token-surface.spec.ts,project
+  tests/unit/scripts/refusal-closure-gate.spec.ts,project
+  tests/unit/scripts/release/command-grammar-gate.spec.ts,project
+  tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project
+  tests/unit/sdk/contracts-full-projection.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/command-namespaces.spec.ts tests/unit/cli/bootstrap-args.spec.ts tests/unit/cli/subcommand-recovery-guidance.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/integration/workspace/customization-namespace.integration.spec.ts,project,300,"harness:codex","2026-09-26T10:09:10.953Z",local_mutation,feat/workspace-query-command-grammar
+  node scripts/dogfood-package-first.mjs,project,240,"harness:codex","2026-09-26T11:48:35.715Z",local_mutation,feat/workspace-customization-grammar
+test_runs[4]:
+  - run_id: test-local-mui81imj-guggeg
+    kind: test
+    status: passed
+    started_at: "2026-09-26T10:02:44.783Z"
+    finished_at: "2026-09-26T10:02:59.083Z"
+    recorded_at: "2026-09-26T10:02:59.083Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/command-namespaces.spec.ts tests/unit/cli/bootstrap-args.spec.ts tests/unit/cli/subcommand-recovery-guidance.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/integration/workspace-customization-namespace.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muib280a-tup7rj
+    kind: test
+    status: failed
+    started_at: "2026-09-26T11:27:30.688Z"
+    finished_at: "2026-09-26T11:27:30.826Z"
+    recorded_at: "2026-09-26T11:27:30.826Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/command-namespaces.spec.ts tests/unit/cli/bootstrap-args.spec.ts tests/unit/cli/subcommand-recovery-guidance.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/integration/workspace/customization-namespace.integration.spec.ts,schema,schema,source,foreign_source_ref
+  - run_id: test-local-muib3e3g-5g3sq8
+    kind: test
+    status: passed
+    started_at: "2026-09-26T11:28:11.382Z"
+    finished_at: "2026-09-26T11:28:25.372Z"
+    recorded_at: "2026-09-26T11:28:25.372Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/command-namespaces.spec.ts tests/unit/cli/bootstrap-args.spec.ts tests/unit/cli/subcommand-recovery-guidance.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/integration/workspace/customization-namespace.integration.spec.ts,schema,schema,source,acknowledged
+  - run_id: test-local-muibyoyu-qh7751
+    kind: test
+    status: passed
+    started_at: "2026-09-26T11:51:19.872Z"
+    finished_at: "2026-09-26T11:52:45.798Z"
+    recorded_at: "2026-09-26T11:52:45.798Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/dogfood-package-first.mjs,schema,schema,source,local_source_ref
+docs[7]{path,scope}:
+  CHANGELOG.md,project
+  docs/agent-task-token-baseline.json,project
+  docs/CLI_GRAMMAR.md,project
+  docs/generated/AGENT_CAPABILITY_ROUTING.md,project
+  docs/generated/AGENT_COMMAND_SURFACE.md,project
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
+close_reason: "Workspace customization, package-first smoke alignment and valid review documentation feedback implemented for final review."
 body: "The four workspace-customization commands (init, config, schema, profile) are the only remaining top-level family with no consolidation child under pm-n7rr and no explicit entry in the ADR pm-pbyu mapping. They overlap: schema manages types/statuses/fields/presets, profile applies archetype bundles that include schema+config+templates, config manages settings keys, init bootstraps all of it. Decide whether they stay four nouns (each arguably a domain) or consolidate (e.g. schema+profile under one customization noun) toward the ~15-noun target. This is a mapping/decision task: outcome is the grammar-table entry plus any follow-up wiring items, not a rename itself."

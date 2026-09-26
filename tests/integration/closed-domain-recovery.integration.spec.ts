@@ -20,7 +20,7 @@ describe("closed-domain recovery envelopes", () => {
             tier: "core",
             family: "context",
           }),
-          expect.objectContaining({ name: "init", tier: "core" }),
+          expect.objectContaining({ name: "workspace", tier: "core" }),
         ]),
       );
       expect(rootPayload.subcommands.some(({ name }) => name === "graph")).toBe(

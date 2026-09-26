@@ -35,6 +35,10 @@ describe("canonical navigation and operations namespaces", () => {
   });
 
   it.each([
+    ["init", "workspace", "init"],
+    ["config", "workspace", "config"],
+    ["schema", "workspace", "schema"],
+    ["profile", "workspace", "profile"],
     ["next", "context", "next"],
     ["focus", "context", "focus"],
     ["health", "ops", "health"],

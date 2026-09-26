@@ -192,3 +192,34 @@ command migration.
 Full discovery uses a uniform destination table. Its `reason` column contains
 the rationale for exceptions and an empty string where no exception applies,
 so adding a rationale does not expand every row into repeated field names.
+
+## Workspace customization and optional authoring
+
+Tracked by [pm-npr3](../.agents/pm/tasks/pm-npr3.toon) and
+[pm-uk9dwh](../.agents/pm/tasks/pm-uk9dwh.toon).
+
+| Canonical command | Compatibility spelling | Responsibility |
+| --- | --- | --- |
+| `workspace init` | `init` | Bootstrap storage, settings, and optional guidance |
+| `workspace config` | `config` | Read or change individual project/global settings |
+| `workspace schema` | `schema` | Define types, statuses, fields, and validation contracts |
+| `workspace profile` | `profile` | Apply reusable bundles of schema, settings, and templates |
+
+These facets share workspace ownership. Schema defines what records mean;
+configuration sets operating policy; profiles compose those primitives for a
+domain; initialization creates their storage. The original SDK methods and MCP
+actions keep their names and semantics. Root spellings remain permanent silent
+aliases, including their arguments and flags.
+
+`templates` remains owned by the optional templates package, within the workspace
+authoring family. Its list/save/show operations provide reusable creation defaults;
+they do not define schema or replace profiles. The destination census declares
+these optional paths even when the package is inactive. `guide` remains owned by
+`guide-shell` within the help family, so reading documentation is not a prerequisite
+for core operation. `workspace position` and `workspace snapshot` retain their
+existing state and recovery roles.
+
+The bounded orientation sequence remains `pm context --for orient`, followed by
+`pm contracts --command "workspace schema" --flags-only` (or the relevant command).
+Use `pm workspace --help` to discover customization facets. No additional core noun
+or mandatory package is introduced.
