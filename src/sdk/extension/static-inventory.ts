@@ -7,7 +7,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveGlobalPmRoot } from "../../core/store/paths.js";
 import { normalizeManagedState, type ManagedExtensionRecord } from "./managed-state.js";
-import { normalizeExtensionNameForMatch, parseExtensionManifest } from "./shared.js";
+import { normalizeExtensionNameForMatch, normalizeStringList, parseExtensionManifest } from "./shared.js";
 
 /** One read failure or malformed document that prevents a complete inventory. */
 export interface StaticExtensionInventoryError {
@@ -58,6 +58,11 @@ export interface StaticExtensionInventoryResult {
 /** Distinguish absent optional files from I/O failures. */
 function isMissing(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
+}
+
+/** An absent optional source is trustworthy; malformed and unreadable sources are not. */
+function isTrustedSourceStatus(status: "ok" | "absent" | "invalid" | "unreadable"): boolean {
+  return status !== "invalid" && status !== "unreadable";
 }
 
 /** Validate the saved enablement lists before they influence a hosted read. */
@@ -145,7 +150,10 @@ async function readManifest(manifestPath: string): Promise<{
   try {
     raw = await fs.readFile(manifestPath, "utf8");
   } catch (error: unknown) {
-    return { manifest: null, error: { code: isMissing(error) ? "manifest_invalid" : "manifest_unreadable", path: manifestPath } };
+    if (isMissing(error)) {
+      return { manifest: null, error: { code: "manifest_invalid", path: manifestPath } };
+    }
+    return { manifest: null, error: { code: "manifest_unreadable", path: manifestPath } };
   }
   try {
     const manifest = parseExtensionManifest(JSON.parse(raw) as unknown);
@@ -164,9 +172,11 @@ function projectConfiguredEntry(input: {
   managed: Awaited<ReturnType<typeof readManagedRecords>>;
 }): StaticExtensionInventoryEntry {
   const name = input.manifest?.name ?? input.directory;
-  const configuredEnabled = input.settings.status === "invalid" || input.settings.status === "unreadable" || !input.manifest ? null :
-    !input.settings.disabled.includes(name) && (input.settings.enabled.length === 0 || input.settings.enabled.includes(name));
-  const managed = input.managed.status === "invalid" || input.managed.status === "unreadable" ? null : input.managed.entries.some((entry) =>
+  const enabled = new Set(normalizeStringList(input.settings.enabled));
+  const disabled = new Set(normalizeStringList(input.settings.disabled));
+  const configuredEnabled = !isTrustedSourceStatus(input.settings.status) || !input.manifest ? null :
+    !disabled.has(name) && (enabled.size === 0 || enabled.has(name));
+  const managed = !isTrustedSourceStatus(input.managed.status) ? null : input.managed.entries.some((entry) =>
     normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(name) ||
     normalizeExtensionNameForMatch(entry.directory) === normalizeExtensionNameForMatch(input.directory));
   return {
@@ -200,9 +210,9 @@ export async function inspectStaticExtensionInventory(options: {
   const managed = await readManagedRecords(path.join(extensionsRoot, ".managed-extensions.json"));
   const listed = await readExtensionDirectories(extensionsRoot);
   const errors: StaticExtensionInventoryError[] = [];
-  if (settings.error) errors.push(settings.error);
-  if (managed.error) errors.push(managed.error);
-  if (listed.error) errors.push(listed.error);
+  for (const source of [settings, managed, listed]) {
+    if (source.error) errors.push(source.error);
+  }
 
   const requested = options.name?.trim();
   const extensions: StaticExtensionInventoryEntry[] = [];
@@ -217,7 +227,10 @@ export async function inspectStaticExtensionInventory(options: {
     extensions.push(entry);
   }
   if (requested && extensions.length === 0 && errors.every((error) => error.code !== "extensions_unreadable")) {
-    extensions.push({ name: requested, directory: null, scope, installed: false, status: "absent", configured_enabled: false, managed: false, runtime_active: null });
+    extensions.push({ name: requested, directory: null, scope, installed: false, status: "absent",
+      configured_enabled: isTrustedSourceStatus(settings.status) ? false : null,
+      managed: isTrustedSourceStatus(managed.status) ? false : null,
+      runtime_active: null });
   }
   return { scope, complete: errors.length === 0, settings_status: settings.status, managed_state_status: managed.status, extensions, errors };
 }

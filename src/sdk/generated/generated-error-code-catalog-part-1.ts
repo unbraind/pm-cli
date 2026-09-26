@@ -2371,6 +2371,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     ],
   },
   {
+    code: "manifest_unreadable",
+    meaning: "Manifest unreadable condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/extension/static-inventory.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "manifest_unreadable",
+    aliases: [],
+  },
+  {
     code: "mcp_annotation_file_unavailable",
     meaning: "Mcp annotation file unavailable condition.",
     stability: "provisional",

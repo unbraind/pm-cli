@@ -30,10 +30,13 @@ describe("read-only configured extension inventory", () => {
       expect(await readdir(tempRoot)).not.toContain("activated");
 
       const settings = JSON.parse(settingsBefore.toString()) as { extensions: { disabled: string[] } };
-      settings.extensions.disabled = ["probe"];
+      settings.extensions.disabled = [" probe "];
       await writeFile(settingsPath, JSON.stringify(settings));
       const inactive = await inspectStaticExtensionInventory({ pmRoot: pmPath, name: "probe" });
       expect(inactive.extensions).toMatchObject([{ status: "inactive", configured_enabled: false }]);
+      await writeFile(settingsPath, JSON.stringify({ extensions: { enabled: [" probe "], disabled: [] } }));
+      expect((await inspectStaticExtensionInventory({ pmRoot: pmPath, name: "probe" })).extensions)
+        .toMatchObject([{ status: "installed", configured_enabled: true }]);
     });
   });
 
@@ -59,6 +62,8 @@ describe("read-only configured extension inventory", () => {
       const sdk = await inspectStaticExtensionInventory({ pmRoot: pmPath });
       expect(sdk).toMatchObject({ complete: false, settings_status: "invalid", managed_state_status: "invalid", extensions: [{ status: "malformed_manifest", configured_enabled: null, managed: null }] });
       expect(sdk.errors.map((error) => error.code)).toEqual(["settings_invalid", "managed_state_invalid", "manifest_invalid"]);
+      expect((await inspectStaticExtensionInventory({ pmRoot: pmPath, name: "missing" })).extensions)
+        .toMatchObject([{ status: "absent", configured_enabled: null, managed: null }]);
       const cli = runCli(["package", "inventory", "--json"], { cwd: tempRoot, expectJson: true });
       expect(cli.code).not.toBe(0);
       expect(cli.json).toMatchObject({ complete: false });

@@ -23031,6 +23031,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "manifest_unreadable",
+      "class": "generic_failure",
+      "code": "manifest_unreadable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Manifest unreadable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/static-inventory.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "mcp_annotation_file_unavailable",
       "class": "usage",
       "code": "mcp_annotation_file_unavailable",
