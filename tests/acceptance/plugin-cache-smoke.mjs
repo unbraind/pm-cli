@@ -65,7 +65,10 @@ try {
       const server = portableMcp.mcpServers?.["pm-mcp"];
       assert.equal(portableManifest.version, version);
       assert.equal(portableManifest.name, plugin);
-      assert.equal(server?.type, "stdio");
+      if (server === undefined || server === null) {
+        throw new Error("Portable Codex MCP server declaration is missing");
+      }
+      assert.equal(server.type, "stdio");
       assert.equal(server.command, "node");
       assert.equal(server.cwd, "./");
       assert.deepEqual(server.args, ["./scripts/pm-mcp-server.mjs"]);

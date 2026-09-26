@@ -15,7 +15,13 @@ async function syncPluginSkills(pluginName, commonNames, aliasNames, check) {
   const drift = [];
   const pluginRoot = path.join(repoRoot, "plugins", pluginName, "skills");
   const skillNames = pluginName === "pm-codex" ? [...commonNames, ...aliasNames] : commonNames;
-  const published = await readdir(pluginRoot);
+  const published = await readdir(pluginRoot).catch(async (error) => {
+    if (error?.code !== "ENOENT") throw error;
+    if (check) return null;
+    await mkdir(pluginRoot, { recursive: true });
+    return [];
+  });
+  if (published === null) return [path.relative(repoRoot, pluginRoot)];
   const unexpected = published.filter((name) => !skillNames.includes(name));
   if (unexpected.length > 0) {
     throw new Error(
