@@ -1,45 +1,24 @@
 ---
 name: pm-release
-description: Run compatibility-gated pm-cli release workflows with native pm tools, linked evidence, and public-surface verification.
+description: Use when preparing a pm release, reviewing its gates, publishing, or verifying the released artifact. Keep source, reviewed head, main, tag, registry, and telemetry evidence distinct.
 license: MIT
 ---
 
 # pm Release
 
-Use for release prep, compatibility gates, publication checks, and post-release verification.
+Inspect the release item and current release position before mutation. Search
+for an existing release or incident lineage and reuse it.
 
-## Release Loop
+1. Link the changed files, changelog, compatibility evidence, and release
+   tests to the item that owns them.
+2. Run the build, full coverage, static quality, security, docs, package,
+   version, and hosted analysis gates required by the repository.
+3. Verify the exact reviewed PR head and resolve actionable feedback before
+   merging. A silent or quota-limited provider is unavailable evidence.
+4. After publishing, verify the main commit, tag, GitHub Release, npm
+   package, installed npm and Bun consumers, Sentry, and telemetry separately.
+5. Record immutable close evidence and release the claim.
 
-1. Find or create the release item after duplicate checks.
-2. Claim it and link release docs, changelog, compatibility scripts, and tests.
-3. Run sandboxed compatibility checks before changing release assets.
-4. Run full local gates before tagging or publishing.
-5. Verify public surfaces after publish and record results through `pm_comments`.
-
-Use `pm_run` for release-adjacent pm actions not exposed as narrow tools.
-
-## Progressive Disclosure and Token Discipline
-
-Load the smallest thing that answers the question. Costs are measured.
-
-| Need | Call | Cost |
-|------|------|------|
-| Pick or resume work | `pm_next`, or `pm_context` with `limit: 10` | ~2.1-2.5k tok |
-| Exact flags for one command | `pm_contracts` with `command: "<name>", flagsOnly: true` | ~1-3.4k tok |
-| The whole command surface with per-command ceilings | `pm_contracts` with `summary: true` | ~2.6k tok |
-| An unfamiliar capability family | `pm_run` with `action: "guide", topic: "<topic>", depth: "brief"` | ~0.6-1k tok |
-
-Guide topics are declared at runtime: `pm guide` prints the current index and
-`pm guide <topic> --depth brief` expands one topic. Do not copy the list.
-
-Never load `docs/COMMANDS.md` (~29k tok) or `docs/SDK.md` (~45k tok) whole.
-
-Bound every read in this order: projection (`outputInclude`), then row limit
-(`outputLimit` or `limit`), then `outputBudget`, then `outputCursor` to resume.
-Read the `omission_receipt` before treating a result as complete — a
-budget-truncated read is a claim about the part it withheld, and a truncated
-list must never be summarized as if it were the whole population.
-
-Author identity is detected automatically. Never pass `author` and never set
-`PM_AUTHOR`; the harness, model, effort, role, and topic are probed and recorded
-on every history entry.
+Use the repository release pipeline and pm_contracts rather than a remembered
+flag spelling. Never assume a successful API request proves a scheduled
+release or physical telemetry delivery.

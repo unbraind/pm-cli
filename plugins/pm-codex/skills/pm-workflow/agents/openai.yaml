@@ -1,0 +1,4 @@
+interface:
+  display_name: "pm Workflow"
+  short_description: "Orient and hand off tracked project work"
+  default_prompt: "Use pm to read live context, select existing work, and leave a concise evidence-backed handoff."

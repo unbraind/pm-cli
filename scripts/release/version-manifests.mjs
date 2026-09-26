@@ -5,6 +5,7 @@ import path from "node:path";
 export const FIXED_DISTRIBUTION_MANIFESTS = [
   "plugins/pm-claude/.claude-plugin/plugin.json",
   "plugins/pm-codex/.codex-plugin/plugin.json",
+  "plugins/pm-codex/plugin.json",
   "plugins/pm-claude/package.json",
   "plugins/pm-codex/package.json",
   ".claude-plugin/marketplace.json",

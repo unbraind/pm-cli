@@ -1,0 +1,61 @@
+id: pm-vf9iaf
+title: SDK complete-list receipt falsely reports legacy aliases for canonical helper
+description: listAllComplete() certifies the corpus but its read_output receipt attributes internal compatibility fields to the caller and emits unusable migration hints.
+type: Issue
+status: closed
+priority: 1
+tags[4]: agent-ux,gh-1315,read-output,sdk
+created_at: "2026-09-26T14:54:31.384Z"
+updated_at: "2026-09-26T16:00:05.170Z"
+closed_at: "2026-09-26T15:43:47.397Z"
+completed_at: "2026-09-26T15:43:47.397Z"
+author: "harness:codex"
+acceptance_criteria: Correct SDK receipt provenance without changing certified completeness or genuine caller alias tracking; add a published SDK regression test and verify CLI parity.
+parent: pm-y4aaol
+repro_steps: "See https://github.com/unbraind/pm-cli/issues/1315 for disposable-tracker reproduction."
+resolution: "SDK-generated complete-list options carry private canonical provenance through normalization, suppressing false legacy alias hints while preserving explicit SDK and CLI alias reporting. Added public SDK regression and kept narrow SDK imports lightweight."
+expected_result: listAllComplete certifies the whole corpus and reports no caller legacy aliases or migration hints; explicit aliases remain visible.
+actual_result: Sandboxed SDK integration and temporary packed npm/Bun consumers passed with clean canonical receipts; explicit SDK and CLI alias assertions passed.
+affected_version: 2026.9.26
+component: src/sdk/query
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,verifies,"2026-09-26T14:54:31.384Z","harness:codex","cli:create:dep",detected
+  pm-0z7n,verifies,"2026-09-26T15:42:03.987Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-26T14:54:31.384Z","harness:codex","Duplicate check 2026-09-26: searched all statuses for listAllComplete, legacy alias migration hints, and canonical read receipt. pm-y4aaol is the closed whole-list implementation parent; pm-0z7n is the closed alias foundation; no item tracks this published SDK regression. Source: https://github.com/unbraind/pm-cli/issues/1315."
+  "2026-09-26T14:59:47.699Z","harness:codex","TDD evidence: the public SDK integration test failed before the fix with legacy_aliases_used=[--full,--no-truncate] on listAllComplete(). The same test passes after marking the helper-generated options and preserving provenance through runtime normalization. Explicit SDK aliases remain reported, and the CLI recovery still reports its explicit --no-truncate alias."
+  "2026-09-26T15:04:28.909Z","harness:codex","Manual installed acceptance: packed this branch, installed into separate temporary npm and Bun projects, exercised npx and bunx init/create/version, and called published SDK listAllComplete(). Both returned one certified row and zero legacy aliases. The SDK import-cost gate passed after moving provenance to a lightweight module."
+  "2026-09-26T15:43:46.218Z","harness:codex","Verification: linked sandboxed SDK integration passed 3/3, complete-list unit plus CI directory contracts passed 51/51, TypeScript and ESLint passed, focused exact coverage covers the skill generator 100/100/100/100, installed npm/npx and Bun/bunx temp projects returned a certified one-item corpus with no false aliases, local SDK import-cost gate passed, graph-composition and record-integrity assurance passed, and bounded mutation gate scored 323 killed/7 equivalent. The full local suite first found two structural test failures, both corrected and focused reverified; final exact full coverage remains for required PR CI. Local CLI transport timing missed tight limits, and unchanged main also missed create by 5ms on this host; no timing baseline was weakened."
+files[6]{path,scope,note}:
+  src/sdk/query/complete-list.ts,project,Canonical complete-list receipt provenance and published SDK regression
+  src/sdk/read-output-contracts.ts,project,Canonical complete-list receipt provenance and published SDK regression
+  src/sdk/read-output/provenance.ts,project,Lightweight private provenance contract keeps narrow SDK imports lean
+  src/sdk/runtime-input.ts,project,Canonical complete-list receipt provenance and published SDK regression
+  tests/integration/sdk-complete-list.integration.spec.ts,project,Canonical complete-list receipt provenance and published SDK regression
+  tests/unit/sdk/query/complete-list.spec.ts,project,Public option shape excludes private provenance symbol
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/sdk-complete-list.integration.spec.ts,project,180,"harness:codex","2026-09-26T14:59:46.707Z",local_mutation,feat/portable-codex-agent-onboarding
+test_runs[1]:
+  - run_id: test-local-muik7aa9-n4l8li
+    kind: test
+    status: passed
+    started_at: "2026-09-26T15:43:10.054Z"
+    finished_at: "2026-09-26T15:43:23.601Z"
+    recorded_at: "2026-09-26T15:43:23.601Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/sdk-complete-list.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated by latest pm-changelog from closed issue evidence
+close_reason: Correct canonical SDK complete-list receipt provenance
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: sdk-complete-list-receipt
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/sdk-complete-list.integration.spec.ts against pre-fix source
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/sdk-complete-list.integration.spec.ts
+  hosted_checks[2]: Gates (coverage),codecov/patch
+  owner: pm-cli maintainers
+body: ""

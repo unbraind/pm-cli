@@ -53,6 +53,10 @@ import {
   type PmReadOutputSessionState,
 } from "./read-output-session.js";
 import { decodeQueryCursorEnvelope, encodeQueryCursor } from "./pagination.js";
+import {
+  READ_OUTPUT_INVOCATION_PROVENANCE,
+  type PmReadOutputInvocationProvenance,
+} from "./read-output/provenance.js";
 
 /** Stable output dimensions shared by every read surface. */
 export const PM_READ_OUTPUT_DIMENSIONS = [
@@ -353,19 +357,6 @@ const CANONICAL_OPTIONS: Record<PmReadOutputDimension, string> = {
   cost: "--output-budget",
   encoding: "--output-format",
 };
-
-const READ_OUTPUT_INVOCATION_PROVENANCE = Symbol.for(
-  "pm.readOutputInvocationProvenance",
-);
-
-interface PmReadOutputInvocationProvenance {
-  /** Canonical include modes forwarded through command-local option keys. */
-  canonical_include_modes: string[];
-  /** Compatibility aliases observed before defaults or canonical forwarding. */
-  explicit_legacy_aliases: string[];
-  /** Whether the CLI captured the complete set of caller-supplied aliases. */
-  cli_invocation_observed?: boolean;
-}
 
 type PmReadOutputOptionsWithProvenance = Record<string, unknown> & {
   [READ_OUTPUT_INVOCATION_PROVENANCE]?: PmReadOutputInvocationProvenance;
@@ -963,7 +954,7 @@ function shouldIgnoreReadOutputLegacyAlias(
 ): boolean {
   if (!provenance) return false;
   const explicitLegacyAliases = new Set(provenance.explicit_legacy_aliases);
-  if (provenance.cli_invocation_observed === true) {
+  if (provenance.cli_invocation_observed === true || provenance.sdk_invocation_observed === true) {
     return !explicitLegacyAliases.has(flag);
   }
   const forwardedIncludeAliases = new Set(

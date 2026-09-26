@@ -1,0 +1,4 @@
+interface:
+  display_name: "pm Developer"
+  short_description: "Deliver code with linked pm evidence"
+  default_prompt: "Use pm to claim, implement, verify, document, and close this repository change."

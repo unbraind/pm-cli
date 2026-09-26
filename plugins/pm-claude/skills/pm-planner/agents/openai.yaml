@@ -1,0 +1,4 @@
+interface:
+  display_name: "pm Planner"
+  short_description: "Plan and connect project work"
+  default_prompt: "Use pm to deduplicate this request, plan its work, and link it to the project outcome."

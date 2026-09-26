@@ -30,6 +30,25 @@ describe("complete list SDK acceptance", () => {
 
       expect(result.complete_list.full_projection).toBe(true);
       expect(result.projection).toEqual({ mode: "full", fields: null });
+      expect(result.read_output.legacy_aliases_used).toEqual([]);
+      expect(result.read_output.migration_hints).toEqual([]);
+      expect(result.read_output.canonical_options_used).toEqual([
+        "--output-include",
+        "--output-limit",
+        "--output-budget",
+      ]);
+
+      const explicitAliases = await client.list({
+        excludeTerminal: false,
+        full: true,
+        noTruncate: true,
+        outputBudget: "unbounded",
+        outputLimit: "unbounded",
+      });
+      expect(explicitAliases.read_output?.legacy_aliases_used).toEqual([
+        "--full",
+        "--no-truncate",
+      ]);
     });
   });
 
@@ -166,6 +185,7 @@ describe("complete list SDK acceptance", () => {
         strings_compacted: false,
         rows_compacted: false,
         result_omitted: false,
+        legacy_aliases_used: ["--no-truncate"],
       });
       expect(recovered.omission_receipt).toEqual({
         has_omissions: false,

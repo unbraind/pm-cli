@@ -58,8 +58,24 @@ try {
       PATH: "",
       npm_config_offline: "true",
     };
+    let serverPath = path.join(pluginRoot, "scripts", "pm-mcp-server.mjs");
+    if (plugin === "pm-codex") {
+      const portableManifest = JSON.parse(await readFile(path.join(pluginRoot, "plugin.json"), "utf8"));
+      const portableMcp = JSON.parse(await readFile(path.join(pluginRoot, "mcp.json"), "utf8"));
+      const server = portableMcp.mcpServers?.["pm-mcp"];
+      assert.equal(portableManifest.version, version);
+      assert.equal(portableManifest.name, plugin);
+      if (server === undefined || server === null) {
+        throw new Error("Portable Codex MCP server declaration is missing");
+      }
+      assert.equal(server.type, "stdio");
+      assert.equal(server.command, "node");
+      assert.equal(server.cwd, "./");
+      assert.deepEqual(server.args, ["./scripts/pm-mcp-server.mjs"]);
+      serverPath = path.resolve(pluginRoot, server.args[0]);
+    }
     const smoke = await startPluginMcpSmoke({
-      serverPath: path.join(pluginRoot, "scripts", "pm-mcp-server.mjs"),
+      serverPath,
       author: `${plugin}-cache-smoke`,
       tmpPrefix: `${plugin}-cache-smoke-`,
       environment: offline,
