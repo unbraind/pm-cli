@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Other
+
+- Dispatch daily releases at 04:45 Europe/Vienna with the hosted schedule as fallback ([pm-9url9h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-9url9h.toon))
+
 ## 2026.9.26 - 2026-09-26
 
 ### Fixed
@@ -9,7 +15,6 @@
 
 ### Other
 
-- Dispatch daily releases at 04:45 Europe/Vienna with the hosted schedule as fallback ([pm-9url9h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-9url9h.toon))
 - Adapt OpenClaw test-audit skill to pm SDK and repository test governance ([pm-xvibt6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xvibt6.toon))
 - Bound embedding requests, enforce retrieval floors, and protect schema previews ([pm-g0b88h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/changesets/pm-g0b88h.toon))
 

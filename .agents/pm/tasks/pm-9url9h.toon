@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[2]: "area:release",automation
 created_at: "2026-09-26T07:47:55.227Z"
-updated_at: "2026-09-26T08:25:19.772Z"
+updated_at: "2026-09-26T08:27:01.936Z"
 closed_at: "2026-09-26T08:25:19.031Z"
 completed_at: "2026-09-26T08:25:19.031Z"
 author: "harness:codex"
@@ -19,7 +19,7 @@ actual_result: "58 linked tests, 37 isolated rechecks, full local static quality
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-44u3wt,discovered_from,"2026-09-26T07:47:55.227Z","harness:codex","cli:create:dep",detected
   pm-e70zh5,discovered_from,"2026-09-26T07:47:55.227Z","harness:codex","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-09-26T07:47:55.227Z","harness:codex","text=Duplicate checks: context plus open/in_progress listings and keyword searches for release schedule, dispatch, reliability and morning. Existing timing and reliability work delivered measurement rather than an external clock. Live run 36111244838 was created 08:07:47Z and its job started 08:07:51Z against cron 02:35Z. The release environment has branch policy only and no wait timer."
   "2026-09-26T07:50:59.505Z","harness:codex","Decision: user approved a local systemd timer plus the unchanged GitHub fallback. Primary target 04:45 Europe/Vienna with one 05:00 retry opportunity for failures before dispatch. Native cron stays 02:35 UTC and reliability-policy values remain unchanged, preserving historical attribution. External dispatches stay outside the native scheduled denominator. Service checks active release workflows and exact UTC-day tags; an exclusive daily intent marker precedes the POST so uncertain acceptance cannot cause an automatic repeat. No publish or workflow dispatch is performed during setup checks."
   "2026-09-26T07:52:35.437Z","harness:codex","Verification: all 53 linked tests pass (21 dispatcher, 8 native reliability, 24 release automation contracts). systemd-analyze validates the private units and confirms 04:45 CEST on September 27 and 04:45 CET after the October 25 transition. An unattended read-only transient user service, with the same protected filesystem and existing keyring authentication as production, completed in 2.7 seconds and reported would_dispatch. It created no intent and sent no workflow dispatch. User linger was already enabled. Timer activation remains deferred until reviewed delivery."
@@ -27,6 +27,7 @@ comments[7]{created_at,author,text}:
   "2026-09-26T08:04:27.483Z","harness:codex","Contention follow-up: all 37 tests in the five affected files pass with one worker (181.53 seconds): merge-receipt-health-classification, operation-source-contract, absence-tolerance-gate, aggregate-set-members and refusal-closure-gate. No unrelated production or test code was changed. The interrupted full coverage run remains explicitly unproved; CI must supply full coverage evidence."
   "2026-09-26T08:11:28.443Z","harness:codex","Final local static evidence: pnpm quality:static completed successfully, including lint, zero-duplicate scans, workflow policy checks, generated-contract checks, repository static quality, package/public-surface checks, tracker governance and bounded mutation controls (323 killed, 7 equivalent, 330 total). No native workflow or reliability-policy file changed. The reviewed delivery includes the generated changelog."
   "2026-09-26T08:25:18.187Z","harness:codex","Hosted review follow-up: the first PR head passed all functional tests but exact coverage identified the new script CLI entrypoint and malformed census branches. Added actual-entrypoint success/error tests and malformed API negative controls without changing production code or coverage policy. All 58 linked release tests pass. Focused dispatcher coverage is 56/56 statements, 45/45 branches, 9/9 functions and 42/42 lines. Focused lint and zero-duplicate checks pass. First-head CodeFactor and DeepScan report zero issues; final-head hosted checks remain required. Sourcery reported quota exhaustion; CodeRabbit review was explicitly requested through the reviewer API."
+  "2026-09-26T08:27:01.936Z","harness:codex","Reviewed-base synchronization: merged the independently created v2026.9.26 version commit into this branch without changing its files, rebuilt the checkout, and verified version sync. Canonical changelog regeneration correctly keeps pm-9url9h under Unreleased and preserves the existing 2026.9.26 section. This observes a version commit/tag, not a publication-success claim; the original Auto Release run is still being watched."
 files[2]{path,scope}:
   scripts/release/dispatch-daily-release.mjs,project
   tests/unit/scripts/release/dispatch-daily-release.spec.ts,project
