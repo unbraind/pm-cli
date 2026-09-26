@@ -6,18 +6,18 @@ status: closed
 priority: 3
 tags[3]: "area:cli","area:schema",cli-simplification
 created_at: "2026-07-06T21:57:44.898Z"
-updated_at: "2026-09-26T11:53:20.599Z"
-closed_at: "2026-09-26T11:53:19.257Z"
-completed_at: "2026-09-26T11:53:19.257Z"
+updated_at: "2026-09-26T12:07:59.137Z"
+closed_at: "2026-09-26T12:07:57.808Z"
+completed_at: "2026-09-26T12:07:57.808Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "ADR pm-pbyu's grammar table gains an explicit mapping for init, config, schema, and profile (kept, merged, or verb-moved) with rationale; overlaps are resolved on paper (schema presets vs profile archetypes vs config keys); if any spelling moves, follow-up wiring items are filed under pm-n7rr with alias shims per pm-0z7n; Implement the declared workspace init/config/schema/profile routes through the SDK alias registry with permanent root compatibility and persistent npm/Bun acceptance"
 parent: pm-n7rr
 risk: medium
 confidence: medium
-resolution: "Consolidated init/config/schema/profile under workspace through the SDK alias registry with permanent root compatibility, stable SDK/MCP identities, canonical recovery/discovery/completion and explicit optional authoring ownership; aligned the real package-first smoke probe with canonical discovery."
-expected_result: Canonical customization must preserve persistent SDK behavior and legacy invocations while bounded discovery and installed-package authoring pass real acceptance gates.
-actual_result: "130 original linked tests and 39 corrective orchestration tests passed. Exact full-source 100/100/100/100 and hosted coverage/static gates passed on 107989a86. The corrective 89-command package journey passed directly and through pm, and Claude/plugin-cache smokes passed. npm/npx and Bun/bunx packed acceptance passed; corrective-head hosted checks and bot review remain required before merge."
+resolution: "Consolidated workspace initialization/configuration/schema/profiles through permanent SDK-backed aliases, aligned discovery/completion/recovery and optional authoring contracts, corrected real package-first acceptance, and documented touched recovery and fixture functions."
+expected_result: "Preserve SDK/MCP identities, permanent legacy behavior, bounded canonical discovery and real package authoring while meeting required tests and addressing actionable review feedback."
+actual_result: "All registered hosted checks passed on fac50261e, including exact coverage, static/performance, security and package smokes. The documentation-only follow-up passed 88 focused tests and the unchanged docstring-quality gate. Real 89-command linked acceptance and npm/Bun installs passed. CodeRabbit found no actionable code/security issue; final-head hosted checks and review availability will be verified before merge."
 dependencies[6]:
   - id: pm-kl19
     kind: related
@@ -43,7 +43,7 @@ dependencies[6]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[9]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-09-26T09:58:16.773Z","harness:codex","four new workspace alias cases failed on baseline; implementation now keeps init/config/schema/profile as permanent compatibility spellings under workspace, preserving existing SDK operation names and command handlers."
   "2026-09-26T10:12:46.370Z","harness:codex","Package acceptance passed from the actual npm tarball in fresh temporary npm and Bun projects. npx and bunx --bun exercised version, workspace init --defaults, custom Specimen schema creation, persistent item creation, config reads, profile listing and bounded orientation. Both project and global PM roots were isolated. Compact root-help regression failed before workspace promotion and passed afterward."
   "2026-09-26T10:30:12.599Z","harness:codex","Full-suite regression evidence: 9320 tests passed and 22 failed before the final corrections. Existing tests exposed incorrect schema refusal identity after namespace normalization and missing workspace completion discovery. The corrected focused runs preserve the original rejected value and registry immutability, canonicalize executable recovery examples, and prove the complete 140-probe refusal corpus. No coverage denominator or threshold was reduced."
@@ -53,6 +53,7 @@ comments[9]{created_at,author,text}:
   "2026-09-26T11:29:09.257Z","harness:codex","Final local evidence: exact full-source coverage passed at 100/100/100/100: 65511 statements, 50068 branches, 13570 functions and 62579 lines, with zero uncovered counts. The full run had 9342 passing tests, two platform skips and one unrelated 30-second absence-tolerance repository-scan timeout; that complete 19-test file passed unchanged in 4.92 seconds on isolated retry. The current linked suite passed all 130 tests, and credential scanning found no tracked secrets. Existing local CLI latency failure remains documented and budgets unchanged; hosted full-suite/static CI and review are still required before merge."
   "2026-09-26T11:48:37.096Z","harness:codex","PR #1314 first-head evidence (107989a86): hosted coverage, static/performance gates, packaged npx/bunx smoke, and all other checks passed except package-first dogfood, which still searched canonical discovery for init instead of workspace init. Updated its two flag probes and controlled fixtures while preserving real legacy init execution. Inlined three one-use single-line test helpers under the required test-audit policy. CodeRabbit skipped automatic review under its star policy; Sourcery full review is quota-limited. Every delivered first-round bot artifact was read, reacted to and acknowledged in one grouped artifact-specific response. Corrective head will explicitly request reviews."
   "2026-09-26T11:53:18.120Z","harness:codex","Corrective validation passed: all 39 package-first orchestration unit tests, targeted ESLint, the real 89-command package-first journey, the same journey through pm linked-test execution, Claude plugin smoke (32 tools and protocol matrix), and plugin-cache smoke. The live semantic-provider probe is explicitly skipped unless configured. The only implementation change since the first hosted-green coverage/static head is canonical discovery lookup in the smoke script; runtime SDK/CLI source is unchanged."
+  "2026-09-26T12:07:56.498Z","harness:codex","Second hosted head fac50261e passed every registered check. CodeRabbit full review reported no actionable code/security issue but flagged touched-function documentation; inspected the diff and added purpose-specific docstrings to buildUnknownSubcommandGuidance, fullContractsPayload, handleContractsCommand and runDogfoodSpawn. All seven touched named function declarations now have documentation, and all 88 focused tests passed. The docstring-quality gate passes without baseline changes; its existing 4153 filler comments across 207 files remain the separate pm-dvwm campaign, not a claim of repository-wide high-quality documentation completion. New/edited bot artifacts were individually read and reacted to, with one grouped revision-specific acknowledgement."
 notes[1]{created_at,author,text}:
   "2026-09-26T10:16:10.896Z","harness:codex","Operational checkpoint: dependency audit and GitHub Dependabot/code-scanning/secret-scanning inventories contain zero current findings; tracked-file credential scan passed. Sentry required gate passed with zero unresolved issues in its 14-day window; telemetry gate passed with 1.41 percent finish error rate and zero failures missing error codes. This is gate evidence, not proof that every user action is captured. Auto Release run 36228364743 published 2026.9.26; rolling reliability run 36232967007 remains red for 13 of 31 failed historical attempts and dispatch delay. Graph audit: 2809 nodes, 14036 edges, no isolated items or ordering cycles, 1473 without semantic edges. History integrity passed all 2809 records; 170 terminal records lack structured resolution fields. Existing graph and docstring debt remains outside this delivered grammar scope."
 learnings[2]{created_at,author,text}:
@@ -139,5 +140,5 @@ docs[7]{path,scope}:
   docs/generated/AGENT_COMMAND_SURFACE.md,project
   docs/generated/FLAG_LEXICON_BUDGETS.md,project
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
-close_reason: Implemented workspace customization and corrected the package-first canonical-discovery probe before merge.
+close_reason: "Workspace customization, package-first smoke alignment and valid review documentation feedback implemented for final review."
 body: "The four workspace-customization commands (init, config, schema, profile) are the only remaining top-level family with no consolidation child under pm-n7rr and no explicit entry in the ADR pm-pbyu mapping. They overlap: schema manages types/statuses/fields/presets, profile applies archetype bundles that include schema+config+templates, config manages settings keys, init bootstraps all of it. Decide whether they stay four nouns (each arguably a domain) or consolidate (e.g. schema+profile under one customization noun) toward the ~15-noun target. This is a mapping/decision task: outcome is the grammar-table entry plus any follow-up wiring items, not a rename itself."

@@ -86,6 +86,7 @@ function handleGetCommand(pmArgs: string[]): SpawnResult | undefined {
   });
 }
 
+/** Model canonical discovery separately from legacy execution so the smoke probe checks the published command paths. */
 function fullContractsPayload(): SpawnResult {
   return pmJson({
     command_flags: [
@@ -102,6 +103,7 @@ function fullContractsPayload(): SpawnResult {
   });
 }
 
+/** Supply scoped discovery and installed-action fixtures for the acceptance script's distinct contract queries. */
 function handleContractsCommand(pmArgs: string[]): SpawnResult {
   if (pmArgs.includes("--command") && pmArgs.includes("list-open")) {
     return pmJson({ command_flags: [{ flags: flagRows(["--compact", "--brief", "--full", "--fields", "--include-body"]) }] });
@@ -249,6 +251,7 @@ const DOGFOOD_JSON_HANDLERS: Record<string, DogfoodPmHandler | undefined> = {
   health: (pmArgs) => (pmArgs.includes("--brief") ? pmJson({ projection: { mode: "brief" } }) : undefined),
 };
 
+/** Route controlled child-process responses while letting failure fixtures override CLI, compiler and semantic-provider boundaries. */
 function runDogfoodSpawn(command: string, args: string[], state: DogfoodSpawnState, overrides: Overrides): SpawnResult {
   if (command === process.execPath && args[0] === "--input-type=module") {
     return overrides.sdk ?? { status: 0, stdout: "", stderr: "" };

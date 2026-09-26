@@ -1763,6 +1763,7 @@ function buildUnknownCommandGuidance(
   });
 }
 
+/** Explain a rejected positional action with its legal domain, canonical help path and any executable retry. */
 function buildUnknownSubcommandGuidance(
   context: CommanderGuidanceContext | undefined,
 ): GuidanceMessage | null {
