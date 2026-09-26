@@ -4,6 +4,8 @@
 
 ### Other
 
+- Declare workspace, templates and guide ownership with bounded agent orientation ([pm-uk9dwh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-uk9dwh.toon))
+- Consolidate workspace customization discovery and commands under workspace with permanent compatibility aliases ([pm-npr3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-npr3.toon))
 - Dispatch daily releases at 04:45 Europe/Vienna with the hosted schedule as fallback ([pm-9url9h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-9url9h.toon))
 
 ## 2026.9.26 - 2026-09-26

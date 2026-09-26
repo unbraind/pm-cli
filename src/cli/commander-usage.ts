@@ -923,6 +923,7 @@ function resolveSuggestedRetryForMissingOption(
   ]);
 }
 
+/** Recover split schema actions after namespace normalization while preserving the remaining arguments. */
 function resolveSplitSchemaSubcommand(
   message: string,
   invocationArgv: string[],
@@ -930,10 +931,12 @@ function resolveSplitSchemaSubcommand(
   if (!/too many arguments/i.test(message)) {
     return undefined;
   }
-  if (parseBootstrapCommandName(invocationArgv) !== "schema") {
+  const commandIndex = findBootstrapCommandTokenIndex(invocationArgv);
+  const namespaced = findPmNamespacedCommand(invocationArgv.slice(commandIndex));
+  if (namespaced?.alias !== "schema") {
     return undefined;
   }
-  const schemaIndex = findBootstrapCommandTokenIndex(invocationArgv)!;
+  const schemaIndex = commandIndex! + namespaced.canonical_argv.length - 1;
   const verb = invocationArgv[schemaIndex + 1]?.trim().toLowerCase();
   const noun = invocationArgv[schemaIndex + 2]?.trim().toLowerCase();
   if (!verb || !noun) {

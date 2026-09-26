@@ -80,6 +80,10 @@ export const PM_BULK_LIFECYCLE_COMMAND_ALIASES: readonly PmCommandAliasContract[
 export const PM_RELOCATED_COMMAND_ALIASES: readonly PmCommandAliasContract[] = [
   ...PM_CONTEXT_OPS_COMMAND_ALIASES,
   ...PM_BULK_LIFECYCLE_COMMAND_ALIASES,
+  ...["init", "config", "schema", "profile"].map((alias): PmCommandAliasContract => ({
+    alias, canonical: `workspace ${alias}`, canonical_argv: ["workspace", alias],
+    lifecycle: "permanent", hidden: true, registration: "bootstrap", owner: "pm-npr3",
+  })),
   ...[
     ...["comments", "notes", "learnings", "files", "docs", "deps", "append", "test"].map((facet) => [facet, `item ${facet}`, "pm-yql1"]),
     ["test-runs-worker", "item test worker", "pm-lp4j"],

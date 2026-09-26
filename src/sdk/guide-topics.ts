@@ -87,7 +87,10 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
     intent:
       "Use this when a human or agent needs to start productive work quickly with minimal context load.",
     commands: [
-      "pm init",
+      "pm workspace init",
+      "pm workspace config --help",
+      "pm workspace schema --help",
+      "pm workspace profile --help",
       "pm context --limit 10",
       "pm list --status open --limit 20",
       'pm create --create-mode progressive --title "..." --description "..." --type Task',

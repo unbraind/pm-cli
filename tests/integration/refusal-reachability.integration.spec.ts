@@ -405,7 +405,7 @@ describe("real-entrypoint refusal reachability", () => {
       expect(envelope.recovery?.allowed_values).toContain("add-type");
       expect(envelope.recovery?.allowed_values).toHaveLength(15);
       expect(envelope.recovery?.suggested_retry).toBe(
-        "pm schema add-type Example --json",
+        "pm workspace schema add-type Example --json",
       );
       const suggestedRetry = envelope.recovery!.suggested_retry!;
       expect(context.runCli(suggestedRetry.split(" ").slice(1)).code).toBe(0);

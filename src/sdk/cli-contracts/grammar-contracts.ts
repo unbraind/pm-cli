@@ -614,6 +614,8 @@ const EXPLICIT_POSITIONAL_SLOTS = new Map<
   ],
   ["search", [positionalSlot("keywords", "string", true, { variadic: true })]],
   ["start-task", [ITEM_ID]],
+  ["templates save", [positionalSlot("name", "string", true)]],
+  ["templates show", [positionalSlot("name", "string", true)]],
   [
     "telemetry",
     [
@@ -926,7 +928,7 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "test-all",
       "validate",
     ]),
-    ...destinationRows("ops", "ops", "consolidation", "pm-npr3", [
+    ...destinationRows("workspace", "workspace", "consolidation", "pm-npr3", [
       "config",
       "profile",
       "schema",
@@ -953,6 +955,9 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "contracts",
     ]),
     ...destinationRows("help", "help", "target_noun", "pm-pbyu", ["help"]),
+    ...destinationRows("workspace", "templates", "package_owned", "package:builtin-templates", [
+      "templates", "templates list", "templates save", "templates show",
+    ]),
     ...destinationRows(
       "help",
       "help",

@@ -10,7 +10,7 @@
       "summary_toon": 15630,
       "summary_json": 19432,
       "json": 19293,
-      "full": 1323656,
+      "full": 1332593,
       "bounded_full": 614
     },
     "mcp_tools_list": 48783,
@@ -33,7 +33,6 @@
       "context next",
       "create",
       "get",
-      "init",
       "list",
       "ops",
       "ops validate",
@@ -57,6 +56,8 @@
       "release",
       "search",
       "update",
+      "workspace",
+      "workspace init",
       "workspace position",
       "workspace snapshot create",
       "workspace snapshot delete",
@@ -89,7 +90,6 @@
       "ops validate": 4870,
       "context": 3441,
       "get": 3049,
-      "init": 2204,
       "context next": 2165,
       "close": 2077,
       "claim": 2020,
@@ -112,7 +112,9 @@
       "release": 537,
       "workspace position": 136,
       "assurance lineages": 1229,
-      "ops": 1591
+      "ops": 1591,
+      "workspace init": 2204,
+      "workspace": 1611
     }
   }
 }

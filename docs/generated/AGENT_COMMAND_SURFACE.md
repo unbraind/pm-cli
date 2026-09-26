@@ -5,7 +5,9 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | Command | Minimum visibility tier | Capability family |
 | --- | --- | --- |
 | `init` | core | workspace |
+| `workspace init` | core | workspace |
 | `config` | standard | workspace |
+| `workspace config` | standard | workspace |
 | `extension` | full | extensions |
 | `package` | full | extensions |
 | `packages` | full | extensions |
@@ -54,7 +56,9 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `merge` | full | workspace |
 | `workspace merge` | full | workspace |
 | `schema` | standard | workspace |
+| `workspace schema` | standard | workspace |
 | `profile` | standard | workspace |
+| `workspace profile` | standard | workspace |
 | `activity` | full | context |
 | `history activity` | full | context |
 | `restore` | full | intake |
@@ -97,7 +101,7 @@ This file is generated from `PM_COMMAND_CAPABILITY_CONTRACTS`. Do not edit it ma
 | `assurance` | full | quality |
 | `gc` | full | workspace |
 | `ops gc` | full | workspace |
-| `workspace` | full | workspace |
+| `workspace` | core | workspace |
 | `contracts` | standard | quality |
 | `claim` | core | lifecycle |
 | `release` | core | lifecycle |

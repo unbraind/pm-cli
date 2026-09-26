@@ -1,20 +1,24 @@
 id: pm-uk9dwh
-title: "templates, workspace and guide are authoring and orientation surfaces with no declared noun, and the orientation protocol agents are routed to spans three of them"
+title: "Declare workspace, templates and guide ownership with bounded agent orientation"
 description: "Give templates, workspace, and guide explicit homes in the target authoring and orientation grammar, or record a package-owned or keep-as-is decision with rationale. The disposition must preserve the documented bounded cold-start path for agents and remain reflected in the generated destination table."
 type: Task
-status: open
+status: closed
 priority: 3
 tags[3]: cli-grammar,consolidation,onboarding
 created_at: "2026-08-05T18:07:59.920Z"
-updated_at: "2026-09-08T13:33:28.269Z"
+updated_at: "2026-09-26T11:29:14.770Z"
+closed_at: "2026-09-26T11:29:13.636Z"
+completed_at: "2026-09-26T11:29:13.636Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "Each of templates, workspace and guide carries a recorded disposition: target noun, package-owned, or keep-as-is with a reason; The recorded disposition is consistent with the two-call agent cold start the project documents"
 parent: pm-n7rr
 risk: low
 confidence: medium
-expected_result: "templates, workspace and guide each carry a recorded grammar disposition consistent with the documented two-call agent cold start."
-dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Declared workspace as the core customization/state/recovery noun, templates as optional package-owned workspace authoring, and guide-shell as optional help; aligned destination contracts, quickstart routes and grammar rationale."
+expected_result: Each surface has an explicit consistent owner and destination while bounded core orientation works without optional authoring or help packages.
+actual_result: "Nine linked tests passed, generated contract/discovery gates passed, and fresh npm and Bun installs completed orientation before optional templates and guide-shell installation. Optional command execution and canonical quickstart routes then passed, with exact full-source coverage at 100/100/100/100."
+dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-0z7n,blocked_by,"2026-08-05T18:08:43.222Z","harness:claude-code","cli:update:dep",detected
   pm-j82fd3,implements,"2026-08-05T18:08:43.222Z","harness:claude-code","cli:update:dep",detected
   pm-pbyu,related,"2026-08-05T18:08:43.222Z","harness:claude-code","cli:update:dep",detected
@@ -24,4 +28,30 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-3dyec2,related,"2026-08-05T18:08:46.725Z","harness:claude-code","cli:update:dep",detected
   pm-ka6d,related,"2026-08-05T18:08:46.725Z","harness:claude-code","cli:update:dep",detected
   pm-z436,related,"2026-08-05T18:08:46.725Z","harness:claude-code","cli:update:dep",detected
+  pm-npr3,verifies,"2026-09-26T10:12:48.118Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-26T09:58:17.710Z","harness:codex","Disposition: workspace is the core state/customization/recovery noun; templates remains optional package-owned authoring; guide remains package-owned orientation under help. Preserve context --for orient and scoped contracts as the cold-start path."
+  "2026-09-26T10:20:05.276Z","harness:codex","Installed-artifact acceptance passed: optional templates and guide-shell install into a fresh npm workspace, templates list and scoped templates-save contracts succeed, and guide quickstart advertises workspace init/config/schema/profile. Core orientation succeeded before either package was installed. The generated destination table and documentation retain package ownership without forcing optional packages into cold start."
+  "2026-09-26T11:29:10.033Z","harness:codex","Final evidence: all nine linked tests passed, full-source coverage is 100/100/100/100, and real installed-artifact npm/npx plus Bun/bunx acceptance verifies core orientation before optional package installation and templates/guide behavior afterward. Latest published pm-changelog 2026.9.25 was installed and activation verified for reviewed changelog generation. Workspace customization and optional authoring retain distinct ownership while sharing the declared family."
+files[2]{path,scope}:
+  src/sdk/cli-contracts/grammar-contracts.ts,project
+  src/sdk/guide-topics.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/integration/workspace/customization-namespace.integration.spec.ts,project,300,"harness:codex","2026-09-26T10:09:14.295Z",local_mutation,feat/workspace-query-command-grammar
+test_runs[1]:
+  - run_id: test-local-muib3nqp-ys3w2q
+    kind: test
+    status: passed
+    started_at: "2026-09-26T11:28:26.528Z"
+    finished_at: "2026-09-26T11:28:37.873Z"
+    recorded_at: "2026-09-26T11:28:37.873Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/integration/workspace/customization-namespace.integration.spec.ts,schema,schema,source,acknowledged
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/CLI_GRAMMAR.md,project
+close_reason: Implemented and locally verified with the workspace customization delivery.
 body: ""

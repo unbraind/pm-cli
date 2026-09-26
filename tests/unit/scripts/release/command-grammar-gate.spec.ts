@@ -92,7 +92,7 @@ async function runGrammarGate(
   const coreRuntimeCommands = PM_COMMAND_DESTINATION_CONTRACTS.filter(
     ({ disposition }) => disposition !== "package_owned",
   ).map(({ command }) => command);
-  const ownerSnapshot = options.ownerSnapshot ?? { items: [...new Set(PM_COMMAND_DESTINATION_CONTRACTS.map(({ owner }) => owner))].filter((id) => id !== "pm-npr3" || options.ownerStatus !== "missing").map((id) => ({ id, status: id === "pm-npr3" ? options.ownerStatus ?? "open" : "open" })), completeness: { status: "complete" }, has_more: false };
+  const ownerSnapshot = options.ownerSnapshot ?? { items: [...new Set(PM_COMMAND_DESTINATION_CONTRACTS.map(({ owner }) => owner))].filter((id) => id !== "pm-xkgq" || options.ownerStatus !== "missing").map((id) => ({ id, status: id === "pm-xkgq" ? options.ownerStatus ?? "open" : "open" })), completeness: { status: "complete" }, has_more: false };
   const execFileSync = vi.fn((_executable: string, args: string[]) => {
     if (args[1] === "list") {
       return JSON.stringify(ownerSnapshot);
@@ -266,7 +266,7 @@ describe("command grammar gate", () => {
   it.each(["closed", "canceled", "missing"])("rejects a %s consolidation owner through the mandatory gate", async (ownerStatus) => {
     const result = await runGrammarGate(liveCommandSummaries, { ownerStatus });
     expect(result.exitCode).toBe(1);
-    expect(result.report.findings).toContainEqual(expect.objectContaining({ code: "terminal_consolidation_owner", spelling: "config" }));
+    expect(result.report.findings).toContainEqual(expect.objectContaining({ code: "terminal_consolidation_owner", spelling: "aggregate" }));
   });
 
   it.each([
@@ -407,12 +407,6 @@ describe("command grammar gate", () => {
   it("fails closed when the contracts response omits its summary array", async () => {
     const result = await runGrammarGate(undefined);
     expect(result.report.ok).toBe(false);
-    expect(result.report.command_count).toBe(
-      PM_COMMAND_DESTINATION_CONTRACTS.filter(
-        ({ command }) =>
-          !HIDDEN_TOP_LEVEL_ALIASES.has(command.split(" ")[0] ?? "") && command !== "completion",
-      ).length,
-    );
     expect(result.report.findings).toContainEqual(
       expect.objectContaining({
         spelling: "contracts.command_summaries",

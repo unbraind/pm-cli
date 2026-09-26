@@ -776,7 +776,8 @@ describe("generateZshScript", () => {
 
   it("includes all pm subcommand descriptions", () => {
     const script = generateZshScript();
-    expect(script).toContain("init:Initialize");
+    expect(script).toContain("workspace:");
+    expect(script).not.toContain("init:Initialize");
     expect(script).not.toContain(
       "extension:Manage extension lifecycle operations",
     );
@@ -1057,7 +1058,7 @@ describe("generateFishScript", () => {
   it("includes all pm subcommands with descriptions", () => {
     const script = generateFishScript();
     for (const [cmd, desc] of [
-      ["init", "Initialize"],
+      ["workspace", "Workspace"],
       ["package", "Manage package lifecycle operations"],
       ["packages", "Alias for package"],
       ["create", "Create"],

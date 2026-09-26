@@ -84,7 +84,7 @@
       "action": "config",
       "available": true,
       "cli_exposed": true,
-      "command_path": "config",
+      "command_path": "workspace config|config",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -464,7 +464,7 @@
       "action": "init",
       "available": true,
       "cli_exposed": true,
-      "command_path": "init",
+      "command_path": "workspace init|init",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -704,7 +704,7 @@
       "action": "profile",
       "available": true,
       "cli_exposed": true,
-      "command_path": "profile",
+      "command_path": "workspace profile|profile",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -744,7 +744,7 @@
       "action": "schema",
       "available": true,
       "cli_exposed": true,
-      "command_path": "schema",
+      "command_path": "workspace schema|schema",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
@@ -1937,6 +1937,46 @@
     },
     {
       "aliases": [
+        "config"
+      ],
+      "canonical": "workspace config",
+      "contracts": [
+        {
+          "alias": "config",
+          "canonical": "workspace config",
+          "canonical_argv": [
+            "workspace",
+            "config"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-npr3",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "init"
+      ],
+      "canonical": "workspace init",
+      "contracts": [
+        {
+          "alias": "init",
+          "canonical": "workspace init",
+          "canonical_argv": [
+            "workspace",
+            "init"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-npr3",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
         "merge"
       ],
       "canonical": "workspace merge",
@@ -1951,6 +1991,46 @@
           "hidden": true,
           "lifecycle": "permanent",
           "owner": "pm-m6g87m",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "profile"
+      ],
+      "canonical": "workspace profile",
+      "contracts": [
+        {
+          "alias": "profile",
+          "canonical": "workspace profile",
+          "canonical_argv": [
+            "workspace",
+            "profile"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-npr3",
+          "registration": "bootstrap"
+        }
+      ]
+    },
+    {
+      "aliases": [
+        "schema"
+      ],
+      "canonical": "workspace schema",
+      "contracts": [
+        {
+          "alias": "schema",
+          "canonical": "workspace schema",
+          "canonical_argv": [
+            "workspace",
+            "schema"
+          ],
+          "hidden": true,
+          "lifecycle": "permanent",
+          "owner": "pm-npr3",
           "registration": "bootstrap"
         }
       ]
@@ -2122,8 +2202,12 @@
           "update many",
           "validate",
           "workspace",
+          "workspace config",
+          "workspace init",
           "workspace merge",
           "workspace position",
+          "workspace profile",
+          "workspace schema",
           "workspace snapshot",
           "workspace snapshot create",
           "workspace snapshot delete",
@@ -10974,6 +11058,107 @@
       "provider": "core"
     },
     {
+      "command": "workspace config",
+      "flags": [
+        {
+          "flag": "--value",
+          "value_name": "value"
+        },
+        {
+          "flag": "--criterion"
+        },
+        {
+          "flag": "--clear-criteria"
+        },
+        {
+          "flag": "--format"
+        },
+        {
+          "flag": "--policy"
+        },
+        {
+          "flag": "--default-depth"
+        },
+        {
+          "flag": "--activity-limit"
+        },
+        {
+          "flag": "--stale-threshold-days"
+        },
+        {
+          "flag": "--section-hierarchy"
+        },
+        {
+          "flag": "--section-activity"
+        },
+        {
+          "flag": "--section-progress"
+        },
+        {
+          "flag": "--section-blockers"
+        },
+        {
+          "flag": "--section-files"
+        },
+        {
+          "flag": "--section-workload"
+        },
+        {
+          "flag": "--section-staleness"
+        },
+        {
+          "flag": "--section-tests"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "workspace init",
+      "flags": [
+        {
+          "aliases": [
+            "--prefix"
+          ],
+          "flag": "--id-prefix"
+        },
+        {
+          "flag": "--preset"
+        },
+        {
+          "flag": "--type-preset"
+        },
+        {
+          "aliases": [
+            "--yes"
+          ],
+          "flag": "--defaults",
+          "short": "-y"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--agent-guidance"
+        },
+        {
+          "flag": "--with-packages"
+        },
+        {
+          "flag": "--no-merge-fence"
+        },
+        {
+          "flag": "--workspace"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--verbose"
+        }
+      ],
+      "provider": "core"
+    },
+    {
       "command": "workspace merge",
       "flags": [
         {
@@ -11003,6 +11188,109 @@
     {
       "command": "workspace position",
       "flags": [],
+      "provider": "core"
+    },
+    {
+      "command": "workspace profile",
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "workspace schema",
+      "flags": [
+        {
+          "flag": "--definition",
+          "value_name": "json"
+        },
+        {
+          "flag": "--policy",
+          "value_name": "id"
+        },
+        {
+          "flag": "--message",
+          "value_name": "value"
+        },
+        {
+          "flag": "--description"
+        },
+        {
+          "aliases": [
+            "--default_status"
+          ],
+          "flag": "--default-status"
+        },
+        {
+          "flag": "--folder"
+        },
+        {
+          "flag": "--alias"
+        },
+        {
+          "flag": "--role"
+        },
+        {
+          "flag": "--order"
+        },
+        {
+          "flag": "--type"
+        },
+        {
+          "flag": "--commands"
+        },
+        {
+          "flag": "--cli-flag"
+        },
+        {
+          "flag": "--required"
+        },
+        {
+          "flag": "--required-on-create"
+        },
+        {
+          "flag": "--no-allow-unset"
+        },
+        {
+          "flag": "--required-types"
+        },
+        {
+          "flag": "--infer"
+        },
+        {
+          "flag": "--min-count"
+        },
+        {
+          "flag": "--apply",
+          "value_type": "boolean"
+        },
+        {
+          "flag": "--to"
+        },
+        {
+          "aliases": [
+            "--migration_id"
+          ],
+          "flag": "--migration-id"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--force"
+        }
+      ],
       "provider": "core"
     },
     {
@@ -15494,6 +15782,60 @@
     {
       "budget": {
         "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "workspace config",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "workspace config",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "workspace init",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "workspace init",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
         "budget_class": "governance",
         "command": "workspace merge",
         "default_max_estimated_tokens": 6000,
@@ -15540,6 +15882,60 @@
       "envelope": {
         "cardinality": "none",
         "command": "workspace position",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "discovery",
+        "command": "workspace profile",
+        "default_max_estimated_tokens": 3000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 4500,
+          "toon": 3000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "workspace profile",
+        "format_flag": "--json",
+        "kind": "diagnostic",
+        "wrapper_key": null
+      }
+    },
+    {
+      "budget": {
+        "allows_unbounded_opt_out": true,
+        "budget_class": "mutation",
+        "command": "workspace schema",
+        "default_max_estimated_tokens": 2000,
+        "default_max_estimated_tokens_by_format": {
+          "json": 3000,
+          "toon": 2000
+        },
+        "degradation_ladder": [
+          "full",
+          "compact",
+          "brief",
+          "summary",
+          "counts"
+        ],
+        "token_estimate": "ceil(utf8_bytes / 4)"
+      },
+      "envelope": {
+        "cardinality": "none",
+        "command": "workspace schema",
         "format_flag": "--json",
         "kind": "diagnostic",
         "wrapper_key": null
@@ -17639,6 +18035,29 @@
       "intent_source": "command"
     },
     {
+      "command": "workspace config",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "flags": [
+        "--format"
+      ],
+      "intent": "Manage settings.",
+      "intent_source": "command"
+    },
+    {
+      "command": "workspace init",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Initialize workspace.",
+      "intent_source": "command"
+    },
+    {
       "command": "workspace merge",
       "default_max_estimated_tokens": 6000,
       "default_max_estimated_tokens_by_format": {
@@ -17657,6 +18076,26 @@
       },
       "intent": "Run workspace position.",
       "intent_source": "generated"
+    },
+    {
+      "command": "workspace profile",
+      "default_max_estimated_tokens": 3000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 4500,
+        "toon": 3000
+      },
+      "intent": "Manage profiles.",
+      "intent_source": "command"
+    },
+    {
+      "command": "workspace schema",
+      "default_max_estimated_tokens": 2000,
+      "default_max_estimated_tokens_by_format": {
+        "json": 3000,
+        "toon": 2000
+      },
+      "intent": "Customize schema.",
+      "intent_source": "command"
     },
     {
       "command": "workspace snapshot",
@@ -19267,8 +19706,12 @@
     "update-many",
     "validate",
     "workspace",
+    "workspace config",
+    "workspace init",
     "workspace merge",
     "workspace position",
+    "workspace profile",
+    "workspace schema",
     "workspace snapshot",
     "workspace snapshot create",
     "workspace snapshot delete",
@@ -26998,6 +27441,14 @@
         "target": "workspace init"
       },
       {
+        "command": "workspace init",
+        "disposition": "target_noun",
+        "noun": "workspace",
+        "owner": "pm-npr3",
+        "reason": "",
+        "target": "workspace init"
+      },
+      {
         "command": "package",
         "disposition": "target_noun",
         "noun": "package",
@@ -27608,26 +28059,50 @@
       {
         "command": "config",
         "disposition": "consolidation",
-        "noun": "ops",
+        "noun": "workspace",
         "owner": "pm-npr3",
         "reason": "",
-        "target": "ops"
+        "target": "workspace config"
+      },
+      {
+        "command": "workspace config",
+        "disposition": "target_noun",
+        "noun": "workspace",
+        "owner": "pm-npr3",
+        "reason": "",
+        "target": "workspace config"
       },
       {
         "command": "profile",
         "disposition": "consolidation",
-        "noun": "ops",
+        "noun": "workspace",
         "owner": "pm-npr3",
         "reason": "",
-        "target": "ops"
+        "target": "workspace profile"
+      },
+      {
+        "command": "workspace profile",
+        "disposition": "target_noun",
+        "noun": "workspace",
+        "owner": "pm-npr3",
+        "reason": "",
+        "target": "workspace profile"
       },
       {
         "command": "schema",
         "disposition": "consolidation",
-        "noun": "ops",
+        "noun": "workspace",
         "owner": "pm-npr3",
         "reason": "",
-        "target": "ops"
+        "target": "workspace schema"
+      },
+      {
+        "command": "workspace schema",
+        "disposition": "target_noun",
+        "noun": "workspace",
+        "owner": "pm-npr3",
+        "reason": "",
+        "target": "workspace schema"
       },
       {
         "command": "assurance",
@@ -27884,6 +28359,38 @@
         "owner": "pm-pbyu",
         "reason": "",
         "target": "help"
+      },
+      {
+        "command": "templates",
+        "disposition": "package_owned",
+        "noun": "workspace",
+        "owner": "package:builtin-templates",
+        "reason": "",
+        "target": "templates"
+      },
+      {
+        "command": "templates list",
+        "disposition": "package_owned",
+        "noun": "workspace",
+        "owner": "package:builtin-templates",
+        "reason": "",
+        "target": "templates"
+      },
+      {
+        "command": "templates save",
+        "disposition": "package_owned",
+        "noun": "workspace",
+        "owner": "package:builtin-templates",
+        "reason": "",
+        "target": "templates"
+      },
+      {
+        "command": "templates show",
+        "disposition": "package_owned",
+        "noun": "workspace",
+        "owner": "package:builtin-templates",
+        "reason": "",
+        "target": "templates"
       },
       {
         "command": "completion",
@@ -29101,6 +29608,18 @@
         ]
       },
       {
+        "command": "workspace init",
+        "slots": [
+          {
+            "name": "prefix-or-path",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
         "command": "package",
         "slots": [
           {
@@ -29748,6 +30267,39 @@
         ]
       },
       {
+        "command": "workspace config",
+        "slots": [
+          {
+            "name": "scope",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "action",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "key",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          },
+          {
+            "name": "value",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
         "command": "profile",
         "slots": [
           {
@@ -29767,7 +30319,45 @@
         ]
       },
       {
+        "command": "workspace profile",
+        "slots": [
+          {
+            "name": "subcommand",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
         "command": "schema",
+        "slots": [
+          {
+            "name": "subcommand",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "action",
+            "variadic": false
+          },
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "workspace schema",
         "slots": [
           {
             "name": "subcommand",
@@ -30240,6 +30830,38 @@
       {
         "command": "help",
         "slots": []
+      },
+      {
+        "command": "templates",
+        "slots": []
+      },
+      {
+        "command": "templates list",
+        "slots": []
+      },
+      {
+        "command": "templates save",
+        "slots": [
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "templates show",
+        "slots": [
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "completion",

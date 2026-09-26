@@ -399,8 +399,8 @@ describe("normalizeLegacyExtensionActionSyntax", () => {
 describe("normalizeBootstrapInvocation", () => {
   it("absorbs package-runner executable aliases without hiding real commands", () => {
     expect(normalizeBootstrapInvocation(["pm", "init"])).toMatchObject({
-      argv: ["init"],
-      commandName: "init",
+      argv: ["workspace", "init"],
+      commandName: "workspace",
       trace: [
         {
           from: "pm",
@@ -408,6 +408,7 @@ describe("normalizeBootstrapInvocation", () => {
           reason: "executable_alias",
           confidence: "high",
         },
+        { from: "init", to: ["workspace", "init"], reason: "command_alias", confidence: "high" },
       ],
     });
     expect(

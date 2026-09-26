@@ -20,7 +20,7 @@ describe("Commander positional subcommand recovery", () => {
     expect(context).toMatchObject({
       unknownSubcommandPath: "schema",
       unknownSubcommandToken: "add type",
-      suggestedRetryCommand: "pm schema add-type Example --json",
+      suggestedRetryCommand: "pm workspace schema add-type Example --json",
     });
     expect(context.unknownSubcommandAllowedValues).toHaveLength(15);
 
@@ -34,7 +34,7 @@ describe("Commander positional subcommand recovery", () => {
     expect(envelope).toMatchObject({
       code: "unknown_subcommand",
       recovery: {
-        suggested_retry: "pm schema add-type Example --json",
+        suggested_retry: "pm workspace schema add-type Example --json",
       },
     });
   });
@@ -63,20 +63,22 @@ describe("Commander positional subcommand recovery", () => {
     );
     expect(unrelatedMessage.unknownSubcommandPath).toBeUndefined();
 
-    const envelopeWithoutRetry = formatCommanderErrorForJson(
-      "error: too many arguments",
-      "schema",
-      "Task|Issue",
-      2,
-      {
-        unknownSubcommandPath: "schema",
-        unknownSubcommandToken: "unknown action",
-        unknownSubcommandAllowedValues: ["list", "show"],
-      },
-    );
-    expect(envelopeWithoutRetry.examples).toEqual(["pm schema --help"]);
-    expect(envelopeWithoutRetry.next_steps).toEqual([
-      "Choose one value from recovery.allowed_values.",
-    ]);
+    for (const commandPath of ["schema", "workspace schema"]) {
+      const envelopeWithoutRetry = formatCommanderErrorForJson(
+        "error: too many arguments",
+        "schema",
+        "Task|Issue",
+        2,
+        {
+          unknownSubcommandPath: commandPath,
+          unknownSubcommandToken: "unknown action",
+          unknownSubcommandAllowedValues: ["list", "show"],
+        },
+      );
+      expect(envelopeWithoutRetry.examples).toEqual(["pm workspace schema --help"]);
+      expect(envelopeWithoutRetry.next_steps).toEqual([
+        "Choose one value from recovery.allowed_values.",
+      ]);
+    }
   });
 });
