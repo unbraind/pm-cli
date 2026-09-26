@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 384
+- Catalog error codes: 385
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 365
-- Coverage fraction: 0.049479
+- Uncovered error codes: 366
+- Coverage fraction: 0.049351
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -195,6 +195,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `manifest_capabilities_absent` | `manifest_capabilities_absent` | uncovered | none | 0 |
 | `manifest_invalid` | `manifest_invalid` | uncovered | none | 0 |
 | `manifest_unknown_key` | `manifest_unknown_key` | executable | owned_state | 1 |
+| `manifest_unreadable` | `manifest_unreadable` | uncovered | none | 0 |
 | `mcp_annotation_file_unavailable` | `mcp_annotation_file_unavailable` | uncovered | none | 0 |
 | `mcp_stdin_unavailable` | `mcp_stdin_unavailable` | uncovered | none | 0 |
 | `mcp_task_not_found_or_not_authorized` | `mcp_task_not_found_or_not_authorized` | uncovered | none | 0 |

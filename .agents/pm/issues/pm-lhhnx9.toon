@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:extensions","area:sdk",gh-1316,security
 created_at: "2026-09-26T16:19:02.178Z"
-updated_at: "2026-09-26T22:43:58.417Z"
+updated_at: "2026-09-26T22:53:33.788Z"
 closed_at: "2026-09-26T21:26:37.459Z"
 completed_at: "2026-09-26T21:26:37.459Z"
 author: "harness:codex"
@@ -19,7 +19,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-5mua,verifies,"2026-09-26T16:19:02.178Z","harness:codex","cli:create:dep",detected
   pm-x6jf,discovered_from,"2026-09-26T16:19:02.178Z","harness:codex","cli:create:dep",detected
   pm-l4c8,verifies,"2026-09-26T16:33:43.474Z","harness:codex","cli:update:dep",detected
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-09-26T16:19:02.178Z","harness:codex","Duplicate check 2026-09-26: all-status searches for extension state inventory, side-effect-free extension, and hosted extension read found closed pm-grst managed state, pm-x6jf public lifecycle SDK, pm-l4c8 runtime describe, and pm-5mua runtime command-path diagnostics. Their shipped runtime probes do not provide the requested static configured-state receipt. GitHub issue: https://github.com/unbraind/pm-cli/issues/1316."
   "2026-09-26T21:26:34.351Z","harness:codex","Implementation evidence 2026-09-26: public SDK inspectStaticExtensionInventory and package/extension inventory CLI read settings, managed metadata, and manifests without loading entrypoints or running hooks. Receipts distinguish installed, inactive, absent, malformed, project/global, and incomplete sources. A disposable initialized workspace with an import-time write marker returned complete inventory without marker or tracker changes; explicit runtime explore afterward created the marker, proving the negative control. Source CLI and dist integration tests cover the behavior."
   "2026-09-26T21:26:35.294Z","harness:codex","Verification evidence 2026-09-26: full sandboxed suite passed 748 files / 9,367 tests with exact statements 65,668/65,668, branches 50,209/50,209, functions 13,594/13,594, lines 62,715/62,715. Focused source and dist tests passed 10/10 after final help wording. pnpm build, typecheck, ESLint, jscpd, docs/skills, SDK surface, and flag-help gate passed; pm health summary ok with zero warnings. pm-changelog installed version 2026.9.25 matches npm latest."
@@ -30,6 +30,7 @@ comments[10]{created_at,author,text}:
   "2026-09-26T21:46:51.170Z","harness:codex",Static quality refusal inventory found the new mutually exclusive inventory scope check. Updated the declared CLI transport refusal count 6 to 7 with rationale; the SDK inventory remains read-only.
   "2026-09-26T21:58:25.472Z","harness:codex",Command grammar gate required noun/verb destination census and optional name positional signatures for package inventory and packages inventory. Declared both; the grammar gate now passes with 231 observed and declared paths.
   "2026-09-26T22:43:58.417Z","harness:codex","PR #1319 review round 1 at head 145d1edca: CodeRabbit identified three valid receipt inconsistencies. Static inventory now trims and filters enablement names like runtime discovery, uses null for absent-entry values when settings or managed metadata are untrusted, and emits a literal manifest_unreadable code so generated SDK and CLI catalogs include it. Extended existing integration cases for whitespace and untrusted absence. Rebuilt, regenerated catalogs and contracts, and passed focused 10/10, typecheck, ESLint, and snapshot checks. Hosted head checks were green before this revision; new head will rerun them and bot reviews."
+  "2026-09-26T22:53:33.788Z","harness:codex","PR #1319 round 2 hosted static gate found generated REFUSAL_CLOSURE_CENSUS.md stale after manifest_unreadable became a catalog code. Regenerated via pnpm contracts:agent-surfaces:update; the document now records 385 catalog codes and the explicit uncovered row. All other completed hosted checks on c50739d8c passed."
 learnings[1]{created_at,author,text}:
   "2026-09-26T21:26:36.371Z","harness:codex","A host GET route must use the static inventory primitive; runtime explore/manage/doctor/describe can import installed extension code. Read settings directly for inventory because the general settings reader may scaffold schema files. Keep configured enablement and runtime activation as separate facts, and fail incomplete reads explicitly."
 files[14]{path,scope,note}:
