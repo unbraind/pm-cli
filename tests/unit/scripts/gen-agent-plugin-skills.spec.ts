@@ -92,7 +92,7 @@ describe("gen-agent-plugin-skills", () => {
     const { contents, mkdir, writeFile } = mockSkillTree({ missingRoot: true });
     process.argv = ["node", "/nonmatching/runner", "--check"];
     const generator = await harness.importModule<GeneratorModule>("scripts/gen-agent-plugin-skills.mjs");
-    await expect(generator.main()).rejects.toThrow("plugins/pm-codex/skills");
+    await expect(generator.main()).rejects.toThrow(path.join("plugins", "pm-codex", "skills"));
     expect(mkdir).not.toHaveBeenCalled();
     process.argv = ["node", "/nonmatching/runner"];
     await expect(generator.main()).resolves.toBeUndefined();
