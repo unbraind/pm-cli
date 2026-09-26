@@ -76,7 +76,52 @@ pnpm version:check
 
 `.github/workflows/auto-release.yml` runs once per day and can also be dispatched manually.
 
-Policy:
+### Independent morning dispatch
+
+Tracked by [pm-9url9h](../.agents/pm/tasks/pm-9url9h.toon). An independent
+operator-managed timer can invoke `scripts/release/dispatch-daily-release.mjs`
+at **04:45 Europe/Vienna** (02:45 UTC in summer, 03:45 UTC in winter).
+The aim is completion before 06:30–07:00 local time; host availability, GitHub
+runner capacity and release gates can prevent that target. The host must be
+awake, online and able to authenticate with `gh` unattended.
+
+The existing **02:35 UTC GitHub cron remains enabled as a fallback**. Either
+clock can arrive first. The dispatcher checks both release workflows for active
+runs and skips an existing exact UTC-day tag. Tag existence is explicitly not
+publication proof: incomplete publication still requires the normal immutable-tag
+recovery procedure. Hosted concurrency and the one-release-per-UTC-day guard
+remain the final protection if a native run races the external request.
+
+The standalone dispatcher requires an absolute private state directory:
+
+```bash
+node scripts/release/dispatch-daily-release.mjs --state-dir /absolute/private/state --check
+```
+
+`--check` reads prerequisites without dispatching or writing state, including
+outside the morning window. Without it, the dispatcher accepts only
+04:45–05:15 Vienna time and sends `workflow_dispatch` to `auto-release.yml` on
+`main` with explicit `push=true`, `dry_run=false`, and `telemetry_mode=off`,
+matching scheduled production policy. It never builds from the operator's
+working branch, changes release secrets or bypasses hosted gates.
+
+An exclusive daily intent file is written **before** sending the request. A
+timeout can mean GitHub accepted the request, so an uncertain attempt is retained
+and never automatically resent that UTC day. Inspect hosted run history before
+any manual recovery. Pre-dispatch read failures leave no intent; a timer may
+try again within the morning window. Late persistent-timer catch-up is a no-op.
+Install a reviewed copy outside development checkouts so branch edits cannot
+silently change an unattended service.
+
+Keep dispatcher output in the service journal: `dispatch_accepted` proves only
+API acceptance. Verify the hosted run, GitHub Release and exact npm version
+separately. These runs remain `workflow_dispatch`; they do not improve or erase
+the native `schedule` denominator in [Release Reliability](RELEASE_RELIABILITY.md).
+Disable the independent timer to roll back; the original hosted schedule and
+publication path continue unchanged. Host-specific unit files and authentication
+configuration belong in private operator documentation.
+
+### Hosted release policy
 
 - release only when commits exist after the latest release tag
 - ignore tracker-governance-only commits for publish eligibility: `.agents/pm/**` and the mechanically generated `CHANGELOG.md` projection do not create a package release by themselves, while any product, test, documentation, workflow, or other changed path remains release-relevant
