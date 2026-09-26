@@ -9409,6 +9409,12 @@
           "signature": "export interface InspectStaleInProgressOptions { in_progress_status?: string; threshold_hours: number; now?: Date; last_history_activity?: (item: ItemMetadata) => string | undefined; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "inspectStaticExtensionInventory",
+          "signature": "(options: { pmRoot: string; scope?: \"global\" | \"project\"; name?: string; cwd?: string; }) => Promise<StaticExtensionInventoryResult> | calls: (options: { pmRoot: string; scope?: \"project\" | \"global\"; name?: string; cwd?: string; }) => Promise<StaticExtensionInventoryResult>"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "inspectStatusRoleAssignments",
@@ -18953,6 +18959,24 @@
           "kind": "function",
           "name": "startTelemetryCommand",
           "signature": "(context: TelemetryCommandContext) => Promise<ActiveTelemetryCommand | null> | calls: (context: TelemetryCommandContext) => Promise<ActiveTelemetryCommand | null>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "StaticExtensionInventoryEntry",
+          "signature": "export interface StaticExtensionInventoryEntry { name: string; directory: string | null; scope: \"project\" | \"global\"; installed: boolean; status: \"installed\" | \"inactive\" | \"absent\" | \"malformed_manifest\"; configured_enabled: boolean | null; managed: boolean | null; runtime_active: null; version?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "StaticExtensionInventoryError",
+          "signature": "export interface StaticExtensionInventoryError { code: \"settings_invalid\" | \"settings_unreadable\" | \"managed_state_invalid\" | \"managed_state_unreadable\" | \"extensions_unreadable\" | \"manifest_invalid\" | \"manifest_unreadable\"; path: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "StaticExtensionInventoryResult",
+          "signature": "export interface StaticExtensionInventoryResult { scope: \"project\" | \"global\"; complete: boolean; settings_status: \"ok\" | \"absent\" | \"invalid\" | \"unreadable\"; managed_state_status: \"ok\" | \"absent\" | \"invalid\" | \"unreadable\"; extensions: StaticExtensionInventoryEntry[]; errors: StaticExtensionInventoryError[]; }"
         },
         {
           "classification": "advanced_export",
@@ -35216,6 +35240,7 @@
     "extension_mutation_guard_invalid_denial",
     "extension_mutation_guard_timed_out",
     "extension_update_health_partial_coverage",
+    "extensions_unreadable",
     "field_duplicate",
     "field_invalid",
     "field_mcp_input_collision",
@@ -35309,8 +35334,12 @@
     "locks_stale_count",
     "locks_unreadable",
     "malformed_plan_step_evidence",
+    "managed_state_invalid",
+    "managed_state_unreadable",
     "manifest_capabilities_absent",
+    "manifest_invalid",
     "manifest_unknown_key",
+    "manifest_unreadable",
     "mcp_annotation_file_unavailable",
     "mcp_stdin_unavailable",
     "mcp_task_not_found_or_not_authorized",
@@ -35394,10 +35423,12 @@
     "retry_failed",
     "schema_migration_input_required",
     "semantic_spelling_collision",
+    "settings_invalid",
     "settings_read_fs_error",
     "settings_read_invalid_json",
     "settings_read_invalid_schema",
     "settings_read_merge_failed",
+    "settings_unreadable",
     "stale_budget",
     "stale_destination",
     "stale_observed_signature",

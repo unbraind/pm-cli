@@ -1070,6 +1070,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "extensions_unreadable",
+    meaning: "Extensions unreadable condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/extension/static-inventory.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "extensions_unreadable",
+    aliases: [],
+  },
+  {
     code: "field_duplicate",
     meaning: "Field duplicate condition.",
     stability: "stable",
@@ -2290,6 +2303,32 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "managed_state_invalid",
+    meaning: "Managed state invalid condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/extension/static-inventory.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "managed_state_invalid",
+    aliases: [],
+  },
+  {
+    code: "managed_state_unreadable",
+    meaning: "Managed state unreadable condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/extension/static-inventory.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "managed_state_unreadable",
+    aliases: [],
+  },
+  {
     code: "manifest_capabilities_absent",
     meaning: "Manifest capabilities absent condition.",
     stability: "stable",
@@ -2300,6 +2339,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["sdk/compose.ts"],
     emitting_commands: ["*"],
     canonical_code: "manifest_capabilities_absent",
+    aliases: [],
+  },
+  {
+    code: "manifest_invalid",
+    meaning: "Manifest invalid condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/extension/static-inventory.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "manifest_invalid",
     aliases: [],
   },
   {
@@ -2317,6 +2369,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     owned_states: [
       { state: "author_workspace_manifest_declares_an_unknown_top_level_key", probe_id: "author-manifest-unknown-key", entrypoints: ["health"], expected_exit_class: "generic_failure" },
     ],
+  },
+  {
+    code: "manifest_unreadable",
+    meaning: "Manifest unreadable condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/extension/static-inventory.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "manifest_unreadable",
+    aliases: [],
   },
   {
     code: "mcp_annotation_file_unavailable",
@@ -2472,19 +2537,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["sdk/history-repair.ts"],
     emitting_commands: ["*"],
     canonical_code: "merge_reconcile_receipt_evidence_untrusted",
-    aliases: [],
-  },
-  {
-    code: "merge_root_not_found",
-    meaning: "Merge root not found condition.",
-    stability: "stable",
-    exit_code: 3,
-    class: "not_found",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/merge/install.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_root_not_found",
     aliases: [],
   },
 ];

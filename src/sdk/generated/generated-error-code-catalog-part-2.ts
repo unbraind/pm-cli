@@ -8,6 +8,19 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
+    code: "merge_root_not_found",
+    meaning: "Merge root not found condition.",
+    stability: "stable",
+    exit_code: 3,
+    class: "not_found",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/merge/install.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_root_not_found",
+    aliases: [],
+  },
+  {
     code: "missing_allowed_values",
     meaning: "Missing allowed values condition.",
     stability: "provisional",
@@ -936,6 +949,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "settings_invalid",
+    meaning: "Settings invalid condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/extension/static-inventory.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "settings_invalid",
+    aliases: [],
+  },
+  {
     code: "settings_read_fs_error",
     meaning: "Settings read fs error condition.",
     stability: "stable",
@@ -985,6 +1011,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
     canonical_code: "settings_read_merge_failed",
+    aliases: [],
+  },
+  {
+    code: "settings_unreadable",
+    meaning: "Settings unreadable condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/extension/static-inventory.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "settings_unreadable",
     aliases: [],
   },
   {

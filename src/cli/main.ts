@@ -175,7 +175,7 @@ import type { RuntimeExtensionActivationProbe } from "./runtime/activation.js";
 import { activationCommandMatchesProbe,buildBootstrapActivationProbe,buildRuntimeExtensionActivationScope,buildRuntimeExtensionFilterForProbe,collectActivationCommandCandidates,collectLeadingCommandArgs,collectParsedActivationCommandArgs,commandPathNeedsSearchExtensions,commandPathNeedsTemplateExtensions,discoveryNeedsActivationForProbe,extensionActivationCommands,extensionCapabilities,extensionNeedsActivationForProbe,extensionProvidesTemplatesRuntime,hasAnyCapability,hasGlobalExtensionContributions,matchesStaticExtensionCommand,probeUsesAnyFlag,resolveStaticExtensionActivationDecision } from "./runtime/activation.js";
 import { collectExtensionFlagDefinitionsForCommand,collectExtensionFlagDefinitionsForInvocation,dynamicCommandArguments,extractCommandScopedOptions,forwardReadOutputIncludeModes,isImporterOrExporterCommandPath,recordCliReadOutputInvocationProvenance,validateDynamicExtensionCommandArgs,validateDynamicExtensionCommandInvocation } from "./runtime/invocation-options.js";
 import type { CoreCommandRegistrationSelection } from "./runtime/selection.js";
-import { LIST_QUERY_COMMAND_NAMES,enforceExplicitRetryForFlagTypos,invocationRequestsVersion,resolveCoreCommandRegistrationSelection,shouldAttachRichHelpTextForInvocation,shouldRegisterDynamicExtensionPaths,shouldRegisterRuntimeSchemaFlags } from "./runtime/selection.js";
+import { LIST_QUERY_COMMAND_NAMES,enforceExplicitRetryForFlagTypos,invocationRequestsVersion,isStaticExtensionInventoryInvocation,resolveCoreCommandRegistrationSelection,shouldAttachRichHelpTextForInvocation,shouldRegisterDynamicExtensionPaths,shouldRegisterRuntimeSchemaFlags } from "./runtime/selection.js";
 import { buildPostActionTelemetryOutcome,inferPostActionErrorCode,inferPostActionFailureMessage,normalizeTelemetryCommandResolution,normalizeTelemetryErrorCategory,normalizeTelemetryResolutionStage,readRecordBoolean,readRecordNumber,readRecordString } from "./runtime/telemetry-outcome.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
@@ -1134,6 +1134,9 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         clearResolvedGlobalOptions(actionCommand);
         let globalOptions = getGlobalOptions(actionCommand);
         const commandPath = resolvePmCommandOperation(getCommandPath(actionCommand));
+        if (["package inventory", "packages inventory", "extension inventory"].includes(commandPath)) {
+          return await originalAction.apply(this, actionArgs);
+        }
         const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
         let commandArgs = actionCommand.args.map(String);
         const activeRegistrations = getActiveExtensionRegistrations();
@@ -1391,7 +1394,8 @@ let program = createPmCliProgram(CLI_VERSION);
 /* c8 ignore start */
 
 /** Bind output validation, extension policy, mutation guards, and observability to the selected semantic command. */
-function attachProgramLifecycleHooks(rootProgram: Command): void {
+function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: string[]): void {
+  if (invocationArgv && isStaticExtensionInventoryInvocation(invocationArgv)) return;
   rootProgram.hook("preAction", async (_thisCommand, actionCommand) => {
     activeExtensionHookContext = null;
     activeTelemetryCommandContext = null;
@@ -1679,7 +1683,7 @@ function createTelemetryCommandErrorEmitter(params: { invocationArgv: string[]; 
 }
 
 async function prepareExtensionServicesForRunPmCliError(params: { invocationArgv: string[]; bootstrapGlobal: GlobalOptions; bootstrapPmRoot: string }): Promise<void> {
-  if (params.bootstrapGlobal.noExtensions) {
+  if (params.bootstrapGlobal.noExtensions || isStaticExtensionInventoryInvocation(params.invocationArgv)) {
     return;
   }
   const bootstrapProbe = buildBootstrapActivationProbe(params.invocationArgv);
@@ -2006,7 +2010,7 @@ function assertRequestedNamespaceAvailable(program: Command, invocationArgv: str
 /** Dispatch one fresh CLI invocation with deterministic process state and tracker-scoped attribution. */
 async function runPmCliInReproducibleContext(rawArgv: string[]): Promise<void> {
   program = createPmCliProgram(CLI_VERSION);
-  attachProgramLifecycleHooks(program);
+  attachProgramLifecycleHooks(program, rawArgv);
   // The runtime-extension snapshot caches dedupe discovery work within a
   // single invocation only. Reset them on entry so long-lived embeddings
   // (in-process test runners, future SDK hosts) observe the same fresh
@@ -2067,6 +2071,10 @@ async function runPmCliInReproducibleContext(rawArgv: string[]): Promise<void> {
         parseBootstrapCommandName(invocationArgv) === undefined)
     ) {
       program.outputHelp();
+      return;
+    }
+    if (isStaticExtensionInventoryInvocation(invocationArgv)) {
+      await program.parseAsync(invocationProcessArgv);
       return;
     }
     const invocationPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);

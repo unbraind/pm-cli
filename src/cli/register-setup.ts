@@ -36,6 +36,7 @@ import {
 import { runConfig } from "./commands/workspace/config.js";
 import { runInit, summarizeInitResult } from "./commands/workspace/init.js";
 import { runUpgrade } from "./commands/workspace/upgrade.js";
+import { inspectStaticExtensionInventory } from "../sdk/extension/static-inventory.js";
 
 type ExtensionSubcommandAction =
   | "init"
@@ -630,37 +631,37 @@ function registerLifecycleCommand(
       collect,
     )
     .option("--install", `Install a ${noun} source`)
-    .option("--dry-run", "Resolve install sources and estimate copying without destination writes or activation")
+    .option("--dry-run", "Preview install without writes or activation")
     .option("--uninstall", `Uninstall an installed ${noun}`)
     .option("--explore", `List discovered ${plural} in selected scope`)
     .option("--list", "Alias for --explore")
-    .option("--manage", `List managed ${plural} with update-check metadata`)
+    .option("--manage", `List managed ${plural} and updates`)
     .option(
       "--describe",
-      `Map every surface a loaded ${noun} registers (optionally one by name)`,
+      `Show surfaces registered by a loaded ${noun}`,
     )
     .option(
       "--markdown",
-      "Render describe output as a Markdown reference document (describe only)",
+      "Render describe as Markdown",
     )
     .option(
       "--output <path>",
-      "Write describe Markdown to a file (requires --markdown)",
+      "Write Markdown to a file",
     )
-    .option("--reload", `Reload ${plural} with cache-busted module imports`)
+    .option("--reload", `Reload ${plural} without import cache`)
     .option("--watch", "Use watch mode with --reload")
     .option(
       "--doctor",
-      `Run consolidated ${noun} diagnostics (summary/deep modes)`,
+      `Run ${noun} diagnostics`,
     )
     .option("--catalog", `List bundled first-party ${noun} catalog metadata`)
     .option(
       "--adopt",
-      `Adopt an existing unmanaged ${noun} into managed metadata`,
+      `Adopt unmanaged ${noun}`,
     )
     .option(
       "--adopt-all",
-      `Adopt all unmanaged ${plural} into managed metadata`,
+      `Adopt all unmanaged ${plural}`,
     )
     .option("--activate", `Activate a ${noun} in selected scope settings`)
     .option("--deactivate", `Deactivate a ${noun} in selected scope settings`)
@@ -830,6 +831,29 @@ function registerLifecycleCommand(
       "explore",
       vocabulary,
     );
+  });
+
+  addLifecycleScopeOptions(
+    lifecycleCommand
+      .command("inventory")
+      .argument("[name]", `${noun[0]!.toUpperCase()}${noun.slice(1)} name or directory to inspect`)
+      .description(`Read configured ${noun} install and enablement state without activating extension code.`),
+    vocabulary,
+  ).action(async (name: string | undefined, _options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const options = command.optsWithGlobals() as Record<string, unknown>;
+    if (options.global === true && (options.project === true || options.local === true)) {
+      throw new PmCliError("--global and --project/--local are mutually exclusive.", EXIT_CODE.USAGE);
+    }
+    const result = await inspectStaticExtensionInventory({
+      pmRoot: resolvePmRoot(process.cwd(), globalOptions.path),
+      scope: options.global === true ? "global" : "project",
+      name,
+    });
+    printResult(result, globalOptions);
+    if (!result.complete) {
+      process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+    }
   });
 
   addLifecycleScopeOptions(
