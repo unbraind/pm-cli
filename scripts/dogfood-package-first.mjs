@@ -360,8 +360,8 @@ try {
   requireContractFlag("package", "--global");
   requireContractFlag("package upgrade", "--packages-only");
   requireContractFlag("package upgrade", "--dry-run");
-  requireContractFlag("init", "--agent-guidance");
-  requireContractFlag("init", "--with-packages");
+  requireContractFlag("workspace init", "--agent-guidance");
+  requireContractFlag("workspace init", "--with-packages");
   requireContractFlag("get", "--fields");
   const packageAliasesFromContracts =
     allFlagContracts?.command_aliases?.find((entry) => entry.canonical === "package")?.aliases ?? [];

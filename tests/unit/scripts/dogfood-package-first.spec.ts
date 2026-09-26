@@ -33,10 +33,6 @@ function flagRows(flags: string[]): Array<{ flag: string }> {
   return flags.map((flag) => ({ flag }));
 }
 
-function runtimeActionRows(actions: string[]): Array<{ action: string; available: boolean; invocable: boolean }> {
-  return actions.map((action) => ({ action, available: true, invocable: true }));
-}
-
 function parseSpawnedPmArgs(args: string[]): { jsonMode: boolean; pmArgs: string[]; cmd: string } {
   const rawPmArgs = args.slice(1);
   const jsonMode = rawPmArgs[0] === "--json";
@@ -95,7 +91,7 @@ function fullContractsPayload(): SpawnResult {
     command_flags: [
       { command: "package", flags: flagRows(["--catalog", "--explore", "--doctor", "--install", "--project", "--global"]) },
       { command: "package upgrade", flags: flagRows(["--packages-only", "--dry-run"]) },
-      { command: "init", flags: flagRows(["--agent-guidance", "--with-packages"]) },
+      { command: "workspace init", flags: flagRows(["--agent-guidance", "--with-packages"]) },
       { command: "get", flags: flagRows(["--fields"]) },
     ],
     command_aliases: [
@@ -118,10 +114,10 @@ function handleContractsCommand(pmArgs: string[]): SpawnResult {
   }
   if (pmArgs.includes("--availability-only") && pmArgs.includes("--runtime-only")) {
     return pmJson({
-      action_availability: runtimeActionRows([
+      action_availability: [
         "beads-import", "completion", "comments-audit", "dedupe-audit", "guide",
         "search-advanced", "templates-save", "templates-show", "test-runs-list", "todos-export",
-      ]),
+      ].map((action) => ({ action, available: true, invocable: true })),
     });
   }
   return fullContractsPayload();
@@ -200,10 +196,6 @@ function handlePlanCommand(pmArgs: string[], state: DogfoodSpawnState): SpawnRes
   return planResponses[sub];
 }
 
-function handleStarterCommand(pmArgs: string[]): SpawnResult | undefined {
-  return pmArgs.slice(1).join(" ") === "scaffold package ping" ? pmJson({ ok: true, command: "starter scaffold package ping" }) : undefined;
-}
-
 function handleTemplatesCommand(pmArgs: string[]): SpawnResult | undefined {
   if (pmArgs[1] === "save") {
     return pmJson({ name: "dogfood-defaults" });
@@ -240,7 +232,7 @@ const DOGFOOD_JSON_HANDLERS: Record<string, DogfoodPmHandler | undefined> = {
   contracts: (pmArgs) => handleContractsCommand(pmArgs),
   install: (pmArgs) => handleInstallCommand(pmArgs),
   package: (pmArgs) => handlePackageCommand(pmArgs),
-  starter: (pmArgs) => handleStarterCommand(pmArgs),
+  starter: (pmArgs) => pmArgs.slice(1).join(" ") === "scaffold package ping" ? pmJson({ ok: true, command: "starter scaffold package ping" }) : undefined,
   guide: (pmArgs) => (pmArgs.includes("--list") ? pmJson({ topics: [{ id: "workflows" }] }) : undefined),
   "dedupe-audit": () => pmJson({ clusters: [] }),
   "comments-audit": () => pmJson({ items: [] }),
@@ -256,10 +248,6 @@ const DOGFOOD_JSON_HANDLERS: Record<string, DogfoodPmHandler | undefined> = {
   "history-redact": (pmArgs) => handleHistoryRedactCommand(pmArgs),
   health: (pmArgs) => (pmArgs.includes("--brief") ? pmJson({ projection: { mode: "brief" } }) : undefined),
 };
-
-function defaultDogfoodJsonResponse(cmd: string, pmArgs: string[], state: DogfoodSpawnState): SpawnResult {
-  return DOGFOOD_JSON_HANDLERS[cmd]?.(pmArgs, state) ?? pmJson({ ok: true });
-}
 
 function runDogfoodSpawn(command: string, args: string[], state: DogfoodSpawnState, overrides: Overrides): SpawnResult {
   if (command === process.execPath && args[0] === "--input-type=module") {
@@ -285,7 +273,7 @@ function runDogfoodSpawn(command: string, args: string[], state: DogfoodSpawnSta
     }
   }
 
-  return jsonMode ? defaultDogfoodJsonResponse(cmd, pmArgs, state) : handleTextPmCommand(cmd);
+  return jsonMode ? DOGFOOD_JSON_HANDLERS[cmd]?.(pmArgs, state) ?? pmJson({ ok: true }) : handleTextPmCommand(cmd);
 }
 
 function buildSpawnSync(overrides: Overrides = {}) {
@@ -985,7 +973,7 @@ describe("dogfood-package-first", () => {
     const fullCommandFlags = [
       { command: "package", flags: ["--catalog", "--explore", "--doctor", "--install", "--project", "--global"].map((flag) => ({ flag })) },
       { command: "package upgrade", flags: ["--packages-only", "--dry-run"].map((flag) => ({ flag })) },
-      { command: "init", flags: ["--agent-guidance", "--with-packages"].map((flag) => ({ flag })) },
+      { command: "workspace init", flags: ["--agent-guidance", "--with-packages"].map((flag) => ({ flag })) },
       { command: "get", flags: ["--fields"].map((flag) => ({ flag })) },
     ];
     const spawnSync = buildSpawnSync({
