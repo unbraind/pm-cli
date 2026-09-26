@@ -13,6 +13,10 @@ Native pm CLI integration for Claude Code. Use pm project management tools direc
 | **Hybrid TUI tracking** | pm items sync to Claude Code's task panel — pm is the persistent store, the task panel is the live session view |
 | **Session hook** | Injects active pm item summary at session start using the same pinned pm-cli runtime as the MCP server |
 
+The five skills are generated from the shared portable source in
+`templates/agent-skills/`. Both plugin packages carry identical workflow
+guidance; the Claude task panel mapping is conditional on its tools.
+
 ## Installation
 
 ### Option A: Plugin marketplace — canonical install (recommended)
@@ -177,7 +181,7 @@ Spawn pm-triage-agent to set up the pm item for: add OAuth2 login support
 
 ## Hybrid TUI Sync Pattern
 
-All skills and commands implement this pattern for every claimed item:
+Claude commands can mirror claimed items with this pattern:
 
 ```
 1. pm_claim → [pm stores claim]

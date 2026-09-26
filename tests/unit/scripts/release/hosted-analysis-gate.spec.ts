@@ -15,6 +15,7 @@ const RELEASE_MANIFESTS = [
   "packages/pm-example/package.json",
   "plugins/pm-claude/.claude-plugin/plugin.json",
   "plugins/pm-codex/.codex-plugin/plugin.json",
+  "plugins/pm-codex/plugin.json",
 ];
 const STRICT_PROTECTION = {
   required_status_checks: {

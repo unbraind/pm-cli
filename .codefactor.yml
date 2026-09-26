@@ -11,4 +11,5 @@ exclude:
   - "pnpm-lock.yaml"  # dependency lockfile
   - "packages/**/runtime-loader.ts"      # generated standalone loaders; drift is enforced by generator tests
   - "plugins/**/scripts/pm-mcp-server.mjs" # generated standalone launchers; drift is enforced by generator tests
+  - "plugins/**/scripts/plugin-runtime.mjs" # generated standalone runtime copies; drift is enforced by generator tests
   - "tests/**"        # test suite quality is enforced by repo gates; CodeFactor remains focused on shipped code

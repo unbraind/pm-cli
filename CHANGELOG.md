@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- SDK complete-list receipt falsely reports legacy aliases for canonical helper ([pm-vf9iaf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vf9iaf.toon))
+
 ### Other
 
 - Consolidate workspace customization discovery and commands under workspace with permanent compatibility aliases ([pm-npr3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-npr3.toon))

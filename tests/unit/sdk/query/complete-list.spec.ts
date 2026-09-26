@@ -70,7 +70,8 @@ const completeResult = () => ({
 
 describe("complete list SDK contract", () => {
   it("builds the canonical all-status, strict, unbounded request", () => {
-    expect(createCompleteListOptions({ includeBody: true })).toEqual({
+    const options = createCompleteListOptions({ includeBody: true });
+    expect(Object.fromEntries(Object.entries(options))).toEqual({
       excludeTerminal: false,
       full: true,
       includeBody: true,

@@ -100,6 +100,9 @@ function syncManifests(rootVersion, mode) {
   const drift = [];
   for (const relativePath of distributionManifestPaths(repoRoot)) {
     const manifest = readJson(relativePath);
+    if (relativePath === "plugins/pm-codex/plugin.json" && typeof manifest.version !== "string") {
+      fail(`${relativePath} requires a string version for portable plugin distribution.`);
+    }
     if (relativePath.startsWith("plugins/") && relativePath.endsWith("/package.json") &&
       (typeof manifest.version !== "string" || typeof manifest.dependencies?.["@unbrained/pm-cli"] !== "string")) {
       fail(`${relativePath} requires a string version and an exact @unbrained/pm-cli runtime dependency.`);

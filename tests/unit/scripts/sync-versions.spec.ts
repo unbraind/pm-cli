@@ -59,6 +59,10 @@ function inSyncFiles(): Record<string, JsonValue> {
       name: "pm-codex",
       version: ROOT_VERSION,
     },
+    "plugins/pm-codex/plugin.json": {
+      name: "pm-codex",
+      version: ROOT_VERSION,
+    },
     "plugins/pm-claude/package.json": {
       name: "pm-claude-runtime", version: ROOT_VERSION,
       dependencies: { "@unbrained/pm-cli": ROOT_VERSION },
@@ -116,6 +120,7 @@ function driftedFiles(): Record<string, JsonValue> {
   (files["plugins/pm-claude/package.json"] as {
     dependencies: { "@unbrained/pm-cli": string };
   }).dependencies["@unbrained/pm-cli"] = "2026.7.10";
+  files["plugins/pm-codex/plugin.json"].version = "2026.7.10";
   return files;
 }
 
@@ -204,6 +209,7 @@ describe("scripts/sync-versions: check mode", () => {
       `.agents/plugins/marketplace.json plugins[2].version: 1.1.0 -> ${ROOT_VERSION}`,
     );
     expect(message).toContain(`plugins/pm-claude/package.json dependencies.@unbrained/pm-cli: 2026.7.10 -> ${ROOT_VERSION}`);
+    expect(message).toContain(`plugins/pm-codex/plugin.json version: 2026.7.10 -> ${ROOT_VERSION}`);
     expect(message).toContain("pnpm version:sync");
     expect(result.writes).toEqual([]);
   });
@@ -222,7 +228,7 @@ describe("scripts/sync-versions: apply mode", () => {
     const writtenPaths = result.writes.map(
       (write) => write.path.split("/").slice(-1)[0],
     );
-    expect(result.writes).toHaveLength(5);
+    expect(result.writes).toHaveLength(6);
     expect(writtenPaths).toContain("package.json");
     expect(writtenPaths).toContain("marketplace.json");
     for (const write of result.writes) {
@@ -249,6 +255,14 @@ describe("scripts/sync-versions: apply mode", () => {
 });
 
 describe("scripts/sync-versions: guard rails", () => {
+  it.each([undefined, null, 7])("rejects a portable plugin without a string version %#", async (version) => {
+    const files = inSyncFiles();
+    files["plugins/pm-codex/plugin.json"].version = version;
+    const result = await runSyncVersionsScenario({ args: ["check"], files, packageDirs: ["pm-alpha"] });
+    expect(result.failure).toEqual(new Error("EXIT:1"));
+    expect(result.errors.join("\n")).toContain("plugins/pm-codex/plugin.json requires a string version");
+    expect(result.writes).toEqual([]);
+  });
   it.each([undefined, null, 7])("rejects malformed runtime versions in apply mode %#", async (version) => {
     const files = inSyncFiles();
     files["plugins/pm-claude/package.json"].version = version;

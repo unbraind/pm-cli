@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: agents,distribution,mcp,onboarding,skills
 created_at: "2026-07-13T09:31:21.359Z"
-updated_at: "2026-09-26T10:00:06.158Z"
+updated_at: "2026-09-26T15:47:57.335Z"
 author: maintainer-agent
 estimated_minutes: 1200
 acceptance_criteria: "pm-mcp published to the official MCP Registry with verified namespace, version-pinned launch command, transports, runtime requirement, permissions/local-data behavior; one canonical portable Agent Skills source tree derives the Claude and Codex skill packages (no hand-maintained copies) with trigger-oriented descriptions plus positive and near-miss trigger tests; pm setup-agent <client|all> detects the client, installs/updates skills, configures version-pinned MCP, selects a tool profile, verifies handshake, and runs a read-only pm context smoke test; pm agent doctor verifies runtime, workspace discovery, MCP launch, profile, skill/plugin versions, contract compatibility, context read, token size, and mutation identity; an agent project profile (pm profile apply agent) composes pm-brief, pm-context, compact context depth, search defaults, and minimal guidance; generated repository guidance stays tiny (a few pm commands + contracts pointer, detail lives in skills/pm guide); Codex plugin never silently runs a newer @latest MCP server than the installed plugin (bundle, pin, or fail clearly — same class as pm-l9wl on the Claude side)"
@@ -17,31 +17,74 @@ expected_result: "Agents find and install pm through a verified registry record,
 dependencies[2]{id,kind,created_at}:
   pm-l9wl,related,"2026-07-13T09:31:21.359Z"
   pm-wjfa,implements,"2026-07-26T05:54:44.496Z"
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-25T05:19:26.046Z","harness:codex","Roadmap integration: pm-8nzivt owns the 2026-07-28 Skills-over-MCP delivery lane and verifies this canonical skills outcome. Discovery stays summary-first; bodies and bundled resources load only on demand with explicit version, compatibility, provenance, and token-budget receipts."
   "2026-09-12T21:08:39.898Z","harness:codex","GitHub report: https://github.com/unbraind/pm-cli/issues/1246. Canonical tracking reused after complete all-status duplicate check."
   "2026-09-23T05:27:24.782Z","harness:codex","Implementation evidence: exact-version plugin package manifests and shared generated launchers are in this branch. The checkout launcher now accepts only the expected repository path with matching package/plugin versions; both copied plugin bundles passed a real npm-packed cache smoke in isolated temporary directories with PATH empty and npm offline. Focused plugin tests passed 23/23; full gates remain in progress."
   "2026-09-23T18:06:00.808Z","harness:codex","Tranche evidence: Claude and Codex generated launchers now select exact-version plugin runtimes and a private atomic cache. Generator parity is enforced in static quality. A real copied-cache acceptance smoke was added to CI; local run passed with npm unavailable after first install. Full 732-file, 9,244-test suite passed at exact 100/100/100/100 coverage; npx/bunx nine-package smoke and 89-command package-first dogfood passed. Remaining feature criteria include official MCP Registry publication, canonical skills, setup-agent, doctor, and agent project profile; keep this feature open after this delivery."
   "2026-09-26T10:00:06.158Z","harness:codex","GitHub intake 2026-09-26: issues #1311 and #1312 report byte-identical generated launcher/runtime copies in the Claude and Codex plugin bundles. Canonical templates and mandatory generator parity already own these copies. CodeFactor hosted ignore scope needs reconciliation; Chrome computer-use could not initialize because CUA_REPL_ENABLED_SURFACES is unavailable. No hosted setting was changed or zero-finding claim made."
+  "2026-09-26T15:44:31.103Z","harness:codex","Delivery evidence 2026-09-26: one canonical portable Agent Skills tree now generates five shared Claude/Codex skills and two Codex compatibility aliases; a checked generator prevents drift, preserving historical linked paths and the tracker missing-path baseline. Docs/skills validation, generator negative controls, packed offline plugin-cache smoke, both MCP plugin smokes, version synchronization, npm/npx and Bun/bunx temporary installed acceptance, security scan, and dependency audit passed. Broader acceptance remains open: registry publication, setup-agent, agent doctor, project profile, and trigger evaluation. Local static quality and substantive assurance passed; the CLI timing gate was noisy and unchanged main also missed create. Required CI will prove exact full coverage."
 notes[3]{created_at,author,text}:
   "2026-07-25T07:13:20.941Z","harness:claude-code","Skill-duplication measurement (ecosystem review 2026-07-25) for the 'one canonical portable Agent Skills source tree' half of this item's AC. Twelve SKILL.md files live under three unrelated roots: .agents/skills (pm-developer, pm-user, pm-extensions, pm-sdk), plugins/pm-claude/skills (pm-workflow, pm-audit, pm-planner, pm-developer, pm-release), plugins/pm-codex/skills (pm-native, pm-auditor, pm-release). Two names are maintained twice over — pm-developer exists in .agents/skills (74 lines, bash/CLI phrasing) and plugins/pm-claude/skills (116 lines, MCP tool phrasing); pm-release exists in both plugin trees and diverges by 90 diff lines, with the Claude copy carrying a Hybrid TUI Sync section the Codex copy lacks and the Codex copy carrying compatibility-gate steps the Claude copy lacks. The same is true of the audit pair (pm-audit vs pm-auditor). scripts/release/docs-skills-gate.mjs only asserts existence of the four .agents/skills entries plus frontmatter validity; nothing compares the harness copies, so the release loop can drift per harness indefinitely. No new item filed: this is evidence for the existing AC clause."
   "2026-07-25T21:17:31.627Z","harness:claude-code","Skill-root divergence census 2026-07-25 (evening ecosystem review), measured by content hash rather than name, sharpening the earlier \"duplication across 3 roots\" observation this item's AC already covers.\n\nThree tracked skill roots hold 12 SKILL.md files:\n- .agents/skills — pm-developer, pm-extensions, pm-sdk, pm-user (plus HARNESS_COMPATIBILITY.md and README.md)\n- plugins/pm-claude/skills — pm-audit, pm-developer, pm-planner, pm-release, pm-workflow\n- plugins/pm-codex/skills — pm-auditor, pm-native, pm-release\n\nThe finding is that the overlapping names are NOT copies, they have DIVERGED, which is worse than duplication because each root silently teaches an agent something different:\n- pm-developer exists in .agents/skills (74 lines) and plugins/pm-claude/skills (123 lines) with different content hashes.\n- pm-release exists in plugins/pm-claude/skills (82 lines) and plugins/pm-codex/skills (19 lines) with different content hashes — a 4x size gap for the same nominal skill, so a Codex-harness agent and a Claude-harness agent given \"the pm release skill\" receive materially different instructions.\n- pm-audit (claude) and pm-auditor (codex) are near-synonym names for the same role, which defeats name-based dedupe entirely and is also a naming-policy problem given the standing rule against the word \"audit\" in this project's own tracker vocabulary.\n\nConsequence for this item's \"one canonical skill source\" AC: the fix cannot be a straight de-duplication pass, because there is no single surviving version to keep. It needs a canonical source plus a per-harness projection (or explicit, reviewed per-harness overrides), and a gate that fails when two roots ship the same skill name with different content. Without the gate the roots re-diverge on the next edit to any one of them."
   "2026-07-26T11:30:02.836Z","harness:claude-code","Skill-corpus drift measured 2026-07-26, extending the 'duplication across 3 roots' observation already routed here — the roots have now diverged, so this is no longer only a duplication problem.\n\nTwelve SKILL.md files across three roots:\n\n  plugins/pm-claude/skills/  pm-planner 147, pm-workflow 144, pm-developer 123, pm-audit 84, pm-release 82\n  plugins/pm-codex/skills/   pm-native 69, pm-auditor 20, pm-release 19\n  .agents/skills/            pm-developer 74, pm-user 60, pm-extensions 58, pm-sdk 51\n\nSame-named skills, different content. pm-developer exists at two roots at 123 and 74 lines with 184 diff lines between them — the two copies share almost nothing verbatim, including the description line, which is the field a harness routes on. pm-release exists in both plugin roots at 82 and 19 lines, 89 diff lines. pm-audit and pm-auditor are the same skill under two names for two harnesses.\n\nThe drift is invisible to the gate. scripts/release/docs-skills-gate.mjs enforces per-file structure — frontmatter present, name matching the directory, a 'Use when' clause in the description, under 500 lines, guide routing markers, relative links resolvable, exactly one H1, and no duplicate section heading within a single file. Every one of those is a within-file check. There is no cross-file comparison of any kind, so two same-named skills can say opposite things and the gate stays green. The one duplication check that exists (line 437) fires only on a heading repeated inside one file.\n\nConsequence for this item's canonical-source AC: the divergence means consolidation is now a merge with judgment calls rather than a deduplication, and the longer it runs the more expensive it gets. A cheap interim control worth having regardless of when consolidation lands: fail the gate when two SKILL.md files share a name across roots and their bodies differ beyond a declared allowance, so drift is at least announced."
-files[13]{path,scope,note}:
+files[55]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,pm-changelog latest package installation provenance for generated changelog check
+  .codefactor.yml,project,Document generated runtime analysis scope
   .github/workflows/ci.yml,project,Require installed plugin cache smoke in CI
   .jscpd.json,project,Exclude generated byte-identical copies
   .jscpd.tables.json,project,Exclude generator-enforced identical plugin runtime copies from cross-format clone gate
   eslint-suppressions.json,project,Prune retired generator baseline suppression
   package.json,project,Expose cache smoke command
+  plugins/pm-claude/skills/pm-audit/agents/openai.yaml,project,Generated Claude skill bundle
+  plugins/pm-claude/skills/pm-audit/SKILL.md,project,Generated Claude skill bundle
+  plugins/pm-claude/skills/pm-developer/agents/openai.yaml,project,Generated Claude skill bundle
+  plugins/pm-claude/skills/pm-developer/SKILL.md,project,Generated Claude skill bundle
+  plugins/pm-claude/skills/pm-planner/agents/openai.yaml,project,Generated Claude skill bundle
+  plugins/pm-claude/skills/pm-planner/SKILL.md,project,Generated Claude skill bundle
+  plugins/pm-claude/skills/pm-release/agents/openai.yaml,project,Generated Claude skill bundle
+  plugins/pm-claude/skills/pm-release/SKILL.md,project,Generated Claude skill bundle
+  plugins/pm-claude/skills/pm-workflow/agents/openai.yaml,project,Generated Claude skill bundle
+  plugins/pm-claude/skills/pm-workflow/SKILL.md,project,Generated Claude skill bundle
+  plugins/pm-codex/skills/pm-audit/agents/openai.yaml,project,Generated Codex skill bundle
+  plugins/pm-codex/skills/pm-audit/SKILL.md,project,Generated Codex skill bundle
+  plugins/pm-codex/skills/pm-auditor/agents/openai.yaml,project,Generated review alias retained for historical links
+  plugins/pm-codex/skills/pm-auditor/SKILL.md,project,Generated review alias retained for historical links
+  plugins/pm-codex/skills/pm-developer/agents/openai.yaml,project,Generated Codex skill bundle
+  plugins/pm-codex/skills/pm-developer/SKILL.md,project,Generated Codex skill bundle
+  plugins/pm-codex/skills/pm-native/agents/openai.yaml,project,Generated native alias retained for historical links
+  plugins/pm-codex/skills/pm-native/SKILL.md,project,Generated native alias retained for historical links
+  plugins/pm-codex/skills/pm-planner/agents/openai.yaml,project,Generated Codex skill bundle
+  plugins/pm-codex/skills/pm-planner/SKILL.md,project,Generated Codex skill bundle
+  plugins/pm-codex/skills/pm-release/agents/openai.yaml,project,Generated Codex skill bundle
+  plugins/pm-codex/skills/pm-release/SKILL.md,project,Generated Codex skill bundle
+  plugins/pm-codex/skills/pm-workflow/agents/openai.yaml,project,Generated Codex skill bundle
+  plugins/pm-codex/skills/pm-workflow/SKILL.md,project,Generated Codex skill bundle
+  scripts/gen-agent-plugin-skills.mjs,project,Generate and check both bundles
   scripts/gen-plugin-mcp-wrappers.mjs,project,Generate and check Claude and Codex launchers
   scripts/sync-versions.mjs,project,Keep plugin dependency pins in release lockstep
   templates/agent-plugins/plugin-runtime.mjs,project,Single source for version-coherent plugin cache resolution
   templates/agent-plugins/pm-mcp-server.mjs,project,Single source for copied native launchers
+  templates/agent-skills/codex-aliases/pm-auditor/agents/openai.yaml,project,Generated Codex compatibility aliases
+  templates/agent-skills/codex-aliases/pm-auditor/SKILL.md,project,Generated Codex compatibility aliases
+  templates/agent-skills/codex-aliases/pm-native/agents/openai.yaml,project,Generated Codex compatibility aliases
+  templates/agent-skills/codex-aliases/pm-native/SKILL.md,project,Generated Codex compatibility aliases
+  templates/agent-skills/pm-audit/agents/openai.yaml,project,Canonical portable skill source
+  templates/agent-skills/pm-audit/SKILL.md,project,Canonical portable skill source
+  templates/agent-skills/pm-developer/agents/openai.yaml,project,Canonical portable skill source
+  templates/agent-skills/pm-developer/SKILL.md,project,Canonical portable skill source
+  templates/agent-skills/pm-planner/agents/openai.yaml,project,Canonical portable skill source
+  templates/agent-skills/pm-planner/SKILL.md,project,Canonical portable skill source
+  templates/agent-skills/pm-release/agents/openai.yaml,project,Canonical portable skill source
+  templates/agent-skills/pm-release/SKILL.md,project,Canonical portable skill source
+  templates/agent-skills/pm-workflow/agents/openai.yaml,project,Canonical portable skill source
+  templates/agent-skills/pm-workflow/SKILL.md,project,Canonical portable skill source
   tests/acceptance/plugin-cache-smoke.mjs,project,Real packed copied-cache offline acceptance harness
   tests/helpers/releaseContracts.ts,project,Pin generator check in release quality contract tests
   tests/unit/plugins/plugin-runtime-races.spec.ts,project,Installer and atomic publication race coverage
   tests/unit/plugins/plugin-runtime.spec.ts,project,Version pin cache reuse offline and isolation coverage
-tests[2]:
+  tests/unit/scripts/gen-agent-plugin-skills.spec.ts,project,"Canonical skill projection drift, regeneration, and unowned directory contract"
+tests[5]:
   - command: node scripts/run-tests.mjs test -- tests/unit/scripts/gen-plugin-mcp-wrappers.spec.ts tests/unit/scripts/sync-versions.spec.ts
     scope: project
     timeout_seconds: 300
@@ -59,7 +102,35 @@ tests[2]:
       source_kind: local_mutation
       source_ref: feat/version-coherent-agent-plugin-runtimes
     note: Packed copied-cache offline MCP smoke
-docs[2]{path,scope,note}:
+  - command: node scripts/gen-agent-plugin-skills.mjs --check
+    scope: project
+    timeout_seconds: 60
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-26T13:56:29.989Z"
+      source_kind: local_mutation
+      source_ref: feat/portable-codex-agent-onboarding
+    note: Fail on skill drift
+  - command: "pnpm quality:docs-skills"
+    scope: project
+    timeout_seconds: 180
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-26T13:56:29.989Z"
+      source_kind: local_mutation
+      source_ref: feat/portable-codex-agent-onboarding
+    note: Validate agent docs and skills
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/gen-agent-plugin-skills.spec.ts
+    scope: project
+    timeout_seconds: 180
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-26T14:40:32.302Z"
+      source_kind: local_mutation
+      source_ref: feat/portable-codex-agent-onboarding
+docs[4]{path,scope,note}:
   docs/CLAUDE_CODE_PLUGIN.md,project,Document copied-cache verification
   docs/CODEX_PLUGIN.md,project,Document copied-cache verification
+  plugins/pm-claude/README.md,project,Explain canonical skill source
+  plugins/pm-codex/README.md,project,Explain shared skill projection
 body: "# Agent distribution funnel\n\nHumans discover via posts/demos/search. Agents discover and select via: tool names+descriptions, skill metadata, repository instructions, MCP registry records, resources/prompts, trust+permission metadata, context cost, and successful prior calls. Funnel stages:\n\n    DISCOVERY  registry, package metadata, agent skill, AGENTS.md, plugin marketplace\n    SELECTION  tool description quality, trigger accuracy, small active surface, trust metadata\n    ACTIVATION workspace detection, init, health/doctor, first context result\n    VALUE      correct next work, successful claim, useful handoff, evidence-backed close\n    RETENTION  session hook, durable history, new-session continuity, low context cost\n\n## Canonical Agent Skills package (derive Claude + Codex from ONE source tree, portable SKILL.md format)\nRecommended skills and triggers: pm-orient (starting/resuming work in a pm repository) · pm-triage (turning a request into duplicate-checked structured work) · pm-plan (creating/updating a durable implementation plan) · pm-deliver (claim, implement, link evidence, validate, close) · pm-handoff (compact context for another agent/session) · pm-review (health, duplicates, missing metadata, project integrity checks) · pm-package-author (building/testing a pm SDK package). Each skill: precise trigger-oriented description (optimized for triggering, not marketing prose), explicit use-when / do-not-use-when boundaries, short core procedure, on-demand references, positive trigger tests, near-miss negative tests, output-quality evals. Example description: \"Use when starting, resuming, triaging, planning, implementing, verifying, or handing off repository work managed under .agents/pm. Prefer pm context, pm next, and search before creating or mutating items.\"\n\n## MCP Registry (preview — keep editor-specific setup paths too)\nCanonical record: stable package identifier, version-pinned launch command, supported transports, runtime requirement, tool profiles, permissions + local-data behavior, repo/docs metadata, checksums/provenance where supported. Verify the namespace.\n\n## MCP resources and prompts (reduce pressure to make every behavior a tool)\nResources: pm://workspace/context, pm://workspace/contracts, pm://workspace/schema, pm://workflow/orient, pm://workflow/deliver, pm://workflow/handoff, pm://packages/catalog. Prompts: pm-start-work, pm-triage-request, pm-create-plan, pm-close-with-evidence, pm-handoff.\n\n## pm setup-agent (build on existing pm init --agent-guidance, do not replace it)\n    pm setup-agent claude|codex|cursor|vscode|gemini|windsurf|all\n1 detect client, 2 install/update canonical skills, 3 configure MCP with version-pinned runtime, 4 add minimal repo guidance, 5 select default tool profile, 6 verify handshake + tool list, 7 read-only pm context smoke test, 8 print exact next steps.\n\n## pm agent doctor (support tool AND onboarding conversion tool)\n    pm agent doctor [--client claude|codex] [--json]\nChecks: runtime version, workspace discovery, MCP launch, tool profile, skill install+version, plugin/runtime compatibility, package activation, contract compatibility, context read, token size, mutation identity, optional search-provider health. Builds on existing health/validate/package-doctor infrastructure.\n\n## agent project profile (use the existing profile system — profiles already compose schema, workflows, config, templates, recommended packages)\n`pm profile apply agent`: recommends pm-brief + pm-context + guide-shell + linked-test adapters, agent-oriented workflow defaults, compact context depth, search defaults, minimal guidance. Advanced semantic search stays optional.\n\n## Tiny repository guidance (generated; giant AGENTS.md files are an anti-goal — fence note (4) on pm-wjfa)\n    ## Project context\n    This repository uses pm.\n    - Start with pm context --limit 10 or pm next.\n    - Search before creating work. Claim before mutating.\n    - Link relevant files, docs, and tests. Close with evidence and a reason.\n    - pm contracts --summary --json for the active machine surface.\n\n## Version coherence\nThe Codex plugin must not silently run a newer @latest MCP server than the installed plugin: bundle the matching runtime, pin the npm version in generated launcher metadata, resolve the plugin version and request exactly it, or fail clearly. Claude-side marketplace @latest fallback is owned by pm-l9wl (related) — fix per-plugin, same class. Version coherence is part of the trust story."

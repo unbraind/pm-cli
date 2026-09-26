@@ -4,6 +4,7 @@
  * Certifies that a list result represents the complete, unfiltered workspace.
  */
 import type { PmReadOutputReceipt } from "../read-output-contracts.js";
+import { markCanonicalSdkReadOutputOptions } from "../read-output/provenance.js";
 import type { ListFullResult, ListOptions, ListedItem } from "./list.js";
 
 /** Stable reasons a purported whole-workspace list cannot be trusted. */
@@ -136,7 +137,7 @@ export function createCompleteListOptions(
   outputLimit: "unbounded";
   strictRead: true;
 } {
-  return {
+  return markCanonicalSdkReadOutputOptions({
     excludeTerminal: false,
     full: true,
     ...(options.includeBody === undefined
@@ -146,7 +147,7 @@ export function createCompleteListOptions(
     outputBudget: "unbounded",
     outputLimit: "unbounded",
     strictRead: true,
-  };
+  }, ["full"]);
 }
 
 /** Narrow an unknown envelope fragment to a non-array object. */

@@ -7,6 +7,14 @@ MCP server. Its cached runtime installs the exact version declared by the plugin
 audit, verified gaps, and phased remediation plan are documented in
 [Native ChatGPT and Codex Plugin Implementation Plan](CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md).
 
+The portable package uses root `plugin.json` and `mcp.json`. The existing
+`.codex-plugin/plugin.json` and `.mcp.json` remain compatibility manifests for
+older hosts. The portable MCP entry launches the same exact-version cached
+server as the compatibility entry. `pnpm version:check` and the release
+provenance gate cover both versioned plugin manifests. The five portable skills
+are generated from `templates/agent-skills/` into both plugin bundles, with
+static drift checking before release.
+
 ## Install From This Repo
 
 ```bash

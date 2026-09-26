@@ -1,0 +1,39 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "pm-codex",
+  "version": "2026.9.26",
+  "description": "Repository-native project context workflows and a version-pinned pm MCP server for Codex.",
+  "author": {
+    "name": "unbrained",
+    "url": "https://github.com/unbraind/pm-cli"
+  },
+  "homepage": "https://github.com/unbraind/pm-cli/tree/main/plugins/pm-codex",
+  "repository": "https://github.com/unbraind/pm-cli",
+  "license": "MIT",
+  "keywords": [
+    "pm-cli",
+    "codex",
+    "mcp",
+    "project-management",
+    "agents"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "pm CLI",
+        "shortDescription": "Track project context with pm",
+        "longDescription": "Orient, plan, implement, verify, and hand off work with repository-native pm records and a bundled MCP server.",
+        "developerName": "unbrained",
+        "category": "Coding",
+        "capabilities": ["Interactive", "Read", "Write"],
+        "websiteURL": "https://github.com/unbraind/pm-cli",
+        "privacyPolicyURL": "https://github.com/unbraind/pm-cli/blob/main/SECURITY.md",
+        "termsOfServiceURL": "https://github.com/unbraind/pm-cli/blob/main/LICENSE",
+        "defaultPrompt": ["Use pm to orient, track, verify, and hand off this repository task."],
+        "composerIcon": "./assets/pm-cli-small.svg",
+        "logo": "./assets/pm-cli-small.svg",
+        "brandColor": "#2563EB"
+      }
+    }
+  }
+}

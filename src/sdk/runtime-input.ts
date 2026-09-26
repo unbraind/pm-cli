@@ -373,6 +373,9 @@ export function normalizeMcpOptionsArrays(
     }
     result[key] = value;
   }
+  Object.assign(result, Object.fromEntries(
+    Object.getOwnPropertySymbols(options).map((symbol) => [symbol, Reflect.get(options, symbol)]),
+  ));
   return result;
 }
 

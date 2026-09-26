@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import {
   assertProtocolHandshakeMatrix,
@@ -6,7 +7,17 @@ import {
 } from "./plugin-mcp-smoke-harness.mjs";
 
 const repoRoot = process.cwd();
-const serverPath = path.join(repoRoot, "plugins", "pm-codex", "scripts", "pm-mcp-server.mjs");
+const pluginRoot = path.join(repoRoot, "plugins", "pm-codex");
+const portableMcp = JSON.parse(await readFile(path.join(pluginRoot, "mcp.json"), "utf8"));
+const portableServer = portableMcp.mcpServers?.["pm-mcp"];
+if (portableServer?.type !== "stdio" || portableServer.command !== "node" ||
+    portableServer.cwd !== "./" || portableServer.args?.length !== 1) {
+  throw new Error("Portable Codex MCP manifest does not declare the standalone Node launcher");
+}
+const serverPath = path.resolve(pluginRoot, portableServer.args[0]);
+if (serverPath !== path.join(pluginRoot, "scripts", "pm-mcp-server.mjs")) {
+  throw new Error("Portable Codex MCP manifest does not target the pinned plugin launcher");
+}
 
 const { tmpRoot, request, callTool, dispose } = await startPluginMcpSmoke({
   serverPath,

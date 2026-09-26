@@ -1,0 +1,4 @@
+interface:
+  display_name: "pm Review"
+  short_description: "Inspect tracker health and readiness"
+  default_prompt: "Review live pm health, quality, and release evidence; report verified findings."
