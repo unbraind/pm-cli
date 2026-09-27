@@ -9,9 +9,11 @@ import {
   runActiveOnWriteHooks,
 } from "../extensions/index.js";
 import {
+  EXIT_CODE,
   GOVERNANCE_PRESET_DEFAULTS,
   SETTINGS_DEFAULTS,
 } from "../shared/constants.js";
+import { PmCliError } from "../shared/errors.js";
 import { resolveAuthor } from "../shared/author.js";
 import { readFileIfExists } from "../fs/fs-utils.js";
 import { mutateWorkspaceJsonWithHistory } from "../history/workspace-history.js";
@@ -2034,16 +2036,38 @@ export async function writeSettings(
     await mutateWorkspaceJsonWithHistory({
       pmRoot,
       filePath: settingsPath,
-      mutate: (beforeRaw) => ({
-        raw: source
-          ? `${JSON.stringify(orderObject(reconcileSettingsSnapshot(
-              source.persisted_settings,
-              proposed,
-              beforeRaw === null ? null : JSON.parse(beforeRaw) as unknown,
-            ) as Record<string, unknown>, SETTINGS_TOP_LEVEL_KEY_ORDER), null, 2)}\n`
-          : afterRaw,
-        result: undefined,
-      }),
+      mutate: (beforeRaw) => {
+        let current: unknown = null;
+        if (beforeRaw !== null) {
+          try {
+            current = JSON.parse(beforeRaw) as unknown;
+          } catch {
+            throw new PmCliError(
+              "Existing settings.json is malformed; the settings write was refused.",
+              EXIT_CODE.USAGE,
+              {
+                code: "settings_write_invalid_existing_json",
+                reason: "existing_settings_json_malformed",
+                why: "Writing defaults over malformed settings could destroy intended project configuration.",
+                nextSteps: [
+                  "Repair the syntax in .agents/pm/settings.json, then retry the original command.",
+                  "Run pm health to confirm the settings warning has cleared.",
+                ],
+              },
+            );
+          }
+        }
+        return {
+          raw: source
+            ? `${JSON.stringify(orderObject(reconcileSettingsSnapshot(
+                source.persisted_settings,
+                proposed,
+                current,
+              ) as Record<string, unknown>, SETTINGS_TOP_LEVEL_KEY_ORDER), null, 2)}\n`
+            : afterRaw,
+          result: undefined,
+        };
+      },
       op,
       author: resolveAuthor(undefined, settings.author_default),
       lockTtlSeconds: settings.locks.ttl_seconds,

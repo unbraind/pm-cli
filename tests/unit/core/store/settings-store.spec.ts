@@ -6,6 +6,7 @@ import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../../../
 import type { ExtensionHookRegistry } from "../../../../src/core/extensions/loader.js";
 import { normalizeRuntimeSchemaSettings } from "../../../../src/core/schema/runtime-schema.js";
 import { DEFAULT_STATUS_DEFINITIONS, SETTINGS_DEFAULTS } from "../../../../src/core/shared/constants.js";
+import { getWorkspaceHistoryPath } from "../../../../src/core/history/workspace-history.js";
 import { getSettingsPath } from "../../../../src/core/store/paths.js";
 import {
   clearSettingsReadCache,
@@ -105,6 +106,23 @@ describe("core/store/settings", () => {
       const metadataRead = await readSettingsWithMetadata(pmRoot);
       expect(metadataRead.settings).toEqual(SETTINGS_DEFAULTS);
       expect(metadataRead.warnings).toEqual(["settings_read_invalid_json"]);
+    });
+  });
+
+  it("refuses a settings write over malformed JSON without changing the file or workspace history", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const settingsPath = getSettingsPath(pmRoot);
+      const malformed = "{ invalid-json";
+      await fs.mkdir(path.dirname(settingsPath), { recursive: true });
+      await fs.writeFile(settingsPath, malformed, "utf8");
+
+      const settings = await readSettings(pmRoot);
+      await expect(writeSettings(pmRoot, settings)).rejects.toMatchObject({
+        code: "settings_write_invalid_existing_json",
+        exitCode: 2,
+      });
+      expect(await fs.readFile(settingsPath, "utf8")).toBe(malformed);
+      await expect(fs.stat(getWorkspaceHistoryPath(pmRoot))).rejects.toMatchObject({ code: "ENOENT" });
     });
   });
 

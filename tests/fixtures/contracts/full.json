@@ -24645,6 +24645,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "settings_write_invalid_existing_json",
+      "class": "usage",
+      "code": "settings_write_invalid_existing_json",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Settings write invalid existing json condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/settings.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "stale_budget",
       "class": "generic_failure",
       "code": "stale_budget",

@@ -1,0 +1,74 @@
+id: pm-z329kd
+title: Malformed settings writes escape as unclassified Sentry faults
+description: "Sentry PM-CLI-3D (one handled generic SyntaxError on released 2026.9.27) maps through writeSettings to JSON.parse of an existing malformed settings.json under the workspace-history lock. A disposable config set reproduces a settings_read_invalid_json warning followed by unknown_error and exit 1 while leaving the file unchanged. Convert this expected corrupt-input refusal into a typed, actionable settings/history error without weakening mutation integrity."
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:history","area:observability","area:settings",defect,sentry
+created_at: "2026-09-27T11:02:43.845Z"
+updated_at: "2026-09-27T11:49:25.972Z"
+closed_at: "2026-09-27T11:48:38.497Z"
+completed_at: "2026-09-27T11:48:38.497Z"
+author: "harness:codex"
+acceptance_criteria: "A disposable malformed settings.json config mutation returns a stable typed refusal with safe repair guidance instead of an unknown runtime error; The existing file and workspace history remain unchanged after refusal, with valid settings writes and merge reconciliation still working; Exact full coverage, focused regression, packed CLI acceptance, and hosted gates pass; Sentry issue and live telemetry are rechecked with released-versus-merged evidence kept distinct"
+goal: project management = context management
+objective: Settings mutations preserve context and report corrupt input as a recoverable refusal
+value: Avoid opaque runtime failures and noisy production Sentry incidents
+impact: Keep settings and hash-chained history safe while giving agents actionable recovery
+outcome: Malformed settings writes fail clearly without mutation or unclassified Sentry capture
+parent: pm-o2kc
+risk: high
+severity: high
+repro_steps: "In a disposable initialized PM root, replace settings.json with malformed content beginning with { then run pm config set test-result-tracking enabled --json; observe settings_read_invalid_json followed by unknown_error and unchanged file."
+resolution: "The SDK settings store parses the locked existing JSON and raises settings_write_invalid_existing_json with repair steps before document or workspace-history mutation; generated contracts, public docs, and regression coverage are updated."
+expected_result: "Malformed settings config writes return a stable typed refusal, preserve the existing file and history, and allow valid writes after repair."
+actual_result: "Disposable CLI acceptance returned exit 2 with repair guidance, unchanged malformed settings and no _workspace history; repaired settings wrote successfully. Focused linked test, 9,375-test exact 100/100/100/100 coverage, docs/skills, mutation, record-integrity, graph-composition, and packed npx/bunx smoke passed. Local static aggregate stopped at host-sensitive transport timing; hosted checks remain to be verified on the PR. Existing Sentry event belongs to the published pre-fix release."
+affected_version: 2026.9.27
+component: core/store/settings + core/history/workspace-history
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-flbo,discovered_from,"2026-09-27T11:02:43.845Z","harness:codex","cli:create:dep",detected
+  pm-k0nl2w,discovered_from,"2026-09-27T11:02:43.845Z","harness:codex","cli:create:dep",detected
+  pm-xdn6,discovered_from,"2026-09-27T11:02:43.845Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-27T11:02:43.845Z","harness:codex","Duplicate check: all-status searches for PM-CLI-3D, malformed settings write, JSON.parse, and unclassified Sentry found related closed read/bootstrap, merge-safety, and classifier items but no owner for write-path parse failure. The release event occurred once at 2026-09-27T10:11:18Z; a disposable local reproduction matches the error and confirms no document mutation."
+  "2026-09-27T11:06:31.514Z","harness:codex","TDD red: disposable malformed settings.json caused writeSettings to throw a raw SyntaxError in the focused store test (31 pass, 1 expected failure). The preexisting file and workspace-history must remain unchanged; the new assertion requires a stable settings_write_invalid_existing_json refusal. No production source changed yet."
+  "2026-09-27T11:32:41.260Z","harness:codex","Verification: corrected full coverage run passed 9,375 tests (2 platform skips) with exact statements/branches/functions/lines 100/100/100/100 and zero uncovered counts. Initial run failed only because the new SDK error code required an updated public-surface snapshot; snapshot updated and full run repeated successfully. Disposable CLI config set refused malformed settings with exit 2 and settings_write_invalid_existing_json, preserved settings.json and absent _workspace history, then succeeded after syntax repair."
+  "2026-09-27T11:48:29.148Z","harness:codex","Verification: docs/skills gate passed; packed npx and bunx smoke passed for version 2026.9.27 with nine packages; mutation gate passed 323 killed, seven equivalent, score 97.88%; record-integrity and graph-composition assurance passed. Local quality:static passed through SDK entrypoint costs, then failed only the host-sensitive CLI transport-floor budget (get 364>362 ms, next 550>440 ms, create 553>398 ms); the benchmark ceiling was not changed. Hosted exact-head gates remain pending."
+learnings[1]{created_at,author,text}:
+  "2026-09-27T11:48:28.318Z","harness:codex",Read-time fallback to defaults must never be interpreted as permission to overwrite malformed persisted settings. Parse the locked current document before any settings write and return a typed repairable refusal.
+files[8]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog install receipt refreshed during managed changelog generation
+  CHANGELOG.md,project,Generated closed-item changelog entry
+  sdk/public-surface.json,project,Public SDK error vocabulary snapshot
+  src/core/store/settings.ts,project,Classify malformed existing JSON before history mutation
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated catalog partition update
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated settings refusal contract
+  tests/fixtures/contracts/full.json,project,Runtime contract snapshot
+  tests/unit/core/store/settings-store.spec.ts,project,Real malformed settings persistence regression
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/core/store/settings-store.spec.ts --run,project,240,"harness:codex","2026-09-27T11:07:28.929Z",local_mutation,fix/classify-malformed-settings-writes
+test_runs[1]:
+  - run_id: test-local-mujpv7r9-pxxk4k
+    kind: test
+    status: passed
+    started_at: "2026-09-27T11:09:36.283Z"
+    finished_at: "2026-09-27T11:09:44.325Z"
+    recorded_at: "2026-09-27T11:09:44.325Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/core/store/settings-store.spec.ts --run,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/CONFIGURATION.md,project,Explain refusal and repair workflow
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated refusal census tracks new code and outstanding executable probe
+close_reason: Classify malformed existing settings JSON before a write
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  gate_id: settings-malformed-write-refusal
+  negative_control: Focused settings-store regression failed against pre-fix 0c3b00880 with raw SyntaxError (TDD red)
+  local_checks[3]: node scripts/run-tests.mjs test tests/unit/core/store/settings-store.spec.ts --run,node scripts/run-tests.mjs coverage,"pnpm smoke:npx"
+  hosted_checks[2]: Gates coverage and static quality,CI packed npm and Bun first run
+  owner: pm-cli settings store
+body: ""
