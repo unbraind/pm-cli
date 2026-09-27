@@ -15,7 +15,9 @@ Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), 
   in disposable workspaces. It applies stored-command provenance checks before process
   creation. Direct runners are accepted; prefer
   `node scripts/run-tests.mjs ...` when the repository provides it because the
-  wrapper also reproduces build, coverage, and cleanup policy.
+  wrapper also reproduces build, coverage, and cleanup policy. Use a direct
+  runner when a `none`-mode test must observe an unset `PM_PATH`; the wrapper
+  creates its own sandboxed `PM_PATH`.
 - Run linked tests before closing the item that owns the work.
 
 Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
@@ -601,7 +603,7 @@ Use explicit modes when needed:
 pm test <item-id> --run --pm-context schema
 pm test <item-id> --run --pm-context tracker
 pm test <item-id> --run --pm-context auto --check-context --auto-pm-context
-pm test <item-id> --add-json '{"command":"node scripts/run-tests.mjs test -- tests/integration/independent-sdk-workspaces.spec.ts","pm_context_mode":"none","workspace_context_mode":"snapshot"}'
+pm test <item-id> --add-json '{"command":"pnpm exec vitest run tests/integration/linked-test-context-trust.integration.spec.ts","pm_context_mode":"none","workspace_context_mode":"snapshot"}'
 ```
 
 For complex linked-test commands, prefer JSON input so shell syntax survives unchanged:
