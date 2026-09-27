@@ -9,12 +9,18 @@ const sourceRoot = path.join(repoRoot, "templates", "agent-skills");
 const codexAliasRoot = path.join(sourceRoot, "codex-aliases");
 const pluginNames = ["pm-claude", "pm-codex"];
 const skillFiles = ["SKILL.md", "agents/openai.yaml"];
+// Claude-only invocation workflows are authored in the plugin beside generated portable skills.
+const claudeOnlySkills = [
+  "pm-calendar", "pm-close-task", "pm-init", "pm-list", "pm-new",
+  "pm-search", "pm-start-task", "pm-status", "pm-triage",
+];
 
 /** Check or update one standalone plugin without crossing its package boundary. */
-async function syncPluginSkills(pluginName, commonNames, aliasNames, check) {
+async function syncPluginSkills(pluginName, commonNames, aliasNames, additionalNames, check) {
   const drift = [];
   const pluginRoot = path.join(repoRoot, "plugins", pluginName, "skills");
   const skillNames = pluginName === "pm-codex" ? [...commonNames, ...aliasNames] : commonNames;
+  const allowedNames = [...skillNames, ...additionalNames];
   const published = await readdir(pluginRoot).catch(async (error) => {
     if (error?.code !== "ENOENT") throw error;
     if (check) return null;
@@ -22,7 +28,7 @@ async function syncPluginSkills(pluginName, commonNames, aliasNames, check) {
     return [];
   });
   if (published === null) return [path.relative(repoRoot, pluginRoot)];
-  const unexpected = published.filter((name) => !skillNames.includes(name));
+  const unexpected = published.filter((name) => !allowedNames.includes(name));
   if (unexpected.length > 0) {
     throw new Error(
       `${pluginName} has unowned skill directories: ${unexpected.join(", ")}`,
@@ -55,7 +61,8 @@ export async function main() {
   if (commonNames.length === 0) throw new Error("Canonical Agent Skills tree is empty");
   const drift = [];
   for (const pluginName of pluginNames) {
-    drift.push(...await syncPluginSkills(pluginName, commonNames, aliasNames, check));
+    const additionalNames = pluginName === "pm-claude" ? claudeOnlySkills : [];
+    drift.push(...await syncPluginSkills(pluginName, commonNames, aliasNames, additionalNames, check));
   }
   if (drift.length > 0) {
     throw new Error(

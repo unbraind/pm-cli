@@ -7,15 +7,15 @@ Native pm CLI integration for Claude Code. Use pm project management tools direc
 | Component | What it provides |
 |-----------|----------------|
 | **32 MCP tools** | Full pm surface: discover, next, context, search, events, list, get, create, atomic mutate, copy, focus, update, claim, release, close, comments, files, docs, notes, learnings, deps, graph, test, validate, health, contracts, plan, append, schema, config, profile + `pm_run` for everything else |
-| **5 skills** | `pm-workflow`, `pm-developer`, `pm-release`, `pm-audit`, `pm-planner` — auto-loaded as Claude Code skills |
-| **14 slash commands** | Full lifecycle coverage — status, start, close, triage, audit, search, new, list, calendar, developer, planner, release, workflow, init |
+| **14 skills and slash invocations** | Full lifecycle coverage — status, start, close, triage, audit, search, new, list, calendar, developer, planner, release, workflow, init |
 | **4 subagents** | `pm-coordinator` (batch/multi-item), `pm-triage-agent` (duplicate-safe item creation), `pm-verification-agent` (evidence + close readiness), and `pm-delivery-chain` (orchestrated delivery) |
 | **Hybrid TUI tracking** | pm items sync to Claude Code's task panel — pm is the persistent store, the task panel is the live session view |
 | **Session hook** | Injects active pm item summary at session start using the same pinned pm-cli runtime as the MCP server |
 
-The five skills are generated from the shared portable source in
+Five core workflow skills are generated from the shared portable source in
 `templates/agent-skills/`. Both plugin packages carry identical workflow
 guidance; the Claude task panel mapping is conditional on its tools.
+The other nine skills provide Claude-specific, directly invocable workflows.
 
 ## Installation
 
@@ -33,7 +33,7 @@ claude plugin marketplace add /path/to/pm-cli
 # claude plugin marketplace add unbraind/pm-cli
 ```
 
-This installs all 32 MCP tools, 5 skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and the session hook in one step. (`pm-claude` is the plugin name; `pm` is the marketplace name from `marketplace.json`.)
+This installs all 32 MCP tools, 14 skills available through `/pm-*`, 4 subagents, hybrid TUI tracking, and the session hook in one step. (`pm-claude` is the plugin name; `pm` is the marketplace name from `.claude-plugin/marketplace.json`.)
 
 ### Option B: Global MCP server via Claude Code CLI (MCP tools only)
 
@@ -41,7 +41,7 @@ This installs all 32 MCP tools, 5 skills, 14 slash commands, 4 subagents, hybrid
 claude mcp add --transport stdio pm-mcp -- npx -y --package=@unbrained/pm-cli@latest pm-mcp
 ```
 
-This gives you the 32 MCP tools but not the skills, slash commands, or session hook.
+This gives you the 32 MCP tools but not the skills or session hook.
 
 ### Option C: Direct `.mcp.json` (project-scoped MCP only)
 
@@ -91,7 +91,7 @@ When you `/pm-start-task` or `/pm-developer`:
 
 This means you get full history in pm (survives restarts, visible in `pm list`) and live visual feedback in the Claude Code session.
 
-## Slash Commands
+## Skill Invocations
 
 | Command | What it does |
 |---------|-------------|
@@ -110,7 +110,7 @@ This means you get full history in pm (survives restarts, visible in `pm list`) 
 | `/pm-workflow [id or description]` | General pm workflow loop with TUI tracking |
 | `/pm-init [project name]` | Initialize pm in the current project |
 
-## Skills
+## Core Skills
 
 | Skill | When Claude uses it |
 |-------|-------------------|

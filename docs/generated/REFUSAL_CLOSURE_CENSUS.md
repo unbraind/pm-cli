@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 387
+- Catalog error codes: 388
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 368
-- Coverage fraction: 0.049096
+- Uncovered error codes: 369
+- Coverage fraction: 0.048969
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -86,6 +86,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `extension_dependency_name_unsafe` | `extension_dependency_name_unsafe` | uncovered | none | 0 |
 | `extension_dependency_spec_invalid` | `extension_dependency_spec_invalid` | uncovered | none | 0 |
 | `extension_dependency_version_unsafe` | `extension_dependency_version_unsafe` | uncovered | none | 0 |
+| `extension_install_incomplete_source_scan` | `extension_install_incomplete_source_scan` | uncovered | none | 0 |
 | `extension_install_soft_failed` | `extension_install_soft_failed` | uncovered | none | 0 |
 | `extension_install_source_contains_destination` | `extension_install_source_contains_destination` | uncovered | none | 0 |
 | `extension_item_field_reserved` | `extension_item_field_reserved` | uncovered | none | 0 |

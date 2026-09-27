@@ -1,4 +1,5 @@
 ---
+name: pm-search
 description: Search pm items by keywords, tags, status, or type — returns ranked results with context. Pass the search query as argument.
 ---
 

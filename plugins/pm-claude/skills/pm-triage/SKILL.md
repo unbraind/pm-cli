@@ -1,4 +1,5 @@
 ---
+name: pm-triage
 description: Triage a new request through pm — check for duplicates, create canonical parent lineage if needed, and produce a scoped child item with acceptance criteria. Pass the request description as argument.
 ---
 

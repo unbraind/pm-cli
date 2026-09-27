@@ -10,6 +10,41 @@ import { writeTestExtension } from "../../helpers/extensions.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("package install dry run", () => {
+  it("refuses incomplete directory scans before dry runs or real installs can publish a package", async () => {
+    await withTempPmPath(async (context) => {
+      const source = path.join(context.tempRoot, "limited-source");
+      await writeTestExtension({ root: source, name: "limited-package" });
+      await fs.writeFile(path.join(source, "package.json"), JSON.stringify({ name: "limited-package", version: "1.0.0" }));
+      const destination = path.join(context.pmPath, "extensions", "limited-package");
+      const client = new PmClient({ pmRoot: context.pmPath });
+
+      for (const dryRun of [true, false]) {
+        await expect(client.packageInstall(source, {
+          project: true,
+          dryRun,
+          copyPlan: { maxEntries: 1 },
+        })).rejects.toMatchObject({
+          code: "extension_install_incomplete_source_scan",
+          context: { reason: "entry_limit" },
+          message: expect.stringContaining("npm pack --ignore-scripts --json"),
+        });
+        await expect(fs.stat(destination)).rejects.toMatchObject({ code: "ENOENT" });
+      }
+      await fs.rm(path.join(source, "package.json"));
+      await fs.mkdir(path.join(source, "nested"));
+      await expect(client.packageInstall(source, {
+        project: true,
+        dryRun: true,
+        copyPlan: { maxDepth: 1 },
+      })).rejects.toMatchObject({
+        code: "extension_install_incomplete_source_scan",
+        context: { reason: "depth_limit" },
+        message: expect.stringContaining("smaller source directory"),
+      });
+      await expect(fs.stat(destination)).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
   it("plans through SDK and every CLI install spelling before any destination mutation", async () => {
     await withTempPmPath(async (context) => {
       const source = path.join(context.tempRoot, "source");

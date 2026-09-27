@@ -1,4 +1,5 @@
 ---
+name: pm-start-task
 description: Start a pm-tracked task — orient, find or create the right item, claim it, sync to TUI, and link initial scope. Accepts an optional item ID or keywords as argument.
 ---
 

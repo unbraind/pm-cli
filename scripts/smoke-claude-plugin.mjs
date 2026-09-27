@@ -3,7 +3,7 @@
  * Smoke test for the pm-cli Claude Code plugin.
  *
  * Tests:
- * 1. Plugin file structure (marketplace + plugin manifests, skills, commands, agents, hooks)
+ * 1. Plugin file structure (marketplace + plugin manifests, skills, agents, hooks)
  * 2. MCP server launcher resolves the repo build
  * 3. MCP server discovers the current stateless protocol with instructions
  * 4. All 32 required tools are listed
@@ -27,18 +27,6 @@ const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const launcherPath = path.join(repoRoot, "plugins", "pm-claude", "scripts", "pm-mcp-server.mjs");
 const sessionStartPath = path.join(repoRoot, "plugins", "pm-claude", "hooks", "session-start.mjs");
 
-/**
- * @internal Exported only for unit coverage of the (runtime-unreachable) mismatch
- * branch. Throws when the marketplace plugin name disagrees with plugin.json.
- */
-export function assertMarketplacePluginNameMatches(marketplacePluginName, pluginJsonName) {
-  if (marketplacePluginName !== pluginJsonName) {
-    throw new Error(
-      `marketplace plugin name "${marketplacePluginName}" does not match plugin.json name "${pluginJsonName}"`,
-    );
-  }
-}
-
 // Verify plugin files exist
 const pluginFiles = [
   // Root-level marketplace (required for /plugin marketplace add unbraind/pm-cli)
@@ -47,27 +35,21 @@ const pluginFiles = [
   "plugins/pm-claude/.claude-plugin/plugin.json",
   "plugins/pm-claude/.mcp.json",
   "plugins/pm-claude/package.json",
-  // Skills (5 total)
+  // Skills (14 total, including the former flat command invocations)
   "plugins/pm-claude/skills/pm-workflow/SKILL.md",
   "plugins/pm-claude/skills/pm-developer/SKILL.md",
   "plugins/pm-claude/skills/pm-release/SKILL.md",
   "plugins/pm-claude/skills/pm-audit/SKILL.md",
   "plugins/pm-claude/skills/pm-planner/SKILL.md",
-  // Commands (14 total)
-  "plugins/pm-claude/commands/pm-status.md",
-  "plugins/pm-claude/commands/pm-start-task.md",
-  "plugins/pm-claude/commands/pm-close-task.md",
-  "plugins/pm-claude/commands/pm-triage.md",
-  "plugins/pm-claude/commands/pm-audit.md",
-  "plugins/pm-claude/commands/pm-search.md",
-  "plugins/pm-claude/commands/pm-new.md",
-  "plugins/pm-claude/commands/pm-list.md",
-  "plugins/pm-claude/commands/pm-calendar.md",
-  "plugins/pm-claude/commands/pm-developer.md",
-  "plugins/pm-claude/commands/pm-init.md",
-  "plugins/pm-claude/commands/pm-planner.md",
-  "plugins/pm-claude/commands/pm-release.md",
-  "plugins/pm-claude/commands/pm-workflow.md",
+  "plugins/pm-claude/skills/pm-status/SKILL.md",
+  "plugins/pm-claude/skills/pm-start-task/SKILL.md",
+  "plugins/pm-claude/skills/pm-close-task/SKILL.md",
+  "plugins/pm-claude/skills/pm-triage/SKILL.md",
+  "plugins/pm-claude/skills/pm-search/SKILL.md",
+  "plugins/pm-claude/skills/pm-new/SKILL.md",
+  "plugins/pm-claude/skills/pm-list/SKILL.md",
+  "plugins/pm-claude/skills/pm-calendar/SKILL.md",
+  "plugins/pm-claude/skills/pm-init/SKILL.md",
   // Hooks
   "plugins/pm-claude/hooks/hooks.json",
   "plugins/pm-claude/hooks/session-start.mjs",
@@ -104,10 +86,6 @@ const pluginJson = JSON.parse(readFileSync(path.join(repoRoot, "plugins", "pm-cl
 if (pluginJson.name !== "pm-claude") {
   throw new Error(`plugin.json name must be "pm-claude", got "${pluginJson.name}"`);
 }
-// Both names are pinned to "pm-claude" by the guards above, so at runtime this
-// consistency check can never fail. It is extracted into a `_testOnly` seam so
-// the mismatch branch remains exercisable in isolation for coverage.
-assertMarketplacePluginNameMatches(marketplacePluginName, pluginJson.name);
 console.log(`Manifest names: marketplace="${rootMarketplace.name}" plugin="${pluginJson.name}" (consistent)`);
 
 const { tmpRoot, request, callTool, dispose } = await startPluginMcpSmoke({

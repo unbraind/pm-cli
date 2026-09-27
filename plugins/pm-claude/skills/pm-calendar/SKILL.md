@@ -1,4 +1,5 @@
 ---
+name: pm-calendar
 description: Show the pm calendar — upcoming deadlines, reminders, and scheduled events. Optionally pass a view like "week", "month", or a date range.
 ---
 

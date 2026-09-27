@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:mcp",author,defect,docs,identity,plugins
 created_at: "2026-07-25T12:26:07.305Z"
-updated_at: "2026-07-26T17:31:11.160Z"
+updated_at: "2026-09-27T07:58:09.612Z"
 closed_at: "2026-07-25T20:06:50.186Z"
 author: "harness:claude-code"
 estimated_minutes: 150
@@ -23,28 +23,27 @@ release: v2026.7.26
 resolution: Removed hard-wired PM_AUTHOR and agent payload authors from MCP/plugin configuration and propagated bounded initialize client identity.
 expected_result: Repository and bundled plugins rely on automatic attribution while keeping authenticated principal claims distinct.
 actual_result: "MCP integrations, 31-file Claude plugin smoke, full suite, packed acceptance, and hosted gates pass."
-dependencies[11]{id,kind,created_at,author,source_kind}:
-  pm-03pq3o,related,"2026-07-25T12:26:07.305Z",null,null
-  pm-5k4v,related,"2026-07-25T12:26:07.305Z",null,null
-  pm-6uxhe0,related,"2026-07-25T12:26:07.305Z",null,null
-  pm-95d7,related,"2026-07-25T12:26:07.305Z",null,null
-  pm-z3ez,related,"2026-07-25T12:26:07.305Z",null,null
-  pm-9k90,related,"2026-07-25T12:35:02.847Z",null,null
-  pm-brxdct,related,"2026-07-25T12:35:02.847Z",null,null
-  pm-j82fd3,related,"2026-07-25T12:35:02.847Z",null,null
-  pm-l9wl,related,"2026-07-25T12:35:02.847Z",null,null
-  pm-sx52hr,related,"2026-07-25T12:35:02.847Z",null,null
-  pm-5k4v,implements,"2026-07-26T17:31:10.915Z",null,null
+dependencies[11]{id,kind,created_at}:
+  pm-03pq3o,related,"2026-07-25T12:26:07.305Z"
+  pm-5k4v,related,"2026-07-25T12:26:07.305Z"
+  pm-6uxhe0,related,"2026-07-25T12:26:07.305Z"
+  pm-95d7,related,"2026-07-25T12:26:07.305Z"
+  pm-z3ez,related,"2026-07-25T12:26:07.305Z"
+  pm-9k90,related,"2026-07-25T12:35:02.847Z"
+  pm-brxdct,related,"2026-07-25T12:35:02.847Z"
+  pm-j82fd3,related,"2026-07-25T12:35:02.847Z"
+  pm-l9wl,related,"2026-07-25T12:35:02.847Z"
+  pm-sx52hr,related,"2026-07-25T12:35:02.847Z"
+  pm-5k4v,implements,"2026-07-26T17:31:10.915Z"
 comments[4]{created_at,author,text}:
   "2026-07-25T18:18:24.300Z","harness:codex","Implementation start: active in the cohesive automatic identity platform PR spanning the identity ADR, structured SDK provenance, precedence-safe observation, declarative harness registry, MCP/plugin configuration, and token-minimal help guidance. Duplicate check covered all 2,028 tracker items and live GitHub reports; no new item created."
   "2026-07-25T19:14:52.683Z","harness:claude-code","Implementation evidence: removed hard-wired PM_AUTHOR and claude-code-agent payloads from repository and bundled Claude MCP/plugin configuration, commands, agents, and skills. MCP now captures initialize clientInfo and scopes tools/call through automatic identity signals; instructions explicitly distinguish local harness provenance from authenticated principal claims. Plugin smoke passed with all 31 files and full flow; MCP integration, full suite, and 100% coverage passed."
   "2026-07-25T19:52:00.406Z","harness:codex","Review amendment: session identifiers are transient host context only and are no longer serialized to durable history or telemetry. Exact branch-local history streams were scrubbed of the mistakenly persisted top-level field. Additional review hardening covers bounded settings validation, executable-basename argv matching, inherited environment values, cached descriptor normalization, deterministic telemetry tests, and failure-safe registration cleanup."
   "2026-07-25T20:06:49.000Z","harness:codex","Final evidence: PR #713 exact head 446d00ae passed all 6,376 tests and 100/100/100/100 coverage (44,010 statements, 31,205 branches, 8,996 functions, 42,752 lines); strict 100% docstring/static/token/API gates; packed unrelated-directory SDK and CLI acceptance; CodeQL, DeepScan with zero findings, Semgrep, Trivy, TruffleHog, CodeFactor, Hound, Windows, compatibility, smokes, and benchmarks. All 13 CodeRabbit findings were individually fixed/dispositioned/reacted and every thread is resolved. Follow-up CodeRabbit and Greptile requests reached external free-review limits after the complete first review."
-files[7]{path,scope,note}:
+files[6]{path,scope,note}:
   .mcp.json,project,repo MCP automatic identity
   plugins/pm-claude/.mcp.json,project,plugin MCP automatic identity
   plugins/pm-claude/agents,project,agent prompts omit redundant author
-  plugins/pm-claude/commands,project,slash commands omit redundant author
   plugins/pm-claude/README.md,project,automatic identity guidance
   plugins/pm-claude/skills,project,skills omit redundant author
   src/mcp/server.ts,project,initialize client identity scoping

@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-09-22T05:00:03.509Z"
+updated_at: "2026-09-27T07:45:31.227Z"
 deadline: "2026-06-01T00:00:00.000Z"
 closed_at: "2026-05-26T22:58:30.907Z"
 author: codex-audit
@@ -1010,8 +1010,8 @@ docs[16]{path,scope,note}:
   packages/pm-calendar/README.md,project,document project install and package bootstrap
   packages/pm-search-advanced/README.md,project,document expanded search-advanced flags
   plugins/pm-claude/agents/pm-coordinator.md,project,sync MCP tool list
-  plugins/pm-claude/commands/pm-init.md,project,sync MCP tool list
   plugins/pm-claude/README.md,project,remove stale pm_guide tool documentation
+  plugins/pm-claude/skills/pm-init/SKILL.md,project,sync MCP tool list
   plugins/pm-codex/README.md,project,sync MCP tool list
   README.md,project,remove private telemetry mode from public release docs
 close_reason: Consolidated perf/reliability umbrella scope delivered and merged in PR #75.

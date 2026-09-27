@@ -1,4 +1,5 @@
 ---
+name: pm-list
 description: List pm items with optional status or type filter. Pass a filter like "open", "in_progress", "blocked", "bugs", or leave empty for active items.
 ---
 
@@ -23,7 +24,7 @@ List pm items using native MCP tools. Filter: `$ARGUMENTS`
      }
    }
    ```
-   For `all`, use `pm_list` with no status filter.
+   For `all`, use `pm_list` with `status: "all"` so closed and canceled items are included.
 
 3. **If filter is empty** (active items) — also call `pm_context` for a richer summary:
    ```json

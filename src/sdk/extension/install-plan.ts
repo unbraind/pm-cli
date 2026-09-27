@@ -96,6 +96,22 @@ export async function buildExtensionInstallPlan(
       archive_argument: "pack_result[0].filename",
     };
   }
+  if (sourceMode === "directory" && !copy.complete) {
+    const limit = copy.stop_reason === "entry_limit"
+      ? `${copy.max_entries} entries`
+      : `${copy.max_depth} directory levels`;
+    throw new PmCliError(
+      `Local extension source scan stopped at ${limit}; the directory snapshot is incomplete and installation was refused. ${plan.packed_alternative ? "Pack the package with npm pack --ignore-scripts --json, then install its archive." : "Install a smaller source directory or a packed archive."}`,
+      EXIT_CODE.USAGE,
+      {
+        code: "extension_install_incomplete_source_scan",
+        reason: copy.stop_reason,
+        nextSteps: plan.packed_alternative
+          ? ["Run npm pack --ignore-scripts --json from the package root, then pm package install <archive-filename> --project."]
+          : ["Choose a smaller source directory or install a packed archive."],
+      },
+    );
+  }
   return plan;
 }
 

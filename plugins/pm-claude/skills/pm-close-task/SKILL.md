@@ -1,4 +1,5 @@
 ---
+name: pm-close-task
 description: Close a pm-tracked task with evidence — verify tests pass, link changed files, add closing comment, close and release in pm, then mark the Claude Code task panel entry as completed. Accepts an optional item ID as argument.
 ---
 
