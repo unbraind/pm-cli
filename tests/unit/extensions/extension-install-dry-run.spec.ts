@@ -30,6 +30,15 @@ describe("package install dry run", () => {
         });
         await expect(fs.stat(destination)).rejects.toMatchObject({ code: "ENOENT" });
       }
+      await expect(client.packageInstall(source, {
+        global: true,
+        dryRun: true,
+        copyPlan: { maxEntries: 1 },
+      })).rejects.toMatchObject({
+        code: "extension_install_incomplete_source_scan",
+        context: { nextSteps: [expect.stringContaining("--global")] },
+      });
+      await expect(fs.stat(path.join(context.env.PM_GLOBAL_PATH, "extensions", "limited-package"))).rejects.toMatchObject({ code: "ENOENT" });
       await fs.rm(path.join(source, "package.json"));
       await fs.mkdir(path.join(source, "nested"));
       await expect(client.packageInstall(source, {

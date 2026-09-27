@@ -18,7 +18,8 @@ The bounded planner can return lower-bound counts with `complete: false` and a
 that incomplete scan in both dry-run and real modes before writing or
 activating. SDK callers receive
 `extension_install_incomplete_source_scan`; the CLI exits nonzero with the
-entry or depth limit and a packed-archive recovery step. A source-directory
+entry or depth limit and a packed-archive recovery step. That recovery keeps
+the requested `--project` or `--global` installation scope. A source-directory
 alias resolves to its
 directory before copying; symlink entries inside the source remain links and
 their targets are never traversed.

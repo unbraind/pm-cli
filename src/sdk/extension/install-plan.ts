@@ -107,7 +107,7 @@ export async function buildExtensionInstallPlan(
         code: "extension_install_incomplete_source_scan",
         reason: copy.stop_reason,
         nextSteps: plan.packed_alternative
-          ? ["Run npm pack --ignore-scripts --json from the package root, then pm package install <archive-filename> --project."]
+          ? [`Run npm pack --ignore-scripts --json from the package root, then pm package install <archive-filename> --${scope}.`]
           : ["Choose a smaller source directory or install a packed archive."],
       },
     );
