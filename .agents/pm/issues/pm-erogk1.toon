@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-27T00:37:15.358Z"
-updated_at: "2026-09-27T08:36:32.158Z"
+updated_at: "2026-09-27T08:49:14.564Z"
 closed_at: "2026-09-27T08:36:28.474Z"
 completed_at: "2026-09-27T08:36:28.474Z"
 author: "harness:codex"
@@ -52,4 +52,12 @@ docs[3]{path,scope,note}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,generated new refusal census row
   docs/PACKAGE_EVIDENCE.md,project,installer refusal and recovery contract
 close_reason: "Refused incomplete local extension installs before destination mutation; verified SDK, CLI and packed archive recovery"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-erogk1
+  gate_id: CI / Gates (coverage)
+  negative_control: "With the SDK incomplete-scan refusal removed, node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-dry-run.spec.ts fails because a truncated local source install resolves successfully."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-dry-run.spec.ts,node scripts/run-tests.mjs coverage -- --maxWorkers=4,"pnpm smoke:npx"
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
 body: ""
