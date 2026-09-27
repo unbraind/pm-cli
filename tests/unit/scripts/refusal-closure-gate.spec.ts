@@ -301,7 +301,7 @@ describe("executable refusal closure gate", () => {
         ],
       });
     },
-    240_000,
+    360_000,
   );
 
   it("fails setup closed and normalizes malformed refusal recovery", () => {

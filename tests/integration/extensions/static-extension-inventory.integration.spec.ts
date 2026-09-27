@@ -1,6 +1,6 @@
-import { mkdir, readFile, readdir, rmdir, stat, unlink, writeFile } from "node:fs/promises";
+import fs, { mkdir, readFile, readdir, rmdir, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { inspectStaticExtensionInventory } from "../../../src/sdk/index.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -95,6 +95,31 @@ describe("read-only configured extension inventory", () => {
       expect(result.complete).toBe(false);
       expect(result.errors.map((error) => error.code)).toEqual(["managed_state_unreadable", "extensions_unreadable"]);
       expect(result.extensions).toEqual([]);
+    });
+  });
+
+  it("reports a managed-state read error when its parent inspection is denied", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const extensionsRoot = path.join(pmPath, "extensions");
+      const realStat = fs.stat;
+      const statSpy = vi.spyOn(fs, "stat").mockImplementation(async (...args) => {
+        if (args[0] === extensionsRoot) {
+          const error = new Error("permission denied") as NodeJS.ErrnoException;
+          error.code = "EACCES";
+          throw error;
+        }
+        return realStat(...args);
+      });
+      try {
+        const result = await inspectStaticExtensionInventory({ pmRoot: pmPath });
+        expect(result).toMatchObject({
+          complete: false,
+          managed_state_status: "unreadable",
+          errors: [{ code: "managed_state_unreadable" }],
+        });
+      } finally {
+        statSpy.mockRestore();
+      }
     });
   });
 

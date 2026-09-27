@@ -162,20 +162,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /** Recursively shorten explanatory strings and record whether content changed. */
-function compactStrings(value: unknown, state: StringCompactionState): unknown {
+function compactStrings(value: unknown, state: StringCompactionState, preserveStrings = false): unknown {
   if (typeof value === "string") {
-    if (value.length <= 240) return value;
+    if (preserveStrings || value.length <= 240) return value;
     state.compacted = true;
     return `${value.slice(0, 240)}…`;
   }
   if (Array.isArray(value)) {
-    return value.map((entry) => compactStrings(entry, state));
+    return value.map((entry) => compactStrings(entry, state, preserveStrings));
   }
   if (!isRecord(value)) return value;
   return Object.fromEntries(
     Object.entries(value).map(([key, entry]) => [
       key,
-      compactStrings(entry, state),
+      compactStrings(entry, state, preserveStrings),
     ]),
   );
 }
@@ -294,12 +294,10 @@ export function compactReadOutputToBudget(
   minimumRowsByPath: ReadonlyMap<string, number> = new Map(),
   format?: "json" | "toon",
   finalize?: (result: Record<string, unknown>) => void,
+  preserveStrings = false,
 ): Record<string, unknown> {
   const stringCompactionState: StringCompactionState = { compacted: false };
-  const compacted = compactStrings(result, stringCompactionState) as Record<
-    string,
-    unknown
-  >;
+  const compacted = compactStrings(result, stringCompactionState, preserveStrings) as Record<string, unknown>;
   preserveReadOutputRowContract(result, compacted);
   receipt.strings_compacted = stringCompactionState.compacted;
   compacted.read_output = receipt;

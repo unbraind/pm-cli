@@ -2,11 +2,13 @@ id: pm-ft90q2
 title: "GH-1327: Windows nightly static inventory unreadable-source assertion fails"
 description: "GitHub issue #1327 records Nightly Validation run 36310799887 at main 2b14d2fdee9d65dd1699d79e617ab53a0ae91dc7. Windows Node 24 shard 2/2 failed the read-only static extension inventory unreadable-roots/sources integration case: expected managed_state_unreadable plus source detail but received extensions_unreadable. This is separate from shard 1 init test timeouts. Source: https://github.com/unbraind/pm-cli/issues/1327"
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[7]: "area:extensions",ci,defect,github,nightly,node24,windows
 created_at: "2026-09-27T12:26:45.447Z"
-updated_at: "2026-09-27T12:26:45.447Z"
+updated_at: "2026-09-27T23:33:00.252Z"
+closed_at: "2026-09-27T23:32:48.029Z"
+completed_at: "2026-09-27T23:32:48.029Z"
 author: "harness:codex"
 acceptance_criteria: Inspect run 36310799887 shard 2 and reproduce on hosted Windows Node 24; distinguish platform error mapping from fixture assumptions; fix SDK or test according to real behavior; verify no activation or writes and rerun nightly plus exact coverage
 goal: project management = context management
@@ -18,12 +20,47 @@ parent: pm-ul9rye
 risk: high
 severity: high
 repro_steps: "Inspect Nightly run 36310799887 shard 2/2: static-extension-inventory.integration.spec.ts expects managed_state_unreadable and source detail but receives extensions_unreadable."
-expected_result: Precise managed-state and source unreadable receipts match the tested read-only conditions.
-actual_result: Generic extensions_unreadable replaces expected receipts on Windows; shard 2 fails.
+resolution: A missing managed-state child under a non-directory parent reports managed_state_unreadable; a portable denied-parent negative control and the inventory integration suite now run in required Windows CI.
+expected_result: Read-only inventory reports errors truthfully across platforms and blocks Windows regressions before merge.
+actual_result: Linked inventory suite and exact coverage passed locally; required Windows PR result awaits review.
 affected_version: 2026.9.27
 component: static extension inventory Windows nightly
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-lhhnx9,discovered_from,"2026-09-27T12:26:45.447Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-09-27T12:26:45.447Z","harness:codex","Duplicate check: GH-1327 and all-status static inventory and Windows nightly searches found closed pm-lhhnx9 and older nightly lineages but no owner for this exact Windows assertion. Run 36310799887 log proves a distinct shard-2 failure."
+  "2026-09-27T23:32:24.400Z","harness:codex","Verification: linked read-only inventory integration suite 9/9 passed, including a portable denied parent-stat negative control and unreadable parent-file classification. The integration file is now pinned to the required Windows Node 24 PR check. Full coverage passed 9380 tests at 100/100/100/100. Hosted Windows result remains pending."
+notes[1]{created_at,author,text}:
+  "2026-09-27T21:41:25.100Z","harness:codex",Hosted Nightly Validation run 36310799887 saw Windows report extensions_unreadable but omit managed_state_unreadable for a file in place of the managed-state parent directory. A parent stat now distinguishes missing state from an unreadable managed root.
+learnings[1]{created_at,author,text}:
+  "2026-09-27T21:41:27.107Z","harness:codex",Reading a child path below a non-directory parent can surface ENOENT on Windows instead of ENOTDIR. Classify absent managed state only after confirming the parent is a directory or genuinely absent.
+files[3]{path,scope,note}:
+  .github/workflows/ci.yml,project,required Windows per-PR static inventory regression gate
+  src/sdk/extension/static-inventory.ts,project,Windows child-file error classification
+  tests/integration/extensions/static-extension-inventory.integration.spec.ts,project,portable parent-read failure negative control
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/extensions/static-extension-inventory.integration.spec.ts,project,240,"harness:codex","2026-09-27T21:15:48.820Z",local_mutation,fix/agent-receipts-history-windows-nightly
+test_runs[1]:
+  - run_id: test-local-mukfgy2r-8qxr3d
+    kind: test
+    status: passed
+    started_at: "2026-09-27T23:06:14.837Z"
+    finished_at: "2026-09-27T23:06:28.611Z"
+    recorded_at: "2026-09-27T23:06:28.611Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extensions/static-extension-inventory.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,generated closed-item release history
+close_reason: Corrected static inventory unreadable-path classification and added Windows PR coverage
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-ft90q2
+  gate_id: windows-static-extension-inventory
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/extensions/static-extension-inventory.integration.spec.ts
+  local_checks[3]: linked 9-test inventory suite passed,explicit EACCES parent-stat negative control passed,full coverage 100/100/100/100
+  hosted_checks[2]: Windows regression (Node 24),Gates (coverage)
 body: ""

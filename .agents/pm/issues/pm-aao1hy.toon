@@ -2,11 +2,13 @@ id: pm-aao1hy
 title: "GH-1328: linked-test execution does not disclose item evidence recording"
 description: "GitHub issue #1328 reports that pm test <id> --run says changed:false both when default test-result-tracking disables item recording and when enabled tracking appends test_run_track. Background runs also report passed without item evidence. Source: https://github.com/unbraind/pm-cli/issues/1328"
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:testing",defect,github
 created_at: "2026-09-27T12:25:46.741Z"
-updated_at: "2026-09-27T12:25:46.741Z"
+updated_at: "2026-09-27T23:32:57.772Z"
+closed_at: "2026-09-27T23:32:45.275Z"
+completed_at: "2026-09-27T23:32:45.275Z"
 author: "harness:codex"
 acceptance_criteria: Reproduce disabled and enabled policy paths in disposable trackers; add an explicit recorded state and reason or accurate changed field; verify foreground and background item history plus SDK and CLI parity; pass exact coverage
 goal: project management = context management
@@ -18,12 +20,48 @@ parent: pm-lm0j
 risk: high
 severity: high
 repro_steps: "Run pm test <id> --run with default tracking and then enabled tracking; both currently print changed:false although only the second appends test_run_track."
-expected_result: The run result accurately reports recording and the command to enable it when disabled.
-actual_result: "changed:false is printed in both cases without recording provenance."
+resolution: The SDK test result now reports recorded/reason/run_id and an executable recovery command when tracking is disabled; changed reflects successful history append only.
+expected_result: Agents can distinguish process completion from durable item evidence.
+actual_result: "Enabled, disabled, and failed-write isolated runs plus linked tests and exact coverage passed; hosted review awaits PR."
 affected_version: 2026.9.27
 component: linked-test runtime and item evidence
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-16f4,discovered_from,"2026-09-27T12:25:46.741Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-09-27T12:25:46.741Z","harness:codex","Duplicate check: all-status GH-1328 and test-result-tracking searches found the closed tracking feature pm-16f4 and its parent epic but no open owner for the false recording receipt."
+  "2026-09-27T23:32:21.975Z","harness:codex","Verification: linked test-command suite 63/63 passed and recorded a durable test_run_track receipt. Manual isolated tracker runs confirmed enabled=true records history, disabled=false reports tracking_disabled and changed=false, and simulated write failure reports write_failed without claiming persistence. Exact full coverage passed 9380 tests at 100/100/100/100. Hosted review remains pending."
+notes[1]{created_at,author,text}:
+  "2026-09-27T21:41:13.799Z","harness:codex","Temporary acceptance: PM_PATH and PM_GLOBAL_PATH pointed to a disposable initialized workspace. A passing linked node command with tracking disabled returned recorded=false, reason=tracking_disabled, changed=false; enabling project tracking then returned recorded=true, changed=true and an immutable test_run_track event."
+learnings[1]{created_at,author,text}:
+  "2026-09-27T21:41:15.542Z","harness:codex",A successful process exit and a durable item evidence write are separate outcomes. Return an explicit receipt and mark changed only after append succeeds; measurement history must read persisted runs only.
+files[3]{path,scope,note}:
+  sdk/public-surface.json,project,public SDK TestResult receipt contract snapshot
+  src/sdk/test/execution.ts,project,durable linked-test recording receipt
+  tests/unit/commands/test/test-command.spec.ts,project,tracking receipt regression assertions
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts,project,240,"harness:codex","2026-09-27T21:15:41.716Z",local_mutation,fix/agent-receipts-history-windows-nightly
+test_runs[1]:
+  - run_id: test-local-mukfg2j5-7bot7u
+    kind: test
+    status: passed
+    started_at: "2026-09-27T23:05:21.118Z"
+    finished_at: "2026-09-27T23:05:47.729Z"
+    recorded_at: "2026-09-27T23:05:47.729Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,generated closed-item release history
+  docs/AGENT_READ_AND_TEST_RECEIPTS.md,project,linked-test recording contract
+close_reason: Made linked-test evidence recording explicit
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-aao1hy
+  gate_id: linked-test-recording-receipt
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts
+  local_checks[3]: linked 63-test execution suite passed,manual isolated enabled disabled and failed-write receipts passed,full coverage 100/100/100/100
+  hosted_checks[2]: Gates (static),Gates (coverage)
 body: ""

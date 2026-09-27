@@ -3802,6 +3802,12 @@ describe("runTest", () => {
           { path: context.pmPath },
         );
         expect(result.warnings).toBeUndefined();
+        expect(result.changed).toBe(true);
+        expect(result.evidence_recording).toMatchObject({
+          recorded: true,
+          reason: "recorded",
+          run_id: "tr-unit-success",
+        });
         expect(result.measurements).toEqual([
           expect.objectContaining({ name: "coverage", value: 100 }),
           expect.objectContaining({ name: "latency", value: 12.5 }),
@@ -3884,6 +3890,13 @@ describe("runTest", () => {
       );
 
       expect(result.run_results[0]?.status).toBe("passed");
+      expect(result.changed).toBe(false);
+      expect(result.evidence_recording).toMatchObject({
+        recorded: false,
+        reason: "tracking_disabled",
+        recovery_command:
+          "pm config project set test-result-tracking --policy enabled",
+      });
       expect(result.measurements).toEqual([
         expect.objectContaining({
           name: "coverage",
@@ -4145,6 +4158,11 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(result.run_results[0]?.status).toBe("passed");
+      expect(result.changed).toBe(false);
+      expect(result.evidence_recording).toMatchObject({
+        recorded: false,
+        reason: "write_failed",
+      });
       expect(result.warnings?.[0] ?? "").toContain(
         "test_result_tracking_failed",
       );

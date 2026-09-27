@@ -367,6 +367,17 @@ export interface TestResult {
   warnings?: string[];
   /** Value that configures or reports changed for this contract. */
   changed: boolean;
+  /** Whether this execution appended evidence to the item's immutable history. */
+  evidence_recording?: {
+    /** True only after the item history mutation succeeds. */
+    recorded: boolean;
+    /** Why the current execution did or did not reach item history. */
+    reason: "recorded" | "tracking_disabled" | "write_failed";
+    /** Identifier of the execution summary, even when item tracking is disabled. */
+    run_id: string;
+    /** Executable next step when recording was disabled. */
+    recovery_command?: string;
+  };
   /** Value that configures or reports count for this contract. */
   count: number;
   /** Number of linked-test entries removed by this mutation. */
@@ -3376,7 +3387,7 @@ async function recordTestRunSummary(params: {
   runResults: TestRunResult[];
   failOnSkippedTriggered: boolean;
   warnings: string[];
-}): Promise<ItemTestRunSummary | undefined> {
+}): Promise<{ entry: ItemTestRunSummary; receipt: NonNullable<TestResult["evidence_recording"]> } | undefined> {
   const {
     options,
     pmRoot,
@@ -3397,7 +3408,15 @@ async function recordTestRunSummary(params: {
     failOnSkippedTriggered,
   });
   if (settings.testing.record_results_to_items !== true) {
-    return entry;
+    return {
+      entry,
+      receipt: {
+        recorded: false,
+        reason: "tracking_disabled",
+        run_id: entry.run_id,
+        recovery_command: "pm config project set test-result-tracking --policy enabled",
+      },
+    };
   }
   try {
     await appendTrackedTestRunSummary({
@@ -3408,12 +3427,12 @@ async function recordTestRunSummary(params: {
       message: `Track test run summary (${entry.run_id})`,
       entry,
     });
-    return entry;
+    return { entry, receipt: { recorded: true, reason: "recorded", run_id: entry.run_id } };
   } catch (error: unknown) {
     warnings.push(
       `test_result_tracking_failed:${itemId}:${error instanceof Error ? error.message : String(error)}`,
     );
-    return entry;
+    return { entry, receipt: { recorded: false, reason: "write_failed", run_id: entry.run_id } };
   }
 }
 
@@ -3459,6 +3478,54 @@ async function maybeAcknowledgeLinkedTests(
 ): Promise<{ acknowledged: number; fingerprints: string[] } | undefined> {
   if (options.acknowledgeLinkedTests !== true) return undefined;
   return acknowledgeLinkedTests(pmRoot, tests, nowIso());
+}
+
+/** Project execution, selection, and persistence into the public test receipt. */
+function projectTestResult(input: {
+  item: Awaited<ReturnType<typeof resolveLinkedTestItem>>;
+  runResults: TestRunResult[];
+  failureCategories: ReturnType<typeof countFailureCategories>;
+  runSelection: ReturnType<typeof resolveTestRunOptions>["runSelection"];
+  failOnSkippedTriggered: boolean;
+  warnings: string[];
+  recording: Awaited<ReturnType<typeof recordTestRunSummary>>;
+  measurementProjection: ReturnType<typeof buildTestMeasurementProjection>;
+}): TestResult {
+  const {
+    item,
+    runResults,
+    failureCategories,
+    runSelection,
+    failOnSkippedTriggered,
+    warnings,
+    recording,
+    measurementProjection,
+  } = input;
+  return {
+    ok:
+      runResults.every((entry) => entry.status !== "failed") &&
+      failOnSkippedTriggered !== true,
+    id: item.itemId,
+    tests: item.tests,
+    run_results: runResults,
+    failure_categories: failureCategories,
+    selection: runSelection
+      ? {
+          selector: runSelection.selector,
+          requested: runSelection.requested,
+          selected_indexes: runSelection.selected_indexes,
+          selected_count: runSelection.selected_count,
+          skipped_count: runSelection.skipped_count,
+        }
+      : undefined,
+    fail_on_skipped_triggered: failOnSkippedTriggered ? true : undefined,
+    warnings: warnings.length > 0 ? warnings : undefined,
+    changed: item.changed || recording?.receipt.recorded === true,
+    ...(recording ? { evidence_recording: recording.receipt } : {}),
+    count: item.tests.length,
+    ...(item.removed > 0 ? { removed: item.removed } : {}),
+    ...measurementProjection,
+  };
 }
 
 /** Implements run test for the public runtime surface of this module. */
@@ -3540,7 +3607,7 @@ export async function runTest(
       `linked_test_trust_acknowledged:${trustAcknowledgement.acknowledged}`,
     );
   }
-  const recordedRun = await recordTestRunSummary({
+  const recording = await recordTestRunSummary({
     options,
     pmRoot,
     settings,
@@ -3550,39 +3617,25 @@ export async function runTest(
     failOnSkippedTriggered,
     warnings,
   });
-  const runs = recordedRun
-    ? buildTrackedTestRunHistory([...item.testRuns, recordedRun])
+  const runs = recording?.receipt.recorded
+    ? buildTrackedTestRunHistory([...item.testRuns, recording.entry])
     : item.testRuns;
   const measurementProjection = buildTestMeasurementProjection(
     options,
     runs,
-    recordedRun,
+    recording?.entry,
   );
 
-  return {
-    ok:
-      runResults.every((entry) => entry.status !== "failed") &&
-      failOnSkippedTriggered !== true,
-    id: item.itemId,
-    tests: item.tests,
-    run_results: runResults,
-    failure_categories: failureCategories,
-    selection: runOptions.runSelection
-      ? {
-          selector: runOptions.runSelection.selector,
-          requested: runOptions.runSelection.requested,
-          selected_indexes: runOptions.runSelection.selected_indexes,
-          selected_count: runOptions.runSelection.selected_count,
-          skipped_count: runOptions.runSelection.skipped_count,
-        }
-      : undefined,
-    fail_on_skipped_triggered: failOnSkippedTriggered ? true : undefined,
-    warnings: warnings.length > 0 ? warnings : undefined,
-    changed: item.changed,
-    count: item.tests.length,
-    ...(item.removed > 0 ? { removed: item.removed } : {}),
-    ...measurementProjection,
-  };
+  return projectTestResult({
+    item,
+    runResults,
+    failureCategories,
+    runSelection: runOptions.runSelection,
+    failOnSkippedTriggered,
+    warnings,
+    recording,
+    measurementProjection,
+  });
 }
 /* c8 ignore stop */
 

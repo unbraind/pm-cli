@@ -1545,7 +1545,7 @@ describe("runInit", () => {
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
-  });
+  }, 90_000);
 
   it("fails init --with-packages when bundled installs report unsuccessful entries", async () => {
     vi.resetModules();

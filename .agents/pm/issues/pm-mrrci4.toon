@@ -1,0 +1,54 @@
+id: pm-mrrci4
+title: Full coverage refusal-closure retry test exceeds its four-minute budget under suite contention
+description: The real refusal-closure gate negative-control test exceeded its explicit 240-second Vitest timeout (244539 ms) during the 2026-09-27 full coverage run. Preserve the executable real-retry and seeded omission assertions while budgeting the test for the observed full-suite contention; rerun exact full coverage to prove 100% thresholds and no test failure.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-27T21:55:52.596Z"
+updated_at: "2026-09-27T23:33:01.018Z"
+closed_at: "2026-09-27T23:32:49.042Z"
+completed_at: "2026-09-27T23:32:49.042Z"
+author: "harness:codex"
+parent: pm-doxj
+severity: medium
+resolution: Raised only the executable retry and seeded omission test's explicit timeout from 240 to 360 seconds; assertions and negative control remain intact.
+expected_result: The full coverage gate completes without a false deadline failure while still catching omitted recovery.
+actual_result: Linked real retry suite and full 9380-test exact coverage passed; hosted review awaits PR.
+component: tests/unit/scripts/refusal-closure-gate.spec.ts
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-f05lsg,discovered_from,"2026-09-27T21:55:52.596Z","harness:codex","cli:create:dep",detected
+  pm-d30l,related,"2026-09-27T22:51:48.891Z","harness:codex","cli:update:dep",detected
+  pm-h9gsix,related,"2026-09-27T22:51:48.891Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-27T21:55:52.596Z","harness:codex","Duplicate check: searched all statuses for refusal-closure-gate timeout and full-coverage contention. pm-h9gsix is a closed wildcard-install budget defect and pm-d30l is a closed metadata content-filter timeout; neither covers this refusal-closure retry case. Existing parent pm-f05lsg owns the refusal gate, but its exhaustive-corpus acceptance remains open and is not claimed for this narrow test-budget correction."
+  "2026-09-27T21:56:44.149Z","harness:codex","Coverage diagnosis: full suite recorded 244539 ms for the real retry and seeded omission test against its previous 240000 ms limit. The test body remains unchanged; only the explicit timeout is now 360000 ms. Focused behavior and a second exact full coverage run will decide closure."
+  "2026-09-27T23:32:25.411Z","harness:codex","Verification: linked real retry and seeded omission suite 9/9 passed in 108 seconds standalone and recorded test history. The unchanged executable negative control passed during the full 9380-test coverage gate, whose exact thresholds were 100/100/100/100. The test budget is 360 seconds to cover observed full-suite contention while preserving assertions."
+files[1]{path,scope}:
+  tests/unit/scripts/refusal-closure-gate.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/refusal-closure-gate.spec.ts,project,480,"harness:codex","2026-09-27T22:52:32.973Z",local_mutation,fix/agent-receipts-history-windows-nightly
+test_runs[1]:
+  - run_id: test-local-mukfjkw4-1ieyk4
+    kind: test
+    status: passed
+    started_at: "2026-09-27T23:06:35.055Z"
+    finished_at: "2026-09-27T23:08:31.492Z"
+    recorded_at: "2026-09-27T23:08:31.492Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/refusal-closure-gate.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,generated closed-item release history
+close_reason: Stabilized the real refusal retry coverage test under suite contention
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-mrrci4
+  gate_id: full-coverage-real-retry
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/refusal-closure-gate.spec.ts
+  local_checks[2]: linked 9-test real retry suite passed,full 9380-test coverage 100/100/100/100
+  hosted_checks[2]: Gates (static),Gates (coverage)
+body: ""

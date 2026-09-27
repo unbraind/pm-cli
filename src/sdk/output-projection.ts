@@ -96,7 +96,7 @@ export const PM_READ_ROW_CONTRACTS = {
     fields: "unsupported",
   },
   history: {
-    row_keys: ["compact_history", "provenance_history", "history"],
+    row_keys: ["compact_history", "provenance_history", "history", "diff"],
     fields: "unsupported",
   },
   deps: {

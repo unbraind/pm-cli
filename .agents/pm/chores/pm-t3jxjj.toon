@@ -1,0 +1,16 @@
+id: pm-t3jxjj
+title: Adopt Sentry 11 after release-age and telemetry compatibility proof
+description: "Sentry Node 11.0.0 was published September 23, 2026 and is below the seven-day repository adoption window on September 27. After eligibility, validate SDK API compatibility, strict static and exact coverage gates, packed Node 22/24/26 consumers, Sentry event classification, telemetry delivery, and rollback before adopting the major."
+type: Chore
+status: open
+priority: 3
+tags[3]: dependencies,sentry,telemetry
+created_at: "2026-09-27T21:20:34.332Z"
+updated_at: "2026-09-27T21:20:34.332Z"
+author: "harness:codex"
+parent: pm-doxj
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-u9qqip,discovered_from,"2026-09-27T21:20:34.332Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-27T21:20:34.332Z","harness:codex","Duplicate check: all-status searches for Sentry 11 major migration and Sentry 11.0.0 found historical closed 10.x refresh and telemetry items but no major-upgrade owner. Registry metadata: @sentry/node latest 11.0.0, released 2026-09-23T12:38:30.858Z; engine range includes supported Node >=22.18.0. This item is open and unclaimed until the seven-day release-age policy allows adoption."
+body: ""
