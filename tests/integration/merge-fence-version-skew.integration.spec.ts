@@ -13,11 +13,105 @@ import {
   PM_GITATTRIBUTES_START,
   PM_GITATTRIBUTES_V2_END,
   PM_GITATTRIBUTES_V2_START,
+  refreshMergeAttributeFenceIfInstalled,
   resolveProjectMergeTypeFolders,
 } from "../../src/sdk/merge/install.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("merge fence version-skew compatibility", () => {
+  it("keeps a child fence inside the parent tracker after reinstalling the parent", async () => {
+    await withTempPmPath(async ({ pmPath, tempRoot }) => {
+      execFileSync("git", ["init", "-q"], { cwd: tempRoot });
+      await installMergeFence({ pmRoot: pmPath, workspaceRoot: tempRoot });
+      const childPmPath = path.join(
+        pmPath,
+        "projects",
+        "child",
+        ".agents",
+        "pm",
+      );
+      await runInit(
+        undefined,
+        { path: childPmPath },
+        { defaults: true, agentGuidance: "skip" },
+      );
+      const childExtension = `${path.relative(tempRoot, childPmPath)}/extensions/package/settings.json`;
+      const attributesPath = path.join(tempRoot, ".gitattributes");
+      expect(
+        execFileSync("git", ["check-attr", "merge", "--", childExtension], {
+          cwd: tempRoot,
+          encoding: "utf8",
+        }),
+      ).toContain("merge: unset");
+
+      await installMergeFence({ pmRoot: pmPath, workspaceRoot: tempRoot });
+      expect(
+        (await readFile(attributesPath, "utf8")).match(
+          /# pm-cli:merge-drivers:v2:start/g,
+        ),
+      ).toHaveLength(2);
+      expect(
+        execFileSync("git", ["check-attr", "merge", "--", childExtension], {
+          cwd: tempRoot,
+          encoding: "utf8",
+        }),
+      ).toContain("merge: unset");
+      for (const tracker of [pmPath, childPmPath]) {
+        expect(
+          (
+            await auditMergeAttributeFence(
+              tracker,
+              resolveProjectMergeTypeFolders(await readSettings(tracker)),
+            )
+          ).status,
+        ).toBe("ok");
+      }
+    });
+  });
+
+  it("retains both tracker fences when independent schema refreshes run concurrently", async () => {
+    await withTempPmPath(async ({ pmPath, tempRoot }) => {
+      execFileSync("git", ["init", "-q"], { cwd: tempRoot });
+      await installMergeFence({ pmRoot: pmPath, workspaceRoot: tempRoot });
+      const secondPmPath = path.join(tempRoot, "nested", ".agents", "pm");
+      await runInit(
+        undefined,
+        { path: secondPmPath },
+        { defaults: true, agentGuidance: "skip" },
+      );
+      const attributesPath = path.join(tempRoot, ".gitattributes");
+      const current = await readFile(attributesPath, "utf8");
+      await writeFile(
+        attributesPath,
+        current
+          .replaceAll('".agents/pm/tasks/*.toon" merge=pm-item-toon', "")
+          .replaceAll(
+            '"nested/.agents/pm/tasks/*.toon" merge=pm-item-toon',
+            "",
+          ),
+      );
+
+      const results = await Promise.all([
+        refreshMergeAttributeFenceIfInstalled(pmPath),
+        refreshMergeAttributeFenceIfInstalled(secondPmPath),
+      ]);
+      expect(results.map((result) => result.status)).toEqual([
+        "refreshed",
+        "refreshed",
+      ]);
+      for (const tracker of [pmPath, secondPmPath]) {
+        expect(
+          (
+            await auditMergeAttributeFence(
+              tracker,
+              resolveProjectMergeTypeFolders(await readSettings(tracker)),
+            )
+          ).status,
+        ).toBe("ok");
+      }
+    });
+  });
+
   it("keeps root and nested tracker mappings after either tracker is reinstalled", async () => {
     await withTempPmPath(async ({ pmPath, tempRoot }) => {
       execFileSync("git", ["init", "-q"], { cwd: tempRoot });
@@ -57,10 +151,14 @@ describe("merge fence version-skew compatibility", () => {
         ).toBe("ok");
       }
       expect(
-        execFileSync("git", ["check-attr", "merge", "--", ".agents/pm/tasks/root.toon"], {
-          cwd: tempRoot,
-          encoding: "utf8",
-        }),
+        execFileSync(
+          "git",
+          ["check-attr", "merge", "--", ".agents/pm/tasks/root.toon"],
+          {
+            cwd: tempRoot,
+            encoding: "utf8",
+          },
+        ),
       ).toContain("merge: pm-item-toon");
       const attributesPath = path.join(tempRoot, ".gitattributes");
       const attributes = await readFile(attributesPath, "utf8");
@@ -82,9 +180,14 @@ describe("merge fence version-skew compatibility", () => {
           "",
         ),
       );
-      const health = await runHealth({ path: pmPath }, { strictExit: true, skipDrift: true, skipVectors: true });
+      const health = await runHealth(
+        { path: pmPath },
+        { strictExit: true, skipDrift: true, skipVectors: true },
+      );
       expect(health.ok).toBe(false);
-      expect(health.warnings).toContainEqual(expect.stringMatching(/^merge_fence_drift:/));
+      expect(health.warnings).toContainEqual(
+        expect.stringMatching(/^merge_fence_drift:/),
+      );
     });
   });
 
@@ -113,7 +216,9 @@ describe("merge fence version-skew compatibility", () => {
       expect(current).toContain(PM_GITATTRIBUTES_V2_START);
       expect(current).toContain(PM_GITATTRIBUTES_V2_END);
       expect(current).not.toContain(PM_GITATTRIBUTES_START);
-      expect(current).toContain('"nested/.agents/pm/tasks/*.toon" merge=pm-item-toon');
+      expect(current).toContain(
+        '"nested/.agents/pm/tasks/*.toon" merge=pm-item-toon',
+      );
 
       // Releases through 2026.8.7 only recognize the legacy marker, so their
       // automatic refresh path now leaves the versioned contract unchanged.
@@ -142,7 +247,9 @@ describe("merge fence version-skew compatibility", () => {
           "",
         ].join("\n"),
       );
-      expect((await auditMergeAttributeFence(tempRoot, ["tasks"])).status).toBe("ok");
+      expect((await auditMergeAttributeFence(tempRoot, ["tasks"])).status).toBe(
+        "ok",
+      );
       expect(
         execFileSync("git", ["check-attr", "merge", "--", "tasks/root.toon"], {
           cwd: tempRoot,

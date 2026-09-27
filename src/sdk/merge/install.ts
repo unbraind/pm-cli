@@ -8,8 +8,8 @@
  * mutations refresh the fenced block automatically once it is installed.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
-import { isFileMissingError } from "../../core/fs/fs-utils.js";
-import { access, readFile, realpath, writeFile } from "node:fs/promises";
+import { isFileMissingError, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
+import { access, readFile, realpath } from "node:fs/promises";
 import { constants } from "node:fs";
 import { execFile } from "node:child_process";
 import path from "node:path";
@@ -31,7 +31,10 @@ import {
 import { isPathOutsideRoot } from "../workspace.js";
 import { resolveSourceContextWritePolicy } from "../environment/source-context.js";
 
-import { gitWorkspaceEnvironment, resolveMergeDriverConfigScope } from "./worktree-config.js";
+import {
+  gitWorkspaceEnvironment,
+  resolveMergeDriverConfigScope,
+} from "./worktree-config.js";
 import { discoverProjectRuntimeVersionPins } from "../environment/project-runtime-compatibility.js";
 
 const execFileAsync = promisify(execFile);
@@ -46,6 +49,7 @@ export const PM_GITATTRIBUTES_V2_START = "# pm-cli:merge-drivers:v2:start";
 export const PM_GITATTRIBUTES_V2_END = "# pm-cli:merge-drivers:v2:end";
 
 const MERGE_FENCE_LOCK_ID = "merge-fence";
+const MERGE_ATTRIBUTES_LOCK_ID = "merge-attributes";
 
 /**
  * Quote one argument for the shell used by Git merge-driver configuration.
@@ -235,7 +239,13 @@ export async function findGitWorkspaceRoot(
     const { stdout } = await execFileAsync(
       "git",
       ["rev-parse", "--show-toplevel"],
-      { cwd, env: gitWorkspaceEnvironment(), encoding: "utf8", windowsHide: true, timeout: 10_000 },
+      {
+        cwd,
+        env: gitWorkspaceEnvironment(),
+        encoding: "utf8",
+        windowsHide: true,
+        timeout: 10_000,
+      },
     );
     return await realpath(stdout.trim());
   } catch {
@@ -286,15 +296,30 @@ function readSingleQuotedArgument(
 }
 
 /** Reject version-pin drift and sibling-worktree runtimes while accepting independent installations. */
-async function isMergeDriverWorkspaceCompatible(packageRoot: string, workspaceRoot: string, version: unknown): Promise<boolean> {
-  const exactPins = discoverProjectRuntimeVersionPins(workspaceRoot).filter((pin) => pin.constraint === "exact");
+async function isMergeDriverWorkspaceCompatible(
+  packageRoot: string,
+  workspaceRoot: string,
+  version: unknown,
+): Promise<boolean> {
+  const exactPins = discoverProjectRuntimeVersionPins(workspaceRoot).filter(
+    (pin) => pin.constraint === "exact",
+  );
   if (exactPins.some((pin) => pin.version !== version)) return false;
   const driverWorkspace = await findGitWorkspaceRoot(packageRoot);
-  if (driverWorkspace !== null && driverWorkspace !== await realpath(workspaceRoot)) {
-    const commonDirectories = await Promise.all([driverWorkspace, workspaceRoot].map(async (cwd) => {
-      const result = await execFileAsync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd, env: gitWorkspaceEnvironment(), timeout: 10_000 });
-      return realpath(result.stdout.trim());
-    }));
+  if (
+    driverWorkspace !== null &&
+    driverWorkspace !== (await realpath(workspaceRoot))
+  ) {
+    const commonDirectories = await Promise.all(
+      [driverWorkspace, workspaceRoot].map(async (cwd) => {
+        const result = await execFileAsync(
+          "git",
+          ["rev-parse", "--path-format=absolute", "--git-common-dir"],
+          { cwd, env: gitWorkspaceEnvironment(), timeout: 10_000 },
+        );
+        return realpath(result.stdout.trim());
+      }),
+    );
     if (commonDirectories[0] === commonDirectories[1]) return false;
   }
   return true;
@@ -333,13 +358,22 @@ async function isPortableMergeDriverCommand(
     const packageRoot = path.dirname(path.dirname(cliArgument.value));
     const manifest = JSON.parse(
       await readFile(path.join(packageRoot, "package.json"), "utf8"),
-    ) as { name?: unknown; bin?: string | Record<string, unknown> | null; version?: unknown };
-    const pmBin = typeof manifest.bin === "string" ? manifest.bin : manifest.bin?.pm;
-    if (!(await isMergeDriverWorkspaceCompatible(packageRoot, workspaceRoot, manifest.version))) return false;
-    return (
-      manifest.name === "@unbrained/pm-cli" &&
-      pmBin === "dist/cli.js"
-    );
+    ) as {
+      name?: unknown;
+      bin?: string | Record<string, unknown> | null;
+      version?: unknown;
+    };
+    const pmBin =
+      typeof manifest.bin === "string" ? manifest.bin : manifest.bin?.pm;
+    if (
+      !(await isMergeDriverWorkspaceCompatible(
+        packageRoot,
+        workspaceRoot,
+        manifest.version,
+      ))
+    )
+      return false;
+    return manifest.name === "@unbrained/pm-cli" && pmBin === "dist/cli.js";
   } catch {
     return false;
   }
@@ -453,20 +487,22 @@ function managedMergeBlocks(content: string): Array<{
   return blocks;
 }
 
-/** Match the tracker's own prefix, including incomplete pre-versioned fences. */
+/** Match exact generated lines or a legacy direct type-folder row for this tracker. */
 function blockBelongsToTracker(
   lines: string[],
+  patterns: string[],
   trackerRelativeRoot: string,
 ): boolean {
-  if (trackerRelativeRoot === "") {
-    return lines.some((line) =>
-      line.startsWith(quoteGitAttributePattern("**/*.toon")),
-    );
-  }
-  const prefix = `${trackerRelativeRoot}/`;
-  const quotedPrefix = quoteGitAttributePattern(prefix).slice(0, -1);
-  return lines.some(
-    (line) => line.startsWith(quotedPrefix) || line.startsWith(prefix),
+  const ownedPatterns = new Set(patterns);
+  const prefix = quoteGitAttributePattern(
+    trackerRelativeRoot.length > 0 ? `${trackerRelativeRoot}/` : "",
+  ).slice(0, -1);
+  return lines.some((line) =>
+    ownedPatterns.has(line) ||
+    (line.startsWith(prefix) &&
+      /^[^/]+\/\*\.(?:toon|md)" merge=pm-item-(?:toon|markdown)$/u.test(
+        line.slice(prefix.length),
+      )),
   );
 }
 
@@ -477,54 +513,74 @@ async function reconcileGitattributesBlock(
   dryRun: boolean,
 ): Promise<{ path: string; changed: boolean }> {
   const gitattributesPath = path.join(workspaceRoot, ".gitattributes");
-  let current = "";
+  // Every tracker in this worktree writes the same file. Serialize the whole
+  // read/modify/write transaction through its Git directory, not a tracker lock.
+  const gitDirectory = dryRun
+    ? null
+    : (
+        await execFileAsync("git", ["rev-parse", "--absolute-git-dir"], {
+          cwd: workspaceRoot,
+          env: gitWorkspaceEnvironment(),
+          encoding: "utf8",
+          windowsHide: true,
+          timeout: 10_000,
+        })
+      ).stdout.trim();
+  const releaseLock =
+    gitDirectory === null
+      ? null
+      : await acquireLock(
+          gitDirectory,
+          MERGE_ATTRIBUTES_LOCK_ID,
+          120,
+          "merge-fence",
+          false,
+          true,
+          5_000,
+        );
   try {
-    current = await readFile(gitattributesPath, "utf8");
-  } catch (error: unknown) {
+    const current = (await readFileIfExists(gitattributesPath)) ?? "";
+    const block = [
+      PM_GITATTRIBUTES_V2_START,
+      ...patterns,
+      PM_GITATTRIBUTES_V2_END,
+    ].join("\n");
+    const blocks = managedMergeBlocks(current);
+    const owned = blocks.filter((candidate) =>
+      blockBelongsToTracker(candidate.lines, patterns, trackerRelativeRoot),
+    );
+    // A marker-only legacy fence carries no owner. The default tracker can
+    // migrate it safely when it is the sole managed block in the repository.
     if (
-      !(error instanceof Error && "code" in error && isFileMissingError(error))
+      owned.length === 0 &&
+      trackerRelativeRoot === ".agents/pm" &&
+      blocks.length === 1 &&
+      blocks[0].lines.every((line) => !line.includes(".agents/pm/"))
     ) {
-      throw error;
+      owned.push(blocks[0]);
     }
-  }
-  const block = [
-    PM_GITATTRIBUTES_V2_START,
-    ...patterns,
-    PM_GITATTRIBUTES_V2_END,
-  ].join("\n");
-  const blocks = managedMergeBlocks(current);
-  const owned = blocks.filter((candidate) =>
-    blockBelongsToTracker(candidate.lines, trackerRelativeRoot),
-  );
-  // A marker-only legacy fence carries no owner. The default tracker can
-  // migrate it safely when it is the sole managed block in the repository.
-  if (
-    owned.length === 0 &&
-    trackerRelativeRoot === ".agents/pm" &&
-    blocks.length === 1 &&
-    blocks[0].lines.every((line) => !line.includes(".agents/pm/"))
-  ) {
-    owned.push(blocks[0]);
-  }
-  let next: string;
-  if (owned.length > 0) {
-    const first = owned[0];
-    next = current;
-    for (const duplicate of owned.slice(1).reverse()) {
-      next = `${next.slice(0, duplicate.start)}${next.slice(duplicate.end)}`;
+    let next: string;
+    if (owned.length > 0) {
+      const first = owned[0];
+      next = current;
+      for (const duplicate of owned.slice(1).reverse()) {
+        next = `${next.slice(0, duplicate.start)}${next.slice(duplicate.end)}`;
+      }
+      next = `${next.slice(0, first.start)}${block}${next.slice(first.end)}`;
+    } else {
+      const prefix = current.trimEnd();
+      next = `${prefix.length > 0 ? `${prefix}\n\n` : ""}${block}\n`;
     }
-    next = `${next.slice(0, first.start)}${block}${next.slice(first.end)}`;
-  } else {
-    const prefix = current.trimEnd();
-    next = `${prefix.length > 0 ? `${prefix}\n\n` : ""}${block}\n`;
+    if (next === current) {
+      return { path: gitattributesPath, changed: false };
+    }
+    if (!dryRun) {
+      await writeFileAtomic(gitattributesPath, next);
+    }
+    return { path: gitattributesPath, changed: true };
+  } finally {
+    await releaseLock?.();
   }
-  if (next === current) {
-    return { path: gitattributesPath, changed: false };
-  }
-  if (!dryRun) {
-    await writeFile(gitattributesPath, next, "utf8");
-  }
-  return { path: gitattributesPath, changed: true };
 }
 
 /** Result of comparing the committed merge-fence block against the coverage the active schema requires. */
@@ -599,23 +655,21 @@ export async function auditMergeAttributeFence(
   const fencePath = path.join(fenceDirectory, ".gitattributes");
   const relativeRoot = toPosixRelative(fenceDirectory, resolvedRoot);
   const blocks = managedMergeBlocks(fenceContent);
+  const expected = buildMergeAttributePatterns(relativeRoot, typeFolders);
   const owned = blocks.filter((block) =>
-    blockBelongsToTracker(block.lines, relativeRoot),
+    blockBelongsToTracker(block.lines, expected, relativeRoot),
   );
-  const committed = owned.flatMap((block) =>
-    block.closed ? block.lines : [],
-  );
-  const expected = buildMergeAttributePatterns(
-    relativeRoot,
-    typeFolders,
-  );
+  const committed = owned.flatMap((block) => (block.closed ? block.lines : []));
   const committedSet = new Set(committed);
   const expectedSet = new Set(expected);
   const missing = expected.filter((line) => !committedSet.has(line));
   const stale = committed.filter((line) => !expectedSet.has(line));
   return {
     status:
-      owned.length !== 1 || !owned[0].closed || missing.length > 0 || stale.length > 0
+      owned.length !== 1 ||
+      !owned[0].closed ||
+      missing.length > 0 ||
+      stale.length > 0
         ? "drift"
         : "ok",
     path: fencePath,
@@ -635,20 +689,20 @@ export async function auditMergeDriverConfiguration(
     const key = `merge.${definition.key}.driver`;
     const expectedSuffix = ` merge driver ${definition.artifact} "%O" "%A" "%B"${definition.itemPath === undefined ? "" : ` --item-path ${definition.itemPath}`}`;
     try {
-      const { stdout } = await execFileAsync(
-        "git",
-        ["config", "--get", key],
-        {
-          cwd: workspaceRoot,
-          env: gitWorkspaceEnvironment(),
-          encoding: "utf8",
-          windowsHide: true,
-          timeout: 10_000,
-        },
-      );
+      const { stdout } = await execFileAsync("git", ["config", "--get", key], {
+        cwd: workspaceRoot,
+        env: gitWorkspaceEnvironment(),
+        encoding: "utf8",
+        windowsHide: true,
+        timeout: 10_000,
+      });
       const configured = stdout.trim();
       if (
-        !(await isPortableMergeDriverCommand(configured, expectedSuffix, workspaceRoot))
+        !(await isPortableMergeDriverCommand(
+          configured,
+          expectedSuffix,
+          workspaceRoot,
+        ))
       ) {
         driftedKeys.push(key);
       }
@@ -845,7 +899,9 @@ export async function installMergeFence(options: {
   }
   if (!dryRun) {
     try {
-      const configScope = await resolveMergeDriverConfigScope(canonicalWorkspaceRoot);
+      const configScope = await resolveMergeDriverConfigScope(
+        canonicalWorkspaceRoot,
+      );
       for (const entry of gitConfigEntries) {
         await execFileAsync(
           "git",
