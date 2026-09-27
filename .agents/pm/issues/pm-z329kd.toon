@@ -1,12 +1,12 @@
 id: pm-z329kd
-title: Malformed settings writes escape as unclassified Sentry faults
+title: Refuse malformed settings writes with typed recovery
 description: "Sentry PM-CLI-3D (one handled generic SyntaxError on released 2026.9.27) maps through writeSettings to JSON.parse of an existing malformed settings.json under the workspace-history lock. A disposable config set reproduces a settings_read_invalid_json warning followed by unknown_error and exit 1 while leaving the file unchanged. Convert this expected corrupt-input refusal into a typed, actionable settings/history error without weakening mutation integrity."
 type: Issue
 status: closed
 priority: 1
 tags[5]: "area:history","area:observability","area:settings",defect,sentry
 created_at: "2026-09-27T11:02:43.845Z"
-updated_at: "2026-09-27T11:49:25.972Z"
+updated_at: "2026-09-27T12:07:19.053Z"
 closed_at: "2026-09-27T11:48:38.497Z"
 completed_at: "2026-09-27T11:48:38.497Z"
 author: "harness:codex"

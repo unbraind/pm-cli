@@ -6,7 +6,7 @@
 
 - Allow self-isolating linked package tests without inherited PM_PATH ([pm-t05d8d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t05d8d.toon))
 - Preserve every tracker merge fence during nested init and detect lost active mappings ([pm-kynkl8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kynkl8.toon))
-- Malformed settings writes escape as unclassified Sentry faults ([pm-z329kd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z329kd.toon))
+- Refuse malformed settings writes with typed recovery ([pm-z329kd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z329kd.toon))
 - Refuse local package installation when source scan stops at entry limit ([pm-erogk1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-erogk1.toon))
 
 ### Security
