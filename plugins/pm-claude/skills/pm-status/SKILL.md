@@ -1,4 +1,5 @@
 ---
+name: pm-status
 description: Show a compact pm project status snapshot — active items, blocked work, and upcoming deadlines.
 ---
 

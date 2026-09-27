@@ -1,6 +1,7 @@
 # Install Plans and Update Evidence
 
-Tracked by [pm-5bsofk](../.agents/pm/issues/pm-5bsofk.toon) and
+Tracked by [pm-erogk1](../.agents/pm/issues/pm-erogk1.toon),
+[pm-5bsofk](../.agents/pm/issues/pm-5bsofk.toon) and
 [pm-gf5zw8](../.agents/pm/issues/pm-gf5zw8.toon), with claim controls tracked by
 [pm-eqdo85](../.agents/pm/issues/pm-eqdo85.toon).
 
@@ -12,15 +13,21 @@ GitHub sources and reports logical file bytes, file/directory/link counts, and
 the copy policy. External local directories are directory snapshots, including
 development artifacts; nested destinations exclude `.agents`, `node_modules`,
 and installer backup directories at every depth using the installer's filter.
-Counts are lower bounds when `complete` is false, with `stop_reason`
-identifying the entry or depth limit. A source-directory alias resolves to its
+The bounded planner can return lower-bound counts with `complete: false` and a
+`stop_reason` when called directly. Installing a local directory now refuses
+that incomplete scan in both dry-run and real modes before writing or
+activating. SDK callers receive
+`extension_install_incomplete_source_scan`; the CLI exits nonzero with the
+entry or depth limit and a packed-archive recovery step. That recovery keeps
+the requested `--project` or `--global` installation scope. A source-directory
+alias resolves to its
 directory before copying; symlink entries inside the source remain links and
 their targets are never traversed.
 Planning writes no destination files, managed state, or activation settings;
 archive and remote source resolution can still prepare temporary source files
 and perform network or dependency-resolution work.
 
-For development-heavy or incomplete local snapshots, `packed_alternative`
+For development-heavy local snapshots, `packed_alternative`
 provides argument vectors for `npm pack --ignore-scripts --json` and archive
 installation. Run packing in its reported `cwd`, substitute the returned
 `pack_result[0].filename`, and install the resulting archive. Normal local

@@ -35239,6 +35239,7 @@
     "extension_dependency_name_unsafe",
     "extension_dependency_spec_invalid",
     "extension_dependency_version_unsafe",
+    "extension_install_incomplete_source_scan",
     "extension_install_soft_failed",
     "extension_install_source_contains_destination",
     "extension_item_field_reserved",

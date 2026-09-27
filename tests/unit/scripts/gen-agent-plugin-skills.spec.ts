@@ -9,6 +9,10 @@ const root = process.cwd();
 const sourceRoot = path.join(root, "templates", "agent-skills");
 const skills = ["pm-audit", "pm-developer", "pm-planner", "pm-release", "pm-workflow"];
 const aliases = ["pm-auditor", "pm-native"];
+const claudeOnly = [
+  "pm-calendar", "pm-close-task", "pm-init", "pm-list", "pm-new",
+  "pm-search", "pm-start-task", "pm-status", "pm-triage",
+];
 const files = ["SKILL.md", "agents/openai.yaml"];
 
 /** Model only the filesystem boundary, leaving the real projection algorithm under test. */
@@ -49,6 +53,7 @@ function mockSkillTree({ emptySource = false, unexpected = false, missingRoot = 
         if (!pluginRootExists) throw Object.assign(new Error("missing skills root"), { code: "ENOENT" });
         return unexpected ? [...skills, ...aliases, "unowned"] : [...skills, ...aliases];
       }
+      if (target === path.join(root, "plugins", "pm-claude", "skills")) return [...skills, ...claudeOnly];
       return skills;
     }),
   }));

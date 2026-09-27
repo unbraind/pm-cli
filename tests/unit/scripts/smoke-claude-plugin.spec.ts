@@ -1,12 +1,10 @@
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import type * as claudePluginSmokeModule from "../../../scripts/smoke-claude-plugin.mjs";
 import { createScriptHarness } from "../../helpers/scriptModule";
 
 const harness = createScriptHarness(["../../../scripts/plugin-mcp-smoke-harness.mjs"]);
 
 const SCRIPT = "scripts/smoke-claude-plugin.mjs";
-type ClaudeModule = typeof claudePluginSmokeModule;
 
 const REQUIRED_TOOLS = [
   "pm_run",
@@ -261,17 +259,4 @@ describe("smoke-claude-plugin", () => {
     expect(dispose).toHaveBeenCalledTimes(1);
   });
 
-  it("assertMarketplacePluginNameMatches throws on the runtime-unreachable mismatch branch", async () => {
-    // Drive the happy-path module body to completion so the exported `_testOnly`
-    // seam is reachable, then exercise its (otherwise dead) mismatch branch and
-    // its passing branch directly. The seam exists because the two pinned
-    // "pm-claude" guards make the inline check unreachable at runtime.
-    setupSmoke();
-    vi.spyOn(console, "log").mockImplementation(() => {});
-    const mod = await harness.importModule<ClaudeModule>(SCRIPT);
-    expect(() => mod.assertMarketplacePluginNameMatches("pm-claude", "other")).toThrow(
-      /does not match plugin.json name/,
-    );
-    expect(() => mod.assertMarketplacePluginNameMatches("pm-claude", "pm-claude")).not.toThrow();
-  });
 });

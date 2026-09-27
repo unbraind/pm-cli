@@ -1,4 +1,4 @@
-import { access, readFile } from "node:fs/promises";
+import { access, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -55,7 +55,7 @@ describe("Claude Code plugin contract", () => {
     }
   });
 
-  it("has all required slash commands", async () => {
+  it("offers every slash invocation through one skill definition", async () => {
     const requiredCommands = [
       "pm-status",
       "pm-start-task",
@@ -73,13 +73,17 @@ describe("Claude Code plugin contract", () => {
       "pm-init",
     ];
     for (const cmd of requiredCommands) {
-      const cmdPath = path.join(pluginRoot, "commands", `${cmd}.md`);
+      const cmdPath = path.join(pluginRoot, "skills", cmd, "SKILL.md");
       const exists = await fileExists(cmdPath);
       expect(exists, `Missing command: ${cmd}`).toBe(true);
 
       const content = await readFile(cmdPath, "utf8");
       expect(content, `Command ${cmd} missing description`).toContain("description:");
+      expect(content, `Command ${cmd} changed its invocation name`).toContain(`name: ${cmd}`);
     }
+    expect(await fileExists(path.join(pluginRoot, "commands"))).toBe(false);
+    const skillEntries = await readdir(path.join(pluginRoot, "skills"));
+    expect(skillEntries.sort()).toEqual(requiredCommands.sort());
   });
 
   it("has all required agents including new subagents", async () => {
@@ -103,6 +107,8 @@ describe("Claude Code plugin contract", () => {
   it("has valid plugin.json with correct version and metadata", async () => {
     const pluginJson = (await readJson(path.join(pluginRoot, ".claude-plugin", "plugin.json"))) as Record<string, unknown>;
     expect(pluginJson.name).toBe("pm-claude");
+    expect(pluginJson.displayName).toBe("pm CLI");
+    expect(pluginJson.$schema).toBe("https://json.schemastore.org/claude-code-plugin-manifest.json");
     expect(typeof pluginJson.version).toBe("string");
     // Date-based version policy (YYYY.M.D[-N]), kept in lockstep with the root
     // package by scripts/sync-versions.mjs — pm-cli artifacts do not use semver.
@@ -129,12 +135,10 @@ describe("Claude Code plugin contract", () => {
     expect(pmClaudePlugin, "marketplace.json must contain pm-claude plugin").toBeTruthy();
     expect(pmClaudePlugin?.source).toBe("./plugins/pm-claude");
 
-    // Reconciled manifest fields (see pm-rjgh): root marketplace.json carries the
-    // same metadata/category surface as .claude-plugin/marketplace.json.
-    const metadata = marketplaceJson.metadata as Record<string, unknown>;
-    expect(metadata, "marketplace.json must carry a metadata block").toBeTruthy();
-    expect(typeof metadata.description).toBe("string");
-    expect(metadata.version).toBe(pmClaudePlugin?.version);
+    // Both marketplace paths carry the same current top-level catalog fields.
+    expect(typeof marketplaceJson.description).toBe("string");
+    expect(marketplaceJson.version).toBe(pmClaudePlugin?.version);
+    expect(marketplaceJson).not.toHaveProperty("metadata");
     expect(pmClaudePlugin?.category).toBe("productivity");
   });
 
@@ -190,6 +194,7 @@ describe("Claude Code plugin contract", () => {
     expect(servers["pm-mcp"]).toBeDefined();
 
     const server = servers["pm-mcp"] as Record<string, unknown>;
+    expect(server).not.toHaveProperty("note");
     expect(server.command).toBe("node");
     expect(Array.isArray(server.args)).toBe(true);
     const args = server.args as string[];

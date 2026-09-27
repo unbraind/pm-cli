@@ -17,8 +17,8 @@ pm-cli/ (repo root)
 │   │   ├── pm-developer/    # Developer execution loop with evidence requirements
 │   │   ├── pm-release/      # Release gate sequence and evidence linking
 │   │   ├── pm-audit/        # Comprehensive audit suite
-│   │   └── pm-planner/      # Planning: decompose, prioritize, triage
-│   ├── commands/            # Slash-command definitions (one .md per /pm-* command)
+│   │   ├── pm-planner/      # Planning: decompose, prioritize, triage
+│   │   └── pm-*/           # Nine focused skill invocations (all /pm-* names retained)
 │   ├── hooks/
 │   │   ├── hooks.json       # SessionStart hook definition
 │   │   └── session-start.mjs # Injects pm context at session start
@@ -34,9 +34,14 @@ pm-cli/ (repo root)
 
 The MCP server itself lives at `src/mcp/server.ts` (compiled to `dist/mcp/server.js`) and is bundled with the npm package as the `pm-mcp` binary.
 
+`.claude-plugin/marketplace.json` is the current Claude marketplace entrypoint.
+The root `marketplace.json` remains for older marketplace consumers. Both files
+must contain identical bytes after version stamping; the plugin contract test
+checks this so the compatibility copy cannot silently drift.
+
 ## Capability Inventory
 
-The canonical user-facing inventory for MCP tools, slash commands, skills, subagents, and `pm_run` actions lives in [`plugins/pm-claude/README.md`](../plugins/pm-claude/README.md). This page focuses on architecture, launcher behavior, and smoke-test expectations so capability counts do not drift between docs.
+The canonical user-facing inventory for MCP tools, skills, slash invocations, subagents, and `pm_run` actions lives in [`plugins/pm-claude/README.md`](../plugins/pm-claude/README.md). This page focuses on architecture, launcher behavior, and smoke-test expectations so capability counts do not drift between docs.
 
 ## Installation Methods
 
@@ -49,7 +54,7 @@ Add the pm-cli GitHub repo as a marketplace source, then install:
 /plugin install pm-claude@pm
 ```
 
-This clones the repo, reads `.claude-plugin/marketplace.json` at the root, installs the plugin from `./plugins/pm-claude/`, and configures the MCP server, skills, slash commands, subagents, and the session hook automatically.
+This clones the repo, reads `.claude-plugin/marketplace.json` at the root, installs the plugin from `./plugins/pm-claude/`, and configures the MCP server, skills with the same `/pm-*` names, subagents, and the session hook automatically.
 
 ### 2. Global MCP via Claude Code CLI (MCP tools only)
 
@@ -57,7 +62,7 @@ This clones the repo, reads `.claude-plugin/marketplace.json` at the root, insta
 claude mcp add --transport stdio pm-mcp -- npx -y --package=@unbrained/pm-cli@latest pm-mcp
 ```
 
-Gives you the 32 MCP tools without skills or slash commands.
+Gives you the 32 MCP tools without skills.
 
 ### 3. Direct project `.mcp.json` (project-scoped MCP only)
 
@@ -171,8 +176,8 @@ For migration details and automation expectations, see:
 ### Validate manifests
 
 ```bash
-claude plugin validate .claude-plugin/marketplace.json
-claude plugin validate plugins/pm-claude/.claude-plugin/plugin.json
+claude plugin validate . --strict
+claude plugin validate plugins/pm-claude --strict
 ```
 
 ### Manual verification

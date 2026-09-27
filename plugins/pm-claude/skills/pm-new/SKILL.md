@@ -1,4 +1,5 @@
 ---
+name: pm-new
 description: Quickly create a new pm item — duplicate-checks first, then creates with sensible defaults. Pass a title (or title + description) as argument.
 ---
 

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: agent-ux,docs,guide,init,plugins,pm-cli
 created_at: "2026-05-17T09:00:17.605Z"
-updated_at: "2026-09-19T08:39:14.597Z"
+updated_at: "2026-09-27T07:45:38.353Z"
 closed_at: "2026-05-17T10:10:58.420Z"
 author: codex-agent
 acceptance_criteria: "Quickstart, Agent Guide, Command Reference, help/guide surfaces, and relevant plugin guidance mention the agent-guidance init option and decline/add-later behavior; docs avoid stale copied flag lists where runtime contracts should be used; docs are linked to implementation items before closure."
@@ -38,7 +38,7 @@ files[7]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Agent workflow bootstrap includes guidance checks
   docs/COMMANDS.md,project,Init command guidance mode reference
   docs/QUICKSTART.md,project,Init guidance mode usage and non-interactive behavior
-  plugins/pm-claude/commands/pm-init.md,project,Claude plugin init guidance
+  plugins/pm-claude/skills/pm-init/SKILL.md,project,Claude plugin init guidance
   plugins/pm-codex/README.md,project,Codex plugin guidance if applicable
   src/cli/guide-topics.ts,project,guide routing for agent workflows
   src/cli/help-content.ts,project,init help docs

@@ -21137,6 +21137,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "extension_install_incomplete_source_scan",
+      "class": "usage",
+      "code": "extension_install_incomplete_source_scan",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Extension install incomplete source scan condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/install-plan.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "extension_install_soft_failed",
       "class": "generic_failure",
       "code": "extension_install_soft_failed",

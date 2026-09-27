@@ -2,21 +2,76 @@ id: pm-dudr
 title: "Claude plugin spec-alignment hygiene vs 2026-07-11 official docs (minor, non-blocking)"
 description: Close minor Claude plugin packaging and documentation deviations from the current official specification without changing the established native runtime architecture.
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[3]: claude-plugin,docs,hygiene
 created_at: "2026-07-11T10:05:30.442Z"
-updated_at: "2026-09-08T13:33:39.517Z"
+updated_at: "2026-09-27T08:36:45.317Z"
+closed_at: "2026-09-27T08:36:41.856Z"
+completed_at: "2026-09-27T08:36:41.856Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "All five spec-alignment gaps closed against the official plugin docs: .mcp.json note key corrected; metadata.* nesting matches schema; commands/ renamed to skills/; displayName + $schema present; root marketplace.json duplicate removed; plugin still validates --strict"
 parent: pm-ugqx
 risk: low
 confidence: high
-expected_result: The Claude plugin matches the official spec on all five flagged points and still validates strictly.
+resolution: "Moved nine unique Claude command prompts into native skills, removed five duplicate command copies, corrected marketplace and plugin manifest fields, kept the compatibility marketplace identical, and migrated historical PM links to current skill paths."
+expected_result: "Both Claude marketplace and plugin manifests validate strictly, all 14 /pm-* invocations remain available through skills, and generated portable skill ownership stays exact."
+actual_result: Both claude plugin validate --strict commands passed; focused linked tests and full 100/100/100/100 coverage passed; packed npm/Bun smoke passed; historical linked-path count returned to its 195 baseline. Local timing gates showed host-sensitive overages; hosted CI is pending.
 dependencies[4]{id,kind,created_at}:
   pm-l9wl,related,"2026-07-11T10:05:30.442Z"
   pm-wg07,related,"2026-07-24T23:53:23.133Z"
   pm-z3ez,related,"2026-07-24T23:53:23.133Z"
   pm-ugqx,implements,"2026-07-26T05:56:10.428Z"
+comments[5]{created_at,author,text}:
+  "2026-09-27T07:08:34.573Z","harness:codex","Current official Claude plugin manifest docs support $schema/displayName, skills with stable slash names, and top-level marketplace description/version. Pre-fix contract test failed at four independent boundaries. The migrated plugin and marketplace now pass claude plugin validate --strict; the compatibility marketplace copy remains byte-equivalent by contract."
+  "2026-09-27T07:11:11.109Z","harness:codex",Static gate found the shared-skill generator rejected nine intentional Claude-owned skill directories. The generator now reserves exactly those names for pm-claude while continuing to refuse arbitrary unowned directories; its focused contract test covers the combined layout.
+  "2026-09-27T08:00:53.366Z","harness:codex","Plugin migration evidence: moved nine unique Claude command prompts into native skill SKILL.md paths, removed five duplicate command copies, validated both marketplace and plugin roots with claude plugin validate --strict, and kept root marketplace compatibility byte-identical. The repository tracker gate exposed 15 newly missing historical links; migrated each former command file link to its current skill path through pm files/docs and removed one obsolete commands directory link already covered by skills. pm validate --check-files now reports the preexisting ceiling of 195."
+  "2026-09-27T08:36:12.071Z","harness:codex","Verification: linked plugin contract/generator tests passed; claude plugin validate . --strict and plugins/pm-claude --strict passed; full coverage passed 9,373 tests at exact 100/100/100/100; packed npx/bunx smoke passed across nine packages; docs-skills, graph composition, record integrity, mutation and repository health passed. Static aggregate stopped only at host-sensitive import timing on unchanged SDK bundles, with isolated import gate passing on retry; hosted exact-head CI remains the release gate."
+  "2026-09-27T08:36:20.615Z","harness:codex","Correction to preceding verification note: a separate CLI transport-floor gate run also exceeded local host latency ceilings for context/next/create/claim under load average about 7. The aggregate static command stopped earlier at import timing. Both timing gates await hosted CI verdict; graph, record-integrity and mutation gates passed separately."
+files[9]{path,scope,note}:
+  .claude-plugin/marketplace.json,project,canonical marketplace catalog
+  marketplace.json,project,byte-identical compatibility catalog
+  plugins/pm-claude/.claude-plugin/plugin.json,project,current plugin metadata schema
+  plugins/pm-claude/.mcp.json,project,schema-clean MCP configuration
+  scripts/gen-agent-plugin-skills.mjs,project,recognize intentionally Claude-owned skill invocations
+  scripts/smoke-claude-plugin.mjs,project,skill inventory and genuine manifest guards
+  tests/integration/claude-plugin-contract.spec.ts,project,plugin manifest and invocation contract
+  tests/unit/scripts/gen-agent-plugin-skills.spec.ts,project,generator preserves both plugin ownership contracts
+  tests/unit/scripts/smoke-claude-plugin.spec.ts,project,smoke behavioral coverage without test-only seam
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/integration/claude-plugin-contract.spec.ts tests/unit/scripts/smoke-claude-plugin.spec.ts,project,240,"harness:codex","2026-09-27T07:08:33.619Z",local_mutation,fix/package-install-readiness-claude-plugin-contracts,Claude plugin manifest and smoke contract
+  node scripts/run-tests.mjs test -- tests/unit/scripts/gen-agent-plugin-skills.spec.ts,project,240,"harness:codex","2026-09-27T07:11:10.302Z",local_mutation,fix/package-install-readiness-claude-plugin-contracts,generated shared skills and Claude-only invocation ownership
+test_runs[1]:
+  - run_id: test-local-mujk8tah-p1a123
+    kind: test
+    status: passed
+    started_at: "2026-09-27T08:32:04.389Z"
+    finished_at: "2026-09-27T08:32:21.065Z"
+    recorded_at: "2026-09-27T08:32:21.065Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/claude-plugin-contract.spec.ts tests/unit/scripts/smoke-claude-plugin.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/gen-agent-plugin-skills.spec.ts,schema,schema,source,local_source_ref
+docs[17]{path,scope,note}:
+  CHANGELOG.md,project,Generated changelog entry for Claude plugin contract
+  docs/CLAUDE_CODE_PLUGIN.md,project,plugin layout and marketplace compatibility invariant
+  plugins/pm-claude/README.md,project,Claude plugin inventory
+  plugins/pm-claude/skills/pm-audit/SKILL.md,project,preserved slash invocations under skills layout
+  plugins/pm-claude/skills/pm-calendar/SKILL.md,project,preserved slash invocations under skills layout
+  plugins/pm-claude/skills/pm-close-task/SKILL.md,project,preserved slash invocations under skills layout
+  plugins/pm-claude/skills/pm-developer/SKILL.md,project,preserved slash invocations under skills layout
+  plugins/pm-claude/skills/pm-init/SKILL.md,project,preserved slash invocations under skills layout
+  plugins/pm-claude/skills/pm-list/SKILL.md,project,preserved slash invocations under skills layout
+  plugins/pm-claude/skills/pm-new/SKILL.md,project,preserved slash invocations under skills layout
+  plugins/pm-claude/skills/pm-planner/SKILL.md,project,preserved slash invocations under skills layout
+  plugins/pm-claude/skills/pm-release/SKILL.md,project,preserved slash invocations under skills layout
+  plugins/pm-claude/skills/pm-search/SKILL.md,project,preserved slash invocations under skills layout
+  plugins/pm-claude/skills/pm-start-task/SKILL.md,project,preserved slash invocations under skills layout
+  plugins/pm-claude/skills/pm-status/SKILL.md,project,preserved slash invocations under skills layout
+  plugins/pm-claude/skills/pm-triage/SKILL.md,project,preserved slash invocations under skills layout
+  plugins/pm-claude/skills/pm-workflow/SKILL.md,project,preserved slash invocations under skills layout
+close_reason: Aligned Claude marketplace and plugin surfaces with current strict validation; preserved 14 slash invocations as skills
 body: "Minor deviations from current official plugin docs (code.claude.com/docs/en/plugins-reference, fetched 2026-07-11; Claude Code v2.1.207). None block loading — `claude plugin validate --strict` passes today. Sweep these when touching the plugin (the substantive install-path defect is pm-l9wl):\n\n1. `plugins/pm-claude/.mcp.json` carries a non-schema `\"note\"` key inside the server entry. Unrecognized-field tolerance is documented for plugin.json top level, not for MCP server configs; Claude Code settings validators are known to strip unknown keys. Move the note to a JS/README comment.\n2. `.claude-plugin/marketplace.json` nests `description`/`version` under `metadata` — docs mark that \"accepted for backward compatibility\"; best practice is top-level fields.\n3. `commands/` (14 flat .md) is the legacy form — docs: \"Commands: Skills as flat Markdown files. Use `skills/` for new plugins.\" Plan a consolidation into `skills/` (each becomes `<name>/SKILL.md`), keeping invocation names stable.\n4. Adopt newer manifest fields: `$schema` (https://json.schemastore.org/claude-code-plugin-manifest.json) for editor validation, `displayName` (v2.1.143+) for the /plugin picker.\n5. Root `marketplace.json` duplicate: kept intentionally for backwards compat (smoke test asserts it). Document the dual-file invariant where it's enforced, or drop it once compat window closes — it is a silent-drift hazard (only `.claude-plugin/marketplace.json` is read by /plugin marketplace add).\n6. If a rename/removal ever happens, use the top-level `renames` map (v2.1.193+) instead of breaking installs."
