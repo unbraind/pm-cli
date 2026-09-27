@@ -1,0 +1,29 @@
+id: pm-s8ztcl
+title: "GH-1330: per-command JSON help inherits the root intent and init example"
+description: "GitHub issue #1330 reports that 55 of 137 command paths in pm help <command> --json inherit the root intent and pm init example without a provenance marker. This gives agents a misleading action for graph, extension, assurance, and history commands. Source: https://github.com/unbraind/pm-cli/issues/1330"
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,"area:cli","area:contracts",defect,github
+created_at: "2026-09-27T12:25:26.400Z"
+updated_at: "2026-09-27T12:25:26.400Z"
+author: "harness:codex"
+acceptance_criteria: Reproduce the 55-of-137 census on the affected release; correct JSON help ownership and provenance; add a negative-control contract test across all command paths; verify generated docs and exact coverage
+goal: project management = context management
+objective: Every command help response describes its own intent or explicitly marks missing or inherited guidance
+value: Prevent agents from following unrelated init examples during command discovery
+impact: Keep machine-readable help trustworthy and token efficient
+outcome: No non-root help response silently repeats root intent or examples
+parent: pm-n7rr
+risk: high
+severity: high
+repro_steps: Compare pm help graph --json and pm help history activity --json with pm help --json; both inherit root intent and pm init example on 2026.9.27.
+expected_result: Command-specific guidance or explicit absence/provenance.
+actual_result: Root intent and pm init example are silently returned on unrelated command paths.
+affected_version: 2026.9.27
+component: CLI help and SDK contracts
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7i97c3,discovered_from,"2026-09-27T12:25:26.400Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-27T12:25:26.400Z","harness:codex","Duplicate check: all-status GH-1330 and distinctive root-intent searches found no exact owner; closed pm-7i97c3 covered intent completeness in contracts but not this help inheritance defect."
+body: ""

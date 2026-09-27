@@ -1,0 +1,29 @@
+id: pm-ft90q2
+title: "GH-1327: Windows nightly static inventory unreadable-source assertion fails"
+description: "GitHub issue #1327 records Nightly Validation run 36310799887 at main 2b14d2fdee9d65dd1699d79e617ab53a0ae91dc7. Windows Node 24 shard 2/2 failed the read-only static extension inventory unreadable-roots/sources integration case: expected managed_state_unreadable plus source detail but received extensions_unreadable. This is separate from shard 1 init test timeouts. Source: https://github.com/unbraind/pm-cli/issues/1327"
+type: Issue
+status: open
+priority: 1
+tags[7]: "area:extensions",ci,defect,github,nightly,node24,windows
+created_at: "2026-09-27T12:26:45.447Z"
+updated_at: "2026-09-27T12:26:45.447Z"
+author: "harness:codex"
+acceptance_criteria: Inspect run 36310799887 shard 2 and reproduce on hosted Windows Node 24; distinguish platform error mapping from fixture assumptions; fix SDK or test according to real behavior; verify no activation or writes and rerun nightly plus exact coverage
+goal: project management = context management
+objective: Static extension inventory reports precise unreadable-source receipts consistently on Windows
+value: Preserve trustworthy read-only extension diagnostics across platforms
+impact: Avoid masking a missing managed-state reason behind a generic extensions_unreadable result
+outcome: Windows nightly shard 2 verifies precise refusal semantics without altering inventory safety
+parent: pm-ul9rye
+risk: high
+severity: high
+repro_steps: "Inspect Nightly run 36310799887 shard 2/2: static-extension-inventory.integration.spec.ts expects managed_state_unreadable and source detail but receives extensions_unreadable."
+expected_result: Precise managed-state and source unreadable receipts match the tested read-only conditions.
+actual_result: Generic extensions_unreadable replaces expected receipts on Windows; shard 2 fails.
+affected_version: 2026.9.27
+component: static extension inventory Windows nightly
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-lhhnx9,discovered_from,"2026-09-27T12:26:45.447Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-27T12:26:45.447Z","harness:codex","Duplicate check: GH-1327 and all-status static inventory and Windows nightly searches found closed pm-lhhnx9 and older nightly lineages but no owner for this exact Windows assertion. Run 36310799887 log proves a distinct shard-2 failure."
+body: ""
