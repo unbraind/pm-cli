@@ -3,7 +3,8 @@
 Tracked by [pm-erogk1](../.agents/pm/issues/pm-erogk1.toon),
 [pm-5bsofk](../.agents/pm/issues/pm-5bsofk.toon) and
 [pm-gf5zw8](../.agents/pm/issues/pm-gf5zw8.toon), with claim controls tracked by
-[pm-eqdo85](../.agents/pm/issues/pm-eqdo85.toon).
+[pm-eqdo85](../.agents/pm/issues/pm-eqdo85.toon) and Git metadata exclusion by
+[pm-k7nxaz](../.agents/pm/issues/pm-k7nxaz.toon).
 
 ## Install planning
 
@@ -11,8 +12,11 @@ Preview an install with `pm package install ./local-package --project --dry-run`
 The `details.install_plan` receipt distinguishes directory, archive, npm, and
 GitHub sources and reports logical file bytes, file/directory/link counts, and
 the copy policy. External local directories are directory snapshots, including
-development artifacts; nested destinations exclude `.agents`, `node_modules`,
-and installer backup directories at every depth using the installer's filter.
+development artifacts other than `.git`. All copied directory sources exclude
+`.git` entries at every depth, including worktree files and symlinks, and count
+those entries in `excluded_entries`. Nested destinations also exclude `.agents`,
+`node_modules`, and installer backup directories at every depth using the
+installer's filter.
 The bounded planner can return lower-bound counts with `complete: false` and a
 `stop_reason` when called directly. Installing a local directory now refuses
 that incomplete scan in both dry-run and real modes before writing or

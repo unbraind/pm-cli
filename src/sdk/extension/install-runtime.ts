@@ -166,6 +166,10 @@ export const copyExtensionDirectoryWithoutSelfNesting = async (
     await copyDirectory(canonicalSource, destinationDirectory, {
       recursive: true,
       force: true,
+      filter: (sourcePath) => includesExtensionCopyPath(
+        canonicalSource, canonicalDestination,
+        path.resolve(sourcePath), false,
+      ),
     });
     return;
   }
@@ -199,7 +203,7 @@ export const copyExtensionDirectoryWithoutSelfNesting = async (
       force: true,
       filter: (sourcePath) => includesExtensionCopyPath(
         canonicalSource, canonicalDestination,
-        path.resolve(sourcePath),
+        path.resolve(sourcePath), true,
       ),
     });
     await copyDirectory(stagedDirectory, destinationDirectory, {

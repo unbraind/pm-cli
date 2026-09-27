@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: ci,quality,security
 created_at: "2026-07-03T14:10:21.927Z"
-updated_at: "2026-09-19T08:39:41.941Z"
+updated_at: "2026-09-27T09:57:14.230Z"
 closed_at: "2026-07-03T14:41:06.488Z"
 author: maintainer-agent
 release: v2026.7.4
@@ -23,5 +23,7 @@ dependencies[2]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
+comments[1]{created_at,author,text}:
+  "2026-09-27T09:57:14.230Z","harness:codex","2026-09-27 merged-main Security and Script Quality run 36310034735 attempt 1 failed before analysis because PowerShell Gallery blocked the pinned PSScriptAnalyzer package download with a WAF response. A single failed-job rerun (attempt 2) completed successfully with every job green. This was an external fetch failure, not an analyzer finding; the required gate stayed enforced."
 close_reason: completed
 body: ""

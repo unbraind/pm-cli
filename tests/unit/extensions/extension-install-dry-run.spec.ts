@@ -10,6 +10,44 @@ import { writeTestExtension } from "../../helpers/extensions.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("package install dry run", () => {
+  it("installs a real Git checkout without copying its source-control metadata", async () => {
+    await withTempPmPath(async (context) => {
+      const source = path.join(context.tempRoot, "git-source");
+      await writeTestExtension({ root: source, name: "git-source" });
+      const git = (args: string[]) => spawnSync("git", ["-C", source, ...args], { encoding: "utf8" });
+      expect(git(["init", "-q"]).status).toBe(0);
+      expect(git(["config", "local.sentinel", "do-not-copy"]).status).toBe(0);
+      expect(git(["add", "manifest.json", "index.js"]).status).toBe(0);
+      expect(git(["-c", "user.name=Fixture", "-c", "user.email=fixture@example.test", "commit", "-qm", "sentinel"]).status).toBe(0);
+      await fs.mkdir(path.join(source, "assets", ".git"), { recursive: true });
+      await fs.writeFile(path.join(source, "assets", ".git", "sentinel"), "do-not-copy");
+      await fs.mkdir(path.join(source, "worktree"));
+      await fs.writeFile(path.join(source, "worktree", ".git"), "gitdir: ../.git/worktrees/example\n");
+      if (process.platform !== "win32") {
+        await fs.mkdir(path.join(source, "linked"));
+        await fs.symlink(path.join(source, ".git"), path.join(source, "linked", ".git"), "dir");
+      }
+
+      const client = new PmClient({ pmRoot: context.pmPath });
+      const dryRun = await client.packageInstall(source, { project: true, dryRun: true });
+      expect(dryRun.details.install_plan?.copy).toMatchObject({ complete: true, excluded_entries: process.platform === "win32" ? 3 : 4 });
+      for (const scope of ["project", "global"] as const) {
+        const installed = await client.packageInstall(source, { [scope]: true });
+        expect(installed.ok).toBe(true);
+        expect(installed.details.activated).toBe(true);
+        expect(installed.details.install_plan?.copy).toMatchObject({
+          complete: true,
+          excluded_entries: process.platform === "win32" ? 3 : 4,
+        });
+        const destination = path.join(scope === "project" ? context.pmPath : context.env.PM_GLOBAL_PATH, "extensions", "git-source");
+        expect(await fs.readFile(path.join(destination, "index.js"), "utf8")).toContain("activate()");
+        for (const gitPath of [".git", path.join("assets", ".git"), path.join("worktree", ".git"), path.join("linked", ".git")]) {
+          await expect(fs.lstat(path.join(destination, gitPath))).rejects.toMatchObject({ code: "ENOENT" });
+        }
+      }
+    });
+  });
+
   it("refuses incomplete directory scans before dry runs or real installs can publish a package", async () => {
     await withTempPmPath(async (context) => {
       const source = path.join(context.tempRoot, "limited-source");

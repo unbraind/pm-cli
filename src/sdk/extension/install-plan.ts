@@ -156,7 +156,7 @@ async function scanExtensionCopyDirectory(directory: string, depth: number, plan
     }
     plan.scanned_entries += 1;
     const candidate = path.join(directory, entry.name);
-    if (plan.copy_scope === "nested_filtered_snapshot" && !includesExtensionCopyPath(plan.source_directory, plan.destination_directory, candidate)) {
+    if (!includesExtensionCopyPath(plan.source_directory, plan.destination_directory, candidate, plan.copy_scope === "nested_filtered_snapshot")) {
       plan.excluded_entries += 1;
       continue;
     }

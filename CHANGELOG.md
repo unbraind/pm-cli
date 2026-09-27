@@ -8,6 +8,10 @@
 - Preserve every tracker merge fence during nested init and detect lost active mappings ([pm-kynkl8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kynkl8.toon))
 - Refuse local package installation when source scan stops at entry limit ([pm-erogk1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-erogk1.toon))
 
+### Security
+
+- Exclude Git metadata from local package directory installs ([pm-k7nxaz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-k7nxaz.toon))
+
 ### Other
 
 - Claude plugin spec-alignment hygiene vs 2026-07-11 official docs (minor, non-blocking) ([pm-dudr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-dudr.toon))

@@ -38,10 +38,11 @@ describe("extension install copy containment", () => {
       destination,
       copyDirectory,
     );
-    expect(copyDirectory).toHaveBeenCalledWith(source, destination, {
+    expect(copyDirectory).toHaveBeenCalledWith(source, destination, expect.objectContaining({
       recursive: true,
       force: true,
-    });
+      filter: expect.any(Function),
+    }));
   });
 
   it("stages a symlinked source whose real install destination is nested inside it", async () => {
