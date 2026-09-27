@@ -2622,6 +2622,63 @@ function resolveLinkedTestSafetyPreflightResult(params: {
     : null;
 }
 
+/** Refuse unbound PM context when a linked command could reach the source tracker. */
+function resolveUnboundPmContextFailure(params: {
+  linkedTest: LinkedTest;
+  executionContext: NonNullable<TestRunResult["execution_context"]>;
+}): TestRunResult | null {
+  if (params.executionContext.pm_context_mode !== "none") return null;
+  if (params.executionContext.workspace_context_mode === "source") {
+    return buildLinkedTestAssertionFailureResult(
+      params.linkedTest,
+      params.executionContext,
+      "pm_context_mode=none requires workspace_context_mode=isolated or snapshot so implicit tracker discovery cannot reach the source workspace.",
+    );
+  }
+  if (params.executionContext.is_pm_command) {
+    return buildLinkedTestAssertionFailureResult(
+      params.linkedTest,
+      params.executionContext,
+      "pm_context_mode=none is for self-isolating SDK tests; direct PM commands require schema, tracker, or auto context.",
+    );
+  }
+  return null;
+}
+
+/** Explain a seeded-tracker mismatch before a linked PM command runs. */
+function resolvePmContextMismatchFailure(params: {
+  linkedTest: LinkedTest;
+  executionContext: NonNullable<TestRunResult["execution_context"]>;
+  runLevelPmContextMode: LinkedTestPmContextMode;
+  linkedOverridePmContextMode: LinkedTestPmContextMode | undefined;
+  options: RunLinkedTestsOptions | undefined;
+}): TestRunResult | null {
+  const failOnMismatchByDefault =
+    params.executionContext.pm_context_mode === "schema" &&
+    params.executionContext.is_pm_tracker_read_command &&
+    params.executionContext.mismatch_detected;
+  const failOnMismatchByFlag =
+    params.options?.failOnContextMismatch === true &&
+    params.executionContext.is_pm_command &&
+    params.executionContext.mismatch_detected;
+  if (!failOnMismatchByDefault && !failOnMismatchByFlag) return null;
+  const mismatchHint = buildPmContextMismatchHint({
+    executionContext: params.executionContext,
+    runLevelPmContextMode: params.runLevelPmContextMode,
+    linkedOverridePmContextMode: params.linkedOverridePmContextMode,
+  });
+  const mismatchPrefix =
+    params.options?.checkContext === true
+      ? "Linked test preflight PM context mismatch detected"
+      : "Linked test PM context mismatch detected";
+  return buildLinkedTestAssertionFailureResult(
+    params.linkedTest,
+    params.executionContext,
+    `${mismatchPrefix} (source_project_items=${params.executionContext.source_project_item_count}, ` +
+      `sandbox_project_items=${params.executionContext.sandbox_project_item_count}).${mismatchHint}`,
+  );
+}
+
 function resolveLinkedTestPreflightResult(params: {
   linkedTest: LinkedTest;
   executionContext: NonNullable<TestRunResult["execution_context"]>;
@@ -2633,31 +2690,10 @@ function resolveLinkedTestPreflightResult(params: {
   if (safetyFailure) return safetyFailure;
   const trustFailure = resolveLinkedTestTrustPreflightResult(params);
   if (trustFailure) return trustFailure;
-  const failOnMismatchByDefault =
-    params.executionContext.pm_context_mode === "schema" &&
-    params.executionContext.is_pm_tracker_read_command &&
-    params.executionContext.mismatch_detected;
-  const failOnMismatchByFlag =
-    params.options?.failOnContextMismatch === true &&
-    params.executionContext.is_pm_command &&
-    params.executionContext.mismatch_detected;
-  if (failOnMismatchByDefault || failOnMismatchByFlag) {
-    const mismatchHint = buildPmContextMismatchHint({
-      executionContext: params.executionContext,
-      runLevelPmContextMode: params.runLevelPmContextMode,
-      linkedOverridePmContextMode: params.linkedOverridePmContextMode,
-    });
-    const mismatchPrefix =
-      params.options?.checkContext === true
-        ? "Linked test preflight PM context mismatch detected"
-        : "Linked test PM context mismatch detected";
-    return buildLinkedTestAssertionFailureResult(
-      params.linkedTest,
-      params.executionContext,
-      `${mismatchPrefix} (source_project_items=${params.executionContext.source_project_item_count}, ` +
-        `sandbox_project_items=${params.executionContext.sandbox_project_item_count}).${mismatchHint}`,
-    );
-  }
+  const unboundContextFailure = resolveUnboundPmContextFailure(params);
+  if (unboundContextFailure) return unboundContextFailure;
+  const mismatchFailure = resolvePmContextMismatchFailure(params);
+  if (mismatchFailure) return mismatchFailure;
   if (
     params.options?.requireAssertionsForPm === true &&
     params.executionContext.is_pm_command &&
@@ -2694,7 +2730,11 @@ function buildLinkedTestExecutionEnv(params: {
     applySharedHostSafeDefaults(executionEnv);
   }
   executionEnv.FORCE_COLOR = "0";
-  executionEnv.PM_PATH = params.executionContext.sandbox_project_pm_path;
+  if (params.executionContext.pm_context_mode === "none") {
+    delete executionEnv.PM_PATH;
+  } else {
+    executionEnv.PM_PATH = params.executionContext.sandbox_project_pm_path;
+  }
   executionEnv.PM_GLOBAL_PATH = params.executionContext.sandbox_global_pm_path;
   if (params.executionContext.workspace_context_mode === "isolated") {
     delete executionEnv.PM_SOURCE_WORKSPACE_ROOT;

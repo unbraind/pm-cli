@@ -2,21 +2,75 @@ id: pm-t05d8d
 title: Allow self-isolating linked package tests without inherited PM_PATH
 description: "A non-PM linked package test that initializes disposable SDK workspaces inherits the runner sandbox PM_PATH, so explicit cwd still resolves to a shared tracker and later fixtures fail. Provide a safe explicit context mode that omits inherited PM_PATH for self-isolating commands while keeping source workspace trust and default sandbox policy."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: "area:sdk","area:test",context-management,gh-1318,packages
 created_at: "2026-09-26T20:34:16.625Z"
-updated_at: "2026-09-26T22:18:49.678Z"
+updated_at: "2026-09-27T03:46:08.453Z"
+closed_at: "2026-09-27T01:49:18.597Z"
+completed_at: "2026-09-27T01:49:18.597Z"
 author: "harness:codex"
 acceptance_criteria: "An explicit linked-test context mode lets non-PM package commands create independent disposable SDK workspaces; default linked tests retain isolated PM_PATH; PM commands cannot bypass tracker isolation; source workspace trust remains enforced; CLI/SDK metadata and execution receipts expose requested and effective mode; focused, full coverage, and temporary package acceptance pass."
 parent: pm-ugqx
+resolution: "Added explicit pm_context_mode=none across parser, SDK types, CLI/MCP contracts, help, completion, execution preflight, and docs; non-PM commands run only in isolated or snapshot workspaces, with PM_GLOBAL_PATH still sandboxed."
+expected_result: Linked package acceptance creates independent SDK tracker roots without touching source data or weakening default context and trust rules.
+actual_result: "Three focused linked-context integration cases and linked PM test passed; packed-package snapshot acceptance created and read two independent roots while source remained clean; 9,371 repository tests passed with exact 100/100/100/100 coverage; npx and bunx resolved the packed CLI."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-954h0o,verifies,"2026-09-26T20:34:16.625Z","harness:codex","cli:create:dep",detected
   pm-alhqbz,verifies,"2026-09-26T20:34:16.625Z","harness:codex","cli:create:dep",detected
   pm-e97jyf,discovered_from,"2026-09-26T20:34:16.625Z","harness:codex","cli:create:dep",detected
   pm-6pij,verifies,"2026-09-26T22:18:49.388Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-26T20:34:16.625Z","harness:codex","Duplicate check 2026-09-26: all-status PM searches for GH-1318, inherited PM_PATH, self-isolating linked tests, and context mode found closed pm-e97jyf, pm-alhqbz, pm-954h0o, and pm-6pij. Those delivered source/tracker parity and nested-write protection but do not provide a no-inherited-PM_PATH mode. GitHub report: https://github.com/unbraind/pm-cli/issues/1318."
+  "2026-09-27T00:32:57.827Z","harness:codex","Added opt-in pm_context_mode=none for isolated/snapshot linked tests that create their own SDK tracker roots. The preflight rejects source-workspace or direct PM commands, and execution clears inherited PM_PATH while retaining sandboxed PM_GLOBAL_PATH. Focused integration tests passed (3/3). A temporary Git project outside this repo ran a snapshot linked test importing the built PmClient SDK, created/read two independent tracker roots, and left the source project untouched. SDK public-surface snapshot was explicitly updated because extending the union changes public TypeScript signatures; existing modes keep their prior behavior. Full repo gates are running."
+  "2026-09-27T00:56:04.231Z","harness:codex","First full coverage pass found two existing contract assertions listing only schema, tracker, and auto. Updated them to include the new none mode; focused parser and public SDK barrel tests pass. Full 100-percent coverage is rerunning."
+  "2026-09-27T01:37:14.269Z","harness:codex","Final verification: pnpm test:coverage passed 748 test files / 9,371 tests with exact 100/100/100/100 coverage; pm test pm-t05d8d --run passed 3 focused integration cases. Packed this checkout, installed its tarball into a disposable project, linked a snapshot test with pm_context_mode=none, and verified the packaged SDK created/read two independent PM roots while source project stayed clean; strict project health returned ok=true, warning_count=0. npx and bunx both resolved the packed CLI at 2026.9.26. Full static gate is the remaining delivery check."
+  "2026-09-27T03:45:14.206Z","harness:codex","PR #1322 review follow-up: CodeRabbit found the none-mode documentation example used scripts/run-tests.mjs, which creates its own PM_PATH after the linked runner omits inherited PM_PATH. The example now invokes Vitest directly in snapshot mode and the Testing guide states why. pnpm build and pnpm quality:docs-skills passed. This changes guidance only; the SDK none-mode implementation and its coverage remain unchanged."
+  "2026-09-27T03:46:08.453Z","harness:codex","Direct-runner documentation proof: in a disposable clone with PM_PATH unset and a temporary PM_GLOBAL_PATH, pnpm exec vitest run tests/integration/linked-test-context-trust.integration.spec.ts passed 3/3 tests. This confirms the documented runner command does not need scripts/run-tests.mjs to build a new PM_PATH."
 notes[1]{created_at,author,text}:
   "2026-09-26T20:39:23.664Z","harness:codex","Investigation 2026-09-26: linked-test runner currently injects sandbox PM_PATH for every child; parser, item serialization, import normalization, SDK/CLI help, and execution receipts all model schema|tracker|auto. A no-inherited-PM_PATH mode must refuse source working-directory execution: nested pm commands would otherwise rediscover the real source tracker. Safer design is an explicit mode paired with a disposable snapshot or isolated working directory; snapshot retains package files and binds .agents/pm to a sandbox tracker while explicit SDK init cwd can select a new temp tracker. Preserve protected env keys and clone trust checks. No source implementation or acceptance proof yet."
+learnings[1]{created_at,author,text}:
+  "2026-09-27T00:40:55.731Z","harness:codex","A linked test that initializes its own SDK workspaces needs a third safe context choice: omit PM_PATH only when the command executes in a disposable isolated or snapshot workspace, while PM_GLOBAL_PATH remains sandboxed and source/trust preflights still apply."
+files[15]{path,scope}:
+  scripts/agent-token-surface-baseline.json,project
+  sdk/public-surface.json,project
+  src/cli/register-operations.ts,project
+  src/core/item/item-format.ts,project
+  src/sdk/cli-contracts/commander-mutation-options.ts,project
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project
+  src/sdk/completion/fish.ts,project
+  src/sdk/completion/zsh.ts,project
+  src/sdk/test/execution.ts,project
+  src/sdk/test/parsers.ts,project
+  src/types.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/linked-test-context-trust.integration.spec.ts,project
+  tests/unit/commands/test/linked-test-parsers.spec.ts,project
+  tests/unit/sdk/execution-diagnostics-primitives.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts,project,2400,"harness:codex","2026-09-27T00:31:52.044Z",local_mutation,fix/isolated-project-context-and-merge-fences
+test_runs[1]:
+  - run_id: test-local-muj33nc5-n2dni3
+    kind: test
+    status: passed
+    started_at: "2026-09-27T00:32:13.902Z"
+    finished_at: "2026-09-27T00:32:26.597Z"
+    recorded_at: "2026-09-27T00:32:26.597Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/TESTING.md,project
+close_reason: Self-isolating SDK package tests run through linked PM tests without inherited PM_PATH.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-t05d8d
+  gate_id: linked-test-independent-sdk-workspaces
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts against the pre-fix runner: isolated SDK workspace test inherits PM_PATH and rejects a second fresh init"
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

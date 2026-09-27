@@ -402,7 +402,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   fixManagedState: { type: "boolean" },
   isolated: { type: "boolean" },
   ignoreGlobal: { type: "boolean" },
-  pmContext: { type: "string", enum: ["schema", "tracker", "auto"] },
+  pmContext: { type: "string", enum: ["schema", "tracker", "auto", "none"] },
   overrideLinkedPmContext: { type: "boolean" },
   workspaceContext: {
     type: "string",
@@ -1556,8 +1556,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   pmContext: {
     description:
-      "PM linked-test context mode (schema keeps isolated tracker data; tracker seeds source tracker data; auto uses tracker for PM tracker-read linked commands).",
-    examples: ["schema", "tracker", "auto"],
+      "PM linked-test context mode (schema keeps isolated tracker data; tracker seeds source tracker data; auto uses tracker for PM tracker-read commands; none omits PM_PATH for self-isolating SDK tests in isolated or snapshot workspaces).",
+    examples: ["schema", "tracker", "auto", "none"],
   },
   overrideLinkedPmContext: {
     description:

@@ -111,6 +111,10 @@ import {
 } from "./stale-work.js";
 import { scanTrackedRuntimeCache } from "./tracked-runtime-cache.js";
 import {
+  buildMergeReceiptEvidenceWarnings,
+  resolveMergeFenceHealthEvidence,
+} from "./health-merge-evidence.js";
+import {
   auditMergeDriverConfiguration,
   findGitWorkspaceRoot,
 } from "../merge/install.js";
@@ -737,28 +741,11 @@ function buildHierarchyIntegrityWarnings(
   ];
 }
 
-function buildMergeReceiptEvidenceWarnings(params: {
-  invalidEvidenceCount: number;
-  missingHistoryReferenceCount: number;
-}): string[] {
-  const warnings: string[] = [];
-  if (params.invalidEvidenceCount > 0) {
-    warnings.push(
-      `merge_receipt_evidence_invalid:${params.invalidEvidenceCount}`,
-    );
-  }
-  if (params.missingHistoryReferenceCount > 0) {
-    warnings.push(
-      `merge_receipt_history_reference_missing:${params.missingHistoryReferenceCount}`,
-    );
-  }
-  return warnings;
-}
-
 async function buildIntegrityCheck(
   pmRoot: string,
   typeToFolder: Record<string, string>,
   schema: PmSettings["schema"],
+  settings: PmSettings,
   requireMergeDrivers: boolean,
   items: Array<ItemMetadata | ItemWithBody>,
 ): Promise<
@@ -778,6 +765,12 @@ async function buildIntegrityCheck(
   );
   const trackedRuntimeCache = await scanTrackedRuntimeCache(pmRoot);
   const gitWorkspaceRoot = await findGitWorkspaceRoot(pmRoot);
+  const mergeFence = await resolveMergeFenceHealthEvidence(
+    pmRoot,
+    gitWorkspaceRoot,
+    settings,
+    requireMergeDrivers,
+  );
   const mergeDriverAudit =
     gitWorkspaceRoot === null
       ? null
@@ -847,6 +840,7 @@ async function buildIntegrityCheck(
           `merge_driver_configuration_${mergeDriverInstallationMissing ? "missing" : "drift"}:${mergeDriverAudit.missing_keys.length + mergeDriverAudit.drifted_keys.length}`,
         ]
       : []),
+    ...mergeFence.warnings,
     ...(pendingMergeDecisions.length > 0
       ? [`merge_decisions_unreviewed:${pendingMergeDecisions.length}`]
       : []),
@@ -892,6 +886,7 @@ async function buildIntegrityCheck(
               ? 0
               : mergeDriverAudit.missing_keys.length +
                 mergeDriverAudit.drifted_keys.length,
+          merge_fence: mergeFence.count,
           pending_merge_decisions: pendingMergeDecisions.length,
           lossless_merge_receipts: losslessMergeReceipts.length,
           invalid_merge_receipt_evidence:
@@ -931,6 +926,7 @@ async function buildIntegrityCheck(
                 ...mergeDriverAudit,
                 required: requireMergeDrivers,
               },
+        merge_fence: mergeFence.audit,
         pending_merge_decision_items: [
           ...new Set(pendingMergeDecisions.map((receipt) => receipt.item_id)),
         ].sort((left, right) => left.localeCompare(right)),
@@ -3468,6 +3464,7 @@ export async function runHealth(
         pmRoot,
         typeRegistry.type_to_folder,
         settings.schema,
+        settings,
         requireMergeDrivers,
         items,
       );

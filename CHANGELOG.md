@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Allow self-isolating linked package tests without inherited PM_PATH ([pm-t05d8d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t05d8d.toon))
+- Preserve every tracker merge fence during nested init and detect lost active mappings ([pm-kynkl8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kynkl8.toon))
+
 ## 2026.9.27 - 2026-09-27
 
 ### Fixed

@@ -266,4 +266,68 @@ describe("linked-test workspace and trust contracts", () => {
       });
     });
   });
+
+  it("allows SDK-style tests to manage their own PM roots only in isolated workspaces", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, {
+        title: "self-isolating linked test",
+        createMode: "progressive",
+      });
+      const command =
+        "node -e \"process.stdout.write(String(process.env.PM_PATH)+':'+String(Boolean(process.env.PM_GLOBAL_PATH)))\"";
+      const added = context.runCli(
+        [
+          "test",
+          id,
+          "--add",
+          `command=${command},pm_context_mode=none,workspace_context_mode=isolated`,
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(added.code).toBe(0);
+      expect((added.json as TestEnvelope).tests[0]).toMatchObject({
+        pm_context_mode: "none",
+        workspace_context_mode: "isolated",
+      });
+      const isolated = context.runCli(["test", id, "--run", "--json"], {
+        expectJson: true,
+      });
+      expect(isolated.code).toBe(0);
+      expect((isolated.json as TestEnvelope).run_results[0]).toMatchObject({
+        status: "passed",
+        stdout: "undefined:true",
+      });
+
+      await overwriteTaskTests(context, id, [
+        { command: "node --version", pm_context_mode: "none" },
+      ]);
+      const source = context.runCli(["test", id, "--run", "--json"], {
+        expectJson: true,
+      });
+      expect(source.code).toBe(5);
+      expect((source.json as TestEnvelope).run_results[0]).toMatchObject({
+        status: "failed",
+        failure_category: "assertion_failure",
+        error: expect.stringContaining("workspace_context_mode"),
+      });
+
+      await overwriteTaskTests(context, id, [
+        {
+          command: "pm --version",
+          pm_context_mode: "none",
+          workspace_context_mode: "isolated",
+        },
+      ]);
+      const directPm = context.runCli(["test", id, "--run", "--json"], {
+        expectJson: true,
+      });
+      expect(directPm.code).toBe(5);
+      expect((directPm.json as TestEnvelope).run_results[0]).toMatchObject({
+        status: "failed",
+        failure_category: "assertion_failure",
+        error: expect.stringContaining("direct PM commands"),
+      });
+    });
+  });
 });

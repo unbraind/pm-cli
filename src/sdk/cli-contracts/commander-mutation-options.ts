@@ -1076,7 +1076,7 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       keys: ["test", "linkedTest"],
       option: "--test <value>",
       description:
-        "Append linked test command=<value>,path=<value>,scope=<project|global>,timeout_seconds=<n>,pm_context_mode=<schema|tracker|auto> (also accepts markdown pairs and - for stdin; repeatable)",
+        "Append test command=<value>,path=<value>,scope=<project|global>,timeout_seconds=<n>,pm_context_mode=<schema|tracker|auto|none> (also accepts markdown pairs and - for stdin; repeatable)",
       repeatable: true,
       aliasOptions: [
         {
