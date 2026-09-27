@@ -1,0 +1,69 @@
+id: pm-k7nxaz
+title: Exclude Git metadata from local package directory installs
+description: "GitHub #1324 reproduces a complete, successful local-directory package install that copies the source checkout .git config, refs, and object history into the managed extension. The installer and its SDK copy planner should share an every-depth Git-metadata exclusion policy, account for excluded entries, preserve runtime files and activation, and refuse unsafe .git symlink cases as appropriate."
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:extensions","area:packages",defect,github-issue,privacy,security
+created_at: "2026-09-27T09:42:32.830Z"
+updated_at: "2026-09-27T10:34:47.218Z"
+closed_at: "2026-09-27T10:34:42.302Z"
+completed_at: "2026-09-27T10:34:42.302Z"
+author: "harness:codex"
+acceptance_criteria: "A real disposable Git checkout with sentinel config/ref installs without any .git metadata under the managed extension; Nested .git directories and symlinked Git metadata cannot enter the copy, and the plan reports excluded entries; Project and global installs, dry runs, packed archive recovery, and existing extension activation remain functional"
+goal: project management = context management
+objective: Local package installs never carry source-control history into managed runtime artifacts
+value: Prevent accidental replication of repository history and config into install outputs
+impact: Reduce copied data and metadata exposure for local checkout installs
+outcome: Real Git checkout installs activate without .git metadata in the managed destination
+parent: pm-x6jf
+risk: high
+severity: high
+resolution: "Shared extension copy policy filters .git directory, worktree file, and symlink entries for external and nested source snapshots; the SDK plan counts exclusions and runtime copy applies the same policy for project and global installs. Added real Git checkout regression and documented receipt semantics."
+expected_result: "A local Git checkout installs and activates without copying source-control metadata, with truthful excluded-entry receipts."
+actual_result: "Focused 16-test extension suite, PM-linked sandbox test, independent temporary project/global CLI installs, 9,374-test exact 100/100/100/100 coverage, packed nine-package npx/bunx smoke, graph/integrity/defect/mutation gates passed. Local aggregate static was limited by host-loaded transport-floor latency; hosted exact-head checks will decide delivery."
+affected_version: 2026.9.27
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5bsofk,discovered_from,"2026-09-27T09:42:32.830Z","harness:codex","cli:create:dep",detected
+  pm-x6jf,discovered_from,"2026-09-27T09:42:32.830Z","harness:codex","cli:create:dep",detected
+  pm-erogk1,discovered_from,"2026-09-27T09:44:26.232Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-09-27T09:42:32.830Z","harness:codex","Duplicate check across all PM statuses: searched Git metadata, local extension install, and GitHub #1324. Historical pm-5bsofk/pm-erogk1 cover copy planning and bounded scans, not the successful Git-history copy defect. Source: https://github.com/unbraind/pm-cli/issues/1324. The issue was created with no PM link and is now owned here."
+  "2026-09-27T09:49:05.041Z","harness:codex","Red regression: a real disposable Git checkout installed and activated, but its install plan reported excluded_entries=0 while .git metadata was copied. Focused test failed on expected 3 excluded entries before the shared copy-policy fix. The source checkout and managed destination are isolated under temporary PM roots."
+  "2026-09-27T09:50:57.402Z","harness:codex","Green focused regression: the SDK dry-run and actual project/global installs of a real temporary Git checkout report four excluded Git entries on Linux (root directory, nested directory, worktree file, and symlink), retain the runtime entrypoint, and activate. Both focused install-plan and install-acceptance test files pass (8 tests)."
+  "2026-09-27T10:03:23.850Z","harness:codex","Independent manual CLI acceptance in a disposable directory passed after a fresh build: created and committed a real Git checkout, added a worktree-style nested .git file, then ran built pm package install with --project and --global under isolated PM_PATH/PM_GLOBAL_PATH. Both JSON receipts reported activated=true and excluded_entries=2; installed entrypoints remained present; neither destination contained root or nested Git metadata. The fixture and tracker were removed afterward."
+  "2026-09-27T10:06:27.503Z","harness:codex","Full local suite first pass: 9,373 tests passed and one existing copy-safety test failed because it required the exact fs.cp options object without a filter. The test was updated to require a filter while keeping its missing-source lexical-containment assertion; this is a test expectation change caused by the SDK copy policy. Exact global coverage awaits the second full run."
+  "2026-09-27T10:22:52.017Z","harness:codex","Final full local suite passed after the copy-safety expectation update: 748 test files passed, one platform-specific file skipped, 9,374 tests passed and two platform-specific tests skipped. Exact V8 coverage gate passed 100/100/100/100: 65,714/65,714 statements, 50,250/50,250 branches, 13,601/13,601 functions, 62,761/62,761 lines. The PM-linked focused test also passed in sandboxed PM roots; independent manual project and global CLI acceptance passed."
+  "2026-09-27T10:34:35.632Z","harness:codex","Verification closeout: docs-skills, build, focused tests, manual temporary project/global CLI installs, full exact coverage, packed nine-package npx/bunx smoke, graph composition, record integrity, defect evidence, and mutation (323 killed, 7 equivalent, score 97.88%) passed. Aggregate static progressed through its preceding checks but the local CLI transport floor missed by 12 ms on a host with load 22.70/8 CPUs; a standalone rerun missed a different operation by 13 ms. Strict budgets remain unchanged; exact-head hosted static and benchmark checks are required before merge."
+files[5]{path,scope,note}:
+  src/sdk/extension/copy-scope.ts,project,shared source snapshot exclusion policy
+  src/sdk/extension/install-plan.ts,project,plan counts Git metadata exclusions
+  src/sdk/extension/install-runtime.ts,project,project and global copy filter
+  tests/unit/extensions/extension-install-dry-run.spec.ts,project,real Git checkout acceptance regression
+  tests/unit/extensions/extension-copy-safety.spec.ts,project,maintain lexical containment test with new Git exclusion filter
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-dry-run.spec.ts tests/unit/extensions/extension-install-plan.spec.ts,project,2400,"harness:codex","2026-09-27T09:49:16.479Z",local_mutation,fix/exclude-git-metadata-from-local-package-installs
+test_runs[1]:
+  - run_id: test-local-mujnl5un-v0qxfq
+    kind: test
+    status: passed
+    started_at: "2026-09-27T09:51:09.545Z"
+    finished_at: "2026-09-27T10:05:56.062Z"
+    recorded_at: "2026-09-27T10:05:56.062Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-dry-run.spec.ts tests/unit/extensions/extension-install-plan.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/PACKAGE_EVIDENCE.md,project,install policy and receipt semantics
+close_reason: Local and SDK package copy plans now exclude Git metadata at every depth
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-k7nxaz
+  gate_id: CI / Gates (coverage)
+  negative_control: "With the shared .git filter removed, node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-dry-run.spec.ts fails because a real Git checkout installs with excluded_entries=0 and copied metadata."
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-copy-safety.spec.ts tests/unit/extensions/extension-install-dry-run.spec.ts tests/unit/extensions/extension-install-plan.spec.ts,node scripts/run-tests.mjs coverage -- --maxWorkers=4
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
+body: ""
