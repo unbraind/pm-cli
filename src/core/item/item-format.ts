@@ -63,6 +63,7 @@ const LINKED_TEST_PM_CONTEXT_MODE_VALUES = new Set([
   "schema",
   "tracker",
   "auto",
+  "none",
 ]);
 const LINKED_TEST_WORKSPACE_CONTEXT_MODE_VALUES = new Set([
   "source",

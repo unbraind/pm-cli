@@ -28,6 +28,7 @@ describe("linked-test constants", () => {
       "schema",
       "tracker",
       "auto",
+      "none",
     ]);
   });
 });

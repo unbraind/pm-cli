@@ -2,14 +2,17 @@
 
 This page describes safe local tests, linked tests, coverage, and release-readiness checks.
 
+Current linked-test and merge-fence work: [pm-t05d8d](../.agents/pm/issues/pm-t05d8d.toon), [pm-kynkl8](../.agents/pm/issues/pm-kynkl8.toon).
+
 Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon), [pm-atfm](../.agents/pm/features/pm-atfm.toon), [pm-xmp5](../.agents/pm/tasks/pm-xmp5.toon), [pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon), [pm-5cgm2z](../.agents/pm/chores/pm-5cgm2z.toon), [pm-avv3wx](../.agents/pm/issues/pm-avv3wx.toon), [pm-rizqb6](../.agents/pm/issues/pm-rizqb6.toon), [pm-95h7pg](../.agents/pm/issues/pm-95h7pg.toon), [pm-giks4s](../.agents/pm/issues/pm-giks4s.toon), [pm-xa3t0o](../.agents/pm/issues/pm-xa3t0o.toon), [pm-e97jyf](../.agents/pm/issues/pm-e97jyf.toon), [pm-efkvdy](../.agents/pm/issues/pm-efkvdy.toon), [pm-ed28wi](../.agents/pm/issues/pm-ed28wi.toon), and [pm-5ug5xq](../.agents/pm/issues/pm-5ug5xq.toon).
 
 ## Agent Quick Context
 
 - Unit and integration tests must not read or write real `.agents/pm` data.
 - Prefer `node scripts/run-tests.mjs ...` because it creates sandboxed `PM_PATH` and `PM_GLOBAL_PATH`.
-- Linked-test execution injects isolated `PM_PATH` and `PM_GLOBAL_PATH` for
-  every command and applies stored-command provenance checks before process
+- Linked-test execution injects isolated `PM_GLOBAL_PATH` and normally
+  `PM_PATH`; `pm_context_mode=none` omits `PM_PATH` for self-isolating SDK tests
+  in disposable workspaces. It applies stored-command provenance checks before process
   creation. Direct runners are accepted; prefer
   `node scripts/run-tests.mjs ...` when the repository provides it because the
   wrapper also reproduces build, coverage, and cleanup policy.
@@ -510,6 +513,11 @@ only their schema roots; a non-PM command explicitly configured with
 data are materialized only when at least one selected command requires tracker
 context. This preserves source isolation without copying an unrelated tracker
 into constrained temporary storage.
+For SDK tests that create independent temporary PM roots, use
+`pm_context_mode: "none"` with `workspace_context_mode: "isolated"` or
+`"snapshot"`. The runner omits `PM_PATH` so each SDK client can resolve its
+explicit workspace independently; `PM_GLOBAL_PATH` remains sandboxed. Source
+workspace execution and direct PM commands refuse this mode before execution.
 Capacity, permission, and resource failures while seeding a required tracker
 surface as typed, path-redacted host-environment refusals with recovery steps.
 When a legacy source tracker has settings but no `_workspace` history, tracker
@@ -593,6 +601,7 @@ Use explicit modes when needed:
 pm test <item-id> --run --pm-context schema
 pm test <item-id> --run --pm-context tracker
 pm test <item-id> --run --pm-context auto --check-context --auto-pm-context
+pm test <item-id> --add-json '{"command":"node scripts/run-tests.mjs test -- tests/integration/independent-sdk-workspaces.spec.ts","pm_context_mode":"none","workspace_context_mode":"snapshot"}'
 ```
 
 For complex linked-test commands, prefer JSON input so shell syntax survives unchanged:

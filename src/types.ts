@@ -351,7 +351,7 @@ export interface LinkedTest {
   /** Value that configures or reports timeout seconds for this contract. */
   timeout_seconds?: number;
   /** Strategy used to control pm context behavior. */
-  pm_context_mode?: "schema" | "tracker" | "auto";
+  pm_context_mode?: "schema" | "tracker" | "auto" | "none";
   /** Strategy used for source-workspace visibility and command working directory. */
   workspace_context_mode?: "source" | "isolated" | "snapshot";
   /** Immutable provenance captured when the linked command enters tracker data. */
@@ -804,9 +804,9 @@ export interface ItemTestRunExecution {
   /** Exact linked command selected for execution. */
   command: string;
   /** Context mode requested before linked-test overrides or auto-remediation. */
-  requested_pm_context_mode?: "schema" | "tracker" | "auto";
+  requested_pm_context_mode?: "schema" | "tracker" | "auto" | "none";
   /** Effective context mode used by the linked command. */
-  pm_context_mode?: "schema" | "tracker" | "auto";
+  pm_context_mode?: "schema" | "tracker" | "auto" | "none";
   /** Effective source-workspace mode used by the linked command. */
   workspace_context_mode?: "source" | "isolated" | "snapshot";
   /** Trust classification applied before execution. */

@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Allow self-isolating linked package tests without inherited PM_PATH ([pm-t05d8d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t05d8d.toon))
+- Preserve every tracker merge fence during nested init and detect lost active mappings ([pm-kynkl8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kynkl8.toon))
 - SDK complete-list receipt falsely reports legacy aliases for canonical helper ([pm-vf9iaf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vf9iaf.toon))
 
 ### Security

@@ -901,7 +901,7 @@ complete -c pm -n '__fish_seen_subcommand_from test' -l progress -d 'Emit linked
 complete -c pm -n '__fish_seen_subcommand_from test' -l env-set -d 'Set linked-test runtime environment values' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l env-clear -d 'Clear linked-test runtime environment values' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l shared-host-safe -d 'Apply shared-host-safe runtime defaults'
-complete -c pm -n '__fish_seen_subcommand_from test' -l pm-context -d 'PM linked-test context mode' -r -a 'schema tracker auto'
+complete -c pm -n '__fish_seen_subcommand_from test' -l pm-context -d 'PM linked-test context mode' -r -a 'schema tracker auto none'
 complete -c pm -n '__fish_seen_subcommand_from test' -l override-linked-pm-context -d 'Force run-level --pm-context over per-linked-test metadata'
 complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-context-mismatch -d 'Fail when context item counts mismatch'
 complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-skipped -d 'Treat skipped linked tests as dependency failures'
@@ -923,7 +923,7 @@ complete -c pm -n '__pm_history_operation test-all' -l progress -d 'Emit linked-
 complete -c pm -n '__pm_history_operation test-all' -l env-set -d 'Set linked-test runtime environment values' -r
 complete -c pm -n '__pm_history_operation test-all' -l env-clear -d 'Clear linked-test runtime environment values' -r
 complete -c pm -n '__pm_history_operation test-all' -l shared-host-safe -d 'Apply shared-host-safe runtime defaults'
-complete -c pm -n '__pm_history_operation test-all' -l pm-context -d 'PM linked-test context mode' -r -a 'schema tracker auto'
+complete -c pm -n '__pm_history_operation test-all' -l pm-context -d 'PM linked-test context mode' -r -a 'schema tracker auto none'
 complete -c pm -n '__pm_history_operation test-all' -l override-linked-pm-context -d 'Force run-level --pm-context over per-linked-test metadata'
 complete -c pm -n '__pm_history_operation test-all' -l fail-on-context-mismatch -d 'Fail when context item counts mismatch'
 complete -c pm -n '__pm_history_operation test-all' -l fail-on-skipped -d 'Treat skipped linked tests as dependency failures'

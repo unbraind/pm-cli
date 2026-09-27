@@ -1,0 +1,16 @@
+id: pm-erogk1
+title: Refuse local package installation when source scan stops at entry limit
+description: "GitHub #1321: local package source inspection reaches max_entries=10000, reports copy.complete=false and stop_reason=entry_limit, yet dry-run and real install return ok=true, warnings=[] and exit 0; real path may activate a partial package. Fail closed before write/activation, give a packed-package recovery hint, and align dry-run readiness."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-09-27T00:37:15.358Z"
+updated_at: "2026-09-27T00:37:15.358Z"
+author: "harness:codex"
+parent: pm-x6jf
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-x6jf,discovered_from,"2026-09-27T00:37:15.358Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-27T00:37:15.358Z","harness:codex","Duplicate check across all PM statuses: searched GH #1321, entry_limit, incomplete source scan, partial package copy, and package install. Earlier lifecycle items cover different completed fixes; no existing item owns this limit-truncation defect. Source: https://github.com/unbraind/pm-cli/issues/1321. Intake only; item remains open and unclaimed."
+body: ""

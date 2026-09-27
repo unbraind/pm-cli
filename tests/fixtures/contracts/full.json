@@ -23169,6 +23169,40 @@
     },
     {
       "aliases": [],
+      "canonical_code": "merge_fence_drift",
+      "class": "generic_failure",
+      "code": "merge_fence_drift",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Merge fence drift condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "merge_fence_missing",
+      "class": "generic_failure",
+      "code": "merge_fence_missing",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Merge fence missing condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "merge_git_config_unwritable",
       "class": "dependency_failed",
       "code": "merge_git_config_unwritable",
@@ -40075,16 +40109,18 @@
             "type": "string"
           },
           "pmContext": {
-            "description": "PM linked-test context mode (schema keeps isolated tracker data; tracker seeds source tracker data; auto uses tracker for PM tracker-read linked commands).",
+            "description": "PM linked-test context mode (schema keeps isolated tracker data; tracker seeds source tracker data; auto uses tracker for PM tracker-read commands; none omits PM_PATH for self-isolating SDK tests in isolated or snapshot workspaces).",
             "enum": [
               "schema",
               "tracker",
-              "auto"
+              "auto",
+              "none"
             ],
             "examples": [
               "schema",
               "tracker",
-              "auto"
+              "auto",
+              "none"
             ],
             "type": "string"
           },
@@ -58747,16 +58783,18 @@
             "type": "string"
           },
           "pmContext": {
-            "description": "PM linked-test context mode (schema keeps isolated tracker data; tracker seeds source tracker data; auto uses tracker for PM tracker-read linked commands).",
+            "description": "PM linked-test context mode (schema keeps isolated tracker data; tracker seeds source tracker data; auto uses tracker for PM tracker-read commands; none omits PM_PATH for self-isolating SDK tests in isolated or snapshot workspaces).",
             "enum": [
               "schema",
               "tracker",
-              "auto"
+              "auto",
+              "none"
             ],
             "examples": [
               "schema",
               "tracker",
-              "auto"
+              "auto",
+              "none"
             ],
             "type": "string"
           },
@@ -58986,16 +59024,18 @@
             "type": "string"
           },
           "pmContext": {
-            "description": "PM linked-test context mode (schema keeps isolated tracker data; tracker seeds source tracker data; auto uses tracker for PM tracker-read linked commands).",
+            "description": "PM linked-test context mode (schema keeps isolated tracker data; tracker seeds source tracker data; auto uses tracker for PM tracker-read commands; none omits PM_PATH for self-isolating SDK tests in isolated or snapshot workspaces).",
             "enum": [
               "schema",
               "tracker",
-              "auto"
+              "auto",
+              "none"
             ],
             "examples": [
               "schema",
               "tracker",
-              "auto"
+              "auto",
+              "none"
             ],
             "type": "string"
           },

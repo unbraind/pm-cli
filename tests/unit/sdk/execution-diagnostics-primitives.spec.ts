@@ -90,6 +90,7 @@ describe("SDK execution and diagnostics ownership", () => {
       "schema",
       "tracker",
       "auto",
+      "none",
     ]);
     expect(TELEMETRY_SUBCOMMANDS).toEqual([
       "status",

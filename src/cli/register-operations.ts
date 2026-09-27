@@ -885,7 +885,7 @@ function addLinkedTestExecutionOptions(command: Command): Command {
     )
     .option(
       "--pm-context <mode>",
-      "PM linked-test context mode: schema|tracker|auto (default: schema)",
+      "PM test context: schema|tracker|auto|none (default: schema)",
     )
     .option(
       "--override-linked-pm-context",

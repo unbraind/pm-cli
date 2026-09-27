@@ -83,7 +83,9 @@ describe("health invocation verdict authority", () => {
             }),
           );
           expect(result.failed_because).toEqual(
-            strictExit ? ["merge_driver_configuration_missing:5"] : [],
+            strictExit
+              ? ["merge_driver_configuration_missing:5", "merge_fence_missing:1"]
+              : [],
           );
         }
       }

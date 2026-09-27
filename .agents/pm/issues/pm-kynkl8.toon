@@ -1,0 +1,81 @@
+id: pm-kynkl8
+title: Preserve every tracker merge fence during nested init and detect lost active mappings
+description: "Nested pm init replaces the root tracker merge-driver attributes, and strict health misses the lost mappings. Reconcile distinct tracker fences in a shared Git repository without erasing other trackers, and make active-tracker strict health fail when the merge fence is missing or stale. GitHub #1320."
+type: Issue
+status: closed
+priority: 1
+tags[4]: "area:init","area:merge",gh-1320,multi-tracker
+created_at: "2026-09-26T23:39:49.274Z"
+updated_at: "2026-09-27T01:54:54.961Z"
+closed_at: "2026-09-27T01:49:16.819Z"
+completed_at: "2026-09-27T01:49:16.819Z"
+author: "harness:codex"
+acceptance_criteria: "Nested init and subsequent merge install preserve both root and nested merge mappings; Strict health detects lost active-tracker mappings; Focused regression, full coverage, and temporary packed CLI acceptance pass"
+parent: pm-dj98
+resolution: "Reconciled only the active tracker managed .gitattributes block, preserved sibling and mixed legacy blocks, repaired truncated block audit, and added strict-health remediation for missing or drifted fences."
+expected_result: "Root, nested, and root-mounted trackers retain field-aware Git attributes across init and reinstall; strict health rejects a lost active fence."
+actual_result: "Four focused merge integration cases and linked PM test passed; 9,371 repository tests passed with exact 100/100/100/100 coverage; packed disposable-project health passed; graph, record-integrity, docstring, lint, and mutation checks passed."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1w3ljt,verifies,"2026-09-27T00:30:21.598Z","harness:codex","cli:update:dep",detected
+  pm-i4fx,verifies,"2026-09-27T00:30:21.598Z","harness:codex","cli:update:dep",detected
+  pm-t05d8d,discovered_from,"2026-09-27T00:30:21.598Z","harness:codex","cli:update:dep",detected
+  pm-g5sx,implements,"2026-09-27T01:47:42.715Z","harness:codex","cli:update:dep",detected
+  pm-l56d0o,verifies,"2026-09-27T01:47:42.715Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-09-26T23:39:49.274Z","harness:codex","created_at=now,text=Duplicate check 2026-09-27: all-status searches for GH-1320, nested init merge attributes, merge fence ownership, and tracker fence drift found closed pm-1w3ljt, pm-i4fx, pm-l56d0o, and pm-g5sx. They delivered initial fence installation, coverage, and version-skew handling but not preservation across nested trackers. Source report https://github.com/unbraind/pm-cli/issues/1320."
+  "2026-09-27T00:32:56.876Z","harness:codex","Root cause: shared .gitattributes reconciliation removed the first managed block without checking tracker ownership, so a nested tracker install could erase the root tracker fence (and vice versa). The fix preserves sibling blocks, replaces only the active tracker block, collapses duplicate owned blocks, and makes strict health report missing/drifted active fences. Focused integration tests passed (2/2), including git check-attr and reinstall for both roots. GitHub #1320 carries the canonical PM link; tracker validation now reports zero orphaned paths."
+  "2026-09-27T00:56:03.425Z","harness:codex","Full coverage run surfaced a real truncated-fence audit edge case: an unterminated managed block still contained expected patterns, so the audit marked drift but reported zero missing patterns. The parser now records whether each block closed, excludes unclosed content from committed mappings, and retains a drift verdict. Updated strict-health expectation; the focused merge and health suite now passes 25 tests."
+  "2026-09-27T01:37:13.523Z","harness:codex","Final verification: pnpm test:coverage passed 748 test files / 9,371 tests with exact 100/100/100/100 coverage (65,708 statements; 50,236 branches; 13,602 functions; 62,756 lines), 2 Windows-only tests skipped on Linux. pm test pm-kynkl8 --run passed 4 integration cases after the final edits. The new cases cover mixed legacy/versioned fences, root-mounted trackers with siblings, ownerless legacy migration, and lone nested-block preservation. pnpm build, pnpm typecheck, ESLint, docstring/static scanner, docs-skills gate, and npm audit high passed. Packaged CLI smoke in a disposable Git project passed, including strict health and npx/bunx version commands."
+  "2026-09-27T01:49:01.054Z","harness:codex",Graph-composition gate identified two prose-only references in this item’s duplicate-check history. Added typed verifies link to closed version-skew issue pm-l56d0o and implements link to closed merge-semantics feature pm-g5sx; graph-composition now passes with prose-edge gaps at its 1236 ceiling. Record-integrity assurance and the mandatory mutation gate also passed (323/330 mutants killed; seven classified equivalent).
+learnings[1]{created_at,author,text}:
+  "2026-09-27T00:40:54.856Z","harness:codex","A repository may host multiple PM roots sharing one .gitattributes. Merge-fence maintenance must identify ownership by tracker-relative pattern prefix, preserve sibling blocks, and audit the active tracker separately from clone-local Git driver configuration."
+files[10]{path,scope}:
+  src/core/diagnostics/remediation.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project
+  src/sdk/governance/health-merge-evidence.ts,project
+  src/sdk/governance/health.ts,project
+  src/sdk/merge/install.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/merge-fence-version-skew.integration.spec.ts,project
+  tests/unit/sdk/governance/health-verdict-authority.spec.ts,project
+  tests/unit/sdk/merge-safety.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/merge-fence-version-skew.integration.spec.ts,project,2400,"harness:codex","2026-09-27T00:31:51.396Z",local_mutation,fix/isolated-project-context-and-merge-fences
+test_runs[2]:
+  - run_id: test-local-muj33ain-jamd0w
+    kind: test
+    status: passed
+    started_at: "2026-09-27T00:31:59.684Z"
+    finished_at: "2026-09-27T00:32:09.983Z"
+    recorded_at: "2026-09-27T00:32:09.983Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/merge-fence-version-skew.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muj5eq4p-ult72v
+    kind: test
+    status: passed
+    started_at: "2026-09-27T01:36:51.877Z"
+    finished_at: "2026-09-27T01:37:02.665Z"
+    recorded_at: "2026-09-27T01:37:02.665Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/merge-fence-version-skew.integration.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  CHANGELOG.md,project
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
+  docs/TESTING.md,project
+close_reason: Nested tracker merge fences are preserved and strict health detects missing active mappings.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-kynkl8
+  gate_id: merge-fence-active-tracker-ownership
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/merge-fence-version-skew.integration.spec.ts against the pre-fix merge installer: nested init loses root merge=pm-item-toon and strict health passes"
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/merge-fence-version-skew.integration.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""

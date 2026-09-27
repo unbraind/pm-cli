@@ -136,6 +136,16 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     summary: "Reinstall clone-local Git drivers after runtime or package paths change.",
   },
   {
+    code: "merge_fence_missing",
+    command: "pm merge install",
+    summary: "Install the active tracker's committed Git merge attributes.",
+  },
+  {
+    code: "merge_fence_drift",
+    command: "pm merge install",
+    summary: "Restore the active tracker's merge mappings while retaining sibling tracker fences.",
+  },
+  {
     code: "validate_merge_driver_configuration",
     command: "pm merge install",
     summary: "Restore missing or drifted clone-local Git merge driver commands.",

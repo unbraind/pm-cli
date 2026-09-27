@@ -8,6 +8,19 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
+    code: "merge_reconcile_receipt_evidence_untrusted",
+    meaning: "Merge reconcile receipt evidence untrusted condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/history-repair.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_reconcile_receipt_evidence_untrusted",
+    aliases: [],
+  },
+  {
     code: "merge_root_not_found",
     meaning: "Merge root not found condition.",
     stability: "stable",

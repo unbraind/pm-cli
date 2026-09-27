@@ -46,6 +46,7 @@ export const LINKED_TEST_PM_CONTEXT_MODE_VALUES = [
   "schema",
   "tracker",
   "auto",
+  "none",
 ] as const;
 /** Restricts linked test pm context mode values accepted by command, SDK, and storage contracts. */
 export type LinkedTestPmContextMode =

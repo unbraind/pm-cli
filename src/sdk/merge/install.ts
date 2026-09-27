@@ -405,20 +405,74 @@ export function buildMergeAttributePatterns(
   return patterns;
 }
 
-function removeManagedBlock(
-  content: string,
-  startMarker: string,
-  endMarker: string,
-): string {
-  const start = content.indexOf(startMarker);
-  const end = content.indexOf(endMarker);
-  return start >= 0 && end > start
-    ? `${content.slice(0, start)}${content.slice(end + endMarker.length)}`
-    : content.replace(startMarker, "").replace(endMarker, "");
+/** Locate every managed fence so one tracker can be updated without erasing its siblings. */
+function managedMergeBlocks(content: string): Array<{
+  start: number;
+  end: number;
+  lines: string[];
+  closed: boolean;
+}> {
+  const blocks: Array<{
+    start: number;
+    end: number;
+    lines: string[];
+    closed: boolean;
+  }> = [];
+  let cursor = 0;
+  while (cursor < content.length) {
+    const legacyStart = content.indexOf(PM_GITATTRIBUTES_START, cursor);
+    const versionedStart = content.indexOf(PM_GITATTRIBUTES_V2_START, cursor);
+    const start =
+      legacyStart === -1
+        ? versionedStart
+        : versionedStart === -1
+          ? legacyStart
+          : Math.min(legacyStart, versionedStart);
+    if (start === -1) break;
+    const versioned = start === versionedStart;
+    const startMarker = versioned
+      ? PM_GITATTRIBUTES_V2_START
+      : PM_GITATTRIBUTES_START;
+    const endMarker = versioned
+      ? PM_GITATTRIBUTES_V2_END
+      : PM_GITATTRIBUTES_END;
+    const closing = content.indexOf(endMarker, start + startMarker.length);
+    const end = closing === -1 ? content.length : closing + endMarker.length;
+    blocks.push({
+      start,
+      end,
+      closed: closing !== -1,
+      lines: content
+        .slice(start + startMarker.length, closing === -1 ? end : closing)
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean),
+    });
+    cursor = end;
+  }
+  return blocks;
+}
+
+/** Match the tracker's own prefix, including incomplete pre-versioned fences. */
+function blockBelongsToTracker(
+  lines: string[],
+  trackerRelativeRoot: string,
+): boolean {
+  if (trackerRelativeRoot === "") {
+    return lines.some((line) =>
+      line.startsWith(quoteGitAttributePattern("**/*.toon")),
+    );
+  }
+  const prefix = `${trackerRelativeRoot}/`;
+  const quotedPrefix = quoteGitAttributePattern(prefix).slice(0, -1);
+  return lines.some(
+    (line) => line.startsWith(quotedPrefix) || line.startsWith(prefix),
+  );
 }
 
 async function reconcileGitattributesBlock(
   workspaceRoot: string,
+  trackerRelativeRoot: string,
   patterns: string[],
   dryRun: boolean,
 ): Promise<{ path: string; changed: boolean }> {
@@ -438,17 +492,32 @@ async function reconcileGitattributesBlock(
     ...patterns,
     PM_GITATTRIBUTES_V2_END,
   ].join("\n");
-  const withoutManagedBlock = removeManagedBlock(
-    removeManagedBlock(
-      current,
-      PM_GITATTRIBUTES_V2_START,
-      PM_GITATTRIBUTES_V2_END,
-    ),
-    PM_GITATTRIBUTES_START,
-    PM_GITATTRIBUTES_END,
+  const blocks = managedMergeBlocks(current);
+  const owned = blocks.filter((candidate) =>
+    blockBelongsToTracker(candidate.lines, trackerRelativeRoot),
   );
-  const prefix = withoutManagedBlock.trimEnd();
-  const next = `${prefix.length > 0 ? `${prefix}\n\n` : ""}${block}\n`;
+  // A marker-only legacy fence carries no owner. The default tracker can
+  // migrate it safely when it is the sole managed block in the repository.
+  if (
+    owned.length === 0 &&
+    trackerRelativeRoot === ".agents/pm" &&
+    blocks.length === 1 &&
+    blocks[0].lines.every((line) => !line.includes(".agents/pm/"))
+  ) {
+    owned.push(blocks[0]);
+  }
+  let next: string;
+  if (owned.length > 0) {
+    const first = owned[0];
+    next = current;
+    for (const duplicate of owned.slice(1).reverse()) {
+      next = `${next.slice(0, duplicate.start)}${next.slice(duplicate.end)}`;
+    }
+    next = `${next.slice(0, first.start)}${block}${next.slice(first.end)}`;
+  } else {
+    const prefix = current.trimEnd();
+    next = `${prefix.length > 0 ? `${prefix}\n\n` : ""}${block}\n`;
+  }
   if (next === current) {
     return { path: gitattributesPath, changed: false };
   }
@@ -528,23 +597,16 @@ export async function auditMergeAttributeFence(
     };
   }
   const fencePath = path.join(fenceDirectory, ".gitattributes");
-  const usesV2 = fenceContent.includes(PM_GITATTRIBUTES_V2_START);
-  const startMarker = usesV2
-    ? PM_GITATTRIBUTES_V2_START
-    : PM_GITATTRIBUTES_START;
-  const endMarker = usesV2 ? PM_GITATTRIBUTES_V2_END : PM_GITATTRIBUTES_END;
-  const start = fenceContent.indexOf(startMarker);
-  const end = fenceContent.indexOf(endMarker);
-  const committed =
-    end > start
-      ? fenceContent
-          .slice(start + startMarker.length, end)
-          .split("\n")
-          .map((line) => line.trim())
-          .filter((line) => line.length > 0)
-      : [];
+  const relativeRoot = toPosixRelative(fenceDirectory, resolvedRoot);
+  const blocks = managedMergeBlocks(fenceContent);
+  const owned = blocks.filter((block) =>
+    blockBelongsToTracker(block.lines, relativeRoot),
+  );
+  const committed = owned.flatMap((block) =>
+    block.closed ? block.lines : [],
+  );
   const expected = buildMergeAttributePatterns(
-    toPosixRelative(fenceDirectory, resolvedRoot),
+    relativeRoot,
     typeFolders,
   );
   const committedSet = new Set(committed);
@@ -552,7 +614,10 @@ export async function auditMergeAttributeFence(
   const missing = expected.filter((line) => !committedSet.has(line));
   const stale = committed.filter((line) => !expectedSet.has(line));
   return {
-    status: missing.length > 0 || stale.length > 0 ? "drift" : "ok",
+    status:
+      owned.length !== 1 || !owned[0].closed || missing.length > 0 || stale.length > 0
+        ? "drift"
+        : "ok",
     path: fencePath,
     missing_patterns: missing,
     stale_patterns: stale,
@@ -672,6 +737,7 @@ export async function refreshMergeAttributeFenceIfInstalled(
     const typeFolders = resolveProjectMergeTypeFolders(settings);
     const outcome = await reconcileGitattributesBlock(
       workspaceRoot,
+      trackerRelativeRoot,
       buildMergeAttributePatterns(trackerRelativeRoot, typeFolders),
       false,
     );
@@ -814,6 +880,7 @@ export async function installMergeFence(options: {
   // activated fence pointing at drivers that this clone has not installed.
   const gitattributes = await reconcileGitattributesBlock(
     canonicalWorkspaceRoot,
+    trackerRelativeRoot,
     patterns,
     dryRun,
   );

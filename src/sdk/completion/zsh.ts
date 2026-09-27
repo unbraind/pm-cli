@@ -1077,7 +1077,7 @@ ${renderZshArgumentSpecs(ATTEST_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.
             '--env-set[Set linked-test runtime environment values]:entry' \\
             '--env-clear[Clear linked-test runtime environment values]:name' \\
             '--shared-host-safe[Apply shared-host-safe runtime defaults]' \\
-            '--pm-context[PM linked-test context mode]:(schema tracker auto)' \\
+            '--pm-context[PM linked-test context mode]:(schema tracker auto none)' \\
             '--override-linked-pm-context[Force run-level --pm-context over per-linked-test pm_context_mode metadata]' \\
             '--fail-on-context-mismatch[Fail when context item counts mismatch]' \\
             '--fail-on-skipped[Treat skipped linked tests as dependency failures]' \\
@@ -1102,7 +1102,7 @@ ${renderZshArgumentSpecs(ATTEST_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.
             '--env-set[Set linked-test runtime environment values]:entry' \\
             '--env-clear[Clear linked-test runtime environment values]:name' \\
             '--shared-host-safe[Apply shared-host-safe runtime defaults]' \\
-            '--pm-context[PM linked-test context mode]:(schema tracker auto)' \\
+            '--pm-context[PM linked-test context mode]:(schema tracker auto none)' \\
             '--override-linked-pm-context[Force run-level --pm-context over per-linked-test pm_context_mode metadata]' \\
             '--fail-on-context-mismatch[Fail when context item counts mismatch]' \\
             '--fail-on-skipped[Treat skipped linked tests as dependency failures]' \\
