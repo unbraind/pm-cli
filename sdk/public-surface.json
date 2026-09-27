@@ -35441,6 +35441,7 @@
     "settings_read_invalid_schema",
     "settings_read_merge_failed",
     "settings_unreadable",
+    "settings_write_invalid_existing_json",
     "stale_budget",
     "stale_destination",
     "stale_observed_signature",

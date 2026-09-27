@@ -1,0 +1,29 @@
+id: pm-aao1hy
+title: "GH-1328: linked-test execution does not disclose item evidence recording"
+description: "GitHub issue #1328 reports that pm test <id> --run says changed:false both when default test-result-tracking disables item recording and when enabled tracking appends test_run_track. Background runs also report passed without item evidence. Source: https://github.com/unbraind/pm-cli/issues/1328"
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,"area:cli","area:testing",defect,github
+created_at: "2026-09-27T12:25:46.741Z"
+updated_at: "2026-09-27T12:25:46.741Z"
+author: "harness:codex"
+acceptance_criteria: Reproduce disabled and enabled policy paths in disposable trackers; add an explicit recorded state and reason or accurate changed field; verify foreground and background item history plus SDK and CLI parity; pass exact coverage
+goal: project management = context management
+objective: Linked-test results explicitly say whether execution evidence reached the item history
+value: Agents can trust closeout evidence without inspecting a separate history stream
+impact: Prevent false assumptions that a passing linked test was recorded
+outcome: Foreground and background test runs expose an accurate recording receipt and recovery command
+parent: pm-lm0j
+risk: high
+severity: high
+repro_steps: "Run pm test <id> --run with default tracking and then enabled tracking; both currently print changed:false although only the second appends test_run_track."
+expected_result: The run result accurately reports recording and the command to enable it when disabled.
+actual_result: "changed:false is printed in both cases without recording provenance."
+affected_version: 2026.9.27
+component: linked-test runtime and item evidence
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-16f4,discovered_from,"2026-09-27T12:25:46.741Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-27T12:25:46.741Z","harness:codex","Duplicate check: all-status GH-1328 and test-result-tracking searches found the closed tracking feature pm-16f4 and its parent epic but no open owner for the false recording receipt."
+body: ""

@@ -67,6 +67,8 @@ Precedence:
 
 When `settings.json` cannot be loaded, `pm` falls back to built-in defaults and prints a one-time `settings_read_fs_error`, `settings_read_invalid_json`, or `settings_read_invalid_schema` warning to stderr (stdout output is unchanged); run `pm health` for remediation.
 
+If the existing project `settings.json` has invalid JSON, a configuration write refuses with `settings_write_invalid_existing_json`. It leaves the file and workspace history untouched. Repair the syntax in `.agents/pm/settings.json`, run `pm health`, then retry the configuration command. The read fallback to defaults does not authorize replacing malformed settings.
+
 ## Common Settings
 
 | Setting                                    | Purpose                                                                                                                                                                                               |

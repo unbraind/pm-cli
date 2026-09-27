@@ -8,19 +8,6 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
-    code: "merge_receipts_pending",
-    meaning: "Merge receipts pending condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["core/diagnostics/remediation.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_receipts_pending",
-    aliases: [],
-  },
-  {
     code: "merge_reconcile_receipt_evidence_untrusted",
     meaning: "Merge reconcile receipt evidence untrusted condition.",
     stability: "provisional",
@@ -1050,6 +1037,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/extension/static-inventory.ts"],
     emitting_commands: ["*"],
     canonical_code: "settings_unreadable",
+    aliases: [],
+  },
+  {
+    code: "settings_write_invalid_existing_json",
+    meaning: "Settings write invalid existing json condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/store/settings.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "settings_write_invalid_existing_json",
     aliases: [],
   },
   {
