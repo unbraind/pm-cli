@@ -202,8 +202,8 @@ export const PM_COMMAND_ALIAS_CONTRACTS: readonly PmCommandAliasContract[] = [
       ["extension scaffold", "extension init"],
       ["package list", "package catalog"],
       ["package scaffold", "package init"],
-      ["packages list", "packages catalog"],
-      ["packages scaffold", "packages init"],
+      ["packages list", "package catalog"],
+      ["packages scaffold", "package init"],
     ] as const
   ).map(([alias, canonical]) => ({
     alias,

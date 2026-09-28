@@ -2,6 +2,50 @@ import { describe, expect, it } from "vitest";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("duplicates command integration", () => {
+  it("does not turn technical prose into issue-code duplicate advice", async () => {
+    await withTempPmPath(async (context) => {
+      for (const title of [
+        "Export --excel with UTF-8 BOM",
+        "Import --encoding UTF-8 input",
+        "Document Match-3 rules",
+        "Implement Match-3 scoring",
+        "Document match-10 rules",
+        "Implement match-10 scoring",
+        "Review chart-404 output",
+        "Repair chart-404 rendering",
+        "Fix GH-672 import",
+        "Investigate Gh-672 regression",
+      ]) {
+        expect(
+          context.runCli([
+            "create",
+            "task",
+            title,
+            "--status",
+            "open",
+            "--json",
+          ]).code,
+        ).toBe(0);
+      }
+
+      const result = context.runCli(["duplicates", "--json"], {
+        expectJson: true,
+      });
+      expect(result.code).toBe(0);
+      expect(result.json?.clusters).toEqual([
+        expect.objectContaining({
+          items: expect.arrayContaining([
+            expect.objectContaining({ title: "Fix GH-672 import" }),
+            expect.objectContaining({ title: "Investigate Gh-672 regression" }),
+          ]),
+          matches: [
+            expect.objectContaining({ reason: "issue_code", score: 0.99 }),
+          ],
+        }),
+      ]);
+    });
+  });
+
   it("discovers all-status clusters with bounded filters and actionable guidance", async () => {
     await withTempPmPath(async (context) => {
       for (const status of ["open", "closed"]) {

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: agent-ergonomics,ci-gates,discoverability,long-horizon
 created_at: "2026-08-01T13:09:26.104Z"
-updated_at: "2026-09-28T13:20:28.876Z"
+updated_at: "2026-09-28T19:03:16.038Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "A replay corpus of wrong invocations is generated from the contract tables and covers every flag with a closed domain, every subcommand family, every required-argument omission and every mutually exclusive flag pair; Every declared error code is reachable from at least one corpus input, and a code with no reachable input is reported as such; A scorer reports the recovery-closure fraction and the list of unrecoverable refusals, scoring a lone nearest-match suggestion as not recoverable; The closure fraction is a ratchet in the gate registry that may not fall, with a negative control proving the gate can fail; The refusal envelope has a declared shape carrying the failing surface, the rejected value, the legal domain when known, and the exit code"
@@ -36,7 +36,7 @@ dependencies[17]{id,kind,created_at,author,source_kind,author_source}:
   pm-xam9bt,blocked_by,"2026-08-22T07:16:01.250Z","harness:codex","cli:update:dep",detected
   pm-3oq022,verifies,"2026-08-23T20:29:31.913Z","harness:codex","cli:update:dep",detected
   pm-elmpav,verifies,"2026-08-27T16:59:09.930Z","harness:codex","cli:update:dep",detected
-comments[58]{created_at,author,text}:
+comments[61]{created_at,author,text}:
   "2026-08-18T19:18:11.981Z","harness:codex","Implementation start 2026-08-18: active in one coupled SDK-first command-contract tranche spanning canonical flag concepts and budgets, truthful invocation arity, complete closed-domain recovery, refusal-closure scoring, source-derived executable recovery obligations, and shared CLI/MCP/completion/docs discovery metadata. This item is claimed because its acceptance surface will be edited and verified in this branch; unrelated parents and backlog items remain open and unclaimed."
   "2026-08-18T21:13:36.921Z","harness:codex","Tranche evidence: the SDK now provides a typed recovery-closure scorer and findings, the gate registry runs a real temporary-tracker corpus, four current closed-domain probes score 4/4 (fraction 1.0), empty corpora fail closed, and omission/malformed-retry negative controls fail. Remaining acceptance: generate the exhaustive corpus from all contract tables, cover every subcommand family/required omission/mutual exclusion/error code, and persist a historical ratchet. Returning open and releasing ownership."
   "2026-08-18T21:49:08.769Z","harness:codex","Hosted CI evidence: PR #1061 exact head b953e36c22804ba26974a2c81307e91f1094f3ca passed the broad matrix except Gates (static), which correctly failed at generate-error-code-catalog.mjs --check because the recovery additions changed the reachable catalog. Treating this as gate-positive drift detection and regenerating through the repository-owned command."
@@ -95,6 +95,9 @@ comments[58]{created_at,author,text}:
   "2026-08-27T17:34:26.808Z","harness:codex","Tranche evidence: complete agent workflows now execute both typed runtime refusal recovery and Commander usage refusal correction under a mandatory token ratchet. The current closure census passes all 117 generated probes and increases executable catalog coverage to 19 of 344 codes, while the new Commander accounting omission is explicitly tracked as an open child rather than hidden. This broad feature remains open because its declared complete-catalog closure acceptance criteria are not yet met."
   "2026-09-17T16:58:35.513Z","harness:codex","Dogfood observation for the existing recovery corpus: pm get with --fields history refuses the unknown selector, but the default text fallback says to adjust command input or tracker state and points to JSON after the declared 768-token ceiling is exceeded. The actionable selector-specific repair is pm history ID, or pm get ID --full for rich metadata. Consider this case in the existing closed-domain and compact-recovery corpus; no duplicate item created and no claim taken."
   "2026-09-28T13:20:27.324Z","harness:codex","GitHub intake 2026-09-28: https://github.com/unbraind/pm-cli/issues/1337 reports that unsupported --dry-run on close, update, and claim in published 2026.9.28 yields a suggested retry that removes the no-side-effect intent and can perform the mutation. No advertised mutating retry was executed during intake. Extend this existing recovery-corpus ownership with a proposed safety obligation: a refusal must not transform dry-run/check/plan intent into an executable mutation; use a read-only inspection, a supported preview, or no executable retry when preservation is impossible. Verification should use isolated trackers and compare semantic state and history before/after both refusal and permitted recovery. This is reported evidence, not an independently reproduced or fixed defect. Duplicate review covered all statuses, existing unsupported-dry-run safety and recovery-parser foundations, and this full feature metadata/history; reuse the canonical scorer/corpus/gate owner without duplicating the broader dry-run feature proposal. Implementation remains open and unclaimed after intake."
+  "2026-09-28T17:13:35.725Z","harness:codex","Active tranche 2026-09-28: unsupported preview/check flags no longer produce stripped mutating retry instructions, even if the error context provides one. Isolated CLI integration checks close/update/claim refusal without item or history mutation; direct formatter tests passed. Linked focused test passed, full 9,399-test 100/100/100/100 coverage suite passed, and packed npx/bunx consumer validation passed. Broader milestone remains open after this tranche."
+  "2026-09-28T17:38:09.910Z","harness:codex","PR #1341 review follow-up: Greptile identified attached --dry-run=true as a preview-intent bypass. Unknown-option recovery now checks the flag name before any attached value for both retry suppression and read-only guidance. Unit and isolated CLI tests cover the attached form; focused tests pass."
+  "2026-09-28T17:58:23.405Z","harness:codex","PR #1341 review correction verified: attached --dry-run=true is rejected without a stripped mutating retry in unit and isolated CLI tests. Full post-review suite passed 9,399 tests with exact 100/100/100/100 coverage."
 learnings[6]{created_at,author,text}:
   "2026-08-19T05:28:38.341Z","harness:codex","Executable assurance should run the full real corpus once, then exercise failure classification through deterministic injected observations. Replaying an expensive corpus for each scorer branch adds latency without improving behavioral evidence."
   "2026-08-19T08:39:06.383Z","harness:codex","Adapter-only enumerable options can silently defeat SDK fast paths even when behavior remains correct. Pin the real CLI registration path against corrupted source files so derived-index use is observable, and treat raw Commander negation defaults as non-semantic only after normalized filters preserve requested fallback semantics."
@@ -102,7 +105,7 @@ learnings[6]{created_at,author,text}:
   "2026-08-21T23:59:02.159Z","harness:codex",A recovery-closure corpus must validate both the presence of a recovery object and a usable corrective action. Negative controls for missing actions and forged/inconsistent degradation receipts prevent superficially structured diagnostics from passing.
   "2026-08-25T09:51:05.386Z","harness:codex","When a new executable refusal group raises a public ratchet, add a versioned baseline export and retain the prior export unchanged; classify advisory lint findings by their emitted process exit class rather than assuming every invalid manifest signal is a usage error."
   "2026-08-27T17:34:27.308Z","harness:codex","Commander usage errors occur before runtime token-accounting attachment, so a transcript gate must label their independently measured transport honestly while the missing self-reported receipt remains separately owned."
-files[66]{path,scope,note}:
+files[67]{path,scope,note}:
   docs/agent-task-token-baseline.json,project,Intentional reviewed refusal-envelope token ceiling ratchet
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Executable refusal closure for bulk ID input states
   scripts/agent-token-surface-baseline.json,project,Regenerated agent token surface after contract API addition
@@ -117,7 +120,7 @@ files[66]{path,scope,note}:
   scripts/release/refusal-closure-gate.mjs,project,Active command contract and recovery conformance implementation
   scripts/release/surface-replication-sets.json,project,Line-scoped replication activation for receipt-bearing changes
   sdk/public-surface.json,project,Operand-preserving executable recovery contract and verification
-  src/cli/error-guidance.ts,project,Operand-preserving executable recovery contract and verification
+  src/cli/error-guidance.ts,project,Keep unsupported preview flags from offering unsafe mutating retries
   src/cli/main.ts,project,Operand-preserving executable recovery contract and verification
   src/cli/register-list-query.ts,project,Operand-preserving executable recovery contract and verification
   src/cli/register-mutation.ts,project,Schema shorthand safety and shared merge domain
@@ -149,12 +152,13 @@ files[66]{path,scope,note}:
   src/sdk/query/search.ts,project,Operand-preserving executable recovery contract and verification
   src/sdk/runtime.ts,project,Operand-preserving executable recovery contract and verification
   tests/fixtures/contracts/full.json,project,generated recovery contract snapshot
-  tests/integration/closed-domain-recovery.integration.spec.ts,project,Operand-preserving executable recovery contract and verification
+  tests/integration/closed-domain-recovery.integration.spec.ts,project,Verify rejected preview flags preserve tracker state and history
   tests/integration/refusal-reachability.integration.spec.ts,project,Runnable complete-catalog reachability evidence
   tests/integration/schema-shorthand-safety.integration.spec.ts,project,Non-mutating schema typo recurrence test
   tests/integration/structured-mutation-io.integration.spec.ts,project,Lean errors retain executable corrective action
   tests/unit/cli/cli-main-errors.spec.ts,project,Operand-preserving executable recovery contract and verification
   tests/unit/cli/error-guidance.spec.ts,project,Operand-preserving executable recovery contract and verification
+  tests/unit/cli/nonmutating-option-guidance.spec.ts,project,Verify actionable nonmutating guidance
   tests/unit/cli/structured-mutation-registration.spec.ts,project,Lean recovery action remains typed and emitted
   tests/unit/commands/query/list-command.spec.ts,project,Real CLI persistent-index regression coverage
   tests/unit/scripts/generate-agent-capability-surfaces.spec.ts,project,Complete error-catalog refusal closure census and ratchet
@@ -169,7 +173,7 @@ files[66]{path,scope,note}:
   tests/unit/sdk/cli-contracts/flag-lexicon-contracts.spec.ts,project,Unmapped full projection negative control
   tests/unit/sdk/context-intent-contracts.spec.ts,project,Operand-preserving executable recovery contract and verification
   tests/unit/sdk/query/projection-recovery.spec.ts,project,review-driven recovery regression coverage
-tests[16]:
+tests[17]:
   - command: "pnpm quality:recovery-closure"
     scope: project
     timeout_seconds: 240
@@ -243,7 +247,15 @@ tests[16]:
       created_at: "2026-09-22T04:59:31.155Z"
       source_kind: local_mutation
       source_ref: refactor/cli-command-domains-export-gate
-test_runs[9]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-28T17:11:04.384Z"
+      source_kind: local_mutation
+      source_ref: fix/agent-recovery-aliases-duplicate-scoring
+test_runs[12]:
   - run_id: test-local-msz5ibe4-fgmh3m
     kind: test
     status: passed
@@ -333,6 +345,39 @@ test_runs[9]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/refusal-reachability.integration.spec.ts tests/unit/sdk/agent/refusal-closure-census.spec.ts tests/unit/scripts/refusal-closure-gate.spec.ts,schema,schema,source,acknowledged
+  - run_id: test-local-muli8aip-j6i616
+    kind: test
+    status: passed
+    started_at: "2026-09-28T17:11:21.101Z"
+    finished_at: "2026-09-28T17:11:29.857Z"
+    recorded_at: "2026-09-28T17:11:29.857Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mulk9j2s-4rhgvn
+    kind: test
+    status: passed
+    started_at: "2026-09-28T18:08:17.643Z"
+    finished_at: "2026-09-28T18:08:26.836Z"
+    recorded_at: "2026-09-28T18:08:26.836Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mullo33y-mni1rn
+    kind: test
+    status: passed
+    started_at: "2026-09-28T18:47:35.232Z"
+    finished_at: "2026-09-28T18:47:45.598Z"
+    recorded_at: "2026-09-28T18:47:45.598Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
 docs[8]{path,scope,note}:
   docs/agent-task-transcripts.json,project,golden refusal and recovery workflows
   docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md,project,Action-preserving recovery budget contract

@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- GH-1340: pm duplicates treats UTF-8 prose as a 0.99 issue-code match ([pm-1ieq24](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1ieq24.toon))
 - Persist revised linked evidence notes while preserving idempotent retries ([pm-zqxlfs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zqxlfs.toon))
 - Bound Plan mutation receipts while preserving full inspection ([pm-hqy7lr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hqy7lr.toon))
 
