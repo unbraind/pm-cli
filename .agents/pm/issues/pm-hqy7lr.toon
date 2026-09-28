@@ -6,18 +6,18 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:sdk","horizon:current",plan,token-efficiency
 created_at: "2026-09-28T06:07:42.721Z"
-updated_at: "2026-09-28T09:39:42.496Z"
-closed_at: "2026-09-28T09:36:15.241Z"
-completed_at: "2026-09-28T09:36:15.241Z"
+updated_at: "2026-09-28T10:26:33.950Z"
+closed_at: "2026-09-28T10:26:32.545Z"
+completed_at: "2026-09-28T10:26:32.545Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Public SDK owns an explicit compact Plan mutation receipt while CLI and MCP share its semantics; A 1000-step fixture proves a single-step update stays inside its declared output ceiling with no unrelated body text; Explicit full inspection still returns all steps decisions evidence and resume metadata with truthful omissions and continuation contracts; Completed planning-journey token replay includes mutation responses and fails when full-plan amplification is reintroduced
 parent: pm-n7rr
 risk: medium
 confidence: high
-resolution: SDK generates bounded Plan mutation receipts shared by CLI and MCP; typed SDK retains complete results and explicit full/deep recovery remains available. Added thousand-step persistence regression and fixed-ceiling planning transcript.
-expected_result: "Single-step mutation output remains bounded independently of unrelated Plan content, with complete counts and safe full-state recovery."
-actual_result: 9388 tests pass with exact 100/100/100/100 coverage; linked checks and typecheck pass; real Node/Bun completion output 891 bytes; npx/bunx smoke passes. Local startup timing limitations remain recorded separately; hosted review and merge pending.
+resolution: "Bound Plan receipts across default and no-changed-fields transports, retain full typed SDK results, publicly export the receipt type, and preserve safely quoted tracker roots in recovery. Extend real persistence and token-replay contracts and update package-first acceptance."
+expected_result: "Plan mutation output is bounded, recoverable in the correct tracker, publicly typed and consistent across CLI and MCP, with strict hosted coverage required for delivery."
+actual_result: "101 linked tests, 60 persistence/projection tests, 41 token-gate tests and 60 acceptance/source-scan tests pass; 89-command real dogfood, typecheck and docstring checks pass. Eight published token ceilings unchanged; new journey 848 tokens. Revised local full run failed stale fixtures and timeouts, all corrected or passing unchanged in focused rerun; mandatory exact-head hosted coverage and review remain pending."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,implements,"2026-09-28T06:07:42.721Z","harness:codex","cli:create:dep",detected
   pm-nilh,discovered_from,"2026-09-28T06:07:42.721Z","harness:codex","cli:create:dep",detected
@@ -26,7 +26,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-q7c36n,related,"2026-09-28T08:58:31.323Z","harness:codex","cli:update:dep",detected
   pm-z3ez,related,"2026-09-28T08:58:31.323Z","harness:codex","cli:update:dep",detected
   pm-zqxlfs,related,"2026-09-28T08:58:31.323Z","harness:codex","cli:update:dep",detected
-comments[13]:
+comments[17]:
   - created_at: "2026-09-28T06:07:42.721Z"
     author: "harness:codex"
     text: "Duplicate check 2026-09-28: searched the complete 2826-item snapshot for mutation receipt/output and Plan mutation titles, plus live all-status keyword AND searches for plan mutation output receipt and plan compact. pm-nilh and pm-ch59 are completed general compact-mutation deliveries; pm-5t33or is the broader output-budget programme. No individual owner was found for the Plan mutator full-collection response. Reproduction: pm plan update-step on one step of pm-a8zm returned all 15 steps. Read full live pm-nilh and pm-ch59 metadata and the complete event history before filing this distinct adapter/receipt gap."
@@ -67,13 +67,28 @@ comments[13]:
   - created_at: "2026-09-28T09:39:41.727Z"
     author: "harness:codex"
     text: "Reviewed-delivery preparation: linked tests passed 100 tests; full typecheck passed. Latest pm-changelog 2026.9.25 generated both fixes under Unreleased. Post-closure defect-evidence gate reports zero findings; tracker-context-quality, graph-composition and record-integrity verdicts pass. Final secret scan found no credential-like secrets. Both completed claims are released; no items remain in progress."
+  - created_at: "2026-09-28T09:58:45.190Z"
+    author: "harness:codex"
+    text: "PR 1335 round one: hosted coverage/static/typecheck passed, while package-first smoke assumed the old Plan envelope. Validated review findings require compact no-changed-fields projection, tracker-qualified recovery and a named public receipt type. Source fixes retain explicit full output. Added meaningful docstrings to touched reorder/remove owners; policy-task acceptance criteria now preserve required checks and release behavior. Sourcery reported its free review quota exhausted; Greptile and CodeRabbit completed substantive reviews."
+  - created_at: "2026-09-28T10:09:57.573Z"
+    author: "harness:codex"
+    text: "Round-one corrections pass 60 focused persistence/projection tests and 41 token-gate tests, including real replay and independent wrong-root/changed-command negative controls. Package-first dogfood now consumes compact receipts and verifies decisions/discoveries/validation/resume through deep reads. Tracker-qualified recovery adds 86 estimated tokens to this PR new planning journey (762 to 848); all eight previously published task ceilings remain unchanged. Replay predicts only declared Plan recovery root substitutions across isolated workspaces and still measures raw emitted bytes."
+  - created_at: "2026-09-28T10:25:29.580Z"
+    author: "harness:codex"
+    text: "Revised full coverage attempt was not accepted: 9385 passed, five failed, two platform skips, and no coverage receipt. Three dogfood script unit fixtures still emitted the old full Plan envelope despite the real 89-command journey passing; updated only their documented external-process responses. Two unchanged source-scan tests exceeded their existing 30-second limits. Focused rerun and exact coverage remain required; no timeout or threshold relaxation."
+  - created_at: "2026-09-28T10:26:31.222Z"
+    author: "harness:codex"
+    text: Final focused recovery passed all 60 tests across dogfood acceptance-script contracts and the two unchanged source-scan cases (both below four seconds). Real package-first journey passed 89 commands. Review corrections and linked checks are locally verified; exact revised-source 100/100/100/100 must be established by the mandatory hosted coverage gate before merge. The unsuccessful local full attempt remains explicitly recorded and is not a coverage receipt.
 notes[1]{created_at,author,text}:
   "2026-09-28T08:46:03.182Z","harness:codex","Compatibility decision: keep runPlan and typed PmClient Plan methods full-shaped. Apply the SDK-generated receipt at CLI/MCP presentation boundaries by default, with fullChangedFields recovery. Omit unrelated content and retain complete step counts, affected identity, bounded warning previews, and a read-only deep inspection command."
-files[14]{path,scope}:
+files[18]{path,scope}:
   .agents/pm/extensions/.managed-extensions.json,project
+  scripts/dogfood-package-first.mjs,project
+  scripts/release/agent-task-token-gate.mjs,project
   sdk/public-surface.json,project
   src/cli/commands/lifecycle/plan.ts,project
   src/core/output/mutation-projection.ts,project
+  src/sdk/index.ts,project
   src/sdk/lifecycle/plan-mutation-receipt.ts,project
   src/sdk/lifecycle/plan.ts,project
   src/sdk/runtime.ts,project
@@ -82,11 +97,12 @@ files[14]{path,scope}:
   tests/integration/mcp-dynamic-package-actions.spec.ts,project
   tests/integration/mcp-handshake.spec.ts,project
   tests/unit/commands/lifecycle/plan-command.spec.ts,project
+  tests/unit/scripts/dogfood-package-first.spec.ts,project
   tests/unit/scripts/release/agent-task-token-gate.spec.ts,project
   tests/unit/sdk/lifecycle/plan-evidence-mutation-receipts.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/plan-evidence-mutation-receipts.spec.ts tests/unit/commands/lifecycle/plan-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/integration/mcp-handshake.spec.ts,project,300,"harness:codex","2026-09-28T08:39:40.054Z",local_mutation,fix/plan-receipts-linked-evidence
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mul1wszt-w3w6bh
     kind: test
     status: passed
@@ -98,13 +114,24 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/plan-evidence-mutation-receipts.spec.ts tests/unit/commands/lifecycle/plan-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mul36oqv-3rhlf9
+    kind: test
+    status: passed
+    started_at: "2026-09-28T10:09:58.411Z"
+    finished_at: "2026-09-28T10:10:20.743Z"
+    recorded_at: "2026-09-28T10:10:20.743Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/plan-evidence-mutation-receipts.spec.ts tests/unit/commands/lifecycle/plan-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
 docs[5]{path,scope}:
   CHANGELOG.md,project
   docs/agent-task-token-baseline.json,project
   docs/agent-task-transcripts.json,project
   docs/ECOSYSTEM_PLANNING_REVIEW.md,project
   docs/SDK_EVIDENCE_TRACEABILITY.md,project
-close_reason: Implemented and locally verified SDK-owned bounded Plan mutation receipts; closure evidence is part of the reviewed delivery.
+close_reason: Implemented and locally verified all validated PR 1335 findings; reviewed delivery remains gated by exact-head hosted checks.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

@@ -262,7 +262,7 @@
     },
     {
       "id": "plan-execution-mutations",
-      "max_estimated_tokens": 762,
+      "max_estimated_tokens": 848,
       "steps": [
         {
           "id": "create-plan",
@@ -271,12 +271,12 @@
         },
         {
           "id": "add-step",
-          "max_estimated_tokens": 232,
+          "max_estimated_tokens": 275,
           "accounting_mode": "self_reported"
         },
         {
           "id": "complete-step",
-          "max_estimated_tokens": 231,
+          "max_estimated_tokens": 274,
           "accounting_mode": "self_reported"
         },
         {
@@ -287,5 +287,5 @@
       ]
     }
   ],
-  "composite_max_estimated_tokens": 13796
+  "composite_max_estimated_tokens": 13882
 }

@@ -554,8 +554,9 @@ try {
     "--parent",
     id,
   ]);
-  const planId = planCreate?.plan?.id;
+  const planId = planCreate?.id;
   assert(typeof planId === "string" && planId.length > 0, "plan create did not return a plan id");
+  assert(planCreate?.kind === "plan_mutation" && planCreate.plan === undefined, "plan create did not return a compact receipt");
   const planAddStep1 = run("plan add-step 1", [
     "plan",
     "add-step",
@@ -605,7 +606,7 @@ try {
     "--decision-rationale",
     "Dogfood requires materialization",
   ]);
-  assert(Array.isArray(planDecision?.plan?.decisions) && planDecision.plan.decisions.length >= 1, "plan decision did not append decision entry");
+  assert(planDecision?.action === "decision", "plan decision did not acknowledge the operation");
   const planDiscovery = run("plan discovery", [
     "plan",
     "discovery",
@@ -613,7 +614,7 @@ try {
     "--discovery-text",
     "Existing dogfood helper covers Plan smoke",
   ]);
-  assert(Array.isArray(planDiscovery?.plan?.discoveries) && planDiscovery.plan.discoveries.length >= 1, "plan discovery did not append discovery entry");
+  assert(planDiscovery?.action === "discovery", "plan discovery did not acknowledge the operation");
   const planValidation = run("plan validation", [
     "plan",
     "validation",
@@ -623,7 +624,7 @@ try {
     "--validation-command",
     "pm history <plan-id> --verify",
   ]);
-  assert(Array.isArray(planValidation?.plan?.validation) && planValidation.plan.validation.length >= 1, "plan validation did not append validation entry");
+  assert(planValidation?.action === "validation", "plan validation did not acknowledge the operation");
   const planResume = run("plan resume", [
     "plan",
     "resume",
@@ -631,9 +632,9 @@ try {
     "--resume-context",
     "step 2 pending; materialize next",
   ]);
-  assert(planResume?.plan?.resume_context?.includes("step 2 pending"), "plan resume did not store resume_context");
+  assert(planResume?.action === "resume", "plan resume did not acknowledge the operation");
   const planApprove = run("plan approve", ["plan", "approve", planId]);
-  assert(planApprove?.plan?.mode === "approved", "plan approve did not flip plan_mode to approved");
+  assert(planApprove?.mode === "approved", "plan approve did not flip plan_mode to approved");
   const planMaterialize = run("plan materialize", [
     "plan",
     "materialize",
@@ -645,9 +646,13 @@ try {
     "--materialize-parent",
     id,
   ]);
-  assert(Array.isArray(planMaterialize?.materialized) && planMaterialize.materialized.length === 1, "plan materialize did not create one item");
+  assert(planMaterialize?.materialized_count === 1, "plan materialize did not create one item");
   const planShow = run("plan show deep", ["plan", "show", planId, "--depth", "deep"]);
   assert(planShow?.plan?.steps?.length === 2, "plan show deep did not include steps array");
+  assert(planShow?.plan?.decisions?.length >= 1, "plan decision did not persist its entry");
+  assert(planShow?.plan?.discoveries?.length >= 1, "plan discovery did not persist its entry");
+  assert(planShow?.plan?.validation?.length >= 1, "plan validation did not persist its entry");
+  assert(planShow?.plan?.resume_context?.includes("step 2 pending"), "plan resume did not persist resume_context");
   const planFields = run("plan show fields", ["plan", "show", planId, "--fields", "id,title,steps_summary"]);
   assert(planFields?.plan?.id === planId, "plan show --fields did not return selected id");
   assert(planFields?.plan?.title === "Dogfood plan workflow", "plan show --fields did not return selected title");

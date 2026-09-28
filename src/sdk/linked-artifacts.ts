@@ -638,29 +638,30 @@ function applyLinkedArtifactMigrations(
   };
 }
 
+/** Collapse migration collisions with existing last-wins semantics, then apply explicit note revisions without reordering retries. */
 function mergeLinkedArtifactChanges(
   current: LinkedArtifact[],
   adds: LinkedArtifact[],
   removes: string[],
   appendStable: boolean,
 ): LinkedArtifact[] {
+  const merged = dedupeLinkedArtifacts(current);
   for (const add of adds) {
-    const index = current.findIndex(
+    const index = merged.findIndex(
       (entry) => entry.path === add.path && entry.scope === add.scope,
     );
     if (index < 0) {
-      current.push(add);
+      merged.push(add);
     } else if (add.note !== undefined) {
-      current[index] = { ...current[index], note: add.note };
+      merged[index] = { ...merged[index], note: add.note };
     }
   }
   if (removes.length > 0) {
-    for (let index = current.length - 1; index >= 0; index -= 1) {
-      if (removes.includes(current[index].path)) current.splice(index, 1);
+    for (let index = merged.length - 1; index >= 0; index -= 1) {
+      if (removes.includes(merged[index].path)) merged.splice(index, 1);
     }
   }
-  const deduped = dedupeLinkedArtifacts(current);
-  return appendStable ? deduped : sortLinkedArtifacts(deduped);
+  return appendStable ? merged : sortLinkedArtifacts(merged);
 }
 
 async function buildLinkedArtifactResult(params: {

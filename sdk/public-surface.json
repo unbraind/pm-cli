@@ -11960,6 +11960,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PlanMutationReceipt",
+          "signature": "export interface PlanMutationReceipt { kind: \"plan_mutation\"; action: PlanSubcommand; id: string; status: string; mode: PlanMode; steps_summary: PlanStepSummary; step?: Pick<NonNullable<PlanCommandResult[\"step\"]>, \"id\" | \"order\"> & { status: PlanStepStatus; }; materialized_count: number; skipped_count: number; warning_count: number; warnings: string[]; warnings_truncated: boolean; next_action: string; inspection_command: string; omission_receipt: { has_omissions: true; omitted_field_group_count: 1; omitted_field_groups: { name: \"plan_detail\"; restore_with: string; }[]; }; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "type",
           "name": "PlanOperationOptions",
           "signature": "export type PlanOperationOptions = PlanCommandOptions;"

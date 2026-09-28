@@ -1679,6 +1679,7 @@ function applyStepCompletionTimestamp(
   }
 }
 
+/** Persist a step's new ordinal and return its updated identity alongside complete Plan state. */
 async function planReorderStep(
   id: string,
   options: PlanCommandOptions,
@@ -1717,6 +1718,7 @@ async function planReorderStep(
   };
 }
 
+/** Remove one step, renumber survivors, and retain the removed identity for the mutation acknowledgement. */
 async function planRemoveStep(
   id: string,
   options: PlanCommandOptions,
@@ -2458,7 +2460,7 @@ export async function runPlan(
   );
   return result.action === "show"
     ? result
-    : { ...result, mutation_receipt: buildPlanMutationReceipt(result) };
+    : { ...result, mutation_receipt: buildPlanMutationReceipt(result, ctx.pmRoot) };
 }
 
 /** Internal Plan mutation helpers exposed only for branch-complete regression coverage. */

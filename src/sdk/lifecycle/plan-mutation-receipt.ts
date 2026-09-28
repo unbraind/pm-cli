@@ -8,6 +8,7 @@ import type {
   PlanSubcommand,
 } from "./plan.js";
 import type { PlanMode, PlanStepStatus } from "../../types/index.js";
+import { quoteCommandArg, renderPmCommand } from "../command-line.js";
 
 /** Stable mutation facts whose size does not grow with unrelated Plan content. */
 export interface PlanMutationReceipt {
@@ -55,8 +56,17 @@ export interface PlanMutationReceipt {
 /** Project a completed SDK operation without echoing bodies, logs or unrelated steps. */
 export function buildPlanMutationReceipt(
   result: PlanCommandResult,
+  pmRoot: string,
 ): PlanMutationReceipt {
-  const inspectionCommand = `pm plan show ${result.plan.id} --depth deep`;
+  const inspectionCommand = renderPmCommand([
+    "plan",
+    "show",
+    result.plan.id,
+    "--depth",
+    "deep",
+    "--pm-path",
+    pmRoot,
+  ]);
   return {
     kind: "plan_mutation",
     action: result.action,
@@ -82,7 +92,10 @@ export function buildPlanMutationReceipt(
     warnings_truncated:
       result.warnings.length > 3 ||
       result.warnings.some((warning) => warning.length > 160),
-    next_action: result.next_actions?.[0] ?? inspectionCommand,
+    next_action:
+      result.next_actions?.[0] === undefined
+        ? inspectionCommand
+        : `${result.next_actions[0]} --pm-path ${quoteCommandArg(pmRoot)}`,
     inspection_command: inspectionCommand,
     omission_receipt: {
       has_omissions: true,

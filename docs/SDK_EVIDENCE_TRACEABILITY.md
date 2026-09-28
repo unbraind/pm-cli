@@ -106,7 +106,9 @@ Repeating an already-present `pm files --add` or `pm docs --add` batch is a true
 An explicit non-empty replacement note updates the existing path/scope entry
 atomically. A bare-path retry preserves its note; a different scope identifies
 a separate link. The same rule applies to glob additions and standalone
-`--note`. This fixes [pm-zqxlfs](../.agents/pm/issues/pm-zqxlfs.toon):
+`--note`. Migration collisions first retain the established last matching
+entry; an explicit note revision then applies to that surviving identity.
+This fixes [pm-zqxlfs](../.agents/pm/issues/pm-zqxlfs.toon):
 
 ```bash
 pm files <id> --add path=src/new.ts,note="verified current implementation"
@@ -128,10 +130,14 @@ command. They omit bodies, resume context, and unrelated steps, so a single-step
 update does not grow with the Plan. `pm plan show <id> --depth deep` retrieves
 the complete current Plan without repeating a mutation. The omission receipt
 explicitly distinguishes this acknowledgement from a full read.
+Recovery commands include the resolved `--pm-path`, safely quoted, so they
+inspect the same tracker even when the caller selected a non-default root.
 
 SDK `runPlan` retains its full typed result and adds `mutation_receipt` for
 consumers that need a compact acknowledgement. Existing full transport output
 is available with CLI `--full-changed-fields` or MCP `fullChangedFields: true`.
+The named `PlanMutationReceipt` type is exported from `@unbrained/pm-cli/sdk`.
+CLI `--no-changed-fields` also selects a compact Plan receipt.
 Read-only `plan show` retains its existing projection behavior.
 
 ## Operational receipts

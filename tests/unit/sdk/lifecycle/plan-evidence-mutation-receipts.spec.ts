@@ -6,10 +6,53 @@ import { runPlan } from "../../../../src/sdk/lifecycle/plan.js";
 import { buildPlanMutationReceipt } from "../../../../src/sdk/lifecycle/plan-mutation-receipt.js";
 import { runDocs } from "../../../../src/sdk/docs.js";
 import { runFiles } from "../../../../src/sdk/files.js";
+import { runInit } from "../../../../src/sdk/init.js";
 import { PmClient, runAction } from "../../../../src/sdk/runtime.js";
+import type { PlanMutationReceipt } from "../../../../src/sdk/index.js";
+import { quoteCommandArg } from "../../../../src/sdk/command-line.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 describe("durable evidence and bounded Plan mutation receipts", () => {
+  it("qualifies recovery with a non-default tracker containing shell-significant characters", async () => {
+    await withTempPmPath(async (context) => {
+      const pmRoot = path.join(context.tempRoot, "tracker space $literal");
+      await runInit(undefined, { path: pmRoot }, { defaults: true });
+      const created = await runPlan({
+        subcommand: "create",
+        options: { title: "Explicit tracker" },
+        global: { path: pmRoot },
+      });
+      const receipt = created.mutation_receipt;
+      const command = `pm plan show ${created.plan.id} --depth deep --pm-path ${quoteCommandArg(pmRoot)}`;
+      expect(receipt?.inspection_command).toBe(command);
+      expect(
+        receipt?.omission_receipt.omitted_field_groups[0].restore_with,
+      ).toBe(command);
+      expect(receipt?.next_action).toContain(
+        `--pm-path ${quoteCommandArg(pmRoot)}`,
+      );
+      const recovered = context.runCli(
+        [
+          "plan",
+          "show",
+          created.plan.id,
+          "--depth",
+          "deep",
+          "--pm-path",
+          pmRoot,
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(recovered.code).toBe(0);
+      expect(recovered.json).toMatchObject({
+        plan: { id: created.plan.id, title: "Explicit tracker" },
+      });
+      expect(
+        context.runCli(["plan", "show", created.plan.id, "--json"]).code,
+      ).not.toBe(0);
+    });
+  });
   it.each(["files", "docs"] as const)(
     "updates %s notes in one event and preserves retry bytes",
     async (kind) => {
@@ -50,6 +93,22 @@ describe("durable evidence and bounded Plan mutation receipts", () => {
           expect((await run(id, { add: [add] }, global)).changed).toBe(false);
           expect(await readFile(historyPath, "utf8")).toBe(after);
         }
+        await run(id, { add: ["path=old.md,note=migrated"] }, global);
+        const collision = await run(
+          id,
+          {
+            migrate: ["from=old.md,to=README.md"],
+            add: ["path=README.md,note=collision revision"],
+          },
+          global,
+        );
+        expect(collision.changed).toBe(true);
+        expect(await run(id, {}, global)).toMatchObject({
+          [kind]: [
+            { path: "README.md", note: "collision revision" },
+            { path: "z.md", note: "other" },
+          ],
+        });
       });
     },
   );
@@ -79,13 +138,16 @@ describe("durable evidence and bounded Plan mutation receipts", () => {
         },
         global,
       });
+      const typedReceipt: PlanMutationReceipt | undefined =
+        result.mutation_receipt;
       const receipt = projectMutationResult(result, { compactEnvelope: true });
+      expect(receipt).toEqual(typedReceipt);
       expect(receipt).toMatchObject({
         id: created.plan.id,
         action: "update-step",
         step: { id: "plan-step-001", status: "in_progress" },
         steps_summary: { total: 1000, in_progress: 1 },
-        inspection_command: `pm plan show ${created.plan.id} --depth deep`,
+        inspection_command: `pm plan show ${created.plan.id} --depth deep --pm-path ${quoteCommandArg(context.pmPath)}`,
         omission_receipt: { has_omissions: true },
       });
       const encoded = JSON.stringify(receipt);
@@ -94,6 +156,12 @@ describe("durable evidence and bounded Plan mutation receipts", () => {
       expect(encoded).not.toContain("private-resume-detail");
       expect(encoded).not.toContain("Unrelated step 999");
       expect(projectMutationResult(result)).toBe(result);
+      expect(
+        projectMutationResult(result, { changedFields: "compact" }),
+      ).toEqual(receipt);
+      expect(result.mutation_receipt?.inspection_command).toContain(
+        context.pmPath,
+      );
       for (const mutation_receipt of [
         undefined,
         { kind: "other" },
@@ -105,11 +173,14 @@ describe("durable evidence and bounded Plan mutation receipts", () => {
           projectMutationResult(unrelated, { compactEnvelope: true }),
         ).toBe(unrelated);
       }
-      const warnings = buildPlanMutationReceipt({
-        ...result,
-        next_actions: [],
-        warnings: ["x".repeat(161), "second", "third", "fourth"],
-      });
+      const warnings = buildPlanMutationReceipt(
+        {
+          ...result,
+          next_actions: [],
+          warnings: ["x".repeat(161), "second", "third", "fourth"],
+        },
+        context.pmPath,
+      );
       expect(warnings).toMatchObject({
         warning_count: 4,
         warnings_truncated: true,
@@ -117,11 +188,14 @@ describe("durable evidence and bounded Plan mutation receipts", () => {
         next_action: warnings.inspection_command,
       });
       expect(
-        buildPlanMutationReceipt({
-          ...result,
-          next_actions: undefined,
-          warnings: ["x".repeat(161)],
-        }).warnings_truncated,
+        buildPlanMutationReceipt(
+          {
+            ...result,
+            next_actions: undefined,
+            warnings: ["x".repeat(161)],
+          },
+          context.pmPath,
+        ).warnings_truncated,
       ).toBe(true);
       const shown = await runPlan({
         subcommand: "show",
@@ -165,6 +239,23 @@ describe("durable evidence and bounded Plan mutation receipts", () => {
         steps_summary: { completed: 1 },
       });
       expect(cli.stdout.length).toBeLessThan(4096);
+      const compactFlag = context.runCli(
+        [
+          "plan",
+          "complete-step",
+          created.plan.id,
+          "plan-step-001",
+          "--no-changed-fields",
+          "--json",
+        ],
+        { expectJson: true, preserveDefaultMutationOutput: true },
+      );
+      expect(compactFlag.code).toBe(0);
+      expect(compactFlag.json).toMatchObject({
+        kind: "plan_mutation",
+        id: created.plan.id,
+      });
+      expect(compactFlag.stdout.length).toBeLessThan(4096);
     });
   });
 });

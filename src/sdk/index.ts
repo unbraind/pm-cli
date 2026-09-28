@@ -750,6 +750,7 @@ export type {
   PlanTemplateName,
 } from "./lifecycle/plan.js";
 export type { CreateOperationOptions } from "./lifecycle/create.js";
+export type { PlanMutationReceipt } from "./lifecycle/plan-mutation-receipt.js";
 export type { UpdateOperationOptions } from "./lifecycle/update.js";
 export type { AppendOperationOptions } from "./lifecycle/append.js";
 export type { CloseManyOperationOptions } from "./lifecycle/close-many.js";

@@ -981,6 +981,43 @@ describe("agent-task transcript token gate", () => {
     }
   });
 
+  it("translates only declared Plan replay roots and rejects changed commands or payloads", () => {
+    const render = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
+    const payload = (root: string) => ({
+      kind: "plan_mutation",
+      id: "pm-plan",
+      inspection_command: `pm plan show pm-plan --depth deep --pm-path ${root}`,
+      next_action: `pm plan show pm-plan --pm-path ${root}`,
+      omission_receipt: { omitted_field_groups: [
+        { name: "plan_detail", restore_with: `pm plan show pm-plan --depth deep --pm-path ${root}` },
+        { name: "other", restore_with: "unchanged" },
+      ] },
+    });
+    const baseline = payload("/tmp/baseline");
+    const accounted = payload("/tmp/accounted");
+    const step = {
+      id: "plan-root", args: ["plan", "create"], expected_exit_code: 0,
+      expected_output_kind: "diagnostic", expected_accounting_mode: "self_reported", required_fields: ["id"],
+    };
+    const roots = { baseline: "/tmp/baseline", accounted: "/tmp/accounted" };
+    const baselineTransport = { status: 0, stdout: render(baseline), stderr: "" };
+    const transport = (value: unknown) => ({ status: 0, stdout: render(attachOutputTokenAccounting(value, render)), stderr: "" });
+    expect(validateAgentTaskTokenInvocation(baselineTransport, transport(accounted), step, roots)).toMatchObject({ payload: accounted });
+    for (const drift of [
+      payload("/tmp/wrong"),
+      { ...accounted, id: "pm-wrong" },
+      { ...accounted, inspection_command: "pm delete pm-plan --pm-path /tmp/accounted" },
+      { ...accounted, omission_receipt: { omitted_field_groups: [] } },
+    ]) {
+      expect(() => validateAgentTaskTokenInvocation(baselineTransport, transport(drift), step, roots)).toThrow();
+    }
+    for (const inspection_command of [undefined, "pm plan show pm-plan --pm-path /tmp/wrong"]) {
+      expect(() => validateAgentTaskTokenInvocation(
+        { ...baselineTransport, stdout: render({ ...baseline, inspection_command }) }, transport(accounted), step, roots,
+      )).toThrow();
+    }
+  });
+
   it("rejects mismatched advertised recovery and fixture identities", () => {
     const recoveryStep = {
       id: "retry",
