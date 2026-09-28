@@ -2,14 +2,12 @@ id: pm-j82fd3
 title: "Outcome milestone: agent-legible command grammar — one-screen surface, zero feature loss, alias-preserved"
 description: "Outcome milestone for an agent-legible command grammar: a one-screen noun-verb surface with complete contracts, lossless aliases, and measured token savings."
 type: Milestone
-status: in_progress
+status: open
 priority: 1
 tags[6]: agent-ux,grammar,"horizon:near",milestone,outcome,token-efficiency
 created_at: "2026-07-24T23:42:39.540Z"
-updated_at: "2026-09-28T18:47:55.672Z"
+updated_at: "2026-09-28T19:03:17.504Z"
 deadline: "2026-10-31T00:00:00.000Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#1f24eae1c4d61fd0c35c2d23"
 author: maintainer-agent
 estimated_minutes: 4800
 acceptance_criteria: Top-level command count meets the pm-pbyu ADR target with zero capability removed; Every pre-consolidation spelling resolves via the alias shim with a one-line migration hint; Golden agent-transcript replay shows a measured tokens-per-completed-task reduction versus the pre-consolidation baseline; Tiered help renders the full core surface in one screen; pm help --all remains complete
