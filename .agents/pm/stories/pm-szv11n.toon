@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: concurrency,identity,merge,multi-agent,story
 created_at: "2026-07-25T12:32:19.634Z"
-updated_at: "2026-09-08T13:24:44.050Z"
+updated_at: "2026-09-28T13:20:24.371Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "An end-to-end scenario runs multiple agents on divergent branches performing claim, work, evidence, and close, then merges in several orders and asserts the same final state; Every agent's history entries are present after merge with their own author, harness, and model provenance intact and no cross-author loss; Claims are respected while held and correctly released or reported as stale after merge, with no item left claimed by nobody yet unreleasable; Evidence links — files, docs, tests, comments, notes — survive merge with no silent drops, asserted by count and content; Concurrent non-contradictory work from different agents is all present after merge, and contradictory work resolves deterministically with the resolution recorded; The scenario runs at a fleet size large enough to exercise contention rather than as a two-agent illustration"
@@ -68,4 +68,6 @@ dependencies[15]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
+comments[1]{created_at,author,text}:
+  "2026-09-28T13:20:23.267Z","harness:codex","GitHub intake 2026-09-28: https://github.com/unbraind/pm-cli/issues/1336 reports ended-agent claims across nine repositories and two website items on published 2026.9.28. The requested improvements are claim age and last activity in refusals/next, an explicit conditional stale takeover policy, and auditable previous-holder/idle-duration history. Treat these as reported observations and proposed acceptance, not independently reproduced defects or permission to force ownership. Reuse this existing composite multi-agent story because its acceptance already requires claims to be respected, released, or reported stale without unreleasable ownership. Duplicate check covered the all-status corpus plus claim searches, including closed atomic-claim, conditional-claim, stale-health, and ownership-guidance foundations. No duplicate item or artificial graph edges created; existing implements/verifies/blocked_by lineage remains authoritative. This intake records evidence only; implementation remains open and unclaimed after release."
 body: ""
