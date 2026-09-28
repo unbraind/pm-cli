@@ -1,0 +1,26 @@
+id: pm-prrlce
+title: "Release runs record no trigger origin: the 04:45 dispatcher is indistinguishable from an operator, its failures fall outside the only reliability measure, and the planned manual same-day exception keys on the same event"
+description: "Since pm-9url9h the primary daily release path is a local timer that calls gh workflow run auto-release.yml with push=true, dry_run=false and telemetry_mode=off, which is exactly what an operator re-run sends. All three 2026-09-28 release runs therefore read actor unbraind, event workflow_dispatch: dispatcher run 36371013489 failed at the Sentry gate (PM-CLI-3D, owner pm-z329kd), a later dispatch 36375818142 cut 2026.9.28 but its tag-triggered Release failed Windows npm-global acceptance (owner pm-q7c36n), and Release dispatch 36380136948 published. Which of these was the timer and which a person cannot be recovered from the run record. The rolling reliability measure (release-reliability.mjs) selects event schedule only and its collector does not even list other events (excluded_events is empty in run 36414208743, which reports 0.40 against a 0.10 policy), so the primary path has no attempts, failures or stage breakdown anywhere, and the later scheduled run records a success for a day whose automatic path failed. Separately, open pm-uenmu9 specifies the manual same-day follow-up (YYYY.M.D-N) as an explicit workflow_dispatch; with the dispatcher on the same event, the workflow cannot enforce at most one automatic release per UTC day by itself and relies on the dispatcher's client-side tag check."
+type: Issue
+status: open
+priority: 1
+tags[4]: "area:release",automation,diagnostics,"horizon:current"
+created_at: "2026-09-28T15:31:49.498Z"
+updated_at: "2026-09-28T15:41:05.660Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "Every Auto Release and Release run carries an explicit trigger origin (native schedule, morning dispatcher, blocker retry, operator) from a declared input and its run name, never inferred from event or actor; Release reliability reports a separate series per origin, including the dispatcher's attempts, failures and failing stages, while the native scheduled denominator stays unchanged as decided on pm-9url9h; The same-day manual follow-up of pm-uenmu9 requires an explicit follow-up request from the operator origin; negative control: a dispatcher-origin run after a same-day tag exists skips before any version mutation; The 2026-09-28 dispatcher failure is visible in the new series or recorded as an explicit pre-attribution gap"
+parent: pm-u9d0
+risk: medium
+confidence: high
+severity: medium
+expected_result: A release run states who asked for it; the automatic primary path has its own measured reliability; only an explicit operator request can mint a same-day follow-up release.
+actual_result: "Dispatcher and operator runs are identical in GitHub's record, the dispatcher path is absent from reliability reporting, and the manual-exception design keys on the event both paths share."
+component: release automation
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9url9h,discovered_from,"2026-09-28T15:31:49.498Z","harness:claude-code","cli:create:dep",detected
+  pm-e70zh5,discovered_from,"2026-09-28T15:31:49.498Z","harness:claude-code","cli:create:dep",detected
+  pm-q7c36n,discovered_from,"2026-09-28T15:32:05.324Z","harness:claude-code","cli:update:dep",detected
+  pm-uenmu9,related,"2026-09-28T15:41:04.958Z","harness:claude-code","cli:update:dep",detected
+  pm-z329kd,discovered_from,"2026-09-28T15:41:04.958Z","harness:claude-code","cli:update:dep",detected
+body: ""

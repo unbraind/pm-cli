@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: concurrency,context-management,"horizon:long",milestone,outcome,performance,scale
 created_at: "2026-07-24T23:43:41.928Z"
-updated_at: "2026-09-28T07:21:07.524Z"
+updated_at: "2026-09-28T15:43:53.495Z"
 deadline: "2027-09-30T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 9600
@@ -109,6 +109,12 @@ dependencies[24]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-notes[1]{created_at,author,text,edited_at}:
-  "2026-09-28T05:51:38.664Z","harness:codex","Scale acceptance design 2026-09-28: freeze hardware, Node/Bun versions, storage mode, corpus shape and cache state. Measure 3-item/minutes, real corpus, 100k and 1M records with 1/10/100/1000 agents and 30-year synthetic history. Report p50/p95/p99 read/claim/write/merge latency, peak RSS, disk/index amplification, recovery/rebuild cost and tokens per completed task. Include skewed hubs, disconnected peers, dense dependencies, clock skew, slow disks, overlapping writes and canceled work. Sub-second claims require the measured percentile and hardware; cold rebuild and warm query results are separate. A small smoke cannot certify this milestone.","2026-09-28T07:21:06.593Z"
+notes[2]:
+  - created_at: "2026-09-28T05:51:38.664Z"
+    author: "harness:codex"
+    text: "Scale acceptance design 2026-09-28: freeze hardware, Node/Bun versions, storage mode, corpus shape and cache state. Measure 3-item/minutes, real corpus, 100k and 1M records with 1/10/100/1000 agents and 30-year synthetic history. Report p50/p95/p99 read/claim/write/merge latency, peak RSS, disk/index amplification, recovery/rebuild cost and tokens per completed task. Include skewed hubs, disconnected peers, dense dependencies, clock skew, slow disks, overlapping writes and canceled work. Sub-second claims require the measured percentile and hardware; cold rebuild and warm query results are separate. A small smoke cannot certify this milestone."
+    edited_at: "2026-09-28T07:21:06.593Z"
+  - created_at: "2026-09-28T15:43:53.487Z"
+    author: "harness:claude-code"
+    text: "Proof-set gap recorded 2026-09-28: this milestone's benchmarks bound read and claim verbs only, while the prescribed close, merge and CI protocol runs strict history verification, which measured 98.8 s at 69k entries with quadratic per-item growth. pm-29ymfn adds that verb to the scale budgets; until it lands, a green scale gate says nothing about the protocol agents are told to follow."
 body: "## Outcome\nCost is a function of the answer, not the archive. The same binary serves a three-item scratch project created minutes ago and a million-item workspace spanning decades, with no special mode the agent has to know about.\n\n## Why this is a milestone, not an epic\npm-9rxu is the living execution epic. This milestone is the outcome gate: it declares the scale claims the GA contract is allowed to publish.\n\n## Delivery chain\npm-801d persistent derived read index -> pm-plwm index-backed --where predicates -> pm-0qg5 item-directory fan-out -> pm-lvyd claim throughput -> pm-o79o growth policy -> pm-5qmm memory tiers for decades-old epochs. Spectrum stories pm-g2zz (large) and pm-z436 (small) are the acceptance narratives.\n\n## Explicit non-goals\nNo daemon (ADR pm-i7i4). No external database requirement for the base install. No scale mode the agent has to opt into."

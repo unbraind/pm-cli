@@ -1,0 +1,27 @@
+id: pm-29ymfn
+title: "Strict history verification is quadratic in a living item's own history and replays the whole corpus on every call, while the prescribed close and merge protocol and every CI push run it"
+description: "pm validate --check-history-drift took 98.8 s of a 100 s validate on this workspace (2,846 streams, 69,306 entries, 99 MB); every other check took at most 7 s. Strict validate re-verifies every stream by full replay on each call by design (the drift cache is trusted only by health's stat mode), and each replayed entry canonicalizes and digests the whole item document, so a stream costs the sum of its document sizes. For items that grow by appending notes and comments that sum is quadratic: on the three most expensive streams (927, 694 and 239 entries, all long-lived roadmap or remediation items) doubling a prefix cost 3.1x to 4.9x, and 1 percent of streams (29 living items) carried 45 percent of all verification time. The same command is prescribed before closing broad work (AGENT_GUIDE), after every merge (MULTI_AGENT_MERGE skill), in AGENTS.md diagnostics, and runs in the static CI gate on every push (74 s step). The scale proof (scripts/bench scale budgets) measures list, get, next, context, search, create and claim only, so nothing bounds this verb at the 100k and 1M tiers. The only shipped growth relief, history-compact, removes prior entries and therefore trades away restore-to-any-version that pm-w7ccmv requires. Reproduce: time validate per --check-* flag, then time verifyHistoryChainWithVersion on 1/8, 1/4, 1/2 and all of the largest streams from the public SDK."
+type: Issue
+status: open
+priority: 1
+tags[4]: "area:history","horizon:current",performance,scale
+created_at: "2026-09-28T15:28:35.030Z"
+updated_at: "2026-09-28T15:41:10.456Z"
+author: "harness:claude-code"
+estimated_minutes: 960
+acceptance_criteria: "Strict verification is incremental: a verified-prefix receipt (prefix byte length, prefix content digest, last after_hash, replay-state digest) lets validate --check-history-drift and history --verify re-check an unchanged prefix by hashing bytes and replay only appended entries; Negative controls: a byte change inside a previously verified prefix, a truncated stream, a reordered line and a receipt from another stream each force full replay and are reported exactly as today; validate --check-history-drift and history --verify join the scale budgets at the 10k, 100k and 1M tiers with fixtures that include long-lived note-accumulating items, each with a declared latency ceiling; A synthetic 10k-entry living item verifies with a measured growth exponent below 1.2, or an accepted ADR in the decision log selects a collection-digest hash epoch behind format_version gating with a lossless migration; Verdict equivalence over the real corpus plus deterministic corruptions is a checked-in regression, not a one-off script; No part of the fix depends on history-compact or any other entry-removing rewrite"
+parent: pm-9rxu
+risk: high
+confidence: high
+severity: high
+expected_result: "Strict history verification cost grows with appended entries since the last verified state, and at most linearly with a stream's length, so the prescribed close and merge checks stay usable at million-item, multi-decade scale."
+actual_result: "Every strict call replays all 69,306 entries (98.8 s before the first tranche, about 41 s after it); per-stream cost is quadratic for living items, e.g. the 239-entry roadmap ledger 3.9 s before and 0.58 s after the first tranche, still super-linear."
+component: core/history
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7vr9,discovered_from,"2026-09-28T15:28:35.030Z","harness:claude-code","cli:create:dep",detected
+  pm-hg0k,discovered_from,"2026-09-28T15:28:35.030Z","harness:claude-code","cli:create:dep",detected
+  pm-ljrh29,implements,"2026-09-28T15:28:35.030Z","harness:claude-code","cli:create:dep",detected
+  pm-mi2x,discovered_from,"2026-09-28T15:28:35.030Z","harness:claude-code","cli:create:dep",detected
+  pm-o87av6,implements,"2026-09-28T15:28:35.030Z","harness:claude-code","cli:create:dep",detected
+  pm-w7ccmv,implements,"2026-09-28T15:28:35.030Z","harness:claude-code","cli:create:dep",detected
+body: ""

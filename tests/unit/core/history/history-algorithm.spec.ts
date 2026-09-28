@@ -42,4 +42,16 @@ describe("named history digest algorithms", () => {
     expect(verifyHistoryChain([{ ...entry, hash_algorithm: "unknown" }]).ok).toBe(false);
     expect(() => sealHistoryRecord({ ...entry, hash_algorithm: "unknown" })).toThrow("unsupported_history_hash_algorithm");
   });
+
+  it("never reuses a replayed state's digest across algorithm switches", () => {
+    const empty = { metadata: {}, body: "" } as ItemDocument;
+    const states = ["a", "b", "c", "d"].map((body) => ({ metadata: { id: "pm-algorithm", title: "Digest reuse", description: "fixture", type: "Task", status: "open", priority: 2, tags: [] }, body }) as ItemDocument);
+    const algorithms = ["sha256", "sha512", "sha256", "sha512"] as const;
+    const chain = states.map((after, index) => createHistoryEntry({ nowIso: `2026-09-10T00:0${index}:00.000Z`, author: "fixture", op: index === 0 ? "create" : "update", before: index === 0 ? empty : states[index - 1]!, after, hashAlgorithm: algorithms[index] }));
+    expect(verifyHistoryChain(chain)).toEqual({ ok: true, errors: [] });
+    // The previous entry's sha256 after-digest describes the same state, but a
+    // sha512 entry must still be judged against its own algorithm.
+    const forged = sealHistoryRecord({ ...chain[3]!, before_hash: chain[2]!.after_hash });
+    expect(verifyHistoryChain([...chain.slice(0, 3), forged])).toEqual({ ok: false, errors: ["verify_failed:before_hash_mismatch:entry_4"] });
+  });
 });

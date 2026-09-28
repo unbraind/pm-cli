@@ -108,16 +108,33 @@ interface ReplayHashCandidateMatch {
   afterIndex: number;
 }
 
+/**
+ * Hash variants already computed for the replay document on each side of one
+ * entry, keyed by epoch and digest algorithm. A chain walk hands the `after`
+ * map of entry N to entry N+1 as its `before` map because both describe the
+ * same document object, so each replayed state is canonicalized and digested
+ * once instead of twice.
+ */
+interface ReplayHashMemo {
+  before: Map<string, [string, ...string[]]>;
+  after: Map<string, [string, ...string[]]>;
+}
+
 /** Match one recorded entry against corresponding before/after hash variants. */
 function matchReplayHashCandidates(
   before: ReplayDocument,
   after: ReplayDocument,
   version: HistoryItemHashVersion,
   entry: HistoryEntry,
+  memo?: ReplayHashMemo,
 ): ReplayHashCandidateMatch {
   const algorithm = resolveHistoryHashAlgorithm(entry.hash_algorithm);
-  const beforeHashes = replayHashVerificationCandidates(before, version, algorithm);
+  const memoKey = `${version}:${algorithm}`;
+  const beforeHashes =
+    memo?.before.get(memoKey) ??
+    replayHashVerificationCandidates(before, version, algorithm);
   const afterHashes = replayHashVerificationCandidates(after, version, algorithm);
+  memo?.after.set(memoKey, afterHashes);
   return {
     beforeHashes,
     afterHashes,
@@ -228,11 +245,13 @@ export function tryApplyReplayPatch(
 ): ReplayApplyResult {
   try {
     const normalizedPatch = normalizeReplayPatchOps(patch);
+    // The structured clone is already private to this call, so the library may
+    // mutate it in place; asking it not to would deep-clone the document again.
     const applied = jsonPatch.applyPatch(
       structuredClone(current),
       normalizedPatch as jsonPatch.Operation[],
       true,
-      false,
+      true,
     ).newDocument as unknown;
     if (!isReplayDocumentShape(applied)) {
       return {
@@ -322,6 +341,30 @@ function assertHistoryEntryIntegrity(entry: HistoryEntry, index: number): void {
   }
 }
 
+/**
+ * Evaluate hash epochs in preference order and stop at the first epoch whose
+ * before/after pair matches. A mismatch evaluates every candidate so the
+ * caller can name the failing side.
+ */
+function matchReplayEpochCandidates(
+  before: ReplayDocument,
+  after: ReplayDocument,
+  candidates: HistoryItemHashVersion[],
+  entry: HistoryEntry,
+  memo: ReplayHashMemo,
+): Array<{ version: HistoryItemHashVersion; match: ReplayHashCandidateMatch }> {
+  const matches: Array<{
+    version: HistoryItemHashVersion;
+    match: ReplayHashCandidateMatch;
+  }> = [];
+  for (const version of candidates) {
+    const match = matchReplayHashCandidates(before, after, version, entry, memo);
+    matches.push({ version, match });
+    if (match.pairIndex >= 0) break;
+  }
+  return matches;
+}
+
 /** Verify a chain and report the explicit or auto-detected item hash epoch. */
 export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
   ok: boolean;
@@ -329,6 +372,7 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
   item_hash_version?: HistoryItemHashVersion;
 } {
   let replay = cloneEmptyReplayDocument();
+  let beforeHashMemo: ReplayHashMemo["before"] = new Map();
   let detectedVersion: HistoryItemHashVersion | undefined;
   let authoritativeExplicitVersion: HistoryItemHashVersion | undefined;
   const errors = findHistoryIdentityDiscontinuities(entries).map(
@@ -354,21 +398,28 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
     }
     if (unsupportedVersion) {
       replay = input.document;
+      beforeHashMemo = new Map();
       detectedVersion = undefined;
       authoritativeExplicitVersion = undefined;
       continue;
     }
     // Prefer legacy epoch 1 when an unversioned entry is valid under both
     // algorithms, but retain compatibility with transitional epoch-2 writers
-    // that shipped before item_hash_version became explicit.
+    // that shipped before item_hash_version became explicit. Candidates are
+    // evaluated in preference order and stop at the first matching epoch; a
+    // mismatch still evaluates every candidate for its diagnostic.
     const candidates = historyEntryHashCandidates(
       explicitVersion,
       authoritativeExplicitVersion,
     );
-    const candidateMatches = candidates.map((version) => ({
-      version,
-      match: matchReplayHashCandidates(replay, input.document, version, entry),
-    }));
+    const memo: ReplayHashMemo = { before: beforeHashMemo, after: new Map() };
+    const candidateMatches = matchReplayEpochCandidates(
+      replay,
+      input.document,
+      candidates,
+      entry,
+      memo,
+    );
     const matchingVersion = candidateMatches.find(
       ({ match }) => match.pairIndex >= 0,
     );
@@ -386,6 +437,7 @@ export function verifyHistoryChainWithVersion(entries: HistoryEntry[]): {
     }
     const version = matchingVersion.version;
     replay = input.document;
+    beforeHashMemo = memo.after;
     detectedVersion = version;
     authoritativeExplicitVersion =
       (explicitVersion as HistoryItemHashVersion | undefined) ??

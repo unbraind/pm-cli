@@ -7,6 +7,10 @@
 - Persist revised linked evidence notes while preserving idempotent retries ([pm-zqxlfs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zqxlfs.toon))
 - Bound Plan mutation receipts while preserving full inspection ([pm-hqy7lr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hqy7lr.toon))
 
+### Other
+
+- Replay each history state once: reuse the previous entry's digest as the next before-hash, stop at the first matching hash epoch, and drop the second document clone ([pm-hen0t6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hen0t6.toon))
+
 ## 2026.9.28 - 2026-09-28
 
 ### Fixed
