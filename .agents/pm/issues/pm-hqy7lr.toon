@@ -1,23 +1,23 @@
 id: pm-hqy7lr
-title: Plan mutations emit the complete step collection instead of a bounded changed-step receipt
+title: Bound Plan mutation receipts while preserving full inspection
 description: "During the 2026-09-28 ecosystem review, updating one field or status on the 15-step reconstruction plan emitted the full plan with all step bodies, linked items and resume context. Eight sequential update-step operations produced roughly 34902 tool-reported tokens of output. The mutation affects one step but response cost grows with the whole plan. This defeats the compact mutation default and agent tokens-per-completed-task goal. Preserve complete Plan functionality and explicit full inspection while making ordinary mutations cheap."
 type: Issue
 status: closed
 priority: 1
 tags[5]: "area:cli","area:sdk","horizon:current",plan,token-efficiency
 created_at: "2026-09-28T06:07:42.721Z"
-updated_at: "2026-09-28T11:28:33.396Z"
-closed_at: "2026-09-28T11:28:32.716Z"
-completed_at: "2026-09-28T11:28:32.716Z"
+updated_at: "2026-09-28T12:02:09.311Z"
+closed_at: "2026-09-28T12:02:08.397Z"
+completed_at: "2026-09-28T12:02:08.397Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Public SDK owns an explicit compact Plan mutation receipt while CLI and MCP share its semantics; A 1000-step fixture proves a single-step update stays inside its declared output ceiling with no unrelated body text; Explicit full inspection still returns all steps decisions evidence and resume metadata with truthful omissions and continuation contracts; Completed planning-journey token replay includes mutation responses and fails when full-plan amplification is reintroduced
 parent: pm-n7rr
 risk: medium
 confidence: high
-resolution: "SDK-owned bounded Plan receipts preserve local tracker-qualified recovery and path-neutral MCP recovery; all receipt regressions, public typing and token replay contracts are included."
-expected_result: "Plan mutation recovery stays bounded and private on MCP, and generated release notes agree with the final tracker state."
-actual_result: All six real receipt/evidence tests and ESLint pass after replacing the unsafe nullable-response cast with explicit failure guards. Prior source head passed hosted exact coverage. Generated changelog and renewed analyzer/review checks remain part of the final delivery gate.
+resolution: "Bound Plan mutation receipts preserve full inspection, local tracker-qualified recovery and path-neutral MCP recovery; public typing and token replay contracts are verified."
+expected_result: "Bounded recoverable mutation output, private MCP receipts, clear generated release notes and documented touched callbacks."
+actual_result: "Real receipt regressions, 103 linked tests and exact hosted 100/100/100/100 passed before the documentation-only correction. Build, ESLint, canonical docstrings and docs checks pass after the correction; renewed hosted gates and review remain required before merge."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,implements,"2026-09-28T06:07:42.721Z","harness:codex","cli:create:dep",detected
   pm-nilh,discovered_from,"2026-09-28T06:07:42.721Z","harness:codex","cli:create:dep",detected
@@ -26,7 +26,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-q7c36n,related,"2026-09-28T08:58:31.323Z","harness:codex","cli:update:dep",detected
   pm-z3ez,related,"2026-09-28T08:58:31.323Z","harness:codex","cli:update:dep",detected
   pm-zqxlfs,related,"2026-09-28T08:58:31.323Z","harness:codex","cli:update:dep",detected
-comments[20]:
+comments[21]:
   - created_at: "2026-09-28T06:07:42.721Z"
     author: "harness:codex"
     text: "Duplicate check 2026-09-28: searched the complete 2826-item snapshot for mutation receipt/output and Plan mutation titles, plus live all-status keyword AND searches for plan mutation output receipt and plan compact. pm-nilh and pm-ch59 are completed general compact-mutation deliveries; pm-5t33or is the broader output-budget programme. No individual owner was found for the Plan mutator full-collection response. Reproduction: pm plan update-step on one step of pm-a8zm returned all 15 steps. Read full live pm-nilh and pm-ch59 metadata and the complete event history before filing this distinct adapter/receipt gap."
@@ -88,6 +88,9 @@ comments[20]:
   - created_at: "2026-09-28T11:27:53.333Z"
     author: "harness:codex"
     text: "Exact head 4939779 hosted coverage passed; static failed only because the reclosed-item order was not yet included in generated CHANGELOG.md. DeepScan reported NULL_POINTER at the new test response cast (finding 235567158). GitHub provided only the count; Chrome CUA is unavailable, so the public read-only DeepScan API supplied the exact diagnostic. Add explicit structured-result and receipt guards, then regenerate and await the complete changelog output before committing. Greptile reviewed 4939779 at 5/5 with no outstanding findings; CodeRabbit free-review cooldown remains pending."
+  - created_at: "2026-09-28T12:02:06.884Z"
+    author: "harness:codex"
+    text: "Final full CodeRabbit review on a0a56d4 found no new code/security defect, but requested positive release wording and reported 79.17 percent touched-function documentation. Updated the canonical title through PM; the original defect description and immutable history are preserved. AST inspection identified the five remaining undocumented inline callbacks across receipt previews, identity matching, replay recovery and fixture title generation; added purpose-specific JSDoc without behavior changes. Build, ESLint, canonical docstrings and docs/skills pass. The source behavior already passed exact hosted coverage in CI 36415947716."
 notes[1]{created_at,author,text}:
   "2026-09-28T08:46:03.182Z","harness:codex","Compatibility decision: keep runPlan and typed PmClient Plan methods full-shaped. Apply the SDK-generated receipt at CLI/MCP presentation boundaries by default, with fullChangedFields recovery. Omit unrelated content and retain complete step counts, affected identity, bounded warning previews, and a read-only deep inspection command."
 files[19]{path,scope}:
@@ -152,7 +155,7 @@ docs[5]{path,scope}:
   docs/agent-task-transcripts.json,project
   docs/ECOSYSTEM_PLANNING_REVIEW.md,project
   docs/SDK_EVIDENCE_TRACEABILITY.md,project
-close_reason: Corrected final analyzer diagnostic and synchronized generated release notes; exact-head review remains required.
+close_reason: Completed final release wording and callback documentation corrections.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

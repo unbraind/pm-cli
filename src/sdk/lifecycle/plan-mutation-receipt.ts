@@ -87,10 +87,16 @@ export function buildPlanMutationReceipt(
     warning_count: result.warnings.length,
     warnings: result.warnings
       .slice(0, 3)
-      .map((warning) => warning.slice(0, 160)),
+      .map(
+        /** Bound each preview independently; the receipt retains the full warning count. */
+        (warning) => warning.slice(0, 160),
+      ),
     warnings_truncated:
       result.warnings.length > 3 ||
-      result.warnings.some((warning) => warning.length > 160),
+      result.warnings.some(
+        /** Report text truncation even when all warnings fit the three-preview limit. */
+        (warning) => warning.length > 160,
+      ),
     next_action:
       result.next_actions?.[0] === undefined
         ? inspectionCommand

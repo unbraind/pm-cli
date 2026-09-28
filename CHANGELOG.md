@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- Plan mutations emit the complete step collection instead of a bounded changed-step receipt ([pm-hqy7lr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hqy7lr.toon))
-- GH-1334: linked artifact additions silently discard revised evidence notes ([pm-zqxlfs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zqxlfs.toon))
+- Persist revised linked evidence notes while preserving idempotent retries ([pm-zqxlfs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zqxlfs.toon))
+- Bound Plan mutation receipts while preserving full inspection ([pm-hqy7lr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hqy7lr.toon))
 
 ## 2026.9.28 - 2026-09-28
 

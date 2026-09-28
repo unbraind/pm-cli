@@ -648,6 +648,7 @@ function mergeLinkedArtifactChanges(
   const merged = dedupeLinkedArtifacts(current);
   for (const add of adds) {
     const index = merged.findIndex(
+      /** Match normalized identity after migration collisions have been resolved. */
       (entry) => entry.path === add.path && entry.scope === add.scope,
     );
     if (index < 0) {

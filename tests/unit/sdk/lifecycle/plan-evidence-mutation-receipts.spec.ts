@@ -156,6 +156,7 @@ describe("durable evidence and bounded Plan mutation receipts", () => {
           title: "Large execution plan",
           step: Array.from(
             { length: 1000 },
+            /** Distinct persisted titles make accidental unrelated-step disclosure observable. */
             (_, index) => `Unrelated step ${index}`,
           ),
           resumeContext: "private-resume-detail".repeat(1000),

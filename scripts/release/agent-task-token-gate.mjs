@@ -243,8 +243,10 @@ function expectedAccountedPlanRoot(baseline, trackerRoots) {
     next_action: translate(baseline.next_action),
     omission_receipt: {
       ...baseline.omission_receipt,
-      omitted_field_groups: baseline.omission_receipt.omitted_field_groups.map((group) =>
-        group.name === "plan_detail" ? { ...group, restore_with: translate(group.restore_with) } : group),
+      omitted_field_groups: baseline.omission_receipt.omitted_field_groups.map(
+        /** Translate only Plan recovery; every other group's protocol must remain identical. */
+        (group) => group.name === "plan_detail" ? { ...group, restore_with: translate(group.restore_with) } : group,
+      ),
     },
   };
 }
