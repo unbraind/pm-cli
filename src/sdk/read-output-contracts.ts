@@ -1536,6 +1536,16 @@ function projectReadOutputRows(
     if (isRecord(projected.projection)) {
       projected.projection = { ...projected.projection, row_key: cursor.path };
     }
+    if (isRecord(projected.row_contract)) {
+      const rowContract = projected.row_contract;
+      projected.row_contract = {
+        ...rowContract,
+        row_keys: [cursor.path],
+        ...(Array.isArray(rowContract.continuation_row_keys)
+          ? { continuation_row_keys: [cursor.path] }
+          : {}),
+      };
+    }
     projected.count = Object.keys(projected[cursor.path] as object).length;
   }
   if (resolved.amount?.source === "canonical") {
@@ -1914,7 +1924,7 @@ function compactReadOutputProjection(
   }
   if (resolved.command === "history" && Array.isArray(projected.diff)) {
     for (const collection of readOutputBudgetCollections(projected)) {
-      if (!collection.path.includes(".")) continue;
+      if (!collection.path.startsWith("diff.")) continue;
       minimumRowsByPath.set(
         collection.path,
         Object.keys(collection.value).length,

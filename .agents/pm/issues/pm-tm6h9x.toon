@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-28T01:01:13.807Z"
-updated_at: "2026-09-28T01:30:30.306Z"
-closed_at: "2026-09-28T01:30:29.489Z"
-completed_at: "2026-09-28T01:30:29.489Z"
+updated_at: "2026-09-28T02:32:32.482Z"
+closed_at: "2026-09-28T02:32:28.947Z"
+completed_at: "2026-09-28T02:32:28.947Z"
 author: "harness:codex"
 acceptance_criteria: "Reproduce missing server.ts:1063 in exact-head coverage; add meaningful async task completion assertion; pass focused tests and hosted exact coverage"
 goal: project management = context management
@@ -19,14 +19,15 @@ outcome: Completed task test awaits stable detached execution cleanup before tea
 parent: pm-rzs24j
 risk: medium
 severity: medium
-resolution: The successful MCP task lifecycle test waits for detached completion cleanup before ending and observes the durable completed state again.
-expected_result: Exact coverage consistently includes the successful task cleanup branch.
-actual_result: Linked 9-test suite and full 9383-test 100/100/100/100 coverage passed locally; hosted final-head merge coverage pending.
+resolution: The MCP task success-path test waits for detached cleanup and confirms the completed state; the required hosted coverage gate passed on PR #1332 head e3ad1955b.
+expected_result: Both local and hosted exact coverage include the detached cleanup branch at 100/100/100/100.
+actual_result: "Linked 9-test MCP suite and local full 9384-test exact 100/100/100/100 coverage passed; PR #1332 Gates (coverage) succeeded at https://github.com/unbraind/pm-cli/actions/runs/36369408528/job/108763297565 on e3ad1955beba908a840748c4e96972a9f06ef8aa."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-rzs24j,discovered_from,"2026-09-28T01:03:09.800Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-09-28T01:01:13.807Z","harness:codex","Duplicate check: all-status searches for MCP task completion coverage and pending-map cleanup found the canonical shipped MCP tasks feature pm-rzs24j, but no item for this exact detached completion coverage race on PR #1332."
   "2026-09-28T01:30:14.727Z","harness:codex","Hosted PR #1332 coverage shards all passed tests, but the merged gate reported 99.99% statements/lines with only src/mcp/server.ts:1063 uncovered. The mocked successful task can expose durable completed status before detached cleanup finishes; the test now observes stable completion after the executor receives another event-loop turn. Linked 9-test suite and full local 9383-test exact 100/100/100/100 coverage passed. Hosted exact-head coverage remains pending; local full static stopped only at host-sensitive CLI transport-floor timing."
+  "2026-09-28T02:32:22.194Z","harness:codex","Hosted exact-head evidence: PR #1332 commit e3ad1955beba908a840748c4e96972a9f06ef8aa passed Gates (coverage) at https://github.com/unbraind/pm-cli/actions/runs/36369408528/job/108763297565. This follows local linked MCP 9/9 and full 9384-test exact 100/100/100/100 coverage. Reopened to replace the earlier terminal evidence that accurately said hosted validation was pending at that time."
 files[1]{path,scope,note}:
   tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,Await stable completed task state after detached success-path cleanup
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
@@ -45,7 +46,7 @@ test_runs[1]:
       node scripts/run-tests.mjs test -- tests/unit/mcp/mcp-server-branch-residual.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,Generated closed-item coverage race fix
-close_reason: Stabilized MCP detached completion coverage observation
+close_reason: Completed after hosted exact coverage confirmed the detached task cleanup branch
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened

@@ -2,13 +2,13 @@ id: pm-v0600g
 title: Windows nightly merge-receipt classification test exceeds 60-second budget
 description: "Full Nightly Validation run 36366344450 on branch ca3d4d788 failed Windows Node 24 shard 1/2 because the lossless receipt settlement integration test timed out at 60000 ms; 4428 other shard tests passed. The test performs many real CLI, Git, history and health operations in one temporary workspace, making its existing budget unsuitable under hosted Windows contention. Source: https://github.com/unbraind/pm-cli/actions/runs/36366344450"
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[5]: "area:merge",ci,defect,nightly,windows
 created_at: "2026-09-28T01:51:53.623Z"
-updated_at: "2026-09-28T02:18:54.030Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#e953e6452c14bdf5bc2ec1d7"
+updated_at: "2026-09-28T02:35:23.300Z"
+closed_at: "2026-09-28T02:35:22.519Z"
+completed_at: "2026-09-28T02:35:22.519Z"
 author: "harness:codex"
 acceptance_criteria: Inspect the failing hosted log and full integration test; set a bounded realistic Windows test budget without suppressing assertions; rerun focused integration and full nightly matrix; retain exact coverage gate
 goal: project management = context management
@@ -20,15 +20,19 @@ parent: pm-ul9rye
 risk: high
 severity: high
 repro_steps: "Nightly 36366344450 Windows Node 24 shard 1/2 timed out in tests/integration/merge-receipt-health-classification.integration.spec.ts:504 at 60000 ms."
+resolution: "Set the real long-form lossless receipt settlement test budget to 120 seconds while retaining every CLI, Git, history and health assertion."
+expected_result: Windows nightly shard 1/2 completes the test and the full matrix and exact coverage remain green.
+actual_result: "Nightly 36366344450 failed this test at 60000 ms; patched head e3ad1955b passed linked 5/5 and local full 9384-test exact coverage, PR Gates (coverage), and all seven Nightly Validation 36369419144 jobs including Windows shard 1/2."
 component: Windows nightly merge-receipt integration
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-kvhnb5,discovered_from,"2026-09-28T01:51:53.623Z","harness:codex","cli:create:dep",detected
   pm-25b7tg,related,"2026-09-28T02:17:10.544Z","harness:codex","cli:update:dep",detected
   pm-baksix,discovered_from,"2026-09-28T02:17:10.544Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-09-28T01:51:53.623Z","harness:codex","Duplicate check: all-status pm search for merge receipt health timeout and Windows nightly test timeout found historical pm-baksix, pm-25b7tg and pm-kvhnb5, but no owner of this exact merge-receipt classification 60-second hosted timeout. Separate from the bundled init timeout in pm-kvhnb5."
   "2026-09-28T01:53:19.569Z","harness:codex","Nightly run 36366344450 at ca3d4d788: Windows Node 24 shard 1/2 reported 4428 passed, 105 skipped and one 60000 ms timeout in the full lossless receipt settlement test at line 504. Other six nightly jobs, including Windows shard 2/2 and exact coverage, passed. This one test runs many real CLI and Git operations, so its 120000 ms limit remains bounded while allowing hosted contention."
   "2026-09-28T02:18:54.030Z","harness:codex",Focused real merge-receipt classification suite passed 5/5 in 24.1 seconds locally with the 120-second bounded test limit. Full exact coverage passed 9384 tests at 100/100/100/100; hosted Windows shard rerun is pending. Graph composition initially found two missing prose edges and passed after typed links to original test owner pm-baksix and prior Windows timeout pm-25b7tg were added.
+  "2026-09-28T02:34:53.355Z","harness:codex","The exact patched head e3ad1955beba908a840748c4e96972a9f06ef8aa passed Nightly Validation run https://github.com/unbraind/pm-cli/actions/runs/36369419144: Windows Node 24 shard 1/2 now completes the full merge-receipt test, Windows shard 2/2 and all five other matrix/quality jobs passed. The prior run 36366344450 failed only this test at 60 seconds. PR Gates (coverage) also passed on the patched head."
 files[1]{path,scope,note}:
   tests/integration/merge-receipt-health-classification.integration.spec.ts,project,bounded Windows full-settlement test budget
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
@@ -45,5 +49,15 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,generated release note for hosted Windows merge-receipt validation
+close_reason: Full Windows nightly merge-receipt classification completed within a bounded budget
 escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-v0600g
+  gate_id: windows-merge-receipt-classification-nightly
+  negative_control: Nightly run 36366344450 failed the real lossless receipt settlement test at its 60000 ms budget while 4428 other shard tests passed.
+  local_checks[2]: linked 5-test real merge-receipt suite passed,full 9384-test exact coverage passed 100/100/100/100
+  hosted_checks[2]: Nightly Validation 36369419144 Windows Node 24 shard 1/2 passed,PR 1332 Gates (coverage) and Windows regression passed
 body: ""

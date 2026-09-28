@@ -2,13 +2,13 @@ id: pm-ft90q2
 title: "GH-1327: Windows nightly static inventory unreadable-source assertion fails"
 description: "GitHub issue #1327 records Nightly Validation run 36310799887 at main 2b14d2fdee9d65dd1699d79e617ab53a0ae91dc7. Windows Node 24 shard 2/2 failed the read-only static extension inventory unreadable-roots/sources integration case: expected managed_state_unreadable plus source detail but received extensions_unreadable. This is separate from shard 1 init test timeouts. Source: https://github.com/unbraind/pm-cli/issues/1327"
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[7]: "area:extensions",ci,defect,github,nightly,node24,windows
 created_at: "2026-09-27T12:26:45.447Z"
-updated_at: "2026-09-28T01:30:41.749Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#e953e6452c14bdf5bc2ec1d7"
+updated_at: "2026-09-28T02:35:21.369Z"
+closed_at: "2026-09-28T02:35:20.451Z"
+completed_at: "2026-09-28T02:35:20.451Z"
 author: "harness:codex"
 acceptance_criteria: Inspect run 36310799887 shard 2 and reproduce on hosted Windows Node 24; distinguish platform error mapping from fixture assumptions; fix SDK or test according to real behavior; verify no activation or writes and rerun nightly plus exact coverage
 goal: project management = context management
@@ -20,15 +20,19 @@ parent: pm-ul9rye
 risk: high
 severity: high
 repro_steps: "Inspect Nightly run 36310799887 shard 2/2: static-extension-inventory.integration.spec.ts expects managed_state_unreadable and source detail but receives extensions_unreadable."
+resolution: Classify unreadable extension inventory sources correctly and include the integration suite in required Windows CI.
+expected_result: Windows static inventory reports unreadable managed state and all hosted nightly jobs pass.
+actual_result: "PR #1332 Windows regression and Gates (coverage) succeeded on e3ad1955b; Nightly Validation 36369419144 passed both Windows shards and all five Ubuntu, macOS and quality jobs."
 affected_version: 2026.9.27
 component: static extension inventory Windows nightly
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-lhhnx9,discovered_from,"2026-09-27T12:26:45.447Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-09-27T12:26:45.447Z","harness:codex","Duplicate check: GH-1327 and all-status static inventory and Windows nightly searches found closed pm-lhhnx9 and older nightly lineages but no owner for this exact Windows assertion. Run 36310799887 log proves a distinct shard-2 failure."
   "2026-09-27T23:32:24.400Z","harness:codex","Verification: linked read-only inventory integration suite 9/9 passed, including a portable denied parent-stat negative control and unreadable parent-file classification. The integration file is now pinned to the required Windows Node 24 PR check. Full coverage passed 9380 tests at 100/100/100/100. Hosted Windows result remains pending."
   "2026-09-27T23:57:42.357Z","harness:codex",PR #1332 hosted coverage shard 1 failed because the workflow contract still expected the old Windows regression command. Updated its exact command assertion to include the static inventory suite already running and passing in required Windows regression; linked inventory and workflow-contract tests passed. Full coverage pending.
   "2026-09-28T00:38:11.104Z","harness:codex","Review verification: workflow contract 15/15 and Windows inventory 9/9 passed; required hosted Windows regression had already passed. Full static quality pipeline passed. Earlier full coverage was 100/100/100/100. Final rerun had two unrelated 30-second suite-load timeouts that passed in isolation; hosted coverage shards will validate this final head."
+  "2026-09-28T02:34:52.541Z","harness:codex","Full Nightly Validation run https://github.com/unbraind/pm-cli/actions/runs/36369419144 at exact head e3ad1955beba908a840748c4e96972a9f06ef8aa passed all seven jobs, including both Windows Node 24 shards, Ubuntu Node 22/24/25, macOS Node 24, and nightly quality. PR #1332 required Windows regression and Gates (coverage) also passed at run 36369408528. This completes the static inventory hosted acceptance."
 notes[1]{created_at,author,text}:
   "2026-09-27T21:41:25.100Z","harness:codex",Hosted Nightly Validation run 36310799887 saw Windows report extensions_unreadable but omit managed_state_unreadable for a file in place of the managed-state parent directory. A parent stat now distinguishes missing state from an unreadable managed root.
 learnings[1]{created_at,author,text}:
@@ -80,6 +84,7 @@ test_runs[2]:
       node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,generated closed-item release history
+close_reason: Windows static extension inventory passes the full hosted nightly matrix
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened

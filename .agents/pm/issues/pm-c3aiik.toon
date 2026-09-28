@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[5]: agent-ux,"area:history","area:output",defect,github
 created_at: "2026-09-27T12:26:03.741Z"
-updated_at: "2026-09-28T02:18:53.293Z"
+updated_at: "2026-09-28T03:10:29.274Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#e953e6452c14bdf5bc2ec1d7"
 author: "harness:codex"
@@ -24,7 +24,7 @@ affected_version: 2026.9.27
 component: history output budgets and continuation
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-tqel,discovered_from,"2026-09-27T12:26:03.741Z","harness:codex","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-09-27T12:26:03.741Z","harness:codex","Duplicate check: all-status GH-1325 and cursor-diff searches found the general output-budget feature pm-5t33or and closed history grammar work pm-tqel; neither owns this specific paired-diff continuation failure."
   "2026-09-27T23:32:22.717Z","harness:codex","Verification: linked diff continuation suite 3/3 passed and recorded test history. Manual isolated tracker replay covered more than 20 history events, independent diff cursors, exact row reconstruction, final-page termination, and explicit larger-budget recovery for an oversized individual diff. Full coverage passed 9380 tests at 100/100/100/100. Hosted review remains pending."
   "2026-09-27T23:57:41.258Z","harness:codex","PR #1332 review recurrence: Greptile P1 identified that history string-only budget compaction overwrote explicit output-limit has_more when no budget cursor existed. Preserved the explicit applied_bound signal and added a regression requiring strings_compacted=true, rows_compacted=false, no next_cursor, has_more=true. Linked four-test suite passed; full coverage pending."
@@ -32,10 +32,11 @@ comments[7]{created_at,author,text}:
   "2026-09-28T01:30:14.076Z","harness:codex","PR #1332 second review: added diff-only history sentinel so row_contract exposes diff, and narrowed lossless string preservation to the diff collection while other history strings still compact. Focused 6-test continuation suite, typecheck, docs links, direct static-quality/docstring gate, and full 9383-test exact 100/100/100/100 coverage passed. Full static pipeline reached transport-floor check, which failed on host-sensitive latency (next 757>440 ms, create 651>398 ms, claim 598>415 ms); no threshold changed, hosted static pending."
   "2026-09-28T01:53:18.626Z","harness:codex","Review reproduction: PR #1332 Greptile thread PRRT_kwDORSgRDc6mglEX found two 2-row collections limited to one each return count=2 even though projection.row_key=history. Added failing regression (actual 2, expected 1) before the SDK fix; active projection row count is now used when present."
   "2026-09-28T02:18:53.293Z","harness:codex","Verification at branch ca3d4d788 plus working changes: focused regression 7/7 passed after a deliberately failing 2-versus-1 count assertion; full suite 9384 passed, two Windows-only skipped locally, exact V8 100/100/100/100 (65748 statements, 50308 branches, 13604 functions, 62794 lines). Static pipeline reached only a host-sensitive list transport floor 423>419 ms; isolated transport rerun passed all six operations, and graph-composition, record-integrity and mutation gates each passed. Hosted final-head check remains pending."
+  "2026-09-28T03:10:29.274Z","harness:codex","Second CodeRabbit review round: corrected learning 1 through pm, rebuilt cursor row_contract for the selected diff collection, and protected only nested diff values from budget truncation. The stale-contract and empty-diff nested-history assertions both failed before their fixes; linked focused suite passed 8/8. Full suite passed 9385 tests with exact 100/100/100/100 V8 coverage (65751 statements, 50312 branches, 13604 functions, 62797 lines). Full quality:static, tag-aware changelog check, and defect-evidence gate passed. Final hosted head for these latest source changes remains pending."
 notes[1]{created_at,author,text}:
   "2026-09-27T21:41:17.451Z","harness:codex",Temporary tracker with 20+ history entries showed compact_history and diff need independent cursors. Following a diff cursor now projects only diff and its own count. Oversized single rows require a larger output budget rather than silently shortened values.
-learnings[1]{created_at,author,text}:
-  "2026-09-27T21:41:19.285Z","harness:codex","History continuation fingerprints must be computed from unmodified source rows. Deep-copy output before compaction, keep diff strings lossless, and never advertise has_more when no usable cursor exists."
+learnings[1]{created_at,author,text,edited_at}:
+  "2026-09-27T21:41:19.285Z","harness:codex",History continuation fingerprints must be computed from unmodified source rows. Deep-copy output before compaction and keep diff strings lossless. Cursor-based budget truncation needs a usable continuation cursor when has_more is true; explicit --output-limit may report has_more without next_cursor because callers can raise the row limit.,"2026-09-28T02:31:53.092Z"
 files[5]{path,scope,note}:
   sdk/public-surface.json,project,public SDK history row contract snapshot
   src/sdk/output-projection.ts,project,diff row contract
@@ -44,7 +45,7 @@ files[5]{path,scope,note}:
   tests/unit/sdk/query/history-diff-continuation.spec.ts,project,page every diff row
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/query/history-diff-continuation.spec.ts,project,240,"harness:codex","2026-09-27T21:28:34.483Z",local_mutation,fix/agent-receipts-history-windows-nightly
-test_runs[4]:
+test_runs[6]:
   - run_id: test-local-mukfeyvz-fcsy97
     kind: test
     status: passed
@@ -84,6 +85,28 @@ test_runs[4]:
     started_at: "2026-09-28T01:53:25.155Z"
     finished_at: "2026-09-28T01:53:32.976Z"
     recorded_at: "2026-09-28T01:53:32.976Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/query/history-diff-continuation.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mukmveyx-k7px90
+    kind: test
+    status: passed
+    started_at: "2026-09-28T02:33:33.354Z"
+    finished_at: "2026-09-28T02:33:41.000Z"
+    recorded_at: "2026-09-28T02:33:41.000Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/query/history-diff-continuation.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mukneo47-1w4p6k
+    kind: test
+    status: passed
+    started_at: "2026-09-28T02:48:32.080Z"
+    finished_at: "2026-09-28T02:48:39.319Z"
+    recorded_at: "2026-09-28T02:48:39.319Z"
     passed: 1
     failed: 0
     skipped: 0

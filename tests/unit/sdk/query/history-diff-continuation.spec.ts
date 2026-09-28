@@ -34,6 +34,24 @@ describe("history diff output continuation", () => {
     }
   });
 
+  it("can trim nested history rows when the diff collection is empty", () => {
+    const result = {
+      id: "pm-example",
+      history: [{ index: 1, details: Array.from({ length: 300 }, (_, index) => `long-history-note-${index}`) }],
+      diff: [],
+      projection: { mode: "full", row_key: "history" },
+      count: 1,
+    };
+    const page = applyReadOutputDimensions(
+      "history",
+      { outputBudget: 450, resolvedOutputFormat: "json" },
+      result,
+    );
+    expect(page).not.toHaveProperty("output_budget_exceeded");
+    expect(page.diff).toEqual([]);
+    expect((page.history as typeof result.history)[0]?.details.length).toBeLessThan(300);
+  });
+
   it("preserves explicit output-limit has_more after string-only budget compaction", () => {
     const result = {
       id: "pm-example",
@@ -151,6 +169,21 @@ describe("history diff output continuation", () => {
     const received = [...(first.diff as typeof diffs)];
     let cursor = (first.output_budget_truncation as { continuations: Array<{ path: string; cursor: string }> })
       .continuations.find(({ path }) => path === "diff")?.cursor;
+    const declaredContinuationPage = applyReadOutputDimensions(
+      "history",
+      { outputBudget: 900, outputCursor: cursor, resolvedOutputFormat: "json" },
+      {
+        ...result,
+        row_contract: {
+          ...(result.row_contract as Record<string, unknown>),
+          continuation_row_keys: ["compact_history", "diff"],
+        },
+      },
+    );
+    expect(declaredContinuationPage.row_contract).toMatchObject({
+      row_keys: ["diff"],
+      continuation_row_keys: ["diff"],
+    });
     for (let pageNumber = 0; cursor && pageNumber < 20; pageNumber += 1) {
       const page = applyReadOutputDimensions(
         "history",
@@ -159,6 +192,7 @@ describe("history diff output continuation", () => {
       );
       expect(page).not.toHaveProperty("compact_history");
       expect(page).not.toHaveProperty("output_budget_exceeded");
+      expect(page.row_contract).toMatchObject({ row_keys: ["diff"] });
       received.push(...(page.diff as typeof diffs));
       cursor = (page.output_budget_truncation as { continuations?: Array<{ path: string; cursor: string }> } | undefined)
         ?.continuations?.find(({ path }) => path === "diff")?.cursor;
