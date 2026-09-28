@@ -112,7 +112,7 @@ describe("structured help command-path resolution", () => {
           ],
         ]),
       ).examples,
-    ).toEqual(["pm init"]);
+    ).toEqual(["pm automation --help"]);
 
     const plan = root.command("plan").description("Plan work");
     const planPayload = _testOnly.buildJsonHelpPayload(
@@ -182,6 +182,23 @@ describe("structured help command-path resolution", () => {
         new Map(),
       ).resolved_path,
     ).toBe("workspace snapshot");
+  });
+
+  it("never assigns root guidance to a command without a dedicated help bundle", () => {
+    const root = new Command("pm");
+    const graph = root.command("graph").description("Inspect project relationships");
+    const unnamed = root.command("unnamed");
+    const rootHelp = _testOnly.buildJsonHelpPayload(root, root, [], [], new Map());
+    const graphHelp = _testOnly.buildJsonHelpPayload(root, graph, [], ["graph"], new Map());
+    const unnamedHelp = _testOnly.buildJsonHelpPayload(root, unnamed, [], ["unnamed"], new Map());
+
+    expect(rootHelp).toMatchObject({ intent_source: "root_help_bundle", examples: ["pm init"] });
+    expect(graphHelp).toMatchObject({
+      intent: "Inspect project relationships",
+      intent_source: "command_description",
+      examples: ["pm graph --help"],
+    });
+    expect(unnamedHelp).toMatchObject({ intent: "", intent_source: "unavailable", examples: ["pm unnamed --help"] });
   });
 
   it("fails closed when a known virtual path has no registered parent", () => {

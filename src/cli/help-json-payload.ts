@@ -32,8 +32,10 @@ import {
   getPmCommandHelpVisibilityTier,
   isFullHelpDiscovery,
   normalizeHelpCommandPath,
+  resolveHelpBundleForPath,
   resolveHelpDetailMode,
   resolveHelpNarrative,
+  ROOT_HELP_BUNDLE,
 } from "./help-content.js";
 import { getCommandPath } from "./registration-helpers.js";
 import {
@@ -461,6 +463,45 @@ function buildJsonHelpNarrative(
   };
 }
 
+/** Resolve both the fallback narrative and its provenance for machine help. */
+function resolveJsonHelpNarrative(
+  commandPath: string | undefined,
+  commandDescription: string,
+  detailMode: ReturnType<typeof resolveHelpDetailMode>,
+  extensionDescriptor: ExtensionCommandHelpDescriptor | undefined,
+  hasPositionalAction: boolean,
+): {
+  narrative: ReturnType<typeof resolveHelpNarrative>;
+  intentSource: string;
+} {
+  const isRootFallback =
+    commandPath !== undefined &&
+    resolveHelpBundleForPath(commandPath) === ROOT_HELP_BUNDLE;
+  const fallback = isRootFallback
+    ? {
+        intent: commandDescription,
+        examples: [`pm ${commandPath} --help`],
+        tips: [],
+        detail_mode: detailMode,
+      }
+    : resolveHelpNarrative(commandPath, detailMode);
+  const intentSource = hasPositionalAction
+    ? "positional_action"
+    : extensionDescriptor?.intent || extensionDescriptor?.description
+      ? "extension"
+      : isRootFallback
+        ? commandDescription
+          ? "command_description"
+          : "unavailable"
+        : commandPath
+          ? "help_bundle"
+          : "root_help_bundle";
+  return {
+    narrative: buildJsonHelpNarrative(detailMode, fallback, extensionDescriptor),
+    intentSource,
+  };
+}
+
 function resolveJsonHelpVisibilityTier(
   rootCommandPath: string | undefined,
   extensionDescriptor: ExtensionCommandSurface | undefined,
@@ -610,7 +651,6 @@ function buildJsonHelpPayload(
   const projectedPath = positionalAction?.command ?? commanderPath;
   const commandPath = projectedPath.length > 0 ? projectedPath : undefined;
   const rootCommandPath = commandPath;
-  const fallbackNarrative = resolveHelpNarrative(commandPath, detailMode);
   const extensionDescriptor = commandPath
     ? extensionDescriptors.get(resolvePmCommandOperation(commandPath))
     : undefined;
@@ -621,10 +661,12 @@ function buildJsonHelpPayload(
         getPmCommandHelpVisibilityTier(targetCommand) !== undefined,
       )
     : undefined;
-  const narrative = buildJsonHelpNarrative(
+  const { narrative, intentSource } = resolveJsonHelpNarrative(
+    commandPath,
+    targetCommand.description().trim(),
     detailMode,
-    fallbackNarrative,
     extensionDescriptor,
+    positionalAction !== undefined,
   );
   const allOptionSummaries = compactHelpOptionAliases(
     mergeHelpOptionSummaries(
@@ -663,6 +705,7 @@ function buildJsonHelpPayload(
     description: positionalAction?.description ?? targetCommand.description(),
     usage: projection.usage,
     intent: positionalAction?.description ?? narrative.intent,
+    intent_source: intentSource,
     examples: positionalAction
       ? [positionalAction.example]
       : narrative.examples,

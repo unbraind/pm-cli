@@ -2,11 +2,13 @@ id: pm-s8ztcl
 title: "GH-1330: per-command JSON help inherits the root intent and init example"
 description: "GitHub issue #1330 reports that 55 of 137 command paths in pm help <command> --json inherit the root intent and pm init example without a provenance marker. This gives agents a misleading action for graph, extension, assurance, and history commands. Source: https://github.com/unbraind/pm-cli/issues/1330"
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:contracts",defect,github
 created_at: "2026-09-27T12:25:26.400Z"
-updated_at: "2026-09-27T12:25:26.400Z"
+updated_at: "2026-09-27T23:32:57.100Z"
+closed_at: "2026-09-27T23:32:44.468Z"
+completed_at: "2026-09-27T23:32:44.468Z"
 author: "harness:codex"
 acceptance_criteria: Reproduce the 55-of-137 census on the affected release; correct JSON help ownership and provenance; add a negative-control contract test across all command paths; verify generated docs and exact coverage
 goal: project management = context management
@@ -18,12 +20,49 @@ parent: pm-n7rr
 risk: high
 severity: high
 repro_steps: Compare pm help graph --json and pm help history activity --json with pm help --json; both inherit root intent and pm init example on 2026.9.27.
-expected_result: Command-specific guidance or explicit absence/provenance.
-actual_result: Root intent and pm init example are silently returned on unrelated command paths.
+resolution: "Unbundled command help now takes the command description, emits intent_source, and offers that command's executable help example without root init leakage."
+expected_result: Each command's JSON help identifies its own purpose and provenance.
+actual_result: Focused and broad CLI tests passed; exact full coverage passed; hosted review awaits PR.
 affected_version: 2026.9.27
 component: CLI help and SDK contracts
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-7i97c3,discovered_from,"2026-09-27T12:25:26.400Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-09-27T12:25:26.400Z","harness:codex","Duplicate check: all-status GH-1330 and distinctive root-intent searches found no exact owner; closed pm-7i97c3 covered intent completeness in contracts but not this help inheritance defect."
+  "2026-09-27T23:32:21.199Z","harness:codex","Verification: linked JSON-help suite 14/14 and the broader CLI error suite 131/131 passed. Unbundled commands now report their own Commander description and a command-specific executable help example with explicit intent_source. Exact full coverage passed 9380 tests and 100/100/100/100. Packed npm, npx, bunx and SDK consumer smoke passed. Hosted exact-head review remains to be observed on the PR."
+notes[1]{created_at,author,text}:
+  "2026-09-27T21:41:10.394Z","harness:codex","Design: JSON help provenance is derived after positional action and extension selection. A missing named bundle uses the registered Commander description and no unrelated root examples; the root bundle remains valid only for root help."
+learnings[1]{created_at,author,text}:
+  "2026-09-27T21:41:12.159Z","harness:codex","A root fallback bundle is valid for rendering help text, but a machine intent read must expose provenance and must never attribute root examples to an unbundled subcommand."
+files[3]{path,scope,note}:
+  docs/README.md,project,receipt documentation index
+  src/cli/help-json-payload.ts,project,command-specific JSON intent provenance
+  tests/unit/cli/help-command-path-resolution.spec.ts,project,regression coverage for unbundled command help
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/help-command-path-resolution.spec.ts,project,240,"harness:codex","2026-09-27T21:15:40.247Z",local_mutation,fix/agent-receipts-history-windows-nightly
+test_runs[1]:
+  - run_id: test-local-mukffdmn-humjpy
+    kind: test
+    status: passed
+    started_at: "2026-09-27T23:05:02.841Z"
+    finished_at: "2026-09-27T23:05:15.455Z"
+    recorded_at: "2026-09-27T23:05:15.455Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/help-command-path-resolution.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,generated closed-item release history
+  docs/AGENT_READ_AND_TEST_RECEIPTS.md,project,JSON help intent provenance
+  docs/README.md,project,documentation index
+close_reason: Corrected command JSON help intent and provenance
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-s8ztcl
+  gate_id: cli-help-json-contract
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/help-command-path-resolution.spec.ts
+  local_checks[3]: linked 14-test command help suite passed,full 9380-test coverage 100/100/100/100,packed npx and bunx smoke passed
+  hosted_checks[2]: Gates (static),Gates (coverage)
 body: ""

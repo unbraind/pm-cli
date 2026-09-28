@@ -111,7 +111,15 @@ async function readManagedRecords(managedPath: string): Promise<{
   try {
     raw = await fs.readFile(managedPath, "utf8");
   } catch (error: unknown) {
-    if (isMissing(error)) return { status: "absent", entries: [] };
+    if (isMissing(error)) {
+      try {
+        if ((await fs.stat(path.dirname(managedPath))).isDirectory()) {
+          return { status: "absent", entries: [] };
+        }
+      } catch (parentError: unknown) {
+        if (isMissing(parentError)) return { status: "absent", entries: [] };
+      }
+    }
     return { status: "unreadable", entries: [], error: { code: "managed_state_unreadable", path: managedPath } };
   }
   try {

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:history","area:observability","area:settings",defect,sentry
 created_at: "2026-09-27T11:02:43.845Z"
-updated_at: "2026-09-27T12:07:19.053Z"
+updated_at: "2026-09-27T21:29:40.797Z"
 closed_at: "2026-09-27T11:48:38.497Z"
 completed_at: "2026-09-27T11:48:38.497Z"
 author: "harness:codex"
@@ -29,11 +29,12 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-flbo,discovered_from,"2026-09-27T11:02:43.845Z","harness:codex","cli:create:dep",detected
   pm-k0nl2w,discovered_from,"2026-09-27T11:02:43.845Z","harness:codex","cli:create:dep",detected
   pm-xdn6,discovered_from,"2026-09-27T11:02:43.845Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-09-27T11:02:43.845Z","harness:codex","Duplicate check: all-status searches for PM-CLI-3D, malformed settings write, JSON.parse, and unclassified Sentry found related closed read/bootstrap, merge-safety, and classifier items but no owner for write-path parse failure. The release event occurred once at 2026-09-27T10:11:18Z; a disposable local reproduction matches the error and confirms no document mutation."
   "2026-09-27T11:06:31.514Z","harness:codex","TDD red: disposable malformed settings.json caused writeSettings to throw a raw SyntaxError in the focused store test (31 pass, 1 expected failure). The preexisting file and workspace-history must remain unchanged; the new assertion requires a stable settings_write_invalid_existing_json refusal. No production source changed yet."
   "2026-09-27T11:32:41.260Z","harness:codex","Verification: corrected full coverage run passed 9,375 tests (2 platform skips) with exact statements/branches/functions/lines 100/100/100/100 and zero uncovered counts. Initial run failed only because the new SDK error code required an updated public-surface snapshot; snapshot updated and full run repeated successfully. Disposable CLI config set refused malformed settings with exit 2 and settings_write_invalid_existing_json, preserved settings.json and absent _workspace history, then succeeded after syntax repair."
   "2026-09-27T11:48:29.148Z","harness:codex","Verification: docs/skills gate passed; packed npx and bunx smoke passed for version 2026.9.27 with nine packages; mutation gate passed 323 killed, seven equivalent, score 97.88%; record-integrity and graph-composition assurance passed. Local quality:static passed through SDK entrypoint costs, then failed only the host-sensitive CLI transport-floor budget (get 364>362 ms, next 550>440 ms, create 553>398 ms); the benchmark ceiling was not changed. Hosted exact-head gates remain pending."
+  "2026-09-27T21:29:40.797Z","harness:codex","Live observability recheck on 2026-09-27: Sentry PM-CLI-3D remains unresolved with exactly one event, lastSeen 10:11:18Z; its scrubbed stack is a JSON.parse SyntaxError. Latest published v2026.9.27 predates the merged typed-refusal fix, so this is pre-fix released evidence and does not establish a new regression. The Sentry trace list for the last 24h is empty; post-fix ingestion and user-action telemetry cannot be claimed until a newer package is published and exercised."
 learnings[1]{created_at,author,text}:
   "2026-09-27T11:48:28.318Z","harness:codex",Read-time fallback to defaults must never be interpreted as permission to overwrite malformed persisted settings. Parse the locked current document before any settings write and return a typed repairable refusal.
 files[8]{path,scope,note}:

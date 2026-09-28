@@ -1356,7 +1356,13 @@ function applyAmountBound(
   bounded.has_more = true;
   bounded.truncated = true;
   if (typeof bounded.count === "number") {
-    bounded.count = countReadOutputRows(bounded);
+    const activeRowKey = isRecord(bounded.projection)
+      ? bounded.projection.row_key
+      : undefined;
+    bounded.count =
+      typeof activeRowKey === "string" && Array.isArray(bounded[activeRowKey])
+        ? bounded[activeRowKey].length
+        : countReadOutputRows(bounded);
   }
   bounded.applied_bound = {
     kind: "output_limit",
@@ -1520,6 +1526,28 @@ function projectReadOutputRows(
     projected = prioritizeAssuranceAssertions(projected);
   }
   projected = applyReadOutputContinuation(projected, resolved.command, cursor);
+  if (resolved.command === "history" && cursor) {
+    const historyRowKeys = ["compact_history", "provenance_history", "history", "diff"];
+    projected = Object.fromEntries(
+      Object.entries(projected).filter(
+        ([key]) => !historyRowKeys.includes(key) || key === cursor.path,
+      ),
+    );
+    if (isRecord(projected.projection)) {
+      projected.projection = { ...projected.projection, row_key: cursor.path };
+    }
+    if (isRecord(projected.row_contract)) {
+      const rowContract = projected.row_contract;
+      projected.row_contract = {
+        ...rowContract,
+        row_keys: [cursor.path],
+        ...(Array.isArray(rowContract.continuation_row_keys)
+          ? { continuation_row_keys: [cursor.path] }
+          : {}),
+      };
+    }
+    projected.count = Object.keys(projected[cursor.path] as object).length;
+  }
   if (resolved.amount?.source === "canonical") {
     projected = applyAmountBound(projected, resolved.amount.value);
   }
@@ -1890,13 +1918,24 @@ function compactReadOutputProjection(
           (row) => isRecord(row) && row.verdict !== "pass",
         ).length
       : 0;
+  const minimumRowsByPath = new Map<string, number>();
+  if (assuranceMinimumRows > 0) {
+    minimumRowsByPath.set("assertions", assuranceMinimumRows);
+  }
+  if (resolved.command === "history" && Array.isArray(projected.diff)) {
+    for (const collection of readOutputBudgetCollections(projected)) {
+      if (!collection.path.startsWith("diff.")) continue;
+      minimumRowsByPath.set(
+        collection.path,
+        Object.keys(collection.value).length,
+      );
+    }
+  }
   return compactReadOutputToBudget(
     projected,
     receipt,
     bindingBudget.tokens,
-    assuranceMinimumRows > 0
-      ? new Map([["assertions", assuranceMinimumRows]])
-      : new Map(),
+    minimumRowsByPath,
     format,
     (compacted) => {
       const continuationCursorRebased = rebaseBudgetCompactedCursor(
@@ -1914,10 +1953,19 @@ function compactReadOutputProjection(
         measuredResultTokens,
         continuationState.collectionsBeforeBudget,
       );
+      if (resolved.command === "history" && isRecord(compacted.projection)) {
+        compacted.has_more = typeof compacted.next_cursor === "string" ||
+          (compacted.applied_bound as { kind?: unknown } | undefined)?.kind === "output_limit";
+        const rowKey = compacted.projection.row_key;
+        if (typeof rowKey === "string" && Array.isArray(compacted[rowKey])) {
+          compacted.count = compacted[rowKey].length;
+        }
+      }
       if (session !== undefined) {
         Object.assign(compacted, attachReadOutputSessionContracts(compacted, session, receipt, format));
       }
     },
+    resolved.command === "history" && Array.isArray(projected.diff),
   );
 }
 

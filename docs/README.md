@@ -34,6 +34,7 @@ pm guide release --json
 - [Quickstart](QUICKSTART.md) - install, initialize, create, claim, link, test, close.
 - [Onboarding](ONBOARDING.md) - first-two-hours maintainer and contributor setup.
 - [Agent Guide](AGENT_GUIDE.md) - canonical agent loop, tracker linking, and token-minimal command choices.
+- [Agent Read and Test Receipts](AGENT_READ_AND_TEST_RECEIPTS.md) - JSON help provenance, linked-test persistence, and history diff continuation.
 - [Command Reference](COMMANDS.md) - command families with examples and when to use each family.
 - [Context and Operations Namespaces](COMMAND_NAMESPACES.md) - native navigation, diagnostics, event streams, and compatibility aliases.
 - [CLI Scripting Contract](SCRIPTING.md) - exit codes, flat mutation receipts versus read envelopes, stdout/stderr boundaries, stable JSON fields, uniform OR filters, and shell composition recipes.

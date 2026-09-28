@@ -96,7 +96,7 @@ export const PM_READ_ROW_CONTRACTS = {
     fields: "unsupported",
   },
   history: {
-    row_keys: ["compact_history", "provenance_history", "history"],
+    row_keys: ["compact_history", "provenance_history", "history", "diff"],
     fields: "unsupported",
   },
   deps: {
@@ -336,7 +336,7 @@ const READ_RESULT_SENTINEL_KEYS: Readonly<Record<string, readonly string[]>> = {
     "provenance_activity",
     "activity",
   ],
-  history: ["compact_history", "provenance_history", "history"],
+  history: ["compact_history", "provenance_history", "history", "diff"],
   deps: ["tree", "graph", "projection"],
   health: ["checks"],
   aggregate: ["groups"],
