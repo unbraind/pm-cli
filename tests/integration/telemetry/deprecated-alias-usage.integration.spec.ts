@@ -23,8 +23,10 @@ describe("deprecated command alias usage", () => {
       expect(deprecated.code).toBe(0);
       const canonical = context.runCli(["list", "--status", "open", "--json"], { expectJson: true });
       expect(canonical.code).toBe(0);
+      expect(context.runCli(["pm", "list-open", "--json"], { expectJson: true }).code).toBe(0);
       const permanent = context.runCli(["extension", "list", "--json"], { expectJson: true });
       expect(permanent.code).toBe(0);
+      expect(context.runCli(["extension", "--global", "list", "--json"], { expectJson: true }).code).toBe(0);
       context.env.PM_TELEMETRY_DISABLED = "1";
       expect(context.runCli(["list-open", "--json"], { expectJson: true }).code).toBe(0);
       context.env.PM_TELEMETRY_DISABLED = "0";
@@ -34,7 +36,7 @@ describe("deprecated command alias usage", () => {
         zero_use_aliases: string[];
       };
       expect(stats.alias_usage).toEqual([{
-        alias: "list-open", canonical: "list", count: 1,
+        alias: "list-open", canonical: "list", count: 2,
         last_seen: expect.any(String),
       }]);
       expect(stats.zero_use_aliases).not.toContain("list-open");

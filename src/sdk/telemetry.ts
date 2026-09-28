@@ -560,6 +560,24 @@ function normalizeAliasUsage(
   return result;
 }
 
+/** Prune expired local observations on diagnostics reads without blocking them on lock contention. */
+async function readRetainedAliasUsage(globalPmRoot: string, statePath: string, retentionDays: number): Promise<Record<string, TelemetryAliasUsageRecord>> {
+  const cutoff = aliasUsageCutoff(retentionDays);
+  const state = await readTelemetryRuntimeState(statePath);
+  const usage = normalizeAliasUsage(state.alias_usage, cutoff);
+  if (JSON.stringify(state.alias_usage ?? {}) === JSON.stringify(usage)) return usage;
+  try {
+    await withTelemetryQueueMutation(async () => {
+      const current = await readTelemetryRuntimeState(statePath);
+      const retained = normalizeAliasUsage(current.alias_usage, cutoff);
+      await writeFileAtomic(statePath, `${JSON.stringify({ ...current, alias_usage: retained }, null, 2)}\n`);
+    }, globalPmRoot, 250);
+  } catch {
+    // Diagnostics still report the retained view when another process holds the lock.
+  }
+  return usage;
+}
+
 /** Count one resolved deprecated command alias in consented, local-only telemetry state. */
 export async function recordDeprecatedAliasUsage(alias: string): Promise<boolean> {
   const contract = DEPRECATED_ALIASES.find((entry) => entry.alias === alias);
@@ -578,12 +596,12 @@ export async function recordDeprecatedAliasUsage(alias: string): Promise<boolean
         canonical: contract.canonical,
         days: {
           ...usage[alias]?.days,
-          [day]: { count: (previous?.count ?? 0) + 1, last_seen: nowIso() },
+          [day]: { count: Math.min(Number.MAX_SAFE_INTEGER, (previous?.count ?? 0) + 1), last_seen: nowIso() },
         },
       };
       await writeFileAtomic(statePath, `${JSON.stringify({ ...state, alias_usage: usage }, null, 2)}\n`);
       return true;
-    }, globalPmRoot);
+    }, globalPmRoot, 250);
   } catch {
     // Local telemetry is best effort and must never block an alias invocation.
     return false;
@@ -707,14 +725,13 @@ const runTelemetryStats: TelemetryCommandHandler = async (options, context) => {
   const buckets = buildTelemetryStatsBuckets(queue.entries);
   const selected = buckets.slice(0, limit);
   const settings = await readSettings(context.globalPmRoot);
-  const state = await readTelemetryRuntimeState(context.statePath);
-  const usage = normalizeAliasUsage(state.alias_usage, aliasUsageCutoff(settings.telemetry.retention_days));
+  const usage = await readRetainedAliasUsage(context.globalPmRoot, context.statePath, settings.telemetry.retention_days);
   const aliasUsage = Object.entries(usage).map(([alias, entry]) => {
     const days = Object.values(entry.days);
     return {
       alias,
       canonical: entry.canonical,
-      count: days.reduce((total, day) => total + day.count, 0),
+      count: days.reduce((total, day) => Math.min(Number.MAX_SAFE_INTEGER, total + day.count), 0),
       last_seen: days.map((day) => day.last_seen).sort().at(-1),
     };
   }).sort((left, right) => right.count - left.count || left.alias.localeCompare(right.alias));

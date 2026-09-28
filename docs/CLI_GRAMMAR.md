@@ -104,8 +104,10 @@ This setting changes presentation only. It does not disable aliases or change co
 canonical target, retained hit count, and last seen time), `zero_use_aliases`,
 and `alias_usage_retention_days`. These counts are held only in the local
 telemetry runtime state when telemetry consent is enabled. The same process
-opt-outs used by telemetry suppress recording; `pm telemetry clear` deletes the
-state. Canonical spellings do not write an alias counter.
+opt-outs used by telemetry suppress recording. Diagnostics reads and new alias
+hits prune expired observations from disk; `pm telemetry clear` removes them
+immediately. Canonical spellings do
+not write an alias counter.
 
 An empty local counter is not evidence that an alias is unused across all
 workspaces. The open GA stability decision [pm-agou](../.agents/pm/decisions/pm-agou.toon)

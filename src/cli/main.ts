@@ -2033,10 +2033,16 @@ function assertRequestedNamespaceAvailable(program: Command, invocationArgv: str
 
 /** Resolve the longest declared deprecated spelling from the original command tokens. */
 function captureInvokedDeprecatedAlias(rootProgram: Command, rawArgv: string[]): void {
-  const commandIndex = findBootstrapCommandTokenIndex(rawArgv);
+  let commandIndex = findBootstrapCommandTokenIndex(rawArgv);
   if (commandIndex === undefined) return;
+  if (["pm", "pm-cli"].includes(rawArgv[commandIndex]?.trim().toLowerCase())) {
+    const offset = findBootstrapCommandTokenIndex(rawArgv.slice(commandIndex + 1));
+    if (offset === undefined) return;
+    commandIndex += offset + 1;
+  }
   const candidates = COMMAND_ALIASES_BY_FIRST_TOKEN.get(rawArgv[commandIndex]);
-  const resolved = candidates?.find((contract) => contract.alias.split(" ").every((token, index) => rawArgv[commandIndex + index] === token));
+  const tokens = rawArgv.slice(commandIndex).filter((token) => !["--global", "--project", "--local"].includes(token));
+  const resolved = candidates?.find((contract) => contract.alias.split(" ").every((token, index) => tokens[index] === token));
   if (resolved?.lifecycle === "deprecated") Reflect.set(rootProgram, DEPRECATED_ALIAS_INVOCATION, resolved.alias);
 }
 
