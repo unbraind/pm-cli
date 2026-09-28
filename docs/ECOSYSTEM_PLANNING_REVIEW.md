@@ -251,7 +251,13 @@ the historical batch were removed: checking citations, history continuity and
 release attribution does not verify the source run or feature behavior. The three
 source-backed discovery links on closed features remain valid and unchanged.
 
-The original writes and their corrections remain in immutable history. Four
+The original writes and their corrections remain in immutable history. Five
 holder/target/text-scoped citation exemptions distinguish the batch inventory
 from verification claims without raising the prose-edge ceiling. The corrected
 graph-composition gate passes.
+
+The follow-up review narrowed those five exemptions to the complete original
+paragraphs, including their historical source-event coordinates. In an isolated
+temporary tracker the original citations pass, while a later batch comment
+asserting an unrecorded prerequisite is blocked with one detected gap. This
+prevents the common phrase “Historical batch” from exempting future claims.

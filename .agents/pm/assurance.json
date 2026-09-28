@@ -1153,26 +1153,32 @@
           {
             "holder_id": "pm-lnrk",
             "target_id": "pm-xjf9",
-            "text_contains": "Historical batch",
-            "reason": "The dated historical batch comments cite the source and three subject records to explain discovery-edge recovery. This citation inventory asserts no verification of run or feature behavior."
+            "text_contains": "Historical batch 2026-09-28: three closed v2026.5.1 feature records have explicit discovery evidence in pm-xjf9 comment 2026-04-04T21:55:31.826Z. pm claim correctly refuses terminal-item ownership, so this claimed batch owns the append-only provenance updates without reopening items or forcing ownership. Preserve release/status/closure fields and verify history plus package-owned changelog.",
+            "reason": "Exact historical citation paragraph from the 2026-09-28 batch, including its 2026-04-04 source-event coordinate; later batch comments are outside this exemption."
+          },
+          {
+            "holder_id": "pm-lnrk",
+            "target_id": "pm-xjf9",
+            "text_contains": "Historical batch complete: added exactly three discovered_from relationships from pm-vi2v, pm-dw5s and pm-lwps to pm-xjf9 using its 2026-04-04T21:55:31.826Z comment. Source-citation sibling inventories are narrowly exempted from prose-edge inference because common discovery does not imply sibling dependence. All three remain closed with release v2026.5.1 and unchanged closure evidence. Broader terminal reconstruction and unresolved ambiguity remain open on this canonical programme.",
+            "reason": "Exact historical citation paragraph from the 2026-09-28 batch, including its 2026-04-04 source-event coordinate; later batch comments are outside this exemption."
           },
           {
             "holder_id": "pm-lnrk",
             "target_id": "pm-vi2v",
-            "text_contains": "Historical batch",
-            "reason": "The dated historical batch comments cite the source and three subject records to explain discovery-edge recovery. This citation inventory asserts no verification of run or feature behavior."
+            "text_contains": "Historical batch complete: added exactly three discovered_from relationships from pm-vi2v, pm-dw5s and pm-lwps to pm-xjf9 using its 2026-04-04T21:55:31.826Z comment. Source-citation sibling inventories are narrowly exempted from prose-edge inference because common discovery does not imply sibling dependence. All three remain closed with release v2026.5.1 and unchanged closure evidence. Broader terminal reconstruction and unresolved ambiguity remain open on this canonical programme.",
+            "reason": "Exact historical citation paragraph from the 2026-09-28 batch, including its 2026-04-04 source-event coordinate; later batch comments are outside this exemption."
           },
           {
             "holder_id": "pm-lnrk",
             "target_id": "pm-dw5s",
-            "text_contains": "Historical batch",
-            "reason": "The dated historical batch comments cite the source and three subject records to explain discovery-edge recovery. This citation inventory asserts no verification of run or feature behavior."
+            "text_contains": "Historical batch complete: added exactly three discovered_from relationships from pm-vi2v, pm-dw5s and pm-lwps to pm-xjf9 using its 2026-04-04T21:55:31.826Z comment. Source-citation sibling inventories are narrowly exempted from prose-edge inference because common discovery does not imply sibling dependence. All three remain closed with release v2026.5.1 and unchanged closure evidence. Broader terminal reconstruction and unresolved ambiguity remain open on this canonical programme.",
+            "reason": "Exact historical citation paragraph from the 2026-09-28 batch, including its 2026-04-04 source-event coordinate; later batch comments are outside this exemption."
           },
           {
             "holder_id": "pm-lnrk",
             "target_id": "pm-lwps",
-            "text_contains": "Historical batch",
-            "reason": "The dated historical batch comments cite the source and three subject records to explain discovery-edge recovery. This citation inventory asserts no verification of run or feature behavior."
+            "text_contains": "Historical batch complete: added exactly three discovered_from relationships from pm-vi2v, pm-dw5s and pm-lwps to pm-xjf9 using its 2026-04-04T21:55:31.826Z comment. Source-citation sibling inventories are narrowly exempted from prose-edge inference because common discovery does not imply sibling dependence. All three remain closed with release v2026.5.1 and unchanged closure evidence. Broader terminal reconstruction and unresolved ambiguity remain open on this canonical programme.",
+            "reason": "Exact historical citation paragraph from the 2026-09-28 batch, including its 2026-04-04 source-event coordinate; later batch comments are outside this exemption."
           }
         ]
       },
