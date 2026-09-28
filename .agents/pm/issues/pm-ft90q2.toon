@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[7]: "area:extensions",ci,defect,github,nightly,node24,windows
 created_at: "2026-09-27T12:26:45.447Z"
-updated_at: "2026-09-27T23:33:00.252Z"
-closed_at: "2026-09-27T23:32:48.029Z"
-completed_at: "2026-09-27T23:32:48.029Z"
+updated_at: "2026-09-28T00:38:23.109Z"
+closed_at: "2026-09-28T00:38:22.252Z"
+completed_at: "2026-09-28T00:38:22.252Z"
 author: "harness:codex"
 acceptance_criteria: Inspect run 36310799887 shard 2 and reproduce on hosted Windows Node 24; distinguish platform error mapping from fixture assumptions; fix SDK or test according to real behavior; verify no activation or writes and rerun nightly plus exact coverage
 goal: project management = context management
@@ -20,27 +20,44 @@ parent: pm-ul9rye
 risk: high
 severity: high
 repro_steps: "Inspect Nightly run 36310799887 shard 2/2: static-extension-inventory.integration.spec.ts expects managed_state_unreadable and source detail but receives extensions_unreadable."
-resolution: A missing managed-state child under a non-directory parent reports managed_state_unreadable; a portable denied-parent negative control and the inventory integration suite now run in required Windows CI.
-expected_result: Read-only inventory reports errors truthfully across platforms and blocks Windows regressions before merge.
-actual_result: Linked inventory suite and exact coverage passed locally; required Windows PR result awaits review.
+resolution: The CI workflow contract now requires the static inventory integration suite in the Windows regression command.
+expected_result: Required Windows regression and coverage contract both enforce the same inventory suite.
+actual_result: "Windows hosted regression, linked 9-test inventory suite, 15-test workflow contract, and full static gate passed; final-head hosted coverage pending."
 affected_version: 2026.9.27
 component: static extension inventory Windows nightly
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-lhhnx9,discovered_from,"2026-09-27T12:26:45.447Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-09-27T12:26:45.447Z","harness:codex","Duplicate check: GH-1327 and all-status static inventory and Windows nightly searches found closed pm-lhhnx9 and older nightly lineages but no owner for this exact Windows assertion. Run 36310799887 log proves a distinct shard-2 failure."
   "2026-09-27T23:32:24.400Z","harness:codex","Verification: linked read-only inventory integration suite 9/9 passed, including a portable denied parent-stat negative control and unreadable parent-file classification. The integration file is now pinned to the required Windows Node 24 PR check. Full coverage passed 9380 tests at 100/100/100/100. Hosted Windows result remains pending."
+  "2026-09-27T23:57:42.357Z","harness:codex",PR #1332 hosted coverage shard 1 failed because the workflow contract still expected the old Windows regression command. Updated its exact command assertion to include the static inventory suite already running and passing in required Windows regression; linked inventory and workflow-contract tests passed. Full coverage pending.
+  "2026-09-28T00:38:11.104Z","harness:codex","Review verification: workflow contract 15/15 and Windows inventory 9/9 passed; required hosted Windows regression had already passed. Full static quality pipeline passed. Earlier full coverage was 100/100/100/100. Final rerun had two unrelated 30-second suite-load timeouts that passed in isolation; hosted coverage shards will validate this final head."
 notes[1]{created_at,author,text}:
   "2026-09-27T21:41:25.100Z","harness:codex",Hosted Nightly Validation run 36310799887 saw Windows report extensions_unreadable but omit managed_state_unreadable for a file in place of the managed-state parent directory. A parent stat now distinguishes missing state from an unreadable managed root.
 learnings[1]{created_at,author,text}:
   "2026-09-27T21:41:27.107Z","harness:codex",Reading a child path below a non-directory parent can surface ENOENT on Windows instead of ENOTDIR. Classify absent managed state only after confirming the parent is a directory or genuinely absent.
-files[3]{path,scope,note}:
+files[4]{path,scope,note}:
   .github/workflows/ci.yml,project,required Windows per-PR static inventory regression gate
   src/sdk/extension/static-inventory.ts,project,Windows child-file error classification
+  tests/integration/ci-workflow-contract.spec.ts,project,Required Windows inventory suite workflow command contract
   tests/integration/extensions/static-extension-inventory.integration.spec.ts,project,portable parent-read failure negative control
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/integration/extensions/static-extension-inventory.integration.spec.ts,project,240,"harness:codex","2026-09-27T21:15:48.820Z",local_mutation,fix/agent-receipts-history-windows-nightly
-test_runs[1]:
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/extensions/static-extension-inventory.integration.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-27T21:15:48.820Z"
+      source_kind: local_mutation
+      source_ref: fix/agent-receipts-history-windows-nightly
+  - command: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-27T23:56:08.157Z"
+      source_kind: local_mutation
+      source_ref: fix/agent-receipts-history-windows-nightly
+test_runs[2]:
   - run_id: test-local-mukfgy2r-8qxr3d
     kind: test
     status: passed
@@ -52,9 +69,21 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/extensions/static-extension-inventory.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mukhajfp-72hsi8
+    kind: test
+    status: passed
+    started_at: "2026-09-27T23:57:05.172Z"
+    finished_at: "2026-09-27T23:57:28.933Z"
+    recorded_at: "2026-09-27T23:57:28.933Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extensions/static-extension-inventory.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,generated closed-item release history
-close_reason: Corrected static inventory unreadable-path classification and added Windows PR coverage
+close_reason: Synchronized Windows inventory workflow contract with required CI suite
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened

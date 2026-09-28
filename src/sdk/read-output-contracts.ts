@@ -1938,7 +1938,8 @@ function compactReadOutputProjection(
         continuationState.collectionsBeforeBudget,
       );
       if (resolved.command === "history" && isRecord(compacted.projection)) {
-        compacted.has_more = typeof compacted.next_cursor === "string";
+        compacted.has_more = typeof compacted.next_cursor === "string" ||
+          (compacted.applied_bound as { kind?: unknown } | undefined)?.kind === "output_limit";
         const rowKey = compacted.projection.row_key;
         if (typeof rowKey === "string" && Array.isArray(compacted[rowKey])) {
           compacted.count = compacted[rowKey].length;

@@ -3,6 +3,31 @@ import { attachOutputOmissionReceipt } from "../../../../src/sdk/output-projecti
 import { applyReadOutputDimensions } from "../../../../src/sdk/read-output-contracts.js";
 
 describe("history diff output continuation", () => {
+  it("preserves explicit output-limit has_more after string-only budget compaction", () => {
+    const result = {
+      id: "pm-example",
+      history: [
+        { index: 1, detail: "A".repeat(2_000) },
+        { index: 2, detail: "B".repeat(2_000) },
+      ],
+      projection: { mode: "full", row_key: "history" },
+      count: 2,
+    };
+    const page = applyReadOutputDimensions(
+      "history",
+      { outputLimit: 1, outputBudget: 550, resolvedOutputFormat: "json" },
+      result,
+    );
+    expect(page).not.toHaveProperty("output_budget_exceeded");
+    expect(page).toMatchObject({
+      has_more: true,
+      applied_bound: { kind: "output_limit", value: 1 },
+      read_output: { strings_compacted: true, rows_compacted: false },
+    });
+    expect(page).not.toHaveProperty("next_cursor");
+    expect(page.history).toHaveLength(1);
+  });
+
   it("tolerates incomplete history projection metadata during budget compaction", () => {
     const diff = Array.from({ length: 80 }, (_, index) => ({
       index: index + 1,

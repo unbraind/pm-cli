@@ -6,10 +6,10 @@
 
 - Allow self-isolating linked package tests without inherited PM_PATH ([pm-t05d8d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t05d8d.toon))
 - Preserve every tracker merge fence during nested init and detect lost active mappings ([pm-kynkl8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kynkl8.toon))
-- Full coverage refusal-closure retry test exceeds its four-minute budget under suite contention ([pm-mrrci4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mrrci4.toon))
 - GH-1327: Windows nightly static inventory unreadable-source assertion fails ([pm-ft90q2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ft90q2.toon))
-- GH-1326: Windows nightly bundled-package init test exceeds 30 seconds ([pm-kvhnb5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kvhnb5.toon))
 - GH-1325: history diff cursor drops newest rows and strands the final page ([pm-c3aiik](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c3aiik.toon))
+- Full coverage refusal-closure retry test exceeds its four-minute budget under suite contention ([pm-mrrci4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mrrci4.toon))
+- GH-1326: Windows nightly bundled-package init test exceeds 30 seconds ([pm-kvhnb5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kvhnb5.toon))
 - GH-1328: linked-test execution does not disclose item evidence recording ([pm-aao1hy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-aao1hy.toon))
 - GH-1330: per-command JSON help inherits the root intent and init example ([pm-s8ztcl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s8ztcl.toon))
 - Refuse malformed settings writes with typed recovery ([pm-z329kd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z329kd.toon))
