@@ -1,0 +1,29 @@
+id: pm-bj7rq0
+title: Diagnose repeated CLI startup budget overruns and distinguish runner qualification from command regressions
+description: "The 2026-09-28 ecosystem review ran the unchanged CLI transport-floor gate against fresh isolated one-item trackers. The first run failed list at 442 ms versus the fixed 419 ms ceiling. A second isolated run failed get 385/362 ms, context 466/433 ms, next 457/440 ms and create 424/398 ms. Source, benchmark code and budgets were unchanged. The SDK import gate initially failed even bare Node at 305/106 ms but passed its isolated rerun. These observations establish repeated local admission failures, not their cause or a production regression. Determine whether runner contention, runtime state or a reproducible command regression explains the changing failures."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-09-28T06:20:35.648Z"
+updated_at: "2026-09-28T06:20:39.865Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
+parent: pm-o87av6
+risk: medium
+confidence: medium
+expected_result: "A qualified runner passes unchanged supported-runtime startup budgets, and genuine command regressions remain fail-closed with attributable evidence."
+actual_result: Two transport-floor runs failed fixed latency ceilings across changing commands; independent SDK import rerun passed. The broad static invocation therefore cannot be reported all green.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-o87av6,implements,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
+  pm-p9a4,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
+  pm-yse5dt,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-28T06:20:35.648Z","harness:codex","text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
+files[2]{path,scope}:
+  scripts/bench/cli-transport-budgets.json,project
+  scripts/bench/cli-transport-floor.mjs,project
+docs[1]{path,scope}:
+  docs/ECOSYSTEM_PLANNING_REVIEW.md,project
+body: ""

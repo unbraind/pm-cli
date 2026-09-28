@@ -67,7 +67,7 @@ pm update <ID> --dep "id=<prerequisite>,kind=blocked_by"
 ```
 
 Do not record the inverse `blocks` edge as well — the pair is one relationship
-and recording both creates a cycle.
+and recording both duplicates the same ordering evidence.
 
 ## Closing Well
 

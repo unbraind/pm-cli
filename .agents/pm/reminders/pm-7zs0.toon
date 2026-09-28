@@ -6,17 +6,17 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-09-22T04:59:42.732Z"
+updated_at: "2026-09-28T05:51:33.064Z"
 reminders[1]{at,text}:
   "2026-08-30T06:00:00.000Z",Verify the next eligible daily cut contains main 57d4a074 or a descendant and advances tag GitHub Release npm npx bunx analyzers Sentry telemetry and queue evidence then rearm
 author: maintainer-agent
 estimated_minutes: 15
-acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day."
+acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day.; Every daily check distinguishes scheduled or guarded dispatch attempts, failed original runs, same-version recovery, immutable publication identity and all supported consumer acceptance results"
 parent: pm-u9d0
 risk: low
 confidence: high
 expected_result: "After each merge to main the next daily release tags a new date version and advances npm latest, and any discrepancy is triaged the same day."
-dependencies[11]:
+dependencies[12]:
   - id: pm-7n5a
     kind: related
     created_at: "2026-07-15T18:17:35.524Z"
@@ -68,6 +68,12 @@ dependencies[11]:
   - id: pm-yql1
     kind: verifies
     created_at: "2026-09-12T08:59:46.125Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-q7c36n
+    kind: discovered_from
+    created_at: "2026-09-28T05:51:30.932Z"
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
@@ -253,7 +259,7 @@ comments[181]{created_at,author,text}:
   "2026-09-12T08:18:37.147Z","harness:codex","Release-health incident GH-1239: scheduled Auto Release 34680405829 cut v2026.9.12; downstream Release 34681372798 passed publication but exhausted npm metadata verification at 08:09:47 UTC with E404. Exact-version npm is now public at 2026.9.12 while GitHub Release is absent. Reusing this canonical recurring lineage, preserving the immutable version, and rerunning the failed exact-tag job to finish verified distribution. No new automatic version or tag is authorized or needed."
   "2026-09-12T08:39:38.710Z","harness:codex","Recovery verified live: exact-tag Release run 34681372798 attempt 2 succeeded; npm latest equals 2026.9.12; GitHub Release v2026.9.12 was published at 08:32:58 UTC. GH-1239 closed with canonical PM link. The original scheduled attempt remains historically failed. Existing immutable version preserved; standing release-health reminder remains open and unclaimed."
   "2026-09-12T20:05:06.266Z","harness:claude-code","Root cause of the 2026-09-11 and 2026-09-12 scheduled failures, recorded after live verification: both Release runs published correctly and then failed attempt 1 at \"Verify published package on npm, npx, and bunx\" because the verifier polled npm view 20 times 15 seconds apart (about five minutes) while the registry made the version visible 8m14s and 6m10s after publish (npm time stamps 2026-09-11T08:21:16Z and 2026-09-12T08:11:04Z against publish steps ending 08:13:02Z and 08:04:54Z). Owner pm-wzmbvn: default raised to 60 polls (about fifteen minutes), verify step timeout 8 to 20 minutes, release job timeout 45 to 60 minutes with the auto-release budget still 30 minutes larger, contract spec and a default-attempts unit spec updated. Expectation for the next scheduled cut: attempt 1 passes unless the lag exceeds fifteen minutes; the stage series on pm-e70zh5 now spans twenty runs. Note that this session's changes land by direct push, so the next scheduled run may refuse at the analyzer-provenance stage (pm-2ksptv) until a pull-request-borne commit lands on top; that refusal is a different stage from the one fixed here.\n"
-notes[9]{created_at,author,text}:
+notes[10]{created_at,author,text}:
   "2026-07-02T06:41:55.766Z",claude-code-agent,"2026-07-02: Auto Release run 28569991109 success; tag v2026.7.2 created and npm dist-tags.latest=2026.7.2 verified live via npm view. Release-commit CI/Release/CodeQL/Docs all green. Release health verified."
   "2026-07-04T06:16:41.031Z",maintainer-agent,"2026-07-04: Release v2026.7.4 verified — Release workflow 28697208639 succeeded, npm @unbrained/pm-cli@2026.7.4 live, GH release published 06:16Z (not draft). Auto-release healthy."
   "2026-07-04T06:52:55.930Z",maintainer-agent,"2026-07-04 verified: v2026.7.4 tagged and npm latest advanced (published 06:15:46Z). Auto-release healthy."
@@ -263,6 +269,7 @@ notes[9]{created_at,author,text}:
   "2026-07-06T07:51:41.740Z",maintainer-agent,"2026-07-06 audit #7 verification: npm latest = 2026.7.6 (published 2026-07-06T07:10Z); scheduled Auto Release run 28773444589 succeeded in 18m41s. Yesterday's scheduled run 28731921751 failed after 1m07s but the blocker-resolution retry path (PR #451) + manual dispatch 28746204455 published 2026.7.5 same day. Release pipeline healthy."
   "2026-07-30T09:21:47.402Z","harness:claude-code","Release procedure verified live 2026-07-30. Exactly one auto-release cut today: push-triggered run 30516964641 at 05:33Z, conclusion success. npm dist-tag latest = 2026.7.30; published versions end 2026.7.26, 2026.7.27, 2026.7.28, 2026.7.29, 2026.7.30 - one artifact per day, no same-day double. Git tag v2026.7.30 present.\n\nPublished-artifact acceptance, both package managers, against the real registry copy rather than a local build: npx -y @unbrained/pm-cli@2026.7.30 runs --version, init, create and list end to end; bunx @unbrained/pm-cli@2026.7.30 does the same under bun 1.3.11. Both created a real item and listed it back."
   "2026-09-08T06:09:32.857Z","harness:codex","Live release verification 2026-09-08: scheduled Auto Release run 34095818006 succeeded for the 2026.9.7 publication. The exact published verification and installed-consumer scripts passed using isolated external scratch storage after a host temporary-filesystem inode exhaustion was diagnosed. npm metadata, GitHub release, npx and bunx paths, all four executables, protocol 2026-07-28 stdio/HTTP with Skills/Apps, negative controls, and fresh npm/Bun installed SDK+agent journeys were checked. This evidence is for the published 2026.9.7 artifact; it does not publish or certify the uncommitted Sep 8 additions. Daily cron is 02:35 UTC and the workflow serializes release attempts; exact-tag recovery and no-change/tracker-only guards prevent a second automatic version on an existing UTC release day. The rolling reliability and schedule-delay concerns retain their own owners and are not resolved by this successful artifact check."
+  "2026-09-28T05:51:30.932Z","harness:codex","{\"text\": \"Release verification 2026-09-28: npm latest and GitHub latest are v2026.9.28. Auto run 36375818142 failed after child Release run 36377133727 failed Windows npm-global install acceptance. Recovery Release run 36380136948 succeeded for npm, npm-global and bun on Linux, macOS and Windows and advertised the existing artifact. No second version was created. Preserve the failed automatic attempt in reliability denominators. The new installer-diagnostics owner is pm-q7c36n; the observed log is insufficient to call the original cause registry propagation.\"}"
 learnings[2]{created_at,author,text}:
   "2026-07-26T13:11:41.088Z","harness:codex","Credential fallback must follow the gate's access obligation, not only its strictness mode: a configured but stale environment token is stronger evidence that Sentry access is expected, so best-effort should try the authenticated CLI before failing the release while tokenless best-effort may remain optional."
   "2026-07-26T15:52:22.655Z","harness:codex","A hidden npm package version can return 404 to both anonymous and authenticated metadata reads while the immutable publish endpoint still knows the version exists. Same-tag recovery must use the access mutation as the existence-sensitive operation, permit publish only on a definitive package-not-found response, and fail closed for every credential or registry error."

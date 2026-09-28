@@ -6,10 +6,10 @@ status: open
 priority: 1
 tags[7]: "area:governance","area:sdk",assurance,configurability,enforcement,measurement-ratchet,universal
 created_at: "2026-08-10T20:55:05.456Z"
-updated_at: "2026-09-12T20:13:26.234Z"
+updated_at: "2026-09-28T06:06:30.125Z"
 author: "harness:claude-code"
 estimated_minutes: 2400
-acceptance_criteria: "The full assurance model is declarable as workspace data through pm commands, with no repository code required to add, retune, scope, or retire a bound; The SDK exposes the primitives so the CLI, MCP, and any embedding host evaluate identical semantics, and the CLI adds no assurance logic of its own; This repository dogfoods the result: every bespoke gate script is either retired onto the primitives or carries a recorded disposition explaining why it cannot be; A gate's identity is a declared id in the registry, never a workflow step title, and the inventory is derived from the registry rather than from prose pattern-matching; Presets make the model usable on a new project in one command for at least software-delivery, research, agent-environment, and operations shapes"
+acceptance_criteria: "The full assurance model is declarable as workspace data through pm commands, with no repository code required to add, retune, scope, or retire a bound; The SDK exposes the primitives so the CLI, MCP, and any embedding host evaluate identical semantics, and the CLI adds no assurance logic of its own; This repository dogfoods the result: every bespoke gate script is either retired onto the primitives or carries a recorded disposition explaining why it cannot be; A gate's identity is a declared id in the registry, never a workflow step title, and the inventory is derived from the registry rather than from prose pattern-matching; Presets make the model usable on a new project in one command for at least software-delivery, research, agent-environment, and operations shapes; Repository active-readiness assertions fail on missing required planning evidence and pass after a source-grounded repair using one local/hosted declaration"
 parent: pm-33cw
 risk: medium
 confidence: 80
@@ -25,7 +25,28 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-o0sqz5,implements,"2026-08-10T20:55:05.456Z","harness:claude-code","cli:create:dep",detected
   pm-t4d7nz,implements,"2026-08-10T20:55:05.456Z","harness:claude-code","cli:create:dep",detected
   pm-usfg,implements,"2026-08-10T20:55:05.456Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-10T20:58:39.520Z","harness:claude-code","Measured surface at filing time (2026-08-10): 55 .mjs files under scripts/ totalling 16,184 lines; 16 files match *gate*.mjs totalling 6,500 lines; 20 scripts invoke the pm CLI as a subprocess to recompute properties over .agents/pm. scripts/release/tracker-measurement-gate.mjs alone is 929 lines and holds 30 declarations across 5 hard-coded selector sources (dependency_kind, validate_warning, graph_profile, graph_finding, health_check) — none of which can address any population the graph ANALYTICS compute, so redundancy_count, articulation_count, bridge_count and community_count are computable and unbounded. A prototype adding a sixth source was written and reverted during this session precisely because the capability belongs in the SDK, not in a script: the same 80 lines of selector plumbing would have to be rewritten by every project that adopts pm."
   "2026-09-12T20:13:26.234Z","harness:claude-code","Measurement design input 2026-09-12: the pm-user skill mandates a create-time duplicate-check comment that names the nearest existing owners, and the prose-edge-gaps measurement counts every id in that comment as a gap, so six correctly filed items raised the observed count by 24 against a ceiling with zero headroom. The exemption list is the only relief and it is per holder, so each new item needs an exemption row that says the same thing. A declared convention (a comment prefix or a comment kind such as duplicate_check) that the prose scanner treats as inventory rather than assertion would remove the per-item ceremony; until then, new items are exempted and the ceiling is tightened to the observed value after each pass."
+  "2026-09-28T06:02:25.860Z","harness:codex","2026-09-28 readiness verification: six native active-only missing-field measurements/assertions are composed into the existing local/hosted tracker-context-quality gate. In an isolated /var/tmp workspace with separate project and global trackers, an incomplete Task blocked on all six assertions and passed all six after filling its explicit planning fields. Existing SDK assurance suite passed 8 tests. No terminal metadata requirement, numeric graph threshold or coverage denominator was weakened."
+notes[1]{created_at,author,text}:
+  "2026-09-28T05:51:55.364Z","harness:codex","{\"text\": \"Project adoption 2026-09-28: add six zero-debt active-readiness assertions to the existing tracker-context-quality gate for description, acceptance criteria, risk, confidence, estimate and expected result. This catches the observed newly filed Sentry migration omission locally and in hosted CI using the same native SDK assurance engine. Historical terminal fields remain outside this active-only gate and retain their known evidence-recovery owners. Prove the gate with a temporary missing-field item and the same item after repair, without changing production data for a negative control.\"}"
+files[1]{path,scope}:
+  .agents/pm/assurance.json,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts,project,240,"harness:codex","2026-09-28T06:01:38.113Z",local_mutation,planning/ecosystem-2026-09-28
+test_runs[1]:
+  - run_id: test-local-mukufcc9-4594fn
+    kind: test
+    status: passed
+    started_at: "2026-09-28T06:04:52.052Z"
+    finished_at: "2026-09-28T06:05:08.025Z"
+    recorded_at: "2026-09-28T06:05:08.025Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/ECOSYSTEM_PLANNING_REVIEW.md,project
 body: ""

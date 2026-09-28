@@ -14,9 +14,13 @@ pm context --limit 10 --for orient
 pm search "<request keywords>" --limit 10   # hybrid when semantic search is configured, keyword otherwise
 pm list --status open --limit 20
 pm list --status in_progress --limit 20
-pm list --all --no-truncate --full --include-body --strict-read --json
+pm list --all --no-truncate --full --include-body --strict-read --json --output-budget unbounded > items.json
 pm events --full --limit 1000
 ```
+
+The complete snapshot command is for an explicitly authorized exhaustive review.
+Keep its output outside the prompt and use a bounded streaming consumer for
+million-item workspaces; an unbounded collection is not a normal agent loop.
 
 Stream large results to an analysis consumer instead of loading them into the
 agent's context. Certify the list's total, completeness, truncation, and omission
@@ -26,10 +30,10 @@ false. Record the snapshot cutoff: a concurrent workspace can change during a
 read, and new events belong to a subsequent delta. Event collection is not an
 independent hash-chain verification.
 
-Read `pm get <ID> --full --json` and the item's history before changing its
+Read `pm get <ID> --full --json --output-budget unbounded` and the item's history before changing its
 meaning or making a status claim. A closed implementation remains completed
 when its encompassing outcome still has work left. Read the full contract only
-when enumerating the surface: `pm contracts --full --json`; its default summary
+when enumerating the surface: `pm contracts --full --json --output-budget unbounded`; its default summary
 does not contain the complete flag, action, SDK, and MCP catalog.
 
 ## Inspect Meaning and Coverage
@@ -93,3 +97,14 @@ timestamp; a closed substrate does not prove its proposed extensions shipped.
 After terminal metadata changes, regenerate and check the package-owned
 changelog, preserving historical release attribution. Release claims when the
 batch ends; keep unfinished programmes open with exact residual scope.
+
+## Interpret verification precisely
+
+A configured embedding model and a successful reindex prove availability, not
+retrieval quality. Run keyword, semantic and hybrid judgments independently and
+inspect each query beside aggregate scores. At cutoff k, a query with more than
+k relevant records cannot attain recall 1. Record feasible per-query floors.
+
+A recovered release does not erase the failed automatic attempt. Preserve the
+original run, same-version recovery, registry identity and each installed-consumer
+verdict separately. Historical fields without recoverable evidence stay unknown.
