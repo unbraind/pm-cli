@@ -11,8 +11,36 @@ import { PmClient, runAction } from "../../../../src/sdk/runtime.js";
 import type { PlanMutationReceipt } from "../../../../src/sdk/index.js";
 import { quoteCommandArg } from "../../../../src/sdk/command-line.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
+import { handleRequest } from "../../../../src/mcp/server.js";
 
 describe("durable evidence and bounded Plan mutation receipts", () => {
+  it.each([false, true])("keeps MCP recovery path-neutral with fullChangedFields=%s", async (fullChangedFields) => {
+    await withTempPmPath(async (context) => {
+      const response = await handleRequest({
+        jsonrpc: "2.0", id: 1, method: "tools/call",
+        params: { name: fullChangedFields ? "pm_run" : "pm_plan", arguments: {
+          path: context.pmPath,
+          ...(fullChangedFields ? { action: "plan", fullChangedFields: true } : {}),
+          options: { subcommand: "create", title: "Remote recovery", step: ["Inspect evidence"] },
+        } },
+      });
+      expect(response?.isError).not.toBe(true);
+      const result = (response?.structuredContent as { result: PlanMutationReceipt & { mutation_receipt?: PlanMutationReceipt } }).result;
+      const receipt = fullChangedFields ? result.mutation_receipt! : result;
+      expect(receipt.inspection_command).toBe(`pm plan show ${receipt.id} --depth deep`);
+      expect(receipt.omission_receipt.omitted_field_groups[0].restore_with).toBe(receipt.inspection_command);
+      expect(JSON.stringify(receipt)).not.toContain(context.pmPath);
+      expect(receipt.next_action).not.toContain("--pm-path");
+      const shown = await handleRequest({
+        jsonrpc: "2.0", id: 2, method: "tools/call",
+        params: { name: "pm_plan", arguments: {
+          path: context.pmPath, id: receipt.id,
+          options: { subcommand: "show", depth: "deep" },
+        } },
+      });
+      expect(shown?.structuredContent).toMatchObject({ result: { plan: { id: receipt.id, steps: [{ title: "Inspect evidence" }] } } });
+    });
+  });
   it("qualifies recovery with a non-default tracker containing shell-significant characters", async () => {
     await withTempPmPath(async (context) => {
       const pmRoot = path.join(context.tempRoot, "tracker space $literal");

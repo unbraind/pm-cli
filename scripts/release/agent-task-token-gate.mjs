@@ -210,6 +210,7 @@ function validateSelfReportedAccounting(accountedPayload, step) {
   return { receipt, independentlyProjectedPayload };
 }
 
+/** Reject accounting-induced payload drift after predicting only declared transport and fixture-root changes. */
 function assertTransportPayloadParity(baselinePayload, measuredPayload, step, trackerRoots) {
   validateExpectedOutput(baselinePayload, step);
   validateExpectedOutput(measuredPayload, step);
@@ -368,6 +369,7 @@ export function assertAdvertisedAgentTaskRecovery(refusal, step) {
   }
 }
 
+/** Replay one complete journey in independent trackers and sum actual emitted bytes including retries. */
 function measureTask(baselineRoot, accountedRoot, task) {
   const measuredSteps = [];
   const payloads = new Map();

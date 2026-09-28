@@ -982,7 +982,9 @@ describe("agent-task transcript token gate", () => {
   });
 
   it("translates only declared Plan replay roots and rejects changed commands or payloads", () => {
+    /** Match the CLI JSON serializer used for independent emitted-byte accounting. */
     const render = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
+    /** Build identical recovery facts for two independently rooted replay fixtures. */
     const payload = (root: string) => ({
       kind: "plan_mutation",
       id: "pm-plan",
@@ -1001,6 +1003,7 @@ describe("agent-task transcript token gate", () => {
     };
     const roots = { baseline: "/tmp/baseline", accounted: "/tmp/accounted" };
     const baselineTransport = { status: 0, stdout: render(baseline), stderr: "" };
+    /** Attach real accounting to each candidate payload before testing parity rejection. */
     const transport = (value: unknown) => ({ status: 0, stdout: render(attachOutputTokenAccounting(value, render)), stderr: "" });
     expect(validateAgentTaskTokenInvocation(baselineTransport, transport(accounted), step, roots)).toMatchObject({ payload: accounted });
     for (const drift of [

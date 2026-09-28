@@ -1731,6 +1731,7 @@ async function planRemoveStep(
     ctx,
     op: "plan_remove_step",
     message: options.message ?? `plan remove-step ${stepRef}`,
+    /** Remove the resolved step while preserving contiguous persisted ordering. */
     mutator(steps) {
       const step = resolveStepRef(steps, stepRef);
       const remaining = steps.filter((entry) => entry.id !== step.id);

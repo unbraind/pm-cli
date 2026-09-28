@@ -68,6 +68,7 @@ import {
   runPlan
 } from "../lifecycle/plan.js";
 import { runRestore } from "../lifecycle/restore.js";
+import { buildPlanMutationReceipt } from "../lifecycle/plan-mutation-receipt.js";
 import { runUpdateMany } from "../lifecycle/update-many.js";
 import { runUpdate } from "../lifecycle/update.js";
 import { runNotes } from "../notes.js";
@@ -106,6 +107,7 @@ import {
 import {
   closeManyOptionsFromFlat,
   graphOptionsFromFlat,
+  isMcpMutationTransportInput,
   parseRuntimeInteger as parseMcpInteger,
   readRuntimeString as readString,
   readRuntimeStringArray as readStringArray,
@@ -416,6 +418,9 @@ async function runMcpPlanAction(ctx: McpActionDispatchContext): Promise<unknown>
     options: ctx.options as never,
     global: ctx.global,
   });
+  if (subcommand !== "show" && isMcpMutationTransportInput(ctx.args)) {
+    result.mutation_receipt = buildPlanMutationReceipt(result, undefined);
+  }
   return subcommand === "show" ? result : projectMutationResult(result, {
     changedFields,
     idOnly,

@@ -130,8 +130,11 @@ command. They omit bodies, resume context, and unrelated steps, so a single-step
 update does not grow with the Plan. `pm plan show <id> --depth deep` retrieves
 the complete current Plan without repeating a mutation. The omission receipt
 explicitly distinguishes this acknowledgement from a full read.
-Recovery commands include the resolved `--pm-path`, safely quoted, so they
-inspect the same tracker even when the caller selected a non-default root.
+Local CLI/SDK recovery commands include the resolved `--pm-path`, safely quoted,
+so they inspect the same tracker even with a non-default root. MCP receipts
+omit the server-resolved filesystem root in both compact and full output.
+For MCP recovery, call `pm_plan` with `subcommand: "show"`, `depth: "deep"`,
+the receipt ID, and the original request's workspace selection (`path` or `cwd`).
 
 SDK `runPlan` retains its full typed result and adds `mutation_receipt` for
 consumers that need a compact acknowledgement. Existing full transport output

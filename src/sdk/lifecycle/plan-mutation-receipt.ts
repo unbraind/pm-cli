@@ -53,10 +53,10 @@ export interface PlanMutationReceipt {
   };
 }
 
-/** Project a completed SDK operation without echoing bodies, logs or unrelated steps. */
+/** Project completed work; omit the root for MCP recovery in the caller's existing workspace context. */
 export function buildPlanMutationReceipt(
   result: PlanCommandResult,
-  pmRoot: string,
+  pmRoot: string | undefined,
 ): PlanMutationReceipt {
   const inspectionCommand = renderPmCommand([
     "plan",
@@ -64,8 +64,7 @@ export function buildPlanMutationReceipt(
     result.plan.id,
     "--depth",
     "deep",
-    "--pm-path",
-    pmRoot,
+    ...(pmRoot === undefined ? [] : ["--pm-path", pmRoot]),
   ]);
   return {
     kind: "plan_mutation",
@@ -95,7 +94,9 @@ export function buildPlanMutationReceipt(
     next_action:
       result.next_actions?.[0] === undefined
         ? inspectionCommand
-        : `${result.next_actions[0]} --pm-path ${quoteCommandArg(pmRoot)}`,
+        : pmRoot === undefined
+          ? result.next_actions[0]
+          : `${result.next_actions[0]} --pm-path ${quoteCommandArg(pmRoot)}`,
     inspection_command: inspectionCommand,
     omission_receipt: {
       has_omissions: true,
