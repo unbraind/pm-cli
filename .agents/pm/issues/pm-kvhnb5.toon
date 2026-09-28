@@ -2,13 +2,13 @@ id: pm-kvhnb5
 title: "GH-1326: Windows nightly bundled-package init test exceeds 30 seconds"
 description: "GitHub issue #1326 records Nightly Validation run 36310799887 at main 2b14d2fdee9d65dd1699d79e617ab53a0ae91dc7. Windows Node 24 shard 1/2 failed two assertions in tests/unit/commands/workspace/init-command.spec.ts because the bundled first-party package initialization test timed out at 30000 ms. This is separate from shard 2 static inventory assertion. Source: https://github.com/unbraind/pm-cli/issues/1326"
 type: Issue
-status: closed
+status: in_progress
 priority: 1
 tags[7]: "area:packages",ci,defect,github,nightly,node24,windows
 created_at: "2026-09-27T12:26:27.673Z"
-updated_at: "2026-09-27T23:32:59.441Z"
-closed_at: "2026-09-27T23:32:47.146Z"
-completed_at: "2026-09-27T23:32:47.146Z"
+updated_at: "2026-09-28T01:30:39.950Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#e953e6452c14bdf5bc2ec1d7"
 author: "harness:codex"
 acceptance_criteria: Inspect the two timeout cases from run 36310799887; reproduce on hosted Windows Node 24; fix the underlying package or test budget with negative control; rerun full nightly matrix and exact coverage
 goal: project management = context management
@@ -20,9 +20,6 @@ parent: pm-ul9rye
 risk: high
 severity: high
 repro_steps: "Inspect Nightly run 36310799887 shard 1/2: both bundled first-party init assertions time out at 30000 ms in init-command.spec.ts."
-resolution: The first-party all-package install test retains its full assertions with a 90-second contention-aware limit.
-expected_result: Hosted Windows runs can complete the real install without a false 30-second timeout.
-actual_result: "Linked init suite, packed consumer smoke, and exact coverage passed locally; required Windows PR result awaits review."
 affected_version: 2026.9.27
 component: Windows nightly bundled package initialization
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
@@ -53,7 +50,6 @@ test_runs[1]:
       node scripts/run-tests.mjs test -- tests/unit/commands/workspace/init-command.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,generated closed-item release history
-close_reason: Budgeted the real bundled package init assertion for Windows
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened

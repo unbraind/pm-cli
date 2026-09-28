@@ -336,7 +336,7 @@ const READ_RESULT_SENTINEL_KEYS: Readonly<Record<string, readonly string[]>> = {
     "provenance_activity",
     "activity",
   ],
-  history: ["compact_history", "provenance_history", "history"],
+  history: ["compact_history", "provenance_history", "history", "diff"],
   deps: ["tree", "graph", "projection"],
   health: ["checks"],
   aggregate: ["groups"],

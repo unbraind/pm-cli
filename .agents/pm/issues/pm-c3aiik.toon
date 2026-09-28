@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:history","area:output",defect,github
 created_at: "2026-09-27T12:26:03.741Z"
-updated_at: "2026-09-28T00:38:21.290Z"
-closed_at: "2026-09-28T00:38:20.566Z"
-completed_at: "2026-09-28T00:38:20.566Z"
+updated_at: "2026-09-28T01:30:28.490Z"
+closed_at: "2026-09-28T01:30:27.746Z"
+completed_at: "2026-09-28T01:30:27.746Z"
 author: "harness:codex"
 acceptance_criteria: Reproduce with disposable 20-entry history and real tracker example; advance or independently continue all truncated diff rows; never emit has_more without a cursor; verify all rows and snapshot contracts with exact coverage
 goal: project management = context management
@@ -20,18 +20,19 @@ parent: pm-5t33or
 risk: high
 severity: high
 repro_steps: Page pm history <id> --diff --format json with default budget using --output-cursor; diff repeats earlier indices and the final page has has_more without next_cursor.
-resolution: History preserves explicit output-limit has_more when string-only budget compaction has no cursor while diff cursor pages still terminate truthfully.
-expected_result: "Limited history retains truthful continuation state, and independent diff pagination remains complete."
-actual_result: Focused 4-test suite and full static gate passed; prior full coverage was 100/100/100/100; final-head hosted coverage pending after unrelated local suite-load timeouts passed in isolation.
+resolution: "Diff-only results declare their row contract; exact diff strings survive budget compaction while other history text shortens, and explicit output-limit has_more remains truthful."
+expected_result: Every history diff row remains discoverable and exact without forcing unrelated history strings beyond the output budget.
+actual_result: "Six focused tests, typecheck, docs links, direct static quality, and full 9383-test 100/100/100/100 coverage passed; hosted final-head gates pending, local transport timing check was host-sensitive."
 affected_version: 2026.9.27
 component: history output budgets and continuation
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-tqel,discovered_from,"2026-09-27T12:26:03.741Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-09-27T12:26:03.741Z","harness:codex","Duplicate check: all-status GH-1325 and cursor-diff searches found the general output-budget feature pm-5t33or and closed history grammar work pm-tqel; neither owns this specific paired-diff continuation failure."
   "2026-09-27T23:32:22.717Z","harness:codex","Verification: linked diff continuation suite 3/3 passed and recorded test history. Manual isolated tracker replay covered more than 20 history events, independent diff cursors, exact row reconstruction, final-page termination, and explicit larger-budget recovery for an oversized individual diff. Full coverage passed 9380 tests at 100/100/100/100. Hosted review remains pending."
   "2026-09-27T23:57:41.258Z","harness:codex","PR #1332 review recurrence: Greptile P1 identified that history string-only budget compaction overwrote explicit output-limit has_more when no budget cursor existed. Preserved the explicit applied_bound signal and added a regression requiring strings_compacted=true, rows_compacted=false, no next_cursor, has_more=true. Linked four-test suite passed; full coverage pending."
   "2026-09-28T00:38:10.409Z","harness:codex","Review verification: focused history continuation suite 4/4 passed after the complexity-safe expression. Full static quality pipeline passed, including repository assurance, 100% docstring coverage, zero jscpd clones, and mutation gate. A full coverage run before the expression-only simplification passed 9381 tests at 100/100/100/100; final rerun hit two unrelated 30-second suite-load timeouts, and both timed-out tests passed in isolation. Hosted coverage shards will give the exact final-head result."
+  "2026-09-28T01:30:14.076Z","harness:codex","PR #1332 second review: added diff-only history sentinel so row_contract exposes diff, and narrowed lossless string preservation to the diff collection while other history strings still compact. Focused 6-test continuation suite, typecheck, docs links, direct static-quality/docstring gate, and full 9383-test exact 100/100/100/100 coverage passed. Full static pipeline reached transport-floor check, which failed on host-sensitive latency (next 757>440 ms, create 651>398 ms, claim 598>415 ms); no threshold changed, hosted static pending."
 notes[1]{created_at,author,text}:
   "2026-09-27T21:41:17.451Z","harness:codex",Temporary tracker with 20+ history entries showed compact_history and diff need independent cursors. Following a diff cursor now projects only diff and its own count. Oversized single rows require a larger output budget rather than silently shortened values.
 learnings[1]{created_at,author,text}:
@@ -44,7 +45,7 @@ files[5]{path,scope,note}:
   tests/unit/sdk/query/history-diff-continuation.spec.ts,project,page every diff row
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/query/history-diff-continuation.spec.ts,project,240,"harness:codex","2026-09-27T21:28:34.483Z",local_mutation,fix/agent-receipts-history-windows-nightly
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mukfeyvz-fcsy97
     kind: test
     status: passed
@@ -67,10 +68,21 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/query/history-diff-continuation.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mukjsgth-z0vjv7
+    kind: test
+    status: passed
+    started_at: "2026-09-28T01:07:17.183Z"
+    finished_at: "2026-09-28T01:07:24.581Z"
+    recorded_at: "2026-09-28T01:07:24.581Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/query/history-diff-continuation.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,generated closed-item release history
   docs/AGENT_READ_AND_TEST_RECEIPTS.md,project,history diff cursor guidance
-close_reason: Preserved history output-limit pagination state during budget compaction
+close_reason: Completed diff-only history contracts and selective budget compaction
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

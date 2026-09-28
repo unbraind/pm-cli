@@ -3,6 +3,37 @@ import { attachOutputOmissionReceipt } from "../../../../src/sdk/output-projecti
 import { applyReadOutputDimensions } from "../../../../src/sdk/read-output-contracts.js";
 
 describe("history diff output continuation", () => {
+  it("declares the diff row contract when no other history collection is present", () => {
+    const result = attachOutputOmissionReceipt("history", {
+      id: "pm-example",
+      diff: [{ index: 1, changes: [] }],
+    }) as Record<string, unknown>;
+    expect(result.row_contract).toMatchObject({
+      command: "history",
+      row_kind: "collection",
+      row_keys: ["diff"],
+    });
+  });
+
+  it("compacts non-diff history strings while preserving exact diff values", () => {
+    const detail = "history detail ".repeat(150);
+    const exactDiff = "diff value ".repeat(150);
+    for (const [diff, budget] of [
+      [[], 450],
+      [[{ index: 1, changes: [{ field: "status", before: exactDiff, after: "closed" }] }], 750],
+    ] as const) {
+      const page = applyReadOutputDimensions(
+        "history",
+        { outputBudget: budget, resolvedOutputFormat: "json" },
+        { id: "pm-example", history: [{ index: 1, detail }], diff, count: 1 },
+      );
+      expect(page).not.toHaveProperty("output_budget_exceeded");
+      expect(page.read_output).toMatchObject({ strings_compacted: true });
+      expect((page.history as Array<{ detail: string }>)[0]?.detail).toHaveLength(241);
+      expect(page.diff).toEqual(diff);
+    }
+  });
+
   it("preserves explicit output-limit has_more after string-only budget compaction", () => {
     const result = {
       id: "pm-example",

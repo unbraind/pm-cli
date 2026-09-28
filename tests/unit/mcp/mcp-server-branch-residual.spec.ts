@@ -962,6 +962,11 @@ describe("mcp server branch residual coverage", () => {
       await expect(poll(taskId, "completed")).resolves.toMatchObject({
         result: { resultType: "complete" },
       });
+      // Durable status can precede the detached executor's final cleanup.
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      await expect(poll(taskId, "completed")).resolves.toMatchObject({
+        result: { resultType: "complete" },
+      });
 
       commandMocks.runValidate.mockRejectedValueOnce(
         server._testOnly.createMcpProtocolError(

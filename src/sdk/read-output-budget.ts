@@ -161,7 +161,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-/** Recursively shorten explanatory strings and record whether content changed. */
+/** Recursively shorten explanatory strings while preserving the selected row collection. */
 function compactStrings(value: unknown, state: StringCompactionState, preserveStrings = false): unknown {
   if (typeof value === "string") {
     if (preserveStrings || value.length <= 240) return value;
@@ -297,7 +297,12 @@ export function compactReadOutputToBudget(
   preserveStrings = false,
 ): Record<string, unknown> {
   const stringCompactionState: StringCompactionState = { compacted: false };
-  const compacted = compactStrings(result, stringCompactionState, preserveStrings) as Record<string, unknown>;
+  const compacted = Object.fromEntries(
+    Object.entries(result).map(([key, value]) => [
+      key,
+      compactStrings(value, stringCompactionState, preserveStrings && key === "diff"),
+    ]),
+  );
   preserveReadOutputRowContract(result, compacted);
   receipt.strings_compacted = stringCompactionState.compacted;
   compacted.read_output = receipt;
