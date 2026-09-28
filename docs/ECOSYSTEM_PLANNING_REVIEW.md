@@ -261,3 +261,10 @@ paragraphs, including their historical source-event coordinates. In an isolated
 temporary tracker the original citations pass, while a later batch comment
 asserting an unrecorded prerequisite is blocked with one detected gap. This
 prevents the common phrase “Historical batch” from exempting future claims.
+
+Annotation review corrected 26 notes and five comments that contained literal
+JSON wrappers around prose. Supported note/comment edits retain the exact inner
+text and append correction events. Per-item rereads confirm lifecycle, closure,
+release, expected and actual fields are unchanged; original annotations remain
+in the history streams. Planning guidance now distinguishes plain-text input
+from intentional JSON events.

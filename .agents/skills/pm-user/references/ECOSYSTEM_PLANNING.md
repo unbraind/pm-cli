@@ -98,6 +98,14 @@ After terminal metadata changes, regenerate and check the package-owned
 changelog, preserving historical release attribution. Release claims when the
 batch ends; keep unfinished programmes open with exact residual scope.
 
+## Keep annotation inputs plain
+
+Use `pm notes <ID> --add "prose"` and `pm comments <ID> --add "prose"`
+for text. Do not JSON-encode a `{ "text": "..." }` object into these plain-text
+arguments: it becomes a literal wrapper in the stored annotation. Use
+`pm notes <ID> --add-json` only for an intentional JSON event. Correct a wrapped
+annotation with `--edit <index> --add "prose"` so history records the correction.
+
 ## Interpret verification precisely
 
 A configured embedding model and a successful reindex prove availability, not
