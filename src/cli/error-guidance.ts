@@ -17,7 +17,10 @@ import {
 import { renderPmCommand } from "./argv-utils.js";
 import { discoverNearbyPmRoot } from "../sdk/tracker-root-discovery.js";
 import { stripGlobalBootstrapTokens } from "../sdk/cli-bootstrap.js";
-import { findPmNamespacedCommand, resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
+import {
+  findPmNamespacedCommand,
+  resolvePmCommandAlias,
+} from "../sdk/cli-contracts/command-aliases.js";
 
 interface GuidanceMessage {
   policyViolations?: PmCliErrorContext["policy_violations"];
@@ -659,9 +662,7 @@ function resolveRefusalCandidateFlag(
     const canonicalFlag = flag.split("=", 1)[0];
     return (
       stripGlobalBootstrapTokens([canonicalFlag]).length > 0 &&
-      !["--help", "--no-changed-fields", "--version"].includes(
-        canonicalFlag,
-      ) &&
+      !["--help", "--no-changed-fields", "--version"].includes(canonicalFlag) &&
       normalizedArgs.some(
         (argument) =>
           argument === canonicalFlag ||
@@ -697,9 +698,7 @@ function resolveRefusalRejectedValue(
       return candidateArgument.slice(candidateFlag.length + 1);
     }
     const candidateIndex = normalizedArgs.indexOf(candidateFlag);
-    return candidateIndex >= 0
-      ? normalizedArgs[candidateIndex + 1]
-      : undefined;
+    return candidateIndex >= 0 ? normalizedArgs[candidateIndex + 1] : undefined;
   }
   const allowedValues = message.recovery?.allowed_values;
   if (!allowedValues?.length) return undefined;
@@ -721,14 +720,23 @@ function buildRefusalEnvelope(
       surface: `policy:${message.policyViolations.map((policy) => policy.policy_id).join(",")}`,
       policies: message.policyViolations,
       policy_violation_count: message.policyViolationCount,
-      missing_fields: [...new Set(message.policyViolations.flatMap((policy) => policy.missing_fields))],
+      missing_fields: [
+        ...new Set(
+          message.policyViolations.flatMap((policy) => policy.missing_fields),
+        ),
+      ],
       exit_code: exitCode,
     };
   }
-  const invocationArgs = stripGlobalBootstrapTokens(message.recovery?.normalized_args ?? []);
+  const invocationArgs = stripGlobalBootstrapTokens(
+    message.recovery?.normalized_args ?? [],
+  );
   const namespaced = findPmNamespacedCommand(invocationArgs);
   const normalizedArgs = namespaced
-    ? [namespaced.alias, ...invocationArgs.slice(namespaced.canonical_argv.length)]
+    ? [
+        namespaced.alias,
+        ...invocationArgs.slice(namespaced.canonical_argv.length),
+      ]
     : invocationArgs;
   const candidateFlag = resolveRefusalCandidateFlag(message, normalizedArgs);
   const rejectedValue = resolveRefusalRejectedValue(
@@ -1591,6 +1599,13 @@ function resolveUnknownOptionRetry(
   context: CommanderGuidanceContext,
   optionName: string,
 ): { retryCommand?: string; suggestedRetryArgs?: string[] } {
+  if (
+    ["--dry-run", "--check", "--check-only", "--plan", "--preview"].includes(
+      optionName,
+    )
+  ) {
+    return {};
+  }
   if (context.suggestedRetryCommand !== undefined) {
     return { retryCommand: context.suggestedRetryCommand };
   }
@@ -1663,9 +1678,18 @@ function buildUnknownOptionGuidance(
     candidateContext,
     retryCommand,
   );
+  if (
+    ["--dry-run", "--check", "--check-only", "--plan", "--preview"].includes(
+      optionName,
+    )
+  ) {
+    nextSteps.push(
+      "The requested preview is unavailable on this path. Inspect the item with a read-only command or use a command that declares this option; do not replay this mutation without preview intent.",
+    );
+  }
   const examples = [
     retryCommand,
-    `pm ${commandName ? resolvePmCommandAlias(commandName)?.canonical ?? commandName : "<command>"} --help`,
+    `pm ${commandName ? (resolvePmCommandAlias(commandName)?.canonical ?? commandName) : "<command>"} --help`,
   ].filter((entry): entry is string => typeof entry === "string");
   return makeGuidanceMessage({
     code: "unknown_option",

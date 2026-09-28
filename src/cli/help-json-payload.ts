@@ -8,6 +8,7 @@ import {
   hasSubcommandFlagContractsForCommand,
   PM_COMMAND_ALIAS_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
+  resolvePmCommandAlias,
   resolvePmCommandOperation,
 } from "../sdk/cli-contracts.js";
 import {
@@ -497,7 +498,11 @@ function resolveJsonHelpNarrative(
           ? "help_bundle"
           : "root_help_bundle";
   return {
-    narrative: buildJsonHelpNarrative(detailMode, fallback, extensionDescriptor),
+    narrative: buildJsonHelpNarrative(
+      detailMode,
+      fallback,
+      extensionDescriptor,
+    ),
     intentSource,
   };
 }
@@ -540,6 +545,11 @@ function projectFullCommandAliases(
     alias: contract.alias,
     canonical: contract.canonical,
     canonical_argv: [...contract.canonical_argv],
+    available:
+      resolveCommandFromPathTokens(
+        rootProgram,
+        contract.canonical.split(" "),
+      ) !== null,
     lifecycle: contract.lifecycle,
     hidden: contract.hidden,
     deprecated: contract.lifecycle === "deprecated",
@@ -762,7 +772,10 @@ export async function maybeRenderBootstrapJsonHelp(
         },
       );
       const output = bootstrapGlobal.tokenAccounting
-        ? attachOutputTokenAccounting(envelope, (value) => `${JSON.stringify(value, null, 2)}\n`)
+        ? attachOutputTokenAccounting(
+            envelope,
+            (value) => `${JSON.stringify(value, null, 2)}\n`,
+          )
         : envelope;
       writeStderr(`${JSON.stringify(output, null, 2)}\n`);
     }
@@ -777,7 +790,17 @@ export async function maybeRenderBootstrapJsonHelp(
       helpRequest.commandPathTokens,
       extensionDescriptors,
     );
-    payload.requested_path = parseBootstrapHelpRequest(requestedArgv).commandPathTokens;
+    const originalPath = parseBootstrapHelpRequest(requestedArgv).commandPathTokens;
+    payload.requested_path = originalPath;
+    const alias = resolvePmCommandAlias(originalPath.join(" "));
+    if (alias) payload.resolved_path = alias.canonical;
+    if (targetCommand === rootProgram && !isFullHelpDiscovery(argv)) {
+      payload.omission_receipt = {
+        has_omissions: true,
+        omitted_field_group_count: 1,
+        omitted_field_groups: [{ name: "command_aliases", restore_with: "--all" }],
+      };
+    }
     writeStdout(`${JSON.stringify(payload, null, 2)}\n`);
   }
   process.exitCode = EXIT_CODE.SUCCESS;

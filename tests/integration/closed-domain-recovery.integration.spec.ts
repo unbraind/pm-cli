@@ -3,6 +3,44 @@ import { listCoreClosedDomainContracts } from "../../src/sdk/agent/closed-domain
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("closed-domain recovery envelopes", () => {
+  it("never suggests a mutating retry after a rejected preview flag", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(
+        ["create", "task", "Preview safety", "--json"],
+        {
+          expectJson: true,
+        },
+      );
+      expect(created.code).toBe(0);
+      const id = created.json?.item?.id as string;
+      const before = context.runCli(["history", id, "--json", "--full"], {
+        expectJson: true,
+      });
+
+      for (const args of [
+        ["close", id, "Preview reason", "--dry-run"],
+        ["update", id, "--status", "closed", "--dry-run"],
+        ["claim", id, "--dry-run"],
+      ]) {
+        const refused = context.runCli(args);
+        expect(refused.code).toBe(2);
+        expect(refused.stderr).toContain("Unknown option --dry-run");
+        expect(refused.stderr).not.toContain("suggested_retry:");
+        expect(refused.stderr).toMatch(/preview|read-only/i);
+      }
+
+      expect(
+        context.runCli(["history", id, "--json", "--full"], {
+          expectJson: true,
+        }).json,
+      ).toEqual(before.json);
+      expect(
+        context.runCli(["get", id, "--json"], { expectJson: true }).json?.item
+          ?.status,
+      ).toBe("open");
+    });
+  });
+
   it("projects the shared tier and family contract through JSON help", async () => {
     await withTempPmPath(async (context) => {
       const root = context.runCli(["--help", "--json"], { expectJson: true });

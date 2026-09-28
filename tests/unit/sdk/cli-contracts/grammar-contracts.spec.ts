@@ -84,14 +84,25 @@ describe("CLI noun-verb grammar contracts", () => {
         }),
       ]),
     );
-    expect(verifyPmCliGrammar([], [{
-      ...PM_COMMAND_ALIAS_CONTRACTS[0]!,
-      alias: "orphan-alias",
-      canonical: "missing destination",
-      canonical_argv: ["missing", "destination"],
-    }], []).findings).toContainEqual(expect.objectContaining({
-      code: "alias_target_missing", spelling: "orphan-alias",
-    }));
+    expect(
+      verifyPmCliGrammar(
+        [],
+        [
+          {
+            ...PM_COMMAND_ALIAS_CONTRACTS[0]!,
+            alias: "orphan-alias",
+            canonical: "missing destination",
+            canonical_argv: ["missing", "destination"],
+          },
+        ],
+        [],
+      ).findings,
+    ).toContainEqual(
+      expect.objectContaining({
+        code: "alias_target_missing",
+        spelling: "orphan-alias",
+      }),
+    );
   });
 
   it("allows inactive package rows while rejecting undeclared active commands", () => {
@@ -171,8 +182,8 @@ describe("CLI noun-verb grammar contracts", () => {
     );
     expect(resolvePmCommandAlias("unknown")).toBeUndefined();
     expect(resolvePmCommandAlias(" packages scaffold ")).toMatchObject({
-      canonical: "packages init",
-      canonical_argv: ["packages", "init"],
+      canonical: "package init",
+      canonical_argv: ["package", "init"],
       lifecycle: "permanent",
       hidden: false,
       registration: "commander",

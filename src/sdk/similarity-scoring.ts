@@ -7,7 +7,8 @@
 import { jaccardSimilarity } from "../core/shared/text-normalization.js";
 
 export { jaccardSimilarity } from "../core/shared/text-normalization.js";
-const ISSUE_CODE_PATTERN = /\b[a-z][a-z0-9]*-\d+(?:-[a-z0-9]+)*\b/giu;
+const ISSUE_CODE_PATTERN = /\b([a-z][a-z0-9]*)-(\d+)(?:-[a-z0-9]+)*\b/giu;
+const TECHNICAL_NUMBER_PREFIX = /^(?:utf|iso|sha|tls|http|covid)$/iu;
 
 /** Precomputed title signals reused by bounded batch similarity operations. */
 export interface PreparedSimilarityText {
@@ -47,9 +48,22 @@ export function prepareSimilarityText(value: string): PreparedSimilarityText {
     tokens: tokenizeSimilarityText(normalized),
     issueCodes: [
       ...new Set(
-        normalized
-          .match(ISSUE_CODE_PATTERN)
-          ?.map((code) => code.toLowerCase()) ?? [],
+        [...value.matchAll(ISSUE_CODE_PATTERN)]
+          .filter((match) => {
+            const prefix = match[1]!;
+            const number = match[2]!;
+            const position = match.index!;
+            const remainder = value.slice(position + match[0].length);
+            return (
+              !TECHNICAL_NUMBER_PREFIX.test(prefix) &&
+              (prefix === prefix.toUpperCase() ||
+                prefix === prefix.toLowerCase()) &&
+              (number.length > 1 ||
+                prefix.length <= 2 ||
+                (position === 0 && /^\s*(?::|—|–|\])/u.test(remainder)))
+            );
+          })
+          .map((match) => match[0].toLowerCase()),
       ),
     ],
   };

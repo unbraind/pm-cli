@@ -769,6 +769,44 @@
       }
     },
     {
+      "id": "duplicate-identity-evidence",
+      "version": 1,
+      "title": "Duplicate similarity gives technical prose an issue-code identity score",
+      "owner_item_id": "pm-1ieq24",
+      "escape_class": "production_defect",
+      "triggers": {
+        "file_patterns": [
+          "src/sdk/similarity-scoring.ts",
+          "src/core/governance/issue-codes.ts",
+          "tests/integration/duplicates-command.integration.spec.ts"
+        ],
+        "item_ids": [
+          "pm-1ieq24"
+        ]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/integration/duplicates-command.integration.spec.ts tests/unit/sdk/query/similarity-issue-code-evidence.spec.ts"
+        ],
+        "hosted": [
+          "CI / Gates (coverage)"
+        ]
+      },
+      "negative_control": {
+        "item_ids": [
+          "pm-1ieq24"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-blvfye",
+        "pm-sn3xor"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.05
+      }
+    },
+    {
       "id": "presentation-layer-default-re-derivation",
       "version": 1,
       "title": "A shipped SDK default is re-derived as a literal in a presentation layer, so the acceptance criterion of the closed feature stops holding without any test failing",
