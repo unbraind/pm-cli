@@ -6,10 +6,10 @@ status: open
 priority: 2
 tags[6]: ci,context-management,governance,provenance,quality-gate,traceability
 created_at: "2026-07-26T10:00:23.657Z"
-updated_at: "2026-09-08T13:33:03.389Z"
+updated_at: "2026-09-28T07:20:57.578Z"
 author: "harness:opencode"
 estimated_minutes: 360
-acceptance_criteria: "CI fails a changeset with no resolvable pm-id and no waiver; negative-control fixture proves the failure; waiver usage is itself a tracked, queryable event; gate registered in pm-k6t4yb with owner and failure taxonomy"
+acceptance_criteria: "CI fails a changeset with no resolvable pm-id and no waiver; negative-control fixture proves the failure; waiver usage is itself a tracked, queryable event; gate registered in pm-k6t4yb with owner and failure taxonomy; Traceability distinguishes existing path ownership from evidence that the current changeset and its behavioral acceptance are tracked"
 goal: project management = context management
 objective: Make the code-to-tracker provenance loop closed and machine-enforced
 value: Every changeset is traversable to the work that authorized it; the graph gains evidence edges from real events instead of retrospective reconstruction
@@ -27,4 +27,6 @@ dependencies[8]{id,kind,created_at}:
   pm-kpftft,related,"2026-07-26T10:00:38.248Z"
   pm-rtn5h6,related,"2026-07-26T10:00:38.248Z"
   pm-w7ccmv,verifies,"2026-07-26T10:00:38.248Z"
+notes[1]{created_at,author,text,edited_at}:
+  "2026-09-28T05:51:51.824Z","harness:codex","Traceability review 2026-09-28: all 1800 tracked source/test/doc/script/package/workflow/skill artifacts in the scoped census have exact path links in at least one pm item. Path ownership alone does not prove every function, changed line or behavior is accepted. The gate should connect each changeset to canonical owners, compare declared changed paths to the actual diff, and require a documented mapping or reviewed waiver. Generated files inherit generator ownership explicitly. Use negative controls for an unlinked file, changed existing file with no item, bogus ID and terminal owner with incompatible scope.","2026-09-28T07:20:56.580Z"
 body: ""

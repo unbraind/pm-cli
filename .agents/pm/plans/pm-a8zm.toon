@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: all-status,audit,backfill,graph,plan,relationships,resumable
 created_at: "2026-07-13T21:59:23.505Z"
-updated_at: "2026-09-12T21:25:25.560Z"
+updated_at: "2026-09-28T06:06:22.474Z"
 author: codex-root
 estimated_minutes: 1800
 acceptance_criteria: "Every item is classified as correctly connected, intentional root, intentional archive or isolate, waived with rationale, or remediation debt with an exact next action; All legacy edge kinds and aliases are mapped to canonical semantics with source evidence; ambiguous relationships remain investigations rather than guessed rewrites; Execution is partitioned into bounded cursor-based waves with snapshots, checkpoints, deterministic ordering, idempotency, resume, rollback-by-new-event, and multi-agent claim boundaries; Active strategic lineages are enriched before terminal history; closed or canceled items change only in dedicated changelog-safe batches coordinated with pm-e9zh; Every mutation records author, timestamp, rationale, source evidence, confidence, previous meaning, and resulting validation evidence in immutable history; Post-wave audits show no new duplicates, dangling endpoints, false order cycles, history drift, or unexplained policy violations and publish graph-quality deltas; The process is benchmarked and token-bounded for one million items and safe under concurrent agents without full-memory or full-output requirements"
@@ -201,7 +201,7 @@ test_runs[7]:
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,Generated tracker delivery surface refreshed against the fetched v2026.8.25 tag topology
 plan_mode: approved
-plan_resume_context: "Post-organization checkpoint 2026-08-25: 2557 items were read with zero omissions after a complete 2543-item and 54141-event baseline inspection. Fourteen fully specified current-MCP items now form pm-rs9vry under pm-5k4v, with ADR pm-sqvshj, agent story pm-x705zo, SDK-first stateless discovery, MRTR, subscriptions and transports, official tasks, cache/schema, authorization, Skills, Apps, deprecation, conformance pm-55yf1t, and released-interoperability milestone pm-s00mpf. Plan step 009 is pending. Graph: 12593 edges, related unchanged at 5570, redundancy unchanged at 67, zero active isolates or ordering contradictions, and 100 percent active and terminal outcome reachability. Active acceptance criteria and estimates are complete; only root pm-doxj lacks a parent. Exact duplicates remain only the canceled probe trio; the open fuzzy scan reports six pre-existing Semgrep event clusters and no new programme item. Build, security scan, tracker-context-quality, changelog check, scheduled v2026.8.25 publication, npm, npx, and bunx passed. GitHub release immutability remains open under pm-k9m6wc because isImmutable is false. Continue canonical roadmap steps 003 through 009; do not treat planning or source-only evidence as MCP completion."
+plan_resume_context: "2026-09-28: complete structural census of 2826 all-status items, 68876 events and 2841 verified history chains is in docs/ECOSYSTEM_PLANNING_REVIEW.md with per-item and duplicate dispositions. Existing owners carry the detailed Current/Emerging/Expansion/Exploratory plans and bounded algorithm evaluations. Six active-readiness gates prevent the observed missing planning fields. qwen3 reindex and MCP/public npx/bunx acceptance pass, while the broad history query has weak recall and original automatic release failure remains visible despite successful same-version recovery. Use existing steps 003-009 plus active enrichment step 011; added overlapping steps 012-015 are superseded by their original canonical steps. Do not convert source tests, smoke checks or planning into million-item/fleet or programme completion claims."
 plan_validation[4]{text,command,expected}:
   All-status baseline must remain reproducible and append-only before any terminal enrichment batch.,pm validate --check-history-drift --check-storage-integrity --check-lifecycle --check-resolution --counts --json,"Zero history-chain, storage-integrity, lifecycle, active-blocker, and active-cycle errors; historical metadata debt remains explicitly classified rather than placeholder-normalized."
   Re-run complete tracker graph history metadata duplicate and storage proof after organization and before publication.,pm validate --check-history-drift --check-storage-integrity --check-lifecycle --check-resolution --counts --json && pm graph audit --summary --json && pm graph analyze --summary --json,No history drift storage failure lifecycle cycle missing endpoint duplicate dependency row or new graph finding. Historical metadata warnings remain classified and new milestones are outcome-reachable through typed edges.
@@ -219,7 +219,7 @@ plan_discoveries[6]{ts,author,text}:
   "2026-08-14T14:37:22.528Z","harness:codex","Live all-status checkpoint 2026-08-14: 2,489 pre-enrichment items and 49,544 immutable events were read completely with no unreadable records or history drift. The graph had 2,489 recorded nodes and 12,246 deduplicated directed edges in one connected acyclic component with 12 layers and no active isolate. Generic related still represented 45.5 percent while semantic edges represented 7.4 percent. Exact normalized-title review found only the three already-canceled accidental probe duplicates. The built-in duplicate sweep could not execute the all-status corpus because its million-pair safety bound is exceeded and is already owned by pm-pshhry. Strict metadata and linked-file warnings are predominantly historical debt already partitioned into canonical owners and were not placeholder-normalized."
   "2026-08-15T13:54:29.380Z","harness:codex","Live complete inventory on 2026-08-15: 2,495 unique items across 339 open, 2,142 closed, and 14 canceled states; 49,923 history events; 12,287 deduplicated directed graph edges; one connected acyclic component with 12 layers and critical-path length 11. Validation found zero dangling dependencies, cycles, stale blockers, history drift, or storage failures. Active metadata is complete except the intentional roadmap root has no parent. The bounded fuzzy duplicate scan correctly failed closed above one million candidate pairs; exact titles are unique except the previously canceled invalid probe trio."
   "2026-08-25T05:15:57.407Z","harness:codex","Live 2026-08-25 inspection loaded all 2543 unique items with no omissions and all 54141 durable events through a terminal cursor. Storage validation scanned 2558 history streams with zero hash, chain, workspace-state, reference, cycle, lifecycle, or merge-integrity errors. The graph has 12527 deduplicated directed edges, zero active isolates or sparse nodes, and 100 percent active and terminal outcome reachability. The actionable gap is protocol currency: src/mcp/server.ts still advertises 2025-06-18 and handles initialize, while the official 2026-07-28 revision is stateless and requires server/discover, request-local metadata, resultType, subscriptions/listen, MRTR, revised tasks, caching, headers, authorization changes, and deprecation migrations."
-plan_steps[9]:
+plan_steps[15]:
   - id: plan-step-001
     order: 1
     title: "Publish the live corpus, provenance, release, and graph baseline"
@@ -310,8 +310,10 @@ plan_steps[9]:
     title: Reconstruct terminal execution order and evolution from immutable evidence
     status: pending
     created_at: "2026-08-03T11:10:29.268Z"
-    updated_at: "2026-08-03T11:10:29.268Z"
+    updated_at: "2026-09-28T06:05:45.409Z"
     body: "Recover prerequisite, verifies, supersedes, incident, release, and package edges from explicit historical evidence in deterministic cursorable batches; retain ambiguities as findings and coordinate any terminal mutation with changelog and resolution governance."
+    owner: pm-lnrk
+    evidence: "2026-09-28: three explicit historical discovery edges recovered without changing closure or release evidence; wider historical inference remains pending."
     linked_items[6]:
       - id: pm-p9a4
         kind: depends_on
@@ -335,8 +337,9 @@ plan_steps[9]:
     title: Prove federated million-item and thousand-agent behavior
     status: pending
     created_at: "2026-08-03T11:10:29.820Z"
-    updated_at: "2026-08-03T11:10:29.820Z"
+    updated_at: "2026-09-28T06:05:46.932Z"
     body: "Benchmark bounded graph and context operations on realistic multi-decade histories, concurrent claims and merges, cross-workspace references, resumable indexes, failure injection, and deterministic replay. Publish latency, memory, token, conflict, and correctness budgets."
+    owner: pm-m2il
     linked_items[6]:
       - id: pm-m2il
         kind: depends_on
@@ -360,8 +363,9 @@ plan_steps[9]:
     title: Graduate outcome milestones through evidence-gated horizons
     status: pending
     created_at: "2026-08-03T11:10:30.374Z"
-    updated_at: "2026-08-14T14:37:39.237Z"
+    updated_at: "2026-09-28T06:05:48.388Z"
     body: "Promote grammar, SDK completeness, provable history, proven scale, general availability, and universal-domain outcomes only when their measurable exit criteria pass; preserve the living roadmap as the sole portfolio root."
+    owner: pm-m08hza
     linked_items[10]:
       - id: pm-m08hza
         kind: depends_on
@@ -435,4 +439,74 @@ plan_steps[9]:
       - id: pm-vzcisw
         kind: implements
         note: Revision-wide removal and deprecation migration
+  - id: plan-step-010
+    order: 10
+    title: 2026-09-28 corpus refresh and evidence reconciliation
+    status: completed
+    created_at: "2026-09-28T06:01:00.593Z"
+    updated_at: "2026-09-28T06:05:38.150Z"
+    body: "Repeat strict all-status inventory, complete event cursors, chain verification, artifact ownership and per-item dispositions. The dated 2026-09-28 census is available; refresh before future batches."
+    owner: pm-p9a4
+    evidence: "Complete 2826-item snapshot, 68876-event collection, 2841 verified hash chains, exact artifact census and duplicate-candidate dispositions are recorded in the dated review."
+    completed_at: "2026-09-28T06:05:38.150Z"
+    linked_items[1]{id,kind}:
+      pm-p9a4,depends_on
+  - id: plan-step-011
+    order: 11
+    title: Enrich active relationships from explicit evidence
+    status: pending
+    created_at: "2026-09-28T06:01:02.293Z"
+    updated_at: "2026-09-28T06:01:02.293Z"
+    body: "Review candidate subject, relation direction, confidence and source pointer. Preserve the 67-edge redundancy bound and outcome reachability. Uncertain pairs remain findings."
+    owner: pm-qnl2
+    linked_items[1]{id,kind}:
+      pm-qnl2,depends_on
+  - id: plan-step-012
+    order: 12
+    title: Recover terminal provenance in release-safe epochs
+    status: superseded
+    created_at: "2026-09-28T06:01:04.661Z"
+    updated_at: "2026-09-28T06:05:39.625Z"
+    body: "Use original event/comment evidence, preserve release and closure fields, apply bounded batches and verify changelog/history. Three explicit April discovery relationships were recovered in this pass."
+    owner: pm-lnrk
+    evidence: Reconciled with the existing terminal reconstruction obligation; no duplicate execution scope.
+    superseded_by: plan-step-005
+    linked_items[1]{id,kind}:
+      pm-lnrk,depends_on
+  - id: plan-step-013
+    order: 13
+    title: Recover incident release and package cross-lineage evidence
+    status: superseded
+    created_at: "2026-09-28T06:01:06.416Z"
+    updated_at: "2026-09-28T06:05:41.078Z"
+    body: Join independently verified artifact identities and recurrence mechanisms to typed edges. Co-occurrence and matching filenames alone do not establish provenance.
+    owner: pm-s5e04g
+    evidence: "Incident, release and package provenance already belongs to existing terminal reconstruction step 005."
+    superseded_by: plan-step-005
+    linked_items[1]{id,kind}:
+      pm-s5e04g,depends_on
+  - id: plan-step-014
+    order: 14
+    title: Prove graph context quality and million-item fleet behavior
+    status: superseded
+    created_at: "2026-09-28T06:01:08.282Z"
+    updated_at: "2026-09-28T06:05:42.582Z"
+    body: "Run the declared graph, replay, concurrent-merge and cold/warm scale matrix. Do not label current-corpus checks as million-item proof."
+    owner: pm-m2il
+    evidence: Existing fleet and scale step owns the same acceptance; retain one canonical obligation.
+    superseded_by: plan-step-006
+    linked_items[1]{id,kind}:
+      pm-m2il,depends_on
+  - id: plan-step-015
+    order: 15
+    title: Reassess horizons from measured outcomes
+    status: superseded
+    created_at: "2026-09-28T06:01:09.683Z"
+    updated_at: "2026-09-28T06:05:44.137Z"
+    body: "Promote only with prerequisite and acceptance evidence. Preserve rejected proposals, uncertainty, dependency changes and the original decision history."
+    owner: pm-m08hza
+    evidence: Existing horizon promotion step owns the same decision contract.
+    superseded_by: plan-step-007
+    linked_items[1]{id,kind}:
+      pm-m08hza,depends_on
 body: "## Wave strategy\n\n0. Freeze and publish a reproducible baseline; classify current roots, active dependency isolates, aliases, and body-to-edge mismatches.\n1. Enrich active strategic stories, features, decisions, and delivery chains with high-confidence explicit evidence.\n2. Normalize legacy edge aliases and repair semantic integrity after ADR acceptance.\n3. Backfill recent terminal lineages in changelog-safe batches, then move backward by history epoch.\n4. Reconstruct evidence, incident, release, package, and domain relationships from immutable events and linked resources.\n5. Verify million-item and federated behavior, sample quality manually, and retain a waiver and uncertainty ledger.\n\n## Safety\n\nNo generic-density target. No all-items full dump. No terminal touch outside a dedicated batch. No automatic edge whose source and confidence cannot be explained. A correction appends a superseding event rather than erasing proof."

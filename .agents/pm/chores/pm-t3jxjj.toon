@@ -6,11 +6,19 @@ status: open
 priority: 3
 tags[3]: dependencies,sentry,telemetry
 created_at: "2026-09-27T21:20:34.332Z"
-updated_at: "2026-09-27T21:20:34.332Z"
+updated_at: "2026-09-28T07:22:06.831Z"
 author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: "Revalidate the exact upstream publication timestamp and seven-day cooldown before choosing an eligible Sentry 11 version; Demonstrate Node 22/24/26 installed-consumer compatibility, telemetry delivery and expected-error classification with positive and negative controls; Pass static, exact coverage and release gates and document rollback to the prior supported major without losing queued telemetry"
 parent: pm-doxj
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+risk: high
+confidence: medium
+expected_result: "Adopt an eligible Sentry 11 release only after public SDK, supported Node consumers and telemetry acceptance prove compatibility."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-u9qqip,discovered_from,"2026-09-27T21:20:34.332Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-09-28T05:51:10.872Z","harness:codex","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-09-27T21:20:34.332Z","harness:codex","Duplicate check: all-status searches for Sentry 11 major migration and Sentry 11.0.0 found historical closed 10.x refresh and telemetry items but no major-upgrade owner. Registry metadata: @sentry/node latest 11.0.0, released 2026-09-23T12:38:30.858Z; engine range includes supported Node >=22.18.0. This item is open and unclaimed until the seven-day release-age policy allows adoption."
+notes[1]{created_at,author,text,edited_at}:
+  "2026-09-28T05:51:10.872Z","harness:codex","Readiness repair 2026-09-28: the complete active census found this as the sole item lacking acceptance criteria, estimate, risk, confidence and expected result. The 240-minute estimate covers compatibility investigation and verification, not a promised delivery date. Earliest adoption remains seven complete days after the recorded upstream release (2026-09-30T12:38:30.858Z), with live registry revalidation before dependency changes.","2026-09-28T07:22:06.053Z"
 body: ""

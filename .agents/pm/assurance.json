@@ -1101,10 +1101,148 @@
           {
             "holder_id": "pm-4k6b",
             "reason": "The context-algorithm catalog notes name the substrate, evaluation and owner items each entry composes with as an inventory; ownership of entries is recorded on pm-g8t7b9 and delivery by implements or verifies edges, so the catalog asserts no pairwise relationship of its own (same shape as the roadmap ledger)."
+          },
+          {
+            "holder_id": "pm-vi2v",
+            "target_id": "pm-dw5s",
+            "text_contains": "Historical discovery-edge recovery 2026-09-28, high confidence:",
+            "reason": "This source-citation inventory names the three independent discoveries in the same original comment. Co-occurrence does not establish a relationship between the sibling deliveries."
+          },
+          {
+            "holder_id": "pm-vi2v",
+            "target_id": "pm-lwps",
+            "text_contains": "Historical discovery-edge recovery 2026-09-28, high confidence:",
+            "reason": "This source-citation inventory names the three independent discoveries in the same original comment. Co-occurrence does not establish a relationship between the sibling deliveries."
+          },
+          {
+            "holder_id": "pm-dw5s",
+            "target_id": "pm-vi2v",
+            "text_contains": "Historical discovery-edge recovery 2026-09-28, high confidence:",
+            "reason": "This source-citation inventory names the three independent discoveries in the same original comment. Co-occurrence does not establish a relationship between the sibling deliveries."
+          },
+          {
+            "holder_id": "pm-dw5s",
+            "target_id": "pm-lwps",
+            "text_contains": "Historical discovery-edge recovery 2026-09-28, high confidence:",
+            "reason": "This source-citation inventory names the three independent discoveries in the same original comment. Co-occurrence does not establish a relationship between the sibling deliveries."
+          },
+          {
+            "holder_id": "pm-lwps",
+            "target_id": "pm-vi2v",
+            "text_contains": "Historical discovery-edge recovery 2026-09-28, high confidence:",
+            "reason": "This source-citation inventory names the three independent discoveries in the same original comment. Co-occurrence does not establish a relationship between the sibling deliveries."
+          },
+          {
+            "holder_id": "pm-lwps",
+            "target_id": "pm-dw5s",
+            "text_contains": "Historical discovery-edge recovery 2026-09-28, high confidence:",
+            "reason": "This source-citation inventory names the three independent discoveries in the same original comment. Co-occurrence does not establish a relationship between the sibling deliveries."
+          },
+          {
+            "holder_id": "pm-q7c36n",
+            "target_id": "pm-wzmbvn",
+            "text_contains": "Duplicate check 2026-09-28:",
+            "reason": "Duplicate-search boundary comparison explicitly distinguishes a different failure mechanism. It does not assert recurrence or delivery dependence."
+          },
+          {
+            "holder_id": "pm-q7c36n",
+            "target_id": "pm-ir9vqy",
+            "text_contains": "Duplicate check 2026-09-28:",
+            "reason": "Duplicate-search boundary comparison explicitly distinguishes a different failure mechanism. It does not assert recurrence or delivery dependence."
+          },
+          {
+            "holder_id": "pm-lnrk",
+            "target_id": "pm-xjf9",
+            "text_contains": "Historical batch 2026-09-28: three closed v2026.5.1 feature records have explicit discovery evidence in pm-xjf9 comment 2026-04-04T21:55:31.826Z. pm claim correctly refuses terminal-item ownership, so this claimed batch owns the append-only provenance updates without reopening items or forcing ownership. Preserve release/status/closure fields and verify history plus package-owned changelog.",
+            "reason": "Exact historical citation paragraph from the 2026-09-28 batch, including its 2026-04-04 source-event coordinate; later batch comments are outside this exemption."
+          },
+          {
+            "holder_id": "pm-lnrk",
+            "target_id": "pm-xjf9",
+            "text_contains": "Historical batch complete: added exactly three discovered_from relationships from pm-vi2v, pm-dw5s and pm-lwps to pm-xjf9 using its 2026-04-04T21:55:31.826Z comment. Source-citation sibling inventories are narrowly exempted from prose-edge inference because common discovery does not imply sibling dependence. All three remain closed with release v2026.5.1 and unchanged closure evidence. Broader terminal reconstruction and unresolved ambiguity remain open on this canonical programme.",
+            "reason": "Exact historical citation paragraph from the 2026-09-28 batch, including its 2026-04-04 source-event coordinate; later batch comments are outside this exemption."
+          },
+          {
+            "holder_id": "pm-lnrk",
+            "target_id": "pm-vi2v",
+            "text_contains": "Historical batch complete: added exactly three discovered_from relationships from pm-vi2v, pm-dw5s and pm-lwps to pm-xjf9 using its 2026-04-04T21:55:31.826Z comment. Source-citation sibling inventories are narrowly exempted from prose-edge inference because common discovery does not imply sibling dependence. All three remain closed with release v2026.5.1 and unchanged closure evidence. Broader terminal reconstruction and unresolved ambiguity remain open on this canonical programme.",
+            "reason": "Exact historical citation paragraph from the 2026-09-28 batch, including its 2026-04-04 source-event coordinate; later batch comments are outside this exemption."
+          },
+          {
+            "holder_id": "pm-lnrk",
+            "target_id": "pm-dw5s",
+            "text_contains": "Historical batch complete: added exactly three discovered_from relationships from pm-vi2v, pm-dw5s and pm-lwps to pm-xjf9 using its 2026-04-04T21:55:31.826Z comment. Source-citation sibling inventories are narrowly exempted from prose-edge inference because common discovery does not imply sibling dependence. All three remain closed with release v2026.5.1 and unchanged closure evidence. Broader terminal reconstruction and unresolved ambiguity remain open on this canonical programme.",
+            "reason": "Exact historical citation paragraph from the 2026-09-28 batch, including its 2026-04-04 source-event coordinate; later batch comments are outside this exemption."
+          },
+          {
+            "holder_id": "pm-lnrk",
+            "target_id": "pm-lwps",
+            "text_contains": "Historical batch complete: added exactly three discovered_from relationships from pm-vi2v, pm-dw5s and pm-lwps to pm-xjf9 using its 2026-04-04T21:55:31.826Z comment. Source-citation sibling inventories are narrowly exempted from prose-edge inference because common discovery does not imply sibling dependence. All three remain closed with release v2026.5.1 and unchanged closure evidence. Broader terminal reconstruction and unresolved ambiguity remain open on this canonical programme.",
+            "reason": "Exact historical citation paragraph from the 2026-09-28 batch, including its 2026-04-04 source-event coordinate; later batch comments are outside this exemption."
           }
         ]
       },
       "max_cost": 3000000
+    },
+    {
+      "id": "active-missing-description",
+      "description": "Active records missing description",
+      "source": {
+        "kind": "items",
+        "field": "description",
+        "state": "missing"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "active-missing-acceptance-criteria",
+      "description": "Active records missing acceptance_criteria",
+      "source": {
+        "kind": "items",
+        "field": "acceptance_criteria",
+        "state": "missing"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "active-missing-risk",
+      "description": "Active records missing risk",
+      "source": {
+        "kind": "items",
+        "field": "risk",
+        "state": "missing"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "active-missing-confidence",
+      "description": "Active records missing confidence",
+      "source": {
+        "kind": "items",
+        "field": "confidence",
+        "state": "missing"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "active-missing-estimated-minutes",
+      "description": "Active records missing estimated_minutes",
+      "source": {
+        "kind": "items",
+        "field": "estimated_minutes",
+        "state": "missing"
+      },
+      "max_cost": 50000
+    },
+    {
+      "id": "active-missing-expected-result",
+      "description": "Active records missing expected_result",
+      "source": {
+        "kind": "items",
+        "field": "expected_result",
+        "state": "missing"
+      },
+      "max_cost": 50000
     }
   ],
   "assertions": [
@@ -2381,6 +2519,144 @@
       },
       "ceiling": 243,
       "authorization_decision": "pm-jhpby4"
+    },
+    {
+      "id": "active-missing-description-zero",
+      "measurement_id": "active-missing-description",
+      "owner_item_id": "pm-1jzupz",
+      "scope": {
+        "kind": "active"
+      },
+      "ceiling": 0,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "active-missing-acceptance-criteria-zero",
+      "measurement_id": "active-missing-acceptance-criteria",
+      "owner_item_id": "pm-1jzupz",
+      "scope": {
+        "kind": "active"
+      },
+      "ceiling": 0,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "active-missing-risk-zero",
+      "measurement_id": "active-missing-risk",
+      "owner_item_id": "pm-1jzupz",
+      "scope": {
+        "kind": "active"
+      },
+      "ceiling": 0,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "active-missing-confidence-zero",
+      "measurement_id": "active-missing-confidence",
+      "owner_item_id": "pm-1jzupz",
+      "scope": {
+        "kind": "active"
+      },
+      "ceiling": 0,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "active-missing-estimated-minutes-zero",
+      "measurement_id": "active-missing-estimated-minutes",
+      "owner_item_id": "pm-1jzupz",
+      "scope": {
+        "kind": "active"
+      },
+      "ceiling": 0,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      }
+    },
+    {
+      "id": "active-missing-expected-result-zero",
+      "measurement_id": "active-missing-expected-result",
+      "owner_item_id": "pm-1jzupz",
+      "scope": {
+        "kind": "active"
+      },
+      "ceiling": 0,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 0,
+            "expected": "pass"
+          },
+          {
+            "observed": 1,
+            "expected": "fail"
+          }
+        ]
+      }
     }
   ],
   "gates": [
@@ -2458,7 +2734,13 @@
         "graph-outcome-reachable-floor",
         "graph-outcome-unreachable-ceiling",
         "graph-outcome-reachability-basis-points-floor",
-        "graph-semantic-edge-share-floor"
+        "graph-semantic-edge-share-floor",
+        "active-missing-description-zero",
+        "active-missing-acceptance-criteria-zero",
+        "active-missing-risk-zero",
+        "active-missing-confidence-zero",
+        "active-missing-estimated-minutes-zero",
+        "active-missing-expected-result-zero"
       ],
       "triggers": [
         "ci",

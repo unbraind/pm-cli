@@ -59,6 +59,7 @@ pm guide release --json
 - [Context Relevance and Packing](CONTEXT_RELEVANCE.md) - shared CLI/SDK signals, derived-store provenance, ranking explanations, and token budgets.
 - [Next-work Selection Budgets](NEXT_SELECTION_BUDGETS.md) - bounded executable recommendations, omission receipts, and graded 10k/100k context verification.
 - [Context Algorithm Portfolio](CONTEXT_ALGORITHM_PORTFOLIO.md) - stable proposal slugs, historical aliases, individual owners, cognitive compositions, and experiment gates.
+- [Ecosystem Planning Review](ECOSYSTEM_PLANNING_REVIEW.md) - dated all-status census, canonical horizons, operational evidence, and active-readiness gates.
 - [Output Projection and Omission Contracts](OUTPUT_PROJECTION_CONTRACTS.md) - explicit withheld-field receipts, mode-paired row keys, and completion resolver outcomes.
 - [Output Token Accounting](OUTPUT_TOKEN_ACCOUNTING.md) - opt-in CLI/MCP byte attribution, bounded receipt overhead, and release-level tokens-per-task baselines.
 - [SDK Context Platform](SDK_CONTEXT.md) - task-oriented entry point for authoritative reads, ranking, package workflows, diagnostics, recovery, and verification.

@@ -10,7 +10,7 @@ and [docs/DEPENDENCY_KIND_CONTRACT.md](../../../../docs/DEPENDENCY_KIND_CONTRACT
 Authoritative at runtime:
 
 ```bash
-pm contracts --json --full | jq '.relationship_kind_contracts'
+pm contracts --json --full --output-budget unbounded | jq '.relationship_kind_contracts'
 ```
 
 | Kind              | Meaning                                        | Ordering | Hierarchy |
@@ -47,11 +47,12 @@ Rules that prevent damage:
 - `--dep-remove` with a bare id deletes **every** row for that id. Always pass
   `kind=` unless removing all of them is the intent.
 - Never record both `A blocks B` and `B blocked_by A`. They are inverse
-  spellings of one edge, and recording both creates a cycle.
+  spellings of one edge; storing both creates redundant evidence and can confuse ordering analyses.
 - Never add an edge to satisfy a count. Each edge should cite durable text, a
   history event, or a linked artifact.
-- A placeholder or misspelled id passes `create` silently. Verify with
-  `pm deps <ID>` after adding.
+- Local targets must exist: create/update reject missing IDs. Deliberate staged
+  imports require `--allow-unresolved-deps` and a retained warning receipt.
+  Verify the resulting neighborhood with `pm deps <ID>` after adding.
 
 ## Reading The Graph
 
@@ -60,13 +61,13 @@ pm deps <ID>                              # tree view of one item's neighborhood
 pm deps <ID> --format context --direction both --kind implements,verifies
 pm graph analyze                          # layers, critical path, components, hubs
 pm graph audit                            # findings, coverage, edge composition
-pm graph impact <ID> --direction downstream
+pm graph impact <ID> --direction incoming
 pm graph ancestors <ID> / descendants <ID>
 pm graph paths <A> <B>
 pm graph dominators <ID>                  # what must pass through this node
 pm graph articulation                     # single points of failure
 pm graph communities / centrality / slack / redundancy
-pm graph plan                             # critical path method over the ordering DAG
+pm graph plan                             # dry-run relationship remediation plan
 ```
 
 `pm graph impact` and the traversal verbs are directional. Pass `--direction`

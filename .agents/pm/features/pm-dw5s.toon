@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: governance,metadata,pm-cli,validation
 created_at: "2026-04-04T21:55:14.472Z"
-updated_at: "2026-09-22T05:03:59.063Z"
+updated_at: "2026-09-28T07:22:09.386Z"
 deadline: "2026-04-18T21:55:14.472Z"
 closed_at: "2026-04-06T18:48:05.620Z"
 author: codex-agent
@@ -36,24 +36,66 @@ affected_version: 2026.3.12
 component: validate-metadata-quality
 regression: false
 customer_impact: Teams gain earlier detection of tracker quality drift and lower remediation cost.
-dependencies[3]{id,kind,created_at}:
-  pm-5rjn,implements,"2026-07-26T17:12:22.468Z"
-  pm-i4ef,related,"2026-07-26T17:12:22.468Z"
-  pm-urxb,related,"2026-07-26T17:12:22.468Z"
-comments[13]{created_at,author,text}:
-  "2026-04-04T21:55:14.472Z",codex-agent,"Duplicate-check evidence: pm search 'validate placeholder metadata blocked_reason unblock_note repro_steps' --limit 20; pm search 'External audit follow-up: validation and large-output ergonomics' --limit 20; pm list-open --limit 20. Net-new because existing validation items focus on structural checks,not semantic low-signal metadata detection."
-  "2026-04-05T03:08:05.985Z",codex-agent,"Scope extension for external issue #4: add default-on remediation command templates for missing resolution metadata in pm validate output details."
-  "2026-04-05T03:26:56.486Z",codex-agent,"Progress: added default-on resolution remediation hints in validate output details. Resolution check now emits deterministic pm update <id> command templates for missing resolution/expected_result/actual_result fields (additive detail fields only, warning tokens unchanged), so both TOON and JSON outputs include actionable remediation by default. Verification: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts passed."
-  "2026-04-05T03:46:59.542Z",codex-agent,Added default remediation command templates for missing resolution fields in validate outputs; smoke checked validate --check-resolution --json emits missing_resolution_remediation_hints with pm update templates.
-  "2026-04-05T20:39:53.229Z",codex-agent,Duplicate-check evidence refreshed; reusing canonical validate metadata lineage for strict profile/configurable required-field expansion (no duplicate item created).
-  "2026-04-05T21:00:37.808Z",codex-agent,"Progress: added validate metadata profiles (core|strict|custom), settings-backed custom required-field policy, --metadata-profile CLI override, and new config keys metadata-validation-profile + metadata-required-fields with list/get/export/set support. Added completion/contracts/Pi wrapper parity and targeted unit/integration coverage. Verification: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/config-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts passed."
-  "2026-04-05T21:44:33.714Z",codex-agent,"Regression follow-up: updated settings-store deterministic serialization expectation to include validation.metadata_profile and validation.metadata_required_fields so full-suite verification aligns with metadata-profile settings expansion."
-  "2026-04-05T23:05:10.066Z",codex-agent,"Implemented lifecycle governance drift checks in pm validate: new default lifecycle check flags active closure-like metadata and active items with terminal parents, plus optional stale blocker diagnostics behind --check-stale-blockers. Wired CLI/contracts/completion/Pi parity and updated docs (README/ARCHITECTURE/PRD). Verification: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (191/191)."
-  "2026-04-05T23:06:15.406Z",codex-agent,"Backlog curation: created net-new child task pm-urxb (Make lifecycle validate patterns configurable) under pm-dw5s after duplicate-check sweep (pm context/search/list-open/list-in-progress) confirmed no existing settings-backed pattern-policy task."
-  "2026-04-05T23:22:04.619Z",codex-agent,"Verification evidence (release pass): pm test pm-dw5s --run --progress passed all 3 linked suites; pnpm build passed; node scripts/run-tests.mjs test passed (69 files / 921 tests); node scripts/run-tests.mjs coverage passed (100/100/100/100). Governance baseline remains clean: pm validate --check-metadata --check-resolution --check-files --check-command-references --check-history-drift --scan-mode tracked-all => ok=true,warnings=0; pm health --json => ok=true."
-  "2026-04-06T16:45:40.471Z",codex-agent,"Lineage note for current remediation wave: pm-dw5s remains canonical feature parent for validate enhancements. Upcoming child task will extend lifecycle validation with dependency-cycle diagnostics/policy without creating duplicate validation lineage."
-  "2026-04-06T16:48:20.111Z",codex-agent,"Child task seeding complete under pm-dw5s for current wave: pm-i4ef (dependency-cycle diagnostics for pm validate lifecycle checks)."
-  "2026-04-06T18:48:03.982Z",codex-agent,"Feature completion verified in remediation wave: validate-related governance hardening remained stable while downstream mutation/search/contracts/completion/calendar/activity changes landed, and full repository verification (build + test + coverage) stayed green with docs synchronized."
+dependencies[4]:
+  - id: pm-5rjn
+    kind: implements
+    created_at: "2026-07-26T17:12:22.468Z"
+  - id: pm-i4ef
+    kind: related
+    created_at: "2026-07-26T17:12:22.468Z"
+  - id: pm-urxb
+    kind: related
+    created_at: "2026-07-26T17:12:22.468Z"
+  - id: pm-xjf9
+    kind: discovered_from
+    created_at: "2026-09-28T05:56:26.197Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[14]:
+  - created_at: "2026-04-04T21:55:14.472Z"
+    author: codex-agent
+    text: "Duplicate-check evidence: pm search 'validate placeholder metadata blocked_reason unblock_note repro_steps' --limit 20; pm search 'External audit follow-up: validation and large-output ergonomics' --limit 20; pm list-open --limit 20. Net-new because existing validation items focus on structural checks,not semantic low-signal metadata detection."
+  - created_at: "2026-04-05T03:08:05.985Z"
+    author: codex-agent
+    text: "Scope extension for external issue #4: add default-on remediation command templates for missing resolution metadata in pm validate output details."
+  - created_at: "2026-04-05T03:26:56.486Z"
+    author: codex-agent
+    text: "Progress: added default-on resolution remediation hints in validate output details. Resolution check now emits deterministic pm update <id> command templates for missing resolution/expected_result/actual_result fields (additive detail fields only, warning tokens unchanged), so both TOON and JSON outputs include actionable remediation by default. Verification: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts passed."
+  - created_at: "2026-04-05T03:46:59.542Z"
+    author: codex-agent
+    text: Added default remediation command templates for missing resolution fields in validate outputs; smoke checked validate --check-resolution --json emits missing_resolution_remediation_hints with pm update templates.
+  - created_at: "2026-04-05T20:39:53.229Z"
+    author: codex-agent
+    text: Duplicate-check evidence refreshed; reusing canonical validate metadata lineage for strict profile/configurable required-field expansion (no duplicate item created).
+  - created_at: "2026-04-05T21:00:37.808Z"
+    author: codex-agent
+    text: "Progress: added validate metadata profiles (core|strict|custom), settings-backed custom required-field policy, --metadata-profile CLI override, and new config keys metadata-validation-profile + metadata-required-fields with list/get/export/set support. Added completion/contracts/Pi wrapper parity and targeted unit/integration coverage. Verification: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/config-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts passed."
+  - created_at: "2026-04-05T21:44:33.714Z"
+    author: codex-agent
+    text: "Regression follow-up: updated settings-store deterministic serialization expectation to include validation.metadata_profile and validation.metadata_required_fields so full-suite verification aligns with metadata-profile settings expansion."
+  - created_at: "2026-04-05T23:05:10.066Z"
+    author: codex-agent
+    text: "Implemented lifecycle governance drift checks in pm validate: new default lifecycle check flags active closure-like metadata and active items with terminal parents, plus optional stale blocker diagnostics behind --check-stale-blockers. Wired CLI/contracts/completion/Pi parity and updated docs (README/ARCHITECTURE/PRD). Verification: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (191/191)."
+  - created_at: "2026-04-05T23:06:15.406Z"
+    author: codex-agent
+    text: "Backlog curation: created net-new child task pm-urxb (Make lifecycle validate patterns configurable) under pm-dw5s after duplicate-check sweep (pm context/search/list-open/list-in-progress) confirmed no existing settings-backed pattern-policy task."
+  - created_at: "2026-04-05T23:22:04.619Z"
+    author: codex-agent
+    text: "Verification evidence (release pass): pm test pm-dw5s --run --progress passed all 3 linked suites; pnpm build passed; node scripts/run-tests.mjs test passed (69 files / 921 tests); node scripts/run-tests.mjs coverage passed (100/100/100/100). Governance baseline remains clean: pm validate --check-metadata --check-resolution --check-files --check-command-references --check-history-drift --scan-mode tracked-all => ok=true,warnings=0; pm health --json => ok=true."
+  - created_at: "2026-04-06T16:45:40.471Z"
+    author: codex-agent
+    text: "Lineage note for current remediation wave: pm-dw5s remains canonical feature parent for validate enhancements. Upcoming child task will extend lifecycle validation with dependency-cycle diagnostics/policy without creating duplicate validation lineage."
+  - created_at: "2026-04-06T16:48:20.111Z"
+    author: codex-agent
+    text: "Child task seeding complete under pm-dw5s for current wave: pm-i4ef (dependency-cycle diagnostics for pm validate lifecycle checks)."
+  - created_at: "2026-04-06T18:48:03.982Z"
+    author: codex-agent
+    text: "Feature completion verified in remediation wave: validate-related governance hardening remained stable while downstream mutation/search/contracts/completion/calendar/activity changes landed, and full repository verification (build + test + coverage) stayed green with docs synchronized."
+  - created_at: "2026-09-28T05:56:26.197Z"
+    author: "harness:codex"
+    text: "Historical discovery-edge recovery 2026-09-28, high confidence: pm-xjf9 comment 2026-04-04T21:55:31.826Z explicitly names pm-vi2v, pm-dw5s and pm-lwps as three net-new child features discovered during that governance run. Add discovered_from to that source. This is provenance recovery, not reopening or a new implementation claim. Preserve original release v2026.5.1 and all closure fields."
+    edited_at: "2026-09-28T07:22:09.386Z"
 notes[1]{created_at,author,text}:
   "2026-04-04T21:55:14.472Z",codex-agent,Checks should be configurable and avoid false positives by supporting per-rule opt-outs and rule versioning.
 files[15]{path,scope,note}:

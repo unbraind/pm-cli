@@ -6,11 +6,11 @@ status: open
 priority: 1
 tags[8]: "area:search","area:semantic",batching,ollama,performance,qwen3,scale,vectorization
 created_at: "2026-08-28T20:35:34.770Z"
-updated_at: "2026-09-25T15:19:56.157Z"
+updated_at: "2026-09-28T07:20:33.057Z"
 deadline: "2026-12-31T00:00:00.000Z"
 author: "harness:codex"
 estimated_minutes: 480
-acceptance_criteria: Separate per-input corpus truncation from provider request byte and token budgets; negotiate or configure safe multi-input request limits per provider and model; preserve deterministic input to vector ordering under parallelism adaptive split retry and resume; expose effective batch count size distribution throughput ETA provider model and limit sources in the receipt; add timeout payload-too-large partial-failure and restart negative controls; benchmark qwen3 Ollama at current 2.5k plus synthetic 100k and 1M tiers with declared throughput and memory ceilings; keep mutation refresh bounded and prevent a full rebuild from starving ordinary reads and writes; public SDK owns batching scheduling receipts and recovery while CLI only renders them
+acceptance_criteria: Separate per-input corpus truncation from provider request byte and token budgets; negotiate or configure safe multi-input request limits per provider and model; preserve deterministic input to vector ordering under parallelism adaptive split retry and resume; expose effective batch count size distribution throughput ETA provider model and limit sources in the receipt; add timeout payload-too-large partial-failure and restart negative controls; benchmark qwen3 Ollama at current 2.5k plus synthetic 100k and 1M tiers with declared throughput and memory ceilings; keep mutation refresh bounded and prevent a full rebuild from starving ordinary reads and writes; public SDK owns batching scheduling receipts and recovery while CLI only renders them; Completion distinguishes the now-measured multi-input current-corpus path from unproven large-scale throughput and interruption fairness
 parent: pm-ydp6
 risk: high
 confidence: high
@@ -30,6 +30,8 @@ comments[5]{created_at,author,text}:
   "2026-09-25T14:39:17.096Z","harness:codex","Real-provider acceptance: local Ollama qwen3-embedding:0.6b embedded 32 synthetic rich inputs (each truncated to the existing 3,200-character corpus ceiling) into 32 ordered 1,024-dimensional vectors in one successful HTTP request. Receipt: planned_batches=1, requests=1, split_batches=0, retries=0, elapsed_ms=3103, inputs_per_second=10.31. This proves effective rich-input batching on the actual model; it is not a million-item throughput extrapolation."
   "2026-09-25T14:58:50.792Z","harness:codex","Delivery is recorded by Changeset pm-g0b88h. The rich-input collapse is repaired and real-provider acceptance passes. Keep this canonical issue open for tokenizer-aware budgets, parallel/resume recovery, ETA and declared 100k/1M throughput/memory acceptance; those outcomes are not claimed by this PR."
   "2026-09-25T15:04:16.040Z","harness:codex","Public-package boundary check caught a documentation/export mistake before review: runtime-primitives is an internal SDK barrel, not an exported package subpath. The batching function and its types are now exposed from the existing public sdk/query entrypoint, and the real HTTP integration test imports that barrel. The changelog omission is separately tracked and fixed in pm-changelog as pmc-k1oq."
+notes[1]{created_at,author,text,edited_at}:
+  "2026-09-28T05:51:27.207Z","harness:codex","Current source verification 2026-09-28 contradicts the historical title as a blanket current diagnosis: semantic refresh embedded 1085 inputs in 34 Ollama requests (33 batches of 32 and one of 29), zero split retries, about 11.91 inputs/sec. Per-request byte limit was 262144. The current corpus batching path works. Residual acceptance is the declared 100k/1M throughput and memory matrix, partial-failure/restart fairness and proof that rebuilds do not starve ordinary work. Keep the item open for those explicit residuals; do not report one-input batching as still observed.","2026-09-28T07:20:31.427Z"
 files[7]{path,scope}:
   src/core/search/embedding-batches.ts,project
   src/core/search/http-client.ts,project
