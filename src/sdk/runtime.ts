@@ -1222,6 +1222,7 @@ export class PmClient {
     reorderTo?: number,
   ): Promise<PlanCommandResult> {
     return this.runTyped("plan", {
+      fullChangedFields: true,
       ...(id === undefined ? {} : { id }),
       ...(stepRef === undefined ? {} : { stepRef }),
       ...(reorderTo === undefined ? {} : { reorderTo }),

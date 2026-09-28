@@ -18,6 +18,7 @@ import {
   parsePmAgentTaskTranscriptCorpus,
   resolvePmCommandOutputEnvelope,
   renderPmCommand,
+  quoteCommandArg,
 } from "../../dist/cli-bundle/sdk.js";
 import { fail, parseFlags, repoRoot } from "./utils.mjs";
 
@@ -209,11 +210,12 @@ function validateSelfReportedAccounting(accountedPayload, step) {
   return { receipt, independentlyProjectedPayload };
 }
 
-function assertTransportPayloadParity(baselinePayload, measuredPayload, step) {
+/** Reject accounting-induced payload drift after predicting only declared transport and fixture-root changes. */
+function assertTransportPayloadParity(baselinePayload, measuredPayload, step, trackerRoots) {
   validateExpectedOutput(baselinePayload, step);
   validateExpectedOutput(measuredPayload, step);
   const [firstDifference] = jsonPatch.compare(
-    expectedAccountedDiagnostic(baselinePayload, step),
+    expectedAccountedPlanRoot(expectedAccountedDiagnostic(baselinePayload, step), trackerRoots),
     measuredPayload,
   );
   if (firstDifference !== undefined) {
@@ -221,6 +223,32 @@ function assertTransportPayloadParity(baselinePayload, measuredPayload, step) {
       `Agent-task transcript step ${step.id} changed its application payload when token accounting was enabled; first_difference=${firstDifference.op}:${firstDifference.path}`,
     );
   }
+}
+
+/** Predict only declared Plan recovery roots across isolated replays; all other payload bytes retain exact parity. */
+function expectedAccountedPlanRoot(baseline, trackerRoots) {
+  if (trackerRoots === undefined || baseline.kind !== "plan_mutation") return baseline;
+  const before = ` --pm-path ${quoteCommandArg(trackerRoots.baseline)}`;
+  const after = ` --pm-path ${quoteCommandArg(trackerRoots.accounted)}`;
+  /** Require the actual baseline tracker suffix before translating one recovery command. */
+  const translate = (command) => {
+    if (typeof command !== "string" || !command.endsWith(before)) {
+      fail("Plan recovery command does not target its replay tracker");
+    }
+    return `${command.slice(0, -before.length)}${after}`;
+  };
+  return {
+    ...baseline,
+    inspection_command: translate(baseline.inspection_command),
+    next_action: translate(baseline.next_action),
+    omission_receipt: {
+      ...baseline.omission_receipt,
+      omitted_field_groups: baseline.omission_receipt.omitted_field_groups.map(
+        /** Translate only Plan recovery; every other group's protocol must remain identical. */
+        (group) => group.name === "plan_detail" ? { ...group, restore_with: translate(group.restore_with) } : group,
+      ),
+    },
+  };
 }
 
 /** Preserve recovery evidence while independently predicting the added transport flag. */
@@ -251,7 +279,7 @@ function expectedAccountedDiagnostic(baseline, step) {
 }
 
 /** Validate and summarize one pair of independently captured CLI transports. */
-export function validateAgentTaskTokenInvocation(baseline, accounted, step) {
+export function validateAgentTaskTokenInvocation(baseline, accounted, step, trackerRoots) {
   if (
     baseline.status !== step.expected_exit_code ||
     accounted.status !== step.expected_exit_code
@@ -287,7 +315,7 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step) {
     accountingMode === "independent_transport"
   ) {
     const emittedBytes = Buffer.byteLength(accounted.stderr, "utf8");
-    assertTransportPayloadParity(baselinePayload, accountedPayload, step);
+    assertTransportPayloadParity(baselinePayload, accountedPayload, step, trackerRoots);
     return {
       id: step.id,
       command: step.args.join(" "),
@@ -313,6 +341,7 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step) {
     baselinePayload,
     independentlyProjectedPayload,
     step,
+    trackerRoots,
   );
   return {
     id: step.id,
@@ -342,6 +371,7 @@ export function assertAdvertisedAgentTaskRecovery(refusal, step) {
   }
 }
 
+/** Replay one complete journey in independent trackers and sum actual emitted bytes including retries. */
 function measureTask(baselineRoot, accountedRoot, task) {
   const measuredSteps = [];
   const payloads = new Map();
@@ -353,6 +383,7 @@ function measureTask(baselineRoot, accountedRoot, task) {
         ["--json", "--token-accounting", ...step.args],
       ),
       step,
+      { baseline: baselineRoot, accounted: accountedRoot },
     );
     if (step.recovery_for !== undefined) {
       assertAdvertisedAgentTaskRecovery(payloads.get(step.recovery_for), step);

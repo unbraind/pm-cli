@@ -172,6 +172,7 @@ function handlePackageCommand(pmArgs: string[]): SpawnResult | undefined {
   return undefined;
 }
 
+/** Supply transport receipts and separate durable reads for the acceptance script's process-boundary tests. */
 function handlePlanCommand(pmArgs: string[], state: DogfoodSpawnState): SpawnResult | undefined {
   const sub = pmArgs[1];
   if (sub === "add-step") {
@@ -179,18 +180,18 @@ function handlePlanCommand(pmArgs: string[], state: DogfoodSpawnState): SpawnRes
     return pmJson({ step: { id: `plan-step-00${state.planAddStepCount}` } });
   }
   const planResponses: Record<string, SpawnResult | undefined> = {
-    create: pmJson({ plan: { id: "plan-dogfood-1" } }),
+    create: pmJson({ kind: "plan_mutation", id: "plan-dogfood-1" }),
     "update-step": pmJson({ step: { status: "in_progress" } }),
     "complete-step": pmJson({ step: { status: "completed" } }),
-    decision: pmJson({ plan: { decisions: [{}] } }),
-    discovery: pmJson({ plan: { discoveries: [{}] } }),
-    validation: pmJson({ plan: { validation: [{}] } }),
-    resume: pmJson({ plan: { resume_context: "step 2 pending; materialize next" } }),
-    approve: pmJson({ plan: { mode: "approved" } }),
-    materialize: pmJson({ materialized: [{ id: "pm-materialized-1" }] }),
+    decision: pmJson({ action: "decision" }),
+    discovery: pmJson({ action: "discovery" }),
+    validation: pmJson({ action: "validation" }),
+    resume: pmJson({ action: "resume" }),
+    approve: pmJson({ mode: "approved" }),
+    materialize: pmJson({ materialized_count: 1 }),
   };
   if (sub === "show" && pmArgs.includes("--depth")) {
-    return pmJson({ plan: { steps: [{}, {}] } });
+    return pmJson({ plan: { steps: [{}, {}], decisions: [{}], discoveries: [{}], validation: [{}], resume_context: "step 2 pending; materialize next" } });
   }
   if (sub === "show" && pmArgs.includes("--fields")) {
     return pmJson({ plan: { id: "plan-dogfood-1", title: "Dogfood plan workflow", steps_summary: { total: 2 } } });

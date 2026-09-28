@@ -17,13 +17,22 @@
         ],
         "capability_evidence": {
           "workspace_state": [
-            { "step_id": "context", "field_path": "summary.active_items" }
+            {
+              "step_id": "context",
+              "field_path": "summary.active_items"
+            }
           ],
           "active_ownership": [
-            { "step_id": "context", "field_path": "activity" }
+            {
+              "step_id": "context",
+              "field_path": "activity"
+            }
           ],
           "actionable_work": [
-            { "step_id": "context", "field_path": "hierarchy" }
+            {
+              "step_id": "context",
+              "field_path": "hierarchy"
+            }
           ]
         }
       },
@@ -36,13 +45,22 @@
         ],
         "capability_evidence": {
           "workspace_state": [
-            { "step_id": "next", "field_path": "summary.in_progress" }
+            {
+              "step_id": "next",
+              "field_path": "summary.in_progress"
+            }
           ],
           "active_ownership": [
-            { "step_id": "next", "field_path": "held_by_others" }
+            {
+              "step_id": "next",
+              "field_path": "held_by_others"
+            }
           ],
           "actionable_work": [
-            { "step_id": "next", "field_path": "recommended.id" }
+            {
+              "step_id": "next",
+              "field_path": "recommended.id"
+            }
           ]
         }
       },
@@ -55,12 +73,23 @@
         ],
         "capability_evidence": {
           "workspace_state": [
-            { "step_id": "context", "field_path": "summary.active_items" }
+            {
+              "step_id": "context",
+              "field_path": "summary.active_items"
+            }
           ],
           "active_ownership": [
-            { "step_id": "in-progress", "field_path": "items" }
+            {
+              "step_id": "in-progress",
+              "field_path": "items"
+            }
           ],
-          "actionable_work": [{ "step_id": "open", "field_path": "items" }]
+          "actionable_work": [
+            {
+              "step_id": "open",
+              "field_path": "items"
+            }
+          ]
         }
       }
     ]
@@ -186,7 +215,9 @@
           "expected_accounting_mode": "self_reported",
           "required_fields": ["code", "refusal", "recovery"],
           "expected_error_code": "unknown_context_intent",
-          "expected_field_values": { "recovery.recovery_mode": "compact" },
+          "expected_field_values": {
+            "recovery.recovery_mode": "compact"
+          },
           "expected_refusal_surface": "--for"
         },
         {
@@ -266,7 +297,9 @@
           "expected_output_kind": "entity",
           "expected_accounting_mode": "self_reported",
           "required_fields": ["item.id", "item.status"],
-          "expected_field_values": { "item.status": "open" }
+          "expected_field_values": {
+            "item.status": "open"
+          }
         },
         {
           "id": "close",
@@ -283,7 +316,9 @@
           "expected_output_kind": "entity",
           "expected_accounting_mode": "self_reported",
           "required_fields": ["item.id", "item.status"],
-          "expected_field_values": { "item.status": "closed" }
+          "expected_field_values": {
+            "item.status": "closed"
+          }
         }
       ]
     },
@@ -329,7 +364,9 @@
           "expected_output_kind": "collection",
           "expected_accounting_mode": "self_reported",
           "required_fields": ["rows", "outcome", "exit_code"],
-          "expected_field_values": { "outcome": "partial_effect" }
+          "expected_field_values": {
+            "outcome": "partial_effect"
+          }
         },
         {
           "id": "no-effect",
@@ -347,7 +384,93 @@
           "expected_output_kind": "collection",
           "expected_accounting_mode": "self_reported",
           "required_fields": ["rows", "outcome", "exit_code"],
-          "expected_field_values": { "outcome": "no_effect" }
+          "expected_field_values": {
+            "outcome": "no_effect"
+          }
+        }
+      ]
+    },
+    {
+      "id": "plan-execution-mutations",
+      "description": "Create a Plan, add and complete a step, then inspect its durable evidence without echoing the full Plan on each mutation.",
+      "steps": [
+        {
+          "id": "create-plan",
+          "args": [
+            "create",
+            "--id",
+            "pm-transcript-plan",
+            "--type",
+            "Plan",
+            "--title",
+            "Transcript execution Plan",
+            "--create-mode",
+            "progressive"
+          ],
+          "expected_exit_code": 0,
+          "expected_output_kind": "mutation_receipt",
+          "expected_accounting_mode": "self_reported",
+          "required_fields": ["id", "status"]
+        },
+        {
+          "id": "add-step",
+          "args": [
+            "plan",
+            "add-step",
+            "pm-transcript-plan",
+            "--step-title",
+            "Verify result",
+            "--step-body",
+            "Durable execution context retained for later inspection."
+          ],
+          "expected_exit_code": 0,
+          "expected_output_kind": "diagnostic",
+          "expected_accounting_mode": "self_reported",
+          "required_fields": [
+            "id",
+            "step.id",
+            "steps_summary.total",
+            "inspection_command"
+          ],
+          "expected_field_values": {
+            "kind": "plan_mutation",
+            "steps_summary.total": 1
+          }
+        },
+        {
+          "id": "complete-step",
+          "args": [
+            "plan",
+            "complete-step",
+            "pm-transcript-plan",
+            "plan-step-001",
+            "--step-evidence",
+            "Verified result"
+          ],
+          "expected_exit_code": 0,
+          "expected_output_kind": "diagnostic",
+          "expected_accounting_mode": "self_reported",
+          "required_fields": [
+            "id",
+            "step.status",
+            "steps_summary.completed",
+            "omission_receipt"
+          ],
+          "expected_field_values": {
+            "step.status": "completed",
+            "steps_summary.completed": 1
+          }
+        },
+        {
+          "id": "inspect-plan",
+          "args": ["plan", "show", "pm-transcript-plan", "--depth", "deep"],
+          "expected_exit_code": 0,
+          "expected_output_kind": "diagnostic",
+          "expected_accounting_mode": "self_reported",
+          "required_fields": ["plan.steps", "plan.steps_summary.completed"],
+          "expected_field_values": {
+            "plan.steps_summary.completed": 1
+          }
         }
       ]
     }

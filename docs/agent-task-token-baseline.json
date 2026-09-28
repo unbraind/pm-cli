@@ -1,7 +1,7 @@
 {
   "version": 4,
   "transcript_version": 2,
-  "transcript_digest": "sha256:b8a6aea318c41e6a40dbcaf8094da8397ca747515a7df249d35c1f21ad94a307",
+  "transcript_digest": "sha256:6d4041acfaa4075dde1972d6127a74f18916f7661738b4f5d5fd47a61c179a78",
   "estimator": "ceil(utf8_bytes / 4)",
   "measurement_scope": "output_before_token_accounting",
   "published_with_release": true,
@@ -259,7 +259,33 @@
           "accounting_mode": "self_reported"
         }
       ]
+    },
+    {
+      "id": "plan-execution-mutations",
+      "max_estimated_tokens": 848,
+      "steps": [
+        {
+          "id": "create-plan",
+          "max_estimated_tokens": 21,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "add-step",
+          "max_estimated_tokens": 275,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "complete-step",
+          "max_estimated_tokens": 274,
+          "accounting_mode": "self_reported"
+        },
+        {
+          "id": "inspect-plan",
+          "max_estimated_tokens": 278,
+          "accounting_mode": "self_reported"
+        }
+      ]
     }
   ],
-  "composite_max_estimated_tokens": 13034
+  "composite_max_estimated_tokens": 13882
 }

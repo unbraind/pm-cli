@@ -68,6 +68,7 @@ import {
   runPlan
 } from "../lifecycle/plan.js";
 import { runRestore } from "../lifecycle/restore.js";
+import { buildPlanMutationReceipt } from "../lifecycle/plan-mutation-receipt.js";
 import { runUpdateMany } from "../lifecycle/update-many.js";
 import { runUpdate } from "../lifecycle/update.js";
 import { runNotes } from "../notes.js";
@@ -106,6 +107,7 @@ import {
 import {
   closeManyOptionsFromFlat,
   graphOptionsFromFlat,
+  isMcpMutationTransportInput,
   parseRuntimeInteger as parseMcpInteger,
   readRuntimeString as readString,
   readRuntimeStringArray as readStringArray,
@@ -394,12 +396,13 @@ function parseMcpIntegerPrefix(
 }
 
 /** Resolve plan subcommand, item, step and reorder position before dispatching the shared plan workflow. */
-function runMcpPlanAction(ctx: McpActionDispatchContext): Promise<unknown> {
+async function runMcpPlanAction(ctx: McpActionDispatchContext): Promise<unknown> {
   const subcommand =
     readString(ctx.args, "subcommand") ??
     readRequiredString(ctx.options, "subcommand");
   const planRecord = ctx.options as Record<string, unknown>;
-  return runPlan({
+  const { changedFields, idOnly } = withMutationCompaction(ctx.args, ctx.options);
+  const result = await runPlan({
     subcommand: subcommand as never,
     id:
       typeof ctx.id === "string"
@@ -414,6 +417,14 @@ function runMcpPlanAction(ctx: McpActionDispatchContext): Promise<unknown> {
     ),
     options: ctx.options as never,
     global: ctx.global,
+  });
+  if (subcommand !== "show" && isMcpMutationTransportInput(ctx.args)) {
+    result.mutation_receipt = buildPlanMutationReceipt(result, undefined);
+  }
+  return subcommand === "show" ? result : projectMutationResult(result, {
+    changedFields,
+    idOnly,
+    compactEnvelope: changedFields === "compact" && !idOnly,
   });
 }
 

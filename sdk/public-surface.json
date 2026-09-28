@@ -2105,6 +2105,13 @@
       ],
       "package_version": "2026.9.27",
       "reason": "Add explicit diff row projection and linked-test evidence recording receipt for agent consumers; existing fields remain available"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PlanCommandResult"
+      ],
+      "package_version": "2026.9.28",
+      "reason": "Add optional typed Plan mutation receipt while preserving full SDK Plan results; default CLI and MCP acknowledgements become bounded, with fullChangedFields compatibility documented."
     }
   ],
   "entrypoints": {
@@ -11931,7 +11938,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PlanCommandResult",
-          "signature": "export interface PlanCommandResult { action: PlanSubcommand; plan: PlanResultPlan; step?: PlanStep; current_step?: PlanStep | undefined; next_actions?: string[]; materialized?: { id: string; title: string; type: string; parent?: string; tags: string[]; from_step: string; }[]; materialize_skipped?: { from_step: string; reason: \"already_completed\" | \"already_materialized\"; existing_id?: string; }[]; warnings: string[]; generated_at: string; }"
+          "signature": "export interface PlanCommandResult { mutation_receipt?: PlanMutationReceipt; action: PlanSubcommand; plan: PlanResultPlan; step?: PlanStep; current_step?: PlanStep | undefined; next_actions?: string[]; materialized?: { id: string; title: string; type: string; parent?: string; tags: string[]; from_step: string; }[]; materialize_skipped?: { from_step: string; reason: \"already_completed\" | \"already_materialized\"; existing_id?: string; }[]; warnings: string[]; generated_at: string; }"
         },
         {
           "classification": "advanced_export",
@@ -11950,6 +11957,12 @@
           "kind": "function",
           "name": "planExtensionDirectoryCopy",
           "signature": "(sourceDirectory: string, destinationDirectory: string, options?: ExtensionCopyPlanOptions) => Promise<ExtensionCopyPlan> | calls: (sourceDirectory: string, destinationDirectory: string, options?: ExtensionCopyPlanOptions) => Promise<ExtensionCopyPlan>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PlanMutationReceipt",
+          "signature": "export interface PlanMutationReceipt { kind: \"plan_mutation\"; action: PlanSubcommand; id: string; status: string; mode: PlanMode; steps_summary: PlanStepSummary; step?: Pick<NonNullable<PlanCommandResult[\"step\"]>, \"id\" | \"order\"> & { status: PlanStepStatus; }; materialized_count: number; skipped_count: number; warning_count: number; warnings: string[]; warnings_truncated: boolean; next_action: string; inspection_command: string; omission_receipt: { has_omissions: true; omitted_field_group_count: 1; omitted_field_groups: { name: \"plan_detail\"; restore_with: string; }[]; }; }"
         },
         {
           "classification": "advanced_export",

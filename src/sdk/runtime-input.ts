@@ -59,7 +59,8 @@ export function markMcpMutationTransportInput<T extends object>(input: T): T {
   return input;
 }
 
-function isMcpMutationTransportInput(input: object): boolean {
+/** Identify transport provenance without trusting caller-supplied JSON fields. */
+export function isMcpMutationTransportInput(input: object): boolean {
   return MCP_MUTATION_TRANSPORT in input;
 }
 

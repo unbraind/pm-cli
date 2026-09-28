@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Persist revised linked evidence notes while preserving idempotent retries ([pm-zqxlfs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zqxlfs.toon))
+- Bound Plan mutation receipts while preserving full inspection ([pm-hqy7lr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hqy7lr.toon))
+
 ## 2026.9.28 - 2026-09-28
 
 ### Fixed
