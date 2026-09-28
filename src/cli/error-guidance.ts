@@ -1601,7 +1601,7 @@ function resolveUnknownOptionRetry(
 ): { retryCommand?: string; suggestedRetryArgs?: string[] } {
   if (
     ["--dry-run", "--check", "--check-only", "--plan", "--preview"].includes(
-      optionName,
+      optionName.split("=", 1)[0],
     )
   ) {
     return {};
@@ -1680,7 +1680,7 @@ function buildUnknownOptionGuidance(
   );
   if (
     ["--dry-run", "--check", "--check-only", "--plan", "--preview"].includes(
-      optionName,
+      optionName.split("=", 1)[0],
     )
   ) {
     nextSteps.push(

@@ -51,14 +51,11 @@ export function prepareSimilarityText(value: string): PreparedSimilarityText {
         [...value.matchAll(ISSUE_CODE_PATTERN)]
           .filter((match) => {
             const prefix = match[1]!;
-            const number = match[2]!;
             const position = match.index!;
             const remainder = value.slice(position + match[0].length);
             return (
               !TECHNICAL_NUMBER_PREFIX.test(prefix) &&
               (prefix === prefix.toUpperCase() ||
-                prefix === prefix.toLowerCase()) &&
-              (number.length > 1 ||
                 prefix.length <= 2 ||
                 (position === 0 && /^\s*(?::|—|–|\])/u.test(remainder)))
             );

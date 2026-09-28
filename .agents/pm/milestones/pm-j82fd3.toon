@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[6]: agent-ux,grammar,"horizon:near",milestone,outcome,token-efficiency
 created_at: "2026-07-24T23:42:39.540Z"
-updated_at: "2026-09-28T17:13:36.456Z"
+updated_at: "2026-09-28T18:08:36.561Z"
 deadline: "2026-10-31T00:00:00.000Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#1f24eae1c4d61fd0c35c2d23"
@@ -101,13 +101,24 @@ files[5]{path,scope,note}:
   tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,Verify package alias grammar
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/integration/root-help-discovery.integration.spec.ts,project,300,"harness:codex","2026-09-28T17:11:05.736Z",local_mutation,fix/agent-recovery-aliases-duplicate-scoring
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-muli8jyc-n63549
     kind: test
     status: passed
     started_at: "2026-09-28T17:11:33.255Z"
     finished_at: "2026-09-28T17:11:42.084Z"
     recorded_at: "2026-09-28T17:11:42.084Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/integration/root-help-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mulk9qkm-3wh5e8
+    kind: test
+    status: passed
+    started_at: "2026-09-28T18:08:27.601Z"
+    finished_at: "2026-09-28T18:08:36.550Z"
+    recorded_at: "2026-09-28T18:08:36.550Z"
     passed: 1
     failed: 0
     skipped: 0

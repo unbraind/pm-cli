@@ -9,8 +9,12 @@ describe("duplicates command integration", () => {
         "Import --encoding UTF-8 input",
         "Document Match-3 rules",
         "Implement Match-3 scoring",
+        "Document match-10 rules",
+        "Implement match-10 scoring",
+        "Review chart-404 output",
+        "Repair chart-404 rendering",
         "Fix GH-672 import",
-        "Investigate gh-672 regression",
+        "Investigate Gh-672 regression",
       ]) {
         expect(
           context.runCli([

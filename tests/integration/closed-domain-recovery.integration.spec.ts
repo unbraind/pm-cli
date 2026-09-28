@@ -19,6 +19,7 @@ describe("closed-domain recovery envelopes", () => {
 
       for (const args of [
         ["close", id, "Preview reason", "--dry-run"],
+        ["close", id, "Preview reason", "--dry-run=true"],
         ["update", id, "--status", "closed", "--dry-run"],
         ["claim", id, "--dry-run"],
       ]) {
