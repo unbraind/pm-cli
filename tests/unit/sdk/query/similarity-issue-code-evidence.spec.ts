@@ -12,6 +12,7 @@ describe("issue-code evidence in similarity scoring", () => {
       "SHA-256",
       "ISO-8859",
       "Match-3",
+      "MATCH-3",
       "match-10",
       "chart-404",
     ]) {
@@ -19,6 +20,9 @@ describe("issue-code evidence in similarity scoring", () => {
         prepareSimilarityText(`Document ${term} behavior`).issueCodes,
       ).toEqual([]);
     }
+    expect(
+      prepareSimilarityText("Match-3: gameplay changes").issueCodes,
+    ).toEqual([]);
   });
 
   it("keeps complete identifiers with strong title evidence", () => {

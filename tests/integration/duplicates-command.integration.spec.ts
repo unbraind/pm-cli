@@ -34,6 +34,10 @@ describe("duplicates command integration", () => {
       expect(result.code).toBe(0);
       expect(result.json?.clusters).toEqual([
         expect.objectContaining({
+          items: expect.arrayContaining([
+            expect.objectContaining({ title: "Fix GH-672 import" }),
+            expect.objectContaining({ title: "Investigate Gh-672 regression" }),
+          ]),
           matches: [
             expect.objectContaining({ reason: "issue_code", score: 0.99 }),
           ],

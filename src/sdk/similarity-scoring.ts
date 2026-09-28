@@ -8,7 +8,7 @@ import { jaccardSimilarity } from "../core/shared/text-normalization.js";
 
 export { jaccardSimilarity } from "../core/shared/text-normalization.js";
 const ISSUE_CODE_PATTERN = /\b([a-z][a-z0-9]*)-(\d+)(?:-[a-z0-9]+)*\b/giu;
-const TECHNICAL_NUMBER_PREFIX = /^(?:utf|iso|sha|tls|http|covid)$/iu;
+const TECHNICAL_NUMBER_PREFIX = /^(?:utf|iso|sha|tls|http|covid|match)$/iu;
 
 /** Precomputed title signals reused by bounded batch similarity operations. */
 export interface PreparedSimilarityText {

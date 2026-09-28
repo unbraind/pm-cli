@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-28T16:19:13.303Z"
-updated_at: "2026-09-28T18:08:45.672Z"
+updated_at: "2026-09-28T18:48:05.238Z"
 closed_at: "2026-09-28T17:13:42.261Z"
 completed_at: "2026-09-28T17:13:42.261Z"
 author: "harness:codex"
@@ -25,12 +25,14 @@ component: similarity-scoring
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-blvfye,recurs_from,"2026-09-28T16:19:13.303Z","harness:codex","cli:create:dep",detected
   pm-sn3xor,verifies,"2026-09-28T16:19:13.303Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-09-28T16:19:13.303Z","harness:codex","Duplicate check: searched all statuses for UTF-8, issue_code, similarity-scoring, natural-language identifiers, and related GitHub issues. Closed pm-blvfye fixed validation prose classification; closed pm-sn3xor preserved complete letter-suffixed duplicate codes. Neither fixed this pm duplicates regression. Source: https://github.com/unbraind/pm-cli/issues/1340. New recurrence owns only the duplicate-scoring defect."
   "2026-09-28T17:13:34.951Z","harness:codex","Implementation evidence 2026-09-28: SDK similarity scoring now distinguishes technical prose such as UTF-8 and Match-3 from project issue codes while retaining GH-672 and BD-30-A identity matches. Regression was red before the fix. Linked SDK plus isolated CLI test passed. Full suite: 9,399 tests passed, 2 platform skips; statements 65,810/65,810, branches 50,372/50,372, functions 13,611/13,611, lines 62,853/62,853. Static source/export/member docstring coverage 100%. Defect recurrence gate passed. Packed tarball in temporary npm and Bun consumers passed via npx and bunx; false duplicate cases remained separate and true GH-672 matched."
   "2026-09-28T17:38:09.263Z","harness:codex","PR #1341 review follow-up: Greptile identified two scoring gaps at the exact PR head: genuine TASK-7 and Gh-672 matches could be lost, and unlisted lowercase match-10/chart-404 prose could still force 0.99 identity. Updated the prefix evidence rule and SDK/CLI regressions; focused tests pass. The title-case technical false-positive protection remains."
   "2026-09-28T17:58:22.771Z","harness:codex","PR #1341 review correction verified: genuine TASK-7 import and Gh-672 are retained, while lowercase match-10 and chart-404 prose is excluded. Focused SDK and CLI tests pass. Full post-review suite: 9,399 passed, 2 platform skips; exact statements 65,809/65,809, branches 50,370/50,370, functions 13,611/13,611, lines 62,852/62,852."
   "2026-09-28T18:08:45.672Z","harness:codex","PR #1341 review revision final local evidence: post-review full coverage 9,399 passed with exact 100/100/100/100; pnpm quality:static passed; linked PM tests for the three items passed; packed temporary npm/npx and Bun/bunx consumers passed on the rebuilt source."
+  "2026-09-28T18:28:08.713Z","harness:codex","PR #1341 CodeRabbit review follow-up: uppercase MATCH-3 and title-heading Match-3: also represented technical prose, so the exclusion rule now includes match regardless of case; SDK negative controls added. The duplicate CLI integration assertion now names both GH-672 items, preventing an unrelated cluster from satisfying the test. Focused SDK and CLI tests passed."
+  "2026-09-28T18:48:05.237Z","harness:codex","PR #1341 CodeRabbit revision final local evidence: full 9,399-test suite passed with exact 100/100/100/100 coverage; pnpm quality:static passed; linked tests for all three active item scopes passed; packed temporary npm/npx and Bun/bunx consumers passed. MATCH-3 and Match-3: negative controls plus explicit GH-672 cluster membership are covered."
 files[4]{path,scope,note}:
   config/defect-recurrence-policy.json,project,Classify recurring duplicate identity evidence
   src/sdk/similarity-scoring.ts,project,Reject technical prose as issue-code evidence while preserving real codes
@@ -38,7 +40,7 @@ files[4]{path,scope,note}:
   tests/unit/sdk/query/similarity-issue-code-evidence.spec.ts,project,Exercise SDK scoring identity evidence
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/query/similarity-issue-code-evidence.spec.ts tests/integration/duplicates-command.integration.spec.ts,project,300,"harness:codex","2026-09-28T17:11:02.974Z",local_mutation,fix/agent-recovery-aliases-duplicate-scoring
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-muli7gk4-oezpi4
     kind: test
     status: failed
@@ -67,6 +69,17 @@ test_runs[3]:
     started_at: "2026-09-28T18:08:08.146Z"
     finished_at: "2026-09-28T18:08:16.927Z"
     recorded_at: "2026-09-28T18:08:16.927Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/query/similarity-issue-code-evidence.spec.ts tests/integration/duplicates-command.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mullnulv-fzi5e5
+    kind: test
+    status: passed
+    started_at: "2026-09-28T18:47:25.828Z"
+    finished_at: "2026-09-28T18:47:34.579Z"
+    recorded_at: "2026-09-28T18:47:34.579Z"
     passed: 1
     failed: 0
     skipped: 0

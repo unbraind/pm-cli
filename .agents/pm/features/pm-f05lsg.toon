@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: agent-ergonomics,ci-gates,discoverability,long-horizon
 created_at: "2026-08-01T13:09:26.104Z"
-updated_at: "2026-09-28T18:08:26.857Z"
+updated_at: "2026-09-28T18:47:45.615Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#1f24eae1c4d61fd0c35c2d23"
 author: "harness:claude-code"
@@ -257,7 +257,7 @@ tests[17]:
       created_at: "2026-09-28T17:11:04.384Z"
       source_kind: local_mutation
       source_ref: fix/agent-recovery-aliases-duplicate-scoring
-test_runs[11]:
+test_runs[12]:
   - run_id: test-local-msz5ibe4-fgmh3m
     kind: test
     status: passed
@@ -364,6 +364,17 @@ test_runs[11]:
     started_at: "2026-09-28T18:08:17.643Z"
     finished_at: "2026-09-28T18:08:26.836Z"
     recorded_at: "2026-09-28T18:08:26.836Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mullo33y-mni1rn
+    kind: test
+    status: passed
+    started_at: "2026-09-28T18:47:35.232Z"
+    finished_at: "2026-09-28T18:47:45.598Z"
+    recorded_at: "2026-09-28T18:47:45.598Z"
     passed: 1
     failed: 0
     skipped: 0
