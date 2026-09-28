@@ -59,6 +59,30 @@ describe("history diff output continuation", () => {
     expect(page.history).toHaveLength(1);
   });
 
+  it("counts only the active history collection after an explicit row limit", () => {
+    const result = {
+      id: "pm-example",
+      history: [{ index: 1 }, { index: 2 }],
+      diff: [{ index: 1 }, { index: 2 }],
+      projection: { mode: "full", row_key: "history" },
+      count: 2,
+    };
+    const page = applyReadOutputDimensions(
+      "history",
+      { outputLimit: 1, outputBudget: 2_000, resolvedOutputFormat: "json" },
+      result,
+    );
+    expect(page).toMatchObject({
+      history: [{ index: 1 }],
+      diff: [{ index: 1 }],
+      count: 1,
+      has_more: true,
+      projection: { row_key: "history" },
+      applied_bound: { kind: "output_limit", value: 1 },
+    });
+    expect(page).not.toHaveProperty("next_cursor");
+  });
+
   it("tolerates incomplete history projection metadata during budget compaction", () => {
     const diff = Array.from({ length: 80 }, (_, index) => ({
       index: index + 1,

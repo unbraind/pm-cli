@@ -1356,7 +1356,13 @@ function applyAmountBound(
   bounded.has_more = true;
   bounded.truncated = true;
   if (typeof bounded.count === "number") {
-    bounded.count = countReadOutputRows(bounded);
+    const activeRowKey = isRecord(bounded.projection)
+      ? bounded.projection.row_key
+      : undefined;
+    bounded.count =
+      typeof activeRowKey === "string" && Array.isArray(bounded[activeRowKey])
+        ? bounded[activeRowKey].length
+        : countReadOutputRows(bounded);
   }
   bounded.applied_bound = {
     kind: "output_limit",

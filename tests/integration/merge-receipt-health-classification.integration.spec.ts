@@ -1970,5 +1970,5 @@ describe("merge receipt health classification", () => {
         ),
       ).rejects.toThrow("item_path_unavailable");
     });
-  }, 60_000);
+  }, 120_000);
 });

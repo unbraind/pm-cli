@@ -1,0 +1,49 @@
+id: pm-v0600g
+title: Windows nightly merge-receipt classification test exceeds 60-second budget
+description: "Full Nightly Validation run 36366344450 on branch ca3d4d788 failed Windows Node 24 shard 1/2 because the lossless receipt settlement integration test timed out at 60000 ms; 4428 other shard tests passed. The test performs many real CLI, Git, history and health operations in one temporary workspace, making its existing budget unsuitable under hosted Windows contention. Source: https://github.com/unbraind/pm-cli/actions/runs/36366344450"
+type: Issue
+status: in_progress
+priority: 1
+tags[5]: "area:merge",ci,defect,nightly,windows
+created_at: "2026-09-28T01:51:53.623Z"
+updated_at: "2026-09-28T02:18:54.030Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#e953e6452c14bdf5bc2ec1d7"
+author: "harness:codex"
+acceptance_criteria: Inspect the failing hosted log and full integration test; set a bounded realistic Windows test budget without suppressing assertions; rerun focused integration and full nightly matrix; retain exact coverage gate
+goal: project management = context management
+objective: Nightly merge receipt validation distinguishes test duration from failed receipt behavior
+value: Keep nightly Windows release evidence reliable
+impact: Prevent an unrelated test budget from making the full nightly matrix untrusted
+outcome: Windows shard completes the real receipt classification test within a measured budget
+parent: pm-ul9rye
+risk: high
+severity: high
+repro_steps: "Nightly 36366344450 Windows Node 24 shard 1/2 timed out in tests/integration/merge-receipt-health-classification.integration.spec.ts:504 at 60000 ms."
+component: Windows nightly merge-receipt integration
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-kvhnb5,discovered_from,"2026-09-28T01:51:53.623Z","harness:codex","cli:create:dep",detected
+  pm-25b7tg,related,"2026-09-28T02:17:10.544Z","harness:codex","cli:update:dep",detected
+  pm-baksix,discovered_from,"2026-09-28T02:17:10.544Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-09-28T01:51:53.623Z","harness:codex","Duplicate check: all-status pm search for merge receipt health timeout and Windows nightly test timeout found historical pm-baksix, pm-25b7tg and pm-kvhnb5, but no owner of this exact merge-receipt classification 60-second hosted timeout. Separate from the bundled init timeout in pm-kvhnb5."
+  "2026-09-28T01:53:19.569Z","harness:codex","Nightly run 36366344450 at ca3d4d788: Windows Node 24 shard 1/2 reported 4428 passed, 105 skipped and one 60000 ms timeout in the full lossless receipt settlement test at line 504. Other six nightly jobs, including Windows shard 2/2 and exact coverage, passed. This one test runs many real CLI and Git operations, so its 120000 ms limit remains bounded while allowing hosted contention."
+  "2026-09-28T02:18:54.030Z","harness:codex",Focused real merge-receipt classification suite passed 5/5 in 24.1 seconds locally with the 120-second bounded test limit. Full exact coverage passed 9384 tests at 100/100/100/100; hosted Windows shard rerun is pending. Graph composition initially found two missing prose edges and passed after typed links to original test owner pm-baksix and prior Windows timeout pm-25b7tg were added.
+files[1]{path,scope,note}:
+  tests/integration/merge-receipt-health-classification.integration.spec.ts,project,bounded Windows full-settlement test budget
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts,project,240,"harness:codex","2026-09-28T01:53:17.846Z",local_mutation,fix/agent-receipts-history-windows-nightly
+test_runs[1]:
+  - run_id: test-local-muklglfq-jl1fb2
+    kind: test
+    status: passed
+    started_at: "2026-09-28T01:53:36.406Z"
+    finished_at: "2026-09-28T01:54:09.926Z"
+    recorded_at: "2026-09-28T01:54:09.926Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/merge-receipt-health-classification.integration.spec.ts,schema,schema,source,local_source_ref
+escape_class: nightly_regression
+body: ""
