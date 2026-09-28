@@ -1149,6 +1149,30 @@
             "target_id": "pm-ir9vqy",
             "text_contains": "Duplicate check 2026-09-28:",
             "reason": "Duplicate-search boundary comparison explicitly distinguishes a different failure mechanism. It does not assert recurrence or delivery dependence."
+          },
+          {
+            "holder_id": "pm-lnrk",
+            "target_id": "pm-xjf9",
+            "text_contains": "Historical batch",
+            "reason": "The dated historical batch comments cite the source and three subject records to explain discovery-edge recovery. This citation inventory asserts no verification of run or feature behavior."
+          },
+          {
+            "holder_id": "pm-lnrk",
+            "target_id": "pm-vi2v",
+            "text_contains": "Historical batch",
+            "reason": "The dated historical batch comments cite the source and three subject records to explain discovery-edge recovery. This citation inventory asserts no verification of run or feature behavior."
+          },
+          {
+            "holder_id": "pm-lnrk",
+            "target_id": "pm-dw5s",
+            "text_contains": "Historical batch",
+            "reason": "The dated historical batch comments cite the source and three subject records to explain discovery-edge recovery. This citation inventory asserts no verification of run or feature behavior."
+          },
+          {
+            "holder_id": "pm-lnrk",
+            "target_id": "pm-lwps",
+            "text_contains": "Historical batch",
+            "reason": "The dated historical batch comments cite the source and three subject records to explain discovery-edge recovery. This citation inventory asserts no verification of run or feature behavior."
           }
         ]
       },

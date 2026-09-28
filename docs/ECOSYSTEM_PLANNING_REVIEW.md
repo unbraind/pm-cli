@@ -80,9 +80,9 @@ metadata. The completed [pm-e9zh](../.agents/pm/chores/pm-e9zh.toon) preserves
 its explicitly unrecoverable 170-item residual. A missing historical observation
 must remain unknown until independent evidence is found.
 
-After this pass the live graph contains 2,829 items and 14,122 directed edges,
-including 1,899 specialized semantic edges. Generic `related` remains unchanged
-at 5,589; no dangling endpoints, isolated items or ordering contradictions were
+After this pass the live graph contains 2,829 items and 14,118 directed edges,
+including 1,894 specialized semantic edges. Generic `related` is 5,590 after one
+reviewed correction from causal provenance to non-causal coordination; no dangling endpoints, isolated items or ordering contradictions were
 introduced. Outcome reachability remains 100%. The 1,458 records without a
 specialized semantic edge remain visible for evidence review; absence alone
 does not justify inventing a relationship.
@@ -241,3 +241,17 @@ the isolated rerun also failed: get 385/362 ms, context 466/433 ms, next
 [startup investigation](../.agents/pm/issues/pm-bj7rq0.toon) distinguishes runner
 qualification from a demonstrated product regression and preserves the completed
 transport-floor implementation. This is an unresolved validation limitation.
+
+## PR review corrections
+
+PR #1333 identified two overly broad relationship claims. The standing release
+reminder predates the new installer-diagnostics issue, so their link is `related`
+coordination rather than `discovered_from` provenance. Four `verifies` rows from
+the historical batch were removed: checking citations, history continuity and
+release attribution does not verify the source run or feature behavior. The three
+source-backed discovery links on closed features remain valid and unchanged.
+
+The original writes and their corrections remain in immutable history. Four
+holder/target/text-scoped citation exemptions distinguish the batch inventory
+from verification claims without raising the prose-edge ceiling. The corrected
+graph-composition gate passes.
