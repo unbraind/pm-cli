@@ -6,6 +6,7 @@ import { recordDeprecatedAliasUsage } from "../../../../src/sdk/telemetry.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { acquireLock } from "../../../../src/core/lock/lock.js";
+import * as files from "../../../../src/core/fs/fs-utils.js";
 import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
 import * as telemetryRuntime from "../../../../src/core/telemetry/runtime.js";
 import { withTempGlobalRoot } from "../../../helpers/temp.js";
@@ -240,6 +241,42 @@ describe("runTelemetry", () => {
       await runTelemetry({ subcommand: "stats" }, {});
       const state = JSON.parse(await fs.readFile(statePath(globalRoot), "utf8")) as { alias_usage: Record<string, unknown> };
       expect(state.alias_usage).not.toHaveProperty("list-open");
+    });
+  }, 10_000);
+
+  it.each(["cleared", "already-pruned"] as const)("does not recreate %s telemetry state after a competing writer", async (peerState) => {
+    await withTempGlobalRoot("pm-cli-alias-clear-race-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.retention_days = 1;
+      await writeSettings(globalRoot, settings, "test:alias_clear_race");
+      const oldDay = new Date(Date.now() - 3 * 86_400_000).toISOString().slice(0, 10);
+      await fs.mkdir(path.dirname(statePath(globalRoot)), { recursive: true });
+      await fs.writeFile(statePath(globalRoot), JSON.stringify({ alias_usage: {
+        "list-open": { canonical: "list", days: { [oldDay]: { count: 3, last_seen: `${oldDay}T00:00:00.000Z` } } },
+      } }), "utf8");
+      const release = await acquireLock(globalRoot, "telemetry-queue", 60, "alias-clear-race-test");
+      let observeRead = () => {};
+      const readObserved = new Promise<void>((resolve) => { observeRead = resolve; });
+      const realReadFileIfExists = files.readFileIfExists;
+      const spy = vi.spyOn(files, "readFileIfExists").mockImplementation(async (target) => {
+        const value = await realReadFileIfExists(target);
+        if (target === statePath(globalRoot)) observeRead();
+        return value;
+      });
+      try {
+        const statsPromise = runTelemetry({ subcommand: "stats" }, {});
+        await readObserved;
+        if (peerState === "cleared") await fs.rm(statePath(globalRoot));
+        else await fs.writeFile(statePath(globalRoot), JSON.stringify({ alias_usage: {} }), "utf8");
+        await release();
+        const result = await statsPromise;
+        expect(result.zero_use_aliases).toContain("list-open");
+        if (peerState === "cleared") await expect(fs.stat(statePath(globalRoot))).rejects.toMatchObject({ code: "ENOENT" });
+        else expect(JSON.parse(await fs.readFile(statePath(globalRoot), "utf8"))).toEqual({ alias_usage: {} });
+      } finally {
+        spy.mockRestore();
+      }
     });
   }, 10_000);
 

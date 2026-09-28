@@ -569,7 +569,9 @@ async function readRetainedAliasUsage(globalPmRoot: string, statePath: string, r
   try {
     await withTelemetryQueueMutation(async () => {
       const current = await readTelemetryRuntimeState(statePath);
+      if (current.alias_usage === undefined) return;
       const retained = normalizeAliasUsage(current.alias_usage, cutoff);
+      if (JSON.stringify(current.alias_usage) === JSON.stringify(retained)) return;
       await writeFileAtomic(statePath, `${JSON.stringify({ ...current, alias_usage: retained }, null, 2)}\n`);
     }, globalPmRoot, 250);
   } catch {
