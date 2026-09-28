@@ -58,6 +58,7 @@ import type {
   SharedLinkedResourceOptions,
 } from "./mutation-command-options.js";
 import { createUnknownSubcommandError } from "../agent/subcommand-recovery.js";
+import { buildPlanMutationReceipt, type PlanMutationReceipt } from "./plan-mutation-receipt.js";
 
 /** Public contract for plan subcommands, shared by SDK and presentation-layer consumers. */
 export const PLAN_SUBCOMMANDS = [
@@ -214,6 +215,8 @@ export type PlanOperationOptions = PlanCommandOptions;
 
 /** Documents the plan command result payload exchanged by command, SDK, and package integrations. */
 export interface PlanCommandResult {
+  /** Bounded acknowledgement for mutations; full typed Plan state remains available alongside it. */
+  mutation_receipt?: PlanMutationReceipt;
   /** Value that configures or reports action for this contract. */
   action: PlanSubcommand;
   /** Value that configures or reports plan for this contract. */
@@ -1683,7 +1686,7 @@ async function planReorderStep(
   stepRef: string,
   newOrder: number,
 ): Promise<PlanCommandResult> {
-  const { document, itemId } = await mutatePlanSteps({
+  const { document, itemId, resultStep } = await mutatePlanSteps({
     id,
     options,
     ctx,
@@ -1707,6 +1710,7 @@ async function planReorderStep(
   return {
     action: "reorder-step",
     plan,
+    step: resultStep,
     next_actions: nextActionsFor(itemId, plan),
     warnings: [],
     generated_at: nowIso(),
@@ -1719,7 +1723,7 @@ async function planRemoveStep(
   ctx: PlanWriteContext,
   stepRef: string,
 ): Promise<PlanCommandResult> {
-  const { document, itemId } = await mutatePlanSteps({
+  const { document, itemId, resultStep } = await mutatePlanSteps({
     id,
     options,
     ctx,
@@ -1733,13 +1737,14 @@ async function planRemoveStep(
       });
       steps.length = 0;
       steps.push(...remaining);
-      return { changedSteps: [step.id] };
+      return { changedSteps: [step.id], resultStep: step };
     },
   });
   const plan = projectPlan(document.metadata, "standard");
   return {
     action: "remove-step",
     plan,
+    step: resultStep,
     next_actions: nextActionsFor(itemId, plan),
     warnings: [],
     generated_at: nowIso(),
@@ -2447,10 +2452,13 @@ export async function runPlan(
 ): Promise<PlanCommandResult> {
   const ctx = await loadContext(input.global);
   const normalizedInput = normalizePlanStepAliasInput(input);
-  return resolvePlanDispatcher(normalizedInput.subcommand)(
+  const result = await resolvePlanDispatcher(normalizedInput.subcommand)(
     normalizedInput,
     ctx,
   );
+  return result.action === "show"
+    ? result
+    : { ...result, mutation_receipt: buildPlanMutationReceipt(result) };
 }
 
 /** Internal Plan mutation helpers exposed only for branch-complete regression coverage. */

@@ -1014,9 +1014,9 @@ describe("agent-task transcript token gate", () => {
 
     const updated = await main(["--update", "--baseline", baselinePath]);
     expect(updated).toMatchObject({
-      task_count: 8,
-      completed_task_count: 8,
-      step_count: 21,
+      task_count: 9,
+      completed_task_count: 9,
+      step_count: 25,
       retry_count: 2,
     });
     const updatedBaseline = JSON.parse(

@@ -50,6 +50,7 @@ const LEGACY_FULL_RESULT_COMMANDS = new Set([
   "focus",
   "learnings",
   "notes",
+  "plan",
   "release",
   "restore",
   "test",

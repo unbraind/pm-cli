@@ -1,11 +1,14 @@
 import { spawn } from "node:child_process";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, symlink as makeSymlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 import readline from "node:readline";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   _testOnly as mcpServerTestOnly,
   handleRequest,
+  isInvokedAsMcpMainModule,
   processRpcLine,
   startMcpServer,
 } from "../../src/mcp/server.js";
@@ -2153,7 +2156,7 @@ describe("MCP protocol handshake", () => {
           title: "mcp literal plan description",
           description: "-",
         },
-      })) as { plan: { id: string } };
+      })) as { id: string };
       const shortcutIds: string[] = [];
       for (const action of ["meet", "event", "remind"] as const) {
         const shortcut = (await mcpServerTestOnly.runAction({
@@ -2194,7 +2197,7 @@ describe("MCP protocol handshake", () => {
       const planItem = (await mcpServerTestOnly.runAction({
         action: "get",
         path: context.pmPath,
-        id: plan.plan.id,
+        id: plan.id,
         options: { full: true },
       })) as { item: { description?: string } };
       expect(planItem.item.description).toBe("-");
@@ -2585,15 +2588,6 @@ describe("MCP protocol handshake", () => {
 
 describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
   it("treats a symlinked argv[1] (npm .bin shim) as the main module", async () => {
-    const { isInvokedAsMcpMainModule } =
-      await import("../../src/mcp/server.js");
-    const {
-      mkdtemp,
-      symlink: makeSymlink,
-      realpath,
-    } = await import("node:fs/promises");
-    const { tmpdir } = await import("node:os");
-    const { fileURLToPath, pathToFileURL } = await import("node:url");
     const selfPath = await realpath(
       fileURLToPath(new URL("../../src/mcp/server.ts", import.meta.url)),
     );
@@ -2613,8 +2607,6 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
   });
 
   it("serves an initialize response when launched through a symlinked npm-style bin", async () => {
-    const { mkdtemp, symlink: makeSymlink } = await import("node:fs/promises");
-    const { tmpdir } = await import("node:os");
     const distServerPath = path.join(process.cwd(), "dist", "mcp", "server.js");
     const binDir = await mkdtemp(path.join(tmpdir(), "pm-mcp-bin-e2e-"));
     const shimPath = path.join(binDir, "pm-mcp");
@@ -2828,6 +2820,7 @@ describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
             arguments: {
               path: context.pmPath,
               id: materializePlanId,
+              fullChangedFields: true,
               options: {
                 subcommand: "materialize",
                 steps: "plan-step-001",

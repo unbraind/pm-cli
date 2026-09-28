@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1334: linked artifact additions silently discard revised evidence notes ([pm-zqxlfs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zqxlfs.toon))
+- Plan mutations emit the complete step collection instead of a bounded changed-step receipt ([pm-hqy7lr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hqy7lr.toon))
+
 ## 2026.9.28 - 2026-09-28
 
 ### Fixed

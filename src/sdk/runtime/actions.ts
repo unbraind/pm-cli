@@ -394,12 +394,13 @@ function parseMcpIntegerPrefix(
 }
 
 /** Resolve plan subcommand, item, step and reorder position before dispatching the shared plan workflow. */
-function runMcpPlanAction(ctx: McpActionDispatchContext): Promise<unknown> {
+async function runMcpPlanAction(ctx: McpActionDispatchContext): Promise<unknown> {
   const subcommand =
     readString(ctx.args, "subcommand") ??
     readRequiredString(ctx.options, "subcommand");
   const planRecord = ctx.options as Record<string, unknown>;
-  return runPlan({
+  const { changedFields, idOnly } = withMutationCompaction(ctx.args, ctx.options);
+  const result = await runPlan({
     subcommand: subcommand as never,
     id:
       typeof ctx.id === "string"
@@ -414,6 +415,11 @@ function runMcpPlanAction(ctx: McpActionDispatchContext): Promise<unknown> {
     ),
     options: ctx.options as never,
     global: ctx.global,
+  });
+  return subcommand === "show" ? result : projectMutationResult(result, {
+    changedFields,
+    idOnly,
+    compactEnvelope: changedFields === "compact" && !idOnly,
   });
 }
 

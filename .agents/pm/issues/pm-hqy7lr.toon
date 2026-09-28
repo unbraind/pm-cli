@@ -2,28 +2,115 @@ id: pm-hqy7lr
 title: Plan mutations emit the complete step collection instead of a bounded changed-step receipt
 description: "During the 2026-09-28 ecosystem review, updating one field or status on the 15-step reconstruction plan emitted the full plan with all step bodies, linked items and resume context. Eight sequential update-step operations produced roughly 34902 tool-reported tokens of output. The mutation affects one step but response cost grows with the whole plan. This defeats the compact mutation default and agent tokens-per-completed-task goal. Preserve complete Plan functionality and explicit full inspection while making ordinary mutations cheap."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: "area:cli","area:sdk","horizon:current",plan,token-efficiency
 created_at: "2026-09-28T06:07:42.721Z"
-updated_at: "2026-09-28T07:20:07.268Z"
+updated_at: "2026-09-28T09:39:42.496Z"
+closed_at: "2026-09-28T09:36:15.241Z"
+completed_at: "2026-09-28T09:36:15.241Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Public SDK owns an explicit compact Plan mutation receipt while CLI and MCP share its semantics; A 1000-step fixture proves a single-step update stays inside its declared output ceiling with no unrelated body text; Explicit full inspection still returns all steps decisions evidence and resume metadata with truthful omissions and continuation contracts; Completed planning-journey token replay includes mutation responses and fails when full-plan amplification is reintroduced
 parent: pm-n7rr
 risk: medium
 confidence: high
-expected_result: "Default Plan mutation output contains plan/step identity, changed fields or counts, compact next action and an explicit route to full plan inspection, with output cost bounded independently of unrelated step bodies."
-actual_result: A one-step update on the live 15-step plan renders unrelated steps and lengthy resume context; repeated planning operations emitted tens of thousands of tokens.
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+resolution: SDK generates bounded Plan mutation receipts shared by CLI and MCP; typed SDK retains complete results and explicit full/deep recovery remains available. Added thousand-step persistence regression and fixed-ceiling planning transcript.
+expected_result: "Single-step mutation output remains bounded independently of unrelated Plan content, with complete counts and safe full-state recovery."
+actual_result: 9388 tests pass with exact 100/100/100/100 coverage; linked checks and typecheck pass; real Node/Bun completion output 891 bytes; npx/bunx smoke passes. Local startup timing limitations remain recorded separately; hosted review and merge pending.
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,implements,"2026-09-28T06:07:42.721Z","harness:codex","cli:create:dep",detected
   pm-nilh,discovered_from,"2026-09-28T06:07:42.721Z","harness:codex","cli:create:dep",detected
   pm-p9a4,discovered_from,"2026-09-28T06:07:42.721Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text,edited_at}:
-  "2026-09-28T06:07:42.721Z","harness:codex","Duplicate check 2026-09-28: searched the complete 2826-item snapshot for mutation receipt/output and Plan mutation titles, plus live all-status keyword AND searches for plan mutation output receipt and plan compact. pm-nilh and pm-ch59 are completed general compact-mutation deliveries; pm-5t33or is the broader output-budget programme. No individual owner was found for the Plan mutator full-collection response. Reproduction: pm plan update-step on one step of pm-a8zm returned all 15 steps. Read full live pm-nilh and pm-ch59 metadata and the complete event history before filing this distinct adapter/receipt gap.","2026-09-28T07:20:06.515Z"
-files[2]{path,scope}:
+  pm-bj7rq0,related,"2026-09-28T08:58:31.323Z","harness:codex","cli:update:dep",detected
+  pm-q7c36n,related,"2026-09-28T08:58:31.323Z","harness:codex","cli:update:dep",detected
+  pm-z3ez,related,"2026-09-28T08:58:31.323Z","harness:codex","cli:update:dep",detected
+  pm-zqxlfs,related,"2026-09-28T08:58:31.323Z","harness:codex","cli:update:dep",detected
+comments[13]:
+  - created_at: "2026-09-28T06:07:42.721Z"
+    author: "harness:codex"
+    text: "Duplicate check 2026-09-28: searched the complete 2826-item snapshot for mutation receipt/output and Plan mutation titles, plus live all-status keyword AND searches for plan mutation output receipt and plan compact. pm-nilh and pm-ch59 are completed general compact-mutation deliveries; pm-5t33or is the broader output-budget programme. No individual owner was found for the Plan mutator full-collection response. Reproduction: pm plan update-step on one step of pm-a8zm returned all 15 steps. Read full live pm-nilh and pm-ch59 metadata and the complete event history before filing this distinct adapter/receipt gap."
+    edited_at: "2026-09-28T07:20:06.515Z"
+  - created_at: "2026-09-28T08:13:44.332Z"
+    author: "harness:codex"
+    text: "Implementation scope: SDK-owned compact Plan mutation receipts and explicit inspection recovery; paired with pm-zqxlfs linked-evidence note correction in one mutation-contract PR. Regression fixtures will exercise unrelated Plan payload growth and exact durable linked-resource writes."
+  - created_at: "2026-09-28T08:22:20.235Z"
+    author: "harness:codex"
+    text: "TDD evidence: 1000-step fixture initially failed compact-receipt shape and echoed full Plan details. After SDK receipt projection, focused Plan suites and real CLI/native-action acceptance passed. Typed PmClient Plan methods explicitly retain full results; compact consumers receive counts and safe read-only inspection guidance. Full coverage and hosted review remain pending."
+  - created_at: "2026-09-28T08:25:26.911Z"
+    author: "harness:codex"
+    text: "Independent temporary-directory manual acceptance passed under Node and Bun: init, compact Plan create, complete-step, deep inspection, and verified hash-chained history. Completion output was 891 bytes. Required-mode Sentry/telemetry gate passed: no unresolved critical/high issues in the 14-day window, telemetry finish error rate 1.48 percent, zero failed rows missing error codes. GitHub security inventories each returned zero; pnpm audit reported no known vulnerabilities. Release 2026.9.28 recovery run 36380136948 is successful after original Windows npm-global failure, already tracked by pm-q7c36n. Chrome CodeFactor inspection unavailable because CUA_REPL_ENABLED_SURFACES is unset; GH-1311/1312 remain linked to pm-z3ez."
+  - created_at: "2026-09-28T08:34:28.720Z"
+    author: "harness:codex"
+    text: "Validation update: packed package smoke passed for npx and bunx. Real temporary tracker exercised Node/Bun evidence-note replacement and retry idempotency, compact Plan completion (891 bytes), explicit deep read and verified history. Production telemetry flush drained its queue, and collector query confirmed fresh command_start/command_finish events including telemetry at 08:33 UTC; this establishes recent delivery, not universal per-action completeness. Coverage remains running; its current failures include directory file cap and invocation wall-clock margin. No acceptance claim yet."
+  - created_at: "2026-09-28T08:39:44.212Z"
+    author: "harness:codex"
+    text: "Full coverage attempt completed 751 files: 9377 passed, 11 failed, two platform skips; no complete coverage artifact was emitted. Seven assertions assumed the previous full Plan envelope or eight-task transcript; directory cap required relocating the new test into lifecycle/. Updated existing full-result fixture normalization to opt into full Plan output, while the new CLI receipt acceptance explicitly preserves production defaults. MCP narrow-tool tests now assert compact identity and recover persisted evidence through deep show. Three timing/timeout failures will be rerun unchanged without competing assurance scans."
+  - created_at: "2026-09-28T08:40:44.512Z"
+    author: "harness:codex"
+    text: "Focused post-fix verification: all 222 tests across 11 affected integration and contract suites passed. Unchanged invocation-profile and source-scanning timeout cases pass without the competing tracker scan. Full static and canonical full-source coverage remain pending; no threshold, timeout, coverage inclusion, or ignore-directive relaxation was made."
+  - created_at: "2026-09-28T08:54:59.913Z"
+    author: "harness:codex"
+    text: "Static chain passed docstring content/coverage, exports, ESLint, duplicate checks, repository structure, workflow/dependency policy, generated surfaces, package and command contracts, refusal closure, all nine task-token journeys, MCP deprecation inventory, all 47 tracker-quality assertions, gate registry and SDK surface. Transcript formatting required only its generated fingerprint refresh; task ceilings stayed unchanged. SDK import timing then failed sdk/merge 240 ms versus 226 ms, recorded under existing pm-bj7rq0; isolated rerun and remaining gates are pending."
+  - created_at: "2026-09-28T08:58:33.040Z"
+    author: "harness:codex"
+    text: "Relationship evidence: co-delivered linked-evidence correction, startup-validation investigation, release-acceptance diagnosis, and GitHub intake ownership are contextual references, not prerequisites or implementation ownership. Added related edges for those four references while retaining the existing implements and discovered_from lineage; no ordering dependency is asserted."
+  - created_at: "2026-09-28T09:03:04.715Z"
+    author: "harness:codex"
+    text: Graph composition now passes all 9 assertions after contextual prose references received honest related edges; existing semantic lineage remains intact. Record integrity passes. Mutation gate passed 323 killed/330 total with the same 7 reviewed equivalent waivers and zero new failures. Performance remains a local qualification limitation reproduced on untouched base; Node 24 passed all SDK entrypoint imports but several CLI timing ceilings still failed. Full coverage is restarting on CI-aligned Node 24 with four workers and unchanged inclusion/thresholds.
+  - created_at: "2026-09-28T09:18:22.311Z"
+    author: "harness:codex"
+    text: "Correction to intermediate test progress: final Node 24.12.0 summary reported 9386 passing tests and two failures, both native SQLite ExperimentalWarning pollution of strict stderr assertions in workflow-policy MCP and lossless mutation contracts. That run produced no coverage receipt and is not accepted as green. Restarted the unchanged canonical full-source coverage gate on supported Node 26.9.0 with four workers; no warning suppression, assertion relaxation, timeout increase, or coverage exclusion was introduced."
+  - created_at: "2026-09-28T09:35:45.446Z"
+    author: "harness:codex"
+    text: "Canonical full-source coverage passed on Node 26.9.0 with four workers: 750 test files passed, one platform-only file skipped; 9388 tests passed and two Windows-only tests skipped. Exact coverage gate passed 100/100/100/100: statements 65763/65763, branches 50338/50338, functions 13607/13607, lines 62809/62809. No inclusion, ignore, assertion, timeout, or threshold changes were used. Version consistency and docs/skills gate passed."
+  - created_at: "2026-09-28T09:39:41.727Z"
+    author: "harness:codex"
+    text: "Reviewed-delivery preparation: linked tests passed 100 tests; full typecheck passed. Latest pm-changelog 2026.9.25 generated both fixes under Unreleased. Post-closure defect-evidence gate reports zero findings; tracker-context-quality, graph-composition and record-integrity verdicts pass. Final secret scan found no credential-like secrets. Both completed claims are released; no items remain in progress."
+notes[1]{created_at,author,text}:
+  "2026-09-28T08:46:03.182Z","harness:codex","Compatibility decision: keep runPlan and typed PmClient Plan methods full-shaped. Apply the SDK-generated receipt at CLI/MCP presentation boundaries by default, with fullChangedFields recovery. Omit unrelated content and retain complete step counts, affected identity, bounded warning previews, and a read-only deep inspection command."
+files[14]{path,scope}:
+  .agents/pm/extensions/.managed-extensions.json,project
+  sdk/public-surface.json,project
   src/cli/commands/lifecycle/plan.ts,project
+  src/core/output/mutation-projection.ts,project
+  src/sdk/lifecycle/plan-mutation-receipt.ts,project
   src/sdk/lifecycle/plan.ts,project
-docs[1]{path,scope}:
+  src/sdk/runtime.ts,project
+  src/sdk/runtime/actions.ts,project
+  tests/helpers/withTempPmPath.ts,project
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project
+  tests/integration/mcp-handshake.spec.ts,project
+  tests/unit/commands/lifecycle/plan-command.spec.ts,project
+  tests/unit/scripts/release/agent-task-token-gate.spec.ts,project
+  tests/unit/sdk/lifecycle/plan-evidence-mutation-receipts.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/plan-evidence-mutation-receipts.spec.ts tests/unit/commands/lifecycle/plan-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/integration/mcp-handshake.spec.ts,project,300,"harness:codex","2026-09-28T08:39:40.054Z",local_mutation,fix/plan-receipts-linked-evidence
+test_runs[1]:
+  - run_id: test-local-mul1wszt-w3w6bh
+    kind: test
+    status: passed
+    started_at: "2026-09-28T09:34:19.114Z"
+    finished_at: "2026-09-28T09:34:40.073Z"
+    recorded_at: "2026-09-28T09:34:40.073Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/plan-evidence-mutation-receipts.spec.ts tests/unit/commands/lifecycle/plan-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/integration/mcp-handshake.spec.ts,schema,schema,source,local_source_ref
+docs[5]{path,scope}:
+  CHANGELOG.md,project
+  docs/agent-task-token-baseline.json,project
+  docs/agent-task-transcripts.json,project
   docs/ECOSYSTEM_PLANNING_REVIEW.md,project
+  docs/SDK_EVIDENCE_TRACEABILITY.md,project
+close_reason: Implemented and locally verified SDK-owned bounded Plan mutation receipts; closure evidence is part of the reviewed delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-hqy7lr
+  gate_id: plan-mutation-receipts
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/plan-evidence-mutation-receipts.spec.ts
+  local_checks[3]: Real temporary persistence and history-byte assertions fail on pre-fix behavior,CLI and MCP compact receipts plus typed SDK full-result compatibility,Versioned planning transcript and fixed token ceiling
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

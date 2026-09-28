@@ -886,11 +886,12 @@ describe("MCP dynamic package actions", () => {
         },
       });
       const createdResult = (created?.structuredContent as {
-        result?: { plan?: { id?: string; steps?: unknown } };
+        result?: { id?: string; kind?: string; plan?: unknown };
       } | undefined)?.result;
-      const planId = createdResult?.plan?.id;
+      const planId = createdResult?.id;
       expect(planId).toMatch(/^pm-/);
-      expect(createdResult?.plan).not.toHaveProperty("steps");
+      expect(createdResult?.kind).toBe("plan_mutation");
+      expect(createdResult?.plan).toBeUndefined();
 
       await handleRequest({
         jsonrpc: "2.0",
@@ -929,7 +930,8 @@ describe("MCP dynamic package actions", () => {
         },
       });
       const result = (updated?.structuredContent as { result?: { step?: { status?: string; evidence?: string } } } | undefined)?.result;
-      expect(result?.step).toMatchObject({ status: "completed", evidence: "done" });
+      expect(result?.step).toMatchObject({ status: "completed" });
+      expect(result?.step).not.toHaveProperty("evidence");
 
       const shownDefault = await handleRequest({
         jsonrpc: "2.0",
@@ -973,7 +975,7 @@ describe("MCP dynamic package actions", () => {
         result?: { plan?: { steps?: Array<Record<string, unknown>> } };
       } | undefined)?.result;
       expect(Array.isArray(shownDeepResult?.plan?.steps)).toBe(true);
-      expect(shownDeepResult?.plan?.steps?.[0]).toMatchObject({ title: "Read code" });
+      expect(shownDeepResult?.plan?.steps?.[0]).toMatchObject({ title: "Read code", status: "completed", evidence: "done" });
     });
   });
 

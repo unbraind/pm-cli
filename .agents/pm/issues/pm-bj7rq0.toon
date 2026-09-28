@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-09-28T06:20:39.865Z"
+updated_at: "2026-09-28T09:03:03.344Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -19,8 +19,10 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-o87av6,implements,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-p9a4,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-yse5dt,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-09-28T06:20:35.648Z","harness:codex","text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
+  "2026-09-28T08:54:59.030Z","harness:codex","Additional live evidence 2026-09-28: during Plan receipt/evidence-note delivery, the static SDK entrypoint gate failed sdk/merge median-of-five at 240 ms against the unchanged 226 ms ceiling. Full-suite invocation-profile also exceeded its scheduling margin and two source scans hit 30-second timeouts while a separate tracker assurance scan ran; all three tests passed unchanged in a focused rerun without that competing scan. This is correlation, not causal attribution. Isolated SDK/transport reruns are pending; no performance ratchet was changed."
+  "2026-09-28T09:03:00.923Z","harness:codex","Untouched-base comparison completed in a separate temporary clone at f3163466b with the same installed dependencies and Node 26.9.0. Base SDK import gate failed aggregate 514/500 ms and merge 252/226 ms; base CLI failed get 388/362, next 448/440, create 403/398 ms. Candidate isolated Node 26 rerun failed merge 232/226 and five CLI operations. Candidate Node 24.12.0 passed all 10 SDK imports; CLI failures moved to list 432/419, context 442/433, claim 425/415 ms. This confirms admission failures also exist on the unchanged base, not a clean local performance qualification. It does not identify the cause or exclude smaller regressions. Preserve all budgets; use hosted exact-head checks and continue this canonical diagnosis separately."
 files[2]{path,scope}:
   scripts/bench/cli-transport-budgets.json,project
   scripts/bench/cli-transport-floor.mjs,project

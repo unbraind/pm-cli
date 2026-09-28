@@ -1,0 +1,66 @@
+id: pm-zqxlfs
+title: "GH-1334: linked artifact additions silently discard revised evidence notes"
+description: Re-adding the same path and scope with a changed note currently keeps stale evidence and reports changed false. Explicit replacement notes must update the existing entry atomically while bare retries preserve notes and unchanged retries preserve bytes and history. Apply shared SDK behavior to files and docs with CLI and MCP parity.
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:cli","area:sdk","horizon:current",linked-resources,mutation-contract
+created_at: "2026-09-28T08:13:29.427Z"
+updated_at: "2026-09-28T09:36:17.641Z"
+closed_at: "2026-09-28T09:36:16.764Z"
+completed_at: "2026-09-28T09:36:16.764Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Explicit changed notes replace in place through the shared SDK; Bare and equal retries preserve existing notes and append no history; Files and docs share normalized path and scope identity; Temporary persistence tests prove exact history and transport behavior
+goal: project management = context management
+objective: Keep evidence corrections durable and mutation receipts truthful
+value: Agents can revise linked evidence without remove/add churn
+impact: Shared files/docs CLI SDK and MCP behavior
+outcome: Corrected notes survive reload and retries remain no-op
+why_now: GH-1334 reports stale linked evidence on the current published release
+parent: pm-mpbb
+risk: medium
+confidence: high
+resolution: Shared SDK merges explicit revised notes in place by normalized path and scope; bare and equal retries preserve notes and append no history.
+expected_result: "Revised file and doc evidence persists once, with truthful changed status and stable retry bytes."
+actual_result: "Pre-fix regressions failed for both files and docs; post-fix real persistence and linked tests pass. Canonical 9388-test suite has exact 100/100/100/100 coverage, with manual Node/Bun note revision and retry acceptance. Hosted review and merge pending."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-jb1ron,discovered_from,"2026-09-28T08:13:29.427Z","harness:codex","cli:create:dep",detected
+  pm-zwpp,implements,"2026-09-28T08:13:29.427Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-09-28T08:13:29.427Z","harness:codex","Duplicate check: complete live all-status census read 2829 items with completeness complete and no omissions. Title and keyword searches plus full pm-jb1ron metadata identify completed equal-link idempotency work but no owner for GH-1334 revised-note loss. Source https://github.com/unbraind/pm-cli/issues/1334."
+  "2026-09-28T08:22:19.515Z","harness:codex","TDD evidence: files and docs regressions both failed because changed was false for revised note. Shared SDK merge now replaces only explicitly supplied non-empty notes for matching normalized path/scope; bare and equal retries preserve note and history bytes. Focused files/docs suite passed 34 tests and new persistence tests passed."
+  "2026-09-28T08:40:46.666Z","harness:codex","Focused post-fix verification: all 222 tests across 11 affected integration and contract suites passed. Unchanged invocation-profile and source-scanning timeout cases pass without the competing tracker scan. Full static and canonical full-source coverage remain pending; no threshold, timeout, coverage inclusion, or ignore-directive relaxation was made."
+  "2026-09-28T09:35:46.265Z","harness:codex","Canonical full-source coverage passed: 9388 tests, 750 files, exact 100/100/100/100 with zero uncovered counts; two Windows-only tests skipped on Linux. Temporary Node/Bun acceptance verified explicit note replacement and unchanged retry history. Packed npx/bunx smoke, security scan, version consistency and docs/skills gate passed."
+learnings[1]{created_at,author,text}:
+  "2026-09-28T08:46:04.058Z","harness:codex",Idempotency must compare semantic state after merging explicit evidence revisions. Identity deduplication alone loses corrected notes. The regression must verify both one changed history event and exact history-byte stability for bare or equal retries.
+files[2]{path,scope}:
+  src/sdk/linked-artifacts.ts,project
+  tests/unit/sdk/lifecycle/plan-evidence-mutation-receipts.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/plan-evidence-mutation-receipts.spec.ts tests/unit/commands/annotations/files-docs-command.spec.ts,project,240,"harness:codex","2026-09-28T08:39:41.707Z",local_mutation,fix/plan-receipts-linked-evidence
+test_runs[1]:
+  - run_id: test-local-mul1xelo-0j8ite
+    kind: test
+    status: passed
+    started_at: "2026-09-28T09:34:40.666Z"
+    finished_at: "2026-09-28T09:35:08.076Z"
+    recorded_at: "2026-09-28T09:35:08.076Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/plan-evidence-mutation-receipts.spec.ts tests/unit/commands/annotations/files-docs-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/SDK_EVIDENCE_TRACEABILITY.md,project
+close_reason: Implemented and locally verified durable evidence-note correction for GH-1334; closure evidence is part of the reviewed delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-zqxlfs
+  gate_id: linked-evidence-note-replacement
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/plan-evidence-mutation-receipts.spec.ts
+  local_checks[3]: Real temporary persistence and history-byte assertions fail on pre-fix behavior,CLI and MCP compact receipts plus typed SDK full-result compatibility,Versioned planning transcript and fixed token ceiling
+  hosted_checks[2]: Gates (coverage),Gates (static)
+body: ""

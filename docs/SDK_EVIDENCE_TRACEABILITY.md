@@ -103,11 +103,36 @@ Replacement requires at least one corresponding `--file` or `--doc` value and ca
 
 Repeating an already-present `pm files --add` or `pm docs --add` batch is a true no-op: `changed` is false, the item file is not rewritten, and append-only history receives no synthetic mutation entry.
 
+An explicit non-empty replacement note updates the existing path/scope entry
+atomically. A bare-path retry preserves its note; a different scope identifies
+a separate link. The same rule applies to glob additions and standalone
+`--note`. This fixes [pm-zqxlfs](../.agents/pm/issues/pm-zqxlfs.toon):
+
+```bash
+pm files <id> --add path=src/new.ts,note="verified current implementation"
+pm docs <id> --add docs/new.md --note "verified current contract"
+```
+
 Audited history redaction participates in the same projection transaction as
 ordinary item mutation. After rewriting an item and its history stream, pm
 invalidates drift verification state and incrementally refreshes the metadata
 index before releasing the derived-index lock. A warmed index therefore cannot
 pair pre-redaction item content with post-redaction history during validation.
+
+## Compact Plan mutation receipts
+
+Tracked by [pm-hqy7lr](../.agents/pm/issues/pm-hqy7lr.toon).
+CLI and MCP Plan mutations return identity, action, step identity when available,
+complete step counts, materialization/skip/warning counts, and an inspection
+command. They omit bodies, resume context, and unrelated steps, so a single-step
+update does not grow with the Plan. `pm plan show <id> --depth deep` retrieves
+the complete current Plan without repeating a mutation. The omission receipt
+explicitly distinguishes this acknowledgement from a full read.
+
+SDK `runPlan` retains its full typed result and adds `mutation_receipt` for
+consumers that need a compact acknowledgement. Existing full transport output
+is available with CLI `--full-changed-fields` or MCP `fullChangedFields: true`.
+Read-only `plan show` retains its existing projection behavior.
 
 ## Operational receipts
 

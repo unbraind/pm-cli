@@ -645,12 +645,13 @@ function mergeLinkedArtifactChanges(
   appendStable: boolean,
 ): LinkedArtifact[] {
   for (const add of adds) {
-    if (
-      !current.some(
-        (entry) => entry.path === add.path && entry.scope === add.scope,
-      )
-    ) {
+    const index = current.findIndex(
+      (entry) => entry.path === add.path && entry.scope === add.scope,
+    );
+    if (index < 0) {
       current.push(add);
+    } else if (add.note !== undefined) {
+      current[index] = { ...current[index], note: add.note };
     }
   }
   if (removes.length > 0) {

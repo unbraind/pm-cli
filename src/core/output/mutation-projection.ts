@@ -179,6 +179,13 @@ function projectIdOnlyResult(result: unknown): unknown | null {
 
 /** Project a recognized item mutation to identity and change counts while preserving warnings and executable recovery. */
 function projectCompactMutationEnvelope(result: unknown): unknown | null {
+  if (
+    isPlainObject(result) && isPlainObject(result.plan) &&
+    isPlainObject(result.mutation_receipt) &&
+    result.mutation_receipt.kind === "plan_mutation" &&
+    result.mutation_receipt.id === result.plan.id &&
+    result.mutation_receipt.action === result.action
+  ) return result.mutation_receipt;
   if (!isPlainObject(result) || !isPlainObject(result.item)) return null;
   if (typeof result.item.id !== "string") return null;
   const changedFields = result[CHANGED_FIELDS_KEY];

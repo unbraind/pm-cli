@@ -1,0 +1,37 @@
+id: pm-aiqmgj
+title: Native SQLite warnings corrupt strict machine-channel acceptance on Node 24.12
+description: "Canonical full coverage on Node 24.12.0 completed 9386 passing tests but failed workflow-policy MCP JSON parsing and lossless mutation stderr cleanliness because native SQLite ExperimentalWarning text preceded application output. Preserve application diagnostics and determine the runtime capability or subprocess boundary responsible, without globally silencing warnings or weakening assertions."
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:ci","area:sdk","horizon:current",runtime-compatibility
+created_at: "2026-09-28T09:20:34.544Z"
+updated_at: "2026-09-28T09:20:34.544Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Reproduce the two affected tests on Node 24.12 and compare supported Node 22/current; identify the actual production or harness boundary; preserve unexpected application-warning and JSON assertions; add a negative control and prove focused supported-runtime coverage without global warning suppression
+goal: project management = context management
+objective: Keep runtime diagnostics from invalidating machine-readable contracts
+value: Agents can trust structured refusal and mutation channels across supported runtimes
+impact: CLI subprocess and MCP parity validation
+outcome: Portable strict machine-channel acceptance
+why_now: Discovered during full validation of current SDK mutation contracts
+parent: pm-u9d0
+risk: medium
+confidence: high
+expected_result: Supported runtimes retain parseable machine channels and strict unexpected-stderr detection
+actual_result: Node 24.12.0 emits native SQLite ExperimentalWarning into two strict subprocess assertions; no exact coverage artifact is produced
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7msh7k,related,"2026-09-28T09:20:34.544Z","harness:codex","cli:create:dep",detected
+  pm-hqy7lr,discovered_from,"2026-09-28T09:20:34.544Z","harness:codex","cli:create:dep",detected
+  pm-lvd647,discovered_from,"2026-09-28T09:20:34.544Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-09-28T09:20:34.544Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-28T09:20:34.544Z","harness:codex","Duplicate check: complete all-status 2829-item census searched for SQLite ExperimentalWarning, strict stderr, runtime warnings and stderr pollution, plus live keyword search and open/in-progress lists. Full records for the two linked historical runtime fixes cover different earlier failure sets; no open owner was found for these two Node 24.12 acceptance failures. Historical closed fixes remain closed. This issue is open and unclaimed until its implementation is actively selected."
+files[2]{path,scope}:
+  tests/integration/workflow-policy-mcp.spec.ts,project
+  tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/workflow-policy-mcp.spec.ts tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts,project,240,"harness:codex","2026-09-28T09:20:34.544Z",local_mutation,fix/plan-receipts-linked-evidence
+escape_class: production_defect
+body: ""
