@@ -389,20 +389,19 @@ async function writeRuntimeState(
   patch: TelemetryRuntimeState,
 ): Promise<void> {
   try {
-    const current = await readRuntimeState(globalPmRoot);
-    const next: TelemetryRuntimeState = {
-      ...current,
-      ...patch,
-    };
-    const normalized = Object.fromEntries(
-      Object.entries(next)
-        .filter(([, value]) => value !== undefined)
-        .sort((left, right) => left[0].localeCompare(right[0])),
-    );
-    await writeFileAtomic(
-      runtimeStatePath(globalPmRoot),
-      `${JSON.stringify(normalized, null, 2)}\n`,
-    );
+    await withQueueMutation(async () => {
+      const current = await readRuntimeState(globalPmRoot);
+      const next: TelemetryRuntimeState = { ...current, ...patch };
+      const normalized = Object.fromEntries(
+        Object.entries(next)
+          .filter(([, value]) => value !== undefined)
+          .sort((left, right) => left[0].localeCompare(right[0])),
+      );
+      await writeFileAtomic(
+        runtimeStatePath(globalPmRoot),
+        `${JSON.stringify(normalized, null, 2)}\n`,
+      );
+    }, globalPmRoot);
   } catch {
     // Runtime state persistence is best effort and must not block command execution.
   }

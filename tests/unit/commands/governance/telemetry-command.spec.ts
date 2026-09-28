@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runTelemetry } from "../../../../src/cli/commands/governance/telemetry.js";
+import { recordDeprecatedAliasUsage } from "../../../../src/sdk/telemetry.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
@@ -130,6 +131,80 @@ describe("runTelemetry", () => {
           error_rate: 1,
         },
       ]);
+    });
+  });
+
+  it("retains only consented alias hits inside the configured UTC window", async () => {
+    await withTempGlobalRoot("pm-cli-alias-window-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.enabled = true;
+      settings.telemetry.retention_days = 1;
+      await writeSettings(globalRoot, settings, "test:alias_window");
+      const oldDay = new Date(Date.now() - 3 * 86_400_000).toISOString().slice(0, 10);
+      await fs.mkdir(path.dirname(statePath(globalRoot)), { recursive: true });
+      await fs.writeFile(statePath(globalRoot), JSON.stringify({
+        alias_usage: {
+          "list-open": {
+            canonical: "list",
+            days: { [oldDay]: { count: 4, last_seen: `${oldDay}T12:00:00.000Z` } },
+          },
+        },
+      }), "utf8");
+      expect(await recordDeprecatedAliasUsage("list-open")).toBe(true);
+      expect(await recordDeprecatedAliasUsage("list")).toBe(false);
+      vi.stubEnv("DO_NOT_TRACK", "1");
+      expect(await recordDeprecatedAliasUsage("list-open")).toBe(false);
+      const result = await runTelemetry({ subcommand: "stats" }, {});
+      expect(result.alias_usage).toEqual([{
+        alias: "list-open", canonical: "list", count: 1,
+        last_seen: expect.any(String),
+      }]);
+      const state = JSON.parse(await fs.readFile(statePath(globalRoot), "utf8")) as {
+        alias_usage: Record<string, { days: Record<string, unknown> }>;
+      };
+      expect(state.alias_usage["list-open"].days).not.toHaveProperty(oldDay);
+    });
+  });
+
+  it("keeps alias commands usable when local telemetry state cannot be read", async () => {
+    await withTempGlobalRoot("pm-cli-alias-unreadable-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.enabled = true;
+      await writeSettings(globalRoot, settings, "test:alias_unreadable");
+      await fs.mkdir(statePath(globalRoot), { recursive: true });
+      expect(await recordDeprecatedAliasUsage("list-open")).toBe(false);
+    });
+  });
+
+  it("does not persist alias observations without saved consent", async () => {
+    await withTempGlobalRoot("pm-cli-alias-no-consent-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.enabled = false;
+      await writeSettings(globalRoot, settings, "test:alias_no_consent");
+      expect(await recordDeprecatedAliasUsage("list-open")).toBe(false);
+      expect(await fs.stat(statePath(globalRoot)).catch(() => null)).toBeNull();
+    });
+  });
+
+  it("sorts local alias counts by use and then spelling while discarding malformed observations", async () => {
+    await withTempGlobalRoot("pm-cli-alias-stats-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      const day = new Date().toISOString().slice(0, 10);
+      await fs.mkdir(path.dirname(statePath(globalRoot)), { recursive: true });
+      await fs.writeFile(statePath(globalRoot), JSON.stringify({ alias_usage: {
+        "list-open": { canonical: "list", days: { [day]: { count: 2, last_seen: `${day}T10:00:00.000Z` } } },
+        "list-closed": { canonical: "list", days: { [day]: { count: 2, last_seen: `${day}T11:00:00.000Z` } } },
+        "list-draft": { canonical: "list", days: { [day]: { count: 4, last_seen: `${day}T12:00:00.000Z` } } },
+        "list-blocked": { canonical: "list", days: { [day]: { count: 0, last_seen: `${day}T12:00:00.000Z` } } },
+        "list-canceled": { canonical: "wrong-command", days: { [day]: { count: 8, last_seen: `${day}T12:00:00.000Z` } } },
+      } }), "utf8");
+      const result = await runTelemetry({ subcommand: "stats" }, {});
+      expect(result.alias_usage.map((entry: { alias: string }) => entry.alias)).toEqual(["list-draft", "list-closed", "list-open"]);
+      expect(result.zero_use_aliases).toContain("list-blocked");
+      expect(result.zero_use_aliases).toContain("list-canceled");
     });
   });
 

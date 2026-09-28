@@ -77,4 +77,40 @@ export default {
       expect(isolated.stderr).not.toContain("--workspace-note");
     });
   });
+
+  it("attributes full-list aliases to the caller with extension flags active", async () => {
+    await withTempPmPath(async (context) => {
+      await writeTestExtension({
+        root: path.join(context.pmPath, "extensions"),
+        directory: "list-receipt-flags",
+        manifest: {
+          name: "list-receipt-flags",
+          capabilities: ["schema"],
+          activation: { commands: ["list"] },
+          entry: "./index.mjs",
+        },
+        entryFilename: "index.mjs",
+        entrySource: `export default { activate(api) { api.registerFlags("list", [{ long: "--workspace-note", value_name: "text", description: "A project flag" }]); } };`,
+      });
+      const canonical = await context.runCliInProcess([
+        "--output-include", "full", "--output-limit", "unbounded",
+        "--output-budget", "unbounded", "list", "--all", "--json",
+      ]);
+      expect(canonical.code).toBe(0);
+      const canonicalReceipt = (JSON.parse(canonical.stdout) as {
+        read_output: { legacy_aliases_used: string[]; migration_hints: string[] };
+      }).read_output;
+      expect(canonicalReceipt.legacy_aliases_used).toEqual([]);
+      expect(canonicalReceipt.migration_hints).toEqual([]);
+
+      const legacy = await context.runCliInProcess([
+        "--output-limit", "unbounded", "--output-budget", "unbounded",
+        "list", "--all", "--full", "--json",
+      ]);
+      expect(legacy.code).toBe(0);
+      expect((JSON.parse(legacy.stdout) as {
+        read_output: { legacy_aliases_used: string[] };
+      }).read_output.legacy_aliases_used).toContain("--full");
+    });
+  });
 });
