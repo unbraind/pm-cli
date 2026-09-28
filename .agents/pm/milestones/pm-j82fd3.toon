@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,grammar,"horizon:near",milestone,outcome,token-efficiency
 created_at: "2026-07-24T23:42:39.540Z"
-updated_at: "2026-09-08T13:24:33.680Z"
+updated_at: "2026-09-28T13:20:32.643Z"
 deadline: "2026-10-31T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 4800
@@ -88,4 +88,6 @@ dependencies[21]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
+comments[1]{created_at,author,text}:
+  "2026-09-28T13:20:31.247Z","harness:codex","GitHub intake 2026-09-28: https://github.com/unbraind/pm-cli/issues/1338 reports 33 of 79 command_aliases disagreeing with executable help on published 2026.9.28: 19 unresolved aliases, 12 unavailable canonical targets, and two targets that remain aliases. It also reports compact help omitting the alias table without an omission receipt while --detail full does not restore it. Counts are reporter evidence, not independently reproduced measurements. Reuse this existing alias-preserving grammar outcome owner after all-status duplicate review, including closed alias-shim and help foundations. Proposed acceptance evidence is a real isolated help/alias replay with terminal canonical resolved_path, capability/package availability provenance, and truthful omission/recovery hints; package-optional commands must be distinguished from invalid aliases. Existing execution-epic, alias-foundation, help, and transcript relationships already capture the delivery chain. No duplicate task or speculative graph depth added. Intake only; the milestone remains open and unclaimed after release."
 body: "## Outcome\nA coding agent that has never seen this workspace can enumerate and operate the entire pm capability set from a single screen of help output, and every historical spelling keeps working.\n\n## Why this is a milestone, not an epic\npm-n7rr is the living execution epic (partition of consolidation tasks). This milestone is the outcome gate: it declares when the grammar work is done enough to freeze, which is the precondition the GA stability contract (pm-agou) consumes.\n\n## Delivery chain\npm-pbyu (ADR, accept first) -> pm-0z7n (alias shim foundation) -> the consolidation partition under pm-n7rr (pfqi/kcs4/tqel/yql1/tnud/6apl/xkgq/ik19/eq4x/o3fh/npr3/lp4j/szdc) -> pm-e2bq tiered help -> pm-8pnj transcript replay proves the outcome.\n\n## Explicit non-goals\nNo capability removal. No breaking rename without an alias. No grammar freeze here — freezing is pm-agou's job."
