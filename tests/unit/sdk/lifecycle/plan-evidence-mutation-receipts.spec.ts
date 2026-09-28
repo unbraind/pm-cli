@@ -25,8 +25,14 @@ describe("durable evidence and bounded Plan mutation receipts", () => {
         } },
       });
       expect(response?.isError).not.toBe(true);
-      const result = (response?.structuredContent as { result: PlanMutationReceipt & { mutation_receipt?: PlanMutationReceipt } }).result;
-      const receipt = fullChangedFields ? result.mutation_receipt! : result;
+      if (response?.structuredContent === undefined) {
+        throw new Error("MCP mutation did not return structured content");
+      }
+      const result = (response.structuredContent as { result: PlanMutationReceipt & { mutation_receipt?: PlanMutationReceipt } }).result;
+      const receipt = fullChangedFields ? result.mutation_receipt : result;
+      if (receipt === undefined) {
+        throw new Error("MCP mutation did not return a receipt");
+      }
       expect(receipt.inspection_command).toBe(`pm plan show ${receipt.id} --depth deep`);
       expect(receipt.omission_receipt.omitted_field_groups[0].restore_with).toBe(receipt.inspection_command);
       expect(JSON.stringify(receipt)).not.toContain(context.pmPath);
