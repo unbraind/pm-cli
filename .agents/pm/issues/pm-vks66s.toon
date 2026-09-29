@@ -6,9 +6,13 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-29T00:20:04.660Z"
-updated_at: "2026-09-29T00:21:29.023Z"
+updated_at: "2026-09-29T00:31:44.903Z"
 author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: Bun init and merge install pass strict health on a fresh Git workspace; Repeated install is idempotent and a real two-branch merge executes the driver
 parent: pm-u9d0
+risk: high
+confidence: 85
 severity: high
 expected_result: "Bun init registers stable, executable merge drivers accepted by strict health."
 actual_result: All five driver keys are reported drifted after init and merge install.
