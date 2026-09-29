@@ -844,6 +844,21 @@ export function itemDocumentToMutationOptions(
   }
   appendFacetOptions(documentOptions, item, mode === "update");
   if (linked !== undefined) appendFacetOptions(documentOptions, linked);
+  if (mode === "update") {
+    const annotations = Object.fromEntries(
+      (["comments", "notes", "learnings"] as const)
+        .filter((key) => Object.hasOwn(item, key))
+        .map((key) => [
+          key,
+          (item[key] as unknown[]).filter(
+            (entry) => isPlainObject(entry) && entry.created_at !== undefined,
+          ),
+        ]),
+    );
+    if (Object.keys(annotations).length > 0) {
+      documentOptions.documentAnnotationSnapshot = annotations;
+    }
+  }
   return {
     ...documentOptions,
     ...Object.fromEntries(

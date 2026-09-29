@@ -1144,6 +1144,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "stdin_json_persisted_annotation_changed",
+    meaning: "Stdin json persisted annotation changed condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/lifecycle/update.ts"],
+    emitting_commands: ["update"],
+    canonical_code: "stdin_json_persisted_annotation_changed",
+    aliases: [],
+  },
+  {
     code: "stdin_json_unknown_key",
     meaning: "Stdin json unknown key condition.",
     stability: "stable",

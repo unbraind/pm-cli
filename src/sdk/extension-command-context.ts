@@ -5,7 +5,16 @@
  * package runtimes never need private imports or runtime package resolution.
  */
 import type { ExtensionCommandSdk } from "../core/extensions/extension-types.js";
+import type { PmSettings } from "../types/index.js";
+import { mutateWorkspaceJsonWithHistory } from "../core/history/workspace-history.js";
+import { resolveAuthor } from "../core/shared/author.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
+import { PmCliError } from "../core/shared/errors.js";
+import { stableValueEquals } from "../core/shared/serialization.js";
+import { getSettingsPath } from "../core/store/paths.js";
+import { readSettings } from "../core/store/settings.js";
+import { clearSettingsReadCache } from "../core/store/settings-read-cache.js";
+import { validateSettings } from "../core/store/settings-validator.js";
 import { isPmCliExpectedError } from "./errors.js";
 import { getItemAt } from "./history-read.js";
 import {
@@ -37,6 +46,7 @@ function buildRelationshipKindRegistry(
 export function createExtensionCommandSdk(
   pmRoot: string,
   client: PmClient,
+  invocationAuthor?: string,
 ): ExtensionCommandSdk {
   return {
     client,
@@ -71,5 +81,56 @@ export function createExtensionCommandSdk(
     },
     commitWorkspaceTransaction: (options) =>
       commitWorkspaceTransaction({ ...options, pmRoot }),
+    mutateWorkspaceSettings: async (options) => {
+      if (!/^[a-zA-Z0-9._-]{1,128}$/u.test(options.operationId)) {
+        throw new PmCliError(
+          "Workspace settings operationId must be 1-128 letters, digits, dots, underscores, or hyphens.",
+          EXIT_CODE.USAGE,
+        );
+      }
+      const settings = await readSettings(pmRoot);
+      try {
+        const mutation = await mutateWorkspaceJsonWithHistory({
+          pmRoot,
+          filePath: getSettingsPath(pmRoot),
+          op: "extension:pm:settings",
+          idempotencyKey: options.operationId,
+          author: invocationAuthor ?? resolveAuthor(undefined, settings.author_default),
+          lockTtlSeconds: settings.locks.ttl_seconds,
+          lockWaitMs: settings.locks.wait_ms,
+          recordCreation: false,
+          dryRun: options.dryRun === true,
+          mutate: async (beforeRaw) => {
+            const current: unknown = beforeRaw === null ? null : JSON.parse(beforeRaw);
+            if (!validateSettings(current).success) {
+              throw new PmCliError(
+                "Workspace settings mutation requires a valid initialized settings.json.",
+                EXIT_CODE.USAGE,
+              );
+            }
+            const next = await options.mutate(structuredClone(current as PmSettings));
+            if (!validateSettings(next).success) {
+              throw new PmCliError(
+                "Workspace settings mutation returned invalid settings.json.",
+                EXIT_CODE.USAGE,
+              );
+            }
+            return {
+              raw: stableValueEquals(current, next)
+                ? beforeRaw!
+                : `${JSON.stringify(next, null, 2)}\n`,
+              result: undefined,
+            };
+          },
+        });
+        return {
+          changed: mutation.changed,
+          dry_run: options.dryRun === true,
+          replayed: mutation.replayed === true,
+        };
+      } finally {
+        clearSettingsReadCache(pmRoot);
+      }
+    },
   };
 }

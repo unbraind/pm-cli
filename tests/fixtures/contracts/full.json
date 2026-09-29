@@ -24781,6 +24781,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "stdin_json_persisted_annotation_changed",
+      "class": "usage",
+      "code": "stdin_json_persisted_annotation_changed",
+      "emitting_commands": [
+        "update"
+      ],
+      "exit_code": 2,
+      "meaning": "Stdin json persisted annotation changed condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/update.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "stdin_json_unknown_key",
       "class": "usage",
       "code": "stdin_json_unknown_key",

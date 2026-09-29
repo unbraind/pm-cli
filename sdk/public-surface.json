@@ -2112,6 +2112,20 @@
       ],
       "package_version": "2026.9.28",
       "reason": "Add optional typed Plan mutation receipt while preserving full SDK Plan results; default CLI and MCP acknowledgements become bounded, with fullChangedFields compatibility documented."
+    },
+    {
+      "changes": [
+        "signature ./sdk:createExtensionCommandSdk",
+        "signature ./sdk:ExtensionCommandSdk",
+        "signature ./sdk:mutateWorkspaceJsonWithHistory",
+        "signature ./sdk:UpdateCommandOptions",
+        "signature ./sdk:WorkspaceJsonMutationOptions",
+        "signature ./sdk:WorkspaceJsonWriteOptions",
+        "signature ./sdk/authoring:ExtensionCommandSdk",
+        "signature ./sdk/runtime:UpdateCommandOptions"
+      ],
+      "package_version": "2026.9.28",
+      "reason": "Add audited host-bound settings mutation and full-item annotation integrity; signatures add optional controls and result fields, while extension command SDK gains one required host-provided capability."
     }
   ],
   "entrypoints": {
@@ -5464,7 +5478,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "createExtensionCommandSdk",
-          "signature": "(pmRoot: string, client: PmClient) => ExtensionCommandSdk | calls: (pmRoot: string, client: PmClient) => ExtensionCommandSdk"
+          "signature": "(pmRoot: string, client: PmClient, invocationAuthor?: string) => ExtensionCommandSdk | calls: (pmRoot: string, client: PmClient, invocationAuthor?: string) => ExtensionCommandSdk"
         },
         {
           "classification": "supported",
@@ -7306,7 +7320,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionCommandSdk",
-          "signature": "export interface ExtensionCommandSdk { client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; }"
+          "signature": "export interface ExtensionCommandSdk { client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; }>; }"
         },
         {
           "classification": "supported",
@@ -10786,7 +10800,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "mutateWorkspaceJsonWithHistory",
-          "signature": "<Result>(params: WorkspaceJsonMutationOptions<Result>) => Promise<{ changed: boolean; result: Result; }> | calls: <Result>(params: WorkspaceJsonMutationOptions<Result>) => Promise<{ changed: boolean; result: Result; }>"
+          "signature": "<Result>(params: WorkspaceJsonMutationOptions<Result>) => Promise<{ changed: boolean; result: Result; replayed?: boolean; }> | calls: <Result>(params: WorkspaceJsonMutationOptions<Result>) => Promise<{ changed: boolean; result: Result; replayed?: boolean; }>"
         },
         {
           "classification": "advanced_export",
@@ -19840,7 +19854,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "UpdateCommandOptions",
-          "signature": "export interface UpdateCommandOptions extends MutationMetadataCommandOptions, SharedLinkedResourceOptions, SharedLinkedResourceClearOptions { title?: string; description?: string; body?: string; status?: string; closeReason?: string; completedAt?: string; priority?: string | number; type?: string; tags?: string; addTags?: string[]; removeTags?: string[]; addAc?: string[]; removeAc?: string[]; force?: boolean; allowMissingParent?: boolean; allowUnresolvedDeps?: boolean; depRemove?: string[]; replaceDeps?: boolean; replaceTests?: boolean; replaceFiles?: boolean; replaceDocs?: boolean; runtimeFieldCommands?: Array<\"update\" | \"update_many\">; [key: string]: unknown; }"
+          "signature": "export interface UpdateCommandOptions extends MutationMetadataCommandOptions, SharedLinkedResourceOptions, SharedLinkedResourceClearOptions { title?: string; description?: string; body?: string; documentAnnotationSnapshot?: Partial<Record<\"comments\" | \"notes\" | \"learnings\", unknown[]>>; status?: string; closeReason?: string; completedAt?: string; priority?: string | number; type?: string; tags?: string; addTags?: string[]; removeTags?: string[]; addAc?: string[]; removeAc?: string[]; force?: boolean; allowMissingParent?: boolean; allowUnresolvedDeps?: boolean; depRemove?: string[]; replaceDeps?: boolean; replaceTests?: boolean; replaceFiles?: boolean; replaceDocs?: boolean; runtimeFieldCommands?: Array<\"update\" | \"update_many\">; [key: string]: unknown; }"
         },
         {
           "classification": "advanced_export",
@@ -20482,7 +20496,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "WorkspaceJsonMutationOptions",
-          "signature": "export interface WorkspaceJsonMutationOptions<Result> extends Omit<WorkspaceJsonWriteOptions, \"raw\"> { mutate: (beforeRaw: string | null) => WorkspaceJsonMutation<Result> | Promise<WorkspaceJsonMutation<Result>>; }"
+          "signature": "export interface WorkspaceJsonMutationOptions<Result> extends Omit<WorkspaceJsonWriteOptions, \"raw\"> { mutate: (beforeRaw: string | null) => WorkspaceJsonMutation<Result> | Promise<WorkspaceJsonMutation<Result>>; dryRun?: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -20506,7 +20520,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "WorkspaceJsonWriteOptions",
-          "signature": "export interface WorkspaceJsonWriteOptions { pmRoot: string; filePath: string; raw: string; op: string; author: string; lockTtlSeconds: number; lockWaitMs: number; message?: string; recordCreation?: boolean; }"
+          "signature": "export interface WorkspaceJsonWriteOptions { pmRoot: string; filePath: string; raw: string; op: string; idempotencyKey?: string; author: string; lockTtlSeconds: number; lockWaitMs: number; message?: string; recordCreation?: boolean; }"
         },
         {
           "classification": "supported",
@@ -21232,7 +21246,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionCommandSdk",
-          "signature": "export interface ExtensionCommandSdk { client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; }"
+          "signature": "export interface ExtensionCommandSdk { client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; }>; }"
         },
         {
           "classification": "supported",
@@ -34390,7 +34404,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "UpdateCommandOptions",
-          "signature": "export interface UpdateCommandOptions extends MutationMetadataCommandOptions, SharedLinkedResourceOptions, SharedLinkedResourceClearOptions { title?: string; description?: string; body?: string; status?: string; closeReason?: string; completedAt?: string; priority?: string | number; type?: string; tags?: string; addTags?: string[]; removeTags?: string[]; addAc?: string[]; removeAc?: string[]; force?: boolean; allowMissingParent?: boolean; allowUnresolvedDeps?: boolean; depRemove?: string[]; replaceDeps?: boolean; replaceTests?: boolean; replaceFiles?: boolean; replaceDocs?: boolean; runtimeFieldCommands?: Array<\"update\" | \"update_many\">; [key: string]: unknown; }"
+          "signature": "export interface UpdateCommandOptions extends MutationMetadataCommandOptions, SharedLinkedResourceOptions, SharedLinkedResourceClearOptions { title?: string; description?: string; body?: string; documentAnnotationSnapshot?: Partial<Record<\"comments\" | \"notes\" | \"learnings\", unknown[]>>; status?: string; closeReason?: string; completedAt?: string; priority?: string | number; type?: string; tags?: string; addTags?: string[]; removeTags?: string[]; addAc?: string[]; removeAc?: string[]; force?: boolean; allowMissingParent?: boolean; allowUnresolvedDeps?: boolean; depRemove?: string[]; replaceDeps?: boolean; replaceTests?: boolean; replaceFiles?: boolean; replaceDocs?: boolean; runtimeFieldCommands?: Array<\"update\" | \"update_many\">; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -35470,6 +35484,7 @@
     "status_invalid",
     "status_lifecycle_role_required",
     "stdin_json_invalid",
+    "stdin_json_persisted_annotation_changed",
     "stdin_json_unknown_key",
     "structured_event_immutable",
     "structured_event_input_conflict",

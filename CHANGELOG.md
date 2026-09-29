@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Bun merge-driver installation disagrees with strict health ([pm-vks66s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vks66s.toon))
+- Expose host-bound audited workspace settings mutation to extension commands ([pm-wtqltn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wtqltn.toon))
+- Full-item stdin JSON update silently ignores edited notes ([pm-2589e6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2589e6.toon))
+
 ## 2026.9.29 - 2026-09-29
 
 ### Fixed

@@ -33,6 +33,63 @@ async function installHostContractExtension(
 }
 
 describe("extension host contracts", () => {
+  it("audits host-bound settings mutations from a copied extension without a local SDK", async () => {
+    await withTempPmPath(async (context) => {
+      await installHostContractExtension(
+        context.pmPath,
+        [
+          "export default { activate(api) {",
+          "  api.registerCommand({",
+          "    name: 'host settings',",
+          "    flags: [{ long: '--operation-id', value_name: 'id', value_type: 'string' }, { long: '--enabled', value_name: 'value', value_type: 'string' }, { long: '--preview', value_type: 'boolean' }],",
+          "    run: ({ sdk, options }) => sdk.mutateWorkspaceSettings({",
+          "      operationId: options.operationId, dryRun: options.preview === true,",
+          "      mutate: (current) => options.enabled === 'invalid' ? { broken: true } : ({ ...current, ux: { ...current.ux, deprecation_hints: options.enabled === 'true' } }),",
+          "    }),",
+          "  });",
+          "} };",
+        ].join("\n"),
+        ["commands", "schema"],
+        ["host settings"],
+      );
+      const manifestPath = path.join(context.pmPath, "extensions", "host-contract-test", "manifest.json");
+      const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as Record<string, unknown>;
+      await writeFile(manifestPath, `${JSON.stringify({ ...manifest, pm_min_version: "2026.9.28" }, null, 2)}\n`);
+      expect(context.runCli(["extension", "adopt-all", "--project", "--json"]).code).toBe(0);
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const before = await readFile(settingsPath, "utf8");
+      const preview = context.runCli(
+        ["host", "settings", "--operation-id", "preview-1", "--enabled", "false", "--preview", "--json"],
+        { expectJson: true },
+      );
+      expect(preview, preview.stderr).toMatchObject({ code: 0, json: { changed: true, dry_run: true, replayed: false } });
+      expect(await readFile(settingsPath, "utf8")).toBe(before);
+
+      const applied = context.runCli(
+        ["host", "settings", "--operation-id", "apply-1", "--enabled", "false", "--json"],
+        { expectJson: true },
+      );
+      expect(applied).toMatchObject({ code: 0, json: { changed: true, dry_run: false, replayed: false } });
+      const persisted = await readFile(settingsPath, "utf8");
+      expect(JSON.parse(persisted)).toMatchObject({ ux: { deprecation_hints: false } });
+      const replay = context.runCli(
+        ["host", "settings", "--operation-id", "apply-1", "--enabled", "true", "--json"],
+        { expectJson: true },
+      );
+      expect(replay).toMatchObject({ code: 0, json: { changed: false, replayed: true } });
+      expect(await readFile(settingsPath, "utf8")).toBe(persisted);
+
+      const invalid = context.runCli(
+        ["host", "settings", "--operation-id", "invalid-1", "--enabled", "invalid", "--json"],
+      );
+      expect(invalid.code).toBe(2);
+      expect(await readFile(settingsPath, "utf8")).toBe(persisted);
+      expect(context.runCli(["history", "_workspace", "--verify", "--json"], { expectJson: true }).code).toBe(0);
+      const health = context.runCli(["health", "--strict-exit", "--json"], { expectJson: true });
+      expect(health.code, JSON.stringify(health.json)).toBe(0);
+    });
+  });
+
   it("preserves package-local explain and rejects reserved-flag activation atomically", async () => {
     await withTempPmPath(async (context) => {
       await installHostContractExtension(context.pmPath, [

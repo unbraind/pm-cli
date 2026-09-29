@@ -152,6 +152,8 @@ export interface UpdateCommandOptions
   description?: string;
   /** Value that configures or reports body for this contract. */
   body?: string;
+  /** Persisted annotations in a full-item JSON round trip, checked under the item lock. */
+  documentAnnotationSnapshot?: Partial<Record<"comments" | "notes" | "learnings", unknown[]>>;
   /** Lifecycle state reported for status. */
   status?: string;
   /** Value that configures or reports close reason for this contract. */
@@ -1867,6 +1869,7 @@ function buildUpdateFieldFlags(
   flags.clearReminders = options.clearReminders === true;
   flags.clearEvents = options.clearEvents === true;
   flags.clearTypeOptions = options.clearTypeOptions === true;
+  flags.documentAnnotationSnapshot = options.documentAnnotationSnapshot !== undefined;
   flags.runtimeFields = Object.keys(runtimeFieldUpdates).length > 0;
   return flags;
 }
@@ -3042,10 +3045,41 @@ function clearDynamicFields(
   }
 }
 
+/** Reject edits to existing audit entries in a submitted full-item document. */
+function assertPersistedAnnotationSnapshot(
+  document: ItemDocument,
+  snapshot: UpdateCommandOptions["documentAnnotationSnapshot"],
+): void {
+  if (snapshot === undefined) return;
+  const current = toItemRecord(document.metadata);
+  const key = (["comments", "notes", "learnings"] as const).find((field) => {
+    const submitted = snapshot[field];
+    return submitted !== undefined &&
+      (!Array.isArray(submitted) ||
+        !stableValueEquals(submitted, current[field] ?? []));
+  });
+  if (key === undefined) return;
+  throw new PmCliError(
+    `Full-item --stdin-json update changed persisted ${key}; no item fields were written.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "stdin_json_persisted_annotation_changed",
+      reason: `${key}_requires_annotation_command`,
+      required: `Use pm ${key} ${document.metadata.id} --edit <index> --add <text> to correct an existing entry.`,
+      why: "Full-item update appends new annotations but cannot replace or remove existing audit entries.",
+      nextSteps: [
+        `Inspect the current ${key} with pm ${key} ${document.metadata.id}.`,
+        `Apply the correction with pm ${key} ${document.metadata.id} --edit <index> --add <text>.`,
+      ],
+    },
+  );
+}
+
 function mutateUpdateDocument(
   document: ItemDocument,
   context: UpdateMutationContext,
 ): { changedFields: string[]; warnings: string[] } {
+  assertPersistedAnnotationSnapshot(document, context.options.documentAnnotationSnapshot);
   const beforeMetadata = structuredClone(toItemRecord(document.metadata));
   const beforeBody = document.body;
   const changedFields: string[] = [];

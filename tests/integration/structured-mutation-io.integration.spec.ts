@@ -334,6 +334,25 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
           ]),
         },
       });
+      const editedDocument = structuredClone(roundTripped.json) as {
+        item: { notes: Array<{ text: string }> };
+      };
+      editedDocument.item.notes[0]!.text = "Corrected evidence";
+      const rejected = context.runCli(
+        ["update", id, "--stdin-json", "--json"],
+        { input: JSON.stringify(editedDocument), expectJson: true },
+      );
+      expect(rejected.code).toBe(2);
+      expect(JSON.parse(rejected.stderr)).toMatchObject({
+        code: "stdin_json_persisted_annotation_changed",
+        required: expect.stringContaining("pm notes"),
+      });
+      expect(context.runCli(["get", id, "--full", "--json"], {
+        expectJson: true,
+      }).json).toMatchObject({ item: { notes: [expect.objectContaining({ text: "-" })] } });
+      expect(context.runCli(["history", id, "--verify", "--json"], {
+        expectJson: true,
+      }).code).toBe(0);
 
       const full = context.runCli(
         [

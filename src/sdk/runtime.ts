@@ -2759,6 +2759,10 @@ async function dispatchActiveExtensionAction(
       EXIT_CODE.USAGE,
     );
   }
+  const extensionAuthor =
+    typeof global.author === "string" && global.author.trim()
+      ? global.author.trim()
+      : "pm-extension";
   const handlerResult = await runActiveCommandHandler({
     command: normalizeCommandPath(command),
     args: readStringArray(options.args ?? args.args),
@@ -2769,11 +2773,9 @@ async function dispatchActiveExtensionAction(
       active.pmRoot,
       PmClient.forActiveExtensionHost({
         pmRoot: active.pmRoot,
-        author:
-          typeof global.author === "string" && global.author.trim()
-            ? global.author.trim()
-            : "pm-extension",
+        author: extensionAuthor,
       }),
+      extensionAuthor,
     ),
   });
   if (!handlerResult.handled) {

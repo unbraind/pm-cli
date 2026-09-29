@@ -74,11 +74,27 @@ async function resolveMergeDriverCliCommand(): Promise<string> {
   ]);
   let executable = process.execPath;
   const runtimeIdentity = await realpath(process.execPath);
+  const bunVersion = (process.versions as Record<string, string | undefined>).bun;
   for (const directory of (process.env.PATH ?? "").split(path.delimiter)) {
     if (!path.isAbsolute(directory)) continue;
-    const candidate = path.join(directory, path.basename(process.execPath));
+    const candidate = path.join(
+      directory,
+      bunVersion === undefined ? path.basename(process.execPath) : "bun",
+    );
     try {
       await access(candidate, constants.X_OK);
+      if (bunVersion !== undefined) {
+        const { stdout } = await execFileAsync(candidate, ["--version"], {
+          encoding: "utf8",
+          windowsHide: true,
+          timeout: 10_000,
+        });
+        if (stdout.trim() === bunVersion) {
+          executable = await realpath(candidate);
+          break;
+        }
+        continue;
+      }
       if (
         candidate !== runtimeIdentity &&
         (await realpath(candidate)) === runtimeIdentity
@@ -342,7 +358,7 @@ async function isPortableMergeDriverCommand(
   if (
     cliArgument === null ||
     configured.slice(cliArgument.nextOffset) !== expectedSuffix ||
-    !/^node(?:\.exe)?$/iu.test(path.basename(nodeArgument.value)) ||
+    !/^(?:node|bun)(?:\.exe)?$/iu.test(path.basename(nodeArgument.value)) ||
     path.basename(cliArgument.value) !== "cli.js" ||
     path.basename(path.dirname(cliArgument.value)) !== "dist"
   ) {

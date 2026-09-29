@@ -760,6 +760,15 @@ export interface ExtensionCommandSdk {
   commitWorkspaceTransaction(
     options: Omit<CommitWorkspaceTransactionOptions, "pmRoot">,
   ): Promise<WorkspaceTransactionCommitResult>;
+  /** Mutate governed project settings under the host's workspace audit lock. */
+  mutateWorkspaceSettings(options: {
+    /** Stable identity for replay-safe retries of this invocation. */
+    operationId: string;
+    /** Compute a preview without changing settings or workspace history. */
+    dryRun?: boolean;
+    /** Derive the complete next settings tree from the locked current tree. */
+    mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>;
+  }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean }>;
 }
 
 /** Documents the parser override context payload exchanged by command, SDK, and package integrations. */

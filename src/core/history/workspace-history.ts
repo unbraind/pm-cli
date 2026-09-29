@@ -65,6 +65,8 @@ export interface WorkspaceJsonWriteOptions {
   raw: string;
   /** Stable operation name. */
   op: string;
+  /** Optional operation identity that prevents replaying a completed write. */
+  idempotencyKey?: string;
   /** Attributable mutation actor. */
   author: string;
   /** Lock time-to-live in seconds. */
@@ -94,6 +96,8 @@ export interface WorkspaceJsonMutationOptions<Result> extends Omit<
   mutate: (
     beforeRaw: string | null,
   ) => WorkspaceJsonMutation<Result> | Promise<WorkspaceJsonMutation<Result>>;
+  /** Preview the locked mutation without writing the singleton or its history. */
+  dryRun?: boolean;
 }
 
 /** Options for one append-only workspace audit event that leaves state unchanged. */
@@ -476,6 +480,7 @@ async function writeWorkspaceJsonWithHistoryLocked(
         before,
         after,
         op: params.op,
+        idempotencyKey: params.idempotencyKey,
         author: params.author,
         lockTtlSeconds: params.lockTtlSeconds,
         lockWaitMs: params.lockWaitMs,
@@ -499,7 +504,8 @@ async function writeWorkspaceJsonWithHistoryLocked(
  */
 export async function mutateWorkspaceJsonWithHistory<Result>(
   params: WorkspaceJsonMutationOptions<Result>,
-): Promise<{ changed: boolean; result: Result }> {
+): Promise<{ changed: boolean; result: Result; replayed?: boolean }> {
+  const { documentPath } = resolveGovernedDocumentPath(params.pmRoot, params.filePath);
   const release = await acquireLock(
     params.pmRoot,
     "workspace-history",
@@ -511,7 +517,36 @@ export async function mutateWorkspaceJsonWithHistory<Result>(
   );
   try {
     const beforeRaw = await readFileIfExists(params.filePath);
+    if (params.dryRun === true || params.idempotencyKey !== undefined) {
+      const entries = await readHistoryEntries(
+        getWorkspaceHistoryPath(params.pmRoot),
+        WORKSPACE_HISTORY_ID,
+      );
+      const verification = verifyHistoryChain(entries);
+      if (!verification.ok) throwWorkspaceHistoryVerificationFailure(verification.errors);
+      const recorded = workspaceDocuments(
+        entries.length === 0
+          ? (EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument)
+          : replayWorkspaceEntries(entries),
+      )[documentPath];
+      if (recorded !== undefined && stableStringify(recorded) !== stableStringify(beforeRaw === null ? null : JSON.parse(beforeRaw))) {
+        throw new PmCliError(
+          `Workspace history state for "${documentPath}" changed outside the audited mutation path.`,
+          EXIT_CODE.CONFLICT,
+          { code: "workspace_history_state_conflict" },
+        );
+      }
+      if (params.idempotencyKey !== undefined && entries.some(
+        (entry) => entry.op === `${params.op}:${params.idempotencyKey}`,
+      )) {
+        return { changed: false, result: (await params.mutate(beforeRaw)).result, replayed: true };
+      }
+    }
     const mutation = await params.mutate(beforeRaw);
+    JSON.parse(mutation.raw);
+    if (params.dryRun === true) {
+      return { changed: beforeRaw !== mutation.raw, result: mutation.result };
+    }
     return {
       changed: await writeWorkspaceJsonWithHistoryLocked(
         { ...params, raw: mutation.raw },

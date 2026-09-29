@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { PmCliError } from "../../../src/core/shared/errors.js";
@@ -17,8 +17,111 @@ import {
 } from "../../../src/sdk/index.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 import { writeTestExtension } from "../../helpers/extensions.js";
+import { readHistoryEntries } from "../../../src/core/history/read.js";
+import {
+  getWorkspaceHistoryPath,
+  WORKSPACE_HISTORY_ID,
+} from "../../../src/core/history/workspace-history.js";
+import type { PmSettings } from "../../../src/types/index.js";
 
 describe("extension mutation platform", () => {
+  it("previews, audits, and replays host-bound settings without losing invalid-state refusals", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const settingsPath = path.join(pmPath, "settings.json");
+      const before = await readFile(settingsPath, "utf8");
+      const historyPath = getWorkspaceHistoryPath(pmPath);
+      const sdk = createExtensionCommandSdk(
+        pmPath,
+        new PmClient({ pmRoot: pmPath, noExtensions: true }),
+        "extension-test-actor",
+      );
+      const nextAuthor = (current: PmSettings): PmSettings => ({
+        ...current,
+        author_default: "extension-owned-author",
+      });
+      await expect(sdk.mutateWorkspaceSettings({
+        operationId: "bad key",
+        mutate: nextAuthor,
+      })).rejects.toMatchObject({ exitCode: 2 });
+      expect(await readFile(settingsPath, "utf8")).toBe(before);
+
+      await expect(sdk.mutateWorkspaceSettings({
+        operationId: "author-v1",
+        dryRun: true,
+        mutate: nextAuthor,
+      })).resolves.toEqual({ changed: true, dry_run: true, replayed: false });
+      expect(await readFile(settingsPath, "utf8")).toBe(before);
+      expect(await readHistoryEntries(historyPath, WORKSPACE_HISTORY_ID)).toHaveLength(0);
+
+      await expect(sdk.mutateWorkspaceSettings({
+        operationId: "author-v1",
+        mutate: nextAuthor,
+      })).resolves.toEqual({ changed: true, dry_run: false, replayed: false });
+      expect(JSON.parse(await readFile(settingsPath, "utf8"))).toMatchObject({
+        author_default: "extension-owned-author",
+      });
+      await expect(sdk.mutateWorkspaceSettings({
+        operationId: "author-v1",
+        mutate: nextAuthor,
+      })).resolves.toEqual({ changed: false, dry_run: false, replayed: true });
+      await expect(sdk.mutateWorkspaceSettings({
+        operationId: "author-noop",
+        mutate: (current) => current,
+      })).resolves.toEqual({ changed: false, dry_run: false, replayed: false });
+      const history = await readHistoryEntries(historyPath, WORKSPACE_HISTORY_ID);
+      expect(history).toHaveLength(1);
+      expect(history[0]).toMatchObject({
+        op: "extension:pm:settings:author-v1",
+        author: "extension-test-actor",
+      });
+
+      await expect(sdk.mutateWorkspaceSettings({
+        operationId: "invalid-next",
+        mutate: () => ({ broken: true }) as unknown as PmSettings,
+      })).rejects.toThrow(/invalid settings/);
+      expect(await readHistoryEntries(historyPath, WORKSPACE_HISTORY_ID)).toHaveLength(1);
+
+      const defaultActorSdk = createExtensionCommandSdk(
+        pmPath,
+        new PmClient({ pmRoot: pmPath, noExtensions: true }),
+      );
+      await expect(defaultActorSdk.mutateWorkspaceSettings({
+        operationId: "author-v2",
+        mutate: (current) => ({ ...current, author_default: "next-default" }),
+      })).resolves.toMatchObject({ changed: true, replayed: false });
+      expect((await readHistoryEntries(historyPath, WORKSPACE_HISTORY_ID))[1]).toMatchObject({
+        author: "test-author",
+      });
+
+      await writeFile(settingsPath, "{}\n");
+      await expect(sdk.mutateWorkspaceSettings({
+        operationId: "invalid-current",
+        mutate: nextAuthor,
+      })).rejects.toMatchObject({ code: "workspace_history_state_conflict" });
+      await rm(settingsPath);
+      await expect(sdk.mutateWorkspaceSettings({
+        operationId: "missing-current",
+        mutate: nextAuthor,
+      })).rejects.toMatchObject({ code: "workspace_history_state_conflict" });
+    });
+    await withTempPmPath(async ({ pmPath }) => {
+      await rm(path.join(pmPath, "settings.json"));
+      const sdk = createExtensionCommandSdk(
+        pmPath,
+        new PmClient({ pmRoot: pmPath, noExtensions: true }),
+      );
+      await expect(sdk.mutateWorkspaceSettings({
+        operationId: "missing-initial-settings",
+        mutate: (current) => current,
+      })).rejects.toThrow(/valid initialized settings/);
+      await writeFile(path.join(pmPath, "settings.json"), "{}\n");
+      await expect(sdk.mutateWorkspaceSettings({
+        operationId: "invalid-initial-settings",
+        mutate: (current) => current,
+      })).rejects.toThrow(/valid initialized settings/);
+    });
+  });
+
   it("injects a real host-bound SDK into command harness dispatch", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
