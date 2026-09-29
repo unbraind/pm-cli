@@ -2,11 +2,13 @@ id: pm-wtqltn
 title: Expose host-bound audited workspace settings mutation to extension commands
 description: "A packed extension can apply settings directly but lacks a portable host SDK transaction that preserves the workspace audit chain, leaving strict health with settings history drift."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-09-29T00:20:00.805Z"
-updated_at: "2026-09-29T00:31:44.311Z"
+updated_at: "2026-09-29T08:09:24.196Z"
+closed_at: "2026-09-29T06:50:55.143Z"
+completed_at: "2026-09-29T06:50:55.143Z"
 author: "harness:codex"
 estimated_minutes: 360
 acceptance_criteria: Host-bound extension SDK mutation writes settings and workspace history atomically; Packed extension without local CLI SDK dependency passes strict health and rollback tests
@@ -14,13 +16,97 @@ parent: pm-o2kc
 risk: high
 confidence: 80
 severity: high
-expected_result: "Extension settings updates are atomic, audited and pass strict health."
-actual_result: pm-presets applies directly to settings.json and strict health reports workspace history drift.
+resolution: "Added typed injected SDK settings mutation with fixed project scope, validation, locking, workspace history, dry-run, idempotent replay, and caller attribution."
+expected_result: A copied extension can change governed settings without a local SDK while retaining strict history and health.
+actual_result: "Copied-extension integration and source-level failure/preview/replay tests pass; linked tests, full suite, exact coverage, and static quality pass."
 affected_version: 2026.9.28
 component: SDK extension command context
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-klo8,discovered_from,"2026-09-29T00:20:00.805Z","harness:codex","cli:create:dep",detected
   pm-lvea,related,"2026-09-29T00:20:00.805Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-29T00:20:00.805Z","harness:codex","Duplicate check: all-status PM search for audited extension settings mutation found related closed workspace-audit and SDK audits but no current owner of this missing host-bound contract. GitHub #1345 cites pm-presets pm-1vx6 in that package's tracker; that is a separate consumer defect."
+  "2026-09-29T04:56:31.683Z","harness:codex","Test-audit contract: a copied extension with no locally resolvable pm SDK can atomically mutate governed settings through its injected host SDK while retaining strict workspace history. Existing direct SDK singleton tests do not prove extension portability or failure compensation. Primary proof will use a disposable packed consumer."
+  "2026-09-29T06:50:38.926Z","harness:codex","Acceptance evidence: extension command SDK now exposes mutateWorkspaceSettings with a fixed host tracker path, lock-scoped read/validate/write, workspace history, author attribution, dry-run, and replay-safe operation IDs. Copied extension integration runs without a local SDK and passes strict health/history verification. Source-level tests cover preview, replay, no-op, invalid current/result, drift, and history failure compensation. Linked tests passed; full suite 9414 passed; exact V8 coverage 100/100/100/100; pnpm quality:static passed. Public SDK surface snapshot acknowledges the added host capability and optional controls."
+  "2026-09-29T07:17:18.090Z","harness:codex","PR #1348 review follow-up: the host SDK now keys settings retries by registered command and operation ID; completed retries do not re-run extension code. Settings mutations use the standard serializer and emit onWrite after changed writes. Focused unit and installed-extension integration tests exercise cross-command IDs, legacy format and collection normalization, and hook behavior. pm-test-audit: each case checks externally observable state or history and would fail against the reviewed implementation; no implementation-only assertions or duplicated happy-path coverage."
+  "2026-09-29T07:30:33.241Z","harness:codex","SDK surface review: the replay receipt now exposes an explicit replay variant with no callback-derived result, and createExtensionCommandSdk accepts optional command context. sdk/public-surface.json records both signatures with a breaking-change acknowledgement because the snapshot classifier treats signature changes conservatively; existing three-argument callers remain executable."
+  "2026-09-29T08:09:24.196Z","harness:codex","Final PR #1348 review verification: all 9414 tests passed, exact V8 coverage is 100/100/100/100 with zero uncovered counts, pnpm quality:static passed including exported docstrings and 97.88% mutation score, pnpm security:scan passed, and both linked test commands passed in schema-sandboxed pm test. A fresh npm-packed archive installed in /tmp/pm-1348-packed-aE4P4Y, where npx and bunx reported 2026.9.29 and strict health returned zero findings. Installed-extension acceptance verifies independent same-ID commands, inert replay, serializer normalization, and changed-write hook delivery."
+learnings[1]{created_at,author,text}:
+  "2026-09-29T06:50:39.821Z","harness:codex",Copied extensions must receive governed workspace mutations through host-injected SDK services; resolving local SDK packages or writing settings.json directly breaks portability and audit attribution.
+files[12]:
+  - path: .agents/pm/extensions/.managed-extensions.json
+    scope: project
+    note: latest pm-changelog package install metadata for reviewed changelog
+  - path: sdk/public-surface.json
+    scope: project
+    note: versioned public SDK capability
+  - path: src/cli/main.ts
+    scope: project
+  - path: src/core/extensions/extension-types.ts
+    scope: project
+    note: typed host capability
+  - path: src/core/history/workspace-history.ts
+    scope: project
+    note: audited preview and replay
+  - path: src/sdk/extension-command-context.ts
+    scope: project
+    note: host-bound mutation
+  - path: src/sdk/runtime.ts
+    scope: project
+    note: caller attribution
+  - path: src/sdk/testing.ts
+    scope: project
+  - path: tests/integration/extension-host-contracts.integration.spec.ts
+    scope: project
+    note: copied-extension acceptance
+  - path: tests/unit/core/history/operation-source-contract.spec.ts
+    scope: project
+    note: instrumented operation census timeout
+  - path: tests/unit/core/history/workspace-history.spec.ts
+    scope: project
+    note: history atomicity regression
+  - path: tests/unit/sdk/sdk-extension-mutation-platform.spec.ts
+    scope: project
+    note: source-level settings mutation coverage
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/extension-host-contracts.integration.spec.ts tests/unit/core/history/workspace-history.spec.ts,project,600,"harness:codex","2026-09-29T05:13:59.218Z",local_mutation,fix/audited-workspace-mutations-bun-merge
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-extension-mutation-platform.spec.ts,project,600,"harness:codex","2026-09-29T06:15:41.923Z",local_mutation,fix/audited-workspace-mutations-bun-merge
+test_runs[2]:
+  - run_id: test-local-mumbeylv-rahy0q
+    kind: test
+    status: passed
+    started_at: "2026-09-29T06:47:49.882Z"
+    finished_at: "2026-09-29T06:48:29.875Z"
+    recorded_at: "2026-09-29T06:48:29.875Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extension-host-contracts.integration.spec.ts tests/unit/core/history/workspace-history.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-extension-mutation-platform.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mumea933-x5koq5
+    kind: test
+    status: passed
+    started_at: "2026-09-29T08:08:21.943Z"
+    finished_at: "2026-09-29T08:08:49.023Z"
+    recorded_at: "2026-09-29T08:08:49.023Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extension-host-contracts.integration.spec.ts tests/unit/core/history/workspace-history.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-extension-mutation-platform.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,generated release entry
+  docs/README.md,project,documentation index
+  docs/SDK_AUDITED_MUTATIONS.md,project,extension settings API
+close_reason: Deliver audited host-bound extension settings mutations
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: Gates (static)
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-extension-mutation-platform.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-extension-mutation-platform.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: Gates (static),Gates (typecheck)
+  owner: pm-wtqltn
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/1345\n\nExpose a typed extension-command SDK operation for lock-scoped audited singleton mutation with invocation identity, atomic write and history, compensation, idempotence, and dry-run. Prove a packed extension without a local host SDK dependency can apply settings and pass strict health."

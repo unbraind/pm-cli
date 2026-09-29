@@ -4,8 +4,19 @@
  * Builds the host-owned SDK services injected into extension commands so
  * package runtimes never need private imports or runtime package resolution.
  */
+import { createHash } from "node:crypto";
 import type { ExtensionCommandSdk } from "../core/extensions/extension-types.js";
+import { runActiveOnWriteHooks } from "../core/extensions/index.js";
+import type { PmSettings } from "../types/index.js";
+import { mutateWorkspaceJsonWithHistory } from "../core/history/workspace-history.js";
+import { resolveAuthor } from "../core/shared/author.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
+import { PmCliError } from "../core/shared/errors.js";
+import { stableValueEquals } from "../core/shared/serialization.js";
+import { getSettingsPath } from "../core/store/paths.js";
+import { readSettings, serializeSettings } from "../core/store/settings.js";
+import { clearSettingsReadCache } from "../core/store/settings-read-cache.js";
+import { validateSettings } from "../core/store/settings-validator.js";
 import { isPmCliExpectedError } from "./errors.js";
 import { getItemAt } from "./history-read.js";
 import {
@@ -37,6 +48,8 @@ function buildRelationshipKindRegistry(
 export function createExtensionCommandSdk(
   pmRoot: string,
   client: PmClient,
+  invocationAuthor?: string,
+  invocationCommand?: string,
 ): ExtensionCommandSdk {
   return {
     client,
@@ -71,5 +84,65 @@ export function createExtensionCommandSdk(
     },
     commitWorkspaceTransaction: (options) =>
       commitWorkspaceTransaction({ ...options, pmRoot }),
+    mutateWorkspaceSettings: async (options) => {
+      if (!/^[a-zA-Z0-9._-]{1,128}$/u.test(options.operationId)) {
+        throw new PmCliError(
+          "Workspace settings operationId must be 1-128 letters, digits, dots, underscores, or hyphens.",
+          EXIT_CODE.USAGE,
+        );
+      }
+      const settings = await readSettings(pmRoot);
+      try {
+        const mutation = await mutateWorkspaceJsonWithHistory({
+          pmRoot,
+          filePath: getSettingsPath(pmRoot),
+          op: "extension:pm:settings",
+          idempotencyKey: invocationCommand === undefined
+            ? options.operationId
+            : `${createHash("sha256").update(invocationCommand).digest("hex").slice(0, 16)}:${options.operationId}`,
+          author: invocationAuthor ?? resolveAuthor(undefined, settings.author_default),
+          lockTtlSeconds: settings.locks.ttl_seconds,
+          lockWaitMs: settings.locks.wait_ms,
+          recordCreation: false,
+          dryRun: options.dryRun === true,
+          mutate: async (beforeRaw) => {
+            const current: unknown = beforeRaw === null ? null : JSON.parse(beforeRaw);
+            if (!validateSettings(current).success) {
+              throw new PmCliError(
+                "Workspace settings mutation requires a valid initialized settings.json.",
+                EXIT_CODE.USAGE,
+              );
+            }
+            const next = await options.mutate(structuredClone(current as PmSettings));
+            if (!validateSettings(next).success) {
+              throw new PmCliError(
+                "Workspace settings mutation returned invalid settings.json.",
+                EXIT_CODE.USAGE,
+              );
+            }
+            return {
+              raw: stableValueEquals(current, next)
+                ? beforeRaw!
+                : serializeSettings(next),
+              result: undefined,
+            };
+          },
+        });
+        if (mutation.changed && options.dryRun !== true) {
+          await runActiveOnWriteHooks({
+            path: getSettingsPath(pmRoot),
+            scope: "project",
+            op: "extension:pm:settings",
+          });
+        }
+        return {
+          changed: mutation.changed,
+          dry_run: options.dryRun === true,
+          replayed: mutation.replayed === true,
+        };
+      } finally {
+        clearSettingsReadCache(pmRoot);
+      }
+    },
   };
 }

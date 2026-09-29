@@ -2,11 +2,13 @@ id: pm-2589e6
 title: Full-item stdin JSON update silently ignores edited notes
 description: Published 2026.9.28 returns changed_field_count=0 for a changed notes array while preserving the old note; successful no-op conceals stale evidence.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-09-29T00:19:58.543Z"
-updated_at: "2026-09-29T00:31:43.731Z"
+updated_at: "2026-09-29T08:09:24.273Z"
+closed_at: "2026-09-29T06:50:53.619Z"
+completed_at: "2026-09-29T06:50:53.619Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Changed notes are atomically audited or rejected with a field-specific error; Disposable get-modify-update regression proves no false successful no-op
@@ -14,13 +16,93 @@ parent: pm-mpbb
 risk: medium
 confidence: 85
 severity: medium
-expected_result: Changed notes are applied with history or explicitly rejected.
-actual_result: Update succeeds with changed_field_count=0 and retains the original note.
+resolution: "Full-item JSON updates now compare persisted comments, notes, and learnings under the item lock and return a stable actionable refusal for edits or removals; new entries still append."
+expected_result: Edited existing notes cannot silently succeed or change item state.
+actual_result: "Disposable structured-mutation regression rejects edited note with unchanged verified history; linked test, full suite, exact coverage, and static quality pass."
 affected_version: 2026.9.28
 component: CLI structured mutations
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-a2h3,related,"2026-09-29T00:19:58.543Z","harness:codex","cli:create:dep",detected
   pm-kipd,discovered_from,"2026-09-29T00:19:58.543Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-29T00:19:58.543Z","harness:codex","Duplicate check: searched all-status PM items for stdin-json and notes; closed pm-kipd delivered the original round-trip feature and pm-a2h3 delivered direct note editing, but neither tracks this new silent no-op defect. GitHub issue #1343 has no prior PM link."
+  "2026-09-29T04:56:30.520Z","harness:codex","Test-audit contract: a changed persisted note in get->modify->update --stdin-json must never return a successful no-op. Existing structured round-trip test only appends a new note and does not detect edits to a persisted annotation. Primary proof will use a disposable tracker and history verification; no test-only production seam."
+  "2026-09-29T06:50:36.685Z","harness:codex","Acceptance evidence: full-item get to update --stdin-json now preserves persisted comments, notes, and learnings as immutable snapshots and rejects edited or removed entries under the item lock with stdin_json_persisted_annotation_changed. The structured-mutation integration test proves the formerly silent edited-note no-op fails without changing item or history, while legitimate new annotations still append. Linked test passed; full suite 9414 passed; exact V8 coverage 100/100/100/100; pnpm quality:static passed. Manual correction remains pm notes/comments/learnings --edit with audit history."
+  "2026-09-29T07:17:18.050Z","harness:codex","PR #1348 review follow-up: malformed full-item annotation arrays now return a PM usage error instead of an unhandled TypeError. Focused parser tests cover all three annotation fields with user-visible diagnostics; these exercise an independent invalid-input boundary rather than mirroring the implementation."
+  "2026-09-29T07:42:04.396Z","harness:codex","Correction to prior review note: the existing appendFacetOptions -> serializeObjectArray path already refuses null comments/notes/learnings with a field-specific PmCliError before the persisted-snapshot filter. The suggested extra guard was unreachable and failed the exact 100% coverage gate, so it was removed. New regression assertions verify the existing usage code and field guidance on all three inputs; no production behavior change was needed for this bot finding."
+  "2026-09-29T08:09:24.273Z","harness:codex","Final PR #1348 review verification: all 9414 tests passed, exact V8 coverage is 100/100/100/100, pnpm quality:static and pnpm security:scan passed, and both linked structured-mutation integration and parser unit tests passed through pm test in an isolated schema tracker. Null annotation arrays produce the existing typed usage refusal; the extra guard suggested in review was removed as unreachable."
+learnings[1]{created_at,author,text}:
+  "2026-09-29T06:50:37.375Z","harness:codex","A full-item JSON round trip must distinguish new annotation entries from persisted audit entries and verify the persisted snapshot inside the locked mutation, including annotation-only updates."
+files[6]:
+  - path: src/sdk/generated/generated-error-code-catalog-part-2.ts
+    scope: project
+    note: stable annotation refusal catalog
+  - path: src/sdk/lifecycle/update.ts
+    scope: project
+    note: locked annotation integrity
+  - path: src/sdk/structured-mutations.ts
+    scope: project
+    note: full-item annotation snapshot
+  - path: tests/fixtures/contracts/full.json
+    scope: project
+    note: generated command contract snapshot
+  - path: tests/integration/structured-mutation-io.integration.spec.ts
+    scope: project
+    note: regression acceptance
+  - path: tests/unit/sdk/structured-mutations.spec.ts
+    scope: project
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-29T05:13:55.996Z"
+      source_kind: local_mutation
+      source_ref: fix/audited-workspace-mutations-bun-merge
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-29T07:17:48.246Z"
+      source_kind: local_mutation
+      source_ref: fix/audited-workspace-mutations-bun-merge
+test_runs[2]:
+  - run_id: test-local-mumbe394-q4gosn
+    kind: test
+    status: passed
+    started_at: "2026-09-29T06:47:32.094Z"
+    finished_at: "2026-09-29T06:47:49.240Z"
+    recorded_at: "2026-09-29T06:47:49.240Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mume762d-n9s2b9
+    kind: test
+    status: passed
+    started_at: "2026-09-29T08:05:55.987Z"
+    finished_at: "2026-09-29T08:06:25.141Z"
+    recorded_at: "2026-09-29T08:06:25.141Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,generated release entry
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,generated refusal recovery contract
+  docs/README.md,project,documentation index
+  docs/SDK_AUDITED_MUTATIONS.md,project,full-item JSON correction contract
+close_reason: Reject persisted annotation edits in full-item JSON updates
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: Gates (static)
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: Gates (static),Gates (typecheck)
+  owner: pm-2589e6
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/1343\n\nReproduce with a disposable tracker: create an item with a note, get the full JSON item, edit notes[0].text, and pipe it to update --stdin-json. Require either an atomic audited note correction or a nonzero field-specific rejection with pm notes --edit guidance."

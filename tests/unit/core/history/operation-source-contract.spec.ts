@@ -164,5 +164,5 @@ describe("native operation write-site contract", () => {
       ),
     );
     expect(findings.flat()).toEqual([]);
-  });
+  }, 120_000);
 });

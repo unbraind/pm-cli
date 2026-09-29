@@ -2,11 +2,13 @@ id: pm-vks66s
 title: Bun merge-driver installation disagrees with strict health
 description: "Published 2026.9.28 bunx --bun init and merge install configure merge drivers that strict health immediately reports drifted, even after reinstall."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-09-29T00:20:04.660Z"
-updated_at: "2026-09-29T00:31:44.903Z"
+updated_at: "2026-09-29T08:09:24.178Z"
+closed_at: "2026-09-29T06:50:57.064Z"
+completed_at: "2026-09-29T06:50:57.064Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Bun init and merge install pass strict health on a fresh Git workspace; Repeated install is idempotent and a real two-branch merge executes the driver
@@ -14,12 +16,49 @@ parent: pm-u9d0
 risk: high
 confidence: 85
 severity: high
-expected_result: "Bun init registers stable, executable merge drivers accepted by strict health."
-actual_result: All five driver keys are reported drifted after init and merge install.
+resolution: Merge installation now selects a version-matched stable absolute Bun launcher and driver audit accepts valid Node or Bun identities.
+expected_result: bunx-installed pm passes strict merge-driver health and performs semantic Git merges.
+actual_result: "Disposable packed Bun consumer passed strict health twice and real item/history Git merge with verified chain; npx and bunx executable checks, linked test, full suite, exact coverage, and static quality pass."
 affected_version: 2026.9.28
 component: Bun merge driver
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-rnl3sa,related,"2026-09-29T00:20:04.660Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-29T00:20:04.660Z","harness:codex","Duplicate check: all-status PM search for Bun merge-driver drift found the closed package-runner dispatch issue pm-rnl3sa and other merge work, but no owner for this Bun-specific install/health mismatch."
+  "2026-09-29T04:56:31.027Z","harness:codex","Test-audit contract: Bun-installed merge drivers must pass strict health, remain idempotent, and execute a real merge. Existing merge safety tests cover Node driver syntax and worktree identity, not Bun's executable name or bunx runtime path. Primary proof will use a disposable Git/Bun workspace."
+  "2026-09-29T06:50:40.724Z","harness:codex","Acceptance evidence: actual Bun 1.4.2 in a disposable npm-packed consumer installed an absolute /usr/bin/bun merge driver; bunx --bun init and repeated merge install both passed strict health with zero findings. A real Git branch merge invoked item and history drivers, retained the left note and right description, and pm history --verify returned three valid entries. npx --no-install pm and bunx --no-install pm both returned the packed CLI version. Linked regression test passed; full suite 9414 passed; exact V8 coverage 100/100/100/100; pnpm quality:static passed. Repository source npm audit found zero advisories and GitHub open Dependabot, code, and secret scanning alerts were empty."
+  "2026-09-29T06:58:37.384Z","harness:codex","Post-rebase packed acceptance on v2026.9.29: fresh tarball installed with Bun in a disposable Git project, bunx --bun pm init succeeded, bunx --bun pm health --strict-exit reported ok with zero findings, and both npx --no-install pm --version and bunx --no-install pm --version returned 2026.9.29. The earlier disposable project also completed a real semantic item/history Git merge with a verified chain."
+  "2026-09-29T07:17:18.123Z","harness:codex","PR #1348 static gate follow-up: added structured production-defect escape and executable Bun merge-launcher regression evidence; corrected the linked gate path to the committed spec. Repository defect-evidence gate passes with zero findings across 262 governed terminal defects."
+  "2026-09-29T08:09:24.177Z","harness:codex","Final PR #1348 review verification: full suite 9414 passed, exact V8 coverage 100/100/100/100, static and security gates passed. Fresh npm-packed CLI installed under /tmp/pm-1348-packed-aE4P4Y; npx and bunx both reported 2026.9.29, and Bun strict health returned zero findings. Earlier temporary Git merge acceptance proved the Bun item/history drivers preserve both sides and verify history."
+learnings[1]{created_at,author,text}:
+  "2026-09-29T06:50:41.415Z","harness:codex",Bun can report a versioned executable path while Git later needs a durable absolute launcher; resolve and validate bun from absolute PATH entries at install time and audit both Node and Bun driver identities.
+files[2]{path,scope,note}:
+  src/sdk/merge/install.ts,project,Bun launcher selection and audit
+  tests/unit/sdk/merge/worktree-config.spec.ts,project,launcher regression
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts,project,600,"harness:codex","2026-09-29T05:14:02.131Z",local_mutation,fix/audited-workspace-mutations-bun-merge
+test_runs[1]:
+  - run_id: test-local-mumbfe6g-zm3zsz
+    kind: test
+    status: passed
+    started_at: "2026-09-29T06:48:31.465Z"
+    finished_at: "2026-09-29T06:48:50.056Z"
+    recorded_at: "2026-09-29T06:48:50.056Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,generated release entry
+  docs/MERGE_SAFETY.md,project,Bun merge-driver contract
+close_reason: Repair Bun merge-driver launcher identity
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: Gates (static)
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/merge/runtime-launcher.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/merge/runtime-launcher.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: Gates (static),Gates (typecheck)
+  owner: pm-vks66s
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/1346\n\nReproduce in a disposable Bun Git project; compare installed Git driver commands against strict health expectation, prove idempotent reinstall, and execute a real two-branch item merge using the registered driver."

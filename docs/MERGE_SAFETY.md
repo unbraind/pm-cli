@@ -13,6 +13,8 @@ compatibility is tracked by
 [pm-wn3ee5](../.agents/pm/issues/pm-wn3ee5.toon).
 Lossless concurrent acceptance-criteria composition is tracked by
 [pm-inn5y5](../.agents/pm/issues/pm-inn5y5.toon).
+The Bun launcher and strict-health repair are tracked by
+[pm-vks66s](../.agents/pm/issues/pm-vks66s.toon).
 Recency-aware scalar convergence, bounded fresh-clone decision evidence, and
 audited pre-durable receipt dispositions are tracked by
 [pm-7wzb6d](../.agents/pm/issues/pm-7wzb6d.toon),
@@ -39,11 +41,14 @@ git commit -m "chore(pm): install tracker merge drivers"
 `pm merge install` writes an idempotent, fenced `.gitattributes` block and repository-local `git config` entries. The attributes are committed; the driver commands are clone-local, so every collaborator and fresh CI clone that performs merges must run the install command.
 
 The clone-local driver values record the absolute runtime launcher and bundled
-`dist/cli.js` path resolved by the installing SDK. The installer preserves an
-absolute PATH symlink when it resolves to the executing runtime, so a runtime
-manager can retarget that launcher during upgrades without breaking every clone.
-Relative PATH entries, inaccessible launchers, and different runtimes are ignored;
-without a matching launcher, the installer retains the executing binary path.
+`dist/cli.js` path resolved by the installing SDK. With Node, the installer
+preserves an absolute PATH symlink when it resolves to the executing runtime, so
+a runtime manager can retarget that launcher during upgrades without breaking
+every clone. With Bun, it resolves an executable `bun` on an absolute PATH entry,
+checks that its version matches the running Bun version, and records its stable
+absolute target. Relative PATH entries, inaccessible launchers, and different
+runtimes are ignored; without a matching launcher, the installer retains the
+executing binary path.
 Git therefore does not depend
 on a bare `pm` command or the caller's later `PATH` when it merges tracker data.
 The item-path placeholder is stored as bare `%P`: Git performs the required
@@ -53,7 +58,7 @@ remain reconcilable.
 `pm validate --check-storage-integrity` and `pm health` also compare every
 effective driver definition with the installed SDK. A command installed by
 another valid `@unbrained/pm-cli` package is
-also accepted when its Node and `dist/cli.js` paths exist, its manifest owns the
+also accepted when its Node or Bun launcher and `dist/cli.js` paths exist, its manifest owns the
 `pm` bin, the driver arguments are semantically identical, and its version
 matches any exact project runtime pins. A driver inside a sibling worktree of
 the same repository is rejected, even when that package is otherwise valid.

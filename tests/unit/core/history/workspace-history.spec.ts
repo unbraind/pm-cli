@@ -16,6 +16,7 @@ import {
   inspectWorkspaceHistoryState,
   reconcileWorkspaceJsonHistory,
   restoreWorkspaceJsonFromHistory,
+  mutateWorkspaceJsonWithHistory,
   writeWorkspaceJsonWithHistory,
   WORKSPACE_HISTORY_ID,
 } from "../../../../src/core/history/workspace-history.js";
@@ -714,6 +715,75 @@ describe("workspace history", () => {
       await expect(readFile(newPath, "utf8")).rejects.toMatchObject({
         code: "ENOENT",
       });
+    });
+  });
+
+  it("previews, replays, and compensates lock-scoped singleton mutations", async () => {
+    await withTempPmPath(async (context) => {
+      const filePath = path.join(context.pmPath, "extension-state.json");
+      const common = {
+        pmRoot: context.pmPath,
+        filePath,
+        op: "extension:state",
+        author: "extension-agent",
+        lockTtlSeconds: 30,
+        lockWaitMs: 1000,
+      };
+      await writeWorkspaceJsonWithHistory({ ...common, raw: '{"enabled":false}\n' });
+      const initialHistory = await readFile(getWorkspaceHistoryPath(context.pmPath), "utf8");
+      const change = (enabled: boolean) => ({ raw: `${JSON.stringify({ enabled })}\n`, result: enabled });
+      await expect(mutateWorkspaceJsonWithHistory({
+        ...common, dryRun: true, idempotencyKey: "preview-1", mutate: () => change(true),
+      })).resolves.toMatchObject({ changed: true, result: true });
+      expect(await readFile(filePath, "utf8")).toBe('{"enabled":false}\n');
+      expect(await readFile(getWorkspaceHistoryPath(context.pmPath), "utf8")).toBe(initialHistory);
+
+      await expect(mutateWorkspaceJsonWithHistory({
+        ...common, idempotencyKey: "apply-1", mutate: () => change(true),
+      })).resolves.toMatchObject({ changed: true, result: true });
+      const appliedHistory = await readFile(getWorkspaceHistoryPath(context.pmPath), "utf8");
+      await expect(mutateWorkspaceJsonWithHistory({
+        ...common, idempotencyKey: "apply-1", mutate: () => { throw new Error("replay reran mutation"); },
+      })).resolves.toEqual({ changed: false, result: undefined, replayed: true });
+      expect(await readFile(filePath, "utf8")).toBe('{"enabled":true}\n');
+      expect(await readFile(getWorkspaceHistoryPath(context.pmPath), "utf8")).toBe(appliedHistory);
+
+      const appendSpy = vi.spyOn(historyModule, "appendHistoryEntry").mockRejectedValueOnce(new Error("injected-history-failure"));
+      try {
+        await expect(mutateWorkspaceJsonWithHistory({
+          ...common, idempotencyKey: "apply-2", mutate: () => change(false),
+        })).rejects.toThrow("injected-history-failure");
+      } finally {
+        appendSpy.mockRestore();
+      }
+      expect(await readFile(filePath, "utf8")).toBe('{"enabled":true}\n');
+      expect(await readFile(getWorkspaceHistoryPath(context.pmPath), "utf8")).toBe(appliedHistory);
+
+      await appendFile(getWorkspaceHistoryPath(context.pmPath), '{"ts":"broken"}\n');
+      await expect(mutateWorkspaceJsonWithHistory({
+        ...common, dryRun: true, mutate: () => change(false),
+      })).rejects.toMatchObject({ code: "workspace_history_chain_invalid" });
+    });
+  });
+
+  it("previews a legacy singleton before its workspace audit stream exists", async () => {
+    await withTempPmPath(async (context) => {
+      const historyPath = getWorkspaceHistoryPath(context.pmPath);
+      await rm(historyPath, { force: true });
+      const filePath = path.join(context.pmPath, "legacy-state.json");
+      await writeFile(filePath, '{"enabled":false}\n');
+      await expect(mutateWorkspaceJsonWithHistory({
+        pmRoot: context.pmPath,
+        filePath,
+        op: "extension:state",
+        author: "extension-agent",
+        lockTtlSeconds: 30,
+        lockWaitMs: 1000,
+        dryRun: true,
+        mutate: () => ({ raw: '{"enabled":true}\n', result: true }),
+      })).resolves.toMatchObject({ changed: true, result: true });
+      expect(await readFile(filePath, "utf8")).toBe('{"enabled":false}\n');
+      await expect(readFile(historyPath, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
     });
   });
 
