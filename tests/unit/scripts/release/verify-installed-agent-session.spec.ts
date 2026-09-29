@@ -395,6 +395,35 @@ describe("verify-installed-agent-session", () => {
     expect(acceptance.json.sessions[0].install_attempts[0].stderr_excerpt).toHaveLength(512);
   });
 
+  it.each([
+    "error: GET https://registry.npmjs.org/@unbrained%2fpm-cli-404-probe-20260929 - 404",
+    'error: package "@example/pm-cli" not found registry.npmjs.org/@example/pm-cli 404',
+  ])("retries a Bun registry visibility failure with a bare 404: %s", async (stderr) => {
+    let attempts = 0;
+    const acceptance = await runAcceptance({
+      argv: ["--version", "2026.9.29", "--manager", "bun", "--json"],
+      runCommand: (command, args) => command === "bun" && args[0] === "add" && ++attempts === 1
+        ? { status: 1, stdout: "", stderr }
+        : successfulCommand(command, args),
+    });
+    expect(acceptance.failure).toBeNull();
+    expect(attempts).toBe(2);
+    expect(acceptance.json.sessions[0].install_attempts.map((row: { classification: string }) => row.classification)).toEqual(["registry_visibility", "success"]);
+  });
+
+  it("does not retry an unrelated bare 404 or HTTP 403", async () => {
+    for (const stderr of ["package not found 404", "error: GET https://registry.npmjs.org/example - 403"]) {
+      const acceptance = await runAcceptance({
+        argv: ["--version", "2026.9.29", "--manager", "bun"],
+        runCommand: (command, args) => command === "bun" && args[0] === "add"
+          ? { status: 1, stdout: "", stderr }
+          : successfulCommand(command, args),
+      });
+      expect(String(acceptance.failure)).toContain('"classification":"nonzero_exit"');
+      expect(acceptance.runCommand.mock.calls.filter(([command, args]) => command === "bun" && args[0] === "add")).toHaveLength(1);
+    }
+  });
+
   it("bounds repeated registry visibility failures and preserves the first attempt", async () => {
     const acceptance = await runAcceptance({
       argv: ["--version", "2026.9.29", "--manager", "npm"],

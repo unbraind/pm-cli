@@ -6,23 +6,23 @@ status: closed
 priority: 1
 tags[4]: "area:release",diagnostics,"horizon:current",recurrence-prevention
 created_at: "2026-09-28T05:47:28.714Z"
-updated_at: "2026-09-29T10:50:28.772Z"
-closed_at: "2026-09-29T10:50:28.123Z"
-completed_at: "2026-09-29T10:50:28.123Z"
+updated_at: "2026-09-29T11:40:23.800Z"
+closed_at: "2026-09-29T11:40:23.030Z"
+completed_at: "2026-09-29T11:40:23.030Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Positive and negative tests distinguish timeout, signal termination, ENOENT, nonzero exit, transient registry visibility and successful install without falsely attributing unknown causes to the registry; Keep install attempt and total-job deadlines bounded and preserve original failed attempt receipts after recovery; Local and hosted npm local/global and bun acceptance use the same classification with privacy-safe bounded stderr"
 parent: pm-u9d0
 risk: medium
 confidence: high
-resolution: "Retain raw subprocess outcomes; classify only complete, redacted registry output before excerpt truncation; redact complete Authorization values; match origin-bearing exact-tag recovery runs."
-expected_result: "npm/Bun acceptance distinguishes failure causes, retries explicit registry 404 even after long output, and never exposes authorization values in retained receipts."
-actual_result: "42 linked installer tests and 9 selector tests passed; full suite 9,430 passed with exact 100/100/100/100 coverage; PR #1350 reviewer defects corrected pending hosted re-review."
+resolution: Retain raw subprocess outcomes; classify full redacted stderr before excerpt truncation; redact complete Authorization values; recognize Bun GET and package-not-found bare-404 messages only when guarded from timeout or signal errors.
+expected_result: Exact-package acceptance preserves safe diagnostics and retries measured registry visibility failures from npm and Bun without retrying unrelated failures.
+actual_result: "45 linked installer tests passed; live Bun --silent temporary-project probe produced the GET URL - 404 format; full 9,433-test suite passed with four workers and exact 100/100/100/100 coverage. PR #1350 updated-head review remains pending."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-e70zh5,implements,"2026-09-28T05:47:28.714Z","harness:codex","cli:create:dep",detected
   pm-p9a4,discovered_from,"2026-09-28T05:47:28.714Z","harness:codex","cli:create:dep",detected
   pm-ygli86,discovered_from,"2026-09-28T05:47:28.714Z","harness:codex","cli:create:dep",detected
-comments[3]:
+comments[4]:
   - created_at: "2026-09-28T05:47:28.714Z"
     author: "harness:codex"
     text: "Duplicate check 2026-09-28: complete 2826-item all-status metadata/history corpus and keyword AND searches for registry installer timeout diagnostics, installation retries, and subprocess error installer. Existing published-metadata propagation owner pm-wzmbvn concerns npm view visibility, not lost install subprocess diagnostics. Existing global reinstall owner pm-ir9vqy concerns missing executable, not acceptance failure classification. Sources: scripts/release/utils.mjs runCommand and scripts/release/verify-installed-agent-session.mjs installAndRun; https://github.com/unbraind/pm-cli/actions/runs/36377133727 and recovery https://github.com/unbraind/pm-cli/actions/runs/36380136948."
@@ -33,6 +33,9 @@ comments[3]:
   - created_at: "2026-09-29T10:28:53.508Z"
     author: "harness:codex"
     text: "PR #1350 review found 404 detection ran after stderr truncation and Authorization: token value redaction was incomplete. Classification now reads the full redacted diagnostic before the excerpt is bounded; test covers a 404 beyond 512 characters and a complete authorization value. Greptile discussions #4132270490 and #4132270496."
+  - created_at: "2026-09-29T11:12:54.996Z"
+    author: "harness:codex"
+    text: "PR #1350 CodeRabbit discussion #4132682738 correctly identified Bun bare-404 output. Reproduced current Bun --silent public-registry failure as error: GET https://registry.npmjs.org/... - 404 in a temporary project; classifier now accepts that form and Bun's package-not-found 404 form while negative controls exclude unrelated bare 404 and HTTP 403."
 notes[1]{created_at,author,text}:
   "2026-09-29T10:00:26.761Z","harness:codex","Recovery must preserve the original installer process cause. A public-registry 404 can represent propagation delay; timeout, signal, spawn failure, and generic nonzero exits provide no such evidence and therefore fail without another registry retry."
 learnings[1]{created_at,author,text}:
@@ -44,7 +47,7 @@ files[4]{path,scope}:
   tests/unit/scripts/release/verify-installed-agent-session.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/utils.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts,project,300,"harness:codex","2026-09-29T09:38:33.645Z",local_mutation,fix/release-origin-and-install-diagnostics
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mumhi6py-senwe7
     kind: test
     status: passed
@@ -67,10 +70,21 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/utils.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mumkv7oh-rzi726
+    kind: test
+    status: passed
+    started_at: "2026-09-29T11:12:56.071Z"
+    finished_at: "2026-09-29T11:13:04.673Z"
+    recorded_at: "2026-09-29T11:13:04.673Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/utils.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   docs/ECOSYSTEM_PLANNING_REVIEW.md,project
   docs/RELEASE_RELIABILITY.md,project
-close_reason: Installer diagnostics and the three actionable PR review defects are resolved with linked regression tests and exact coverage.
+close_reason: "Installer classifications now cover observed npm and Bun registry 404 forms, with all review findings and negative controls verified."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

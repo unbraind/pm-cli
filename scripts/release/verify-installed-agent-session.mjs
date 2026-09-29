@@ -286,7 +286,7 @@ function installFailureReceipt(result, attempt) {
     .replace(/(^|\n)([ \t]*Authorization\s*:\s*)[^\r\n]*/gimu, "$1$2[redacted]")
     .replace(/(https?:\/\/)[^\s/@]+@/giu, "$1[redacted]@")
     .replace(/(Bearer\s+|(?:token|password|secret|authorization|_authToken)\s*[=:]\s*)[^\s&]+/giu, "$1[redacted]");
-  const transientRegistry = !result.error_code && !result.signal && /(?:\bE404\b|\b404 Not Found\b)/iu.test(redactedStderr);
+  const transientRegistry = !result.error_code && !result.signal && /(?:\bE404\b|\b404 Not Found\b|^error: GET https?:\/\/[^\r\n ]+ - 404$|^error: package [^\r\n]+ not found [^\r\n ]+ 404$)/imu.test(redactedStderr);
   const errorKind = new Map([["ETIMEDOUT", "timeout"], ["ENOENT", "executable_missing"]]).get(result.error_code);
   return {
     attempt,
