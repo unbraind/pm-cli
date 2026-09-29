@@ -46,28 +46,32 @@ function nominalOccurrence(instant, policy) {
   return date.getTime() > instant ? date.getTime() - DAY_MS : date.getTime();
 }
 
-/** Convert one authoritative first-attempt run into a compact timing/outcome row. */
-function observation(run, policy) {
+/** Convert one authoritative first-attempt run without assigning cron timing to dispatches. */
+function observation(run, policy, scheduled = true) {
   if (!Number.isSafeInteger(run.id) || run.id < 1 || run.run_attempt !== 1) {
     throw new Error("Expected a positive run id and authoritative first attempt.");
   }
   const created = timestamp(run.created_at);
   const started = run.run_started_at === null ? null : timestamp(run.run_started_at);
   if (started !== null && started < created) throw new Error("Run started before creation.");
-  const nominal = nominalOccurrence(created, policy);
   const completed = run.status === "completed";
   const failed = completed && run.conclusion !== "success";
   let outcome = "pending";
   if (completed) {
     outcome = failed ? "failed" : KNOWN_OUTCOMES.has(run.outcome) ? run.outcome : "unknown_success";
   }
-  return {
+  const row = {
     id: run.id, created_at: new Date(created).toISOString(),
-    nominal_occurrence: new Date(nominal).toISOString(),
-    dispatch_delay_minutes: (created - nominal) / MINUTE_MS,
     queue_delay_minutes: started === null ? null : (started - created) / MINUTE_MS,
     conclusion: run.conclusion, completed, failed, outcome,
     failure_stage: failed ? run.failure_stage || "unrecorded" : null,
+  };
+  if (!scheduled) return row;
+  const nominal = nominalOccurrence(created, policy);
+  return {
+    ...row,
+    nominal_occurrence: new Date(nominal).toISOString(),
+    dispatch_delay_minutes: (created - nominal) / MINUTE_MS,
   };
 }
 
@@ -88,7 +92,7 @@ function counts(rows, field) {
 function reliabilitySeries(run, policy) {
   if (run.event === "schedule") return { name: "scheduled", row: observation(run, policy) };
   if (run.event === "workflow_dispatch" && run.trigger_origin === "morning_dispatcher") {
-    return { name: "dispatcher", row: observation(run, policy) };
+    return { name: "dispatcher", row: observation(run, policy, false) };
   }
   return { name: "excluded", row: run };
 }

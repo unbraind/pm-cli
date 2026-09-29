@@ -47,6 +47,10 @@ run name and attempt receipt preserve it. If setup fails before the receipt can
 be uploaded, the collector reads the declared run name. Historical dispatches
 without either declaration appear in `pre_attribution_gap`; the failed
 2026-09-28 morning dispatch cannot be attributed from its old run record.
+Dispatcher rows retain creation time, queue delay, outcome, and failure stage.
+They omit nominal occurrence and dispatch delay because the native 02:35 UTC
+cron is not the dispatcher's clock; the scheduled timing policy does not apply
+to those rows.
 API errors, truncated pages, ambiguous artifacts, and mismatched run identities
 fail collection rather than silently reducing the denominator.
 
