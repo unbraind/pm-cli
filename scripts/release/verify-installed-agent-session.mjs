@@ -25,6 +25,13 @@ const packageName =
     readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
   ).name;
 
+/** Keep all control and candidate sessions inside the hosted job deadline. */
+function remainingAcceptanceMs(deadline) {
+  const remaining = deadline - Date.now();
+  if (remaining <= 0) fail("Installed-agent acceptance exceeded its total deadline.");
+  return Math.min(120_000, remaining);
+}
+
 /** Describe the registry acceptance command and supported install modes. */
 function usage() {
   console.log(`Usage:
@@ -70,7 +77,7 @@ function assertCompleteSdkRead(manager, sdkRead) {
 }
 
 /** Execute a cold SDK and CLI lifecycle with per-command output and time bounds. */
-function runAgentSession(manager, executable, installRoot, publicRegistryEnv) {
+function runAgentSession(manager, executable, installRoot, publicRegistryEnv, deadline) {
   const workspace = path.join(installRoot, "agent-workspace");
   const pmRoot = path.join(workspace, ".agents", "pm");
   const evidencePath = path.join(workspace, "acceptance-evidence.txt");
@@ -90,7 +97,7 @@ function runAgentSession(manager, executable, installRoot, publicRegistryEnv) {
       allowFailure: true,
       env,
       inheritEnvironment: false,
-      timeout: 120_000,
+      timeout: remainingAcceptanceMs(deadline),
     });
     if (result.status !== 0) {
       fail(
@@ -242,7 +249,7 @@ function runAgentSession(manager, executable, installRoot, publicRegistryEnv) {
 }
 
 /** Execute one exact-package installation with a bounded subprocess deadline. */
-function installPackage(manager, packageSpec, installRoot, publicRegistryEnv, globalInstall) {
+function installPackage(manager, packageSpec, installRoot, publicRegistryEnv, globalInstall, deadline) {
   return manager === "npm"
     ? runCommand(
         process.platform === "win32" ? process.execPath : "npm",
@@ -257,7 +264,7 @@ function installPackage(manager, packageSpec, installRoot, publicRegistryEnv, gl
           "--no-fund",
           packageSpec,
         ],
-        { capture: true, allowFailure: true, env: publicRegistryEnv, inheritEnvironment: false, timeout: 120_000 },
+        { capture: true, allowFailure: true, env: publicRegistryEnv, inheritEnvironment: false, timeout: remainingAcceptanceMs(deadline) },
       )
     : runCommand(
         "bun",
@@ -268,13 +275,31 @@ function installPackage(manager, packageSpec, installRoot, publicRegistryEnv, gl
           allowFailure: true,
           env: publicRegistryEnv,
           inheritEnvironment: false,
-          timeout: 120_000,
+          timeout: remainingAcceptanceMs(deadline),
         },
       );
 }
 
-/** Retry registry propagation, then exercise the installed package in its own workspace. */
-function installAndRun(manager, packageSpec, root, publicRegistryEnv, globalInstall) {
+/** Keep diagnostics bounded and strip credentials before they enter a hosted log. */
+function installFailureReceipt(result, attempt) {
+  const stderr = result.stderr
+    .replace(/(https?:\/\/)[^\s/@]+@/giu, "$1[redacted]@")
+    .replace(/(Bearer\s+|(?:token|password|secret|authorization|_authToken)\s*[=:]\s*)[^\s&]+/giu, "$1[redacted]")
+    .slice(0, 512);
+  const transientRegistry = !result.error_code && !result.signal && /(?:\bE404\b|\b404 Not Found\b)/iu.test(stderr);
+  const errorKind = new Map([["ETIMEDOUT", "timeout"], ["ENOENT", "executable_missing"]]).get(result.error_code);
+  return {
+    attempt,
+    classification: errorKind ?? (result.error_code ? "spawn_error" : result.signal ? "signal" : transientRegistry ? "registry_visibility" : "nonzero_exit"),
+    exit_status: "exit_status" in result ? result.exit_status : result.status,
+    signal: result.signal ?? null,
+    error_code: result.error_code ?? null,
+    stderr_excerpt: stderr,
+  };
+}
+
+/** Retry only a measured registry visibility delay, retaining every attempt. */
+function installAndRun(manager, packageSpec, root, publicRegistryEnv, globalInstall, deadline) {
   const installRoot = path.join(root, `${manager}-install`);
   mkdirSync(installRoot, { recursive: true });
   if (manager === "bun") {
@@ -285,25 +310,25 @@ function installAndRun(manager, packageSpec, root, publicRegistryEnv, globalInst
     );
   }
   let installResult;
+  const installAttempts = [];
   for (let attempt = 1; attempt <= 3; attempt += 1) {
-    installResult = installPackage(manager, packageSpec, installRoot, publicRegistryEnv, globalInstall);
+    installResult = installPackage(manager, packageSpec, installRoot, publicRegistryEnv, globalInstall, deadline);
     if (installResult.status === 0) {
+      installAttempts.push({ attempt, classification: "success", exit_status: 0 });
       break;
     }
-    if (attempt < 3) {
-      console.error(
-        `Waiting for ${manager} registry availability (attempt ${attempt}/3)...`,
-      );
-      const override = Number(process.env.PM_VERIFY_SLEEP_MS);
-      /* c8 ignore next -- production uses the real 10s registry backoff; tests set PM_VERIFY_SLEEP_MS=0 to avoid blocking the worker */
-      const delay =
-        Number.isFinite(override) && override >= 0 ? override : 10_000;
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delay);
-    }
+    const receipt = installFailureReceipt(installResult, attempt);
+    installAttempts.push(receipt);
+    if (receipt.classification !== "registry_visibility" || attempt === 3) break;
+    console.error(`Waiting for ${manager} registry visibility (attempt ${attempt}/3)...`);
+    const override = Number(process.env.PM_VERIFY_SLEEP_MS);
+    /* c8 ignore next -- production uses the real 10s registry backoff; tests set PM_VERIFY_SLEEP_MS=0 to avoid blocking the worker */
+    const delay = Number.isFinite(override) && override >= 0 ? override : 10_000;
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delay);
   }
   if (installResult.status !== 0) {
     fail(
-      `${manager} exact-package installation failed: ${installResult.stderr.trim() || "installer exited non-zero"}`,
+      `${manager} exact-package installation failed: ${JSON.stringify(installAttempts)}`,
     );
   }
   const moduleRoot = globalInstall
@@ -315,12 +340,13 @@ function installAndRun(manager, packageSpec, root, publicRegistryEnv, globalInst
     "dist",
     "cli.js",
   );
-  return runAgentSession(
+  return { ...runAgentSession(
     manager,
     assertContainedExecutable(installRoot, executable),
     installRoot,
     publicRegistryEnv,
-  );
+    deadline,
+  ), install_attempts: installAttempts };
 }
 
 /** Validate exact versions and platform-specific installer requirements before any writes. */
@@ -354,6 +380,7 @@ function main() {
   }
   const { version, manager, previousVersion, globalInstall } = acceptanceOptions(flags);
   const root = mkdtempSync(path.join(tmpdir(), "pm-cli-installed-acceptance-"));
+  const deadline = Date.now() + 13 * 60_000;
   const releaseCleanup = registerTempCleanup(root);
   try {
     const npmUserConfig = path.join(root, "npmrc-public");
@@ -384,6 +411,7 @@ function main() {
         path.join(root, selectedVersion),
         publicRegistryEnv,
         globalInstall,
+        deadline,
       ),
     })));
     const result = { ok: true, version, package: packageName, sessions };

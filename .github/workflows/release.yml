@@ -1,5 +1,5 @@
 name: Release
-run-name: Release ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+run-name: Release ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }} (${{ github.event_name == 'workflow_dispatch' && inputs.trigger_origin || 'tag_push' }})
 
 on:
   push:
@@ -11,6 +11,16 @@ on:
         description: "Release tag to publish, for example v2026.5.5"
         type: string
         required: true
+      trigger_origin:
+        description: "Declared origin of exact-tag recovery"
+        type: choice
+        required: true
+        default: operator
+        options:
+          - operator
+          - morning_dispatcher
+          - native_schedule
+          - blocker_retry
 
 permissions:
   contents: read

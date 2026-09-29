@@ -1,7 +1,10 @@
 # Scheduled release reliability
 
 Tracked by [pm-e70zh5](../.agents/pm/issues/pm-e70zh5.toon) and
-[pm-44u3wt](../.agents/pm/issues/pm-44u3wt.toon).
+[pm-44u3wt](../.agents/pm/issues/pm-44u3wt.toon). Trigger provenance and
+installed-package diagnostics are tracked by
+[pm-prrlce](../.agents/pm/issues/pm-prrlce.toon) and
+[pm-q7c36n](../.agents/pm/issues/pm-q7c36n.toon).
 
 The **Release Reliability** workflow evaluates the preceding 30 days after a
 scheduled Auto Release completes, daily at nominal 04:35 UTC, and on manual
@@ -33,16 +36,23 @@ The unchanged [release recovery rules](RELEASING.md#failure-handling) apply.
 
 ## Evidence and denominator
 
-The collector paginates the schedule-only runs API over an explicit half-open
-UTC window and checks returned counts and unique IDs. It retrieves attempt 1
+The collector paginates Auto Release runs over an explicit half-open UTC window
+and checks returned counts and unique IDs. It retrieves attempt 1
 when a run was rerun. A later successful attempt, manual dispatch, issue recovery,
 or closed blocker cannot change the original scheduled failure. Pending runs
 are listed separately; all completed non-success conclusions count as failures.
+The native scheduled denominator and policy remain separate from the morning
+dispatcher series. Each new dispatch declares `trigger_origin`; the workflow
+run name and attempt receipt preserve it. If setup fails before the receipt can
+be uploaded, the collector reads the declared run name. Historical dispatches
+without either declaration appear in `pre_attribution_gap`; the failed
+2026-09-28 morning dispatch cannot be attributed from its old run record.
 API errors, truncated pages, ambiguous artifacts, and mismatched run identities
 fail collection rather than silently reducing the denominator.
 
 Auto Release saves `release-observation-<attempt>` artifacts for 90 days. Each
-contains only run/attempt identity, event, outcome and failure-stage name. Gate
+contains only run/attempt identity, event, trigger origin, outcome and
+failure-stage name. Gate
 stdout, stderr, credentials and environment values are not archived. A confirmed
 publication, verified existing same-day release, unchanged source, tracker-only
 changes, and an empty changelog are distinct outcomes. Failed gates retain their
@@ -60,6 +70,14 @@ replay with a fixed clock and captured input; the collector is read-only and
 downloads only data, never executable source. The reporting workflow checks out
 the default branch rather than the triggering run's code and has read-only token
 permissions.
+
+Registry acceptance records every exact-package install attempt. A timeout,
+signal, missing executable, other spawn error, and nonzero exit each keep their
+own classification, exit status, signal, error code, and a bounded redacted
+stderr excerpt. Only an explicit registry 404 is retried as possible metadata
+propagation; successful recovery retains the earlier failure receipts. The
+control and candidate sessions share a 13-minute deadline under the 15-minute
+hosted acceptance job limit.
 
 The report is a rolling observation, not a permanent archive of all releases.
 Retain exported receipts externally if a longer historical window is needed.

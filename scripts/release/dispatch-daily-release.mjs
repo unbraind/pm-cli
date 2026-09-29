@@ -51,7 +51,7 @@ export function dispatchDailyRelease({ stateDirectory, check = false, now = new 
   // Exclusive intent creation serializes competing invocations. Keep it even if
   // the POST times out: GitHub may have accepted the request despite that error.
   writeFileSync(marker, `${JSON.stringify({ ...result, outcome: "dispatch_attempted" })}\n`, { flag: "wx", mode: 0o600 });
-  github(["workflow", "run", "auto-release.yml", "--repo", REPOSITORY, "--ref", "main", "-f", "push=true", "-f", "dry_run=false", "-f", "telemetry_mode=off"]);
+  github(["workflow", "run", "auto-release.yml", "--repo", REPOSITORY, "--ref", "main", "-f", "push=true", "-f", "dry_run=false", "-f", "telemetry_mode=off", "-f", "trigger_origin=morning_dispatcher"]);
   const accepted = { ...result, outcome: "dispatch_accepted" };
   writeFileSync(marker, `${JSON.stringify(accepted)}\n`, { mode: 0o600 });
   return accepted;

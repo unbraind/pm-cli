@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Registry install acceptance loses subprocess timeout and signal evidence and labels every failure as registry availability ([pm-q7c36n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q7c36n.toon))
 - Bun merge-driver installation disagrees with strict health ([pm-vks66s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vks66s.toon))
 - Expose host-bound audited workspace settings mutation to extension commands ([pm-wtqltn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wtqltn.toon))
 - Full-item stdin JSON update silently ignores edited notes ([pm-2589e6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2589e6.toon))

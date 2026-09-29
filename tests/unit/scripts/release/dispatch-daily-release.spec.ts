@@ -29,7 +29,7 @@ describe("independent morning release dispatch", () => {
   it.each(["2026-09-27T02:45:00Z", "2026-12-01T03:45:00Z", "2026-03-29T02:45:00Z", "2026-10-25T03:45:00Z"])("uses Vienna wall time across seasons and DST: %s", (instant) => {
     const report = dispatchDailyRelease({ stateDirectory, now: new Date(instant) });
     expect(report).toMatchObject({ outcome: "dispatch_accepted", local_time: "04:45" });
-    expect(transport).toHaveBeenLastCalledWith("gh", ["workflow", "run", "auto-release.yml", "--repo", "unbraind/pm-cli", "--ref", "main", "-f", "push=true", "-f", "dry_run=false", "-f", "telemetry_mode=off"], expect.any(Object));
+    expect(transport).toHaveBeenLastCalledWith("gh", ["workflow", "run", "auto-release.yml", "--repo", "unbraind/pm-cli", "--ref", "main", "-f", "push=true", "-f", "dry_run=false", "-f", "telemetry_mode=off", "-f", "trigger_origin=morning_dispatcher"], expect.any(Object));
     expect(dispatchDailyRelease({ stateDirectory, now: new Date(instant) }).outcome).toBe("dispatch_already_attempted");
     expect(transport).toHaveBeenCalledTimes(4);
   });

@@ -12,9 +12,18 @@ export function createReleaseObservation(env, failure) {
   const outcome = env.RELEASE_PUBLISHED_TAG
     ? env.RELEASE_EXISTING_TAG ? "same_day_verified" : "published"
     : env.RELEASE_PIPELINE_REASON || "unknown_success";
+  const origin = env.RELEASE_TRIGGER_ORIGIN;
+  const allowedOrigins = {
+    schedule: ["native_schedule"],
+    issues: ["blocker_retry"],
+    workflow_dispatch: ["morning_dispatcher", "operator"],
+  };
+  if (!allowedOrigins[env.GITHUB_EVENT_NAME]?.includes(origin)) {
+    throw new Error("Invalid release trigger origin.");
+  }
   return {
     schema: "release-observation/1", run_id: id, run_attempt: attempt,
-    event: env.GITHUB_EVENT_NAME, outcome,
+    event: env.GITHUB_EVENT_NAME, trigger_origin: origin, outcome,
     failure_stage: failure?.schema === RECORD_SCHEMA ? failure.stage : null,
   };
 }

@@ -22,7 +22,7 @@ describe("GitHub release reliability collector", () => {
   });
 
   it("refuses malformed or cross-attempt receipts", () => {
-    for (const changed of [{ schema: "other" }, { run_id: 43 }, { run_attempt: 2 }, { event: "issues" }, { outcome: 3 }, { failure_stage: {} }]) {
+    for (const changed of [{ schema: "other" }, { run_id: 43 }, { run_attempt: 2 }, { event: "issues" }, { outcome: 3 }, { failure_stage: {} }, { trigger_origin: "unknown" }]) {
       expect(() => validateReleaseObservation({ ...receipt, ...changed }, run)).toThrow();
     }
     expect(validateReleaseObservation({ ...receipt, failure_stage: "build" }, run).failure_stage).toBe("build");
@@ -61,7 +61,7 @@ describe("GitHub release reliability collector", () => {
 
   it("rejects wrong original identities and ambiguous artifacts", () => {
     expect(() => collectReleaseReliability("../bad", policy, "2026-09-24T08:00:00Z", vi.fn())).toThrow("repository");
-    for (const bad of [{ ...run, id: 7 }, { ...run, run_attempt: 2 }, { ...run, event: "issues" }]) {
+    for (const bad of [{ ...run, id: 7 }, { ...run, run_attempt: 2 }, { ...run, event: "pull_request" }]) {
       const read = (args: string[]) => args[1]?.includes("/workflows/") ? JSON.stringify([{ total_count: 1, workflow_runs: [{ ...run, run_attempt: 2 }] }]) : JSON.stringify(bad);
       expect(() => collectReleaseReliability("owner/repo", policy, "2026-09-24T08:00:00Z", read)).toThrow("attempt mismatch");
     }
@@ -76,6 +76,47 @@ describe("GitHub release reliability collector", () => {
       return '[{"total_count":0,"jobs":[]}]';
     };
     expect(collectReleaseReliability("owner/repo", policy, "2026-09-24T08:00:00Z", read).failure_stages).toEqual({ unrecorded: 1 });
+  });
+
+  it("attributes a dispatcher failure from its declared run name when setup could not upload a receipt", () => {
+    const read = (args: string[]) => {
+      if (args[1]?.includes("/workflows/")) return JSON.stringify([{ total_count: 1, workflow_runs: [{ ...run, event: "workflow_dispatch", display_title: "Auto Release (morning_dispatcher)", conclusion: "failure" }] }]);
+      if (args[1]?.includes("/artifacts")) return '[{"total_count":0,"artifacts":[]}]';
+      return JSON.stringify([{ total_count: 1, jobs: [{ name: "Auto release pipeline", steps: [{ name: "Setup Node.js", conclusion: "failure" }] }] }]);
+    };
+    const report = collectReleaseReliability("owner/repo", policy, "2026-09-24T08:00:00Z", read);
+    expect(report.completed).toBe(0);
+    expect(report.dispatcher).toMatchObject({ completed: 1, failed: 1, failure_stages: { "Auto release pipeline / Setup Node.js": 1 } });
+  });
+
+  it("refuses a receipt whose declared origin contradicts the run name", () => {
+    const read = (args: string[]) => {
+      if (args[0] === "run") {
+        const directory = args.at(-1) ?? "";
+        mkdirSync(directory, { recursive: true });
+        writeFileSync(path.join(directory, "release-observation.json"), JSON.stringify({ ...receipt, event: "workflow_dispatch", trigger_origin: "operator" }));
+        return "";
+      }
+      return args[1]?.includes("/workflows/")
+        ? JSON.stringify([{ total_count: 1, workflow_runs: [{ ...run, event: "workflow_dispatch", display_title: "Auto Release (morning_dispatcher)" }] }])
+        : JSON.stringify([{ total_count: 1, artifacts: [{ id: 1, name: "release-observation-1", expired: false }] }]);
+    };
+    expect(() => collectReleaseReliability("owner/repo", policy, "2026-09-24T08:00:00Z", read)).toThrow("origin disagrees");
+  });
+
+  it.each([undefined, "morning_dispatcher"])("accepts run-name provenance with receipt origin %s", (origin) => {
+    const read = (args: string[]) => {
+      if (args[0] === "run") {
+        const directory = args.at(-1) ?? "";
+        mkdirSync(directory, { recursive: true });
+        writeFileSync(path.join(directory, "release-observation.json"), JSON.stringify({ ...receipt, event: "workflow_dispatch", ...(origin ? { trigger_origin: origin } : {}) }));
+        return "";
+      }
+      return args[1]?.includes("/workflows/")
+        ? JSON.stringify([{ total_count: 1, workflow_runs: [{ ...run, event: "workflow_dispatch", display_title: "Auto Release (morning_dispatcher)" }] }])
+        : JSON.stringify([{ total_count: 1, artifacts: [{ id: 1, name: "release-observation-1", expired: false }] }]);
+    };
+    expect(collectReleaseReliability("owner/repo", policy, "2026-09-24T08:00:00Z", read).dispatcher.completed).toBe(1);
   });
 
   it("writes a report before the workflow enforces its verdict and uses a bounded gh transport", () => {
