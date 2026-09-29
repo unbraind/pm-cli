@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: "area:ci","area:sdk","horizon:current",runtime-compatibility
 created_at: "2026-09-28T09:20:34.544Z"
-updated_at: "2026-09-28T09:20:34.544Z"
+updated_at: "2026-09-29T19:19:41.464Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Reproduce the two affected tests on Node 24.12 and compare supported Node 22/current; identify the actual production or harness boundary; preserve unexpected application-warning and JSON assertions; add a negative control and prove focused supported-runtime coverage without global warning suppression
@@ -26,8 +26,9 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-hqy7lr,discovered_from,"2026-09-28T09:20:34.544Z","harness:codex","cli:create:dep",detected
   pm-lvd647,discovered_from,"2026-09-28T09:20:34.544Z","harness:codex","cli:create:dep",detected
   pm-u9d0,implements,"2026-09-28T09:20:34.544Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-09-28T09:20:34.544Z","harness:codex","Duplicate check: complete all-status 2829-item census searched for SQLite ExperimentalWarning, strict stderr, runtime warnings and stderr pollution, plus live keyword search and open/in-progress lists. Full records for the two linked historical runtime fixes cover different earlier failure sets; no open owner was found for these two Node 24.12 acceptance failures. Historical closed fixes remain closed. This issue is open and unclaimed until its implementation is actively selected."
+  "2026-09-29T19:19:41.464Z","harness:codex","Reconfirmed during PR #1353 full-corpus validation on Node 24.12.0 with two workers: 9432 pass, two failures, two Windows-only skips, exit 3 after 1260.02 seconds. The exact existing workflow-policy MCP JSON parsing and lossless-mutation empty-stderr assertions fail on native experimental SQLite warning text. This is the existing canonical owner, not a new duplicate. No global warning suppression or assertion weakening was used. Node 26.9.0 is being validated separately; implementation of this distinct supported-runtime defect remains open and unclaimed."
 files[2]{path,scope}:
   tests/integration/workflow-policy-mcp.spec.ts,project
   tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts,project

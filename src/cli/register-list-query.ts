@@ -1,7 +1,9 @@
 /**
  * @module cli/register-list-query
  *
- * Provides CLI runtime support for Register List Query.
+ * Registers SDK-backed item, list, context, search, graph, history, and event
+ * transports. CLI aliases and rendering live here; selection and persistence
+ * remain owned by the SDK.
  */
 import type { Command } from "commander";
 import {
@@ -68,12 +70,13 @@ import {
   writeStdout,
 } from "./registration-helpers.js";
 
-/** Documents the register list query commands options payload exchanged by command, SDK, and package integrations. */
+/** Restrict command registration for lazy CLI startup without changing action behavior. */
 export interface RegisterListQueryCommandsOptions {
-  /** Value that configures or reports command filter for this contract. */
+  /** Canonical names to register; an absent or empty set registers every family, and context accepts ctx. */
   commandFilter?: Set<string>;
 }
 
+/** Apply the lazy command filter, treating context and ctx as one registration family. */
 function shouldRegisterListQueryCommand(
   commandName: string,
   commandFilter?: Set<string>,
@@ -118,6 +121,7 @@ function parseListFormat(rawFormat: unknown): ListOutputFormat | undefined {
   );
 }
 
+/** Apply an explicit JSON/TOON override or permitted NDJSON mode, refusing unsupported formats and conflicting --json/TOON requests. */
 function resolveReadCommandOutputFormat(
   commandLabel: string,
   rawFormat: unknown,
@@ -156,6 +160,7 @@ function resolveReadCommandOutputFormat(
   };
 }
 
+/** Apply the declared family default only when the caller supplied no body, mode, or field projection. */
 function applyDefaultListProjection(
   listOptions: ReturnType<typeof normalizeListOptions>,
   commandName: ListCommandName,
@@ -172,6 +177,7 @@ function applyDefaultListProjection(
   }
 }
 
+/** Declare shared content-presence and missing-governance flags; the SDK applies their filtering semantics. */
 function registerContentAndGovernanceFilters(command: Command): void {
   command
     .option("--has-notes", "Show only items that have notes")
@@ -296,6 +302,7 @@ function renderRegisteredListResult(
   }
 }
 
+/** Resolve alias, intent, lifecycle, and output controls before delegating one list selection to the SDK and recording optional CLI timing. */
 async function runRegisteredListCommand(params: {
   name: ListCommandName;
   status?: ItemStatus;
@@ -400,6 +407,7 @@ function resolveRegisteredListSelection(
   };
 }
 
+/** Declarative list family or compatibility spelling with its lifecycle selection and visibility policy. */
 interface ListCommandDescriptor {
   name: ListCommandName;
   description: string;
@@ -412,6 +420,7 @@ interface ListCommandDescriptor {
   aliasContract?: PmCommandAliasContract;
 }
 
+/** Register one list spelling with shared filters, projection controls, aliases, and its SDK-backed action. */
 function registerListCommand(
   program: Command,
   descriptor: ListCommandDescriptor,
@@ -594,6 +603,7 @@ function registerListCommand(
   );
 }
 
+/** Normalize aggregate controls and render the SDK's statistics result with optional command timing. */
 async function runAggregateAction(
   options: Record<string, unknown>,
   command: Command,
@@ -610,6 +620,7 @@ async function runAggregateAction(
   }
 }
 
+/** Apply the context intent and render SDK evidence as Markdown, NDJSON rows, JSON, or TOON while honoring quiet mode. */
 async function runContextAction(
   options: Record<string, unknown>,
   actionCommand: Command,
@@ -646,6 +657,7 @@ async function runContextAction(
   }
 }
 
+/** Apply next-work intent controls and render the SDK selection in the requested human or structured format. */
 async function runNextAction(
   options: Record<string, unknown>,
   actionCommand: Command,
@@ -669,6 +681,7 @@ async function runNextAction(
   }
 }
 
+/** Normalize keyword and intent inputs, leaving default search-mode policy to the SDK and supporting NDJSON hit rendering. */
 async function runSearchAction(
   keywords: string[],
   options: Record<string, unknown>,
@@ -742,6 +755,7 @@ async function runEvalAction(
   }
 }
 
+/** Bind CLI detail, field, historical, and hierarchy controls to the SDK read, then apply its selected renderer. */
 async function runGetAction(
   id: string,
   options: Record<string, unknown>,
@@ -776,6 +790,7 @@ async function runGetAction(
   }
 }
 
+/** Refuse conflicting projections, render SDK history evidence, and set a failing exit only when strict verification was explicitly requested. */
 async function runHistoryAction(
   id: string,
   options: Record<string, unknown>,
@@ -833,6 +848,7 @@ async function runHistoryAction(
   }
 }
 
+/** Retain Commander collection values without treating a scalar option as repeated input. */
 function readRepeatableStringOption(
   options: Record<string, unknown>,
   key: string,
@@ -841,6 +857,7 @@ function readRepeatableStringOption(
   return Array.isArray(value) ? (value as string[]) : undefined;
 }
 
+/** Assemble event filters and provenance controls, refusing unknown cursor modes before dispatch to the SDK. */
 function buildMutationEventOptions(
   options: Record<string, unknown>,
   pmRoot: string | undefined,
@@ -946,6 +963,7 @@ function renderMutationEventPage(page: MutationEventPage): string {
   });
 }
 
+/** Dispatch finite or followed event reads, using JSON envelopes or the declared NDJSON row/batch encoding. */
 async function runEventsAction(
   options: Record<string, unknown>,
   command: Command,
@@ -979,6 +997,7 @@ async function runEventsAction(
   }
 }
 
+/** Bind graph traversal and maintenance controls to the SDK graph action and render its result without duplicating graph policy. */
 async function runGraphAction(
   subcommand: string,
   id: string | undefined,
@@ -1025,12 +1044,13 @@ async function runGraphAction(
   }
 }
 
-/** Implements register list query commands for the public runtime surface of this module. */
+/** Register filtered read families and compatibility aliases without reading tracker state. Action adapters normalize Commander inputs and delegate domain behavior to SDK owners. */
 export function registerListQueryCommands(
   program: Command,
   options?: RegisterListQueryCommandsOptions,
 ): void {
   const commandFilter = options?.commandFilter;
+  /** Share the chosen lazy filter across list descriptors and individual read families. */
   const shouldRegister = (commandName: string): boolean =>
     shouldRegisterListQueryCommand(commandName, commandFilter);
   const listCommandDescriptors: ListCommandDescriptor[] = [
@@ -1486,11 +1506,11 @@ export function registerListQueryCommands(
       )
       .option(
         "--depth <value>",
-        "Detail depth: brief|standard|deep|full (full aliases deep; default: standard)",
+        "brief|standard|deep|full (default: standard)",
       )
       .option(
         "--full",
-        "Explicit full item read; equivalent to --depth deep (mutually exclusive with --depth/--fields)",
+        "Full details and children for any type; excludes --depth/--fields",
       )
       .option(
         "--fields <value>",
@@ -1709,7 +1729,7 @@ export function registerListQueryCommands(
   }
 }
 
-/** Public contract for test only register list query, shared by SDK and presentation-layer consumers. */
+/** Compatibility access to the format validators used by registered CLI actions. */
 export const _testOnlyRegisterListQuery = {
   resolveReadCommandOutputFormat,
   parseListFormat,

@@ -63,10 +63,28 @@ function quoteMergeDriverArgument(value: string): string {
   return `'${value.replaceAll("'", `'"'"'`)}'`;
 }
 
+/** Resolve a version-matched Bun target, excluding known disposable bunx copies. Filesystem and process failures propagate so the candidate loop can try another launcher. */
+async function resolveMatchingBunLauncher(
+  candidate: string,
+  version: string,
+): Promise<string | undefined> {
+  const resolvedCandidate = await realpath(candidate);
+  if (/(?:^|[\\/])bun-node-[^\\/]+[\\/]bun(?:\.exe)?$/iu.test(resolvedCandidate)) {
+    return undefined;
+  }
+  const { stdout } = await execFileAsync(candidate, ["--version"], {
+    encoding: "utf8",
+    windowsHide: true,
+    timeout: 10_000,
+  });
+  return stdout.trim() === version ? resolvedCandidate : undefined;
+}
+
 /** Preserve a durable absolute runtime launcher across later Git merges.
  * Bun package runners may expose their source binary through npm_execpath even
- * when execPath is a temporary bunx copy; candidates must match the live Bun
- * version. The installed command never depends on the future merge PATH.
+ * when execPath is a temporary bunx copy. A directly invoked Bun binary is
+ * also usable when absent from PATH. Reject known bunx temporary copies and
+ * require every candidate to match the live Bun version.
  */
 async function resolveMergeDriverCliCommand(): Promise<string> {
   const packageRoot = resolvePmPackageRootFromModule(import.meta.url, [
@@ -88,7 +106,7 @@ async function resolveMergeDriverCliCommand(): Promise<string> {
   const candidates =
     bunVersion === undefined
       ? pathCandidates
-      : [process.env.npm_execpath ?? "", ...pathCandidates].filter(
+      : [process.env.npm_execpath ?? "", ...pathCandidates, runtimeIdentity].filter(
           (candidate) =>
             path.isAbsolute(candidate) &&
             /^(?:bun|bun\.exe)$/iu.test(path.basename(candidate)),
@@ -97,13 +115,9 @@ async function resolveMergeDriverCliCommand(): Promise<string> {
     try {
       await access(candidate, constants.X_OK);
       if (bunVersion !== undefined) {
-        const { stdout } = await execFileAsync(candidate, ["--version"], {
-          encoding: "utf8",
-          windowsHide: true,
-          timeout: 10_000,
-        });
-        if (stdout.trim() === bunVersion) {
-          executable = await realpath(candidate);
+        const launcher = await resolveMatchingBunLauncher(candidate, bunVersion);
+        if (launcher !== undefined) {
+          executable = launcher;
           bunLauncherFound = true;
           break;
         }
@@ -128,7 +142,7 @@ async function resolveMergeDriverCliCommand(): Promise<string> {
         code: "merge_bun_launcher_unavailable",
         why: "The current Bun process may be a temporary bunx launcher that Git cannot reuse after this command exits.",
         nextSteps: [
-          "Run with a version-matched Bun executable on an absolute PATH entry, or invoke pm through a Bun runner that publishes an absolute npm_execpath.",
+          "Run with a durable version-matched Bun executable, expose one on an absolute PATH entry, or invoke pm through a Bun runner that publishes an absolute npm_execpath.",
           "Retry pm merge install, then check pm health --strict-exit before merging branches.",
         ],
       },
@@ -170,13 +184,13 @@ const MERGE_DRIVER_DEFINITIONS = [
   },
 ] as const;
 
-/** Documents the merge install options payload exchanged by command, SDK, and package integrations. */
+/** Control whether merge installation writes the fence and clone-local drivers or only previews the same configuration. */
 export interface MergeInstallOptions {
   /** Preview the `.gitattributes` and `git config` changes without writing anything. */
   dryRun?: boolean;
 }
 
-/** Documents the merge install result payload exchanged by command, SDK, and package integrations. */
+/** Installation or preview evidence identifying the selected workspace, fence coverage, and exact Git driver commands. */
 export interface MergeInstallResult {
   /** Whether the installation completed (or, for dry runs, would complete) without errors. */
   ok: boolean;
@@ -297,6 +311,7 @@ export async function findGitWorkspaceRoot(
   }
 }
 
+/** Require a discoverable Git worktree before any merge configuration is planned or written. */
 async function resolveGitWorkspaceRoot(cwd: string): Promise<string> {
   const workspaceRoot = await findGitWorkspaceRoot(cwd);
   if (workspaceRoot === null) {
@@ -308,6 +323,7 @@ async function resolveGitWorkspaceRoot(cwd: string): Promise<string> {
   return workspaceRoot;
 }
 
+/** Express a repository-relative path with portable Git attribute separators. */
 function toPosixRelative(fromPath: string, toPath: string): string {
   return path.relative(fromPath, toPath).replaceAll("\\", "/");
 }
@@ -317,6 +333,7 @@ function quoteGitAttributePattern(value: string): string {
   return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 }
 
+/** Parse the installer's shell-quoted argument and escaped apostrophes, returning null for an incomplete or differently quoted token. */
 function readSingleQuotedArgument(
   command: string,
   offset: number,
@@ -550,6 +567,7 @@ function blockBelongsToTracker(
   );
 }
 
+/** Replace only this tracker's managed fence, preserving sibling fences and user attributes. Serialize writes in the Git directory; dry runs acquire no write lock and publish no file. */
 async function reconcileGitattributesBlock(
   workspaceRoot: string,
   trackerRelativeRoot: string,

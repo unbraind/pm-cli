@@ -20,6 +20,59 @@ import { createTestItemId } from "../helpers/itemFactory.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("SDK context integrity transports", () => {
+  it("keeps full leaf receipts and Task child recovery consistent across read aliases and notes", async () => {
+    await withTempPmPath(async (context) => {
+      const parent = createTestItemId(context, {
+        title: "Nested Task parent",
+        type: "Task",
+      });
+      const child = createTestItemId(context, {
+        title: "Nested Task leaf",
+        type: "Task",
+        parent,
+        note: "retained fixture note",
+      });
+      for (const alias of ["get", "show", "read"]) {
+        const leaf = context.runCli([alias, child, "--full", "--json"], {
+          expectJson: true,
+        });
+        expect(leaf).toMatchObject({
+          code: 0,
+          json: {
+            item: { id: child, notes: [{ text: "retained fixture note" }] },
+            children: { count: 0 },
+            omission_receipt: { has_omissions: false },
+          },
+        });
+      }
+      const briefParent = context.runCli(
+        ["get", parent, "--depth", "brief", "--json"],
+        { expectJson: true },
+      );
+      expect(briefParent.json).toMatchObject({
+        omission_receipt: {
+          omitted_field_groups: expect.arrayContaining([
+            { name: "children", restore_with: "--fields children" },
+          ]),
+        },
+      });
+      const fullParent = context.runCli(["get", parent, "--full", "--json"], {
+        expectJson: true,
+      });
+      expect(fullParent.json).toMatchObject({
+        children: { count: 1 },
+        omission_receipt: { has_omissions: false },
+      });
+      const notes = context.runCli(["notes", child, "--json"], {
+        expectJson: true,
+      });
+      expect(notes.code).toBe(0);
+      expect(notes.json).toMatchObject({
+        notes: [{ text: "retained fixture note" }],
+      });
+    });
+  });
+
   it("keeps CLI and SDK get output selectors and omission receipts equivalent", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, {
@@ -41,8 +94,10 @@ describe("SDK context integrity transports", () => {
       expect(cli.json).toMatchObject({
         item: { id, title: "projection parity" },
         omission_receipt: {
-          has_omissions: false,
-          omitted_field_groups: [],
+          has_omissions: true,
+          omitted_field_groups: [
+            { name: "children", restore_with: "--fields children" },
+          ],
         },
       });
       expect(sdk).toEqual(cli.json);

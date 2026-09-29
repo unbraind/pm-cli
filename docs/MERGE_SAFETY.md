@@ -47,8 +47,10 @@ The clone-local driver values record the absolute runtime launcher and bundled
 preserves an absolute PATH symlink when it resolves to the executing runtime, so
 a runtime manager can retarget that launcher during upgrades without breaking
 every clone. With Bun, the installer checks the absolute executable published
-by the package runner and absolute `PATH` entries for a matching Bun version,
-then records its stable target. Relative paths, inaccessible launchers, and
+by the package runner, absolute `PATH` entries, and the directly invoked binary
+for a matching Bun version, then records its stable target. Known temporary
+`bun-node-*` launcher copies are rejected even when their version matches.
+Relative paths, inaccessible launchers, and
 different runtimes are ignored. If no durable matching Bun launcher is available,
 installation fails with recovery guidance before it writes Git configuration or
 the shared fence; a temporary `bunx` runtime is never recorded as a successful

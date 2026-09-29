@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[5]: "area:docs",code-quality,docstrings,maintainability,token-efficiency
 created_at: "2026-07-19T04:07:16.881Z"
-updated_at: "2026-09-22T14:23:33.531Z"
+updated_at: "2026-09-29T18:21:15.221Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Census script or lint rule flags the known filler templates (Implements X for the public runtime surface of this module; Value that configures or reports X for this contract; Provides CLI runtime support for X; payload exchanged by command, SDK, and package integrations) and the count is ratcheted down, not up; Touched-file burn-down policy documented so gate-mandated docstrings added going forward must carry real information (what the value means, units, invariants) or use @inheritDoc/type-level docs; Static-gate docstring coverage stays at 100 percent throughout - the fix is content quality, never coverage relaxation"
@@ -42,7 +42,7 @@ dependencies[6]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[7]:
+comments[12]:
   - created_at: "2026-09-13T16:15:21.639Z"
     author: "harness:codex"
     text: "Continuation observation: runtime-contracts.ts still contains generic interface/member filler despite coverage gates. The command-discovery tranche improves the modified module and function documentation with concrete visibility and assembly semantics, but does not implement the repository-wide filler census or ratchet owned here. Reuse this canonical owner for that remaining work; no duplicate item created."
@@ -65,18 +65,59 @@ comments[7]:
   - created_at: "2026-09-22T14:23:31.474Z"
     author: "harness:codex"
     text: "Completed this delivery's census, no-growth ratchet, touched-declaration policy, and ten semantic comment replacements. Source/export/member docstring coverage remains 100 percent (646/646, 4876/4876, 8819/8819 in the static census). The broader replacement title still has 4182 filler comments in 209 files, so this canonical item remains open; releasing ownership rather than claiming the entire cleanup complete."
-files[7]{path,scope,note}:
+  - created_at: "2026-09-29T17:40:22.603Z"
+    author: "harness:codex"
+    text: "PR #1353 scoped documentation continuation: complete live metadata/comments and all 34 full history events were read, with no omission receipt and no active owner. The current AST census found 4153 filler comments before this batch; three get option/result comments were already replaced, leaving 4150. This pass will replace remaining filler in src/sdk/query/get.ts, src/sdk/merge/install.ts, and src/cli/register-list-query.ts and document their named callables with current projection, history, Git, and transport semantics. Only the reviewed per-file census reductions will be generated. The repository-wide semantic documentation debt remains open here and is not equivalent to the separate 100 percent presence metric."
+  - created_at: "2026-09-29T17:45:09.168Z"
+    author: "harness:codex"
+    text: "Scoped documentation proof for PR #1353: TypeScript AST printing with comments removed is identical before/after the documentation-only tranche in all three affected modules. Named-callable census is 24/24 in sdk/query/get, 21/21 in sdk/merge/install, and 25/25 in cli/register-list-query. All 19 original filler comments in those modules now describe actual projection, ownership/history, Git persistence, runtime matching, and transport policy. Supported baseline generation removed only their reviewed 13/2/4 entries; the global corpus remains 4134 filler comments in 204 of 758 maintained source files. That remaining debt is not claimed complete. Negative controls and 100 percent source/export/member presence gates will remain required."
+  - created_at: "2026-09-29T18:07:02.824Z"
+    author: "harness:codex"
+    text: "PR #1353 documentation tranche removed all 19 legacy filler entries from the three touched runtime modules (get 13, merge install 2, read registration 4). All 70 named callables in those modules have contract comments; normalized TypeScript AST comparison before/after the documentation-only edits is identical. The generated ratchet baseline removes three entries and increases no ceiling. Global remaining census is 4134 filler entries in 204 of 758 maintained-source files: the presence gate is not a proof of globally meaningful documentation, and this broader canonical chore remains unfinished. The full runner includes negative controls for filler growth and baseline drift; final verification is pending."
+  - created_at: "2026-09-29T18:17:11.632Z"
+    author: "harness:codex"
+    text: "Linked validation correctly refused the two older branch-provenance commands (pnpm build and pnpm quality:docstrings); the new negative-control suite passed 3/3. Both refused commands have been inspected in current package scripts and already run directly during this batch. Acknowledge these exact current commands through the supported clone-local trust mechanism, then rerun the existing linked set. No allow-untrusted policy or trust gate will be relaxed."
+  - created_at: "2026-09-29T18:19:50.793Z"
+    author: "harness:codex"
+    text: "All three current linked commands now pass after inspecting and acknowledging the exact older command fingerprints through the clone-local trust API. The negative-control suite passes 3/3, including rejection of filler growth and stale baselines. Latest published pm-changelog resolves to 2026.9.25; supported generation removed reopened bug owners from completed changelog entries. This tranche does not close the broader 4134-entry semantic documentation debt."
+files[10]{path,scope,note}:
   packages/pm-guide-shell/extensions/guide-shell/runtime.ts,project,Semantic contracts for every named callable in the reviewed module
   scripts/release/docstring-quality-baseline.json,project,File-level filler debt cannot grow or retain stale headroom
   scripts/release/docstring-quality.mjs,project,AST documentation content census and file-level ratchet
   scripts/release/surface-replication-gate.mjs,project,Semantic contracts for every named callable in the reviewed module
+  src/cli/register-list-query.ts,project,Replace filler and document current SDK read and merge contracts without changing executable syntax
   src/sdk/cli-contracts/commander-types.ts,project,Replace ten filler comments with semantic contracts
   src/sdk/completion/bash.ts,project,Semantic contracts for every named callable in the reviewed module
+  src/sdk/merge/install.ts,project,Replace filler and document current SDK read and merge contracts without changing executable syntax
+  src/sdk/query/get.ts,project,Replace filler and document current SDK read and merge contracts without changing executable syntax
   tests/unit/scripts/release/docstring-quality.spec.ts,project,AST and real-Git baseline negative controls
-tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
-  pnpm build,project,300,"harness:codex","2026-09-20T15:08:13.893Z",local_mutation,fix/shell-portability-validation,Documentation-only source build
-  "pnpm quality:docstrings",project,120,"harness:codex","2026-09-22T13:40:44.856Z",local_mutation,feat/sdk-mutation-docstring-gates,AST filler inventory and exact file-level baseline
-test_runs[2]:
+tests[3]:
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-20T15:08:13.893Z"
+      source_kind: local_mutation
+      source_ref: fix/shell-portability-validation
+    note: Documentation-only source build
+  - command: "pnpm quality:docstrings"
+    scope: project
+    timeout_seconds: 120
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-22T13:40:44.856Z"
+      source_kind: local_mutation
+      source_ref: feat/sdk-mutation-docstring-gates
+    note: AST filler inventory and exact file-level baseline
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/docstring-quality.spec.ts
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-29T18:07:01.258Z"
+      source_kind: local_mutation
+      source_ref: fix/published-bun-merge-and-leaf-read-contracts
+test_runs[4]:
   - run_id: test-local-mu9ybc3z-w1b0ua
     kind: test
     status: passed
@@ -99,6 +140,32 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "pnpm quality:docstrings",schema,schema,source,local_source_ref
+  - run_id: test-local-mun001ll-pdjks1
+    kind: test
+    status: failed
+    started_at: "2026-09-29T18:16:38.225Z"
+    finished_at: "2026-09-29T18:16:44.313Z"
+    recorded_at: "2026-09-29T18:16:44.313Z"
+    passed: 1
+    failed: 2
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm build,schema,schema,source,foreign_source_ref
+      "pnpm quality:docstrings",schema,schema,source,foreign_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/docstring-quality.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mun010vf-143uvl
+    kind: test
+    status: passed
+    started_at: "2026-09-29T18:17:12.978Z"
+    finished_at: "2026-09-29T18:17:30.026Z"
+    recorded_at: "2026-09-29T18:17:30.026Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm build,schema,schema,source,acknowledged
+      "pnpm quality:docstrings",schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/docstring-quality.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/QUALITY_EVIDENCE.md,project,Touched-declaration burn-down and baseline governance
   docs/TESTING.md,project,Documentation content gate routing

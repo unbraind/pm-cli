@@ -373,6 +373,32 @@ describe("output projection omission contracts", () => {
       expect(attachOutputOmissionReceipt("get", parentFull)).toMatchObject({
         omission_receipt: { has_omissions: false },
       });
+      const taskParent = await runCreate(
+        { title: "Task parent with children", type: "Task" },
+        { ...global, json: true, quiet: true },
+      );
+      await runCreate(
+        { title: "Nested task", type: "Task", parent: taskParent.item.id },
+        { ...global, json: true, quiet: true },
+      );
+      for (const depth of ["brief", "standard", "deep"]) {
+        const taskRead = await runGet(taskParent.item.id, global, { depth });
+        expect(taskRead.children).toBeUndefined();
+        expect(attachOutputOmissionReceipt("get", taskRead)).toMatchObject({
+          omission_receipt: {
+            omitted_field_groups: expect.arrayContaining([
+              { name: "children", restore_with: "--fields children" },
+            ]),
+          },
+        });
+      }
+      for (const options of [{ full: true }, { depth: "full" }]) {
+        const taskFull = await runGet(taskParent.item.id, global, options);
+        expect(taskFull.children?.count).toBe(1);
+        expect(attachOutputOmissionReceipt("get", taskFull)).toMatchObject({
+          omission_receipt: { has_omissions: false },
+        });
+      }
       const unclaimedBrief = await runGet(
         created.item.id,
         global,

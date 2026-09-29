@@ -22,6 +22,7 @@ describe("worktree-local merge drivers", () => {
       const originalPath = process.env.PATH;
       const originalNpmExecpath = process.env.npm_execpath;
       const bunDescriptor = Object.getOwnPropertyDescriptor(process.versions, "bun");
+      const execPathDescriptor = Object.getOwnPropertyDescriptor(process, "execPath");
       try {
         process.env.PATH = [staleDir, stableDir, originalPath].join(path.delimiter);
         Object.defineProperty(process.versions, "bun", { value: process.version, configurable: true });
@@ -39,6 +40,18 @@ describe("worktree-local merge drivers", () => {
         expect(bunxInstalled.git_config.find((entry) => entry.key === "merge.pm-history.driver")?.value)
           .toContain(`'${path.join(stableDir, "bun")}'`);
         delete process.env.npm_execpath;
+        Object.defineProperty(process, "execPath", { value: path.join(stableDir, "bun"), configurable: true });
+        const directlyInvoked = await installMergeFence({
+          workspaceRoot: tempRoot,
+          pmRoot: pmPath,
+          dryRun: true,
+        });
+        expect(directlyInvoked.git_config.find((entry) => entry.key === "merge.pm-history.driver")?.value)
+          .toContain(`'${path.join(stableDir, "bun")}'`);
+        Object.defineProperty(process, "execPath", { value: path.join(tempRoot, "bun-node-disposable", "bun"), configurable: true });
+        await mkdir(path.join(tempRoot, "bun-node-disposable"));
+        await writeFile(path.join(tempRoot, "bun-node-disposable", "bun"), `#!/bin/sh\nprintf '${process.version}\\n'\n`);
+        await chmod(path.join(tempRoot, "bun-node-disposable", "bun"), 0o755);
         await expect(installMergeFence({
           workspaceRoot: tempRoot,
           pmRoot: pmPath,
@@ -50,6 +63,7 @@ describe("worktree-local merge drivers", () => {
         else process.env.npm_execpath = originalNpmExecpath;
         if (bunDescriptor === undefined) delete (process.versions as Record<string, string | undefined>).bun;
         else Object.defineProperty(process.versions, "bun", bunDescriptor);
+        if (execPathDescriptor) Object.defineProperty(process, "execPath", execPathDescriptor);
       }
     });
   });

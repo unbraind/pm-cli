@@ -4,8 +4,9 @@ Tracked by [pm-pshhry](../.agents/pm/issues/pm-pshhry.toon),
 [pm-ydshl9](../.agents/pm/issues/pm-ydshl9.toon),
 [pm-bab3gb](../.agents/pm/issues/pm-bab3gb.toon),
 [pm-fx80w2](../.agents/pm/issues/pm-fx80w2.toon),
-[pm-gtw5zh](../.agents/pm/issues/pm-gtw5zh.toon), and
-[pm-s8ybl9](../.agents/pm/issues/pm-s8ybl9.toon).
+[pm-gtw5zh](../.agents/pm/issues/pm-gtw5zh.toon),
+[pm-s8ybl9](../.agents/pm/issues/pm-s8ybl9.toon), and
+[pm-x8jdt8](../.agents/pm/issues/pm-x8jdt8.toon).
 
 Project management is context management. Routine reads should pay for the
 requested evidence, and derived feedback should not grow with every candidate
@@ -21,12 +22,14 @@ The cost still depends on the addressed record, registered type directories,
 and extension activation; this is not a constant-latency guarantee for arbitrary
 extensions or unbounded individual history streams.
 
-Request hierarchy work explicitly with `--fields id,children`, `--tree`, or a
-deep/full container read. These paths preserve registered hierarchy semantics,
+Request hierarchy work explicitly with `--fields id,children`, `--tree`, a
+deep read of a container or custom type, or a full read of any type. These
+paths preserve registered hierarchy semantics,
 including inverse and custom relationship kinds, rather than treating only the
-scalar `parent` field as authoritative. An omitted `children` facet carries a
-restore selector in the omission receipt. Explicit deep/full and child-field
-projections retain a zero-count rollup for an empty container.
+scalar `parent` field as authoritative. An uncomputed `children` facet carries a
+restore selector in the omission receipt even for Task items, which may have
+children. Explicit full and child-field projections retain a zero-count rollup
+for an empty item; a deep container read does the same.
 
 Caller-carried output sessions retain only portable item identities in
 `next_state.seen_item_ids`. Workspace activity such as `_workspace` remains
