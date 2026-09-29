@@ -110,6 +110,9 @@ function isExactCandidate(candidate, options) {
   }
   return (
     candidate.display_title === `Release ${options.tag}` ||
+    ["operator", "morning_dispatcher", "native_schedule", "blocker_retry"].some(
+      (origin) => candidate.display_title === `Release ${options.tag} (${origin})`,
+    ) ||
     options.dispatchRunIds.has(candidate.database_id)
   );
 }

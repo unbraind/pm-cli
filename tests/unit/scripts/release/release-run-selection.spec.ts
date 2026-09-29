@@ -82,6 +82,19 @@ describe("selectAuthoritativeReleaseRun", () => {
     expect(selection.selected?.database_id).toBe(25);
   });
 
+  it("recognizes origin-bearing exact-tag recovery without accepting a different tag or origin", () => {
+    const selection = selectAuthoritativeReleaseRun(
+      [
+        run({ databaseId: 26, event: "workflow_dispatch", headBranch: "main", displayTitle: `Release ${tag} (morning_dispatcher)` }),
+        run({ databaseId: 27, event: "workflow_dispatch", headBranch: "main", displayTitle: "Release v2026.8.6 (morning_dispatcher)" }),
+        run({ databaseId: 28, event: "workflow_dispatch", headBranch: "main", displayTitle: `Release ${tag} (unverified)` }),
+      ],
+      { tag, tagSha, defaultBranch: "main" },
+    );
+    expect(selection.matched_count).toBe(1);
+    expect(selection.selected?.database_id).toBe(26);
+  });
+
   it("selects the newest active run when publication has not succeeded", () => {
     const selection = selectAuthoritativeReleaseRun(
       [

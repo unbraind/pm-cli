@@ -376,6 +376,25 @@ describe("verify-installed-agent-session", () => {
     expect(JSON.stringify(acceptance.json)).not.toContain("secret@example.com");
   });
 
+  it("detects a registry 404 beyond the excerpt and redacts complete authorization values", async () => {
+    let attempts = 0;
+    const acceptance = await runAcceptance({
+      argv: ["--version", "2026.9.29", "--manager", "npm", "--json"],
+      runCommand: (command, args) => {
+        if (args.includes("install") && ++attempts === 1) {
+          return { status: 1, stdout: "", stderr: `Authorization: token abc-secret\n${"x".repeat(600)} E404 404 Not Found` };
+        }
+        return successfulCommand(command, args);
+      },
+    });
+    expect(acceptance.failure).toBeNull();
+    expect(attempts).toBe(2);
+    expect(acceptance.json.sessions[0].install_attempts[0].classification).toBe("registry_visibility");
+    expect(acceptance.json.sessions[0].install_attempts[0].stderr_excerpt).toContain("Authorization: [redacted]");
+    expect(JSON.stringify(acceptance.json)).not.toContain("abc-secret");
+    expect(acceptance.json.sessions[0].install_attempts[0].stderr_excerpt).toHaveLength(512);
+  });
+
   it("bounds repeated registry visibility failures and preserves the first attempt", async () => {
     const acceptance = await runAcceptance({
       argv: ["--version", "2026.9.29", "--manager", "npm"],

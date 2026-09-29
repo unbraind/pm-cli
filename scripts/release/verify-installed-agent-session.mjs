@@ -282,11 +282,11 @@ function installPackage(manager, packageSpec, installRoot, publicRegistryEnv, gl
 
 /** Keep diagnostics bounded and strip credentials before they enter a hosted log. */
 function installFailureReceipt(result, attempt) {
-  const stderr = result.stderr
+  const redactedStderr = result.stderr
+    .replace(/(^|\n)([ \t]*Authorization\s*:\s*)[^\r\n]*/gimu, "$1$2[redacted]")
     .replace(/(https?:\/\/)[^\s/@]+@/giu, "$1[redacted]@")
-    .replace(/(Bearer\s+|(?:token|password|secret|authorization|_authToken)\s*[=:]\s*)[^\s&]+/giu, "$1[redacted]")
-    .slice(0, 512);
-  const transientRegistry = !result.error_code && !result.signal && /(?:\bE404\b|\b404 Not Found\b)/iu.test(stderr);
+    .replace(/(Bearer\s+|(?:token|password|secret|authorization|_authToken)\s*[=:]\s*)[^\s&]+/giu, "$1[redacted]");
+  const transientRegistry = !result.error_code && !result.signal && /(?:\bE404\b|\b404 Not Found\b)/iu.test(redactedStderr);
   const errorKind = new Map([["ETIMEDOUT", "timeout"], ["ENOENT", "executable_missing"]]).get(result.error_code);
   return {
     attempt,
@@ -294,7 +294,7 @@ function installFailureReceipt(result, attempt) {
     exit_status: "exit_status" in result ? result.exit_status : result.status,
     signal: result.signal ?? null,
     error_code: result.error_code ?? null,
-    stderr_excerpt: stderr,
+    stderr_excerpt: redactedStderr.slice(0, 512),
   };
 }
 

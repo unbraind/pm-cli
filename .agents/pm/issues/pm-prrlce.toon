@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: "area:release",automation,diagnostics,"horizon:current"
 created_at: "2026-09-28T15:31:49.498Z"
-updated_at: "2026-09-29T10:00:34.097Z"
+updated_at: "2026-09-29T10:50:30.032Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Every Auto Release and Release run carries an explicit trigger origin (native schedule, morning dispatcher, blocker retry, operator) from a declared input and its run name, never inferred from event or actor; Release reliability reports a separate series per origin, including the dispatcher's attempts, failures and failing stages, while the native scheduled denominator stays unchanged as decided on pm-9url9h; The same-day manual follow-up of pm-uenmu9 requires an explicit follow-up request from the operator origin; negative control: a dispatcher-origin run after a same-day tag exists skips before any version mutation; The 2026-09-28 dispatcher failure is visible in the new series or recorded as an explicit pre-attribution gap"
@@ -23,13 +23,14 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-q7c36n,discovered_from,"2026-09-28T15:32:05.324Z","harness:claude-code","cli:update:dep",detected
   pm-z329kd,discovered_from,"2026-09-28T15:41:04.958Z","harness:claude-code","cli:update:dep",detected
   pm-uenmu9,discovered_from,"2026-09-29T09:47:31.174Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-09-29T10:00:31.279Z","harness:codex","Implemented declared Auto Release origin in workflow run names and attempt receipts; morning dispatcher now passes its own origin. Reliability collection includes schedule, dispatch, and issue runs while keeping the native scheduled policy denominator intact; the dispatcher has a separate count, failure rate, stage series, and historical unattributed-run gap. New same-day dispatcher runs take the early immutable-tag guard. Release exact-tag dispatch carries origin; tag-push runs retain tag_push provenance. Linked tests passed (72), full coverage passed 9,428 tests at 100/100/100/100, and packed npm/Bun manual acceptance passed. Remaining acceptance: per-origin reliability series for operator and blocker retry, and upstream origin propagation into tag-push Release runs; operator-only ordinal follow-up remains owned by pm-uenmu9. No hosted release run or live new-origin receipt has yet been observed."
+  "2026-09-29T10:28:52.881Z","harness:codex",PR #1350 review found the new origin-bearing Release run name no longer matched exact-tag recovery selection. Added exact declared-origin run-name matching with wrong-tag and unknown-origin negative controls; focused selector tests pass. Greptile discussion #4132270479.
 notes[1]{created_at,author,text}:
   "2026-09-29T10:00:32.043Z","harness:codex",A tag-push Release run currently knows only tag_push in its run name. Do not equate that with the upstream Auto Release trigger; completing the accepted provenance contract needs immutable upstream attribution through the tag or an explicitly dispatched Release workflow without duplicate publish runs.
 learnings[1]{created_at,author,text}:
   "2026-09-29T10:00:32.723Z","harness:codex","GitHub workflow_dispatch is shared by a local timer and an operator. Count dispatches by a declared origin retained in the run name and attempt receipt, not by event or actor; preserve an explicit historical gap when older runs lack attribution."
-files[11]{path,scope}:
+files[13]{path,scope}:
   .github/workflows/auto-release.yml,project
   .github/workflows/release-reliability.yml,project
   .github/workflows/release.yml,project
@@ -37,13 +38,16 @@ files[11]{path,scope}:
   scripts/release/dispatch-daily-release.mjs,project
   scripts/release/release-observation.mjs,project
   scripts/release/release-reliability.mjs,project
+  scripts/release/release-run-selection.mjs,project
   tests/unit/scripts/release/collect-release-reliability.spec.ts,project
   tests/unit/scripts/release/dispatch-daily-release.spec.ts,project
   tests/unit/scripts/release/release-observation.spec.ts,project
   tests/unit/scripts/release/release-reliability.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  tests/unit/scripts/release/release-run-selection.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/dispatch-daily-release.spec.ts tests/unit/scripts/release/release-observation.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts tests/unit/scripts/release/release-reliability.spec.ts tests/integration/release-automation-contract.spec.ts,project,300,"harness:codex","2026-09-29T09:38:31.591Z",local_mutation,fix/release-origin-and-install-diagnostics
-test_runs[1]:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-run-selection.spec.ts,project,300,"harness:codex","2026-09-29T10:29:04.313Z",local_mutation,fix/release-origin-and-install-diagnostics
+test_runs[2]:
   - run_id: test-local-mumhi17y-rifyl0
     kind: test
     status: passed
@@ -55,6 +59,18 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/dispatch-daily-release.spec.ts tests/unit/scripts/release/release-observation.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts tests/unit/scripts/release/release-reliability.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mumjaybq-mxoap5
+    kind: test
+    status: passed
+    started_at: "2026-09-29T10:29:04.900Z"
+    finished_at: "2026-09-29T10:29:19.814Z"
+    recorded_at: "2026-09-29T10:29:19.814Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/dispatch-daily-release.spec.ts tests/unit/scripts/release/release-observation.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts tests/unit/scripts/release/release-reliability.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-run-selection.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/RELEASE_RELIABILITY.md,project
 body: ""
