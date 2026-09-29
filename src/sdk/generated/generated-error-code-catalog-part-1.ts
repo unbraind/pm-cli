@@ -2436,6 +2436,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "merge_bun_launcher_unavailable",
+    meaning: "Merge bun launcher unavailable condition.",
+    stability: "provisional",
+    exit_code: 5,
+    class: "dependency_failed",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/merge/install.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_bun_launcher_unavailable",
+    aliases: [],
+  },
+  {
     code: "merge_conflict_markers_detected",
     meaning: "Merge conflict markers detected condition.",
     stability: "stable",

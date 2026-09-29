@@ -63,24 +63,37 @@ function quoteMergeDriverArgument(value: string): string {
   return `'${value.replaceAll("'", `'"'"'`)}'`;
 }
 
-/** Preserve an absolute runtime symlink across upgrades, accepting only launchers
- * that resolve to this running executable. Relative PATH entries and unrelated
- * runtimes cannot redirect Git; without a matching launcher, retain execPath.
- * The installed command never depends on the future merge process's PATH.
+/** Preserve a durable absolute runtime launcher across later Git merges.
+ * Bun package runners may expose their source binary through npm_execpath even
+ * when execPath is a temporary bunx copy; candidates must match the live Bun
+ * version. The installed command never depends on the future merge PATH.
  */
 async function resolveMergeDriverCliCommand(): Promise<string> {
   const packageRoot = resolvePmPackageRootFromModule(import.meta.url, [
     "../../..",
   ]);
   let executable = process.execPath;
+  let bunLauncherFound = false;
   const runtimeIdentity = await realpath(process.execPath);
   const bunVersion = (process.versions as Record<string, string | undefined>).bun;
-  for (const directory of (process.env.PATH ?? "").split(path.delimiter)) {
-    if (!path.isAbsolute(directory)) continue;
-    const candidate = path.join(
-      directory,
-      bunVersion === undefined ? path.basename(process.execPath) : "bun",
+  const pathCandidates = (process.env.PATH ?? "")
+    .split(path.delimiter)
+    .filter((directory) => path.isAbsolute(directory))
+    .map((directory) =>
+      path.join(
+        directory,
+        bunVersion === undefined ? path.basename(process.execPath) : "bun",
+      ),
     );
+  const candidates =
+    bunVersion === undefined
+      ? pathCandidates
+      : [process.env.npm_execpath ?? "", ...pathCandidates].filter(
+          (candidate) =>
+            path.isAbsolute(candidate) &&
+            /^(?:bun|bun\.exe)$/iu.test(path.basename(candidate)),
+        );
+  for (const candidate of candidates) {
     try {
       await access(candidate, constants.X_OK);
       if (bunVersion !== undefined) {
@@ -91,6 +104,7 @@ async function resolveMergeDriverCliCommand(): Promise<string> {
         });
         if (stdout.trim() === bunVersion) {
           executable = await realpath(candidate);
+          bunLauncherFound = true;
           break;
         }
         continue;
@@ -105,6 +119,20 @@ async function resolveMergeDriverCliCommand(): Promise<string> {
     } catch {
       // Missing, inaccessible, or dangling PATH entries cannot be launchers.
     }
+  }
+  if (bunVersion !== undefined && !bunLauncherFound) {
+    throw new PmCliError(
+      "Cannot install Bun merge drivers without a durable executable matching the current Bun version.",
+      EXIT_CODE.DEPENDENCY_FAILED,
+      {
+        code: "merge_bun_launcher_unavailable",
+        why: "The current Bun process may be a temporary bunx launcher that Git cannot reuse after this command exits.",
+        nextSteps: [
+          "Run with a version-matched Bun executable on an absolute PATH entry, or invoke pm through a Bun runner that publishes an absolute npm_execpath.",
+          "Retry pm merge install, then check pm health --strict-exit before merging branches.",
+        ],
+      },
+    );
   }
   return `${quoteMergeDriverArgument(executable)} ${quoteMergeDriverArgument(path.join(packageRoot, "dist", "cli.js"))}`;
 }

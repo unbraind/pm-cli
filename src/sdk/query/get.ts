@@ -163,7 +163,12 @@ function itemCollectionCounts(
   return lengths as NonNullable<GetItemProjection["collection_counts"]>;
 }
 
-function itemMaterialFieldGroups(item: ItemMetadata, body: string): string[] {
+/** Report children as withheld only when a computed rollup has content, or a container's cheaper projection has not computed it yet. */
+function itemMaterialFieldGroups(
+  item: ItemMetadata,
+  body: string,
+  children: ChildRollupContext | undefined,
+): string[] {
   const collectionCounts = itemCollectionCounts(item);
   return [
     ...(body.length > 0 ? ["body"] : []),
@@ -176,7 +181,13 @@ function itemMaterialFieldGroups(item: ItemMetadata, body: string): string[] {
     0
       ? ["linked"]
       : []),
-    "children",
+    ...(children === undefined
+      ? shouldAutoIncludeGetChildren(item.type)
+        ? ["children"]
+        : []
+      : children.count > 0
+        ? ["children"]
+        : []),
     ...(typeof item.assignee === "string" && item.assignee.trim().length > 0
       ? ["claim_state"]
       : []),
@@ -778,7 +789,7 @@ export async function runGet(
   }
   registerOutputMaterialFieldGroups(
     result,
-    itemMaterialFieldGroups(context.metadata, context.body),
+    itemMaterialFieldGroups(context.metadata, context.body, children),
   );
   return result;
 }

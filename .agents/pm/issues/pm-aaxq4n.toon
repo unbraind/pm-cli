@@ -1,0 +1,64 @@
+id: pm-aaxq4n
+title: "GH-1349: Bun 1.3.5 merge installer accepts a transient launcher"
+description: Published 2026.9.29 under bunx --bun 1.3.5 reports merge install success but strict health sees all five driver commands drifted. The launcher selection falls back to a temporary Bun path when PATH has only a different Bun version.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-29T14:58:58.446Z"
+updated_at: "2026-09-29T16:43:50.805Z"
+closed_at: "2026-09-29T16:17:17.248Z"
+completed_at: "2026-09-29T16:17:17.248Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Packed CLI under Bun 1.3.5 installs a stable version-matched launcher; strict health passes after init and repeated merge install; a real Git merge executes the driver and preserves item/history integrity; mismatched or invalid runner hints fail safely
+parent: pm-u9d0
+risk: high
+confidence: 85
+resolution: "Merge installer resolves a durable Bun launcher from the package runner or absolute PATH, validates its runtime version, and refuses to publish a fence when none is safe; public error contracts and recurrence gate are updated."
+expected_result: Packed Bun 1.3.5 installs stable merge drivers; repeated install and strict health pass; real branch merge preserves item and history; mismatched launcher inputs fail safely.
+actual_result: "Focused linked test 5/5, full repository 9,433 passing with exact 100/100/100/100 coverage, bounded mutation admission, and isolated final tarball Bun 1.3.5 npm/npx/bunx, strict health, real branch merge, reconciliation, and valid three-entry history all passed."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-vks66s,recurs_from,"2026-09-29T14:58:58.446Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-09-29T14:58:58.446Z","harness:codex","Duplicate check: complete 2840-item all-status corpus and Bun merge-driver lineage reviewed. pm-vks66s closed with valid Bun 1.4.2 evidence; this is a genuine published 2026.9.29 recurrence under Bun 1.3.5, linked by recurs_from. Reproduced in a disposable npm-installed project with both PM tracker roots isolated: Bun 1.3.5 and pm 2026.9.29, merge install exit 0, strict health exit 1 with five driver drifts. Configured executable was a Bun temporary runtime path; no private project data was used."
+  "2026-09-29T14:59:19.958Z","harness:codex","Test-audit contract: a bunx --bun process must persist a durable version-matched Bun executable in Git config. Existing test covers matching PATH and Node; extend it with a matching absolute npm_execpath and only mismatched Bun on PATH, so the old fallback fails before repair. Manual acceptance uses the actual published Bun 1.3.5 binary and a packed pm artifact in a temporary Git project, then a real branch merge. No mock replaces install/audit behavior."
+  "2026-09-29T15:00:23.959Z","harness:codex","Red phase: focused worktree-config test exited 1 on the new Bun runner-hint assertion. Four existing tests passed. With PATH containing only a mismatched Bun and a matching absolute npm_execpath, the installer fell back to the Node executable in the simulated test, mirroring the published Bun 1.3.5 transient fallback seen in the disposable consumer."
+  "2026-09-29T16:16:31.380Z","harness:codex","Green and acceptance evidence 2026-09-29: linked worktree-config test passed 5/5 (pm test run test-local-mumvnf45-fpgu6j). Canonical full coverage passed 9,433 tests with 2 Windows-only skips, exact 65,983/65,983 statements, 50,533/50,533 branches, 13,644/13,644 functions, and 63,006/63,006 lines. Typecheck, security scan, docs links, generated contracts and public surface, record integrity, graph composition, and bounded mutation admission passed; full static chain awaits final rerun after tracker closure. Final packed tarball SHA-256 f950a566da4691af29c38c065e0d0377ad2623616998acc0f763216daaf8eb7f installed by Bun 1.3.5 in a disposable Git project with isolated PM_PATH/PM_GLOBAL_PATH. Bun/bunx and npx executed version 2026.9.29; init, repeated merge install, and strict health passed with zero findings. A real divergent branch merge used the packed Bun driver, preserved right description and left note, verified three history entries with matching item hash, reconciled, and returned strict health ok. Published 2026.9.29 data also read and verified under the packed build. This is packed-artifact evidence, not proof of a future published release."
+  "2026-09-29T16:43:50.804Z","harness:codex","Delivery gate status 2026-09-29: pnpm quality:static has not completed locally because the host-sensitive performance subgate failed on different attempts. SDK merge import measured 247 and 231 ms against 226 ms; unchanged main in an isolated built worktree measured 312 ms against the same ceiling, while the candidate later passed the same direct 10-entrypoint gate. A later static attempt passed import cost but failed CLI transport floors (get 381>362 ms, context 445>433, next 469>440, create 424>398, claim 420>415). No threshold was changed. Hosted exact-head static and performance checks remain required before merge; this note does not claim a full local static pass."
+files[7]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Latest published pm-changelog project installation refresh used to generate the reviewed changelog
+  config/defect-recurrence-policy.json,project,Register Bun merge launcher recurrence under installed-consumer portability with focused gate
+  sdk/public-surface.json,project,Additive public error-code surface for Bun launcher refusal
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated public error catalog for stable Bun launcher refusal
+  src/sdk/merge/install.ts,project,Select version-matched durable Bun runner and fail safely without one
+  tests/fixtures/contracts/full.json,project,Generated additive error contract snapshot for Bun launcher refusal
+  tests/unit/sdk/merge/worktree-config.spec.ts,project,Matching runner hint and missing-launcher regression
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts,project,300,"harness:codex","2026-09-29T15:05:34.843Z",local_mutation,fix/published-bun-merge-and-leaf-read-contracts
+test_runs[1]:
+  - run_id: test-local-mumvnf45-fpgu6j
+    kind: test
+    status: passed
+    started_at: "2026-09-29T16:14:43.689Z"
+    finished_at: "2026-09-29T16:14:56.837Z"
+    recorded_at: "2026-09-29T16:14:56.837Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Generated release note for Bun merge-driver launcher repair
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated agent refusal census includes the new Bun launcher recovery code
+  docs/MERGE_SAFETY.md,project,Document Bun runner selection and fail-closed installation
+close_reason: Repair published Bun 1.3.5 merge-driver launcher drift with stable matching executable selection and safe refusal
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-aaxq4n
+  gate_id: installed-package-runtime-compatibility
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),CI / Gates (smokes)
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/1349"

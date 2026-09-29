@@ -20,6 +20,7 @@ describe("worktree-local merge drivers", () => {
       await chmod(path.join(staleDir, "bun"), 0o755);
       await chmod(path.join(stableDir, "bun"), 0o755);
       const originalPath = process.env.PATH;
+      const originalNpmExecpath = process.env.npm_execpath;
       const bunDescriptor = Object.getOwnPropertyDescriptor(process.versions, "bun");
       try {
         process.env.PATH = [staleDir, stableDir, originalPath].join(path.delimiter);
@@ -28,8 +29,25 @@ describe("worktree-local merge drivers", () => {
         expect(installed.git_config.find((entry) => entry.key === "merge.pm-history.driver")?.value)
           .toContain(`'${path.join(stableDir, "bun")}'`);
         expect(await auditMergeDriverConfiguration(tempRoot)).toMatchObject({ status: "ok" });
+        process.env.PATH = staleDir;
+        process.env.npm_execpath = path.join(stableDir, "bun");
+        const bunxInstalled = await installMergeFence({
+          workspaceRoot: tempRoot,
+          pmRoot: pmPath,
+          dryRun: true,
+        });
+        expect(bunxInstalled.git_config.find((entry) => entry.key === "merge.pm-history.driver")?.value)
+          .toContain(`'${path.join(stableDir, "bun")}'`);
+        delete process.env.npm_execpath;
+        await expect(installMergeFence({
+          workspaceRoot: tempRoot,
+          pmRoot: pmPath,
+          dryRun: true,
+        })).rejects.toThrow("Cannot install Bun merge drivers without a durable executable");
       } finally {
         process.env.PATH = originalPath;
+        if (originalNpmExecpath === undefined) delete process.env.npm_execpath;
+        else process.env.npm_execpath = originalNpmExecpath;
         if (bunDescriptor === undefined) delete (process.versions as Record<string, string | undefined>).bun;
         else Object.defineProperty(process.versions, "bun", bunDescriptor);
       }

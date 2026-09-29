@@ -335,10 +335,44 @@ describe("output projection omission contracts", () => {
   it("charges get receipts only for material omitted groups", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const global = { path: pmPath };
-      const created = await runCreate(
-        { title: "Material omission source", type: "Task" },
+      const parent = await runCreate(
+        { title: "Material child rollup parent", type: "Epic" },
         { ...global, json: true, quiet: true },
       );
+      const created = await runCreate(
+        {
+          title: "Material omission source",
+          type: "Task",
+          parent: parent.item.id,
+        },
+        { ...global, json: true, quiet: true },
+      );
+      const leafFull = await runGet(created.item.id, global, { full: true });
+      expect(attachOutputOmissionReceipt("get", leafFull)).toMatchObject({
+        omission_receipt: { has_omissions: false },
+      });
+      const emptyChildren = await runGet(created.item.id, global, {
+        fields: "children",
+      });
+      expect(emptyChildren.children?.count).toBe(0);
+      expect(attachOutputOmissionReceipt("get", emptyChildren)).toMatchObject({
+        omission_receipt: { has_omissions: false },
+      });
+      const parentBrief = await runGet(parent.item.id, global, {
+        depth: "brief",
+      });
+      expect(attachOutputOmissionReceipt("get", parentBrief)).toMatchObject({
+        omission_receipt: {
+          omitted_field_groups: expect.arrayContaining([
+            { name: "children", restore_with: "--fields children" },
+          ]),
+        },
+      });
+      const parentFull = await runGet(parent.item.id, global, { full: true });
+      expect(parentFull.children?.count).toBe(1);
+      expect(attachOutputOmissionReceipt("get", parentFull)).toMatchObject({
+        omission_receipt: { has_omissions: false },
+      });
       const unclaimedBrief = await runGet(
         created.item.id,
         global,

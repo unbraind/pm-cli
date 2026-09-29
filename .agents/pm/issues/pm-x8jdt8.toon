@@ -1,0 +1,77 @@
+id: pm-x8jdt8
+title: "GH-1351: leaf get advertises empty children as omitted"
+description: A full get/read/show of a leaf item marks children omitted despite zero children; the suggested follow-up returns an empty rollup. Correct materiality in the SDK without hiding populated children or notes.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-29T14:54:09.941Z"
+updated_at: "2026-09-29T16:17:26.235Z"
+closed_at: "2026-09-29T16:17:25.502Z"
+completed_at: "2026-09-29T16:17:25.502Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: "Real isolated tracker proves a parent with one child and a leaf with zero children across get, show, and read; full leaf reads have no empty children omission; populated omitted children retain recovery guidance; previously repaired notes behavior remains correct"
+parent: pm-5t33or
+risk: medium
+confidence: 90
+resolution: "SDK get output materiality now uses the computed child rollup and retains conservative container guidance before a rollup is requested, without adding ordinary Task corpus scans."
+expected_result: "Full leaf get, show, and read do not advertise empty children; parent reads with material children retain restoration guidance, and explicitly requested empty rollups remain visible."
+actual_result: "Linked SDK and CLI transport tests passed, full repository 9,433 passing with exact 100/100/100/100 coverage, and isolated packed CLI and Bun 1.3.5 public SDK acceptance proved zero-child full leaf receipt and populated parent count."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4fwgaz,verifies,"2026-09-29T16:08:20.937Z","harness:codex","cli:update:dep",detected
+  pm-b1w8vr,verifies,"2026-09-29T16:08:20.937Z","harness:codex","cli:update:dep",detected
+  pm-p258tx,verifies,"2026-09-29T16:08:20.937Z","harness:codex","cli:update:dep",detected
+  pm-vks66s,discovered_from,"2026-09-29T16:08:20.937Z","harness:codex","cli:update:dep",detected
+  pm-y4z5,verifies,"2026-09-29T16:08:20.937Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-09-29T14:54:09.941Z","harness:codex","Duplicate check: complete 2840-item all-status corpus, exact title scan, and prior closed omission/get owners pm-p258tx, pm-y4z5, pm-b1w8vr, pm-4fwgaz reviewed. This is a distinct published 2026.9.29 leaf-materiality regression. The main checkout itself reproduces a false children omission on closed leaf pm-vks66s. No duplicate active owner found."
+  "2026-09-29T14:55:27.573Z","harness:codex","Test-audit contract: omission receipts must describe restorable material. A leaf with zero children must have no children omission; a parent with a child must still advertise the group when withheld. Extend the existing SDK output-projection test with real temporary persistence; run it red against current code, then green after the SDK change. CLI get/show/read acceptance will exercise transport aliases separately. No production test seam or duplicate fixture."
+  "2026-09-29T14:58:07.487Z","harness:codex","Red phase: node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts exited 1 with the new real-tracker leaf full assertion: expected has_omissions=false, received true. Existing five tests passed. The current get implementation bypasses corpus scans for Task reads by design; the repair will derive children materiality from an available rollup and retain a conservative hint only for container types before their rollup is requested."
+  "2026-09-29T16:08:29.797Z","harness:codex","Graph audit evidence: the current SDK regressions verify the prior omission-receipt contract (pm-p258tx), populated parent and scan-free built-in leaf child projection (pm-y4z5), empty-versus-unprojected collection distinction (pm-b1w8vr), and explicit requested-empty collection behavior (pm-4fwgaz). The live pm-vks66s leaf was the confirming tracker sample, recorded as discovered_from rather than a causal dependency. These five typed edges close the five new prose-reference gaps without changing the historical graph ceiling."
+  "2026-09-29T16:16:32.109Z","harness:codex","Green and acceptance evidence 2026-09-29: linked SDK output projection and CLI/SDK parity tests passed in isolated tracker contexts (pm test run test-local-mumvn0ug-8pk4ug); canonical full suite passed 9,433 tests with 2 Windows-only skips and exact 100/100/100/100 all-source coverage. Final packed tarball SHA-256 f950a566da4691af29c38c065e0d0377ad2623616998acc0f763216daaf8eb7f under Bun 1.3.5 public SDK runGet reports a zero-child full leaf with has_omissions=false and its Epic parent with children.count=1. Earlier same-source packed CLI get/show/read full all reported no false child omission, while brief parent retained --fields children recovery. Published 2026.9.29 data remained readable with valid history. Full static chain awaits final rerun after tracker closure."
+files[3]{path,scope,note}:
+  src/sdk/query/get.ts,project,Derive omission materiality from actual child rollup without adding leaf corpus scans
+  tests/integration/sdk-context-integrity.integration.spec.ts,project,CLI SDK receipt parity for empty child group
+  tests/unit/sdk/output-projection.spec.ts,project,Real temporary parent and leaf receipt regression
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-29T15:05:33.039Z"
+      source_kind: local_mutation
+      source_ref: fix/published-bun-merge-and-leaf-read-contracts
+  - command: node scripts/run-tests.mjs test -- tests/integration/sdk-context-integrity.integration.spec.ts
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-29T16:13:58.862Z"
+      source_kind: local_mutation
+      source_ref: fix/published-bun-merge-and-leaf-read-contracts
+test_runs[1]:
+  - run_id: test-local-mumvn0ug-8pk4ug
+    kind: test
+    status: passed
+    started_at: "2026-09-29T16:14:04.865Z"
+    finished_at: "2026-09-29T16:14:38.340Z"
+    recorded_at: "2026-09-29T16:14:38.340Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/sdk-context-integrity.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated release note for material child omission receipts
+close_reason: Correct empty leaf children omission receipts while preserving populated parent recovery
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-x8jdt8
+  gate_id: get-output-omission-receipts
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts tests/integration/sdk-context-integrity.integration.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/1351"

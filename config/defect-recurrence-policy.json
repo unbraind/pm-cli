@@ -533,18 +533,21 @@
     },
     {
       "id": "installed-consumer-portability",
-      "version": 1,
+      "version": 2,
       "title": "Packed npm and Bun runtime compatibility and executable verification",
       "owner_item_id": "pm-ikj8ve",
       "escape_class": "production_defect",
       "triggers": {
         "item_ids": [
-          "pm-8eebb6"
+          "pm-8eebb6",
+          "pm-vks66s",
+          "pm-aaxq4n"
         ]
       },
       "checks": {
         "local": [
-          "node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts"
+          "node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts",
+          "node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts"
         ],
         "hosted": [
           "CI / Gates (smokes)"
@@ -558,7 +561,8 @@
       "historical_item_ids": [
         "pm-8eebb6",
         "pm-b8hwfr",
-        "pm-ikj8ve"
+        "pm-ikj8ve",
+        "pm-vks66s"
       ],
       "budget": {
         "max_escape_rate": 0,
