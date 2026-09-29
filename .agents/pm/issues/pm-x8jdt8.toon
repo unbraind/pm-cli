@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-09-29T14:54:09.941Z"
-updated_at: "2026-09-29T19:54:21.126Z"
+updated_at: "2026-09-29T21:56:56.321Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Real isolated tracker proves a parent with one child and a leaf with zero children across get, show, and read; full leaf reads have no empty children omission; populated omitted children retain recovery guidance; previously repaired notes behavior remains correct; Task parents retain child recovery in standard, brief, and deep reads; Both explicit full spellings return the child rollup for every type while full leaves remain complete"
@@ -14,7 +14,7 @@ parent: pm-5t33or
 risk: medium
 confidence: 90
 expected_result: Accurate materiality and recoverable children across SDK/CLI aliases without adding routine Task scans or breaking published exports
-actual_result: Relevant red phase confirmed. Focused SDK and CLI alias/notes tests passed. Full validation and review revision are in progress
+actual_result: "Runtime full-read and child recovery behavior is implemented; complete SDK/CLI receipts now strictly enforce false/zero/empty. Focused, linked, full exact coverage and fresh packed acceptance pass; local static timing and broader mandatory delivery/review requirements remain unmet."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-4fwgaz,verifies,"2026-09-29T16:08:20.937Z","harness:codex","cli:update:dep",detected
   pm-b1w8vr,verifies,"2026-09-29T16:08:20.937Z","harness:codex","cli:update:dep",detected
@@ -23,7 +23,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-y4z5,verifies,"2026-09-29T16:08:20.937Z","harness:codex","cli:update:dep",detected
   pm-aiqmgj,blocked_by,"2026-09-29T19:54:17.937Z","harness:codex","cli:update:dep",detected
   pm-dvwm,blocked_by,"2026-09-29T19:54:17.937Z","harness:codex","cli:update:dep",detected
-comments[15]{created_at,author,text}:
+comments[18]{created_at,author,text}:
   "2026-09-29T14:54:09.941Z","harness:codex","Duplicate check: complete 2840-item all-status corpus, exact title scan, and prior closed omission/get owners pm-p258tx, pm-y4z5, pm-b1w8vr, pm-4fwgaz reviewed. This is a distinct published 2026.9.29 leaf-materiality regression. The main checkout itself reproduces a false children omission on closed leaf pm-vks66s. No duplicate active owner found."
   "2026-09-29T14:55:27.573Z","harness:codex","Test-audit contract: omission receipts must describe restorable material. A leaf with zero children must have no children omission; a parent with a child must still advertise the group when withheld. Extend the existing SDK output-projection test with real temporary persistence; run it red against current code, then green after the SDK change. CLI get/show/read acceptance will exercise transport aliases separately. No production test seam or duplicate fixture."
   "2026-09-29T14:58:07.487Z","harness:codex","Red phase: node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts exited 1 with the new real-tracker leaf full assertion: expected has_omissions=false, received true. Existing five tests passed. The current get implementation bypasses corpus scans for Task reads by design; the repair will derive children materiality from an available rollup and retain a conservative hint only for container types before their rollup is requested."
@@ -39,8 +39,12 @@ comments[15]{created_at,author,text}:
   "2026-09-29T18:57:03.925Z","harness:codex","Final packed acceptance on artifact e164bf16c0574db13a3cb75df3c45ff0bae093789d054b7b24daf3a0cfd80112 proves both zero-child leaves and one-child Task parents through get/show/read --full, with leaf notes retained and complete receipts. npx and bunx additionally execute changed parent behavior from verified local bin bindings. Both full spellings return the rollup; brief/standard/deep ordinary Task reads retain child recovery with zero public-SDK enumeration work. Latest pm-changelog 2026.9.25 supported regeneration/check exits 0 and excludes reopened, unmerged items from completed entries. The complete Node 24.12.0 two-worker corpus is now running; earlier Node 26 timing failures remain recorded and are not coverage passes."
   "2026-09-29T19:18:53.381Z","harness:codex","Supported Node 24.12.0 two-worker full corpus exited 3 after 1260.02 seconds: 9432 passed, 2 failed, and 2 Windows-only tests skipped. All previous deadline failures passed. The two failures retain JSON/empty-stderr assertions and reject the runtime experimental SQLite warning; no warning suppression, assertion weakening, timeout extension, or inventory change was applied. Coverage summary was not produced. The final full-corpus retry uses Node 26.9.0 with the same two-worker execution setting."
   "2026-09-29T19:49:36.276Z","harness:codex","Final complete verification exits 0: node scripts/run-tests.mjs coverage -- --maxWorkers 2 on Node 26.9.0/Vitest 4.1.11 gives 9434 passes, two Windows-only skips, 1229.00 seconds. Canonical 758-source coverage is exactly statements 65988/65988, branches 50538/50538, functions 13645/13645, lines 63011/63011. Final complete pnpm quality:static also exits 0, retaining all thresholds. Focused SDK/CLI/public-surface regressions pass 31/31 and actual packed alias/notes/children acceptance passes. Node 24.12 warning pollution is retained in existing pm-aiqmgj; global meaningful-doc debt remains in pm-dvwm. These are implementation/validation results, not current-head review, merge, or publication evidence."
-learnings[1]{created_at,author,text}:
+  "2026-09-29T21:15:12.318Z","harness:codex","Current-head CodeRabbit review identifies a useful assertion gap: complete leaf/parent fixtures inspect only has_omissions. Strengthen existing SDK and CLI cases to require false, zero omitted-field count, and an empty group list with strict receipt equality. Use an isolated production mutation that retains false but corrupts the count/list to demonstrate that old assertions pass and strengthened assertions fail; do not add mocks, seams, duplicated fixtures, or runtime behavior."
+  "2026-09-29T21:56:52.958Z","harness:codex","Complete-receipt assertion revision: an isolated SDK production mutation retains has_omissions=false but returns count=1 and a populated children group for complete receipts. The old SDK case passes (one selected, five excluded); the strengthened SDK and CLI cases both fail on those fields (two selected failures, seven excluded). These are bounded sensitivity controls, not a real product defect or full mutation proof. Real focused SDK/Bun/CLI tests pass 14/14, and both existing linked commands pass with test-local-mun7sqiz-o18mor. No tests or runtime source were added; partial receipt assertions remain selective."
+  "2026-09-29T21:56:53.676Z","harness:codex","Final current assertion-revision validation on Node 26.9.0/Vitest 4.1.11: canonical coverage exits 0 after 1289.47 s with 9434 passes, two platform-specific skips and all 758 source files. Exact counts: statements 65988/65988, branches 50540/50540, functions 13645/13645, lines 63011/63011. Typecheck exits 0; static exits 1 only when reaching unchanged CLI timing limits (get 430>362, list 500>419, context 476>433, next 546>440, create 460>398, claim 434>415 ms). Preceding source/docs/contracts/package gates and SDK import costs pass; separate graph/record and bounded two-module mutation admission pass. The previous source head c12717c passed every protected hosted check, but fresh current-head checks/reviews remain required. Latest packed acceptance exits 0 against SHA256 b15492b6129c61add3053588415fbd783f7171ae0e62439ef7220e529d7c7713: actual npm/npx 12.0.2 and Bun/bunx 1.3.5 execute verified 2026.9.29 local bindings; real merge/history/strict health, pre-write refusal/recovery, full aliases/notes/children and published 2026.9.28 data compatibility pass in isolated opt-out projects. No thresholds or assertions weakened."
+learnings[2]{created_at,author,text}:
   "2026-09-29T18:22:43.069Z","harness:codex","An uncomputed hierarchy facet is unknown, not proven empty. Preserve a recovery hint for every item type because Tasks may own Tasks; reserve corpus enumeration for explicit full/children reads and existing deep container policy. Measure enumeration work through the public SDK and validate receipts through real CLI aliases."
+  "2026-09-29T21:56:54.509Z","harness:codex","A completeness boolean alone cannot detect contradictory count/list metadata introduced at receipt attachment or transport. Strictly compare the complete receipt at existing SDK and CLI boundaries; preserve focused partial assertions for intentionally omitted groups. Demonstrate sensitivity with a real isolated production mutation, not a mock that substitutes the behavior."
 files[4]{path,scope,note}:
   src/cli/register-list-query.ts,project,Describe full reads that compute child rollups for every item type
   src/sdk/query/get.ts,project,Compute explicit full child rollups and conservative materiality while preserving scan-free ordinary Task reads
@@ -62,7 +66,7 @@ tests[2]:
       created_at: "2026-09-29T16:13:58.862Z"
       source_kind: local_mutation
       source_ref: fix/published-bun-merge-and-leaf-read-contracts
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mumvn0ug-8pk4ug
     kind: test
     status: passed
@@ -81,6 +85,18 @@ test_runs[2]:
     started_at: "2026-09-29T18:16:16.868Z"
     finished_at: "2026-09-29T18:16:37.178Z"
     recorded_at: "2026-09-29T18:16:37.178Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/sdk-context-integrity.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mun7sqiz-o18mor
+    kind: test
+    status: passed
+    started_at: "2026-09-29T21:54:27.652Z"
+    finished_at: "2026-09-29T21:55:00.298Z"
+    recorded_at: "2026-09-29T21:55:00.298Z"
     passed: 2
     failed: 0
     skipped: 0

@@ -21,6 +21,11 @@ import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("SDK context integrity transports", () => {
   it("keeps full leaf receipts and Task child recovery consistent across read aliases and notes", async () => {
+    const completeReceipt = {
+      has_omissions: false,
+      omitted_field_group_count: 0,
+      omitted_field_groups: [],
+    };
     await withTempPmPath(async (context) => {
       const parent = createTestItemId(context, {
         title: "Nested Task parent",
@@ -41,9 +46,9 @@ describe("SDK context integrity transports", () => {
           json: {
             item: { id: child, notes: [{ text: "retained fixture note" }] },
             children: { count: 0 },
-            omission_receipt: { has_omissions: false },
           },
         });
+        expect((leaf.json as Record<string, unknown>).omission_receipt).toStrictEqual(completeReceipt);
       }
       const briefParent = context.runCli(
         ["get", parent, "--depth", "brief", "--json"],
@@ -61,8 +66,8 @@ describe("SDK context integrity transports", () => {
       });
       expect(fullParent.json).toMatchObject({
         children: { count: 1 },
-        omission_receipt: { has_omissions: false },
       });
+      expect((fullParent.json as Record<string, unknown>).omission_receipt).toStrictEqual(completeReceipt);
       const notes = context.runCli(["notes", child, "--json"], {
         expectJson: true,
       });
