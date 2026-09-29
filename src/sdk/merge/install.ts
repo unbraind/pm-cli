@@ -100,7 +100,9 @@ async function resolveMergeDriverCliCommand(): Promise<string> {
     .map((directory) =>
       path.join(
         directory,
-        bunVersion === undefined ? path.basename(process.execPath) : "bun",
+        bunVersion === undefined
+          ? path.basename(process.execPath)
+          : process.platform === "win32" ? "bun.exe" : "bun",
       ),
     );
   const candidates =

@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { chmod, mkdir, writeFile, rm } from "node:fs/promises";
+import { chmod, copyFile, mkdir, writeFile, rm } from "node:fs/promises";
 import { gitWorkspaceEnvironment, resolveMergeDriverConfigScope } from "../../../../src/sdk/merge/worktree-config.js";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -8,55 +8,73 @@ import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 describe("worktree-local merge drivers", () => {
   it("selects a stable Bun launcher and accepts its installed driver commands", async () => {
-    if (process.platform === "win32") return;
     await withTempPmPath(async ({ tempRoot, pmPath }) => {
       execFileSync("git", ["init", "-q"], { cwd: tempRoot, env: gitWorkspaceEnvironment() });
       const staleDir = path.join(tempRoot, "stale-runtime");
       const stableDir = path.join(tempRoot, "stable-runtime");
+      const executableName = process.platform === "win32" ? "bun.exe" : "bun";
+      const staleBinary = path.join(staleDir, executableName);
+      const stableBinary = path.join(stableDir, executableName);
+      const disposableBinary = path.join(tempRoot, "bun-node-disposable", executableName);
+      const originalExecPath = process.execPath;
+      const runtimeVersion = (process.versions as Record<string, string | undefined>).bun ?? process.version;
       await mkdir(staleDir);
       await mkdir(stableDir);
-      await writeFile(path.join(staleDir, "bun"), "#!/bin/sh\nprintf 'old\\n'\n");
-      await writeFile(path.join(stableDir, "bun"), `#!/bin/sh\nprintf '${process.version}\\n'\n`);
-      await chmod(path.join(staleDir, "bun"), 0o755);
-      await chmod(path.join(stableDir, "bun"), 0o755);
+      await writeFile(staleBinary, "#!/bin/sh\nprintf 'old\\n'\n");
+      await copyFile(originalExecPath, stableBinary);
+      await chmod(staleBinary, 0o755);
+      await chmod(stableBinary, 0o755);
       const originalPath = process.env.PATH;
       const originalNpmExecpath = process.env.npm_execpath;
       const bunDescriptor = Object.getOwnPropertyDescriptor(process.versions, "bun");
       const execPathDescriptor = Object.getOwnPropertyDescriptor(process, "execPath");
+      const platformDescriptor = Object.getOwnPropertyDescriptor(process, "platform");
       try {
         process.env.PATH = [staleDir, stableDir, originalPath].join(path.delimiter);
-        Object.defineProperty(process.versions, "bun", { value: process.version, configurable: true });
+        Object.defineProperty(process.versions, "bun", { value: runtimeVersion, configurable: true });
         const installed = await installMergeFence({ workspaceRoot: tempRoot, pmRoot: pmPath });
         expect(installed.git_config.find((entry) => entry.key === "merge.pm-history.driver")?.value)
-          .toContain(`'${path.join(stableDir, "bun")}'`);
+          .toContain(`'${stableBinary}'`);
         expect(await auditMergeDriverConfiguration(tempRoot)).toMatchObject({ status: "ok" });
         process.env.PATH = staleDir;
-        process.env.npm_execpath = path.join(stableDir, "bun");
+        process.env.npm_execpath = stableBinary;
         const bunxInstalled = await installMergeFence({
           workspaceRoot: tempRoot,
           pmRoot: pmPath,
           dryRun: true,
         });
         expect(bunxInstalled.git_config.find((entry) => entry.key === "merge.pm-history.driver")?.value)
-          .toContain(`'${path.join(stableDir, "bun")}'`);
+          .toContain(`'${stableBinary}'`);
         delete process.env.npm_execpath;
-        Object.defineProperty(process, "execPath", { value: path.join(stableDir, "bun"), configurable: true });
+        Object.defineProperty(process, "execPath", { value: stableBinary, configurable: true });
         const directlyInvoked = await installMergeFence({
           workspaceRoot: tempRoot,
           pmRoot: pmPath,
           dryRun: true,
         });
         expect(directlyInvoked.git_config.find((entry) => entry.key === "merge.pm-history.driver")?.value)
-          .toContain(`'${path.join(stableDir, "bun")}'`);
-        Object.defineProperty(process, "execPath", { value: path.join(tempRoot, "bun-node-disposable", "bun"), configurable: true });
+          .toContain(`'${stableBinary}'`);
+        Object.defineProperty(process, "execPath", { value: disposableBinary, configurable: true });
         await mkdir(path.join(tempRoot, "bun-node-disposable"));
-        await writeFile(path.join(tempRoot, "bun-node-disposable", "bun"), `#!/bin/sh\nprintf '${process.version}\\n'\n`);
-        await chmod(path.join(tempRoot, "bun-node-disposable", "bun"), 0o755);
+        await copyFile(originalExecPath, disposableBinary);
+        await chmod(disposableBinary, 0o755);
         await expect(installMergeFence({
           workspaceRoot: tempRoot,
           pmRoot: pmPath,
           dryRun: true,
         })).rejects.toThrow("Cannot install Bun merge drivers without a durable executable");
+        await rm(stableBinary);
+        await copyFile(originalExecPath, path.join(stableDir, "bun.exe"));
+        await chmod(path.join(stableDir, "bun.exe"), 0o755);
+        process.env.PATH = stableDir;
+        Object.defineProperty(process, "platform", { value: "win32", configurable: true });
+        const windowsPathLauncher = await installMergeFence({
+          workspaceRoot: tempRoot,
+          pmRoot: pmPath,
+          dryRun: true,
+        });
+        expect(windowsPathLauncher.git_config.find((entry) => entry.key === "merge.pm-history.driver")?.value)
+          .toContain(`'${path.join(stableDir, "bun.exe")}'`);
       } finally {
         process.env.PATH = originalPath;
         if (originalNpmExecpath === undefined) delete process.env.npm_execpath;
@@ -64,6 +82,7 @@ describe("worktree-local merge drivers", () => {
         if (bunDescriptor === undefined) delete (process.versions as Record<string, string | undefined>).bun;
         else Object.defineProperty(process.versions, "bun", bunDescriptor);
         if (execPathDescriptor) Object.defineProperty(process, "execPath", execPathDescriptor);
+        if (platformDescriptor) Object.defineProperty(process, "platform", platformDescriptor);
       }
     });
   });
