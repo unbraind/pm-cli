@@ -171,7 +171,9 @@ function extractCommandScopedOptions(command: Command, commandArgs: string[], ex
       }
     }
     validateLooseCommandOptionsWithFlagDefinitions(optionsToValidate, [...coreFlagDefinitions, ...extensionFlagDefinitions], getCommandPath(command));
-    return coerceLooseCommandOptionsWithFlagDefinitions(scoped, extensionFlagDefinitions, looseOptions);
+    const coerced = coerceLooseCommandOptionsWithFlagDefinitions(scoped, extensionFlagDefinitions, looseOptions);
+    copyReadOutputInvocationProvenance(scoped, coerced);
+    return coerced;
   }
   return scoped;
 }
@@ -308,4 +310,4 @@ function validateDynamicExtensionCommandInvocation(
   validateDynamicExtensionCommandOptions(descriptor, options, extensionFlagDefinitions);
 }
 
-export { collectExtensionFlagDefinitionsForCommand,collectExtensionFlagDefinitionsForInvocation,dynamicCommandArguments,extractCommandScopedOptions,forwardReadOutputIncludeModes,isImporterOrExporterCommandPath,recordCliReadOutputInvocationProvenance,validateDynamicExtensionCommandArgs,validateDynamicExtensionCommandInvocation };
+export { collectExtensionFlagDefinitionsForCommand,collectExtensionFlagDefinitionsForInvocation,copyReadOutputInvocationProvenance,dynamicCommandArguments,extractCommandScopedOptions,forwardReadOutputIncludeModes,isImporterOrExporterCommandPath,recordCliReadOutputInvocationProvenance,validateDynamicExtensionCommandArgs,validateDynamicExtensionCommandInvocation };

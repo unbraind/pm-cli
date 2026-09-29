@@ -1,0 +1,64 @@
+id: pm-8uwigr
+title: Extension activation attributes canonical full-list projection to deprecated --full
+description: Preserve actual caller flag provenance in read-output receipts when project extensions are active.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-09-28T21:02:53.776Z"
+updated_at: "2026-09-28T22:16:25.692Z"
+closed_at: "2026-09-28T22:16:25.065Z"
+completed_at: "2026-09-28T22:16:25.065Z"
+author: "harness:codex"
+acceptance_criteria: A disposable extension activation leaves canonical full-list legacy_aliases_used and migration_hints empty; actual --full remains attributed; SDK and CLI receipts agree; regression is covered by sandboxed real-extension tests.
+parent: pm-5t33or
+repro_steps: "See https://github.com/unbraind/pm-cli/issues/1342; compare strict complete list before and after activating a disposable project extension."
+resolution: "Preserved original caller read-output provenance through extension-scoped option reconstruction, parser override, and preflight override; real extension regression guards canonical and legacy receipts."
+expected_result: "Canonical full-list requests have no --full migration hint, while caller-supplied --full remains attributed with extensions active."
+actual_result: "Pre-fix regression failed with false --full; linked snapshot test and fresh temporary CLI extension both pass. Full suite: 9405 passed, exact coverage 100/100/100/100."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0mox,related,"2026-09-28T21:02:53.776Z","harness:codex","cli:create:dep",detected
+  pm-j82fd3,verifies,"2026-09-28T21:02:53.776Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-28T21:02:53.776Z","harness:codex","Duplicate check: searched all PM statuses for extension activation, legacy_aliases_used, and output-include full; closed output/projection and extension items describe earlier foundations but no active item owns GitHub #1342 false attribution. Reusing the output-contract feature parent and linking the alias measurement task."
+  "2026-09-28T22:03:16.245Z","harness:codex","Pre-fix negative control: the real disposable extension test failed because canonical --output-include full returned legacy_aliases_used=[--full]. After provenance propagation, focused linked test passed in a snapshot workspace; manual fresh /tmp workspace with active extension returned canonical_aliases=[] and legacy_aliases=[--full]. Full suite: 9405 passed, exact coverage 100/100/100/100."
+files[4]{path,scope,note}:
+  src/cli/main.ts,project,Preserve caller flag provenance through extension runtime lifecycle
+  src/cli/runtime/invocation-options.ts,project,Copy read-output provenance across scoped option reconstruction
+  tests/integration/telemetry/deprecated-alias-usage.integration.spec.ts,project,Isolated resolved command alias behavior
+  tests/unit/cli/cli-main-reentrancy.spec.ts,project,Real extension regression for canonical and legacy full-list receipts
+tests[1]{command,scope,timeout_seconds,pm_context_mode,workspace_context_mode,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-reentrancy.spec.ts,project,300,none,snapshot,"harness:codex","2026-09-28T22:01:38.258Z",local_mutation,feat/alias-provenance-and-usage-metrics
+test_runs[2]:
+  - run_id: test-local-mulsl7zk-qi61kh
+    kind: test
+    status: failed
+    started_at: "2026-09-28T22:01:29.156Z"
+    finished_at: "2026-09-28T22:01:29.264Z"
+    recorded_at: "2026-09-28T22:01:29.264Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-reentrancy.spec.ts,none,none,source,local_source_ref
+  - run_id: test-local-mulsmeqg-z0bjg3
+    kind: test
+    status: passed
+    started_at: "2026-09-28T22:01:42.695Z"
+    finished_at: "2026-09-28T22:02:24.664Z"
+    recorded_at: "2026-09-28T22:02:24.664Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-reentrancy.spec.ts,none,none,snapshot,local_source_ref
+close_reason: Fixed extension-active false legacy read-output attribution
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: Gates (static)
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-reentrancy.spec.ts (fails on pre-fix branch with false --full receipt)
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-reentrancy.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: Gates (static),Gates (typecheck)
+  owner: pm-8uwigr
+body: ""

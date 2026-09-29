@@ -1,6 +1,6 @@
 # Noun–Verb CLI Grammar and Compatibility Policy
 
-Tracked by [pm-pbyu](../.agents/pm/decisions/pm-pbyu.toon), implemented through [pm-0z7n](../.agents/pm/features/pm-0z7n.toon), [pm-pfqi](../.agents/pm/tasks/pm-pfqi.toon), [pm-yy8rmx](../.agents/pm/tasks/pm-yy8rmx.toon), [pm-wt43zj](../.agents/pm/tasks/pm-wt43zj.toon), [pm-e2bq](../.agents/pm/features/pm-e2bq.toon), and [pm-yql1](../.agents/pm/tasks/pm-yql1.toon).
+Tracked by [pm-pbyu](../.agents/pm/decisions/pm-pbyu.toon), implemented through [pm-0z7n](../.agents/pm/features/pm-0z7n.toon), [pm-0mox](../.agents/pm/tasks/pm-0mox.toon), [pm-pfqi](../.agents/pm/tasks/pm-pfqi.toon), [pm-yy8rmx](../.agents/pm/tasks/pm-yy8rmx.toon), [pm-wt43zj](../.agents/pm/tasks/pm-wt43zj.toon), [pm-e2bq](../.agents/pm/features/pm-e2bq.toon), and [pm-yql1](../.agents/pm/tasks/pm-yql1.toon).
 
 ## Agent Quick Context
 
@@ -97,6 +97,23 @@ pm config project set ux_deprecation_hints false
 ```
 
 This setting changes presentation only. It does not disable aliases or change command results. The uniform machine result-envelope receipt is intentionally deferred to its separately tracked cross-command contract so this implementation does not create a list-only shape.
+
+### Removal evidence
+
+`pm telemetry stats --json` reports `alias_usage` (declared deprecated spelling,
+canonical target, retained hit count, and last seen time), `zero_use_aliases`,
+and `alias_usage_retention_days`. These counts are held only in the local
+telemetry runtime state when telemetry consent is enabled. The same process
+opt-outs used by telemetry suppress recording. Diagnostics reads and new alias
+hits prune expired observations from disk; `pm telemetry clear` removes them
+immediately. Canonical spellings do
+not write an alias counter.
+
+An empty local counter is not evidence that an alias is unused across all
+workspaces. The open GA stability decision [pm-agou](../.agents/pm/decisions/pm-agou.toon)
+must set the number of releases with zero observed use across reporting
+workspaces before any removal at a major version boundary. Until that decision
+and cross-workspace evidence exist, published aliases remain executable.
 
 ## Enforcement
 

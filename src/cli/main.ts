@@ -3,7 +3,7 @@
  * Coordinates CLI invocation state, extension lifecycle and command dispatch.
  */
 import { Command,CommanderError } from "commander";
-import { findPmNamespacedCommand,resolvePmCommandOperation } from "../sdk/cli-contracts/command-aliases.js";
+import { PM_COMMAND_ALIAS_CONTRACTS,findPmNamespacedCommand,resolvePmCommandOperation } from "../sdk/cli-contracts/command-aliases.js";
 import { createPmCliProgram } from "../sdk/cli-program.js";
 import { runWithDiscoveredContextIntentContracts } from "../sdk/context-intent-runtime.js";
 import { describeUnknownError,isCommanderError,normalizeThrownExitCode,readThrownExitCode,wrapThrownErrorForSentry } from "../sdk/error-runtime.js";
@@ -90,6 +90,7 @@ import {
   writeStderr
 } from "../sdk/runtime-primitives.js";
 import { PmClient } from "../sdk/runtime.js";
+import { recordDeprecatedAliasUsage } from "../sdk/telemetry.js";
 import type { PmSettings } from "../types/index.js";
 import { finishActiveTelemetryCommand,recordAfterCommandContextUsage } from "./after-command-context-usage.js";
 import { extractProvidedOptionFlags,normalizeLongOptionFlag,redactSensitiveCommandArgs,renderPmCommand } from "./argv-utils.js";
@@ -173,12 +174,23 @@ import {
 } from "./registration-helpers.js";
 import type { RuntimeExtensionActivationProbe } from "./runtime/activation.js";
 import { activationCommandMatchesProbe,buildBootstrapActivationProbe,buildRuntimeExtensionActivationScope,buildRuntimeExtensionFilterForProbe,collectActivationCommandCandidates,collectLeadingCommandArgs,collectParsedActivationCommandArgs,commandPathNeedsSearchExtensions,commandPathNeedsTemplateExtensions,discoveryNeedsActivationForProbe,extensionActivationCommands,extensionCapabilities,extensionNeedsActivationForProbe,extensionProvidesTemplatesRuntime,hasAnyCapability,hasGlobalExtensionContributions,matchesStaticExtensionCommand,probeUsesAnyFlag,resolveStaticExtensionActivationDecision } from "./runtime/activation.js";
-import { collectExtensionFlagDefinitionsForCommand,collectExtensionFlagDefinitionsForInvocation,dynamicCommandArguments,extractCommandScopedOptions,forwardReadOutputIncludeModes,isImporterOrExporterCommandPath,recordCliReadOutputInvocationProvenance,validateDynamicExtensionCommandArgs,validateDynamicExtensionCommandInvocation } from "./runtime/invocation-options.js";
+import { collectExtensionFlagDefinitionsForCommand,collectExtensionFlagDefinitionsForInvocation,copyReadOutputInvocationProvenance,dynamicCommandArguments,extractCommandScopedOptions,forwardReadOutputIncludeModes,isImporterOrExporterCommandPath,recordCliReadOutputInvocationProvenance,validateDynamicExtensionCommandArgs,validateDynamicExtensionCommandInvocation } from "./runtime/invocation-options.js";
 import type { CoreCommandRegistrationSelection } from "./runtime/selection.js";
 import { LIST_QUERY_COMMAND_NAMES,enforceExplicitRetryForFlagTypos,invocationRequestsVersion,isStaticExtensionInventoryInvocation,resolveCoreCommandRegistrationSelection,shouldAttachRichHelpTextForInvocation,shouldRegisterDynamicExtensionPaths,shouldRegisterRuntimeSchemaFlags } from "./runtime/selection.js";
 import { buildPostActionTelemetryOutcome,inferPostActionErrorCode,inferPostActionFailureMessage,normalizeTelemetryCommandResolution,normalizeTelemetryErrorCategory,normalizeTelemetryResolutionStage,readRecordBoolean,readRecordNumber,readRecordString } from "./runtime/telemetry-outcome.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
+const DEPRECATED_ALIAS_INVOCATION = Symbol("pm.deprecatedAliasInvocation");
+const COMMAND_ALIASES_BY_FIRST_TOKEN = new Map<string, Array<(typeof PM_COMMAND_ALIAS_CONTRACTS)[number]>>();
+for (const contract of PM_COMMAND_ALIAS_CONTRACTS) {
+  const firstToken = contract.alias.split(" ")[0];
+  const matches = COMMAND_ALIASES_BY_FIRST_TOKEN.get(firstToken) ?? [];
+  matches.push(contract);
+  COMMAND_ALIASES_BY_FIRST_TOKEN.set(firstToken, matches);
+}
+for (const matches of COMMAND_ALIASES_BY_FIRST_TOKEN.values()) {
+  matches.sort((left, right) => right.alias.split(" ").length - left.alias.split(" ").length);
+}
 
 function resolvePmPackageRoot(): string {
   return resolvePmPackageRootFromModule(import.meta.url, ["../.."]);
@@ -1153,6 +1165,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         maybePrintExtensionProfileWarnings(globalOptions.profile, "parser_warnings", parserOverride.warnings);
         commandArgs = parserOverride.context.args;
         commandOptions = parserOverride.context.options;
+        copyReadOutputInvocationProvenance(actionCommand, commandOptions);
         globalOptions = parserOverride.context.global;
         // Validate importer/exporter positionals on the real dispatch path:
         // these short-circuit before the dynamic action that previously held the
@@ -1391,6 +1404,13 @@ const CLI_VERSION = resolvePmCliVersion(import.meta.url, ["../.."]) ?? "0.0.0";
 
 let program = createPmCliProgram(CLI_VERSION);
 
+/** Record a resolved deprecated command spelling only for an active telemetry command. */
+async function recordActiveDeprecatedAliasUsage(rootProgram: Command): Promise<void> {
+  if (!activeTelemetryCommandContext) return;
+  const alias = Reflect.get(rootProgram, DEPRECATED_ALIAS_INVOCATION);
+  if (typeof alias === "string") await recordDeprecatedAliasUsage(alias);
+}
+
 /* c8 ignore start */
 
 /** Bind output validation, extension policy, mutation guards, and observability to the selected semantic command. */
@@ -1436,6 +1456,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
         global: globalOptions,
         pm_root: fallbackPmRoot,
       });
+      await recordActiveDeprecatedAliasUsage(rootProgram);
       sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
         source_context: activeTelemetryCommandContext?.source_context,
         source_context_source: activeTelemetryCommandContext?.source_context_source,
@@ -1470,6 +1491,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
     }
     commandArgs = parserOverride.context.args;
     commandOptions = parserOverride.context.options;
+    copyReadOutputInvocationProvenance(actionCommand, commandOptions);
     globalOptions = parserOverride.context.global;
     syncCommanderActionOptions(actionCommand, commandOptions);
 
@@ -1487,6 +1509,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
     }
     commandArgs = preflightOverride.context.args;
     commandOptions = preflightOverride.context.options;
+    copyReadOutputInvocationProvenance(actionCommand, commandOptions);
     globalOptions = preflightOverride.context.global;
     syncCommanderActionOptions(actionCommand, commandOptions);
     const preflightDecision = preflightOverride.decision;
@@ -1528,6 +1551,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
       global: globalOptions,
       pm_root: runtimeExtensions.pmRoot,
     });
+    await recordActiveDeprecatedAliasUsage(rootProgram);
     sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
       source_context: activeTelemetryCommandContext?.source_context,
       source_context_source: activeTelemetryCommandContext?.source_context_source,
@@ -2007,6 +2031,21 @@ function assertRequestedNamespaceAvailable(program: Command, invocationArgv: str
   }
 }
 
+/** Resolve the longest declared deprecated spelling from the original command tokens. */
+function captureInvokedDeprecatedAlias(rootProgram: Command, rawArgv: string[]): void {
+  let commandIndex = findBootstrapCommandTokenIndex(rawArgv);
+  if (commandIndex === undefined) return;
+  if (["pm", "pm-cli"].includes(rawArgv[commandIndex]?.trim().toLowerCase())) {
+    const offset = findBootstrapCommandTokenIndex(rawArgv.slice(commandIndex + 1));
+    if (offset === undefined) return;
+    commandIndex += offset + 1;
+  }
+  const candidates = COMMAND_ALIASES_BY_FIRST_TOKEN.get(rawArgv[commandIndex]);
+  const tokens = rawArgv.slice(commandIndex).filter((token) => !["--global", "--project", "--local"].includes(token));
+  const resolved = candidates?.find((contract) => contract.alias.split(" ").every((token, index) => tokens[index] === token));
+  if (resolved?.lifecycle === "deprecated") Reflect.set(rootProgram, DEPRECATED_ALIAS_INVOCATION, resolved.alias);
+}
+
 /** Dispatch one fresh CLI invocation with deterministic process state and tracker-scoped attribution. */
 async function runPmCliInReproducibleContext(rawArgv: string[]): Promise<void> {
   program = createPmCliProgram(CLI_VERSION);
@@ -2026,6 +2065,7 @@ async function runPmCliInReproducibleContext(rawArgv: string[]): Promise<void> {
   try {
     const bootstrapInvocation = normalizeBootstrapInvocation(rawArgv);
     invocationArgv = bootstrapInvocation.argv;
+    captureInvokedDeprecatedAlias(program, rawArgv);
     const invocationProcessArgv = [process.argv[0], process.argv[1], ...invocationArgv];
     const isBareInvocation = invocationArgv.length === 0;
     const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);

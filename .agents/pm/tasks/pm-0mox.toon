@@ -2,18 +2,22 @@ id: pm-0mox
 title: "Alias-usage counters: measure deprecated-spelling hits so grammar-freeze removals are evidence-based"
 description: Record privacy-safe deprecated-alias usage counters so removal decisions after the grammar freeze are evidence-based rather than time-based.
 type: Task
-status: open
+status: closed
 priority: 3
 tags[3]: agent-ux,cli-simplification,telemetry
 created_at: "2026-07-07T07:01:56.726Z"
-updated_at: "2026-09-08T13:33:37.749Z"
+updated_at: "2026-09-28T23:41:32.460Z"
+closed_at: "2026-09-28T23:41:31.780Z"
+completed_at: "2026-09-28T23:41:31.780Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Alias shim records per-alias hit counters (alias, canonical, count, last_seen) in the local telemetry store honoring existing telemetry disable env-vars; canonical spellings incur zero overhead; a diagnostics surface lists alias usage and zero-use aliases; the deprecation ADR documents the zero-use-for-N-releases removal criterion; unit test proves counter increment on alias resolution and absence on canonical invocation"
 parent: pm-n7rr
 risk: low
 confidence: high
-expected_result: "Privacy-safe per-alias hit counters are recorded and a diagnostics surface lists zero-use aliases, so grammar-freeze removals are evidence-based."
+resolution: "Added consented safe-integer alias counters, bounded lock waits, complete-spelling attribution, and retention pruning that rechecks the on-disk state under lock before writing, preserving concurrent telemetry clear."
+expected_result: Deprecated alias diagnostics remain accurate and private while canonical and permanent commands remain uncounted; stats never recreates telemetry state after clear.
+actual_result: Second Greptile race reproduced and fixed with two competing-writer regressions. Linked snapshot test passed 31 cases; full suite passed 9409 at exact 100/100/100/100 coverage.
 dependencies[6]{id,kind,created_at}:
   pm-0z7n,blocked_by,"2026-07-07T07:01:56.726Z"
   pm-agou,related,"2026-07-07T07:01:56.726Z"
@@ -21,4 +25,55 @@ dependencies[6]{id,kind,created_at}:
   pm-0z7n,verifies,"2026-07-26T05:50:29.055Z"
   pm-n7rr,implements,"2026-07-26T05:55:55.387Z"
   pm-pbyu,verifies,"2026-07-26T05:59:51.845Z"
+comments[5]{created_at,author,text}:
+  "2026-09-28T22:03:17.639Z","harness:codex","Implemented local consented daily alias usage counters, zero-use diagnostics, retention pruning, and concurrent state-write serialization. Canonical invocation remains uncounted; DO_NOT_TRACK and disabled consent return no observation. Linked snapshot test passed 27 assertions across unit and CLI integration. Full suite: 9405 passed, exact coverage 100/100/100/100. Zero local use is not global removal proof; GA removal threshold remains with pm-agou."
+  "2026-09-28T22:40:46.201Z","harness:codex","PR #1344 review findings: Greptile flagged executable prefixes, parent --global before a permanent extension subcommand, and foreground lock wait. CodeRabbit flagged safe-integer overflow and on-disk retention after reporting cutoff. Reproducing and correcting valid cases in the same PR before re-close."
+  "2026-09-28T23:06:45.648Z","harness:codex","PR #1344 review pass: Greptile executable-prefix and parent-scope permanent-alias findings reproduced and fixed; foreground alias writes now use a 250 ms lock wait. CodeRabbit safe-integer overflow was valid and both daily and rolled-up totals now saturate. Diagnostics reads prune expired local observations when lock available and return a filtered view promptly under contention. Linked snapshot test passed 29 cases; full suite passed 9407 tests with exact 100/100/100/100 coverage. A transient unrelated cold-read performance ceiling failed under host load, then passed in isolation and on the successful full rerun."
+  "2026-09-28T23:28:26.936Z","harness:codex","Second review pass: Greptile identified a cross-process clear/prune race. Stats reads an expired view, then waits for the telemetry lock; if clear removes state meanwhile, pruning must re-read under lock and avoid writing a new empty state file."
+  "2026-09-28T23:41:31.078Z","harness:codex","PR #1344 second Greptile finding fixed: stats now re-reads state under the telemetry lock and skips a prune write when a concurrent clear removed state or a peer already pruned it. Controlled competing-writer tests cover both races. Linked snapshot test passed 31 cases; full suite passed 9409 tests with exact 100/100/100/100 coverage."
+files[5]{path,scope,note}:
+  src/cli/main.ts,project,Capture original deprecated command spelling at dispatch
+  src/core/telemetry/runtime.ts,project,Serialize runtime state writes with local alias counter updates
+  src/sdk/telemetry.ts,project,Local consented alias counters and diagnostics
+  tests/integration/telemetry/deprecated-alias-usage.integration.spec.ts,project,Isolated CLI end-to-end usage attribution
+  tests/unit/commands/governance/telemetry-command.spec.ts,project,Consent retention malformed state and sorting regression
+tests[1]{command,scope,timeout_seconds,pm_context_mode,workspace_context_mode,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/governance/telemetry-command.spec.ts tests/integration/telemetry/deprecated-alias-usage.integration.spec.ts,project,300,none,snapshot,"harness:codex","2026-09-28T22:01:39.213Z",local_mutation,feat/alias-provenance-and-usage-metrics
+test_runs[3]:
+  - run_id: test-local-mulsn30l-wkdamq
+    kind: test
+    status: passed
+    started_at: "2026-09-28T22:02:25.264Z"
+    finished_at: "2026-09-28T22:02:56.133Z"
+    recorded_at: "2026-09-28T22:02:56.133Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/governance/telemetry-command.spec.ts tests/integration/telemetry/deprecated-alias-usage.integration.spec.ts,none,none,snapshot,local_source_ref
+  - run_id: test-local-muluwyit-bv8n16
+    kind: test
+    status: passed
+    started_at: "2026-09-28T23:06:04.367Z"
+    finished_at: "2026-09-28T23:06:36.101Z"
+    recorded_at: "2026-09-28T23:06:36.101Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/governance/telemetry-command.spec.ts tests/integration/telemetry/deprecated-alias-usage.integration.spec.ts,none,none,snapshot,local_source_ref
+  - run_id: test-local-mulw5ojc-u5umkc
+    kind: test
+    status: passed
+    started_at: "2026-09-28T23:40:52.201Z"
+    finished_at: "2026-09-28T23:41:22.680Z"
+    recorded_at: "2026-09-28T23:41:22.680Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/governance/telemetry-command.spec.ts tests/integration/telemetry/deprecated-alias-usage.integration.spec.ts,none,none,snapshot,local_source_ref
+docs[1]{path,scope,note}:
+  docs/CLI_GRAMMAR.md,project,Explain local removal evidence and limits
+close_reason: Completed reviewed alias diagnostics with clear-safe pruning
 body: "## Context\nThe noun-verb consolidation (pm-n7rr, ADR pm-pbyu) keeps every legacy spelling alive as a hidden alias via the shim layer (pm-0z7n), and the v1.0 GA stability contract (pm-agou) will eventually freeze the grammar and decide which aliases can be retired. Today there is no way to know whether any agent or script still uses a given deprecated spelling — removal decisions would be guesses, and a wrong guess breaks working automations for zero benefit.\n\n## Proposal\nInstrument alias resolution with the existing local telemetry subsystem (counters only, no new infrastructure, same privacy posture — local-only, never in git):\n- The alias shim increments a per-alias counter (alias -> canonical, count, last_seen) whenever a deprecated spelling is resolved.\n- Surface the rollup in the diagnostics noun (ops stats / telemetry stats): aliases still in use, counts over the retention window, and aliases with zero recorded use.\n- Document the removal criterion in the ADR: an alias is removable at a major boundary only after N releases with zero recorded use across reporting workspaces (exact N decided in pm-agou).\n\n## Scope guard\nCounting happens inside the shim resolution path only — canonical spellings cost nothing. No network, no new storage format: reuse the telemetry store and its existing disable env-vars."

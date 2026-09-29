@@ -5,7 +5,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { pathExists, readFileIfExists } from "../core/fs/fs-utils.js";
+import { pathExists, readFileIfExists, writeFileAtomic } from "../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -15,6 +15,7 @@ import { readSettings, writeSettings } from "../core/store/settings.js";
 import { resolveTelemetryEnvironmentPolicy } from "../core/telemetry/policy.js";
 import { flushTelemetryQueueNow, withTelemetryQueueMutation } from "../core/telemetry/runtime.js";
 import { createUnknownSubcommandError } from "./agent/subcommand-recovery.js";
+import { PM_COMMAND_ALIAS_CONTRACTS } from "./cli-contracts/command-aliases.js";
 
 const TELEMETRY_QUEUE_RELATIVE_PATH = path.join(
   "runtime",
@@ -28,6 +29,19 @@ const TELEMETRY_STATE_RELATIVE_PATH = path.join(
 );
 const TELEMETRY_RUNTIME_RELATIVE_PATH = path.join("runtime", "telemetry");
 const DEFAULT_STATS_LIMIT = 20;
+const DEPRECATED_ALIASES = PM_COMMAND_ALIAS_CONTRACTS.filter(
+  (contract) => contract.lifecycle === "deprecated",
+);
+
+interface TelemetryAliasUsageDay {
+  count: number;
+  last_seen: string;
+}
+
+interface TelemetryAliasUsageRecord {
+  canonical: string;
+  days: Record<string, TelemetryAliasUsageDay>;
+}
 
 /** Public contract for telemetry subcommands, shared by SDK and presentation-layer consumers. */
 export const TELEMETRY_SUBCOMMANDS = [
@@ -46,6 +60,7 @@ interface TelemetryRuntimeStateRecord {
   last_successful_flush_at?: string;
   last_failed_flush_at?: string;
   last_failed_flush_error?: string;
+  alias_usage?: Record<string, TelemetryAliasUsageRecord>;
 }
 
 interface QueuedTelemetryEventRecord {
@@ -504,6 +519,97 @@ const readTelemetryRuntimeState = async (
   return parseTelemetryRuntimeState(stateRaw);
 };
 
+/** Keep one rolling window of UTC calendar days in local telemetry state. */
+function aliasUsageCutoff(retentionDays: number): string {
+  const now = new Date();
+  return new Date(Date.UTC(
+    now.getUTCFullYear(), now.getUTCMonth(),
+    now.getUTCDate() - Math.max(1, Math.trunc(retentionDays)) + 1,
+  )).toISOString().slice(0, 10);
+}
+
+/** Retain valid daily observations within the local retention window. */
+function normalizeAliasUsageDays(value: Record<string, unknown>, cutoff: string, today: string): Record<string, TelemetryAliasUsageDay> {
+  const days: Record<string, TelemetryAliasUsageDay> = Object.create(null);
+  for (const [day, entry] of Object.entries(value)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/u.test(day) || day < cutoff || day > today || typeof entry !== "object" || entry === null || Array.isArray(entry)) continue;
+    const observation = entry as Record<string, unknown>;
+    if (!Number.isSafeInteger(observation.count) || (observation.count as number) < 1 || typeof observation.last_seen !== "string" || !observation.last_seen.startsWith(day)) continue;
+    days[day] = { count: observation.count as number, last_seen: observation.last_seen };
+  }
+  return days;
+}
+
+/** Accept only declared aliases and well-formed day counters from local state. */
+function normalizeAliasUsage(
+  value: unknown,
+  cutoff: string,
+): Record<string, TelemetryAliasUsageRecord> {
+  const result: Record<string, TelemetryAliasUsageRecord> = Object.create(null);
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return result;
+  const stored = value as Record<string, unknown>;
+  const today = new Date().toISOString().slice(0, 10);
+  for (const contract of DEPRECATED_ALIASES) {
+    const candidate = stored[contract.alias];
+    if (typeof candidate !== "object" || candidate === null || Array.isArray(candidate)) continue;
+    const row = candidate as Record<string, unknown>;
+    if (row.canonical !== contract.canonical || typeof row.days !== "object" || row.days === null || Array.isArray(row.days)) continue;
+    const days = normalizeAliasUsageDays(row.days as Record<string, unknown>, cutoff, today);
+    if (Object.keys(days).length > 0) result[contract.alias] = { canonical: contract.canonical, days };
+  }
+  return result;
+}
+
+/** Prune expired local observations on diagnostics reads without blocking them on lock contention. */
+async function readRetainedAliasUsage(globalPmRoot: string, statePath: string, retentionDays: number): Promise<Record<string, TelemetryAliasUsageRecord>> {
+  const cutoff = aliasUsageCutoff(retentionDays);
+  const state = await readTelemetryRuntimeState(statePath);
+  const usage = normalizeAliasUsage(state.alias_usage, cutoff);
+  if (JSON.stringify(state.alias_usage ?? {}) === JSON.stringify(usage)) return usage;
+  try {
+    await withTelemetryQueueMutation(async () => {
+      const current = await readTelemetryRuntimeState(statePath);
+      if (current.alias_usage === undefined) return;
+      const retained = normalizeAliasUsage(current.alias_usage, cutoff);
+      if (JSON.stringify(current.alias_usage) === JSON.stringify(retained)) return;
+      await writeFileAtomic(statePath, `${JSON.stringify({ ...current, alias_usage: retained }, null, 2)}\n`);
+    }, globalPmRoot, 250);
+  } catch {
+    // Diagnostics still report the retained view when another process holds the lock.
+  }
+  return usage;
+}
+
+/** Count one resolved deprecated command alias in consented, local-only telemetry state. */
+export async function recordDeprecatedAliasUsage(alias: string): Promise<boolean> {
+  const contract = DEPRECATED_ALIASES.find((entry) => entry.alias === alias);
+  if (!contract || resolveTelemetryEnvironmentPolicy().telemetry_disabled) return false;
+  const globalPmRoot = resolveGlobalPmRoot(process.cwd());
+  try {
+    return await withTelemetryQueueMutation(async () => {
+      const settings = await readSettings(globalPmRoot);
+      if (!settings.telemetry.enabled || resolveTelemetryEnvironmentPolicy().telemetry_disabled) return false;
+      const statePath = path.join(globalPmRoot, TELEMETRY_STATE_RELATIVE_PATH);
+      const state = await readTelemetryRuntimeState(statePath);
+      const usage = normalizeAliasUsage(state.alias_usage, aliasUsageCutoff(settings.telemetry.retention_days));
+      const day = new Date().toISOString().slice(0, 10);
+      const previous = usage[alias]?.days[day];
+      usage[alias] = {
+        canonical: contract.canonical,
+        days: {
+          ...usage[alias]?.days,
+          [day]: { count: Math.min(Number.MAX_SAFE_INTEGER, (previous?.count ?? 0) + 1), last_seen: nowIso() },
+        },
+      };
+      await writeFileAtomic(statePath, `${JSON.stringify({ ...state, alias_usage: usage }, null, 2)}\n`);
+      return true;
+    }, globalPmRoot, 250);
+  } catch {
+    // Local telemetry is best effort and must never block an alias invocation.
+    return false;
+  }
+}
+
 /** Converts an optional telemetry state value to an explicit nullable field. */
 const nullableTelemetryStateValue = (
   value: string | undefined,
@@ -620,6 +726,17 @@ const runTelemetryStats: TelemetryCommandHandler = async (options, context) => {
   const queue = parseTelemetryQueue(queueRaw);
   const buckets = buildTelemetryStatsBuckets(queue.entries);
   const selected = buckets.slice(0, limit);
+  const settings = await readSettings(context.globalPmRoot);
+  const usage = await readRetainedAliasUsage(context.globalPmRoot, context.statePath, settings.telemetry.retention_days);
+  const aliasUsage = Object.entries(usage).map(([alias, entry]) => {
+    const days = Object.values(entry.days);
+    return {
+      alias,
+      canonical: entry.canonical,
+      count: days.reduce((total, day) => Math.min(Number.MAX_SAFE_INTEGER, total + day.count), 0),
+      last_seen: days.map((day) => day.last_seen).sort().at(-1),
+    };
+  }).sort((left, right) => right.count - left.count || left.alias.localeCompare(right.alias));
   return {
     action: "telemetry",
     subcommand: "stats",
@@ -630,6 +747,9 @@ const runTelemetryStats: TelemetryCommandHandler = async (options, context) => {
     queue_rows_total: queue.rows_total,
     truncated: buckets.length > selected.length,
     stats: selected,
+    alias_usage: aliasUsage,
+    zero_use_aliases: DEPRECATED_ALIASES.map((entry) => entry.alias).filter((alias) => usage[alias] === undefined),
+    alias_usage_retention_days: settings.telemetry.retention_days,
     generated_at: nowIso(),
   };
 };
