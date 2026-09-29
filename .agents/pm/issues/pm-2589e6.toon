@@ -1,0 +1,22 @@
+id: pm-2589e6
+title: Full-item stdin JSON update silently ignores edited notes
+description: Published 2026.9.28 returns changed_field_count=0 for a changed notes array while preserving the old note; successful no-op conceals stale evidence.
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-09-29T00:19:58.543Z"
+updated_at: "2026-09-29T00:21:27.747Z"
+author: "harness:codex"
+parent: pm-mpbb
+severity: medium
+expected_result: Changed notes are applied with history or explicitly rejected.
+actual_result: Update succeeds with changed_field_count=0 and retains the original note.
+affected_version: 2026.9.28
+component: CLI structured mutations
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-a2h3,related,"2026-09-29T00:19:58.543Z","harness:codex","cli:create:dep",detected
+  pm-kipd,discovered_from,"2026-09-29T00:19:58.543Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-29T00:19:58.543Z","harness:codex","Duplicate check: searched all-status PM items for stdin-json and notes; closed pm-kipd delivered the original round-trip feature and pm-a2h3 delivered direct note editing, but neither tracks this new silent no-op defect. GitHub issue #1343 has no prior PM link."
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/1343\n\nReproduce with a disposable tracker: create an item with a note, get the full JSON item, edit notes[0].text, and pipe it to update --stdin-json. Require either an atomic audited note correction or a nonzero field-specific rejection with pm notes --edit guidance."

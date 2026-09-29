@@ -1,0 +1,22 @@
+id: pm-wtqltn
+title: Expose host-bound audited workspace settings mutation to extension commands
+description: "A packed extension can apply settings directly but lacks a portable host SDK transaction that preserves the workspace audit chain, leaving strict health with settings history drift."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-09-29T00:20:00.805Z"
+updated_at: "2026-09-29T00:21:28.391Z"
+author: "harness:codex"
+parent: pm-o2kc
+severity: high
+expected_result: "Extension settings updates are atomic, audited and pass strict health."
+actual_result: pm-presets applies directly to settings.json and strict health reports workspace history drift.
+affected_version: 2026.9.28
+component: SDK extension command context
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-klo8,discovered_from,"2026-09-29T00:20:00.805Z","harness:codex","cli:create:dep",detected
+  pm-lvea,related,"2026-09-29T00:20:00.805Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-29T00:20:00.805Z","harness:codex","Duplicate check: all-status PM search for audited extension settings mutation found related closed workspace-audit and SDK audits but no current owner of this missing host-bound contract. GitHub #1345 cites pm-presets pm-1vx6 in that package's tracker; that is a separate consumer defect."
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/1345\n\nExpose a typed extension-command SDK operation for lock-scoped audited singleton mutation with invocation identity, atomic write and history, compensation, idempotence, and dry-run. Prove a packed extension without a local host SDK dependency can apply settings and pass strict health."
