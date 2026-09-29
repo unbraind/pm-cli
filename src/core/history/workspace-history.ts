@@ -502,9 +502,23 @@ async function writeWorkspaceJsonWithHistoryLocked(
  * Derive and persist an audited singleton mutation from one lock-protected
  * before-state, preventing read-modify-write callers from losing updates.
  */
+export function mutateWorkspaceJsonWithHistory<Result>(
+  params: WorkspaceJsonMutationOptions<Result> & { idempotencyKey?: undefined },
+): Promise<{ changed: boolean; result: Result; replayed?: false }>;
+/** Mutate an audited singleton while reporting a completed operation replay. */
+export function mutateWorkspaceJsonWithHistory<Result>(
+  params: WorkspaceJsonMutationOptions<Result>,
+): Promise<
+  | { changed: boolean; result: Result; replayed?: false }
+  | { changed: false; result: undefined; replayed: true }
+>;
+/** Apply the lock-scoped write once, returning an inert receipt for retries. */
 export async function mutateWorkspaceJsonWithHistory<Result>(
   params: WorkspaceJsonMutationOptions<Result>,
-): Promise<{ changed: boolean; result: Result; replayed?: boolean }> {
+): Promise<
+  | { changed: boolean; result: Result; replayed?: false }
+  | { changed: false; result: undefined; replayed: true }
+> {
   const { documentPath } = resolveGovernedDocumentPath(params.pmRoot, params.filePath);
   const release = await acquireLock(
     params.pmRoot,
@@ -539,7 +553,7 @@ export async function mutateWorkspaceJsonWithHistory<Result>(
       if (params.idempotencyKey !== undefined && entries.some(
         (entry) => entry.op === `${params.op}:${params.idempotencyKey}`,
       )) {
-        return { changed: false, result: (await params.mutate(beforeRaw)).result, replayed: true };
+        return { changed: false, result: undefined, replayed: true };
       }
     }
     const mutation = await params.mutate(beforeRaw);

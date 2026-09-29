@@ -75,11 +75,27 @@ describe("extension mutation platform", () => {
         author: "extension-test-actor",
       });
 
+      const otherCommand = createExtensionCommandSdk(
+        pmPath,
+        new PmClient({ pmRoot: pmPath, noExtensions: true }),
+        "extension-test-actor",
+        "other settings command",
+      );
+      await expect(otherCommand.mutateWorkspaceSettings({
+        operationId: "author-v1",
+        mutate: (current) => ({ ...current, author_default: "other-command-author" }),
+      })).resolves.toMatchObject({ changed: true, replayed: false });
+      expect((await readHistoryEntries(historyPath, WORKSPACE_HISTORY_ID))[1]?.op)
+        .toMatch(/^extension:pm:settings:[a-f0-9]{16}:author-v1$/u);
+      expect(JSON.parse(await readFile(settingsPath, "utf8"))).toMatchObject({
+        author_default: "other-command-author",
+      });
+
       await expect(sdk.mutateWorkspaceSettings({
         operationId: "invalid-next",
         mutate: () => ({ broken: true }) as unknown as PmSettings,
       })).rejects.toThrow(/invalid settings/);
-      expect(await readHistoryEntries(historyPath, WORKSPACE_HISTORY_ID)).toHaveLength(1);
+      expect(await readHistoryEntries(historyPath, WORKSPACE_HISTORY_ID)).toHaveLength(2);
 
       const defaultActorSdk = createExtensionCommandSdk(
         pmPath,
@@ -89,8 +105,21 @@ describe("extension mutation platform", () => {
         operationId: "author-v2",
         mutate: (current) => ({ ...current, author_default: "next-default" }),
       })).resolves.toMatchObject({ changed: true, replayed: false });
-      expect((await readHistoryEntries(historyPath, WORKSPACE_HISTORY_ID))[1]).toMatchObject({
+      expect((await readHistoryEntries(historyPath, WORKSPACE_HISTORY_ID))[2]).toMatchObject({
         author: "test-author",
+      });
+
+      await expect(sdk.mutateWorkspaceSettings({
+        operationId: "normalize-settings",
+        mutate: (current) => ({
+          ...current,
+          item_format: "json_markdown" as PmSettings["item_format"],
+          vector_store: { ...current.vector_store, collection_name: "bad/name" },
+        }),
+      })).resolves.toMatchObject({ changed: true });
+      expect(JSON.parse(await readFile(settingsPath, "utf8"))).toMatchObject({
+        item_format: "toon",
+        vector_store: { collection_name: "bad_name" },
       });
 
       await writeFile(settingsPath, "{}\n");

@@ -27,13 +27,18 @@ api.registerCommand({
 });
 ```
 
-Supply a stable `operationId` for a logical operation. Retrying an already
-recorded operation returns `replayed: true` without appending another history
-event. `dryRun: true` calculates `changed` without changing settings or history;
+Supply a stable `operationId` for a logical operation within its registered
+command. The host scopes the ID to that command, so another command can use
+the same ID independently. Retrying an already recorded operation returns
+`replayed: true` without invoking `mutate`, writing settings, or appending
+another history event. `dryRun: true` calculates `changed` without changing settings or history;
 the same operation ID can then be used for the real mutation. A normal return
 also reports `changed` and `dry_run`. Invalid results fail before writing, and
 a history-append failure restores the previous settings bytes. The callback
 must derive its complete next settings object from the locked `current` value.
+The host applies the standard settings serializer, including legacy format
+coercion and collection-name sanitization, and runs active `onWrite` hooks
+after a changed write.
 
 ## Full-item JSON updates
 

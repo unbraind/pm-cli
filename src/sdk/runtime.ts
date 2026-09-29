@@ -2776,6 +2776,7 @@ async function dispatchActiveExtensionAction(
         author: extensionAuthor,
       }),
       extensionAuthor,
+      normalizeCommandPath(command),
     ),
   });
   if (!handlerResult.handled) {

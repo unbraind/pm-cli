@@ -999,7 +999,7 @@ export async function runRegisteredCommandForTest(
     options.sdk ??
     options.sdkFactory?.({ pmRoot, global }) ??
     (pmRoot.length > 0
-      ? createExtensionCommandSdk(pmRoot, new PmClient({ pmRoot }))
+      ? createExtensionCommandSdk(pmRoot, new PmClient({ pmRoot }), undefined, command)
       : undefined);
   return runCommandHandler(commands, {
     command,

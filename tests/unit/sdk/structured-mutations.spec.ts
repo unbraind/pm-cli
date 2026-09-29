@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { PmCliError } from "../../../src/core/shared/errors.js";
 import {
   itemDocumentToMutationOptions,
   parseAtomicMutationControls,
@@ -556,6 +557,18 @@ describe("structured mutation input", () => {
     expect(() =>
       itemDocumentToMutationOptions('{"item":[]}', "update"),
     ).toThrow("item must be an object");
+    for (const key of ["comments", "notes", "learnings"]) {
+      try {
+        itemDocumentToMutationOptions(JSON.stringify({ [key]: null }), "update");
+        throw new Error("Expected malformed annotation array to be refused.");
+      } catch (error) {
+        expect(error).toBeInstanceOf(PmCliError);
+        expect(error).toMatchObject({
+          exitCode: 2,
+          message: expect.stringContaining(`${key} must be an array`),
+        });
+      }
+    }
     expect(() => itemDocumentToMutationOptions("[]", "create")).toThrow(
       "must be a JSON object",
     );

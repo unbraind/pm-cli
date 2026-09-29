@@ -2126,6 +2126,14 @@
       ],
       "package_version": "2026.9.28",
       "reason": "Add audited host-bound settings mutation and full-item annotation integrity; signatures add optional controls and result fields, while extension command SDK gains one required host-provided capability."
+    },
+    {
+      "changes": [
+        "signature ./sdk:createExtensionCommandSdk",
+        "signature ./sdk:mutateWorkspaceJsonWithHistory"
+      ],
+      "package_version": "2026.9.29",
+      "reason": "Command-scoped host settings retries and explicit replay receipt prevent cross-command collisions and callback reexecution; the optional command context is backward compatible at runtime."
     }
   ],
   "entrypoints": {
@@ -5478,7 +5486,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "createExtensionCommandSdk",
-          "signature": "(pmRoot: string, client: PmClient, invocationAuthor?: string) => ExtensionCommandSdk | calls: (pmRoot: string, client: PmClient, invocationAuthor?: string) => ExtensionCommandSdk"
+          "signature": "(pmRoot: string, client: PmClient, invocationAuthor?: string, invocationCommand?: string) => ExtensionCommandSdk | calls: (pmRoot: string, client: PmClient, invocationAuthor?: string, invocationCommand?: string) => ExtensionCommandSdk"
         },
         {
           "classification": "supported",
@@ -10800,7 +10808,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "mutateWorkspaceJsonWithHistory",
-          "signature": "<Result>(params: WorkspaceJsonMutationOptions<Result>) => Promise<{ changed: boolean; result: Result; replayed?: boolean; }> | calls: <Result>(params: WorkspaceJsonMutationOptions<Result>) => Promise<{ changed: boolean; result: Result; replayed?: boolean; }>"
+          "signature": "{ <Result>(params: WorkspaceJsonMutationOptions<Result> & { idempotencyKey?: undefined; }): Promise<{ changed: boolean; result: Result; replayed?: false; }>; <Result>(params: WorkspaceJsonMutationOptions<Result>): Promise<{ changed: boolean; result: Result; replayed?: false; } | { changed: false; result: undefined; replayed: true; }>; } | calls: <Result>(params: WorkspaceJsonMutationOptions<Result> & { idempotencyKey?: undefined; }) => Promise<{ changed: boolean; result: Result; replayed?: false; }> ; <Result>(params: WorkspaceJsonMutationOptions<Result>) => Promise<{ changed: boolean; result: Result; replayed?: false; } | { changed: false; result: undefined; replayed: true; }>"
         },
         {
           "classification": "advanced_export",

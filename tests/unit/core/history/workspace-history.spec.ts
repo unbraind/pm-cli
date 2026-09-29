@@ -743,8 +743,8 @@ describe("workspace history", () => {
       })).resolves.toMatchObject({ changed: true, result: true });
       const appliedHistory = await readFile(getWorkspaceHistoryPath(context.pmPath), "utf8");
       await expect(mutateWorkspaceJsonWithHistory({
-        ...common, idempotencyKey: "apply-1", mutate: () => change(false),
-      })).resolves.toMatchObject({ changed: false, replayed: true });
+        ...common, idempotencyKey: "apply-1", mutate: () => { throw new Error("replay reran mutation"); },
+      })).resolves.toEqual({ changed: false, result: undefined, replayed: true });
       expect(await readFile(filePath, "utf8")).toBe('{"enabled":true}\n');
       expect(await readFile(getWorkspaceHistoryPath(context.pmPath), "utf8")).toBe(appliedHistory);
 

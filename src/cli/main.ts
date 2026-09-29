@@ -1010,9 +1010,9 @@ async function executeRegisteredRuntimeMigrations(migrations: RegisteredExtensio
 /* c8 ignore start */
 
 /** Build one host-bound extension SDK using the command's resolved author. */
-function buildExtensionCommandSdk(pmRoot: string, global: GlobalOptions) {
+function buildExtensionCommandSdk(pmRoot: string, global: GlobalOptions, commandPath: string) {
   const author = typeof global.author === "string" && global.author.trim() ? global.author.trim() : "pm-extension";
-  return createExtensionCommandSdk(pmRoot, PmClient.forActiveExtensionHost({ pmRoot, author }));
+  return createExtensionCommandSdk(pmRoot, PmClient.forActiveExtensionHost({ pmRoot, author }), author, normalizeExtensionCommandPath(commandPath));
 }
 
 async function runRequiredExtensionCommand(
@@ -1059,7 +1059,7 @@ async function runRequiredExtensionCommand(
     options: commandOptions,
     global: resolvedGlobalOptions,
     pm_root: pmRoot,
-    sdk: buildExtensionCommandSdk(pmRoot, resolvedGlobalOptions),
+    sdk: buildExtensionCommandSdk(pmRoot, resolvedGlobalOptions, commandPath),
   });
   if (resolvedGlobalOptions.profile && extensionCommandResult.warnings.length > 0) {
     printError(`profile:extensions command_handler_warnings=${formatHookWarnings(extensionCommandResult.warnings)}`);
@@ -1197,7 +1197,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
           options: commandOptions,
           global: globalOptions,
           pm_root: pmRoot,
-          sdk: buildExtensionCommandSdk(pmRoot, globalOptions),
+          sdk: buildExtensionCommandSdk(pmRoot, globalOptions, commandPath),
         });
         maybePrintExtensionProfileWarnings(globalOptions.profile, "command_handler_warnings", extensionCommandResult.warnings);
         if (extensionCommandResult.handled) {

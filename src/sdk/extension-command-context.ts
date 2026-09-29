@@ -4,7 +4,9 @@
  * Builds the host-owned SDK services injected into extension commands so
  * package runtimes never need private imports or runtime package resolution.
  */
+import { createHash } from "node:crypto";
 import type { ExtensionCommandSdk } from "../core/extensions/extension-types.js";
+import { runActiveOnWriteHooks } from "../core/extensions/index.js";
 import type { PmSettings } from "../types/index.js";
 import { mutateWorkspaceJsonWithHistory } from "../core/history/workspace-history.js";
 import { resolveAuthor } from "../core/shared/author.js";
@@ -12,7 +14,7 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { stableValueEquals } from "../core/shared/serialization.js";
 import { getSettingsPath } from "../core/store/paths.js";
-import { readSettings } from "../core/store/settings.js";
+import { readSettings, serializeSettings } from "../core/store/settings.js";
 import { clearSettingsReadCache } from "../core/store/settings-read-cache.js";
 import { validateSettings } from "../core/store/settings-validator.js";
 import { isPmCliExpectedError } from "./errors.js";
@@ -47,6 +49,7 @@ export function createExtensionCommandSdk(
   pmRoot: string,
   client: PmClient,
   invocationAuthor?: string,
+  invocationCommand?: string,
 ): ExtensionCommandSdk {
   return {
     client,
@@ -94,7 +97,9 @@ export function createExtensionCommandSdk(
           pmRoot,
           filePath: getSettingsPath(pmRoot),
           op: "extension:pm:settings",
-          idempotencyKey: options.operationId,
+          idempotencyKey: invocationCommand === undefined
+            ? options.operationId
+            : `${createHash("sha256").update(invocationCommand).digest("hex").slice(0, 16)}:${options.operationId}`,
           author: invocationAuthor ?? resolveAuthor(undefined, settings.author_default),
           lockTtlSeconds: settings.locks.ttl_seconds,
           lockWaitMs: settings.locks.wait_ms,
@@ -118,11 +123,18 @@ export function createExtensionCommandSdk(
             return {
               raw: stableValueEquals(current, next)
                 ? beforeRaw!
-                : `${JSON.stringify(next, null, 2)}\n`,
+                : serializeSettings(next),
               result: undefined,
             };
           },
         });
+        if (mutation.changed && options.dryRun !== true) {
+          await runActiveOnWriteHooks({
+            path: getSettingsPath(pmRoot),
+            scope: "project",
+            op: "extension:pm:settings",
+          });
+        }
         return {
           changed: mutation.changed,
           dry_run: options.dryRun === true,
