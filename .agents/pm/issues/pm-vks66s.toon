@@ -1,0 +1,25 @@
+id: pm-vks66s
+title: Bun merge-driver installation disagrees with strict health
+description: "Published 2026.9.28 bunx --bun init and merge install configure merge drivers that strict health immediately reports drifted, even after reinstall."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-09-29T00:20:04.660Z"
+updated_at: "2026-09-29T00:31:44.903Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: Bun init and merge install pass strict health on a fresh Git workspace; Repeated install is idempotent and a real two-branch merge executes the driver
+parent: pm-u9d0
+risk: high
+confidence: 85
+severity: high
+expected_result: "Bun init registers stable, executable merge drivers accepted by strict health."
+actual_result: All five driver keys are reported drifted after init and merge install.
+affected_version: 2026.9.28
+component: Bun merge driver
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-rnl3sa,related,"2026-09-29T00:20:04.660Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-29T00:20:04.660Z","harness:codex","Duplicate check: all-status PM search for Bun merge-driver drift found the closed package-runner dispatch issue pm-rnl3sa and other merge work, but no owner for this Bun-specific install/health mismatch."
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/1346\n\nReproduce in a disposable Bun Git project; compare installed Git driver commands against strict health expectation, prove idempotent reinstall, and execute a real two-branch item merge using the registered driver."
