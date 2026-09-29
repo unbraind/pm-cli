@@ -5,7 +5,7 @@ import { createScriptHarness } from "../../../helpers/scriptModule";
 const UTILS_SPECIFIER = "../../../../scripts/release/utils.mjs";
 const harness = createScriptHarness([UTILS_SPECIFIER]);
 
-type CommandResult = { status: number; stdout: string; stderr: string };
+type CommandResult = { status: number; stdout: string; stderr: string; exit_status?: number | null; signal?: string | null; error_code?: string | null; timed_out?: boolean };
 
 interface RunOptions {
   argv: string[];
@@ -13,6 +13,7 @@ interface RunOptions {
   npmExecpath?: string | null;
   realpath?: (value: string) => string;
   runCommand?: (command: string, args: string[]) => CommandResult;
+  elapsedBeyondDeadline?: boolean;
 }
 
 /** Execute the real verifier with isolated installer, filesystem, and output boundaries. */
@@ -64,6 +65,10 @@ async function runAcceptance(options: RunOptions) {
   vi.spyOn(console, "log").mockImplementation((value?: unknown) => {
     logs.push(String(value ?? ""));
   });
+  if (options.elapsedBeyondDeadline) {
+    let reads = 0;
+    vi.spyOn(Date, "now").mockImplementation(() => ++reads === 1 ? 0 : 13 * 60_000 + 1);
+  }
   let failure: unknown = null;
   try {
     await harness.importModuleStable(
@@ -267,13 +272,13 @@ describe("verify-installed-agent-session", () => {
           : successfulCommand(command, args),
     });
     expect(String(installFailure.failure)).toContain(
-      "bun exact-package installation failed: registry unavailable",
+      'bun exact-package installation failed: [{"attempt":1,"classification":"nonzero_exit"',
     );
     expect(
       installFailure.runCommand.mock.calls.filter(
         ([command, args]) => command === "bun" && args[0] === "add",
       ),
-    ).toHaveLength(3);
+    ).toHaveLength(1);
   });
 
   it("reports the exact failing agent step, malformed output, and output budget", async () => {
@@ -330,8 +335,112 @@ describe("verify-installed-agent-session", () => {
           : successfulCommand(command, args),
     });
     expect(String(installFailure.failure)).toContain(
-      "npm exact-package installation failed: installer exited non-zero",
+      'npm exact-package installation failed: [{"attempt":1,"classification":"nonzero_exit"',
     );
+  });
+
+  it.each([
+    { name: "timeout", result: { status: 1, exit_status: null, signal: "SIGTERM", error_code: "ETIMEDOUT", timed_out: true, stderr: "timed out" }, classification: "timeout" },
+    { name: "signal", result: { status: 1, exit_status: null, signal: "SIGKILL", stderr: "" }, classification: "signal" },
+    { name: "missing executable", result: { status: 1, exit_status: null, error_code: "ENOENT", stderr: "" }, classification: "executable_missing" },
+    { name: "other spawn error", result: { status: 1, exit_status: null, error_code: "EACCES", stderr: "" }, classification: "spawn_error" },
+    { name: "nonzero exit", result: { status: 17, exit_status: 17, stderr: "failed" }, classification: "nonzero_exit" },
+  ])("classifies $name without a registry retry", async ({ result, classification }) => {
+    const acceptance = await runAcceptance({
+      argv: ["--version", "2026.9.29", "--manager", "npm"],
+      runCommand: (command, args) => args.includes("install")
+        ? { stdout: "", ...result }
+        : successfulCommand(command, args),
+    });
+    expect(String(acceptance.failure)).toContain(`"classification":"${classification}"`);
+    expect(acceptance.runCommand.mock.calls.filter(([, args]) => args.includes("install"))).toHaveLength(1);
+  });
+
+  it("retains redacted registry failures after successful propagation", async () => {
+    let attempts = 0;
+    const acceptance = await runAcceptance({
+      argv: ["--version", "2026.9.29", "--manager", "bun", "--json"],
+      runCommand: (command, args) => {
+        if (command === "bun" && args[0] === "add" && ++attempts === 1) {
+          return { status: 1, stdout: "", stderr: "E404 404 Not Found https://secret@example.com/pkg Bearer private-token" };
+        }
+        return successfulCommand(command, args);
+      },
+    });
+    expect(acceptance.failure).toBeNull();
+    expect(acceptance.json.sessions[0].install_attempts).toMatchObject([
+      { classification: "registry_visibility", attempt: 1 },
+      { classification: "success", attempt: 2 },
+    ]);
+    expect(JSON.stringify(acceptance.json)).not.toContain("private-token");
+    expect(JSON.stringify(acceptance.json)).not.toContain("secret@example.com");
+  });
+
+  it("detects a registry 404 beyond the excerpt and redacts complete authorization values", async () => {
+    let attempts = 0;
+    const acceptance = await runAcceptance({
+      argv: ["--version", "2026.9.29", "--manager", "npm", "--json"],
+      runCommand: (command, args) => {
+        if (args.includes("install") && ++attempts === 1) {
+          return { status: 1, stdout: "", stderr: `Authorization: token abc-secret\n${"x".repeat(600)} E404 404 Not Found` };
+        }
+        return successfulCommand(command, args);
+      },
+    });
+    expect(acceptance.failure).toBeNull();
+    expect(attempts).toBe(2);
+    expect(acceptance.json.sessions[0].install_attempts[0].classification).toBe("registry_visibility");
+    expect(acceptance.json.sessions[0].install_attempts[0].stderr_excerpt).toContain("Authorization: [redacted]");
+    expect(JSON.stringify(acceptance.json)).not.toContain("abc-secret");
+    expect(acceptance.json.sessions[0].install_attempts[0].stderr_excerpt).toHaveLength(512);
+  });
+
+  it.each([
+    "error: GET https://registry.npmjs.org/@unbrained%2fpm-cli-404-probe-20260929 - 404",
+    'error: package "@example/pm-cli" not found registry.npmjs.org/@example/pm-cli 404',
+  ])("retries a Bun registry visibility failure with a bare 404: %s", async (stderr) => {
+    let attempts = 0;
+    const acceptance = await runAcceptance({
+      argv: ["--version", "2026.9.29", "--manager", "bun", "--json"],
+      runCommand: (command, args) => command === "bun" && args[0] === "add" && ++attempts === 1
+        ? { status: 1, stdout: "", stderr }
+        : successfulCommand(command, args),
+    });
+    expect(acceptance.failure).toBeNull();
+    expect(attempts).toBe(2);
+    expect(acceptance.json.sessions[0].install_attempts.map((row: { classification: string }) => row.classification)).toEqual(["registry_visibility", "success"]);
+  });
+
+  it("does not retry an unrelated bare 404 or HTTP 403", async () => {
+    for (const stderr of ["package not found 404", "error: GET https://registry.npmjs.org/example - 403"]) {
+      const acceptance = await runAcceptance({
+        argv: ["--version", "2026.9.29", "--manager", "bun"],
+        runCommand: (command, args) => command === "bun" && args[0] === "add"
+          ? { status: 1, stdout: "", stderr }
+          : successfulCommand(command, args),
+      });
+      expect(String(acceptance.failure)).toContain('"classification":"nonzero_exit"');
+      expect(acceptance.runCommand.mock.calls.filter(([command, args]) => command === "bun" && args[0] === "add")).toHaveLength(1);
+    }
+  });
+
+  it("bounds repeated registry visibility failures and preserves the first attempt", async () => {
+    const acceptance = await runAcceptance({
+      argv: ["--version", "2026.9.29", "--manager", "npm"],
+      runCommand: (command, args) => args.includes("install")
+        ? { status: 1, stdout: "", stderr: "E404 404 Not Found token=private" }
+        : successfulCommand(command, args),
+    });
+    expect(acceptance.runCommand.mock.calls.filter(([, args]) => args.includes("install"))).toHaveLength(3);
+    expect(String(acceptance.failure)).toContain('"attempt":1,"classification":"registry_visibility"');
+    expect(String(acceptance.failure)).toContain('"attempt":3,"classification":"registry_visibility"');
+    expect(String(acceptance.failure)).not.toContain("private");
+  });
+
+  it("refuses work once the shared acceptance deadline has elapsed", async () => {
+    const acceptance = await runAcceptance({ argv: ["--version", "2026.9.29", "--manager", "npm"], elapsedBeyondDeadline: true });
+    expect(String(acceptance.failure)).toContain("total deadline");
+    expect(acceptance.runCommand).not.toHaveBeenCalled();
   });
 
   it("requires create identity and closed read-back state", async () => {

@@ -9,15 +9,19 @@ afterEach(() => vi.unstubAllEnvs());
 
 describe("release observations", () => {
   it("distinguishes published, verified-existing, no-op and unavailable outcomes", () => {
-    const env = { GITHUB_RUN_ID: "42", GITHUB_RUN_ATTEMPT: "1", GITHUB_EVENT_NAME: "schedule" };
+    const env = { GITHUB_RUN_ID: "42", GITHUB_RUN_ATTEMPT: "1", GITHUB_EVENT_NAME: "schedule", RELEASE_TRIGGER_ORIGIN: "native_schedule" };
     expect(createReleaseObservation(env, null).outcome).toBe("unknown_success");
     expect(createReleaseObservation({ ...env, RELEASE_PUBLISHED_TAG: "v2026.9.24" }, null).outcome).toBe("published");
     expect(createReleaseObservation({ ...env, RELEASE_PUBLISHED_TAG: "v2026.9.24", RELEASE_EXISTING_TAG: "v2026.9.24" }, null).outcome).toBe("same_day_verified");
     const receipt = createReleaseObservation({ ...env, RELEASE_PIPELINE_REASON: "no_changes_since_last_tag" }, {
       schema: "release-failure-record/1", stage: "coverage-gate", stdout: "sensitive gate text",
     });
-    expect(receipt).toEqual({ schema: "release-observation/1", run_id: 42, run_attempt: 1, event: "schedule", outcome: "no_changes_since_last_tag", failure_stage: "coverage-gate" });
+    expect(receipt).toEqual({ schema: "release-observation/1", run_id: 42, run_attempt: 1, event: "schedule", trigger_origin: "native_schedule", outcome: "no_changes_since_last_tag", failure_stage: "coverage-gate" });
     expect(createReleaseObservation(env, { schema: "foreign" }).failure_stage).toBeNull();
+    expect(createReleaseObservation({ ...env, GITHUB_EVENT_NAME: "workflow_dispatch", RELEASE_TRIGGER_ORIGIN: "morning_dispatcher" }, null).trigger_origin).toBe("morning_dispatcher");
+    expect(createReleaseObservation({ ...env, GITHUB_EVENT_NAME: "issues", RELEASE_TRIGGER_ORIGIN: "blocker_retry" }, null).trigger_origin).toBe("blocker_retry");
+    expect(() => createReleaseObservation({ ...env, GITHUB_EVENT_NAME: "workflow_dispatch" }, null)).toThrow("origin");
+    expect(() => createReleaseObservation({ ...env, RELEASE_TRIGGER_ORIGIN: "operator" }, null)).toThrow("origin");
     for (const bad of [{ GITHUB_RUN_ID: "x" }, { GITHUB_RUN_ID: "0" }, { GITHUB_RUN_ATTEMPT: "0" }, { GITHUB_RUN_ATTEMPT: "x" }]) {
       expect(() => createReleaseObservation({ ...env, ...bad }, null)).toThrow("identities");
     }
@@ -29,7 +33,7 @@ describe("release observations", () => {
       const failurePath = path.join(root, "failure.json");
       const output = path.join(root, "release-observation.json");
       writeFileSync(failurePath, JSON.stringify({ schema: "release-failure-record/1", stage: "sentry-telemetry-gate", stderr: "private" }));
-      for (const [key, value] of Object.entries({ GITHUB_RUN_ID: "42", GITHUB_RUN_ATTEMPT: "2", GITHUB_EVENT_NAME: "schedule", RELEASE_FAILURE_RECORD: failurePath, RELEASE_OBSERVATION_PATH: output })) vi.stubEnv(key, value);
+      for (const [key, value] of Object.entries({ GITHUB_RUN_ID: "42", GITHUB_RUN_ATTEMPT: "2", GITHUB_EVENT_NAME: "schedule", RELEASE_TRIGGER_ORIGIN: "native_schedule", RELEASE_FAILURE_RECORD: failurePath, RELEASE_OBSERVATION_PATH: output })) vi.stubEnv(key, value);
       const result = writeReleaseObservation();
       expect(JSON.parse(readFileSync(output, "utf8"))).toEqual(result);
       expect(result.run_attempt).toBe(2);

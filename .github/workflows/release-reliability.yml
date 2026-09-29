@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   report:
-    name: Scheduled release reliability
+    name: Scheduled and morning dispatcher reliability
     if: >-
       github.event_name != 'workflow_run' ||
       (github.event.workflow_run.event == 'schedule' &&
@@ -49,6 +49,9 @@ jobs:
           appendFileSync(process.env.GITHUB_STEP_SUMMARY,
             `## Scheduled release reliability\n\nWindow: ${report.window_start} to ${report.window_end}\n\n` +
             `Original scheduled attempts: ${report.completed}; failed: ${report.failed}; pending: ${report.pending}\n\n` +
+            `Morning dispatcher attempts: ${report.dispatcher.completed}; failed: ${report.dispatcher.failed}; pending: ${report.dispatcher.pending}\n\n` +
+            `Morning dispatcher failing stages: ${JSON.stringify(report.dispatcher.failure_stages)}\n\n` +
+            `Pre-attribution dispatch gaps: ${report.pre_attribution_gap.join(", ") || "none"}\n\n` +
             `Policy findings: ${report.violations.join(", ") || "none"}\n\n` +
             `Outcome evidence complete: ${report.outcome_evidence_complete}\n\n` +
             "PM owners: [pm-e70zh5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e70zh5.toon), " +

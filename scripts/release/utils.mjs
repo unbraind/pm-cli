@@ -64,6 +64,9 @@ export function runCommand(command, args, options = {}) {
     status,
     stdout: capture ? result.stdout ?? "" : "",
     stderr: capture ? result.stderr ?? "" : "",
+    exit_status: result.status,
+    signal: result.signal,
+    error_code: result.error?.code,
   };
 }
 

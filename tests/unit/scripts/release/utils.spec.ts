@@ -101,7 +101,7 @@ describe("scripts/release/utils: runCommand", () => {
     const utils = await loadUtils("utilsRunOk");
 
     const success = utils.runCommand("pm", ["json-ok"], { capture: true, cwd: "/tmp/pm" });
-    expect(success).toEqual({ status: 0, stdout: '{"ok":true}', stderr: "" });
+    expect(success).toMatchObject({ status: 0, stdout: '{"ok":true}', stderr: "", exit_status: 0 });
     expect(spawnSync).toHaveBeenCalledWith(
       "pm",
       ["json-ok"],
@@ -135,7 +135,7 @@ describe("scripts/release/utils: runCommand", () => {
   it("leaves stdout/stderr empty on non-capture runs", async () => {
     vi.doMock("node:child_process", () => ({ spawnSync: vi.fn(() => ({ status: 0, stdout: "out", stderr: "err" })) }));
     const utils = await loadUtils("utilsRunNoCapture");
-    expect(utils.runCommand("echo", ["hi"])).toEqual({ status: 0, stdout: "", stderr: "" });
+    expect(utils.runCommand("echo", ["hi"])).toMatchObject({ status: 0, stdout: "", stderr: "", exit_status: 0 });
   });
 
   it("can replace the ambient environment for deterministic child processes", async () => {
@@ -200,6 +200,21 @@ describe("scripts/release/utils: runCommand", () => {
     errorSpy.mockRestore();
   });
 
+  it("preserves spawn timeout, signal and missing executable evidence", async () => {
+    const spawnSync = vi.fn()
+      .mockReturnValueOnce({ status: null, signal: "SIGTERM", error: { code: "ETIMEDOUT" }, stdout: "", stderr: "" })
+      .mockReturnValueOnce({ status: null, signal: "SIGKILL", stdout: "", stderr: "" })
+      .mockReturnValueOnce({ status: null, error: { code: "ENOENT" }, stdout: "", stderr: "" });
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+    const utils = await loadUtils("utilsSpawnFailures");
+    const results = [0, 1, 2].map(() => utils.runCommand("installer", [], { capture: true, allowFailure: true, timeout: 120_000 }));
+    expect(results.map(({ exit_status, signal, error_code }) => ({ exit_status, signal, error_code }))).toEqual([
+      { exit_status: null, signal: "SIGTERM", error_code: "ETIMEDOUT" },
+      { exit_status: null, signal: "SIGKILL", error_code: undefined },
+      { exit_status: null, signal: undefined, error_code: "ENOENT" },
+    ]);
+  });
+
   it("does not fail on a non-zero status when allowFailure is set without capture", async () => {
     vi.doMock("node:child_process", () => ({ spawnSync: vi.fn(() => ({ status: 3, stdout: "", stderr: "" })) }));
     const utils = await loadUtils("utilsRunAllow");
@@ -226,7 +241,7 @@ describe("scripts/release/utils: runCommand", () => {
       spawnSync: vi.fn(() => ({ status: 0, stdout: undefined, stderr: undefined })),
     }));
     const utils = await loadUtils("utilsRunUndefStdio");
-    expect(utils.runCommand("x", [], { capture: true })).toEqual({ status: 0, stdout: "", stderr: "" });
+    expect(utils.runCommand("x", [], { capture: true })).toMatchObject({ status: 0, stdout: "", stderr: "", exit_status: 0 });
   });
 
   it("fails without capture by taking the empty-detail branch", async () => {

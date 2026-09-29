@@ -37,14 +37,18 @@ export function validateReleaseObservation(value, run) {
   if (typeof value.outcome !== "string" || (value.failure_stage !== null && typeof value.failure_stage !== "string")) {
     throw new Error("Malformed release observation.");
   }
-  return { outcome: value.outcome, failure_stage: value.failure_stage };
+  if (value.trigger_origin !== undefined && !["native_schedule", "blocker_retry", "morning_dispatcher", "operator"].includes(value.trigger_origin)) {
+    throw new Error("Malformed release observation origin.");
+  }
+  return { outcome: value.outcome, failure_stage: value.failure_stage, trigger_origin: value.trigger_origin ?? null };
 }
 
 /** Collect one original attempt and its optional structured outcome artifact. */
 function originalAttempt(listed, repository, read, root) {
   const base = `repos/${repository}/actions/runs/${listed.id}`;
   const run = listed.run_attempt === 1 ? listed : JSON.parse(read(["api", `${base}/attempts/1`]));
-  if (run.id !== listed.id || run.run_attempt !== 1 || run.event !== "schedule") throw new Error("Original attempt mismatch.");
+  if (run.id !== listed.id || run.run_attempt !== 1 || !["schedule", "workflow_dispatch", "issues"].includes(run.event)) throw new Error("Original attempt mismatch.");
+  const declaredOrigin = /^Auto Release \((native_schedule|blocker_retry|morning_dispatcher|operator)\)$/u.exec(String(run.display_title))?.[1];
   const artifacts = completePages(read(["api", `${base}/artifacts?per_page=100`, "--paginate", "--slurp"]), "artifacts");
   const receiptName = "release-observation-1";
   const candidates = artifacts.filter((artifact) => artifact.name === receiptName && !artifact.expired);
@@ -52,8 +56,11 @@ function originalAttempt(listed, repository, read, root) {
   if (candidates.length === 1) {
     const directory = path.join(root, String(run.id));
     read(["run", "download", String(run.id), "--repo", repository, "--name", receiptName, "--dir", directory]);
-    Object.assign(run, validateReleaseObservation(JSON.parse(readFileSync(path.join(directory, "release-observation.json"), "utf8")), run));
+    const receipt = validateReleaseObservation(JSON.parse(readFileSync(path.join(directory, "release-observation.json"), "utf8")), run);
+    if (declaredOrigin && ![null, declaredOrigin].includes(receipt.trigger_origin)) throw new Error("Release origin disagrees with run name.");
+    Object.assign(run, { ...receipt, trigger_origin: receipt.trigger_origin ?? declaredOrigin });
   }
+  run.trigger_origin ??= declaredOrigin;
   if (run.status === "completed" && run.conclusion !== "success" && !run.failure_stage) {
     const jobs = completePages(read(["api", `${base}/attempts/1/jobs?per_page=100`, "--paginate", "--slurp"]), "jobs");
     run.failure_stage = jobs.flatMap((job) => job.steps.filter((step) => step.conclusion === "failure").map((step) => `${job.name} / ${step.name}`)).join("; ") || "unrecorded";
@@ -70,7 +77,7 @@ export function collectReleaseReliability(repository, policy, now, read = github
   validateReliabilityPolicy(policy);
   const end = new Date(now);
   const start = new Date(end.getTime() - policy.window_days * 86_400_000).toISOString();
-  const query = new URLSearchParams({ event: "schedule", per_page: "100", created: `${start}..${end.toISOString()}` });
+  const query = new URLSearchParams({ per_page: "100", created: `${start}..${end.toISOString()}` });
   const listed = completePages(read(["api", `repos/${repository}/actions/workflows/auto-release.yml/runs?${query}`, "--paginate", "--slurp"]), "workflow_runs");
   const root = mkdtempSync(path.join(tmpdir(), "pm-release-reliability-"));
   try {

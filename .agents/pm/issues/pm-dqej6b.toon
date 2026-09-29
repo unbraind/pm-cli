@@ -1,0 +1,29 @@
+id: pm-dqej6b
+title: Scratch lifecycle 15-second wall-clock assertion flakes under default full coverage concurrency
+description: "Two local full-coverage runs on 2026-09-29 failed only tests/integration/scratch-lifecycle.integration.spec.ts:132 because the entire nine-command scratch CLI lifecycle took 16166.9ms and 15517.2ms against a fixed 15000ms wall-clock assertion. The same test passed alone in 4155ms, and a full run with Vitest --maxWorkers 4 passed 9433 tests at exact 100/100/100/100. This is evidence of a load-sensitive quality gate, not proof of a product latency regression."
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:quality",coverage,flaky-test,performance
+created_at: "2026-09-29T11:40:12.733Z"
+updated_at: "2026-09-29T11:58:23.810Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Reproduce under controlled concurrency and measure the real CLI command costs; distinguish product latency from host scheduling contention without deleting or blindly increasing the performance budget; make the default full-coverage gate deterministic while preserving exact 100/100/100/100 coverage and integration lifecycle assertions.
+parent: pm-doxj
+risk: medium
+confidence: high
+severity: medium
+expected_result: The scratch lifecycle performance contract identifies real CLI regressions without failing solely from unrelated parallel test load.
+actual_result: Two default-worker coverage runs were red solely at the 15-second assertion; isolated and four-worker runs passed with the same production code.
+component: test reliability
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-h9gsix,discovered_from,"2026-09-29T11:40:12.733Z","harness:codex","cli:create:dep",detected
+  pm-z436,discovered_from,"2026-09-29T11:40:12.733Z","harness:codex","cli:create:dep",detected
+  pm-7x0wqg,discovered_from,"2026-09-29T11:58:23.590Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-29T11:40:12.733Z","harness:codex","Duplicate check across every PM status: pm-z436 owns the completed scratch lifecycle experience; pm-h9gsix and pm-7x0wqg are closed coverage-flake repairs for different all-package install tests. No existing item owns this exact repeated 15-second scratch assertion. Evidence: default runs 16166.9ms and 15517.2ms; isolated 4155ms; four-worker full coverage 9433 passed, exact 100/100/100/100."
+files[2]{path,scope}:
+  tests/integration/scratch-lifecycle.integration.spec.ts,project
+  vitest.config.ts,project
+body: ""

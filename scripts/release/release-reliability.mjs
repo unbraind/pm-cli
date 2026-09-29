@@ -46,28 +46,32 @@ function nominalOccurrence(instant, policy) {
   return date.getTime() > instant ? date.getTime() - DAY_MS : date.getTime();
 }
 
-/** Convert one authoritative first-attempt run into a compact timing/outcome row. */
-function observation(run, policy) {
+/** Convert one authoritative first-attempt run without assigning cron timing to dispatches. */
+function observation(run, policy, scheduled = true) {
   if (!Number.isSafeInteger(run.id) || run.id < 1 || run.run_attempt !== 1) {
     throw new Error("Expected a positive run id and authoritative first attempt.");
   }
   const created = timestamp(run.created_at);
   const started = run.run_started_at === null ? null : timestamp(run.run_started_at);
   if (started !== null && started < created) throw new Error("Run started before creation.");
-  const nominal = nominalOccurrence(created, policy);
   const completed = run.status === "completed";
   const failed = completed && run.conclusion !== "success";
   let outcome = "pending";
   if (completed) {
     outcome = failed ? "failed" : KNOWN_OUTCOMES.has(run.outcome) ? run.outcome : "unknown_success";
   }
-  return {
+  const row = {
     id: run.id, created_at: new Date(created).toISOString(),
-    nominal_occurrence: new Date(nominal).toISOString(),
-    dispatch_delay_minutes: (created - nominal) / MINUTE_MS,
     queue_delay_minutes: started === null ? null : (started - created) / MINUTE_MS,
     conclusion: run.conclusion, completed, failed, outcome,
     failure_stage: failed ? run.failure_stage || "unrecorded" : null,
+  };
+  if (!scheduled) return row;
+  const nominal = nominalOccurrence(created, policy);
+  return {
+    ...row,
+    nominal_occurrence: new Date(nominal).toISOString(),
+    dispatch_delay_minutes: (created - nominal) / MINUTE_MS,
   };
 }
 
@@ -84,6 +88,15 @@ function counts(rows, field) {
   return result;
 }
 
+/** Keep declared dispatcher observations distinct from the native cron policy. */
+function reliabilitySeries(run, policy) {
+  if (run.event === "schedule") return { name: "scheduled", row: observation(run, policy) };
+  if (run.event === "workflow_dispatch" && run.trigger_origin === "morning_dispatcher") {
+    return { name: "dispatcher", row: observation(run, policy, false) };
+  }
+  return { name: "excluded", row: run };
+}
+
 /**
  * Evaluate a complete run census in [now-window, now). A red historical rate
  * is an operational report, independent of the gates judging a candidate tree.
@@ -94,18 +107,21 @@ export function evaluateReleaseReliability(runs, policy, now) {
   const start = end - policy.window_days * DAY_MS;
   const ids = new Set();
   const selected = [];
+  const dispatcher = [];
   const excluded = [];
   for (const run of runs) {
     const created = timestamp(run.created_at);
     if (created < start || created >= end) continue;
     if (ids.has(run.id)) throw new Error(`Duplicate run id ${run.id}.`);
     ids.add(run.id);
-    if (run.event !== "schedule") { excluded.push(run); continue; }
-    selected.push(observation(run, policy));
+    const { name, row } = reliabilitySeries(run, policy);
+    ({ scheduled: selected, dispatcher, excluded })[name].push(row);
   }
   selected.sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id - b.id);
   const completed = selected.filter((row) => row.completed);
   const failed = completed.filter((row) => row.failed);
+  const dispatcherCompleted = dispatcher.filter((row) => row.completed);
+  const dispatcherFailed = dispatcherCompleted.filter((row) => row.failed);
   const failureRate = completed.length === 0 ? null : failed.length / completed.length;
   const expected = nominalOccurrence(end - policy.max_dispatch_delay_minutes * MINUTE_MS, policy);
   const violations = [];
@@ -121,6 +137,14 @@ export function evaluateReleaseReliability(runs, policy, now) {
     completed: completed.length, failed: failed.length, pending: selected.length - completed.length,
     failure_rate: failureRate, outcomes: counts(completed, "outcome"),
     failure_stages: counts(failed, "failure_stage"), excluded_events: counts(excluded, "event"),
+    dispatcher: {
+      completed: dispatcherCompleted.length, failed: dispatcherFailed.length,
+      pending: dispatcher.length - dispatcherCompleted.length,
+      failure_rate: dispatcherCompleted.length === 0 ? null : dispatcherFailed.length / dispatcherCompleted.length,
+      outcomes: counts(dispatcherCompleted, "outcome"), failure_stages: counts(dispatcherFailed, "failure_stage"),
+      items: dispatcher,
+    },
+    pre_attribution_gap: excluded.filter((run) => run.event === "workflow_dispatch" && !run.trigger_origin).map((run) => run.id),
     outcome_evidence_complete: completed.every((row) => row.outcome !== "unknown_success" && (!row.failed || row.failure_stage !== "unrecorded")),
     items: selected,
   };

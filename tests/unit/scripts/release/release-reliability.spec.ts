@@ -122,4 +122,23 @@ describe("release reliability", () => {
     expect(report.items[1]?.queue_delay_minutes).toBeNull();
     expect(report.outcomes).toEqual({ unknown_success: 3 });
   });
+
+  it("measures declared morning dispatches separately and retains unattributed history", () => {
+    const report = evaluateReleaseReliability([
+      run(1, { outcome: "published" }),
+      run(2, { event: "workflow_dispatch", trigger_origin: "morning_dispatcher", conclusion: "failure", failure_stage: "Sentry gate", created_at: "2026-09-24T04:45:00Z", run_started_at: "2026-09-24T04:47:00Z" }),
+      run(3, { event: "workflow_dispatch", trigger_origin: "operator", outcome: "published" }),
+      run(4, { event: "workflow_dispatch" }),
+    ], policy, now);
+    expect(report.completed).toBe(1);
+    expect(report.failed).toBe(0);
+    expect(report.dispatcher).toMatchObject({ completed: 1, failed: 1, failure_rate: 1, failure_stages: { "Sentry gate": 1 } });
+    expect(report.dispatcher.items[0]).toMatchObject({ id: 2, queue_delay_minutes: 2, failure_stage: "Sentry gate" });
+    expect(report.dispatcher.items[0]).not.toHaveProperty("nominal_occurrence");
+    expect(report.dispatcher.items[0]).not.toHaveProperty("dispatch_delay_minutes");
+    expect(report.items[0]).toHaveProperty("nominal_occurrence");
+    expect(report.items[0]).toHaveProperty("dispatch_delay_minutes");
+    expect(report.pre_attribution_gap).toEqual([4]);
+    expect(report.excluded_events).toEqual({ workflow_dispatch: 2 });
+  });
 });

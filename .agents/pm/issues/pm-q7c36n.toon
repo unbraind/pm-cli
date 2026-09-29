@@ -2,28 +2,95 @@ id: pm-q7c36n
 title: Registry install acceptance loses subprocess timeout and signal evidence and labels every failure as registry availability
 description: "The 2026-09-28 Windows npm-global acceptance job failed after three approximately 120-second install attempts. Its only terminal diagnosis was installer exited non-zero. Source inspection shows runCommand normalizes a null status to 1 and discards spawn error and signal, while installAndRun labels every retry registry availability. The later exact-version recovery passed, which proves recoverability but not the cause of the original failure. Preserve classified bounded evidence so reliability improvements target measured causes."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: "area:release",diagnostics,"horizon:current",recurrence-prevention
 created_at: "2026-09-28T05:47:28.714Z"
-updated_at: "2026-09-28T07:20:11.054Z"
+updated_at: "2026-09-29T11:40:23.800Z"
+closed_at: "2026-09-29T11:40:23.030Z"
+completed_at: "2026-09-29T11:40:23.030Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Positive and negative tests distinguish timeout, signal termination, ENOENT, nonzero exit, transient registry visibility and successful install without falsely attributing unknown causes to the registry; Keep install attempt and total-job deadlines bounded and preserve original failed attempt receipts after recovery; Local and hosted npm local/global and bun acceptance use the same classification with privacy-safe bounded stderr"
 parent: pm-u9d0
 risk: medium
 confidence: high
-expected_result: "Installer receipts preserve exit status, signal, timeout and spawn error classification with bounded redacted diagnostics; retries distinguish transient registry evidence from non-transient local failures."
-actual_result: Original release run 36377133727 failed Windows npm-global acceptance with three roughly 120-second attempts and no underlying process cause; recovery run 36380136948 passed all nine install legs.
+resolution: Retain raw subprocess outcomes; classify full redacted stderr before excerpt truncation; redact complete Authorization values; recognize Bun GET and package-not-found bare-404 messages only when guarded from timeout or signal errors.
+expected_result: Exact-package acceptance preserves safe diagnostics and retries measured registry visibility failures from npm and Bun without retrying unrelated failures.
+actual_result: "45 linked installer tests passed; live Bun --silent temporary-project probe produced the GET URL - 404 format; full 9,433-test suite passed with four workers and exact 100/100/100/100 coverage. PR #1350 updated-head review remains pending."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-e70zh5,implements,"2026-09-28T05:47:28.714Z","harness:codex","cli:create:dep",detected
   pm-p9a4,discovered_from,"2026-09-28T05:47:28.714Z","harness:codex","cli:create:dep",detected
   pm-ygli86,discovered_from,"2026-09-28T05:47:28.714Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text,edited_at}:
-  "2026-09-28T05:47:28.714Z","harness:codex","Duplicate check 2026-09-28: complete 2826-item all-status metadata/history corpus and keyword AND searches for registry installer timeout diagnostics, installation retries, and subprocess error installer. Existing published-metadata propagation owner pm-wzmbvn concerns npm view visibility, not lost install subprocess diagnostics. Existing global reinstall owner pm-ir9vqy concerns missing executable, not acceptance failure classification. Sources: scripts/release/utils.mjs runCommand and scripts/release/verify-installed-agent-session.mjs installAndRun; https://github.com/unbraind/pm-cli/actions/runs/36377133727 and recovery https://github.com/unbraind/pm-cli/actions/runs/36380136948.","2026-09-28T07:20:10.255Z"
-files[2]{path,scope}:
+comments[4]:
+  - created_at: "2026-09-28T05:47:28.714Z"
+    author: "harness:codex"
+    text: "Duplicate check 2026-09-28: complete 2826-item all-status metadata/history corpus and keyword AND searches for registry installer timeout diagnostics, installation retries, and subprocess error installer. Existing published-metadata propagation owner pm-wzmbvn concerns npm view visibility, not lost install subprocess diagnostics. Existing global reinstall owner pm-ir9vqy concerns missing executable, not acceptance failure classification. Sources: scripts/release/utils.mjs runCommand and scripts/release/verify-installed-agent-session.mjs installAndRun; https://github.com/unbraind/pm-cli/actions/runs/36377133727 and recovery https://github.com/unbraind/pm-cli/actions/runs/36380136948."
+    edited_at: "2026-09-28T07:20:10.255Z"
+  - created_at: "2026-09-29T10:00:26.151Z"
+    author: "harness:codex"
+    text: "Implemented classified installer receipts for timeout, signal, ENOENT, other spawn error, nonzero exit, and registry 404. Registry visibility alone retries up to three attempts; every failed attempt remains in the success or failure evidence. Stderr excerpts are bounded to 512 characters with credential redaction. One 13-minute deadline covers control and candidate sessions under the hosted 15-minute job. Verification: linked unit tests passed (41); full coverage suite passed 9,428 tests at 100/100/100/100; packed package initialized, created, and read back items under both npm and Bun in separate temporary roots. Hosted matrix evidence awaits this PR and is not claimed as run locally."
+  - created_at: "2026-09-29T10:28:53.508Z"
+    author: "harness:codex"
+    text: "PR #1350 review found 404 detection ran after stderr truncation and Authorization: token value redaction was incomplete. Classification now reads the full redacted diagnostic before the excerpt is bounded; test covers a 404 beyond 512 characters and a complete authorization value. Greptile discussions #4132270490 and #4132270496."
+  - created_at: "2026-09-29T11:12:54.996Z"
+    author: "harness:codex"
+    text: "PR #1350 CodeRabbit discussion #4132682738 correctly identified Bun bare-404 output. Reproduced current Bun --silent public-registry failure as error: GET https://registry.npmjs.org/... - 404 in a temporary project; classifier now accepts that form and Bun's package-not-found 404 form while negative controls exclude unrelated bare 404 and HTTP 403."
+notes[1]{created_at,author,text}:
+  "2026-09-29T10:00:26.761Z","harness:codex","Recovery must preserve the original installer process cause. A public-registry 404 can represent propagation delay; timeout, signal, spawn failure, and generic nonzero exits provide no such evidence and therefore fail without another registry retry."
+learnings[1]{created_at,author,text}:
+  "2026-09-29T10:00:27.539Z","harness:codex","Keep raw spawn status separate from the normalized command status: a null exit status plus ETIMEDOUT or a signal is materially different from exit code 1. Bound and redact process diagnostics before retaining them in acceptance receipts."
+files[4]{path,scope}:
   scripts/release/utils.mjs,project
   scripts/release/verify-installed-agent-session.mjs,project
-docs[1]{path,scope}:
+  tests/unit/scripts/release/utils.spec.ts,project
+  tests/unit/scripts/release/verify-installed-agent-session.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/utils.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts,project,300,"harness:codex","2026-09-29T09:38:33.645Z",local_mutation,fix/release-origin-and-install-diagnostics
+test_runs[3]:
+  - run_id: test-local-mumhi6py-senwe7
+    kind: test
+    status: passed
+    started_at: "2026-09-29T09:38:51.643Z"
+    finished_at: "2026-09-29T09:38:58.054Z"
+    recorded_at: "2026-09-29T09:38:58.054Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/utils.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mumjb349-xlt0et
+    kind: test
+    status: passed
+    started_at: "2026-09-29T10:29:20.362Z"
+    finished_at: "2026-09-29T10:29:26.024Z"
+    recorded_at: "2026-09-29T10:29:26.024Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/utils.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mumkv7oh-rzi726
+    kind: test
+    status: passed
+    started_at: "2026-09-29T11:12:56.071Z"
+    finished_at: "2026-09-29T11:13:04.673Z"
+    recorded_at: "2026-09-29T11:13:04.673Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/utils.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
   docs/ECOSYSTEM_PLANNING_REVIEW.md,project
+  docs/RELEASE_RELIABILITY.md,project
+close_reason: "Installer classifications now cover observed npm and Bun registry 404 forms, with all review findings and negative controls verified."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-q7c36n
+  gate_id: registry-installed-agent-acceptance
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-installed-agent-session.spec.ts tests/unit/scripts/release/utils.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[4]: CI / Gates (coverage),"Release / Registry acceptance (ubuntu-latest, npm)","Release / Registry acceptance (windows-latest, npm-global)","Release / Registry acceptance (macos-latest, bun)"
 body: ""
