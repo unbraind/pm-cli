@@ -3,7 +3,7 @@
   "name": "pm-claude",
   "displayName": "pm CLI",
   "description": "Native pm CLI integration for Claude Code — 32 MCP tools, 14 skills with slash invocations, 4 subagents (coordinator, delivery-chain, triage, verification), hybrid TUI task tracking (pm as persistent store + Claude Code task panel as live view), session context injection, and full git-based project management without leaving Claude Code.",
-  "version": "2026.9.29",
+  "version": "2026.9.30",
   "author": {
     "name": "unbrained",
     "url": "https://github.com/unbraind/pm-cli"
