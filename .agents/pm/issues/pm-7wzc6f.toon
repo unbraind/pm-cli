@@ -1,0 +1,22 @@
+id: pm-7wzc6f
+title: "GH-1355: Agent UX: unknown prefix-option values become nonexistent commands in recovery examples"
+description: An unknown prefix-option value is reportedly promoted to an undeclared command in structured help recovery.
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,context-management,github-intake
+created_at: "2026-09-30T06:48:36.512Z"
+updated_at: "2026-09-30T06:48:36.512Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Unknown prefix options with separate and equals-form values retain usage rejection; Recovery help targets validate against current runtime command contracts; Known command-first and nested paths remain correct; Ambiguous values use safe root guidance without a second failed invocation
+parent: pm-f05lsg
+risk: medium
+confidence: medium
+expected_result: "Every suggested help target is declared in the runtime command lexicon, with a safe root fallback for ambiguous unknown option/value boundaries."
+actual_result: "Reporter observed unknown_option recovery suggesting synthetic-value as a command, followed by unknown_command, on published 2026.9.29. Equals-form and command-first controls identify context correctly. Current-tree reproduction and implementation are pending."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fo8g7j,discovered_from,"2026-09-30T06:48:36.512Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-30T06:48:36.512Z","harness:codex","Duplicate check: complete strict all-status corpus contained 2843 records with no unreadable directories or items. Exact GitHub ID plus behavior/root-cause searches were complete. Closed prior lineage pm-fo8g7j and its full history were read; this new report requests a distinct unimplemented contract. Relationship reconstructed during current intake rather than asserted as historical knowledge. Queued and unclaimed; source investigation remains pending."
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/1355\n\nReporter observed unknown_option recovery suggesting synthetic-value as a command, followed by unknown_command, on published 2026.9.29. Equals-form and command-first controls identify context correctly. Current-tree reproduction and implementation are pending.\n\nRequested contract: Every suggested help target is declared in the runtime command lexicon, with a safe root fallback for ambiguous unknown option/value boundaries.\n\nVerification plan: reproduce the public report in a temporary project outside this checkout with both PM roots isolated, demonstrate a relevant regression, then validate the SDK boundary, thin transport where applicable, complete coverage and packed consumers. No implementation is included in PR #1353."

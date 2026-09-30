@@ -6,7 +6,7 @@ settings:
 
 overrides:
   '@opentelemetry/core': '>=2.8.0 <3.0.0'
-  brace-expansion: '>=5.0.9 <6.0.0'
+  brace-expansion: '>=5.0.12 <6.0.0'
   esbuild: '>=0.28.2 <0.29.0'
   hono: '>=4.13.5 <5.0.0'
   nanoid: '>=3.3.18 <4.0.0'
@@ -1495,8 +1495,8 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  brace-expansion@5.0.9:
-    resolution: {integrity: sha512-ScQ4IuvIEF1TMlP7Zt+vjJ//9zlPb2SDcxWxM3bk8s6t6GGdJ7KO1dCcTidOPJKePW30LE/2cT7wCyPho9/Wxg==}
+  brace-expansion@5.0.12:
+    resolution: {integrity: sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ==}
     engines: {node: 20 || >=22}
 
   braces@3.0.3:
@@ -3958,7 +3958,7 @@ snapshots:
 
   baseline-browser-mapping@2.11.25: {}
 
-  brace-expansion@5.0.9:
+  brace-expansion@5.0.12:
     dependencies:
       balanced-match: 4.0.4
 
@@ -4628,7 +4628,7 @@ snapshots:
 
   minimatch@10.2.6:
     dependencies:
-      brace-expansion: 5.0.9
+      brace-expansion: 5.0.12
 
   minipass@7.1.3: {}
 

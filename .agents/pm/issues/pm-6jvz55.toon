@@ -1,0 +1,44 @@
+id: pm-6jvz55
+title: Control native effort in the history/activity provenance fixture
+description: Make the effort-filter negative control deterministic under a legitimate native xhigh harness while preserving both actual history events and SDK/CLI filtering.
+type: Issue
+status: closed
+priority: 1
+tags[4]: "area:ci",provenance,regression,test-isolation
+created_at: "2026-09-30T07:20:36.517Z"
+updated_at: "2026-09-30T07:22:58.225Z"
+closed_at: "2026-09-30T07:22:57.403Z"
+completed_at: "2026-09-30T07:22:57.403Z"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: Native xhigh host input deterministically challenges the fixture; Both creation and legacy events remain persisted and independently observable; The creation event is a sealed asserted-low-effort negative control and the original one-event SDK/CLI filters pass; Dedicated resolver tests and complete source/static gates remain intact
+parent: pm-u9d0
+risk: low
+confidence: high
+severity: medium
+resolution: "Declare the native xhigh challenge, reseal creation provenance with asserted low effort, retain the legacy xhigh event, and verify unfiltered two-event versus filtered one-event output without changing runtime detection or the shared sandbox."
+expected_result: The history/activity provenance fixture remains deterministic under legitimate native host effort with both history records intact and all real SDK/CLI contracts preserved.
+actual_result: Controlled pre-fix failure matched two events; corrected 64-test group and 77-test handoff group pass. Full 9434-test source coverage is exactly 100/100/100/100 across 758 modules and canonical static quality passes. Protected current-head review and merge remain pending.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-cbzvgn,discovered_from,"2026-09-30T07:20:36.517Z","harness:codex","cli:create:dep",detected
+  pm-xgah3a,recurs_from,"2026-09-30T07:20:36.517Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-09-30T07:20:36.517Z","harness:codex","Duplicate check: complete all-status strict corpus has 2846/2846 records with no unreadable items/directories; complete current effort/provenance and exact path searches include all 14 path owners. Full prior pm-xgah3a metadata and history confirm its completed foreign AI_AGENT fix and August completion. This distinct native-effort negative-control failure was initially assigned there, which moved the shipped entry out of its release window. Preserve that shipped owner and record this genuine recurrence with typed lineage; do not create a duplicate of the original resolver/sandbox fix."
+  "2026-09-30T07:22:56.550Z","harness:codex","Validation and ownership transfer: the initial source assignment to pm-xgah3a was corrected because its original foreign AI_AGENT fix remains completed. The current native-effort fixture has a distinct uncontrolled creation event and is the genuine recurrence owned here. Controlled red fails with two matches; the unchanged corrected fixture passes all 77 current handoff cases. Canonical full source verification already passed 9434 tests plus two Windows-only skips across 758 maintained sources with exact 100/100/100/100 coverage; pnpm quality:static also passed including unchanged latency limits and the bounded 323/330-killed, seven-equivalent mutation gate. Ownership-only changes do not alter executable source or that coverage denominator."
+files[2]{path,scope,note}:
+  config/defect-recurrence-policy.json,project,Existing ambient host family covers typed recurrence lineage
+  tests/unit/commands/history/history-activity-command.spec.ts,project,Controlled native effort and real persisted negative control
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/history/history-activity-command.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts,project,"harness:codex","2026-09-30T07:20:40.320Z",local_mutation,fix/published-bun-merge-and-leaf-read-contracts
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated current recurrence entry while original shipped entry is retained
+close_reason: Deterministic native-effort provenance fixture preserves both real events and existing SDK/CLI filter assertions.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: ambient-host-state-in-measured-fixture
+  owner: pm-6jvz55
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/commands/history/history-activity-command.spec.ts -t returns: the same provenance test with declared CODEX_THREAD_ID and PM_AGENT_EFFORT=xhigh failed with two matched events before fixture normalization"
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/commands/history/history-activity-command.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts,node scripts/run-tests.mjs coverage -- --maxWorkers 2
+  hosted_checks[1]: CI / Gates (coverage)
+body: "Delivery: https://github.com/unbraind/pm-cli/pull/1353\n\nThe current history/activity provenance projection fixture creates a real event under a native xhigh harness, then appends its intended xhigh legacy event. An effort-only filter correctly matches both, so the existing count=1 assertion depends on ambient host effort. The original pm-xgah3a foreign AI_AGENT resolver/sandbox correction remains shipped and unchanged. This recurrence has a different source: an uncontrolled negative-control creation event in another fixture.\n\nThe fix explicitly declares the native host challenge, reseals creation provenance as asserted low effort, retains both events, and verifies unfiltered count=2 plus the original filtered count=1 through real SDK/CLI paths. Full-source and canonical static validation are already recorded and remain unchanged by this ownership correction."
