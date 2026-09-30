@@ -2,28 +2,31 @@ id: pm-x8jdt8
 title: "GH-1351: leaf get advertises empty children as omitted"
 description: A full get/read/show of a leaf item marks children omitted despite zero children; the suggested follow-up returns an empty rollup. Correct materiality in the SDK without hiding populated children or notes.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-09-29T14:54:09.941Z"
-updated_at: "2026-09-29T21:56:56.321Z"
+updated_at: "2026-09-30T05:20:31.250Z"
+closed_at: "2026-09-30T05:20:30.508Z"
+completed_at: "2026-09-30T05:20:30.508Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Real isolated tracker proves a parent with one child and a leaf with zero children across get, show, and read; full leaf reads have no empty children omission; populated omitted children retain recovery guidance; previously repaired notes behavior remains correct; Task parents retain child recovery in standard, brief, and deep reads; Both explicit full spellings return the child rollup for every type while full leaves remain complete"
 parent: pm-5t33or
 risk: medium
 confidence: 90
-expected_result: Accurate materiality and recoverable children across SDK/CLI aliases without adding routine Task scans or breaking published exports
-actual_result: "Runtime full-read and child recovery behavior is implemented; complete SDK/CLI receipts now strictly enforce false/zero/empty. Focused, linked, full exact coverage and fresh packed acceptance pass; local static timing and broader mandatory delivery/review requirements remain unmet."
+resolution: "SDK full reads compute child materiality for every type, complete receipts strictly report false/zero/empty, and ordinary Task reads retain child recovery without corpus enumeration. CLI get/show/read full aliases preserve notes and SDK semantics."
+expected_result: Leaves and parents expose truthful complete receipts while routine Task reads remain bounded and omitted children remain recoverable.
+actual_result: "Focused SDK/Bun/CLI 14/14 pass on the updated 2026.9.30 build and both previously linked commands pass; an isolated real production mutation passes the old SDK assertion and fails both strengthened boundary assertions. Full source coverage passes 9434 tests, two platform skips, exact 100/100/100/100 across 758 unchanged sources. Packed npm/npx/Bun/bunx prove changed parent behavior and previous data compatibility. Current reviewed b449ce52f protected checks all passed; the version-only 2026.9.30 baseline plus tracker closure will receive fresh checks/reviews before merge. Separate disclosed timing/runtime/documentation/telemetry gaps remain unresolved; publication is not claimed."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-4fwgaz,verifies,"2026-09-29T16:08:20.937Z","harness:codex","cli:update:dep",detected
   pm-b1w8vr,verifies,"2026-09-29T16:08:20.937Z","harness:codex","cli:update:dep",detected
   pm-p258tx,verifies,"2026-09-29T16:08:20.937Z","harness:codex","cli:update:dep",detected
   pm-vks66s,discovered_from,"2026-09-29T16:08:20.937Z","harness:codex","cli:update:dep",detected
   pm-y4z5,verifies,"2026-09-29T16:08:20.937Z","harness:codex","cli:update:dep",detected
-  pm-aiqmgj,blocked_by,"2026-09-29T19:54:17.937Z","harness:codex","cli:update:dep",detected
-  pm-dvwm,blocked_by,"2026-09-29T19:54:17.937Z","harness:codex","cli:update:dep",detected
-comments[18]{created_at,author,text}:
+  pm-aiqmgj,verifies,"2026-09-30T05:20:27.163Z","harness:codex","cli:update:dep",detected
+  pm-dvwm,implements,"2026-09-30T05:20:27.163Z","harness:codex","cli:update:dep",detected
+comments[20]{created_at,author,text}:
   "2026-09-29T14:54:09.941Z","harness:codex","Duplicate check: complete 2840-item all-status corpus, exact title scan, and prior closed omission/get owners pm-p258tx, pm-y4z5, pm-b1w8vr, pm-4fwgaz reviewed. This is a distinct published 2026.9.29 leaf-materiality regression. The main checkout itself reproduces a false children omission on closed leaf pm-vks66s. No duplicate active owner found."
   "2026-09-29T14:55:27.573Z","harness:codex","Test-audit contract: omission receipts must describe restorable material. A leaf with zero children must have no children omission; a parent with a child must still advertise the group when withheld. Extend the existing SDK output-projection test with real temporary persistence; run it red against current code, then green after the SDK change. CLI get/show/read acceptance will exercise transport aliases separately. No production test seam or duplicate fixture."
   "2026-09-29T14:58:07.487Z","harness:codex","Red phase: node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts exited 1 with the new real-tracker leaf full assertion: expected has_omissions=false, received true. Existing five tests passed. The current get implementation bypasses corpus scans for Task reads by design; the repair will derive children materiality from an available rollup and retain a conservative hint only for container types before their rollup is requested."
@@ -42,6 +45,8 @@ comments[18]{created_at,author,text}:
   "2026-09-29T21:15:12.318Z","harness:codex","Current-head CodeRabbit review identifies a useful assertion gap: complete leaf/parent fixtures inspect only has_omissions. Strengthen existing SDK and CLI cases to require false, zero omitted-field count, and an empty group list with strict receipt equality. Use an isolated production mutation that retains false but corrupts the count/list to demonstrate that old assertions pass and strengthened assertions fail; do not add mocks, seams, duplicated fixtures, or runtime behavior."
   "2026-09-29T21:56:52.958Z","harness:codex","Complete-receipt assertion revision: an isolated SDK production mutation retains has_omissions=false but returns count=1 and a populated children group for complete receipts. The old SDK case passes (one selected, five excluded); the strengthened SDK and CLI cases both fail on those fields (two selected failures, seven excluded). These are bounded sensitivity controls, not a real product defect or full mutation proof. Real focused SDK/Bun/CLI tests pass 14/14, and both existing linked commands pass with test-local-mun7sqiz-o18mor. No tests or runtime source were added; partial receipt assertions remain selective."
   "2026-09-29T21:56:53.676Z","harness:codex","Final current assertion-revision validation on Node 26.9.0/Vitest 4.1.11: canonical coverage exits 0 after 1289.47 s with 9434 passes, two platform-specific skips and all 758 source files. Exact counts: statements 65988/65988, branches 50540/50540, functions 13645/13645, lines 63011/63011. Typecheck exits 0; static exits 1 only when reaching unchanged CLI timing limits (get 430>362, list 500>419, context 476>433, next 546>440, create 460>398, claim 434>415 ms). Preceding source/docs/contracts/package gates and SDK import costs pass; separate graph/record and bounded two-module mutation admission pass. The previous source head c12717c passed every protected hosted check, but fresh current-head checks/reviews remain required. Latest packed acceptance exits 0 against SHA256 b15492b6129c61add3053588415fbd783f7171ae0e62439ef7220e529d7c7713: actual npm/npx 12.0.2 and Bun/bunx 1.3.5 execute verified 2026.9.29 local bindings; real merge/history/strict health, pre-write refusal/recovery, full aliases/notes/children and published 2026.9.28 data compatibility pass in isolated opt-out projects. No thresholds or assertions weakened."
+  "2026-09-30T05:12:55.496Z","harness:codex","Explicit merge request follows disclosure of local timing, Node 24.12 output, global documentation and stored-event correlation gaps. These remain separate unresolved follow-ups, not defects fixed by this read-contract item. The temporary blocked_by delivery holds on pm-aiqmgj and pm-dvwm are removed through the supported mutation API because the user now authorizes this scoped delivery; their original history and canonical records remain intact. Current reviewed head b449ce52f has 26 protected successes, current Greptile/Sourcery/CodeRabbit completion, all 25 bot revisions handled and no unresolved threads. Cubic quota is unavailable. Close the implemented/validated read contract before fresh current-head verification and normal protected merge; do not claim publication."
+  "2026-09-30T05:20:26.554Z","harness:codex","Graph validation after removing temporary scheduling holds found two historical prose references without current typed links. Preserve their actual semantics: this item verifies the still-unresolved Node 24.12 warning behavior through the recorded full-corpus run (9432 passes, two specific output failures), not a repaired runtime; its read-module and CLI semantic documentation contributes the scoped 17 of the 19 filler replacements to the canonical documentation chore, without completing that broader chore. Use verifies and implements respectively, rather than retaining an obsolete blocked_by schedule claim. No relationship is added solely to meet a count."
 learnings[2]{created_at,author,text}:
   "2026-09-29T18:22:43.069Z","harness:codex","An uncomputed hierarchy facet is unknown, not proven empty. Preserve a recovery hint for every item type because Tasks may own Tasks; reserve corpus enumeration for explicit full/children reads and existing deep container policy. Measure enumeration work through the public SDK and validate receipts through real CLI aliases."
   "2026-09-29T21:56:54.509Z","harness:codex","A completeness boolean alone cannot detect contradictory count/list metadata introduced at receipt attachment or transport. Strictly compare the complete receipt at existing SDK and CLI boundaries; preserve focused partial assertions for intentionally omitted groups. Demonstrate sensitivity with a real isolated production mutation, not a mock that substitutes the behavior."
@@ -107,6 +112,7 @@ docs[3]{path,scope,note}:
   CHANGELOG.md,project,Generated projection excludes reopened work until structured validated closeout
   docs/BOUNDED_CONTEXT_READS.md,project,Document explicit full scan and conservative Task child recovery
   docs/COMMANDS.md,project,Document explicit full scan and conservative Task child recovery
+close_reason: Implemented and validated complete-read receipts and Task child recovery for reviewed delivery in PR #1353.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

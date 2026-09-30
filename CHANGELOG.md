@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1351: leaf get advertises empty children as omitted ([pm-x8jdt8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x8jdt8.toon))
+- GH-1349: Bun 1.3.5 merge installer accepts a transient launcher ([pm-aaxq4n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-aaxq4n.toon))
+
 ## 2026.9.30 - 2026-09-30
 
 ### Fixed
