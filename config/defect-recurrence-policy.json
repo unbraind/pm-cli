@@ -101,7 +101,7 @@
     },
     {
       "id": "security-scanner-finding",
-      "version": 2,
+      "version": 3,
       "title": "Secret, dependency, and static-analysis findings",
       "owner_item_id": "pm-6ixn",
       "escape_class": "scanner_finding",
@@ -109,6 +109,7 @@
         "file_patterns": [
           "src/**",
           "package.json",
+          "pnpm-workspace.yaml",
           "pnpm-lock.yaml",
           "scripts/check-secrets.mjs",
           ".github/workflows/security.yml"
@@ -126,6 +127,7 @@
       "checks": {
         "local": [
           "pnpm security:scan",
+          "pnpm audit",
           "pnpm audit --prod"
         ],
         "hosted": [
@@ -141,7 +143,8 @@
       },
       "historical_item_ids": [
         "pm-qgvj",
-        "pm-4ris"
+        "pm-4ris",
+        "pm-2cv2o1"
       ],
       "budget": {
         "max_escape_rate": 0,
@@ -369,7 +372,7 @@
     },
     {
       "id": "ambient-host-state-in-measured-fixture",
-      "version": 3,
+      "version": 4,
       "title": "A gate fixture that claims isolation still reads ambient host state, so local and hosted verdicts diverge for the same tree",
       "owner_item_id": "pm-4o7tlx",
       "escape_class": "review_caught_late",
@@ -383,11 +386,13 @@
           "scripts/release/verify-installed-agent-session.mjs",
           "src/sdk/extension/install-sources.ts",
           "src/core/shared/author.ts",
-          "src/sdk/governance/health.ts"
+          "src/sdk/governance/health.ts",
+          "tests/unit/commands/history/history-activity-command.spec.ts"
         ],
         "item_ids": [
           "pm-t7wn04",
-          "pm-4o7tlx"
+          "pm-4o7tlx",
+          "pm-xgah3a"
         ],
         "tags": [
           "area:ci",
@@ -399,6 +404,7 @@
         "local": [
           "node scripts/release/token-budget-gate.mjs",
           "node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-installed-agent-session.spec.ts tests/unit/extensions/extension-install-security.spec.ts",
+          "node scripts/run-tests.mjs test -- tests/unit/commands/history/history-activity-command.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts",
           "pnpm quality:static"
         ],
         "hosted": [
@@ -417,7 +423,8 @@
         "pm-5ug5xq",
         "pm-t7wn04",
         "pm-gh1072",
-        "pm-64qsbl"
+        "pm-64qsbl",
+        "pm-xgah3a"
       ],
       "budget": {
         "max_escape_rate": 0,
@@ -533,18 +540,21 @@
     },
     {
       "id": "installed-consumer-portability",
-      "version": 1,
+      "version": 2,
       "title": "Packed npm and Bun runtime compatibility and executable verification",
       "owner_item_id": "pm-ikj8ve",
       "escape_class": "production_defect",
       "triggers": {
         "item_ids": [
-          "pm-8eebb6"
+          "pm-8eebb6",
+          "pm-vks66s",
+          "pm-aaxq4n"
         ]
       },
       "checks": {
         "local": [
-          "node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts"
+          "node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts",
+          "node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts"
         ],
         "hosted": [
           "CI / Gates (smokes)"
@@ -558,7 +568,8 @@
       "historical_item_ids": [
         "pm-8eebb6",
         "pm-b8hwfr",
-        "pm-ikj8ve"
+        "pm-ikj8ve",
+        "pm-vks66s"
       ],
       "budget": {
         "max_escape_rate": 0,

@@ -543,6 +543,8 @@ describe("runHistory and runActivity", () => {
 
   it("returns patch-free provenance projections and shared filters for history and activity", async () => {
     await withTempPmPath(async (context) => {
+      context.env.CODEX_THREAD_ID = "provenance-filter-host";
+      context.env.PM_AGENT_EFFORT = "xhigh";
       const id = createItem(context, "Provenance Context Reads");
       const settings = await readSettings(context.pmPath);
       settings.agent_identity!.identity_vocabulary = {
@@ -551,6 +553,25 @@ describe("runHistory and runActivity", () => {
       };
       await writeSettings(context.pmPath, settings, "settings:write");
       const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      // Keep the creation event as a nonmatching control even on an xhigh host.
+      const creationHistory = await readHistoryEntries(historyPath, id);
+      expect(creationHistory).toHaveLength(1);
+      await writeFile(
+        historyPath,
+        `${creationHistory
+          .map((entry) =>
+            JSON.stringify(
+              sealHistoryRecord({
+                ...entry,
+                agent_provenance: {
+                  effort: { value: "low", source: "asserted" },
+                },
+              }),
+            ),
+          )
+          .join("\n")}\n`,
+        "utf8",
+      );
       await appendFile(
         historyPath,
         `${JSON.stringify({
@@ -602,6 +623,23 @@ describe("runHistory and runActivity", () => {
       });
       expect(history.provenance_history?.[0]).not.toHaveProperty("patch");
       expect(history).not.toHaveProperty("history");
+
+      const unfilteredActivity = await runActivity(
+        { provenance: true, id },
+        { path: context.pmPath },
+      );
+      expect(unfilteredActivity).toMatchObject({
+        count: 2,
+        total_count: 2,
+        provenance_activity: expect.arrayContaining([
+          expect.objectContaining({
+            author: "test-author",
+            agent_provenance: {
+              effort: { value: "low", source: "asserted" },
+            },
+          }),
+        ]),
+      });
 
       const activity = await runActivity(
         {

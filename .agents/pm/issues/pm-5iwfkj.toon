@@ -1,0 +1,22 @@
+id: pm-5iwfkj
+title: "GH-1354: Linked-test snapshot mode drops nested package dependencies and breaks monorepo acceptance"
+description: Published linked-test snapshot mode reportedly loses independently installed nested package dependencies.
+type: Issue
+status: open
+priority: 1
+tags[3]: agent-ux,context-management,github-intake
+created_at: "2026-09-30T06:48:35.183Z"
+updated_at: "2026-09-30T06:48:35.183Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Real filesystem regression retains distinct root and nested dependency versions without flattening; Snapshot and ordinary linked runs preserve PM_PATH and PM_GLOBAL_PATH isolation; Dependency write/isolation behavior is documented and tested; Current built and packed artifacts pass the reporter contract
+parent: pm-u9d0
+risk: medium
+confidence: medium
+expected_result: Snapshot execution retains correct root and nested package dependency resolution with distinct versions while preserving both tracker sandboxes and documented no-writeback boundaries.
+actual_result: "Reporter verified direct Node test success and linked snapshot failure (ERR_MODULE_NOT_FOUND), with a root-dependency positive control, on published 2026.9.29. Current-tree reproduction and implementation are pending."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-efkvdy,discovered_from,"2026-09-30T06:48:35.183Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-30T06:48:35.183Z","harness:codex","Duplicate check: complete strict all-status corpus contained 2843 records with no unreadable directories or items. Exact GitHub ID plus behavior/root-cause searches were complete. Closed prior lineage pm-efkvdy and its full history were read; this new report requests a distinct unimplemented contract. Relationship reconstructed during current intake rather than asserted as historical knowledge. Queued and unclaimed; source investigation remains pending."
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/1354\n\nReporter verified direct Node test success and linked snapshot failure (ERR_MODULE_NOT_FOUND), with a root-dependency positive control, on published 2026.9.29. Current-tree reproduction and implementation are pending.\n\nRequested contract: Snapshot execution retains correct root and nested package dependency resolution with distinct versions while preserving both tracker sandboxes and documented no-writeback boundaries.\n\nVerification plan: reproduce the public report in a temporary project outside this checkout with both PM roots isolated, demonstrate a relevant regression, then validate the SDK boundary, thin transport where applicable, complete coverage and packed consumers. No implementation is included in PR #1353."

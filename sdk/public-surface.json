@@ -35396,6 +35396,7 @@
     "mcp_annotation_file_unavailable",
     "mcp_stdin_unavailable",
     "mcp_task_not_found_or_not_authorized",
+    "merge_bun_launcher_unavailable",
     "merge_conflict_markers_detected",
     "merge_decisions_unreviewed",
     "merge_driver_configuration_drift",

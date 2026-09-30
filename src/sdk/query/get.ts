@@ -53,12 +53,14 @@ export {
   listGetProjectionFields,
 } from "./projection-contracts.js";
 
+/** Latest claim or release coordinate exposed without its mutation patch. */
 interface ClaimHistoryContext {
   ts: string;
   author: string;
   message: string | null;
 }
 
+/** Claim-history fields needed to reconstruct ownership at the selected read boundary. */
 interface ClaimHistoryEntry {
   op: string;
   ts: string;
@@ -66,6 +68,7 @@ interface ClaimHistoryEntry {
   message?: string;
 }
 
+/** Ownership from the selected item snapshot, accompanied by its latest claim and release events. */
 interface ClaimStateContext {
   claimed: boolean;
   assignee: string | null;
@@ -73,9 +76,11 @@ interface ClaimStateContext {
   last_release: ClaimHistoryContext | null;
 }
 
+/** Depth or field-selected metadata; identity survives every projection. */
 type GetItemProjection = Partial<ItemMetadata> & {
   /** Canonical item identity retained by every depth and field projection. */
   id: string;
+  /** Item document body, included inside metadata for CLI/list parity. */
   body?: string;
   /** Number of notes omitted by a token-bounded projection. */
   notes_count?: number;
@@ -94,22 +99,22 @@ type GetItemProjection = Partial<ItemMetadata> & {
   }>;
 };
 
-/** Documents the get result payload exchanged by command, SDK, and package integrations. */
+/** Single-item read with optional derived facets; omission materiality is carried separately from its JSON representation. */
 export interface GetResult {
   // `body` lives inside `item` (alongside `description`/`acceptance_criteria`)
   // for parity with `pm list --include-body`, so agents reliably find it at
   // `.item.body` in JSON output instead of a top-level sibling.
-  /** Value that configures or reports item for this contract. */
+  /** Selected metadata and body; requested empty collections are represented explicitly. */
   item: GetItemProjection;
-  /** Value that configures or reports linked for this contract. */
+  /** Requested artifact groups; narrower selectors leave unrequested groups empty. */
   linked?: {
     files: LinkedFile[];
     tests: LinkedTest[];
     docs: LinkedDoc[];
   };
-  /** Value that configures or reports claim state for this contract. */
+  /** Ownership evidence for the current or selected historical snapshot. */
   claim_state?: ClaimStateContext;
-  /** Value that configures or reports children for this contract. */
+  /** Current child rollup for full or explicit child reads and deep container reads; historical hierarchy is not indexed. */
   children?: ChildRollupContext;
   /** Normalized scheduling data for scheduled item types and metadata. */
   schedule?: Partial<ItemScheduleContext>;
@@ -119,7 +124,7 @@ export interface GetResult {
   as_of_version?: number | null;
   /** Timestamp of the last history entry included in a reconstructed read. */
   as_of_timestamp?: string;
-  /** Value that configures or reports tree for this contract. */
+  /** Current descendants selected through registered hierarchy semantics and the optional depth bound. */
   tree?: {
     root_id: string;
     root_title: string | null;
@@ -141,6 +146,7 @@ const BUILTIN_ITEM_TYPES = new Set(
 
 type GetDepth = (typeof GET_DEPTH_VALUES)[number];
 
+/** Preserve stored collection cardinalities even when a projection withholds their contents. */
 function itemCollectionCounts(
   item: ItemMetadata,
 ): NonNullable<GetItemProjection["collection_counts"]> {
@@ -163,7 +169,12 @@ function itemCollectionCounts(
   return lengths as NonNullable<GetItemProjection["collection_counts"]>;
 }
 
-function itemMaterialFieldGroups(item: ItemMetadata, body: string): string[] {
+/** Report children as withheld until a computed rollup proves there are none. */
+function itemMaterialFieldGroups(
+  item: ItemMetadata,
+  body: string,
+  children: ChildRollupContext | undefined,
+): string[] {
   const collectionCounts = itemCollectionCounts(item);
   return [
     ...(body.length > 0 ? ["body"] : []),
@@ -176,7 +187,11 @@ function itemMaterialFieldGroups(item: ItemMetadata, body: string): string[] {
     0
       ? ["linked"]
       : []),
-    "children",
+    ...(children === undefined
+      ? ["children"]
+      : children.count > 0
+        ? ["children"]
+        : []),
     ...(typeof item.assignee === "string" && item.assignee.trim().length > 0
       ? ["claim_state"]
       : []),
@@ -184,7 +199,7 @@ function itemMaterialFieldGroups(item: ItemMetadata, body: string): string[] {
   ];
 }
 
-/** Decide whether a normal read should pay for a workspace-wide child projection. */
+/** Decide which item types receive a child rollup during deep reads. */
 function shouldAutoIncludeGetChildren(itemType: string): boolean {
   const normalizedType = itemType.trim().toLowerCase();
   return (
@@ -194,22 +209,23 @@ function shouldAutoIncludeGetChildren(itemType: string): boolean {
   );
 }
 
-/** Documents the get options payload exchanged by command, SDK, and package integrations. */
+/** Select item detail and optional hierarchy or verified historical evidence. Incompatible projections fail before serving the item. */
 export interface GetOptions {
-  /** Value that configures or reports depth for this contract. */
+  /** Detail depth: brief|standard|deep|full. Full includes current children for every type; standard and brief avoid workspace enumeration. */
   depth?: string;
-  /** Value that configures or reports fields for this contract. */
+  /** Comma-separated metadata or facet selectors, including item-prefixed aliases; identity is always retained. */
   fields?: string;
-  /** Value that configures or reports full for this contract. */
+  /** Complete item and current child rollup for every type, mutually exclusive with fields/depth. Historical reads retain child recovery because past hierarchy is not indexed. */
   full?: boolean;
-  /** Value that configures or reports tree for this contract. */
+  /** Include current descendants; cannot be combined with a historical read. */
   tree?: boolean;
-  /** Value that configures or reports tree depth for this contract. */
+  /** Non-negative descendant depth limit, valid only when tree is enabled. */
   treeDepth?: string;
   /** One-based history version or ISO timestamp for a mutation-free read. */
   at?: string;
 }
 
+/** Expose a stable claim coordinate, normalizing an absent message to null. */
 function toClaimHistoryContext(entry: ClaimHistoryEntry): ClaimHistoryContext {
   return {
     ts: entry.ts,
@@ -218,6 +234,7 @@ function toClaimHistoryContext(entry: ClaimHistoryEntry): ClaimHistoryContext {
   };
 }
 
+/** Pair snapshot ownership with the latest claim/release in the supplied history prefix. */
 function resolveClaimStateContext(
   assigneeValue: string | undefined,
   history: ClaimHistoryEntry[],
@@ -238,6 +255,7 @@ function resolveClaimStateContext(
   };
 }
 
+/** Default blank depth to standard, normalize the full alias, and refuse unknown modes. */
 function parseGetDepth(raw: string | undefined): GetDepth {
   if (raw === undefined || raw.trim().length === 0) {
     return "standard";
@@ -255,6 +273,7 @@ function parseGetDepth(raw: string | undefined): GetDepth {
   );
 }
 
+/** Preserve metadata and collection counts while deep reads additionally retain every stored collection. */
 function projectItemForDepth(
   item: ItemMetadata,
   depth: GetDepth,
@@ -295,6 +314,7 @@ function projectItemForDepth(
   };
 }
 
+/** Distinguish no field selection from a nonempty comma-separated projection; reject an empty explicit selector. */
 function parseGetFields(raw: string | undefined): string[] | null {
   if (raw === undefined) {
     return null;
@@ -312,10 +332,12 @@ function parseGetFields(raw: string | undefined): string[] | null {
   return fields;
 }
 
+/** Remove the optional item prefix before matching a metadata or derived facet selector. */
 function normalizeGetField(field: string): string {
   return field.startsWith("item.") ? field.slice("item.".length) : field;
 }
 
+/** Validate against current runtime metadata and facet contracts, publishing legal selectors in typed recovery on refusal. */
 function validateGetFields(
   fields: string[] | null,
   runtimeMetadataKeys: Iterable<string>,
@@ -388,6 +410,7 @@ function projectedMetadataValue(
   return EMPTY_PROJECTED_COLLECTION_FIELDS.has(field) ? [] : undefined;
 }
 
+/** Select metadata and empty requested collections, retaining identity and deferring derived facets to their owners. */
 function projectItemForFields(
   item: ItemMetadata,
   fields: string[],
@@ -423,12 +446,14 @@ function projectItemForFields(
   return projected as GetItemProjection;
 }
 
+/** Match an exact metadata selector in either bare or item-prefixed spelling. */
 function fieldsInclude(fields: string[] | null, name: string): boolean {
   return (
     fields?.some((field) => field === name || field === `item.${name}`) ?? false
   );
 }
 
+/** Match a facet itself or any nested selector after normalizing the item prefix. */
 function fieldsIncludeRoot(fields: string[], name: string): boolean {
   return fields.some((field) => {
     const normalized = normalizeGetField(field);
@@ -436,13 +461,16 @@ function fieldsIncludeRoot(fields: string[], name: string): boolean {
   });
 }
 
+/** Validated projection plan that distinguishes complete reads from ordinary deep container reads. */
 interface ResolvedGetProjection {
   depth: GetDepth;
+  full: boolean;
   treeDepth: number | undefined;
   fields: string[] | null;
   fieldProjection: boolean;
 }
 
+/** One located or history-reconstructed document plus the registries needed for its derived facets. */
 interface GetItemContext {
   pmRoot: string;
   settings: Awaited<ReturnType<typeof readSettings>>;
@@ -453,6 +481,7 @@ interface GetItemContext {
   historical?: GetItemAtResult;
 }
 
+/** Normalize detail modes and depth limits, refusing incompatible full, field, tree, and historical controls. */
 function resolveGetProjection(
   options: GetOptions,
   id: string,
@@ -484,6 +513,7 @@ function resolveGetProjection(
   }
   return {
     depth: options.full ? "deep" : parseGetDepth(options.depth),
+    full: options.full === true || options.depth?.trim().toLowerCase() === "full",
     treeDepth:
       options.tree === true
         ? parseIntegerLimit(options.treeDepth, "--tree-depth")
@@ -493,6 +523,7 @@ function resolveGetProjection(
   };
 }
 
+/** Require an initialized tracker and resolve one unambiguous current item or verified historical snapshot with active type/schema registrations. */
 async function loadGetItemContext(
   id: string,
   global: GlobalOptions,
@@ -543,6 +574,7 @@ async function loadGetItemContext(
   };
 }
 
+/** Validate active metadata selectors and refuse historical child queries because workspace history is not indexed. */
 function validateGetProjectionFields(
   fields: string[] | null,
   settings: Awaited<ReturnType<typeof readSettings>>,
@@ -561,6 +593,7 @@ function validateGetProjectionFields(
   }
 }
 
+/** Include explicit facet selectors, or retain ordinary body/link/claim facets above brief depth. */
 function shouldIncludeGetField(params: {
   fieldProjection: boolean;
   depth: GetDepth;
@@ -595,6 +628,7 @@ async function resolveGetClaimState(
   );
 }
 
+/** Attach only requested artifact groups while preserving the linked envelope's stable three-group shape. */
 function attachGetLinked(
   result: GetResult,
   context: GetItemContext,
@@ -645,6 +679,7 @@ async function buildGetChildrenRollup(
   );
 }
 
+/** Derive scheduling from the selected snapshot and retain only requested schedule members when field-projected. */
 function attachGetSchedule(
   result: GetResult,
   context: GetItemContext,
@@ -669,6 +704,7 @@ function attachGetSchedule(
   ) as Partial<ItemScheduleContext>;
 }
 
+/** Build current descendants through the shared list hierarchy query, retaining its depth limit and row count. */
 async function buildGetTree(
   context: GetItemContext,
   options: GetOptions,
@@ -697,7 +733,7 @@ async function buildGetTree(
   };
 }
 
-/** Implements run get for the public runtime surface of this module. */
+/** Read one authoritative item and selected facets. Full current reads compute children for every type; ordinary Task reads avoid corpus enumeration. Historical reads exclude current hierarchy, and failed derived usage recording never invalidates the item read. */
 export async function runGet(
   id: string,
   global: GlobalOptions,
@@ -725,7 +761,8 @@ export async function runGet(
     (projection.fieldProjection
       ? fieldsIncludeRoot(projection.fields as string[], "children")
       : projection.depth === "deep" &&
-        shouldAutoIncludeGetChildren(context.metadata.type));
+        (projection.full ||
+          shouldAutoIncludeGetChildren(context.metadata.type)));
   const includeSchedule = projection.fieldProjection
     ? fieldsIncludeRoot(projection.fields as string[], "schedule")
     : projection.depth !== "brief";
@@ -778,12 +815,12 @@ export async function runGet(
   }
   registerOutputMaterialFieldGroups(
     result,
-    itemMaterialFieldGroups(context.metadata, context.body),
+    itemMaterialFieldGroups(context.metadata, context.body, children),
   );
   return result;
 }
 
-/** Public contract for test-only get command policy helpers. */
+/** Compatibility access to deep-read container classification; explicit full reads override that classification. */
 export const _testOnlyGetCommand = {
   shouldAutoIncludeGetChildren,
 };

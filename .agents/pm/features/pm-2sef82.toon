@@ -1,0 +1,22 @@
+id: pm-2sef82
+title: "GH-1356: SDK: expose the canonical settings preview through host-bound audited mutation"
+description: Expose an opt-in canonical settings preview through the injected audited extension command SDK.
+type: Feature
+status: open
+priority: 2
+tags[3]: agent-ux,context-management,github-intake
+created_at: "2026-09-30T06:48:43.202Z"
+updated_at: "2026-09-30T06:48:43.202Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: "An opt-in host-bound preview matches actual canonical persistence for named and custom presets; Ordinary mutation receipts remain bounded and backwards compatible; Preview is read-only for settings and immutable history; Invalid settings, locks, concurrency and replay retain existing guarantees; A copied packed extension without a local SDK import demonstrates preview parity"
+parent: pm-o2kc
+risk: medium
+confidence: medium
+expected_result: A copied extension can obtain the exact validated effective settings preview through the host capability without duplicate normalization or a local SDK runtime import.
+actual_result: "Reporter independently observed a dry-run boolean receipt without canonical settings on published 2026.9.30. Named governance preset normalization is correct, but the callback proposal differs from the effective persisted result. No settings/history preview writes were reported. Current-tree design and implementation are pending."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-wtqltn,discovered_from,"2026-09-30T06:48:43.202Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-09-30T06:48:43.202Z","harness:codex","Duplicate check: complete strict all-status corpus contained 2843 records with no unreadable directories or items. Exact GitHub ID plus behavior/root-cause searches were complete. Closed prior lineage pm-wtqltn and its full history were read; this new report requests a distinct unimplemented contract. Relationship reconstructed during current intake rather than asserted as historical knowledge. Queued and unclaimed; source investigation remains pending."
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/1356\n\nReporter independently observed a dry-run boolean receipt without canonical settings on published 2026.9.30. Named governance preset normalization is correct, but the callback proposal differs from the effective persisted result. No settings/history preview writes were reported. Current-tree design and implementation are pending.\n\nRequested contract: A copied extension can obtain the exact validated effective settings preview through the host capability without duplicate normalization or a local SDK runtime import.\n\nVerification plan: reproduce the public report in a temporary project outside this checkout with both PM roots isolated, demonstrate a relevant regression, then validate the SDK boundary, thin transport where applicable, complete coverage and packed consumers. No implementation is included in PR #1353."

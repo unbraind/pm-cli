@@ -14,7 +14,9 @@ compatibility is tracked by
 Lossless concurrent acceptance-criteria composition is tracked by
 [pm-inn5y5](../.agents/pm/issues/pm-inn5y5.toon).
 The Bun launcher and strict-health repair are tracked by
-[pm-vks66s](../.agents/pm/issues/pm-vks66s.toon).
+[pm-vks66s](../.agents/pm/issues/pm-vks66s.toon), with the Bun 1.3.5
+package-runner recurrence tracked by
+[pm-aaxq4n](../.agents/pm/issues/pm-aaxq4n.toon).
 Recency-aware scalar convergence, bounded fresh-clone decision evidence, and
 audited pre-durable receipt dispositions are tracked by
 [pm-7wzb6d](../.agents/pm/issues/pm-7wzb6d.toon),
@@ -44,11 +46,15 @@ The clone-local driver values record the absolute runtime launcher and bundled
 `dist/cli.js` path resolved by the installing SDK. With Node, the installer
 preserves an absolute PATH symlink when it resolves to the executing runtime, so
 a runtime manager can retarget that launcher during upgrades without breaking
-every clone. With Bun, it resolves an executable `bun` on an absolute PATH entry,
-checks that its version matches the running Bun version, and records its stable
-absolute target. Relative PATH entries, inaccessible launchers, and different
-runtimes are ignored; without a matching launcher, the installer retains the
-executing binary path.
+every clone. With Bun, the installer checks the absolute executable published
+by the package runner, absolute `PATH` entries, and the directly invoked binary
+for a matching Bun version, then records its stable target. Known temporary
+`bun-node-*` launcher copies are rejected even when their version matches.
+Relative paths, inaccessible launchers, and
+different runtimes are ignored. If no durable matching Bun launcher is available,
+installation fails with recovery guidance before it writes Git configuration or
+the shared fence; a temporary `bunx` runtime is never recorded as a successful
+driver installation.
 Git therefore does not depend
 on a bare `pm` command or the caller's later `PATH` when it merges tracker data.
 The item-path placeholder is stored as bare `%P`: Git performs the required

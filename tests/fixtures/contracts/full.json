@@ -23115,6 +23115,23 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "merge_bun_launcher_unavailable",
+      "class": "dependency_failed",
+      "code": "merge_bun_launcher_unavailable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 5,
+      "meaning": "Merge bun launcher unavailable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/merge/install.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
       "aliases": [
         "history_merge_conflict_markers_detected"
       ],
