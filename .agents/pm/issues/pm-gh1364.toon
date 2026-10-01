@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-01T09:24:18.862Z"
-updated_at: "2026-10-01T19:40:37.587Z"
+updated_at: "2026-10-01T20:04:33.505Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#25a4e59e3a757fa1c2538e8e"
 author: "harness:codex"
@@ -18,7 +18,7 @@ confidence: high
 expected_result: "Exact recovery preserves the selected tracker through canonical and legacy path flags, including flag-looking values, and retains a single explicitly selected full, brief or compact mode."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-szn67i,related,"2026-10-01T13:47:52.212Z","harness:codex","cli:update:dep",detected
-comments[9]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-10-01T09:24:18.862Z","harness:codex","Duplicate check: live GH-1364 search across all statuses returned zero; pm-szn67i is closed for earlier strict-close/global scope corrections. Reuse recovery-closure lineage pm-f05lsg. GitHub issue remains the external owner; local implementation only."
   "2026-10-01T09:44:09.288Z","harness:codex","Current-main negative control: exact retry from two colliding trackers reads the default tracker and drops JSON and valid close_reason. New executable retry regression fails on untouched 89b4aa8bb; fixed branch passes with selected tracker, JSON, valid selectors, aliases, attached values and spaces. Expanded focused suite passed 58/58. Full coverage/static/package checks remain underway; no publishing authorized."
   "2026-10-01T15:01:58.882Z","harness:codex","Final packed CLI exact recovery replay passed selected colliding tracker, JSON and retained valid fields. Final source coverage runner exited 0: 9467 passed, two Windows-only skips, zero uncovered counts in all four dimensions. Generated changelog consistency and post-close graph/history/tracker assurance pass; hosted checks and PR review remain pending."
@@ -28,6 +28,7 @@ comments[9]{created_at,author,text}:
   "2026-10-01T18:55:48.713Z","harness:codex","Review correction: failed run test-local-mupv1k68-926ate now carries no measurements. Its four provisional 100-percent values were invalid because the coverage gate failed; the original failed receipt and immutable history remain intact. The CLI exposes no prior-receipt measurement edit, so this exact-row correction used the checked-out PM mutateItem test_run_track operation with automatic author, item locking, no force, and immutable history. Future measurements will be recorded only from an actually passing producing gate."
   "2026-10-01T18:57:02.287Z","harness:codex","Current post-reopen recovery receipt test-local-mupwadit-o8by2n passed the existing canonical focused command (CLI selected-tracker replay, projection-retry unit cases, closed-domain discovery). This reruns the corrected source without duplicating its linked test. It covers tracker-path aliases and flag-looking values, single full/brief/compact selection, root explain and both token_budget spellings. The failed aggregate run remains failed with no measurements; full-source verification is pending."
   "2026-10-01T19:40:37.587Z","harness:codex","Hosted static import-boundary failure corrected by removing a private bootstrap-scanner import: canonical pm-path arity and declared alias metadata now cover legacy paths, while every other option retains contract-driven arity. Current focused suite passes 77 tests, lint, all four type configurations, and the exact SDK import-boundary check has zero violations. The contained full-source attempt stopped without a final exit report or receipt and is uncompleted, not passing evidence; a supervised retry will use final source with no provisional measurements."
+  "2026-10-01T20:04:32.788Z","harness:codex","Current verification receipts: test-local-mupyio63-jdx8vs passes the exact latest four-file focused command (77 tests); test-local-mupymsom-icnh18 passes focused ESLint, all four type configurations and the exact SDK import-boundary check. Full-source producing receipt test-local-mupyg89a-2vgwyc is failed (9484 test cases passed, ten failed, two platform skips) and carries no measurements. Two failures came from read-only home npm cache writes; the same two cases now pass with an isolated writable temporary npm cache. Eight failures were timeout or load-related. All hosted checks passed on source 7bdd9a05a. Active terminal fields and unsupported exact coverage claims remain cleared; another full attempt will retain the entire corpus and every existing assertion, timeout and coverage threshold while limiting workers."
 files[13]{path,scope}:
   scripts/release/refusal-closure-gate.mjs,project
   src/cli/main.ts,project
@@ -42,7 +43,7 @@ files[13]{path,scope}:
   tests/unit/commands/query/get-append-command.spec.ts,project
   tests/unit/commands/query/list-command.spec.ts,project
   tests/unit/scripts/refusal-closure-gate.spec.ts,project
-tests[3]:
+tests[6]:
   - command: node scripts/run-tests.mjs test -- tests/integration/cli/projection-retry-scope.integration.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts
     scope: project
     timeout_seconds: 300
@@ -68,7 +69,34 @@ tests[3]:
       source_kind: local_mutation
       source_ref: fix/agent-recovery-pagination-preflight
     note: Canonical full-source aggregate receipt shared by GH-1364 GH-1370 GH-1371
-test_runs[3]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts tests/integration/cli/projection-retry-scope.integration.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-01T19:52:20.745Z"
+      source_kind: local_mutation
+      source_ref: fix/agent-recovery-pagination-preflight
+    note: Canonical receipt for the exact latest 77-test cross-issue focused review command
+  - command: "pnpm exec eslint src/sdk/item-transaction.ts src/cli/runtime/projection-retry.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts --max-warnings=0 && pnpm typecheck && node --input-type=module --eval 'import { checkSdkImportBoundary } from \"./scripts/release/static-quality-gate.mts\"; const result = checkSdkImportBoundary(); console.log(JSON.stringify(result)); if (!result.ok) process.exitCode = 1;'"
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-01T20:01:01.394Z"
+      source_kind: local_mutation
+      source_ref: fix/agent-recovery-pagination-preflight
+    note: "Canonical focused lint, all four type configurations and exact SDK import-boundary verification"
+  - command: node scripts/run-tests.mjs coverage -- --maxWorkers=4
+    scope: project
+    timeout_seconds: 3600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-01T20:04:33.451Z"
+      source_kind: local_mutation
+      source_ref: fix/agent-recovery-pagination-preflight
+    note: Full-source canonical coverage with lower worker concurrency and an isolated writable npm cache; no corpus or gate changes
+test_runs[6]:
   - run_id: test-local-muplbvfh-6qgqd9
     kind: test
     status: passed
@@ -103,6 +131,39 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/cli/projection-retry-scope.integration.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mupyg89a-2vgwyc
+    kind: test
+    status: failed
+    started_at: "2026-10-01T19:41:09.946Z"
+    finished_at: "2026-10-01T19:56:38.734Z"
+    recorded_at: "2026-10-01T19:56:38.734Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mupyio63-jdx8vs
+    kind: test
+    status: passed
+    started_at: "2026-10-01T19:57:45.271Z"
+    finished_at: "2026-10-01T19:58:32.666Z"
+    recorded_at: "2026-10-01T19:58:32.666Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts tests/integration/cli/projection-retry-scope.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mupymsom-icnh18
+    kind: test
+    status: passed
+    started_at: "2026-10-01T20:01:02.293Z"
+    finished_at: "2026-10-01T20:01:45.142Z"
+    recorded_at: "2026-10-01T20:01:45.142Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm exec eslint src/sdk/item-transaction.ts src/cli/runtime/projection-retry.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts --max-warnings=0 && pnpm typecheck && node --input-type=module --eval 'import { checkSdkImportBoundary } from \"./scripts/release/static-quality-gate.mts\"; const result = checkSdkImportBoundary(); console.log(JSON.stringify(result)); if (!result.ok) process.exitCode = 1;'",schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project
