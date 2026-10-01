@@ -6,7 +6,9 @@
  * with correct-by-construction inspection and compensation wiring.
  */
 import crypto from "node:crypto";
-import { cp, mkdtemp, readdir, readFile, rm, stat } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { isFileAbsentError } from "../core/fs/fs-utils.js";
+import { cp, mkdtemp, readdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { getActiveExtensionRegistrations, setActiveExtensionRegistrations } from "../core/extensions/index.js";
 import path from "node:path";
@@ -590,12 +592,42 @@ async function previewTrackerFingerprint(root: string): Promise<string> {
         await visit(file);
       } else {
         fingerprint.update(JSON.stringify(path.relative(root, file)));
-        fingerprint.update(crypto.createHash("sha256").update(await readFile(file)).digest());
+        const contents = crypto.createHash("sha256");
+        for await (const chunk of createReadStream(file, { highWaterMark: 64 * 1024 })) contents.update(chunk);
+        fingerprint.update(contents.digest());
       }
     }
   }
   await visit(root);
   return fingerprint.digest("hex");
+}
+
+/** Classify inconsistent snapshot state with actionable retry guidance. */
+function previewSnapshotChangedError(): PmCliError {
+  return new PmCliError("Tracker changed while preparing the transaction preview; retry against stable state.", EXIT_CODE.CONFLICT, { code: "transaction_preview_snapshot_changed" });
+}
+
+/** Copy a stable tracker without source writes and normalize concurrent disappearance failures. */
+async function stagePreviewTracker(sourceRoot: string, stagedRoot: string): Promise<void> {
+  // Preserve an initially missing root's existing error; disappearance after
+  // this check is a concurrent snapshot change.
+  await stat(sourceRoot);
+  try {
+    const sourceFingerprint = await previewTrackerFingerprint(sourceRoot);
+    await cp(sourceRoot, stagedRoot, {
+      recursive: true, dereference: true,
+      filter: (source) => includePreviewPath(sourceRoot, source),
+    });
+    const [currentFingerprint, stagedFingerprint] = await Promise.all([
+      previewTrackerFingerprint(sourceRoot), previewTrackerFingerprint(stagedRoot),
+    ]);
+    if (sourceFingerprint !== currentFingerprint || sourceFingerprint !== stagedFingerprint) {
+      throw previewSnapshotChangedError();
+    }
+  } catch (error) {
+    if (isFileAbsentError(error)) throw previewSnapshotChangedError();
+    throw error;
+  }
 }
 
 /** Validate ordered mutations using apply's coordinator in a disposable tracker, without source writes, journals or extension hooks. */
@@ -608,17 +640,7 @@ export async function previewItemMutations(options: Pick<CommitItemMutationsOpti
   const root = await mkdtemp(path.join(tmpdir(), "pm-transaction-preview-"));
   const stagedRoot = path.join(root, "tracker");
   try {
-    const sourceFingerprint = await previewTrackerFingerprint(identity.pmRoot);
-    await cp(identity.pmRoot, stagedRoot, {
-      recursive: true, dereference: true,
-      filter: (source) => includePreviewPath(identity.pmRoot, source),
-    });
-    const [currentFingerprint, stagedFingerprint] = await Promise.all([
-      previewTrackerFingerprint(identity.pmRoot), previewTrackerFingerprint(stagedRoot),
-    ]);
-    if (sourceFingerprint !== currentFingerprint || sourceFingerprint !== stagedFingerprint) {
-      throw new PmCliError("Tracker changed while preparing the transaction preview; retry against stable state.", EXIT_CODE.CONFLICT, { code: "transaction_preview_snapshot_changed" });
-    }
+    await stagePreviewTracker(identity.pmRoot, stagedRoot);
     await runWithActiveExtensions({ path: stagedRoot, noExtensions: true }, async () => {
       setActiveExtensionRegistrations(registrations);
       const config = { ...identity, pmRoot: stagedRoot, createCompensation: "close" as const };

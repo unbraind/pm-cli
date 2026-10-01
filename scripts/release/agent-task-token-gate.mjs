@@ -375,7 +375,7 @@ export function assertAdvertisedAgentTaskRecovery(refusal, step) {
 function captureTaskReplays(pmRoot, tasks) {
   return tasks.map((task) => task.steps.map((step) => {
     const replay = runCli(pmRoot, ["--json", ...step.args]);
-    if (replay.status !== step.expected_exit_code) fail(`Agent-task transcript step ${step.id} baseline exit mismatch`);
+    if (replay.status !== step.expected_exit_code) fail(`Agent-task transcript step ${step.id} baseline exit mismatch: baseline=${replay.status}, expected=${step.expected_exit_code}`);
     validateExpectedOutput(parseJsonOutput(replay, step), step);
     return replay;
   }));

@@ -1456,7 +1456,10 @@ later validation. Existing journals retain their replay and plan-identity
 checks. The source tracker receives no item, history, claim, lock or journal
 writes, and mutation hooks do not run. Durable source bytes are fingerprinted
 before and after copying and compared with the staged copy; an inconsistent
-copy fails with `transaction_preview_snapshot_changed` and can be retried.
+copy or a file disappearing during the scan fails with
+`transaction_preview_snapshot_changed` and can be retried. File contents are
+hashed in bounded streams so large history files do not require whole-file
+buffers.
 Invalid plans fail with the underlying
 lifecycle error and a structured `transaction_operation` containing the
 zero-based index, operation and resolved target ID.

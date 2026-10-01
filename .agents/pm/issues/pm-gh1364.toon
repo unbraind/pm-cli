@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-01T09:24:18.862Z"
-updated_at: "2026-10-01T18:31:00.169Z"
+updated_at: "2026-10-01T18:57:02.287Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#25a4e59e3a757fa1c2538e8e"
 author: "harness:codex"
@@ -18,13 +18,15 @@ confidence: high
 expected_result: "Exact recovery preserves the selected tracker through canonical and legacy path flags, including flag-looking values, and retains a single explicitly selected full, brief or compact mode."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-szn67i,related,"2026-10-01T13:47:52.212Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-10-01T09:24:18.862Z","harness:codex","Duplicate check: live GH-1364 search across all statuses returned zero; pm-szn67i is closed for earlier strict-close/global scope corrections. Reuse recovery-closure lineage pm-f05lsg. GitHub issue remains the external owner; local implementation only."
   "2026-10-01T09:44:09.288Z","harness:codex","Current-main negative control: exact retry from two colliding trackers reads the default tracker and drops JSON and valid close_reason. New executable retry regression fails on untouched 89b4aa8bb; fixed branch passes with selected tracker, JSON, valid selectors, aliases, attached values and spaces. Expanded focused suite passed 58/58. Full coverage/static/package checks remain underway; no publishing authorized."
   "2026-10-01T15:01:58.882Z","harness:codex","Final packed CLI exact recovery replay passed selected colliding tracker, JSON and retained valid fields. Final source coverage runner exited 0: 9467 passed, two Windows-only skips, zero uncovered counts in all four dimensions. Generated changelog consistency and post-close graph/history/tracker assurance pass; hosted checks and PR review remain pending."
   "2026-10-01T15:32:45.273Z","harness:codex",Hosted Windows regression exposed a POSIX path literal in the new refusal fixture. Expected scope now uses platform path.join; exact argv and unsafe-scope negative control are unchanged. Added structured gate evidence required by the post-close defect gate. Prior static success preceded closure and did not validate this terminal-only requirement; final checks are rerunning.
   "2026-10-01T17:59:46.045Z","harness:codex","Recovery review corrections pass focused CLI/SDK replay tests, lint and all four type checks: legacy/canonical tracker flags consume flag-looking values including literal --, selected full/brief/compact survives generic suggestions, and supported root --explain remains intact before/after the command. Actual CLI already normalizes both token_budget forms before recovery; scanner now also canonicalizes declared aliases defensively. No merge or live telemetry transmission performed."
   "2026-10-01T18:31:00.168Z","harness:codex","Full-source linked run on dd42b1f3c recorded a failed receipt: 9472 passed, 12 failed, two skipped. One failure was the introduced 121-file SDK test directory; eleven were fixture behavior changed by inherited global telemetry opt-outs. No live telemetry was sent. Corrected directory grouping plus a process-only network namespace (loopback available, no external route; original host settings and queues untouched) now pass all 138 affected tests without weakening assertions. Full coverage will rerun under this containment; previous failed metrics are not passing evidence."
+  "2026-10-01T18:55:48.713Z","harness:codex","Review correction: failed run test-local-mupv1k68-926ate now carries no measurements. Its four provisional 100-percent values were invalid because the coverage gate failed; the original failed receipt and immutable history remain intact. The CLI exposes no prior-receipt measurement edit, so this exact-row correction used the checked-out PM mutateItem test_run_track operation with automatic author, item locking, no force, and immutable history. Future measurements will be recorded only from an actually passing producing gate."
+  "2026-10-01T18:57:02.287Z","harness:codex","Current post-reopen recovery receipt test-local-mupwadit-o8by2n passed the existing canonical focused command (CLI selected-tracker replay, projection-retry unit cases, closed-domain discovery). This reruns the corrected source without duplicating its linked test. It covers tracker-path aliases and flag-looking values, single full/brief/compact selection, root explain and both token_budget spellings. The failed aggregate run remains failed with no measurements; full-source verification is pending."
 files[13]{path,scope}:
   scripts/release/refusal-closure-gate.mjs,project
   src/cli/main.ts,project
@@ -65,7 +67,7 @@ tests[3]:
       source_kind: local_mutation
       source_ref: fix/agent-recovery-pagination-preflight
     note: Canonical full-source aggregate receipt shared by GH-1364 GH-1370 GH-1371
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-muplbvfh-6qgqd9
     kind: test
     status: passed
@@ -87,13 +89,19 @@ test_runs[2]:
     passed: 0
     failed: 1
     skipped: 0
-    measurements[4]{name,value,unit,threshold,recorded_at}:
-      coverage_branches,100,percent,100,"2026-10-01T18:21:15.487Z"
-      coverage_functions,100,percent,100,"2026-10-01T18:21:15.487Z"
-      coverage_lines,100,percent,100,"2026-10-01T18:21:15.487Z"
-      coverage_statements,100,percent,100,"2026-10-01T18:21:15.487Z"
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mupwadit-o8by2n
+    kind: test
+    status: passed
+    started_at: "2026-10-01T18:55:49.240Z"
+    finished_at: "2026-10-01T18:56:06.388Z"
+    recorded_at: "2026-10-01T18:56:06.388Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/projection-retry-scope.integration.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project
