@@ -1,5 +1,6 @@
 import { cp, mkdir, readFile, symlink } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -112,7 +113,11 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       const repository = fileURLToPath(new URL("../../../", import.meta.url));
       const consumer = path.join(context.tempRoot, "packed-consumer");
       await mkdir(consumer);
-      const packed = JSON.parse(execFileSync(process.platform === "win32" ? "npm.cmd" : "npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", consumer], { cwd: repository, env: context.env, encoding: "utf8", shell: process.platform === "win32", timeout: 30_000 }))[0] as { filename: string };
+      // Invoke npm's Node entry directly so the timeout kills the pack process,
+      // including on Windows where a cmd shell would leave its child running.
+      const npmPackage = createRequire(import.meta.url).resolve("npm/package.json", { paths: [path.dirname(process.execPath), path.resolve(path.dirname(process.execPath), "../lib")] });
+      const npmCli = path.join(path.dirname(npmPackage), "bin", "npm-cli.js");
+      const packed = JSON.parse(execFileSync(process.execPath, [npmCli, "pack", "--ignore-scripts", "--json", "--pack-destination", consumer], { cwd: repository, env: context.env, encoding: "utf8", timeout: 30_000 }))[0] as { filename: string };
       execFileSync("tar", ["-xzf", path.join(consumer, packed.filename), "-C", consumer], { timeout: 10_000 });
       const packedRoot = path.join(consumer, "package");
       await mkdir(path.join(consumer, "node_modules", "@unbrained"), { recursive: true });
