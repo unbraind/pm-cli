@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-01T10:36:55.000Z"
-updated_at: "2026-10-01T18:58:26.420Z"
+updated_at: "2026-10-01T19:40:36.093Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#25a4e59e3a757fa1c2538e8e"
 author: "harness:codex"
@@ -18,7 +18,7 @@ confidence: high
 expected_result: "A semantic preview validates one stable staged tracker state, preserves source files and hooks, and resolves nested context contracts for the selected tracker; commit revalidates concurrent and extension constraints."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-o8z748,related,"2026-10-01T13:08:55.258Z","harness:codex","cli:update:dep",detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-10-01T11:18:02.965Z","harness:codex","Semantic preview regression checks now pass: invalid risk/status/missing-target refusal parity, strict completion after staged evidence, no source writes, no mutation hooks, committed-plan replay/mismatch, and revalidation after a subsequent deletion. Public SDK/MCP and CLI routes share the disposable transaction coordinator."
   "2026-10-01T12:44:38.312Z","harness:codex",Explicit-cwd MCP dry-run nested activation deadlock fixed by isolating disabled nested registries while retaining the caller activation gate. The real MCP regression passes and preview leaves source durable state unchanged. Shared adapter author resolution avoids divergent preview/apply precedence. Focused checks pass; final all-source coverage and aggregate gates remain pending.
   "2026-10-01T15:01:59.949Z","harness:codex","Final packed invalid-plan preview/apply parity and structured operation evidence pass. Core semantic/staged-state/no-source-writes/explicit-cwd/replay controls passed linked and complete coverage runs; migration and all-source gates pass. Post-close graph, record-integrity and tracker-context assurance pass. Hosted checks and PR review remain pending."
@@ -26,6 +26,7 @@ comments[7]{created_at,author,text}:
   "2026-10-01T17:59:44.836Z","harness:codex","Cubic review correction: content fingerprints before/after copy and on staged bytes refuse inconsistent snapshots without source locks. Both controlled-copy negative controls returned validated:true before the fix and now reject with conflict. Nested disabled scopes discover selected-tracker context intents without reacquiring activation gates. Focused affected suites, lint, and all four type configurations pass. Broad aggregate verification is pending; this item remains in_progress and live telemetry is paused awaiting explicit approval."
   "2026-10-01T18:31:00.777Z","harness:codex","Snapshot regression moved to tests/unit/sdk/transactions/preview-snapshot.spec.ts to preserve the existing 120-file directory cap. Controlled-copy and directory-cap tests pass in a temporary network namespace. Updated generated refusal census, additive SDK error discovery and active-item changelog; thresholds and public guarantees unchanged. Shared full-source coverage remains pending."
   "2026-10-01T18:58:26.420Z","harness:codex","Review corrections verified: durable files hash through 64 KiB streams; source files disappearing after the initial root check report transaction_preview_snapshot_changed (exit 4), while initial missing-root and unrelated permission errors retain their existing semantics. The identical pre-fix regression failed three cases; passing canonical receipt test-local-mupwc030-4m1l77 now records all nine snapshot and semantic-preview tests, including a real disappearance and final-byte changes in a 2 MiB fixture. Focused ESLint and all four type configurations pass. Full-source coverage is pending; no source tracker locks or writes and no external telemetry delivery."
+  "2026-10-01T19:40:36.093Z","harness:codex","Latest review: preserve ENOTDIR, persistent dangling links, and ENOENT without filesystem provenance instead of labeling them transient. Only an ENOENT whose named entry is still absent under lstat becomes transaction_preview_snapshot_changed. Four new path-error cases fail under the previous catch and pass with this correction; the canonical focused receipt now includes them. Strict TOON decode confirms the expanded tests array retains both commands, nested provenance and the optional note; pm history verification passes 45 entries with current hash equal to the latest history hash. No tracker-format hand edits are appropriate."
 files[16]{path,scope}:
   .agents/pm/extensions/.managed-extensions.json,project
   sdk/public-surface.json,project
@@ -61,7 +62,7 @@ tests[2]:
       source_kind: local_mutation
       source_ref: fix/agent-recovery-pagination-preflight
     note: Review regressions for concurrent disappearance and bounded streaming fingerprints
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-muplc8jc-wu0sz9
     kind: test
     status: passed
@@ -79,6 +80,17 @@ test_runs[2]:
     started_at: "2026-10-01T18:57:03.873Z"
     finished_at: "2026-10-01T18:57:22.284Z"
     recorded_at: "2026-10-01T18:57:22.284Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mupxsyqh-j2m49n
+    kind: test
+    status: passed
+    started_at: "2026-10-01T19:38:10.766Z"
+    finished_at: "2026-10-01T19:38:33.305Z"
+    recorded_at: "2026-10-01T19:38:33.305Z"
     passed: 1
     failed: 0
     skipped: 0

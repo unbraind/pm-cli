@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-01T09:24:20.761Z"
-updated_at: "2026-10-01T18:58:27.318Z"
+updated_at: "2026-10-01T19:40:36.829Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#25a4e59e3a757fa1c2538e8e"
 author: "harness:codex"
@@ -18,7 +18,7 @@ confidence: high
 expected_result: "Count-only aggregate totals survive field, amount and budget projection; replay fixtures remain private and continuation preserves tracker/query semantics."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-fgih,related,"2026-10-01T13:47:53.034Z","harness:codex","cli:update:dep",detected
-comments[15]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-10-01T09:24:20.761Z","harness:codex","Duplicate check: live GH-1371 search across all statuses returned zero; full live pm-fgih is closed for command-local presentation classification. This issue extends that canonical implementation to universal controls and composed cursor boundaries. GitHub issue remains external owner; local implementation only."
   "2026-10-01T09:44:11.069Z","harness:codex","Current-main negative control: list/search budget subpages deliver 25/30 rows, terminal delivered counts remain 25, and producer continuation rejects invalid_query_cursor. Hierarchical context also rejects producer continuation and retains pre-compaction returned_focus. New regression suite fails on untouched 89b4aa8bb and passes on this branch. Expanded focused suite passed 58/58. Context hierarchy companions may repeat as contextual scaffolding; focus collection IDs are checked for duplicates. Full checks remain underway."
   "2026-10-01T11:18:04.591Z","harness:codex","Composed list/search/context tests traverse actual budget cursors before producer pagination, verify delivered status counters and unique focus rows, and reject filter or tracker changes after continuation. A second tracker with identical items proves scope binding rather than accidental missing-ID rejection."
@@ -34,6 +34,7 @@ comments[15]{created_at,author,text}:
   "2026-10-01T15:32:46.069Z","harness:codex","Independent final review caught count-only root projection compaction with items omitted: 30 aggregate matches became 24 retained warnings. Private authoritative aggregate mode now survives projection, including omission of count_only. Both exact projections failed against the packed prior head (count 24), and focused regressions pass with count 30. Structured gate evidence added; full final verification pending."
   "2026-10-01T17:59:45.406Z","harness:codex","Cubic review correction: preserve authoritative count-only count across the second refresh after root selection; items and items,count,total retain count30 for bounded/unbounded amount. Before correction both reproduced count0. Token replay directories preserve0700, accounted steps validate immediately, and baseline expected-output failures stop capture. Focused tests, lint and all four type configurations pass. Broad aggregate verification and source-linked coverage receipts are pending; item remains in_progress."
   "2026-10-01T18:58:27.318Z","harness:codex","Token replay gate now reports observed and expected baseline exit codes. Canonical receipt test-local-mupwctzm-5lz9o4 passes all 42 real transport harness tests, including a new controlled first-baseline mismatch proving immediate abort with baseline=7, expected=0 and zero accounted invocations. Existing complete task, recovery equality, privacy and negative controls remain intact. Focused lint and all four type configurations pass; full-source coverage remains pending."
+  "2026-10-01T19:40:36.829Z","harness:codex","Latest review: the baseline diagnostic negative control now intercepts the exact node/dist CLI argv for the first context --for orient --limit 10 step and returns synthetic exit 7 before executing that process. Unrelated fixture setup invocations retain the real runner. Canonical focused token receipt passes all 42 tests again; immediate abort and zero accounted invocations remain asserted."
 files[18]{path,scope}:
   scripts/release/agent-task-token-gate.mjs,project
   scripts/release/sdk-mutation-baseline.json,project
@@ -71,7 +72,7 @@ tests[2]:
       source_kind: local_mutation
       source_ref: fix/agent-recovery-pagination-preflight
     note: Real transport transcript fail-fast and exit diagnostics regression
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-muplbeu1-znb6nq
     kind: test
     status: passed
@@ -100,6 +101,17 @@ test_runs[3]:
     started_at: "2026-10-01T18:57:24.543Z"
     finished_at: "2026-10-01T18:58:01.042Z"
     recorded_at: "2026-10-01T18:58:01.042Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mupxtx52-vpmd7a
+    kind: test
+    status: passed
+    started_at: "2026-10-01T19:38:33.989Z"
+    finished_at: "2026-10-01T19:39:17.894Z"
+    recorded_at: "2026-10-01T19:39:17.894Z"
     passed: 1
     failed: 0
     skipped: 0

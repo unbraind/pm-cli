@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-01T09:24:18.862Z"
-updated_at: "2026-10-01T18:57:02.287Z"
+updated_at: "2026-10-01T19:40:37.587Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#25a4e59e3a757fa1c2538e8e"
 author: "harness:codex"
@@ -18,7 +18,7 @@ confidence: high
 expected_result: "Exact recovery preserves the selected tracker through canonical and legacy path flags, including flag-looking values, and retains a single explicitly selected full, brief or compact mode."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-szn67i,related,"2026-10-01T13:47:52.212Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-10-01T09:24:18.862Z","harness:codex","Duplicate check: live GH-1364 search across all statuses returned zero; pm-szn67i is closed for earlier strict-close/global scope corrections. Reuse recovery-closure lineage pm-f05lsg. GitHub issue remains the external owner; local implementation only."
   "2026-10-01T09:44:09.288Z","harness:codex","Current-main negative control: exact retry from two colliding trackers reads the default tracker and drops JSON and valid close_reason. New executable retry regression fails on untouched 89b4aa8bb; fixed branch passes with selected tracker, JSON, valid selectors, aliases, attached values and spaces. Expanded focused suite passed 58/58. Full coverage/static/package checks remain underway; no publishing authorized."
   "2026-10-01T15:01:58.882Z","harness:codex","Final packed CLI exact recovery replay passed selected colliding tracker, JSON and retained valid fields. Final source coverage runner exited 0: 9467 passed, two Windows-only skips, zero uncovered counts in all four dimensions. Generated changelog consistency and post-close graph/history/tracker assurance pass; hosted checks and PR review remain pending."
@@ -27,6 +27,7 @@ comments[8]{created_at,author,text}:
   "2026-10-01T18:31:00.168Z","harness:codex","Full-source linked run on dd42b1f3c recorded a failed receipt: 9472 passed, 12 failed, two skipped. One failure was the introduced 121-file SDK test directory; eleven were fixture behavior changed by inherited global telemetry opt-outs. No live telemetry was sent. Corrected directory grouping plus a process-only network namespace (loopback available, no external route; original host settings and queues untouched) now pass all 138 affected tests without weakening assertions. Full coverage will rerun under this containment; previous failed metrics are not passing evidence."
   "2026-10-01T18:55:48.713Z","harness:codex","Review correction: failed run test-local-mupv1k68-926ate now carries no measurements. Its four provisional 100-percent values were invalid because the coverage gate failed; the original failed receipt and immutable history remain intact. The CLI exposes no prior-receipt measurement edit, so this exact-row correction used the checked-out PM mutateItem test_run_track operation with automatic author, item locking, no force, and immutable history. Future measurements will be recorded only from an actually passing producing gate."
   "2026-10-01T18:57:02.287Z","harness:codex","Current post-reopen recovery receipt test-local-mupwadit-o8by2n passed the existing canonical focused command (CLI selected-tracker replay, projection-retry unit cases, closed-domain discovery). This reruns the corrected source without duplicating its linked test. It covers tracker-path aliases and flag-looking values, single full/brief/compact selection, root explain and both token_budget spellings. The failed aggregate run remains failed with no measurements; full-source verification is pending."
+  "2026-10-01T19:40:37.587Z","harness:codex","Hosted static import-boundary failure corrected by removing a private bootstrap-scanner import: canonical pm-path arity and declared alias metadata now cover legacy paths, while every other option retains contract-driven arity. Current focused suite passes 77 tests, lint, all four type configurations, and the exact SDK import-boundary check has zero violations. The contained full-source attempt stopped without a final exit report or receipt and is uncompleted, not passing evidence; a supervised retry will use final source with no provisional measurements."
 files[13]{path,scope}:
   scripts/release/refusal-closure-gate.mjs,project
   src/cli/main.ts,project

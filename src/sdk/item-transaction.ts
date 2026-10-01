@@ -7,8 +7,8 @@
  */
 import crypto from "node:crypto";
 import { createReadStream } from "node:fs";
-import { isFileAbsentError } from "../core/fs/fs-utils.js";
-import { cp, mkdtemp, readdir, rm, stat } from "node:fs/promises";
+import { isFileMissingError } from "../core/fs/fs-utils.js";
+import { cp, lstat, mkdtemp, readdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { getActiveExtensionRegistrations, setActiveExtensionRegistrations } from "../core/extensions/index.js";
 import path from "node:path";
@@ -607,6 +607,19 @@ function previewSnapshotChangedError(): PmCliError {
   return new PmCliError("Tracker changed while preparing the transaction preview; retry against stable state.", EXIT_CODE.CONFLICT, { code: "transaction_preview_snapshot_changed" });
 }
 
+/** Distinguish vanished entries from persistent dangling links and invalid paths. */
+async function isDisappearingPreviewPath(error: unknown): Promise<boolean> {
+  if (!isFileMissingError(error)) return false;
+  const file = (error as NodeJS.ErrnoException).path;
+  if (typeof file !== "string") return false;
+  try {
+    await lstat(file);
+    return false;
+  } catch (lookupError) {
+    return isFileMissingError(lookupError);
+  }
+}
+
 /** Copy a stable tracker without source writes and normalize concurrent disappearance failures. */
 async function stagePreviewTracker(sourceRoot: string, stagedRoot: string): Promise<void> {
   // Preserve an initially missing root's existing error; disappearance after
@@ -625,7 +638,7 @@ async function stagePreviewTracker(sourceRoot: string, stagedRoot: string): Prom
       throw previewSnapshotChangedError();
     }
   } catch (error) {
-    if (isFileAbsentError(error)) throw previewSnapshotChangedError();
+    if (await isDisappearingPreviewPath(error)) throw previewSnapshotChangedError();
     throw error;
   }
 }

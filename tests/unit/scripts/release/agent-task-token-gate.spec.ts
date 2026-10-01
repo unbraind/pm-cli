@@ -1055,14 +1055,14 @@ describe("agent-task transcript token gate", () => {
     const diagnostic = vi.spyOn(console, "error").mockImplementation(() => undefined);
     vi.spyOn(process, "exit").mockImplementation(() => { throw new Error("Controlled baseline exit"); });
     vi.spyOn(childProcess, "spawnSync").mockImplementation((...args) => {
-      const result = Reflect.apply(original, childProcess, args) as ReturnType<typeof original>;
       const argv = Array.isArray(args[1]) ? args[1] : [];
       if (argv.includes("--token-accounting")) accountedInvocations += 1;
-      if (argv.includes("context") && argv.includes("orient")) {
+      const baselineArgs = [path.resolve("dist/cli.js"), "--json", "context", "--for", "orient", "--limit", "10"];
+      if (args[0] === process.execPath && JSON.stringify(argv) === JSON.stringify(baselineArgs)) {
         refusedBaselines += 1;
-        return { ...result, status: 7 };
+        return { status: 7, stdout: "", stderr: "", pid: 0, signal: null } as ReturnType<typeof original>;
       }
-      return result;
+      return Reflect.apply(original, childProcess, args) as ReturnType<typeof original>;
     });
     syncBuiltinESMExports();
     await expect(main()).rejects.toThrow("Controlled baseline exit");

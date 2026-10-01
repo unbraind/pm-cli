@@ -6,7 +6,6 @@
  */
 import type { PmCliErrorRecoveryPayload } from "../../sdk/runtime-primitives.js";
 import { parseBootstrapCommandName } from "../../sdk/cli-bootstrap.js";
-import { GLOBAL_VALUE_CONSUMING_FLAGS } from "../../sdk/cli-contracts/bootstrap-command-scanner.js";
 import { LIST_COMMANDER_STRING_OPTION_CONTRACTS, SEARCH_COMMANDER_STRING_OPTION_CONTRACTS, CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS } from "../../sdk/cli-contracts/commander-types.js";
 import { GLOBAL_FLAG_CONTRACTS, resolveSubcommandFlagContractsForCommand, type CliFlagContract } from "../../sdk/cli-contracts/flag-contracts.js";
 import { renderPmCommand } from "../argv-utils.js";
@@ -18,7 +17,7 @@ const BOOLEAN_PROJECTION_FLAGS = new Set(["--full", "--brief", "--compact"]);
 function consumesFlagValue(contract: CliFlagContract, valueFlags: ReadonlySet<string>): boolean {
   // Tracker paths consume even flag-looking values; their host reservation
   // contract deliberately omits a value label.
-  return Boolean(GLOBAL_VALUE_CONSUMING_FLAGS.has(contract.flag) || contract.value_name || contract.list || contract.value_type === "number" || contract.value_type === "string" || valueFlags.has(contract.flag));
+  return Boolean(contract.flag === "--pm-path" || contract.value_name || contract.list || contract.value_type === "number" || contract.value_type === "string" || valueFlags.has(contract.flag));
 }
 
 /** Scan actual option tokens, consuming their values even when a value resembles a flag. */
