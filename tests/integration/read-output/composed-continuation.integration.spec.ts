@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, symlink } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, symlink } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -115,10 +115,17 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       await mkdir(consumer);
       // Invoke npm's Node entry directly so the timeout kills the pack process,
       // including on Windows where a cmd shell would leave its child running.
-      const npmPackage = createRequire(import.meta.url).resolve("npm/package.json", { paths: [path.dirname(process.execPath), path.resolve(path.dirname(process.execPath), "../lib")] });
+      let npmPackage: string;
+      try {
+        npmPackage = createRequire(import.meta.url).resolve("npm/package.json", { paths: [path.dirname(process.execPath), path.resolve(path.dirname(process.execPath), "../lib")] });
+      } catch (cause) {
+        throw new Error("Packed SDK continuation could not resolve npm/package.json. Install npm for this Node runtime or expose its package through NODE_PATH.", { cause });
+      }
       const npmCli = path.join(path.dirname(npmPackage), "bin", "npm-cli.js");
-      const packed = JSON.parse(execFileSync(process.execPath, [npmCli, "pack", "--ignore-scripts", "--json", "--pack-destination", consumer], { cwd: repository, env: context.env, encoding: "utf8", timeout: 30_000 }))[0] as { filename: string };
-      execFileSync("tar", ["-xzf", path.join(consumer, packed.filename), "-C", consumer], { timeout: 10_000 });
+      execFileSync(process.execPath, [npmCli, "pack", "--ignore-scripts", "--json", "--pack-destination", consumer], { cwd: repository, env: context.env, encoding: "utf8", timeout: 30_000 });
+      const tarballs = (await readdir(consumer)).filter((name) => name.endsWith(".tgz"));
+      expect(tarballs, "npm pack must produce exactly one tarball in the fresh destination").toHaveLength(1);
+      execFileSync("tar", ["-xzf", path.join(consumer, tarballs[0]!), "-C", consumer], { timeout: 10_000 });
       const packedRoot = path.join(consumer, "package");
       await mkdir(path.join(consumer, "node_modules", "@unbrained"), { recursive: true });
       await symlink(packedRoot, path.join(consumer, "node_modules", "@unbrained", "pm-cli"), "junction");

@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-01T09:24:20.761Z"
-updated_at: "2026-10-01T23:13:15.378Z"
+updated_at: "2026-10-01T23:50:40.986Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#25a4e59e3a757fa1c2538e8e"
 author: "harness:codex"
@@ -19,7 +19,7 @@ expected_result: Complete unique CLI and packed SDK serialized traversal across 
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-fgih,related,"2026-10-01T13:47:53.034Z","harness:codex","cli:update:dep",detected
   pm-gh1364,related,"2026-10-01T20:34:13.744Z","harness:codex","cli:update:dep",detected
-comments[23]:
+comments[24]:
   - created_at: "2026-10-01T09:24:20.761Z"
     author: "harness:codex"
     text: "Duplicate check: live GH-1371 search across all statuses returned zero; full live pm-fgih is closed for command-local presentation classification. This issue extends that canonical implementation to universal controls and composed cursor boundaries. GitHub issue remains external owner; local implementation only."
@@ -93,6 +93,10 @@ comments[23]:
   - created_at: "2026-10-01T23:13:15.378Z"
     author: "harness:codex"
     text: "Review correction for Windows timeout: packed npm runs through the actual npm-cli.js entry with process.execPath and no cmd shell. The selected Node installation resolves npm through its exported package manifest; --ignore-scripts and the 30-second deadline are retained. Canonical test-local-muq5c5tr-k6qsy7 passes 56 tests and nine actual packed SDK scenarios. Focused ESLint passes, and canonical test-local-muq5dob2-i6jjm3 passes all four type configurations and the SDK import-boundary check. Current full static and full-source coverage remain pending; no Windows execution is claimed from this Linux-only run."
+  - created_at: "2026-10-01T23:49:41.078Z"
+    author: "harness:codex"
+    text: "Latest review portability correction: npm manifest lookup retains Node global-folder fallback and now gives a clear npm/package.json prerequisite error with its original cause. The real npm 12 pack result is a package-keyed object, whereas npm 11 emits an array; both create the same tarball. The prior Node 26 focused failure test-local-muq6hf15-1ws6za is preserved. The fixture now selects exactly one actual tarball from its fresh destination, preserving direct Node invocation, --ignore-scripts, deadlines and the public SDK consumer. Canonical test-local-muq6pvhi-immi3p passes 56 tests and nine packed scenarios on Node 26/npm 12. The same canonical suite passes on Node 24/npm 11 in test-local-muq6qnhi-l9k6cr. Focused lint passes; all four type configurations and SDK import-boundary checks pass in related owner pm-gh1364 receipt test-local-muq6r2d8-g2xkay. Complete full-source verification is still pending."
+    edited_at: "2026-10-01T23:50:40.986Z"
 files[19]:
   - path: scripts/release/agent-task-token-gate.mjs
     scope: project
@@ -160,7 +164,7 @@ tests[3]:
       source_kind: local_mutation
       source_ref: fix/agent-recovery-pagination-preflight
     note: "Final-source context relevance, packed artifact, package-first lifecycle and packed npx/Bun consumer gates"
-test_runs[12]:
+test_runs[15]:
   - run_id: test-local-muplbeu1-znb6nq
     kind: test
     status: passed
@@ -288,6 +292,39 @@ test_runs[12]:
     started_at: "2026-10-01T23:09:03.895Z"
     finished_at: "2026-10-01T23:09:26.270Z"
     recorded_at: "2026-10-01T23:09:26.270Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq6hf15-1ws6za
+    kind: test
+    status: failed
+    started_at: "2026-10-01T23:40:57.146Z"
+    finished_at: "2026-10-01T23:41:31.097Z"
+    recorded_at: "2026-10-01T23:41:31.097Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq6pvhi-immi3p
+    kind: test
+    status: passed
+    started_at: "2026-10-01T23:47:31.887Z"
+    finished_at: "2026-10-01T23:48:05.670Z"
+    recorded_at: "2026-10-01T23:48:05.670Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq6qnhi-l9k6cr
+    kind: test
+    status: passed
+    started_at: "2026-10-01T23:48:16.913Z"
+    finished_at: "2026-10-01T23:48:41.958Z"
+    recorded_at: "2026-10-01T23:48:41.958Z"
     passed: 1
     failed: 0
     skipped: 0
