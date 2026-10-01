@@ -1,8 +1,8 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { previewItemMutations } from "../../../src/sdk/item-transaction.js";
-import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+import { previewItemMutations } from "../../../../src/sdk/item-transaction.js";
+import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 const copying = vi.hoisted(() => ({ change: "none" }));
 vi.mock("node:fs/promises", async (importOriginal) => {

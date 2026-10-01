@@ -23,6 +23,11 @@ describe("minimal projection retry edits", () => {
     expect(repairProjectionRecovery(["get", "pm-one", "--token_budget=1000", "--full", "--json"], "projection_options_mutually_exclusive", { suggested_retry_args: ["get", "pm-one", "--full"] })?.suggested_retry_args).toEqual(["get", "pm-one", "--full", "--json"]);
   });
 
+  it("preserves attached extension controls whose value resembles a projection flag", () => {
+    const argv = ["get", "pm-one", "--custom=--fields", "--fields", "title,typo", "--json"];
+    expect(repairProjectionRecovery(argv, "unknown_field_projection", { suggested_retry_args: ["get", "pm-one", "--fields", "title"] })?.suggested_retry_args).toEqual(["get", "pm-one", "--custom=--fields", "--fields", "title", "--json"]);
+  });
+
   it("withholds a retry when an unknown extension option has ambiguous value arity", () => {
     expect(repairProjectionRecovery(["get", "pm-one", "--custom", "--fields", "--fields", "title,typo"], "unknown_field_projection", { suggested_retry_args: ["get", "pm-one", "--fields", "title"] })?.suggested_retry_args).toBeUndefined();
   });

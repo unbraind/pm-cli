@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-01T10:36:55.000Z"
-updated_at: "2026-10-01T18:08:36.715Z"
+updated_at: "2026-10-01T18:31:00.777Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#25a4e59e3a757fa1c2538e8e"
 author: "harness:codex"
@@ -18,12 +18,13 @@ confidence: high
 expected_result: "A semantic preview validates one stable staged tracker state, preserves source files and hooks, and resolves nested context contracts for the selected tracker; commit revalidates concurrent and extension constraints."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-o8z748,related,"2026-10-01T13:08:55.258Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-01T11:18:02.965Z","harness:codex","Semantic preview regression checks now pass: invalid risk/status/missing-target refusal parity, strict completion after staged evidence, no source writes, no mutation hooks, committed-plan replay/mismatch, and revalidation after a subsequent deletion. Public SDK/MCP and CLI routes share the disposable transaction coordinator."
   "2026-10-01T12:44:38.312Z","harness:codex",Explicit-cwd MCP dry-run nested activation deadlock fixed by isolating disabled nested registries while retaining the caller activation gate. The real MCP regression passes and preview leaves source durable state unchanged. Shared adapter author resolution avoids divergent preview/apply precedence. Focused checks pass; final all-source coverage and aggregate gates remain pending.
   "2026-10-01T15:01:59.949Z","harness:codex","Final packed invalid-plan preview/apply parity and structured operation evidence pass. Core semantic/staged-state/no-source-writes/explicit-cwd/replay controls passed linked and complete coverage runs; migration and all-source gates pass. Post-close graph, record-integrity and tracker-context assurance pass. Hosted checks and PR review remain pending."
   "2026-10-01T15:32:46.817Z","harness:codex",Added structured gate evidence for staged semantic preview negative controls. Prior static success preceded closure and missed the terminal-only defect evidence requirement; final static and post-close defect gates will rerun with unchanged policy.
   "2026-10-01T17:59:44.836Z","harness:codex","Cubic review correction: content fingerprints before/after copy and on staged bytes refuse inconsistent snapshots without source locks. Both controlled-copy negative controls returned validated:true before the fix and now reject with conflict. Nested disabled scopes discover selected-tracker context intents without reacquiring activation gates. Focused affected suites, lint, and all four type configurations pass. Broad aggregate verification is pending; this item remains in_progress and live telemetry is paused awaiting explicit approval."
+  "2026-10-01T18:31:00.777Z","harness:codex","Snapshot regression moved to tests/unit/sdk/transactions/preview-snapshot.spec.ts to preserve the existing 120-file directory cap. Controlled-copy and directory-cap tests pass in a temporary network namespace. Updated generated refusal census, additive SDK error discovery and active-item changelog; thresholds and public guarantees unchanged. Shared full-source coverage remains pending."
 files[16]{path,scope}:
   .agents/pm/extensions/.managed-extensions.json,project
   sdk/public-surface.json,project
@@ -40,7 +41,7 @@ files[16]{path,scope}:
   tests/unit/cli/error-guidance.spec.ts,project
   tests/unit/cli/structured-mutation-registration.spec.ts,project
   tests/unit/sdk/context-intent-runtime.spec.ts,project
-  tests/unit/sdk/preview-snapshot.spec.ts,project
+  tests/unit/sdk/transactions/preview-snapshot.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/transactions/semantic-preview.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/unit/sdk/workspace-transaction.spec.ts,project,300,"harness:codex","2026-10-01T12:42:44.897Z",local_mutation,fix/agent-recovery-pagination-preflight
 test_runs[1]:
