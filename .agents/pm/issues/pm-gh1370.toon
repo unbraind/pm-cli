@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-01T10:36:55.000Z"
-updated_at: "2026-10-01T22:12:24.343Z"
+updated_at: "2026-10-01T22:36:36.437Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#25a4e59e3a757fa1c2538e8e"
 author: "harness:codex"
@@ -15,6 +15,7 @@ acceptance_criteria: Invalid enums and missing IDs refuse previews with apply-co
 parent: pm-y9hq
 risk: medium
 confidence: high
+expected_result: Invalid plans refuse with apply-compatible diagnostics; ordered staged evidence validates without original mutation hooks or writes; prepared interior links and special files refuse before traversal or streaming
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-o8z748,related,"2026-10-01T13:08:55.258Z","harness:codex","cli:update:dep",detected
   pm-gh1364,related,"2026-10-01T20:34:12.110Z","harness:codex","cli:update:dep",detected
@@ -59,7 +60,8 @@ comments[14]:
     text: "Final local verification: Canonical full-source receipt test-local-mupzfgkx-70we5e passed 9494 cases with zero failures and two Windows-only skips; exact coverage lines63200/63200 statements66237/66237 functions13710/13710 branches50719/50719 is recorded on that passing producing receipt. Complete local pnpm quality:static receipt test-local-muq26sl1-rucv2t passed on CI-supported Node24.12.0 with unchanged gates. Focused/type/import-boundary receipts, context/artifact/package-first/npx-Bunx receipt test-local-muq0up1n-tew4bo and bounded mutation329/336 with seven existing equivalents pass. Node26 timing receipts remain failed; matched base/current both failed the same transport ceilings, and changing only to supported Node24 passed them. Implementation source is unchanged. Final hosted/provider review and independent merge clearance remain pending; live telemetry and opt-in semantic dogfood unrun."
   - created_at: "2026-10-01T22:12:21.451Z"
     author: "harness:codex"
-    text: "Fresh CodeRabbit top-level security architecture concern is valid despite zero actionable inline comments. The unchanged source incorrectly validated real external file and directory links; a real Unix socket leaked ENXIO. The same regressions now pass with a regular-file/directory policy, rejection of interior links and special entries, no dereferenced copies, O_NOFOLLOW/O_NONBLOCK descriptor opens and reads bounded to observed file size. Explicit root links establish their resolved selected boundary; native dangling-link and persistent path diagnostics remain. Canonical test-local-muq2ve7e-4du2ny passes20 snapshot/semantic tests, including a real FIFO substituted after lstat without waiting for a writer. This prevents prepared link/cycle/device/pipe traversal; aggregate work remains proportional to finite regular tracker contents. Fresh full-source coverage and static validation pending before renewed closure."
+    text: "Fresh CodeRabbit top-level security architecture concern is valid despite zero actionable inline comments. The unchanged source incorrectly validated real external file and directory links; a real Unix socket leaked ENXIO. The same regressions now pass with a regular-file/directory policy, rejection of interior links and special entries, no dereferenced copies, O_NOFOLLOW/O_NONBLOCK descriptor opens and reads bounded to observed file size. Explicit root links establish their resolved selected boundary; native dangling-link and persistent path diagnostics remain. Canonical test-local-muq2ve7e-4du2ny passes 20 snapshot/semantic tests, including a real FIFO substituted after lstat without waiting for a writer. This prevents prepared link/cycle/device/pipe traversal; aggregate work remains proportional to finite regular tracker contents. Fresh full-source coverage and static validation pending before renewed closure."
+    edited_at: "2026-10-01T22:36:36.437Z"
   - created_at: "2026-10-01T22:12:24.343Z"
     author: "harness:codex"
     text: Removed only the unrelated generated managed-extension timestamp delta after checking all other managed state bytes match the PR base. Item/history mutations and evidence remain canonical PM operations. The preview repair has no extension-manager changes.

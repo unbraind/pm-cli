@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-01T09:24:20.761Z"
-updated_at: "2026-10-01T22:18:12.138Z"
+updated_at: "2026-10-01T22:46:35.159Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#25a4e59e3a757fa1c2538e8e"
 author: "harness:codex"
@@ -15,10 +15,11 @@ acceptance_criteria: Advertised output and producer cursors retrieve every match
 parent: pm-doxj
 risk: medium
 confidence: high
+expected_result: Complete unique CLI and packed SDK serialized traversal across producer and budget cursors; true query/scope changes refuse; delivered and count-only counters remain accurate
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-fgih,related,"2026-10-01T13:47:53.034Z","harness:codex","cli:update:dep",detected
   pm-gh1364,related,"2026-10-01T20:34:13.744Z","harness:codex","cli:update:dep",detected
-comments[21]:
+comments[22]:
   - created_at: "2026-10-01T09:24:20.761Z"
     author: "harness:codex"
     text: "Duplicate check: live GH-1371 search across all statuses returned zero; full live pm-fgih is closed for command-local presentation classification. This issue extends that canonical implementation to universal controls and composed cursor boundaries. GitHub issue remains external owner; local implementation only."
@@ -83,6 +84,9 @@ comments[21]:
   - created_at: "2026-10-01T22:18:12.138Z"
     author: "harness:codex"
     text: "Final packed consumer after complexity cleanup passes the identical canonical56-test command as test-local-muq3gjbv-dr0sdy. It retains all nine real packed SDK traversal scenarios and counter assertions. Focused ESLint for the fixture passes; the earlier whole lint attempt correctly failed on fixture complexity, and complete static verification will rerun unchanged gates. No passing whole-lint claim is made from the failed attempt."
+  - created_at: "2026-10-01T22:46:35.159Z"
+    author: "harness:codex"
+    text: "Follow-up deadline and counter corrections pass canonical test-local-muq4aovr-dzsoko (56 tests, all nine packed SDK scenarios). The enclosing scenario has a120-second cap; npm pack, tar extraction and SDK execution are bounded at30,10 and60 seconds. Focus counters are asserted only when returned_focus exists and sum high_level,low_level and blocked_fallback. Thresholds and production semantics unchanged."
 files[19]:
   - path: scripts/release/agent-task-token-gate.mjs
     scope: project
@@ -150,7 +154,7 @@ tests[3]:
       source_kind: local_mutation
       source_ref: fix/agent-recovery-pagination-preflight
     note: "Final-source context relevance, packed artifact, package-first lifecycle and packed npx/Bun consumer gates"
-test_runs[10]:
+test_runs[11]:
   - run_id: test-local-muplbeu1-znb6nq
     kind: test
     status: passed
@@ -256,6 +260,17 @@ test_runs[10]:
     started_at: "2026-10-01T22:16:28.612Z"
     finished_at: "2026-10-01T22:16:51.163Z"
     recorded_at: "2026-10-01T22:16:51.163Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq4aovr-dzsoko
+    kind: test
+    status: passed
+    started_at: "2026-10-01T22:39:55.765Z"
+    finished_at: "2026-10-01T22:40:18.039Z"
+    recorded_at: "2026-10-01T22:40:18.039Z"
     passed: 1
     failed: 0
     skipped: 0

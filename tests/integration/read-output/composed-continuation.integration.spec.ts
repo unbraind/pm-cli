@@ -68,7 +68,7 @@ async function collectReadPages(run: RunRead, base: string[]): Promise<{ ids: st
 }
 
 describe("composed producer and budget continuation (GH-1371)", () => {
-  it("finishes list, search and hierarchical context reads using advertised serialized cursors", async () => {
+  it("finishes list, search and hierarchical context reads using advertised serialized cursors", { timeout: 120_000 }, async () => {
     await withTempPmPath(async (context) => {
       const run = (args: string[]) => context.runCliInProcess(args, { expectJson: true });
       const otherTracker = `${context.tempRoot}/other-tracker`;
@@ -112,8 +112,8 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       const repository = fileURLToPath(new URL("../../../", import.meta.url));
       const consumer = path.join(context.tempRoot, "packed-consumer");
       await mkdir(consumer);
-      const packed = JSON.parse(execFileSync(process.platform === "win32" ? "npm.cmd" : "npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", consumer], { cwd: repository, env: context.env, encoding: "utf8", shell: process.platform === "win32" }))[0] as { filename: string };
-      execFileSync("tar", ["-xzf", path.join(consumer, packed.filename), "-C", consumer]);
+      const packed = JSON.parse(execFileSync(process.platform === "win32" ? "npm.cmd" : "npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", consumer], { cwd: repository, env: context.env, encoding: "utf8", shell: process.platform === "win32", timeout: 30_000 }))[0] as { filename: string };
+      execFileSync("tar", ["-xzf", path.join(consumer, packed.filename), "-C", consumer], { timeout: 10_000 });
       const packedRoot = path.join(consumer, "package");
       await mkdir(path.join(consumer, "node_modules", "@unbrained"), { recursive: true });
       await symlink(packedRoot, path.join(consumer, "node_modules", "@unbrained", "pm-cli"), "junction");
@@ -122,7 +122,7 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       await cp(new URL("../../fixtures/read-output/packed-continuation-consumer.mjs", import.meta.url), consumerScript);
       const manifest = JSON.parse(await readFile(path.join(packedRoot, "package.json"), "utf8")) as { exports: Record<string, unknown> };
       expect(manifest.exports["./sdk"]).toBeDefined();
-      const evidence = JSON.parse(execFileSync(process.execPath, [consumerScript, context.pmPath, emptyTracker], { cwd: consumer, env: context.env, encoding: "utf8", timeout: 90_000 })) as { publicExport: string; results: { name: string; limit?: number; empty?: boolean; budgetTransitions: number }[] };
+      const evidence = JSON.parse(execFileSync(process.execPath, [consumerScript, context.pmPath, emptyTracker], { cwd: consumer, env: context.env, encoding: "utf8", timeout: 60_000 })) as { publicExport: string; results: { name: string; limit?: number; empty?: boolean; budgetTransitions: number }[] };
       expect(evidence.publicExport).toBe("@unbrained/pm-cli/sdk");
       expect(evidence.results).toHaveLength(9);
       expect(evidence.results.filter((result) => result.limit === 25).every((result) => result.budgetTransitions > 0)).toBe(true);

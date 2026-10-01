@@ -10,7 +10,10 @@ const emptyClient = new PmClient({ pmRoot: emptyRoot, noExtensions: true });
 function deliveredRows(page) {
   const rows = page.items ?? page.low_level ?? [];
   if (page.items && page.count !== undefined) assert.equal(page.count, page.items.length);
-  if (page.summary) assert.equal(page.summary.returned_focus.active_items, rows.length + (page.high_level?.length ?? 0));
+  if (page.summary?.returned_focus) {
+    const focusCount = ["high_level", "low_level", "blocked_fallback"].reduce((sum, section) => sum + (page[section]?.length ?? 0), 0);
+    assert.equal(page.summary.returned_focus.active_items, focusCount);
+  }
   return rows;
 }
 
