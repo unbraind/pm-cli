@@ -53,6 +53,15 @@ export interface PmCliErrorContext {
   code?: string;
   /** Item whose document could not be decoded or parsed. */
   item_id?: string;
+  /** Ordered mutation that failed semantic preview validation. */
+  transaction_operation?: {
+    /** Zero-based position in the resolved batch. */
+    index: number;
+    /** Mutation kind from the resolved batch. */
+    op: string;
+    /** Resolved target identity. */
+    id: string;
+  };
   /** Verified retained deletion and the latest recoverable durable address. */
   tombstone?: {
     /** The retained stream proves the item is currently deleted. */

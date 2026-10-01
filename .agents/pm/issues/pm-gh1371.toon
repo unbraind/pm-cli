@@ -1,0 +1,73 @@
+id: pm-gh1371
+title: "GH-1371: compose output budget and producer pagination"
+description: "Implement existing GitHub issue https://github.com/unbraind/pm-cli/issues/1371. Presentation-only universal output controls must not alter producer fingerprints; every emitted count must match its delivered rows."
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-01T09:24:20.761Z"
+updated_at: "2026-10-01T15:01:59.410Z"
+closed_at: "2026-10-01T14:50:46.270Z"
+completed_at: "2026-10-01T14:50:46.270Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Advertised output and producer cursors retrieve every matching ID;Continued focus collections have no duplicated IDs;Delivered counts and hidden status receipts agree with emitted rows;Population and count-only totals remain intact;CLI and SDK filter changes reject cursors and field projection remains compatible
+parent: pm-doxj
+risk: medium
+confidence: high
+resolution: "Universal presentation controls no longer alter producer identity; tracker-bound cursors compose across output and producer pages, and delivered counts and serialized focus classifications survive projection/compaction while count-only aggregates remain intact."
+expected_result: Advertised cursor chains deliver all matching focus IDs with correct counts; genuine filter/scope changes refuse reuse and population totals remain accurate.
+actual_result: "Linked continuation acceptance passed 52 tests, including actual budget cursors, JSON cloning, long semantic receipts and count-only warning compaction. Full corpus passed 9467 with two platform skips and exact all-source coverage. Static/token/context gates passed unchanged ceilings; 329 of 336 mutants killed with seven existing reviewed equivalents and the score floor raised to 97.91666666666667."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fgih,related,"2026-10-01T13:47:53.034Z","harness:codex","cli:update:dep",detected
+comments[11]{created_at,author,text}:
+  "2026-10-01T09:24:20.761Z","harness:codex","Duplicate check: live GH-1371 search across all statuses returned zero; full live pm-fgih is closed for command-local presentation classification. This issue extends that canonical implementation to universal controls and composed cursor boundaries. GitHub issue remains external owner; local implementation only."
+  "2026-10-01T09:44:11.069Z","harness:codex","Current-main negative control: list/search budget subpages deliver 25/30 rows, terminal delivered counts remain 25, and producer continuation rejects invalid_query_cursor. Hierarchical context also rejects producer continuation and retains pre-compaction returned_focus. New regression suite fails on untouched 89b4aa8bb and passes on this branch. Expanded focused suite passed 58/58. Context hierarchy companions may repeat as contextual scaffolding; focus collection IDs are checked for duplicates. Full checks remain underway."
+  "2026-10-01T11:18:04.591Z","harness:codex","Composed list/search/context tests traverse actual budget cursors before producer pagination, verify delivered status counters and unique focus rows, and reject filter or tracker changes after continuation. A second tracker with identical items proves scope binding rather than accidental missing-ID rejection."
+  "2026-10-01T11:30:28.097Z","harness:codex","Full corpus: 9459 tests passed, with a benchmark timeout and token parity failure; coverage was not emitted on failure. Cursor scope correctly differs across the gate’s two fixture paths. The token harness now restores independent workspace snapshots at one common real tracker path, retaining exact payload/cursor equality and every negative control; no fingerprint fields are ignored or rewritten."
+  "2026-10-01T11:39:44.782Z","harness:codex","Empty-result cursor binding also fixed and verified: both equivalent/nonmatching filter changes and populated/empty tracker changes reject producer cursors after actual output-budget continuation. ESLint and structural quality pass; 42 focused composed-continuation/token-gate tests pass."
+  "2026-10-01T12:44:37.522Z","harness:codex","Final review corrections: producer classifications now survive JSON cloning through compact optional focus receipts; ID-only composed continuation regression actually triggers budget cursors and has no skipped budget assertion. Token gate passes existing ceilings after independently reseeding complete replays at one common real scope, without ignoring or rewriting cursor fields. Focused suite: 262/262 pass. Exact all-source coverage and aggregate gates are underway."
+  "2026-10-01T12:55:08.089Z","harness:codex","Further independent review found explanatory-string compaction could corrupt long semantic focus receipts. Scoped correction protects those receipt strings and validates both alphabet and exact record count. Count refresh now reads one authoritative pre-shaping source instead of accepting a potentially compacted result mask, simplifying the pipeline. Added direct compactor plus >240 retained projected-row and malformed-receipt regressions; final verification remains underway."
+  "2026-10-01T12:56:56.768Z","harness:codex","Negative control confirms old string compactor truncates a 600-record semantic receipt to 241 characters and inserts an invalid ellipsis; the new validation refuses that corrupt receipt. Protected compaction and >240 retained projected rows now pass, with every row classified in-progress and no false blockers. Final scoped integration/read/token corpus passes 84/84; published token ceilings, exact coverage thresholds and denominator are unchanged."
+  "2026-10-01T13:49:30.558Z","harness:codex",Packed SDK negative control found warning compaction changed a count-only aggregate from 30 to 24. Delivered-count refresh now restores the authoritative producer aggregate; budgeted warning and absent-authoritative-count regressions pass 11/11. Graph-composition passes unchanged 1236 ceiling after linking the verified presentation-classification predecessor. Final serial gates and full coverage remain pending.
+  "2026-10-01T14:02:25.829Z","harness:codex","Bounded mutation run completed all 336 mutants: 329 killed, seven existing reviewed equivalents, zero uncovered/errors/timeouts. All six additional mutants were killed. The gate correctly required the improved score floor to be ratcheted from 97.87878787878788 to 97.91666666666667; only that upward threshold change was made. Full final aggregate rerun remains pending."
+  "2026-10-01T15:01:59.410Z","harness:codex","Final packed CLI/SDK serialized continuation matrix passed both cursor layers, focus classifications and real filter/tracker rejection. Packed warning compaction retains count-only count/total 30 while reducing warnings to 24. Exact all-source coverage, static/token/context, package-first, artifact budget, migration and npx/Bunx smoke pass. Score floor is raised to measured 329/336 killed with seven existing equivalents. Hosted checks and PR review remain pending."
+files[18]{path,scope}:
+  scripts/release/agent-task-token-gate.mjs,project
+  scripts/release/sdk-mutation-baseline.json,project
+  sdk/public-surface.json,project
+  src/sdk/pagination.ts,project
+  src/sdk/query/context.ts,project
+  src/sdk/query/list.ts,project
+  src/sdk/query/search-pagination.ts,project
+  src/sdk/query/search.ts,project
+  src/sdk/read-output-budget.ts,project
+  src/sdk/read-output-contracts.ts,project
+  src/sdk/read-output-rows.ts,project
+  src/sdk/read-output/options.ts,project
+  tests/integration/read-output/composed-continuation.integration.spec.ts,project
+  tests/unit/commands/query/search-command.spec.ts,project
+  tests/unit/scripts/release/agent-task-token-gate.spec.ts,project
+  tests/unit/sdk/pagination.spec.ts,project
+  tests/unit/sdk/read-output-contracts.spec.ts,project
+  tests/unit/sdk/read-output/delivered-counts.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,project,300,"harness:codex","2026-10-01T09:53:01.452Z",local_mutation,fix/agent-recovery-pagination-preflight
+test_runs[1]:
+  - run_id: test-local-muplbeu1-znb6nq
+    kind: test
+    status: passed
+    started_at: "2026-10-01T13:48:42.647Z"
+    finished_at: "2026-10-01T13:48:58.969Z"
+    recorded_at: "2026-10-01T13:48:58.969Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project
+close_reason: Local implementation and final validation complete; PR review and hosted checks remain the delivery boundary.
+escape_class: production_defect
+body: ""

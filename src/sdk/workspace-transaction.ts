@@ -159,6 +159,15 @@ function requiredText(value: unknown, label: string): string {
   return normalized;
 }
 
+/** Validate transaction identity before preview staging or acquiring any writer lock. */
+export function validateWorkspaceTransactionIdentity(options: Pick<CommitWorkspaceTransactionOptions, "pmRoot" | "transactionId" | "author">): Pick<CommitWorkspaceTransactionOptions, "pmRoot" | "transactionId" | "author"> {
+  return {
+    pmRoot: requiredText(options.pmRoot, "Transaction pmRoot"),
+    transactionId: requiredIdentifier(options.transactionId, "Transaction id"),
+    author: requiredText(options.author, "Transaction author"),
+  };
+}
+
 function positiveInteger(
   value: number | undefined,
   fallback: number,
@@ -567,12 +576,7 @@ async function compensateAppliedSteps(
 export async function commitWorkspaceTransaction(
   options: CommitWorkspaceTransactionOptions,
 ): Promise<WorkspaceTransactionCommitResult> {
-  const pmRoot = requiredText(options.pmRoot, "Transaction pmRoot");
-  const transactionId = requiredIdentifier(
-    options.transactionId,
-    "Transaction id",
-  );
-  const author = requiredText(options.author, "Transaction author");
+  const { pmRoot, transactionId, author } = validateWorkspaceTransactionIdentity(options);
   const lockTtlSeconds = positiveInteger(
     options.lockTtlSeconds,
     DEFAULT_LOCK_TTL_SECONDS,

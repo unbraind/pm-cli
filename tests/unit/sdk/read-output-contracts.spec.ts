@@ -197,7 +197,7 @@ describe("read output contracts", () => {
     );
   });
 
-  it("counts every retained row collection after applying an amount bound", () => {
+  it("keeps item counts separate from other retained row collections after an amount bound", () => {
     const projected = applyReadOutputDimensions(
       "list",
       { outputLimit: 2 },
@@ -212,7 +212,8 @@ describe("read output contracts", () => {
         },
       },
     );
-    expect(projected).toMatchObject({ count: 3 });
+    expect(projected).toMatchObject({ count: 2 });
+    expect(countReadOutputRows(projected)).toBe(3);
   });
 
   it("keeps legacy flags working while publishing one-line migration hints", () => {
@@ -1161,7 +1162,7 @@ describe("read output contracts", () => {
       throw new Error("Expected compacted rows instead of an omission.");
     }
     expect(rowCompacted.count).toBe(
-      rowCompacted.items.length + rowCompacted.related.length,
+      rowCompacted.items.length,
     );
 
     const paginated = applyReadOutputDimensions(

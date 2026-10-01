@@ -132,7 +132,9 @@ describe("closed-domain recovery envelopes", () => {
           ),
         );
         expect(envelope.recovery.suggested_retry_args).toEqual(
-          contract.suggested_retry_args,
+          ["unknown_field_projection", "projection_options_mutually_exclusive"].includes(contract.error_code)
+            ? [...contract.suggested_retry_args, "--json"]
+            : contract.suggested_retry_args,
         );
         const retry = context.runCli([
           ...envelope.recovery.suggested_retry_args,

@@ -360,7 +360,7 @@ function validateGetFields(
       "get",
       id,
       "--fields",
-      "id,title,status",
+      fields.filter((field) => !unknown.includes(field)).join(",") || "id,title,status",
     ];
     throw new PmCliError(
       `Unknown get --fields value(s): ${unknown.join(", ")}`,

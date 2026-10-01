@@ -4,6 +4,7 @@
  * Provides versioned opaque cursor primitives shared by CLI, SDK, MCP, and
  * package-authored query surfaces.
  */
+import { READ_OUTPUT_DIMENSION_FLAGS, READ_OUTPUT_COMPOSITION_FLAGS } from "./read-output/options.js";
 import { createHash } from "node:crypto";
 import { PmCliError } from "../core/shared/errors.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
@@ -66,7 +67,8 @@ export function selectCursorSemanticOptions(
   options: Readonly<Record<string, unknown>>,
   contracts: readonly CliFlagContract[],
 ): Record<string, unknown> {
-  const presentationKeys = new Set<string>();
+  const universalFlags = [...Object.values(READ_OUTPUT_DIMENSION_FLAGS), ...READ_OUTPUT_COMPOSITION_FLAGS];
+  const presentationKeys = new Set(universalFlags.flatMap((flag) => [optionKeyForFlag(flag), flag.slice(2).replaceAll("-", "_")]));
   for (const contract of contracts) {
     if (contract.cursor_semantics === "presentation") {
       presentationKeys.add(optionKeyForFlag(contract.flag));

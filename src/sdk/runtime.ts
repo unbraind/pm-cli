@@ -2620,6 +2620,11 @@ export async function runWithActiveExtensions<T>(
   run: () => Promise<T>,
 ): Promise<T> {
   const explicitCwd = options.cwd;
+  if (activeExtensionScope.getStore() === true && explicitCwd === undefined && options.noExtensions === true) {
+    // The caller already owns the activation gate. A nested disabled scope
+    // needs fresh registries, but must not reacquire a reader behind its writer.
+    return runWithIsolatedExtensionRuntime(run);
+  }
   const resolutionCwd = explicitCwd ?? process.cwd();
   return withActiveExtensions(
     globalOptions({ path: options.path, noExtensions: options.noExtensions }),

@@ -26,6 +26,7 @@ interface GuidanceMessage {
   policyViolations?: PmCliErrorContext["policy_violations"];
   policyViolationCount?: number;
   itemId?: string;
+  transactionOperation?: PmCliErrorContext["transaction_operation"];
   tombstone?: PmCliErrorContext["tombstone"];
   code: string;
   type: string;
@@ -65,6 +66,8 @@ export interface PmRefusalEnvelope {
 
 /** Documents the json error envelope payload exchanged by command, SDK, and package integrations. */
 export interface JsonErrorEnvelope {
+  /** Ordered mutation that failed semantic preview validation. */
+  transaction_operation?: PmCliErrorContext["transaction_operation"];
   /** Exact item identity attached to a storage diagnostic. */
   item_id?: string;
   /** Verified retained deletion and its recoverable version. */
@@ -121,6 +124,8 @@ export function projectLeanErrorEnvelope(
 
 /** Documents the error classification payload exchanged by command, SDK, and package integrations. */
 export interface ErrorClassification {
+  /** Ordered mutation that failed semantic preview validation. */
+  transaction_operation?: PmCliErrorContext["transaction_operation"];
   /** Exact item identity attached to a storage diagnostic. */
   item_id?: string;
   /** Verified retained deletion and its recoverable version. */
@@ -625,6 +630,9 @@ export function renderGuidanceMessage(message: GuidanceMessage): string {
 function attachStructuredGuidanceDetails<
   Payload extends JsonErrorEnvelope | ErrorClassification,
 >(payload: Payload, message: GuidanceMessage): Payload {
+  if (message.transactionOperation !== undefined) {
+    payload.transaction_operation = message.transactionOperation;
+  }
   if (message.tombstone !== undefined) {
     payload.tombstone = message.tombstone;
     payload.item_id = message.itemId;
@@ -955,6 +963,7 @@ function applyPmCliErrorContext(
     value: context.value,
     unmatchedSelectors: context.unmatched_selectors,
     itemId: context.item_id,
+    transactionOperation: context.transaction_operation,
     tombstone: context.tombstone,
     availableDependencies: context.available_dependencies,
     recovery,

@@ -2237,6 +2237,7 @@ describe("runList", () => {
           "Unknown list --fields value(s): bogus",
         ),
       });
+      await expect(runList(undefined, { fields: "bogus" }, { path: context.pmPath })).rejects.toMatchObject({ context: { recovery: { suggested_retry_args: ["list", "--fields", "id,title,status"] } } });
       await expect(
         runList(undefined, { order: "asc" }, { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({

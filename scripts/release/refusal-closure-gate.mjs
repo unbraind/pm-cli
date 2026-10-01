@@ -120,13 +120,15 @@ function snapshotDirectory(root) {
 function executeClosedDomainProbes(probes, spawn, environment) {
   return probes.map((contract) => {
     const { probe_id: probeId, refusal_args: args } = contract;
-    const refusal = runCli(spawn, [...args, "--json"], environment);
+    const preserveInvocation = ["unknown_field_projection", "projection_options_mutually_exclusive"].includes(contract.error_code);
+    const scope = preserveInvocation ? ["--pm-path", environment.PM_PATH] : [];
+    const refusal = runCli(spawn, [...scope, ...args, "--json"], environment);
     const envelope = parseProblemEnvelope(refusal);
     const recovery = envelope.recovery ?? {};
     const retryArguments = strictStringArray(recovery.suggested_retry_args);
     const retry =
       retryArguments.length > 0
-        ? runCli(spawn, [...retryArguments, "--json"], environment)
+        ? runCli(spawn, preserveInvocation ? retryArguments : [...retryArguments, "--json"], environment)
         : { status: 1 };
     return {
       probe_id: probeId,
@@ -145,7 +147,7 @@ function executeClosedDomainProbes(probes, spawn, environment) {
           ? recovery.suggested_retry
           : "",
       suggested_retry_args: retryArguments,
-      expected_suggested_retry_args: contract.suggested_retry_args,
+      expected_suggested_retry_args: preserveInvocation ? [...scope, ...contract.suggested_retry_args, "--json"] : contract.suggested_retry_args,
       retry_succeeded: retry.status === 0,
       diagnostic_output: envelope.diagnostic_output,
       diagnostic_output_present: Object.hasOwn(envelope, "diagnostic_output"),

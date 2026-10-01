@@ -18,6 +18,7 @@ describe("pm cli error guidance context plumbing", () => {
       2,
       {
         code: "merge_conflict_markers_detected",
+        transaction_operation: { index: 2, op: "close", id: "pm-a" },
         required: "Resolve all conflict markers before retrying.",
         why: "Conflicted item files cannot be parsed deterministically.",
         examples: [
@@ -38,6 +39,7 @@ describe("pm cli error guidance context plumbing", () => {
       required: "Resolve all conflict markers before retrying.",
       why: "Conflicted item files cannot be parsed deterministically.",
       exit_code: 2,
+      transaction_operation: { index: 2, op: "close", id: "pm-a" },
     });
     expect(envelope.examples).toEqual([
       "pm history pm-a1b2 --limit 5 --diff",

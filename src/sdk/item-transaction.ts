@@ -6,6 +6,9 @@
  * with correct-by-construction inspection and compensation wiring.
  */
 import crypto from "node:crypto";
+import { cp, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { getActiveExtensionRegistrations, setActiveExtensionRegistrations } from "../core/extensions/index.js";
 import path from "node:path";
 import {
   transferMutationStdinTokenPolicy,
@@ -22,10 +25,12 @@ import {
   release,
   restore,
   update,
+  runWithActiveExtensions,
   type PmClientFullMutationOptions,
 } from "./runtime.js";
 import {
   commitWorkspaceTransaction,
+  validateWorkspaceTransactionIdentity,
   type CommitWorkspaceTransactionOptions,
   type WorkspaceTransactionJsonValue,
   type WorkspaceTransactionStep,
@@ -541,6 +546,65 @@ function assertValidBulkMutation(
     throw new TypeError(
       `Bulk close mutation ${index + 1} requires a non-empty reason`,
     );
+  }
+}
+
+/** Evidence and explicit limits of a non-writing semantic transaction preview. */
+export interface ItemMutationPreviewValidation {
+  /** Core lifecycle semantics were validated against the staged snapshot. */
+  validated: true;
+  /** Ordered earlier mutations participate in validation of later mutations. */
+  state: "staged_snapshot";
+  /** Rules that must still be evaluated against actual state during commit. */
+  unresolved_commit_constraints: readonly string[];
+}
+
+/** Attach the resolved batch position while preserving lifecycle error classification. */
+async function validateMutationOperation<T>(mutation: BulkItemMutation, index: number, run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    if (error instanceof PmCliError) {
+      throw new PmCliError(error.message, error.exitCode, {
+        ...error.context,
+        transaction_operation: { index, op: mutation.op, id: mutation.id },
+      });
+    }
+    throw error;
+  }
+}
+
+/** Validate ordered mutations using apply's coordinator in a disposable tracker, without source writes, journals or extension hooks. */
+export async function previewItemMutations(options: Pick<CommitItemMutationsOptions, "pmRoot" | "transactionId" | "author" | "mutations">): Promise<ItemMutationPreviewValidation> {
+  const identity = validateWorkspaceTransactionIdentity(options);
+  const mutations = [...options.mutations];
+  if (mutations.length === 0) throw new TypeError("Bulk item transaction requires at least one mutation");
+  for (const [index, mutation] of mutations.entries()) assertValidBulkMutation(mutation, index);
+  const registrations = getActiveExtensionRegistrations();
+  const root = await mkdtemp(path.join(tmpdir(), "pm-transaction-preview-"));
+  const stagedRoot = path.join(root, "tracker");
+  try {
+    await cp(identity.pmRoot, stagedRoot, {
+      recursive: true, dereference: true,
+      filter: (source) => !["locks", "runtime"].includes(path.relative(identity.pmRoot, source).split(path.sep)[0]!),
+    });
+    await runWithActiveExtensions({ path: stagedRoot, noExtensions: true }, async () => {
+      setActiveExtensionRegistrations(registrations);
+      const config = { ...identity, pmRoot: stagedRoot, createCompensation: "close" as const };
+      const steps = mutations.map((mutation, index) => {
+        const step = buildStepForMutation(config, mutation, index);
+        return {
+          ...step,
+          inspect: () => validateMutationOperation(mutation, index, () => step.inspect()),
+          prepareCompensation: () => validateMutationOperation(mutation, index, async () => step.prepareCompensation?.()),
+          apply: () => validateMutationOperation(mutation, index, () => step.apply()),
+        };
+      });
+      await commitWorkspaceTransaction({ ...identity, pmRoot: stagedRoot, steps });
+    });
+    return { validated: true, state: "staged_snapshot", unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_mutation_guards_and_hooks"] };
+  } finally {
+    await rm(root, { recursive: true, force: true });
   }
 }
 

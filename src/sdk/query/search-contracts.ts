@@ -212,7 +212,7 @@ export function validateSearchProjectionFields(
       "search",
       query,
       "--fields",
-      "id,title,status,score",
+      projection.fields.filter((field) => !unknown.includes(field)).join(",") || "id,title,status,score",
     ];
     throw new PmCliError(
       `Unknown search --fields value(s): ${unknown.join(", ")}`,

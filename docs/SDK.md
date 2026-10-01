@@ -1449,6 +1449,23 @@ the same durable coordinator, restoring annotations, linked artifacts,
 lifecycle fields, and claim ownership on failure. It is the SDK primitive
 behind `pm item complete`.
 
+`previewItemMutations` validates an ordered plan with the same transaction
+coordinator and lifecycle primitives as apply, using a disposable copy of the
+tracker. Earlier staged creates, evidence updates and closures participate in
+later validation. Existing journals retain their replay and plan-identity
+checks. The source tracker receives no item, history, claim, lock or journal
+writes, and mutation hooks do not run. Invalid plans fail with the underlying
+lifecycle error and a structured `transaction_operation` containing the
+zero-based index, operation and resolved target ID.
+
+CLI `item mutate --dry-run`, `item complete --dry-run`, and MCP `pm_mutate`
+with `dryRun: true` share this validation. A successful result includes
+`validation: { validated: true, state: "staged_snapshot",
+unresolved_commit_constraints: ["concurrent_tracker_changes",
+"extension_mutation_guards_and_hooks"] }`. This is a snapshot of core semantic
+validity. Commit still checks current state and runs extension guards and hooks.
+Copying the tracker also makes preview cost proportional to tracker size.
+
 `itemDocumentToMutationOptions` is the companion full-document adapter. It
 accepts either a direct `ItemDocument` or the envelope returned by
 `pm get <id> --json`, strips read-only metadata, maps canonical snake-case item

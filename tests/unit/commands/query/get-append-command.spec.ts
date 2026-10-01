@@ -438,6 +438,7 @@ describe("runGet and runAppend", () => {
           "Unknown get --fields value(s): bogus",
         ),
       });
+      await expect(runGet(id, { path: context.pmPath }, { fields: "bogus" })).rejects.toMatchObject({ context: { recovery: { suggested_retry_args: ["get", id, "--fields", "id,title,status"] } } });
     });
   });
 

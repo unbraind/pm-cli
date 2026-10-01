@@ -9,6 +9,7 @@ import { runWithDiscoveredContextIntentContracts } from "../sdk/context-intent-r
 import { describeUnknownError,isCommanderError,normalizeThrownExitCode,readThrownExitCode,wrapThrownErrorForSentry } from "../sdk/error-runtime.js";
 import { createExtensionCommandSdk } from "../sdk/extension-command-context.js";
 import { runExtensionMigrations } from "../sdk/extension/migrations.js";
+import { repairProjectionRecovery } from "./runtime/projection-retry.js";
 import { applyInvocationAuthorOverride } from "../sdk/invocation-author.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import {
@@ -401,7 +402,7 @@ function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invoc
   const commandIndex = findBootstrapCommandTokenIndex(commandArgs);
   const [rootCommand, subcommand] = commandIndex === undefined ? [] : commandArgs.slice(commandIndex, commandIndex + 2);
   const explainRequested = safeInvocationArgv.includes("--explain");
-  const rawExistingRecovery = context?.recovery;
+  const rawExistingRecovery = repairProjectionRecovery(safeInvocationArgv, context?.code, context?.recovery);
   const existingRecovery =
     rawExistingRecovery && (rootCommand === "history-redact" || (rootCommand === "history" && subcommand === "redact"))
       ? {

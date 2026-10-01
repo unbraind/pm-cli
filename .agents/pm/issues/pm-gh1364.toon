@@ -1,0 +1,62 @@
+id: pm-gh1364
+title: "GH-1364: preserve tracker scope and valid projection in recovery"
+description: "Implement existing GitHub issue https://github.com/unbraind/pm-cli/issues/1364. Retain original invocation scope, renderer and unrelated valid controls when repairing field projection or full/intent conflicts."
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-01T09:24:18.862Z"
+updated_at: "2026-10-01T15:01:58.882Z"
+closed_at: "2026-10-01T14:50:45.027Z"
+completed_at: "2026-10-01T14:50:45.027Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Exact retry reads the explicitly selected colliding tracker;JSON and all valid selectors survive correction;Aliases and attached flags retain unrelated options;Unsafe ambiguous retry is omitted and mutation recovery safety remains intact
+parent: pm-f05lsg
+risk: medium
+confidence: high
+resolution: "Recovery minimally repairs the original invocation while preserving selected tracker, JSON, valid selectors and unrelated controls; unsafe ambiguous retries are withheld."
+expected_result: "Exact emitted retries read the selected colliding tracker, retain valid output controls, and preserve no-preview-to-mutation safety."
+actual_result: "Linked recovery acceptance passed 17 tests plus its executable refusal negative control; full corpus passed 9467 with two platform skips and exact 100/100/100/100 coverage; final static, context, type, version and credential checks passed."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-szn67i,related,"2026-10-01T13:47:52.212Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-01T09:24:18.862Z","harness:codex","Duplicate check: live GH-1364 search across all statuses returned zero; pm-szn67i is closed for earlier strict-close/global scope corrections. Reuse recovery-closure lineage pm-f05lsg. GitHub issue remains the external owner; local implementation only."
+  "2026-10-01T09:44:09.288Z","harness:codex","Current-main negative control: exact retry from two colliding trackers reads the default tracker and drops JSON and valid close_reason. New executable retry regression fails on untouched 89b4aa8bb; fixed branch passes with selected tracker, JSON, valid selectors, aliases, attached values and spaces. Expanded focused suite passed 58/58. Full coverage/static/package checks remain underway; no publishing authorized."
+  "2026-10-01T15:01:58.882Z","harness:codex","Final packed CLI exact recovery replay passed selected colliding tracker, JSON and retained valid fields. Final source coverage runner exited 0: 9467 passed, two Windows-only skips, zero uncovered counts in all four dimensions. Generated changelog consistency and post-close graph/history/tracker assurance pass; hosted checks and PR review remain pending."
+files[13]{path,scope}:
+  scripts/release/refusal-closure-gate.mjs,project
+  src/cli/main.ts,project
+  src/cli/runtime/projection-retry.ts,project
+  src/sdk/agent/closed-domain-contracts.ts,project
+  src/sdk/query/get.ts,project
+  src/sdk/query/list.ts,project
+  src/sdk/query/search-contracts.ts,project
+  tests/integration/cli/projection-retry-scope.integration.spec.ts,project
+  tests/integration/closed-domain-recovery.integration.spec.ts,project
+  tests/unit/cli/runtime/projection-retry.spec.ts,project
+  tests/unit/commands/query/get-append-command.spec.ts,project
+  tests/unit/commands/query/list-command.spec.ts,project
+  tests/unit/scripts/refusal-closure-gate.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/cli/projection-retry-scope.integration.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,project,300,"harness:codex","2026-10-01T09:52:58.436Z",local_mutation,fix/agent-recovery-pagination-preflight
+  "node scripts/run-tests.mjs test -- tests/unit/scripts/refusal-closure-gate.spec.ts -t \"requires projection retries\"",project,300,"harness:codex","2026-10-01T10:09:04.444Z",local_mutation,fix/agent-recovery-pagination-preflight
+test_runs[1]:
+  - run_id: test-local-muplbvfh-6qgqd9
+    kind: test
+    status: passed
+    started_at: "2026-10-01T13:48:59.606Z"
+    finished_at: "2026-10-01T13:49:20.477Z"
+    recorded_at: "2026-10-01T13:49:20.477Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/projection-retry-scope.integration.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+      "node scripts/run-tests.mjs test -- tests/unit/scripts/refusal-closure-gate.spec.ts -t \"requires projection retries\"",schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project
+close_reason: Local implementation and final validation complete; PR review and hosted checks remain the delivery boundary.
+escape_class: production_defect
+body: ""

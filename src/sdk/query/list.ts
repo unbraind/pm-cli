@@ -3,6 +3,7 @@
  *
  * Implements the pm list command surface and its agent-facing runtime behavior.
  */
+import { renderPmCommand } from "../command-line.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
   getActiveExtensionRegistrations,
@@ -959,13 +960,11 @@ function validateListProjectionFields(
         ],
         recovery: {
           allowed_values: allowedValues,
-          suggested_retry: `pm ${invokedCommand} --fields id,title,status --limit 10`,
+          suggested_retry: renderPmCommand([invokedCommand, "--fields", projection.fields.filter((field) => !unknown.includes(field)).join(",") || "id,title,status"]),
           suggested_retry_args: [
             invokedCommand,
             "--fields",
-            "id,title,status",
-            "--limit",
-            "10",
+            projection.fields.filter((field) => !unknown.includes(field)).join(",") || "id,title,status",
           ],
         },
       },
@@ -1856,8 +1855,10 @@ function buildListCursorFingerprint(
   status: string | string[] | null,
   options: ListOptions,
   ordering: ListOrderingOptions,
+  pmRoot: string,
 ): string {
   return createQueryFingerprint("list", {
+    pmRoot,
     status,
     options: selectCursorSemanticOptions(
       options as Readonly<Record<string, unknown>>,
@@ -1959,6 +1960,7 @@ async function tryLoadIndexedListPage(params: {
           statusSelection.filtersStatus,
           options,
           ordering,
+          runtime.pmRoot,
         ),
         indexed.items.at(-1)!.id,
         offset + indexed.items.length - 1,
@@ -2134,6 +2136,7 @@ export async function runList(
         statusSelection.filtersStatus,
         options,
         ordering,
+        runtime.pmRoot,
       ),
     );
   }
