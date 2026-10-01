@@ -1454,7 +1454,10 @@ coordinator and lifecycle primitives as apply, using a disposable copy of the
 tracker. Earlier staged creates, evidence updates and closures participate in
 later validation. Existing journals retain their replay and plan-identity
 checks. The source tracker receives no item, history, claim, lock or journal
-writes, and mutation hooks do not run. Invalid plans fail with the underlying
+writes, and mutation hooks do not run. Durable source bytes are fingerprinted
+before and after copying and compared with the staged copy; an inconsistent
+copy fails with `transaction_preview_snapshot_changed` and can be retried.
+Invalid plans fail with the underlying
 lifecycle error and a structured `transaction_operation` containing the
 zero-based index, operation and resolved target ID.
 

@@ -555,6 +555,12 @@ describe("read output contracts", () => {
     ).toBeUndefined();
   });
 
+  it.each(["items", "items,count,total"].flatMap((include) => [1, "unbounded"].map((limit) => [include, limit] as const)))("preserves count-only totals after %s projection and %s amount shaping", (outputInclude, outputLimit) => {
+    const result = applyReadOutputDimensions("search", { outputInclude, outputLimit, outputBudget: "unbounded" }, { items: [], count: 30, total: 30, count_only: true });
+    expect(result).toMatchObject({ items: [], count: 30 });
+    expect(result).not.toHaveProperty("count_only");
+  });
+
   it("projects root fields and inferred heterogeneous row collections", () => {
     const root = applyReadOutputDimensions(
       "stats",

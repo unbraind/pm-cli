@@ -12,9 +12,15 @@ describe("minimal projection retry edits", () => {
     expect(invocation[2]).toBe("--fields=title,typo");
   });
 
-  it.each(["--fields", "--full", "--depth"])("preserves flag-looking tracker values %s", (path) => {
-    const argv = ["--pm-path", path, "get", "pm-one", "--fields", "title,typo", "--json"];
-    expect(repairProjectionRecovery(argv, "unknown_field_projection", { suggested_retry_args: ["get", "pm-one", "--fields", "title"] })?.suggested_retry_args).toEqual(["--pm-path", path, "get", "pm-one", "--fields", "title", "--json"]);
+  it.each(["--pm-path", "--path"].flatMap((flag) => ["--fields", "--full", "--depth", "--"].map((path) => [flag, path])))("preserves %s with flag-looking tracker value %s", (flag, path) => {
+    const argv = [flag, path, "get", "pm-one", "--fields", "title,typo", "--json"];
+    expect(repairProjectionRecovery(argv, "unknown_field_projection", { suggested_retry_args: ["get", "pm-one", "--fields", "title"] })?.suggested_retry_args).toEqual([flag, path, "get", "pm-one", "--fields", "title", "--json"]);
+  });
+
+  it("retains supported root booleans and removes the underscore budget alias", () => {
+    const argv = ["--explain", "--path", "/selected", "get", "pm-one", "--token_budget", "1000", "--full", "--json"];
+    expect(repairProjectionRecovery(argv, "projection_options_mutually_exclusive", { suggested_retry_args: ["get", "pm-one", "--full"] })?.suggested_retry_args).toEqual(["--explain", "--path", "/selected", "get", "pm-one", "--full", "--json"]);
+    expect(repairProjectionRecovery(["get", "pm-one", "--token_budget=1000", "--full", "--json"], "projection_options_mutually_exclusive", { suggested_retry_args: ["get", "pm-one", "--full"] })?.suggested_retry_args).toEqual(["get", "pm-one", "--full", "--json"]);
   });
 
   it("withholds a retry when an unknown extension option has ambiguous value arity", () => {
@@ -24,6 +30,15 @@ describe("minimal projection retry edits", () => {
   it("removes conflicting intent/depth controls while retaining the producer budget and selected full mode", () => {
     const argv = ["get", "pm-selected", "--for=inspect", "--token-budget", "1000", "--full", "--fields", "id", "--depth", "deep", "--output-budget", "2000", "--json"];
     expect(repairProjectionRecovery(argv, "projection_options_mutually_exclusive", { suggested_retry_args: ["get", "pm-selected", "--full"] })?.suggested_retry_args).toEqual(["get", "pm-selected", "--full", "--output-budget", "2000", "--json"]);
+  });
+
+  it.each(["--full", "--brief", "--compact"])("retains the caller's single explicit %s mode over the generic suggestion", (mode) => {
+    const argv = ["--path", "/selected", "list", mode, "--fields", "id", "--json"];
+    expect(repairProjectionRecovery(argv, "projection_options_mutually_exclusive", { suggested_retry_args: ["list", mode === "--brief" ? "--full" : "--brief"] })?.suggested_retry_args).toEqual(["--path", "/selected", "list", mode, "--json"]);
+  });
+
+  it("uses the suggested mode when multiple explicit modes conflict", () => {
+    expect(repairProjectionRecovery(["list", "--full", "--brief", "--json"], "projection_options_mutually_exclusive", { suggested_retry_args: ["list", "--brief"] })?.suggested_retry_args).toEqual(["list", "--brief", "--json"]);
   });
 
   it("leaves unrelated recovery and absent recovery unchanged", () => {

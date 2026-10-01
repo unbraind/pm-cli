@@ -399,4 +399,11 @@ Dependency token accounting includes the projection declaration and derived
 receipt. Reported `usedTokens` and truncation estimates therefore describe the
 final serialized result, not a pre-receipt intermediate.
 
-When context field selection hides focus roles or blocker flags, optional `summary.focus_row_states` strings retain those classifications across JSON transport. Each character corresponds to a delivered record in its named focus section: `i`/`I` means in progress, `o`/`O` means open; uppercase means blocked. Continuation and compaction slice these receipts with the rows. Self-describing focus rows need no extra receipt. Semantic receipts are preserved during explanatory-string compaction, and corrupt alphabet or row-count mismatches are rejected.
+When context field selection hides focus roles or blocker flags, optional
+`summary.focus_row_states` strings retain those classifications across JSON
+transport. Each character corresponds to a delivered record in its named focus
+section: `i`/`I` means in progress, `o`/`O` means open; uppercase means blocked.
+Continuation and compaction slice these receipts with the rows. Self-describing
+focus rows need no extra receipt. Semantic receipts are preserved during
+explanatory-string compaction, and corrupt alphabet or row-count mismatches are
+rejected.

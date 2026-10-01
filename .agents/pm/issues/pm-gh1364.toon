@@ -2,29 +2,28 @@ id: pm-gh1364
 title: "GH-1364: preserve tracker scope and valid projection in recovery"
 description: "Implement existing GitHub issue https://github.com/unbraind/pm-cli/issues/1364. Retain original invocation scope, renderer and unrelated valid controls when repairing field projection or full/intent conflicts."
 type: Issue
-status: closed
+status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-01T09:24:18.862Z"
-updated_at: "2026-10-01T15:32:45.273Z"
-closed_at: "2026-10-01T14:50:45.027Z"
-completed_at: "2026-10-01T14:50:45.027Z"
+updated_at: "2026-10-01T17:59:46.045Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#25a4e59e3a757fa1c2538e8e"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Exact retry reads the explicitly selected colliding tracker;JSON and all valid selectors survive correction;Aliases and attached flags retain unrelated options;Unsafe ambiguous retry is omitted and mutation recovery safety remains intact
 parent: pm-f05lsg
 risk: medium
 confidence: high
-resolution: "Recovery minimally repairs the original invocation while preserving selected tracker, JSON, valid selectors and unrelated controls; unsafe ambiguous retries are withheld."
-expected_result: "Exact emitted retries read the selected colliding tracker, retain valid output controls, and preserve no-preview-to-mutation safety."
-actual_result: "Linked recovery acceptance passed 17 tests plus its executable refusal negative control; full corpus passed 9467 with two platform skips and exact 100/100/100/100 coverage; final static, context, type, version and credential checks passed."
+expected_result: "Exact recovery preserves the selected tracker through canonical and legacy path flags, including flag-looking values, and retains a single explicitly selected full, brief or compact mode."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-szn67i,related,"2026-10-01T13:47:52.212Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-01T09:24:18.862Z","harness:codex","Duplicate check: live GH-1364 search across all statuses returned zero; pm-szn67i is closed for earlier strict-close/global scope corrections. Reuse recovery-closure lineage pm-f05lsg. GitHub issue remains the external owner; local implementation only."
   "2026-10-01T09:44:09.288Z","harness:codex","Current-main negative control: exact retry from two colliding trackers reads the default tracker and drops JSON and valid close_reason. New executable retry regression fails on untouched 89b4aa8bb; fixed branch passes with selected tracker, JSON, valid selectors, aliases, attached values and spaces. Expanded focused suite passed 58/58. Full coverage/static/package checks remain underway; no publishing authorized."
   "2026-10-01T15:01:58.882Z","harness:codex","Final packed CLI exact recovery replay passed selected colliding tracker, JSON and retained valid fields. Final source coverage runner exited 0: 9467 passed, two Windows-only skips, zero uncovered counts in all four dimensions. Generated changelog consistency and post-close graph/history/tracker assurance pass; hosted checks and PR review remain pending."
   "2026-10-01T15:32:45.273Z","harness:codex",Hosted Windows regression exposed a POSIX path literal in the new refusal fixture. Expected scope now uses platform path.join; exact argv and unsafe-scope negative control are unchanged. Added structured gate evidence required by the post-close defect gate. Prior static success preceded closure and did not validate this terminal-only requirement; final checks are rerunning.
+  "2026-10-01T17:59:46.045Z","harness:codex","Recovery review corrections pass focused CLI/SDK replay tests, lint and all four type checks: legacy/canonical tracker flags consume flag-looking values including literal --, selected full/brief/compact survives generic suggestions, and supported root --explain remains intact before/after the command. Actual CLI already normalizes both token_budget forms before recovery; scanner now also canonicalizes declared aliases defensively. No merge or live telemetry transmission performed."
 files[13]{path,scope}:
   scripts/release/refusal-closure-gate.mjs,project
   src/cli/main.ts,project
@@ -58,7 +57,6 @@ test_runs[1]:
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project
-close_reason: Local implementation and final validation complete; PR review and hosted checks remain the delivery boundary.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

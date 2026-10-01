@@ -2,25 +2,23 @@ id: pm-gh1371
 title: "GH-1371: compose output budget and producer pagination"
 description: "Implement existing GitHub issue https://github.com/unbraind/pm-cli/issues/1371. Presentation-only universal output controls must not alter producer fingerprints; every emitted count must match its delivered rows."
 type: Issue
-status: closed
+status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-01T09:24:20.761Z"
-updated_at: "2026-10-01T16:15:30.343Z"
-closed_at: "2026-10-01T16:15:29.851Z"
-completed_at: "2026-10-01T16:15:29.851Z"
+updated_at: "2026-10-01T17:59:45.407Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#25a4e59e3a757fa1c2538e8e"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Advertised output and producer cursors retrieve every matching ID;Continued focus collections have no duplicated IDs;Delivered counts and hidden status receipts agree with emitted rows;Population and count-only totals remain intact;CLI and SDK filter changes reject cursors and field projection remains compatible
 parent: pm-doxj
 risk: medium
 confidence: high
-resolution: "Producer and output-budget cursors compose across CLI and SDK; delivered focus/item counts survive serialized projections, while count-only aggregates survive root omission and warning compaction."
-expected_result: "Complete unique traversal, true query/scope rejection, delivered count accuracy and aggregate count preservation even when items and count_only are projected away."
-actual_result: "Corrected final source passes 9467 tests with two Windows-only skips; exact all-source coverage is 63163 lines, 66189 statements, 13699 functions and 50697 branches, all covered. All local static/context/type/dogfood/docs/version/security aggregates pass. Linked continuation regressions pass again. Count-only roots retain aggregate 30 while compacting 100 warnings, including omission of items and count_only. Independent source review confirms the correction; exact-head hosted and configured bot reviews remain pending."
+expected_result: "Count-only aggregate totals survive field, amount and budget projection; replay fixtures remain private and continuation preserves tracker/query semantics."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-fgih,related,"2026-10-01T13:47:53.034Z","harness:codex","cli:update:dep",detected
-comments[13]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-10-01T09:24:20.761Z","harness:codex","Duplicate check: live GH-1371 search across all statuses returned zero; full live pm-fgih is closed for command-local presentation classification. This issue extends that canonical implementation to universal controls and composed cursor boundaries. GitHub issue remains external owner; local implementation only."
   "2026-10-01T09:44:11.069Z","harness:codex","Current-main negative control: list/search budget subpages deliver 25/30 rows, terminal delivered counts remain 25, and producer continuation rejects invalid_query_cursor. Hierarchical context also rejects producer continuation and retains pre-compaction returned_focus. New regression suite fails on untouched 89b4aa8bb and passes on this branch. Expanded focused suite passed 58/58. Context hierarchy companions may repeat as contextual scaffolding; focus collection IDs are checked for duplicates. Full checks remain underway."
   "2026-10-01T11:18:04.591Z","harness:codex","Composed list/search/context tests traverse actual budget cursors before producer pagination, verify delivered status counters and unique focus rows, and reject filter or tracker changes after continuation. A second tracker with identical items proves scope binding rather than accidental missing-ID rejection."
@@ -34,6 +32,7 @@ comments[13]{created_at,author,text}:
   "2026-10-01T15:01:59.410Z","harness:codex","Final packed CLI/SDK serialized continuation matrix passed both cursor layers, focus classifications and real filter/tracker rejection. Packed warning compaction retains count-only count/total 30 while reducing warnings to 24. Exact all-source coverage, static/token/context, package-first, artifact budget, migration and npx/Bunx smoke pass. Score floor is raised to measured 329/336 killed with seven existing equivalents. Hosted checks and PR review remain pending."
   "2026-10-01T15:10:55.111Z","harness:codex","Packed head negative control confirms both root projections count,total,count_only,warnings and count,total,warnings change aggregate 30 to 24 under budget compaction. Restore the aggregate independently of items and retain producer count-only semantics across root projection; add both exact root-projection regressions. No merge approval for the published head."
   "2026-10-01T15:32:46.069Z","harness:codex","Independent final review caught count-only root projection compaction with items omitted: 30 aggregate matches became 24 retained warnings. Private authoritative aggregate mode now survives projection, including omission of count_only. Both exact projections failed against the packed prior head (count 24), and focused regressions pass with count 30. Structured gate evidence added; full final verification pending."
+  "2026-10-01T17:59:45.406Z","harness:codex","Cubic review correction: preserve authoritative count-only count across the second refresh after root selection; items and items,count,total retain count30 for bounded/unbounded amount. Before correction both reproduced count0. Token replay directories preserve0700, accounted steps validate immediately, and baseline expected-output failures stop capture. Focused tests, lint and all four type configurations pass. Broad aggregate verification and source-linked coverage receipts are pending; item remains in_progress."
 files[18]{path,scope}:
   scripts/release/agent-task-token-gate.mjs,project
   scripts/release/sdk-mutation-baseline.json,project
@@ -81,7 +80,6 @@ test_runs[2]:
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project
-close_reason: Corrected implementation verified locally; exact-head independent and hosted PR review remain the delivery boundary.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

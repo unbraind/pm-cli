@@ -11,10 +11,19 @@ describe("scope-preserving projection retries (GH-1364)", () => {
       for (const [scope, title] of [[[], "Default tracker"], [["--pm-path", other], "Selected tracker"]] as const) {
         expect((await run([...scope, "create", "task", title, "--id", "collision", "--json"])).code).toBe(0);
       }
-      const flagPath = path.join(context.tempRoot, "--fields");
-      expect((await run(["init", flagPath, "--defaults", "--agent-guidance", "skip", "--json"])).code).toBe(0);
-      expect((await run(["--pm-path", flagPath, "create", "task", "Selected tracker", "--id", "collision", "--json"])).code).toBe(0);
+      for (const name of ["--fields", "--"]) {
+        const flagPath = path.join(context.tempRoot, name);
+        expect((await run(["init", flagPath, "--defaults", "--agent-guidance", "skip", "--json"])).code).toBe(0);
+        expect((await run(["--pm-path", flagPath, "create", "task", "Selected tracker", "--id", "collision", "--json"])).code).toBe(0);
+      }
+      expect((await run(["--pm-path", other, "update", "pm-collision", "--description", "Full description sentinel", "--json"])).code).toBe(0);
       for (const invocation of [
+        ["--explain", "--path", other, "get", "pm-collision", "--fields", "title,titlle,close_reason", "--json"],
+        ["get", "pm-collision", "--path", other, "--for", "inspect", "--full", "--token_budget", "1000", "--json"],
+        ["get", "pm-collision", "--path", other, "--explain", "--fields", "title,titlle,close_reason", "--json"],
+        ["--path", "--fields", "get", "pm-collision", "--fields", "title,titlle,close_reason", "--json"],
+        ["--path", "--", "get", "pm-collision", "--fields", "title,titlle,close_reason", "--json"],
+        ["--pm-path", "--", "get", "pm-collision", "--fields", "title,titlle,close_reason", "--json"],
         ["--pm-path", "--fields", "get", "pm-collision", "--fields", "title,titlle,close_reason", "--json"],
         ["--pm-path", other, "get", "pm-collision", "--fields", "title,titlle,close_reason", "--json"],
         ["get", "pm-collision", `--pm-path=${other}`, "--fields=title,titlle,close_reason", "--json"],
@@ -27,7 +36,7 @@ describe("scope-preserving projection retries (GH-1364)", () => {
         expect(refused.code).toBe(2);
         const error = JSON.parse(refused.stderr) as { recovery: { suggested_retry_args: string[] } };
         const args = error.recovery.suggested_retry_args;
-        expect(args).toContain("--json");
+        expect(args, JSON.stringify({ invocation, error })).toContain("--json");
         const replay = await run(args);
         expect(replay.code).toBe(0);
         if (invocation.includes("list") || invocation.includes("search")) {
@@ -40,6 +49,15 @@ describe("scope-preserving projection retries (GH-1364)", () => {
           expect(args[args.lastIndexOf("--fields") + 1]).toBe(invocation.some((token) => token.includes("close_reason")) ? "title,close_reason" : "title");
         }
       }
+      const refusedFull = await run(["--path", other, "list", "--full", "--fields", "title", "--limit", "1", "--output-budget", "unbounded", "--json"]);
+      expect(refusedFull.code).toBe(2);
+      const fullArgs = JSON.parse(refusedFull.stderr).recovery.suggested_retry_args as string[];
+      expect(fullArgs).toContain("--full");
+      expect(fullArgs).not.toContain("--brief");
+      expect(fullArgs).not.toContain("--fields");
+      const fullReplay = await run(fullArgs);
+      expect(fullReplay.code).toBe(0);
+      expect(fullReplay.json).toMatchObject({ items: [{ title: "Selected tracker", description: "Full description sentinel" }] });
     });
   });
 });

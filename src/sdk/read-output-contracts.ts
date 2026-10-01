@@ -1542,7 +1542,9 @@ function projectReadOutputRows(
     }
     projected.count = Object.keys(projected[cursor.path] as object).length;
   }
-  const continuationSource = projected;
+  const continuationSource = result.count_only === true
+    ? { ...projected, count_only: true, count: result.count }
+    : projected;
   if (resolved.amount?.source === "canonical") {
     projected = applyAmountBound(projected, resolved.amount.value);
   }

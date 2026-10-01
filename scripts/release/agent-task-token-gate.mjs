@@ -372,19 +372,22 @@ export function assertAdvertisedAgentTaskRecovery(refusal, step) {
 }
 
 /** Capture a complete independent replay without relocating cache files between commands. */
-function captureTaskReplays(pmRoot, tasks, accounting) {
-  return tasks.map((task) => task.steps.map((step) =>
-    runCli(pmRoot, ["--json", ...(accounting ? ["--token-accounting"] : []), ...step.args]),
-  ));
+function captureTaskReplays(pmRoot, tasks) {
+  return tasks.map((task) => task.steps.map((step) => {
+    const replay = runCli(pmRoot, ["--json", ...step.args]);
+    if (replay.status !== step.expected_exit_code) fail(`Agent-task transcript step ${step.id} baseline exit mismatch`);
+    validateExpectedOutput(parseJsonOutput(replay, step), step);
+    return replay;
+  }));
 }
 
 /** Compare complete independent replays at the same scope and sum every emitted byte, including retries. */
-function measureTask(pmRoot, baselineSteps, accountedSteps, task) {
+function measureTask(pmRoot, baselineSteps, task) {
   const measuredSteps = [];
   const payloads = new Map();
   for (const [index, step] of task.steps.entries()) {
     const measured = validateAgentTaskTokenInvocation(
-      baselineSteps[index], accountedSteps[index], step,
+      baselineSteps[index], runCli(pmRoot, ["--json", "--token-accounting", ...step.args]), step,
       { baseline: pmRoot, accounted: pmRoot },
     );
     if (step.recovery_for !== undefined) {
@@ -790,14 +793,13 @@ export async function main(argv = process.argv.slice(2)) {
         ),
       })),
     }));
-    const baselineReplays = captureTaskReplays(baselineFixture.pmRoot, tasks, false);
+    const baselineReplays = captureTaskReplays(baselineFixture.pmRoot, tasks);
     rmSync(comparisonWorkspace, { recursive: true, force: true });
-    mkdirSync(comparisonWorkspace, { recursive: true });
+    mkdirSync(comparisonWorkspace, { recursive: true, mode: 0o700 });
     const accountedFixture = await seedWorkspace(comparisonWorkspace);
     assertMatchingAgentTaskFixtureAnchors(baselineFixture, accountedFixture);
-    const accountedReplays = captureTaskReplays(accountedFixture.pmRoot, tasks, true);
     const measured = tasks.map((task, index) =>
-      measureTask(baselineFixture.pmRoot, baselineReplays[index], accountedReplays[index], task),
+      measureTask(accountedFixture.pmRoot, baselineReplays[index], task),
     );
     const report = {
       version: BASELINE_VERSION,

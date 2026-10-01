@@ -50,11 +50,11 @@ describe("semantic transaction previews (GH-1370)", () => {
       expect(context.runCli(["create", "task", "Completion target", "--id", "complete", "--json"]).code).toBe(0);
       expect(context.runCli(["claim", "pm-complete", "--author", "preview-agent", "--json"]).code).toBe(0);
       const before = await durableSnapshot(context.pmPath);
-      const base = ["item", "complete", "pm-complete", "Delivered", "--transaction-id", "completion", "--validate-close", "strict", "--author", "preview-agent", "--json"];
-      const invalid = context.runCli([...base, "--dry-run"]);
+      const base = ["item", "complete", "pm-complete", "Delivered", "--validate-close", "strict", "--author", "preview-agent", "--json"];
+      const invalid = context.runCli([...base, "--transaction-id", "completion", "--dry-run"]);
       expect(invalid.code).toBe(2);
       expect(await durableSnapshot(context.pmPath)).toEqual(before);
-      expect(context.runCli(base).code).toBe(2);
+      expect(context.runCli([...base, "--transaction-id", "completion"]).code).toBe(2);
       const valid = [...base, "--transaction-id", "completion-valid", "--comment", "text=Staged completion evidence", "--resolution", "Delivered", "--expected-result", "Expected", "--actual-result", "Observed"];
       const beforeValid = await durableSnapshot(context.pmPath);
       const preview = context.runCli([...valid, "--dry-run"], { expectJson: true });

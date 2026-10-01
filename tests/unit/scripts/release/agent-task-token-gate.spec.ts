@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import { syncBuiltinESMExports } from "node:module";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -19,6 +21,7 @@ const tempRoots: string[] = [];
 
 afterEach(async () => {
   vi.restoreAllMocks();
+  syncBuiltinESMExports();
   for (const root of tempRoots.splice(0))
     await rm(root, { recursive: true, force: true });
 });
@@ -1052,7 +1055,10 @@ describe("agent-task transcript token gate", () => {
     const baselinePath = path.join(root, "baseline.json");
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 
+    const mkdir = vi.spyOn(fs, "mkdirSync");
+    syncBuiltinESMExports();
     const updated = await main(["--update", "--baseline", baselinePath]);
+    expect(mkdir.mock.calls.some(([directory, options]) => String(directory).includes("pm-agent-task-accounted-") && typeof options === "object" && options?.mode === 0o700)).toBe(true);
     expect(updated).toMatchObject({
       task_count: 9,
       completed_task_count: 9,

@@ -1472,6 +1472,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     ],
   },
   {
+    code: "transaction_preview_snapshot_changed",
+    meaning: "Transaction preview snapshot changed condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/item-transaction.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "transaction_preview_snapshot_changed",
+    aliases: [],
+  },
+  {
     code: "type_duplicate",
     meaning: "Type duplicate condition.",
     stability: "stable",

@@ -2145,13 +2145,6 @@
       ],
       "package_version": "2026.10.1",
       "reason": "Add optional tracker-scope inputs and transaction-operation error evidence; existing caller shapes remain valid. Add semantic preview exports."
-    },
-    {
-      "changes": [
-        "signature ./sdk:rememberReadOutputFocusRows"
-      ],
-      "package_version": "2026.10.1",
-      "reason": "Add optional tracker-scope inputs, staged semantic preview exports, transaction-operation error evidence and optional projected context classifications; existing caller shapes remain valid."
     }
   ],
   "entrypoints": {

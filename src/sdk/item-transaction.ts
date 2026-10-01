@@ -6,7 +6,7 @@
  * with correct-by-construction inspection and compensation wiring.
  */
 import crypto from "node:crypto";
-import { cp, mkdtemp, rm } from "node:fs/promises";
+import { cp, mkdtemp, readdir, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { getActiveExtensionRegistrations, setActiveExtensionRegistrations } from "../core/extensions/index.js";
 import path from "node:path";
@@ -574,6 +574,30 @@ async function validateMutationOperation<T>(mutation: BulkItemMutation, index: n
   }
 }
 
+/** Exclude transient runtime and lock files from non-writing previews. */
+function includePreviewPath(root: string, file: string): boolean {
+  return !["locks", "runtime"].includes(path.relative(root, file).split(path.sep)[0]!);
+}
+
+/** Hash dereferenced durable paths and bytes so a staged copy cannot validate mixed source state. */
+async function previewTrackerFingerprint(root: string): Promise<string> {
+  const fingerprint = crypto.createHash("sha256");
+  async function visit(directory: string): Promise<void> {
+    for (const name of (await readdir(directory)).sort()) {
+      const file = path.join(directory, name);
+      if (!includePreviewPath(root, file)) continue;
+      if ((await stat(file)).isDirectory()) {
+        await visit(file);
+      } else {
+        fingerprint.update(JSON.stringify(path.relative(root, file)));
+        fingerprint.update(crypto.createHash("sha256").update(await readFile(file)).digest());
+      }
+    }
+  }
+  await visit(root);
+  return fingerprint.digest("hex");
+}
+
 /** Validate ordered mutations using apply's coordinator in a disposable tracker, without source writes, journals or extension hooks. */
 export async function previewItemMutations(options: Pick<CommitItemMutationsOptions, "pmRoot" | "transactionId" | "author" | "mutations">): Promise<ItemMutationPreviewValidation> {
   const identity = validateWorkspaceTransactionIdentity(options);
@@ -584,10 +608,17 @@ export async function previewItemMutations(options: Pick<CommitItemMutationsOpti
   const root = await mkdtemp(path.join(tmpdir(), "pm-transaction-preview-"));
   const stagedRoot = path.join(root, "tracker");
   try {
+    const sourceFingerprint = await previewTrackerFingerprint(identity.pmRoot);
     await cp(identity.pmRoot, stagedRoot, {
       recursive: true, dereference: true,
-      filter: (source) => !["locks", "runtime"].includes(path.relative(identity.pmRoot, source).split(path.sep)[0]!),
+      filter: (source) => includePreviewPath(identity.pmRoot, source),
     });
+    const [currentFingerprint, stagedFingerprint] = await Promise.all([
+      previewTrackerFingerprint(identity.pmRoot), previewTrackerFingerprint(stagedRoot),
+    ]);
+    if (sourceFingerprint !== currentFingerprint || sourceFingerprint !== stagedFingerprint) {
+      throw new PmCliError("Tracker changed while preparing the transaction preview; retry against stable state.", EXIT_CODE.CONFLICT, { code: "transaction_preview_snapshot_changed" });
+    }
     await runWithActiveExtensions({ path: stagedRoot, noExtensions: true }, async () => {
       setActiveExtensionRegistrations(registrations);
       const config = { ...identity, pmRoot: stagedRoot, createCompensation: "close" as const };

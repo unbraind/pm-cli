@@ -2623,7 +2623,8 @@ export async function runWithActiveExtensions<T>(
   if (activeExtensionScope.getStore() === true && explicitCwd === undefined && options.noExtensions === true) {
     // The caller already owns the activation gate. A nested disabled scope
     // needs fresh registries, but must not reacquire a reader behind its writer.
-    return runWithIsolatedExtensionRuntime(run);
+    const pmRoot = resolvePmRoot(process.cwd(), options.path);
+    return runWithIsolatedExtensionRuntime(() => runWithDiscoveredContextIntentContracts({ pmRoot }, run));
   }
   const resolutionCwd = explicitCwd ?? process.cwd();
   return withActiveExtensions(
