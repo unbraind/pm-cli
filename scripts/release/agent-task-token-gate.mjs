@@ -372,6 +372,7 @@ export function assertAdvertisedAgentTaskRecovery(refusal, step) {
 }
 
 /** Capture a complete independent replay without relocating cache files between commands. */
+/** Capture independent baseline steps and stop immediately on an exit or payload mismatch. */
 function captureTaskReplays(pmRoot, tasks) {
   return tasks.map((task) => task.steps.map((step) => {
     const replay = runCli(pmRoot, ["--json", ...step.args]);

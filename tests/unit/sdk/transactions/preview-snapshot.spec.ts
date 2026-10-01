@@ -1,5 +1,7 @@
-import { symlink, writeFile } from "node:fs/promises";
+import { mkdir, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { createServer } from "node:net";
+import { execFileSync } from "node:child_process";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { previewItemMutations } from "../../../../src/sdk/item-transaction.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
@@ -8,6 +10,13 @@ const copying = vi.hoisted(() => ({ change: "none" }));
 vi.mock("node:fs/promises", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:fs/promises")>();
   return { ...actual,
+    open: async (...args: Parameters<typeof actual.open>) => {
+      if (copying.change === "opened-pipe" && String(args[0]).endsWith("snapshot-probe.txt")) {
+        await actual.rm(args[0]);
+        execFileSync("mkfifo", [String(args[0])]);
+      }
+      return actual.open(...args);
+    },
     readFile: async (...args: Parameters<typeof actual.readFile>) => {
       if (copying.change.startsWith("stream") && String(args[0]).endsWith("snapshot-probe.txt")) throw new Error("Whole-file buffering is forbidden for this large fixture");
       return actual.readFile(...args);
@@ -68,6 +77,55 @@ describe("semantic preview snapshot consistency", () => {
       await writeFile(path.join(context.pmPath, "snapshot-probe.txt"), "file rather than directory");
       copying.change = change;
       await expect(previewItemMutations({ pmRoot: context.pmPath, transactionId: "persistent-path", author: "snapshot-agent", mutations: [{ op: "create", id: "pm-path", options: { title: "Path preview", type: "Task" } }] })).rejects.toMatchObject({ code: change === "invalid-path" ? "ENOTDIR" : "ENOENT" });
+    });
+  });
+
+  it("includes empty regular files in a valid snapshot", async () => {
+    await withTempPmPath(async (context) => {
+      await writeFile(path.join(context.pmPath, "empty-entry"), "");
+      await expect(previewItemMutations({ pmRoot: context.pmPath, transactionId: "empty-file", author: "snapshot-agent", mutations: [{ op: "create", id: "pm-empty", options: { title: "Empty file preview", type: "Task" } }] })).resolves.toMatchObject({ validated: true });
+    });
+  });
+
+  it.skipIf(process.platform === "win32")("refuses a regular file replaced by a pipe before opening without waiting for a writer", async () => {
+    await withTempPmPath(async (context) => {
+      await writeFile(path.join(context.pmPath, "snapshot-probe.txt"), "regular file");
+      copying.change = "opened-pipe";
+      await expect(previewItemMutations({ pmRoot: context.pmPath, transactionId: "pipe-race", author: "snapshot-agent", mutations: [{ op: "create", id: "pm-pipe", options: { title: "Pipe preview", type: "Task" } }] })).rejects.toThrow("Transaction preview requires regular files and directories");
+    });
+  });
+
+  it.skipIf(process.platform === "win32")("accepts an explicitly selected linked tracker root while rejecting links within it", async () => {
+    await withTempPmPath(async (context) => {
+      const linkedRoot = path.join(context.tempRoot, "selected-root");
+      await symlink(context.pmPath, linkedRoot);
+      await expect(previewItemMutations({ pmRoot: linkedRoot, transactionId: "linked-root", author: "snapshot-agent", mutations: [{ op: "create", id: "pm-root", options: { title: "Selected root preview", type: "Task" } }] })).resolves.toMatchObject({ validated: true });
+    });
+  });
+
+  it.skipIf(process.platform === "win32").each(["file", "directory", "cycle"])("rejects a %s symlink before staging external or cyclic contents", async (kind) => {
+    await withTempPmPath(async (context) => {
+      const outside = path.join(path.dirname(context.pmPath), "outside");
+      await mkdir(outside);
+      await writeFile(path.join(outside, "secret.txt"), "outside tracker");
+      const target = kind === "cycle" ? context.pmPath : kind === "file" ? path.join(outside, "secret.txt") : outside;
+      await symlink(target, path.join(context.pmPath, "linked-entry"));
+      await expect(previewItemMutations({ pmRoot: context.pmPath, transactionId: "linked-preview", author: "snapshot-agent", mutations: [{ op: "create", id: "pm-linked", options: { title: "Linked preview", type: "Task" } }] })).rejects.toThrow("Transaction preview requires regular files and directories");
+    });
+  });
+
+  it.skipIf(process.platform === "win32")("rejects a non-regular socket before opening its contents", async () => {
+    await withTempPmPath(async (context) => {
+      const socket = createServer();
+      await new Promise<void>((resolve, reject) => {
+        socket.once("error", reject);
+        socket.listen(path.join(context.pmPath, "special-entry"), resolve);
+      });
+      try {
+        await expect(previewItemMutations({ pmRoot: context.pmPath, transactionId: "special-preview", author: "snapshot-agent", mutations: [{ op: "create", id: "pm-special", options: { title: "Special preview", type: "Task" } }] })).rejects.toThrow("Transaction preview requires regular files and directories");
+      } finally {
+        await new Promise<void>((resolve, reject) => socket.close((error) => error ? reject(error) : resolve()));
+      }
     });
   });
 

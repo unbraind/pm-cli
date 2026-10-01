@@ -932,6 +932,7 @@ function normalizeProjectionField(field: string): string {
   return field.startsWith("item.") ? field.slice("item.".length) : field;
 }
 
+/** Reject unknown selectors with a complete field domain and a minimal valid retry. */
 function validateListProjectionFields(
   projection: ListProjectionConfig,
   runtimeMetadataKeys: Iterable<string>,
@@ -1851,6 +1852,7 @@ function pageAndProjectListItems(
   };
 }
 
+/** Bind list continuation to tracker scope and matched ordering, excluding presentation controls. */
 function buildListCursorFingerprint(
   status: string | string[] | null,
   options: ListOptions,
@@ -1871,6 +1873,7 @@ function buildListCursorFingerprint(
   });
 }
 
+/** Use the metadata index only when the requested filters and projection preserve authoritative results. */
 async function tryLoadIndexedListPage(params: {
   options: ListOptions;
   runtime: ListRuntimeContext;

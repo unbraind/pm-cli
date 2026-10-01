@@ -17,7 +17,9 @@ describe("scope-preserving projection retries (GH-1364)", () => {
         expect((await run(["--pm-path", flagPath, "create", "task", "Selected tracker", "--id", "collision", "--json"])).code).toBe(0);
       }
       expect((await run(["--pm-path", other, "update", "pm-collision", "--description", "Full description sentinel", "--json"])).code).toBe(0);
+      // The harness selects the default tracker through PM_PATH, with cwd outside it.
       for (const invocation of [
+        ["get", "pm-collision", "--fields", "title,titlle,close_reason", "--json"],
         ["--explain", "--path", other, "get", "pm-collision", "--fields", "title,titlle,close_reason", "--json"],
         ["get", "pm-collision", "--path", other, "--for", "inspect", "--full", "--token_budget", "1000", "--json"],
         ["get", "pm-collision", "--path", other, "--explain", "--fields", "title,titlle,close_reason", "--json"],
@@ -43,7 +45,8 @@ describe("scope-preserving projection retries (GH-1364)", () => {
           expect(replay.json).toMatchObject({ items: [{ title: "Selected tracker" }] });
           expect(args).toContain("--limit");
         } else {
-          expect(replay.json).toMatchObject({ item: { id: "pm-collision", title: "Selected tracker" } });
+          const explicitScope = invocation.some((token) => token === "--path" || token.startsWith("--pm-path"));
+          expect(replay.json).toMatchObject({ item: { id: "pm-collision", title: explicitScope ? "Selected tracker" : "Default tracker" } });
         }
         if (invocation.some((token) => token.startsWith("--fields"))) {
           expect(args[args.lastIndexOf("--fields") + 1]).toBe(invocation.some((token) => token.includes("close_reason")) ? "title,close_reason" : "title");

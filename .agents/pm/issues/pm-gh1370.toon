@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-01T10:36:55.000Z"
-updated_at: "2026-10-01T21:13:25.003Z"
+updated_at: "2026-10-01T22:12:24.343Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#25a4e59e3a757fa1c2538e8e"
 author: "harness:codex"
@@ -15,11 +15,10 @@ acceptance_criteria: Invalid enums and missing IDs refuse previews with apply-co
 parent: pm-y9hq
 risk: medium
 confidence: high
-expected_result: "A semantic preview validates one stable staged tracker state, preserves source files and hooks, and resolves nested context contracts for the selected tracker; commit revalidates concurrent and extension constraints."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-o8z748,related,"2026-10-01T13:08:55.258Z","harness:codex","cli:update:dep",detected
   pm-gh1364,related,"2026-10-01T20:34:12.110Z","harness:codex","cli:update:dep",detected
-comments[11]:
+comments[14]:
   - created_at: "2026-10-01T11:18:02.965Z"
     author: "harness:codex"
     text: "Semantic preview regression checks now pass: invalid risk/status/missing-target refusal parity, strict completion after staged evidence, no source writes, no mutation hooks, committed-plan replay/mismatch, and revalidation after a subsequent deletion. Public SDK/MCP and CLI routes share the disposable transaction coordinator."
@@ -55,8 +54,16 @@ comments[11]:
   - created_at: "2026-10-01T21:13:25.003Z"
     author: "harness:codex"
     text: "Controlled original-checkout comparison preserved the branch and local main: PR base 89b4aa8bb and checkpoint 2916c6e2f both passed unchanged SDK import ceilings with 15 measured samples. The same ten-sample CLI transport gate failed on both: base get365>362ms, next461>440ms, create419>398ms; head get366>362ms, next451>440ms, create426>398ms. Mixed small changes do not establish a patch-specific regression; the existing local transport admission failure remains a blocker and no budget was weakened. Canonical test-local-muq0nuea-dqzwjn passes graph/record integrity plus bounded mutation (329/336 killed, seven existing equivalents); test-local-muq0up1n-tew4bo passes context relevance, unchanged artifact budget, 89 package-first commands and nine-package npx/Bunx packed smoke. Opt-in semantic dogfood and live external telemetry were unrun. The full static receipt remains failed; no all-static-passed claim is made. Current coverage/focused/type receipts remain valid for unchanged implementation source. Merge awaits final hosted/provider review, resolution of the local timing blocker and independent final-head clearance."
-files[16]{path,scope}:
-  .agents/pm/extensions/.managed-extensions.json,project
+  - created_at: "2026-10-01T21:45:15.662Z"
+    author: "harness:codex"
+    text: "Final local verification: Canonical full-source receipt test-local-mupzfgkx-70we5e passed 9494 cases with zero failures and two Windows-only skips; exact coverage lines63200/63200 statements66237/66237 functions13710/13710 branches50719/50719 is recorded on that passing producing receipt. Complete local pnpm quality:static receipt test-local-muq26sl1-rucv2t passed on CI-supported Node24.12.0 with unchanged gates. Focused/type/import-boundary receipts, context/artifact/package-first/npx-Bunx receipt test-local-muq0up1n-tew4bo and bounded mutation329/336 with seven existing equivalents pass. Node26 timing receipts remain failed; matched base/current both failed the same transport ceilings, and changing only to supported Node24 passed them. Implementation source is unchanged. Final hosted/provider review and independent merge clearance remain pending; live telemetry and opt-in semantic dogfood unrun."
+  - created_at: "2026-10-01T22:12:21.451Z"
+    author: "harness:codex"
+    text: "Fresh CodeRabbit top-level security architecture concern is valid despite zero actionable inline comments. The unchanged source incorrectly validated real external file and directory links; a real Unix socket leaked ENXIO. The same regressions now pass with a regular-file/directory policy, rejection of interior links and special entries, no dereferenced copies, O_NOFOLLOW/O_NONBLOCK descriptor opens and reads bounded to observed file size. Explicit root links establish their resolved selected boundary; native dangling-link and persistent path diagnostics remain. Canonical test-local-muq2ve7e-4du2ny passes20 snapshot/semantic tests, including a real FIFO substituted after lstat without waiting for a writer. This prevents prepared link/cycle/device/pipe traversal; aggregate work remains proportional to finite regular tracker contents. Fresh full-source coverage and static validation pending before renewed closure."
+  - created_at: "2026-10-01T22:12:24.343Z"
+    author: "harness:codex"
+    text: Removed only the unrelated generated managed-extension timestamp delta after checking all other managed state bytes match the PR base. Item/history mutations and evidence remain canonical PM operations. The preview repair has no extension-manager changes.
+files[15]{path,scope}:
   sdk/public-surface.json,project
   src/cli/error-guidance.ts,project
   src/cli/register-structured-mutation.ts,project
@@ -90,7 +97,7 @@ tests[2]:
       source_kind: local_mutation
       source_ref: fix/agent-recovery-pagination-preflight
     note: Review regressions for concurrent disappearance and bounded streaming fingerprints
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-muplc8jc-wu0sz9
     kind: test
     status: passed
@@ -119,6 +126,17 @@ test_runs[3]:
     started_at: "2026-10-01T19:38:10.766Z"
     finished_at: "2026-10-01T19:38:33.305Z"
     recorded_at: "2026-10-01T19:38:33.305Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq2ve7e-4du2ny
+    kind: test
+    status: passed
+    started_at: "2026-10-01T22:00:06.339Z"
+    finished_at: "2026-10-01T22:00:24.746Z"
+    recorded_at: "2026-10-01T22:00:24.746Z"
     passed: 1
     failed: 0
     skipped: 0

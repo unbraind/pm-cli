@@ -2351,6 +2351,7 @@ async function resolveContextFocusGroups(
   };
 }
 
+/** Bind context continuation to tracker scope and semantic filters while allowing rendering changes. */
 function buildContextCursorFingerprint(options: ContextOptions, pmRoot: string): string {
   return createQueryFingerprint(
     "context",

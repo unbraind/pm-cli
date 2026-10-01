@@ -2,23 +2,25 @@ id: pm-gh1364
 title: "GH-1364: preserve tracker scope and valid projection in recovery"
 description: "Implement existing GitHub issue https://github.com/unbraind/pm-cli/issues/1364. Retain original invocation scope, renderer and unrelated valid controls when repairing field projection or full/intent conflicts."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-01T09:24:18.862Z"
-updated_at: "2026-10-01T21:13:24.390Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#25a4e59e3a757fa1c2538e8e"
+updated_at: "2026-10-01T22:12:22.834Z"
+closed_at: "2026-10-01T21:45:10.665Z"
+completed_at: "2026-10-01T21:45:10.665Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Exact retry reads the explicitly selected colliding tracker;JSON and all valid selectors survive correction;Aliases and attached flags retain unrelated options;Unsafe ambiguous retry is omitted and mutation recovery safety remains intact
 parent: pm-f05lsg
 risk: medium
 confidence: high
-expected_result: "Exact recovery preserves the selected tracker through canonical and legacy path flags, including flag-looking values, and retains a single explicitly selected full, brief or compact mode."
+resolution: "Recovery minimally repairs the original invocation while retaining selected tracker, JSON, valid selectors and caller display mode; ambiguous unsafe retries are withheld."
+expected_result: Exact emitted retries reach the selected colliding tracker and preserve unrelated controls without turning preview into mutation.
+actual_result: "Canonical full-source receipt test-local-mupzfgkx-70we5e passed 9494 cases with zero failures and two Windows-only skips; exact coverage lines63200/63200 statements66237/66237 functions13710/13710 branches50719/50719 is recorded on that passing producing receipt. Complete local pnpm quality:static receipt test-local-muq26sl1-rucv2t passed on CI-supported Node24.12.0 with unchanged gates. Focused/type/import-boundary receipts, context/artifact/package-first/npx-Bunx receipt test-local-muq0up1n-tew4bo and bounded mutation329/336 with seven existing equivalents pass. Node26 timing receipts remain failed; matched base/current both failed the same transport ceilings, and changing only to supported Node24 passed them. Implementation source is unchanged. Final hosted/provider review and independent merge clearance remain pending; live telemetry and opt-in semantic dogfood unrun."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-szn67i,related,"2026-10-01T13:47:52.212Z","harness:codex","cli:update:dep",detected
-comments[14]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-10-01T09:24:18.862Z","harness:codex","Duplicate check: live GH-1364 search across all statuses returned zero; pm-szn67i is closed for earlier strict-close/global scope corrections. Reuse recovery-closure lineage pm-f05lsg. GitHub issue remains the external owner; local implementation only."
   "2026-10-01T09:44:09.288Z","harness:codex","Current-main negative control: exact retry from two colliding trackers reads the default tracker and drops JSON and valid close_reason. New executable retry regression fails on untouched 89b4aa8bb; fixed branch passes with selected tracker, JSON, valid selectors, aliases, attached values and spaces. Expanded focused suite passed 58/58. Full coverage/static/package checks remain underway; no publishing authorized."
   "2026-10-01T15:01:58.882Z","harness:codex","Final packed CLI exact recovery replay passed selected colliding tracker, JSON and retained valid fields. Final source coverage runner exited 0: 9467 passed, two Windows-only skips, zero uncovered counts in all four dimensions. Generated changelog consistency and post-close graph/history/tracker assurance pass; hosted checks and PR review remain pending."
@@ -33,6 +35,8 @@ comments[14]{created_at,author,text}:
   "2026-10-01T20:47:24.816Z","harness:codex","Final canonical full static receipt test-local-muq07idm-3sj1wf failed at SDK entrypoint import-time budgets: five medians exceeded their unchanged ceilings. Earlier static stages passed, but stages after this failure did not run and this receipt is not aggregate passing evidence. Exact import-time gate is being rerun alone before deciding whether a code regression or environmental variability is responsible. Full-source coverage receipt test-local-mupzfgkx-70we5e remains passed with verified measurements; closure and merge remain held."
   "2026-10-01T20:51:53.327Z","harness:codex","Import-time follow-up: direct default-five-sample recheck failed only graph (195 ms median versus 172 ms permitted). Canonical larger-sample receipt test-local-muq0cjcq-i81qdu failed only merge (237 ms median of 15 versus 226 ms permitted); graph cleared its unchanged ceiling. These are failed gates, not passing aggregate evidence. No budgets were changed. Remaining static stages are running separately, and a same-checkout PR-base comparison will distinguish patch-specific cost from timing variability before final closure."
   "2026-10-01T21:13:24.390Z","harness:codex","Controlled original-checkout comparison preserved the branch and local main: PR base 89b4aa8bb and checkpoint 2916c6e2f both passed unchanged SDK import ceilings with 15 measured samples. The same ten-sample CLI transport gate failed on both: base get365>362ms, next461>440ms, create419>398ms; head get366>362ms, next451>440ms, create426>398ms. Mixed small changes do not establish a patch-specific regression; the existing local transport admission failure remains a blocker and no budget was weakened. Canonical test-local-muq0nuea-dqzwjn passes graph/record integrity plus bounded mutation (329/336 killed, seven existing equivalents); test-local-muq0up1n-tew4bo passes context relevance, unchanged artifact budget, 89 package-first commands and nine-package npx/Bunx packed smoke. Opt-in semantic dogfood and live external telemetry were unrun. The full static receipt remains failed; no all-static-passed claim is made. Current coverage/focused/type receipts remain valid for unchanged implementation source. Merge awaits final hosted/provider review, resolution of the local timing blocker and independent final-head clearance."
+  "2026-10-01T21:45:09.899Z","harness:codex","Final local verification: Canonical full-source receipt test-local-mupzfgkx-70we5e passed 9494 cases with zero failures and two Windows-only skips; exact coverage lines63200/63200 statements66237/66237 functions13710/13710 branches50719/50719 is recorded on that passing producing receipt. Complete local pnpm quality:static receipt test-local-muq26sl1-rucv2t passed on CI-supported Node24.12.0 with unchanged gates. Focused/type/import-boundary receipts, context/artifact/package-first/npx-Bunx receipt test-local-muq0up1n-tew4bo and bounded mutation329/336 with seven existing equivalents pass. Node26 timing receipts remain failed; matched base/current both failed the same transport ceilings, and changing only to supported Node24 passed them. Implementation source is unchanged. Final hosted/provider review and independent merge clearance remain pending; live telemetry and opt-in semantic dogfood unrun."
+  "2026-10-01T22:12:22.834Z","harness:codex","Fresh CodeRabbit environment-default scope evidence is now explicit in the existing canonical replay test: PM_PATH selects the default tracker while cwd is outside it; the emitted retry runs unchanged and reads Default tracker, while the colliding explicit tracker and legacy/attached overrides still read Selected tracker. Canonical test-local-muq2xjyr-0neonz passes28 recovery tests after this addition. Changed nontrivial runtime/gate helpers now have specific purpose docstrings; the provider did not identify individual missing functions. Latest CodSpeed reports decoder230.3→233.5 microseconds (-1.37%) and fingerprint+1.53%; all decoder/validation/encoding helper bodies and benchmark inputs are byte-identical to PR base. Timing noise/environment effects are an inference, not causal proof, and the current report lacks the older different-runtime warning. Fresh full coverage/static verification is pending for the separate preview repair."
 files[13]{path,scope}:
   scripts/release/refusal-closure-gate.mjs,project
   src/cli/main.ts,project
@@ -140,7 +144,7 @@ tests[10]:
       source_kind: local_mutation
       source_ref: fix/agent-recovery-pagination-preflight
     note: "Final-source graph, record integrity and bounded mutation checks; performance gate failures remain separately recorded"
-test_runs[12]:
+test_runs[15]:
   - run_id: test-local-muplbvfh-6qgqd9
     kind: test
     status: passed
@@ -339,9 +343,43 @@ test_runs[12]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded && pnpm quality:mutation -- --prebuilt",tracker,tracker,source,local_source_ref
+  - run_id: test-local-muq26sl1-rucv2t
+    kind: test
+    status: passed
+    started_at: "2026-10-01T21:31:10.836Z"
+    finished_at: "2026-10-01T21:41:16.981Z"
+    recorded_at: "2026-10-01T21:41:16.981Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:static",tracker,tracker,source,local_source_ref
+  - run_id: test-local-muq2xjyr-0neonz
+    kind: test
+    status: passed
+    started_at: "2026-10-01T22:01:50.484Z"
+    finished_at: "2026-10-01T22:02:05.523Z"
+    recorded_at: "2026-10-01T22:02:05.523Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/projection-retry-scope.integration.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq3ach5-pzrc12
+    kind: test
+    status: passed
+    started_at: "2026-10-01T22:11:16.270Z"
+    finished_at: "2026-10-01T22:12:02.345Z"
+    recorded_at: "2026-10-01T22:12:02.345Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm exec eslint src/sdk/item-transaction.ts src/cli/runtime/projection-retry.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts --max-warnings=0 && pnpm typecheck && node --input-type=module --eval 'import { checkSdkImportBoundary } from \"./scripts/release/static-quality-gate.mts\"; const result = checkSdkImportBoundary(); console.log(JSON.stringify(result)); if (!result.ok) process.exitCode = 1;'",schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project
+close_reason: Scope-preserving executable recovery verified
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

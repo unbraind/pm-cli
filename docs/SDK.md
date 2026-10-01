@@ -1457,7 +1457,10 @@ checks. The source tracker receives no item, history, claim, lock or journal
 writes, and mutation hooks do not run. Durable source bytes are fingerprinted
 before and after copying and compared with the staged copy; an inconsistent
 copy or a file disappearing during the scan fails with
-`transaction_preview_snapshot_changed` and can be retried. File contents are
+`transaction_preview_snapshot_changed` and can be retried. Preview accepts regular
+files and directories; interior symbolic links and special files are rejected
+without following their targets. An explicitly selected root link is resolved
+once to establish the tracker boundary. File contents are
 hashed in bounded streams so large history files do not require whole-file
 buffers.
 Invalid plans fail with the underlying

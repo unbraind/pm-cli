@@ -6,9 +6,9 @@
  * with correct-by-construction inspection and compensation wiring.
  */
 import crypto from "node:crypto";
-import { createReadStream } from "node:fs";
+import { constants, type Stats } from "node:fs";
 import { isFileMissingError } from "../core/fs/fs-utils.js";
-import { cp, lstat, mkdtemp, readdir, rm, stat } from "node:fs/promises";
+import { cp, lstat, mkdtemp, open, readdir, realpath, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { getActiveExtensionRegistrations, setActiveExtensionRegistrations } from "../core/extensions/index.js";
 import path from "node:path";
@@ -581,20 +581,48 @@ function includePreviewPath(root: string, file: string): boolean {
   return !["locks", "runtime"].includes(path.relative(root, file).split(path.sep)[0]!);
 }
 
-/** Hash dereferenced durable paths and bytes so a staged copy cannot validate mixed source state. */
+/** Reject links and special files before preview can traverse or open their targets. */
+async function previewEntryStat(file: string): Promise<Stats> {
+  const entry = await lstat(file);
+  if (entry.isSymbolicLink()) {
+    // Retain the native diagnostic for persistent dangling links.
+    await stat(file);
+  } else if (entry.isDirectory() || entry.isFile()) {
+    return entry;
+  }
+  throw new TypeError(`Transaction preview requires regular files and directories: ${file}`);
+}
+
+/** Hash regular-file snapshot bytes with bounded buffers and no link or pipe following. */
+async function previewFileDigest(file: string): Promise<Buffer> {
+  const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  try {
+    const entry = await handle.stat();
+    if (!entry.isFile()) throw new TypeError(`Transaction preview requires regular files and directories: ${file}`);
+    const contents = crypto.createHash("sha256");
+    // Bound this read to the observed size, even if a concurrent writer appends.
+    if (entry.size > 0) {
+      for await (const chunk of handle.createReadStream({ highWaterMark: 64 * 1024, end: entry.size - 1, autoClose: false })) contents.update(chunk);
+    }
+    return contents.digest();
+  } finally {
+    await handle.close();
+  }
+}
+
+/** Hash durable paths and bytes so a staged copy cannot validate mixed source state. */
 async function previewTrackerFingerprint(root: string): Promise<string> {
   const fingerprint = crypto.createHash("sha256");
+  /** Visit durable entries in stable order, excluding transient runtime and lock state. */
   async function visit(directory: string): Promise<void> {
     for (const name of (await readdir(directory)).sort()) {
       const file = path.join(directory, name);
       if (!includePreviewPath(root, file)) continue;
-      if ((await stat(file)).isDirectory()) {
+      if ((await previewEntryStat(file)).isDirectory()) {
         await visit(file);
       } else {
         fingerprint.update(JSON.stringify(path.relative(root, file)));
-        const contents = crypto.createHash("sha256");
-        for await (const chunk of createReadStream(file, { highWaterMark: 64 * 1024 })) contents.update(chunk);
-        fingerprint.update(contents.digest());
+        fingerprint.update(await previewFileDigest(file));
       }
     }
   }
@@ -626,13 +654,20 @@ async function stagePreviewTracker(sourceRoot: string, stagedRoot: string): Prom
   // this check is a concurrent snapshot change.
   await stat(sourceRoot);
   try {
-    const sourceFingerprint = await previewTrackerFingerprint(sourceRoot);
-    await cp(sourceRoot, stagedRoot, {
-      recursive: true, dereference: true,
-      filter: (source) => includePreviewPath(sourceRoot, source),
+    // An explicitly selected root may itself be a link; its resolved directory
+    // establishes the boundary. Entries within it must never be dereferenced.
+    const resolvedRoot = await realpath(sourceRoot);
+    const sourceFingerprint = await previewTrackerFingerprint(resolvedRoot);
+    await cp(resolvedRoot, stagedRoot, {
+      recursive: true, dereference: false,
+      filter: async (source) => {
+        if (!includePreviewPath(resolvedRoot, source)) return false;
+        await previewEntryStat(source);
+        return true;
+      },
     });
     const [currentFingerprint, stagedFingerprint] = await Promise.all([
-      previewTrackerFingerprint(sourceRoot), previewTrackerFingerprint(stagedRoot),
+      previewTrackerFingerprint(resolvedRoot), previewTrackerFingerprint(stagedRoot),
     ]);
     if (sourceFingerprint !== currentFingerprint || sourceFingerprint !== stagedFingerprint) {
       throw previewSnapshotChangedError();

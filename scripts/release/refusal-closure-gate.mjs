@@ -117,6 +117,7 @@ function snapshotDirectory(root) {
   return { digest: hash.digest("hex"), entries };
 }
 
+/** Execute advertised closed-domain retries and compare the resulting command contracts. */
 function executeClosedDomainProbes(probes, spawn, environment) {
   return probes.map((contract) => {
     const { probe_id: probeId, refusal_args: args } = contract;

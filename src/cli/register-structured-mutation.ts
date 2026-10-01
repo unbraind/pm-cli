@@ -56,6 +56,7 @@ async function runItemReopenAction(
   printResult(result, globalOptions);
 }
 
+/** Preview or commit the ordered item plan through the shared lifecycle coordinator. */
 async function runItemMutateAction(
   options: Record<string, unknown>,
   command: Command,
@@ -134,6 +135,7 @@ function resolveCompletionReason(
   return typeof optionReason === "string" ? optionReason.trim() : "";
 }
 
+/** Compose completion evidence, closure and release before previewing or committing the plan. */
 async function runItemCompleteAction(
   id: string,
   positionalReason: string | undefined,

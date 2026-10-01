@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-01T09:24:20.761Z"
-updated_at: "2026-10-01T21:13:25.642Z"
+updated_at: "2026-10-01T22:18:12.138Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#25a4e59e3a757fa1c2538e8e"
 author: "harness:codex"
@@ -15,11 +15,10 @@ acceptance_criteria: Advertised output and producer cursors retrieve every match
 parent: pm-doxj
 risk: medium
 confidence: high
-expected_result: "Count-only aggregate totals survive field, amount and budget projection; replay fixtures remain private and continuation preserves tracker/query semantics."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-fgih,related,"2026-10-01T13:47:53.034Z","harness:codex","cli:update:dep",detected
   pm-gh1364,related,"2026-10-01T20:34:13.744Z","harness:codex","cli:update:dep",detected
-comments[18]:
+comments[21]:
   - created_at: "2026-10-01T09:24:20.761Z"
     author: "harness:codex"
     text: "Duplicate check: live GH-1371 search across all statuses returned zero; full live pm-fgih is closed for command-local presentation classification. This issue extends that canonical implementation to universal controls and composed cursor boundaries. GitHub issue remains external owner; local implementation only."
@@ -75,25 +74,55 @@ comments[18]:
   - created_at: "2026-10-01T21:13:25.641Z"
     author: "harness:codex"
     text: "Controlled original-checkout comparison preserved the branch and local main: PR base 89b4aa8bb and checkpoint 2916c6e2f both passed unchanged SDK import ceilings with 15 measured samples. The same ten-sample CLI transport gate failed on both: base get365>362ms, next461>440ms, create419>398ms; head get366>362ms, next451>440ms, create426>398ms. Mixed small changes do not establish a patch-specific regression; the existing local transport admission failure remains a blocker and no budget was weakened. Canonical test-local-muq0nuea-dqzwjn passes graph/record integrity plus bounded mutation (329/336 killed, seven existing equivalents); test-local-muq0up1n-tew4bo passes context relevance, unchanged artifact budget, 89 package-first commands and nine-package npx/Bunx packed smoke. Opt-in semantic dogfood and live external telemetry were unrun. The full static receipt remains failed; no all-static-passed claim is made. Current coverage/focused/type receipts remain valid for unchanged implementation source. Merge awaits final hosted/provider review, resolution of the local timing blocker and independent final-head clearance."
-files[18]{path,scope}:
-  scripts/release/agent-task-token-gate.mjs,project
-  scripts/release/sdk-mutation-baseline.json,project
-  sdk/public-surface.json,project
-  src/sdk/pagination.ts,project
-  src/sdk/query/context.ts,project
-  src/sdk/query/list.ts,project
-  src/sdk/query/search-pagination.ts,project
-  src/sdk/query/search.ts,project
-  src/sdk/read-output-budget.ts,project
-  src/sdk/read-output-contracts.ts,project
-  src/sdk/read-output-rows.ts,project
-  src/sdk/read-output/options.ts,project
-  tests/integration/read-output/composed-continuation.integration.spec.ts,project
-  tests/unit/commands/query/search-command.spec.ts,project
-  tests/unit/scripts/release/agent-task-token-gate.spec.ts,project
-  tests/unit/sdk/pagination.spec.ts,project
-  tests/unit/sdk/read-output-contracts.spec.ts,project
-  tests/unit/sdk/read-output/delivered-counts.spec.ts,project
+  - created_at: "2026-10-01T21:45:13.220Z"
+    author: "harness:codex"
+    text: "Final local verification: Canonical full-source receipt test-local-mupzfgkx-70we5e passed 9494 cases with zero failures and two Windows-only skips; exact coverage lines63200/63200 statements66237/66237 functions13710/13710 branches50719/50719 is recorded on that passing producing receipt. Complete local pnpm quality:static receipt test-local-muq26sl1-rucv2t passed on CI-supported Node24.12.0 with unchanged gates. Focused/type/import-boundary receipts, context/artifact/package-first/npx-Bunx receipt test-local-muq0up1n-tew4bo and bounded mutation329/336 with seven existing equivalents pass. Node26 timing receipts remain failed; matched base/current both failed the same transport ceilings, and changing only to supported Node24 passed them. Implementation source is unchanged. Final hosted/provider review and independent merge clearance remain pending; live telemetry and opt-in semantic dogfood unrun."
+  - created_at: "2026-10-01T22:12:22.193Z"
+    author: "harness:codex"
+    text: "CodeRabbit linked-issue evidence warning addressed by committed acceptance design: canonical test-local-muq36xtl-oogptj passes56 tests and runs the actual npm tarball public @unbrained/pm-cli/sdk export in a separate Node consumer, with installed dependencies linked and no source implementation imports. JSON-round-tripped cursors traverse list/search/context completely: producer limit1 yields30/30/26 unique records; limit25 composes1/2/7 budget continuations and producer transitions; three empty trackers finish in one read each. Failed consumer runs remain failed with no measurements; harness corrections followed the SDK optional count and authoritative next_cursor contracts. Global coverage/static refreshed for new preview source before closure."
+  - created_at: "2026-10-01T22:18:12.138Z"
+    author: "harness:codex"
+    text: "Final packed consumer after complexity cleanup passes the identical canonical56-test command as test-local-muq3gjbv-dr0sdy. It retains all nine real packed SDK traversal scenarios and counter assertions. Focused ESLint for the fixture passes; the earlier whole lint attempt correctly failed on fixture complexity, and complete static verification will rerun unchanged gates. No passing whole-lint claim is made from the failed attempt."
+files[19]:
+  - path: scripts/release/agent-task-token-gate.mjs
+    scope: project
+  - path: scripts/release/sdk-mutation-baseline.json
+    scope: project
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/sdk/pagination.ts
+    scope: project
+  - path: src/sdk/query/context.ts
+    scope: project
+  - path: src/sdk/query/list.ts
+    scope: project
+  - path: src/sdk/query/search-pagination.ts
+    scope: project
+  - path: src/sdk/query/search.ts
+    scope: project
+  - path: src/sdk/read-output-budget.ts
+    scope: project
+  - path: src/sdk/read-output-contracts.ts
+    scope: project
+  - path: src/sdk/read-output-rows.ts
+    scope: project
+  - path: src/sdk/read-output/options.ts
+    scope: project
+  - path: tests/fixtures/read-output/packed-continuation-consumer.mjs
+    scope: project
+    note: Real packed SDK public-export serialized continuation acceptance
+  - path: tests/integration/read-output/composed-continuation.integration.spec.ts
+    scope: project
+  - path: tests/unit/commands/query/search-command.spec.ts
+    scope: project
+  - path: tests/unit/scripts/release/agent-task-token-gate.spec.ts
+    scope: project
+  - path: tests/unit/sdk/pagination.spec.ts
+    scope: project
+  - path: tests/unit/sdk/read-output-contracts.spec.ts
+    scope: project
+  - path: tests/unit/sdk/read-output/delivered-counts.spec.ts
+    scope: project
 tests[3]:
   - command: node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts
     scope: project
@@ -121,7 +150,7 @@ tests[3]:
       source_kind: local_mutation
       source_ref: fix/agent-recovery-pagination-preflight
     note: "Final-source context relevance, packed artifact, package-first lifecycle and packed npx/Bun consumer gates"
-test_runs[5]:
+test_runs[10]:
   - run_id: test-local-muplbeu1-znb6nq
     kind: test
     status: passed
@@ -177,6 +206,61 @@ test_runs[5]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "pnpm quality:context-eval && pnpm quality:package-artifact && pnpm dogfood:package-first && pnpm smoke:npx",schema,schema,source,local_source_ref
+  - run_id: test-local-muq31e84-gtstw7
+    kind: test
+    status: failed
+    started_at: "2026-10-01T22:04:41.327Z"
+    finished_at: "2026-10-01T22:05:04.708Z"
+    recorded_at: "2026-10-01T22:05:04.708Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq33bbt-uchgjr
+    kind: test
+    status: failed
+    started_at: "2026-10-01T22:06:11.144Z"
+    finished_at: "2026-10-01T22:06:34.265Z"
+    recorded_at: "2026-10-01T22:06:34.265Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq34uwc-28wpij
+    kind: test
+    status: failed
+    started_at: "2026-10-01T22:07:24.670Z"
+    finished_at: "2026-10-01T22:07:46.284Z"
+    recorded_at: "2026-10-01T22:07:46.284Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq36xtl-oogptj
+    kind: test
+    status: passed
+    started_at: "2026-10-01T22:09:00.009Z"
+    finished_at: "2026-10-01T22:09:23.385Z"
+    recorded_at: "2026-10-01T22:09:23.385Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq3gjbv-dr0sdy
+    kind: test
+    status: passed
+    started_at: "2026-10-01T22:16:28.612Z"
+    finished_at: "2026-10-01T22:16:51.163Z"
+    recorded_at: "2026-10-01T22:16:51.163Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project
