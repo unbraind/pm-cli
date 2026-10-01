@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-01T09:24:20.761Z"
-updated_at: "2026-10-01T21:03:52.925Z"
+updated_at: "2026-10-01T21:13:25.642Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#25a4e59e3a757fa1c2538e8e"
 author: "harness:codex"
@@ -19,7 +19,7 @@ expected_result: "Count-only aggregate totals survive field, amount and budget p
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-fgih,related,"2026-10-01T13:47:53.034Z","harness:codex","cli:update:dep",detected
   pm-gh1364,related,"2026-10-01T20:34:13.744Z","harness:codex","cli:update:dep",detected
-comments[17]:
+comments[18]:
   - created_at: "2026-10-01T09:24:20.761Z"
     author: "harness:codex"
     text: "Duplicate check: live GH-1371 search across all statuses returned zero; full live pm-fgih is closed for command-local presentation classification. This issue extends that canonical implementation to universal controls and composed cursor boundaries. GitHub issue remains external owner; local implementation only."
@@ -72,6 +72,9 @@ comments[17]:
     author: "harness:codex"
     text: "Final-source full coverage producing receipt test-local-mupzfgkx-70we5e (pm-gh1364) passed on 09ba3c30ec10e637f111b477a46e252b4558d241: 9494 test cases passed, zero failed, two Windows-only skips; exact integer gate passed for lines 63200/63200, statements 66237/66237, functions 13710/13710 and branches 50719/50719. Its canonical passing test_runs row now carries four observed percent gates plus all covered/total dimensions and test-case counts; linked-command passed=1 remains the runner's command count. coverage-summary SHA256=40c980160ae95b9591e5cbb4ac483ee7ca5d42ee7140beb205e2c1e9f38650c6. Measurements were attached only after the actual gate passed using PM's locked test_run_track operation, automatic author and immutable history. Earlier failed receipts remain failed without measurements. This item references the one producing full-corpus receipt through its related edge to the receipt owner; no separate aggregate execution is claimed here. Local static/context/package aggregates and final exact-head hosted/reviewer checks remain pending. No live telemetry delivery or merge performed."
     edited_at: "2026-10-01T20:57:28.966Z"
+  - created_at: "2026-10-01T21:13:25.641Z"
+    author: "harness:codex"
+    text: "Controlled original-checkout comparison preserved the branch and local main: PR base 89b4aa8bb and checkpoint 2916c6e2f both passed unchanged SDK import ceilings with 15 measured samples. The same ten-sample CLI transport gate failed on both: base get365>362ms, next461>440ms, create419>398ms; head get366>362ms, next451>440ms, create426>398ms. Mixed small changes do not establish a patch-specific regression; the existing local transport admission failure remains a blocker and no budget was weakened. Canonical test-local-muq0nuea-dqzwjn passes graph/record integrity plus bounded mutation (329/336 killed, seven existing equivalents); test-local-muq0up1n-tew4bo passes context relevance, unchanged artifact budget, 89 package-first commands and nine-package npx/Bunx packed smoke. Opt-in semantic dogfood and live external telemetry were unrun. The full static receipt remains failed; no all-static-passed claim is made. Current coverage/focused/type receipts remain valid for unchanged implementation source. Merge awaits final hosted/provider review, resolution of the local timing blocker and independent final-head clearance."
 files[18]{path,scope}:
   scripts/release/agent-task-token-gate.mjs,project
   scripts/release/sdk-mutation-baseline.json,project
