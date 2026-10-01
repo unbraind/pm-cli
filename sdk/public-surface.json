@@ -35558,6 +35558,7 @@
     "tracker_root_missing",
     "tracker_root_not_directory",
     "tracker_root_unreadable",
+    "transaction_preview_snapshot_changed",
     "type_duplicate",
     "type_invalid",
     "undeclared_observation",

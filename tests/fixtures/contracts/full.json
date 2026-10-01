@@ -25246,6 +25246,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "transaction_preview_snapshot_changed",
+      "class": "conflict",
+      "code": "transaction_preview_snapshot_changed",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Transaction preview snapshot changed condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/item-transaction.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "type_duplicate",
       "class": "generic_failure",
       "code": "type_duplicate",
