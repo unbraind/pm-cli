@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-01T10:36:55.000Z"
-updated_at: "2026-10-01T15:01:59.949Z"
+updated_at: "2026-10-01T15:32:46.817Z"
 closed_at: "2026-10-01T14:50:47.580Z"
 completed_at: "2026-10-01T14:50:47.580Z"
 author: "harness:codex"
@@ -20,10 +20,11 @@ expected_result: "Preview and apply agree on core semantic validity against unch
 actual_result: "Linked semantic preview and transaction acceptance passed 84 tests. Invalid enums, missing IDs, strict-close staged evidence, no source writes/hooks, replay/mismatch, explicit-cwd MCP and subsequent deletion controls passed. Full corpus passed 9467 with two platform skips, exact all-source coverage, static/context/dogfood/types/version/credential checks."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-o8z748,related,"2026-10-01T13:08:55.258Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-01T11:18:02.965Z","harness:codex","Semantic preview regression checks now pass: invalid risk/status/missing-target refusal parity, strict completion after staged evidence, no source writes, no mutation hooks, committed-plan replay/mismatch, and revalidation after a subsequent deletion. Public SDK/MCP and CLI routes share the disposable transaction coordinator."
   "2026-10-01T12:44:38.312Z","harness:codex",Explicit-cwd MCP dry-run nested activation deadlock fixed by isolating disabled nested registries while retaining the caller activation gate. The real MCP regression passes and preview leaves source durable state unchanged. Shared adapter author resolution avoids divergent preview/apply precedence. Focused checks pass; final all-source coverage and aggregate gates remain pending.
   "2026-10-01T15:01:59.949Z","harness:codex","Final packed invalid-plan preview/apply parity and structured operation evidence pass. Core semantic/staged-state/no-source-writes/explicit-cwd/replay controls passed linked and complete coverage runs; migration and all-source gates pass. Post-close graph, record-integrity and tracker-context assurance pass. Hosted checks and PR review remain pending."
+  "2026-10-01T15:32:46.817Z","harness:codex",Added structured gate evidence for staged semantic preview negative controls. Prior static success preceded closure and missed the terminal-only defect evidence requirement; final static and post-close defect gates will rerun with unchanged policy.
 files[12]{path,scope}:
   .agents/pm/extensions/.managed-extensions.json,project
   sdk/public-surface.json,project
@@ -56,4 +57,11 @@ docs[2]{path,scope}:
   docs/SDK.md,project
 close_reason: Local implementation and final validation complete; PR review and hosted checks remain the delivery boundary.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1370
+  gate_id: semantic-transaction-preview
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/transactions/semantic-preview.integration.spec.ts -t \"rejects invalid scalar domains\""
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/transactions/semantic-preview.integration.spec.ts,"pnpm test:coverage"
+  hosted_checks[3]: Gates (coverage),Gates (static),Windows regression (Node 24)
 body: ""

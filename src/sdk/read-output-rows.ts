@@ -289,10 +289,11 @@ function deliveredFocusSectionStates(
 
 /** Restore producer aggregates or count delivered items independently of auxiliary rows. */
 function refreshItemCount(result: Record<string, unknown>, source: Record<string, unknown>): void {
-  if (Array.isArray(result.items) && typeof result.count === "number") {
-    result.count = result.count_only === true
-      ? (typeof source.count === "number" ? source.count : result.count)
-      : result.items.length;
+  if (typeof result.count !== "number") return;
+  if (result.count_only === true || source.count_only === true) {
+    if (typeof source.count === "number") result.count = source.count;
+  } else if (Array.isArray(result.items)) {
+    result.count = result.items.length;
   }
 }
 

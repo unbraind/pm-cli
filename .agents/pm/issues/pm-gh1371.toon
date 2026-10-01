@@ -6,21 +6,21 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-01T09:24:20.761Z"
-updated_at: "2026-10-01T15:01:59.410Z"
-closed_at: "2026-10-01T14:50:46.270Z"
-completed_at: "2026-10-01T14:50:46.270Z"
+updated_at: "2026-10-01T16:15:30.343Z"
+closed_at: "2026-10-01T16:15:29.851Z"
+completed_at: "2026-10-01T16:15:29.851Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Advertised output and producer cursors retrieve every matching ID;Continued focus collections have no duplicated IDs;Delivered counts and hidden status receipts agree with emitted rows;Population and count-only totals remain intact;CLI and SDK filter changes reject cursors and field projection remains compatible
 parent: pm-doxj
 risk: medium
 confidence: high
-resolution: "Universal presentation controls no longer alter producer identity; tracker-bound cursors compose across output and producer pages, and delivered counts and serialized focus classifications survive projection/compaction while count-only aggregates remain intact."
-expected_result: Advertised cursor chains deliver all matching focus IDs with correct counts; genuine filter/scope changes refuse reuse and population totals remain accurate.
-actual_result: "Linked continuation acceptance passed 52 tests, including actual budget cursors, JSON cloning, long semantic receipts and count-only warning compaction. Full corpus passed 9467 with two platform skips and exact all-source coverage. Static/token/context gates passed unchanged ceilings; 329 of 336 mutants killed with seven existing reviewed equivalents and the score floor raised to 97.91666666666667."
+resolution: "Producer and output-budget cursors compose across CLI and SDK; delivered focus/item counts survive serialized projections, while count-only aggregates survive root omission and warning compaction."
+expected_result: "Complete unique traversal, true query/scope rejection, delivered count accuracy and aggregate count preservation even when items and count_only are projected away."
+actual_result: "Corrected final source passes 9467 tests with two Windows-only skips; exact all-source coverage is 63163 lines, 66189 statements, 13699 functions and 50697 branches, all covered. All local static/context/type/dogfood/docs/version/security aggregates pass. Linked continuation regressions pass again. Count-only roots retain aggregate 30 while compacting 100 warnings, including omission of items and count_only. Independent source review confirms the correction; exact-head hosted and configured bot reviews remain pending."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-fgih,related,"2026-10-01T13:47:53.034Z","harness:codex","cli:update:dep",detected
-comments[11]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-10-01T09:24:20.761Z","harness:codex","Duplicate check: live GH-1371 search across all statuses returned zero; full live pm-fgih is closed for command-local presentation classification. This issue extends that canonical implementation to universal controls and composed cursor boundaries. GitHub issue remains external owner; local implementation only."
   "2026-10-01T09:44:11.069Z","harness:codex","Current-main negative control: list/search budget subpages deliver 25/30 rows, terminal delivered counts remain 25, and producer continuation rejects invalid_query_cursor. Hierarchical context also rejects producer continuation and retains pre-compaction returned_focus. New regression suite fails on untouched 89b4aa8bb and passes on this branch. Expanded focused suite passed 58/58. Context hierarchy companions may repeat as contextual scaffolding; focus collection IDs are checked for duplicates. Full checks remain underway."
   "2026-10-01T11:18:04.591Z","harness:codex","Composed list/search/context tests traverse actual budget cursors before producer pagination, verify delivered status counters and unique focus rows, and reject filter or tracker changes after continuation. A second tracker with identical items proves scope binding rather than accidental missing-ID rejection."
@@ -32,6 +32,8 @@ comments[11]{created_at,author,text}:
   "2026-10-01T13:49:30.558Z","harness:codex",Packed SDK negative control found warning compaction changed a count-only aggregate from 30 to 24. Delivered-count refresh now restores the authoritative producer aggregate; budgeted warning and absent-authoritative-count regressions pass 11/11. Graph-composition passes unchanged 1236 ceiling after linking the verified presentation-classification predecessor. Final serial gates and full coverage remain pending.
   "2026-10-01T14:02:25.829Z","harness:codex","Bounded mutation run completed all 336 mutants: 329 killed, seven existing reviewed equivalents, zero uncovered/errors/timeouts. All six additional mutants were killed. The gate correctly required the improved score floor to be ratcheted from 97.87878787878788 to 97.91666666666667; only that upward threshold change was made. Full final aggregate rerun remains pending."
   "2026-10-01T15:01:59.410Z","harness:codex","Final packed CLI/SDK serialized continuation matrix passed both cursor layers, focus classifications and real filter/tracker rejection. Packed warning compaction retains count-only count/total 30 while reducing warnings to 24. Exact all-source coverage, static/token/context, package-first, artifact budget, migration and npx/Bunx smoke pass. Score floor is raised to measured 329/336 killed with seven existing equivalents. Hosted checks and PR review remain pending."
+  "2026-10-01T15:10:55.111Z","harness:codex","Packed head negative control confirms both root projections count,total,count_only,warnings and count,total,warnings change aggregate 30 to 24 under budget compaction. Restore the aggregate independently of items and retain producer count-only semantics across root projection; add both exact root-projection regressions. No merge approval for the published head."
+  "2026-10-01T15:32:46.069Z","harness:codex","Independent final review caught count-only root projection compaction with items omitted: 30 aggregate matches became 24 retained warnings. Private authoritative aggregate mode now survives projection, including omission of count_only. Both exact projections failed against the packed prior head (count 24), and focused regressions pass with count 30. Structured gate evidence added; full final verification pending."
 files[18]{path,scope}:
   scripts/release/agent-task-token-gate.mjs,project
   scripts/release/sdk-mutation-baseline.json,project
@@ -53,7 +55,7 @@ files[18]{path,scope}:
   tests/unit/sdk/read-output/delivered-counts.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,project,300,"harness:codex","2026-10-01T09:53:01.452Z",local_mutation,fix/agent-recovery-pagination-preflight
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-muplbeu1-znb6nq
     kind: test
     status: passed
@@ -65,9 +67,27 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mupqh7zx-y0vcxh
+    kind: test
+    status: passed
+    started_at: "2026-10-01T16:13:11.603Z"
+    finished_at: "2026-10-01T16:13:28.124Z"
+    recorded_at: "2026-10-01T16:13:28.124Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project
-close_reason: Local implementation and final validation complete; PR review and hosted checks remain the delivery boundary.
+close_reason: Corrected implementation verified locally; exact-head independent and hosted PR review remain the delivery boundary.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1371
+  gate_id: repository-context-quality
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/delivered-counts.spec.ts -t \"preserves count-only aggregates\""
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts,"pnpm quality:context-eval","pnpm quality:mutation -- --prebuilt"
+  hosted_checks[3]: Gates (coverage),Gates (static),Windows regression (Node 24)
 body: ""

@@ -1898,6 +1898,7 @@ function captureReadOutputContinuationState(
 function compactReadOutputProjection(
   projected: Record<string, unknown>,
   source: Record<string, unknown>,
+  countOnly: boolean,
   resolved: PmResolvedReadOutputDimensions,
   receipt: PmReadOutputReceipt,
   bindingBudget: {
@@ -1909,6 +1910,7 @@ function compactReadOutputProjection(
   measuredResultTokens: number,
   format?: "json" | "toon",
 ): Record<string, unknown> {
+  const deliveredSource = { ...source, count_only: countOnly };
   const assuranceMinimumRows =
     resolved.command === "assurance" && Array.isArray(projected.assertions)
       ? projected.assertions.filter(
@@ -1935,7 +1937,7 @@ function compactReadOutputProjection(
     minimumRowsByPath,
     format,
     (compacted) => {
-      refreshReadOutputDeliveredCounts(compacted, source);
+      refreshReadOutputDeliveredCounts(compacted, deliveredSource);
       const continuationCursorRebased = rebaseBudgetCompactedCursor(
         compacted,
         continuationState.originalItemCount,
@@ -2043,6 +2045,7 @@ export function applyReadOutputDimensions<
       projected = compactReadOutputProjection(
         projected,
         projected,
+        continuationReadyResult.count_only === true,
         resolved,
         receipt,
         bindingBudget,

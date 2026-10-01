@@ -95,6 +95,17 @@ describe("delivered row count receipts (GH-1371)", () => {
     expect(compacted.warnings.length).toBeGreaterThan(0);
     expect(compacted.warnings.length).toBeLessThan(100);
     expect(compacted).toMatchObject(source);
+    for (const outputInclude of ["count,total,count_only,warnings", "count,total,warnings"]) {
+      const rootProjected = applyReadOutputDimensions("search", { outputInclude, outputBudget: 1000, outputFormat: "json" }, {
+        ...source,
+        warnings: Array.from({ length: 100 }, (_, index) => `warning ${index} ${"detail ".repeat(10)}`),
+      });
+      expect(rootProjected).not.toHaveProperty("items");
+      expect(rootProjected.warnings.length).toBeGreaterThan(0);
+      expect(rootProjected.warnings.length).toBeLessThan(100);
+      expect(rootProjected).toMatchObject({ count: 30, total: 30 });
+      expect(Object.hasOwn(rootProjected, "count_only")).toBe(outputInclude.includes("count_only"));
+    }
     const noAuthoritativeCount = { ...source };
     refreshReadOutputDeliveredCounts(noAuthoritativeCount, {});
     expect(noAuthoritativeCount.count).toBe(30);
