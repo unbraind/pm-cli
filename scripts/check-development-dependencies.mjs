@@ -23,10 +23,14 @@ export async function verifyDevelopmentBundles(coreRoot, policy) {
   const manifest = JSON.parse(await readFile(path.join(coreRoot, "package.json"), "utf8"));
   assert.equal(manifest.name, policy.name, "Unexpected CodSpeed package identity");
   assert.equal(manifest.version, policy.version, "CodSpeed upgrade requires a reviewed patch and integrity refresh");
-  const installedFiles = (await readdir(coreRoot, { recursive: true, withFileTypes: true }))
-    .filter((entry) => !entry.isDirectory())
-    .map((entry) => path.relative(coreRoot, path.join(entry.parentPath, entry.name)).split(path.sep).join("/"))
-    .filter((file) => !file.startsWith("node_modules/"));
+  const installedFiles = [];
+  for (const entry of await readdir(coreRoot, { recursive: true, withFileTypes: true })) {
+    if (entry.isDirectory()) continue;
+    const file = path.relative(coreRoot, path.join(entry.parentPath, entry.name)).split(path.sep).join("/");
+    if (file.startsWith("node_modules/.bin/")) continue;
+    assert.ok(entry.isFile(), "CodSpeed artifacts must be regular files");
+    installedFiles.push(file);
+  }
   assert.deepEqual(installedFiles.sort(), [...REQUIRED_FILES].sort(), "Unexpected CodSpeed artifact inventory");
   for (const file of REQUIRED_FILES) {
     const actual = createHash("sha256").update(await readFile(path.join(coreRoot, file))).digest("hex");

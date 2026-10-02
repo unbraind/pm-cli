@@ -556,7 +556,12 @@ pm test <item-id> --run --workspace-context snapshot --override-linked-workspace
   from modifying the original installation. Use an independent installation
   when testing package-manager operations or dependency writes. Built output
   remains available so linked commands such as `node dist/cli.js` keep working.
-  Changes to copied source files stay in the disposable snapshot.
+  The source workspace root is resolved before copying. Ordinary file and
+  directory symlinks into included workspace source are rebased into the copy,
+  including dangling file aliases; writes through those aliases stay in the
+  disposable snapshot. Source aliases into external directories or excluded
+  tracker/build trees fail before the linked command runs. An alias into a
+  shared dependency directory retains the dependency-write convention above.
 
   The real-filesystem regression for this contract is tracked by
   [pm-5iwfkj](../.agents/pm/issues/pm-5iwfkj.toon).

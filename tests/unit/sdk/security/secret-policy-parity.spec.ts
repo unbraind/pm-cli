@@ -30,7 +30,14 @@ const samples = [
 describe("shared mutation and repository secret policy", () => {
   it.each([
     ["empty fallback", "config.auth.password || ''", false],
+    ["terminated empty fallback", 'config.auth.password || ""; ', false],
     ["encoded optional configuration", "config.auth.password ? unescape(encodeURIComponent(config.auth.password)) : ''", false],
+    ["terminated optional configuration", 'config.auth.password ? unescape(encodeURIComponent(config.auth.password)) : "";', false],
+    ["chained fallback", 'config.auth.password || "" || "example-value"', true],
+    ["concatenated fallback", "config.auth.password || '' + 'example-value'", true],
+    ["composed optional configuration", "config.auth.password ? unescape(encodeURIComponent(config.auth.password)) : '' + 'example-value'", true],
+    ["continued fallback", "config.auth.password || ''\n || 'example-value'", true],
+    ["comma expression", "config.auth.password || '', 'example-value'", true],
     ["bare credential-shaped value", "config.auth.password", true],
     ["nonempty fallback", "config.auth.password || 'example-value'", true],
     ["quoted expression", '"config.auth.password || empty"', true],

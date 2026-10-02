@@ -6,25 +6,26 @@ status: closed
 priority: 0
 tags[1]: security
 created_at: "2026-10-02T06:33:46.098Z"
-updated_at: "2026-10-02T19:46:24.975Z"
-closed_at: "2026-10-02T19:46:24.853Z"
-completed_at: "2026-10-02T19:46:24.853Z"
+updated_at: "2026-10-02T21:29:17.892Z"
+closed_at: "2026-10-02T21:29:16.056Z"
+completed_at: "2026-10-02T21:29:16.056Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Patch external Axios to a cooldown-eligible supported release and eliminate affected CJS/ESM bundled copies with reproducible integrity and source-map evidence.; Preserve CodSpeed instrumentation, platform compatibility, benchmark coverage and package contracts; retain genuine pre-fix vulnerability controls.; Enforce development dependency vulnerability admission in mandatory CI, nightly, release and local gates; seeded vulnerable artifacts must fail without changing coverage or quality thresholds.; Verify full and production audits, dev-inclusive Trivy, real Node/Bun tooling and merged-main Scorecard retirement; document evidence tiers without suppressing or dismissing an unresolved report."
 parent: pm-qwoy
 risk: high
 confidence: high
-resolution: "CodSpeed CJS/ESM entries use audited dedicated Axios clients with preserved cancellation and FormData contracts; obsolete embedded sources and maps are removed, native bytes remain intact, and exact twelve-file inventory plus hashes and development-inclusive audit/Trivy admission reject recurrence. Shared secret detection preserves real credential refusal while recognizing the public empty-fallback expression."
-expected_result: "Installed tooling contains no affected external or embedded Axios, and mandatory admission preserves runtime, native tooling and SDK security contracts."
-actual_result: "All-severity and production audits report zero; exact twelve-file hashes and inventory controls pass. Real CJS/ESM HTTP and interceptor controls, 47 focused tests, static/typecheck/secrets/docs gates and refreshed packed/dogfood consumers pass. Canonical PM receipt test-local-murdbyvj-6ohpqa passes 9608 tests; report receipt test-local-murdgisu-s8759q records statements 66411/66411, branches 50825/50825, functions 13734/13734 and lines 63334/63334. Revised-head native performance and merged-main Scorecard alert 29 retirement remain explicit independent checks under open pm-7zs0; no alert was dismissed and publication is not claimed."
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Removed affected embedded CJS/ESM HTTP clients through the exact CodSpeed 5.7.1 patch, retained reviewed maps and native payloads, enforced a complete twelve-regular-file inventory and audited dependency graph, rejected nested client shadowing, and constrained shared secret exemptions to complete empty-fallback expressions."
+expected_result: "Audited CodSpeed tooling retains runtime compatibility and admits only reviewed installed artifacts, while genuine credentials and seeded corrupt or shadowed packages remain rejected by mandatory local, CI, nightly and release gates."
+actual_result: "Canonical test-local-murgv9bh-hqiwl4 passes 9616 tests and exact 100/100/100/100; report test-local-murgvxx1-115b0n binds twelve count/percentage measurements to SHA-256 100c1ea48effbcab2948e31db190eefbdaa99501ba52ad22acb30b1521033bab. Focused test-local-murgwhe8-iio2d6 passes 44 controls; actual dependency admission, audit, secrets, packed npm/npx/bunx/SDK and 89-command dogfood pass. Exact-head hosted review, performance comparability and native merged-main Scorecard retirement/publication are separate checks retained under standing owner pm-7zs0."
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-7wmq,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
   pm-cbzvgn,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
   pm-gh1364,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
   pm-5iwfkj,related,"2026-10-02T17:24:53.523Z","harness:codex","cli:update:dep",detected
   pm-5iwfkj,verifies,"2026-10-02T19:08:09.966Z","harness:codex","cli:update:dep",detected
-comments[14]:
+  pm-iktual,verifies,"2026-10-02T20:57:56.198Z","harness:codex","cli:update:dep",detected
+comments[21]:
   - created_at: "2026-10-02T06:33:46.098Z"
     author: "harness:codex"
     text: "Duplicate check: complete all-status corpus 2850/2850 with no unreadable records; live exact keyword Axios finds only the discovery comment on pm-gh1364, include-dev-deps and GHSA-c29m-xwm3-cm6r find no canonical work. All twelve GHSA identifiers were checked in the initial all-status intake. Full live pm-qwoy, pm-cbzvgn and pm-7wmq metadata were read; parent history verifies. Closed pm-cbzvgn fixed distinct brace-expansion advisories and is preserved as completed historical work. This new Axios/CodSpeed report is recorded before PR1372 merge to keep discovery evidence reviewed. Remediation is open and unclaimed; it is not included in PR1372 source-fix closure or represented as security clearance."
@@ -68,11 +69,33 @@ comments[14]:
   - created_at: "2026-10-02T19:46:22.775Z"
     author: "harness:codex"
     text: "Final local revision validation: packed npm/npx/bunx and SDK consumer smoke passes for version 2026.10.2 and nine package surfaces; package-first dogfood passes. Exact generated-report admission receipt test-local-murdgisu-s8759q passes and records the eight observed covered/total counts plus four percentages, bound to coverage-summary SHA-256 fa944974f43987bf88083321387a75a302312d9120632e28374a077304e8197c. The complete suite is executed once under test-local-murdbyvj-6ohpqa. Fresh unchanged-main CodSpeed baseline run 37055126994 succeeds on b52bb3b; revised-head performance comparison remains a hosted delivery check. Native merged-main Scorecard retirement and next eligible publication are explicitly tracked by open standing owner pm-7zs0."
+  - created_at: "2026-10-02T20:21:55.206Z"
+    author: "harness:codex"
+    text: "Round-two TDD: the unchanged admission and shared secret policy failed six relevant assertions: nested node_modules/axios was admitted and five composed empty-fallback expressions evaded both scanners. Source-workspace alias controls independently failed. No gate or threshold is relaxed; repair complete-expression admission, reject dependency shadowing while retaining generated executable shims, and rebase included source aliases into the disposable workspace."
+  - created_at: "2026-10-02T20:24:18.275Z"
+    author: "harness:codex"
+    text: "Second-head performance evidence: Chrome dashboard compares 32eff2c with b52bb3b and still reports 2.64 percent aggregate regression, six changed benchmarks and five unchanged. It explicitly shows AMD EPYC 9V45 96-Core baseline versus AMD EPYC 7763 64-Core head, differing instruction flags, and identical native build ID 574e1ea5495a22829428f4c8cc4bd474ffc7c710. CodSpeed documents that shared-runner CPU differences affect simulated cache behavior: https://codspeed.io/docs/instruments/cpu/regression-causes. The unchanged-main refresh succeeds but does not make this comparison equivalent. Native benchmark execution passes; causality and performance acceptance remain limited. No threshold, acknowledgment or paid runner is changed."
+  - created_at: "2026-10-02T20:34:43.636Z"
+    author: "harness:codex"
+    text: "The revised focused boundary suites pass 44 tests across five files. A further real filesystem control replaced an approved bundle with a symlink to identical bytes and correctly failed before tightening admission. Owned artifacts now must be regular files, and nested module shadowing is rejected; generated .bin shims remain supported. Full static quality, typecheck, secret scanning and documentation links pass; focused lint and actual installed-package admission pass after the additional regular-file control. The complete canonical coverage run is next, with no source edits during execution."
+  - created_at: "2026-10-02T20:57:59.333Z"
+    author: "harness:codex"
+    text: "Canonical run test-local-murfxbph-760lu7 reached exact 100/100/100/100 (66428 statements, 50839 branches, 13732 functions, 63349 lines), but failed one packed continuation acceptance because npm/package.json was absent from this Node runtime lookup path. The test is retained unchanged. The rerun will expose the real installed global npm package through NODE_PATH, matching the documented consumer prerequisite. It will also validate the newly eligible MCP Apps 2.0.3 refresh under pm-iktual; the failed receipt remains historical evidence."
+  - created_at: "2026-10-02T21:21:05.684Z"
+    author: "harness:codex"
+    text: "Final frozen-source canonical run test-local-murgv9bh-hqiwl4 passes 9616 tests across 762 suites, with two existing Windows-only skips. Exact statements 66428/66428, branches 50839/50839, functions 13732/13732 and lines 63349/63349 enforce unchanged 100/100/100/100. Report receipt test-local-murgvxx1-115b0n independently admits generated coverage-summary SHA-256 100c1ea48effbcab2948e31db190eefbdaa99501ba52ad22acb30b1521033bab and records all twelve actual count/percentage measurements without repeating the full suite. The real globally installed npm prerequisite is exposed through NODE_PATH; the packed continuation test and all regression controls remain unchanged. Typed verifies edges share this canonical proof with pm-5iwfkj and pm-iktual."
+  - created_at: "2026-10-02T21:22:14.740Z"
+    author: "harness:codex"
+    text: "Focused owner-linked receipt test-local-murgwhe8-iio2d6 passes 44 cases across installed artifact corruption/shadow/symlink controls, real CJS/ESM loopback HTTP behavior, and native CI/release workflow contracts. The same source has the full canonical exact-count proof. Every actionable round-two inline finding has a specific implementation response and useful feedback vote; package publication and merged-main analyzer retirement remain independent delivery checks."
+  - created_at: "2026-10-02T21:29:10.077Z"
+    author: "harness:codex"
+    text: "Final local acceptance after all review fixes and the eligible MCP Apps refresh: packed npm/npx/bunx version 2026.10.2 and nine package surfaces pass, including a plain installed SDK TypeScript consumer. The 89-command package-first dogfood journey passes in a cleaned temporary tracker. Full dependency audit reports no known vulnerabilities, all twelve owned regular artifacts pass hash/inventory admission, secrets scan is clear, and documentation links pass. Optional live Ollama semantic dogfood was not requested and remains explicitly unattempted. Hosted exact-head review, native Windows, performance comparison and merged-main analyzer retirement remain independent checks."
 notes[2]{created_at,author,text}:
   "2026-10-02T06:37:50.731Z","harness:codex","Scope and evidence boundary: this intake documents an unresolved development-tool dependency report before merging PR1372. It is not a regression introduced by the scoped recovery, continuation or semantic-preview fixes. Production-only audit is clean. Full audit and native Scorecard remain open; embedded Axios requires separate inspection beyond pnpm lock resolution. Do not dismiss the scanner alert or report security clearance until remediation and native merged-main scans are verified."
   "2026-10-02T19:24:09.415Z","harness:codex","Large-patch review rationale: GitHub treats a new patch artifact as 38,448 added lines although the upstream diff removes 38,404 lines and adds ten. Only two bundles and their two maps change; three native payloads remain byte-identical. Replacing the patch with an upstream supported fixed release is preferable once one is available and passes the same inventory, runtime, map and native gates. The exact-version pnpm patch remains reproducible across frozen installs and does not introduce an install-time transformation or weaken dependency admission."
-learnings[1]{created_at,author,text}:
+learnings[2]{created_at,author,text}:
   "2026-10-02T18:32:24.961Z","harness:codex","Externalizing an embedded HTTP client must preserve its isolation from application interceptors, not just its version and exported API. Dedicated Axios clients, real HTTP compatibility controls, reviewed map coordinates and immutable native hashes cover different risks; lockfile audit alone cannot detect an embedded obsolete implementation."
+  "2026-10-02T20:36:49.766Z","harness:codex",Content hashes alone do not pin JavaScript resolution boundaries. An identical-byte bundle symlink or nested node_modules client can redirect imports; exact owned-file inventory plus regular-file admission covers that boundary. Public-expression secret exceptions must recognize complete expressions rather than prefixes and share the same controls across SDK and repository scanners.
 files[18]{path,scope}:
   .github/workflows/ci.yml,project
   .github/workflows/release.yml,project
@@ -115,11 +138,11 @@ tests[3]:
     timeout_seconds: 180
     provenance:
       author: "harness:codex"
-      created_at: "2026-10-02T19:43:34.112Z"
+      created_at: "2026-10-02T21:20:30.195Z"
       source_kind: local_mutation
       source_ref: codex/codspeed-dependency-security-snapshot-resolution
-    note: Exact report admission and observed count receipt for canonical run test-local-murdbyvj-6ohpqa; coverage-summary SHA-256 fa944974f43987bf88083321387a75a302312d9120632e28374a077304e8197c; validates the generated report without repeating the suite
-test_runs[3]:
+    note: Exact report admission for canonical run test-local-murgv9bh-hqiwl4; coverage-summary SHA-256 100c1ea48effbcab2948e31db190eefbdaa99501ba52ad22acb30b1521033bab; observed counts are recorded without repeating the suite
+test_runs[7]:
   - run_id: test-local-murayqth-r6rf24
     kind: test
     status: passed
@@ -211,9 +234,106 @@ test_runs[3]:
         recorded_at: "2026-10-02T19:44:32.814Z"
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/release/coverage-threshold-gate.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-murfxbph-760lu7
+    kind: test
+    status: failed
+    started_at: "2026-10-02T20:34:44.339Z"
+    finished_at: "2026-10-02T20:53:36.004Z"
+    recorded_at: "2026-10-02T20:53:36.004Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage -- --maxWorkers=2 --coverage.reportOnFailure,schema,schema,source,local_source_ref
+  - run_id: test-local-murgv9bh-hqiwl4
+    kind: test
+    status: passed
+    started_at: "2026-10-02T21:00:45.201Z"
+    finished_at: "2026-10-02T21:19:59.213Z"
+    recorded_at: "2026-10-02T21:19:59.213Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage -- --maxWorkers=2 --coverage.reportOnFailure,schema,schema,source,local_source_ref
+  - run_id: test-local-murgvxx1-115b0n
+    kind: test
+    status: passed
+    started_at: "2026-10-02T21:20:30.879Z"
+    finished_at: "2026-10-02T21:20:31.093Z"
+    recorded_at: "2026-10-02T21:20:31.093Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[12]:
+      - name: coverage_branches
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-02T21:20:31.093Z"
+      - name: coverage_branches_covered
+        value: 50839
+        unit: count
+        recorded_at: "2026-10-02T21:20:31.093Z"
+      - name: coverage_branches_total
+        value: 50839
+        unit: count
+        recorded_at: "2026-10-02T21:20:31.093Z"
+      - name: coverage_functions
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-02T21:20:31.093Z"
+      - name: coverage_functions_covered
+        value: 13732
+        unit: count
+        recorded_at: "2026-10-02T21:20:31.093Z"
+      - name: coverage_functions_total
+        value: 13732
+        unit: count
+        recorded_at: "2026-10-02T21:20:31.093Z"
+      - name: coverage_lines
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-02T21:20:31.093Z"
+      - name: coverage_lines_covered
+        value: 63349
+        unit: count
+        recorded_at: "2026-10-02T21:20:31.093Z"
+      - name: coverage_lines_total
+        value: 63349
+        unit: count
+        recorded_at: "2026-10-02T21:20:31.093Z"
+      - name: coverage_statements
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-02T21:20:31.093Z"
+      - name: coverage_statements_covered
+        value: 66428
+        unit: count
+        recorded_at: "2026-10-02T21:20:31.093Z"
+      - name: coverage_statements_total
+        value: 66428
+        unit: count
+        recorded_at: "2026-10-02T21:20:31.093Z"
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/coverage-threshold-gate.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-murgwhe8-iio2d6
+    kind: test
+    status: passed
+    started_at: "2026-10-02T21:20:46.192Z"
+    finished_at: "2026-10-02T21:20:56.336Z"
+    recorded_at: "2026-10-02T21:20:56.336Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/development-dependencies.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
-close_reason: "Completed reviewed dependency-security implementation and local proof, with open independent landing verification under pm-7zs0."
+close_reason: Implemented the reviewed CodSpeed client remediation and mandatory dependency admission with canonical source and real-consumer evidence.
 escape_class: scanner_finding
 gate_evidence:
   disposition: gate_added

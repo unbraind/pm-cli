@@ -45,10 +45,15 @@ Both maps end with a newline; the integrity policy records the installed bytes.
 
 [The integrity policy](../config/dependency-bundle-integrity.json) pins all twelve
 package-owned files by SHA-256: both entries, both maps, all three native binaries,
-the manifest, declarations and declaration map, license and README. Admission
+the manifest, declarations and declaration map, license and README. Owned
+artifacts must be regular files; symlinks cannot redirect their module resolution
+to an unreviewed dependency tree even when their target bytes have the same hash. Admission
 also checks the exact installed file inventory, so an added executable, map or
 native payload fails even when the previously approved files are unchanged.
-Nested installed dependencies are checked by the full dependency audit. An
+Package-local dependency overrides also fail inventory admission: an added
+`node_modules/axios` could shadow the audited dependency resolved by the bundle.
+Only package-manager-generated `node_modules/.bin` executable shims are outside
+the owned inventory; the locked dependency graph is checked by the full audit. An
 upstream upgrade requires a reviewed patch removal or refresh, renewed runtime
 compatibility evidence, and a matching policy update. Never update hashes
 merely to admit an unexplained difference.

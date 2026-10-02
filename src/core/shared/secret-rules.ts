@@ -55,9 +55,10 @@ export const SECRET_RULES = [
   {
     name: "password-assignment", mutationRule: "password_assignment",
     // Unquoted configuration reads with an empty fallback contain no literal
-    // credential. Quoted values and nonempty fallbacks remain detectable.
+    // credential only when they end the expression. Composed fallbacks,
+    // quoted values and nonempty fallbacks remain detectable.
     regex:
-      /\b(?:password|passphrase)\s*[:=]\s*(?:(?!<|\$\{|\$\(|config\.auth\.password\s*(?:\|\|\s*(?:''|"")|\?\s*unescape\(encodeURIComponent\(config\.auth\.password\)\)\s*:\s*(?:''|"")))[A-Za-z0-9!@#$%^&*._+\-=]{8,}|"(?!<|\$\{|\$\()[^"]{8,}"|'(?!<|\$\{|\$\()[^']{8,}')/gi,
+      /\b(?:password|passphrase)\s*[:=]\s*(?:(?!<|\$\{|\$\(|config\.auth\.password\s*(?:\|\|\s*(?:''|"")|\?\s*unescape\(encodeURIComponent\(config\.auth\.password\)\)\s*:\s*(?:''|""))(?=[ \t]*(?:;|$)))[A-Za-z0-9!@#$%^&*._+\-=]{8,}|"(?!<|\$\{|\$\()[^"]{8,}"|'(?!<|\$\{|\$\()[^']{8,}')/gi,
   },
   {
     name: "absolute-home-path", mutationRule: "absolute_home_path",

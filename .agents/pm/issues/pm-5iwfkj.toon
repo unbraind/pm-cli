@@ -6,22 +6,22 @@ status: closed
 priority: 1
 tags[3]: agent-ux,context-management,github-intake
 created_at: "2026-09-30T06:48:35.183Z"
-updated_at: "2026-10-02T19:46:23.956Z"
-closed_at: "2026-10-02T19:46:23.822Z"
-completed_at: "2026-10-02T19:46:23.822Z"
+updated_at: "2026-10-02T21:29:20.281Z"
+closed_at: "2026-10-02T21:29:19.023Z"
+completed_at: "2026-10-02T21:29:19.023Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Real filesystem regression retains distinct root and nested dependency versions without flattening; Snapshot and ordinary linked runs preserve PM_PATH and PM_GLOBAL_PATH isolation; Dependency write/isolation behavior is documented and tested; Current built and packed artifacts pass the reporter contract
 parent: pm-u9d0
 risk: medium
 confidence: medium
-resolution: "The SDK seeds copied-source snapshots with absolute root and nested dependency junctions, preserves independent installed versions, and ignores dangling dependency links on supported filesystems."
-expected_result: Linked snapshot commands resolve root and nested installed dependencies correctly and isolate tracker roots and copied-source writes.
-actual_result: Six owner-linked snapshot cases and temporary npm Node/Bun monorepos pass. Revised relative-root and dangling-link controls pass. Shared full-suite receipt pm-r61juc/test-local-murdbyvj-6ohpqa passes 9608 tests with 100/100/100/100 coverage; exact observed counts are recorded in test-local-murdgisu-s8759q. Static gates and refreshed packed/dogfood consumers pass. Required hosted Windows and exact-head PR gates govern landing; publication is tracked separately by pm-7zs0.
+resolution: "The shared SDK snapshot resolves the physical workspace root, preserves every installed root/nested dependency path by original-tree junction, rebases included file and directory aliases into the copy, preserves dangling-file isolation, and refuses external or excluded source aliases before execution."
+expected_result: Linked snapshots retain each original dependency resolution tree while writes to copied source and included source aliases remain disposable; dependency writes require an independent installation.
+actual_result: Owner-linked test-local-murgw94f-a8ye79 passes seven real filesystem/CLI cases. Manual temporary Node and Bun workflows resolve distinct root/nested npm versions and preserve original source bytes through file/directory/dangling aliases. Shared canonical test-local-murgv9bh-hqiwl4 passes 9616 tests at exact all-source 100/100/100/100; packed npm/npx/bunx/SDK and 89-command dogfood pass. Native Windows remains required on the pushed head.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-efkvdy,discovered_from,"2026-09-30T06:48:35.183Z","harness:codex","cli:create:dep",detected
   pm-efkvdy,verifies,"2026-10-02T17:04:50.022Z","harness:codex","cli:update:dep",detected
-comments[10]:
+comments[15]:
   - created_at: "2026-09-30T06:48:35.183Z"
     author: "harness:codex"
     text: "Duplicate check: complete strict all-status corpus contained 2843 records with no unreadable directories or items. Exact GitHub ID plus behavior/root-cause searches were complete. Closed prior lineage pm-efkvdy and its full history were read; this new report requests a distinct unimplemented contract. Relationship reconstructed during current intake rather than asserted as historical knowledge. Queued and unclaimed; source investigation remains pending."
@@ -53,8 +53,24 @@ comments[10]:
   - created_at: "2026-10-02T19:43:04.577Z"
     author: "harness:codex"
     text: "Shared canonical coverage is auditable in pm-r61juc run test-local-murdbyvj-6ohpqa: the actual linked full-suite command passed with 9608 passing tests and two existing Windows-only skips. Statements 66411/66411, branches 50825/50825, functions 13734/13734 and lines 63334/63334 are exact covered/total counts, all 100 percent. The primary owner has four run-bound threshold measurements and a verifies relationship to this snapshot owner, avoiding duplicated complete-suite executions."
-learnings[1]{created_at,author,text}:
+  - created_at: "2026-10-02T20:21:55.779Z"
+    author: "harness:codex"
+    text: "Round-two real filesystem TDD reproduced two source alias failures before implementation: an aliased workspace root retained original-source links and external/excluded aliases were accepted. Preserve dependency sharing deliberately, but resolve the source root and rebase ordinary within-workspace aliases into copied source; refuse targets outside included source. Genuine directory, file and dangling file controls cover source preservation."
+  - created_at: "2026-10-02T21:00:43.159Z"
+    author: "harness:codex"
+    text: "Revised manual acceptance in a fresh temporary monorepo passes actual Node node:test and Bun linked snapshots with independently installed fast-json-patch 3.1.1 root and 3.1.0 nested. Both write through file and absolute directory source aliases and create through a dangling file alias inside the disposable copy; original identity bytes and absent source file remain unchanged. Temporary data is cleaned and tracker roots remain isolated."
+  - created_at: "2026-10-02T21:21:06.870Z"
+    author: "harness:codex"
+    text: "Shared frozen-source proof: pm-r61juc canonical receipt test-local-murgv9bh-hqiwl4 passes 9616 tests, 762 suites and exact all-source 100/100/100/100. Its linked report receipt test-local-murgvxx1-115b0n records covered/total counts and the generated-report SHA-256 without duplicating the full suite. Real temporary CLI acceptance independently passes under both Node and Bun with root and nested fast-json-patch installations, included source file/directory aliases and dangling-file writes confined to the disposable snapshot. Source target bytes and absence of the dangling original remain intact; both temporary workspaces were cleaned."
+  - created_at: "2026-10-02T21:22:15.983Z"
+    author: "harness:codex"
+    text: "Owner-linked receipt test-local-murgw94f-a8ye79 passes seven cases across the real filesystem snapshot policy and CLI integration. It covers original root/nested dependency identities, included source alias rebasing, dangling-file isolation, external/excluded refusal and independently installed nested versions. The source is unchanged since the complete canonical proof; native Windows junction and file-symlink acceptance remains required on the pushed head."
+  - created_at: "2026-10-02T21:29:11.472Z"
+    author: "harness:codex"
+    text: Packed npm/npx/bunx and installed SDK consumers pass after the snapshot source-alias fixes. The 89-command isolated package-first dogfood journey passes and cleans its temporary tracker. Node/Bun manual alias acceptance and the owner-linked seven-case suite preserve source bytes and distinct dependency installations. Native Windows acceptance will be checked on the pushed revision.
+learnings[2]{created_at,author,text}:
   "2026-10-02T18:32:24.044Z","harness:codex",Snapshot dependency preservation must retain each nested installation at its original relative path. Positive direct execution plus a real copied-workspace write distinguishes correct dependency resolution from a no-op isolation assertion. Directory junctions retain Windows support; dependency writes still require an independent install or stronger sandbox.
+  "2026-10-02T20:36:49.004Z","harness:codex",A disposable workspace must also rebase ordinary source aliases and resolve an aliased workspace root. Blind dereferencing can import excluded tracker data or external files. Preserve included source link topology inside the copy and refuse outside or excluded targets; dependency links are a separate deliberately shared contract.
 files[5]{path,scope}:
   .github/workflows/ci.yml,project
   src/sdk/test/execution.ts,project
@@ -63,7 +79,7 @@ files[5]{path,scope}:
   tests/unit/sdk/test/workspace-snapshot.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts,project,240,"harness:codex","2026-10-02T17:04:05.377Z",local_mutation,codex/codspeed-dependency-security-snapshot-resolution
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-murayhq7-j2tsuz
     kind: test
     status: passed
@@ -75,9 +91,20 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-murgw94f-a8ye79
+    kind: test
+    status: passed
+    started_at: "2026-10-02T21:20:31.995Z"
+    finished_at: "2026-10-02T21:20:45.615Z"
+    recorded_at: "2026-10-02T21:20:45.615Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/TESTING.md,project
-close_reason: "Implemented and locally verified monorepo snapshot dependency resolution, including review regressions, for reviewed delivery."
+close_reason: Implemented nested dependency preservation and disposable source-alias snapshots with real filesystem and Node/Bun evidence.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
@@ -86,4 +113,4 @@ gate_evidence:
   local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts
   hosted_checks[2]: CI / Gates (coverage),CI / Windows regression (Node 24)
   owner: pm-5iwfkj
-body: "GitHub: https://github.com/unbraind/pm-cli/issues/1354\n\nReporter verified direct Node test success and linked snapshot failure (ERR_MODULE_NOT_FOUND), with a root-dependency positive control, on published 2026.9.29. Current-tree reproduction and implementation are pending.\n\nRequested contract: Snapshot execution retains correct root and nested package dependency resolution with distinct versions while preserving both tracker sandboxes and documented no-writeback boundaries.\n\nVerification plan: reproduce the public report in a temporary project outside this checkout with both PM roots isolated, demonstrate a relevant regression, then validate the SDK boundary, thin transport where applicable, complete coverage and packed consumers. No implementation is included in PR #1353."
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/1354\n\nHistorical intake (2026-09-30): the reporter verified direct Node test success and linked snapshot failure (ERR_MODULE_NOT_FOUND), with a root-dependency positive control, on published 2026.9.29. Source investigation was pending at intake; this work was excluded from PR #1353.\n\nContract: snapshot execution retains distinct root and nested package dependency resolution while isolating both tracker roots. Copied source and included source aliases stay disposable. Installed dependency directories are deliberately shared by convention, so dependency writes require an independent install.\n\nDelivery: PR #1375 implements and verifies the current contract. Comments, linked tests, run receipts, resolution and immutable close evidence record the actual current result; the historical reporter version alone does not establish current behavior."

@@ -1,0 +1,53 @@
+id: pm-iktual
+title: Refresh eligible MCP Apps 2.0.3 SDK type contracts
+description: "Refresh the MCP Apps development type dependency from 2.0.0 to the eligible 2.0.3 patch while preserving official SDK server metadata contracts, negotiated protocol behavior, exact lockfile reproducibility, and the existing seven-day dependency cooldown. Validate the actual installed declarations with all TypeScript projects, existing MCP Apps integration coverage, shared canonical all-source coverage, and packed Node/Bun consumers in PR 1375."
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-02T20:56:51.089Z"
+updated_at: "2026-10-02T21:29:22.486Z"
+closed_at: "2026-10-02T21:29:21.507Z"
+completed_at: "2026-10-02T21:29:21.507Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: Install exact eligible MCP Apps 2.0.3 with a reproducible lockfile and unchanged seven-day cooldown; Verify official server metadata types with all TypeScript projects and existing MCP Apps acceptance; Pass canonical exact coverage and packed consumers with the shared delivery proof
+parent: pm-u9d0
+risk: low
+confidence: high
+resolution: Pinned the cooldown-eligible MCP Apps 2.0.3 patch and reproducible lockfile while retaining official core/client 2.0.0 peers and existing type-only SDK metadata imports.
+expected_result: "Actual MCP Apps 2.0.3 server declarations remain compatible with all SDK TypeScript projects and real package consumers without weakening cooldown, dependency security or quality gates."
+actual_result: "Owner-linked test-local-murgxa60-dxo6h9 passes all four TypeScript projects and four MCP Apps contract cases. Shared canonical test-local-murgv9bh-hqiwl4 passes 9616 tests and exact all-source 100/100/100/100; packed npm/npx/bunx/SDK and 89-command isolated dogfood pass. Full dependency audit, owned-artifact admission and documentation links pass with no exclusion or peer override."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-pznhee,verifies,"2026-10-02T20:56:51.089Z","harness:codex","cli:create:dep",detected
+  pm-qs5iiq,recurs_from,"2026-10-02T20:56:51.089Z","harness:codex","cli:create:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-10-02T20:56:51.089Z","harness:codex","Duplicate check: complete all-status 2863-record corpus and current keyword searches found no 2.0.3 owner. All ext-apps matches identify completed MCP Apps 2.0.0 adoption and older security work; full live pm-qs5iiq confirms it delivered 2.0.0 and remains closed. Fresh open and in-progress inventories checked. Registry release 2.0.3 at 2026-09-25T16:01:35.299Z is now older than seven complete days; remaining routine candidates are newer than the cooldown and incompatible majors retain canonical owners. This compatible type-only dependency refresh joins PR 1375."
+  "2026-10-02T20:59:19.300Z","harness:codex","Registry census and actual install: eligible ext-apps 2.0.3 replaces only 2.0.0, retaining core/client 2.0.0 peers and Node >=20 compatibility with the repository >=22.18 floor. Fully inspected the SDK consumer and actual installed official server declarations; usage remains type-only. The other routine latest candidates were released September 28 through October 1 and remain inside the explicit seven-day cooldown; no exclusion is added. Shared exact coverage is owned by pm-r61juc through its verifies edge."
+  "2026-10-02T21:00:44.045Z","harness:codex","All four TypeScript projects pass with actual MCP Apps 2.0.3 server declarations. Existing MCP Apps plus unchanged packed continuation regression suites pass with the real globally installed npm package available via NODE_PATH. Full dependency audit reports no known vulnerabilities, actual CodSpeed owned-file admission passes, and the seven-day cooldown contract passes. The complete shared canonical coverage rerun will now validate the frozen source and dependency graph."
+  "2026-10-02T21:21:07.788Z","harness:codex","Shared canonical receipt test-local-murgv9bh-hqiwl4 verifies the eligible MCP Apps 2.0.3 dependency graph with 9616 passing tests and exact all-source 100/100/100/100. The primary security owner links this refresh through verifies; its report receipt test-local-murgvxx1-115b0n records actual integer counts and the generated-report identity. Current tracker context and graph-composition assurance pass after adding this item description and the dependency-census coordination edge, with every threshold unchanged."
+  "2026-10-02T21:22:13.358Z","harness:codex",Owner-linked receipt test-local-murgxa60-dxo6h9 passes all four real TypeScript projects and the four existing MCP Apps contract cases. This confirms the actual installed 2.0.3 metadata declarations remain compatible; canonical source coverage is shared through the existing verifies edge rather than repeated.
+  "2026-10-02T21:29:13.312Z","harness:codex","Final dependency refresh acceptance passes the current packed npm/npx/bunx and installed SDK TypeScript consumer, plus 89 isolated package-first dogfood commands. Full audit remains free of known vulnerabilities, dependency admission and documentation links pass, and no cooldown exclusion or peer override is introduced."
+files[2]{path,scope}:
+  package.json,project
+  pnpm-lock.yaml,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  pnpm typecheck,project,240,"harness:codex","2026-10-02T20:57:57.594Z",local_mutation,codex/codspeed-dependency-security-snapshot-resolution
+  node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/apps.spec.ts,project,240,"harness:codex","2026-10-02T20:57:58.315Z",local_mutation,codex/codspeed-dependency-security-snapshot-resolution
+test_runs[1]:
+  - run_id: test-local-murgxa60-dxo6h9
+    kind: test
+    status: passed
+    started_at: "2026-10-02T21:20:56.931Z"
+    finished_at: "2026-10-02T21:21:33.624Z"
+    recorded_at: "2026-10-02T21:21:33.624Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/apps.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: Adopted eligible MCP Apps 2.0.3 with unchanged SDK protocol behavior and verified type contracts.
+body: ""
