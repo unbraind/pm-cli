@@ -3,6 +3,10 @@
  *
  * Reads and writes tracker storage with format-aware helpers for Settings.
  */
+import { AsyncLocalStorage } from "node:async_hooks";
+import type { Stats } from "node:fs";
+import { lstat, realpath } from "node:fs/promises";
+import path from "node:path";
 import { validateSettings, type ParsedSettings } from "./settings-validator.js";
 import {
   runActiveOnReadHooks,
@@ -15,7 +19,7 @@ import {
 } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { resolveAuthor } from "../shared/author.js";
-import { readFileIfExists } from "../fs/fs-utils.js";
+import { isFileAbsentError, readFileIfExists, readRegularFile } from "../fs/fs-utils.js";
 import { mutateWorkspaceJsonWithHistory } from "../history/workspace-history.js";
 import { reconcileSettingsSnapshot } from "./settings-concurrency.js";
 import {
@@ -54,6 +58,36 @@ import type {
   SearchMutationRefreshPolicy,
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
+
+/** One composable source-read policy owned by the async host invocation. */
+type ConfigurationOnlySettingsLayer = readonly [roots: ReadonlySet<string>, isEnabled: () => boolean];
+
+const configurationOnlySettingsRoots = new AsyncLocalStorage<readonly ConfigurationOnlySettingsLayer[]>();
+
+/**
+ * Scope bootstrap reads to validated inline base settings for the selected
+ * source tracker and its resolved root alias. These reads execute no hooks,
+ * optional-schema hydration, schema scaffolding or hydrated-cache access.
+ * Nested source scopes compose; staged and unrelated trackers keep normal
+ * settings behavior. Async context is restored when the callback returns or
+ * throws, including concurrent invocations outside this scope.
+ * The optional predicate is evaluated for each matching read. Disabling this
+ * layer restores normal reads unless an enabled ancestor layer protects the
+ * same root; hosts can settle conservative parser decisions without changing
+ * a caller's policy or another invocation.
+ */
+export async function runWithConfigurationOnlySettings<T>(pmRoot: string, run: () => Promise<T>, isEnabled: () => boolean = () => true): Promise<T> {
+  const roots = new Set([path.resolve(pmRoot)]);
+  try { roots.add(await realpath(pmRoot)); }
+  catch { /* Missing trackers retain their normal command diagnostics. */ }
+  return configurationOnlySettingsRoots.run([...(configurationOnlySettingsRoots.getStore() ?? []), [roots, isEnabled]], run);
+}
+
+/** Report whether this tracker belongs to the current configuration-only source preparation scope. */
+export function isConfigurationOnlySettingsRead(pmRoot: string): boolean {
+  const root = path.resolve(pmRoot);
+  return configurationOnlySettingsRoots.getStore()?.some(([roots, isEnabled]) => roots.has(root) && isEnabled()) ?? false;
+}
 
 const SETTINGS_WRITE_OP = "settings:write";
 const SETTINGS_PERSIST_SOURCE_SYMBOL = Symbol("pm.settings.persist_source");
@@ -1838,10 +1872,34 @@ export function serializeSettings(
   return `${JSON.stringify(ordered, null, 2)}\n`;
 }
 
+/** Read invocation configuration without executing hooks, loading schemas, scaffolding, or sharing hydrated caches. */
+async function readConfigurationOnlySettings(pmRoot: string): Promise<SettingsReadResult> {
+  let root: string;
+  try { root = await realpath(pmRoot); }
+  catch (error) { if (isFileAbsentError(error)) return buildFallbackSettingsReadResult(); throw error; }
+  const file = getSettingsPath(root);
+  let entry: Stats;
+  try { entry = await lstat(file); }
+  catch (error) { if (isFileAbsentError(error)) return buildFallbackSettingsReadResult(); throw error; }
+  if (!entry.isFile()) throw new TypeError(`Transaction preview requires regular files and directories: ${file}`);
+  const raw = await readRegularFile(file, `Transaction preview requires regular files and directories: ${file}`);
+  let parsed: unknown;
+  try { parsed = JSON.parse(raw) as unknown; }
+  catch { return buildFallbackSettingsReadResult("settings_read_invalid_json"); }
+  const validated = validateSettings(parsed);
+  if (!validated.success) return buildFallbackSettingsReadResult("settings_read_invalid_schema");
+  return {
+    settings: mergeSettings(validated.data),
+    metadata: { has_explicit_item_format: hasExplicitItemFormat(parsed) },
+    warnings: validated.data.item_format === "json_markdown" ? ["settings_item_format_legacy_json_markdown_coerced_to_toon"] : [],
+  };
+}
+
 /** Implements read settings with metadata for the public runtime surface of this module. */
 export async function readSettingsWithMetadata(
   pmRoot: string,
 ): Promise<SettingsReadResult> {
+  if (isConfigurationOnlySettingsRead(pmRoot)) return readConfigurationOnlySettings(pmRoot);
   const settingsPath = getSettingsPath(pmRoot);
   let trackedPathsForFailure: string[] = [settingsPath];
   await runActiveOnReadHooks({

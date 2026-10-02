@@ -36,7 +36,7 @@ import {
   readAuthorEnvironment,
 } from "../shared/author.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
-import { readSettings, writeSettings } from "../store/settings.js";
+import { isConfigurationOnlySettingsRead, readSettings, writeSettings } from "../store/settings.js";
 import { clearSettingsReadCache } from "../store/settings-read-cache.js";
 import {
   deriveTelemetryCommandResolution,
@@ -1546,7 +1546,7 @@ function buildCommandErrorPayload(params: {
   };
 }
 
-/** Revalidate process and persisted consent before initializing identity. The caller must hold the queue mutex through any subsequent capture writes. */
+/** Revalidate consent before initializing identity, preserving configuration-only tracker settings; capture requires a persisted identity. The caller holds the queue mutex through subsequent writes. */
 async function ensureInstallationId(globalPmRoot: string): Promise<{
   installationId: string;
   endpoint: string;
@@ -1556,6 +1556,7 @@ async function ensureInstallationId(globalPmRoot: string): Promise<{
   const settings = await readSettings(globalPmRoot);
   if (!settings.telemetry.enabled || resolveTelemetryEnvironmentPolicy().telemetry_disabled) return null;
   if (settings.telemetry.installation_id.trim().length === 0) {
+    if (isConfigurationOnlySettingsRead(globalPmRoot)) return null;
     settings.telemetry.installation_id = crypto.randomUUID();
     await writeSettings(globalPmRoot, settings, "telemetry:install_id");
   }
@@ -2518,6 +2519,9 @@ function scheduleTelemetryFlush(
   endpoint: string,
   retentionDays: number,
 ): void {
+  // Preview capture stays in derived queues: detached workers cannot inherit
+  // the settings scope that prevents durable schema and identity preparation.
+  if (isConfigurationOnlySettingsRead(globalPmRoot)) return;
   if (shouldFlushInline()) {
     const previousFlush = _lastFlushPromise;
     const nextFlush = flushTelemetryArtifacts(

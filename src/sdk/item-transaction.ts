@@ -7,18 +7,24 @@
  */
 import crypto from "node:crypto";
 import { constants, type Stats } from "node:fs";
-import { isFileMissingError } from "../core/fs/fs-utils.js";
-import { cp, lstat, mkdtemp, open, readdir, realpath, rm, stat } from "node:fs/promises";
+import { isFileMissingError, readRegularFile } from "../core/fs/fs-utils.js";
+import { cp, lstat, mkdir, mkdtemp, open, readdir, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { getActiveExtensionRegistrations, setActiveExtensionRegistrations } from "../core/extensions/index.js";
 import path from "node:path";
 import {
   transferMutationStdinTokenPolicy,
 } from "../core/item/parse.js";
-import { EXIT_CODE } from "../core/shared/constants.js";
+import { EXIT_CODE, PM_REQUIRED_SUBDIRS, SETTINGS_DEFAULTS, SETTINGS_FILENAME } from "../core/shared/constants.js";
+import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
+import { DEFAULT_RUNTIME_SCHEMA_FILE_PATHS, filePathForSchemaSection, loadRuntimeSchemaFromOptionalFiles, normalizeRuntimeSchemaSettings } from "../core/schema/runtime-schema.js";
+import { validateSettings } from "../core/store/settings-validator.js";
+import { resolveWorkspaceRoot } from "../core/store/paths.js";
+import { getSessionStatePath } from "../core/session/session-state.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { stableStringify } from "../core/shared/serialization.js";
 import { readHistoryEntries } from "./history-read.js";
+import { PM_CONTEXT_INTENTS_FILE } from "./context-intent-runtime.js";
 import {
   close,
   create,
@@ -553,11 +559,11 @@ function assertValidBulkMutation(
 
 /** Evidence and explicit limits of a non-writing semantic transaction preview. */
 export interface ItemMutationPreviewValidation {
-  /** Core lifecycle semantics were validated against the staged snapshot. */
-  validated: true;
-  /** Ordered earlier mutations participate in validation of later mutations. */
-  state: "staged_snapshot";
-  /** Rules that must still be evaluated against actual state during commit. */
+  /** True when the coordinator executed staged validation; false for an already committed journal replay. */
+  validated: boolean;
+  /** Distinguishes newly staged execution from idempotent replay without fresh step validation. */
+  state: "staged_snapshot" | "replayed_committed_plan";
+  /** Preview leaves current commit state and executable extension effects unvalidated, including host-run pending migrations, mutation guards and hooks. */
   unresolved_commit_constraints: readonly string[];
 }
 
@@ -576,9 +582,11 @@ async function validateMutationOperation<T>(mutation: BulkItemMutation, index: n
   }
 }
 
-/** Exclude transient runtime and lock files from non-writing previews. */
-function includePreviewPath(root: string, file: string): boolean {
-  return !["locks", "runtime"].includes(path.relative(root, file).split(path.sep)[0]!);
+/** Include durable tracker storage and its ancestors, excluding transient caches and locks. */
+function includePreviewPath(root: string, file: string, ownedPaths: readonly string[] | undefined, retainedPaths: readonly string[]): boolean {
+  const relative = path.relative(root, file);
+  if (["locks", "runtime", "search"].includes(relative.split(path.sep)[0]!)) return retainedPaths.some((retained) => relative === retained || relative.startsWith(`${retained}${path.sep}`) || retained.startsWith(`${relative}${path.sep}`));
+  return relative === "" || ownedPaths === undefined || ownedPaths.some((owned) => relative === owned || relative.startsWith(`${owned}${path.sep}`) || owned.startsWith(`${relative}${path.sep}`));
 }
 
 /** Reject links and special files before preview can traverse or open their targets. */
@@ -611,13 +619,13 @@ async function previewFileDigest(file: string): Promise<Buffer> {
 }
 
 /** Hash durable paths and bytes so a staged copy cannot validate mixed source state. */
-async function previewTrackerFingerprint(root: string): Promise<string> {
+async function previewTrackerFingerprint(root: string, ownedPaths: readonly string[] | undefined, retainedPaths: readonly string[]): Promise<string> {
   const fingerprint = crypto.createHash("sha256");
   /** Visit durable entries in stable order, excluding transient runtime and lock state. */
   async function visit(directory: string): Promise<void> {
     for (const name of (await readdir(directory)).sort()) {
       const file = path.join(directory, name);
-      if (!includePreviewPath(root, file)) continue;
+      if (!includePreviewPath(root, file, ownedPaths, retainedPaths)) continue;
       if ((await previewEntryStat(file)).isDirectory()) {
         await visit(file);
       } else {
@@ -648,8 +656,61 @@ async function isDisappearingPreviewPath(error: unknown): Promise<boolean> {
   }
 }
 
+/** Read optional configuration without following interior links, pipes, or special entries. */
+async function readPreviewConfiguration(root: string, relative: string): Promise<string | undefined> {
+  const file = path.join(root, relative);
+  try {
+    let current = root;
+    for (const component of relative.split(path.sep).slice(0, -1)) {
+      current = path.join(current, component);
+      await previewEntryStat(current);
+    }
+    if (!(await previewEntryStat(file)).isFile()) throw new TypeError(`Transaction preview requires regular files and directories: ${file}`);
+    return await readRegularFile(file, `Transaction preview requires regular files and directories: ${file}`);
+  } catch (error) {
+    if (await isDisappearingPreviewPath(error)) return undefined;
+    throw error;
+  }
+}
+
+/** Resolve storage from captured configuration using pure contracts and disposable schema files. */
+async function resolvePreviewStorage(root: string, configurationRoot: string, registrations: ReturnType<typeof getActiveExtensionRegistrations>) {
+  const configuration = new Map<string, string | undefined>();
+  const rawSettings = await readPreviewConfiguration(root, SETTINGS_FILENAME);
+  configuration.set(SETTINGS_FILENAME, rawSettings);
+  let parsed: unknown;
+  try { parsed = JSON.parse(rawSettings ?? "null") as unknown; }
+  catch { parsed = null; }
+  const validated = validateSettings(parsed);
+  const settings = validated.success ? validated.data : undefined;
+  const schema = normalizeRuntimeSchemaSettings(settings?.schema);
+  for (const [section, configuredPath] of Object.entries(schema.files)) {
+    const relative = path.relative(root, filePathForSchemaSection(root, configuredPath, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS[section as keyof typeof schema.files]));
+    if (relative === "" || !path.resolve(root, relative).startsWith(path.join(root, path.sep))) {
+      throw new PmCliError("Transaction preview requires schema files inside the selected tracker root; relocate the configured schema file before retrying.", EXIT_CODE.USAGE, { code: "transaction_preview_external_schema", field: `schema.files.${section}` });
+    }
+    schema.files[section as keyof typeof schema.files] = relative;
+    const contents = await readPreviewConfiguration(root, relative);
+    configuration.set(relative, contents);
+    if (contents !== undefined) {
+      const target = path.join(configurationRoot, relative);
+      await mkdir(path.dirname(target), { recursive: true });
+      await writeFile(target, contents);
+    }
+  }
+  const sessionPath = path.relative(root, getSessionStatePath(root));
+  configuration.set(sessionPath, await readPreviewConfiguration(root, sessionPath));
+  const loaded = await loadRuntimeSchemaFromOptionalFiles(configurationRoot, schema);
+  const registry = resolveItemTypeRegistry({ ...SETTINGS_DEFAULTS, item_types: { definitions: [...(settings?.item_types?.definitions ?? []), ...(loaded.type_definitions_from_file ?? [])] } }, registrations);
+  const ownedPaths = resolveWorkspaceRoot(root) === root ? [...PM_REQUIRED_SUBDIRS.filter(Boolean), SETTINGS_FILENAME, PM_CONTEXT_INTENTS_FILE, "transactions", ...registry.folders, ...configuration.keys()].map((entry) => path.normalize(entry)) : undefined;
+  // Only the disposable copy is rewritten, so absolute in-root schema paths
+  // cannot point lifecycle reads or schema scaffolding back at source files.
+  const stagedSettings = settings === undefined ? undefined : JSON.stringify({ ...parsed as Record<string, unknown>, schema: { ...settings.schema, files: schema.files } });
+  return { configuration, ownedPaths, stagedSettings, registryFolders: registry.folders };
+}
+
 /** Copy a stable tracker without source writes and normalize concurrent disappearance failures. */
-async function stagePreviewTracker(sourceRoot: string, stagedRoot: string): Promise<void> {
+async function stagePreviewTracker(sourceRoot: string, stagedRoot: string, registrations: ReturnType<typeof getActiveExtensionRegistrations>): Promise<void> {
   // Preserve an initially missing root's existing error; disappearance after
   // this check is a concurrent snapshot change.
   await stat(sourceRoot);
@@ -657,21 +718,27 @@ async function stagePreviewTracker(sourceRoot: string, stagedRoot: string): Prom
     // An explicitly selected root may itself be a link; its resolved directory
     // establishes the boundary. Entries within it must never be dereferenced.
     const resolvedRoot = await realpath(sourceRoot);
-    const sourceFingerprint = await previewTrackerFingerprint(resolvedRoot);
+    const storage = await resolvePreviewStorage(resolvedRoot, path.join(path.dirname(stagedRoot), "configuration"), registrations);
+    const retainedPaths = [...storage.configuration.keys(), ...storage.registryFolders].map((entry) => path.normalize(entry));
+    const sourceFingerprint = await previewTrackerFingerprint(resolvedRoot, storage.ownedPaths, retainedPaths);
     await cp(resolvedRoot, stagedRoot, {
       recursive: true, dereference: false,
       filter: async (source) => {
-        if (!includePreviewPath(resolvedRoot, source)) return false;
+        if (!includePreviewPath(resolvedRoot, source, storage.ownedPaths, retainedPaths)) return false;
         await previewEntryStat(source);
         return true;
       },
     });
     const [currentFingerprint, stagedFingerprint] = await Promise.all([
-      previewTrackerFingerprint(resolvedRoot), previewTrackerFingerprint(stagedRoot),
+      previewTrackerFingerprint(resolvedRoot, storage.ownedPaths, retainedPaths), previewTrackerFingerprint(stagedRoot, storage.ownedPaths, retainedPaths),
     ]);
     if (sourceFingerprint !== currentFingerprint || sourceFingerprint !== stagedFingerprint) {
       throw previewSnapshotChangedError();
     }
+    for (const [relative, contents] of storage.configuration) {
+      if (await readPreviewConfiguration(stagedRoot, relative) !== contents) throw previewSnapshotChangedError();
+    }
+    if (storage.stagedSettings !== undefined) await writeFile(path.join(stagedRoot, SETTINGS_FILENAME), storage.stagedSettings);
   } catch (error) {
     if (await isDisappearingPreviewPath(error)) throw previewSnapshotChangedError();
     throw error;
@@ -688,7 +755,8 @@ export async function previewItemMutations(options: Pick<CommitItemMutationsOpti
   const root = await mkdtemp(path.join(tmpdir(), "pm-transaction-preview-"));
   const stagedRoot = path.join(root, "tracker");
   try {
-    await stagePreviewTracker(identity.pmRoot, stagedRoot);
+    await stagePreviewTracker(identity.pmRoot, stagedRoot, registrations);
+    let validated = false;
     await runWithActiveExtensions({ path: stagedRoot, noExtensions: true }, async () => {
       setActiveExtensionRegistrations(registrations);
       const config = { ...identity, pmRoot: stagedRoot, createCompensation: "close" as const };
@@ -701,9 +769,9 @@ export async function previewItemMutations(options: Pick<CommitItemMutationsOpti
           apply: () => validateMutationOperation(mutation, index, () => step.apply()),
         };
       });
-      await commitWorkspaceTransaction({ ...identity, pmRoot: stagedRoot, steps });
+      await commitWorkspaceTransaction({ ...identity, pmRoot: stagedRoot, steps, onTransition: ({ transition }) => { if (transition === "committed") validated = true; } });
     });
-    return { validated: true, state: "staged_snapshot", unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_mutation_guards_and_hooks"] };
+    return { validated, state: validated ? "staged_snapshot" : "replayed_committed_plan", unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_mutation_guards_and_hooks"] };
   } finally {
     await rm(root, { recursive: true, force: true });
   }

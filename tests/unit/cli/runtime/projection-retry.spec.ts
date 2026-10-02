@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { repairProjectionRecovery } from "../../../../src/cli/runtime/projection-retry.js";
-import { renderPmCommand } from "../../../../src/sdk/command-line.js";
 
 describe("minimal projection retry edits", () => {
   it("preserves scope, encoding, filters, literal operands and shell quoting", () => {
@@ -8,7 +7,9 @@ describe("minimal projection retry edits", () => {
     const result = repairProjectionRecovery(invocation, "unknown_field_projection", { suggested_retry_args: ["search", "ignored generic operand", "--fields", "title"] });
     const expected = ["--pm-path=/tracker with spaces/$literal", "search", "--fields", "title", "--output-format", "json", "--tag", "scope", "--limit", "7", "--", "--full"];
     expect(result?.suggested_retry_args).toEqual(expected);
-    expect(result?.suggested_retry).toBe(renderPmCommand(expected));
+    expect(result?.suggested_retry).toBe(process.platform === "win32"
+      ? 'pm "--pm-path=/tracker with spaces/$literal" search --fields title --output-format json --tag scope --limit 7 -- --full'
+      : 'pm "--pm-path=/tracker with spaces/\\$literal" search --fields title --output-format json --tag scope --limit 7 -- --full');
     expect(invocation[2]).toBe("--fields=title,typo");
   });
 

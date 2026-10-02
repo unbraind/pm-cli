@@ -59,6 +59,7 @@ import {
   readSettings,
   readSettingsWithMetadata,
   resetActiveExtensionRuntimeState,
+  resolveGlobalPmRoot,
   resolveItemTypeRegistry,
   resolvePmCliVersion,
   resolvePmPackageRootFromModule,
@@ -70,6 +71,7 @@ import {
   runActivePreflightOverride,
   runAfterCommandHooks,
   runBeforeCommandHooks,
+  runWithConfigurationOnlySettings,
   runWithHarnessDetectionSignals,
   runWithWorkspaceHarnessSignalDescriptors,
   sentryCaptureCliError,
@@ -177,7 +179,7 @@ import type { RuntimeExtensionActivationProbe } from "./runtime/activation.js";
 import { activationCommandMatchesProbe,buildBootstrapActivationProbe,buildRuntimeExtensionActivationScope,buildRuntimeExtensionFilterForProbe,collectActivationCommandCandidates,collectLeadingCommandArgs,collectParsedActivationCommandArgs,commandPathNeedsSearchExtensions,commandPathNeedsTemplateExtensions,discoveryNeedsActivationForProbe,extensionActivationCommands,extensionCapabilities,extensionNeedsActivationForProbe,extensionProvidesTemplatesRuntime,hasAnyCapability,hasGlobalExtensionContributions,matchesStaticExtensionCommand,probeUsesAnyFlag,resolveStaticExtensionActivationDecision } from "./runtime/activation.js";
 import { collectExtensionFlagDefinitionsForCommand,collectExtensionFlagDefinitionsForInvocation,copyReadOutputInvocationProvenance,dynamicCommandArguments,extractCommandScopedOptions,forwardReadOutputIncludeModes,isImporterOrExporterCommandPath,recordCliReadOutputInvocationProvenance,validateDynamicExtensionCommandArgs,validateDynamicExtensionCommandInvocation } from "./runtime/invocation-options.js";
 import type { CoreCommandRegistrationSelection } from "./runtime/selection.js";
-import { LIST_QUERY_COMMAND_NAMES,enforceExplicitRetryForFlagTypos,invocationRequestsVersion,isStaticExtensionInventoryInvocation,resolveCoreCommandRegistrationSelection,shouldAttachRichHelpTextForInvocation,shouldRegisterDynamicExtensionPaths,shouldRegisterRuntimeSchemaFlags } from "./runtime/selection.js";
+import { LIST_QUERY_COMMAND_NAMES,enforceExplicitRetryForFlagTypos,invocationRequestsVersion,isStaticExtensionInventoryInvocation,resolveStructuredMutationPreviewInvocation,resolveCoreCommandRegistrationSelection,shouldAttachRichHelpTextForInvocation,shouldRegisterDynamicExtensionPaths,shouldRegisterRuntimeSchemaFlags } from "./runtime/selection.js";
 import { buildPostActionTelemetryOutcome,inferPostActionErrorCode,inferPostActionFailureMessage,normalizeTelemetryCommandResolution,normalizeTelemetryErrorCategory,normalizeTelemetryResolutionStage,readRecordBoolean,readRecordNumber,readRecordString } from "./runtime/telemetry-outcome.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
@@ -1412,9 +1414,16 @@ async function recordActiveDeprecatedAliasUsage(rootProgram: Command): Promise<v
   if (typeof alias === "string") await recordDeprecatedAliasUsage(alias);
 }
 
+/** Skip host-owned durable preparation for structured previews using the same effective inherited options as command dispatch. */
+async function runCommandPreparation<T>(actionCommand: Command, skipped: T, run: () => Promise<T>): Promise<T> {
+  const commandPath = getCommandPath(actionCommand);
+  if (["item mutate", "item complete"].includes(commandPath) && actionCommand.optsWithGlobals().dryRun === true) return skipped;
+  return run();
+}
+
 /* c8 ignore start */
 
-/** Bind output validation, extension policy, mutation guards, and observability to the selected semantic command. */
+/** Bind command policy and observability while keeping structured previews free of host-owned migration and consent writes. */
 function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: string[]): void {
   if (invocationArgv && isStaticExtensionInventoryInvocation(invocationArgv)) return;
   rootProgram.hook("preAction", async (_thisCommand, actionCommand) => {
@@ -1438,7 +1447,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
       outputCursor: rawGlobalOptions.outputCursor,
     });
     forwardReadOutputIncludeModes(actionCommand, commandPath, globalOptions, commandOptions);
-    await maybeRunFirstUseTelemetryPrompt(commandPath, globalOptions);
+    await runCommandPreparation(actionCommand, undefined, () => maybeRunFirstUseTelemetryPrompt(commandPath, globalOptions));
     const fallbackPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
     const runtimeExtensions = await maybeLoadRuntimeExtensions(actionCommand);
     if (!runtimeExtensions) {
@@ -1520,7 +1529,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
 
     /* c8 ignore next */
     const migrationWarnings = preflightDecision.run_extension_migrations
-      ? await executeRegisteredRuntimeMigrations(runtimeExtensions.registrations.migrations, runtimeExtensions.pmRoot)
+      ? await runCommandPreparation(actionCommand, [], () => executeRegisteredRuntimeMigrations(runtimeExtensions.registrations.migrations, runtimeExtensions.pmRoot))
       : [];
     if (globalOptions.profile && migrationWarnings.length > 0) {
       printError(`profile:extensions migration_warnings=${formatHookWarnings(migrationWarnings)}`);
@@ -2048,8 +2057,11 @@ function captureInvokedDeprecatedAlias(rootProgram: Command, rawArgv: string[]):
 }
 
 /** Dispatch one fresh CLI invocation with deterministic process state and tracker-scoped attribution. */
-async function runPmCliInReproducibleContext(rawArgv: string[]): Promise<void> {
+async function runPmCliInReproducibleContext(rawArgv: string[], settingsPolicy: { configurationOnly: boolean }): Promise<void> {
   program = createPmCliProgram(CLI_VERSION);
+  program.hook("preAction", (_thisCommand, actionCommand) => {
+    settingsPolicy.configurationOnly = ["item mutate", "item complete"].includes(getCommandPath(actionCommand)) && actionCommand.optsWithGlobals().dryRun === true;
+  });
   attachProgramLifecycleHooks(program, rawArgv);
   // The runtime-extension snapshot caches dedupe discovery work within a
   // single invocation only. Reset them on entry so long-lived embeddings
@@ -2149,10 +2161,33 @@ async function runPmCliInReproducibleContext(rawArgv: string[]): Promise<void> {
 
 /** Implements run pm cli for the public runtime surface of this module. */
 export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promise<void> {
-  try {
-    await runWithReproducibleProcessEnvironment(process.env, () => runPmCliInReproducibleContext(rawArgv));
-  } catch (error: unknown) {
-    await handleRunPmCliError({ error, invocationArgv: [...rawArgv] });
+  let invocationArgv = rawArgv;
+  try { invocationArgv = normalizeBootstrapInvocation(rawArgv).argv; }
+  catch { /* Report normalization failures through the normal invocation path inside the selected settings scope. */ }
+  const preview = resolveStructuredMutationPreviewInvocation(invocationArgv);
+  const settingsPolicy = { configurationOnly: preview !== undefined };
+  const isConfigurationOnly = (): boolean => settingsPolicy.configurationOnly;
+  /** Keep bootstrap, execution and error cleanup within the selected settings policy. */
+  const runInvocation = async (): Promise<void> => {
+    try {
+      await runWithReproducibleProcessEnvironment(process.env, () => runPmCliInReproducibleContext(rawArgv, settingsPolicy));
+    } catch (error: unknown) {
+      await handleRunPmCliError({ error, invocationArgv: [...rawArgv] });
+    }
+  };
+  if (preview !== undefined) {
+    const bootstrapRoot = resolvePmRoot(process.cwd(), parseBootstrapGlobalOptions(invocationArgv).path);
+    const actionRoot = resolvePmRoot(process.cwd(), preview.path);
+    const globalRoot = resolveGlobalPmRoot(process.cwd());
+    await runWithConfigurationOnlySettings(bootstrapRoot, () =>
+      runWithConfigurationOnlySettings(actionRoot, () =>
+        runWithConfigurationOnlySettings(globalRoot, runInvocation, isConfigurationOnly),
+        isConfigurationOnly,
+      ),
+      isConfigurationOnly,
+    );
+  } else {
+    await runInvocation();
   }
 }
 

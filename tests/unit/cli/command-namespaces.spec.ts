@@ -7,6 +7,36 @@ import { describe, expect, it } from "vitest";
 import { installCommandNamespaces } from "../../../src/cli/command-namespaces.js";
 import { normalizeBootstrapInvocation } from "../../../src/sdk/cli-bootstrap.js";
 import { _testOnly as mainInternals } from "../../../src/cli/main.js";
+import { resolveStructuredMutationPreviewInvocation } from "../../../src/cli/runtime/selection.js";
+
+describe("structured preview bootstrap selection", () => {
+  it.each<[string[], { path: string | undefined } | undefined]>([
+    [["item", "mutate", "--dry-run"], { path: undefined }],
+    [["pm", "--pm-path", "tracker", "item", "mutate", "--dry-run"], { path: "tracker" }],
+    [["--path=legacy", "item", "mutate", "--dry-run"], { path: "legacy" }],
+    [["--path", "legacy", "--pm-path=preferred", "item", "mutate", "--dry-run"], { path: "preferred" }],
+    [["item", "complete", "pm-example", "--reason=Delivered", "--dry-run"], { path: undefined }],
+    [["item", "--package-note", "package", "complete", "pm-example", "--dry-run"], { path: undefined }],
+    [["item", "--unknown", "complete", "pm-example", "--dry-run"], { path: undefined }],
+    [["item", "complete", "pm-example", "--reason", "--path", "--dry-run"], { path: "--dry-run" }],
+    [["item", "complete", "pm-example", "--reason", "--dry-run"], { path: undefined }],
+    [["item", "complete", "pm-example", "--reason=--dry-run"], undefined],
+    [["item", "mutate", "--transaction-id", "--dry-run"], { path: undefined }],
+    [["--pm-path", "--dry-run", "item", "mutate"], { path: "--dry-run" }],
+    [["item", "complete", "pm-example", "--", "--dry-run"], { path: undefined }],
+    [["item", "mutate", "--dry-run", "--author"], { path: undefined }],
+    [["item", "mutate", "--dry-run=false"], undefined],
+    [["item", "mutate", "--dry_run"], undefined],
+    [["item", "mutate"], undefined],
+    [["item", "reopen", "pm-example", "--dry-run"], { path: undefined }],
+    [["item"], undefined],
+    [[], undefined],
+  ])("protects literal candidates in %j until the actual parser selects an action", (argv, expected) => {
+    expect(resolveStructuredMutationPreviewInvocation(normalizeBootstrapInvocation(argv).argv)).toEqual(expected);
+  });
+
+
+});
 
 describe("canonical navigation and operations namespaces", () => {
   it("moves existing handlers without copying their argument or option contracts", async () => {

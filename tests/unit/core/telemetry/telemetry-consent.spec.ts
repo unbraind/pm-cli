@@ -1,9 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { runPmCli } from "../../../../src/cli/main.js";
 import { maybeRunFirstUseTelemetryPrompt } from "../../../../src/core/telemetry/consent.js";
 import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
+import { getSettingsPath } from "../../../../src/core/store/paths.js";
+import { runInProcessDistCli } from "../../../helpers/cliRunner.js";
+import { writeTestExtension } from "../../../helpers/extensions.js";
 import { withTempGlobalRoot } from "../../../helpers/temp.js";
+import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 // Replace the interactive readline prompt so consent flows can be driven
 // non-interactively; each test sets questionImpl to the desired answer.
@@ -43,9 +48,13 @@ function setTty(value: boolean | undefined): void {
 function restoreTty(): void {
   if (stdinDescriptor) {
     Object.defineProperty(process.stdin, "isTTY", stdinDescriptor);
+  } else {
+    Reflect.deleteProperty(process.stdin, "isTTY");
   }
   if (stdoutDescriptor) {
     Object.defineProperty(process.stdout, "isTTY", stdoutDescriptor);
+  } else {
+    Reflect.deleteProperty(process.stdout, "isTTY");
   }
 }
 
@@ -95,6 +104,51 @@ describe("core/telemetry/consent", () => {
       process.env.PM_GLOBAL_PATH = originalGlobalPath;
     }
     promptState.questionImpl = async () => "";
+  });
+
+  it.each(["action", "namespace"])("skips eligible interactive consent for %s preview flags and persists it during ordinary apply", async (flagOwner) => {
+    await withTempPmPath(async (context) => {
+      expect(context.runCli(["create", "task", "Consent boundary", "--id", "consent-preview", "--json"]).code).toBe(0);
+      if (flagOwner === "namespace") {
+        await writeTestExtension({
+          root: context.pmPath,
+          placement: "projectRoot",
+          directory: "consent-preview-flags",
+          entryFilename: "index.mjs",
+          manifestOverrides: { capabilities: ["schema"], activation: { commands: ["item"] } },
+          entrySource: 'export default { activate(api) { api.registerFlags("item", [{ long: "--dry-run" }]); } };',
+        });
+      }
+      const globalRoot = context.env.PM_GLOBAL_PATH!;
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.enabled = false;
+      settings.telemetry.first_run_prompt_completed = false;
+      await writeSettings(globalRoot, settings, "test:eligible-consent");
+      const before = await fs.readFile(getSettingsPath(globalRoot), "utf8");
+      let prompts = 0;
+      promptState.questionImpl = async () => { prompts += 1; return "n"; };
+      await withInteractiveEnv(async () => {
+        const env = {
+          ...context.env,
+          PM_TELEMETRY_DISABLED: "0",
+          PM_NO_TELEMETRY: "0",
+          PM_TELEMETRY_SEND_TEST_EVENTS: "1",
+          DO_NOT_TRACK: "0",
+          PM_TELEMETRY_PROMPT: undefined,
+          CI: undefined,
+        };
+        const args = ["item", "complete", "pm-consent-preview", "Delivered", "--transaction-id", "consent-boundary", "--validate-close", "off", ...(flagOwner === "action" ? ["--no-extensions"] : [])];
+        const previewArgs = flagOwner === "namespace" ? [args[0]!, "--dry-run", ...args.slice(1)] : [...args, "--dry-run"];
+        const preview = await runInProcessDistCli(previewArgs, { env }, runPmCli);
+        expect(preview.code).toBe(0);
+        expect(prompts).toBe(0);
+        expect(await fs.readFile(getSettingsPath(globalRoot), "utf8")).toBe(before);
+        const applied = await runInProcessDistCli(args, { env }, runPmCli);
+        expect(applied.code).toBe(0);
+        expect(prompts).toBe(1);
+        expect(await readSettings(globalRoot)).toMatchObject({ telemetry: { enabled: false, first_run_prompt_completed: true } });
+      });
+    });
   });
 
   it("skips prompt and leaves settings untouched in non-interactive environments", async () => {

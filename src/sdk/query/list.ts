@@ -949,6 +949,11 @@ function validateListProjectionFields(
     (field) => !allowed.has(normalizeProjectionField(field)),
   );
   if (unknown.length > 0) {
+    const suggestedRetryArguments = [
+      invokedCommand,
+      "--fields",
+      projection.fields.filter((field) => !unknown.includes(field)).join(",") || "id,title,status",
+    ];
     throw new PmCliError(
       `Unknown list --fields value(s): ${unknown.join(", ")}`,
       EXIT_CODE.USAGE,
@@ -961,12 +966,8 @@ function validateListProjectionFields(
         ],
         recovery: {
           allowed_values: allowedValues,
-          suggested_retry: renderPmCommand([invokedCommand, "--fields", projection.fields.filter((field) => !unknown.includes(field)).join(",") || "id,title,status"]),
-          suggested_retry_args: [
-            invokedCommand,
-            "--fields",
-            projection.fields.filter((field) => !unknown.includes(field)).join(",") || "id,title,status",
-          ],
+          suggested_retry: renderPmCommand(suggestedRetryArguments),
+          suggested_retry_args: suggestedRetryArguments,
         },
       },
     );

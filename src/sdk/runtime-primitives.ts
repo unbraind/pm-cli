@@ -407,6 +407,7 @@ export {
   getHistoryPath,
   getItemPath,
   getSettingsPath,
+  resolveGlobalPmRoot,
   resolveImplicitPmRoot,
   resolvePmRoot,
   resolveWorkspaceRoot,
@@ -415,6 +416,7 @@ export {
   persistSelectedItemFormat,
   readSettings,
   readSettingsWithMetadata,
+  runWithConfigurationOnlySettings,
   writeSettings,
 } from "../core/store/settings.js";
 export { maybeRunFirstUseTelemetryPrompt } from "../core/telemetry/consent.js";

@@ -2145,6 +2145,20 @@
       ],
       "package_version": "2026.10.1",
       "reason": "Add optional tracker-scope inputs and transaction-operation error evidence; existing caller shapes remain valid. Add semantic preview exports."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ItemMutationPreviewValidation"
+      ],
+      "package_version": "2026.10.1",
+      "reason": "pm-gh1370 corrects the new unmerged preview receipt: already committed plans report validated false and replayed_committed_plan instead of falsely claiming fresh staged validation. No released SDK declaration is removed; clients must inspect validation state."
+    },
+    {
+      "changes": [
+        "signature ./sdk:runWithConfigurationOnlySettings"
+      ],
+      "package_version": "2026.10.1",
+      "reason": "pm-gh1370 adds an optional per-read enabled predicate to the new unmerged runWithConfigurationOnlySettings helper so actual Commander preAction parsing can release only its invocation-owned protection. Existing two-argument calls retain their behavior; no released SDK declaration changes."
     }
   ],
   "entrypoints": {
@@ -9871,7 +9885,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ItemMutationPreviewValidation",
-          "signature": "export interface ItemMutationPreviewValidation { validated: true; state: \"staged_snapshot\"; unresolved_commit_constraints: readonly string[]; }"
+          "signature": "export interface ItemMutationPreviewValidation { validated: boolean; state: \"staged_snapshot\" | \"replayed_committed_plan\"; unresolved_commit_constraints: readonly string[]; }"
         },
         {
           "classification": "supported",
@@ -16464,6 +16478,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "resolveGlobalPmRoot",
+          "signature": "(cwd: string) => string | calls: (cwd: string) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "resolveGuideOutputFormat",
           "signature": "(options: GuideOptions, global: GlobalOptions) => GuideOutputFormat | calls: (options: GuideOptions, global: GlobalOptions) => GuideOutputFormat"
         },
@@ -17870,6 +17890,12 @@
           "kind": "function",
           "name": "runWithAgentSessionContext",
           "signature": "<T>(context: AgentSessionContext, callback: () => T) => T | calls: <T>(context: AgentSessionContext, callback: () => T) => T"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runWithConfigurationOnlySettings",
+          "signature": "<T>(pmRoot: string, run: () => Promise<T>, isEnabled?: () => boolean) => Promise<T> | calls: <T>(pmRoot: string, run: () => Promise<T>, isEnabled?: () => boolean) => Promise<T>"
         },
         {
           "classification": "contract_data",
@@ -35558,6 +35584,7 @@
     "tracker_root_missing",
     "tracker_root_not_directory",
     "tracker_root_unreadable",
+    "transaction_preview_external_schema",
     "transaction_preview_snapshot_changed",
     "type_duplicate",
     "type_invalid",

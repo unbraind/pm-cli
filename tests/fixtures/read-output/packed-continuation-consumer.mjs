@@ -2,37 +2,64 @@
 import assert from "node:assert/strict";
 import { PmClient } from "@unbrained/pm-cli/sdk";
 
-const [pmRoot, emptyRoot] = process.argv.slice(2);
+const [pmRoot, emptyRoot, blockedRoot] = process.argv.slice(2);
 const client = new PmClient({ pmRoot, noExtensions: true });
 const emptyClient = new PmClient({ pmRoot: emptyRoot, noExtensions: true });
+const blockedClient = new PmClient({ pmRoot: blockedRoot, noExtensions: true });
 
 /** Check only advertised SDK counters, including compact focus summaries. */
-function deliveredRows(page) {
-  const rows = page.items ?? page.low_level ?? [];
+function deliveredRows(page, blocked) {
+  const sections = page.items ? { items: page.items } : {
+    high_level: page.high_level ?? [],
+    low_level: page.low_level ?? [],
+    blocked_fallback: page.blocked_fallback ?? [],
+  };
+  const rows = Object.entries(sections).flatMap(([section, items]) => items.map(({ id }) => ({ section, id })));
   if (page.items && page.count !== undefined) assert.equal(page.count, page.items.length);
   if (page.summary?.returned_focus) {
-    const focusCount = ["high_level", "low_level", "blocked_fallback"].reduce((sum, section) => sum + (page[section]?.length ?? 0), 0);
-    assert.equal(page.summary.returned_focus.active_items, focusCount);
+    assert.deepEqual(page.summary.returned_focus, {
+      active_items: rows.length,
+      in_progress: blocked ? 0 : rows.length,
+      open: blocked ? rows.length : 0,
+      blocked: blocked ? rows.length : 0,
+    });
   }
+  assert.equal(new Set(rows.map(({ id }) => id)).size, rows.length, "A page must not duplicate delivered focus rows");
   return rows;
 }
 
+/** Count repeated companion focus rows while retaining every resumed collection row for uniqueness checks. */
+function appendProducerRows(rows, continuedSection, producerRows, ids) {
+  let companions = 0;
+  for (const row of rows) {
+    if (continuedSection && row.section !== continuedSection && producerRows.has(row.id)) companions += 1;
+    else ids.push(row.id);
+    producerRows.add(row.id);
+  }
+  return companions;
+}
+
 /** Traverse advertised serialized cursors and require unique, accurate delivered rows. */
-async function collect(reader, options, expected) {
+async function collect(reader, options, expected, blocked = false) {
   let after;
   let outputCursor;
+  let continuedSection;
   let reads = 0;
   let producerTransitions = 0;
   let budgetTransitions = 0;
+  let companionRows = 0;
   const ids = [];
-  const hierarchy = new Set();
+  const producerRows = new Set();
   do {
+    if (!outputCursor) producerRows.clear();
     const page = JSON.parse(JSON.stringify(await reader({ ...options, ...(after ? { after } : {}), ...(outputCursor ? { outputCursor } : {}) })));
-    const rows = deliveredRows(page);
-    ids.push(...rows.map((row) => row.id));
-    for (const row of page.high_level ?? []) hierarchy.add(row.id);
+    companionRows += appendProducerRows(deliveredRows(page, blocked), outputCursor ? continuedSection : undefined, producerRows, ids);
     outputCursor = page.output_budget_truncation?.recovery?.cursor;
-    if (outputCursor) budgetTransitions += 1;
+    if (outputCursor) {
+      continuedSection = page.output_budget_truncation.continuations.find(({ cursor }) => cursor === outputCursor)?.path;
+      assert(continuedSection, "Advertised output recovery must identify its resumed collection");
+      budgetTransitions += 1;
+    }
     else {
       after = page.next_cursor ?? undefined;
       if (after) producerTransitions += 1;
@@ -41,8 +68,8 @@ async function collect(reader, options, expected) {
     assert(reads <= 100, "Serialized continuation must finish");
   } while (after || outputCursor);
   assert.equal(ids.length, new Set(ids).size, "Continuation must not duplicate delivered rows");
-  assert.equal(new Set([...ids, ...hierarchy]).size, expected);
-  return { reads, producerTransitions, budgetTransitions };
+  assert.equal(ids.length, expected);
+  return { reads, producerTransitions, budgetTransitions, companionRows, uniqueRows: ids.length };
 }
 
 const results = [];
@@ -63,4 +90,14 @@ for (const [name, reader] of [
   ["search", (options) => emptyClient.search("Matrix", options)],
   ["context", (options) => emptyClient.context(options)],
 ]) results.push({ name, empty: true, ...await collect(reader, { limit: 1, outputBudget: 1500, json: true }, 0) });
+const blockedOptions = { limit: 12, tokenBudget: 100000, tag: "blocked-matrix", json: true };
+results.push({ name: "context", blocked: true, ...await collect((options) => blockedClient.context(options), { ...blockedOptions, outputBudget: 2000 }, 12, true) });
+const boundedBlocked = JSON.parse(JSON.stringify(await blockedClient.context({ ...blockedOptions, outputBudget: 1500 })));
+const boundedRows = deliveredRows(boundedBlocked, true);
+assert(boundedRows.length > 0 && boundedRows.length < 12);
+assert.equal(boundedBlocked.summary.blocked, 12, "Population counters must include withheld fallback rows");
+const recoveryBudget = boundedBlocked.output_budget_truncation?.recovery?.sdk?.outputBudget;
+assert.equal(typeof recoveryBudget, "number", "Fallback recovery must advertise a usable SDK budget");
+assert(recoveryBudget > 1500);
+results.push({ name: "context", blocked: true, recovery: true, ...await collect((options) => blockedClient.context(options), { ...blockedOptions, outputBudget: recoveryBudget }, 12, true) });
 console.log(JSON.stringify({ publicExport: "@unbrained/pm-cli/sdk", results }));

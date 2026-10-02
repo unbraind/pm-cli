@@ -5,7 +5,13 @@ import { setTimeout as sleep } from "node:timers/promises";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { BUILTIN_HARNESS_SIGNAL_DESCRIPTORS } from "../../../../src/core/shared/author.js";
-import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
+import { getWorkspaceHistoryPath } from "../../../../src/core/history/workspace-history.js";
+import { getSettingsPath } from "../../../../src/core/store/paths.js";
+import {
+  readSettings,
+  runWithConfigurationOnlySettings,
+  writeSettings,
+} from "../../../../src/core/store/settings.js";
 import {
   _testOnly,
   emitTelemetryErrorEvent,
@@ -1757,6 +1763,42 @@ describe("core/telemetry/runtime", () => {
         endpoint: "https://telemetry.example.test/events",
         queue_entries: 0,
       });
+    });
+  });
+
+  it("preserves consented settings and missing schema during a scoped flush, then restores ordinary identity initialization", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const settings = await readSettings(globalRoot);
+      await writeSettings(globalRoot, settings, "test:initial_settings");
+      const schemaPath = path.join(globalRoot, "schema", "preview-statuses.json");
+      settings.schema.files.statuses = schemaPath;
+      settings.telemetry.enabled = true;
+      settings.telemetry.installation_id = "";
+      settings.telemetry.endpoint = "https://telemetry.example.test/events";
+      await writeSettings(globalRoot, settings, "test:scoped_flush_fixture");
+      const settingsPath = getSettingsPath(globalRoot);
+      const historyPath = getWorkspaceHistoryPath(globalRoot);
+      const before = await Promise.all([
+        fs.readFile(settingsPath, "utf8"),
+        fs.readFile(historyPath, "utf8"),
+      ]);
+      await expect(fs.stat(schemaPath)).rejects.toMatchObject({ code: "ENOENT" });
+
+      await runWithConfigurationOnlySettings(globalRoot, () => flushTelemetryQueueNow(globalRoot));
+
+      expect(await Promise.all([
+        fs.readFile(settingsPath, "utf8"),
+        fs.readFile(historyPath, "utf8"),
+      ])).toEqual(before);
+      await expect(fs.stat(schemaPath)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(fs.stat(telemetryQueuePath(globalRoot))).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(_testOnly.readRuntimeState(globalRoot)).resolves.toEqual({});
+
+      await flushTelemetryQueueNow(globalRoot);
+
+      expect((await readSettings(globalRoot)).telemetry.installation_id).not.toBe("");
+      expect((await fs.stat(schemaPath)).isFile()).toBe(true);
+      expect(await fs.readFile(historyPath, "utf8")).not.toBe(before[1]);
     });
   });
 

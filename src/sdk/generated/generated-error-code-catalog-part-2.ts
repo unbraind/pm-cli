@@ -8,19 +8,6 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
-    code: "merge_reconcile_receipt_evidence_untrusted",
-    meaning: "Merge reconcile receipt evidence untrusted condition.",
-    stability: "provisional",
-    exit_code: 4,
-    class: "conflict",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/history-repair.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_reconcile_receipt_evidence_untrusted",
-    aliases: [],
-  },
-  {
     code: "merge_root_not_found",
     meaning: "Merge root not found condition.",
     stability: "stable",
@@ -1470,6 +1457,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     owned_states: [
       { state: "selected_tracker_root_is_not_readable", probe_id: "tracker-root-unreadable", entrypoints: ["list"], expected_exit_class: "generic_failure" },
     ],
+  },
+  {
+    code: "transaction_preview_external_schema",
+    meaning: "Transaction preview external schema condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/item-transaction.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "transaction_preview_external_schema",
+    aliases: [],
   },
   {
     code: "transaction_preview_snapshot_changed",

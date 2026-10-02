@@ -10,62 +10,78 @@ interface ReadPage {
   items?: { id: string }[];
   low_level?: { id: string }[];
   high_level?: { id: string }[];
-  summary?: { returned_focus: { active_items: number; in_progress: number; open: number } };
+  blocked_fallback?: { id: string }[];
+  summary?: { blocked: number; returned_focus: { active_items: number; in_progress: number; open: number; blocked: number } };
   count?: number;
   total?: number;
   has_more?: boolean;
   next_cursor?: string;
-  output_budget_truncation?: { recovery?: { cursor?: string } };
+  output_budget_truncation?: { continuations: { cursor: string; path: string }[]; recovery?: { cursor?: string; sdk?: { outputBudget?: number }; cli?: string } };
 }
 
 type RunRead = (args: string[]) => Promise<{ code: number | null; json?: unknown; stderr: string }>;
 
-/** Replay an advertised output cursor before advancing the enclosing producer page. */
-function continuationArgs(base: string[], after: string | undefined, outputCursor: string | undefined): string[] {
-  return [...base, ...(after ? ["--after", after] : []), ...(outputCursor ? ["--output-cursor", outputCursor] : [])];
-}
-
 /** Check delivered-row counters independently of total query matches. */
-function verifyDeliveredCounts(page: ReadPage): void {
+function verifyDeliveredCounts(page: ReadPage, blocked = false): { section: string; id: string }[] {
+  const sections = page.items ? { items: page.items } : {
+    high_level: page.high_level ?? [], low_level: page.low_level ?? [], blocked_fallback: page.blocked_fallback ?? [],
+  };
+  const delivered = Object.entries(sections).flatMap(([section, rows]) => rows.map(({ id }) => ({ section, id })));
   if (page.items && page.count !== undefined) expect(page.count).toBe(page.items.length);
   if (page.summary) {
-    const rows = (page.low_level?.length ?? 0) + (page.high_level?.length ?? 0);
-    expect(page.summary.returned_focus).toMatchObject({ active_items: rows, in_progress: rows, open: 0 });
+    expect(page.summary.returned_focus).toEqual({
+      active_items: delivered.length, in_progress: blocked ? 0 : delivered.length,
+      open: blocked ? delivered.length : 0, blocked: blocked ? delivered.length : 0,
+    });
   }
+  expect(new Set(delivered.map(({ id }) => id)).size).toBe(delivered.length);
+  return delivered;
+}
+
+/** Preserve resumed collection duplicates as failures, allowing only companion repeats within one producer page. */
+function appendProducerRows(rows: { section: string; id: string }[], continuedSection: string | undefined, producerRows: Set<string>, ids: string[]): number {
+  let companions = 0;
+  for (const row of rows) {
+    if (continuedSection && row.section !== continuedSection && producerRows.has(row.id)) companions += 1;
+    else ids.push(row.id);
+    producerRows.add(row.id);
+  }
+  return companions;
 }
 
 /** Traverse both advertised cursor layers and reject loops or duplicate delivered rows. */
-async function collectReadPages(run: RunRead, base: string[]): Promise<{ ids: string[]; hierarchy: Set<string>; producerCursor: string }> {
+async function collectReadPages(run: RunRead, base: string[], blocked = false): Promise<{ ids: string[]; producerCursor: string; transitions: number; budgetContinuations: number; companionRows: number }> {
   const ids: string[] = [];
-  const hierarchy = new Set<string>();
+  const producerRows = new Set<string>();
   let after: string | undefined;
   let outputCursor: string | undefined;
+  let continuedSection: string | undefined;
   let transitions = 0;
   let budgetContinuations = 0;
+  let companionRows = 0;
   let producerCursor = "";
   let pages = 0;
   do {
-    const response = await run(continuationArgs(base, after, outputCursor));
+    if (!outputCursor) producerRows.clear();
+    const response = await run([...base, ...(after ? ["--after", after] : []), ...(outputCursor ? ["--output-cursor", outputCursor] : [])]);
     expect(response.code, `${base.join(" ")}: ${response.stderr}`).toBe(0);
     const page = response.json as ReadPage;
-    const rows = page.items ?? page.low_level ?? [];
-    ids.push(...rows.map((row) => row.id));
-    for (const row of page.high_level ?? []) hierarchy.add(row.id);
-    verifyDeliveredCounts(page);
-    const nextOutput = page.output_budget_truncation?.recovery?.cursor;
-    outputCursor = nextOutput;
-    if (nextOutput) budgetContinuations += 1;
-    if (!nextOutput) {
+    companionRows += appendProducerRows(verifyDeliveredCounts(page, blocked), outputCursor ? continuedSection : undefined, producerRows, ids);
+    outputCursor = page.output_budget_truncation?.recovery?.cursor;
+    if (outputCursor) {
+      continuedSection = page.output_budget_truncation!.continuations.find(({ cursor }) => cursor === outputCursor)?.path;
+      expect(continuedSection, "Advertised recovery must identify its resumed collection").toBeDefined();
+      budgetContinuations += 1;
+    } else {
       after = page.has_more ? page.next_cursor : undefined;
-      if (after) { transitions += 1; producerCursor = after; }
+      transitions += Number(Boolean(after));
+      producerCursor = after ?? producerCursor;
     }
     pages += 1;
     expect(pages).toBeLessThan(30);
   } while (outputCursor || after);
-  expect(transitions).toBeGreaterThan(0);
-  expect(budgetContinuations, base.join(" ")).toBeGreaterThan(0);
   expect(new Set(ids).size).toBe(ids.length);
-  return { ids, hierarchy, producerCursor };
+  return { ids, producerCursor, transitions, budgetContinuations, companionRows };
 }
 
 describe("composed producer and budget continuation (GH-1371)", () => {
@@ -74,13 +90,16 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       const run = (args: string[]) => context.runCliInProcess(args, { expectJson: true });
       const otherTracker = `${context.tempRoot}/other-tracker`;
       const emptyTracker = `${context.tempRoot}/empty-tracker`;
+      const blockedTracker = `${context.tempRoot}/blocked-tracker`;
       expect((await run(["init", otherTracker, "--defaults", "--agent-guidance", "skip", "--json"])).code).toBe(0);
       expect((await run(["init", emptyTracker, "--defaults", "--agent-guidance", "skip", "--json"])).code).toBe(0);
+      expect((await run(["init", blockedTracker, "--defaults", "--agent-guidance", "skip", "--json"])).code).toBe(0);
       for (let index = 0; index < 30; index += 1) {
         const created = await run(["create", "task", `Matrix work ${index}`, "--id", `matrix-long-projected-continuation-row-to-require-id-only-budget-truncation-${index}`, "--description", "Execution evidence ".repeat(150), "--tags", "matrix,alternate", "--status", "in_progress", ...(index === 29 ? ["--parent", "pm-matrix-long-projected-continuation-row-to-require-id-only-budget-truncation-28"] : []), "--json"]);
         expect(created.code).toBe(0);
       }
       for (let index = 0; index < 4; index += 1) expect((await run(["close", `pm-matrix-long-projected-continuation-row-to-require-id-only-budget-truncation-${index}`, "Fixture closure", "--json"])).code).toBe(0);
+      for (let index = 0; index < 12; index += 1) expect((await run(["--pm-path", blockedTracker, "create", "task", `Blocked matrix work ${index}`, "--id", `blocked-matrix-long-projected-continuation-row-for-budget-pagination-${index}`, "--description", "Blocked execution evidence ".repeat(150), "--tags", "blocked-matrix", "--status", "blocked", "--json"])).code).toBe(0);
       await cp(context.pmPath, otherTracker, { recursive: true });
       for (const query of [
         ["list", "--all", "--limit", "25", "--output-budget", "1700"],
@@ -89,8 +108,11 @@ describe("composed producer and budget continuation (GH-1371)", () => {
         ["context", "--fields", "id", "--limit", "25", "--output-budget", "1300"],
       ]) {
         const base = ["--pm-path", context.pmPath, "--json", ...query, "--tag", "matrix"];
-        const { ids, hierarchy, producerCursor } = await collectReadPages(run, base);
-        expect(new Set([...ids, ...hierarchy]).size).toBe(query[0] === "context" ? 26 : 30);
+        const { ids, producerCursor, transitions, budgetContinuations, companionRows } = await collectReadPages(run, base);
+        expect(ids).toHaveLength(query[0] === "context" ? 26 : 30);
+        expect(transitions).toBeGreaterThan(0);
+        expect(budgetContinuations, base.join(" ")).toBeGreaterThan(0);
+        if (query[0] === "context") expect(companionRows).toBeGreaterThan(0);
         const changedFilter = [...base]; changedFilter[changedFilter.lastIndexOf("matrix")] = "alternate";
         const filterRefusal = await run([...changedFilter, "--after", producerCursor]);
         expect(filterRefusal.code).toBe(2);
@@ -108,8 +130,24 @@ describe("composed producer and budget continuation (GH-1371)", () => {
         expect(emptyScopeRefusal.code).toBe(2);
         expect(JSON.parse(emptyScopeRefusal.stderr)).toMatchObject({ code: "invalid_query_cursor" });
       }
+      const blockedBase = ["--pm-path", blockedTracker, "--json", "context", "--limit", "12", "--token-budget", "100000", "--tag", "blocked-matrix"];
+      const blockedComplete = await collectReadPages(run, [...blockedBase, "--output-budget", "2000"], true);
+      expect(blockedComplete.ids).toHaveLength(12);
+      const boundedBlocked = await run([...blockedBase, "--output-row-contract", "--output-budget", "1500"]);
+      expect(boundedBlocked.code).toBe(0);
+      const boundedPage = boundedBlocked.json as ReadPage;
+      const boundedRows = verifyDeliveredCounts(boundedPage, true);
+      expect(boundedRows.length).toBeGreaterThan(0);
+      expect(boundedRows.length).toBeLessThan(12);
+      expect(boundedPage.summary?.blocked).toBe(12);
+      const recoveryBudget = boundedPage.output_budget_truncation?.recovery?.sdk?.outputBudget;
+      expect(recoveryBudget).toBeGreaterThan(1500);
+      expect(boundedPage.output_budget_truncation?.recovery?.cli).toBe(`--output-budget ${recoveryBudget}`);
+      const blockedRecovery = await collectReadPages(run, [...blockedBase, "--output-budget", String(recoveryBudget)], true);
+      expect(blockedRecovery.ids).toHaveLength(12);
       // Load the actual tarball public export in a separate Node consumer; the
-      // dependency link supplies installed dependencies without source imports.
+      // dependency link keeps this cursor/export test network-free. The required
+      // smoke:npx gate separately installs production dependencies in a fresh consumer.
       const repository = fileURLToPath(new URL("../../../", import.meta.url));
       const consumer = path.join(context.tempRoot, "packed-consumer");
       await mkdir(consumer);
@@ -134,11 +172,14 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       await cp(new URL("../../fixtures/read-output/packed-continuation-consumer.mjs", import.meta.url), consumerScript);
       const manifest = JSON.parse(await readFile(path.join(packedRoot, "package.json"), "utf8")) as { exports: Record<string, unknown> };
       expect(manifest.exports["./sdk"]).toBeDefined();
-      const evidence = JSON.parse(execFileSync(process.execPath, [consumerScript, context.pmPath, emptyTracker], { cwd: consumer, env: context.env, encoding: "utf8", timeout: 60_000 })) as { publicExport: string; results: { name: string; limit?: number; empty?: boolean; budgetTransitions: number }[] };
+      const evidence = JSON.parse(execFileSync(process.execPath, [consumerScript, context.pmPath, emptyTracker, blockedTracker], { cwd: consumer, env: context.env, encoding: "utf8", timeout: 60_000 })) as { publicExport: string; results: { name: string; limit?: number; empty?: boolean; blocked?: boolean; recovery?: boolean; budgetTransitions: number; uniqueRows: number }[] };
       expect(evidence.publicExport).toBe("@unbrained/pm-cli/sdk");
-      expect(evidence.results).toHaveLength(9);
+      expect(evidence.results).toHaveLength(11);
       expect(evidence.results.filter((result) => result.limit === 25).every((result) => result.budgetTransitions > 0)).toBe(true);
       expect(evidence.results.filter((result) => result.empty)).toHaveLength(3);
+      expect(evidence.results.filter((result) => result.blocked)).toHaveLength(2);
+      expect(evidence.results.filter((result) => result.blocked).every((result) => result.uniqueRows === 12)).toBe(true);
+      expect(evidence.results.some((result) => result.blocked && result.recovery)).toBe(true);
       console.log("Packed SDK continuation evidence", JSON.stringify(evidence));
     });
   });

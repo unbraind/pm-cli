@@ -206,7 +206,7 @@
     },
     {
       "id": "output-budget-and-continuation",
-      "version": 2,
+      "version": 3,
       "title": "Token-budget, omission, and continuation contract regressions",
       "owner_item_id": "pm-1qkivy",
       "escape_class": "production_defect",
@@ -224,10 +224,13 @@
       },
       "checks": {
         "local": [
-          "pnpm quality:token-surface"
+          "pnpm quality:token-surface",
+          "node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts"
         ],
         "hosted": [
-          "CI / Gates (static)"
+          "CI / Gates (static)",
+          "CI / Gates (coverage)",
+          "CI / Windows regression (Node 24)"
         ]
       },
       "negative_control": {
@@ -241,11 +244,47 @@
         "pm-8nev0o",
         "pm-b0v8fs",
         "pm-bfa1ob",
-        "pm-ips23h"
+        "pm-ips23h",
+        "pm-fgih"
       ],
       "budget": {
         "max_escape_rate": 0,
         "max_false_positive_rate": 0.03
+      }
+    },
+    {
+      "id": "tracker-scoped-executable-recovery",
+      "version": 1,
+      "title": "Executable recovery retains the caller tracker and valid invocation controls",
+      "owner_item_id": "pm-gh1364",
+      "escape_class": "production_defect",
+      "triggers": {
+        "item_ids": [
+          "pm-gh1364"
+        ]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/integration/cli/projection-retry-scope.integration.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts",
+          "node scripts/release/refusal-closure-gate.mjs"
+        ],
+        "hosted": [
+          "CI / Gates (static)",
+          "CI / Gates (coverage)",
+          "CI / Windows regression (Node 24)"
+        ]
+      },
+      "negative_control": {
+        "item_ids": [
+          "pm-gh1364"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-szn67i"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.05
       }
     },
     {

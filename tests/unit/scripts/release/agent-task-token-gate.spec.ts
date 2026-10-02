@@ -1053,7 +1053,7 @@ describe("agent-task transcript token gate", () => {
     let refusedBaselines = 0;
     let accountedInvocations = 0;
     const diagnostic = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    vi.spyOn(process, "exit").mockImplementation(() => { throw new Error("Controlled baseline exit"); });
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => { throw new Error("Controlled baseline exit"); });
     vi.spyOn(childProcess, "spawnSync").mockImplementation((...args) => {
       const argv = Array.isArray(args[1]) ? args[1] : [];
       if (argv.includes("--token-accounting")) accountedInvocations += 1;
@@ -1066,6 +1066,7 @@ describe("agent-task transcript token gate", () => {
     });
     syncBuiltinESMExports();
     await expect(main()).rejects.toThrow("Controlled baseline exit");
+    expect(exit).toHaveBeenCalledExactlyOnceWith(1);
     expect(diagnostic).toHaveBeenLastCalledWith("Agent-task transcript step context baseline exit mismatch: baseline=7, expected=0");
     expect(refusedBaselines).toBe(1);
     expect(accountedInvocations).toBe(0);
