@@ -548,10 +548,16 @@ pm test <item-id> --run --workspace-context snapshot --override-linked-workspace
 - `snapshot` copies the workspace into the linked-test sandbox, runs from that
   copy, and binds its `.agents/pm` path to the selected temporary tracker.
   `.git`, `.agents`, coverage output, and common cache directories are excluded
-  at every directory depth. Each existing root or nested `node_modules`
+  at every directory depth, with reserved names matched case-insensitively for
+  portable admission. Each existing root or nested `node_modules`
   directory is linked at its original relative path, including installations
   already represented by directory symlinks. This preserves independent
   monorepo dependency versions without copying dependency trees. Dependency
+  aliases into excluded trees or included workspace source are refused. Internal
+  shared targets must remain within admitted `node_modules` subtrees; external
+  installations must be disjoint from the source workspace, rather than
+  containing it. They remain available even when an external ancestor shares an
+  excluded directory name.
   links are read-only **by convention**; they do not prevent a trusted command
   from modifying the original installation. Use an independent installation
   when testing package-manager operations or dependency writes. Built output
@@ -559,7 +565,10 @@ pm test <item-id> --run --workspace-context snapshot --override-linked-workspace
   The source workspace root is resolved before copying. Ordinary file and
   directory symlinks into included workspace source are rebased into the copy,
   including dangling file aliases; writes through those aliases stay in the
-  disposable snapshot. Source aliases into external directories or excluded
+  disposable snapshot. Targets are canonicalized through their nearest existing
+  ancestor, so absolute aliases through another workspace path spelling and
+  missing target suffixes retain the same isolation on supported platforms.
+  Source aliases into external directories or excluded
   tracker/build trees fail before the linked command runs. An alias into a
   shared dependency directory retains the dependency-write convention above.
 

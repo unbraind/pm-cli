@@ -6,22 +6,22 @@ status: closed
 priority: 1
 tags[3]: agent-ux,context-management,github-intake
 created_at: "2026-09-30T06:48:35.183Z"
-updated_at: "2026-10-02T21:29:20.281Z"
-closed_at: "2026-10-02T21:29:19.023Z"
-completed_at: "2026-10-02T21:29:19.023Z"
+updated_at: "2026-10-02T23:03:27.605Z"
+closed_at: "2026-10-02T23:03:26.741Z"
+completed_at: "2026-10-02T23:03:26.741Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Real filesystem regression retains distinct root and nested dependency versions without flattening; Snapshot and ordinary linked runs preserve PM_PATH and PM_GLOBAL_PATH isolation; Dependency write/isolation behavior is documented and tested; Current built and packed artifacts pass the reporter contract
 parent: pm-u9d0
 risk: medium
 confidence: medium
-resolution: "The shared SDK snapshot resolves the physical workspace root, preserves every installed root/nested dependency path by original-tree junction, rebases included file and directory aliases into the copy, preserves dangling-file isolation, and refuses external or excluded source aliases before execution."
-expected_result: Linked snapshots retain each original dependency resolution tree while writes to copied source and included source aliases remain disposable; dependency writes require an independent installation.
-actual_result: Owner-linked test-local-murgw94f-a8ye79 passes seven real filesystem/CLI cases. Manual temporary Node and Bun workflows resolve distinct root/nested npm versions and preserve original source bytes through file/directory/dangling aliases. Shared canonical test-local-murgv9bh-hqiwl4 passes 9616 tests at exact all-source 100/100/100/100; packed npm/npx/bunx/SDK and 89-command dogfood pass. Native Windows remains required on the pushed head.
+resolution: "Resolve workspace and target ancestors physically, preserve missing suffixes, rebase ordinary included aliases into the copy, share admitted internal dependency subtrees or disjoint external installations, and refuse source/ancestor/reserved-tree dependency targets with portable case-insensitive exclusion."
+expected_result: Every installed dependency tree retains its original resolution path while source-alias writes remain disposable and original tracker/build/source trees cannot be accidentally exposed through a shared dependency-root alias.
+actual_result: "Owner-linked test-local-murkcznw-p8yo3a passes nine real filesystem/CLI cases; shared canonical test-local-murk9e8z-r4gw2y passes all 9628 tests and exact 100/100/100/100 measured by test-local-murkhsbe-xcywcf. Fresh temporary Node/Bun workflows resolve distinct root/nested npm versions and preserve original source bytes through file/directory/dangling aliases. Static, four-project typecheck, packed consumers and 89-command dogfood pass. Native Windows and hosted exact-head review will verify the new pushed revision before merge."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-efkvdy,discovered_from,"2026-09-30T06:48:35.183Z","harness:codex","cli:create:dep",detected
   pm-efkvdy,verifies,"2026-10-02T17:04:50.022Z","harness:codex","cli:update:dep",detected
-comments[15]:
+comments[23]:
   - created_at: "2026-09-30T06:48:35.183Z"
     author: "harness:codex"
     text: "Duplicate check: complete strict all-status corpus contained 2843 records with no unreadable directories or items. Exact GitHub ID plus behavior/root-cause searches were complete. Closed prior lineage pm-efkvdy and its full history were read; this new report requests a distinct unimplemented contract. Relationship reconstructed during current intake rather than asserted as historical knowledge. Queued and unclaimed; source investigation remains pending."
@@ -68,9 +68,34 @@ comments[15]:
   - created_at: "2026-10-02T21:29:11.472Z"
     author: "harness:codex"
     text: Packed npm/npx/bunx and installed SDK consumers pass after the snapshot source-alias fixes. The 89-command isolated package-first dogfood journey passes and cleans its temporary tracker. Node/Bun manual alias acceptance and the owner-linked seven-case suite preserve source bytes and distinct dependency installations. Native Windows acceptance will be checked on the pushed revision.
-learnings[2]{created_at,author,text}:
+  - created_at: "2026-10-02T22:04:12.968Z"
+    author: "harness:codex"
+    text: "Exact-head round 3: Windows job 111039600499 rejects directory-alias because readlink returns a platform path spelling different from the physical root. CodeRabbit independently reproduces absolute targets through workspace aliases; Cubic confirms node_modules links can bypass excluded-target admission. Add real alias and excluded-dependency controls first, canonicalize existing target ancestors while preserving genuinely missing suffixes, retain external installations, and propagate other filesystem errors. Native Windows is still a required independent check."
+  - created_at: "2026-10-02T22:06:53.724Z"
+    author: "harness:codex"
+    text: "Regression-first result: the expanded real filesystem controls failed before implementation for unresolved absolute/dangling workspace targets and excluded node_modules admission. The corrected helper resolves only existing ancestors, preserves missing suffixes, propagates other errors, refuses internal excluded dependency targets and retains external installs. All 48 focused cases across snapshot, real CLI integration and shared secret policy now pass. Absolute aliases through another workspace spelling and real missing-root/cyclic-link controls cover the new branches; native Windows completion remains required."
+  - created_at: "2026-10-02T22:11:10.682Z"
+    author: "harness:codex"
+    text: "Independent read-only review found two additional source-backed admission risks: node_modules aliases to the workspace root or included source can expose originals, and case-variant reserved names can bypass Windows exclusions. Extend real filesystem negative controls before fixing: internal dependency sharing must stay within admitted node_modules subtrees, external installations remain allowed, and reserved tracker/build names use a portable case-insensitive comparison. Static quality also rejected filter complexity 17 over the unchanged maximum 16; consolidate the reused containment/segment predicates instead of weakening the gate."
+  - created_at: "2026-10-02T22:13:17.744Z"
+    author: "harness:codex"
+    text: "The independent boundary corrections passed their red controls and the final 50-case focused suite. Diagnostic coverage limited to the changed snapshot primitive reports exact 43/43 statements, 26/26 branches, 6/6 functions and 38/38 lines; this is a focused diagnostic and does not replace the all-source canonical gate. Reused predicates keep the mandatory complexity limit intact. Temporary Node and Bun CLI workflows also passed with real independent root/nested installs and source aliases through another workspace spelling."
+  - created_at: "2026-10-02T22:14:58.035Z"
+    author: "harness:codex"
+    text: "A second independent review identified the remaining ancestor case: an external-looking node_modules target can contain the source workspace itself. Add a real parent-directory negative control and require external installations to be disjoint from the source workspace. Canonical containment must reject both internal included-source targets and ancestors; a genuine sibling external installation remains a positive control."
+  - created_at: "2026-10-02T22:18:46.564Z"
+    author: "harness:codex"
+    text: "Final focused containment verification: root, parent, included-source and case-variant excluded dependency targets are refused; disjoint external installations remain available. Aliased physical roots and missing suffixes are rebased, cyclic errors propagate, and the existing isFileMissingError contract preserves structural ENOTDIR failures. All 51 focused cases pass. The prior native Windows failure is retained as evidence until the new pushed head passes its dedicated job."
+  - created_at: "2026-10-02T22:19:54.469Z"
+    author: "harness:codex"
+    text: Final independent read-only review reports no remaining actionable finding in the revised snapshot/scanner scope. Complete source and tests were inspected; native Windows remains pending hosted verification. No extra local runner or source edit occurred during that independent review.
+  - created_at: "2026-10-02T23:02:55.379Z"
+    author: "harness:codex"
+    text: "Final source proof: owner-linked test-local-murkcznw-p8yo3a passes nine real filesystem/CLI cases, and the shared canonical primary-owner run test-local-murk9e8z-r4gw2y passes all 9628 tests with 100/100/100/100 and measured report test-local-murkhsbe-xcywcf. Final temporary Node/Bun acceptance resolves independent root/nested versions and preserves original source bytes through physical directory/file/dangling aliases. Packed consumers and serial static/typecheck/dogfood pass. Native Windows and exact-head hosted review will verify the new pushed revision before merge."
+learnings[3]{created_at,author,text}:
   "2026-10-02T18:32:24.044Z","harness:codex",Snapshot dependency preservation must retain each nested installation at its original relative path. Positive direct execution plus a real copied-workspace write distinguishes correct dependency resolution from a no-op isolation assertion. Directory junctions retain Windows support; dependency writes still require an independent install or stronger sandbox.
   "2026-10-02T20:36:49.004Z","harness:codex",A disposable workspace must also rebase ordinary source aliases and resolve an aliased workspace root. Blind dereferencing can import excluded tracker data or external files. Preserve included source link topology inside the copy and refuse outside or excluded targets; dependency links are a separate deliberately shared contract.
+  "2026-10-02T22:27:25.230Z","harness:codex","Canonical containment must be checked in both directions for shared dependency roots: an ancestor that looks external can still expose the original workspace. Admit disjoint external installations or internal node_modules subtrees, normalize reserved segments consistently, and resolve missing targets through existing ancestors before rebasing. Real root, parent, case-variant, cyclic and dangling controls verify distinct failure modes without mocks."
 files[5]{path,scope}:
   .github/workflows/ci.yml,project
   src/sdk/test/execution.ts,project
@@ -79,7 +104,7 @@ files[5]{path,scope}:
   tests/unit/sdk/test/workspace-snapshot.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts,project,240,"harness:codex","2026-10-02T17:04:05.377Z",local_mutation,codex/codspeed-dependency-security-snapshot-resolution
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-murayhq7-j2tsuz
     kind: test
     status: passed
@@ -102,9 +127,20 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-murkcznw-p8yo3a
+    kind: test
+    status: passed
+    started_at: "2026-10-02T22:57:31.348Z"
+    finished_at: "2026-10-02T22:57:45.355Z"
+    recorded_at: "2026-10-02T22:57:45.355Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/TESTING.md,project
-close_reason: Implemented nested dependency preservation and disposable source-alias snapshots with real filesystem and Node/Bun evidence.
+close_reason: Implemented portable dependency-preserving snapshots with disposable source aliases and canonical target admission.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
