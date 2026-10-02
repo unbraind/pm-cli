@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-01T09:24:18.862Z"
-updated_at: "2026-10-02T00:55:50.284Z"
+updated_at: "2026-10-02T04:59:52.501Z"
 closed_at: "2026-10-02T00:41:51.352Z"
 completed_at: "2026-10-02T00:41:51.352Z"
 author: "harness:codex"
@@ -20,7 +20,7 @@ expected_result: "Exact emitted retries preserve environment-default or explicit
 actual_result: "Canonical recovery receipt test-local-muq2xjyr-0neonz passes 28 cases, including colliding trackers, environment defaults, legacy/attached flags, flag-looking values, projection modes, explain and both token_budget spellings. Exact producing coverage is lines 63216/63216, statements 66255/66255, functions 13712/13712, branches 50731/50731; all files have zero deficits. Final source 92cff9ef184f8b6e932afccc999b24c86f070c30: full-source producing receipt test-local-muq885vf-vje4y3 on canonical owner pm-gh1364 passes 9501 tests with zero failures and 2 Windows-only skips. Its fifteen observed metrics record all four exact 100-percent coverage gates and integer totals; summary SHA256 70cc18dc59614d3a42993046ce1f454131daa8f92f4133fb363abad0132167f0. Complete pnpm quality:static passes test-local-muq8lpre-ketrg6 on supported Node 22.21.1 with unchanged ceilings. Focused lint, four type configurations and SDK import-boundary checks pass test-local-muq6r2d8-g2xkay. Earlier failed runs remain failed without measurements. Final hosted/provider review and independent merge clearance remain pending; live telemetry and opt-in semantic dogfood are unrun."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-szn67i,related,"2026-10-01T13:47:52.212Z","harness:codex","cli:update:dep",detected
-comments[24]:
+comments[26]:
   - created_at: "2026-10-01T09:24:18.862Z"
     author: "harness:codex"
     text: "Duplicate check: live GH-1364 search across all statuses returned zero; pm-szn67i is closed for earlier strict-close/global scope corrections. Reuse recovery-closure lineage pm-f05lsg. GitHub issue remains the external owner; local implementation only."
@@ -96,6 +96,12 @@ comments[24]:
     author: "harness:codex"
     text: "Reviewed closeout checks now pass canonical receipt test-local-muq92u8a-hr6iiu: terminal-only defect evidence, validator ok:true with pre-existing historical warnings, all 47 tracker-context assertions and record integrity. The actual repository changelog check independently returns action:unchanged after package generation from refreshed tag windows. This is a repository operation, because a tracker-only copy cannot supply original Git release membership; the two failed setup receipts are preserved with no measurements. The final evidence commit includes closed/released records and generated changelog, with unchanged implementation source. Actual manual CodeRabbit and Sourcery reviews will be requested on the published head; merge remains held pending those outcomes, independent clearance and outstanding user decisions."
     edited_at: "2026-10-02T00:55:50.284Z"
+  - created_at: "2026-10-02T01:20:36.394Z"
+    author: "harness:codex"
+    text: "Review correction: default 20-run retention pruned historical producing receipts still referenced by earlier evidence comments. Restored all 13 missing receipt rows from verified immutable history through a locked test_run_track mutation, using each run's latest audited state. Current and historical passing coverage receipts retain their 15 observed measurements; failed test-local-mupv1k68-926ate retains its corrected empty measurements. No failed run has coverage measurements. The active source remains 92cff9ef184f8b6e932afccc999b24c86f070c30; no source, test, gate threshold, or default retention setting changed. Subsequent verification for this reviewed item uses process-scoped PM_TRACKED_TEST_RUN_HISTORY_LIMIT=128 so these cited receipts remain discoverable. Historical successes and failures remain dated evidence, not new final-source results.\n"
+  - created_at: "2026-10-02T04:59:52.501Z"
+    author: "harness:codex"
+    text: "Pre-publication acceptance and review evidence: independent manual runs in temporary workspaces preserve selected tracker scope across seven exact advertised retry replays. Three invalid previews match apply error codes and leave durable hashes unchanged; ordered create/update/strict-close preview preserves durable bytes and apply completes. Serialized SDK list/search/context retrieve 30/30/26 unique items through both cursor layers. Actual packed npm/npx/bunx workflows pass (version 2026.10.1, nine bundled packages), and direct Bun init/create/list persistence passes. Both PM roots and package caches are isolated, every created temporary root is removed, and manual telemetry is explicitly disabled. Two fixture-budget calibration failures remain failed evidence; adjusting only the manual context budget exercised the intended continuation path. Independent hosted artifact on published head 4814e522 confirms all four exact 100-percent source coverage dimensions and zero per-file deficits. Thirty-two missing historical bot reactions and thirteen once-only actionable inline explanations are complete; the latest retention thread is reserved for acknowledgement after publication. Separately, the live required Sentry/telemetry gate passes: zero critical/high recent issues, finish error rate 1.4 percent, zero missing error-code rows. That threshold result does not prove every action or trace was received. Source dependencies contain a newly reopened Scorecard Axios development-dependency report which is outside these three fixes and will receive separate canonical security intake after this PR finishes."
 files[13]{path,scope}:
   scripts/release/refusal-closure-gate.mjs,project
   src/cli/main.ts,project
@@ -221,7 +227,216 @@ tests[12]:
       source_kind: local_mutation
       source_ref: fix/agent-recovery-pagination-preflight
     note: "Post-closure defect contract and canonical tracker/history integrity on isolated snapshots; release-tag changelog verification runs separately against the real repository, because its Git membership cannot use a tracker-only copy. Implementation source unchanged."
-test_runs[20]:
+test_runs[35]:
+  - run_id: test-local-muplbvfh-6qgqd9
+    kind: test
+    status: passed
+    started_at: "2026-10-01T13:48:59.606Z"
+    finished_at: "2026-10-01T13:49:20.477Z"
+    recorded_at: "2026-10-01T13:49:20.477Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/projection-retry-scope.integration.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+      "node scripts/run-tests.mjs test -- tests/unit/scripts/refusal-closure-gate.spec.ts -t \"requires projection retries\"",schema,schema,source,local_source_ref
+  - run_id: test-local-mupv1k68-926ate
+    kind: test
+    status: failed
+    started_at: "2026-10-01T18:08:40.792Z"
+    finished_at: "2026-10-01T18:21:15.487Z"
+    recorded_at: "2026-10-01T18:21:15.487Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mupwadit-o8by2n
+    kind: test
+    status: passed
+    started_at: "2026-10-01T18:55:49.240Z"
+    finished_at: "2026-10-01T18:56:06.388Z"
+    recorded_at: "2026-10-01T18:56:06.388Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/projection-retry-scope.integration.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mupyg89a-2vgwyc
+    kind: test
+    status: failed
+    started_at: "2026-10-01T19:41:09.946Z"
+    finished_at: "2026-10-01T19:56:38.734Z"
+    recorded_at: "2026-10-01T19:56:38.734Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mupyio63-jdx8vs
+    kind: test
+    status: passed
+    started_at: "2026-10-01T19:57:45.271Z"
+    finished_at: "2026-10-01T19:58:32.666Z"
+    recorded_at: "2026-10-01T19:58:32.666Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts tests/integration/cli/projection-retry-scope.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mupymsom-icnh18
+    kind: test
+    status: passed
+    started_at: "2026-10-01T20:01:02.293Z"
+    finished_at: "2026-10-01T20:01:45.142Z"
+    recorded_at: "2026-10-01T20:01:45.142Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm exec eslint src/sdk/item-transaction.ts src/cli/runtime/projection-retry.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts --max-warnings=0 && pnpm typecheck && node --input-type=module --eval 'import { checkSdkImportBoundary } from \"./scripts/release/static-quality-gate.mts\"; const result = checkSdkImportBoundary(); console.log(JSON.stringify(result)); if (!result.ok) process.exitCode = 1;'",schema,schema,source,local_source_ref
+  - run_id: test-local-mupzfgkx-70we5e
+    kind: test
+    status: passed
+    started_at: "2026-10-01T20:05:29.754Z"
+    finished_at: "2026-10-01T20:24:02.481Z"
+    recorded_at: "2026-10-01T20:24:02.481Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[15]:
+      - name: coverage_branches
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-01T20:24:02.481Z"
+      - name: coverage_branches_covered
+        value: 50719
+        unit: count
+        recorded_at: "2026-10-01T20:24:02.481Z"
+      - name: coverage_branches_total
+        value: 50719
+        unit: count
+        recorded_at: "2026-10-01T20:24:02.481Z"
+      - name: coverage_functions
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-01T20:24:02.481Z"
+      - name: coverage_functions_covered
+        value: 13710
+        unit: count
+        recorded_at: "2026-10-01T20:24:02.481Z"
+      - name: coverage_functions_total
+        value: 13710
+        unit: count
+        recorded_at: "2026-10-01T20:24:02.481Z"
+      - name: coverage_lines
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-01T20:24:02.481Z"
+      - name: coverage_lines_covered
+        value: 63200
+        unit: count
+        recorded_at: "2026-10-01T20:24:02.481Z"
+      - name: coverage_lines_total
+        value: 63200
+        unit: count
+        recorded_at: "2026-10-01T20:24:02.481Z"
+      - name: coverage_statements
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-01T20:24:02.481Z"
+      - name: coverage_statements_covered
+        value: 66237
+        unit: count
+        recorded_at: "2026-10-01T20:24:02.481Z"
+      - name: coverage_statements_total
+        value: 66237
+        unit: count
+        recorded_at: "2026-10-01T20:24:02.481Z"
+      - name: test_cases_failed
+        value: 0
+        unit: count
+        recorded_at: "2026-10-01T20:24:02.481Z"
+      - name: test_cases_passed
+        value: 9494
+        unit: count
+        recorded_at: "2026-10-01T20:24:02.481Z"
+      - name: test_cases_skipped
+        value: 2
+        unit: count
+        recorded_at: "2026-10-01T20:24:02.481Z"
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage -- --maxWorkers=4,schema,schema,source,local_source_ref
+  - run_id: test-local-muq07idm-3sj1wf
+    kind: test
+    status: failed
+    started_at: "2026-10-01T20:34:51.757Z"
+    finished_at: "2026-10-01T20:45:51.177Z"
+    recorded_at: "2026-10-01T20:45:51.177Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:static",tracker,tracker,source,local_source_ref
+  - run_id: test-local-muq0cjcq-i81qdu
+    kind: test
+    status: failed
+    started_at: "2026-10-01T20:48:55.785Z"
+    finished_at: "2026-10-01T20:49:45.722Z"
+    recorded_at: "2026-10-01T20:49:45.722Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "node scripts/bench/sdk-entrypoint-costs.mjs --check --iterations 15 && node scripts/bench/cli-transport-floor.mjs --check && node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded && pnpm quality:mutation -- --prebuilt",tracker,tracker,source,local_source_ref
+  - run_id: test-local-muq0f56s-a68sur
+    kind: test
+    status: failed
+    started_at: "2026-10-01T20:51:12.807Z"
+    finished_at: "2026-10-01T20:51:47.332Z"
+    recorded_at: "2026-10-01T20:51:47.332Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "node scripts/bench/cli-transport-floor.mjs --check && node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded && pnpm quality:mutation -- --prebuilt",tracker,tracker,source,local_source_ref
+  - run_id: test-local-muq0h15i-77e2lf
+    kind: test
+    status: failed
+    started_at: "2026-10-01T20:52:57.170Z"
+    finished_at: "2026-10-01T20:53:15.414Z"
+    recorded_at: "2026-10-01T20:53:15.414Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded && pnpm quality:mutation -- --prebuilt",tracker,tracker,source,local_source_ref
+  - run_id: test-local-muq0nuea-dqzwjn
+    kind: test
+    status: passed
+    started_at: "2026-10-01T20:57:29.666Z"
+    finished_at: "2026-10-01T20:58:33.250Z"
+    recorded_at: "2026-10-01T20:58:33.250Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded && pnpm quality:mutation -- --prebuilt",tracker,tracker,source,local_source_ref
+  - run_id: test-local-muq26sl1-rucv2t
+    kind: test
+    status: passed
+    started_at: "2026-10-01T21:31:10.836Z"
+    finished_at: "2026-10-01T21:41:16.981Z"
+    recorded_at: "2026-10-01T21:41:16.981Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:static",tracker,tracker,source,local_source_ref
   - run_id: test-local-muq2xjyr-0neonz
     kind: test
     status: passed
@@ -502,6 +717,28 @@ test_runs[20]:
     started_at: "2026-10-02T00:52:31.108Z"
     finished_at: "2026-10-02T00:54:09.802Z"
     recorded_at: "2026-10-02T00:54:09.802Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:defect-evidence && node dist/cli.js validate --check-resolution --check-history-drift --json && node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded",tracker,tracker,source,local_source_ref
+  - run_id: test-local-muqa3n5r-unqvo6
+    kind: test
+    status: passed
+    started_at: "2026-10-02T01:20:43.644Z"
+    finished_at: "2026-10-02T01:22:46.911Z"
+    recorded_at: "2026-10-02T01:22:46.911Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:defect-evidence && node dist/cli.js validate --check-resolution --check-history-drift --json && node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded",tracker,tracker,source,local_source_ref
+  - run_id: test-local-muqhlhtg-bipsvh
+    kind: test
+    status: passed
+    started_at: "2026-10-02T04:50:48.074Z"
+    finished_at: "2026-10-02T04:52:37.108Z"
+    recorded_at: "2026-10-02T04:52:37.108Z"
     passed: 1
     failed: 0
     skipped: 0

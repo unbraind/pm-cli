@@ -1,4 +1,5 @@
 import { mkdir, symlink, writeFile } from "node:fs/promises";
+import type * as fsPromises from "node:fs/promises";
 import path from "node:path";
 import { createServer } from "node:net";
 import { execFileSync } from "node:child_process";
@@ -8,7 +9,7 @@ import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 const copying = vi.hoisted(() => ({ change: "none" }));
 vi.mock("node:fs/promises", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  const actual = await importOriginal<typeof fsPromises>();
   return { ...actual,
     open: async (...args: Parameters<typeof actual.open>) => {
       if (copying.change === "opened-pipe" && String(args[0]).endsWith("snapshot-probe.txt")) {

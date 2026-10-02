@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-01T10:36:55.000Z"
-updated_at: "2026-10-02T00:41:53.348Z"
-closed_at: "2026-10-02T00:41:53.191Z"
-completed_at: "2026-10-02T00:41:53.191Z"
+updated_at: "2026-10-02T04:57:35.367Z"
+closed_at: "2026-10-02T04:57:34.218Z"
+completed_at: "2026-10-02T04:57:34.218Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Invalid enums and missing IDs refuse previews with apply-compatible diagnostics;Strict completion validates staged evidence;Preview changes no source items history or journals;Existing rollback and replay controls remain green
@@ -17,11 +17,11 @@ risk: medium
 confidence: high
 resolution: "Preview runs ordered mutation semantics through the real lifecycle coordinator on a consistent staged snapshot, suppressing original mutation hooks and writes. Durable regular files hash through bounded streams; prepared interior links and special entries refuse before traversal or streaming, and disappeared entries return retryable snapshot conflicts while persistent native path errors are preserved."
 expected_result: Invalid plans refuse with apply-compatible diagnostics; ordered staged evidence validates without original mutation hooks or writes; prepared interior links and special files refuse before traversal or streaming
-actual_result: "Canonical snapshot/semantic receipt test-local-muq2ve7e-4du2ny passes 20 cases, including three identical pre-fix filesystem failures, links, cycles, sockets, FIFO substitution, bounded large-file final-byte changes, empty files and selected root links. Apply revalidates actual state; normal permitted extension activation can precede staged hook suppression. Final source 92cff9ef184f8b6e932afccc999b24c86f070c30: full-source producing receipt test-local-muq885vf-vje4y3 on canonical owner pm-gh1364 passes 9501 tests with zero failures and 2 Windows-only skips. Its fifteen observed metrics record all four exact 100-percent coverage gates and integer totals; summary SHA256 70cc18dc59614d3a42993046ce1f454131daa8f92f4133fb363abad0132167f0. Complete pnpm quality:static passes test-local-muq8lpre-ketrg6 on supported Node 22.21.1 with unchanged ceilings. Focused lint, four type configurations and SDK import-boundary checks pass test-local-muq6r2d8-g2xkay. Earlier failed runs remain failed without measurements. Final hosted/provider review and independent merge clearance remain pending; live telemetry and opt-in semantic dogfood are unrun."
+actual_result: "Canonical snapshot/semantic receipt test-local-muq2ve7e-4du2ny passes 20 cases, including three identical pre-fix filesystem failures, links, cycles, sockets, FIFO substitution, bounded large-file final-byte changes, empty files and selected root links. Apply revalidates actual state; normal permitted extension activation can precede staged hook suppression. Final source 92cff9ef184f8b6e932afccc999b24c86f070c30: full-source producing receipt test-local-muq885vf-vje4y3 on canonical owner pm-gh1364 passes 9501 tests with zero failures and 2 Windows-only skips. Its fifteen observed metrics record all four exact 100-percent coverage gates and integer totals; summary SHA256 70cc18dc59614d3a42993046ce1f454131daa8f92f4133fb363abad0132167f0. Complete pnpm quality:static passes test-local-muq8lpre-ketrg6 on supported Node 22.21.1 with unchanged ceilings. Focused lint, four type configurations and SDK import-boundary checks pass test-local-muq6r2d8-g2xkay. Earlier failed runs remain failed without measurements. Final hosted/provider review and independent merge clearance remain pending; live telemetry and opt-in semantic dogfood are unrun. Final test-only typing correction passes canonical receipt test-local-muqhp1g1-rx5nbb, ESLint, all four type configurations, docstring gate and byte-identical TypeScript emit; production source remains unchanged. Final published-head checks and review remain pending."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-o8z748,related,"2026-10-01T13:08:55.258Z","harness:codex","cli:update:dep",detected
   pm-gh1364,related,"2026-10-01T20:34:12.110Z","harness:codex","cli:update:dep",detected
-comments[15]:
+comments[16]:
   - created_at: "2026-10-01T11:18:02.965Z"
     author: "harness:codex"
     text: "Semantic preview regression checks now pass: invalid risk/status/missing-target refusal parity, strict completion after staged evidence, no source writes, no mutation hooks, committed-plan replay/mismatch, and revalidation after a subsequent deletion. Public SDK/MCP and CLI routes share the disposable transaction coordinator."
@@ -70,6 +70,9 @@ comments[15]:
   - created_at: "2026-10-02T00:31:54.909Z"
     author: "harness:codex"
     text: "Shared final-source verification now passes on related canonical owner pm-gh1364: producing receipt test-local-muq885vf-vje4y3 is attributed to source 92cff9ef184f8b6e932afccc999b24c86f070c30 and records 9501 passed cases, zero failures and two platform skips, with all four exact 100-percent coverage dimensions and observed integer totals. The coverage summary hash and fifteen actual measurements are attached to the producing receipt; no focused command is relabeled as corpus evidence. Existing snapshot/semantic receipts and three pre-fix filesystem failures remain independently traceable. Complete final-source static and configured final-head review are pending; live telemetry is unrun."
+  - created_at: "2026-10-02T04:57:33.162Z"
+    author: "harness:codex"
+    text: "Final pre-publication review correction: replaced the newly introduced inline filesystem type import with a top-level type namespace import. TypeScript transpileModule confirms byte-identical JavaScript before/after; production source and its coverage denominator are unchanged. Canonical focused receipt test-local-muqhp1g1-rx5nbb passes snapshot and semantic-preview regressions; focused ESLint, all four type configurations and repository docstring gate pass. Canonical tracker receipt test-local-muqhlhtg-bipsvh passes terminal defect contracts, history/resolution validation, all tracker-context assertions and record integrity. Historical receipt restoration independently matches every latest immutable history state. Final-head hosted checks/reviews will rerun after publishing; no pending checks are claimed passed."
 files[15]{path,scope}:
   sdk/public-surface.json,project
   src/cli/error-guidance.ts,project
@@ -104,7 +107,7 @@ tests[2]:
       source_kind: local_mutation
       source_ref: fix/agent-recovery-pagination-preflight
     note: Review regressions for concurrent disappearance and bounded streaming fingerprints
-test_runs[4]:
+test_runs[5]:
   - run_id: test-local-muplc8jc-wu0sz9
     kind: test
     status: passed
@@ -149,10 +152,21 @@ test_runs[4]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muqhp1g1-rx5nbb
+    kind: test
+    status: passed
+    started_at: "2026-10-02T04:55:06.211Z"
+    finished_at: "2026-10-02T04:55:22.513Z"
+    recorded_at: "2026-10-02T04:55:22.513Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/SDK.md,project
-close_reason: Apply-compatible staged semantic preview and filesystem review corrections are verified on final source.
+close_reason: Final review typing correction verified with unchanged emitted behavior
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
