@@ -288,6 +288,8 @@ control and fails if `pm eval --fail-under` stops returning a non-zero exit.
 Refresh the baseline only with `pnpm quality:retrieval-eval:update` after
 reviewing query-level ranking changes.
 
+Development tools must also pass the [development dependency security gate](DEVELOPMENT_DEPENDENCY_SECURITY.md), including the full audit and installed bundle integrity policy.
+
 ## Context Quality Evaluation
 
 The required context relevance gate proves that `pm context` and `pm next`
@@ -545,11 +547,19 @@ pm test <item-id> --run --workspace-context snapshot --override-linked-workspace
   declaration. Use it only for commands that do not require checkout files.
 - `snapshot` copies the workspace into the linked-test sandbox, runs from that
   copy, and binds its `.agents/pm` path to the selected temporary tracker.
-  `.git`, `.agents`, `node_modules`, coverage output, and common cache
-  directories are excluded at every directory depth; an existing top-level
-  `node_modules` is linked read-only by convention. Built output remains
-  available so linked commands such as `node dist/cli.js` keep working. Writes
-  therefore land in the disposable snapshot rather than the source checkout.
+  `.git`, `.agents`, coverage output, and common cache directories are excluded
+  at every directory depth. Each existing root or nested `node_modules`
+  directory is linked at its original relative path, including installations
+  already represented by directory symlinks. This preserves independent
+  monorepo dependency versions without copying dependency trees. Dependency
+  links are read-only **by convention**; they do not prevent a trusted command
+  from modifying the original installation. Use an independent installation
+  when testing package-manager operations or dependency writes. Built output
+  remains available so linked commands such as `node dist/cli.js` keep working.
+  Changes to copied source files stay in the disposable snapshot.
+
+  The real-filesystem regression for this contract is tracked by
+  [pm-5iwfkj](../.agents/pm/issues/pm-5iwfkj.toon).
 
 Every result reports the requested/effective workspace mode, working
 directory, exposed source root, and trust decision. Recorded `test_runs` retain

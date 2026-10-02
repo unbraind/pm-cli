@@ -653,6 +653,11 @@ jobs:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts
 
+      - name: Verify nested linked-test dependency junctions
+        env:
+          PM_RUN_TESTS_SKIP_BUILD: "1"
+        run: node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts
+
       # The packed-npm-extension install path exercises the Windows `.cmd` npm
       # spawn + tar extraction + hosted-SDK junction class that only the Node 24
       # nightly previously caught (GH-348). Run just that integration case here so

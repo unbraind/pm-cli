@@ -1,4 +1,5 @@
-import { access, mkdir, writeFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { access, mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runTest } from "../../src/sdk/test/execution.js";
@@ -32,6 +33,62 @@ interface TestEnvelope {
 }
 
 describe("linked-test workspace and trust contracts", () => {
+  it("preserves independent nested installations without hoisting or source writeback", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceRoot = path.join(context.tempRoot, "monorepo");
+      const packageRoot = path.join(sourceRoot, "apps", "site");
+      const dependencyRoot = path.join(context.tempRoot, "installed-dependencies");
+      for (const [root, version] of [
+        [path.join(sourceRoot, "node_modules"), "1.0.0"],
+        [dependencyRoot, "2.0.0"],
+      ]) {
+        const moduleRoot = path.join(root, "snapshot-dependency");
+        await mkdir(moduleRoot, { recursive: true });
+        await writeFile(path.join(moduleRoot, "package.json"), JSON.stringify({
+          name: "snapshot-dependency", version, type: "module", exports: "./index.js",
+        }));
+        await writeFile(path.join(moduleRoot, "index.js"), `export const version = ${JSON.stringify(version)};\n`);
+      }
+      await mkdir(packageRoot, { recursive: true });
+      await symlink(dependencyRoot, path.join(packageRoot, "node_modules"), process.platform === "win32" ? "junction" : "dir");
+      await writeFile(path.join(sourceRoot, "root.js"), "export { version } from 'snapshot-dependency';\n");
+      const testPath = path.join(packageRoot, "dependency.test.mjs");
+      await writeFile(testPath, [
+        "import assert from 'node:assert/strict';",
+        "import { test } from 'node:test';",
+        "import { writeFileSync } from 'node:fs';",
+        "import { version as rootVersion } from '../../root.js';",
+        "import { version } from 'snapshot-dependency';",
+        "test('independent dependency identities', () => {",
+        "  assert.equal(rootVersion, '1.0.0');",
+        "  assert.equal(version, '2.0.0');",
+        "  assert.ok(process.env.PM_GLOBAL_PATH);",
+        "  if (process.env.PM_PATH === undefined) writeFileSync('snapshot-only.txt', version);",
+        "});",
+      ].join("\n"));
+      const before = await readFile(testPath, "utf8");
+      const direct = spawnSync(process.execPath, ["--test", testPath], {
+        cwd: sourceRoot, env: context.env, encoding: "utf8",
+      });
+      expect(direct.status, direct.stderr).toBe(0);
+      context.env.PM_SOURCE_WORKSPACE_ROOT = sourceRoot;
+      const id = createTestItemId(context, { title: "nested dependency snapshot", createMode: "progressive" });
+      expect(context.runCli(["test", id, "--add-json", JSON.stringify({
+        command: "node --test apps/site/dependency.test.mjs",
+        pm_context_mode: "none", workspace_context_mode: "snapshot",
+      }), "--json"], { cwd: sourceRoot }).code).toBe(0);
+      const snapshot = context.runCli(["test", id, "--run", "--json"], { cwd: sourceRoot, expectJson: true });
+      const result = (snapshot.json as TestEnvelope).run_results[0];
+      expect(snapshot.code, JSON.stringify(result)).toBe(0);
+      expect(result).toMatchObject({ status: "passed" });
+      expect((snapshot.json as TestEnvelope).execution_context).toMatchObject({ workspace_context_mode: "snapshot" });
+      expect(result.stdout).toContain("independent dependency identities");
+      expect(await readFile(testPath, "utf8")).toBe(before);
+      await expect(access(path.join(sourceRoot, "snapshot-only.txt"))).rejects.toThrow();
+      expect(await readFile(path.join(dependencyRoot, "snapshot-dependency", "index.js"), "utf8")).toBe('export const version = "2.0.0";\n');
+    });
+  });
+
   it("persists provenance and requires policy plus a per-run flag for foreign commands", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, {

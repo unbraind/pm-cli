@@ -2,8 +2,9 @@ import { spawnSync } from "node:child_process";
 import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { isReleaseRelevantPath } from "../../scripts/release/release-relevance.mjs";
 import { EXPECTED_QUALITY_STATIC_SCRIPT } from "../helpers/releaseContracts.js";
 
 const repoRoot = path.resolve(
@@ -45,6 +46,9 @@ describe("release automation contract", () => {
     );
     expect(packageJson.scripts?.["quality:static"]).toBe(
       EXPECTED_QUALITY_STATIC_SCRIPT,
+    );
+    expect(packageJson.scripts?.["quality:dependencies"]).toBe(
+      "pnpm audit && node scripts/check-development-dependencies.mjs",
     );
     expect(packageJson.scripts?.["quality:context-eval"]).toBe(
       "pnpm build && node scripts/release/repository-assurance.mjs repository-context-quality --trigger ci --json && pnpm quality:token-surface",
@@ -103,6 +107,8 @@ describe("release automation contract", () => {
       local_preflight: {
         steps: Array<{
           id: string;
+          gates: string[];
+          skip_policy: string;
           executable: { command: string; args: string[] };
         }>;
       };
@@ -114,6 +120,8 @@ describe("release automation contract", () => {
       command: "pnpm",
       args: ["quality:static"],
     });
+    expect(staticStep?.gates).toContain("development-dependency-security");
+    expect(staticStep?.skip_policy).toBe("forbidden");
     const runGatesSource = await readFile(
       path.join(repoRoot, "scripts/release/run-gates.mjs"),
       "utf8",
@@ -771,23 +779,15 @@ exit "\${NPM_STATUS}"
     expect(gateRegistry).toContain('"{{sentry_window_days}}"');
   });
 
-  it("keeps tracker-only changes outside release relevance", async () => {
-    const pipelineModule = (await import(
-      pathToFileURL(
-        path.join(repoRoot, "scripts/release/release-relevance.mjs"),
-      ).href
-    )) as {
-      isReleaseRelevantPath(filePath: string): boolean;
-    };
-
+  it("keeps tracker-only changes outside release relevance", () => {
     expect(
-      pipelineModule.isReleaseRelevantPath(".agents/pm/tasks/pm-example.md"),
+      isReleaseRelevantPath(".agents/pm/tasks/pm-example.md"),
     ).toBe(false);
     expect(
-      pipelineModule.isReleaseRelevantPath(".agents\\pm\\tasks\\pm-example.md"),
+      isReleaseRelevantPath(".agents\\pm\\tasks\\pm-example.md"),
     ).toBe(false);
-    expect(pipelineModule.isReleaseRelevantPath("CHANGELOG.md")).toBe(false);
-    expect(pipelineModule.isReleaseRelevantPath("src/cli/main.ts")).toBe(true);
+    expect(isReleaseRelevantPath("CHANGELOG.md")).toBe(false);
+    expect(isReleaseRelevantPath("src/cli/main.ts")).toBe(true);
   });
 
   it("keeps release pipeline and gate scripts discoverable through help output", () => {

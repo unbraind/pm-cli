@@ -460,6 +460,8 @@ describe("GitHub workflow contract", () => {
       'run: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t "installs runtime dependencies for packed npm package extensions"',
       "name: Verify copied plugin first-install command transport",
       "run: node scripts/run-tests.mjs test -- tests/integration/plugins/plugin-runtime-win32.integration.spec.ts tests/unit/plugins/plugin-runtime-races.spec.ts",
+      "name: Verify nested linked-test dependency junctions",
+      "run: node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts",
       "name: Run Windows history durability and recovery regressions",
       "run: node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts",
     ]);
@@ -477,7 +479,7 @@ describe("GitHub workflow contract", () => {
       ),
     );
     expectExactValidationCacheSteps(ciWorkflow, 3);
-    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(9);
+    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(10);
     expect(ciWorkflow).not.toMatch(/^\s*run: pnpm test\s*$/m);
     expect(ciWorkflow).not.toContain("Sandboxed PM regression");
 
@@ -1178,6 +1180,7 @@ describe("GitHub workflow contract", () => {
       "contents: read",
       PINNED_ACTIONS.checkout,
       "persist-credentials: false",
+      'TRIVY_INCLUDE_DEV_DEPS: "true"',
       "scanners: vuln,secret,misconfig",
       "trivyignores: .trivyignore",
       "skip-dirs: node_modules,dist,coverage,.pnpm-store",

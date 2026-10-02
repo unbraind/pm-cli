@@ -1,0 +1,14 @@
+{
+  "owner": "pm-r61juc",
+  "name": "@codspeed/core",
+  "version": "5.7.1",
+  "sha256": {
+    "dist/index.cjs.js": "91da84dd7deb81cbdc25d0f4e772ff2c6e380ccb01429f8c03ea7b2b1e8f51ea",
+    "dist/index.cjs.js.map": "fce07e1edb4aa0c0435713c80b3d29843ac5871ee4461ef81a8c05b3b22c9121",
+    "dist/index.es5.js": "8579eedd71a1ace91b917a727e3fac18b4441cd3ffe88d55bf4e5a7084d349cf",
+    "dist/index.es5.js.map": "92bce3d7ad4ac411467ae661810fd65b535bc12c4de21d7f253d8b5d8a4e4053",
+    "prebuilds/darwin-arm64/node.napi.node": "e1cdd31964603f11b9324398917284155370577d76c38d1ace41de44a5cf1171",
+    "prebuilds/linux-arm64/node.napi.node": "3b4f6c49b131ea9d4cc21ec431796ad74e7de4847b38233da38d2e378a2305e5",
+    "prebuilds/linux-x64/node.napi.node": "9e520dbfa548fa8556b707c133f94e5dd9f305f224dbfd87ef7efef27a3837ed"
+  }
+}
