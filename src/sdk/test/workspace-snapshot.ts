@@ -4,7 +4,6 @@
  */
 import { cp, mkdir, stat, symlink } from "node:fs/promises";
 import path from "node:path";
-import { pathExists } from "../../core/fs/fs-utils.js";
 
 const EXCLUDED_SEGMENTS = new Set([
   ".agents", ".git", ".nyc_output", ".turbo", "coverage",
@@ -30,13 +29,13 @@ export async function seedLinkedTestWorkspaceSnapshot(
       if (!relative) return true;
       if (relative.split(path.sep).some((segment) => EXCLUDED_SEGMENTS.has(segment))) return false;
       if (path.basename(source) !== "node_modules") return true;
-      if (await pathExists(source) && (await stat(source)).isDirectory()) dependencyRoots.push(relative);
+      if ((await stat(source, { throwIfNoEntry: false }))?.isDirectory()) dependencyRoots.push(relative);
       return false;
     },
   });
   for (const relative of dependencyRoots) {
     await symlink(
-      path.join(sourceRoot, relative),
+      path.resolve(sourceRoot, relative),
       path.join(snapshotRoot, relative),
       "junction",
     );

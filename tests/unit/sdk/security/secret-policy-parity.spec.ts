@@ -28,6 +28,21 @@ const samples = [
 ] as const;
 
 describe("shared mutation and repository secret policy", () => {
+  it.each([
+    ["empty fallback", "config.auth.password || ''", false],
+    ["encoded optional configuration", "config.auth.password ? unescape(encodeURIComponent(config.auth.password)) : ''", false],
+    ["bare credential-shaped value", "config.auth.password", true],
+    ["nonempty fallback", "config.auth.password || 'example-value'", true],
+    ["quoted expression", '"config.auth.password || empty"', true],
+  ] as const)("distinguishes %s from a literal password in both consumers", async (_label, expression, detected) => {
+    const gate = await harness.importModule<{
+      scanContent(file: string, content: string): Array<{ rule: string }>;
+    }>("scripts/check-secrets-lib.mjs");
+    const content = ["password", "=", expression].join(" ");
+    expect(gate.scanContent("patches/dependency.patch", content).some(({ rule }) => rule === "password-assignment")).toBe(detected);
+    expect(scanMutationSecrets({ description: content }).some(({ rule }) => rule === "password_assignment")).toBe(detected);
+  });
+
   it("accounts for every detector and explicitly declares scope exceptions", async () => {
     const gate = await harness.importModule<{ RULES: Array<{ name: string; regex: RegExp }> }>("scripts/check-secrets-lib.mjs");
     const shared = SECRET_RULES.filter((rule) => !("mutationOnlyReason" in rule));

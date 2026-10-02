@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 const require = createRequire(import.meta.resolve("@codspeed/vitest-plugin"));
 const coreRoot = path.dirname(path.dirname(require.resolve("@codspeed/core")));
 const coreRequire = createRequire(path.join(coreRoot, "package.json"));
+const axiosVersion = (JSON.parse(await readFile(coreRequire.resolve("axios/package.json"), "utf8")) as { version: string }).version;
 
 describe("CodSpeed patched dependency runtime", () => {
   it.each(["cjs", "es5"])("preserves %s public contracts and performs real audited HTTP requests", async (entry) => {
@@ -77,7 +78,7 @@ describe("CodSpeed patched dependency runtime", () => {
         { method: "POST", url: "/benchmark/stop", body: { uri: "probe" } },
         { method: "POST", url: "/instruments/setup", body: { mongoUrl: "reject" } },
       ]);
-      expect(requests.every(({ agent }) => agent === "axios/1.20.0")).toBe(true);
+      expect(requests.every(({ agent }) => agent === `axios/${axiosVersion}`)).toBe(true);
       expect(requests.every(({ applicationHeader }) => applicationHeader === undefined)).toBe(true);
     } finally {
       server.closeAllConnections();

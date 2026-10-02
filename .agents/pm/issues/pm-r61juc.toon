@@ -6,38 +6,74 @@ status: closed
 priority: 0
 tags[1]: security
 created_at: "2026-10-02T06:33:46.098Z"
-updated_at: "2026-10-02T18:35:39.407Z"
-closed_at: "2026-10-02T18:35:39.191Z"
-completed_at: "2026-10-02T18:35:39.191Z"
+updated_at: "2026-10-02T19:46:24.975Z"
+closed_at: "2026-10-02T19:46:24.853Z"
+completed_at: "2026-10-02T19:46:24.853Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Patch external Axios to a cooldown-eligible supported release and eliminate affected CJS/ESM bundled copies with reproducible integrity and source-map evidence.; Preserve CodSpeed instrumentation, platform compatibility, benchmark coverage and package contracts; retain genuine pre-fix vulnerability controls.; Enforce development dependency vulnerability admission in mandatory CI, nightly, release and local gates; seeded vulnerable artifacts must fail without changing coverage or quality thresholds.; Verify full and production audits, dev-inclusive Trivy, real Node/Bun tooling and merged-main Scorecard retirement; document evidence tiers without suppressing or dismissing an unresolved report."
 parent: pm-qwoy
 risk: high
 confidence: high
-resolution: "Axios resolves to audited 1.20.0; patched CJS/ESM bundles use dedicated clients with CancelToken and audited FormData, obsolete embedded sources/maps are removed, native payloads and mappings are preserved, and exact integrity plus dev-inclusive audit/Trivy gates refuse recurrence."
-expected_result: "No affected external or embedded Axios remains in installed tooling, while CodSpeed runtime, benchmarks and production SDK contracts remain compatible."
-actual_result: "Full and production audits are zero, dev-inclusive Trivy and seven integrity hashes pass, real CJS/ESM HTTP and interceptor controls pass, all 44 owner-linked tests and static gates pass, complete canonical coverage is 100/100/100/100 with 9603 passing tests, and packed/manual/dogfood acceptance passes. Hosted native benchmark and merged-main Scorecard retirement remain required landing evidence; no alert was dismissed and publication remains separate."
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "CodSpeed CJS/ESM entries use audited dedicated Axios clients with preserved cancellation and FormData contracts; obsolete embedded sources and maps are removed, native bytes remain intact, and exact twelve-file inventory plus hashes and development-inclusive audit/Trivy admission reject recurrence. Shared secret detection preserves real credential refusal while recognizing the public empty-fallback expression."
+expected_result: "Installed tooling contains no affected external or embedded Axios, and mandatory admission preserves runtime, native tooling and SDK security contracts."
+actual_result: "All-severity and production audits report zero; exact twelve-file hashes and inventory controls pass. Real CJS/ESM HTTP and interceptor controls, 47 focused tests, static/typecheck/secrets/docs gates and refreshed packed/dogfood consumers pass. Canonical PM receipt test-local-murdbyvj-6ohpqa passes 9608 tests; report receipt test-local-murdgisu-s8759q records statements 66411/66411, branches 50825/50825, functions 13734/13734 and lines 63334/63334. Revised-head native performance and merged-main Scorecard alert 29 retirement remain explicit independent checks under open pm-7zs0; no alert was dismissed and publication is not claimed."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-7wmq,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
   pm-cbzvgn,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
   pm-gh1364,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
   pm-5iwfkj,related,"2026-10-02T17:24:53.523Z","harness:codex","cli:update:dep",detected
-comments[9]{created_at,author,text}:
-  "2026-10-02T06:33:46.098Z","harness:codex","Duplicate check: complete all-status corpus 2850/2850 with no unreadable records; live exact keyword Axios finds only the discovery comment on pm-gh1364, include-dev-deps and GHSA-c29m-xwm3-cm6r find no canonical work. All twelve GHSA identifiers were checked in the initial all-status intake. Full live pm-qwoy, pm-cbzvgn and pm-7wmq metadata were read; parent history verifies. Closed pm-cbzvgn fixed distinct brace-expansion advisories and is preserved as completed historical work. This new Axios/CodSpeed report is recorded before PR1372 merge to keep discovery evidence reviewed. Remediation is open and unclaimed; it is not included in PR1372 source-fix closure or represented as security clearance."
-  "2026-10-02T10:31:07.233Z","harness:codex","Planning correction: the mandatory active-item context gate identified this newly recorded open intake as missing estimated_minutes. Add a preliminary 240-minute estimate covering external-version remediation, inspection/replacement of both embedded bundles and source maps, dev-inclusive admission with negative controls, and review/verification. This is a planning estimate with implementation uncertainty, not time spent or proof of remediation. The item remains open and unclaimed while PR1372 is finished first; all documented scanner findings remain unresolved."
-  "2026-10-02T16:39:24.811Z","harness:codex","Live intake 2026-10-02: complete strict all-status corpus 2851/2851 with no omissions or unreadable records; no in-progress items or open GitHub PRs. pnpm full audit reproduces 7 high/5 moderate Axios findings and native Scorecard alert29 remains open at current main. This delivery actively implements CodSpeed external/embedded dependency remediation and mandatory dev-inclusive admission together with linked-test monorepo snapshot dependency preservation under pm-5iwfkj in one reviewed PR. Prior completed brace-expansion work stays closed. No alert will be dismissed to simulate remediation."
-  "2026-10-02T16:59:31.480Z","harness:codex","Pre-edit test audit: admission uses the actual installed CodSpeed package plus real temporary copies; stale CJS, ESM, map, native, missing-file and package-upgrade controls must fail. A separate loopback-server integration will exercise the public runtime with both entrypoints and audited transport. No security policy skip or scanner dismissal is introduced. The independent boundary investigation found only axios and FormData cross the removed embedded-dependency section; both remain supplied by audited declared runtime dependencies."
-  "2026-10-02T17:10:53.023Z","harness:codex","Independent candidate review found and reproduced a compatibility defect: using external Axios default instances shares application response interceptors, unlike the original embedded clients. Both original entries passed the loopback setup response, while both candidate entries threw ApiError with undefined status after an application response.data interceptor. The candidate will use a dedicated client and retain CancelToken. The same review independently confirmed every retained mapping coordinate and name, untouched native payload, exact plugin resolution and a zero-advisory full audit."
-  "2026-10-02T17:29:30.225Z","harness:codex","Independent candidate review found shared default Axios interceptors could transform instrumentation responses. Both CJS and ESM real loopback regressions failed before the corrective patch (ApiError status undefined), then the patch was changed to dedicated axios.create clients with CancelToken retained. Native payloads remain byte-identical; all retained source map coordinates and names are preserved. Required full-suite regressions additionally enforce the complete audit command and Windows snapshot workflow. No production exploit is established."
-  "2026-10-02T18:09:24.814Z","harness:codex","Final full audit reports zero advisories at every severity, and development-inclusive Trivy reports zero findings. The installed patch uses dedicated Axios clients; all seven entry/map/native policy hashes pass. Current hosted Scorecard alert remains open on the pre-fix main release, so it is neither dismissed nor claimed retired. The final all-status corpus contains 2863 readable records without omissions, and only the two current implementation owners are in progress."
-  "2026-10-02T18:32:22.979Z","harness:codex","Final canonical coverage passes 9603 tests and exact 100/100/100/100 (66406 statements, 50827 branches, 13731 functions, 63329 lines). Full and production audits report zero advisories; dev-inclusive Trivy and all seven installed bundle/map/native integrity checks pass. Real CJS/ESM loopback instrumentation with application interceptors passes after a relevant red compatibility control. Source-map coordinates/names and native payloads are preserved. Mandatory static admission is registered for local, CI, nightly and release; hosted checks and native merged-main Scorecard retirement remain subsequent delivery evidence, not suppressed alerts."
-  "2026-10-02T18:35:37.203Z","harness:codex","Final local delivery: pm test --run --progress passes all 44 linked admission/runtime/release/workflow tests with trusted same-branch provenance. Complete static checks pass, including all-dependency audit, docstrings, zero duplicate clones, startup budgets, graph/history assurance and bounded mutation. Package-first dogfood and published npm/Bun consumer verification pass. PR checks, native CodSpeed performance and merged-main alert retirement remain required delivery steps; this closure does not claim an already published fix."
-notes[1]{created_at,author,text}:
+  pm-5iwfkj,verifies,"2026-10-02T19:08:09.966Z","harness:codex","cli:update:dep",detected
+comments[14]:
+  - created_at: "2026-10-02T06:33:46.098Z"
+    author: "harness:codex"
+    text: "Duplicate check: complete all-status corpus 2850/2850 with no unreadable records; live exact keyword Axios finds only the discovery comment on pm-gh1364, include-dev-deps and GHSA-c29m-xwm3-cm6r find no canonical work. All twelve GHSA identifiers were checked in the initial all-status intake. Full live pm-qwoy, pm-cbzvgn and pm-7wmq metadata were read; parent history verifies. Closed pm-cbzvgn fixed distinct brace-expansion advisories and is preserved as completed historical work. This new Axios/CodSpeed report is recorded before PR1372 merge to keep discovery evidence reviewed. Remediation is open and unclaimed; it is not included in PR1372 source-fix closure or represented as security clearance."
+  - created_at: "2026-10-02T10:31:07.233Z"
+    author: "harness:codex"
+    text: "Planning correction: the mandatory active-item context gate identified this newly recorded open intake as missing estimated_minutes. Add a preliminary 240-minute estimate covering external-version remediation, inspection/replacement of both embedded bundles and source maps, dev-inclusive admission with negative controls, and review/verification. This is a planning estimate with implementation uncertainty, not time spent or proof of remediation. The item remains open and unclaimed while PR1372 is finished first; all documented scanner findings remain unresolved."
+  - created_at: "2026-10-02T16:39:24.811Z"
+    author: "harness:codex"
+    text: "Live intake 2026-10-02: complete strict all-status corpus 2851/2851 with no omissions or unreadable records; no in-progress items or open GitHub PRs. pnpm full audit reproduces 7 high/5 moderate Axios findings and native Scorecard alert29 remains open at current main. This delivery actively implements CodSpeed external/embedded dependency remediation and mandatory dev-inclusive admission together with linked-test monorepo snapshot dependency preservation under pm-5iwfkj in one reviewed PR. Prior completed brace-expansion work stays closed. No alert will be dismissed to simulate remediation."
+  - created_at: "2026-10-02T16:59:31.480Z"
+    author: "harness:codex"
+    text: "Pre-edit test audit: admission uses the actual installed CodSpeed package plus real temporary copies; stale CJS, ESM, map, native, missing-file and package-upgrade controls must fail. A separate loopback-server integration will exercise the public runtime with both entrypoints and audited transport. No security policy skip or scanner dismissal is introduced. The independent boundary investigation found only axios and FormData cross the removed embedded-dependency section; both remain supplied by audited declared runtime dependencies."
+  - created_at: "2026-10-02T17:10:53.023Z"
+    author: "harness:codex"
+    text: "Independent candidate review found and reproduced a compatibility defect: using external Axios default instances shares application response interceptors, unlike the original embedded clients. Both original entries passed the loopback setup response, while both candidate entries threw ApiError with undefined status after an application response.data interceptor. The candidate will use a dedicated client and retain CancelToken. The same review independently confirmed every retained mapping coordinate and name, untouched native payload, exact plugin resolution and a zero-advisory full audit."
+  - created_at: "2026-10-02T17:29:30.225Z"
+    author: "harness:codex"
+    text: "Independent candidate review found shared default Axios interceptors could transform instrumentation responses. Both CJS and ESM real loopback regressions failed before the corrective patch (ApiError status undefined), then the patch was changed to dedicated axios.create clients with CancelToken retained. Native payloads remain byte-identical; all retained source map coordinates and names are preserved. Required full-suite regressions additionally enforce the complete audit command and Windows snapshot workflow. No production exploit is established."
+  - created_at: "2026-10-02T18:09:24.814Z"
+    author: "harness:codex"
+    text: "Final full audit reports zero advisories at every severity, and development-inclusive Trivy reports zero findings. The installed patch uses dedicated Axios clients; all seven entry/map/native policy hashes pass. Current hosted Scorecard alert remains open on the pre-fix main release, so it is neither dismissed nor claimed retired. The final all-status corpus contains 2863 readable records without omissions, and only the two current implementation owners are in progress."
+  - created_at: "2026-10-02T18:32:22.979Z"
+    author: "harness:codex"
+    text: "Final canonical coverage passes 9603 tests and exact 100/100/100/100 (66406 statements, 50827 branches, 13731 functions, 63329 lines). Full and production audits report zero advisories; dev-inclusive Trivy and all seven installed bundle/map/native integrity checks pass. Real CJS/ESM loopback instrumentation with application interceptors passes after a relevant red compatibility control. Source-map coordinates/names and native payloads are preserved. Mandatory static admission is registered for local, CI, nightly and release; hosted checks and native merged-main Scorecard retirement remain subsequent delivery evidence, not suppressed alerts."
+  - created_at: "2026-10-02T18:35:37.203Z"
+    author: "harness:codex"
+    text: "Final local delivery: pm test --run --progress passes all 44 linked admission/runtime/release/workflow tests with trusted same-branch provenance. Complete static checks pass, including all-dependency audit, docstrings, zero duplicate clones, startup budgets, graph/history assurance and bounded mutation. Package-first dogfood and published npm/Bun consumer verification pass. PR checks, native CodSpeed performance and merged-main alert retirement remain required delivery steps; this closure does not claim an already published fix."
+  - created_at: "2026-10-02T19:08:08.325Z"
+    author: "harness:codex"
+    text: "Review TDD evidence: the added relative-path, unexpected artifact and public-expression negative controls failed in four independent assertions before the fixes. After correction, 47 tests in five suites pass. The exact installed package inventory now rejects unreviewed payloads and pins all twelve owned files including manifest and declarations. The shared secret detector exempts only unquoted config.auth.password with an empty fallback; bare, quoted and nonempty-fallback credential assignments still fail in repository and SDK parity tests. No path exemption or secret-scanning gate bypass was added. The 38,448-line, 2,052,361-byte patch changes only two dependency bundles and their maps: its exact unified diff removes 38,404 artifact lines and adds ten, including 19,201 removed dependency lines per bundle. Source-map coordinates and native payload bytes are preserved."
+    edited_at: "2026-10-02T19:15:20.154Z"
+  - created_at: "2026-10-02T19:08:11.260Z"
+    author: "harness:codex"
+    text: "CodSpeed first-head performance observation: the hosted native benchmark job succeeds, but its dashboard reports six small regressions and five unchanged benchmarks, with a 2.69 percent aggregate regression. Chrome inspection of createQueryFingerprint shows differing CPU flags and an unchanged native build ID, plus the expected pnpm patched-package path change. Benchmark sources are unchanged. This is not claimed as performance acceptance; the next exact-head native run and comparison must be evaluated, and no regression has been acknowledged or threshold weakened."
+  - created_at: "2026-10-02T19:35:35.468Z"
+    author: "harness:codex"
+    text: "Performance verification follow-up: trigger the existing CodSpeed workflow on unchanged main b52bb3b before the revised PR benchmark. The first comparison reports changed CPU flags and runtime environments, so a fresh same-code main execution provides a current baseline for the subsequent head run. No benchmark code, acceptance threshold or acknowledgment is changed; this is additional evidence for an unresolved comparison concern."
+  - created_at: "2026-10-02T19:43:03.840Z"
+    author: "harness:codex"
+    text: "Canonical review coverage receipt test-local-murdbyvj-6ohpqa passed through pm test --only-last --run with trusted same-branch provenance and source execution mode. The unmodified runner independently executes Vitest and its exact-count gate. 9608 tests pass, two existing Windows-only tests skip, and 762 suites pass with one Windows-only suite skipped. Exact covered/total counts: statements 66411/66411, branches 50825/50825, functions 13734/13734, lines 63334/63334. All four run-bound coverage measurements are 100 percent with unchanged 100 thresholds. This single canonical run verifies both pm-r61juc and pm-5iwfkj through the typed verification edge; the complete suite is not duplicated."
+  - created_at: "2026-10-02T19:46:22.775Z"
+    author: "harness:codex"
+    text: "Final local revision validation: packed npm/npx/bunx and SDK consumer smoke passes for version 2026.10.2 and nine package surfaces; package-first dogfood passes. Exact generated-report admission receipt test-local-murdgisu-s8759q passes and records the eight observed covered/total counts plus four percentages, bound to coverage-summary SHA-256 fa944974f43987bf88083321387a75a302312d9120632e28374a077304e8197c. The complete suite is executed once under test-local-murdbyvj-6ohpqa. Fresh unchanged-main CodSpeed baseline run 37055126994 succeeds on b52bb3b; revised-head performance comparison remains a hosted delivery check. Native merged-main Scorecard retirement and next eligible publication are explicitly tracked by open standing owner pm-7zs0."
+notes[2]{created_at,author,text}:
   "2026-10-02T06:37:50.731Z","harness:codex","Scope and evidence boundary: this intake documents an unresolved development-tool dependency report before merging PR1372. It is not a regression introduced by the scoped recovery, continuation or semantic-preview fixes. Production-only audit is clean. Full audit and native Scorecard remain open; embedded Axios requires separate inspection beyond pnpm lock resolution. Do not dismiss the scanner alert or report security clearance until remediation and native merged-main scans are verified."
+  "2026-10-02T19:24:09.415Z","harness:codex","Large-patch review rationale: GitHub treats a new patch artifact as 38,448 added lines although the upstream diff removes 38,404 lines and adds ten. Only two bundles and their two maps change; three native payloads remain byte-identical. Replacing the patch with an upstream supported fixed release is preferable once one is available and passes the same inventory, runtime, map and native gates. The exact-version pnpm patch remains reproducible across frozen installs and does not introduce an install-time transformation or weaken dependency admission."
 learnings[1]{created_at,author,text}:
   "2026-10-02T18:32:24.961Z","harness:codex","Externalizing an embedded HTTP client must preserve its isolation from application interceptors, not just its version and exported API. Dedicated Axios clients, real HTTP compatibility controls, reviewed map coordinates and immutable native hashes cover different risks; lockfile audit alone cannot detect an embedded obsolete implementation."
-files[16]{path,scope}:
+files[18]{path,scope}:
   .github/workflows/ci.yml,project
   .github/workflows/release.yml,project
   .github/workflows/security.yml,project
@@ -49,14 +85,41 @@ files[16]{path,scope}:
   scripts/check-development-dependencies.mjs,project
   scripts/release/gate-registry.json,project
   scripts/release/gate-registry.mjs,project
+  src/core/shared/secret-rules.ts,project
   tests/helpers/releaseContracts.ts,project
   tests/integration/ci-workflow-contract.spec.ts,project
   tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts,project
   tests/integration/release-automation-contract.spec.ts,project
   tests/unit/scripts/development-dependencies.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/scripts/development-dependencies.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240,"harness:codex","2026-10-02T17:30:09.196Z",local_mutation,codex/codspeed-dependency-security-snapshot-resolution
-test_runs[1]:
+  tests/unit/sdk/security/secret-policy-parity.spec.ts,project
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/development-dependencies.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-02T17:30:09.196Z"
+      source_kind: local_mutation
+      source_ref: codex/codspeed-dependency-security-snapshot-resolution
+  - command: node scripts/run-tests.mjs coverage -- --maxWorkers=2 --coverage.reportOnFailure
+    scope: project
+    timeout_seconds: 2400
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-02T19:08:07.463Z"
+      source_kind: local_mutation
+      source_ref: codex/codspeed-dependency-security-snapshot-resolution
+    note: "Canonical shared source coverage proof for PR 1375; thresholds enforce all four metrics at 100 percent, including snapshot and dependency-security controls"
+  - command: node scripts/release/coverage-threshold-gate.mjs
+    scope: project
+    timeout_seconds: 180
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-02T19:43:34.112Z"
+      source_kind: local_mutation
+      source_ref: codex/codspeed-dependency-security-snapshot-resolution
+    note: Exact report admission and observed count receipt for canonical run test-local-murdbyvj-6ohpqa; coverage-summary SHA-256 fa944974f43987bf88083321387a75a302312d9120632e28374a077304e8197c; validates the generated report without repeating the suite
+test_runs[3]:
   - run_id: test-local-murayqth-r6rf24
     kind: test
     status: passed
@@ -68,9 +131,89 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/development-dependencies.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-murdbyvj-6ohpqa
+    kind: test
+    status: passed
+    started_at: "2026-10-02T19:20:57.813Z"
+    finished_at: "2026-10-02T19:41:00.365Z"
+    recorded_at: "2026-10-02T19:41:00.365Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[4]{name,value,unit,threshold,recorded_at}:
+      coverage_branches,100,percent,100,"2026-10-02T19:41:00.365Z"
+      coverage_functions,100,percent,100,"2026-10-02T19:41:00.365Z"
+      coverage_lines,100,percent,100,"2026-10-02T19:41:00.365Z"
+      coverage_statements,100,percent,100,"2026-10-02T19:41:00.365Z"
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage -- --maxWorkers=2 --coverage.reportOnFailure,schema,schema,source,local_source_ref
+  - run_id: test-local-murdgisu-s8759q
+    kind: test
+    status: passed
+    started_at: "2026-10-02T19:44:32.509Z"
+    finished_at: "2026-10-02T19:44:32.814Z"
+    recorded_at: "2026-10-02T19:44:32.814Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[12]:
+      - name: coverage_branches
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-02T19:44:32.814Z"
+      - name: coverage_branches_covered
+        value: 50825
+        unit: count
+        recorded_at: "2026-10-02T19:44:32.814Z"
+      - name: coverage_branches_total
+        value: 50825
+        unit: count
+        recorded_at: "2026-10-02T19:44:32.814Z"
+      - name: coverage_functions
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-02T19:44:32.814Z"
+      - name: coverage_functions_covered
+        value: 13734
+        unit: count
+        recorded_at: "2026-10-02T19:44:32.814Z"
+      - name: coverage_functions_total
+        value: 13734
+        unit: count
+        recorded_at: "2026-10-02T19:44:32.814Z"
+      - name: coverage_lines
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-02T19:44:32.814Z"
+      - name: coverage_lines_covered
+        value: 63334
+        unit: count
+        recorded_at: "2026-10-02T19:44:32.814Z"
+      - name: coverage_lines_total
+        value: 63334
+        unit: count
+        recorded_at: "2026-10-02T19:44:32.814Z"
+      - name: coverage_statements
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-02T19:44:32.814Z"
+      - name: coverage_statements_covered
+        value: 66411
+        unit: count
+        recorded_at: "2026-10-02T19:44:32.814Z"
+      - name: coverage_statements_total
+        value: 66411
+        unit: count
+        recorded_at: "2026-10-02T19:44:32.814Z"
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/coverage-threshold-gate.mjs,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
-close_reason: Removed vulnerable external and embedded Axios from CodSpeed tooling and added mandatory development-dependency admission for reviewed delivery.
+close_reason: "Completed reviewed dependency-security implementation and local proof, with open independent landing verification under pm-7zs0."
 escape_class: scanner_finding
 gate_evidence:
   disposition: gate_added

@@ -6,22 +6,22 @@ status: closed
 priority: 1
 tags[3]: agent-ux,context-management,github-intake
 created_at: "2026-09-30T06:48:35.183Z"
-updated_at: "2026-10-02T18:35:38.100Z"
-closed_at: "2026-10-02T18:35:37.996Z"
-completed_at: "2026-10-02T18:35:37.996Z"
+updated_at: "2026-10-02T19:46:23.956Z"
+closed_at: "2026-10-02T19:46:23.822Z"
+completed_at: "2026-10-02T19:46:23.822Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Real filesystem regression retains distinct root and nested dependency versions without flattening; Snapshot and ordinary linked runs preserve PM_PATH and PM_GLOBAL_PATH isolation; Dependency write/isolation behavior is documented and tested; Current built and packed artifacts pass the reporter contract
 parent: pm-u9d0
 risk: medium
 confidence: medium
-resolution: "SDK snapshot seeding preserves independent root and nested dependency directories through relative-position junctions, with copied-source isolation, typed lineage, real regression proof and Windows gate coverage."
-expected_result: Linked snapshot execution resolves each installed package version correctly and isolates tracker roots and copied-source writes.
-actual_result: "Pre-fix nested fallback reproduced; 6 owner-linked tests pass, real npm root 3.1.1/nested 3.1.0 monorepos pass Node and Bun, packed consumers and dogfood pass, complete coverage is 100/100/100/100 across 9603 passing tests, and static/compatibility gates pass. Hosted PR and merged-main checks precede landing; next daily publication remains separate."
+resolution: "The SDK seeds copied-source snapshots with absolute root and nested dependency junctions, preserves independent installed versions, and ignores dangling dependency links on supported filesystems."
+expected_result: Linked snapshot commands resolve root and nested installed dependencies correctly and isolate tracker roots and copied-source writes.
+actual_result: Six owner-linked snapshot cases and temporary npm Node/Bun monorepos pass. Revised relative-root and dangling-link controls pass. Shared full-suite receipt pm-r61juc/test-local-murdbyvj-6ohpqa passes 9608 tests with 100/100/100/100 coverage; exact observed counts are recorded in test-local-murdgisu-s8759q. Static gates and refreshed packed/dogfood consumers pass. Required hosted Windows and exact-head PR gates govern landing; publication is tracked separately by pm-7zs0.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-efkvdy,discovered_from,"2026-09-30T06:48:35.183Z","harness:codex","cli:create:dep",detected
   pm-efkvdy,verifies,"2026-10-02T17:04:50.022Z","harness:codex","cli:update:dep",detected
-comments[8]:
+comments[10]:
   - created_at: "2026-09-30T06:48:35.183Z"
     author: "harness:codex"
     text: "Duplicate check: complete strict all-status corpus contained 2843 records with no unreadable directories or items. Exact GitHub ID plus behavior/root-cause searches were complete. Closed prior lineage pm-efkvdy and its full history were read; this new report requests a distinct unimplemented contract. Relationship reconstructed during current intake rather than asserted as historical knowledge. Queued and unclaimed; source investigation remains pending."
@@ -47,6 +47,12 @@ comments[8]:
     author: "harness:codex"
     text: "Final local delivery: both owner-linked commands passed through pm test --run --progress with trusted same-branch provenance and sandboxed tracker roots. Snapshot suite: 6 tests in 2 files; security/release/workflow suite: 44 tests in 4 files. Package-first dogfood now passes after sequential execution; the earlier timeout was competing build-lease contention, not a relaxed test. Complete static gates, including unchanged SDK startup budgets, graph composition, record integrity and bounded mutation (329 killed, 7 classified equivalent, 0 failures), pass."
     edited_at: "2026-10-02T18:35:36.652Z"
+  - created_at: "2026-10-02T19:08:09.209Z"
+    author: "harness:codex"
+    text: "PR 1375 review regressions: relative source roots now produce absolute dependency junction targets. Dangling dependency links are ignored using stat with throwIfNoEntry false, avoiding the Windows access/stat disagreement seen in native CI. Both real-filesystem unit tests pass locally, and hosted Windows remains the independent platform acceptance gate. Full canonical source coverage is executed once under pm-r61juc and shared through the typed verification relationship rather than duplicating the complete suite."
+  - created_at: "2026-10-02T19:43:04.577Z"
+    author: "harness:codex"
+    text: "Shared canonical coverage is auditable in pm-r61juc run test-local-murdbyvj-6ohpqa: the actual linked full-suite command passed with 9608 passing tests and two existing Windows-only skips. Statements 66411/66411, branches 50825/50825, functions 13734/13734 and lines 63334/63334 are exact covered/total counts, all 100 percent. The primary owner has four run-bound threshold measurements and a verifies relationship to this snapshot owner, avoiding duplicated complete-suite executions."
 learnings[1]{created_at,author,text}:
   "2026-10-02T18:32:24.044Z","harness:codex",Snapshot dependency preservation must retain each nested installation at its original relative path. Positive direct execution plus a real copied-workspace write distinguishes correct dependency resolution from a no-op isolation assertion. Directory junctions retain Windows support; dependency writes still require an independent install or stronger sandbox.
 files[5]{path,scope}:
@@ -71,7 +77,7 @@ test_runs[1]:
       node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/TESTING.md,project
-close_reason: Implemented and locally verified the monorepo snapshot dependency contract for reviewed delivery.
+close_reason: "Implemented and locally verified monorepo snapshot dependency resolution, including review regressions, for reviewed delivery."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

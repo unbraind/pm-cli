@@ -15,7 +15,7 @@ describe("linked workspace snapshot filesystem policy", () => {
         await writeFile(path.join(source, directory, "identity"), directory);
       }
       await writeFile(path.join(source, "packages/lib/node_modules"), "not a directory");
-      await seedLinkedTestWorkspaceSnapshot(source, snapshot);
+      await seedLinkedTestWorkspaceSnapshot(path.relative(process.cwd(), source), snapshot);
       for (const directory of ["node_modules", "apps/site/node_modules"]) {
         expect(await realpath(path.join(snapshot, directory))).toBe(await realpath(path.join(source, directory)));
         expect(await readFile(path.join(snapshot, directory, "identity"), "utf8")).toBe(directory);

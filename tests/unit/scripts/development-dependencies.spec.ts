@@ -1,4 +1,4 @@
-import { cp, mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -28,15 +28,24 @@ describe("development dependency bundle admission", () => {
       for (const file of Object.keys(policy.sha256)) {
         const target = path.join(root, file);
         const original = await readFile(target);
-        await writeFile(target, Buffer.concat([original, Buffer.from("stale embedded dependency")]));
+        await writeFile(target, file === "package.json"
+          ? JSON.stringify({ ...JSON.parse(original.toString()), main: "./unreviewed.js" })
+          : Buffer.concat([original, Buffer.from("stale embedded dependency")]));
         await expect(verifyDevelopmentBundles(root, policy)).rejects.toThrow(`CodSpeed bundle integrity mismatch: ${file}`);
         await writeFile(target, original);
       }
       const incomplete = { ...policy, sha256: { ...policy.sha256 } };
       delete incomplete.sha256["dist/index.es5.js.map"];
       await expect(verifyDevelopmentBundles(root, incomplete)).rejects.toThrow("Incomplete bundle integrity policy");
+      for (const file of ["unreviewed.mjs", "dist/unreviewed.js", "dist/nested/unreviewed.js.map", "prebuilds/unreviewed.node"]) {
+        const target = path.join(root, file);
+        await mkdir(path.dirname(target), { recursive: true });
+        await writeFile(target, "unreviewed artifact");
+        await expect(verifyDevelopmentBundles(root, policy)).rejects.toThrow("Unexpected CodSpeed artifact inventory");
+        await unlink(target);
+      }
       await unlink(path.join(root, "dist/index.cjs.js"));
-      await expect(verifyDevelopmentBundles(root, policy)).rejects.toThrow("ENOENT");
+      await expect(verifyDevelopmentBundles(root, policy)).rejects.toThrow("Unexpected CodSpeed artifact inventory");
     } finally {
       await rm(root, { recursive: true, force: true });
     }

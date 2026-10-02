@@ -1180,7 +1180,6 @@ describe("GitHub workflow contract", () => {
       "contents: read",
       PINNED_ACTIONS.checkout,
       "persist-credentials: false",
-      'TRIVY_INCLUDE_DEV_DEPS: "true"',
       "scanners: vuln,secret,misconfig",
       "trivyignores: .trivyignore",
       "skip-dirs: node_modules,dist,coverage,.pnpm-store",
@@ -1198,6 +1197,12 @@ describe("GitHub workflow contract", () => {
       "sha256sum --check --strict",
       "./actionlint -color",
     ]);
+    const securityJobs = (parse(securityWorkflow) as {
+      jobs: Record<string, { steps: Array<{ name?: string; env?: Record<string, unknown> }> }>;
+    }).jobs;
+    const trivyStep = Object.values(securityJobs).flatMap(({ steps }) => steps)
+      .find(({ name }) => name === "Trivy repository scan");
+    expect(trivyStep?.env).toEqual({ TRIVY_INCLUDE_DEV_DEPS: "true" });
     expect(truffleHogExclusions).toEqual([
       "tests/unit/health-command\\.spec\\.ts",
       "\\.agents/pm/history/pm-4ris\\.jsonl",
