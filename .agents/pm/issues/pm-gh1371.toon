@@ -2,24 +2,26 @@ id: pm-gh1371
 title: "GH-1371: compose output budget and producer pagination"
 description: "Implement existing GitHub issue https://github.com/unbraind/pm-cli/issues/1371. Presentation-only universal output controls must not alter producer fingerprints; every emitted count must match its delivered rows."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-01T09:24:20.761Z"
-updated_at: "2026-10-01T23:50:40.986Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#25a4e59e3a757fa1c2538e8e"
+updated_at: "2026-10-02T00:41:55.011Z"
+closed_at: "2026-10-02T00:41:54.903Z"
+completed_at: "2026-10-02T00:41:54.903Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Advertised output and producer cursors retrieve every matching ID;Continued focus collections have no duplicated IDs;Delivered counts and hidden status receipts agree with emitted rows;Population and count-only totals remain intact;CLI and SDK filter changes reject cursors and field projection remains compatible
 parent: pm-doxj
 risk: medium
 confidence: high
+resolution: "Producer and output-budget cursors compose across CLI and SDK with query and tracker-scope validation. Delivered item/focus counts survive serialized projection, and count-only aggregate provenance survives root omission and warning compaction. Packed consumer checks actual public SDK exports across npm versions."
 expected_result: Complete unique CLI and packed SDK serialized traversal across producer and budget cursors; true query/scope changes refuse; delivered and count-only counters remain accurate
+actual_result: "Canonical test-local-muq6pvhi-immi3p (Node 26/npm 12) and test-local-muq6qnhi-l9k6cr (Node 24/npm 11) each pass 56 continuation cases and nine real tarball SDK scenarios: one-row producer pages, composed budget continuations, empty trackers, uniqueness and serialized delivered focus counts. The count-only regression retains its aggregate despite hidden items/count_only and compacted warnings; query/scope changes still refuse. Final source 92cff9ef184f8b6e932afccc999b24c86f070c30: full-source producing receipt test-local-muq885vf-vje4y3 on canonical owner pm-gh1364 passes 9501 tests with zero failures and 2 Windows-only skips. Its fifteen observed metrics record all four exact 100-percent coverage gates and integer totals; summary SHA256 70cc18dc59614d3a42993046ce1f454131daa8f92f4133fb363abad0132167f0. Complete pnpm quality:static passes test-local-muq8lpre-ketrg6 on supported Node 22.21.1 with unchanged ceilings. Focused lint, four type configurations and SDK import-boundary checks pass test-local-muq6r2d8-g2xkay. Earlier failed runs remain failed without measurements. Final hosted/provider review and independent merge clearance remain pending; live telemetry and opt-in semantic dogfood are unrun."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-fgih,related,"2026-10-01T13:47:53.034Z","harness:codex","cli:update:dep",detected
   pm-gh1364,related,"2026-10-01T20:34:13.744Z","harness:codex","cli:update:dep",detected
-comments[24]:
+comments[25]:
   - created_at: "2026-10-01T09:24:20.761Z"
     author: "harness:codex"
     text: "Duplicate check: live GH-1371 search across all statuses returned zero; full live pm-fgih is closed for command-local presentation classification. This issue extends that canonical implementation to universal controls and composed cursor boundaries. GitHub issue remains external owner; local implementation only."
@@ -97,6 +99,9 @@ comments[24]:
     author: "harness:codex"
     text: "Latest review portability correction: npm manifest lookup retains Node global-folder fallback and now gives a clear npm/package.json prerequisite error with its original cause. The real npm 12 pack result is a package-keyed object, whereas npm 11 emits an array; both create the same tarball. The prior Node 26 focused failure test-local-muq6hf15-1ws6za is preserved. The fixture now selects exactly one actual tarball from its fresh destination, preserving direct Node invocation, --ignore-scripts, deadlines and the public SDK consumer. Canonical test-local-muq6pvhi-immi3p passes 56 tests and nine packed scenarios on Node 26/npm 12. The same canonical suite passes on Node 24/npm 11 in test-local-muq6qnhi-l9k6cr. Focused lint passes; all four type configurations and SDK import-boundary checks pass in related owner pm-gh1364 receipt test-local-muq6r2d8-g2xkay. Complete full-source verification is still pending."
     edited_at: "2026-10-01T23:50:40.986Z"
+  - created_at: "2026-10-02T00:31:55.556Z"
+    author: "harness:codex"
+    text: "Shared final-source full coverage is now actual passing evidence: related owner pm-gh1364 receipt test-local-muq885vf-vje4y3 on 92cff9ef184f8b6e932afccc999b24c86f070c30 records 9501 passed, zero failed and two platform skips, plus the producing four-dimension 100-percent coverage and exact integer totals. Earlier unsupported figures were withdrawn; the actual summary hash and fifteen observed measurements are recorded on that producing receipt after its gate passed. Current packed SDK tests separately pass 56 cases and nine scenarios on npm 11 and 12, preserving real serialized-cursor traversal, empty pages and delivered focus counts. Final complete static and configured reviews remain pending; older failed receipts stay failed without provisional measurements."
 files[19]:
   - path: scripts/release/agent-task-token-gate.mjs
     scope: project
@@ -333,6 +338,7 @@ test_runs[15]:
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project
+close_reason: "Composed continuation, delivered counts and real packed SDK review evidence are verified on final source."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
