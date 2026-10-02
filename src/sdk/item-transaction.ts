@@ -601,7 +601,13 @@ async function previewEntryStat(file: string): Promise<Stats> {
   throw new TypeError(`Transaction preview requires regular files and directories: ${file}`);
 }
 
-/** Hash regular-file snapshot bytes with bounded buffers and no link or pipe following. */
+/**
+ * Hash regular-file snapshot bytes in bounded streams after checking the opened
+ * descriptor. Available O_NOFOLLOW and O_NONBLOCK flags add platform guards;
+ * Windows retains entry, descriptor and snapshot checks without these POSIX
+ * flags. Trusted, stable entries and ancestors remain required because these
+ * checks do not prevent hostile concurrent path redirection before reading.
+ */
 async function previewFileDigest(file: string): Promise<Buffer> {
   const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {

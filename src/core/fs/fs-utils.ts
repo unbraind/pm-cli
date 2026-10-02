@@ -58,9 +58,12 @@ export async function readFileIfExists(
 }
 
 /**
- * Read UTF-8 bytes through a regular-file descriptor without following a final
- * link or waiting on a pipe. Callers validate path ancestors and optional-file
- * absence before opening; the descriptor check also catches entry replacement.
+ * Read UTF-8 bytes after checking that the opened descriptor is a regular file.
+ * Callers validate entries, ancestors and optional-file absence before opening.
+ * Where Node exposes O_NOFOLLOW and O_NONBLOCK, the open also requests those
+ * platform guards. Windows retains entry and descriptor checks without these
+ * POSIX flags. Entries and ancestors must be trusted and stable: these checks
+ * do not pin paths or prevent hostile concurrent redirection before a read.
  * @param targetPath Contained file whose ancestors the caller already validated.
  * @param rejectionMessage Actionable diagnostic when the opened entry is not a regular file.
  */

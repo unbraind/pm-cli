@@ -1465,14 +1465,21 @@ retaining registered item folders, explicitly configured schema files, and
 `runtime/session.json` for core focus and inherited-parent semantics. Root-layout
 trackers copy only tracker-owned files and directories, including standard and
 custom item folders and configured schema files; unrelated project content is
-excluded. Preview accepts regular
-files and directories. Interior symbolic links and special files are rejected
-without following their targets; an explicitly selected root link is resolved
-once to establish the tracker boundary. Absolute configured schema paths inside
-that resolved boundary are
+excluded. Preview accepts regular files and directories. Entry checks reject
+existing interior symbolic links and special files; an explicitly selected root
+link is resolved once to establish the tracker boundary. Absolute configured
+schema paths inside that resolved boundary are
 remapped only in the staged settings. Schema files configured outside the
 tracker fail with `transaction_preview_external_schema`; relocate them inside
 the selected tracker root before retrying.
+
+Preview requires trusted, stable directory entries and ancestors. Where Node
+exposes `O_NOFOLLOW` and `O_NONBLOCK`, descriptor opens request those POSIX guards.
+Windows retains entry checks, regular-file descriptor checks and snapshot
+comparisons without these flags. Portable Node APIs do not pin directory entries
+or ancestors, and later fingerprints cannot prevent hostile path redirection
+before a read. Use a caller-owned isolated copy when an untrusted actor can
+concurrently replace workspace paths.
 
 Durable source bytes are fingerprinted before and after copying and compared
 with the staged copy. An inconsistent copy or a file disappearing during the

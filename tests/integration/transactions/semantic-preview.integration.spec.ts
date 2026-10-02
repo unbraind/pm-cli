@@ -10,19 +10,21 @@ import { runInProcessDistCli } from "../../helpers/cliRunner.js";
 import type { PmSettings } from "../../../src/types/index.js";
 import { writeTestExtension } from "../../helpers/extensions.js";
 import { resolveExtensionMigrationStatePath } from "../../../src/sdk/extension/migrations.js";
-import { EXIT_CODE } from "../../../src/sdk/runtime-primitives.js";
+import { EXIT_CODE, setFocusedItem } from "../../../src/sdk/runtime-primitives.js";
 import { readSettings } from "../../../src/core/store/settings.js";
 import { waitForPendingFlush } from "../../../src/core/telemetry/runtime.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
-/** Snapshot durable tracker bytes, excluding derived caches and transient locks. */
+/** Snapshot durable tracker bytes, including session and telemetry state but excluding queues, caches, and locks. */
 async function durableSnapshot(root: string): Promise<Record<string, string>> {
   const bytes: Record<string, string> = {};
+  const retainedRuntimePaths = ["runtime", path.join("runtime", "session.json"), path.join("runtime", "telemetry"), path.join("runtime", "telemetry", "state.json")];
   async function visit(directory: string): Promise<void> {
     for (const entry of await readdir(directory, { withFileTypes: true })) {
       const file = path.join(directory, entry.name);
       const relative = path.relative(root, file);
-      if (["runtime", "locks", "cache", ".cache"].includes(relative.split(path.sep)[0]!)) continue;
+      const topLevel = relative.split(path.sep)[0]!;
+      if (["locks", "cache", ".cache"].includes(topLevel) || (topLevel === "runtime" && !retainedRuntimePaths.includes(relative))) continue;
       if (entry.isDirectory()) await visit(file);
       else bytes[relative] = await readFile(file, "utf8");
     }
@@ -301,7 +303,9 @@ describe("semantic transaction previews (GH-1370)", () => {
     await withTempPmPath(async (context) => {
       expect(context.runCli(["create", "task", "Completion target", "--id", "complete", "--json"]).code).toBe(0);
       expect(context.runCli(["claim", "pm-complete", "--author", "preview-agent", "--json"]).code).toBe(0);
+      await setFocusedItem(context.pmPath, "pm-complete");
       const before = await durableSnapshot(context.pmPath);
+      expect(JSON.parse(before[path.join("runtime", "session.json")] ?? "null") as unknown).toMatchObject({ focused_item: "pm-complete" });
       const base = ["item", "complete", "pm-complete", "Delivered", "--validate-close", "strict", "--author", "preview-agent", "--json"];
       const invalid = context.runCli([...base, "--transaction-id", "completion", "--dry-run"]);
       expect(invalid.code).toBe(2);
