@@ -2134,6 +2134,31 @@
       ],
       "package_version": "2026.9.29",
       "reason": "Command-scoped host settings retries and explicit replay receipt prevent cross-command collisions and callback reexecution; the optional command context is backward compatible at runtime."
+    },
+    {
+      "changes": [
+        "signature ./sdk:createSearchCursorFingerprint",
+        "signature ./sdk:PmCliErrorContext",
+        "signature ./sdk:resolveSearchPage",
+        "signature ./sdk/query:createSearchCursorFingerprint",
+        "signature ./sdk/query:resolveSearchPage"
+      ],
+      "package_version": "2026.10.1",
+      "reason": "Add optional tracker-scope inputs and transaction-operation error evidence; existing caller shapes remain valid. Add semantic preview exports."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ItemMutationPreviewValidation"
+      ],
+      "package_version": "2026.10.1",
+      "reason": "pm-gh1370 corrects the new unmerged preview receipt: already committed plans report validated false and replayed_committed_plan instead of falsely claiming fresh staged validation. No released SDK declaration is removed; clients must inspect validation state."
+    },
+    {
+      "changes": [
+        "signature ./sdk:runWithConfigurationOnlySettings"
+      ],
+      "package_version": "2026.10.1",
+      "reason": "pm-gh1370 adds an optional per-read enabled predicate to the new unmerged runWithConfigurationOnlySettings helper so actual Commander preAction parsing can release only its invocation-owned protection. Existing two-argument calls retain their behavior; no released SDK declaration changes."
     }
   ],
   "entrypoints": {
@@ -5612,7 +5637,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "createSearchCursorFingerprint",
-          "signature": "(options: { query: string; mode: SearchMode; searchOptions: SearchOptions; }) => string | calls: (options: { query: string; mode: SearchMode; searchOptions: SearchOptions; }) => string"
+          "signature": "(options: { query: string; mode: SearchMode; searchOptions: SearchOptions; pmRoot?: string; }) => string | calls: (options: { query: string; mode: SearchMode; searchOptions: SearchOptions; pmRoot?: string; }) => string"
         },
         {
           "classification": "advanced_export",
@@ -9857,6 +9882,12 @@
           "signature": "export interface ItemMetadataReadWork { enumeration_calls: number; metadata_rows: number; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ItemMutationPreviewValidation",
+          "signature": "export interface ItemMutationPreviewValidation { validated: boolean; state: \"staged_snapshot\" | \"replayed_committed_plan\"; unresolved_commit_constraints: readonly string[]; }"
+        },
+        {
           "classification": "supported",
           "kind": "type",
           "name": "ItemScalarConflictResolution",
@@ -12908,7 +12939,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { code?: string; item_id?: string; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { code?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -14273,6 +14304,12 @@
           "signature": "<T extends object>(options: T) => T | calls: <T extends object>(options: T) => T"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "previewItemMutations",
+          "signature": "(options: Pick<CommitItemMutationsOptions, \"author\" | \"mutations\" | \"pmRoot\" | \"transactionId\">) => Promise<ItemMutationPreviewValidation> | calls: (options: Pick<CommitItemMutationsOptions, \"pmRoot\" | \"transactionId\" | \"author\" | \"mutations\">) => Promise<ItemMutationPreviewValidation>"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "PreviousTerminalEvidence",
@@ -15169,6 +15206,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "refreshReadOutputDeliveredCounts",
+          "signature": "(result: Record<string, unknown>, source?: Record<string, unknown>) => void | calls: (result: Record<string, unknown>, source?: Record<string, unknown>) => void"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "refreshSearchArtifactsForMutation",
           "signature": "(pmRoot: string, itemIds: string[], options?: RefreshSearchArtifactsForMutationOptions) => Promise<SearchMutationArtifactRefreshResult> | calls: (pmRoot: string, itemIds: string[], options?: RefreshSearchArtifactsForMutationOptions) => Promise<SearchMutationArtifactRefreshResult>"
         },
@@ -15971,6 +16014,12 @@
           "signature": "export interface ReleaseResult { item: Record<string, unknown>; changed_fields?: string[]; released_by: string; previous_assignee: string | null; forced: boolean; warnings?: string[]; suggestions?: string[]; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "rememberReadOutputFocusRows",
+          "signature": "(result: Record<string, unknown>, rows: readonly Record<string, unknown>[]) => void | calls: (result: Record<string, unknown>, rows: readonly Record<string, unknown>[]) => void"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "REMIND_FLAG_CONTRACTS",
@@ -16429,6 +16478,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "resolveGlobalPmRoot",
+          "signature": "(cwd: string) => string | calls: (cwd: string) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "resolveGuideOutputFormat",
           "signature": "(options: GuideOptions, global: GlobalOptions) => GuideOutputFormat | calls: (options: GuideOptions, global: GlobalOptions) => GuideOutputFormat"
         },
@@ -16814,7 +16869,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "resolveSearchPage",
-          "signature": "(options: { sorted: SearchHit[]; query: string; mode: SearchMode; searchOptions: SearchOptions; limit: number; }) => { limited: SearchHit[]; pageExtras: { has_more?: boolean; next_cursor?: string; applied_limit: number; truncated?: true; }; } | calls: (options: { sorted: SearchHit[]; query: string; mode: SearchMode; searchOptions: SearchOptions; limit: number; }) => { limited: SearchHit[]; pageExtras: { has_more?: boolean; next_cursor?: string; applied_limit: number; truncated?: true; }; }"
+          "signature": "(options: { sorted: SearchHit[]; query: string; mode: SearchMode; searchOptions: SearchOptions; limit: number; pmRoot?: string; }) => { limited: SearchHit[]; pageExtras: { has_more?: boolean; next_cursor?: string; applied_limit: number; truncated?: true; }; } | calls: (options: { sorted: SearchHit[]; query: string; mode: SearchMode; searchOptions: SearchOptions; limit: number; pmRoot?: string; }) => { limited: SearchHit[]; pageExtras: { has_more?: boolean; next_cursor?: string; applied_limit: number; truncated?: true; }; }"
         },
         {
           "classification": "supported",
@@ -17835,6 +17890,12 @@
           "kind": "function",
           "name": "runWithAgentSessionContext",
           "signature": "<T>(context: AgentSessionContext, callback: () => T) => T | calls: <T>(context: AgentSessionContext, callback: () => T) => T"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runWithConfigurationOnlySettings",
+          "signature": "<T>(pmRoot: string, run: () => Promise<T>, isEnabled?: () => boolean) => Promise<T> | calls: <T>(pmRoot: string, run: () => Promise<T>, isEnabled?: () => boolean) => Promise<T>"
         },
         {
           "classification": "contract_data",
@@ -20073,6 +20134,12 @@
           "kind": "function",
           "name": "validateTypeOptions",
           "signature": "(typeName: string, rawTypeOptions: Record<string, string> | undefined, registry: ItemTypeRegistry) => { normalized: Record<string, string> | undefined; errors: string[]; } | calls: (typeName: string, rawTypeOptions: Record<string, string> | undefined, registry: ItemTypeRegistry) => { normalized: Record<string, string> | undefined; errors: string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "validateWorkspaceTransactionIdentity",
+          "signature": "(options: Pick<CommitWorkspaceTransactionOptions, \"author\" | \"pmRoot\" | \"transactionId\">) => Pick<CommitWorkspaceTransactionOptions, \"author\" | \"pmRoot\" | \"transactionId\"> | calls: (options: Pick<CommitWorkspaceTransactionOptions, \"pmRoot\" | \"transactionId\" | \"author\">) => Pick<CommitWorkspaceTransactionOptions, \"pmRoot\" | \"transactionId\" | \"author\">"
         },
         {
           "classification": "advanced_export",
@@ -30344,7 +30411,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "createSearchCursorFingerprint",
-          "signature": "(options: { query: string; mode: SearchMode; searchOptions: SearchOptions; }) => string | calls: (options: { query: string; mode: SearchMode; searchOptions: SearchOptions; }) => string"
+          "signature": "(options: { query: string; mode: SearchMode; searchOptions: SearchOptions; pmRoot?: string; }) => string | calls: (options: { query: string; mode: SearchMode; searchOptions: SearchOptions; pmRoot?: string; }) => string"
         },
         {
           "classification": "supported",
@@ -31220,7 +31287,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "resolveSearchPage",
-          "signature": "(options: { sorted: SearchHit[]; query: string; mode: SearchMode; searchOptions: SearchOptions; limit: number; }) => { limited: SearchHit[]; pageExtras: { has_more?: boolean; next_cursor?: string; applied_limit: number; truncated?: true; }; } | calls: (options: { sorted: SearchHit[]; query: string; mode: SearchMode; searchOptions: SearchOptions; limit: number; }) => { limited: SearchHit[]; pageExtras: { has_more?: boolean; next_cursor?: string; applied_limit: number; truncated?: true; }; }"
+          "signature": "(options: { sorted: SearchHit[]; query: string; mode: SearchMode; searchOptions: SearchOptions; limit: number; pmRoot?: string; }) => { limited: SearchHit[]; pageExtras: { has_more?: boolean; next_cursor?: string; applied_limit: number; truncated?: true; }; } | calls: (options: { sorted: SearchHit[]; query: string; mode: SearchMode; searchOptions: SearchOptions; limit: number; pmRoot?: string; }) => { limited: SearchHit[]; pageExtras: { has_more?: boolean; next_cursor?: string; applied_limit: number; truncated?: true; }; }"
         },
         {
           "classification": "supported",
@@ -35517,6 +35584,8 @@
     "tracker_root_missing",
     "tracker_root_not_directory",
     "tracker_root_unreadable",
+    "transaction_preview_external_schema",
+    "transaction_preview_snapshot_changed",
     "type_duplicate",
     "type_invalid",
     "undeclared_observation",

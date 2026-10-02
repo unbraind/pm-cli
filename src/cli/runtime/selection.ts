@@ -4,6 +4,7 @@
  */
 import { Command } from "commander";
 import { PM_RELOCATED_COMMAND_ALIASES,findPmNamespacedCommand } from "../../sdk/cli-contracts/command-aliases.js";
+import { GLOBAL_FLAG_CONTRACTS } from "../../sdk/cli-contracts/flag-contracts.js";
 import {
   EXIT_CODE,
   PmCliError
@@ -25,6 +26,30 @@ const VERSION_FLAG_TOKENS = new Set(["--version", "-V"]);
 function isStaticExtensionInventoryInvocation(invocationArgv: string[]): boolean {
   const tokens = stripGlobalBootstrapTokens(invocationArgv);
   return ["package", "packages", "extension"].includes(tokens[0] ?? "") && tokens[1] === "inventory";
+}
+
+/** Protect literal preview candidates in the item namespace until the real parser settles the selected action; host-owned global grammar also captures the tracker roots. */
+function resolveStructuredMutationPreviewInvocation(invocationArgv: string[]): { path: string | undefined } | undefined {
+  const tokens = stripGlobalBootstrapTokens(invocationArgv);
+  if (tokens[0] !== "item" || !invocationArgv.includes("--dry-run")) return undefined;
+  const probe = new Command().configureOutput({ writeErr: () => {} }).exitOverride();
+  const registered = new Set<string>();
+  for (const contract of GLOBAL_FLAG_CONTRACTS) {
+    for (const flag of [contract.flag, contract.short, ...(contract.aliases ?? [])]) {
+      if (flag === undefined || registered.has(flag)) continue;
+      registered.add(flag);
+      const takesValue = contract.value_name !== undefined || contract.flag === "--pm-path";
+      probe.option(`${flag}${takesValue ? " <value>" : ""}`);
+    }
+  }
+  try {
+    probe.parseOptions(invocationArgv);
+  } catch {
+    // The invocation's real parser owns invalid-input diagnostics. Preserve
+    // preview protection when a later malformed option follows --dry-run.
+  }
+  const options = probe.opts<{ pmPath?: string; path?: string }>();
+  return { path: options.pmPath ?? options.path };
 }
 
 const SETUP_COMMAND_NAMES = new Set(["config", "extension", "init", "install", "package", "packages", "templates", "upgrade"]);
@@ -308,4 +333,4 @@ function enforceExplicitRetryForFlagTypos(bootstrapInvocation: ReturnType<typeof
   );
 }
 
-export { CoreCommandRegistrationSelection,LIST_QUERY_COMMAND_NAMES,enforceExplicitRetryForFlagTypos,invocationRequestsVersion,isStaticExtensionInventoryInvocation,resolveCoreCommandRegistrationSelection,shouldAttachRichHelpTextForInvocation,shouldRegisterDynamicExtensionPaths,shouldRegisterRuntimeSchemaFlags };
+export { CoreCommandRegistrationSelection,LIST_QUERY_COMMAND_NAMES,enforceExplicitRetryForFlagTypos,invocationRequestsVersion,isStaticExtensionInventoryInvocation,resolveStructuredMutationPreviewInvocation,resolveCoreCommandRegistrationSelection,shouldAttachRichHelpTextForInvocation,shouldRegisterDynamicExtensionPaths,shouldRegisterRuntimeSchemaFlags };

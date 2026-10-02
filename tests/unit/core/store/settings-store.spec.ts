@@ -1,7 +1,8 @@
 import fs from "node:fs/promises";
+import { syncBuiltinESMExports } from "node:module";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../../../src/core/extensions/index.js";
 import type { ExtensionHookRegistry } from "../../../../src/core/extensions/loader.js";
 import { normalizeRuntimeSchemaSettings } from "../../../../src/core/schema/runtime-schema.js";
@@ -17,6 +18,7 @@ import {
 } from "../../../../src/core/store/settings-read-cache.js";
 import {
   readSettings,
+  runWithConfigurationOnlySettings,
   readSettingsWithMetadata,
   resolveGovernanceKnobs,
   serializeSettings,
@@ -83,6 +85,169 @@ describe("core/store/settings", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
     clearSettingsReadCache();
+  });
+
+  it.each(["missing-root", "missing-settings", "invalid-json", "invalid-schema", "legacy", "valid"])("preserves base-settings diagnostics in configuration-only bootstrap: %s", async (mode) => {
+    await withTempPmRoot(async (pmRoot) => {
+      const settingsPath = getSettingsPath(pmRoot);
+      if (mode !== "missing-root") await fs.mkdir(pmRoot, { recursive: true });
+      if (mode === "invalid-json") await fs.writeFile(settingsPath, "{");
+      else if (mode === "invalid-schema") await fs.writeFile(settingsPath, "{}");
+      else if (["legacy", "valid"].includes(mode)) await writeLegacySettings(pmRoot, mode === "legacy" ? { item_format: "json_markdown" } : {});
+      const result = await runWithConfigurationOnlySettings(pmRoot, () => readSettingsWithMetadata(pmRoot));
+      const warnings: Record<string, string> = { "invalid-json": "settings_read_invalid_json", "invalid-schema": "settings_read_invalid_schema", legacy: "settings_item_format_legacy_json_markdown_coerced_to_toon" };
+      expect(result.warnings).toEqual(warnings[mode] ? [warnings[mode]] : []);
+      expect(result.settings.author_default).toBe(["legacy", "valid"].includes(mode) ? "legacy" : SETTINGS_DEFAULTS.author_default);
+      expect(result.metadata.has_explicit_item_format).toBe(mode === "legacy");
+      expect(getSettingsReadCacheEntry(pmRoot)).toBeUndefined();
+      await expect(fs.stat(path.join(pmRoot, "schema"))).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  it("isolates configuration-only hydration, hooks and caches by root and restores them after errors", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      await writeLegacySettings(pmRoot);
+      await readSettings(pmRoot);
+      const statusesPath = path.join(pmRoot, "schema", "statuses.json");
+      await fs.writeFile(statusesPath, JSON.stringify({ statuses: [...DEFAULT_STATUS_DEFINITIONS, { id: "reviewed", roles: ["active"] }] }));
+      expect((await readSettings(pmRoot)).schema.statuses.map((status) => status.id)).toContain("reviewed");
+      const originalSettings = await fs.readFile(getSettingsPath(pmRoot), "utf8");
+      const otherRoot = path.join(path.dirname(pmRoot), "staged-tracker");
+      await writeLegacySettings(otherRoot);
+      const reads: string[] = [];
+      setActiveExtensionHooks({ beforeCommand: [], afterCommand: [], onRead: [{ layer: "project", name: "read-root", run: (context) => { reads.push(context.path); } }], onWrite: [], onIndex: [] });
+      const [base, other] = await Promise.all([
+        runWithConfigurationOnlySettings(pmRoot, async () => {
+          const settings = await readSettings(pmRoot);
+          expect((await readSettings(otherRoot)).author_default).toBe("legacy");
+          return settings;
+        }),
+        readSettings(otherRoot),
+      ]);
+      expect(base.schema.statuses.map((status) => status.id)).not.toContain("reviewed");
+      expect(other.schema.statuses.length).toBeGreaterThan(0);
+      expect(reads).not.toContain(getSettingsPath(pmRoot));
+      expect(await fs.readFile(getSettingsPath(pmRoot), "utf8")).toBe(originalSettings);
+      expect(await fs.stat(path.join(otherRoot, "schema", "statuses.json"))).toBeDefined();
+      await expect(runWithConfigurationOnlySettings(pmRoot, async () => { await readSettings(pmRoot); throw new Error("Preview callback failed"); })).rejects.toThrow("Preview callback failed");
+      expect((await readSettings(pmRoot)).schema.statuses.map((status) => status.id)).toContain("reviewed");
+      expect(reads).toContain(getSettingsPath(pmRoot));
+    });
+  });
+
+  it.skipIf(process.platform === "win32")("keeps a selected tracker link and its resolved alias in the same configuration-only scope", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      await writeLegacySettings(pmRoot);
+      const selected = path.join(path.dirname(pmRoot), "selected-tracker");
+      await fs.symlink(pmRoot, selected);
+      await runWithConfigurationOnlySettings(selected, async () => {
+        expect((await readSettings(selected)).author_default).toBe("legacy");
+        expect((await readSettings(await fs.realpath(selected))).author_default).toBe("legacy");
+      });
+      await expect(fs.stat(path.join(pmRoot, "schema"))).rejects.toMatchObject({ code: "ENOENT" });
+      await readSettings(selected);
+      expect(await fs.stat(path.join(pmRoot, "schema", "statuses.json"))).toBeDefined();
+    });
+  });
+
+  it("reconciles invocation policies without releasing inherited or concurrent source protection", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      await writeLegacySettings(pmRoot);
+      const parentRoot = path.join(path.dirname(pmRoot), "parent-policy");
+      await writeLegacySettings(parentRoot);
+      let enabled = true;
+      await runWithConfigurationOnlySettings(parentRoot, async () => {
+        await Promise.all([
+          runWithConfigurationOnlySettings(pmRoot, async () => {
+            await readSettings(pmRoot);
+            await expect(fs.stat(path.join(pmRoot, "schema"))).rejects.toMatchObject({ code: "ENOENT" });
+            enabled = false;
+            await readSettings(pmRoot);
+            expect(await fs.stat(path.join(pmRoot, "schema", "statuses.json"))).toBeDefined();
+            await runWithConfigurationOnlySettings(parentRoot, () => readSettings(parentRoot), () => false);
+            await expect(fs.stat(path.join(parentRoot, "schema"))).rejects.toMatchObject({ code: "ENOENT" });
+          }, () => enabled),
+          runWithConfigurationOnlySettings(parentRoot, async () => {
+            await readSettings(parentRoot);
+            await expect(fs.stat(path.join(parentRoot, "schema"))).rejects.toMatchObject({ code: "ENOENT" });
+          }),
+        ]);
+      });
+      await readSettings(parentRoot);
+      expect(await fs.stat(path.join(parentRoot, "schema", "statuses.json"))).toBeDefined();
+    });
+  });
+
+  it("refuses a settings directory before configuration-only reads can open it", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      await fs.mkdir(getSettingsPath(pmRoot), { recursive: true });
+      await expect(runWithConfigurationOnlySettings(pmRoot, () => readSettings(pmRoot))).rejects.toThrow("Transaction preview requires regular files and directories");
+      expect((await fs.stat(getSettingsPath(pmRoot))).isDirectory()).toBe(true);
+    });
+  });
+
+  for (const change of ["removed-file", "replaced-ancestor", "denied-file", "linked-file"] as const) {
+    it.skipIf((change === "denied-file" && (process.platform === "win32" || process.getuid?.() === 0)) || (change === "linked-file" && process.platform === "win32"))(`handles actual settings changes between configuration-only entry validation and open: ${change}`, async () => {
+      await withTempPmRoot(async (pmRoot) => {
+        await writeLegacySettings(pmRoot);
+        const settingsPath = getSettingsPath(pmRoot);
+        const original = await fs.readFile(settingsPath, "utf8");
+        const movedRoot = `${pmRoot}-moved`;
+        const nativeLstat = fs.lstat;
+        let changed = false;
+        const entryRead = vi.spyOn(fs, "lstat").mockImplementation(async (file, options) => {
+          const entry = await nativeLstat(file, options);
+          if (file === settingsPath && !changed) {
+            expect(entry.isFile()).toBe(true);
+            changed = true;
+            if (change === "removed-file") await fs.unlink(settingsPath);
+            else if (change === "replaced-ancestor") {
+              await fs.rename(pmRoot, movedRoot);
+              await fs.writeFile(pmRoot, "Replaced tracker ancestor");
+            } else if (change === "denied-file") await fs.chmod(settingsPath, 0);
+            else {
+              await fs.rename(settingsPath, `${settingsPath}.retained`);
+              await fs.symlink(`${settingsPath}.retained`, settingsPath);
+            }
+          }
+          return entry;
+        });
+        syncBuiltinESMExports();
+        try {
+          const read = runWithConfigurationOnlySettings(pmRoot, () => readSettingsWithMetadata(pmRoot));
+          if (change === "removed-file" || change === "replaced-ancestor") {
+            expect(await read).toEqual({ settings: SETTINGS_DEFAULTS, metadata: { has_explicit_item_format: false }, warnings: [] });
+          } else await expect(read).rejects.toMatchObject({ code: change === "denied-file" ? "EACCES" : "ELOOP" });
+          expect(changed).toBe(true);
+          expect(getSettingsReadCacheEntry(pmRoot)).toBeUndefined();
+        } finally {
+          entryRead.mockRestore();
+          syncBuiltinESMExports();
+          if (change === "denied-file") await fs.chmod(settingsPath, 0o600);
+        }
+        if (change === "removed-file") await expect(fs.lstat(settingsPath)).rejects.toMatchObject({ code: "ENOENT" });
+        else expect(await fs.readFile(getSettingsPath(change === "replaced-ancestor" ? movedRoot : pmRoot), "utf8")).toBe(original);
+        if (change === "replaced-ancestor") expect((await fs.lstat(pmRoot)).isFile()).toBe(true);
+        if (change === "linked-file") expect((await fs.lstat(settingsPath)).isSymbolicLink()).toBe(true);
+        await expect(fs.stat(path.join(pmRoot, "schema"))).rejects.toMatchObject({ code: expect.stringMatching(/^(?:ENOENT|ENOTDIR)$/u) });
+      });
+    });
+  }
+
+  it("preserves native malformed-root errors in configuration-only reads", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      await expect(runWithConfigurationOnlySettings(`${pmRoot}\0`, () => readSettings(pmRoot + "\0"))).rejects.toMatchObject({ code: "ERR_INVALID_ARG_VALUE" });
+    });
+  });
+
+  it.skipIf(process.platform === "win32" || process.getuid?.() === 0).each(["root", "settings"])("preserves native denied %s access without source repairs", async (target) => {
+    await withTempPmRoot(async (pmRoot) => {
+      await writeLegacySettings(pmRoot);
+      const denied = target === "root" ? path.dirname(pmRoot) : pmRoot;
+      await fs.chmod(denied, 0);
+      try { await expect(runWithConfigurationOnlySettings(pmRoot, () => readSettings(pmRoot))).rejects.toMatchObject({ code: "EACCES" }); }
+      finally { await fs.chmod(denied, 0o700); }
+    });
   });
 
   it("returns cloned defaults when settings file is missing", async () => {

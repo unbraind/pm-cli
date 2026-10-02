@@ -4,6 +4,7 @@
  * Provides filesystem helpers for Fs Utils.
  */
 import * as fs from "node:fs/promises";
+import { constants } from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 
@@ -54,6 +55,24 @@ export async function readFileIfExists(
     }
     throw error;
   }
+}
+
+/**
+ * Read UTF-8 bytes after checking that the opened descriptor is a regular file.
+ * Callers validate entries, ancestors and optional-file absence before opening.
+ * Where Node exposes O_NOFOLLOW and O_NONBLOCK, the open also requests those
+ * platform guards. Windows retains entry and descriptor checks without these
+ * POSIX flags. Entries and ancestors must be trusted and stable: these checks
+ * do not pin paths or prevent hostile concurrent redirection before a read.
+ * @param targetPath Contained file whose ancestors the caller already validated.
+ * @param rejectionMessage Actionable diagnostic when the opened entry is not a regular file.
+ */
+export async function readRegularFile(targetPath: string, rejectionMessage: string): Promise<string> {
+  const handle = await fs.open(targetPath, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  try {
+    if (!(await handle.stat()).isFile()) throw new TypeError(rejectionMessage);
+    return await handle.readFile("utf8");
+  } finally { await handle.close(); }
 }
 
 /** Implements write file atomic for the public runtime surface of this module. */

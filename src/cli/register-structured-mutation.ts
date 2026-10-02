@@ -16,6 +16,7 @@ import {
   buildItemCompletionMutations,
   commitItemCompletion,
   commitItemMutations,
+  previewItemMutations,
 } from "../sdk/item-transaction.js";
 import { runReopen } from "../sdk/lifecycle/reopen.js";
 import {
@@ -55,6 +56,7 @@ async function runItemReopenAction(
   printResult(result, globalOptions);
 }
 
+/** Preview or commit the ordered item plan through the shared lifecycle coordinator. */
 async function runItemMutateAction(
   options: Record<string, unknown>,
   command: Command,
@@ -88,11 +90,17 @@ async function runItemMutateAction(
   });
   const { mutations, references } = resolved;
   const controls = parseAtomicMutationControls(options);
+  const author = resolveAuthor(
+    typeof options.author === "string" ? options.author : globalOptions.author,
+    settings.author_default,
+  );
   if (options.dryRun === true) {
+    const validation = await previewItemMutations({ pmRoot, transactionId, author, mutations });
     printResult(
       {
         transaction_id: transactionId,
         dry_run: true,
+        validation,
         mutation_count: mutations.length,
         mutations,
         references,
@@ -104,12 +112,7 @@ async function runItemMutateAction(
   const result = await commitItemMutations({
     pmRoot,
     transactionId,
-    author: resolveAuthor(
-      typeof options.author === "string"
-        ? options.author
-        : globalOptions.author,
-      settings.author_default,
-    ),
+    author,
     mutations,
     ...controls,
   });
@@ -132,6 +135,7 @@ function resolveCompletionReason(
   return typeof optionReason === "string" ? optionReason.trim() : "";
 }
 
+/** Compose completion evidence, closure and release before previewing or committing the plan. */
 async function runItemCompleteAction(
   id: string,
   positionalReason: string | undefined,
@@ -196,12 +200,19 @@ async function runItemCompleteAction(
     ...(Object.keys(closeOptions).length === 0 ? {} : { closeOptions }),
     ...(force ? { releaseOptions: { force: true } } : {}),
   };
+  const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+  const author = resolveAuthor(
+    typeof options.author === "string" ? options.author : globalOptions.author,
+    (await readSettings(pmRoot)).author_default,
+  );
   if (options.dryRun === true) {
     const mutations = buildItemCompletionMutations(completion);
+    const validation = await previewItemMutations({ pmRoot, transactionId, author, mutations });
     printResult(
       {
         transaction_id: transactionId,
         dry_run: true,
+        validation,
         mutation_count: mutations.length,
         mutations,
       },
@@ -209,16 +220,10 @@ async function runItemCompleteAction(
     );
     return;
   }
-  const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
   const result = await commitItemCompletion({
     pmRoot,
     transactionId,
-    author: resolveAuthor(
-      typeof options.author === "string"
-        ? options.author
-        : globalOptions.author,
-      (await readSettings(pmRoot)).author_default,
-    ),
+    author,
     ...completion,
     lockTtlSeconds,
     lockWaitMs,

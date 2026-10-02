@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   stdin: "" as string | undefined,
   commitItemCompletion: vi.fn(),
   commitItemMutations: vi.fn(),
+  previewItemMutations: vi.fn(),
   runReopen: vi.fn(),
   runCreate: vi.fn(),
   runUpdate: vi.fn(),
@@ -33,6 +34,7 @@ vi.mock("../../../src/sdk/item-transaction.js", async (importOriginal) => {
     ...actual,
     commitItemCompletion: mocks.commitItemCompletion,
     commitItemMutations: mocks.commitItemMutations,
+    previewItemMutations: mocks.previewItemMutations,
   };
 });
 
@@ -66,6 +68,7 @@ describe("structured mutation command registration", () => {
     vi.clearAllMocks();
     vi.stubEnv("PM_AUTHOR", "");
     mocks.stdin = "";
+    mocks.previewItemMutations.mockResolvedValue({ validated: true });
     mocks.runCreate.mockResolvedValue({ item: { id: "pm-created" } });
     mocks.runReopen.mockResolvedValue({
       item: { id: "pm-reopened", status: "open" },
@@ -342,9 +345,10 @@ describe("structured mutation command registration", () => {
     registerStructuredMutationCommands(dryRunProgram);
     mocks.stdin = JSON.stringify(mutations);
     await dryRunProgram.parseAsync(
-      ["item", "mutate", "--transaction-id", " batch ", "--dry-run"],
+      ["item", "mutate", "--transaction-id", " batch ", "--dry-run", "--author", "preview-agent"],
       { from: "user" },
     );
+    expect(mocks.previewItemMutations).toHaveBeenCalledWith(expect.objectContaining({ author: "preview-agent" }));
     expect(mocks.commitItemMutations).not.toHaveBeenCalled();
 
     const commitProgram = programWithGlobals();
@@ -451,12 +455,15 @@ describe("structured mutation command registration", () => {
         "All gates passed",
         "--transaction-id",
         "complete-dry",
+        "--author",
+        "completion-preview-agent",
         "--comment",
         "text=Verified",
         "--dry-run",
       ],
       { from: "user" },
     );
+    expect(mocks.previewItemMutations).toHaveBeenCalledWith(expect.objectContaining({ author: "completion-preview-agent" }));
     expect(mocks.commitItemCompletion).not.toHaveBeenCalled();
 
     const commitProgram = programWithGlobals();

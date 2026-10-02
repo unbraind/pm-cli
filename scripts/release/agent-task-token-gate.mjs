@@ -4,7 +4,7 @@
  * ratchets output cost, envelope conformance, and executable recovery.
  */
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -371,19 +371,24 @@ export function assertAdvertisedAgentTaskRecovery(refusal, step) {
   }
 }
 
-/** Replay one complete journey in independent trackers and sum actual emitted bytes including retries. */
-function measureTask(baselineRoot, accountedRoot, task) {
+/** Capture independent baseline steps and stop immediately on an exit or payload mismatch. */
+function captureTaskReplays(pmRoot, tasks) {
+  return tasks.map((task) => task.steps.map((step) => {
+    const replay = runCli(pmRoot, ["--json", ...step.args]);
+    if (replay.status !== step.expected_exit_code) fail(`Agent-task transcript step ${step.id} baseline exit mismatch: baseline=${replay.status}, expected=${step.expected_exit_code}`);
+    validateExpectedOutput(parseJsonOutput(replay, step), step);
+    return replay;
+  }));
+}
+
+/** Compare complete independent replays at the same scope and sum every emitted byte, including retries. */
+function measureTask(pmRoot, baselineSteps, task) {
   const measuredSteps = [];
   const payloads = new Map();
-  for (const step of task.steps) {
+  for (const [index, step] of task.steps.entries()) {
     const measured = validateAgentTaskTokenInvocation(
-      runCli(baselineRoot, ["--json", ...step.args]),
-      runCli(
-        accountedRoot,
-        ["--json", "--token-accounting", ...step.args],
-      ),
-      step,
-      { baseline: baselineRoot, accounted: accountedRoot },
+      baselineSteps[index], runCli(pmRoot, ["--json", "--token-accounting", ...step.args]), step,
+      { baseline: pmRoot, accounted: pmRoot },
     );
     if (step.recovery_for !== undefined) {
       assertAdvertisedAgentTaskRecovery(payloads.get(step.recovery_for), step);
@@ -765,16 +770,11 @@ export async function main(argv = process.argv.slice(2)) {
   const transcriptSource = readFileSync(TRANSCRIPT_PATH, "utf8");
   const transcriptDocument = JSON.parse(transcriptSource);
   const corpus = parsePmAgentTaskTranscriptCorpus(transcriptDocument);
-  const baselineWorkspace = mkdtempSync(
-    path.join(tmpdir(), "pm-agent-task-baseline-"),
-  );
-  const accountedWorkspace = mkdtempSync(
-    path.join(tmpdir(), "pm-agent-task-accounted-"),
-  );
+  // Scope is query semantics. Re-seed complete replays at one real path so
+  // fingerprints remain comparable without changing cache ctimes mid-task.
+  const comparisonWorkspace = mkdtempSync(path.join(tmpdir(), "pm-agent-task-accounted-"));
   try {
-    const baselineFixture = await seedWorkspace(baselineWorkspace);
-    const accountedFixture = await seedWorkspace(accountedWorkspace);
-    assertMatchingAgentTaskFixtureAnchors(baselineFixture, accountedFixture);
+    const baselineFixture = await seedWorkspace(comparisonWorkspace);
     const replacements = new Map([
       ["$ANCHOR_ID", baselineFixture.anchorId],
       ["$LIFECYCLE_ID", fixtureId("agent-task-transcript-lifecycle")],
@@ -793,8 +793,13 @@ export async function main(argv = process.argv.slice(2)) {
         ),
       })),
     }));
-    const measured = tasks.map((task) =>
-      measureTask(baselineFixture.pmRoot, accountedFixture.pmRoot, task),
+    const baselineReplays = captureTaskReplays(baselineFixture.pmRoot, tasks);
+    rmSync(comparisonWorkspace, { recursive: true, force: true });
+    mkdirSync(comparisonWorkspace, { recursive: true, mode: 0o700 });
+    const accountedFixture = await seedWorkspace(comparisonWorkspace);
+    assertMatchingAgentTaskFixtureAnchors(baselineFixture, accountedFixture);
+    const measured = tasks.map((task, index) =>
+      measureTask(accountedFixture.pmRoot, baselineReplays[index], task),
     );
     const report = {
       version: BASELINE_VERSION,
@@ -820,8 +825,7 @@ export async function main(argv = process.argv.slice(2)) {
     );
     return finalizeAgentTaskTokenReport(report, flags, baselinePath);
   } finally {
-    rmSync(baselineWorkspace, { recursive: true, force: true });
-    rmSync(accountedWorkspace, { recursive: true, force: true });
+    rmSync(comparisonWorkspace, { recursive: true, force: true });
   }
 }
 

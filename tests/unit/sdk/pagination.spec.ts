@@ -46,6 +46,18 @@ describe("SDK query pagination", () => {
     ).toEqual({ futureFilter: "value" });
   });
 
+  it.each([LIST_FILTER_FLAG_CONTRACTS, SEARCH_FLAG_CONTRACTS, CONTEXT_FLAG_CONTRACTS].map((contracts) => ({ contracts })) )(
+    "excludes universal presentation controls from producer query identity",
+    ({ contracts }) => {
+      expect(selectCursorSemanticOptions({
+        tag: "matrix", path: "/selected/tracker", futureFilter: "bound",
+        outputInclude: "id,title", outputLimit: 10, outputBudget: 1500,
+        outputFormat: "json", outputCursor: "output", outputSession: "session",
+        outputRowContract: true, output_cursor: "snake", output_budget: 1600,
+      }, contracts)).toEqual({ tag: "matrix", path: "/selected/tracker", futureFilter: "bound" });
+    },
+  );
+
   it("creates stable fingerprints and resumes after the encoded id", () => {
     const first = createQueryFingerprint("list", {
       status: "open",

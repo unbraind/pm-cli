@@ -1449,6 +1449,104 @@ the same durable coordinator, restoring annotations, linked artifacts,
 lifecycle fields, and claim ownership on failure. It is the SDK primitive
 behind `pm item complete`.
 
+`previewItemMutations` validates an ordered plan with the same transaction
+coordinator and lifecycle primitives as apply, using a disposable copy of the
+tracker. Earlier staged creates, evidence updates and closures participate in
+later validation. Existing journals retain the coordinator's replay and
+plan-identity behavior. The preview coordinator writes no source item, history,
+claim, lock or journal data. Active declarative extension registrations are preserved;
+executable extension guards, hooks, service overrides, and package command
+handlers remain disabled. Package-backed `--template` create input cannot be
+semantically previewed through its package handler; expand it into explicit core
+mutation options before preview.
+
+Staging excludes derived `search` and `locks` content and unrelated runtime state,
+retaining registered item folders, explicitly configured schema files, and
+`runtime/session.json` for core focus and inherited-parent semantics. Root-layout
+trackers copy only tracker-owned files and directories, including standard and
+custom item folders and configured schema files; unrelated project content is
+excluded. Preview accepts regular files and directories. Entry checks reject
+existing interior symbolic links and special files; an explicitly selected root
+link is resolved once to establish the tracker boundary. Absolute configured
+schema paths inside that resolved boundary are
+remapped only in the staged settings. Schema files configured outside the
+tracker fail with `transaction_preview_external_schema`; relocate them inside
+the selected tracker root before retrying.
+
+Preview requires trusted, stable directory entries and ancestors. Where Node
+exposes `O_NOFOLLOW` and `O_NONBLOCK`, descriptor opens request those POSIX guards.
+Windows retains entry checks, regular-file descriptor checks and snapshot
+comparisons without these flags. Portable Node APIs do not pin directory entries
+or ancestors, and later fingerprints cannot prevent hostile path redirection
+before a read. Use a caller-owned isolated copy when an untrusted actor can
+concurrently replace workspace paths.
+
+Durable source bytes are fingerprinted before and after copying and compared
+with the staged copy. An inconsistent copy or a file disappearing during the
+scan fails with `transaction_preview_snapshot_changed` and can be retried.
+File contents are hashed in bounded streams so large history files do not
+require whole-file buffers. `PmCliError` failures from staged step inspection,
+compensation preparation and apply preserve their lifecycle classification and
+include a structured `transaction_operation` with the zero-based index,
+operation and requested target ID from the mutation plan, after any batch-local
+reference resolution. That ID need not be prefix-normalized. Native errors and
+compensation or recovery failures retain the coordinator's error semantics; if
+compensation also fails, its `AggregateError` preserves the decorated primary
+error.
+
+CLI `item mutate --dry-run`, `item complete --dry-run`, and MCP `pm_mutate`
+with `dryRun: true` share this validation. CLI structured previews use
+`runWithConfigurationOnlySettings(pmRoot, run, isEnabled?)` across bootstrap,
+command execution and error cleanup. The optional predicate defaults to enabled.
+Scoped settings reads validate `settings.json` and
+merge inline configuration with defaults, without loading or scaffolding optional
+schema files, running settings-read hooks, or consulting or populating hydrated
+settings caches. Only selected bootstrap/action tracker roots, the actual global
+tracker root, and their resolved aliases are scoped.
+
+Nested async-local scopes compose through new policy layers without modifying
+their ancestors. Matching-root reads evaluate live predicates, so returning
+`false` disables that layer while an enabled caller-owned ancestor can still
+protect the same root. Concurrent invocations keep separate policies, and scopes
+restore when the callback returns or throws. Staged and unrelated roots retain
+normal settings behavior, including schema-file hydration.
+
+CLI bootstrap conservatively protects normalized invocations in the `item`
+namespace that contain a literal `--dry-run`, before extension option contracts
+are available. These settings policies cover command registration, invocation
+base-settings reads and parser-error cleanup. The earliest root `preAction` hook
+then settles invocation-owned policies from the actual selected command path and
+effective `optsWithGlobals()` values, before host-owned consent, migration and
+telemetry preparation. The real parser owns required-option values, `--`
+boundaries, positional child selection and inherited option precedence. For
+example, an extension's required `--package-note --dry-run` consumes `--dry-run`
+as its value. Without a separate preview flag, ordinary apply disables its own
+policy layers and resumes normal source/global settings hydration, consent,
+identity initialization and migration preparation. Explicit caller-owned layers
+remain effective. Genuine previews remain scoped when extension options are
+present.
+Structured CLI previews skip host-owned extension
+migration execution, first-use telemetry consent persistence and installation-ID
+initialization. Pending migration effects on a later commit remain unvalidated.
+Existing consented telemetry with a persisted identity still
+enters derived local queues; preview schedules no flush worker, and later normal
+commands retain delivery. Normal CLI extension discovery and activation happen
+before staged execution and retain their existing policy. CLI parser/preflight
+overrides and before/after-command hooks are also outside staged
+suppression; `--no-extensions` disables those executable paths.
+
+`ItemMutationPreviewValidation`
+reports `validated: true, state: "staged_snapshot"` when the coordinator
+executes the staged plan. An already committed journal instead returns
+`validated: false, state: "replayed_committed_plan"`, matching idempotent apply
+without freshly executing or validating the supplied lifecycle steps. Both
+results disclose
+`unresolved_commit_constraints: ["concurrent_tracker_changes",
+"extension_mutation_guards_and_hooks"]`. Newly staged validation proves core
+semantic validity at that snapshot; commit still checks current state and runs
+extension guards and hooks. Preview cost is proportional to the tracker data
+staged, rather than unrelated root-layout project content.
+
 `itemDocumentToMutationOptions` is the companion full-document adapter. It
 accepts either a direct `ItemDocument` or the envelope returned by
 `pm get <id> --json`, strips read-only metadata, maps canonical snake-case item

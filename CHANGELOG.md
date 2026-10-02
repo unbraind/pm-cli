@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1370: validate transaction previews against staged lifecycle state ([pm-gh1370](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1370.toon))
+- GH-1371: compose output budget and producer pagination ([pm-gh1371](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1371.toon))
+- GH-1364: preserve tracker scope and valid projection in recovery ([pm-gh1364](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1364.toon))
+
 ## 2026.10.1 - 2026-10-01
 
 ### Fixed

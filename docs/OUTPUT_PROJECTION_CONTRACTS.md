@@ -244,6 +244,24 @@ Explicit overrides below 256 tokens are rejected because the minimum
 machine-readable receipt cannot fit; malformed or absent overrides retain the
 declared intent budget.
 
+Projection refusals repair the original CLI invocation: tracker selection,
+operands, output encoding, filters and unrelated controls survive the retry.
+Unknown field selectors are removed while valid requested selectors remain.
+Full/projection conflicts retain the selected full or brief mode and remove the
+conflicting projection and intent controls. If that correction cannot be
+constructed safely, the error does not advertise an automatic retry.
+Tracked by [pm-gh1364](../.agents/pm/issues/pm-gh1364.toon).
+
+For a budget-compacted producer page, follow
+`output_budget_truncation.recovery.cursor` with `--output-cursor`, keeping the
+original arguments and any `--after` value. Once that cursor is absent, use the
+producer `next_cursor` with `--after` and remove `--output-cursor`. Universal
+output shaping and continuation controls do not change producer query identity;
+actual filter and scope changes still invalidate its cursor. Emitted `count`
+and `summary.returned_focus` describe delivered rows; matching-population totals
+remain separate, including explicit count-only aggregates. Context hierarchy companions may repeat while continuing a
+focus collection. Tracked by [pm-gh1371](../.agents/pm/issues/pm-gh1371.toon).
+
 The first cursor page carries the complete projection, filtering, sorting,
 completeness, row, and omission contracts. Continuation pages replace those
 chain-invariant blocks with `continuation_contract`, which carries the cursor's
@@ -380,3 +398,12 @@ key continue to receive the same rows.
 Dependency token accounting includes the projection declaration and derived
 receipt. Reported `usedTokens` and truncation estimates therefore describe the
 final serialized result, not a pre-receipt intermediate.
+
+When context field selection hides focus roles or blocker flags, optional
+`summary.focus_row_states` strings retain those classifications across JSON
+transport. Each character corresponds to a delivered record in its named focus
+section: `i`/`I` means in progress, `o`/`O` means open; uppercase means blocked.
+Continuation and compaction slice these receipts with the rows. Self-describing
+focus rows need no extra receipt. Semantic receipts are preserved during
+explanatory-string compaction, and corrupt alphabet or row-count mismatches are
+rejected.

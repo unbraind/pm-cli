@@ -4,6 +4,7 @@
  * Declares and applies one output-bounding vocabulary to every built-in read
  * surface without coupling package authors to command-specific option names.
  */
+import { READ_OUTPUT_DIMENSION_FLAGS, READ_OUTPUT_COMPOSITION_FLAGS } from "./read-output/options.js";
 import { resolvePmHistoryOperation } from "./cli-contracts/command-aliases.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -29,6 +30,7 @@ import {
   readOutputContinuationRowCollections,
   readOutputRowPaths,
   readOutputRowCollections,
+  refreshReadOutputDeliveredCounts,
 } from "./read-output-rows.js";
 import {
   applyReadOutputContinuation,
@@ -351,12 +353,7 @@ const READ_OUTPUT_PRECEDENCE = [
   "default",
 ] as const;
 
-const CANONICAL_OPTIONS: Record<PmReadOutputDimension, string> = {
-  include: "--output-include",
-  amount: "--output-limit",
-  cost: "--output-budget",
-  encoding: "--output-format",
-};
+const CANONICAL_OPTIONS: Record<PmReadOutputDimension, string> = READ_OUTPUT_DIMENSION_FLAGS;
 
 type PmReadOutputOptionsWithProvenance = Record<string, unknown> & {
   [READ_OUTPUT_INVOCATION_PROVENANCE]?: PmReadOutputInvocationProvenance;
@@ -368,11 +365,7 @@ export const PM_READ_OUTPUT_OPTION_FLAGS: readonly string[] = Object.freeze(
 );
 
 /** Canonical control that composes the four per-call dimensions across reads. */
-export const PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS = Object.freeze([
-  "--output-session",
-  "--output-cursor",
-  "--output-row-contract",
-] as const);
+export const PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS = READ_OUTPUT_COMPOSITION_FLAGS;
 
 const LEGACY_FLAGS_BY_COMMAND: Readonly<
   Record<PmReadOutputSurface, Partial<Record<PmReadOutputDimension, string[]>>>
@@ -1525,6 +1518,7 @@ function projectReadOutputRows(
   if (resolved.command === "assurance") {
     projected = prioritizeAssuranceAssertions(projected);
   }
+  refreshReadOutputDeliveredCounts(projected, result);
   projected = applyReadOutputContinuation(projected, resolved.command, cursor);
   if (resolved.command === "history" && cursor) {
     const historyRowKeys = ["compact_history", "provenance_history", "history", "diff"];
@@ -1548,9 +1542,13 @@ function projectReadOutputRows(
     }
     projected.count = Object.keys(projected[cursor.path] as object).length;
   }
+  const continuationSource = result.count_only === true
+    ? { ...projected, count_only: true, count: result.count }
+    : projected;
   if (resolved.amount?.source === "canonical") {
     projected = applyAmountBound(projected, resolved.amount.value);
   }
+  refreshReadOutputDeliveredCounts(projected, continuationSource);
   return session === undefined
     ? projected
     : applyReadOutputSessionReferences(projected, session);
@@ -1901,6 +1899,8 @@ function captureReadOutputContinuationState(
 /** Recompact the rendered envelope after attaching disclosure, cursor, and session metadata while retaining nonpassing assurance rows. */
 function compactReadOutputProjection(
   projected: Record<string, unknown>,
+  source: Record<string, unknown>,
+  countOnly: boolean,
   resolved: PmResolvedReadOutputDimensions,
   receipt: PmReadOutputReceipt,
   bindingBudget: {
@@ -1912,6 +1912,7 @@ function compactReadOutputProjection(
   measuredResultTokens: number,
   format?: "json" | "toon",
 ): Record<string, unknown> {
+  const deliveredSource = { ...source, count_only: countOnly };
   const assuranceMinimumRows =
     resolved.command === "assurance" && Array.isArray(projected.assertions)
       ? projected.assertions.filter(
@@ -1938,6 +1939,7 @@ function compactReadOutputProjection(
     minimumRowsByPath,
     format,
     (compacted) => {
+      refreshReadOutputDeliveredCounts(compacted, deliveredSource);
       const continuationCursorRebased = rebaseBudgetCompactedCursor(
         compacted,
         continuationState.originalItemCount,
@@ -2044,6 +2046,8 @@ export function applyReadOutputDimensions<
     if (receipt.estimated_tokens > bindingBudget.tokens) {
       projected = compactReadOutputProjection(
         projected,
+        projected,
+        continuationReadyResult.count_only === true,
         resolved,
         receipt,
         bindingBudget,

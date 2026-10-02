@@ -90,8 +90,6 @@ export function listCoreClosedDomainContracts(): PmClosedDomainContract[] {
         command,
         "--fields",
         "id,title,status",
-        "--limit",
-        "10",
       ],
       error_code: "unknown_field_projection" as const,
     }),

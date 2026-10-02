@@ -13,6 +13,8 @@ import {
   SETTINGS_DEFAULTS,
 } from "../../../../src/core/shared/constants.js";
 import { serializeItemDocument } from "../../../../src/core/item/item-format.js";
+import { encodeQueryCursor } from "../../../../src/sdk/pagination.js";
+import { createSearchCursorFingerprint } from "../../../../src/sdk/query/search-pagination.js";
 import { runSearch } from "../../../../src/cli/commands/query/search.js";
 import { readJsonFixture } from "../../../helpers/fixtures.js";
 
@@ -761,6 +763,9 @@ describe("runSearch", () => {
     );
     expect(defaultKeywordNoItems.mode).toBe("keyword");
     expect(defaultKeywordNoItems.count).toBe(0);
+    const cursor = encodeQueryCursor(createSearchCursorFingerprint({ query: "token", mode: "keyword", searchOptions: { limit: "0" }, pmRoot: "/tmp/pm-search" }), "pm-previous-page");
+    expect(await runSearch("token", { limit: "0", after: cursor }, { path: "/tmp/pm-search" })).toMatchObject({ count: 0 });
+    await expect(runSearch("different", { limit: "0", after: cursor }, { path: "/tmp/pm-search" })).rejects.toMatchObject({ context: { code: "invalid_query_cursor" } });
     readSettingsMock.mockResolvedValueOnce(openAiSemanticSettings);
     const semanticNoItems = await runSearch(
       "token",

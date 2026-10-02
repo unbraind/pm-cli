@@ -50,7 +50,7 @@ import {
   discoverPmTools,
   parsePmToolDiscoveryOptions,
 } from "../sdk/mcp/discovery.js";
-import { commitItemMutations } from "../sdk/item-transaction.js";
+import { commitItemMutations, previewItemMutations } from "../sdk/item-transaction.js";
 import {
   isRuntimeRecord,
   markMcpMutationTransportInput,
@@ -380,9 +380,11 @@ const HANDLERS: Record<string, ToolHandler> = {
     );
     const { mutations, references } = resolved;
     if (args.dryRun === true) {
+      const validation = await runWithActiveExtensions({ cwd: typeof args.cwd === "string" ? args.cwd : undefined, path: pmRoot, noExtensions: args.noExtensions === true }, () => previewItemMutations({ pmRoot, transactionId, author: resolveAuthor(typeof args.author === "string" ? args.author : undefined, "unknown"), mutations }));
       return {
         transaction_id: transactionId,
         dry_run: true,
+        validation,
         mutation_count: mutations.length,
         mutations,
         references,

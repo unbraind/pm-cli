@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import childProcess from "node:child_process";
+import { syncBuiltinESMExports } from "node:module";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -19,6 +22,7 @@ const tempRoots: string[] = [];
 
 afterEach(async () => {
   vi.restoreAllMocks();
+  syncBuiltinESMExports();
   for (const root of tempRoots.splice(0))
     await rm(root, { recursive: true, force: true });
 });
@@ -1044,6 +1048,30 @@ describe("agent-task transcript token gate", () => {
     ).toThrow();
   });
 
+  it("reports actual and expected baseline exits and stops before accounted replay", async () => {
+    const original = childProcess.spawnSync;
+    let refusedBaselines = 0;
+    let accountedInvocations = 0;
+    const diagnostic = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => { throw new Error("Controlled baseline exit"); });
+    vi.spyOn(childProcess, "spawnSync").mockImplementation((...args) => {
+      const argv = Array.isArray(args[1]) ? args[1] : [];
+      if (argv.includes("--token-accounting")) accountedInvocations += 1;
+      const baselineArgs = [path.resolve("dist/cli.js"), "--json", "context", "--for", "orient", "--limit", "10"];
+      if (args[0] === process.execPath && JSON.stringify(argv) === JSON.stringify(baselineArgs)) {
+        refusedBaselines += 1;
+        return { status: 7, stdout: "", stderr: "", pid: 0, signal: null } as ReturnType<typeof original>;
+      }
+      return Reflect.apply(original, childProcess, args) as ReturnType<typeof original>;
+    });
+    syncBuiltinESMExports();
+    await expect(main()).rejects.toThrow("Controlled baseline exit");
+    expect(exit).toHaveBeenCalledExactlyOnceWith(1);
+    expect(diagnostic).toHaveBeenLastCalledWith("Agent-task transcript step context baseline exit mismatch: baseline=7, expected=0");
+    expect(refusedBaselines).toBe(1);
+    expect(accountedInvocations).toBe(0);
+  }, 60_000);
+
   it("replays every versioned task and evaluates normal and negative reports", async () => {
     const root = await mkdtemp(
       path.join(os.tmpdir(), "pm-agent-task-token-spec-"),
@@ -1052,7 +1080,10 @@ describe("agent-task transcript token gate", () => {
     const baselinePath = path.join(root, "baseline.json");
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 
+    const mkdir = vi.spyOn(fs, "mkdirSync");
+    syncBuiltinESMExports();
     const updated = await main(["--update", "--baseline", baselinePath]);
+    expect(mkdir.mock.calls.some(([directory, options]) => String(directory).includes("pm-agent-task-accounted-") && typeof options === "object" && options?.mode === 0o700)).toBe(true);
     expect(updated).toMatchObject({
       task_count: 9,
       completed_task_count: 9,

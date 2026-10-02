@@ -78,7 +78,8 @@ import {
   type SearchOptions,
   type SearchTuning
 } from "./search-contracts.js";
-import { resolveSearchPage } from "./search-pagination.js";
+import { createSearchCursorFingerprint, resolveSearchPage } from "./search-pagination.js";
+import { decodeQueryCursor } from "../pagination.js";
 import {
   buildCompactSearchFilterSummary,
   buildVerboseSearchFilters,
@@ -602,6 +603,13 @@ async function executeSemanticSearch(
   }
 }
 
+/** Validate query binding before an empty-result shortcut can bypass pagination. */
+function validateEmptySearchCursor(options: Parameters<typeof createSearchCursorFingerprint>[0]): void {
+  if (options.searchOptions.after !== undefined) {
+    decodeQueryCursor(options.searchOptions.after, createSearchCursorFingerprint(options));
+  }
+}
+
 /** Implements run search for the public runtime surface of this module. */
 export async function runSearch(
   rawQuery: string,
@@ -657,6 +665,7 @@ export async function runSearch(
     (corpus.filteredDocuments.length === 0 ||
       (prepared.limit === 0 && !prepared.countOnly))
   ) {
+    validateEmptySearchCursor({ query: prepared.query, mode: runtime.effectiveMode, searchOptions: prepared.options, pmRoot: runtime.pmRoot });
     return withSearchWorkspaceMemory(
       buildEmptySearchResultFromContext(
         { ...responseBase, effectiveMode: runtime.effectiveMode },
@@ -684,6 +693,7 @@ export async function runSearch(
     (corpus.filteredDocuments.length === 0 ||
       (prepared.limit === 0 && !prepared.countOnly))
   ) {
+    validateEmptySearchCursor({ query: prepared.query, mode: modeResult.effectiveMode, searchOptions: prepared.options, pmRoot: runtime.pmRoot });
     return withSearchWorkspaceMemory(
       buildEmptySearchResultFromContext(
         { ...responseBase, effectiveMode: modeResult.effectiveMode },
@@ -699,6 +709,7 @@ export async function runSearch(
   const sorted = sortHits(thresholded, runtime.statusRegistry);
   const total = sorted.length;
   const page = resolveSearchPage({
+    pmRoot: runtime.pmRoot,
     sorted,
     query: prepared.query,
     mode: modeResult.effectiveMode,

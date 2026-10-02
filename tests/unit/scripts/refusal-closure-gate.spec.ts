@@ -63,6 +63,20 @@ function createSuccessfulOptions(errorEnvelope = {}) {
 }
 
 describe("executable refusal closure gate", () => {
+  it("requires projection retries to preserve explicit scope and executes their exact argv", () => {
+    const contract = { ...SAMPLE_CONTRACT, error_code: "unknown_field_projection", refusal_args: ["get", "pm-domain", "--fields", "typo"], suggested_retry_args: ["get", "pm-domain", "--fields", "id"] };
+    const tracker = path.join("/tmp/pm-refusal-unit", "project");
+    const corrected = ["--pm-path", tracker, ...contract.suggested_retry_args, "--json"];
+    for (const retry of [corrected, contract.suggested_retry_args]) {
+      const options = createSuccessfulOptions({ code: contract.error_code, recovery: { allowed_values: contract.allowed_values, suggested_retry: "pm get pm-domain --fields id", suggested_retry_args: retry } });
+      const spawn = vi.fn(options.spawn);
+      const result = verifyExecutableRefusalClosure({ ...options, probes: [contract], spawn });
+      expect(result.ok).toBe(retry === corrected);
+      expect(spawn.mock.calls[2]?.[1]).toEqual(["dist/cli.js", "--pm-path", tracker, ...contract.refusal_args, "--json"]);
+      expect(spawn.mock.calls[3]?.[1]).toEqual(["dist/cli.js", ...retry]);
+    }
+  });
+
   it("rejects curated-only discovery and malformed unknown-command guidance", () => {
     expect(verifyUnknownCommandDiscovery(undefined, spawnSync, process.env, true)).toMatchObject({
       ok: false, findings: [expect.objectContaining({ code: "incomplete_command_discovery" })],

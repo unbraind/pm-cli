@@ -90,7 +90,12 @@ export function sliceReadOutputRowCollection(
   const replacement = Array.isArray(collection.value)
     ? collection.value.slice(offset)
     : Object.fromEntries(Object.entries(collection.value).slice(offset));
-  return replaceValueAtPath(result, rowPath, replacement);
+  const sliced = replaceValueAtPath(result, rowPath, replacement);
+  if (isRecord(sliced.summary) && isRecord(sliced.summary.focus_row_states) && typeof sliced.summary.focus_row_states[rowPath] === "string") {
+    sliced.summary = { ...sliced.summary, focus_row_states: { ...sliced.summary.focus_row_states, [rowPath]: sliced.summary.focus_row_states[rowPath].slice(offset) } };
+  }
+  refreshReadOutputDeliveredCounts(sliced);
+  return sliced;
 }
 
 /** Resolve declared row paths, falling back to top-level array properties. */
@@ -236,4 +241,84 @@ export function boundReadOutputRows(
     projected = replaceValueAtPath(projected, collection.path, replacement);
   }
   return { result: projected, truncated };
+}
+
+const FOCUS_KEYS = ["high_level", "low_level", "blocked_fallback"];
+
+/** Encode producer role and blocker state without expanding projected item rows. */
+function focusRowState(row: Record<string, unknown>): string {
+  const state = row.status === "in_progress" ? "i" : "o";
+  return row.blocked === true ? state.toUpperCase() : state;
+}
+
+/** Retain compact producer classifications across serialized projection boundaries. */
+export function rememberReadOutputFocusRows(result: Record<string, unknown>, rows: readonly Record<string, unknown>[]): void {
+  if (!isRecord(result.summary) || !isRecord(result.summary.returned_focus)) return;
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  result.summary = { ...result.summary, focus_row_states: Object.fromEntries(FOCUS_KEYS.map((key) => [key,
+    Array.isArray(result[key]) ? result[key].filter(isRecord).map((row) => focusRowState(byId.get(row.id) ?? row)).join("") : "",
+  ])) };
+}
+
+/** Reject corrupt semantic receipts rather than inferring lost classifications. */
+function validatedFocusStates(value: unknown, rows: number): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string" || value.length !== rows || !/^[iIoO]*$/u.test(value)) {
+    throw new TypeError("Context focus classification receipt must contain one i/I/o/O code per delivered record");
+  }
+  return value;
+}
+
+/** Resolve a delivered focus section from its authoritative pre-shaping rows. */
+function deliveredFocusSectionStates(
+  result: Record<string, unknown>, source: Record<string, unknown>, key: string,
+  sourceStates: Record<string, unknown>,
+): { states: string; needsStates: boolean } {
+  const original = Array.isArray(source[key]) ? source[key].filter(isRecord) : [];
+  const originalStates = validatedFocusStates(sourceStates[key], original.length) ?? original.map(focusRowState).join("");
+  const byId = new Map<unknown, string | undefined>(original.flatMap((row, index) => row.id === undefined ? [] : [[row.id, originalStates[index]] as const]));
+  const delivered = Array.isArray(result[key]) ? result[key].filter(isRecord) : [];
+  let needsStates = false;
+  const states = delivered.map((row, index) => {
+    const state = byId.get(row.id) ?? (row.id === undefined ? originalStates[index] : undefined) ?? focusRowState(row);
+    if (state !== focusRowState(row)) needsStates = true;
+    return state;
+  }).join("");
+  return { states, needsStates };
+}
+
+/** Restore producer aggregates or count delivered items independently of auxiliary rows. */
+function refreshItemCount(result: Record<string, unknown>, source: Record<string, unknown>): void {
+  if (typeof result.count !== "number") return;
+  if (result.count_only === true || source.count_only === true) {
+    if (typeof source.count === "number") result.count = source.count;
+  } else if (Array.isArray(result.items)) {
+    result.count = result.items.length;
+  }
+}
+
+/** Refresh delivered counters, preserving full-match totals and hidden classifications. */
+export function refreshReadOutputDeliveredCounts(
+  result: Record<string, unknown>,
+  source: Record<string, unknown> = result,
+): void {
+  refreshItemCount(result, source);
+  if (!isRecord(result.summary) || !isRecord(result.summary.returned_focus)) return;
+  const summary = { ...result.summary };
+  const sourceStates = isRecord(source.summary) && isRecord(source.summary.focus_row_states) ? source.summary.focus_row_states : {};
+  const sections = FOCUS_KEYS.map((key) => ({ key, ...deliveredFocusSectionStates(result, source, key, sourceStates) }));
+  const states = Object.fromEntries(sections.map(({ key, states }) => [key, states]));
+  const needsStates = sections.some((section) => section.needsStates);
+  const deliveredStates = Object.values(states).join("");
+  if (typeof summary.high_level === "number") summary.high_level = Array.isArray(result.high_level) ? result.high_level.length : 0;
+  if (typeof summary.low_level === "number") summary.low_level = Array.isArray(result.low_level) ? result.low_level.length : 0;
+  summary.returned_focus = {
+    active_items: deliveredStates.length,
+    in_progress: [...deliveredStates].filter((state) => state.toLowerCase() === "i").length,
+    open: [...deliveredStates].filter((state) => state.toLowerCase() === "o").length,
+    blocked: [...deliveredStates].filter((state) => state === state.toUpperCase()).length,
+  };
+  if (needsStates) summary.focus_row_states = states;
+  else delete summary.focus_row_states;
+  result.summary = summary;
 }

@@ -197,7 +197,7 @@ describe("read output contracts", () => {
     );
   });
 
-  it("counts every retained row collection after applying an amount bound", () => {
+  it("keeps item counts separate from other retained row collections after an amount bound", () => {
     const projected = applyReadOutputDimensions(
       "list",
       { outputLimit: 2 },
@@ -212,7 +212,8 @@ describe("read output contracts", () => {
         },
       },
     );
-    expect(projected).toMatchObject({ count: 3 });
+    expect(projected).toMatchObject({ count: 2 });
+    expect(countReadOutputRows(projected)).toBe(3);
   });
 
   it("keeps legacy flags working while publishing one-line migration hints", () => {
@@ -552,6 +553,12 @@ describe("read output contracts", () => {
     expect(
       resolveReadOutputEncoding("events", { follow: true }),
     ).toBeUndefined();
+  });
+
+  it.each(["items", "items,count,total"].flatMap((include) => [1, "unbounded"].map((limit) => [include, limit] as const)))("preserves count-only totals after %s projection and %s amount shaping", (outputInclude, outputLimit) => {
+    const result = applyReadOutputDimensions("search", { outputInclude, outputLimit, outputBudget: "unbounded" }, { items: [], count: 30, total: 30, count_only: true });
+    expect(result).toMatchObject({ items: [], count: 30 });
+    expect(result).not.toHaveProperty("count_only");
   });
 
   it("projects root fields and inferred heterogeneous row collections", () => {
@@ -1161,7 +1168,7 @@ describe("read output contracts", () => {
       throw new Error("Expected compacted rows instead of an omission.");
     }
     expect(rowCompacted.count).toBe(
-      rowCompacted.items.length + rowCompacted.related.length,
+      rowCompacted.items.length,
     );
 
     const paginated = applyReadOutputDimensions(

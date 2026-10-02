@@ -1,3 +1,4 @@
+import { runWithActiveExtensions } from "../../../src/sdk/runtime.js";
 import { describe, expect, it, vi } from "vitest";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
@@ -51,6 +52,25 @@ describe("runtime context intent contracts", () => {
       },
     );
     expect(getActiveContextIntentContracts()).toEqual(outside);
+  });
+
+  it("discovers nested disabled-scope contracts at their selected tracker and restores the outer scope", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-nested-context-intents-"));
+    const outer = path.join(root, "outer");
+    const nested = path.join(root, "nested");
+    try {
+      for (const [pmRoot, description] of [[outer, "Outer workspace"], [nested, "Nested workspace"]]) {
+        await mkdir(pmRoot);
+        await writeFile(path.join(pmRoot, "context-intents.json"), JSON.stringify({ intents: [{ command: "next", intent: "execute", description, included_field_groups: ["recommended"], token_budget: 1200 }] }));
+      }
+      await runWithActiveExtensions({ cwd: root, path: outer, noExtensions: true }, async () => {
+        expect(resolveContextIntentContract("next", "execute")?.description).toBe("Outer workspace");
+        await runWithActiveExtensions({ path: nested, noExtensions: true }, async () => {
+          expect(resolveContextIntentContract("next", "execute")?.description).toBe("Nested workspace");
+        });
+        expect(resolveContextIntentContract("next", "execute")?.description).toBe("Outer workspace");
+      });
+    } finally { await rm(root, { recursive: true, force: true }); }
   });
 
   it("isolates concurrent workspaces", async () => {

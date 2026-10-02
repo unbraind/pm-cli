@@ -175,7 +175,7 @@ function compactStrings(value: unknown, state: StringCompactionState, preserveSt
   return Object.fromEntries(
     Object.entries(value).map(([key, entry]) => [
       key,
-      compactStrings(entry, state, preserveStrings),
+      compactStrings(entry, state, preserveStrings || key === "focus_row_states"),
     ]),
   );
 }

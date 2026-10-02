@@ -17,8 +17,11 @@ export function createSearchCursorFingerprint(options: {
   query: string;
   mode: SearchMode;
   searchOptions: SearchOptions;
+  /** Resolved tracker scope when invoked by the query runtime. */
+  pmRoot?: string;
 }): string {
   return createQueryFingerprint("search", {
+    pmRoot: options.pmRoot,
     query: options.query.trim(),
     mode: options.mode,
     options: selectCursorSemanticOptions(
@@ -35,6 +38,8 @@ export function resolveSearchPage(options: {
   mode: SearchMode;
   searchOptions: SearchOptions;
   limit: number;
+  /** Resolved tracker scope when invoked by the query runtime. */
+  pmRoot?: string;
 }): {
   limited: SearchHit[];
   pageExtras: {

@@ -6,14 +6,25 @@
  * with correct-by-construction inspection and compensation wiring.
  */
 import crypto from "node:crypto";
+import { constants, type Stats } from "node:fs";
+import { isFileMissingError, readRegularFile } from "../core/fs/fs-utils.js";
+import { cp, lstat, mkdir, mkdtemp, open, readdir, realpath, rm, stat, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { getActiveExtensionRegistrations, setActiveExtensionRegistrations } from "../core/extensions/index.js";
 import path from "node:path";
 import {
   transferMutationStdinTokenPolicy,
 } from "../core/item/parse.js";
-import { EXIT_CODE } from "../core/shared/constants.js";
+import { EXIT_CODE, PM_REQUIRED_SUBDIRS, SETTINGS_DEFAULTS, SETTINGS_FILENAME } from "../core/shared/constants.js";
+import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
+import { DEFAULT_RUNTIME_SCHEMA_FILE_PATHS, filePathForSchemaSection, loadRuntimeSchemaFromOptionalFiles, normalizeRuntimeSchemaSettings } from "../core/schema/runtime-schema.js";
+import { validateSettings } from "../core/store/settings-validator.js";
+import { resolveWorkspaceRoot } from "../core/store/paths.js";
+import { getSessionStatePath } from "../core/session/session-state.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { stableStringify } from "../core/shared/serialization.js";
 import { readHistoryEntries } from "./history-read.js";
+import { PM_CONTEXT_INTENTS_FILE } from "./context-intent-runtime.js";
 import {
   close,
   create,
@@ -22,10 +33,12 @@ import {
   release,
   restore,
   update,
+  runWithActiveExtensions,
   type PmClientFullMutationOptions,
 } from "./runtime.js";
 import {
   commitWorkspaceTransaction,
+  validateWorkspaceTransactionIdentity,
   type CommitWorkspaceTransactionOptions,
   type WorkspaceTransactionJsonValue,
   type WorkspaceTransactionStep,
@@ -541,6 +554,232 @@ function assertValidBulkMutation(
     throw new TypeError(
       `Bulk close mutation ${index + 1} requires a non-empty reason`,
     );
+  }
+}
+
+/** Evidence and explicit limits of a non-writing semantic transaction preview. */
+export interface ItemMutationPreviewValidation {
+  /** True when the coordinator executed staged validation; false for an already committed journal replay. */
+  validated: boolean;
+  /** Distinguishes newly staged execution from idempotent replay without fresh step validation. */
+  state: "staged_snapshot" | "replayed_committed_plan";
+  /** Preview leaves current commit state and executable extension effects unvalidated, including host-run pending migrations, mutation guards and hooks. */
+  unresolved_commit_constraints: readonly string[];
+}
+
+/** Attach the resolved batch position while preserving lifecycle error classification. */
+async function validateMutationOperation<T>(mutation: BulkItemMutation, index: number, run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    if (error instanceof PmCliError) {
+      throw new PmCliError(error.message, error.exitCode, {
+        ...error.context,
+        transaction_operation: { index, op: mutation.op, id: mutation.id },
+      });
+    }
+    throw error;
+  }
+}
+
+/** Include durable tracker storage and its ancestors, excluding transient caches and locks. */
+function includePreviewPath(root: string, file: string, ownedPaths: readonly string[] | undefined, retainedPaths: readonly string[]): boolean {
+  const relative = path.relative(root, file);
+  if (["locks", "runtime", "search"].includes(relative.split(path.sep)[0]!)) return retainedPaths.some((retained) => relative === retained || relative.startsWith(`${retained}${path.sep}`) || retained.startsWith(`${relative}${path.sep}`));
+  return relative === "" || ownedPaths === undefined || ownedPaths.some((owned) => relative === owned || relative.startsWith(`${owned}${path.sep}`) || owned.startsWith(`${relative}${path.sep}`));
+}
+
+/** Reject links and special files before preview can traverse or open their targets. */
+async function previewEntryStat(file: string): Promise<Stats> {
+  const entry = await lstat(file);
+  if (entry.isSymbolicLink()) {
+    // Retain the native diagnostic for persistent dangling links.
+    await stat(file);
+  } else if (entry.isDirectory() || entry.isFile()) {
+    return entry;
+  }
+  throw new TypeError(`Transaction preview requires regular files and directories: ${file}`);
+}
+
+/**
+ * Hash regular-file snapshot bytes in bounded streams after checking the opened
+ * descriptor. Available O_NOFOLLOW and O_NONBLOCK flags add platform guards;
+ * Windows retains entry, descriptor and snapshot checks without these POSIX
+ * flags. Trusted, stable entries and ancestors remain required because these
+ * checks do not prevent hostile concurrent path redirection before reading.
+ */
+async function previewFileDigest(file: string): Promise<Buffer> {
+  const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  try {
+    const entry = await handle.stat();
+    if (!entry.isFile()) throw new TypeError(`Transaction preview requires regular files and directories: ${file}`);
+    const contents = crypto.createHash("sha256");
+    // Bound this read to the observed size, even if a concurrent writer appends.
+    if (entry.size > 0) {
+      for await (const chunk of handle.createReadStream({ highWaterMark: 64 * 1024, end: entry.size - 1, autoClose: false })) contents.update(chunk);
+    }
+    return contents.digest();
+  } finally {
+    await handle.close();
+  }
+}
+
+/** Hash durable paths and bytes so a staged copy cannot validate mixed source state. */
+async function previewTrackerFingerprint(root: string, ownedPaths: readonly string[] | undefined, retainedPaths: readonly string[]): Promise<string> {
+  const fingerprint = crypto.createHash("sha256");
+  /** Visit durable entries in stable order, excluding transient runtime and lock state. */
+  async function visit(directory: string): Promise<void> {
+    for (const name of (await readdir(directory)).sort()) {
+      const file = path.join(directory, name);
+      if (!includePreviewPath(root, file, ownedPaths, retainedPaths)) continue;
+      if ((await previewEntryStat(file)).isDirectory()) {
+        await visit(file);
+      } else {
+        fingerprint.update(JSON.stringify(path.relative(root, file)));
+        fingerprint.update(await previewFileDigest(file));
+      }
+    }
+  }
+  await visit(root);
+  return fingerprint.digest("hex");
+}
+
+/** Classify inconsistent snapshot state with actionable retry guidance. */
+function previewSnapshotChangedError(): PmCliError {
+  return new PmCliError("Tracker changed while preparing the transaction preview; retry against stable state.", EXIT_CODE.CONFLICT, { code: "transaction_preview_snapshot_changed" });
+}
+
+/** Distinguish vanished entries from persistent dangling links and invalid paths. */
+async function isDisappearingPreviewPath(error: unknown): Promise<boolean> {
+  if (!isFileMissingError(error)) return false;
+  const file = (error as NodeJS.ErrnoException).path;
+  if (typeof file !== "string") return false;
+  try {
+    await lstat(file);
+    return false;
+  } catch (lookupError) {
+    return isFileMissingError(lookupError);
+  }
+}
+
+/** Read optional configuration without following interior links, pipes, or special entries. */
+async function readPreviewConfiguration(root: string, relative: string): Promise<string | undefined> {
+  const file = path.join(root, relative);
+  try {
+    let current = root;
+    for (const component of relative.split(path.sep).slice(0, -1)) {
+      current = path.join(current, component);
+      await previewEntryStat(current);
+    }
+    if (!(await previewEntryStat(file)).isFile()) throw new TypeError(`Transaction preview requires regular files and directories: ${file}`);
+    return await readRegularFile(file, `Transaction preview requires regular files and directories: ${file}`);
+  } catch (error) {
+    if (await isDisappearingPreviewPath(error)) return undefined;
+    throw error;
+  }
+}
+
+/** Resolve storage from captured configuration using pure contracts and disposable schema files. */
+async function resolvePreviewStorage(root: string, configurationRoot: string, registrations: ReturnType<typeof getActiveExtensionRegistrations>) {
+  const configuration = new Map<string, string | undefined>();
+  const rawSettings = await readPreviewConfiguration(root, SETTINGS_FILENAME);
+  configuration.set(SETTINGS_FILENAME, rawSettings);
+  let parsed: unknown;
+  try { parsed = JSON.parse(rawSettings ?? "null") as unknown; }
+  catch { parsed = null; }
+  const validated = validateSettings(parsed);
+  const settings = validated.success ? validated.data : undefined;
+  const schema = normalizeRuntimeSchemaSettings(settings?.schema);
+  for (const [section, configuredPath] of Object.entries(schema.files)) {
+    const relative = path.relative(root, filePathForSchemaSection(root, configuredPath, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS[section as keyof typeof schema.files]));
+    if (relative === "" || !path.resolve(root, relative).startsWith(path.join(root, path.sep))) {
+      throw new PmCliError("Transaction preview requires schema files inside the selected tracker root; relocate the configured schema file before retrying.", EXIT_CODE.USAGE, { code: "transaction_preview_external_schema", field: `schema.files.${section}` });
+    }
+    schema.files[section as keyof typeof schema.files] = relative;
+    const contents = await readPreviewConfiguration(root, relative);
+    configuration.set(relative, contents);
+    if (contents !== undefined) {
+      const target = path.join(configurationRoot, relative);
+      await mkdir(path.dirname(target), { recursive: true });
+      await writeFile(target, contents);
+    }
+  }
+  const sessionPath = path.relative(root, getSessionStatePath(root));
+  configuration.set(sessionPath, await readPreviewConfiguration(root, sessionPath));
+  const loaded = await loadRuntimeSchemaFromOptionalFiles(configurationRoot, schema);
+  const registry = resolveItemTypeRegistry({ ...SETTINGS_DEFAULTS, item_types: { definitions: [...(settings?.item_types?.definitions ?? []), ...(loaded.type_definitions_from_file ?? [])] } }, registrations);
+  const ownedPaths = resolveWorkspaceRoot(root) === root ? [...PM_REQUIRED_SUBDIRS.filter(Boolean), SETTINGS_FILENAME, PM_CONTEXT_INTENTS_FILE, "transactions", ...registry.folders, ...configuration.keys()].map((entry) => path.normalize(entry)) : undefined;
+  // Only the disposable copy is rewritten, so absolute in-root schema paths
+  // cannot point lifecycle reads or schema scaffolding back at source files.
+  const stagedSettings = settings === undefined ? undefined : JSON.stringify({ ...parsed as Record<string, unknown>, schema: { ...settings.schema, files: schema.files } });
+  return { configuration, ownedPaths, stagedSettings, registryFolders: registry.folders };
+}
+
+/** Copy a stable tracker without source writes and normalize concurrent disappearance failures. */
+async function stagePreviewTracker(sourceRoot: string, stagedRoot: string, registrations: ReturnType<typeof getActiveExtensionRegistrations>): Promise<void> {
+  // Preserve an initially missing root's existing error; disappearance after
+  // this check is a concurrent snapshot change.
+  await stat(sourceRoot);
+  try {
+    // An explicitly selected root may itself be a link; its resolved directory
+    // establishes the boundary. Entries within it must never be dereferenced.
+    const resolvedRoot = await realpath(sourceRoot);
+    const storage = await resolvePreviewStorage(resolvedRoot, path.join(path.dirname(stagedRoot), "configuration"), registrations);
+    const retainedPaths = [...storage.configuration.keys(), ...storage.registryFolders].map((entry) => path.normalize(entry));
+    const sourceFingerprint = await previewTrackerFingerprint(resolvedRoot, storage.ownedPaths, retainedPaths);
+    await cp(resolvedRoot, stagedRoot, {
+      recursive: true, dereference: false,
+      filter: async (source) => {
+        if (!includePreviewPath(resolvedRoot, source, storage.ownedPaths, retainedPaths)) return false;
+        await previewEntryStat(source);
+        return true;
+      },
+    });
+    const [currentFingerprint, stagedFingerprint] = await Promise.all([
+      previewTrackerFingerprint(resolvedRoot, storage.ownedPaths, retainedPaths), previewTrackerFingerprint(stagedRoot, storage.ownedPaths, retainedPaths),
+    ]);
+    if (sourceFingerprint !== currentFingerprint || sourceFingerprint !== stagedFingerprint) {
+      throw previewSnapshotChangedError();
+    }
+    for (const [relative, contents] of storage.configuration) {
+      if (await readPreviewConfiguration(stagedRoot, relative) !== contents) throw previewSnapshotChangedError();
+    }
+    if (storage.stagedSettings !== undefined) await writeFile(path.join(stagedRoot, SETTINGS_FILENAME), storage.stagedSettings);
+  } catch (error) {
+    if (await isDisappearingPreviewPath(error)) throw previewSnapshotChangedError();
+    throw error;
+  }
+}
+
+/** Validate ordered mutations using apply's coordinator in a disposable tracker, without source writes, journals or extension hooks. */
+export async function previewItemMutations(options: Pick<CommitItemMutationsOptions, "pmRoot" | "transactionId" | "author" | "mutations">): Promise<ItemMutationPreviewValidation> {
+  const identity = validateWorkspaceTransactionIdentity(options);
+  const mutations = [...options.mutations];
+  if (mutations.length === 0) throw new TypeError("Bulk item transaction requires at least one mutation");
+  for (const [index, mutation] of mutations.entries()) assertValidBulkMutation(mutation, index);
+  const registrations = getActiveExtensionRegistrations();
+  const root = await mkdtemp(path.join(tmpdir(), "pm-transaction-preview-"));
+  const stagedRoot = path.join(root, "tracker");
+  try {
+    await stagePreviewTracker(identity.pmRoot, stagedRoot, registrations);
+    let validated = false;
+    await runWithActiveExtensions({ path: stagedRoot, noExtensions: true }, async () => {
+      setActiveExtensionRegistrations(registrations);
+      const config = { ...identity, pmRoot: stagedRoot, createCompensation: "close" as const };
+      const steps = mutations.map((mutation, index) => {
+        const step = buildStepForMutation(config, mutation, index);
+        return {
+          ...step,
+          inspect: () => validateMutationOperation(mutation, index, () => step.inspect()),
+          prepareCompensation: () => validateMutationOperation(mutation, index, async () => step.prepareCompensation?.()),
+          apply: () => validateMutationOperation(mutation, index, () => step.apply()),
+        };
+      });
+      await commitWorkspaceTransaction({ ...identity, pmRoot: stagedRoot, steps, onTransition: ({ transition }) => { if (transition === "committed") validated = true; } });
+    });
+    return { validated, state: validated ? "staged_snapshot" : "replayed_committed_plan", unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_mutation_guards_and_hooks"] };
+  } finally {
+    await rm(root, { recursive: true, force: true });
   }
 }
 

@@ -1,0 +1,382 @@
+id: pm-gh1371
+title: "GH-1371: compose output budget and producer pagination"
+description: "Implement existing GitHub issue https://github.com/unbraind/pm-cli/issues/1371. Presentation-only universal output controls must not alter producer fingerprints; every emitted count must match its delivered rows."
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-01T09:24:20.761Z"
+updated_at: "2026-10-02T14:34:29.418Z"
+closed_at: "2026-10-02T12:23:04.949Z"
+completed_at: "2026-10-02T12:23:04.949Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Advertised output and producer cursors retrieve every matching ID;Continued focus collections have no duplicated IDs;Delivered counts and hidden status receipts agree with emitted rows;Population and count-only totals remain intact;CLI and SDK filter changes reject cursors and field projection remains compatible
+parent: pm-doxj
+risk: medium
+confidence: high
+resolution: "Retrieve every selected list/search/context row across producer and output cursors with truthful counters, strict collection-specific duplicate checks and documented same-page companions; retain fast versus clean-install boundary ownership."
+expected_result: "Advertised producer and output-budget continuations retrieve every selected list/search/context row exactly under their documented companion rules, including blocked fallback focus; delivered counters and omission receipts describe the actual serialized population, and real clean package consumers satisfy the same public SDK contracts."
+actual_result: "Historical temporary consumers retrieved30 list,30 search and26 context rows across both continuation kinds, including blocked fallback and documented same-page companions. Its own package/context producing receipt pm-gh1371/test-local-muqt3kve-ua5tys, pm get --at 2026-10-02T10:14:36.703Z, after_hash=a9d5f871b698e4f9a975c7e7b7a97704b10a5928df7f253f7a0da31865f8dddc passes58 token/context surfaces,89 package-first commands and nine packed npx/bunx packages; artifact19981526 bytes remains below the unchanged20000000-byte gate for that run. Earlier separate clean production npm installation passed11 SDK scenarios with58 packages, nine direct dependencies and no repository links, recorded in this owner's immutable manual annotation at2026-10-02T05:49:22.673Z (after_hash=e6aad37d14e02388500e75abd21498216a835f91a679f79549144ff21f888c9b); it predates later startup corrections and is not a fresh final installation. Shared current-source coverage is canonically attributed separately: Current corrected-source whole coverage is canonical pm-gh1364/test-local-mur290si-00u51s, replayable with pm get pm-gh1364 --at 2026-10-02T14:31:02.430Z --full (after_hash=e5f5cf0bac926e3c827b5d081fb66b6fc3e463bd91b04147fb81beff9807f82c): sixteen actual numeric observations record9595 passed,0 failed,2 Windows-only skips,760 source files and exact100/100/100/100 (lines63302/63302,statements66373/66373,functions13726/13726,branches50813/50813). All1452 scoped frozen authoring/config/test/doc digests match the producing boundary; freeze receipt SHA256=b9d84b0487fdb4562b68723343f707524553de41bbc6df30f3902380a78c9bfa. The independently observed saved summary artifact SHA256=13df597eba22099fa558d2285e7804b3ebd081a09989f7413275431f4c551060 is an artifact integrity fact, not a numeric ledger measurement. Four workers,zero test retries and30000ms per-test timeout remain unchanged. Failed whole attempt test-local-mur1l8gp-l1icak remains failed without metrics; cold-import/resource timing cause is unproven. Prior failed continuation attempts remain failed."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fgih,related,"2026-10-01T13:47:53.034Z","harness:codex","cli:update:dep",detected
+  pm-gh1364,related,"2026-10-01T20:34:13.744Z","harness:codex","cli:update:dep",detected
+  pm-fgih,recurs_from,"2026-10-02T08:38:01.423Z","harness:codex","cli:update:dep",detected
+  pm-1qkivy,verifies,"2026-10-02T11:04:31.852Z","harness:codex","cli:update:dep",detected
+comments[30]:
+  - created_at: "2026-10-01T09:24:20.761Z"
+    author: "harness:codex"
+    text: "Duplicate check: live GH-1371 search across all statuses returned zero; full live pm-fgih is closed for command-local presentation classification. This issue extends that canonical implementation to universal controls and composed cursor boundaries. GitHub issue remains external owner; local implementation only."
+  - created_at: "2026-10-01T09:44:11.069Z"
+    author: "harness:codex"
+    text: "Current-main negative control: list/search budget subpages deliver 25/30 rows, terminal delivered counts remain 25, and producer continuation rejects invalid_query_cursor. Hierarchical context also rejects producer continuation and retains pre-compaction returned_focus. New regression suite fails on untouched 89b4aa8bb and passes on this branch. Expanded focused suite passed 58/58. Context hierarchy companions may repeat as contextual scaffolding; focus collection IDs are checked for duplicates. Full checks remain underway."
+  - created_at: "2026-10-01T11:18:04.591Z"
+    author: "harness:codex"
+    text: "Composed list/search/context tests traverse actual budget cursors before producer pagination, verify delivered status counters and unique focus rows, and reject filter or tracker changes after continuation. A second tracker with identical items proves scope binding rather than accidental missing-ID rejection."
+  - created_at: "2026-10-01T11:30:28.097Z"
+    author: "harness:codex"
+    text: "Full corpus: 9459 tests passed, with a benchmark timeout and token parity failure; coverage was not emitted on failure. Cursor scope correctly differs across the gate’s two fixture paths. The token harness now restores independent workspace snapshots at one common real tracker path, retaining exact payload/cursor equality and every negative control; no fingerprint fields are ignored or rewritten."
+  - created_at: "2026-10-01T11:39:44.782Z"
+    author: "harness:codex"
+    text: "Empty-result cursor binding also fixed and verified: both equivalent/nonmatching filter changes and populated/empty tracker changes reject producer cursors after actual output-budget continuation. ESLint and structural quality pass; 42 focused composed-continuation/token-gate tests pass."
+  - created_at: "2026-10-01T12:44:37.522Z"
+    author: "harness:codex"
+    text: "Final review corrections: producer classifications now survive JSON cloning through compact optional focus receipts; ID-only composed continuation regression actually triggers budget cursors and has no skipped budget assertion. Token gate passes existing ceilings after independently reseeding complete replays at one common real scope, without ignoring or rewriting cursor fields. Focused suite: 262/262 pass. Exact all-source coverage and aggregate gates are underway."
+  - created_at: "2026-10-01T12:55:08.089Z"
+    author: "harness:codex"
+    text: "Further independent review found explanatory-string compaction could corrupt long semantic focus receipts. Scoped correction protects those receipt strings and validates both alphabet and exact record count. Count refresh now reads one authoritative pre-shaping source instead of accepting a potentially compacted result mask, simplifying the pipeline. Added direct compactor plus >240 retained projected-row and malformed-receipt regressions; final verification remains underway."
+  - created_at: "2026-10-01T12:56:56.768Z"
+    author: "harness:codex"
+    text: "Negative control confirms old string compactor truncates a 600-record semantic receipt to 241 characters and inserts an invalid ellipsis; the new validation refuses that corrupt receipt. Protected compaction and >240 retained projected rows now pass, with every row classified in-progress and no false blockers. Final scoped integration/read/token corpus passes 84/84; published token ceilings, exact coverage thresholds and denominator are unchanged."
+  - created_at: "2026-10-01T13:49:30.558Z"
+    author: "harness:codex"
+    text: Packed SDK negative control found warning compaction changed a count-only aggregate from 30 to 24. Delivered-count refresh now restores the authoritative producer aggregate; budgeted warning and absent-authoritative-count regressions pass 11/11. Graph-composition passes unchanged 1236 ceiling after linking the verified presentation-classification predecessor. Final serial gates and full coverage remain pending.
+  - created_at: "2026-10-01T14:02:25.829Z"
+    author: "harness:codex"
+    text: "Bounded mutation run completed all 336 mutants: 329 killed, seven existing reviewed equivalents, zero uncovered/errors/timeouts. All six additional mutants were killed. The gate correctly required the improved score floor to be ratcheted from 97.87878787878788 to 97.91666666666667; only that upward threshold change was made. Full final aggregate rerun remains pending."
+  - created_at: "2026-10-01T15:01:59.410Z"
+    author: "harness:codex"
+    text: "Final packed CLI/SDK serialized continuation matrix passed both cursor layers, focus classifications and real filter/tracker rejection. Packed warning compaction retains count-only count/total 30 while reducing warnings to 24. Exact all-source coverage, static/token/context, package-first, artifact budget, migration and npx/Bunx smoke pass. Score floor is raised to measured 329/336 killed with seven existing equivalents. Hosted checks and PR review remain pending."
+  - created_at: "2026-10-01T15:10:55.111Z"
+    author: "harness:codex"
+    text: "Packed head negative control confirms both root projections count,total,count_only,warnings and count,total,warnings change aggregate 30 to 24 under budget compaction. Restore the aggregate independently of items and retain producer count-only semantics across root projection; add both exact root-projection regressions. No merge approval for the published head."
+  - created_at: "2026-10-01T15:32:46.069Z"
+    author: "harness:codex"
+    text: "Independent final review caught count-only root projection compaction with items omitted: 30 aggregate matches became 24 retained warnings. Private authoritative aggregate mode now survives projection, including omission of count_only. Both exact projections failed against the packed prior head (count 24), and focused regressions pass with count 30. Structured gate evidence added; full final verification pending."
+  - created_at: "2026-10-01T17:59:45.406Z"
+    author: "harness:codex"
+    text: "Cubic review correction: preserve authoritative count-only count across the second refresh after root selection; items and items,count,total retain count30 for bounded/unbounded amount. Before correction both reproduced count0. Token replay directories preserve0700, accounted steps validate immediately, and baseline expected-output failures stop capture. Focused tests, lint and all four type configurations pass. Broad aggregate verification and source-linked coverage receipts are pending; item remains in_progress."
+  - created_at: "2026-10-01T18:58:27.318Z"
+    author: "harness:codex"
+    text: "Token replay gate now reports observed and expected baseline exit codes. Canonical receipt test-local-mupwctzm-5lz9o4 passes all 42 real transport harness tests, including a new controlled first-baseline mismatch proving immediate abort with baseline=7, expected=0 and zero accounted invocations. Existing complete task, recovery equality, privacy and negative controls remain intact. Focused lint and all four type configurations pass; full-source coverage remains pending."
+  - created_at: "2026-10-01T19:40:36.829Z"
+    author: "harness:codex"
+    text: "Latest review: the baseline diagnostic negative control now intercepts the exact node/dist CLI argv for the first context --for orient --limit 10 step and returns synthetic exit 7 before executing that process. Unrelated fixture setup invocations retain the real runner. Canonical focused token receipt passes all 42 tests again; immediate abort and zero accounted invocations remain asserted."
+  - created_at: "2026-10-01T20:35:27.113Z"
+    author: "harness:codex"
+    text: "Final-source full coverage producing receipt test-local-mupzfgkx-70we5e (pm-gh1364) passed on 09ba3c30ec10e637f111b477a46e252b4558d241: 9494 test cases passed, zero failed, two Windows-only skips; exact integer gate passed for lines 63200/63200, statements 66237/66237, functions 13710/13710 and branches 50719/50719. Its canonical passing test_runs row now carries four observed percent gates plus all covered/total dimensions and test-case counts; linked-command passed=1 remains the runner's command count. coverage-summary SHA256=40c980160ae95b9591e5cbb4ac483ee7ca5d42ee7140beb205e2c1e9f38650c6. Measurements were attached only after the actual gate passed using PM's locked test_run_track operation, automatic author and immutable history. Earlier failed receipts remain failed without measurements. This item references the one producing full-corpus receipt through its related edge to the receipt owner; no separate aggregate execution is claimed here. Local static/context/package aggregates and final exact-head hosted/reviewer checks remain pending. No live telemetry delivery or merge performed."
+    edited_at: "2026-10-01T20:57:28.966Z"
+  - created_at: "2026-10-01T21:13:25.641Z"
+    author: "harness:codex"
+    text: "Controlled original-checkout comparison preserved the branch and local main: PR base 89b4aa8bb and checkpoint 2916c6e2f both passed unchanged SDK import ceilings with 15 measured samples. The same ten-sample CLI transport gate failed on both: base get365>362ms, next461>440ms, create419>398ms; head get366>362ms, next451>440ms, create426>398ms. Mixed small changes do not establish a patch-specific regression; the existing local transport admission failure remains a blocker and no budget was weakened. Canonical test-local-muq0nuea-dqzwjn passes graph/record integrity plus bounded mutation (329/336 killed, seven existing equivalents); test-local-muq0up1n-tew4bo passes context relevance, unchanged artifact budget, 89 package-first commands and nine-package npx/Bunx packed smoke. Opt-in semantic dogfood and live external telemetry were unrun. The full static receipt remains failed; no all-static-passed claim is made. Current coverage/focused/type receipts remain valid for unchanged implementation source. Merge awaits final hosted/provider review, resolution of the local timing blocker and independent final-head clearance."
+  - created_at: "2026-10-01T21:45:13.220Z"
+    author: "harness:codex"
+    text: "Final local verification: Canonical full-source receipt test-local-mupzfgkx-70we5e passed 9494 cases with zero failures and two Windows-only skips; exact coverage lines63200/63200 statements66237/66237 functions13710/13710 branches50719/50719 is recorded on that passing producing receipt. Complete local pnpm quality:static receipt test-local-muq26sl1-rucv2t passed on CI-supported Node24.12.0 with unchanged gates. Focused/type/import-boundary receipts, context/artifact/package-first/npx-Bunx receipt test-local-muq0up1n-tew4bo and bounded mutation329/336 with seven existing equivalents pass. Node26 timing receipts remain failed; matched base/current both failed the same transport ceilings, and changing only to supported Node24 passed them. Implementation source is unchanged. Final hosted/provider review and independent merge clearance remain pending; live telemetry and opt-in semantic dogfood unrun."
+  - created_at: "2026-10-01T22:12:22.193Z"
+    author: "harness:codex"
+    text: "CodeRabbit linked-issue evidence warning addressed by committed acceptance design: canonical test-local-muq36xtl-oogptj passes 56 tests and runs the actual npm tarball public @unbrained/pm-cli/sdk export in a separate Node consumer, with installed dependencies linked and no source implementation imports. JSON-round-tripped cursors traverse list/search/context completely: producer limit1 yields30/30/26 unique records; limit25 composes1/2/7 budget continuations and producer transitions; three empty trackers finish in one read each. Failed consumer runs remain failed with no measurements; harness corrections followed the SDK optional count and authoritative next_cursor contracts. Global coverage/static refreshed for new preview source before closure."
+    edited_at: "2026-10-01T22:48:32.358Z"
+  - created_at: "2026-10-01T22:18:12.138Z"
+    author: "harness:codex"
+    text: "Final packed consumer after complexity cleanup passes the identical canonical 56-test command as test-local-muq3gjbv-dr0sdy. It retains all nine real packed SDK traversal scenarios and counter assertions. Focused ESLint for the fixture passes; the earlier whole lint attempt correctly failed on fixture complexity, and complete static verification will rerun unchanged gates. No passing whole-lint claim is made from the failed attempt."
+    edited_at: "2026-10-01T22:48:32.925Z"
+  - created_at: "2026-10-01T22:46:35.159Z"
+    author: "harness:codex"
+    text: "Follow-up deadline and counter corrections pass canonical test-local-muq4aovr-dzsoko (56 tests, all nine packed SDK scenarios). The enclosing scenario has a 120-second cap; npm pack, tar extraction and SDK execution are bounded at 30, 10 and 60 seconds. Focus counters are asserted only when returned_focus exists and sum high_level, low_level and blocked_fallback. Thresholds and production semantics unchanged."
+    edited_at: "2026-10-01T22:48:33.494Z"
+  - created_at: "2026-10-01T23:13:15.378Z"
+    author: "harness:codex"
+    text: "Review correction for Windows timeout: packed npm runs through the actual npm-cli.js entry with process.execPath and no cmd shell. The selected Node installation resolves npm through its exported package manifest; --ignore-scripts and the 30-second deadline are retained. Canonical test-local-muq5c5tr-k6qsy7 passes 56 tests and nine actual packed SDK scenarios. Focused ESLint passes, and canonical test-local-muq5dob2-i6jjm3 passes all four type configurations and the SDK import-boundary check. Current full static and full-source coverage remain pending; no Windows execution is claimed from this Linux-only run."
+  - created_at: "2026-10-01T23:49:41.078Z"
+    author: "harness:codex"
+    text: "Latest review portability correction: npm manifest lookup retains Node global-folder fallback and now gives a clear npm/package.json prerequisite error with its original cause. The real npm 12 pack result is a package-keyed object, whereas npm 11 emits an array; both create the same tarball. The prior Node 26 focused failure test-local-muq6hf15-1ws6za is preserved. The fixture now selects exactly one actual tarball from its fresh destination, preserving direct Node invocation, --ignore-scripts, deadlines and the public SDK consumer. Canonical test-local-muq6pvhi-immi3p passes 56 tests and nine packed scenarios on Node 26/npm 12. The same canonical suite passes on Node 24/npm 11 in test-local-muq6qnhi-l9k6cr. Focused lint passes; all four type configurations and SDK import-boundary checks pass in related owner pm-gh1364 receipt test-local-muq6r2d8-g2xkay. Complete full-source verification is still pending."
+    edited_at: "2026-10-01T23:50:40.986Z"
+  - created_at: "2026-10-02T00:31:55.556Z"
+    author: "harness:codex"
+    text: "Shared final-source full coverage is now actual passing evidence: related owner pm-gh1364 receipt test-local-muq885vf-vje4y3 on 92cff9ef184f8b6e932afccc999b24c86f070c30 records 9501 passed, zero failed and two platform skips, plus the producing four-dimension 100-percent coverage and exact integer totals. Earlier unsupported figures were withdrawn; the actual summary hash and fifteen observed measurements are recorded on that producing receipt after its gate passed. Current packed SDK tests separately pass 56 cases and nine scenarios on npm 11 and 12, preserving real serialized-cursor traversal, empty pages and delivered focus counts. Final complete static and configured reviews remain pending; older failed receipts stay failed without provisional measurements."
+  - created_at: "2026-10-02T05:49:22.673Z"
+    author: "harness:codex"
+    text: "Review4163072995 is confirmed and corrected in existing CLI/packed continuation owners: count and per-page uniqueness cover high_level, low_level and blocked_fallback together. Only companions outside the advertised resumed section may repeat within one producer page; delivered primary rows remain globally unique. The fixture now creates12 real blocked items and exercises complete fallback output plus the advertised higher-budget recovery for bounded fallback output (not an invented fallback cursor). Independent fresh npm install --omit=dev --ignore-scripts installed58 packages from the actual tarball without repository node_modules links: original collector failed0 !==12; corrected collector passed11 scenarios, including list30/search30/context26, intentional parent companions, blocked12 and recoveredblocked12. All9 direct runtime dependencies resolve inside the owned consumer, installed pm-cli is a real directory, and TypeScript dev dependency is absent. Evidence SHA25692bf4e5633a92490b7e7fcd44048c8287520e68396b67b346a01cd55ff80159f. Shared final build/integration/full gates remain pending."
+  - created_at: "2026-10-02T06:22:34.232Z"
+    author: "harness:codex"
+    text: "The final continuation fixtures independently collect items, high_level, low_level, and blocked_fallback. Companion repetition is allowed only outside the resumed collection within the same producer page; continued primary rows must stay unique globally. Real blocked fixtures verify withheld population counts and advertised SDK output-budget recovery. Clean npm production installation already passed all 11 public SDK scenarios without repository dependency links; the fast packed fixture and required clean-install smoke retain distinct boundary ownership. Strict collector complexity checks now pass with unchanged assertions. Full combined source proof is running before closure."
+  - created_at: "2026-10-02T08:38:02.880Z"
+    author: "harness:codex"
+    text: "Verified historical recurrence: contract-based presentation classification anticipated the presentation-flag cursor identity defect now exercised by universal output-budget controls; preserve the completed predecessor. The predecessor and current full metadata/history were read before this typed edge; this complements the existing related relationship and does not reopen or supersede shipped work."
+  - created_at: "2026-10-02T10:17:06.305Z"
+    author: "harness:codex"
+    text: "The evidence-backed recurs_from edge to shipped pm-fgih exposed both lineage members as unregistered in the recurrence policy. Existing output-budget-and-continuation family v2→v3 retains canonical owner pm-1qkivy, negative-control selector and zero escape/0.03 false-positive budgets. It adds the fully read historical pm-fgih seed, the exact existing composed-continuation/pagination/delivered-counts contract suite, and required hosted coverage/Windows checks. No new duplicate family/item, removal of the graph edge or evaluator weakening is used. Predecessor full metadata/history verified24entries with matching live hash and zero omissions; it stays shipped/closed/released. Final corrected source receipt test-local-muqt3kve-ua5tys passes context relevance/token58surfaces, artifact19981526<20000000bytes, package-first89commands and real packed npx/bunx smoke across9packages. This receipt predates the registry-only change; no final registry/static proof is claimed yet.\n"
+  - created_at: "2026-10-02T12:23:04.252Z"
+    author: "harness:codex"
+    text: "Temporary consumers retrieve30 list rows,30 search rows and26 context rows through both continuation types with no losses; high/low/blocked fixture collectors and package consumers pass. The earlier separate clean production installation proved58 dependencies, nine direct dependencies, no repository dependency links and11 SDK continuation scenarios; it predates startup-only corrections and is not relabeled as a fresh final installation. Final corrected source: producing receipt test-local-muqw5il0-81bh9y passes 9591 cases, zero failures, two Windows-only skips and exact100/100/100/100 across760 coverage files (lines63301, statements66369, functions13726, branches50811 all fully covered; summarySHA256 80c472e674c90ef42cdb09b8806ed9a5a5729af294f6679afc33f11d5329401c). All1452 frozen authoring/config/test/doc digests remain unchanged. Focused seven-owner228-case CLI/SDK contracts and temporary manual current-artifact acceptance pass. Canonical type/ESLint/SDK-boundary proof passes; complete static prefix passes source/docs/duplicates/contracts/error catalogs/workflow/agent-context47/gate-registry/public-surface checks. Node24.12 official SDK import admission passes. Matched official CLItransport baseline16bb/current controls both pass all six unchanged latency/RSS budgets with10 measured samples per command; no cause for earlier failed samples is established. Canonical test-local-muqxn5c3-9l1c4s passes graph-composition9 assertions (prose gaps1236 at unchanged ceiling), record-integrity1 assertion and bounded mutation329 killed/336 with seven existing declared equivalents. Failed coverage/performance/static attempts remain failed. Current context/package receipt test-local-muqt3kve-ua5tys passes58 token/context surfaces,89 package-first commands, nine packed npx/bunx packages and artifact19981526<20000000bytes. Registrypositive164/164 members across55 lineages/112edges passes; synthetic unregistered two-member negativecontrol correctly fails. This closes verified implementation for the reviewed PR; exact final-head hosted reviews/checks, merge, main workflows and registry publication remain separate pending stages."
+learnings[1]{created_at,author,text}:
+  "2026-10-02T05:56:48.681Z","harness:codex","Delivered context counts cover all high_level, low_level and blocked_fallback rows. Companion rows may repeat only outside the advertised resumed collection within one producer page; do not hide arbitrary duplicates behind a Set. A fast packed-export test can share installed dependency resolution when a distinct mandatory clean-install gate proves the manifest boundary; keep both results explicit."
+files[20]:
+  - path: config/defect-recurrence-policy.json
+    scope: project
+  - path: scripts/release/agent-task-token-gate.mjs
+    scope: project
+  - path: scripts/release/sdk-mutation-baseline.json
+    scope: project
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/sdk/pagination.ts
+    scope: project
+  - path: src/sdk/query/context.ts
+    scope: project
+  - path: src/sdk/query/list.ts
+    scope: project
+  - path: src/sdk/query/search-pagination.ts
+    scope: project
+  - path: src/sdk/query/search.ts
+    scope: project
+  - path: src/sdk/read-output-budget.ts
+    scope: project
+  - path: src/sdk/read-output-contracts.ts
+    scope: project
+  - path: src/sdk/read-output-rows.ts
+    scope: project
+  - path: src/sdk/read-output/options.ts
+    scope: project
+  - path: tests/fixtures/read-output/packed-continuation-consumer.mjs
+    scope: project
+    note: Real packed SDK public-export serialized continuation acceptance
+  - path: tests/integration/read-output/composed-continuation.integration.spec.ts
+    scope: project
+  - path: tests/unit/commands/query/search-command.spec.ts
+    scope: project
+  - path: tests/unit/scripts/release/agent-task-token-gate.spec.ts
+    scope: project
+  - path: tests/unit/sdk/pagination.spec.ts
+    scope: project
+  - path: tests/unit/sdk/read-output-contracts.spec.ts
+    scope: project
+  - path: tests/unit/sdk/read-output/delivered-counts.spec.ts
+    scope: project
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-01T09:53:01.452Z"
+      source_kind: local_mutation
+      source_ref: fix/agent-recovery-pagination-preflight
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-01T18:57:23.717Z"
+      source_kind: local_mutation
+      source_ref: fix/agent-recovery-pagination-preflight
+    note: Real transport transcript fail-fast and exit diagnostics regression
+  - command: "pnpm quality:context-eval && pnpm quality:package-artifact && pnpm dogfood:package-first && pnpm smoke:npx"
+    scope: project
+    timeout_seconds: 1800
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-01T20:41:59.190Z"
+      source_kind: local_mutation
+      source_ref: fix/agent-recovery-pagination-preflight
+    note: "Final-source context relevance, packed artifact, package-first lifecycle and packed npx/Bun consumer gates"
+test_runs[16]:
+  - run_id: test-local-muplbeu1-znb6nq
+    kind: test
+    status: passed
+    started_at: "2026-10-01T13:48:42.647Z"
+    finished_at: "2026-10-01T13:48:58.969Z"
+    recorded_at: "2026-10-01T13:48:58.969Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mupqh7zx-y0vcxh
+    kind: test
+    status: passed
+    started_at: "2026-10-01T16:13:11.603Z"
+    finished_at: "2026-10-01T16:13:28.124Z"
+    recorded_at: "2026-10-01T16:13:28.124Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mupwctzm-5lz9o4
+    kind: test
+    status: passed
+    started_at: "2026-10-01T18:57:24.543Z"
+    finished_at: "2026-10-01T18:58:01.042Z"
+    recorded_at: "2026-10-01T18:58:01.042Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mupxtx52-vpmd7a
+    kind: test
+    status: passed
+    started_at: "2026-10-01T19:38:33.989Z"
+    finished_at: "2026-10-01T19:39:17.894Z"
+    recorded_at: "2026-10-01T19:39:17.894Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq0up1n-tew4bo
+    kind: test
+    status: passed
+    started_at: "2026-10-01T20:58:52.730Z"
+    finished_at: "2026-10-01T21:03:52.907Z"
+    recorded_at: "2026-10-01T21:03:52.907Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:context-eval && pnpm quality:package-artifact && pnpm dogfood:package-first && pnpm smoke:npx",schema,schema,source,local_source_ref
+  - run_id: test-local-muq31e84-gtstw7
+    kind: test
+    status: failed
+    started_at: "2026-10-01T22:04:41.327Z"
+    finished_at: "2026-10-01T22:05:04.708Z"
+    recorded_at: "2026-10-01T22:05:04.708Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq33bbt-uchgjr
+    kind: test
+    status: failed
+    started_at: "2026-10-01T22:06:11.144Z"
+    finished_at: "2026-10-01T22:06:34.265Z"
+    recorded_at: "2026-10-01T22:06:34.265Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq34uwc-28wpij
+    kind: test
+    status: failed
+    started_at: "2026-10-01T22:07:24.670Z"
+    finished_at: "2026-10-01T22:07:46.284Z"
+    recorded_at: "2026-10-01T22:07:46.284Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq36xtl-oogptj
+    kind: test
+    status: passed
+    started_at: "2026-10-01T22:09:00.009Z"
+    finished_at: "2026-10-01T22:09:23.385Z"
+    recorded_at: "2026-10-01T22:09:23.385Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq3gjbv-dr0sdy
+    kind: test
+    status: passed
+    started_at: "2026-10-01T22:16:28.612Z"
+    finished_at: "2026-10-01T22:16:51.163Z"
+    recorded_at: "2026-10-01T22:16:51.163Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq4aovr-dzsoko
+    kind: test
+    status: passed
+    started_at: "2026-10-01T22:39:55.765Z"
+    finished_at: "2026-10-01T22:40:18.039Z"
+    recorded_at: "2026-10-01T22:40:18.039Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq5c5tr-k6qsy7
+    kind: test
+    status: passed
+    started_at: "2026-10-01T23:09:03.895Z"
+    finished_at: "2026-10-01T23:09:26.270Z"
+    recorded_at: "2026-10-01T23:09:26.270Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq6hf15-1ws6za
+    kind: test
+    status: failed
+    started_at: "2026-10-01T23:40:57.146Z"
+    finished_at: "2026-10-01T23:41:31.097Z"
+    recorded_at: "2026-10-01T23:41:31.097Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq6pvhi-immi3p
+    kind: test
+    status: passed
+    started_at: "2026-10-01T23:47:31.887Z"
+    finished_at: "2026-10-01T23:48:05.670Z"
+    recorded_at: "2026-10-01T23:48:05.670Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muq6qnhi-l9k6cr
+    kind: test
+    status: passed
+    started_at: "2026-10-01T23:48:16.913Z"
+    finished_at: "2026-10-01T23:48:41.958Z"
+    recorded_at: "2026-10-01T23:48:41.958Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muqt3kve-ua5tys
+    kind: test
+    status: passed
+    started_at: "2026-10-02T10:09:45.591Z"
+    finished_at: "2026-10-02T10:14:36.650Z"
+    recorded_at: "2026-10-02T10:14:36.650Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:context-eval && pnpm quality:package-artifact && pnpm dogfood:package-first && pnpm smoke:npx",schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project
+close_reason: Composed producer/output-budget continuation and complete focus populations completed.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1371
+  gate_id: repository-context-quality
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/delivered-counts.spec.ts -t \"preserves count-only aggregates\""
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts,"pnpm quality:context-eval","pnpm quality:mutation -- --prebuilt"
+  hosted_checks[3]: Gates (coverage),Gates (static),Windows regression (Node 24)
+body: ""

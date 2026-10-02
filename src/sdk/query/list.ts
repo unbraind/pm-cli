@@ -3,6 +3,7 @@
  *
  * Implements the pm list command surface and its agent-facing runtime behavior.
  */
+import { renderPmCommand } from "../command-line.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
   getActiveExtensionRegistrations,
@@ -931,6 +932,7 @@ function normalizeProjectionField(field: string): string {
   return field.startsWith("item.") ? field.slice("item.".length) : field;
 }
 
+/** Reject unknown selectors with a complete field domain and a minimal valid retry. */
 function validateListProjectionFields(
   projection: ListProjectionConfig,
   runtimeMetadataKeys: Iterable<string>,
@@ -947,6 +949,11 @@ function validateListProjectionFields(
     (field) => !allowed.has(normalizeProjectionField(field)),
   );
   if (unknown.length > 0) {
+    const suggestedRetryArguments = [
+      invokedCommand,
+      "--fields",
+      projection.fields.filter((field) => !unknown.includes(field)).join(",") || "id,title,status",
+    ];
     throw new PmCliError(
       `Unknown list --fields value(s): ${unknown.join(", ")}`,
       EXIT_CODE.USAGE,
@@ -959,14 +966,8 @@ function validateListProjectionFields(
         ],
         recovery: {
           allowed_values: allowedValues,
-          suggested_retry: `pm ${invokedCommand} --fields id,title,status --limit 10`,
-          suggested_retry_args: [
-            invokedCommand,
-            "--fields",
-            "id,title,status",
-            "--limit",
-            "10",
-          ],
+          suggested_retry: renderPmCommand(suggestedRetryArguments),
+          suggested_retry_args: suggestedRetryArguments,
         },
       },
     );
@@ -1852,12 +1853,15 @@ function pageAndProjectListItems(
   };
 }
 
+/** Bind list continuation to tracker scope and matched ordering, excluding presentation controls. */
 function buildListCursorFingerprint(
   status: string | string[] | null,
   options: ListOptions,
   ordering: ListOrderingOptions,
+  pmRoot: string,
 ): string {
   return createQueryFingerprint("list", {
+    pmRoot,
     status,
     options: selectCursorSemanticOptions(
       options as Readonly<Record<string, unknown>>,
@@ -1870,6 +1874,7 @@ function buildListCursorFingerprint(
   });
 }
 
+/** Use the metadata index only when the requested filters and projection preserve authoritative results. */
 async function tryLoadIndexedListPage(params: {
   options: ListOptions;
   runtime: ListRuntimeContext;
@@ -1959,6 +1964,7 @@ async function tryLoadIndexedListPage(params: {
           statusSelection.filtersStatus,
           options,
           ordering,
+          runtime.pmRoot,
         ),
         indexed.items.at(-1)!.id,
         offset + indexed.items.length - 1,
@@ -2134,6 +2140,7 @@ export async function runList(
         statusSelection.filtersStatus,
         options,
         ordering,
+        runtime.pmRoot,
       ),
     );
   }

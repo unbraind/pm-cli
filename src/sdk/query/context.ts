@@ -63,6 +63,7 @@ import {
   resolveQueryCursorStart,
   selectCursorSemanticOptions,
 } from "../pagination.js";
+import { rememberReadOutputFocusRows, refreshReadOutputDeliveredCounts } from "../read-output-rows.js";
 import { CONTEXT_FLAG_CONTRACTS } from "../cli-contracts/flag-contracts.js";
 import {
   packContextCandidates,
@@ -393,6 +394,8 @@ interface ContextSummary {
     open: number;
     blocked: number;
   };
+  /** Optional per-section role/blocker codes for projected rows: i/I in progress, o/O open; uppercase is blocked. */
+  focus_row_states?: Record<string, string>;
   active_items: number;
   in_progress: number;
   open: number;
@@ -2348,13 +2351,14 @@ async function resolveContextFocusGroups(
   };
 }
 
-function buildContextCursorFingerprint(options: ContextOptions): string {
+/** Bind context continuation to tracker scope and semantic filters while allowing rendering changes. */
+function buildContextCursorFingerprint(options: ContextOptions, pmRoot: string): string {
   return createQueryFingerprint(
     "context",
-    selectCursorSemanticOptions(
+    { pmRoot, options: selectCursorSemanticOptions(
       options as Readonly<Record<string, unknown>>,
       CONTEXT_FLAG_CONTRACTS,
-    ),
+    ) },
   );
 }
 
@@ -2798,7 +2802,7 @@ export async function runContext(
     nowIso(),
     author,
     options.after,
-    buildContextCursorFingerprint(options),
+    buildContextCursorFingerprint(options, pmRoot),
     shouldPageContextFocus(options, corpus.fullCorpus.length),
     pmRoot,
     runtime.tokenBudget,
@@ -2927,7 +2931,13 @@ export async function runContext(
     );
     result.packing = toContextPackingSummary(focusGroups.packing);
   }
+  rememberReadOutputFocusRows(result as unknown as Record<string, unknown>, [...focusGroups.highLevel, ...focusGroups.lowLevel, ...focusGroups.blockedFallback].map((row) => ({
+    id: row.id,
+    status: normalizeStatusForRegistry(row.status, runtime.statusRegistry) === runtime.statusRegistry.in_progress_status ? "in_progress" : "open",
+    blocked: row.blocked,
+  })));
   applyContextFocusProjection(result, runtime.focusFields);
+  refreshReadOutputDeliveredCounts(result as unknown as Record<string, unknown>);
   if (warnings.length > 0) result.warnings = warnings;
   maybeAttachEmptyContextSuggestions(
     result,
