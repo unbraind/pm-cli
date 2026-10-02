@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { access, mkdir, readFile, symlink, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runTest } from "../../src/sdk/test/execution.js";
@@ -63,14 +63,17 @@ describe("linked-test workspace and trust contracts", () => {
         "  assert.equal(rootVersion, '1.0.0');",
         "  assert.equal(version, '2.0.0');",
         "  assert.ok(process.env.PM_GLOBAL_PATH);",
-        "  if (process.env.PM_PATH === undefined) writeFileSync('snapshot-only.txt', version);",
+        "  assert.equal(process.env.PM_PATH, undefined);",
+        "  writeFileSync('snapshot-only.txt', version);",
         "});",
       ].join("\n"));
       const before = await readFile(testPath, "utf8");
       const direct = spawnSync(process.execPath, ["--test", testPath], {
-        cwd: sourceRoot, env: context.env, encoding: "utf8",
+        cwd: sourceRoot, env: { ...context.env, PM_PATH: undefined }, encoding: "utf8",
       });
       expect(direct.status, direct.stderr).toBe(0);
+      expect(await readFile(path.join(sourceRoot, "snapshot-only.txt"), "utf8")).toBe("2.0.0");
+      await rm(path.join(sourceRoot, "snapshot-only.txt"));
       context.env.PM_SOURCE_WORKSPACE_ROOT = sourceRoot;
       const id = createTestItemId(context, { title: "nested dependency snapshot", createMode: "progressive" });
       expect(context.runCli(["test", id, "--add-json", JSON.stringify({

@@ -2,31 +2,53 @@ id: pm-5iwfkj
 title: "GH-1354: Linked-test snapshot mode drops nested package dependencies and breaks monorepo acceptance"
 description: Published linked-test snapshot mode reportedly loses independently installed nested package dependencies.
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[3]: agent-ux,context-management,github-intake
 created_at: "2026-09-30T06:48:35.183Z"
-updated_at: "2026-10-02T18:00:21.989Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#e8a9340e8653200e7802ceab"
+updated_at: "2026-10-02T18:35:38.100Z"
+closed_at: "2026-10-02T18:35:37.996Z"
+completed_at: "2026-10-02T18:35:37.996Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Real filesystem regression retains distinct root and nested dependency versions without flattening; Snapshot and ordinary linked runs preserve PM_PATH and PM_GLOBAL_PATH isolation; Dependency write/isolation behavior is documented and tested; Current built and packed artifacts pass the reporter contract
 parent: pm-u9d0
 risk: medium
 confidence: medium
-expected_result: Snapshot execution retains correct root and nested package dependency resolution with distinct versions while preserving both tracker sandboxes and documented no-writeback boundaries.
-actual_result: "Reporter verified direct Node test success and linked snapshot failure (ERR_MODULE_NOT_FOUND), with a root-dependency positive control, on published 2026.9.29. Current-tree reproduction and implementation are pending."
+resolution: "SDK snapshot seeding preserves independent root and nested dependency directories through relative-position junctions, with copied-source isolation, typed lineage, real regression proof and Windows gate coverage."
+expected_result: Linked snapshot execution resolves each installed package version correctly and isolates tracker roots and copied-source writes.
+actual_result: "Pre-fix nested fallback reproduced; 6 owner-linked tests pass, real npm root 3.1.1/nested 3.1.0 monorepos pass Node and Bun, packed consumers and dogfood pass, complete coverage is 100/100/100/100 across 9603 passing tests, and static/compatibility gates pass. Hosted PR and merged-main checks precede landing; next daily publication remains separate."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-efkvdy,discovered_from,"2026-09-30T06:48:35.183Z","harness:codex","cli:create:dep",detected
   pm-efkvdy,verifies,"2026-10-02T17:04:50.022Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
-  "2026-09-30T06:48:35.183Z","harness:codex","Duplicate check: complete strict all-status corpus contained 2843 records with no unreadable directories or items. Exact GitHub ID plus behavior/root-cause searches were complete. Closed prior lineage pm-efkvdy and its full history were read; this new report requests a distinct unimplemented contract. Relationship reconstructed during current intake rather than asserted as historical knowledge. Queued and unclaimed; source investigation remains pending."
-  "2026-10-02T16:39:25.373Z","harness:codex","Actively implementing this dependency-resolution contract in the same substantial PR as pm-r61juc: preserving nested dependency identity and isolated tracker roots is required for genuine package/security acceptance. Original reporter and full current item/history read; pre-fix reproduction and real filesystem regression precede implementation. Unrelated roadmap items remain open and unclaimed."
-  "2026-10-02T16:44:09.145Z","harness:codex","Pre-edit test audit: primary owner is the existing linked-test workspace integration suite at the public CLI boundary. The regression imports different locally installed root/nested package versions through real filesystem resolution and verifies sandbox environment and source-file preservation. Existing workspace-mode tests have no nested dependency directory, so root-only linking falsely passes them. No test-only SDK export or control is needed. The unchanged new test must fail before the source fix."
-  "2026-10-02T17:04:51.086Z","harness:codex","Verification: the new CLI filesystem regression failed before the fix because the nested dependency resolved to root version 1.0.0 instead of independently installed 2.0.0. It now passes with both real directory and directory-link paths; source bytes are preserved, copied-file writes stay disposable, and PM roots remain isolated. Dependencies remain shared by convention, documented explicitly. The extraction gives the snapshot policy an independently measured coverage surface rather than placing new logic inside an existing orchestration ignore region."
-  "2026-10-02T17:31:34.651Z","harness:codex","Manual acceptance in a temporary monorepo installed fast-json-patch 3.1.1 at the root and 3.1.0 independently under apps/site. Real Node node:test and Bun linked runs both passed with pm_context_mode=none and workspace_context_mode=snapshot; nested resolution remained 3.1.0 and copied-source writes did not affect the original. Focused regression suites pass, including exclusions, external nested links, broken links, source preservation and Windows junction workflow contracts. Local npm module lookup required NODE_PATH pointing to the actual installed global npm package; no source workaround was added."
-  "2026-10-02T18:00:21.989Z","harness:codex","Broad validation: 9602 tests passed in the four-worker full run, with one unchanged reproducibility test exceeding its 30-second test budget. Its complete four-case suite plus release automation passed unchanged in a two-worker rerun (28 tests). No timeout, coverage threshold or test assertion was relaxed. A final full coverage run will use two workers and sequential local test jobs. Packed acceptance is independently verified; only source-copy writes, not dependency-tree writes, are isolated by snapshot mode."
+comments[8]:
+  - created_at: "2026-09-30T06:48:35.183Z"
+    author: "harness:codex"
+    text: "Duplicate check: complete strict all-status corpus contained 2843 records with no unreadable directories or items. Exact GitHub ID plus behavior/root-cause searches were complete. Closed prior lineage pm-efkvdy and its full history were read; this new report requests a distinct unimplemented contract. Relationship reconstructed during current intake rather than asserted as historical knowledge. Queued and unclaimed; source investigation remains pending."
+  - created_at: "2026-10-02T16:39:25.373Z"
+    author: "harness:codex"
+    text: "Actively implementing this dependency-resolution contract in the same substantial PR as pm-r61juc: preserving nested dependency identity and isolated tracker roots is required for genuine package/security acceptance. Original reporter and full current item/history read; pre-fix reproduction and real filesystem regression precede implementation. Unrelated roadmap items remain open and unclaimed."
+  - created_at: "2026-10-02T16:44:09.145Z"
+    author: "harness:codex"
+    text: "Pre-edit test audit: primary owner is the existing linked-test workspace integration suite at the public CLI boundary. The regression imports different locally installed root/nested package versions through real filesystem resolution and verifies sandbox environment and source-file preservation. Existing workspace-mode tests have no nested dependency directory, so root-only linking falsely passes them. No test-only SDK export or control is needed. The unchanged new test must fail before the source fix."
+  - created_at: "2026-10-02T17:04:51.086Z"
+    author: "harness:codex"
+    text: "Verification: the new CLI filesystem regression failed before the fix because the nested dependency resolved to root version 1.0.0 instead of independently installed 2.0.0. It now passes with both real directory and directory-link paths; source bytes are preserved, copied-file writes stay disposable, and PM roots remain isolated. Dependencies remain shared by convention, documented explicitly. The extraction gives the snapshot policy an independently measured coverage surface rather than placing new logic inside an existing orchestration ignore region."
+  - created_at: "2026-10-02T17:31:34.651Z"
+    author: "harness:codex"
+    text: "Manual acceptance in a temporary monorepo installed fast-json-patch 3.1.1 at the root and 3.1.0 independently under apps/site. Real Node node:test and Bun linked runs both passed with pm_context_mode=none and workspace_context_mode=snapshot; nested resolution remained 3.1.0 and copied-source writes did not affect the original. Focused regression suites pass, including exclusions, external nested links, broken links, source preservation and Windows junction workflow contracts. Local npm module lookup required NODE_PATH pointing to the actual installed global npm package; no source workaround was added."
+  - created_at: "2026-10-02T18:00:21.989Z"
+    author: "harness:codex"
+    text: "Broad validation: 9602 tests passed in the four-worker full run, with one unchanged reproducibility test exceeding its 30-second test budget. Its complete four-case suite plus release automation passed unchanged in a two-worker rerun (28 tests). No timeout, coverage threshold or test assertion was relaxed. A final full coverage run will use two workers and sequential local test jobs. Packed acceptance is independently verified; only source-copy writes, not dependency-tree writes, are isolated by snapshot mode."
+  - created_at: "2026-10-02T18:32:21.111Z"
+    author: "harness:codex"
+    text: "Final test audit: the complete two-worker canonical coverage run passed 9603 tests across 763 files (2 existing Windows-only skips), with statements 66406/66406, branches 50827/50827, functions 13731/13731 and lines 63329/63329. No source, coverage denominator, threshold or ignore policy changed afterward. The final integration fixture now unconditionally proves absent PM_PATH in none context and performs a real copied-workspace write; all four linked trust/workspace cases pass. Real temporary npm root/nested 3.1.1/3.1.0 installations passed Node and Bun snapshots, packed npm/npx/bunx and SDK consumer smoke passed, compatibility passed. Dependency trees are shared by convention; copied regular-source writes are disposable, not an OS security sandbox."
+  - created_at: "2026-10-02T18:35:03.052Z"
+    author: "harness:codex"
+    text: "Final local delivery: both owner-linked commands passed through pm test --run --progress with trusted same-branch provenance and sandboxed tracker roots. Snapshot suite: 6 tests in 2 files; security/release/workflow suite: 44 tests in 4 files. Package-first dogfood now passes after sequential execution; the earlier timeout was competing build-lease contention, not a relaxed test. Complete static gates, including unchanged SDK startup budgets, graph composition, record integrity and bounded mutation (329 killed, 7 classified equivalent, 0 failures), pass."
+    edited_at: "2026-10-02T18:35:36.652Z"
+learnings[1]{created_at,author,text}:
+  "2026-10-02T18:32:24.044Z","harness:codex",Snapshot dependency preservation must retain each nested installation at its original relative path. Positive direct execution plus a real copied-workspace write distinguishes correct dependency resolution from a no-op isolation assertion. Directory junctions retain Windows support; dependency writes still require an independent install or stronger sandbox.
 files[5]{path,scope}:
   .github/workflows/ci.yml,project
   src/sdk/test/execution.ts,project
@@ -35,8 +57,21 @@ files[5]{path,scope}:
   tests/unit/sdk/test/workspace-snapshot.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts,project,240,"harness:codex","2026-10-02T17:04:05.377Z",local_mutation,codex/codspeed-dependency-security-snapshot-resolution
+test_runs[1]:
+  - run_id: test-local-murayhq7-j2tsuz
+    kind: test
+    status: passed
+    started_at: "2026-10-02T18:34:19.767Z"
+    finished_at: "2026-10-02T18:34:32.383Z"
+    recorded_at: "2026-10-02T18:34:32.383Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/TESTING.md,project
+close_reason: Implemented and locally verified the monorepo snapshot dependency contract for reviewed delivery.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

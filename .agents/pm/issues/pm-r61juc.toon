@@ -2,35 +2,41 @@ id: pm-r61juc
 title: "Scorecard alert 29: patch Axios in the CodSpeed development dependency graph"
 description: "Live Scorecard alert 29 on main 89b4aa8bb4d9fd4ece4e9865905929d41cc84515 is open: https://github.com/unbraind/pm-cli/security/code-scanning/29. The October 2 all-dependency pnpm audit reports 7 high and 5 moderate Axios advisories; production audit reports zero. The sole locked Axios 1.19.0 is reached through @codspeed/vitest-plugin 5.7.1 -> @codspeed/core 5.7.1, and every reported advisory is patched by Axios >=1.20.0. Separately, both published CodSpeed core CJS and ESM bundles contain embedded Axios 1.4.0; a lockfile-only override cannot remove that bundled copy. The Mongo instrumentation path is controlled by CODSPEED_MONGO_INSTR_SERVER_ADDRESS and is not configured by this repository normal benchmark workflow; no production CLI Axios use or present exploit is established. Preserve mandatory CodSpeed benchmarking and its runtime contracts while correcting the dependency and bundled source. The current mandatory Trivy filesystem scan excludes development dependencies, while standalone secret scanning does not detect vulnerable dependency versions. Add real dev-inclusive admission and negative controls in required CI/nightly/release/local gates without skip or threshold relaxation.\n\nExact npm advisory evidence:\n- GHSA-3pq3-5fj3-cg6v: https://github.com/advisories/GHSA-3pq3-5fj3-cg6v (high)\n- GHSA-44g4-m2mj-wpvx: https://github.com/advisories/GHSA-44g4-m2mj-wpvx (moderate)\n- GHSA-4hqw-qxg8-jxx2: https://github.com/advisories/GHSA-4hqw-qxg8-jxx2 (moderate)\n- GHSA-542g-h47m-68v8: https://github.com/advisories/GHSA-542g-h47m-68v8 (high)\n- GHSA-9fr6-4gfg-395g: https://github.com/advisories/GHSA-9fr6-4gfg-395g (moderate)\n- GHSA-c29m-xwm3-cm6r: https://github.com/advisories/GHSA-c29m-xwm3-cm6r (high)\n- GHSA-j8rh-479h-cp32: https://github.com/advisories/GHSA-j8rh-479h-cp32 (moderate)\n- GHSA-m8m8-qj5v-23w3: https://github.com/advisories/GHSA-m8m8-qj5v-23w3 (high)\n- GHSA-mghh-pgcx-3jjj: https://github.com/advisories/GHSA-mghh-pgcx-3jjj (high)\n- GHSA-r4gj-5m52-g5wh: https://github.com/advisories/GHSA-r4gj-5m52-g5wh (high)\n- GHSA-vh66-26gq-q6x8: https://github.com/advisories/GHSA-vh66-26gq-q6x8 (moderate)\n- GHSA-x97p-jq2g-jp4f: https://github.com/advisories/GHSA-x97p-jq2g-jp4f (high)"
 type: Issue
-status: in_progress
+status: closed
 priority: 0
 tags[1]: security
 created_at: "2026-10-02T06:33:46.098Z"
-updated_at: "2026-10-02T17:32:40.549Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#e8a9340e8653200e7802ceab"
+updated_at: "2026-10-02T18:35:39.407Z"
+closed_at: "2026-10-02T18:35:39.191Z"
+completed_at: "2026-10-02T18:35:39.191Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Patch external Axios to a cooldown-eligible supported release and eliminate affected CJS/ESM bundled copies with reproducible integrity and source-map evidence.; Preserve CodSpeed instrumentation, platform compatibility, benchmark coverage and package contracts; retain genuine pre-fix vulnerability controls.; Enforce development dependency vulnerability admission in mandatory CI, nightly, release and local gates; seeded vulnerable artifacts must fail without changing coverage or quality thresholds.; Verify full and production audits, dev-inclusive Trivy, real Node/Bun tooling and merged-main Scorecard retirement; document evidence tiers without suppressing or dismissing an unresolved report."
 parent: pm-qwoy
 risk: high
 confidence: high
-expected_result: No vulnerable external or embedded Axios remains reachable from installed development tooling; dev-inclusive gates refuse reintroduction while production SDK and CodSpeed benchmark contracts remain compatible.
-actual_result: All-dependency audit currently fails with seven high and five moderate advisories; production audit passes. Scorecard alert 29 remains open on main. Embedded Axios copies and dev-scan admission need independent remediation.
+resolution: "Axios resolves to audited 1.20.0; patched CJS/ESM bundles use dedicated clients with CancelToken and audited FormData, obsolete embedded sources/maps are removed, native payloads and mappings are preserved, and exact integrity plus dev-inclusive audit/Trivy gates refuse recurrence."
+expected_result: "No affected external or embedded Axios remains in installed tooling, while CodSpeed runtime, benchmarks and production SDK contracts remain compatible."
+actual_result: "Full and production audits are zero, dev-inclusive Trivy and seven integrity hashes pass, real CJS/ESM HTTP and interceptor controls pass, all 44 owner-linked tests and static gates pass, complete canonical coverage is 100/100/100/100 with 9603 passing tests, and packed/manual/dogfood acceptance passes. Hosted native benchmark and merged-main Scorecard retirement remain required landing evidence; no alert was dismissed and publication remains separate."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-7wmq,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
   pm-cbzvgn,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
   pm-gh1364,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
   pm-5iwfkj,related,"2026-10-02T17:24:53.523Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-10-02T06:33:46.098Z","harness:codex","Duplicate check: complete all-status corpus 2850/2850 with no unreadable records; live exact keyword Axios finds only the discovery comment on pm-gh1364, include-dev-deps and GHSA-c29m-xwm3-cm6r find no canonical work. All twelve GHSA identifiers were checked in the initial all-status intake. Full live pm-qwoy, pm-cbzvgn and pm-7wmq metadata were read; parent history verifies. Closed pm-cbzvgn fixed distinct brace-expansion advisories and is preserved as completed historical work. This new Axios/CodSpeed report is recorded before PR1372 merge to keep discovery evidence reviewed. Remediation is open and unclaimed; it is not included in PR1372 source-fix closure or represented as security clearance."
   "2026-10-02T10:31:07.233Z","harness:codex","Planning correction: the mandatory active-item context gate identified this newly recorded open intake as missing estimated_minutes. Add a preliminary 240-minute estimate covering external-version remediation, inspection/replacement of both embedded bundles and source maps, dev-inclusive admission with negative controls, and review/verification. This is a planning estimate with implementation uncertainty, not time spent or proof of remediation. The item remains open and unclaimed while PR1372 is finished first; all documented scanner findings remain unresolved."
   "2026-10-02T16:39:24.811Z","harness:codex","Live intake 2026-10-02: complete strict all-status corpus 2851/2851 with no omissions or unreadable records; no in-progress items or open GitHub PRs. pnpm full audit reproduces 7 high/5 moderate Axios findings and native Scorecard alert29 remains open at current main. This delivery actively implements CodSpeed external/embedded dependency remediation and mandatory dev-inclusive admission together with linked-test monorepo snapshot dependency preservation under pm-5iwfkj in one reviewed PR. Prior completed brace-expansion work stays closed. No alert will be dismissed to simulate remediation."
   "2026-10-02T16:59:31.480Z","harness:codex","Pre-edit test audit: admission uses the actual installed CodSpeed package plus real temporary copies; stale CJS, ESM, map, native, missing-file and package-upgrade controls must fail. A separate loopback-server integration will exercise the public runtime with both entrypoints and audited transport. No security policy skip or scanner dismissal is introduced. The independent boundary investigation found only axios and FormData cross the removed embedded-dependency section; both remain supplied by audited declared runtime dependencies."
   "2026-10-02T17:10:53.023Z","harness:codex","Independent candidate review found and reproduced a compatibility defect: using external Axios default instances shares application response interceptors, unlike the original embedded clients. Both original entries passed the loopback setup response, while both candidate entries threw ApiError with undefined status after an application response.data interceptor. The candidate will use a dedicated client and retain CancelToken. The same review independently confirmed every retained mapping coordinate and name, untouched native payload, exact plugin resolution and a zero-advisory full audit."
   "2026-10-02T17:29:30.225Z","harness:codex","Independent candidate review found shared default Axios interceptors could transform instrumentation responses. Both CJS and ESM real loopback regressions failed before the corrective patch (ApiError status undefined), then the patch was changed to dedicated axios.create clients with CancelToken retained. Native payloads remain byte-identical; all retained source map coordinates and names are preserved. Required full-suite regressions additionally enforce the complete audit command and Windows snapshot workflow. No production exploit is established."
+  "2026-10-02T18:09:24.814Z","harness:codex","Final full audit reports zero advisories at every severity, and development-inclusive Trivy reports zero findings. The installed patch uses dedicated Axios clients; all seven entry/map/native policy hashes pass. Current hosted Scorecard alert remains open on the pre-fix main release, so it is neither dismissed nor claimed retired. The final all-status corpus contains 2863 readable records without omissions, and only the two current implementation owners are in progress."
+  "2026-10-02T18:32:22.979Z","harness:codex","Final canonical coverage passes 9603 tests and exact 100/100/100/100 (66406 statements, 50827 branches, 13731 functions, 63329 lines). Full and production audits report zero advisories; dev-inclusive Trivy and all seven installed bundle/map/native integrity checks pass. Real CJS/ESM loopback instrumentation with application interceptors passes after a relevant red compatibility control. Source-map coordinates/names and native payloads are preserved. Mandatory static admission is registered for local, CI, nightly and release; hosted checks and native merged-main Scorecard retirement remain subsequent delivery evidence, not suppressed alerts."
+  "2026-10-02T18:35:37.203Z","harness:codex","Final local delivery: pm test --run --progress passes all 44 linked admission/runtime/release/workflow tests with trusted same-branch provenance. Complete static checks pass, including all-dependency audit, docstrings, zero duplicate clones, startup budgets, graph/history assurance and bounded mutation. Package-first dogfood and published npm/Bun consumer verification pass. PR checks, native CodSpeed performance and merged-main alert retirement remain required delivery steps; this closure does not claim an already published fix."
 notes[1]{created_at,author,text}:
   "2026-10-02T06:37:50.731Z","harness:codex","Scope and evidence boundary: this intake documents an unresolved development-tool dependency report before merging PR1372. It is not a regression introduced by the scoped recovery, continuation or semantic-preview fixes. Production-only audit is clean. Full audit and native Scorecard remain open; embedded Axios requires separate inspection beyond pnpm lock resolution. Do not dismiss the scanner alert or report security clearance until remediation and native merged-main scans are verified."
+learnings[1]{created_at,author,text}:
+  "2026-10-02T18:32:24.961Z","harness:codex","Externalizing an embedded HTTP client must preserve its isolation from application interceptors, not just its version and exported API. Dedicated Axios clients, real HTTP compatibility controls, reviewed map coordinates and immutable native hashes cover different risks; lockfile audit alone cannot detect an embedded obsolete implementation."
 files[16]{path,scope}:
   .github/workflows/ci.yml,project
   .github/workflows/release.yml,project
@@ -50,8 +56,21 @@ files[16]{path,scope}:
   tests/unit/scripts/development-dependencies.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/development-dependencies.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240,"harness:codex","2026-10-02T17:30:09.196Z",local_mutation,codex/codspeed-dependency-security-snapshot-resolution
+test_runs[1]:
+  - run_id: test-local-murayqth-r6rf24
+    kind: test
+    status: passed
+    started_at: "2026-10-02T18:34:32.945Z"
+    finished_at: "2026-10-02T18:34:44.165Z"
+    recorded_at: "2026-10-02T18:34:44.165Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/development-dependencies.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
+close_reason: Removed vulnerable external and embedded Axios from CodSpeed tooling and added mandatory development-dependency admission for reviewed delivery.
 escape_class: scanner_finding
 gate_evidence:
   disposition: gate_added

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1354: Linked-test snapshot mode drops nested package dependencies and breaks monorepo acceptance ([pm-5iwfkj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5iwfkj.toon))
+
+### Security
+
+- Scorecard alert 29: patch Axios in the CodSpeed development dependency graph ([pm-r61juc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r61juc.toon))
+
 ## 2026.10.2 - 2026-10-02
 
 ### Fixed
