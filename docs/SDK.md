@@ -1485,9 +1485,14 @@ Durable source bytes are fingerprinted before and after copying and compared
 with the staged copy. An inconsistent copy or a file disappearing during the
 scan fails with `transaction_preview_snapshot_changed` and can be retried.
 File contents are hashed in bounded streams so large history files do not
-require whole-file buffers. Invalid staged plans fail with the underlying
-lifecycle error and a structured `transaction_operation` containing the
-zero-based index, operation and resolved target ID.
+require whole-file buffers. `PmCliError` failures from staged step inspection,
+compensation preparation and apply preserve their lifecycle classification and
+include a structured `transaction_operation` with the zero-based index,
+operation and requested target ID from the mutation plan, after any batch-local
+reference resolution. That ID need not be prefix-normalized. Native errors and
+compensation or recovery failures retain the coordinator's error semantics; if
+compensation also fails, its `AggregateError` preserves the decorated primary
+error.
 
 CLI `item mutate --dry-run`, `item complete --dry-run`, and MCP `pm_mutate`
 with `dryRun: true` share this validation. CLI structured previews use

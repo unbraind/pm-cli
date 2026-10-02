@@ -6,7 +6,7 @@ import { handleRequest } from "../../../src/mcp/server.js";
 import { buildItemCompletionMutations, commitItemMutations, previewItemMutations } from "../../../src/sdk/item-transaction.js";
 import { createEmptyExtensionHookRegistry, setActiveExtensionHooks } from "../../../src/core/extensions/index.js";
 import { runPmCli } from "../../../src/cli/main.js";
-import { runInProcessDistCli } from "../../helpers/cliRunner.js";
+import { runDirectDistCli, runInProcessDistCli } from "../../helpers/cliRunner.js";
 import type { PmSettings } from "../../../src/types/index.js";
 import { writeTestExtension } from "../../helpers/extensions.js";
 import { resolveExtensionMigrationStatePath } from "../../../src/sdk/extension/migrations.js";
@@ -50,7 +50,9 @@ describe("semantic transaction previews (GH-1370)", () => {
           const args = ["item", command, ...(command === "complete" ? ["pm-bootstrap", "Staged closure"] : []), "--transaction-id", "bootstrap-boundary", "--dry-run", "--json", ...(noExtensions ? ["--no-extensions"] : [])];
           const result = command === "mutate"
             ? context.runCli(args, { input: JSON.stringify([{ op: "update", id: "pm-bootstrap", options: { title: "Staged title" } }]), expectJson: true })
-            : await runInProcessDistCli(args, { env: context.env, expectJson: true }, runPmCli);
+            : noExtensions
+              ? runDirectDistCli(args, { env: context.env, expectJson: true })
+              : await runInProcessDistCli(args, { env: context.env, expectJson: true }, runPmCli);
           expect(result.code).toBe(mode === "missing-inside" ? 0 : 2);
           if (mode === "missing-inside") expect(result.json).toMatchObject({ validation: { validated: true, state: "staged_snapshot" } });
           else expect(JSON.parse(result.stderr)).toMatchObject({ code: "transaction_preview_external_schema" });

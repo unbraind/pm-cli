@@ -1,7 +1,8 @@
 import fs from "node:fs/promises";
+import { syncBuiltinESMExports } from "node:module";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../../../src/core/extensions/index.js";
 import type { ExtensionHookRegistry } from "../../../../src/core/extensions/loader.js";
 import { normalizeRuntimeSchemaSettings } from "../../../../src/core/schema/runtime-schema.js";
@@ -184,6 +185,54 @@ describe("core/store/settings", () => {
       expect((await fs.stat(getSettingsPath(pmRoot))).isDirectory()).toBe(true);
     });
   });
+
+  for (const change of ["removed-file", "replaced-ancestor", "denied-file", "linked-file"] as const) {
+    it.skipIf((change === "denied-file" && (process.platform === "win32" || process.getuid?.() === 0)) || (change === "linked-file" && process.platform === "win32"))(`handles actual settings changes between configuration-only entry validation and open: ${change}`, async () => {
+      await withTempPmRoot(async (pmRoot) => {
+        await writeLegacySettings(pmRoot);
+        const settingsPath = getSettingsPath(pmRoot);
+        const original = await fs.readFile(settingsPath, "utf8");
+        const movedRoot = `${pmRoot}-moved`;
+        const nativeLstat = fs.lstat;
+        let changed = false;
+        const entryRead = vi.spyOn(fs, "lstat").mockImplementation(async (file, options) => {
+          const entry = await nativeLstat(file, options);
+          if (file === settingsPath && !changed) {
+            expect(entry.isFile()).toBe(true);
+            changed = true;
+            if (change === "removed-file") await fs.unlink(settingsPath);
+            else if (change === "replaced-ancestor") {
+              await fs.rename(pmRoot, movedRoot);
+              await fs.writeFile(pmRoot, "Replaced tracker ancestor");
+            } else if (change === "denied-file") await fs.chmod(settingsPath, 0);
+            else {
+              await fs.rename(settingsPath, `${settingsPath}.retained`);
+              await fs.symlink(`${settingsPath}.retained`, settingsPath);
+            }
+          }
+          return entry;
+        });
+        syncBuiltinESMExports();
+        try {
+          const read = runWithConfigurationOnlySettings(pmRoot, () => readSettingsWithMetadata(pmRoot));
+          if (change === "removed-file" || change === "replaced-ancestor") {
+            expect(await read).toEqual({ settings: SETTINGS_DEFAULTS, metadata: { has_explicit_item_format: false }, warnings: [] });
+          } else await expect(read).rejects.toMatchObject({ code: change === "denied-file" ? "EACCES" : "ELOOP" });
+          expect(changed).toBe(true);
+          expect(getSettingsReadCacheEntry(pmRoot)).toBeUndefined();
+        } finally {
+          entryRead.mockRestore();
+          syncBuiltinESMExports();
+          if (change === "denied-file") await fs.chmod(settingsPath, 0o600);
+        }
+        if (change === "removed-file") await expect(fs.lstat(settingsPath)).rejects.toMatchObject({ code: "ENOENT" });
+        else expect(await fs.readFile(getSettingsPath(change === "replaced-ancestor" ? movedRoot : pmRoot), "utf8")).toBe(original);
+        if (change === "replaced-ancestor") expect((await fs.lstat(pmRoot)).isFile()).toBe(true);
+        if (change === "linked-file") expect((await fs.lstat(settingsPath)).isSymbolicLink()).toBe(true);
+        await expect(fs.stat(path.join(pmRoot, "schema"))).rejects.toMatchObject({ code: expect.stringMatching(/^(?:ENOENT|ENOTDIR)$/u) });
+      });
+    });
+  }
 
   it("preserves native malformed-root errors in configuration-only reads", async () => {
     await withTempPmRoot(async (pmRoot) => {

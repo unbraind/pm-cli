@@ -1882,7 +1882,9 @@ async function readConfigurationOnlySettings(pmRoot: string): Promise<SettingsRe
   try { entry = await lstat(file); }
   catch (error) { if (isFileAbsentError(error)) return buildFallbackSettingsReadResult(); throw error; }
   if (!entry.isFile()) throw new TypeError(`Transaction preview requires regular files and directories: ${file}`);
-  const raw = await readRegularFile(file, `Transaction preview requires regular files and directories: ${file}`);
+  let raw: string;
+  try { raw = await readRegularFile(file, `Transaction preview requires regular files and directories: ${file}`); }
+  catch (error) { if (isFileAbsentError(error)) return buildFallbackSettingsReadResult(); throw error; }
   let parsed: unknown;
   try { parsed = JSON.parse(raw) as unknown; }
   catch { return buildFallbackSettingsReadResult("settings_read_invalid_json"); }

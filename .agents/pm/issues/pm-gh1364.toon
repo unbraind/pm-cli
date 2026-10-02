@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-01T09:24:18.862Z"
-updated_at: "2026-10-02T13:17:00.116Z"
+updated_at: "2026-10-02T14:44:48.854Z"
 closed_at: "2026-10-02T12:22:57.290Z"
 completed_at: "2026-10-02T12:22:57.290Z"
 author: "harness:codex"
@@ -17,13 +17,13 @@ risk: medium
 confidence: high
 resolution: Preserve selected tracker and valid JSON/selectors/controls in one canonical retry argv; withhold unsafe ambiguous retries; enforce historical recurrence and verification lineage.
 expected_result: "Projection recovery retains the selected tracker, JSON mode, valid selectors and unrelated controls; ambiguous unsafe retries withhold executable argv, and rendered shell commands agree with independently declared platform expectations."
-actual_result: "Seven temporary scoped recovery commands replay successfully; literal platform expectations and path-arity negative controls detect real drift. fb7 corrected-source producing receipt test-local-muqw5il0-81bh9y passes 9591 cases, zero failures, two Windows-only skips and exact100/100/100/100 across760 coverage files (lines63301, statements66369, functions13726, branches50811 all fully covered; summarySHA256 80c472e674c90ef42cdb09b8806ed9a5a5729af294f6679afc33f11d5329401c). All1452 frozen authoring/config/test/doc digests matched the fb7 producing boundary for that run; the later retained-state test and JSDoc/SDK prose amendments change three authoring files and the SDK doc. Parsed executable tokens and comment-free printer output remain identical in both production files. Focused seven-owner228-case CLI/SDK contracts and temporary manual current-artifact acceptance pass. Canonical type/ESLint/SDK-boundary proof passes; complete static prefix passes source/docs/duplicates/contracts/error catalogs/workflow/agent-context47/gate-registry/public-surface checks. Node24.12 official SDK import admission passes. Matched official CLItransport baseline16bb/current controls both pass all six unchanged latency/RSS budgets with10 measured samples per command; no cause for earlier failed samples is established. Canonical test-local-muqxn5c3-9l1c4s passes graph-composition9 assertions (prose gaps1236 at unchanged ceiling), record-integrity1 assertion and bounded mutation329 killed/336 with seven existing declared equivalents. Failed coverage/performance/static attempts remain failed. Shared context/package producing receipt test-local-muqt3kve-ua5tys, owned by pm-gh1371 (finished2026-10-02T10:14:36.650Z; immutable test_run_track after_hash=a9d5f871b698e4f9a975c7e7b7a97704b10a5928df7f253f7a0da31865f8dddc), passes58 token/context surfaces,89 package-first commands, nine packed npx/bunx packages and artifact19981526<20000000bytes. Registrypositive164/164 members across55 lineages/112edges passes; synthetic unregistered two-member negativecontrol correctly fails. This closes verified implementation for the reviewed PR; exact final-head hosted reviews/checks, merge, main workflows and registry publication remain separate pending stages. Subsequent reviewed test/documentation correction: test-local-muqzeidi-52wvk6 passes all228 focused cases including the retained focused-session and telemetry-state oracle; original-oracle controls miss genuine post-preview session/state writes while the revised oracle independently rejects each. test-local-muqzfuo0-k9mrsy passes four TypeScript configurations, ESLint and unchanged SDK private-import boundary; test-local-muqzggz4-vdadni passes mandatory source docstrings, documentation links and all three edited TypeScript lint checks. Actual isolated missing-item_format mutate/complete previews preserve all51 workspace/project/global entries with no exclusions; this control disables telemetry and proves migration no-write only. Available POSIX flags and Windows entry/descriptor/fingerprint checks require trusted stable paths; no portable kernel path pinning is claimed. Fresh next-head hosted full coverage/static/Windows gates remain required before merge."
+actual_result: "Earlier temporary manual acceptance replayed all seven scoped recovery commands; independent shell literals and arity negative controls detect real drift. Fresh source/type/import-boundary evidence: pm-gh1364/test-local-mur11vg3-grwuow, pm get --at 2026-10-02T13:57:14.002Z, after_hash=6ba07748d10af444665a11e479562de517fe8a9bbfcefee6a115ad965c5a9066, passed all four TypeScript configurations, ESLint and the unchanged private-import policy. Historical graph/mutation proof: pm-gh1364/test-local-muqxn5c3-9l1c4s, pm get --at 2026-10-02T12:21:48.121Z, after_hash=f2a8249498509ee612c8df2bc4816ccc9c0edd6449b5d234067229b4ef84270e, graph-composition9 assertions at prose-gap1236 and bounded mutation329/336 with seven declared equivalents; its record-integrity result contains one assertion. The current metadata/closure boundary is canonical pm-gh1364/test-local-mur2gxhh-4rjzgm, replayable at 2026-10-02T14:36:56.100Z (after_hash=6f7a034a4d5061f922c04692deb9b85ade5c94a05d36cab4992e1fa465413e84): rebuilt defect/recurrence admission, tracker-context47 and record-integrity1 assertions pass after item closure. Final resolution validation completes with overall ok=true and170 historical missing-field warnings; these three current owners are absent from those warning rows. Full2851-item history-drift validation reports zero drift/missing/unreadable/mismatched streams. Current corrected-source whole coverage is canonical pm-gh1364/test-local-mur290si-00u51s, replayable with pm get pm-gh1364 --at 2026-10-02T14:31:02.430Z --full (after_hash=e5f5cf0bac926e3c827b5d081fb66b6fc3e463bd91b04147fb81beff9807f82c): sixteen actual numeric observations record9595 passed,0 failed,2 Windows-only skips,760 source files and exact100/100/100/100 (lines63302/63302,statements66373/66373,functions13726/13726,branches50813/50813). All1452 scoped frozen authoring/config/test/doc digests match the producing boundary; freeze receipt SHA256=b9d84b0487fdb4562b68723343f707524553de41bbc6df30f3902380a78c9bfa. The independently observed saved summary artifact SHA256=13df597eba22099fa558d2285e7804b3ebd081a09989f7413275431f4c551060 is an artifact integrity fact, not a numeric ledger measurement. Four workers,zero test retries and30000ms per-test timeout remain unchanged. Failed whole attempt test-local-mur1l8gp-l1icak remains failed without metrics; cold-import/resource timing cause is unproven. Earlier failed attempts remain failed; exact final-head hosted checks, merged-main workflows and publication require separate evidence. Shared focused232-case and documentation proofs are owned by pm-gh1370: test-local-mur113a4-l5wbvk, replay2026-10-02T13:56:37.480Z, after_hash=3fe31a6a7b78596d65661cec4408405ce3443b371372e0c082417edee8df866f; test-local-mur125gz-ktaxrb, replay2026-10-02T13:57:26.978Z, after_hash=d7355726f01450787a3e715bef8f32eaa868041cb53fb696f0f0d37b7caec139. Each producing row stays in its own canonical history; no shared receipt is cloned."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-szn67i,related,"2026-10-01T13:47:52.212Z","harness:codex","cli:update:dep",detected
   pm-szn67i,recurs_from,"2026-10-02T08:37:59.500Z","harness:codex","cli:update:dep",detected
   pm-gh1370,verifies,"2026-10-02T11:04:38.809Z","harness:codex","cli:update:dep",detected
   pm-gh1371,verifies,"2026-10-02T11:04:38.809Z","harness:codex","cli:update:dep",detected
-comments[42]:
+comments[45]:
   - created_at: "2026-10-01T09:24:18.862Z"
     author: "harness:codex"
     text: "Duplicate check: live GH-1364 search across all statuses returned zero; pm-szn67i is closed for earlier strict-close/global scope corrections. Reuse recovery-closure lineage pm-f05lsg. GitHub issue remains the external owner; local implementation only."
@@ -154,6 +154,15 @@ comments[42]:
   - created_at: "2026-10-02T12:57:37.846Z"
     author: "harness:codex"
     text: "Receipt source attribution clarification: test-local-muqsgn28-ortk6u is an independent passing full-corpus run before the correction from the private bootstrap arity import to the published global flag contracts. The earlier snapshot also precedes later generated contract/recurrence configuration refreshes. Its pre-boundary status was already recorded in the preview owner historical comment; preserve its own timestamps and actual observed measurements. The later test-local-muqw5il0-81bh9y is the authoritative corrected-source full-corpus producing receipt at final source freeze. Identical aggregate counts/summary hashes establish identical measured totals, not source identity; the separately retained source digests establish each boundary. Failed attempts retain no coverage measurements. Shared context/package receipt test-local-muqt3kve-ua5tys is owned by pm-gh1371, finished2026-10-02T10:14:36.650Z, and remains only in that owner canonical ledger; its audited test_run_track event at10:14:36.703Z has after_hash a9d5f871b698e4f9a975c7e7b7a97704b10a5928df7f253f7a0da31865f8dddc. No receipt is cloned."
+  - created_at: "2026-10-02T14:14:28.491Z"
+    author: "harness:codex"
+    text: "Full-source coverage producing receipt test-local-mur1l8gp-l1icak remains failed: one release-readiness-runtime read-only parity test exceeded 30000ms; 9594 passed, 2 Windows-only skipped, no valid summary or coverage measurements. Failing-case isolation precedes any new full command; no timeout/worker/retry/coverage relaxation is authorized. The successful earlier fb7 coverage remains historical and cannot substitute for current executable settings source."
+  - created_at: "2026-10-02T14:17:28.595Z"
+    author: "harness:codex"
+    text: "Isolated instrumented failing-case probe completed in 5.70s (Node26.9 current default runtime) with its one selected test passed and 32 unrelated cases skipped. The deliberately focused invocation fails global all-source coverage thresholds, as expected; its partial summary is not current coverage proof and will not be attached as passing metrics. The unchanged case performs setup plus six real worker/source parity reads; no assertion mismatch or named hung command was recorded. Case and runner/config source are unchanged from the prior passing fb7 run, but timing variation and simultaneous work do not establish a cause. All heavy acceptance/package work has ended before one new complete primary Node24.21 command with the original four workers, zero retries and 30000ms per-test ceiling; the first whole failure remains failed."
+  - created_at: "2026-10-02T14:44:48.854Z"
+    author: "harness:codex"
+    text: "Final full validator receipt at2026-10-02T14:41:43.476Z returns overall ok=true with170 historical closed-item missing-resolution/expected/actual warnings across2549 closed records; pm-gh1364/1370/1371 are absent from those warning rows. These historical metadata gaps remain visible; no invented closure outcomes or gate strengthening claim is made. Complete2851-item history-drift validation has zero drift, missing/unreadable streams, hash/chain/version/workspace-state mismatches. Current three implementation owners are closed/released, source coverage100/100/100/100 is independent, and broad older metadata work remains outside this open-PR-first completion."
 learnings[1]{created_at,author,text}:
   "2026-10-02T05:56:47.933Z","harness:codex","A current item test_runs array is a bounded cache, not the complete evidence ledger. When citing a producing receipt, record its canonical owner and verified history timestamp/hash so pm get --at can reproduce it after normal retention. Keep gate/test expected domains independently declared to expose runtime drift; pin rendered shell commands to literal platform expectations rather than using the renderer under test as the oracle."
 files[15]{path,scope}:
@@ -283,7 +292,7 @@ tests[12]:
       source_kind: local_mutation
       source_ref: fix/agent-recovery-pagination-preflight
     note: "Post-closure defect contract and canonical tracker/history integrity on isolated snapshots; release-tag changelog verification runs separately against the real repository, because its Git membership cannot use a tracker-only copy. Implementation source unchanged."
-test_runs[57]:
+test_runs[61]:
   - run_id: test-local-muplbvfh-6qgqd9
     kind: test
     status: passed
@@ -1167,6 +1176,119 @@ test_runs[57]:
     started_at: "2026-10-02T13:14:01.102Z"
     finished_at: "2026-10-02T13:17:00.074Z"
     recorded_at: "2026-10-02T13:17:00.074Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:defect-evidence && node dist/cli.js validate --check-resolution --check-history-drift --json && node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded",tracker,tracker,source,local_source_ref
+  - run_id: test-local-mur11vg3-grwuow
+    kind: test
+    status: passed
+    started_at: "2026-10-02T13:56:38.351Z"
+    finished_at: "2026-10-02T13:57:13.971Z"
+    recorded_at: "2026-10-02T13:57:13.971Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm exec eslint src/sdk/item-transaction.ts src/cli/runtime/projection-retry.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts --max-warnings=0 && pnpm typecheck && node --input-type=module --eval 'import { checkSdkImportBoundary } from \"./scripts/release/static-quality-gate.mts\"; const result = checkSdkImportBoundary(); console.log(JSON.stringify(result)); if (!result.ok) process.exitCode = 1;'",schema,schema,source,local_source_ref
+  - run_id: test-local-mur1l8gp-l1icak
+    kind: test
+    status: failed
+    started_at: "2026-10-02T13:57:27.930Z"
+    finished_at: "2026-10-02T14:12:17.305Z"
+    recorded_at: "2026-10-02T14:12:17.305Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage -- --maxWorkers=4,schema,schema,source,local_source_ref
+  - run_id: test-local-mur290si-00u51s
+    kind: test
+    status: passed
+    started_at: "2026-10-02T14:17:29.318Z"
+    finished_at: "2026-10-02T14:30:47.106Z"
+    recorded_at: "2026-10-02T14:30:47.106Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[16]:
+      - name: coverage_branches
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-02T14:30:47.106Z"
+      - name: coverage_branches_covered
+        value: 50813
+        unit: count
+        recorded_at: "2026-10-02T14:30:47.106Z"
+      - name: coverage_branches_total
+        value: 50813
+        unit: count
+        recorded_at: "2026-10-02T14:30:47.106Z"
+      - name: coverage_functions
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-02T14:30:47.106Z"
+      - name: coverage_functions_covered
+        value: 13726
+        unit: count
+        recorded_at: "2026-10-02T14:30:47.106Z"
+      - name: coverage_functions_total
+        value: 13726
+        unit: count
+        recorded_at: "2026-10-02T14:30:47.106Z"
+      - name: coverage_lines
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-02T14:30:47.106Z"
+      - name: coverage_lines_covered
+        value: 63302
+        unit: count
+        recorded_at: "2026-10-02T14:30:47.106Z"
+      - name: coverage_lines_total
+        value: 63302
+        unit: count
+        recorded_at: "2026-10-02T14:30:47.106Z"
+      - name: coverage_source_files
+        value: 760
+        unit: count
+        recorded_at: "2026-10-02T14:30:47.106Z"
+      - name: coverage_statements
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-02T14:30:47.106Z"
+      - name: coverage_statements_covered
+        value: 66373
+        unit: count
+        recorded_at: "2026-10-02T14:30:47.106Z"
+      - name: coverage_statements_total
+        value: 66373
+        unit: count
+        recorded_at: "2026-10-02T14:30:47.106Z"
+      - name: test_cases_failed
+        value: 0
+        unit: count
+        recorded_at: "2026-10-02T14:30:47.106Z"
+      - name: test_cases_passed
+        value: 9595
+        unit: count
+        recorded_at: "2026-10-02T14:30:47.106Z"
+      - name: test_cases_skipped
+        value: 2
+        unit: count
+        recorded_at: "2026-10-02T14:30:47.106Z"
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage -- --maxWorkers=4,schema,schema,source,local_source_ref
+  - run_id: test-local-mur2gxhh-4rjzgm
+    kind: test
+    status: passed
+    started_at: "2026-10-02T14:35:02.701Z"
+    finished_at: "2026-10-02T14:36:56.069Z"
+    recorded_at: "2026-10-02T14:36:56.069Z"
     passed: 1
     failed: 0
     skipped: 0
