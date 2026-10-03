@@ -92,7 +92,9 @@ export function createExtensionCommandSdk(
         );
       }
       const settings = options.dryRun === true
-        ? await runWithConfigurationOnlySettings(pmRoot, () => readSettings(pmRoot))
+        ? await runWithConfigurationOnlySettings(pmRoot,
+          /** Read inline configuration under the dry-run policy without schema hydration or read hooks. */
+          () => readSettings(pmRoot))
         : await readSettings(pmRoot);
       try {
         const mutation = await mutateWorkspaceJsonWithHistory({

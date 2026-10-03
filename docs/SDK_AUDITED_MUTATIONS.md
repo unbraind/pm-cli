@@ -70,6 +70,11 @@ without executing read hooks, scaffolding optional schemas, or populating the
 hydrated settings cache. Mutation callbacks should only derive settings and
 avoid external side effects.
 
+For an extension that requires previews, set its manifest `pm_min_version` to
+a published host release containing this option. Check for `preview` on a fresh
+dry-run operation before applying settings, while allowing replay receipts to
+omit it as described above.
+
 ## Full-item JSON updates
 
 `pm update <id> --stdin-json` accepts a full item read document. New comments,
