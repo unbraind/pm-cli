@@ -393,6 +393,7 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
     ) => void
   >
 > = {
+  /** Apply intent defaults only to unspecified context sections/depth and bound row limits by the declared budget. */
   context: (projected, contract, explicitTokenBudget) => {
     if (projected.section === undefined && projected.depth === undefined) {
       projected.section =

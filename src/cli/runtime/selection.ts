@@ -4,7 +4,8 @@
  */
 import { Command } from "commander";
 import { PM_RELOCATED_COMMAND_ALIASES,findPmNamespacedCommand } from "../../sdk/cli-contracts/command-aliases.js";
-import { GLOBAL_FLAG_CONTRACTS } from "../../sdk/cli-contracts/flag-contracts.js";
+import { enrichCliFlagInvocationContracts } from "../../sdk/flag-invocation-contracts.js";
+import { GLOBAL_FLAG_CONTRACTS, resolveSubcommandFlagContractsForCommand } from "../../sdk/cli-contracts/flag-contracts.js";
 import {
   EXIT_CODE,
   PmCliError
@@ -156,6 +157,29 @@ function invocationRequestsVersion(invocationArgv: string[]): boolean {
   return invocationArgv.some((token) => VERSION_FLAG_TOKENS.has(token));
 }
 
+/** Select relocated handlers from declared ancestor grammar while leaving malformed invocations to complete discovery. */
+function resolveAncestorOptionRegistration(commandTokens: string[], namespaceRoot: string): CoreCommandRegistrationSelection | undefined {
+  if (!PM_RELOCATED_COMMAND_ALIASES.some((alias) => alias.canonical_argv[0] === namespaceRoot)) return undefined;
+  const probe = new Command().configureOutput({ writeErr: () => {} }).exitOverride();
+  for (const contract of enrichCliFlagInvocationContracts(namespaceRoot, resolveSubcommandFlagContractsForCommand(namespaceRoot))) {
+    const suffix = contract.takes_value ? (contract.value_required ? " <value>" : " [value]") : "";
+    for (const flag of [contract.flag, contract.short, ...(contract.aliases ?? [])]) {
+      if (flag !== undefined) probe.option(`${flag}${suffix}`);
+    }
+  }
+  try {
+    const parsed = probe.parseOptions(commandTokens.slice(1));
+    if (parsed.unknown.length > 0) return REGISTER_ALL_CORE_COMMAND_FAMILIES;
+    const operation = findPmNamespacedCommand([namespaceRoot, ...parsed.operands])?.alias;
+    if (PM_RELOCATED_COMMAND_ALIASES.some((alias) => alias.alias === operation)) {
+      return { ...REGISTER_ALL_CORE_COMMAND_FAMILIES, targetCommandName: operation };
+    }
+  } catch {
+    return REGISTER_ALL_CORE_COMMAND_FAMILIES;
+  }
+  return undefined;
+}
+
 /** Load only the selected core registration family, retaining complete discovery for help and unknown paths. */
 function resolveCoreCommandRegistrationSelection(invocationArgv: string[]): CoreCommandRegistrationSelection {
   if (invocationRequestsVersion(invocationArgv)) {
@@ -179,14 +203,8 @@ function resolveCoreCommandRegistrationSelection(invocationArgv: string[]): Core
   if (PM_RELOCATED_COMMAND_ALIASES.some((alias) => alias.alias === semanticCommand)) {
     return { ...REGISTER_ALL_CORE_COMMAND_FAMILIES, targetCommandName: semanticCommand };
   }
-  // An ancestor option may precede a leaf. Register possible destinations
-  // conservatively; only Commander's declared grammar decides whether a token
-  // is the leaf or an option value, and its pre-action hook validates scope.
-  if (PM_RELOCATED_COMMAND_ALIASES.some((alias) =>
-    alias.canonical_argv[0] === normalizedCommand && commandTokens.slice(1).includes(alias.canonical_argv[1]),
-  )) {
-    return REGISTER_ALL_CORE_COMMAND_FAMILIES;
-  }
+  const ancestorSelection = resolveAncestorOptionRegistration(commandTokens, normalizedCommand === "ctx" ? "context" : normalizedCommand);
+  if (ancestorSelection) return ancestorSelection;
   if (SETUP_COMMAND_NAMES.has(normalizedCommand)) {
     return {
       setup: true,

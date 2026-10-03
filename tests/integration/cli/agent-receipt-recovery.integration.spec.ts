@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { runPmCli } from "../../../src/cli/main.js";
 import type { JsonErrorEnvelope } from "../../../src/cli/error-guidance.js";
-import { PmClient, runAction } from "../../../src/sdk/runtime.js";
+import { PmClient, runAction, runGet } from "../../../src/sdk/runtime.js";
 import type { OutputOmissionReceipt } from "../../../src/sdk/output-projection.js";
 import { createTaskFixture } from "../../helpers/createTaskFixture.js";
 import { runInProcessDistCli } from "../../helpers/cliRunner.js";
@@ -24,6 +24,14 @@ describe("agent receipt and recovery contracts", () => {
         expect(error.refusal).toMatchObject({ surface, rejected_value: value, exit_code: 2 });
         if (surface === "--risk") expect(error.refusal.legal_domain).toEqual(["low", "medium", "high", "critical"]);
       }
+      const invalidDepth = await runInProcessDistCli(["get", "pm-attribution", "--depth=nonsense", "--json"], { env: context.env }, runPmCli);
+      expect(invalidDepth.code).toBe(2);
+      expect(JSON.parse(invalidDepth.stderr)).toMatchObject({ refusal: {
+        surface: "--depth", rejected_value: "nonsense", legal_domain: ["brief", "standard", "deep", "full"],
+      } });
+      await expect(runGet("pm-attribution", { path: context.pmPath }, { depth: "nonsense" })).rejects.toMatchObject({
+        exitCode: 2, context: { field: "depth", value: "nonsense", recovery: { allowed_values: ["brief", "standard", "deep", "full"] } },
+      });
       const missing = await runInProcessDistCli(["update", "missing", "--title", "x", "--json"], { env: context.env }, runPmCli);
       expect(missing.code).toBe(3);
       expect(JSON.parse(missing.stderr)).toMatchObject({ refusal: { surface: "id", rejected_value: "missing" } });

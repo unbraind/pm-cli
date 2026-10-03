@@ -6,23 +6,23 @@ status: closed
 priority: 1
 tags[3]: gh-1365,github-intake,sdk-first
 created_at: "2026-10-02T17:09:15.472Z"
-updated_at: "2026-10-03T09:45:45.388Z"
-closed_at: "2026-10-03T09:45:44.468Z"
-completed_at: "2026-10-03T09:45:44.468Z"
+updated_at: "2026-10-03T10:54:45.080Z"
+closed_at: "2026-10-03T10:54:44.246Z"
+completed_at: "2026-10-03T10:54:44.246Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Risk, deadline and missing-ID fixtures identify the actual failure; Permuting valid title/priority flags never changes attribution; Attached values, aliases, multiple invalid inputs and no flagged inputs are covered; Error paths do not mutate item state; Unknown attribution is omitted; legal-domain values correspond to the blamed field; Existing policy-specific missing-field and surface tests remain green"
 parent: pm-f05lsg
 risk: medium
 confidence: medium
-resolution: "SDK validators now own failed field, rejected value and enum-domain evidence; CLI guidance preserves producer attribution, canonical aliases, missing-ID operands and subcommand tokens without guessing from unrelated arguments."
+resolution: "SDK validators now own failed field, rejected value and enum-domain evidence; CLI guidance preserves producer attribution, canonical aliases, missing-ID operands and subcommand tokens without guessing from unrelated arguments. Review corrections add complete SDK get-depth metadata and grammar-aware registration without expanding ordinary option values."
 expected_result: "Risk and deadline refusals identify their own validator surface and rejected value; missing-item failures identify lookup or ID; valid unrelated title and priority flags never determine attribution, and unknown attribution is omitted."
-actual_result: "Five public regression tests failed before implementation and pass afterward. Full isolated suite: 9637 passed; exact coverage 100/100/100/100 with zero uncovered counts (66524 statements, 50886 branches, 13745 functions, 63433 lines). Type checking, all static-quality stages including mutation controls, native deduplicated linked tests, 52 packed Node/Bun manual commands, and nine npx/bunx package workflows passed. Two Windows-only cases are platform-skipped on Linux and retain hosted Windows gates. Required local Sentry/telemetry gate passed. Closure metadata and changelog are included in the same reviewed branch; hosted review and merge proof follow through the PR, and this batch is not part of the earlier v2026.10.3 publication."
+actual_result: "Final review correction proof for PR https://github.com/unbraind/pm-cli/pull/1376: 9638 tests passed, with exact source coverage 100/100/100/100 and zero uncovered counts: statements 66543/66543, branches 50900/50900, functions 13748/13748, lines 63446/63446. Strict static stages and type checking passed with no weakened policy; native linked commands passed with duplicate suppression. Packed manual Node/Bun acceptance passed 58 commands, preserving literal next tag values, canonical receipts, complete depth refusal evidence, rich full opt-in, and immutable history. All dependency severities and current GitHub security alert surfaces are zero; required Sentry/telemetry checks passed. First-head required CI passed and both actionable bot findings were implemented; the corrected-head hosted cycle remains required before merge. The prior v2026.10.3 publication predates this batch."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-o5s22y,discovered_from,"2026-10-02T17:09:15.472Z","harness:codex","cli:create:dep",detected
   pm-gh1363,implements,"2026-10-02T17:10:07.308Z","harness:codex","cli:update:dep",detected
   pm-o5s22y,verifies,"2026-10-03T08:35:47.992Z","harness:codex","cli:update:dep",detected
-comments[7]:
+comments[11]:
   - created_at: "2026-10-02T17:09:15.472Z"
     author: "harness:codex"
     text: "Duplicate check 2026-10-02: complete strict all-status corpus read returned 2851/2851 items with no omissions or unreadable files; exact GitHub issue/ID and contract-title searches found no canonical owner for this residual acceptance. Existing foundations are linked, including closed historical work; no closed fix is asserted outstanding. Imported report and acceptance are planning evidence, not current reproduction or implementation completion. This item remains open and unclaimed until selected for implementation."
@@ -45,14 +45,27 @@ comments[7]:
   - created_at: "2026-10-03T09:45:43.504Z"
     author: "harness:codex"
     text: "Final local delivery evidence: all mandatory static stages passed after registering the recurrence family and exact CLI refusal inventory. The original gate refusals remain in evidence; no waiver, threshold, ignore marker or assertion was weakened. The unchanged source coverage remains exact 100 percent. Closure is staged with structured evidence for the combined reviewed delivery; broader graph and semantic docstring debt retain their open canonical owners."
+  - created_at: "2026-10-03T10:08:43.002Z"
+    author: "harness:codex"
+    text: "Review round one for PR https://github.com/unbraind/pm-cli/pull/1376: all required hosted checks passed; accepted precise SDK get-depth refusal metadata and grammar-aware registration selection for option values. Reopened only the two correction owners; other verified batch items remain closed and released. Corrections will retain exact coverage, active-item ownership, and public temporary-consumer proof."
+  - created_at: "2026-10-03T10:13:48.256Z"
+    author: "harness:codex"
+    text: "Review regression evidence: invalid get-depth produces --depth/nonsense and all four legal values across direct SDK and real CLI, while full before/after item snapshots remain equal. SDK implementation and documentation were aligned, with meaningful docstrings added to five touched functions. Focused integration and registration-selection tests pass."
+  - created_at: "2026-10-03T10:41:59.053Z"
+    author: "harness:codex"
+    text: "Review local gate evidence: all static stages passed across the strict prefix and resumed tracker/registry/SDK/import-cost/transport/graph/history/mutation tail after restoring reopened expected_result through the CLI. The original complexity and active-metadata refusals are preserved in private evidence; no gate, timeout, threshold, ignore or assertion was weakened. Packed manual acceptance passed 56 Node/Bun commands, dependency audit found zero advisories at every severity, and required Sentry/telemetry checks passed with no blocking issues and 1.41 percent finish error rate. The final full coverage run is verifying the extracted grammar probe before closure and the next hosted head."
+  - created_at: "2026-10-03T10:54:43.603Z"
+    author: "harness:codex"
+    text: "Final review correction proof for PR https://github.com/unbraind/pm-cli/pull/1376: 9638 tests passed, with exact source coverage 100/100/100/100 and zero uncovered counts: statements 66543/66543, branches 50900/50900, functions 13748/13748, lines 63446/63446. Strict static stages and type checking passed with no weakened policy; native linked commands passed with duplicate suppression. Packed manual Node/Bun acceptance passed 58 commands, preserving literal next tag values, canonical receipts, complete depth refusal evidence, rich full opt-in, and immutable history. All dependency severities and current GitHub security alert surfaces are zero; required Sentry/telemetry checks passed. First-head required CI passed and both actionable bot findings were implemented; the corrected-head hosted cycle remains required before merge. The prior v2026.10.3 publication predates this batch."
 notes[1]{created_at,author,text}:
   "2026-10-03T08:53:39.591Z","harness:codex","Verification ownership: this batch keeps diagnostics and composed lifecycle behavior in shared SDK producers; CLI rendering consumes declared recovery rather than guessing from valid inputs. Real temporary tracker tests complement registration boundary tests. Root integration directory cap remains enforced; moved agent receipt suite into its CLI subdirectory. Full coverage and hosted checks are mandatory before delivery."
 learnings[1]{created_at,author,text}:
   "2026-10-03T08:32:15.885Z","harness:codex","Agent context controls must either change the declared public result or fail before host preparation. Refusal ownership follows producer evidence, restore instructions execute under the original intent, and composition identities come from persisted mutation results. Tests must observe the public boundary and unchanged tracker state rather than mirror internal forwarding."
-files[9]{path,scope}:
+files[10]{path,scope}:
   src/cli/error-guidance.ts,project
   src/core/shared/time.ts,project
   src/sdk/agent/subcommand-recovery.ts,project
+  src/sdk/context-intent-contracts.ts,project
   src/sdk/generated/generated-error-code-catalog-part-2.ts,project
   src/sdk/lifecycle/recurrence-parsers.ts,project
   src/sdk/query/get.ts,project
@@ -61,7 +74,7 @@ files[9]{path,scope}:
   tests/unit/sdk/subcommand-recovery.spec.ts,project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project,"harness:codex","2026-10-03T08:53:38.196Z",local_mutation,codex/agent-refusals-context-recovery-claim-receipts
-test_runs[1]:
+test_runs[3]:
   - run_id: test-all-local-mus6wso8-m6rk3o
     kind: test-all
     status: passed
@@ -75,9 +88,35 @@ test_runs[1]:
     linked_tests: 1
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mus8mdwb-jyvln0
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T10:16:54.456Z"
+    finished_at: "2026-10-03T10:25:17.335Z"
+    recorded_at: "2026-10-03T10:25:17.335Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mus9qf4u-24hj0m
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T10:48:02.284Z"
+    finished_at: "2026-10-03T10:53:57.385Z"
+    recorded_at: "2026-10-03T10:53:57.385Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md,project
-close_reason: Implemented and locally verified the shared SDK agent contract with TDD and packed consumers.
+close_reason: "Implemented, reviewed and locally verified the agent contract and review corrections."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

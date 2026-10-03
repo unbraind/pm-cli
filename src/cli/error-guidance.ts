@@ -661,11 +661,13 @@ function attachStructuredGuidanceDetails<
   return payload;
 }
 
+/** Prefer the producer flag, then an explicitly mentioned supplied flag; unrelated arguments cannot own a refusal. */
 function resolveRefusalCandidateFlag(
   message: GuidanceMessage,
   normalizedArgs: readonly string[],
 ): string | undefined {
   if (message.flag) return message.flag;
+  /** Admit a mentioned flag only when the invocation supplies it and it is not a presentation control. */
   const isAdmissibleCandidate = (flag: string): boolean => {
     const canonicalFlag = flag.split("=", 1)[0];
     return (
@@ -688,6 +690,7 @@ function resolveRefusalCandidateFlag(
   return mentionedFlag;
 }
 
+/** Preserve the producer scalar or read the matched flag operand without attributing another positional argument. */
 function resolveRefusalRejectedValue(
   message: GuidanceMessage,
   normalizedArgs: readonly string[],
@@ -1017,6 +1020,7 @@ function buildTrackerNotInitializedGuidance(
   );
 }
 
+/** Explain a failed item lookup with its actual ID operand and tracker-scope recovery. */
 function buildItemNotFoundGuidance(
   rawMessage: string,
   message: string,

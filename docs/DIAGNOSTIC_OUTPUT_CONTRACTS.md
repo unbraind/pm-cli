@@ -67,9 +67,11 @@ remains complete and `recovery.suggested_retry_args` is atomic: the projector
 either retains the executable argv or removes the recovery rather than slicing
 it into a dead command.
 
-Validation producers attach the failed metadata `field`, supplied `value`, and
-complete enum domain to `PmCliError.context`. CLI attribution matches that field
-to an actually supplied canonical flag; argument order and unrelated valid flags
+Enum, date, and get-depth validation producers attach the failed metadata
+`field` and supplied `value` to `PmCliError.context`; closed domains also attach
+the complete legal values, including the accepted `full` depth alias. CLI
+attribution matches that field to an actually supplied canonical flag; argument
+order and unrelated valid flags
 cannot become the refusal owner. Missing items identify the `id` operand.
 When the producer cannot identify a field or value, the diagnostic retains the
 command surface and omits the unknown scalar. Policy evidence takes precedence
