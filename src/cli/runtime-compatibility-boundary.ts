@@ -12,6 +12,7 @@ import {
   assertProjectRuntimeCompatibility,
   PmCliError,
 } from "../sdk/environment/project-runtime-compatibility.js";
+import { parseBootstrapGlobalOptions } from "../sdk/cli-bootstrap.js";
 
 /** Options for one early CLI compatibility check and deferred dispatch. */
 export interface RuntimeCompatibleCliOptions {
@@ -29,15 +30,12 @@ export interface RuntimeCompatibleCliOptions {
   writeError: (message: string) => void;
 }
 
-/** Run CLI dispatch after the SDK compatibility guard and handle declared refusal exits. */
+/** Apply SDK compatibility/output policy, emitting structured read warnings only after successful dispatch. */
 export async function runRuntimeCompatibleCli(
   options: RuntimeCompatibleCliOptions,
 ): Promise<void> {
-  const outputFormatIndex = options.argv.indexOf("--output-format");
-  const jsonOutput =
-    options.argv.includes("--json") ||
-    options.argv.includes("--output-format=json") ||
-    (outputFormatIndex >= 0 && options.argv[outputFormatIndex + 1] === "json");
+  const jsonOutput = parseBootstrapGlobalOptions([...options.argv]).json;
+  let pendingJsonWarning: string | undefined;
   try {
     if (options.executingVersion !== undefined) {
       const compatibility = assertProjectRuntimeCompatibility({
@@ -47,14 +45,19 @@ export async function runRuntimeCompatibleCli(
         allowStale: options.allowStale,
       });
       if (compatibility.warning !== undefined) {
-        options.writeError(
-          jsonOutput
-            ? `${JSON.stringify({ type: "warning", ...compatibility.warning })}\n`
-            : `[pm] warning: ${compatibility.warning.code} — ${compatibility.warning.message} Running ${compatibility.warning.executing_version}; project pin ${compatibility.warning.project_version} (${compatibility.warning.source}). ${compatibility.warning.next_steps[0]}\n`,
-        );
+        if (jsonOutput) {
+          pendingJsonWarning = `${JSON.stringify({ type: "warning", ...compatibility.warning })}\n`;
+        } else {
+          options.writeError(
+            `[pm] warning: ${compatibility.warning.code} — ${compatibility.warning.message} Running ${compatibility.warning.executing_version}; project pin ${compatibility.warning.project_version} (${compatibility.warning.source}). ${compatibility.warning.next_steps[0]}\n`,
+          );
+        }
       }
     }
     await options.run();
+    if (pendingJsonWarning !== undefined && Number(process.exitCode ?? 0) === 0) {
+      options.writeError(pendingJsonWarning);
+    }
   } catch (error) {
     if (!(error instanceof PmCliError)) throw error;
     options.writeError(

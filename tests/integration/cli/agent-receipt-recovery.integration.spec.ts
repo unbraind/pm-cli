@@ -1,11 +1,14 @@
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runPmCli } from "../../../src/cli/main.js";
+import { runRuntimeCompatibleCli } from "../../../src/cli/runtime-compatibility-boundary.js";
 import type { JsonErrorEnvelope } from "../../../src/cli/error-guidance.js";
 import { PmClient, runAction, runGet } from "../../../src/sdk/runtime.js";
 import type { OutputOmissionReceipt } from "../../../src/sdk/output-projection.js";
 import { applyContextIntentProjection } from "../../../src/sdk/context-intent-contracts.js";
 import { createTaskFixture } from "../../helpers/createTaskFixture.js";
-import { runInProcessDistCli } from "../../helpers/cliRunner.js";
+import { runDirectDistCli, runInProcessDistCli } from "../../helpers/cliRunner.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("agent receipt and recovery contracts", () => {
@@ -76,6 +79,45 @@ describe("agent receipt and recovery contracts", () => {
         expect(text.stderr).toContain("What is required:");
         expect(text.stderr.trimStart()).not.toMatch(/^\{/u);
       }
+      const before = context.runCli(["list", "--json"], { expectJson: true }).json as { items: unknown[]; count: number };
+      await writeFile(path.join(context.tempRoot, "package.json"), JSON.stringify({
+        devDependencies: { "@unbrained/pm-cli": "2099.1.1" },
+      }));
+      for (const [selector, json] of [
+        [["--json"], true],
+        [["--output-format", "json"], true],
+        [["--output-format=json"], true],
+        [["--json", "--output-format", "toon"], false],
+        [["--output-format=toon", "--json"], false],
+      ] as const) {
+        for (const invocation of [[...selector, "create", "Refused mutation"], ["create", "Refused mutation", ...selector]]) {
+          const early = runDirectDistCli(invocation, { env: context.env, cwd: context.tempRoot });
+          expect(early.code, early.stderr).toBe(4);
+          expect(early.stdout).toBe("");
+          if (json) {
+            expect(JSON.parse(early.stderr)).toMatchObject({ code: "project_runtime_stale_mutation", exit_code: 4 });
+          } else {
+            expect(early.stderr).toContain("cannot mutate a project pinned to newer pm");
+            expect(early.stderr.trimStart()).not.toMatch(/^\{/u);
+          }
+        }
+        if (json) {
+          const args = ["get", "missing", ...selector];
+          const failedRead = runDirectDistCli(args, { env: context.env, cwd: context.tempRoot });
+          const instrumentedRead = await runInProcessDistCli(args, { env: context.env, cwd: context.tempRoot },
+            (argv) => runRuntimeCompatibleCli({
+              executingVersion: "2026.8.7", projectRoot: context.tempRoot, argv, allowStale: false,
+              run: () => runPmCli(argv), writeError: (message) => { process.stderr.write(message); },
+            }));
+          const reads = [failedRead, instrumentedRead];
+          expect(reads.map((result) => result.code)).toEqual([3, 3]);
+          expect(reads.map((result) => result.stdout)).toEqual(["", ""]);
+          expect(reads.map((result) => JSON.parse(result.stderr))).toMatchObject([
+            { code: "item_not_found", exit_code: 3 }, { code: "item_not_found", exit_code: 3 },
+          ]);
+        }
+      }
+      expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ items: before.items, count: before.count });
     });
   });
 

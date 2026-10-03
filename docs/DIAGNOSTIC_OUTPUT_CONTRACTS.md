@@ -85,6 +85,11 @@ over syntactic attribution. Tracked by [pm-gh1365](../.agents/pm/issues/pm-gh136
 JSON on stderr for parser and execution errors as well as successful output.
 The canonical `--output-format` selector wins when combined with `--json`, so
 `--output-format toon --json` retains text diagnostics. Exit codes are unchanged.
+The executable's project-runtime compatibility warnings and refusals use that
+same SDK selector, including repeated formats and the `--` terminator. A JSON
+stale-read warning is emitted after successful dispatch; a failed read emits its
+typed error alone so stderr remains one JSON value. Text warnings retain their
+pre-dispatch presentation.
 Tracked by [pm-gh1366](../.agents/pm/issues/pm-gh1366.toon).
 
 The deterministic ladder is:
