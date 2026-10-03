@@ -1740,6 +1740,25 @@ function buildNormalizedSettingsForSerialization(
   };
 }
 
+/** Restore only present validated source values so deltas include normalization without materializing omitted defaults. */
+function overlayPresentSettingsSource(
+  target: Record<string, unknown>,
+  source: object,
+): void {
+  for (const key of Object.keys(source)) {
+    const value: unknown = Reflect.get(source, key);
+    const existing = target[key];
+    if (
+      typeof value === "object" && value !== null && !Array.isArray(value) &&
+      typeof existing === "object" && existing !== null && !Array.isArray(existing)
+    ) {
+      overlayPresentSettingsSource(existing as Record<string, unknown>, value);
+    } else {
+      target[key] = structuredClone(value);
+    }
+  }
+}
+
 function applySettingsDelta(
   target: Record<string, unknown>,
   baseline: Record<string, unknown>,
@@ -1868,6 +1887,7 @@ export function serializeSettings(
       baselineSettings,
       persistSource,
     );
+    if (options.source !== undefined) overlayPresentSettingsSource(baseline, options.source.validated);
     const sparse = structuredClone(
       options.source === undefined ? persistSource.source_settings : options.source.raw,
     ) as unknown as Record<string, unknown>;

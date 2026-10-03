@@ -4,9 +4,9 @@ description: "GH-1377/1378/1380 expose separate portable-boundary regressions in
 type: Issue
 status: in_progress
 priority: 1
-tags: []
+tags[4]: context-management,github-intake,portability,regression
 created_at: "2026-10-03T20:11:29.225Z"
-updated_at: "2026-10-03T22:34:18.309Z"
+updated_at: "2026-10-03T22:56:12.977Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#c34534ca90095a05f3a48f57"
 author: "harness:codex"
@@ -17,13 +17,14 @@ risk: medium
 confidence: high
 expected_result: "Canonical physical/aliased race fixtures and resolved cursor scopes pass on native Windows, macOS and Linux. Persistent invalid-path diagnostics are preserved, disappearing entries retry safely, and every source coverage metric remains exactly 100 percent."
 actual_result: "Pre-fix boundary controls reproduced cursor and persistent-path failures. Focused real-filesystem, SDK and linked tests now pass. Native focused checks pass; complete hosted validation identified remaining registry-fixture ordering and missing planning metadata, which are being corrected without weakening gates."
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-2sef82,verifies,"2026-10-03T20:11:29.225Z","harness:codex","cli:create:dep",detected
   pm-2zjs0g,incident_from,"2026-10-03T20:11:29.225Z","harness:codex","cli:create:dep",detected
   pm-fgih,verifies,"2026-10-03T20:11:29.225Z","harness:codex","cli:create:dep",detected
   pm-gh1370,recurs_from,"2026-10-03T20:11:29.225Z","harness:codex","cli:create:dep",detected
   pm-j668gl,discovered_from,"2026-10-03T20:11:29.225Z","harness:codex","cli:create:dep",detected
-comments[9]{created_at,author,text}:
+  pm-5iwfkj,verifies,"2026-10-03T22:51:58.638Z","harness:codex","cli:update:dep",detected
+comments[11]{created_at,author,text}:
   "2026-10-03T20:11:29.225Z","harness:codex","Duplicate check: strict all-status full-body corpus 2867/2867 with complete receipt and zero omissions/unreadables. Examined all matching settings/snapshot/cursor/platform titles and full shipped semantic-preview owner pm-gh1370; pm-2zjs0g is expressly rate measurement rather than individual repairs and stays open/unclaimed. No existing leaf owns these new persistent-path classification and canonical-injection causes. Original nightly run 37114037678 remains failing evidence; Ubuntu Node22 repair is already shipped separately under pm-5iwfkj."
   "2026-10-03T20:12:46.090Z","harness:codex","Test-audit rationale: retain actual filesystem state transitions and propagation of structural/permission/link failures; normalize the chosen path spelling so injection executes rather than weakening expected results. Extend the existing snapshot fault table with Windows ENOENT-below-file and nested missing-ancestor cases; the production classifier must distinguish these without treating a persistent error as a retryable race. Search cursor fingerprint should bind its documented resolved scope consistently."
   "2026-10-03T20:26:46.648Z","harness:codex","TDD negative controls on the unchanged production tree: 6 expected failures and 58 passes. The Windows ENOENT boundary now reproduces on Linux by translating only the actual lstat ENOTDIR syscall failure below a real regular file. Native assertions are retained. Search scopes now normalize through the shared SDK fingerprint. Canonical settings race injection targets fs.realpath output; native macOS and Windows regression checks cover these files before merge."
@@ -33,6 +34,46 @@ comments[9]{created_at,author,text}:
   "2026-10-03T21:54:58.113Z","harness:codex","Live release/observability boundary check: today has one successful native scheduled Auto Release (37109948652), GitHub release and public npm both expose immutable 2026.10.3. Automatic workflow serializes attempts and reuses an existing exact-day tag before preparation; it does not create another automatic same-day version. These branch repairs remain separate from that earlier publication. Recent Sentry gate observed zero critical/high blockers, telemetry finish error rate 1.42 percent and zero missing error-code rows, and a real queue flush drained one event successfully. No trace rows were returned, so complete end-to-end action/trace coverage is not certified."
   "2026-10-03T22:05:47.371Z","harness:codex","Hosted head 50f7ff9ee failure analysis: static tracker-context quality found this new owner missing risk/confidence/estimate/expected behavior. Those planning fields are now supplied through pm. Coverage shard 4 and native Windows failed the existing gate-registry test because it copied families[0] and asserted the boundary-format family ID after a new family was inserted. The fixture now selects its stable ID explicitly and uses the public policy type, preserving the exact matrix-rename refusal assertion. This is a fixture-order dependency, not a weakened production registry check."
   "2026-10-03T22:34:18.309Z","harness:codex","Round-two gate remediation: native portability cases passed, but the newly registered recurrence family exposed an existing gate-registry test that selected the first family while asserting a different fixed ID. The fixture now selects boundary-format-drift by ID and retains the stale matrix-check refusal assertion. Hosted tracker-context quality also required risk, confidence, estimate and expected-result metadata; these are now supplied through pm. The linked CI/recurrence verification command was replaced, not duplicated, to include the gate-registry regression. Nightly and aggregate coverage failures from that head are retained as failures, pending a fresh complete run."
+  "2026-10-03T22:40:35.791Z","harness:codex","Production/source verification at ce81a2fe9: both linked commands passed, with 211 runtime tests and 33 workflow/recurrence tests. The complete native nightly and PR checks are running on the repaired source. GitHub Dependabot, code-scanning and secret-scanning live inventories each contain zero open alerts; the local tracked-file secret scanner passes. Sentry/telemetry live gate passes for the last day: no critical/high issue and no missing error-code telemetry rows; finish error rate 1.42 percent is within its 6 percent guardrail. This is bounded production observation, not proof of every individual action or complete tracing. Reviewer availability limits (CodeRabbit/cubic/Sourcery quota receipts) are retained independently of approval, and Greptile P1 preservation remediation is linked to the paired SDK owner."
+  "2026-10-03T22:54:26.473Z","harness:codex","Exact graph remediation: a full prose-reference comparison against the initial complete corpus identified only two new missing pairs: this owner cites the already closed supported-Node22 snapshot repair, and the SDK owner cites the canonical semantic-docstring debt. Added a verifies relationship to the existing Node22 owner and a discovered_from relationship from the documentation owner to the current SDK observations. The graph-composition gate now passes with 1236 prose gaps, retaining its original ceiling; semantic/verification edges increased with evidence, and no synthetic ancestry or historical knowledge was invented."
+notes[2]:
+  - created_at: "2026-10-03T22:43:49.120Z"
+    author: "harness:codex"
+    text: "{\"observed_at\":\"2026-10-03T22:42:15.166Z\",\"queue_drained\":1,\"queue_rows_at_flush_receipt\":0,\"scope\":\"recent threshold gate and one real queue flush\",\"sentry_critical\":0,\"sentry_high\":0,\"telemetry_finish_error_rate_percent\":1.42,\"telemetry_missing_error_code_rows\":0,\"trace_completeness_verified\":false,\"type\":\"observability.bounded\",\"window_days\":1}"
+    format: json
+    data:
+      type: observability.bounded
+      observed_at: "2026-10-03T22:42:15.166Z"
+      window_days: 1
+      sentry_critical: 0
+      sentry_high: 0
+      telemetry_finish_error_rate_percent: 1.42
+      telemetry_missing_error_code_rows: 0
+      queue_drained: 1
+      queue_rows_at_flush_receipt: 0
+      trace_completeness_verified: false
+      scope: recent threshold gate and one real queue flush
+    event_type: observability.bounded
+  - created_at: "2026-10-03T22:56:12.975Z"
+    author: "harness:codex"
+    text: "{\"ci_run\":37158980558,\"coverage_exact\":{\"branches\":{\"covered\":50924,\"total\":50924},\"functions\":{\"covered\":13750,\"total\":13750},\"lines\":{\"covered\":63468,\"total\":63468},\"statements\":{\"covered\":66569,\"total\":66569}},\"coverage_files\":762,\"native_nightly_matrix_entries_passed\":6,\"nightly_quality_passed\":false,\"nightly_run\":37159066515,\"source_head\":\"ce81a2fe9\",\"static_failure\":\"two new unsupported prose references now linked without raising the 1236 ceiling\",\"superseded_by_later_source_fix\":true,\"type\":\"validation.hosted\"}"
+    format: json
+    data:
+      type: validation.hosted
+      source_head: ce81a2fe9
+      ci_run: 37158980558
+      nightly_run: 37159066515
+      coverage_exact[4:]{covered,total}:
+        lines: 63468,63468
+        statements: 66569,66569
+        functions: 13750,13750
+        branches: 50924,50924
+      coverage_files: 762
+      native_nightly_matrix_entries_passed: 6
+      nightly_quality_passed: false
+      static_failure: two new unsupported prose references now linked without raising the 1236 ceiling
+      superseded_by_later_source_fix: true
+    event_type: validation.hosted
 learnings[1]{created_at,author,text}:
   "2026-10-03T21:50:57.168Z","harness:codex","A native ENOENT is not by itself evidence of a disappearing snapshot path. Verify the nearest existing ancestor and preserve diagnostics for regular files, links, permission failures, and unavailable roots. Race fixtures must inject against the same canonical path the implementation opens. Register concrete recurrence checks when recording recurs_from edges, and organize new SDK specs in their existing domain folders."
 files[9]{path,scope}:
@@ -48,7 +89,7 @@ files[9]{path,scope}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/commands/query/search-command.spec.ts,project,300,"harness:codex","2026-10-03T20:34:18.304Z",local_mutation,feat/canonical-sdk-settings-preview-platform-recovery
   node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/defect-evidence-gate.spec.ts tests/unit/scripts/release/gate-registry.spec.ts --maxWorkers=2,project,300,"harness:codex","2026-10-03T22:33:41.347Z",local_mutation,feat/canonical-sdk-settings-preview-platform-recovery
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-musx6ben-sivicz
     kind: test
     status: passed
@@ -61,6 +102,20 @@ test_runs[1]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/commands/query/search-command.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/defect-evidence-gate.spec.ts --maxWorkers=2,schema,schema,source,local_source_ref
+  - run_id: test-local-musz1duq-9i5y1f
+    kind: test
+    status: passed
+    started_at: "2026-10-03T22:35:06.039Z"
+    finished_at: "2026-10-03T22:36:24.290Z"
+    recorded_at: "2026-10-03T22:36:24.290Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/commands/query/search-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/defect-evidence-gate.spec.ts tests/unit/scripts/release/gate-registry.spec.ts --maxWorkers=2,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

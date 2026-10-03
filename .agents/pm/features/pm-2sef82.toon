@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: agent-ux,context-management,github-intake
 created_at: "2026-09-30T06:48:43.202Z"
-updated_at: "2026-10-03T22:34:52.753Z"
+updated_at: "2026-10-03T22:56:08.071Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#c34534ca90095a05f3a48f57"
 author: "harness:codex"
@@ -21,7 +21,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-wtqltn,discovered_from,"2026-09-30T06:48:43.202Z","harness:codex","cli:create:dep",detected
   pm-9rgaal,implements,"2026-10-03T20:12:43.404Z","harness:codex","cli:update:dep",detected
   pm-wtqltn,implements,"2026-10-03T20:12:43.404Z","harness:codex","cli:update:dep",detected
-comments[7]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-09-30T06:48:43.202Z","harness:codex","Duplicate check: complete strict all-status corpus contained 2843 records with no unreadable directories or items. Exact GitHub ID plus behavior/root-cause searches were complete. Closed prior lineage pm-wtqltn and its full history were read; this new report requests a distinct unimplemented contract. Relationship reconstructed during current intake rather than asserted as historical knowledge. Queued and unclaimed; source investigation remains pending."
   "2026-10-03T20:11:01.244Z","harness:codex","Implementation plan: opt-in host-owned canonical persistence preview from the same audited lock-scoped serializer, preserving bounded default receipts, inert retries and read-only dry runs. Primary contracts are real SDK persistence/history plus copied extension transport and packed Node/Bun consumers. Related platform preview failures will be fixed in this reviewed bundle under their own canonical owner. Strict all-status intake: 2867/2867, complete, zero omissions, zero unreadable records, zero in_progress before claim."
   "2026-10-03T20:26:48.048Z","harness:codex","Canonical preview design: includePreview opt-in returns the normalized inline tree derived from the exact locked serialized bytes, before optional file-backed schema overlays. Ordinary receipts remain three booleans. Replays omit preview because the callback is not executed and historical proposals must not be invented from current state. Direct dry runs use the existing configuration-only settings policy to avoid hooks and missing-schema scaffolding. TDD missing-preview failures reproduced before source edits for minimal, strict and custom presets."
@@ -29,8 +29,30 @@ comments[7]{created_at,author,text}:
   "2026-10-03T21:54:56.601Z","harness:codex","Manual packed acceptance: fresh temporary Node and Bun projects installed the current tarball and a copied extension with no local SDK runtime import. Canonical named-preset preview matches the applied result, dry-run settings/history bytes remain identical, replay stays bounded without a fabricated preview, item create/get/context/structured close succeeds, workspace history verifies, and strict health is clean. Packed npm/npx/bunx and typed SDK consumer smoke also passed. Published npm remains immutable 2026.10.3 and predates this branch; current packed source acceptance is not a publication claim."
   "2026-10-03T21:58:14.366Z","harness:codex","Greptile P1 review of head 50f7ff9ee identified a valid forward-compatibility regression: changed settings mutations replace the normalized known tree and discard an unrecognized top-level source field, even though sparse no-ops already preserve it. Reproduce with a real custom future field plus a known-setting change, then preserve unknown source keys under the existing audited lock while keeping canonical callback/preview trees typed and normalized. Validate final bytes and retain known-field deletion semantics; do not invent another PM item for this review correction."
   "2026-10-03T22:34:16.194Z","harness:codex","Review remediation: Greptile identified real forward-compatibility data loss on changed writes. The new real-filesystem control failed 1/7 before the fix; a nested-field extension also failed 1/7 against a shallow preservation attempt. The final implementation reuses the core serializer source-delta machinery, pairing the locked original JSON with its validated projection. Known-value edits retain top-level and nested unrecognized fields and sparse omissions; canonical callback/preview trees remain typed known settings. Existing array replacement semantics remain explicit. Focused verification passed 95 tests across five suites, including ordinary settings writes and copied extensions. Semantic serializer/callback documentation was improved; the generated filler baseline decreased from 4133 to 4132, while the broader pm-dvwm semantic-docstring backlog remains open. Full exact-head coverage and packed source-field acceptance remain pending."
-learnings[1]{created_at,author,text}:
+  "2026-10-03T22:39:35.420Z","harness:codex","Exact source-fix acceptance at ce81a2fe9: linked preview/extension verification passed 17/17 tests; the paired portability owner passed 211/211 runtime tests plus 33/33 CI/recurrence tests. A freshly packed tarball was installed into a new consumer outside the checkout. Real Node and Bun copied extensions used only the injected host SDK to seed a future field, preview a normalized proposal, apply it, preserve the future field outside the canonical preview, replay with the bounded receipt, create/read/context/close an item, and verify workspace history and strict health. Dry-run settings and history bytes stayed unchanged. Both runtimes passed. Typecheck passed all four repository/type-consumer targets. GitHub DeepScan reports zero new/fixed issues and CodeFactor passed on this source head. Full hosted coverage/native-nightly and local static gates remain pending."
+  "2026-10-03T22:48:03.883Z","harness:codex","Round-three follow-up: all-source hosted coverage passed on ce81a2fe9, but Greptile identified a valid P2 compatibility edge: source-delta comparison uses two normalized trees, so changed writes can retain old non-canonical inline values such as json_markdown or an unsanitized collection name. Reproduce with legacy source plus an unrelated known edit, then canonicalize present known values while retaining future fields and absent defaults. Keep identity no-op byte preservation. Hosted static separately blocks because the prose-edge-gap graph census rose from 1236 to 1238; inspect the exact new prose references and add only semantically supported relationships rather than raising its ceiling."
+  "2026-10-03T22:56:08.070Z","harness:codex","P2 TDD and repair: extending the existing sparse-source contract with json_markdown and old/name, then changing only author and rerank values, failed 1/7 before the fix. The serializer baseline now overlays only present validated source values onto its normalized comparison tree. This makes changed writes persist toon and old_name while retaining missing governance/ux defaults and future root/nested fields; identity no-ops remain byte-identical. The same 70 real settings-store, SDK and copied-extension tests pass. A focused coverage diagnostic confirmed the new overlay helper is exercised, but its limited suite leaves 17 existing source statements uncovered elsewhere and is not a canonical coverage pass. Fresh all-source hosted coverage is required for this change."
+notes[1]:
+  - created_at: "2026-10-03T22:43:41.850Z"
+    author: "harness:codex"
+    text: "{\"dry_run_bytes_inert\":true,\"future_root_fields_retained\":true,\"item_context_lifecycle\":true,\"npx_bunx_packages\":9,\"preview_apply_parity\":true,\"publication_verified_for_this_change\":false,\"replay_bounded\":true,\"runtimes\":[\"node\",\"bun\"],\"source_head\":\"ce81a2fe9\",\"type\":\"acceptance.packed\",\"workspace_history_verified\":true}"
+    format: json
+    data:
+      type: acceptance.packed
+      source_head: ce81a2fe9
+      runtimes[2]: node,bun
+      preview_apply_parity: true
+      future_root_fields_retained: true
+      dry_run_bytes_inert: true
+      replay_bounded: true
+      item_context_lifecycle: true
+      workspace_history_verified: true
+      npx_bunx_packages: 9
+      publication_verified_for_this_change: false
+    event_type: acceptance.packed
+learnings[2]{created_at,author,text}:
   "2026-10-03T21:50:55.682Z","harness:codex","Canonical mutation previews must come from the exact locked serialized bytes and shared inline normalizer. File-backed schema hydration belongs to a separate read boundary. Validate after serialization as well as before it: mutable/getter-backed proposals can change between the two. Replay receipts cannot reconstruct an old proposal from current settings."
+  "2026-10-03T22:43:46.038Z","harness:codex","Forward compatibility belongs to the source-aware persistence boundary. Canonical projections deliberately omit future fields, so serializing only the projection can lose data even when preview equality is correct. Reuse the normal recursive source-delta serializer and test root plus nested unrecognized fields, dry-run inertness and audited apply history in one real-filesystem contract."
 files[7]{path,scope}:
   scripts/release/docstring-quality-baseline.json,project
   sdk/public-surface.json,project
@@ -75,6 +97,7 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/settings-preview.spec.ts tests/integration/extension-host-contracts.integration.spec.ts --maxWorkers=2,schema,schema,source,local_source_ref
-docs[1]{path,scope}:
+docs[2]{path,scope}:
+  CHANGELOG.md,project
   docs/SDK_AUDITED_MUTATIONS.md,project
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/1356\n\nReporter independently observed a dry-run boolean receipt without canonical settings on published 2026.9.30. Named governance preset normalization is correct, but the callback proposal differs from the effective persisted result. No settings/history preview writes were reported. Current-tree design and implementation are pending.\n\nRequested contract: A copied extension can obtain the exact validated effective settings preview through the host capability without duplicate normalization or a local SDK runtime import.\n\nVerification plan: reproduce the public report in a temporary project outside this checkout with both PM roots isolated, demonstrate a relevant regression, then validate the SDK boundary, thin transport where applicable, complete coverage and packed consumers. No implementation is included in PR #1353."

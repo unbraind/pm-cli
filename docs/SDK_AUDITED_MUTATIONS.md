@@ -44,7 +44,8 @@ Changed writes apply known-setting changes to the captured source through the
 standard serializer, preserving sparse omissions and unrecognized fields in
 unchanged containers for forward compatibility. Those fields remain outside the
 typed callback and canonical preview. Replacing an array replaces its complete
-contents, as in normal settings writes.
+contents, as in normal settings writes. Present legacy values are canonicalized
+on a changed write; an identity no-op still retains the original bytes.
 The host also validates the final serialized bytes before committing, so a
 proposal that changes while being serialized cannot persist invalid settings.
 The host applies the standard settings serializer, including legacy format

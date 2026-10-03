@@ -77,6 +77,9 @@ describe("canonical host settings preview", () => {
       const sparse = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown>;
       delete sparse.governance;
       delete sparse.ux;
+      sparse.item_format = "json_markdown";
+      const sourceVector = sparse.vector_store as Record<string, unknown>;
+      sourceVector.collection_name = "old/name";
       sparse.future_setting = { version: 2, custom: ["preserved", { enabled: true }] };
       const sourceSearch = sparse.search as Record<string, unknown>;
       sourceSearch.future_provider = { options: ["vendor", { enabled: true }] };
@@ -110,10 +113,13 @@ describe("canonical host settings preview", () => {
       expect(await readHistoryEntries(getWorkspaceHistoryPath(pmPath), WORKSPACE_HISTORY_ID)).toHaveLength(0);
       const applied = await sdk.mutateWorkspaceSettings({ ...changedOptions, dryRun: false });
       expect(applied).toEqual({ ...changedPreview, dry_run: false });
-      expect(JSON.parse(await readFile(settingsPath, "utf8"))).toMatchObject({
-        author_default: "changed", future_setting: sparse.future_setting,
+      const saved = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown>;
+      expect(saved).toMatchObject({
+        author_default: "changed", item_format: "toon", vector_store: { collection_name: "old_name" }, future_setting: sparse.future_setting,
         search: { future_provider: sourceSearch.future_provider, rerank: { future_ranker: sourceRerank.future_ranker } },
       });
+      expect(saved).not.toHaveProperty("governance");
+      expect(saved).not.toHaveProperty("ux");
       expect(await runWithConfigurationOnlySettings(pmPath, () => readSettings(pmPath))).toEqual(changedPreview.preview);
       expect(await readHistoryEntries(getWorkspaceHistoryPath(pmPath), WORKSPACE_HISTORY_ID)).toHaveLength(1);
     });
