@@ -3,6 +3,7 @@
  * Copies linked-test source files while retaining each installed dependency root.
  */
 import { cp, lstat, mkdir, readlink, realpath, stat, symlink } from "node:fs/promises";
+import type { Stats } from "node:fs";
 import path from "node:path";
 import { isFileMissingError } from "../../core/fs/fs-utils.js";
 
@@ -18,6 +19,16 @@ function hasExcludedSegment(relative: string): boolean {
 /** Detect an ancestor, sibling or different-volume target relative to the workspace. */
 function isOutsideWorkspace(relative: string): boolean {
   return relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative);
+}
+
+/** Read target metadata across supported runtimes, treating only ENOENT as absence and propagating other filesystem failures. */
+async function statSnapshotTarget(source: string): Promise<Stats | undefined> {
+  try {
+    return await stat(source);
+  } catch (error) {
+    if (!isFileMissingError(error)) throw error;
+    return undefined;
+  }
 }
 
 /**
@@ -96,7 +107,7 @@ export async function seedLinkedTestWorkspaceSnapshot(
       if (!relative) return true;
       if (hasExcludedSegment(relative)) return false;
       if (path.basename(source).toLowerCase() === "node_modules") {
-        if ((await stat(source, { throwIfNoEntry: false }))?.isDirectory()) {
+        if ((await statSnapshotTarget(source))?.isDirectory()) {
           const target = await resolveLinkTarget(source);
           const targetRelative = path.relative(resolvedSourceRoot, target);
           if (!isOutsideWorkspace(path.relative(target, resolvedSourceRoot))
@@ -109,7 +120,7 @@ export async function seedLinkedTestWorkspaceSnapshot(
         return false;
       }
       if (!(await lstat(source)).isSymbolicLink()) return true;
-      sourceLinks.push([relative, path.resolve(path.dirname(source), await readlink(source)), (await stat(source, { throwIfNoEntry: false }))?.isDirectory() ? "junction" : "file"]);
+      sourceLinks.push([relative, path.resolve(path.dirname(source), await readlink(source)), (await statSnapshotTarget(source))?.isDirectory() ? "junction" : "file"]);
       return false;
     },
   });

@@ -67,12 +67,16 @@ remains complete and `recovery.suggested_retry_args` is atomic: the projector
 either retains the executable argv or removes the recovery rather than slicing
 it into a dead command.
 
-Enum, date, and get-depth validation producers attach the failed metadata
+Enum, date, get-depth, and minimum intent-budget validation producers attach the failed metadata
 `field` and supplied `value` to `PmCliError.context`; closed domains also attach
 the complete legal values, including the accepted `full` depth alias. CLI
-attribution matches that field to an actually supplied canonical flag; argument
-order and unrelated valid flags
-cannot become the refusal owner. Missing items identify the `id` operand.
+attribution normalizes camelCase and snake_case fields to an actually supplied
+canonical flag, so `tokenBudget` identifies `--token-budget`. Explicit flag
+metadata retains its spelling. Argument order and unrelated valid flags cannot
+become the refusal owner. The error-context `value` is text, including the
+textual representation of numeric SDK inputs. Compound projection conflicts
+identify their flag without inventing a rejected scalar. Missing items identify
+the `id` operand.
 When the producer cannot identify a field or value, the diagnostic retains the
 command surface and omits the unknown scalar. Policy evidence takes precedence
 over syntactic attribution. Tracked by [pm-gh1365](../.agents/pm/issues/pm-gh1365.toon).

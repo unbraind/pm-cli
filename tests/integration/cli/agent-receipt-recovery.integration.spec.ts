@@ -3,6 +3,7 @@ import { runPmCli } from "../../../src/cli/main.js";
 import type { JsonErrorEnvelope } from "../../../src/cli/error-guidance.js";
 import { PmClient, runAction, runGet } from "../../../src/sdk/runtime.js";
 import type { OutputOmissionReceipt } from "../../../src/sdk/output-projection.js";
+import { applyContextIntentProjection } from "../../../src/sdk/context-intent-contracts.js";
 import { createTaskFixture } from "../../helpers/createTaskFixture.js";
 import { runInProcessDistCli } from "../../helpers/cliRunner.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
@@ -42,6 +43,14 @@ describe("agent receipt and recovery contracts", () => {
       const sdkConflict = await runGet("pm-attribution", { path: context.pmPath }, { full: true, fields: "id" }).catch((error: unknown) => error);
       expect(sdkConflict).toMatchObject({ context: { flag: "--full" } });
       expect(sdkConflict).not.toHaveProperty("context.value");
+      for (const controls of [["--for", "orient", "--token-budget", "200"], ["--token-budget=200", "--for=orient"]]) {
+        const budget = await runInProcessDistCli(["context", ...controls, "--json"], { env: context.env }, runPmCli);
+        expect(budget.code).toBe(2);
+        expect(JSON.parse(budget.stderr)).toMatchObject({ refusal: { surface: "--token-budget", rejected_value: "200" } });
+      }
+      expect(() => applyContextIntentProjection("context", { for: "orient", tokenBudget: 200 })).toThrowError(expect.objectContaining({
+        exitCode: 2, context: expect.objectContaining({ field: "tokenBudget", value: "200" }),
+      }));
       const missing = await runInProcessDistCli(["update", "missing", "--title", "x", "--json"], { env: context.env }, runPmCli);
       expect(missing.code).toBe(3);
       expect(JSON.parse(missing.stderr)).toMatchObject({ refusal: { surface: "id", rejected_value: "missing" } });

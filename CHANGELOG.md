@@ -4,17 +4,18 @@
 
 ### Fixed
 
+- GH-1354: Linked-test snapshot mode drops nested package dependencies and breaks monorepo acceptance ([pm-5iwfkj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5iwfkj.toon))
+- GH-1365: Agent UX: typed update refusals blame valid flags instead of the field that failed validation ([pm-gh1365](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1365.toon))
 - GH-1369: Agent UX: claim --start bypasses compact mutation receipts and returns a noncanonical outer ID ([pm-gh1369](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1369.toon))
 - GH-1368: Agent UX: context next silently ignores inherited --fields and --depth options, including invalid values ([pm-gh1368](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1368.toon))
-- GH-1365: Agent UX: typed update refusals blame valid flags instead of the field that failed validation ([pm-gh1365](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1365.toon))
 - GH-1367: Agent UX: context handoff omission receipts suggest depth flags that do not restore omitted sections ([pm-gh1367](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1367.toon))
 - GH-1366: Agent UX: --output-format json emits human errors while --json emits structured errors ([pm-gh1366](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1366.toon))
 
+### Other
+
+- Published artifact weight: the npm tarball ships 20MB of inline-source sourcemaps plus duplicate tsc and bundle outputs ([pm-998juj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-998juj.toon))
+
 ## 2026.10.3 - 2026-10-03
-
-### Fixed
-
-- GH-1354: Linked-test snapshot mode drops nested package dependencies and breaks monorepo acceptance ([pm-5iwfkj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5iwfkj.toon))
 
 ### Security
 
@@ -1227,7 +1228,6 @@
 ### Other
 
 - Scripting contract: documented and test-gated guarantees for exit codes, stdout/stderr stream discipline, and stable machine-readable field names ([pm-psy1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-psy1.toon))
-- Published artifact weight: the npm tarball ships 20MB of inline-source sourcemaps plus duplicate tsc and bundle outputs ([pm-998juj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-998juj.toon))
 
 ## 2026.8.3 - 2026-08-03
 

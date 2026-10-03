@@ -594,6 +594,7 @@ function parsePositiveIntentTokenBudget(value: unknown): number | undefined {
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
+/** Reject budgets below the intent receipt minimum while preserving the caller's value as typed error-context text. */
 function resolveIntentTokenBudget(
   value: unknown,
   declaredBudget: number,
@@ -608,6 +609,7 @@ function resolveIntentTokenBudget(
         code: "invalid_argument_value",
         reason: "below_minimum",
         field: "tokenBudget",
+        value: String(value),
         required: `Use an integer token budget of at least ${MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET}.`,
         why: "Smaller ceilings cannot contain the minimum machine-readable intent receipt.",
         nextSteps: [

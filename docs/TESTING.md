@@ -575,6 +575,14 @@ pm test <item-id> --run --workspace-context snapshot --override-linked-workspace
   must be physically disjoint; overlapping roots fail before copying with a
   diagnostic directing the caller to a temporary root outside the checkout.
 
+  Snapshot target probes treat only `ENOENT` as absence and propagate other
+  filesystem failures. They use explicit error handling so Node 22 and older
+  Node 24 releases retain the same dangling-link behavior; the async `stat`
+  `throwIfNoEntry` option was added in
+  [Node 24.15](https://nodejs.org/download/release/v24.20.0/docs/api/fs.html#fspromisesstatpath-options).
+  The real filesystem and CLI snapshot suite runs in the required Node 22
+  telemetry regression job and native Windows regression job before merge.
+
   The real-filesystem regression for this contract is tracked by
   [pm-5iwfkj](../.agents/pm/issues/pm-5iwfkj.toon).
 

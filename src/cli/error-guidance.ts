@@ -911,11 +911,15 @@ function normalizeContextValue<Fallback extends string | undefined>(
     : fallback;
 }
 
-/** Match producer-owned metadata to supplied canonical flags without guessing from other arguments. */
+/** Match camelCase or snake_case SDK fields to supplied kebab-case flags, preserving explicit flag metadata. */
 function resolveErrorContextFlag(context: PmCliErrorContext, recovery: PmCliErrorRecoveryPayload | undefined): string | undefined {
   if (context.flag !== undefined) return context.flag;
   if (context.field === undefined) return undefined;
-  const flag = context.field.startsWith("--") ? context.field : `--${context.field.replaceAll("_", "-")}`;
+  const flag = context.field.startsWith("--") ? context.field : `--${context.field
+    .replaceAll(/([A-Z])([A-Z][a-z])/gu, "$1-$2")
+    .replaceAll(/([a-z0-9])([A-Z])/gu, "$1-$2")
+    .replaceAll("_", "-")
+    .toLowerCase()}`;
   return recovery?.normalized_args?.some(/** Match only the supplied canonical spelling or its attached value; another valid flag cannot own this refusal. */ (argument) => argument === flag || argument.startsWith(`${flag}=`)) ? flag : undefined;
 }
 
