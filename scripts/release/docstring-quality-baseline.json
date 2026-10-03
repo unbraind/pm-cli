@@ -105,7 +105,7 @@
     "src/core/store/paths.ts": 17,
     "src/core/store/settings-read-cache.ts": 11,
     "src/core/store/settings-validator.ts": 21,
-    "src/core/store/settings.ts": 10,
+    "src/core/store/settings.ts": 9,
     "src/core/telemetry/observability.ts": 8,
     "src/core/telemetry/runtime.ts": 43,
     "src/core/test/background-runs.ts": 88,

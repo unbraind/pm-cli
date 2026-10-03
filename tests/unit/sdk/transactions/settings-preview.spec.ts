@@ -71,13 +71,17 @@ describe("canonical host settings preview", () => {
     });
   });
 
-  it("supplies complete inline settings to callbacks while preserving sparse no-op source bytes", async () => {
+  it("supplies canonical callbacks while preserving sparse no-ops and unknown fields on changes", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const settingsPath = path.join(pmPath, "settings.json");
       const sparse = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown>;
       delete sparse.governance;
       delete sparse.ux;
-      sparse.future_setting = "retained on a no-op";
+      sparse.future_setting = { version: 2, custom: ["preserved", { enabled: true }] };
+      const sourceSearch = sparse.search as Record<string, unknown>;
+      sourceSearch.future_provider = { options: ["vendor", { enabled: true }] };
+      const sourceRerank = sourceSearch.rerank as Record<string, unknown>;
+      sourceRerank.future_ranker = { strategy: "custom" };
       const before = `${JSON.stringify(sparse)}\n`;
       await writeFile(settingsPath, before);
       const expected = await runWithConfigurationOnlySettings(pmPath, () => readSettings(pmPath));
@@ -90,6 +94,28 @@ describe("canonical host settings preview", () => {
       expect(await sdk.mutateWorkspaceSettings(options)).toEqual({ changed: false, dry_run: true, replayed: false, preview: expected });
       expect(await readFile(settingsPath, "utf8")).toBe(before);
       expect(await readHistoryEntries(getWorkspaceHistoryPath(pmPath), WORKSPACE_HISTORY_ID)).toHaveLength(0);
+      const changedOptions = {
+        ...options, operationId: "sparse-change",
+        mutate: (current: PmSettings) => {
+          expect(current).toEqual(expected);
+          return { ...current, author_default: "changed", search: { ...current.search, rerank: { ...current.search.rerank, top_k: current.search.rerank.top_k + 1 } } };
+        },
+      };
+      const changedPreview = await sdk.mutateWorkspaceSettings(changedOptions);
+      expect(changedPreview).toEqual({
+        changed: true, dry_run: true, replayed: false,
+        preview: { ...expected, author_default: "changed", search: { ...expected.search, rerank: { ...expected.search.rerank, top_k: expected.search.rerank.top_k + 1 } } },
+      });
+      expect(await readFile(settingsPath, "utf8")).toBe(before);
+      expect(await readHistoryEntries(getWorkspaceHistoryPath(pmPath), WORKSPACE_HISTORY_ID)).toHaveLength(0);
+      const applied = await sdk.mutateWorkspaceSettings({ ...changedOptions, dryRun: false });
+      expect(applied).toEqual({ ...changedPreview, dry_run: false });
+      expect(JSON.parse(await readFile(settingsPath, "utf8"))).toMatchObject({
+        author_default: "changed", future_setting: sparse.future_setting,
+        search: { future_provider: sourceSearch.future_provider, rerank: { future_ranker: sourceRerank.future_ranker } },
+      });
+      expect(await runWithConfigurationOnlySettings(pmPath, () => readSettings(pmPath))).toEqual(changedPreview.preview);
+      expect(await readHistoryEntries(getWorkspaceHistoryPath(pmPath), WORKSPACE_HISTORY_ID)).toHaveLength(1);
     });
   });
 

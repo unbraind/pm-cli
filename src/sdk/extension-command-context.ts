@@ -83,6 +83,7 @@ export function createExtensionCommandSdk(
     },
     commitWorkspaceTransaction: (options) =>
       commitWorkspaceTransaction({ ...options, pmRoot }),
+    /** Normalize one locked proposal, preserve sparse source fields, and return an opt-in inline preview. */
     mutateWorkspaceSettings: async (options) => {
       if (!/^[a-zA-Z0-9._-]{1,128}$/u.test(options.operationId)) {
         throw new PmCliError(
@@ -106,6 +107,7 @@ export function createExtensionCommandSdk(
           lockWaitMs: settings.locks.wait_ms,
           recordCreation: false,
           dryRun: options.dryRun === true,
+          /** Derive both audited bytes and canonical preview from the same validated locked source. */
           mutate: async (beforeRaw) => {
             const current: unknown = beforeRaw === null ? null : JSON.parse(beforeRaw);
             const validatedCurrent = validateSettings(current);
@@ -125,7 +127,7 @@ export function createExtensionCommandSdk(
             }
             const raw = stableValueEquals(currentSettings, next)
               ? beforeRaw!
-              : serializeSettings(next);
+              : serializeSettings(next, { source: { raw: current, validated: validatedCurrent.data } });
             const validatedResult = validateSettings(JSON.parse(raw));
             if (!validatedResult.success) {
               throw new PmCliError(

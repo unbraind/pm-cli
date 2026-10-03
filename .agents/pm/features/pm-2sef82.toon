@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: agent-ux,context-management,github-intake
 created_at: "2026-09-30T06:48:43.202Z"
-updated_at: "2026-10-03T21:42:27.476Z"
+updated_at: "2026-10-03T22:34:52.753Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#c34534ca90095a05f3a48f57"
 author: "harness:codex"
@@ -21,12 +21,18 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-wtqltn,discovered_from,"2026-09-30T06:48:43.202Z","harness:codex","cli:create:dep",detected
   pm-9rgaal,implements,"2026-10-03T20:12:43.404Z","harness:codex","cli:update:dep",detected
   pm-wtqltn,implements,"2026-10-03T20:12:43.404Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-09-30T06:48:43.202Z","harness:codex","Duplicate check: complete strict all-status corpus contained 2843 records with no unreadable directories or items. Exact GitHub ID plus behavior/root-cause searches were complete. Closed prior lineage pm-wtqltn and its full history were read; this new report requests a distinct unimplemented contract. Relationship reconstructed during current intake rather than asserted as historical knowledge. Queued and unclaimed; source investigation remains pending."
   "2026-10-03T20:11:01.244Z","harness:codex","Implementation plan: opt-in host-owned canonical persistence preview from the same audited lock-scoped serializer, preserving bounded default receipts, inert retries and read-only dry runs. Primary contracts are real SDK persistence/history plus copied extension transport and packed Node/Bun consumers. Related platform preview failures will be fixed in this reviewed bundle under their own canonical owner. Strict all-status intake: 2867/2867, complete, zero omissions, zero unreadable records, zero in_progress before claim."
   "2026-10-03T20:26:48.048Z","harness:codex","Canonical preview design: includePreview opt-in returns the normalized inline tree derived from the exact locked serialized bytes, before optional file-backed schema overlays. Ordinary receipts remain three booleans. Replays omit preview because the callback is not executed and historical proposals must not be invented from current state. Direct dry runs use the existing configuration-only settings policy to avoid hooks and missing-schema scaffolding. TDD missing-preview failures reproduced before source edits for minimal, strict and custom presets."
   "2026-10-03T20:54:28.664Z","harness:codex","Additional TDD findings: sparse valid settings supplied an undefined governance/ux tree despite the PmSettings callback type; unknown source fields leaked into the preview rather than matching validated reads; a getter-backed proposal could pass validation then serialize invalid version data. Regression controls failed on the previous implementation (3 failures, 56 passes including a vanished ancestor under the filesystem root). Callbacks now receive the shared normalized inline tree; identity no-ops retain original sparse bytes; final serialized bytes are validated before commit. No test-only production export, optional schema hydration, or dynamic imports were added."
-files[6]{path,scope}:
+  "2026-10-03T21:54:56.601Z","harness:codex","Manual packed acceptance: fresh temporary Node and Bun projects installed the current tarball and a copied extension with no local SDK runtime import. Canonical named-preset preview matches the applied result, dry-run settings/history bytes remain identical, replay stays bounded without a fabricated preview, item create/get/context/structured close succeeds, workspace history verifies, and strict health is clean. Packed npm/npx/bunx and typed SDK consumer smoke also passed. Published npm remains immutable 2026.10.3 and predates this branch; current packed source acceptance is not a publication claim."
+  "2026-10-03T21:58:14.366Z","harness:codex","Greptile P1 review of head 50f7ff9ee identified a valid forward-compatibility regression: changed settings mutations replace the normalized known tree and discard an unrecognized top-level source field, even though sparse no-ops already preserve it. Reproduce with a real custom future field plus a known-setting change, then preserve unknown source keys under the existing audited lock while keeping canonical callback/preview trees typed and normalized. Validate final bytes and retain known-field deletion semantics; do not invent another PM item for this review correction."
+  "2026-10-03T22:34:16.194Z","harness:codex","Review remediation: Greptile identified real forward-compatibility data loss on changed writes. The new real-filesystem control failed 1/7 before the fix; a nested-field extension also failed 1/7 against a shallow preservation attempt. The final implementation reuses the core serializer source-delta machinery, pairing the locked original JSON with its validated projection. Known-value edits retain top-level and nested unrecognized fields and sparse omissions; canonical callback/preview trees remain typed known settings. Existing array replacement semantics remain explicit. Focused verification passed 95 tests across five suites, including ordinary settings writes and copied extensions. Semantic serializer/callback documentation was improved; the generated filler baseline decreased from 4133 to 4132, while the broader pm-dvwm semantic-docstring backlog remains open. Full exact-head coverage and packed source-field acceptance remain pending."
+learnings[1]{created_at,author,text}:
+  "2026-10-03T21:50:55.682Z","harness:codex","Canonical mutation previews must come from the exact locked serialized bytes and shared inline normalizer. File-backed schema hydration belongs to a separate read boundary. Validate after serialization as well as before it: mutable/getter-backed proposals can change between the two. Replay receipts cannot reconstruct an old proposal from current settings."
+files[7]{path,scope}:
+  scripts/release/docstring-quality-baseline.json,project
   sdk/public-surface.json,project
   src/core/extensions/extension-types.ts,project
   src/core/store/settings.ts,project
@@ -35,7 +41,7 @@ files[6]{path,scope}:
   tests/unit/sdk/transactions/settings-preview.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/settings-preview.spec.ts tests/integration/extension-host-contracts.integration.spec.ts --maxWorkers=2,project,300,"harness:codex","2026-10-03T21:23:40.364Z",local_mutation,feat/canonical-sdk-settings-preview-platform-recovery
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-musw3r9k-8bp52r
     kind: test
     status: failed
@@ -53,6 +59,17 @@ test_runs[2]:
     started_at: "2026-10-03T21:41:55.064Z"
     finished_at: "2026-10-03T21:42:27.459Z"
     recorded_at: "2026-10-03T21:42:27.459Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/settings-preview.spec.ts tests/integration/extension-host-contracts.integration.spec.ts --maxWorkers=2,schema,schema,source,local_source_ref
+  - run_id: test-local-musyzf7j-b34100
+    kind: test
+    status: passed
+    started_at: "2026-10-03T22:33:45.251Z"
+    finished_at: "2026-10-03T22:34:52.735Z"
+    recorded_at: "2026-10-03T22:34:52.735Z"
     passed: 1
     failed: 0
     skipped: 0
