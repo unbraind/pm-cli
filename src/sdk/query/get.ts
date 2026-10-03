@@ -270,6 +270,7 @@ function parseGetDepth(raw: string | undefined): GetDepth {
   throw new PmCliError(
     "Get --depth must be one of brief|standard|deep|full",
     EXIT_CODE.USAGE,
+    { field: "depth", value: raw, recovery: { allowed_values: [...GET_DEPTH_VALUES, "full"] } },
   );
 }
 
@@ -495,6 +496,7 @@ function resolveGetProjection(
       EXIT_CODE.USAGE,
       {
         code: "projection_options_mutually_exclusive",
+        flag: "--full",
         recovery: {
           suggested_retry: renderPmCommand(["get", id, "--full"]),
           suggested_retry_args: ["get", id, "--full"],

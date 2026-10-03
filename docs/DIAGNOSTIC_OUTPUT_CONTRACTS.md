@@ -67,6 +67,31 @@ remains complete and `recovery.suggested_retry_args` is atomic: the projector
 either retains the executable argv or removes the recovery rather than slicing
 it into a dead command.
 
+Enum, date, get-depth, and minimum intent-budget validation producers attach the failed metadata
+`field` and supplied `value` to `PmCliError.context`; closed domains also attach
+the complete legal values, including the accepted `full` depth alias. CLI
+attribution normalizes camelCase and snake_case fields to an actually supplied
+canonical flag, so `tokenBudget` identifies `--token-budget`. Explicit flag
+metadata retains its spelling. Argument order and unrelated valid flags cannot
+become the refusal owner. The error-context `value` is text, including the
+textual representation of numeric SDK inputs. Compound projection conflicts
+identify their flag without inventing a rejected scalar. Missing items identify
+the `id` operand.
+When the producer cannot identify a field or value, the diagnostic retains the
+command surface and omits the unknown scalar. Policy evidence takes precedence
+over syntactic attribution. Tracked by [pm-gh1365](../.agents/pm/issues/pm-gh1365.toon).
+
+`--json` and `--output-format json` (including `--output-format=json`) select
+JSON on stderr for parser and execution errors as well as successful output.
+The canonical `--output-format` selector wins when combined with `--json`, so
+`--output-format toon --json` retains text diagnostics. Exit codes are unchanged.
+The executable's project-runtime compatibility warnings and refusals use that
+same SDK selector, including repeated formats and the `--` terminator. A JSON
+stale-read warning is emitted after successful dispatch; a failed read emits its
+typed error alone so stderr remains one JSON value. Text warnings retain their
+pre-dispatch presentation.
+Tracked by [pm-gh1366](../.agents/pm/issues/pm-gh1366.toon).
+
 The deterministic ladder is:
 
 1. full diagnostic;

@@ -232,6 +232,29 @@ activity limits so the built-in orientation declaration remains feasible on a
 large tracker. All five intent commands accept the same
 `--token-budget` override. Explicit `--depth` and `--limit` controls still win.
 
+Context omission instructions request the named section, for example
+`--section files`, so they can be appended while retaining `--for handoff` or
+`--for orient`. An explicit depth suppresses the intent's default section subset;
+an explicit section remains authoritative at any depth. Workspace memory that
+is already present is never reported as omitted. The original filters and token
+budget remain binding; an oversized restoration reports its remaining budget
+constraint. Tracked by [pm-gh1367](../.agents/pm/issues/pm-gh1367.toon).
+
+For namespaced commands, options supplied on an ancestor apply only when the
+selected leaf declares them. `context --tag urgent next` forwards the tag;
+a leaf-supplied limit takes precedence. `context next --depth deep` and
+`context --depth deep next` fail with `unknown_option`, because `next` does not
+declare a depth projection. Inspect the leaf's help before applying context
+controls to it. Tracked by [pm-gh1368](../.agents/pm/issues/pm-gh1368.toon).
+
+Ownership compositions use the resolved canonical item ID in every stage and
+the root receipt, including short-ID invocations. Default CLI/MCP start, pause,
+and close receipts expose the final status and aggregate changed-field count
+without repeating item bodies. `--full-changed-fields` and typed SDK methods
+retain complete constituent results. A failed later step reports the canonical
+item and prior durable mutation without implying rollback.
+Tracked by [pm-gh1369](../.agents/pm/issues/pm-gh1369.toon).
+
 If a selected result exceeds its budget, long explanatory strings compact
 first, followed by deterministic root-row reduction that retains at least one
 useful row and reports `budget_row_compaction`. Only a result whose minimum

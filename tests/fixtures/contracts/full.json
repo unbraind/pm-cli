@@ -25511,6 +25511,7 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts",
+        "cli/runtime/invocation-options.ts",
         "core/telemetry/observability.ts"
       ],
       "stability": "stable"

@@ -1652,7 +1652,11 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/error-guidance.ts", "core/telemetry/observability.ts"],
+    sources: [
+      "cli/error-guidance.ts",
+      "cli/runtime/invocation-options.ts",
+      "core/telemetry/observability.ts",
+    ],
     emitting_commands: ["*"],
     canonical_code: "unknown_option",
     aliases: [],

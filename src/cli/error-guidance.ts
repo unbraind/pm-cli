@@ -661,11 +661,13 @@ function attachStructuredGuidanceDetails<
   return payload;
 }
 
+/** Prefer the producer flag, then an explicitly mentioned supplied flag; unrelated arguments cannot own a refusal. */
 function resolveRefusalCandidateFlag(
   message: GuidanceMessage,
   normalizedArgs: readonly string[],
 ): string | undefined {
   if (message.flag) return message.flag;
+  /** Admit a mentioned flag only when the invocation supplies it and it is not a presentation control. */
   const isAdmissibleCandidate = (flag: string): boolean => {
     const canonicalFlag = flag.split("=", 1)[0];
     return (
@@ -685,18 +687,17 @@ function resolveRefusalCandidateFlag(
   ]
     .map((match) => match[0])
     .find((flag) => isAdmissibleCandidate(flag));
-  if (mentionedFlag) return mentionedFlag;
-  return message.recovery?.provided_fields
-    ?.map((field) => field.split("=", 1)[0])
-    .find((field) => isAdmissibleCandidate(field));
+  return mentionedFlag;
 }
 
+/** Preserve producer scalars and intentional unknown values; infer an operand only when the surface came from legacy text guidance. */
 function resolveRefusalRejectedValue(
   message: GuidanceMessage,
   normalizedArgs: readonly string[],
   candidateFlag: string | undefined,
 ): string | undefined {
   if (message.value !== undefined) return message.value;
+  if (message.flag !== undefined) return undefined;
   if (candidateFlag) {
     const candidateArgument = normalizedArgs.find(
       (argument) =>
@@ -706,16 +707,10 @@ function resolveRefusalRejectedValue(
       return candidateArgument.slice(candidateFlag.length + 1);
     }
     const candidateIndex = normalizedArgs.indexOf(candidateFlag);
-    return candidateIndex >= 0 ? normalizedArgs[candidateIndex + 1] : undefined;
+    // Legacy candidates have already been matched to supplied arguments; attached values returned above.
+    return normalizedArgs[candidateIndex + 1];
   }
-  const allowedValues = message.recovery?.allowed_values;
-  if (!allowedValues?.length) return undefined;
-  return normalizedArgs.find(
-    (argument, index) =>
-      index > 0 &&
-      !argument.startsWith("-") &&
-      !allowedValues.includes(argument),
-  );
+  return undefined;
 }
 
 /** Identify the actual refusal surface, prioritizing domain policy evidence over syntactically valid input flags. */
@@ -916,6 +911,18 @@ function normalizeContextValue<Fallback extends string | undefined>(
     : fallback;
 }
 
+/** Match camelCase or snake_case SDK fields to supplied kebab-case flags, preserving explicit flag metadata. */
+function resolveErrorContextFlag(context: PmCliErrorContext, recovery: PmCliErrorRecoveryPayload | undefined): string | undefined {
+  if (context.flag !== undefined) return context.flag;
+  if (context.field === undefined) return undefined;
+  const flag = context.field.startsWith("--") ? context.field : `--${context.field
+    .replaceAll(/([A-Z])([A-Z][a-z])/gu, "$1-$2")
+    .replaceAll(/([a-z0-9])([A-Z])/gu, "$1-$2")
+    .replaceAll("_", "-")
+    .toLowerCase()}`;
+  return recovery?.normalized_args?.some(/** Match only the supplied canonical spelling or its attached value; another valid flag cannot own this refusal. */ (argument) => argument === flag || argument.startsWith(`${flag}=`)) ? flag : undefined;
+}
+
 /** Merge SDK error evidence with CLI fallback guidance without discarding typed recovery or policy diagnostics. */
 function applyPmCliErrorContext(
   guidance: GuidanceMessage,
@@ -959,8 +966,8 @@ function applyPmCliErrorContext(
     verificationErrors,
     policyViolations: context.policy_violations,
     policyViolationCount: context.policy_violation_count,
-    flag: context.flag,
-    value: context.value,
+    flag: resolveErrorContextFlag(context, recovery) ?? guidance.flag,
+    value: context.value ?? guidance.value,
     unmatchedSelectors: context.unmatched_selectors,
     itemId: context.item_id,
     transactionOperation: context.transaction_operation,
@@ -1019,6 +1026,7 @@ function buildTrackerNotInitializedGuidance(
   );
 }
 
+/** Explain a failed item lookup with its actual ID operand and tracker-scope recovery. */
 function buildItemNotFoundGuidance(
   rawMessage: string,
   message: string,
@@ -1043,6 +1051,8 @@ function buildItemNotFoundGuidance(
     makeGuidanceMessage({
       code: "item_not_found",
       title: "Item ID not found",
+      flag: "id",
+      value: badId,
       happened,
       required: "Use an existing item ID from current tracker data.",
       why: "Mutation and read commands operate only on known IDs.",
@@ -1810,6 +1820,7 @@ function buildUnknownSubcommandGuidance(
   return makeGuidanceMessage({
     code: "unknown_subcommand",
     title: `Unknown ${commandPath} subcommand ${token}`,
+    value: token,
     happened: `The positional token sequence "${token}" is not a declared ${commandPath} subcommand.`,
     required: `Use one of: ${allowed.join(", ")}.`,
     why: "Subcommands are single positional tokens; multi-word action names use hyphens.",

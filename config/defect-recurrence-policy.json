@@ -857,6 +857,46 @@
       }
     },
     {
+      "id": "canonical-ownership-composition-receipts",
+      "version": 1,
+      "title": "Lifecycle compositions retain canonical identities and compact ownership evidence",
+      "owner_item_id": "pm-gh1369",
+      "escape_class": "production_defect",
+      "triggers": {
+        "file_patterns": [
+          "src/sdk/lifecycle/task-composition.ts",
+          "src/core/output/mutation-projection.ts",
+          "src/sdk/lifecycle/mcp-actions.ts"
+        ],
+        "item_ids": [
+          "pm-gh1369"
+        ]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts tests/unit/commands/lifecycle/claim-receipts.spec.ts",
+          "node scripts/release/lifecycle-evidence-control.mjs"
+        ],
+        "hosted": [
+          "CI / Gates (coverage)",
+          "CI / Gates (static)",
+          "CI / Windows regression (Node 24)"
+        ]
+      },
+      "negative_control": {
+        "item_ids": [
+          "pm-gh1369"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-eqdo85"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.05
+      }
+    },
+    {
       "id": "presentation-layer-default-re-derivation",
       "version": 1,
       "title": "A shipped SDK default is re-derived as a literal in a presentation layer, so the acceptance criterion of the closed feature stops holding without any test failing",

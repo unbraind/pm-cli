@@ -2,22 +2,217 @@ id: pm-gh1365
 title: "GH-1365: Agent UX: typed update refusals blame valid flags instead of the field that failed validation"
 description: "Reported agent-facing contract defect imported from https://github.com/unbraind/pm-cli/issues/1365. Preserve existing shipped foundations. Detailed source observations are dated 2026-09-30 and must be revalidated before implementation."
 type: Issue
-status: open
+status: closed
 priority: 1
-tags[4]: changelog-exclude,gh-1365,github-intake,sdk-first
+tags[3]: gh-1365,github-intake,sdk-first
 created_at: "2026-10-02T17:09:15.472Z"
-updated_at: "2026-10-02T19:07:21.879Z"
+updated_at: "2026-10-03T15:10:04.459Z"
+closed_at: "2026-10-03T15:10:03.587Z"
+completed_at: "2026-10-03T15:10:03.587Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Risk, deadline and missing-ID fixtures identify the actual failure; Permuting valid title/priority flags never changes attribution; Attached values, aliases, multiple invalid inputs and no flagged inputs are covered; Error paths do not mutate item state; Unknown attribution is omitted; legal-domain values correspond to the blamed field; Existing policy-specific missing-field and surface tests remain green"
 parent: pm-f05lsg
 risk: medium
 confidence: medium
+resolution: "SDK validators own failed field, rejected value and enum-domain evidence; CLI guidance preserves producer attribution, canonical aliases, missing-ID operands and subcommand tokens without guessing from unrelated arguments. Get depth discloses its complete SDK domain. Compound projection conflicts identify their option surface while omitting an unknown scalar, and legacy inference only reads an argument already admitted by the matched invocation. CamelCase and snake_case SDK field names map to supplied canonical CLI flags, and minimum intent-token-budget refusals retain the SDK caller value as typed context text."
 expected_result: "Risk and deadline refusals identify their own validator surface and rejected value; missing-item failures identify lookup or ID; valid unrelated title and priority flags never determine attribution, and unknown attribution is omitted."
-actual_result: Source report reproduced published 2026.9.30 behavior; current checkout requires fresh reproduction before claiming the defect.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+actual_result: "Final round-four corrected-source isolated suite on CI-supported current Node24.21/npm11: 9638 passed and two Windows-only cases skipped on Linux; exact coverage 100/100/100/100 with zero uncovered counts (66550/66550 statements, 50902/50902 branches, 13749/13749 functions, 63451/63451 lines). Full type checking, every static-quality stage including unchanged performance ceilings, graph/history and mutation controls (329 killed, seven reviewed equivalent, zero failures), native deduplicated linked tests, 67 clean packed Node/Bun manual commands with history verification and four public snapshot backend/linked-command combinations, and nine npx/bunx packed package workflows plus typed SDK consumers passed. All 32 touched source functions have behavior-specific documentation. Required Sentry/telemetry gate passed with zero blocking issues, 1.41 percent finish error rate and 0 missing error-code rows. Cross-runtime snapshot contracts pass unchanged on Node22.21.1, Node24.12, Node24.21 and Node26.9. Earlier failed Node26/old-Node24 coverage and performance observations remain recorded, and their unrelated timeout/warning causes are not claimed fixed. Exact-head hosted checks/reviews and merge follow through PR1376; this batch is separate from the earlier v2026.10.3 publication and four pre-existing-main nightly alerts."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-o5s22y,discovered_from,"2026-10-02T17:09:15.472Z","harness:codex","cli:create:dep",detected
   pm-gh1363,implements,"2026-10-02T17:10:07.308Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
-  "2026-10-02T17:09:15.472Z","harness:codex","Duplicate check 2026-10-02: complete strict all-status corpus read returned 2851/2851 items with no omissions or unreadable files; exact GitHub issue/ID and contract-title searches found no canonical owner for this residual acceptance. Existing foundations are linked, including closed historical work; no closed fix is asserted outstanding. Imported report and acceptance are planning evidence, not current reproduction or implementation completion. This item remains open and unclaimed until selected for implementation."
+  pm-o5s22y,verifies,"2026-10-03T08:35:47.992Z","harness:codex","cli:update:dep",detected
+comments[23]:
+  - created_at: "2026-10-02T17:09:15.472Z"
+    author: "harness:codex"
+    text: "Duplicate check 2026-10-02: complete strict all-status corpus read returned 2851/2851 items with no omissions or unreadable files; exact GitHub issue/ID and contract-title searches found no canonical owner for this residual acceptance. Existing foundations are linked, including closed historical work; no closed fix is asserted outstanding. Imported report and acceptance are planning evidence, not current reproduction or implementation completion. This item remains open and unclaimed until selected for implementation."
+  - created_at: "2026-10-03T08:17:20.713Z"
+    author: "harness:codex"
+    text: "TDD baseline: reproduced the report against 2026.10.2 in isolated temporary trackers. Added tests/integration/agent-receipt-recovery.integration.spec.ts; all five independent contract tests fail before implementation at the reported behavior (validation attribution, equivalent JSON error selectors, executable handoff restore, inherited leaf options, canonical compact short-ID compositions). No domain mocks or live tracker access in tests. Related batch GH-1365 through GH-1369 shares SDK-owned agent context contracts; existing closed compact receipt lineage is preserved."
+  - created_at: "2026-10-03T08:41:17.845Z"
+    author: "harness:codex"
+    text: "Implementation evidence: focused isolated suite passes 209 tests. Manual clean npm installation of the packed artifact passed 46 commands under Node and Bun: short-ID claim/start, full opt-in preserving an 18,000-character description, both JSON selectors for validation and missing IDs, inherited-option refusals, executable orient/handoff section recovery, pause/close, and verified immutable history. npx/bunx packed acceptance independently passed all nine package workflows plus TypeScript SDK consumers. No coverage or lint threshold changed; repository-wide static/coverage runs are still pending."
+  - created_at: "2026-10-03T09:00:15.114Z"
+    author: "harness:codex"
+    text: "Full-suite repair evidence: replaced remaining unknown positional attribution inference with the shared SDK subcommand producer value; compound get projection failures declare --full directly. New integration baseline had exposed five defects; existing schema and projection recovery tests additionally constrain valid producer attribution. Invalid lifecycle registration mocks were corrected to the actual item.id result shape without adding a production fallback. Temporary consumer continuation also passed after providing this host npm module lookup through NODE_PATH; no test or coverage gate was bypassed."
+  - created_at: "2026-10-03T09:22:18.626Z"
+    author: "harness:codex"
+    text: "Corrected manual evidence: --completed_at=bad reports canonical --completed-at with rejected_value bad. With both risk and deadline invalid, both argument permutations report the actual deadline validator and rejected_value bad, because SDK validation order checks the date first. Full get snapshots before and after all refusals are equal. The original risk-first expectation was incorrect; this correction is recorded through immutable annotation history. These temporary-tracker checks preserve documented aliases and prove error paths do not mutate the item."
+    edited_at: "2026-10-03T09:23:27.977Z"
+  - created_at: "2026-10-03T09:34:05.164Z"
+    author: "harness:codex"
+    text: "Repository-wide verification: 9637 tests passed (the two Windows-only tests are platform-skipped on Linux), with exact coverage and zero uncovered counts: statements 66524/66524, branches 50886/50886, functions 13745/13745, lines 63433/63433. pnpm typecheck passed. Native pm test-all for the five active items passed, executing their shared public suite once and explicitly suppressing duplicate linked commands. The clean packed manual harness passed 52 Node/Bun commands; npx/bunx acceptance passed nine workflows. Gate thresholds, assertions, subprocess timeouts and coverage exclusions were not relaxed; the new ancestor-option implementation was moved outside the pre-existing c8 exclusion so its branches are measured. Hosted review remains pending."
+  - created_at: "2026-10-03T09:45:43.504Z"
+    author: "harness:codex"
+    text: "Final local delivery evidence: all mandatory static stages passed after registering the recurrence family and exact CLI refusal inventory. The original gate refusals remain in evidence; no waiver, threshold, ignore marker or assertion was weakened. The unchanged source coverage remains exact 100 percent. Closure is staged with structured evidence for the combined reviewed delivery; broader graph and semantic docstring debt retain their open canonical owners."
+  - created_at: "2026-10-03T10:08:43.002Z"
+    author: "harness:codex"
+    text: "Review round one for PR https://github.com/unbraind/pm-cli/pull/1376: all required hosted checks passed; accepted precise SDK get-depth refusal metadata and grammar-aware registration selection for option values. Reopened only the two correction owners; other verified batch items remain closed and released. Corrections will retain exact coverage, active-item ownership, and public temporary-consumer proof."
+  - created_at: "2026-10-03T10:13:48.256Z"
+    author: "harness:codex"
+    text: "Review regression evidence: invalid get-depth produces --depth/nonsense and all four legal values across direct SDK and real CLI, while full before/after item snapshots remain equal. SDK implementation and documentation were aligned, with meaningful docstrings added to five touched functions. Focused integration and registration-selection tests pass."
+  - created_at: "2026-10-03T10:41:59.053Z"
+    author: "harness:codex"
+    text: "Review local gate evidence: all static stages passed across the strict prefix and resumed tracker/registry/SDK/import-cost/transport/graph/history/mutation tail after restoring reopened expected_result through the CLI. The original complexity and active-metadata refusals are preserved in private evidence; no gate, timeout, threshold, ignore or assertion was weakened. Packed manual acceptance passed 56 Node/Bun commands, dependency audit found zero advisories at every severity, and required Sentry/telemetry checks passed with no blocking issues and 1.41 percent finish error rate. The final full coverage run is verifying the extracted grammar probe before closure and the next hosted head."
+  - created_at: "2026-10-03T10:54:43.603Z"
+    author: "harness:codex"
+    text: "Final review correction proof for PR https://github.com/unbraind/pm-cli/pull/1376: 9638 tests passed, with exact source coverage 100/100/100/100 and zero uncovered counts: statements 66543/66543, branches 50900/50900, functions 13748/13748, lines 63446/63446. Strict static stages and type checking passed with no weakened policy; native linked commands passed with duplicate suppression. Packed manual Node/Bun acceptance passed 58 commands, preserving literal next tag values, canonical receipts, complete depth refusal evidence, rich full opt-in, and immutable history. All dependency severities and current GitHub security alert surfaces are zero; required Sentry/telemetry checks passed. First-head required CI passed and both actionable bot findings were implemented; the corrected-head hosted cycle remains required before merge. The prior v2026.10.3 publication predates this batch."
+  - created_at: "2026-10-03T11:14:34.934Z"
+    author: "harness:codex"
+    text: "Review round two: exact-head hosted checks passed and Greptile returned 5/5 with no new findings. Accept CodeRabbit corrections for unknown projection-conflict scalar omission and both repeated compact snapshot absence assertions. Preserve producer-owned unknown values and the 100-percent coverage gate. Only the two correction owners are active; expected outcomes were restored atomically while reopening."
+  - created_at: "2026-10-03T11:19:23.878Z"
+    author: "harness:codex"
+    text: "Round-three TDD evidence: the real projection-conflict negative control failed before the fix and now passes in both argument orders and with explicit depth. SDK conflict evidence declares --full without a scalar; CLI rendering preserves that intentional unknown instead of reading another option token. Repeated compact MCP receipts now assert both claim.item and update.item absent. Focused 56 tests passed. All 28 touched source function-like nodes have meaningful JSDoc, verified through the TypeScript AST including callback documentation; broader semantic documentation debt remains with its existing canonical owner. ESLint and type checking passed; strict static and final coverage verification are pending."
+  - created_at: "2026-10-03T11:29:59.923Z"
+    author: "harness:codex"
+    text: "Round-three static proof: the complete pnpm quality:static command finished successfully without resumed stages, with dependency audit zero vulnerabilities, source documentation ratchet, dead exports, ESLint, duplication, generated contracts, CLI refusal/grammar/token controls, tracker metadata, SDK/package boundaries, startup cost, graph/history assurance and mutation controls all passing. No thresholds, exclusions or assertions changed. Packed manual acceptance passed 58 distinct Node/Bun commands, including both projection-conflict shapes with no rejected scalar. Final coverage and native linked tests are running before closure."
+  - created_at: "2026-10-03T11:43:29.997Z"
+    author: "harness:codex"
+    text: "Final full-suite correction: the existing closed-domain integration test requires a fabricated --full scalar for the projection-conflict probe. Tighten that probe to require surface --full with no rejected_value while retaining complete-domain and executable-retry assertions for all 19 contracts. The unrelated packed continuation consumer timed out in npm pack at its existing 30-second bound; rerun unchanged with reduced suite concurrency. The first round-three coverage attempt is a failure, not coverage proof."
+  - created_at: "2026-10-03T12:05:38.450Z"
+    author: "harness:codex"
+    text: "The unchanged full suite now passes all 9638 tests at two workers, including the packed continuation consumer, but exact coverage correctly rejects one unreachable fallback branch. Producer flags with unknown scalar now exit before legacy inference; legacy candidates are guaranteed supplied by resolveRefusalCandidateFlag, and attached values return earlier. Remove the redundant candidateIndex >= 0 branch rather than fabricating an impossible input or relaxing coverage. Fresh complete coverage remains required."
+  - created_at: "2026-10-03T12:45:02.136Z"
+    author: "harness:codex"
+    text: "Final corrected-source isolated suite: 9638 passed and two Windows-only cases skipped on Linux; exact coverage 100/100/100/100 with zero uncovered counts (66545/66545 statements, 50900/50900 branches, 13748/13748 functions, 63447/63447 lines). Full type checking, every static-quality stage including unchanged performance ceilings, graph/history and mutation controls (329 killed, seven reviewed equivalent, zero failures), native deduplicated linked tests, 58 clean packed Node/Bun manual commands with history verification, and nine npx/bunx packed package workflows plus typed SDK consumers passed. All 28 touched source functions have behavior-specific documentation. Required Sentry/telemetry gate passed with zero blocking issues, 1.40 percent finish error rate and zero missing error-code rows. Earlier failed test/coverage and performance observations remain recorded. Exact-head hosted checks/reviews and merge follow through PR1376; this batch is separate from the earlier v2026.10.3 publication and four pre-existing-main nightly alerts."
+  - created_at: "2026-10-03T13:04:51.398Z"
+    author: "harness:codex"
+    text: "Exact-head 7822654e3 required checks all passed and CodeRabbit completed a full review with one new valid attribution finding: the SDK emits tokenBudget, while the CLI derives --tokenBudget instead of supplied --token-budget. Add a real public negative control, normalize camelCase and snake_case SDK field names into the matched kebab-case CLI spelling, preserve producer-prefixed flags, and keep unknown attribution omitted. Only this source owner reopens; all other delivery and roadmap owners remain released."
+  - created_at: "2026-10-03T13:13:48.166Z"
+    author: "harness:codex"
+    text: "PR1376 round-four CodeRabbit finding reproduced through real public context invocations with separate and attached token-budget controls: before production edits, refusal surface was context and rejected_value was absent instead of --token-budget/200. The corrected regression also checks the actual SDK applyContextIntentProjection producer with numeric input. An initial test harness attempt named a nonexistent export and was corrected before collecting valid red evidence; that import failure is not counted as regression proof. CLI attribution now normalizes camelCase and snake_case SDK fields to canonical kebab-case while preserving explicit flag spellings, and the SDK minimum-budget validator supplies its original caller value. Focused tests, complete source coverage, strict quality, packed Node/Bun and typed consumer validation are being rerun without changing thresholds or test timers. Only this owner is active."
+  - created_at: "2026-10-03T13:16:13.322Z"
+    author: "harness:codex"
+    text: "Round-four focused verification passed: 73 SDK/CLI/public contract tests and all four TypeScript compilation targets. The SDK error payload contract declares value as string; numeric budget input is therefore preserved as its original textual scalar (200 becomes \"200\"), without widening the public type. An intermediate compilation attempt with unknown-valued metadata correctly failed and was corrected; no public error-context type or gate was weakened. Full strict quality, coverage and packed validation remain pending."
+  - created_at: "2026-10-03T13:50:30.075Z"
+    author: "harness:codex"
+    text: "Round-four complete verification failed honestly: 9637 passed, two platform-only cases skipped and one packed SDK continuation case failed at the existing 30-second npm pack subprocess deadline. No coverage report was emitted, so exact source coverage is currently unverified. Clean packed Node/Bun/manual and nine npx/bunx consumers had passed independently. The known intermittent packed-consumer timeout also appeared in an earlier review run. No timeout, assertion, threshold or exclusion will be weakened; inspect the isolated control, then rerun the whole suite with serialized file execution to avoid competing fixture processes."
+  - created_at: "2026-10-03T13:52:09.198Z"
+    author: "harness:codex"
+    text: "Unchanged isolated packed-continuation control passed on Node26/npm12: all11 real public SDK traversal scenarios and all counter/cursor assertions completed. This does not turn the failed full run into a pass or prove its timeout cause. The live historical continuation owner confirms the fast packed-export test and independent clean-install gate have distinct ownership; shipped continuation work stays closed. Rerun complete source verification on the repository CI-supported Node24.12/npm11 profile with two workers, retaining every fixture deadline, test, threshold and coverage denominator. Source and test assertions remain unchanged; failed Node26 full-run evidence is preserved."
+  - created_at: "2026-10-03T15:10:02.839Z"
+    author: "harness:codex"
+    text: "Final round-four corrected-source isolated suite on CI-supported current Node24.21/npm11: 9638 passed and two Windows-only cases skipped on Linux; exact coverage 100/100/100/100 with zero uncovered counts (66550/66550 statements, 50902/50902 branches, 13749/13749 functions, 63451/63451 lines). Full type checking, every static-quality stage including unchanged performance ceilings, graph/history and mutation controls (329 killed, seven reviewed equivalent, zero failures), native deduplicated linked tests, 67 clean packed Node/Bun manual commands with history verification and four public snapshot backend/linked-command combinations, and nine npx/bunx packed package workflows plus typed SDK consumers passed. All 32 touched source functions have behavior-specific documentation. Required Sentry/telemetry gate passed with zero blocking issues, 1.41 percent finish error rate and 0 missing error-code rows. Cross-runtime snapshot contracts pass unchanged on Node22.21.1, Node24.12, Node24.21 and Node26.9. Earlier failed Node26/old-Node24 coverage and performance observations remain recorded, and their unrelated timeout/warning causes are not claimed fixed. Exact-head hosted checks/reviews and merge follow through PR1376; this batch is separate from the earlier v2026.10.3 publication and four pre-existing-main nightly alerts."
+notes[1]{created_at,author,text}:
+  "2026-10-03T08:53:39.591Z","harness:codex","Verification ownership: this batch keeps diagnostics and composed lifecycle behavior in shared SDK producers; CLI rendering consumes declared recovery rather than guessing from valid inputs. Real temporary tracker tests complement registration boundary tests. Root integration directory cap remains enforced; moved agent receipt suite into its CLI subdirectory. Full coverage and hosted checks are mandatory before delivery."
+learnings[2]{created_at,author,text}:
+  "2026-10-03T08:32:15.885Z","harness:codex","Agent context controls must either change the declared public result or fail before host preparation. Refusal ownership follows producer evidence, restore instructions execute under the original intent, and composition identities come from persisted mutation results. Tests must observe the public boundary and unchanged tracker state rather than mirror internal forwarding."
+  "2026-10-03T13:38:57.389Z","harness:codex","SDK diagnostic field names may use camelCase while CLI flags use kebab-case. Normalize producer-owned field spelling, then match only a supplied canonical flag; preserve explicit flag metadata and omit scalar values for compound projection conflicts. The public error-context value type is string, so numeric SDK inputs need their truthful textual representation rather than widening the protocol. Validate each correction through public CLI permutations and direct SDK producer assertions before rerunning exact source coverage."
+files[11]{path,scope}:
+  src/cli/error-guidance.ts,project
+  src/core/shared/time.ts,project
+  src/sdk/agent/subcommand-recovery.ts,project
+  src/sdk/context-intent-contracts.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project
+  src/sdk/lifecycle/recurrence-parsers.ts,project
+  src/sdk/query/get.ts,project
+  tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project
+  tests/integration/closed-domain-recovery.integration.spec.ts,project
+  tests/unit/cli/error-guidance.spec.ts,project
+  tests/unit/sdk/subcommand-recovery.spec.ts,project
+tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project,"harness:codex","2026-10-03T08:53:38.196Z",local_mutation,codex/agent-refusals-context-recovery-claim-receipts
+  node scripts/run-tests.mjs test -- tests/integration/closed-domain-recovery.integration.spec.ts,project,"harness:codex","2026-10-03T11:43:31.194Z",local_mutation,codex/agent-refusals-context-recovery-claim-receipts
+test_runs[7]:
+  - run_id: test-all-local-mus6wso8-m6rk3o
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T09:29:00.793Z"
+    finished_at: "2026-10-03T09:29:49.364Z"
+    recorded_at: "2026-10-03T09:29:49.364Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mus8mdwb-jyvln0
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T10:16:54.456Z"
+    finished_at: "2026-10-03T10:25:17.335Z"
+    recorded_at: "2026-10-03T10:25:17.335Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mus9qf4u-24hj0m
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T10:48:02.284Z"
+    finished_at: "2026-10-03T10:53:57.385Z"
+    recorded_at: "2026-10-03T10:53:57.385Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-musb6kmq-skrhty
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T11:28:35.495Z"
+    finished_at: "2026-10-03T11:41:28.098Z"
+    recorded_at: "2026-10-03T11:41:28.098Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-musd4j0h-nmz9c2
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T12:22:59.351Z"
+    finished_at: "2026-10-03T12:23:23.242Z"
+    recorded_at: "2026-10-03T12:23:23.242Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 2
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-musfdw0v-loniap
+    kind: test
+    status: passed
+    started_at: "2026-10-03T13:25:50.952Z"
+    finished_at: "2026-10-03T13:26:15.391Z"
+    recorded_at: "2026-10-03T13:26:15.391Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mushteq8-dszqsh
+    kind: test
+    status: passed
+    started_at: "2026-10-03T14:33:54.863Z"
+    finished_at: "2026-10-03T14:34:18.704Z"
+    recorded_at: "2026-10-03T14:34:18.704Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md,project
+close_reason: "Implemented the shared refusal contract and all review corrections and the verified snapshot-runtime compatibility recurrence, with exact coverage and packed validation."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1365
+  gate_id: agent-receipt-recovery
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: Gates (coverage),Gates (static),Windows regression (Node 24)
 body: "## Summary\nThe human detail identifies the invalid field, while machine-readable `refusal.surface` and `rejected_value` blame another valid input. This misdirects automated repair.\n\nReproduced with the official installed `@unbrained/pm-cli` 2026.9.30 on Linux, using disposable synthetic non-Git trackers. No implementation changes are included in this issue.\n\n## Reproduction\n```bash\nLAB=$(mktemp -d)\nmkdir -p \"$LAB/home\" \"$LAB/work\"\nexport HOME=\"$LAB/home\" PM_PATH=\"$LAB/work/.agents/pm\"\nexport PM_GLOBAL_PATH=\"$LAB/global\" PM_TELEMETRY_DISABLED=1\ncd \"$LAB/work\"\npm init \"$PM_PATH\" --defaults --author audit --agent-guidance skip --json >/dev/null\npm create task \"Audit sample\" --id t1 --description \"Execution detail\" --json >/dev/null\n```\n```bash\npm update pm-t1 --priority high --risk invalid --json\npm update pm-t1 --title x --risk invalid --json\npm update pm-t1 --title x --deadline not-a-date --json\npm update pm-missing --title x --json\n```\n\n## Actual\nFor the first command, exit 2:\n```json\n{\"code\":\"invalid_argument_value\",\"detail\":\"Invalid risk value \\\"invalid\\\". Allowed: low, medium, high, critical\",\"refusal\":{\"surface\":\"--priority\",\"rejected_value\":\"high\",\"exit_code\":2}}\n```\nWith title preceding invalid risk or deadline, the refusal instead names `--title` / `x`. A missing-item update also attributes the refusal to a valid title flag. Structured consumers therefore receive different, false repair targets depending on unrelated arguments.\n\n## Expected\nRisk validation names `--risk` and `invalid`; deadline validation names `--deadline` and `not-a-date`; a missing item names the ID/lookup surface. If precise attribution is unavailable, omit it rather than inventing an offending flag.\n\n## Implementation plan\n1. Carry validator-owned structured metadata (surface, rejected value, legal domain where available) with the typed error from its origin.\n2. Have the shared refusal renderer preserve that metadata. Remove fallback attribution based on the first/last supplied flag or argument order.\n3. Give lookup and policy errors their own meaningful surfaces, independent of mutation options.\n4. Keep detail, recovery and refusal metadata consistent across CLI/SDK adapters; document nullable/absent attribution.\n5. Add parameterized conformance tests over validators and argument permutations.\n\n## Regression acceptance\n- [ ] Risk, deadline and missing-ID fixtures identify the actual failure\n- [ ] Permuting valid title/priority flags never changes attribution\n- [ ] Attached values, aliases, multiple invalid inputs and no flagged inputs are covered\n- [ ] Error paths do not mutate item state\n- [ ] Unknown attribution is omitted; legal-domain values correspond to the blamed field\n- [ ] Existing policy-specific missing-field and surface tests remain green\n\n## Ownership and duplicate check\nChild of #1363; use as a structured-refusal negative control in #1362. Related closed #1305 fixed require_fields policy metadata. These current ordinary value-validation and missing-item cases require no workflow policy and are not covered by that narrow report. Open and closed issues were searched for refusal and rejected_value."

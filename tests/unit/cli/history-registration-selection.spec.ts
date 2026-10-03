@@ -17,6 +17,33 @@ describe("history maintenance registration selection", () => {
     }
   });
 
+  it("distinguishes relocated leaves from values using declared option arity", () => {
+    for (const argv of [
+      ["context", "--tag", "next"],
+      ["context", "--tag=next"],
+      ["ctx", "--tag", "focus"],
+      ["context", "--tag", "--next"],
+      ["context", "--explain-ranking", "--tag", "next"],
+      ["context", "--max-items", "next"],
+    ]) {
+      expect(_testOnly.resolveCoreCommandRegistrationSelection(argv)).toEqual({
+        setup: false, listQuery: true, mutation: false, operation: false,
+        targetCommandName: argv[0],
+      });
+    }
+    for (const argv of [
+      ["context", "--tag", "next", "next"],
+      ["ctx", "--tag=next", "next"],
+      ["context", "--explain-ranking", "next"],
+      ["context", "--unknown", "next"],
+      ["context", "--tag"],
+    ]) {
+      expect(_testOnly.resolveCoreCommandRegistrationSelection(argv)).toMatchObject({
+        setup: true, listQuery: true, mutation: true, operation: true,
+      });
+    }
+  });
+
   it("preserves unrelated recovery when redaction names occur in argument values", () => {
     const recovery = {
       recovery_mode: "compact" as const,

@@ -393,15 +393,16 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
     ) => void
   >
 > = {
+  /** Apply intent defaults only to unspecified context sections/depth and bound row limits by the declared budget. */
   context: (projected, contract, explicitTokenBudget) => {
-    if (projected.depth === undefined) {
-      projected.depth = contract.intent === "handoff" ? "deep" : "standard";
-    }
-    if (projected.section === undefined) {
+    if (projected.section === undefined && projected.depth === undefined) {
       projected.section =
         contract.intent === "handoff"
           ? ["activity", "progress", "blockers"]
           : ["hierarchy", "blockers", "activity"];
+    }
+    if (projected.depth === undefined) {
+      projected.depth = contract.intent === "handoff" ? "deep" : "standard";
     }
     const tokenBudget = resolveIntentTokenBudget(
       projected.tokenBudget,
@@ -593,6 +594,7 @@ function parsePositiveIntentTokenBudget(value: unknown): number | undefined {
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
+/** Reject budgets below the intent receipt minimum while preserving the caller's value as typed error-context text. */
 function resolveIntentTokenBudget(
   value: unknown,
   declaredBudget: number,
@@ -607,6 +609,7 @@ function resolveIntentTokenBudget(
         code: "invalid_argument_value",
         reason: "below_minimum",
         field: "tokenBudget",
+        value: String(value),
         required: `Use an integer token budget of at least ${MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET}.`,
         why: "Smaller ceilings cannot contain the minimum machine-readable intent receipt.",
         nextSteps: [

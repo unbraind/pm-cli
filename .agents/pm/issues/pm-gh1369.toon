@@ -2,23 +2,101 @@ id: pm-gh1369
 title: "GH-1369: Agent UX: claim --start bypasses compact mutation receipts and returns a noncanonical outer ID"
 description: "Reported agent-facing contract defect imported from https://github.com/unbraind/pm-cli/issues/1369. Preserve existing shipped foundations. Detailed source observations are dated 2026-09-30 and must be revalidated before implementation."
 type: Issue
-status: open
+status: closed
 priority: 1
-tags[4]: changelog-exclude,gh-1369,github-intake,sdk-first
+tags[3]: gh-1369,github-intake,sdk-first
 created_at: "2026-10-02T17:09:35.291Z"
-updated_at: "2026-10-02T19:13:14.445Z"
+updated_at: "2026-10-03T15:10:09.962Z"
+closed_at: "2026-10-03T12:45:11.033Z"
+completed_at: "2026-10-03T12:45:11.033Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Short and canonical input IDs produce the same canonical outer ID; Default receipt has final status and changed-field count without duplicate item bodies; Start success, already-owned/no-op, unavailable claim, and update-after-claim failure report truthful stage outcomes; Full-detail opt-in is complete and consistent with the compact receipt; JSON and default rendering share the same semantics; Deterministic payload-size regression catches duplicate snapshot reintroduction; byte counts are not presented as provider tokens"
 parent: pm-mpbb
 risk: medium
 confidence: medium
+resolution: "SDK lifecycle compositions derive canonical identity from persisted claim/update/close results, preserve full typed SDK constituents and expose compact CLI/MCP receipts with truthful stage outcomes. Repeated-start regression protection excludes both claim and update item snapshots; the historical recurrence lineage has executable registered checks."
 expected_result: Claim --start returns a compact canonical ID and final status with changed-field count and truthful stage outcomes by default; detailed snapshots require explicit opt-in and partial failures remain visible.
-actual_result: Source report reproduced published 2026.9.30 behavior; current checkout requires fresh reproduction before claiming the defect.
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+actual_result: "Final corrected-source isolated suite: 9638 passed and two Windows-only cases skipped on Linux; exact coverage 100/100/100/100 with zero uncovered counts (66545/66545 statements, 50900/50900 branches, 13748/13748 functions, 63447/63447 lines). Full type checking, every static-quality stage including unchanged performance ceilings, graph/history and mutation controls (329 killed, seven reviewed equivalent, zero failures), native deduplicated linked tests, 58 clean packed Node/Bun manual commands with history verification, and nine npx/bunx packed package workflows plus typed SDK consumers passed. All 28 touched source functions have behavior-specific documentation. Required Sentry/telemetry gate passed with zero blocking issues, 1.40 percent finish error rate and zero missing error-code rows. Earlier failed test/coverage and performance observations remain recorded. Exact-head hosted checks/reviews and merge follow through PR1376; this batch is separate from the earlier v2026.10.3 publication and four pre-existing-main nightly alerts."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-eqdo85,discovered_from,"2026-10-02T17:09:35.291Z","harness:codex","cli:create:dep",detected
   pm-nilh,discovered_from,"2026-10-02T17:09:35.291Z","harness:codex","cli:create:dep",detected
   pm-gh1363,implements,"2026-10-02T17:10:13.458Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+  pm-eqdo85,recurs_from,"2026-10-03T08:36:00.860Z","harness:codex","cli:update:dep",detected
+comments[13]{created_at,author,text}:
   "2026-10-02T17:09:35.291Z","harness:codex","Duplicate check 2026-10-02: complete strict all-status corpus read returned 2851/2851 items with no omissions or unreadable files; exact GitHub issue/ID and contract-title searches found no canonical owner for this residual acceptance. Existing foundations are linked, including closed historical work; no closed fix is asserted outstanding. Imported report and acceptance are planning evidence, not current reproduction or implementation completion. This item remains open and unclaimed until selected for implementation."
+  "2026-10-03T08:17:29.465Z","harness:codex","TDD baseline: reproduced the report against 2026.10.2 in isolated temporary trackers. Added tests/integration/agent-receipt-recovery.integration.spec.ts; all five independent contract tests fail before implementation at the reported behavior (validation attribution, equivalent JSON error selectors, executable handoff restore, inherited leaf options, canonical compact short-ID compositions). No domain mocks or live tracker access in tests. Related batch GH-1365 through GH-1369 shares SDK-owned agent context contracts; existing closed compact receipt lineage is preserved."
+  "2026-10-03T08:41:25.912Z","harness:codex","Implementation evidence: focused isolated suite passes 209 tests. Manual clean npm installation of the packed artifact passed 46 commands under Node and Bun: short-ID claim/start, full opt-in preserving an 18,000-character description, both JSON selectors for validation and missing IDs, inherited-option refusals, executable orient/handoff section recovery, pause/close, and verified immutable history. npx/bunx packed acceptance independently passed all nine package workflows plus TypeScript SDK consumers. No coverage or lint threshold changed; repository-wide static/coverage runs are still pending."
+  "2026-10-03T09:12:38.243Z","harness:codex","Canonical full-suite rerun passed 9636 tests with two Windows-only skips, but an existing packed SDK continuation test timed out in its 30-second npm pack subprocess under concurrent host load. It had independently passed 39815ms end-to-end in the repaired focused suite. This is not a full coverage pass: no coverage summary was generated after the test failure. Retrying the complete unchanged assertions with bounded worker concurrency and no parallel packaging; no threshold, timeout or test exclusion is changed."
+  "2026-10-03T09:34:09.444Z","harness:codex","Repository-wide verification: 9637 tests passed (the two Windows-only tests are platform-skipped on Linux), with exact coverage and zero uncovered counts: statements 66524/66524, branches 50886/50886, functions 13745/13745, lines 63433/63433. pnpm typecheck passed. Native pm test-all for the five active items passed, executing their shared public suite once and explicitly suppressing duplicate linked commands. The clean packed manual harness passed 52 Node/Bun commands; npx/bunx acceptance passed nine workflows. Gate thresholds, assertions, subprocess timeouts and coverage exclusions were not relaxed; the new ancestor-option implementation was moved outside the pre-existing c8 exclusion so its branches are measured. Hosted review remains pending."
+  "2026-10-03T09:34:10.499Z","harness:codex","Recurrence governance: the new recurs_from link to closed pm-eqdo85 exposed an unregistered component. Registered canonical-ownership-composition-receipts with that historical seed and real CLI/MCP/SDK receipt checks; all 167 recorded recurrence members are now covered. The disconnected-lineage negative control still exits 1 with the expected two findings, while the real defect-evidence gate passes. Preserved the typed recurrence edge and gate enforcement rather than removing either."
+  "2026-10-03T09:45:57.794Z","harness:codex","Final local delivery evidence: all mandatory static stages passed after registering the recurrence family and exact CLI refusal inventory. The original gate refusals remain in evidence; no waiver, threshold, ignore marker or assertion was weakened. The unchanged source coverage remains exact 100 percent. Closure is staged with structured evidence for the combined reviewed delivery; broader graph and semantic docstring debt retain their open canonical owners."
+  "2026-10-03T10:54:52.760Z","harness:codex","Final review correction proof for PR https://github.com/unbraind/pm-cli/pull/1376: 9638 tests passed, with exact source coverage 100/100/100/100 and zero uncovered counts: statements 66543/66543, branches 50900/50900, functions 13748/13748, lines 63446/63446. Strict static stages and type checking passed with no weakened policy; native linked commands passed with duplicate suppression. Packed manual Node/Bun acceptance passed 58 commands, preserving literal next tag values, canonical receipts, complete depth refusal evidence, rich full opt-in, and immutable history. All dependency severities and current GitHub security alert surfaces are zero; required Sentry/telemetry checks passed. First-head required CI passed and both actionable bot findings were implemented; the corrected-head hosted cycle remains required before merge. The prior v2026.10.3 publication predates this batch."
+  "2026-10-03T11:14:38.023Z","harness:codex","Review round two: exact-head hosted checks passed and Greptile returned 5/5 with no new findings. Accept CodeRabbit corrections for unknown projection-conflict scalar omission and both repeated compact snapshot absence assertions. Preserve producer-owned unknown values and the 100-percent coverage gate. Only the two correction owners are active; expected outcomes were restored atomically while reopening."
+  "2026-10-03T11:19:25.397Z","harness:codex","Round-three TDD evidence: the real projection-conflict negative control failed before the fix and now passes in both argument orders and with explicit depth. SDK conflict evidence declares --full without a scalar; CLI rendering preserves that intentional unknown instead of reading another option token. Repeated compact MCP receipts now assert both claim.item and update.item absent. Focused 56 tests passed. All 28 touched source function-like nodes have meaningful JSDoc, verified through the TypeScript AST including callback documentation; broader semantic documentation debt remains with its existing canonical owner. ESLint and type checking passed; strict static and final coverage verification are pending."
+  "2026-10-03T11:30:02.931Z","harness:codex","Round-three static proof: the complete pnpm quality:static command finished successfully without resumed stages, with dependency audit zero vulnerabilities, source documentation ratchet, dead exports, ESLint, duplication, generated contracts, CLI refusal/grammar/token controls, tracker metadata, SDK/package boundaries, startup cost, graph/history assurance and mutation controls all passing. No thresholds, exclusions or assertions changed. Packed manual acceptance passed 58 distinct Node/Bun commands, including both projection-conflict shapes with no rejected scalar. Final coverage and native linked tests are running before closure."
+  "2026-10-03T12:45:10.401Z","harness:codex","Final corrected-source isolated suite: 9638 passed and two Windows-only cases skipped on Linux; exact coverage 100/100/100/100 with zero uncovered counts (66545/66545 statements, 50900/50900 branches, 13748/13748 functions, 63447/63447 lines). Full type checking, every static-quality stage including unchanged performance ceilings, graph/history and mutation controls (329 killed, seven reviewed equivalent, zero failures), native deduplicated linked tests, 58 clean packed Node/Bun manual commands with history verification, and nine npx/bunx packed package workflows plus typed SDK consumers passed. All 28 touched source functions have behavior-specific documentation. Required Sentry/telemetry gate passed with zero blocking issues, 1.40 percent finish error rate and zero missing error-code rows. Earlier failed test/coverage and performance observations remain recorded. Exact-head hosted checks/reviews and merge follow through PR1376; this batch is separate from the earlier v2026.10.3 publication and four pre-existing-main nightly alerts."
+  "2026-10-03T15:10:09.962Z","harness:codex","Final round-four corrected-source isolated suite on CI-supported current Node24.21/npm11: 9638 passed and two Windows-only cases skipped on Linux; exact coverage 100/100/100/100 with zero uncovered counts (66550/66550 statements, 50902/50902 branches, 13749/13749 functions, 63451/63451 lines). Full type checking, every static-quality stage including unchanged performance ceilings, graph/history and mutation controls (329 killed, seven reviewed equivalent, zero failures), native deduplicated linked tests, 67 clean packed Node/Bun manual commands with history verification and four public snapshot backend/linked-command combinations, and nine npx/bunx packed package workflows plus typed SDK consumers passed. All 32 touched source functions have behavior-specific documentation. Required Sentry/telemetry gate passed with zero blocking issues, 1.41 percent finish error rate and 0 missing error-code rows. Cross-runtime snapshot contracts pass unchanged on Node22.21.1, Node24.12, Node24.21 and Node26.9. Earlier failed Node26/old-Node24 coverage and performance observations remain recorded, and their unrelated timeout/warning causes are not claimed fixed. Exact-head hosted checks/reviews and merge follow through PR1376; this batch is separate from the earlier v2026.10.3 publication and four pre-existing-main nightly alerts."
+notes[1]{created_at,author,text}:
+  "2026-10-03T08:53:58.028Z","harness:codex","Verification ownership: this batch keeps diagnostics and composed lifecycle behavior in shared SDK producers; CLI rendering consumes declared recovery rather than guessing from valid inputs. Real temporary tracker tests complement registration boundary tests. Root integration directory cap remains enforced; moved agent receipt suite into its CLI subdirectory. Full coverage and hosted checks are mandatory before delivery."
+learnings[1]{created_at,author,text}:
+  "2026-10-03T08:32:57.486Z","harness:codex","Agent context controls must either change the declared public result or fail before host preparation. Refusal ownership follows producer evidence, restore instructions execute under the original intent, and composition identities come from persisted mutation results. Tests must observe the public boundary and unchanged tracker state rather than mirror internal forwarding."
+files[4]{path,scope}:
+  config/defect-recurrence-policy.json,project
+  src/sdk/lifecycle/task-composition.ts,project
+  tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project
+  tests/unit/commands/register-commands.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project,"harness:codex","2026-10-03T08:53:56.662Z",local_mutation,codex/agent-refusals-context-recovery-claim-receipts
+test_runs[3]:
+  - run_id: test-all-local-mus6wso8-m6rk3o
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T09:29:00.793Z"
+    finished_at: "2026-10-03T09:29:50.104Z"
+    recorded_at: "2026-10-03T09:29:50.104Z"
+    passed: 0
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 1
+    executions[1]{command}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts
+  - run_id: test-all-local-musb6kmq-skrhty
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T11:28:35.495Z"
+    finished_at: "2026-10-03T11:41:39.348Z"
+    recorded_at: "2026-10-03T11:41:39.348Z"
+    passed: 0
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 1
+    executions[1]{command}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts
+  - run_id: test-all-local-musd4j0h-nmz9c2
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T12:22:59.351Z"
+    finished_at: "2026-10-03T12:23:34.563Z"
+    recorded_at: "2026-10-03T12:23:34.563Z"
+    passed: 0
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 1
+    executions[1]{command}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts
+docs[1]{path,scope}:
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project
+close_reason: "Implemented, reviewed and locally verified the shared agent contract and all review corrections."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1369
+  gate_id: agent-receipt-recovery
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: Gates (coverage),Gates (static),Windows regression (Node 24)
 body: "## Summary\nThe composite claim-and-start path returns two full item snapshots with different statuses, a raw input ID, and no top-level final status or changed-field count. Plain claim follows the compact canonical receipt contract.\n\nReproduced with the official installed `@unbrained/pm-cli` 2026.9.30 on Linux, using disposable synthetic non-Git trackers. No implementation changes are included in this issue.\n\n## Reproduction\n```bash\nLAB=$(mktemp -d)\nmkdir -p \"$LAB/home\" \"$LAB/work\"\nexport HOME=\"$LAB/home\" PM_PATH=\"$LAB/work/.agents/pm\"\nexport PM_GLOBAL_PATH=\"$LAB/global\" PM_TELEMETRY_DISABLED=1\ncd \"$LAB/work\"\npm init \"$PM_PATH\" --defaults --author audit --agent-guidance skip --json >/dev/null\npm create task \"Audit sample\" --id t1 --description \"Execution detail\" --json >/dev/null\n```\n```bash\npm claim t1 --start --author audit --json >start.json\npm claim t1 --author audit --json >claim.json\n```\n\n## Actual\nThe start receipt has this shape (abridged):\n```json\n{\n  \"id\": \"t1\",\n  \"action\": \"start_task\",\n  \"claim\": {\"item\": {\"id\":\"pm-t1\",\"status\":\"open\"}, \"changed_fields\":[\"assignee\",\"claim_principal\"]},\n  \"update\": {\"item\": {\"id\":\"pm-t1\",\"status\":\"in_progress\"}, \"changed_fields\":[\"status\"], \"warnings\":[]}\n}\n```\nBoth nested items contain the full content, not just the excerpt above. In the measured fixture, this was 1,299 bytes. Plain claim returned a 151-byte flat receipt with canonical `id: \"pm-t1\"`, final status and `changed_field_count`. Root help advertises the flat mutation contract.\n\n## Expected and impact\nThe optimized composite command should provide a compact, unambiguous final receipt by default: canonical ID, final status, total changed-field count and concise per-stage outcomes. It should not make consumers guess whether the stale claim snapshot or the update snapshot is authoritative.\n\n## Implementation plan\n1. Route claim/start composite results through the shared mutation receipt normalization.\n2. Resolve the canonical item ID once and propagate it to all top-level and stage references.\n3. Derive final status from the completed operation state; avoid duplicate full item snapshots by default.\n4. Preserve concise claim/update outcomes and explicit partial-failure receipts. Do not hide a successful claim if starting fails, or imply atomicity unless guaranteed.\n5. Keep full stage snapshots and detailed changed fields behind an explicit documented opt-in; account for compatibility consumers and SDK/MCP parity.\n6. Document composite result semantics alongside #1359's execution/checkpoint work.\n\n## Regression acceptance\n- [ ] Short and canonical input IDs produce the same canonical outer ID\n- [ ] Default receipt has final status and changed-field count without duplicate item bodies\n- [ ] Start success, already-owned/no-op, unavailable claim, and update-after-claim failure report truthful stage outcomes\n- [ ] Full-detail opt-in is complete and consistent with the compact receipt\n- [ ] JSON and default rendering share the same semantics\n- [ ] Deterministic payload-size regression catches duplicate snapshot reintroduction; byte counts are not presented as provider tokens\n\n## Ownership and duplicate check\nChild of #1363; related #1359 and #1362 under #1357. Closed #437 established lean mutation defaults; this is the still-uncompacted composite path, including canonical identity and final-state ambiguity. Searched open and closed claim/start/receipt issues; #1352 is a different invalid-flag recovery failure. No implementation is included here."

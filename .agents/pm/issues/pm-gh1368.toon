@@ -2,23 +2,151 @@ id: pm-gh1368
 title: "GH-1368: Agent UX: context next silently ignores inherited --fields and --depth options, including invalid values"
 description: "Reported agent-facing contract defect imported from https://github.com/unbraind/pm-cli/issues/1368. Preserve existing shipped foundations. Detailed source observations are dated 2026-09-30 and must be revalidated before implementation."
 type: Issue
-status: open
+status: closed
 priority: 1
-tags[4]: changelog-exclude,gh-1368,github-intake,sdk-first
+tags[3]: gh-1368,github-intake,sdk-first
 created_at: "2026-10-02T17:09:29.485Z"
-updated_at: "2026-10-02T19:13:13.159Z"
+updated_at: "2026-10-03T15:10:08.695Z"
+closed_at: "2026-10-03T12:45:08.463Z"
+completed_at: "2026-10-03T12:45:08.463Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "An id/title/description projection returns the requested stored description and documented mandatory metadata, or is explicitly rejected as unsupported; Unknown fields and invalid depth return nonzero typed errors; Parent flag placement and aliases do not change validation; Recommended and companion rows follow one documented projection rule; Tests cover other inherited controls to catch accepted-but-unused flags; No regression to next ranking, blocker visibility or token-budget enforcement"
 parent: pm-4k6b
 risk: medium
 confidence: medium
+resolution: "Namespaced leaves reject undeclared ancestor options before host preparation, forward only compatible supplied controls and preserve explicit leaf precedence. Lightweight command selection consumes published SDK option arity so ordinary command-like option values do not expand registration. The exact CLI refusal census includes this transport grammar boundary and the real literal-tag regression protects minimal family registration."
 expected_result: "Context next applies and validates supported inherited projection and depth controls, or rejects unsupported controls with a typed actionable error before execution; invalid values cannot silently succeed."
-actual_result: Source report reproduced published 2026.9.30 behavior; current checkout requires fresh reproduction before claiming the defect.
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+actual_result: "Final corrected-source isolated suite: 9638 passed and two Windows-only cases skipped on Linux; exact coverage 100/100/100/100 with zero uncovered counts (66545/66545 statements, 50900/50900 branches, 13748/13748 functions, 63447/63447 lines). Full type checking, every static-quality stage including unchanged performance ceilings, graph/history and mutation controls (329 killed, seven reviewed equivalent, zero failures), native deduplicated linked tests, 58 clean packed Node/Bun manual commands with history verification, and nine npx/bunx packed package workflows plus typed SDK consumers passed. All 28 touched source functions have behavior-specific documentation. Required Sentry/telemetry gate passed with zero blocking issues, 1.40 percent finish error rate and zero missing error-code rows. Earlier failed test/coverage and performance observations remain recorded. Exact-head hosted checks/reviews and merge follow through PR1376; this batch is separate from the earlier v2026.10.3 publication and four pre-existing-main nightly alerts."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-hnjf,discovered_from,"2026-10-02T17:09:29.485Z","harness:codex","cli:create:dep",detected
   pm-v53h9j,discovered_from,"2026-10-02T17:09:29.485Z","harness:codex","cli:create:dep",detected
   pm-gh1363,implements,"2026-10-02T17:10:11.382Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+  pm-hnjf,verifies,"2026-10-03T08:35:57.377Z","harness:codex","cli:update:dep",detected
+comments[17]{created_at,author,text}:
   "2026-10-02T17:09:29.485Z","harness:codex","Duplicate check 2026-10-02: complete strict all-status corpus read returned 2851/2851 items with no omissions or unreadable files; exact GitHub issue/ID and contract-title searches found no canonical owner for this residual acceptance. Existing foundations are linked, including closed historical work; no closed fix is asserted outstanding. Imported report and acceptance are planning evidence, not current reproduction or implementation completion. This item remains open and unclaimed until selected for implementation."
+  "2026-10-03T08:17:27.250Z","harness:codex","TDD baseline: reproduced the report against 2026.10.2 in isolated temporary trackers. Added tests/integration/agent-receipt-recovery.integration.spec.ts; all five independent contract tests fail before implementation at the reported behavior (validation attribution, equivalent JSON error selectors, executable handoff restore, inherited leaf options, canonical compact short-ID compositions). No domain mocks or live tracker access in tests. Related batch GH-1365 through GH-1369 shares SDK-owned agent context contracts; existing closed compact receipt lineage is preserved."
+  "2026-10-03T08:41:23.612Z","harness:codex","Implementation evidence: focused isolated suite passes 209 tests. Manual clean npm installation of the packed artifact passed 46 commands under Node and Bun: short-ID claim/start, full opt-in preserving an 18,000-character description, both JSON selectors for validation and missing IDs, inherited-option refusals, executable orient/handoff section recovery, pause/close, and verified immutable history. npx/bunx packed acceptance independently passed all nine package workflows plus TypeScript SDK consumers. No coverage or lint threshold changed; repository-wide static/coverage runs are still pending."
+  "2026-10-03T09:00:18.214Z","harness:codex","Full-suite compatibility proof: semantic transaction revalidation fixture previously passed unsupported delete --reason solely because namespace inheritance silently discarded it. The test now proves this control refuses with unknown_option, then uses documented --message to perform the actual concurrent deletion and retains the commit refusal assertion. No mutation behavior or safety assertion was removed."
+  "2026-10-03T09:34:08.543Z","harness:codex","Repository-wide verification: 9637 tests passed (the two Windows-only tests are platform-skipped on Linux), with exact coverage and zero uncovered counts: statements 66524/66524, branches 50886/50886, functions 13745/13745, lines 63433/63433. pnpm typecheck passed. Native pm test-all for the five active items passed, executing their shared public suite once and explicitly suppressing duplicate linked commands. The clean packed manual harness passed 52 Node/Bun commands; npx/bunx acceptance passed nine workflows. Gate thresholds, assertions, subprocess timeouts and coverage exclusions were not relaxed; the new ancestor-option implementation was moved outside the pre-existing c8 exclusion so its branches are measured. Hosted review remains pending."
+  "2026-10-03T09:38:59.113Z","harness:codex","Transport census evidence: registered the new ancestor/leaf grammar refusal alongside the three existing argv syntax refusals. The exact source inventory now requires four occurrences owned by this item, with no waiver or weakened count check; domain validation remains in SDK producers. Repository static assurance and package boundary/parity checks passed; the remaining mandatory stages are running."
+  "2026-10-03T09:45:53.914Z","harness:codex","Final local delivery evidence: all mandatory static stages passed after registering the recurrence family and exact CLI refusal inventory. The original gate refusals remain in evidence; no waiver, threshold, ignore marker or assertion was weakened. The unchanged source coverage remains exact 100 percent. Closure is staged with structured evidence for the combined reviewed delivery; broader graph and semantic docstring debt retain their open canonical owners."
+  "2026-10-03T10:08:45.281Z","harness:codex","Review round one for PR https://github.com/unbraind/pm-cli/pull/1376: all required hosted checks passed; accepted precise SDK get-depth refusal metadata and grammar-aware registration selection for option values. Reopened only the two correction owners; other verified batch items remain closed and released. Corrections will retain exact coverage, active-item ownership, and public temporary-consumer proof."
+  "2026-10-03T10:13:50.389Z","harness:codex","Review regression evidence: SDK invocation arity drives a lightweight Commander probe; attached values, flag-looking operands, ctx alias, booleans and --max-items values retain single-family selection. Genuine relocated leaves after parent controls still load destination handlers. Unknown/incomplete grammar keeps full discovery so the actual parser owns refusal. New negative control failed before the correction and passes afterward."
+  "2026-10-03T10:41:59.920Z","harness:codex","Review local gate evidence: all static stages passed across the strict prefix and resumed tracker/registry/SDK/import-cost/transport/graph/history/mutation tail after restoring reopened expected_result through the CLI. The original complexity and active-metadata refusals are preserved in private evidence; no gate, timeout, threshold, ignore or assertion was weakened. Packed manual acceptance passed 56 Node/Bun commands, dependency audit found zero advisories at every severity, and required Sentry/telemetry checks passed with no blocking issues and 1.41 percent finish error rate. The final full coverage run is verifying the extracted grammar probe before closure and the next hosted head."
+  "2026-10-03T10:54:49.707Z","harness:codex","Final review correction proof for PR https://github.com/unbraind/pm-cli/pull/1376: 9638 tests passed, with exact source coverage 100/100/100/100 and zero uncovered counts: statements 66543/66543, branches 50900/50900, functions 13748/13748, lines 63446/63446. Strict static stages and type checking passed with no weakened policy; native linked commands passed with duplicate suppression. Packed manual Node/Bun acceptance passed 58 commands, preserving literal next tag values, canonical receipts, complete depth refusal evidence, rich full opt-in, and immutable history. All dependency severities and current GitHub security alert surfaces are zero; required Sentry/telemetry checks passed. First-head required CI passed and both actionable bot findings were implemented; the corrected-head hosted cycle remains required before merge. The prior v2026.10.3 publication predates this batch."
+  "2026-10-03T11:15:45.382Z","harness:codex","Review docstring census: document the touched grammar callbacks as well as their containing functions, preserving strict code-quality rules. This owner is active only for the actual registration/option-boundary documentation edits; other roadmap programmes remain open and unclaimed."
+  "2026-10-03T11:19:24.625Z","harness:codex","Round-three TDD evidence: the real projection-conflict negative control failed before the fix and now passes in both argument orders and with explicit depth. SDK conflict evidence declares --full without a scalar; CLI rendering preserves that intentional unknown instead of reading another option token. Repeated compact MCP receipts now assert both claim.item and update.item absent. Focused 56 tests passed. All 28 touched source function-like nodes have meaningful JSDoc, verified through the TypeScript AST including callback documentation; broader semantic documentation debt remains with its existing canonical owner. ESLint and type checking passed; strict static and final coverage verification are pending."
+  "2026-10-03T11:30:01.154Z","harness:codex","Round-three static proof: the complete pnpm quality:static command finished successfully without resumed stages, with dependency audit zero vulnerabilities, source documentation ratchet, dead exports, ESLint, duplication, generated contracts, CLI refusal/grammar/token controls, tracker metadata, SDK/package boundaries, startup cost, graph/history assurance and mutation controls all passing. No thresholds, exclusions or assertions changed. Packed manual acceptance passed 58 distinct Node/Bun commands, including both projection-conflict shapes with no rejected scalar. Final coverage and native linked tests are running before closure."
+  "2026-10-03T12:16:44.908Z","harness:codex","The final strict static command passed every stage through the public SDK surface check, then rejected measured SDK entrypoint import medians above unchanged ceilings across seven modules. Preserve the failed observation and recheck that performance stage without concurrent local builds/tests, then complete the remaining transport/graph/history/mutation stages. The preceding round-three whole static run passed before the one unreachable refusal branch was removed; no threshold, budget, retry, exclusion or waiver is changed. Exact-head hosted full static remains mandatory."
+  "2026-10-03T12:45:07.826Z","harness:codex","Final corrected-source isolated suite: 9638 passed and two Windows-only cases skipped on Linux; exact coverage 100/100/100/100 with zero uncovered counts (66545/66545 statements, 50900/50900 branches, 13748/13748 functions, 63447/63447 lines). Full type checking, every static-quality stage including unchanged performance ceilings, graph/history and mutation controls (329 killed, seven reviewed equivalent, zero failures), native deduplicated linked tests, 58 clean packed Node/Bun manual commands with history verification, and nine npx/bunx packed package workflows plus typed SDK consumers passed. All 28 touched source functions have behavior-specific documentation. Required Sentry/telemetry gate passed with zero blocking issues, 1.40 percent finish error rate and zero missing error-code rows. Earlier failed test/coverage and performance observations remain recorded. Exact-head hosted checks/reviews and merge follow through PR1376; this batch is separate from the earlier v2026.10.3 publication and four pre-existing-main nightly alerts."
+  "2026-10-03T15:10:08.695Z","harness:codex","Final round-four corrected-source isolated suite on CI-supported current Node24.21/npm11: 9638 passed and two Windows-only cases skipped on Linux; exact coverage 100/100/100/100 with zero uncovered counts (66550/66550 statements, 50902/50902 branches, 13749/13749 functions, 63451/63451 lines). Full type checking, every static-quality stage including unchanged performance ceilings, graph/history and mutation controls (329 killed, seven reviewed equivalent, zero failures), native deduplicated linked tests, 67 clean packed Node/Bun manual commands with history verification and four public snapshot backend/linked-command combinations, and nine npx/bunx packed package workflows plus typed SDK consumers passed. All 32 touched source functions have behavior-specific documentation. Required Sentry/telemetry gate passed with zero blocking issues, 1.41 percent finish error rate and 0 missing error-code rows. Cross-runtime snapshot contracts pass unchanged on Node22.21.1, Node24.12, Node24.21 and Node26.9. Earlier failed Node26/old-Node24 coverage and performance observations remain recorded, and their unrelated timeout/warning causes are not claimed fixed. Exact-head hosted checks/reviews and merge follow through PR1376; this batch is separate from the earlier v2026.10.3 publication and four pre-existing-main nightly alerts."
+notes[1]{created_at,author,text}:
+  "2026-10-03T08:53:54.196Z","harness:codex","Verification ownership: this batch keeps diagnostics and composed lifecycle behavior in shared SDK producers; CLI rendering consumes declared recovery rather than guessing from valid inputs. Real temporary tracker tests complement registration boundary tests. Root integration directory cap remains enforced; moved agent receipt suite into its CLI subdirectory. Full coverage and hosted checks are mandatory before delivery."
+learnings[2]{created_at,author,text}:
+  "2026-10-03T08:32:48.135Z","harness:codex","Agent context controls must either change the declared public result or fail before host preparation. Refusal ownership follows producer evidence, restore instructions execute under the original intent, and composition identities come from persisted mutation results. Tests must observe the public boundary and unchanged tracker state rather than mirror internal forwarding."
+  "2026-10-03T10:39:57.743Z","harness:codex","A review correction that reopens a closed owner must re-establish expected_result before active tracker assurance: SDK reopening intentionally clears prior resolution/expected/actual closure evidence. Restore the real expected outcome through pm rather than weakening the active metadata gate or copying an obsolete actual-result claim."
+files[7]{path,scope}:
+  scripts/release/surface-replication-sets.json,project
+  src/cli/runtime/invocation-options.ts,project
+  src/cli/runtime/selection.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project
+  tests/integration/transactions/semantic-preview.integration.spec.ts,project
+  tests/unit/cli/history-registration-selection.spec.ts,project
+tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project,"harness:codex","2026-10-03T08:53:52.254Z",local_mutation,codex/agent-refusals-context-recovery-claim-receipts
+  node scripts/run-tests.mjs test -- tests/unit/cli/history-registration-selection.spec.ts,project,"harness:codex","2026-10-03T10:48:01.035Z",local_mutation,codex/agent-refusals-context-recovery-claim-receipts
+test_runs[5]:
+  - run_id: test-all-local-mus6wso8-m6rk3o
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T09:29:00.793Z"
+    finished_at: "2026-10-03T09:29:50.039Z"
+    recorded_at: "2026-10-03T09:29:50.039Z"
+    passed: 0
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 1
+    executions[1]{command}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts
+  - run_id: test-all-local-mus8mdwb-jyvln0
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T10:16:54.456Z"
+    finished_at: "2026-10-03T10:25:17.405Z"
+    recorded_at: "2026-10-03T10:25:17.405Z"
+    passed: 0
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 1
+    executions[1]{command}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts
+  - run_id: test-all-local-mus9qf4u-24hj0m
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T10:48:02.284Z"
+    finished_at: "2026-10-03T10:54:09.097Z"
+    recorded_at: "2026-10-03T10:54:09.097Z"
+    passed: 1
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 2
+    executions[2]:
+      - command: node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts
+      - command: node scripts/run-tests.mjs test -- tests/unit/cli/history-registration-selection.spec.ts
+        requested_pm_context_mode: schema
+        pm_context_mode: schema
+        workspace_context_mode: source
+        trust_reason: local_source_ref
+  - run_id: test-all-local-musb6kmq-skrhty
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T11:28:35.495Z"
+    finished_at: "2026-10-03T11:41:39.302Z"
+    recorded_at: "2026-10-03T11:41:39.302Z"
+    passed: 1
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 2
+    executions[2]:
+      - command: node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts
+      - command: node scripts/run-tests.mjs test -- tests/unit/cli/history-registration-selection.spec.ts
+        requested_pm_context_mode: schema
+        pm_context_mode: schema
+        workspace_context_mode: source
+        trust_reason: local_source_ref
+  - run_id: test-all-local-musd4j0h-nmz9c2
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T12:22:59.351Z"
+    finished_at: "2026-10-03T12:23:34.520Z"
+    recorded_at: "2026-10-03T12:23:34.520Z"
+    passed: 1
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 2
+    executions[2]:
+      - command: node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts
+      - command: node scripts/run-tests.mjs test -- tests/unit/cli/history-registration-selection.spec.ts
+        requested_pm_context_mode: schema
+        pm_context_mode: schema
+        workspace_context_mode: source
+        trust_reason: local_source_ref
+docs[1]{path,scope}:
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project
+close_reason: "Implemented, reviewed and locally verified the shared agent contract and all review corrections."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1368
+  gate_id: agent-receipt-recovery
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: Gates (coverage),Gates (static),Windows regression (Node 24)
 body: "## Summary\n`context next` accepts inherited context projection/depth flags but neither applies nor validates them. Invalid controls return success and a normal recommendation.\n\nReproduced with the official installed `@unbrained/pm-cli` 2026.9.30 on Linux, using disposable synthetic non-Git trackers. No implementation changes are included in this issue.\n\n## Reproduction\n```bash\nLAB=$(mktemp -d)\nmkdir -p \"$LAB/home\" \"$LAB/work\"\nexport HOME=\"$LAB/home\" PM_PATH=\"$LAB/work/.agents/pm\"\nexport PM_GLOBAL_PATH=\"$LAB/global\" PM_TELEMETRY_DISABLED=1\ncd \"$LAB/work\"\npm init \"$PM_PATH\" --defaults --author audit --agent-guidance skip --json >/dev/null\npm create task \"Audit sample\" --id t1 --description \"Execution detail\" --json >/dev/null\n```\n```bash\npm context next --json\npm context next --fields id,title,description --json\npm context next --fields notafield --json\npm context next --depth nonsense --json\n```\n\n## Actual\nAll commands exit 0. The same recommendation shape is returned: 17 fields, including fields not requested by the explicit projection, while the stored description remains absent. An unknown projection and a nonsensical depth receive no typed error or ignored-option warning.\n\n## Expected and impact\nA supported option must be applied and validated. If a parent option has no meaning on a child command, reject it with a typed actionable error before executing the command. Silent acceptance teaches agents an incorrect contract and can withhold explicitly requested execution detail.\n\n## Implementation plan\n1. Inventory parent/global option inheritance versus child handlers and declared flag contracts.\n2. Define supported projection/depth semantics for next; reuse the shared projection validator and renderer where appropriate.\n3. Explicitly reject unsupported inherited controls rather than silently swallowing them.\n4. Generate help/contract applicability from the same registry used by dispatch validation.\n5. Add parent-flags × subcommands tests, with representative valid and invalid values, and CLI/MCP parity for supported features.\n\n## Regression acceptance\n- [ ] An id/title/description projection returns the requested stored description and documented mandatory metadata, or is explicitly rejected as unsupported\n- [ ] Unknown fields and invalid depth return nonzero typed errors\n- [ ] Parent flag placement and aliases do not change validation\n- [ ] Recommended and companion rows follow one documented projection rule\n- [ ] Tests cover other inherited controls to catch accepted-but-unused flags\n- [ ] No regression to next ranking, blocker visibility or token-budget enforcement\n\n## Ownership and duplicate check\nChild of #1363; conformance coverage for #1361/#1362. Closed #440/#156 concerned context projection availability; this is the nested next dispatch path. Closed #1264 concerned token-budget enforcement and is distinct. Searched open and closed context-next, fields and depth issues."

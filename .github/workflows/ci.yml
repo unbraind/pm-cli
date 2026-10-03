@@ -243,6 +243,13 @@ jobs:
       - name: Run Node 22 telemetry regressions
         run: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/core/telemetry/
 
+      # pm-5iwfkj: current Node types must not conceal a newer filesystem API
+      # in the SDK's supported Node 22 snapshot path. Retain the required job name.
+      - name: Verify linked snapshot target handling on Node 22
+        env:
+          PM_RUN_TESTS_SKIP_BUILD: "1"
+        run: node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts
+
   gates:
     name: Gates (${{ matrix.gate }})
     needs: build-foundation

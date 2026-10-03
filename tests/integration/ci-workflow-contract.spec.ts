@@ -419,9 +419,10 @@ describe("GitHub workflow contract", () => {
       "pnpm test",
       "pnpm dogfood:package-first",
     ]);
-    const runtimeSteps = (parse(ciWorkflow) as {
-      jobs: Record<string, { steps: Array<{ uses?: string; run?: string; if?: string; "continue-on-error"?: boolean; env?: Record<string, string> }> }>;
-    }).jobs["build-test"].steps;
+    const runtimeJobs = (parse(ciWorkflow) as {
+      jobs: Record<string, { name?: string; needs?: string; steps: Array<{ name?: string; uses?: string; run?: string; if?: string; "continue-on-error"?: boolean; env?: Record<string, string>; with?: Record<string, unknown> }> }>;
+    }).jobs;
+    const runtimeSteps = runtimeJobs["build-test"].steps;
     const nativeShellSteps = runtimeSteps.filter(
       (step) => step.uses?.startsWith("pnpm/action-setup@") || step.run?.includes("pnpm install"),
     );
@@ -479,7 +480,19 @@ describe("GitHub workflow contract", () => {
       ),
     );
     expectExactValidationCacheSteps(ciWorkflow, 3);
-    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(10);
+    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(11);
+    const node22Job = runtimeJobs["node22-telemetry"];
+    expect(node22Job).toMatchObject({
+      name: "Telemetry regression (Node 22)",
+      needs: "build-foundation",
+    });
+    expect(node22Job.steps.find((step) => step.uses?.startsWith("actions/setup-node@"))?.with).toMatchObject({ "node-version": 22 });
+    const snapshotSteps = node22Job.steps.filter((step) => step.name === "Verify linked snapshot target handling on Node 22");
+    expect(snapshotSteps).toEqual([{
+      name: "Verify linked snapshot target handling on Node 22",
+      env: { PM_RUN_TESTS_SKIP_BUILD: "1" },
+      run: "node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts",
+    }]);
     expect(ciWorkflow).not.toMatch(/^\s*run: pnpm test\s*$/m);
     expect(ciWorkflow).not.toContain("Sandboxed PM regression");
 

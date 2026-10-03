@@ -112,6 +112,7 @@ export function createUnknownSubcommandError(
     {
       code: "unknown_subcommand",
       reason: "unknown_positional_token",
+      value: token,
       examples: [
         ...(suggestedRetry ? [suggestedRetry] : []),
         ...(options.examples ?? []),

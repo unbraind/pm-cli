@@ -39,6 +39,11 @@ describe("CLI runtime compatibility boundary", () => {
     [["--json", "context"], true],
     [["--output-format", "json", "health", "--check-only"], true],
     [["--output-format=json", "context"], true],
+    [["--json", "--output-format", "toon", "context"], false],
+    [["--output-format=toon", "context", "--json"], false],
+    [["--output-format=json", "context", "--output-format=toon"], false],
+    [["--output-format=toon", "context", "--output-format=json"], true],
+    [["context", "--", "--json"], false],
     [["context"], false],
   ] as const)("warns without blocking stale read %j", async (argv, json) => {
     const writeError = vi.fn();
@@ -72,6 +77,7 @@ describe("CLI runtime compatibility boundary", () => {
     } else {
       expect(rendered).toContain("project_runtime_stale_read");
       expect(rendered).toContain("Running 2026.8.7; project pin 2026.8.9");
+      expect(rendered).toMatch(/^\[pm\] warning:/u);
     }
   });
 
@@ -79,6 +85,11 @@ describe("CLI runtime compatibility boundary", () => {
     [["--json", "create"], true],
     [["--output-format", "json", "create"], true],
     [["--output-format=json", "create"], true],
+    [["--json", "--output-format", "toon", "create"], false],
+    [["--output-format=toon", "create", "--json"], false],
+    [["--output-format=json", "create", "--output-format=toon"], false],
+    [["--output-format=toon", "create", "--output-format=json"], true],
+    [["create", "--", "--json"], false],
     [["create"], false],
   ] as const)("renders stale mutation recovery for %j", async (argv, json) => {
     const writeError = vi.fn();
@@ -109,6 +120,7 @@ describe("CLI runtime compatibility boundary", () => {
       });
     } else {
       expect(rendered).toContain("cannot mutate a project pinned to newer pm");
+      expect(rendered.trimStart()).not.toMatch(/^\{/u);
     }
   });
 
@@ -144,11 +156,15 @@ describe("CLI runtime compatibility boundary", () => {
     ).rejects.toBe(defect);
   });
 
-  it("renders an SDK refusal raised by deferred dispatch", async () => {
+  it("renders one SDK refusal when a stale read fails during deferred dispatch", async () => {
+    const projectRoot = await mkdtemp(path.join(tmpdir(), "pm-runtime-refusal-"));
+    roots.push(projectRoot);
+    await writeFile(path.join(projectRoot, "package.json"), JSON.stringify(newerPin));
     const writeError = vi.fn();
     await expect(
       runRuntimeCompatibleCli({
-        projectRoot: "/missing",
+        executingVersion: "2026.8.7",
+        projectRoot,
         argv: ["--json", "context"],
         allowStale: false,
         run: async () => {
@@ -161,6 +177,7 @@ describe("CLI runtime compatibility boundary", () => {
       }),
     ).resolves.toBeUndefined();
     expect(process.exitCode).toBe(2);
+    expect(writeError).toHaveBeenCalledOnce();
     expect(JSON.parse(String(writeError.mock.calls[0]?.[0]))).toMatchObject({
       code: "invalid_command_usage",
       exit_code: 2,

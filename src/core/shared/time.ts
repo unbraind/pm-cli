@@ -344,6 +344,7 @@ function assertRealCalendarDate(
     throw new PmCliError(
       `Invalid ${label} value "${originalInput}". Month "${match[2]}" is out of range — use a month between 01 and 12.`,
       EXIT_CODE.USAGE,
+      { field: label, value: originalInput },
     );
   }
   const maxDay = daysInUtcMonth(year, month - 1);
@@ -351,6 +352,7 @@ function assertRealCalendarDate(
     throw new PmCliError(
       `Invalid ${label} value "${originalInput}". ${MONTH_NAMES[month - 1]} ${year} has ${maxDay} days, so day "${match[3]}" does not exist. Use a real YYYY-MM-DD calendar date.`,
       EXIT_CODE.USAGE,
+      { field: label, value: originalInput },
     );
   }
 }
@@ -406,6 +408,7 @@ export function resolveIsoOrRelative(
     throw new PmCliError(
       `Invalid ${normalizedLabel} value "${input}". ${guidance}`,
       EXIT_CODE.USAGE,
+      { field: normalizedLabel, value: input },
     );
   }
   return new Date(timestamp).toISOString();
