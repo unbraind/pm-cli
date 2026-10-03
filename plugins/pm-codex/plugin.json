@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "pm-codex",
-  "version": "2026.10.2",
+  "version": "2026.10.3",
   "description": "Repository-native project context workflows and a version-pinned pm MCP server for Codex.",
   "author": {
     "name": "unbrained",
