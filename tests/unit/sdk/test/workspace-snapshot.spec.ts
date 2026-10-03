@@ -1,4 +1,4 @@
-import { access, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -27,7 +27,7 @@ describe("linked workspace snapshot filesystem policy", () => {
         expect(await readFile(path.join(snapshot, directory, "identity"), "utf8")).toBe(directory);
       }
       for (const directory of [".agents", ".AGENTS", ".git", ".GIT", ".nyc_output", ".turbo", "coverage", "packages/lib/node_modules"]) {
-        await expect(access(path.join(snapshot, directory))).rejects.toThrow("ENOENT");
+        await expect(lstat(path.join(snapshot, directory))).rejects.toMatchObject({ code: "ENOENT" });
       }
       expect(await realpath(path.join(snapshot, "directory-alias"))).toBe(await realpath(path.join(snapshot, "packages/lib")));
       await writeFile(path.join(snapshot, "packages/lib/file-alias"), "changed in snapshot");
@@ -35,11 +35,11 @@ describe("linked workspace snapshot filesystem policy", () => {
       expect(await readFile(path.join(source, "packages/lib/identity"), "utf8")).toBe("packages/lib");
       await writeFile(path.join(snapshot, "packages/lib/dangling-alias"), "created in snapshot");
       expect(await readFile(path.join(snapshot, "packages/lib/missing"), "utf8")).toBe("created in snapshot");
-      await expect(access(path.join(source, "packages/lib/missing"))).rejects.toThrow("ENOENT");
+      await expect(lstat(path.join(source, "packages/lib/missing"))).rejects.toMatchObject({ code: "ENOENT" });
       await mkdir(path.join(snapshot, "missing-parent"));
       await writeFile(path.join(snapshot, "absolute-dangling-alias"), "created through copied absolute alias");
       expect(await readFile(path.join(snapshot, "missing-parent/child"), "utf8")).toBe("created through copied absolute alias");
-      await expect(access(path.join(source, "missing-parent"))).rejects.toThrow("ENOENT");
+      await expect(lstat(path.join(source, "missing-parent"))).rejects.toMatchObject({ code: "ENOENT" });
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -70,10 +70,11 @@ describe("linked workspace snapshot filesystem policy", () => {
       expect(await readFile(path.join(snapshot, "dependency-file-alias"), "utf8")).toBe("external installation");
       expect(await realpath(path.join(snapshot, "dependency-directory-alias"))).toBe(await realpath(dependencies));
       expect(await readFile(path.join(snapshot, "linked-package-alias"), "utf8")).toBe("linked package");
-      await expect(access(path.join(snapshot, "dependency-dangling-alias"))).rejects.toThrow("ENOENT");
+      expect((await lstat(path.join(snapshot, "dependency-dangling-alias"))).isSymbolicLink()).toBe(true);
+      await expect(readFile(path.join(snapshot, "dependency-dangling-alias"))).rejects.toMatchObject({ code: "ENOENT" });
       await writeFile(path.join(snapshot, "dependency-dangling-alias"), "dependency writes remain shared");
       expect(await readFile(path.join(dependencies, "missing"), "utf8")).toBe("dependency writes remain shared");
-      await expect(access(path.join(snapshot, "packages/dangling/node_modules"))).rejects.toThrow("ENOENT");
+      await expect(lstat(path.join(snapshot, "packages/dangling/node_modules"))).rejects.toMatchObject({ code: "ENOENT" });
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -92,9 +93,9 @@ describe("linked workspace snapshot filesystem policy", () => {
           .rejects.toThrow("Snapshot destination must be disjoint from the source workspace; choose a temporary root outside the checkout.");
       }
       expect(await readFile(path.join(source, "identity"), "utf8")).toBe("original source");
-      await expect(access(path.join(source, "nested"))).rejects.toThrow("ENOENT");
-      await expect(access(path.join(source, "missing"))).rejects.toThrow("ENOENT");
-      await expect(access(path.join(root, "identity"))).rejects.toThrow("ENOENT");
+      await expect(lstat(path.join(source, "nested"))).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(lstat(path.join(source, "missing"))).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(lstat(path.join(root, "identity"))).rejects.toMatchObject({ code: "ENOENT" });
     } finally {
       await rm(root, { recursive: true, force: true });
     }
