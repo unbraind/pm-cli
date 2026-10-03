@@ -25,6 +25,8 @@ describe("development dependency bundle admission", () => {
     const root = await mkdtemp(path.join(tmpdir(), "pm-dependency-admission-"));
     try {
       await cp(coreRoot, root, { recursive: true });
+      // Copied executable shims retain their original relative targets; this fixture admits owned payloads.
+      await rm(path.join(root, "node_modules/.bin"), { recursive: true, force: true });
       for (const file of Object.keys(policy.sha256)) {
         const target = path.join(root, file);
         const original = await readFile(target);
@@ -37,13 +39,25 @@ describe("development dependency bundle admission", () => {
       const incomplete = { ...policy, sha256: { ...policy.sha256 } };
       delete incomplete.sha256["dist/index.es5.js.map"];
       await expect(verifyDevelopmentBundles(root, incomplete)).rejects.toThrow("Incomplete bundle integrity policy");
-      for (const file of ["unreviewed.mjs", "dist/unreviewed.js", "dist/nested/unreviewed.js.map", "prebuilds/unreviewed.node", "node_modules/axios/index.js"]) {
+      for (const file of ["unreviewed.mjs", "dist/unreviewed.js", "dist/nested/unreviewed.js.map", "prebuilds/unreviewed.node", "node_modules/axios/index.js", "node_modules/.bin/unreviewed", "node_modules/.bin/nested/unreviewed.js", "node_modules/.bin/node-gyp-build.exe", "node_modules/.bin/nested/node-gyp-build"]) {
         const target = path.join(root, file);
         await mkdir(path.dirname(target), { recursive: true });
         await writeFile(target, "unreviewed artifact");
         await expect(verifyDevelopmentBundles(root, policy)).rejects.toThrow("Unexpected CodSpeed artifact inventory");
         await unlink(target);
       }
+      const originalShim = await readFile(path.join(coreRoot, "node_modules/.bin/node-gyp-build"), "utf8");
+      const forgedMarker = originalShim.slice(originalShim.lastIndexOf("# cmd-shim-target="));
+      for (const extension of ["", ".cmd", ".ps1"]) {
+        const target = path.join(root, `node_modules/.bin/node-gyp-build${extension}`);
+        await writeFile(target, `${forgedMarker}unreviewed payload\n`);
+        await expect(verifyDevelopmentBundles(root, policy)).rejects.toThrow("CodSpeed executable shim integrity mismatch");
+        await unlink(target);
+      }
+      const shimAlias = path.join(root, "node_modules/.bin/node-gyp-build");
+      await symlink(path.join(coreRoot, "node_modules/.bin/node-gyp-build"), shimAlias, "file");
+      await expect(verifyDevelopmentBundles(root, policy)).rejects.toThrow("CodSpeed artifacts must be regular files");
+      await unlink(shimAlias);
       const bundle = path.join(root, "dist/index.cjs.js");
       await unlink(bundle);
       await symlink(path.join(coreRoot, "dist/index.cjs.js"), bundle, "file");

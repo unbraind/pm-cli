@@ -217,10 +217,10 @@
     "@toon-format/toon": "^4.1.1",
     "@types/node": ">=22",
     "commander": "^15.0.0",
-    "fast-glob": "^3.3.3",
     "fast-json-patch": "^3.1.1",
     "npm-package-arg": "^13.0.2",
     "tar": "7.5.22",
+    "tinyglobby": "^0.2.17",
     "yaml": "^2.9.1"
   },
   "devDependencies": {

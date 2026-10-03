@@ -6,18 +6,18 @@ status: closed
 priority: 0
 tags[1]: security
 created_at: "2026-10-02T06:33:46.098Z"
-updated_at: "2026-10-03T00:12:19.199Z"
-closed_at: "2026-10-02T23:03:24.843Z"
-completed_at: "2026-10-02T23:03:24.843Z"
+updated_at: "2026-10-03T02:46:49.006Z"
+closed_at: "2026-10-03T02:42:04.196Z"
+completed_at: "2026-10-03T02:42:04.196Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Patch external Axios to a cooldown-eligible supported release and eliminate affected CJS/ESM bundled copies with reproducible integrity and source-map evidence.; Preserve CodSpeed instrumentation, platform compatibility, benchmark coverage and package contracts; retain genuine pre-fix vulnerability controls.; Enforce development dependency vulnerability admission in mandatory CI, nightly, release and local gates; seeded vulnerable artifacts must fail without changing coverage or quality thresholds.; Verify full and production audits, dev-inclusive Trivy, real Node/Bun tooling and merged-main Scorecard retirement; document evidence tiers without suppressing or dismissing an unresolved report."
 parent: pm-qwoy
 risk: high
 confidence: high
-resolution: "Removed vulnerable embedded CJS/ESM clients through an exact-version patch, preserved maps/native payloads and interceptor isolation, enforced regular-file inventory against shadows, and accepted bounded configuration comments while detecting continued or literal credentials across all JavaScript line terminators."
-expected_result: "Audited tooling retains runtime compatibility, only reviewed artifacts are admitted, benign complete expressions remain usable, and vulnerable or redirected dependencies and genuine credentials fail mandatory local, CI, nightly and release controls."
-actual_result: "Canonical test-local-murk9e8z-r4gw2y passes 9628 tests with 100/100/100/100; measured test-local-murkhsbe-xcywcf retains twelve values bound to SHA-256 f586fac52502b298f1401e44e92e9330eda233cdcd7bd05fd3f88e6de87d551c. Parity test-local-murkcofa-t7qfi3 passes 42 cases. Static/typecheck, packed npm/npx/bunx SDK consumers, 89-command dogfood, real HTTP/inventory controls and actual Trivy 0.70.0 dev-only vulnerable/corrected fixtures pass. Native review, Windows, merged-main Scorecard retirement and the next eligible publication remain distinct delivery boundaries under pm-7zs0."
+resolution: Replace embedded obsolete HTTP clients and map sources with audited isolated clients while preserving native payloads and twelve reviewed owned-file hashes. Independently validate known generated shim formats with exact reviewed programs and trusted targets; reject arbitrary nested altered linked or forged executable entries. Preserve shared SDK secret detection controls and require full development-inclusive security gates.
+expected_result: Audited dependency resolution and exact installed artifact admission preserve CodSpeed CJS/ESM runtime compatibility without application interceptor contamination or unreviewed executable payloads.
+actual_result: Real CJS/ESM HTTP and artifact corruption controls pass. The installed POSIX shims pass complete program admission and arbitrary/forged/link controls are rejected. Full source receipt test-local-murs1oys-9xt763 passes 9631 tests; exact measured receipt test-local-murs7i3k-9zz2me records 100/100/100/100. Full/prod audits zero; temporary Node/Bun monorepo and nine-package packed acceptance plus 89-command dogfood pass. Required native Windows and provider reviews execute on the pushed head before merge. Main scanner retirement and immutable registry publication remain separately verified landing boundaries.
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-7wmq,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
   pm-cbzvgn,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
@@ -25,7 +25,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-5iwfkj,related,"2026-10-02T17:24:53.523Z","harness:codex","cli:update:dep",detected
   pm-5iwfkj,verifies,"2026-10-02T19:08:09.966Z","harness:codex","cli:update:dep",detected
   pm-iktual,verifies,"2026-10-02T20:57:56.198Z","harness:codex","cli:update:dep",detected
-comments[30]:
+comments[35]:
   - created_at: "2026-10-02T06:33:46.098Z"
     author: "harness:codex"
     text: "Duplicate check: complete all-status corpus 2850/2850 with no unreadable records; live exact keyword Axios finds only the discovery comment on pm-gh1364, include-dev-deps and GHSA-c29m-xwm3-cm6r find no canonical work. All twelve GHSA identifiers were checked in the initial all-status intake. Full live pm-qwoy, pm-cbzvgn and pm-7wmq metadata were read; parent history verifies. Closed pm-cbzvgn fixed distinct brace-expansion advisories and is preserved as completed historical work. This new Axios/CodSpeed report is recorded before PR1372 merge to keep discovery evidence reviewed. Remediation is open and unclaimed; it is not included in PR1372 source-fix closure or represented as security clearance."
@@ -117,18 +117,39 @@ comments[30]:
   - created_at: "2026-10-03T00:12:19.199Z"
     author: "harness:codex"
     text: "The shared primary-owner verification is renewed for the final snapshot correction: canonical test-local-murmvdoi-pilgng passes 9629 tests and all four coverage percentages are exactly 100. Measured report test-local-murmxdfi-0nvqus retains twelve actual values, with covered/total statements 66459, branches 50854, functions 13736 and lines 63377, bound to SHA-256 413ae1baf7cba0ef38d7fa780999fd33ae2a32c769f73079bf4adb43b891d69b. Existing security behavior, full audit and twelve-artifact bundle inventory remain verified. Source ownership of the new dependency-alias and destination fixes remains pm-5iwfkj; its current closure references this shared proof. The earlier immutable security closure remains valid historical evidence. Native merged-main Scorecard retirement and publication remain independent under pm-7zs0."
+  - created_at: "2026-10-03T01:08:02.390Z"
+    author: "harness:codex"
+    text: "Review round 6: CodeRabbit final architecture review observes that the whole node_modules/.bin namespace is skipped before file-type/inventory validation. No execution exploit was established, but arbitrary entries can evade the newly documented exact-inventory contract. Reopened the existing canonical owner to tighten admission with a real pre-fix temporary-copy regression. All other latest-head required checks passed; merge remains paused until this review correction receives renewed complete verification."
+  - created_at: "2026-10-03T01:22:35.769Z"
+    author: "harness:codex"
+    text: "TDD shim inventory control failed before the fix: the real copied package with node_modules/.bin/unreviewed was incorrectly admitted (the existing three-case admission fixture retained its two other passes). The correction permits only the three locked node-gyp-build commands and optional CMD/PowerShell variants directly in .bin, requires regular files, and compares the complete program against reviewed generated templates with independently resolved audited target paths. Forged markers do not suffice. Shell output is taken from actual pnpm 11.10.0; CMD and PowerShell output is generated from registry @zkochan/cmd-shim 9.0.7, preserving its ISC license. No generator dependency is added. Stored templates use repository LF; only CMD rendering restores native CRLF. Native Windows already runs the entire scripts unit directory, so it will independently validate real Windows-generated installed shims. Owned-artifact corruption copies omit relocated generated shims because their relative targets change on copying; the actual installation remains the primary positive admission control."
+  - created_at: "2026-10-03T01:36:04.267Z"
+    author: "harness:codex"
+    text: "Correction to review implementation provenance: the copied cmd-shim LICENSE is the BSD 2-Clause license printed in config/codspeed-shims/LICENSE.txt. The earlier ISC label was incorrect. The POSIX template comes from the actual pnpm 11.10.0 installation; CMD and PowerShell template bodies come from cmd-shim 9.0.7. No new generator dependency is added."
+  - created_at: "2026-10-03T02:16:50.746Z"
+    author: "harness:codex"
+    text: "Canonical run test-local-murrf2ai-dwks7e measured exact 100/100/100/100 but is FAILED overall: 9630 cases passed and the packed SDK continuation test could not resolve the installed npm package from this Node runtime. No source defect or test suppression is inferred. Re-run the complete source suite with the actual npm package location exposed through NODE_PATH; retain this failed receipt and do not label coverage alone as a passing suite."
+  - created_at: "2026-10-03T02:41:24.415Z"
+    author: "harness:codex"
+    text: "Final local review correction evidence: arbitrary executable names nested payloads unknown formats symlinks and forged target markers are refused; complete real installed shim programs pass the reviewed templates. Full source suite test-local-murs1oys-9xt763 passes 9631 cases and exact report receipt test-local-murs7i3k-9zz2me records 100/100/100/100 with zero uncovered counts; coverage-summary SHA-256 71ec731ebcf91c9608a595a0b56c17ade9d77a9dc02222b4f41fd7f470eac1bf. The prior npm-setup failure remains recorded. Shared security controls source censuses static components mutation gate and renewed temporary Node/Bun packed and monorepo acceptance pass. Strict native Windows and provider review run on the pushed head; native merged-main scanning and immutable registry publication retain their separate landing evidence boundary."
 notes[3]{created_at,author,text}:
   "2026-10-02T06:37:50.731Z","harness:codex","Scope and evidence boundary: this intake documents an unresolved development-tool dependency report before merging PR1372. It is not a regression introduced by the scoped recovery, continuation or semantic-preview fixes. Production-only audit is clean. Full audit and native Scorecard remain open; embedded Axios requires separate inspection beyond pnpm lock resolution. Do not dismiss the scanner alert or report security clearance until remediation and native merged-main scans are verified."
   "2026-10-02T19:24:09.415Z","harness:codex","Large-patch review rationale: GitHub treats a new patch artifact as 38,448 added lines although the upstream diff removes 38,404 lines and adds ten. Only two bundles and their two maps change; three native payloads remain byte-identical. Replacing the patch with an upstream supported fixed release is preferable once one is available and passes the same inventory, runtime, map and native gates. The exact-version pnpm patch remains reproducible across frozen installs and does not introduce an install-time transformation or weaken dependency admission."
   "2026-10-02T22:37:47.608Z","harness:codex","Reproducible manual Trivy control: in a fresh temporary directory create a private package whose sole devDependency is axios 1.4.0, run pnpm install --lockfile-only --ignore-scripts, then the official checksummed 0.70.0 trivy filesystem --include-dev-deps --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --format json on that directory. Expect exit 1 and detected Axios findings. Change the sole devDependency to axios 1.20.0, regenerate the lock and repeat; expect exit 0 and zero selected-severity findings. Observed archive SHA-256 8b4376d5d6befe5c24d503f10ff136d9e0c49f9127a4279fd110b727929a5aa9; lock format 9.0. The local comparison reused the current vulnerability database, and all temporary data was cleaned."
-learnings[3]{created_at,author,text}:
+learnings[4]{created_at,author,text}:
   "2026-10-02T18:32:24.961Z","harness:codex","Externalizing an embedded HTTP client must preserve its isolation from application interceptors, not just its version and exported API. Dedicated Axios clients, real HTTP compatibility controls, reviewed map coordinates and immutable native hashes cover different risks; lockfile audit alone cannot detect an embedded obsolete implementation."
   "2026-10-02T20:36:49.766Z","harness:codex",Content hashes alone do not pin JavaScript resolution boundaries. An identical-byte bundle symlink or nested node_modules client can redirect imports; exact owned-file inventory plus regular-file admission covers that boundary. Public-expression secret exceptions must recognize complete expressions rather than prefixes and share the same controls across SDK and repository scanners.
   "2026-10-02T22:27:26.037Z","harness:codex","Expression exceptions must account for JavaScript comment delimiters and all four line terminators without consuming later code. Separate genuine acceptance controls from continued-expression detection controls in both SDK and repository consumers. Canonical reopening also clears prior terminal expectations; restate active expected behavior through the CLI before strict tracker validation, and retain failed attempts as evidence."
-files[18]{path,scope}:
+  "2026-10-03T02:41:23.055Z","harness:codex",Generated executable shims are programs whose complete bytes and dependency targets must be admitted. An allowlisted filename or matching target marker cannot authorize an altered payload. Keep POSIX CMD and PowerShell templates as reviewed data with preserved licensing and exercise actual pnpm installations on native Windows as well as POSIX. When Node and npm come from separate installations expose the actual npm package through NODE_PATH for packed SDK acceptance instead of weakening the test.
+files[23]{path,scope}:
+  .agents/pm/extensions/.managed-extensions.json,project
   .github/workflows/ci.yml,project
   .github/workflows/release.yml,project
   .github/workflows/security.yml,project
+  config/codspeed-shims/cmd.txt,project
+  config/codspeed-shims/LICENSE.txt,project
+  config/codspeed-shims/ps1.txt,project
+  config/codspeed-shims/sh.txt,project
   config/dependency-bundle-integrity.json,project
   package.json,project
   patches/@codspeed__core@5.7.1.patch,project
@@ -176,11 +197,11 @@ tests[4]:
     timeout_seconds: 180
     provenance:
       author: "harness:codex"
-      created_at: "2026-10-03T00:09:34.700Z"
+      created_at: "2026-10-03T02:35:28.359Z"
       source_kind: local_mutation
       source_ref: codex/codspeed-dependency-security-snapshot-resolution
-    note: Exact report admission for canonical test-local-murmvdoi-pilgng; coverage-summary SHA-256 413ae1baf7cba0ef38d7fa780999fd33ae2a32c769f73079bf4adb43b891d69b; twelve percentages/counts retain the full unchanged source denominator policy
-test_runs[13]:
+    note: Exact report admission for complete passing source suite test-local-murs1oys-9xt763; coverage-summary SHA-256 71ec731ebcf91c9608a595a0b56c17ade9d77a9dc02222b4f41fd7f470eac1bf; the twelve percentage and covered/total measurements retain the full source policy.
+test_runs[17]:
   - run_id: test-local-murayqth-r6rf24
     kind: test
     status: passed
@@ -541,9 +562,106 @@ test_runs[13]:
         recorded_at: "2026-10-03T00:09:35.550Z"
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/release/coverage-threshold-gate.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-murplraf-csa9wn
+    kind: test
+    status: passed
+    started_at: "2026-10-03T01:24:22.859Z"
+    finished_at: "2026-10-03T01:24:32.487Z"
+    recorded_at: "2026-10-03T01:24:32.487Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/development-dependencies.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-murrf2ai-dwks7e
+    kind: test
+    status: failed
+    started_at: "2026-10-03T01:59:20.161Z"
+    finished_at: "2026-10-03T02:15:19.385Z"
+    recorded_at: "2026-10-03T02:15:19.385Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage -- --maxWorkers=2 --coverage.reportOnFailure,schema,schema,source,local_source_ref
+  - run_id: test-local-murs1oys-9xt763
+    kind: test
+    status: passed
+    started_at: "2026-10-03T02:16:51.310Z"
+    finished_at: "2026-10-03T02:32:55.203Z"
+    recorded_at: "2026-10-03T02:32:55.203Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage -- --maxWorkers=2 --coverage.reportOnFailure,schema,schema,source,local_source_ref
+  - run_id: test-local-murs7i3k-9zz2me
+    kind: test
+    status: passed
+    started_at: "2026-10-03T02:37:25.946Z"
+    finished_at: "2026-10-03T02:37:26.240Z"
+    recorded_at: "2026-10-03T02:37:26.240Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[12]:
+      - name: coverage_branches
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-03T02:37:26.240Z"
+      - name: coverage_branches_covered
+        value: 50861
+        unit: count
+        recorded_at: "2026-10-03T02:37:26.240Z"
+      - name: coverage_branches_total
+        value: 50861
+        unit: count
+        recorded_at: "2026-10-03T02:37:26.240Z"
+      - name: coverage_functions
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-03T02:37:26.240Z"
+      - name: coverage_functions_covered
+        value: 13740
+        unit: count
+        recorded_at: "2026-10-03T02:37:26.240Z"
+      - name: coverage_functions_total
+        value: 13740
+        unit: count
+        recorded_at: "2026-10-03T02:37:26.240Z"
+      - name: coverage_lines
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-03T02:37:26.240Z"
+      - name: coverage_lines_covered
+        value: 63403
+        unit: count
+        recorded_at: "2026-10-03T02:37:26.240Z"
+      - name: coverage_lines_total
+        value: 63403
+        unit: count
+        recorded_at: "2026-10-03T02:37:26.240Z"
+      - name: coverage_statements
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-03T02:37:26.240Z"
+      - name: coverage_statements_covered
+        value: 66487
+        unit: count
+        recorded_at: "2026-10-03T02:37:26.240Z"
+      - name: coverage_statements_total
+        value: 66487
+        unit: count
+        recorded_at: "2026-10-03T02:37:26.240Z"
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/coverage-threshold-gate.mjs,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
-close_reason: "Implemented the reviewed CodSpeed remediation, strict dependency admission and shared secret-expression compatibility controls."
+close_reason: Remediate embedded CodSpeed dependencies and admit only complete reviewed executable shims
 escape_class: scanner_finding
 gate_evidence:
   disposition: gate_added

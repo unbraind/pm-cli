@@ -2,7 +2,7 @@ import { chmodSync } from "node:fs";
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import fg from "fast-glob";
+import { glob } from "tinyglobby";
 import { describe, expect, it } from "vitest";
 import { PM_ERROR_CODE_CATALOG } from "../../src/sdk/generated-error-code-catalog.js";
 import { PM_READ_OUTPUT_SURFACE_CONTRACTS } from "../../src/sdk/read-output-contracts.js";
@@ -137,7 +137,7 @@ describe("real-entrypoint refusal reachability", () => {
   >;
 
   it("censuses the complete source producer table without unknown recovery fields", async () => {
-    const sourcePaths = await fg("src/**/*.ts", { cwd: process.cwd() });
+    const sourcePaths = await glob("src/**/*.ts", { cwd: process.cwd(), expandDirectories: false });
     const sources = await Promise.all(
       sourcePaths.map(async (sourcePath) => ({
         path: sourcePath,

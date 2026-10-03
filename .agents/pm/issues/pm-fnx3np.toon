@@ -1,0 +1,90 @@
+id: pm-fnx3np
+title: Remove unpatched braces recursion vulnerability from file matching
+description: "GHSA-vfj7-8cjw-p6xm / CVE-2026-93687: braces 3.0.3 reaches production through fast-glob 3.3.3 and micromatch 4.0.8. The mandatory complete audit rejects this tree. No patched braces version is published. Replace the glob implementation while retaining SDK linked file semantics and complete quality censuses."
+type: Issue
+status: closed
+priority: 0
+tags[4]: dependencies,glob,sdk,security
+created_at: "2026-10-03T01:35:10.144Z"
+updated_at: "2026-10-03T02:46:48.413Z"
+closed_at: "2026-10-03T02:42:02.954Z"
+completed_at: "2026-10-03T02:42:02.954Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Zero full audit findings; no installed braces or micromatch path; real deeply nested input succeeds without stack overflow; brace and extglob matching retains dot files and absolute or nested relative anchoring; literal directories stay excluded; complete source census and coverage gates pass
+goal: continuously enforced software supply-chain trust
+objective: Remove recursive vulnerable brace expansion from production SDK matching and repository source censuses
+value: Agent-supplied file patterns remain usable without a vulnerable transitive parser or changes to link identity
+why_now: A newly reviewed advisory blocks the mandatory complete dependency audit during the same reviewed security delivery
+parent: pm-qwoy
+risk: high
+confidence: high
+resolution: Replace fast-glob with tinyglobby throughout SDK matching and repository censuses. Explicitly preserve file-only directory behavior and invocation anchoring; retain a real nested-pattern regression and required native Windows coverage.
+expected_result: No vulnerable braces or micromatch dependency path; nested patterns cannot exhaust the old recursion stack; file matching and complete source census contracts retain their behavior.
+actual_result: Full and production audits report zero advisories. All 9631 source tests pass with exact 100/100/100/100 and twelve independently recorded counts. Real Node/Bun CLI and published SDK entrypoint consumers plus nine-package npm/npx/bunx and 89-command acceptance pass. Native exact-head checks precede merge; immutable publication remains a separate release-health obligation.
+component: sdk/linked-artifacts
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-qwoy,implements,"2026-10-03T01:35:10.144Z","harness:codex","cli:update:dep",detected
+  pm-r61juc,blocks,"2026-10-03T01:35:10.144Z","harness:codex","evidence:pnpm-quality-dependencies-GHSA-vfj7-8cjw-p6xm",detected
+  pm-r61juc,discovered_from,"2026-10-03T01:35:10.144Z","harness:codex","cli:update:dep",detected
+  pm-t57d,verifies,"2026-10-03T01:57:57.490Z","harness:codex","evidence:sdk-entrypoint-and-cli-transport-budget-checks",detected
+comments[6]{created_at,author,text}:
+  "2026-10-03T01:35:10.144Z","harness:codex","Duplicate search across every status found zero exact GHSA matches and only three unrelated closed braces text matches. Full historical pm-t57d confirms completed command splitting; this newly reviewed advisory is separate. Discovered while validating the CodSpeed review fix in PR 1375. Upstream https://github.com/advisories/GHSA-vfj7-8cjw-p6xm has no published fix; do not waive the audit or invent version 3.0.4."
+  "2026-10-03T01:36:04.978Z","harness:codex","Independent pre-fix comparison: fast-glob rejects a 9003-character pattern containing 4500 nested brace pairs and a comma with RangeError Maximum call stack size exceeded. Installed tinyglobby 0.2.17 returns an empty match list on the identical temporary fixture. The real complete dependency audit also fails before remediation. Registry publication date for tinyglobby 0.2.17 is 2026-05-30; the existing cooldown needs no exception."
+  "2026-10-03T01:49:16.357Z","harness:codex",The real required dependency audit blocked pm-r61juc delivery because it failed on GHSA-vfj7-8cjw-p6xm. The blocks edge now explicitly cites that verified scanner evidence. The initial tracker assurance also identified missing estimate and acceptance criteria; both are now populated with actual implementation and verification scope. Matching semantics remain documented in the SDK function instead of a filler docstring; the reviewed filler ceiling decreases by one.
+  "2026-10-03T01:57:58.288Z","harness:codex","The SDK entrypoint and CLI transport budget checks pass after removal. pm-fnx3np verifies the retained command-splitting and cold read-path contract documented by completed pm-t57d: the glob engine remains in the linked-artifact owner and the vulnerable fast-glob tree is entirely absent. This relationship closes the new prose reference gap without changing the historical completed item or graph thresholds."
+  "2026-10-03T01:59:19.455Z","harness:codex","The existing required native Windows regression command now includes the SDK glob security and compatibility owner. Complete local static components pass with no policy changes: the initial composite identified missing planning metadata and a prose reference; the corrected tracker, graph and record-integrity checks pass alongside the unchanged bounded mutation gate. The SDK import cost and CLI transport budgets remain enforced."
+  "2026-10-03T02:41:23.684Z","harness:codex","Final local proof: complete primary source suite test-local-murs1oys-9xt763 passes 9631 tests across 763 suites with two pre-existing Windows-only skips; exact twelve count/percentage measurements are recorded by test-local-murs7i3k-9zz2me. Statements 66487; branches 50861; functions 13740; lines 63403 all fully covered. Full and production audits contain zero advisories. Both Node and Bun CLI plus actual public SDK consumers pass real temporary nested brace/extglob and directory-refusal checks. Independent Node/Bun monorepo snapshot acceptance preserves original source and distinct installed dependency versions. Packed npm/npx/bunx consumers pass for nine packages and the package-first journey passes all 89 commands. Native Windows exact-head checks and provider review still precede merge."
+learnings[1]{created_at,author,text}:
+  "2026-10-03T02:41:22.239Z","harness:codex",A clean lock upgrade cannot fix an unpatched recursive parser. Replace its sole dependency path and prove both the actual failing nested input and retained matching semantics. tinyglobby expands directories by default; explicitly disable that behavior and exclude the invocation directory before its normalization can create an empty pattern.
+files[10]{path,scope}:
+  .github/workflows/ci.yml,project
+  package.json,project
+  pnpm-lock.yaml,project
+  scripts/release/docstring-quality-baseline.json,project
+  scripts/release/docstring-quality.mjs,project
+  scripts/release/package-sdk-contract-parity.mjs,project
+  src/sdk/linked-artifacts.ts,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+  tests/integration/refusal-reachability.integration.spec.ts,project
+  tests/unit/sdk/security/linked-artifact-glob.spec.ts,project
+tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  "pnpm quality:dependencies",project,"harness:codex","2026-10-03T01:38:03.589Z",local_mutation,codex/codspeed-dependency-security-snapshot-resolution
+  node scripts/run-tests.mjs test -- tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/commands/annotations/files-docs-command.spec.ts tests/unit/scripts/release/docstring-quality.spec.ts tests/unit/scripts/release/package-sdk-contract-parity.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/refusal-reachability.integration.spec.ts,project,"harness:codex","2026-10-03T01:39:32.854Z",local_mutation,codex/codspeed-dependency-security-snapshot-resolution
+test_runs[2]:
+  - run_id: test-local-murq3mi0-1tgeff
+    kind: test
+    status: failed
+    started_at: "2026-10-03T01:38:04.213Z"
+    finished_at: "2026-10-03T01:38:26.088Z"
+    recorded_at: "2026-10-03T01:38:26.088Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/linked-artifact-glob-security.spec.ts tests/unit/commands/annotations/files-docs-command.spec.ts tests/unit/scripts/release/docstring-quality.spec.ts tests/unit/scripts/release/package-sdk-contract-parity.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/refusal-reachability.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-murq5n1r-jq1v5n
+    kind: test
+    status: passed
+    started_at: "2026-10-03T01:39:33.577Z"
+    finished_at: "2026-10-03T01:40:00.111Z"
+    recorded_at: "2026-10-03T01:40:00.111Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:dependencies",schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/commands/annotations/files-docs-command.spec.ts tests/unit/scripts/release/docstring-quality.spec.ts tests/unit/scripts/release/package-sdk-contract-parity.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/refusal-reachability.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
+close_reason: Remove the unpatched recursive braces dependency with compatible SDK file matching
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: development-dependency-security
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/security/linked-artifact-glob.spec.ts; pre-fix 9003-character brace pattern exhausts braces expansion stack
+  local_checks[2]: "pnpm quality:dependencies",node scripts/run-tests.mjs coverage
+  hosted_checks[4]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24),Security and Script Quality / Trivy
+  owner: pm-fnx3np
+body: ""

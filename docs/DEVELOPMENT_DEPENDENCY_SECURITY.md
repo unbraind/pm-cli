@@ -1,6 +1,7 @@
 # Development dependency security
 
-Tracked by [pm-r61juc](../.agents/pm/issues/pm-r61juc.toon).
+Tracked by [pm-r61juc](../.agents/pm/issues/pm-r61juc.toon) and
+[pm-fnx3np](../.agents/pm/issues/pm-fnx3np.toon).
 
 Development tools execute during tests, benchmarks and release preparation.
 Their dependencies have the same admission requirement as production packages:
@@ -18,6 +19,20 @@ upgrades all fail. `quality:static` includes this command, so the existing CI,
 nightly quality and release paths enforce it. The registry-owned local
 preflight also requires the static gate and permits no skip. Trivy separately
 includes development dependencies in its required repository scan.
+
+## File matching dependency removal
+
+[GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)
+affects `braces` 3.0.3, previously reachable through the production `fast-glob`
+dependency. A pattern under 10,000 characters can exhaust the recursive brace
+expansion stack. No fixed version was published when this change was verified.
+The SDK and repository censuses now use `tinyglobby` 0.2.17, removing `fast-glob`,
+`micromatch` and `braces` from the installed graph. Explicit
+`expandDirectories: false` retains file-only semantics: a directory argument
+does not silently become a recursive match. Dot files, brace and extglob
+patterns, absolute paths and invocation-relative anchoring remain supported.
+The regression uses a real temporary directory and the same deeply nested input
+that failed before the replacement. Audit errors remain mandatory failures.
 
 ## CodSpeed 5.7.1 patch
 
@@ -52,8 +67,16 @@ also checks the exact installed file inventory, so an added executable, map or
 native payload fails even when the previously approved files are unchanged.
 Package-local dependency overrides also fail inventory admission: an added
 `node_modules/axios` could shadow the audited dependency resolved by the bundle.
-Only package-manager-generated `node_modules/.bin` executable shims are outside
-the owned inventory; the locked dependency graph is checked by the full audit. An
+Only the three `node-gyp-build` commands and their CMD/PowerShell variants may
+appear directly in `node_modules/.bin`. Each must be a regular file whose complete
+program matches the reviewed [shim templates](../config/codspeed-shims/), with
+targets and module paths derived from the audited installed dependency. Arbitrary
+names, nested payloads, links, altered programs and forged target markers fail;
+these shims are outside the twelve package-owned hashes but are independently
+validated. The shell template records pnpm 11.10.0's installed output; the CMD
+and PowerShell templates come from `@zkochan/cmd-shim` 9.0.7. Template changes
+require renewed real installation evidence on both POSIX and native Windows.
+The locked dependency graph is checked by the full audit. An
 upstream upgrade requires a reviewed patch removal or refresh, renewed runtime
 compatibility evidence, and a matching policy update. Never update hashes
 merely to admit an unexplained difference.

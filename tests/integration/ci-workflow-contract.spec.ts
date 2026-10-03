@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import fg from "fast-glob";
+import { glob } from "tinyglobby";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import {
@@ -456,7 +456,7 @@ describe("GitHub workflow contract", () => {
       "run: pnpm install --frozen-lockfile",
       "run: pnpm build",
       'PM_RUN_TESTS_SKIP_BUILD: "1"',
-      "run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/integration/extensions/static-extension-inventory.integration.spec.ts tests/unit/commands/test/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/core/extensions/activation-summary.spec.ts",
+      "run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/integration/extensions/static-extension-inventory.integration.spec.ts tests/unit/commands/test/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/core/extensions/activation-summary.spec.ts",
       'run: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t "installs runtime dependencies for packed npm package extensions"',
       "name: Verify copied plugin first-install command transport",
       "run: node scripts/run-tests.mjs test -- tests/integration/plugins/plugin-runtime-win32.integration.spec.ts tests/unit/plugins/plugin-runtime-races.spec.ts",
@@ -944,12 +944,13 @@ describe("GitHub workflow contract", () => {
   });
 
   it("rejects the unclaimed npm scope from production workflows, scripts, and source", async () => {
-    const productionFiles = await fg(
+    const productionFiles = await glob(
       [".github/workflows/**/*", "scripts/**/*", "src/**/*"],
       {
         cwd: repoRoot,
         dot: true,
         onlyFiles: true,
+        expandDirectories: false,
       },
     );
     const exposures = (
