@@ -76,6 +76,14 @@ these shims are outside the twelve package-owned hashes but are independently
 validated. The shell template records pnpm 11.10.0's installed output; the CMD
 and PowerShell templates come from `@zkochan/cmd-shim` 9.0.7. Template changes
 require renewed real installation evidence on both POSIX and native Windows.
+The CMD suffix follows the installed `PATHEXT` spelling, including `.CMD`;
+format lookup folds its case while validating the complete program. All three
+shell launchers are required, together with the CMD and PowerShell sets on
+Windows. Any additional format must also contain all three commands. Missing
+or duplicate launchers fail admission. Installation roots and rendered paths
+containing shell interpolation syntax fail before template comparison;
+ordinary paths containing spaces remain supported. Templates are comparison
+data: the checker never rewrites pnpm-generated launchers.
 The locked dependency graph is checked by the full audit. An
 upstream upgrade requires a reviewed patch removal or refresh, renewed runtime
 compatibility evidence, and a matching policy update. Never update hashes

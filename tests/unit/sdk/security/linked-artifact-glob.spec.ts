@@ -20,9 +20,15 @@ describe("linked artifact glob security and file-only compatibility", () => {
       for (const name of ["context.ts", "notes.md", ".hidden.ts", "ignored.txt"]) {
         await writeFile(path.join(invocation, name), name);
       }
-      for (const pattern of [".", "./", invocation, "missing", "missing/**"]) {
+      const child = path.join(invocation, "child");
+      await mkdir(child);
+      await writeFile(path.join(child, "nested.ts"), "nested\n");
+      for (const pattern of [".", "./", invocation, "child", child, "missing", "missing/**"]) {
         expect(await expandAddGlobEntries([{ pattern, scope: "project" }], root, invocation)).toEqual([]);
       }
+      expect(await expandAddGlobEntries([{ pattern: "child/**", scope: "project" }], root, invocation)).toEqual([
+        { path: "workspace/child/nested.ts", scope: "project" },
+      ]);
       for (const pattern of ["*.{ts,md}", "*.@(ts|md)", `${invocation.replaceAll("\\", "/")}/*.{ts,md}`]) {
         const absolute = path.isAbsolute(pattern);
         expect(await expandAddGlobEntries([{ pattern, scope: "global", note: "evidence" }], root, invocation)).toEqual(

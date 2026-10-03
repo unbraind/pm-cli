@@ -1,0 +1,39 @@
+id: pm-rnpmtp
+title: Renew pinned pnpm Windows shell-launcher compatibility after dependency cooldown
+description: "PR 1375 review identifies the locked pnpm 11.10.0 shell launcher using POSIX NODE_PATH when selecting Windows node.exe. The repository .txt templates only compare actual installed output and do not generate launchers. Upstream pnpm 11.28.1 also fixes Windows CMD percent-path handling and Cygwin target paths: https://github.com/pnpm/pnpm/releases/tag/v11.28.1. npm reports publication 2026-09-28T07:33:45.016Z, so that version first satisfies the unchanged seven-day cooldown on 2026-10-05T07:33:45.016Z; 11.28.2 is published later the same day. Evaluate a then-eligible supported version with real mixed-runtime fixtures instead of changing comparison templates independently of the installed generator. The verification edge to pm-q1ke preserves the completed pinned-installer bootstrap invariants when this future renewal is undertaken."
+type: Chore
+status: open
+priority: 2
+tags[4]: compatibility,pnpm,tooling,windows
+created_at: "2026-10-03T03:44:58.496Z"
+updated_at: "2026-10-03T03:46:55.503Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Retain the seven-day dependency cooldown; align packageManager and every CI/release/example pnpm pin; inspect actual published generator types/source and renew complete templates from real installation; run Windows Git Bash/Cygwin node.exe and POSIX Node dependency-resolution controls; verify quoted/percent paths, exact inventory, complete source coverage and all existing mandatory gates"
+goal: Portable audited development tooling
+objective: Renew pinned generator output and prove Windows shell runtime path compatibility
+value: Windows Node receives native path syntax while POSIX Node retains POSIX paths
+why_now: Native review found a distinct upstream mixed-runtime compatibility concern while validating CodSpeed bundle admission
+parent: pm-qwoy
+risk: medium
+confidence: high
+expected_result: A supported cooldown-eligible pnpm generator preserves module and target paths across Windows and POSIX runtimes without weakening installed-artifact admission
+actual_result: "Upstream release and registry dates are verified. Locked-template admission is strengthened in the current delivery; mixed-runtime generator renewal is queued and unclaimed, with no adoption or full interoperability claim."
+component: toolchain/generated-command-shims
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-mudv,implements,"2026-10-03T03:44:58.496Z","harness:codex","cli:create:dep",detected
+  pm-q1ke,verifies,"2026-10-03T03:44:58.496Z","harness:codex","cli:create:dep",detected
+  pm-r61juc,discovered_from,"2026-10-03T03:44:58.496Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-03T03:44:58.496Z","harness:codex","Duplicate check: complete all-status keyword NODE_PATH returns exactly four records (current CodSpeed owner, completed snapshot owner, completed MCP Apps refresh, and completed plugin-runtime owner); exact 11.28.1 returns zero without omissions. Full current pnpm bootstrap and terminal foundation metadata were read, and bootstrap history verifies. These historical completed fixes remain completed. Existing open/in-progress lists and canonical orientation were refreshed before creation. This queued intake records an upstream installer boundary rather than treating comparison templates as executable repository launchers."
+notes[1]{created_at,author,text}:
+  "2026-10-03T03:46:55.503Z","harness:codex","Boundary: these .txt files are validation references, while the installed pnpm/@zkochan generator writes the executable launchers. Preserve complete program admission and unchanged cooldown; do not edit reference bytes to invent new generated output. The official pnpm release documents related CMD percent-path and Cygwin target fixes, but resolution of the specific POSIX NODE_PATH plus Windows node.exe combination must be demonstrated with actual installed runtime controls before adopting a candidate."
+files[5]{path,scope}:
+  config/codspeed-shims/cmd.txt,project
+  config/codspeed-shims/ps1.txt,project
+  config/codspeed-shims/sh.txt,project
+  package.json,project
+  pnpm-workspace.yaml,project
+docs[1]{path,scope}:
+  docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
+body: ""

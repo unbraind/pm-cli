@@ -1,4 +1,4 @@
-import { cp, mkdir, mkdtemp, readFile, rm, symlink, unlink, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, readdir, rm, symlink, unlink, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -22,11 +22,19 @@ describe("development dependency bundle admission", () => {
   });
 
   it("rejects stale bundles, source maps, native payloads, and missing integrity entries", async () => {
-    const root = await mkdtemp(path.join(tmpdir(), "pm-dependency-admission-"));
+    // A sibling preserves the installed shims' real relative targets without changing the original package.
+    const root = await mkdtemp(path.join(path.dirname(coreRoot), "pm safe-"));
     try {
       await cp(coreRoot, root, { recursive: true });
-      // Copied executable shims retain their original relative targets; this fixture admits owned payloads.
-      await rm(path.join(root, "node_modules/.bin"), { recursive: true, force: true });
+      await expect(verifyDevelopmentBundles(root, policy)).resolves.toBeUndefined();
+      const shims = await readdir(path.join(root, "node_modules/.bin"));
+      for (const shim of shims) {
+        const target = path.join(root, "node_modules/.bin", shim);
+        const original = await readFile(target);
+        await unlink(target);
+        await expect(verifyDevelopmentBundles(root, policy)).rejects.toThrow("Incomplete CodSpeed executable shim inventory");
+        await writeFile(target, original);
+      }
       for (const file of Object.keys(policy.sha256)) {
         const target = path.join(root, file);
         const original = await readFile(target);
@@ -48,13 +56,16 @@ describe("development dependency bundle admission", () => {
       }
       const originalShim = await readFile(path.join(coreRoot, "node_modules/.bin/node-gyp-build"), "utf8");
       const forgedMarker = originalShim.slice(originalShim.lastIndexOf("# cmd-shim-target="));
-      for (const extension of ["", ".cmd", ".ps1"]) {
+      for (const extension of ["", ".cmd", ".CMD", ".ps1"]) {
         const target = path.join(root, `node_modules/.bin/node-gyp-build${extension}`);
+        const original = await readFile(target).catch(() => undefined);
         await writeFile(target, `${forgedMarker}unreviewed payload\n`);
         await expect(verifyDevelopmentBundles(root, policy)).rejects.toThrow("CodSpeed executable shim integrity mismatch");
         await unlink(target);
+        if (original) await writeFile(target, original);
       }
       const shimAlias = path.join(root, "node_modules/.bin/node-gyp-build");
+      await unlink(shimAlias);
       await symlink(path.join(coreRoot, "node_modules/.bin/node-gyp-build"), shimAlias, "file");
       await expect(verifyDevelopmentBundles(root, policy)).rejects.toThrow("CodSpeed artifacts must be regular files");
       await unlink(shimAlias);
@@ -64,6 +75,16 @@ describe("development dependency bundle admission", () => {
       await expect(verifyDevelopmentBundles(root, policy)).rejects.toThrow("CodSpeed artifacts must be regular files");
       await unlink(bundle);
       await expect(verifyDevelopmentBundles(root, policy)).rejects.toThrow("Unexpected CodSpeed artifact inventory");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("refuses installation roots containing shell interpolation syntax", async () => {
+    const root = await mkdtemp(path.join(path.dirname(coreRoot), "pm-$-"));
+    try {
+      await cp(coreRoot, root, { recursive: true });
+      await expect(verifyDevelopmentBundles(root, policy)).rejects.toThrow("CodSpeed shim paths contain shell interpolation syntax");
     } finally {
       await rm(root, { recursive: true, force: true });
     }

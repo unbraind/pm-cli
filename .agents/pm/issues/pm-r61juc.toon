@@ -6,26 +6,27 @@ status: closed
 priority: 0
 tags[1]: security
 created_at: "2026-10-02T06:33:46.098Z"
-updated_at: "2026-10-03T02:46:49.006Z"
-closed_at: "2026-10-03T02:42:04.196Z"
-completed_at: "2026-10-03T02:42:04.196Z"
+updated_at: "2026-10-03T04:08:21.750Z"
+closed_at: "2026-10-03T04:08:20.640Z"
+completed_at: "2026-10-03T04:08:20.640Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Patch external Axios to a cooldown-eligible supported release and eliminate affected CJS/ESM bundled copies with reproducible integrity and source-map evidence.; Preserve CodSpeed instrumentation, platform compatibility, benchmark coverage and package contracts; retain genuine pre-fix vulnerability controls.; Enforce development dependency vulnerability admission in mandatory CI, nightly, release and local gates; seeded vulnerable artifacts must fail without changing coverage or quality thresholds.; Verify full and production audits, dev-inclusive Trivy, real Node/Bun tooling and merged-main Scorecard retirement; document evidence tiers without suppressing or dismissing an unresolved report."
 parent: pm-qwoy
 risk: high
 confidence: high
-resolution: Replace embedded obsolete HTTP clients and map sources with audited isolated clients while preserving native payloads and twelve reviewed owned-file hashes. Independently validate known generated shim formats with exact reviewed programs and trusted targets; reject arbitrary nested altered linked or forged executable entries. Preserve shared SDK secret detection controls and require full development-inclusive security gates.
-expected_result: Audited dependency resolution and exact installed artifact admission preserve CodSpeed CJS/ESM runtime compatibility without application interceptor contamination or unreviewed executable payloads.
-actual_result: Real CJS/ESM HTTP and artifact corruption controls pass. The installed POSIX shims pass complete program admission and arbitrary/forged/link controls are rejected. Full source receipt test-local-murs1oys-9xt763 passes 9631 tests; exact measured receipt test-local-murs7i3k-9zz2me records 100/100/100/100. Full/prod audits zero; temporary Node/Bun monorepo and nine-package packed acceptance plus 89-command dogfood pass. Required native Windows and provider reviews execute on the pushed head before merge. Main scanner retirement and immutable registry publication remain separately verified landing boundaries.
-dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Removed embedded vulnerable HTTP clients and obsolete map sources while preserving native bytes and dedicated-client isolation. Required gates audit all dependencies and admit only exact owned hashes plus complete regular-file shell/CMD/PowerShell programs, accepting actual PATHEXT suffix spelling and refusing unsafe paths."
+expected_result: "Preserved CodSpeed runtime contracts, no dependency advisories, exact artifacts and complete launchers, real negative controls, and unchanged source/quality/graph thresholds."
+actual_result: "Real pre-fix missing-launcher and unsafe-root controls fail before correction and pass afterward; 45 focused security/workflow cases pass as test-local-muru05yu-1rmg6a. Typed verification cites the renewed complete canonical execution test-local-murutkzl-pv12k5 under the glob owner; direct exact-count receipt test-local-muruupmh-3atz3n records statements 66498/66498, branches 50861/50861, functions 13743/13743 and lines 63411/63411. Full/prod audits, all static components, mutation, secrets and renewed temporary Node/Bun/packed acceptance pass. Exact-head native Windows/review and merged-main Scorecard retirement remain the landing gate; immutable next-eligible daily registry publication is separately tracked."
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-7wmq,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
   pm-cbzvgn,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
   pm-gh1364,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
   pm-5iwfkj,related,"2026-10-02T17:24:53.523Z","harness:codex","cli:update:dep",detected
   pm-5iwfkj,verifies,"2026-10-02T19:08:09.966Z","harness:codex","cli:update:dep",detected
   pm-iktual,verifies,"2026-10-02T20:57:56.198Z","harness:codex","cli:update:dep",detected
-comments[35]:
+  pm-fnx3np,verifies,"2026-10-03T03:51:30.144Z","harness:codex","evidence:complete-source-test-local-murutkzl-pv12k5",detected
+comments[39]:
   - created_at: "2026-10-02T06:33:46.098Z"
     author: "harness:codex"
     text: "Duplicate check: complete all-status corpus 2850/2850 with no unreadable records; live exact keyword Axios finds only the discovery comment on pm-gh1364, include-dev-deps and GHSA-c29m-xwm3-cm6r find no canonical work. All twelve GHSA identifiers were checked in the initial all-status intake. Full live pm-qwoy, pm-cbzvgn and pm-7wmq metadata were read; parent history verifies. Closed pm-cbzvgn fixed distinct brace-expansion advisories and is preserved as completed historical work. This new Axios/CodSpeed report is recorded before PR1372 merge to keep discovery evidence reviewed. Remediation is open and unclaimed; it is not included in PR1372 source-fix closure or represented as security clearance."
@@ -132,15 +133,28 @@ comments[35]:
   - created_at: "2026-10-03T02:41:24.415Z"
     author: "harness:codex"
     text: "Final local review correction evidence: arbitrary executable names nested payloads unknown formats symlinks and forged target markers are refused; complete real installed shim programs pass the reviewed templates. Full source suite test-local-murs1oys-9xt763 passes 9631 cases and exact report receipt test-local-murs7i3k-9zz2me records 100/100/100/100 with zero uncovered counts; coverage-summary SHA-256 71ec731ebcf91c9608a595a0b56c17ade9d77a9dc02222b4f41fd7f470eac1bf. The prior npm-setup failure remains recorded. Shared security controls source censuses static components mutation gate and renewed temporary Node/Bun packed and monorepo acceptance pass. Strict native Windows and provider review run on the pushed head; native merged-main scanning and immutable registry publication retain their separate landing evidence boundary."
+  - created_at: "2026-10-03T03:13:29.914Z"
+    author: "harness:codex"
+    text: "Round 7 native Windows run 37091117809 fails only the installed shim admission control (1746 passing, 1 failure, 8 platform skips). All other watched checks pass. Review identifies optional launcher completeness and shell-path literal admission; templates are comparison data rather than executable repository launchers. Investigate and retain strict refusal without editing generated dependency programs."
+  - created_at: "2026-10-03T03:24:02.566Z"
+    author: "harness:codex"
+    text: "Actual generator dependency cmd-extension 1.0.2 selects the matching PATHEXT entry without lowercasing it. Standard native Windows PATHEXT therefore produces .CMD, while the current format map admits only .cmd. Normalize only the suffix for format lookup and preserve its actual spelling for strict flat-name validation. Add real installed-copy launcher deletion controls; candidate roots and all rendered literal paths must refuse interpolation characters. Do not alter generated pnpm launcher programs."
+  - created_at: "2026-10-03T03:51:29.244Z"
+    author: "harness:codex"
+    text: "Evidence complete-source-test-local-murutkzl-pv12k5: the actual renewed full source suite is recorded directly under pm-fnx3np and passes 9632 tests across 763 suites with only two existing Windows-only skips. Exact report SHA-256 7b30b0196b6493ca17d53d9e1d0ea2ae323004bf1ab4767022091b1855560ead records statements 66498/66498, branches 50861/50861, functions 13743/13743 and lines 63411/63411. This verifies the SDK glob replacement and the CodSpeed checker together; both owners retain the twelve direct measurements without re-running or duplicating the full test suite."
+  - created_at: "2026-10-03T04:08:17.488Z"
+    author: "harness:codex"
+    text: "Renewed temporary Node/Bun CLI and public SDK matching and monorepo snapshot acceptance pass, preserving real independently installed root/nested versions and original source bytes. Packed npm/npx/bunx and SDK consumers pass for nine packages; the package-first journey passes 89 commands. Full and production dependency audits, secrets and docs-link checks pass. All static components, graph and tracker checks plus the unchanged bounded mutation gate pass; the initial tracker gate correctly refused missing active expectations after reopening, then passed after CLI restoration. Exact hosted Windows/review, merged-main scanning and immutable scheduled publication remain distinct landing evidence."
 notes[3]{created_at,author,text}:
   "2026-10-02T06:37:50.731Z","harness:codex","Scope and evidence boundary: this intake documents an unresolved development-tool dependency report before merging PR1372. It is not a regression introduced by the scoped recovery, continuation or semantic-preview fixes. Production-only audit is clean. Full audit and native Scorecard remain open; embedded Axios requires separate inspection beyond pnpm lock resolution. Do not dismiss the scanner alert or report security clearance until remediation and native merged-main scans are verified."
   "2026-10-02T19:24:09.415Z","harness:codex","Large-patch review rationale: GitHub treats a new patch artifact as 38,448 added lines although the upstream diff removes 38,404 lines and adds ten. Only two bundles and their two maps change; three native payloads remain byte-identical. Replacing the patch with an upstream supported fixed release is preferable once one is available and passes the same inventory, runtime, map and native gates. The exact-version pnpm patch remains reproducible across frozen installs and does not introduce an install-time transformation or weaken dependency admission."
   "2026-10-02T22:37:47.608Z","harness:codex","Reproducible manual Trivy control: in a fresh temporary directory create a private package whose sole devDependency is axios 1.4.0, run pnpm install --lockfile-only --ignore-scripts, then the official checksummed 0.70.0 trivy filesystem --include-dev-deps --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --format json on that directory. Expect exit 1 and detected Axios findings. Change the sole devDependency to axios 1.20.0, regenerate the lock and repeat; expect exit 0 and zero selected-severity findings. Observed archive SHA-256 8b4376d5d6befe5c24d503f10ff136d9e0c49f9127a4279fd110b727929a5aa9; lock format 9.0. The local comparison reused the current vulnerability database, and all temporary data was cleaned."
-learnings[4]{created_at,author,text}:
+learnings[5]{created_at,author,text}:
   "2026-10-02T18:32:24.961Z","harness:codex","Externalizing an embedded HTTP client must preserve its isolation from application interceptors, not just its version and exported API. Dedicated Axios clients, real HTTP compatibility controls, reviewed map coordinates and immutable native hashes cover different risks; lockfile audit alone cannot detect an embedded obsolete implementation."
   "2026-10-02T20:36:49.766Z","harness:codex",Content hashes alone do not pin JavaScript resolution boundaries. An identical-byte bundle symlink or nested node_modules client can redirect imports; exact owned-file inventory plus regular-file admission covers that boundary. Public-expression secret exceptions must recognize complete expressions rather than prefixes and share the same controls across SDK and repository scanners.
   "2026-10-02T22:27:26.037Z","harness:codex","Expression exceptions must account for JavaScript comment delimiters and all four line terminators without consuming later code. Separate genuine acceptance controls from continued-expression detection controls in both SDK and repository consumers. Canonical reopening also clears prior terminal expectations; restate active expected behavior through the CLI before strict tracker validation, and retain failed attempts as evidence."
   "2026-10-03T02:41:23.055Z","harness:codex",Generated executable shims are programs whose complete bytes and dependency targets must be admitted. An allowlisted filename or matching target marker cannot authorize an altered payload. Keep POSIX CMD and PowerShell templates as reviewed data with preserved licensing and exercise actual pnpm installations on native Windows as well as POSIX. When Node and npm come from separate installations expose the actual npm package through NODE_PATH for packed SDK acceptance instead of weakening the test.
+  "2026-10-03T04:04:40.434Z","harness:codex","Windows CMD launcher suffix spelling is controlled by cmd-extension/PATHEXT, not a guaranteed lowercase .cmd. Fold only format lookup while preserving the actual flat filename and whole program. Exact owned-file hashes also need a mandatory complete generated-launcher inventory; absence is an admission failure, and ordinary installation spaces must stay usable while shell interpolation characters fail closed."
 files[23]{path,scope}:
   .agents/pm/extensions/.managed-extensions.json,project
   .github/workflows/ci.yml,project
@@ -197,11 +211,11 @@ tests[4]:
     timeout_seconds: 180
     provenance:
       author: "harness:codex"
-      created_at: "2026-10-03T02:35:28.359Z"
+      created_at: "2026-10-03T03:51:27.424Z"
       source_kind: local_mutation
       source_ref: codex/codspeed-dependency-security-snapshot-resolution
-    note: Exact report admission for complete passing source suite test-local-murs1oys-9xt763; coverage-summary SHA-256 71ec731ebcf91c9608a595a0b56c17ade9d77a9dc02222b4f41fd7f470eac1bf; the twelve percentage and covered/total measurements retain the full source policy.
-test_runs[17]:
+    note: Exact report admission for complete passing source suite test-local-murutkzl-pv12k5; coverage-summary SHA-256 7b30b0196b6493ca17d53d9e1d0ea2ae323004bf1ab4767022091b1855560ead; all twelve measured percentages and covered/total counts are retained.
+test_runs[19]:
   - run_id: test-local-murayqth-r6rf24
     kind: test
     status: passed
@@ -659,9 +673,84 @@ test_runs[17]:
         recorded_at: "2026-10-03T02:37:26.240Z"
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/release/coverage-threshold-gate.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-muru05yu-1rmg6a
+    kind: test
+    status: passed
+    started_at: "2026-10-03T03:27:33.423Z"
+    finished_at: "2026-10-03T03:27:43.157Z"
+    recorded_at: "2026-10-03T03:27:43.157Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/development-dependencies.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muruupmh-3atz3n
+    kind: test
+    status: passed
+    started_at: "2026-10-03T03:51:28.128Z"
+    finished_at: "2026-10-03T03:51:28.313Z"
+    recorded_at: "2026-10-03T03:51:28.313Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[12]:
+      - name: coverage_branches
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-03T03:51:28.313Z"
+      - name: coverage_branches_covered
+        value: 50861
+        unit: count
+        recorded_at: "2026-10-03T03:51:28.313Z"
+      - name: coverage_branches_total
+        value: 50861
+        unit: count
+        recorded_at: "2026-10-03T03:51:28.313Z"
+      - name: coverage_functions
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-03T03:51:28.313Z"
+      - name: coverage_functions_covered
+        value: 13743
+        unit: count
+        recorded_at: "2026-10-03T03:51:28.313Z"
+      - name: coverage_functions_total
+        value: 13743
+        unit: count
+        recorded_at: "2026-10-03T03:51:28.313Z"
+      - name: coverage_lines
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-03T03:51:28.313Z"
+      - name: coverage_lines_covered
+        value: 63411
+        unit: count
+        recorded_at: "2026-10-03T03:51:28.313Z"
+      - name: coverage_lines_total
+        value: 63411
+        unit: count
+        recorded_at: "2026-10-03T03:51:28.313Z"
+      - name: coverage_statements
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-03T03:51:28.313Z"
+      - name: coverage_statements_covered
+        value: 66498
+        unit: count
+        recorded_at: "2026-10-03T03:51:28.313Z"
+      - name: coverage_statements_total
+        value: 66498
+        unit: count
+        recorded_at: "2026-10-03T03:51:28.313Z"
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/coverage-threshold-gate.mjs,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
-close_reason: Remediate embedded CodSpeed dependencies and admit only complete reviewed executable shims
+close_reason: Completed audited CodSpeed clients and fail-closed native launcher admission with full source and package proof
 escape_class: scanner_finding
 gate_evidence:
   disposition: gate_added
