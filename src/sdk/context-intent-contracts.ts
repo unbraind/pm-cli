@@ -394,14 +394,14 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
   >
 > = {
   context: (projected, contract, explicitTokenBudget) => {
-    if (projected.depth === undefined) {
-      projected.depth = contract.intent === "handoff" ? "deep" : "standard";
-    }
-    if (projected.section === undefined) {
+    if (projected.section === undefined && projected.depth === undefined) {
       projected.section =
         contract.intent === "handoff"
           ? ["activity", "progress", "blockers"]
           : ["hierarchy", "blockers", "activity"];
+    }
+    if (projected.depth === undefined) {
+      projected.depth = contract.intent === "handoff" ? "deep" : "standard";
     }
     const tokenBudget = resolveIntentTokenBudget(
       projected.tokenBudget,

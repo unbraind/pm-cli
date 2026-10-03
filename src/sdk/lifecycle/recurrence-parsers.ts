@@ -70,6 +70,8 @@ export function ensureEnumValue<T extends string>(
       EXIT_CODE.USAGE,
       {
         field,
+        value,
+        recovery: { allowed_values: [...allowed] },
         required: `${label} must be one of: ${allowed.join(", ")}.`,
         nextSteps: [`Choose an allowed ${label} and retry the mutation.`],
       },

@@ -48,6 +48,8 @@ const OUTPUT_VALUE_FLAGS = new Set<string>([
   "--output-cursor",
 ]);
 
+const BOOTSTRAP_OUTPUT_ENCODINGS = new Set<string | undefined>(["toon", "json"]);
+
 /** Documents the bootstrap global options payload exchanged by command, SDK, and package integrations. */
 export interface BootstrapGlobalOptions {
   /** Filesystem path used for path resolution. */
@@ -149,7 +151,9 @@ export function parseBootstrapGlobalOptions(
         parseBootstrapCommandPathName(argv) ?? "",
       ),
     noPager: state.booleanFlags.has("--no-pager"),
-    json: state.booleanFlags.has("--json"),
+    json: state.booleanFlags.has("--json")
+      ? state.outputValues.get("--output-format") !== "toon"
+      : state.outputValues.get("--output-format") === "json",
     quiet: state.booleanFlags.has("--quiet"),
     lean: state.booleanFlags.has("--lean"),
     tokenAccounting: state.booleanFlags.has("--token-accounting"),
@@ -165,8 +169,7 @@ export function parseBootstrapGlobalOptions(
     ...(state.outputValues.get("--output-budget") === undefined
       ? {}
       : { outputBudget: state.outputValues.get("--output-budget") }),
-    ...(state.outputValues.get("--output-format") === "toon" ||
-    state.outputValues.get("--output-format") === "json"
+    ...(BOOTSTRAP_OUTPUT_ENCODINGS.has(state.outputValues.get("--output-format"))
       ? {
           outputFormat: state.outputValues.get("--output-format") as
             | "toon"

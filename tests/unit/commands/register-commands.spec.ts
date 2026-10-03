@@ -436,7 +436,7 @@ beforeEach(() => {
   vi.mocked(runMergeInstall).mockResolvedValue({ dry_run: false } as never);
   vi.mocked(runMergeDriver).mockResolvedValue({ ok: true } as never);
   vi.mocked(runContracts).mockResolvedValue({ contracts: {} } as never);
-  vi.mocked(runClaim).mockResolvedValue({ id: "pm-1", claimed: true } as never);
+  vi.mocked(runClaim).mockResolvedValue({ id: "pm-1", item: { id: "pm-1" }, claimed: true } as never);
   vi.mocked(runRelease).mockResolvedValue({
     id: "pm-1",
     released: true,
@@ -447,10 +447,11 @@ beforeEach(() => {
     action: "set",
     focused_item: "pm-1",
   } as never);
-  vi.mocked(runUpdate).mockResolvedValue({ id: "pm-1" } as never);
+  vi.mocked(runUpdate).mockResolvedValue({ id: "pm-1", item: { id: "pm-1" } } as never);
   vi.mocked(runUpdateMany).mockResolvedValue({ ids: ["pm-1"] } as never);
   vi.mocked(runClose).mockResolvedValue({
     id: "pm-1",
+    item: { id: "pm-1" },
     status: "closed",
   } as never);
   vi.mocked(runCloseMany).mockResolvedValue({ ids: ["pm-1"] } as never);

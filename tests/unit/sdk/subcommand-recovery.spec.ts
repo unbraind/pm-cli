@@ -18,6 +18,7 @@ describe("unknown subcommand recovery", () => {
       exitCode: 2,
       context: {
         reason: "unknown_positional_token",
+        value: "add-typ",
         recovery: {
           attempted_command: 'pm schema add-typ "Example Project"',
           allowed_values: ["add-type", "list", "show"],

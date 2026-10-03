@@ -179,6 +179,14 @@ function resolveCoreCommandRegistrationSelection(invocationArgv: string[]): Core
   if (PM_RELOCATED_COMMAND_ALIASES.some((alias) => alias.alias === semanticCommand)) {
     return { ...REGISTER_ALL_CORE_COMMAND_FAMILIES, targetCommandName: semanticCommand };
   }
+  // An ancestor option may precede a leaf. Register possible destinations
+  // conservatively; only Commander's declared grammar decides whether a token
+  // is the leaf or an option value, and its pre-action hook validates scope.
+  if (PM_RELOCATED_COMMAND_ALIASES.some((alias) =>
+    alias.canonical_argv[0] === normalizedCommand && commandTokens.slice(1).includes(alias.canonical_argv[1]),
+  )) {
+    return REGISTER_ALL_CORE_COMMAND_FAMILIES;
+  }
   if (SETUP_COMMAND_NAMES.has(normalizedCommand)) {
     return {
       setup: true,

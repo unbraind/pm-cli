@@ -361,7 +361,10 @@ describe("semantic transaction previews (GH-1370)", () => {
       await expect(previewItemMutations({ ...options, transactionId: "native-validation", mutations: [{ op: "create", id: "pm-native", options: { title: "Native validation", type: [] as never } }] })).rejects.toBeInstanceOf(TypeError);
       const next = { ...options, transactionId: "changed-since-preview", mutations: [{ op: "update" as const, id: "pm-staged", options: { risk: "low" } }] };
       expect(await previewItemMutations(next)).toMatchObject({ validated: true });
-      expect(context.runCli(["delete", "pm-staged", "--reason", "Concurrent fixture change", "--json"]).code).toBe(0);
+      const refusedDelete = context.runCli(["delete", "pm-staged", "--reason", "Concurrent fixture change", "--json"]);
+      expect(refusedDelete.code).toBe(EXIT_CODE.USAGE);
+      expect(JSON.parse(refusedDelete.stderr)).toMatchObject({ code: "unknown_option", flag: "--reason" });
+      expect(context.runCli(["delete", "pm-staged", "--message", "Concurrent fixture change", "--json"]).code).toBe(0);
       await expect(commitItemMutations(next)).rejects.toMatchObject({ exitCode: 3 });
     });
   });

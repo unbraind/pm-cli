@@ -2,22 +2,88 @@ id: pm-gh1365
 title: "GH-1365: Agent UX: typed update refusals blame valid flags instead of the field that failed validation"
 description: "Reported agent-facing contract defect imported from https://github.com/unbraind/pm-cli/issues/1365. Preserve existing shipped foundations. Detailed source observations are dated 2026-09-30 and must be revalidated before implementation."
 type: Issue
-status: open
+status: closed
 priority: 1
-tags[4]: changelog-exclude,gh-1365,github-intake,sdk-first
+tags[3]: gh-1365,github-intake,sdk-first
 created_at: "2026-10-02T17:09:15.472Z"
-updated_at: "2026-10-02T19:07:21.879Z"
+updated_at: "2026-10-03T09:45:45.388Z"
+closed_at: "2026-10-03T09:45:44.468Z"
+completed_at: "2026-10-03T09:45:44.468Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Risk, deadline and missing-ID fixtures identify the actual failure; Permuting valid title/priority flags never changes attribution; Attached values, aliases, multiple invalid inputs and no flagged inputs are covered; Error paths do not mutate item state; Unknown attribution is omitted; legal-domain values correspond to the blamed field; Existing policy-specific missing-field and surface tests remain green"
 parent: pm-f05lsg
 risk: medium
 confidence: medium
+resolution: "SDK validators now own failed field, rejected value and enum-domain evidence; CLI guidance preserves producer attribution, canonical aliases, missing-ID operands and subcommand tokens without guessing from unrelated arguments."
 expected_result: "Risk and deadline refusals identify their own validator surface and rejected value; missing-item failures identify lookup or ID; valid unrelated title and priority flags never determine attribution, and unknown attribution is omitted."
-actual_result: Source report reproduced published 2026.9.30 behavior; current checkout requires fresh reproduction before claiming the defect.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+actual_result: "Five public regression tests failed before implementation and pass afterward. Full isolated suite: 9637 passed; exact coverage 100/100/100/100 with zero uncovered counts (66524 statements, 50886 branches, 13745 functions, 63433 lines). Type checking, all static-quality stages including mutation controls, native deduplicated linked tests, 52 packed Node/Bun manual commands, and nine npx/bunx package workflows passed. Two Windows-only cases are platform-skipped on Linux and retain hosted Windows gates. Required local Sentry/telemetry gate passed. Closure metadata and changelog are included in the same reviewed branch; hosted review and merge proof follow through the PR, and this batch is not part of the earlier v2026.10.3 publication."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-o5s22y,discovered_from,"2026-10-02T17:09:15.472Z","harness:codex","cli:create:dep",detected
   pm-gh1363,implements,"2026-10-02T17:10:07.308Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
-  "2026-10-02T17:09:15.472Z","harness:codex","Duplicate check 2026-10-02: complete strict all-status corpus read returned 2851/2851 items with no omissions or unreadable files; exact GitHub issue/ID and contract-title searches found no canonical owner for this residual acceptance. Existing foundations are linked, including closed historical work; no closed fix is asserted outstanding. Imported report and acceptance are planning evidence, not current reproduction or implementation completion. This item remains open and unclaimed until selected for implementation."
+  pm-o5s22y,verifies,"2026-10-03T08:35:47.992Z","harness:codex","cli:update:dep",detected
+comments[7]:
+  - created_at: "2026-10-02T17:09:15.472Z"
+    author: "harness:codex"
+    text: "Duplicate check 2026-10-02: complete strict all-status corpus read returned 2851/2851 items with no omissions or unreadable files; exact GitHub issue/ID and contract-title searches found no canonical owner for this residual acceptance. Existing foundations are linked, including closed historical work; no closed fix is asserted outstanding. Imported report and acceptance are planning evidence, not current reproduction or implementation completion. This item remains open and unclaimed until selected for implementation."
+  - created_at: "2026-10-03T08:17:20.713Z"
+    author: "harness:codex"
+    text: "TDD baseline: reproduced the report against 2026.10.2 in isolated temporary trackers. Added tests/integration/agent-receipt-recovery.integration.spec.ts; all five independent contract tests fail before implementation at the reported behavior (validation attribution, equivalent JSON error selectors, executable handoff restore, inherited leaf options, canonical compact short-ID compositions). No domain mocks or live tracker access in tests. Related batch GH-1365 through GH-1369 shares SDK-owned agent context contracts; existing closed compact receipt lineage is preserved."
+  - created_at: "2026-10-03T08:41:17.845Z"
+    author: "harness:codex"
+    text: "Implementation evidence: focused isolated suite passes 209 tests. Manual clean npm installation of the packed artifact passed 46 commands under Node and Bun: short-ID claim/start, full opt-in preserving an 18,000-character description, both JSON selectors for validation and missing IDs, inherited-option refusals, executable orient/handoff section recovery, pause/close, and verified immutable history. npx/bunx packed acceptance independently passed all nine package workflows plus TypeScript SDK consumers. No coverage or lint threshold changed; repository-wide static/coverage runs are still pending."
+  - created_at: "2026-10-03T09:00:15.114Z"
+    author: "harness:codex"
+    text: "Full-suite repair evidence: replaced remaining unknown positional attribution inference with the shared SDK subcommand producer value; compound get projection failures declare --full directly. New integration baseline had exposed five defects; existing schema and projection recovery tests additionally constrain valid producer attribution. Invalid lifecycle registration mocks were corrected to the actual item.id result shape without adding a production fallback. Temporary consumer continuation also passed after providing this host npm module lookup through NODE_PATH; no test or coverage gate was bypassed."
+  - created_at: "2026-10-03T09:22:18.626Z"
+    author: "harness:codex"
+    text: "Corrected manual evidence: --completed_at=bad reports canonical --completed-at with rejected_value bad. With both risk and deadline invalid, both argument permutations report the actual deadline validator and rejected_value bad, because SDK validation order checks the date first. Full get snapshots before and after all refusals are equal. The original risk-first expectation was incorrect; this correction is recorded through immutable annotation history. These temporary-tracker checks preserve documented aliases and prove error paths do not mutate the item."
+    edited_at: "2026-10-03T09:23:27.977Z"
+  - created_at: "2026-10-03T09:34:05.164Z"
+    author: "harness:codex"
+    text: "Repository-wide verification: 9637 tests passed (the two Windows-only tests are platform-skipped on Linux), with exact coverage and zero uncovered counts: statements 66524/66524, branches 50886/50886, functions 13745/13745, lines 63433/63433. pnpm typecheck passed. Native pm test-all for the five active items passed, executing their shared public suite once and explicitly suppressing duplicate linked commands. The clean packed manual harness passed 52 Node/Bun commands; npx/bunx acceptance passed nine workflows. Gate thresholds, assertions, subprocess timeouts and coverage exclusions were not relaxed; the new ancestor-option implementation was moved outside the pre-existing c8 exclusion so its branches are measured. Hosted review remains pending."
+  - created_at: "2026-10-03T09:45:43.504Z"
+    author: "harness:codex"
+    text: "Final local delivery evidence: all mandatory static stages passed after registering the recurrence family and exact CLI refusal inventory. The original gate refusals remain in evidence; no waiver, threshold, ignore marker or assertion was weakened. The unchanged source coverage remains exact 100 percent. Closure is staged with structured evidence for the combined reviewed delivery; broader graph and semantic docstring debt retain their open canonical owners."
+notes[1]{created_at,author,text}:
+  "2026-10-03T08:53:39.591Z","harness:codex","Verification ownership: this batch keeps diagnostics and composed lifecycle behavior in shared SDK producers; CLI rendering consumes declared recovery rather than guessing from valid inputs. Real temporary tracker tests complement registration boundary tests. Root integration directory cap remains enforced; moved agent receipt suite into its CLI subdirectory. Full coverage and hosted checks are mandatory before delivery."
+learnings[1]{created_at,author,text}:
+  "2026-10-03T08:32:15.885Z","harness:codex","Agent context controls must either change the declared public result or fail before host preparation. Refusal ownership follows producer evidence, restore instructions execute under the original intent, and composition identities come from persisted mutation results. Tests must observe the public boundary and unchanged tracker state rather than mirror internal forwarding."
+files[9]{path,scope}:
+  src/cli/error-guidance.ts,project
+  src/core/shared/time.ts,project
+  src/sdk/agent/subcommand-recovery.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project
+  src/sdk/lifecycle/recurrence-parsers.ts,project
+  src/sdk/query/get.ts,project
+  tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project
+  tests/unit/cli/error-guidance.spec.ts,project
+  tests/unit/sdk/subcommand-recovery.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project,"harness:codex","2026-10-03T08:53:38.196Z",local_mutation,codex/agent-refusals-context-recovery-claim-receipts
+test_runs[1]:
+  - run_id: test-all-local-mus6wso8-m6rk3o
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T09:29:00.793Z"
+    finished_at: "2026-10-03T09:29:49.364Z"
+    recorded_at: "2026-10-03T09:29:49.364Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md,project
+close_reason: Implemented and locally verified the shared SDK agent contract with TDD and packed consumers.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1365
+  gate_id: agent-receipt-recovery
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: Gates (coverage),Gates (static),Windows regression (Node 24)
 body: "## Summary\nThe human detail identifies the invalid field, while machine-readable `refusal.surface` and `rejected_value` blame another valid input. This misdirects automated repair.\n\nReproduced with the official installed `@unbrained/pm-cli` 2026.9.30 on Linux, using disposable synthetic non-Git trackers. No implementation changes are included in this issue.\n\n## Reproduction\n```bash\nLAB=$(mktemp -d)\nmkdir -p \"$LAB/home\" \"$LAB/work\"\nexport HOME=\"$LAB/home\" PM_PATH=\"$LAB/work/.agents/pm\"\nexport PM_GLOBAL_PATH=\"$LAB/global\" PM_TELEMETRY_DISABLED=1\ncd \"$LAB/work\"\npm init \"$PM_PATH\" --defaults --author audit --agent-guidance skip --json >/dev/null\npm create task \"Audit sample\" --id t1 --description \"Execution detail\" --json >/dev/null\n```\n```bash\npm update pm-t1 --priority high --risk invalid --json\npm update pm-t1 --title x --risk invalid --json\npm update pm-t1 --title x --deadline not-a-date --json\npm update pm-missing --title x --json\n```\n\n## Actual\nFor the first command, exit 2:\n```json\n{\"code\":\"invalid_argument_value\",\"detail\":\"Invalid risk value \\\"invalid\\\". Allowed: low, medium, high, critical\",\"refusal\":{\"surface\":\"--priority\",\"rejected_value\":\"high\",\"exit_code\":2}}\n```\nWith title preceding invalid risk or deadline, the refusal instead names `--title` / `x`. A missing-item update also attributes the refusal to a valid title flag. Structured consumers therefore receive different, false repair targets depending on unrelated arguments.\n\n## Expected\nRisk validation names `--risk` and `invalid`; deadline validation names `--deadline` and `not-a-date`; a missing item names the ID/lookup surface. If precise attribution is unavailable, omit it rather than inventing an offending flag.\n\n## Implementation plan\n1. Carry validator-owned structured metadata (surface, rejected value, legal domain where available) with the typed error from its origin.\n2. Have the shared refusal renderer preserve that metadata. Remove fallback attribution based on the first/last supplied flag or argument order.\n3. Give lookup and policy errors their own meaningful surfaces, independent of mutation options.\n4. Keep detail, recovery and refusal metadata consistent across CLI/SDK adapters; document nullable/absent attribution.\n5. Add parameterized conformance tests over validators and argument permutations.\n\n## Regression acceptance\n- [ ] Risk, deadline and missing-ID fixtures identify the actual failure\n- [ ] Permuting valid title/priority flags never changes attribution\n- [ ] Attached values, aliases, multiple invalid inputs and no flagged inputs are covered\n- [ ] Error paths do not mutate item state\n- [ ] Unknown attribution is omitted; legal-domain values correspond to the blamed field\n- [ ] Existing policy-specific missing-field and surface tests remain green\n\n## Ownership and duplicate check\nChild of #1363; use as a structured-refusal negative control in #1362. Related closed #1305 fixed require_fields policy metadata. These current ordinary value-validation and missing-item cases require no workflow policy and are not covered by that narrow report. Open and closed issues were searched for refusal and rejected_value."

@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[5]: "area:docs",code-quality,docstrings,maintainability,token-efficiency
 created_at: "2026-07-19T04:07:16.881Z"
-updated_at: "2026-10-02T17:46:16.368Z"
+updated_at: "2026-10-03T08:36:08.767Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Census script or lint rule flags the known filler templates (Implements X for the public runtime surface of this module; Value that configures or reports X for this contract; Provides CLI runtime support for X; payload exchanged by command, SDK, and package integrations) and the count is ratcheted down, not up; Touched-file burn-down policy documented so gate-mandated docstrings added going forward must carry real information (what the value means, units, invariants) or use @inheritDoc/type-level docs; Static-gate docstring coverage stays at 100 percent throughout - the fix is content quality, never coverage relaxation"
@@ -42,7 +42,7 @@ dependencies[6]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[13]:
+comments[14]:
   - created_at: "2026-09-13T16:15:21.639Z"
     author: "harness:codex"
     text: "Continuation observation: runtime-contracts.ts still contains generic interface/member filler despite coverage gates. The command-discovery tranche improves the modified module and function documentation with concrete visibility and assembly semantics, but does not implement the repository-wide filler census or ratchet owned here. Reuse this canonical owner for that remaining work; no duplicate item created."
@@ -83,6 +83,9 @@ comments[13]:
   - created_at: "2026-10-02T17:46:16.368Z"
     author: "harness:codex"
     text: "Current quality census during the CodSpeed/snapshot delivery: 762 maintained source files, 4134 filler comments in 204 files. Existing source/export/member presence and no-growth/touched-declaration gates remain required. The new SDK snapshot helper and dependency admission script have semantic contract documentation and introduce no filler. The broader replacement work remains open under this canonical owner, with no duplicate created and no completeness claim based only on presence coverage."
+  - created_at: "2026-10-03T08:36:08.767Z"
+    author: "harness:codex"
+    text: "Live quality observation during GH-1365 through GH-1369 delivery: quality:docstrings scans 762 files and reports 4,133 existing filler descriptions across 204 files. The ratchet passes without weakening it, but this is not evidence that all repository docstrings meet the requested semantic quality. Reusing this canonical open owner; no duplicate item or additional in-progress claim. New helpers in the active batch describe producer attribution and ancestor-option preparation concretely."
 files[10]{path,scope,note}:
   packages/pm-guide-shell/extensions/guide-shell/runtime.ts,project,Semantic contracts for every named callable in the reviewed module
   scripts/release/docstring-quality-baseline.json,project,File-level filler debt cannot grow or retain stale headroom

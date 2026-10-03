@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1369: Agent UX: claim --start bypasses compact mutation receipts and returns a noncanonical outer ID ([pm-gh1369](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1369.toon))
+- GH-1368: Agent UX: context next silently ignores inherited --fields and --depth options, including invalid values ([pm-gh1368](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1368.toon))
+- GH-1367: Agent UX: context handoff omission receipts suggest depth flags that do not restore omitted sections ([pm-gh1367](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1367.toon))
+- GH-1366: Agent UX: --output-format json emits human errors while --json emits structured errors ([pm-gh1366](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1366.toon))
+- GH-1365: Agent UX: typed update refusals blame valid flags instead of the field that failed validation ([pm-gh1365](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1365.toon))
+
 ## 2026.10.3 - 2026-10-03
 
 ### Fixed

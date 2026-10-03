@@ -357,7 +357,7 @@ describe("pm cli error guidance context plumbing", () => {
     );
   });
 
-  it("canonicalizes inline provided-field fallbacks before resolving refusal values", () => {
+  it("does not infer refusal ownership from supplied flags without producer evidence", () => {
     const envelope = formatPmCliErrorForJson(
       "Value must be one of brief|standard|deep|full",
       2,
@@ -369,10 +369,14 @@ describe("pm cli error guidance context plumbing", () => {
       },
     );
 
-    expect(envelope.refusal).toMatchObject({
-      surface: "--depth",
-      rejected_value: "verbose",
+    expect(envelope.refusal.surface).toBe("get");
+    expect(envelope.refusal).not.toHaveProperty("rejected_value");
+    const attributed = formatPmCliErrorForJson("Invalid depth", 2, {
+      field: "--depth",
+      value: "verbose",
+      recovery: { normalized_args: ["get", "pm-demo", "--depth=verbose"] },
     });
+    expect(attributed.refusal).toMatchObject({ surface: "--depth", rejected_value: "verbose" });
   });
 
   it("preserves structured fallback recovery candidates in JSON and text output", () => {

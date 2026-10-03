@@ -179,7 +179,7 @@ describe("output projection omission contracts", () => {
     }) as Record<string, unknown>;
     expect(context.omission_receipt).toMatchObject({
       has_omissions: true,
-      omitted_field_group_count: 10,
+      omitted_field_group_count: 9,
     });
 
     const briefGet = attachOutputOmissionReceipt("get", {

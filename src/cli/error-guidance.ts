@@ -685,10 +685,7 @@ function resolveRefusalCandidateFlag(
   ]
     .map((match) => match[0])
     .find((flag) => isAdmissibleCandidate(flag));
-  if (mentionedFlag) return mentionedFlag;
-  return message.recovery?.provided_fields
-    ?.map((field) => field.split("=", 1)[0])
-    .find((field) => isAdmissibleCandidate(field));
+  return mentionedFlag;
 }
 
 function resolveRefusalRejectedValue(
@@ -708,14 +705,7 @@ function resolveRefusalRejectedValue(
     const candidateIndex = normalizedArgs.indexOf(candidateFlag);
     return candidateIndex >= 0 ? normalizedArgs[candidateIndex + 1] : undefined;
   }
-  const allowedValues = message.recovery?.allowed_values;
-  if (!allowedValues?.length) return undefined;
-  return normalizedArgs.find(
-    (argument, index) =>
-      index > 0 &&
-      !argument.startsWith("-") &&
-      !allowedValues.includes(argument),
-  );
+  return undefined;
 }
 
 /** Identify the actual refusal surface, prioritizing domain policy evidence over syntactically valid input flags. */
@@ -916,6 +906,14 @@ function normalizeContextValue<Fallback extends string | undefined>(
     : fallback;
 }
 
+/** Match producer-owned metadata to supplied canonical flags without guessing from other arguments. */
+function resolveErrorContextFlag(context: PmCliErrorContext, recovery: PmCliErrorRecoveryPayload | undefined): string | undefined {
+  if (context.flag !== undefined) return context.flag;
+  if (context.field === undefined) return undefined;
+  const flag = context.field.startsWith("--") ? context.field : `--${context.field.replaceAll("_", "-")}`;
+  return recovery?.normalized_args?.some((argument) => argument === flag || argument.startsWith(`${flag}=`)) ? flag : undefined;
+}
+
 /** Merge SDK error evidence with CLI fallback guidance without discarding typed recovery or policy diagnostics. */
 function applyPmCliErrorContext(
   guidance: GuidanceMessage,
@@ -959,8 +957,8 @@ function applyPmCliErrorContext(
     verificationErrors,
     policyViolations: context.policy_violations,
     policyViolationCount: context.policy_violation_count,
-    flag: context.flag,
-    value: context.value,
+    flag: resolveErrorContextFlag(context, recovery) ?? guidance.flag,
+    value: context.value ?? guidance.value,
     unmatchedSelectors: context.unmatched_selectors,
     itemId: context.item_id,
     transactionOperation: context.transaction_operation,
@@ -1043,6 +1041,8 @@ function buildItemNotFoundGuidance(
     makeGuidanceMessage({
       code: "item_not_found",
       title: "Item ID not found",
+      flag: "id",
+      value: badId,
       happened,
       required: "Use an existing item ID from current tracker data.",
       why: "Mutation and read commands operate only on known IDs.",
@@ -1810,6 +1810,7 @@ function buildUnknownSubcommandGuidance(
   return makeGuidanceMessage({
     code: "unknown_subcommand",
     title: `Unknown ${commandPath} subcommand ${token}`,
+    value: token,
     happened: `The positional token sequence "${token}" is not a declared ${commandPath} subcommand.`,
     required: `Use one of: ${allowed.join(", ")}.`,
     why: "Subcommands are single positional tokens; multi-word action names use hyphens.",

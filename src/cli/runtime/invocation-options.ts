@@ -70,6 +70,37 @@ function recordCliReadOutputInvocationProvenance(actionCommand: Command, command
   copyReadOutputInvocationProvenance(commandOptions, actionCommand);
 }
 
+/** Resolve declared ancestor options before host preparation, preserving leaf values and refusing controls the selected leaf cannot apply. */
+function collectCommandInvocationOptions(command: Command): Record<string, unknown> {
+  const allOptions = command.optsWithGlobals() as Record<string, unknown>;
+  const commandPath = getCommandPath(command);
+  if (resolvePmCommandOperation(commandPath) === commandPath) return allOptions;
+  const ownOptions = command.opts() as Record<string, unknown>;
+  for (let parent = command.parent; parent?.parent; parent = parent.parent) {
+    for (const option of parent.options) {
+      const key = option.attributeName();
+      const suppliedOnParent = parent.getOptionValueSource(key) === "cli";
+      if (suppliedOnParent && !command.options.some((candidate) => candidate.long === option.long)) {
+        throw new PmCliError(`Unknown option '${option.long}' for ${commandPath}`, EXIT_CODE.USAGE, {
+          code: "unknown_option",
+          flag: option.long,
+          required: `Use options declared by pm ${commandPath} --help.`,
+        });
+      }
+      if (suppliedOnParent && command.getOptionValueSource(key) !== "cli") {
+        const value: unknown = parent.getOptionValue(key);
+        command.setOptionValueWithSource(key, value, "cli");
+      }
+      if (key in ownOptions) {
+        allOptions[key] = ownOptions[key];
+      } else {
+        delete allOptions[key];
+      }
+    }
+  }
+  return allOptions;
+}
+
 /* c8 ignore start */
 
 /**
@@ -108,20 +139,6 @@ function forwardReadOutputIncludeModes(actionCommand: Command, commandPath: stri
     scope.setOptionValueWithSource("outputInclude", residual, "cli");
   }
   setResolvedGlobalOptions(actionCommand, globalOptions);
-}
-
-/** Collect inherited options without leaking namespace-parent defaults into relocated leaves. */
-function collectCommandInvocationOptions(command: Command): Record<string, unknown> {
-  const allOptions = command.optsWithGlobals() as Record<string, unknown>;
-  const commandPath = getCommandPath(command);
-  if (resolvePmCommandOperation(commandPath) === commandPath) return allOptions;
-  const ownOptions = command.opts() as Record<string, unknown>;
-  for (let parent = command.parent; parent?.parent; parent = parent.parent) {
-    for (const key of Object.keys(parent.opts())) {
-      if (!(key in ownOptions) && parent.getOptionValueSource(key) === "default") delete allOptions[key];
-    }
-  }
-  return allOptions;
 }
 
 /** Separate handler options from global controls, then validate and coerce contributed flags against the command's declared schema. */

@@ -695,11 +695,11 @@
     },
     {
       "path": "src/cli/runtime/invocation-options.ts",
-      "expected_count": 3,
+      "expected_count": 4,
       "rule_ownership": "all_occurrences",
-      "owner": "pm-yh8r",
+      "owner": "pm-gh1368",
       "disposition": "transport_validation",
-      "reason": "Existing argv global-option syntax refusals moved from main into invocation parsing; domain validation remains SDK-owned."
+      "reason": "The three existing global-option syntax checks and the new declared ancestor/leaf option-scope refusal are Commander transport validation before host preparation; domain validation remains SDK-owned."
     },
     {
       "path": "src/cli/runtime/selection.ts",

@@ -240,17 +240,16 @@ export function resolveModePairedOutputOmissionReceipt(
 }
 
 const CONTEXT_FIELD_GROUPS = [
-  { name: "hierarchy", restore_with: "--depth standard" },
-  { name: "activity", restore_with: "--depth standard" },
-  { name: "progress", restore_with: "--depth standard" },
-  { name: "blockers", restore_with: "--depth standard" },
-  { name: "recently_created", restore_with: "--depth standard" },
-  { name: "unparented", restore_with: "--depth standard" },
-  { name: "files", restore_with: "--depth deep" },
-  { name: "workload", restore_with: "--depth standard" },
-  { name: "staleness", restore_with: "--depth deep" },
-  { name: "tests", restore_with: "--depth deep" },
-  { name: "workspace_memory", restore_with: "--depth deep" },
+  { name: "hierarchy", restore_with: "--section hierarchy" },
+  { name: "activity", restore_with: "--section activity" },
+  { name: "progress", restore_with: "--section progress" },
+  { name: "blockers", restore_with: "--section blockers" },
+  { name: "recently_created", restore_with: "--section recently_created" },
+  { name: "unparented", restore_with: "--section unparented" },
+  { name: "files", restore_with: "--section files" },
+  { name: "workload", restore_with: "--section workload" },
+  { name: "staleness", restore_with: "--section staleness" },
+  { name: "tests", restore_with: "--section tests" },
 ] as const satisfies readonly OutputProjectionFieldGroup[];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
