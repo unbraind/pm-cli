@@ -1,14 +1,14 @@
 import { readFile, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
-import { readSettings, runWithConfigurationOnlySettings } from "../../../src/core/store/settings.js";
-import { getWorkspaceHistoryPath, WORKSPACE_HISTORY_ID } from "../../../src/core/history/workspace-history.js";
-import { readHistoryEntries } from "../../../src/core/history/read.js";
-import { createExtensionCommandSdk } from "../../../src/sdk/extension-command-context.js";
-import { PmClient } from "../../../src/sdk/runtime.js";
-import type { PmSettings } from "../../../src/types/index.js";
-import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+import { SETTINGS_DEFAULTS } from "../../../../src/core/shared/constants.js";
+import { readSettings, runWithConfigurationOnlySettings } from "../../../../src/core/store/settings.js";
+import { getWorkspaceHistoryPath, WORKSPACE_HISTORY_ID } from "../../../../src/core/history/workspace-history.js";
+import { readHistoryEntries } from "../../../../src/core/history/read.js";
+import { createExtensionCommandSdk } from "../../../../src/sdk/extension-command-context.js";
+import { PmClient } from "../../../../src/sdk/runtime.js";
+import type { PmSettings } from "../../../../src/types/index.js";
+import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 describe("canonical host settings preview", () => {
   it.each(["minimal", "strict", "custom"] as const)("returns the persisted %s preset rather than the callback proposal", async (preset) => {

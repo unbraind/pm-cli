@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: agent-ux,context-management,github-intake
 created_at: "2026-09-30T06:48:43.202Z"
-updated_at: "2026-10-03T20:57:03.173Z"
+updated_at: "2026-10-03T21:42:27.476Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#c34534ca90095a05f3a48f57"
 author: "harness:codex"
@@ -32,9 +32,32 @@ files[6]{path,scope}:
   src/core/store/settings.ts,project
   src/sdk/extension-command-context.ts,project
   tests/integration/extension-host-contracts.integration.spec.ts,project
-  tests/unit/sdk/settings-preview.spec.ts,project
+  tests/unit/sdk/transactions/settings-preview.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/settings-preview.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,project,300,"harness:codex","2026-10-03T20:34:15.667Z",local_mutation,feat/canonical-sdk-settings-preview-platform-recovery
+  node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/settings-preview.spec.ts tests/integration/extension-host-contracts.integration.spec.ts --maxWorkers=2,project,300,"harness:codex","2026-10-03T21:23:40.364Z",local_mutation,feat/canonical-sdk-settings-preview-platform-recovery
+test_runs[2]:
+  - run_id: test-local-musw3r9k-8bp52r
+    kind: test
+    status: failed
+    started_at: "2026-10-03T21:09:15.631Z"
+    finished_at: "2026-10-03T21:14:16.135Z"
+    recorded_at: "2026-10-03T21:14:16.135Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/settings-preview.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-musx40ar-3u32dq
+    kind: test
+    status: passed
+    started_at: "2026-10-03T21:41:55.064Z"
+    finished_at: "2026-10-03T21:42:27.459Z"
+    recorded_at: "2026-10-03T21:42:27.459Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/settings-preview.spec.ts tests/integration/extension-host-contracts.integration.spec.ts --maxWorkers=2,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/SDK_AUDITED_MUTATIONS.md,project
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/1356\n\nReporter independently observed a dry-run boolean receipt without canonical settings on published 2026.9.30. Named governance preset normalization is correct, but the callback proposal differs from the effective persisted result. No settings/history preview writes were reported. Current-tree design and implementation are pending.\n\nRequested contract: A copied extension can obtain the exact validated effective settings preview through the host capability without duplicate normalization or a local SDK runtime import.\n\nVerification plan: reproduce the public report in a temporary project outside this checkout with both PM roots isolated, demonstrate a relevant regression, then validate the SDK boundary, thin transport where applicable, complete coverage and packed consumers. No implementation is included in PR #1353."
