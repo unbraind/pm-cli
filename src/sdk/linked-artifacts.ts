@@ -6,7 +6,7 @@
 import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import fs from "node:fs/promises";
 import path from "node:path";
-import fg from "fast-glob";
+import { glob } from "tinyglobby";
 import { isFileAbsentError } from "../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
 import {
@@ -471,7 +471,7 @@ export function anchorLinkedPath(
   );
 }
 
-/** Implements expand add glob entries for the public runtime surface of this module. */
+/** Match files from the invocation directory, then anchor and sort each entry while retaining its scope and note. Literal directories never expand recursively. */
 export async function expandAddGlobEntries(
   entries: AddGlobEntry[],
   workspaceRoot: string = process.cwd(),
@@ -479,13 +479,15 @@ export async function expandAddGlobEntries(
 ): Promise<LinkedArtifact[]> {
   const expanded: LinkedArtifact[] = [];
   for (const entry of entries) {
+    // A literal invocation directory cannot match a file; tinyglobby otherwise normalizes it to an invalid empty pattern.
+    if (path.resolve(invocationRoot, entry.pattern) === path.resolve(invocationRoot)) continue;
     const absolutePattern = path.isAbsolute(entry.pattern);
-    const matches = await fg(entry.pattern, {
+    const matches = await glob(entry.pattern, {
       cwd: invocationRoot,
       absolute: absolutePattern,
       onlyFiles: true,
       dot: true,
-      unique: true,
+      expandDirectories: false,
       followSymbolicLinks: true,
     });
     const sortedMatches = [

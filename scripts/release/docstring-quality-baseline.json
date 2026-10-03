@@ -174,7 +174,7 @@
     "src/sdk/lifecycle/shared-unset-fields.ts": 8,
     "src/sdk/lifecycle/update-many.ts": 16,
     "src/sdk/lifecycle/update.ts": 20,
-    "src/sdk/linked-artifacts.ts": 43,
+    "src/sdk/linked-artifacts.ts": 42,
     "src/sdk/merge/driver.ts": 2,
     "src/sdk/merge/three-way.ts": 4,
     "src/sdk/notes.ts": 9,

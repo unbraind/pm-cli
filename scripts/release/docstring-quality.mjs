@@ -2,7 +2,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import fg from "fast-glob";
+import { globSync } from "tinyglobby";
 import ts from "typescript";
 
 const FILLER = [
@@ -56,8 +56,8 @@ export function compareDocstringBaseline(actual, baseline, previous) {
 
 /** Scan hand-authored runtime sources with the same roots as the all-source coverage gate. */
 export function readDocstringCensus(root) {
-  const files = fg.sync(["src/**/*.ts", "packages/**/*.ts", "scripts/**/*.{mjs,mts}", "plugins/**/*.{mjs,ts}", "docs/examples/**/*.{mjs,ts}"], {
-    cwd: root, onlyFiles: true, ignore: ["**/node_modules/**", "**/*.d.ts", "scripts/prod/**"],
+  const files = globSync(["src/**/*.ts", "packages/**/*.ts", "scripts/**/*.{mjs,mts}", "plugins/**/*.{mjs,ts}", "docs/examples/**/*.{mjs,ts}"], {
+    cwd: root, onlyFiles: true, expandDirectories: false, ignore: ["**/node_modules/**", "**/*.d.ts", "scripts/prod/**"],
   }).sort();
   const findings = files.flatMap((filename) => collectFillerDocstrings(filename, readFileSync(path.join(root, filename), "utf8")));
   const counts = {};

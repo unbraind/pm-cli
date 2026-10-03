@@ -1,0 +1,210 @@
+id: pm-fnx3np
+title: Remove unpatched braces recursion vulnerability from file matching
+description: "GHSA-vfj7-8cjw-p6xm / CVE-2026-93687: braces 3.0.3 reaches production through fast-glob 3.3.3 and micromatch 4.0.8. The mandatory complete audit rejects this tree. No patched braces version is published. Replace the glob implementation while retaining SDK linked file semantics and complete quality censuses."
+type: Issue
+status: closed
+priority: 0
+tags[4]: dependencies,glob,sdk,security
+created_at: "2026-10-03T01:35:10.144Z"
+updated_at: "2026-10-03T04:08:19.672Z"
+closed_at: "2026-10-03T04:08:18.849Z"
+completed_at: "2026-10-03T04:08:18.849Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Zero full audit findings; no installed braces or micromatch path; real deeply nested input succeeds without stack overflow; brace and extglob matching retains dot files and absolute or nested relative anchoring; literal directories stay excluded; complete source census and coverage gates pass
+goal: continuously enforced software supply-chain trust
+objective: Remove recursive vulnerable brace expansion from production SDK matching and repository source censuses
+value: Agent-supplied file patterns remain usable without a vulnerable transitive parser or changes to link identity
+why_now: A newly reviewed advisory blocks the mandatory complete dependency audit during the same reviewed security delivery
+parent: pm-qwoy
+risk: high
+confidence: high
+resolution: "Removed fast-glob/micromatch/braces in favor of cooldown-eligible tinyglobby; retained file-only anchoring, dot files, braces/extglobs, and explicit recursion. Direct canonical and exact-count receipts now make the complete proof item-local."
+expected_result: "No vulnerable brace dependency or recursive overflow; literal populated directories remain excluded, explicit globs retain metadata and matching behavior, and complete source coverage is exactly 100/100/100/100."
+actual_result: "Direct canonical run test-local-murutkzl-pv12k5 passes 9632 tests across 763 suites with two existing native-Windows-only skips. Direct exact-count run test-local-muruuo0g-cxcqrl measures statements 66498/66498, branches 50861/50861, functions 13743/13743 and lines 63411/63411 across all 762 sources; report SHA-256 7b30b0196b6493ca17d53d9e1d0ea2ae323004bf1ab4767022091b1855560ead. The 64-case focused receipt, audits, static components and renewed real temporary/packed consumers pass. Exact-head hosted review and native Windows, then merged-main and scheduled registry evidence, still precede landing and publication."
+component: sdk/linked-artifacts
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-qwoy,implements,"2026-10-03T01:35:10.144Z","harness:codex","cli:update:dep",detected
+  pm-r61juc,blocks,"2026-10-03T01:35:10.144Z","harness:codex","evidence:pnpm-quality-dependencies-GHSA-vfj7-8cjw-p6xm",detected
+  pm-r61juc,discovered_from,"2026-10-03T01:35:10.144Z","harness:codex","cli:update:dep",detected
+  pm-t57d,verifies,"2026-10-03T01:57:57.490Z","harness:codex","evidence:sdk-entrypoint-and-cli-transport-budget-checks",detected
+comments[9]{created_at,author,text}:
+  "2026-10-03T01:35:10.144Z","harness:codex","Duplicate search across every status found zero exact GHSA matches and only three unrelated closed braces text matches. Full historical pm-t57d confirms completed command splitting; this newly reviewed advisory is separate. Discovered while validating the CodSpeed review fix in PR 1375. Upstream https://github.com/advisories/GHSA-vfj7-8cjw-p6xm has no published fix; do not waive the audit or invent version 3.0.4."
+  "2026-10-03T01:36:04.978Z","harness:codex","Independent pre-fix comparison: fast-glob rejects a 9003-character pattern containing 4500 nested brace pairs and a comma with RangeError Maximum call stack size exceeded. Installed tinyglobby 0.2.17 returns an empty match list on the identical temporary fixture. The real complete dependency audit also fails before remediation. Registry publication date for tinyglobby 0.2.17 is 2026-05-30; the existing cooldown needs no exception."
+  "2026-10-03T01:49:16.357Z","harness:codex",The real required dependency audit blocked pm-r61juc delivery because it failed on GHSA-vfj7-8cjw-p6xm. The blocks edge now explicitly cites that verified scanner evidence. The initial tracker assurance also identified missing estimate and acceptance criteria; both are now populated with actual implementation and verification scope. Matching semantics remain documented in the SDK function instead of a filler docstring; the reviewed filler ceiling decreases by one.
+  "2026-10-03T01:57:58.288Z","harness:codex","The SDK entrypoint and CLI transport budget checks pass after removal. pm-fnx3np verifies the retained command-splitting and cold read-path contract documented by completed pm-t57d: the glob engine remains in the linked-artifact owner and the vulnerable fast-glob tree is entirely absent. This relationship closes the new prose reference gap without changing the historical completed item or graph thresholds."
+  "2026-10-03T01:59:19.455Z","harness:codex","The existing required native Windows regression command now includes the SDK glob security and compatibility owner. Complete local static components pass with no policy changes: the initial composite identified missing planning metadata and a prose reference; the corrected tracker, graph and record-integrity checks pass alongside the unchanged bounded mutation gate. The SDK import cost and CLI transport budgets remain enforced."
+  "2026-10-03T02:41:23.684Z","harness:codex","Final local proof: complete primary source suite test-local-murs1oys-9xt763 passes 9631 tests across 763 suites with two pre-existing Windows-only skips; exact twelve count/percentage measurements are recorded by test-local-murs7i3k-9zz2me. Statements 66487; branches 50861; functions 13740; lines 63403 all fully covered. Full and production audits contain zero advisories. Both Node and Bun CLI plus actual public SDK consumers pass real temporary nested brace/extglob and directory-refusal checks. Independent Node/Bun monorepo snapshot acceptance preserves original source and distinct installed dependency versions. Packed npm/npx/bunx consumers pass for nine packages and the package-first journey passes all 89 commands. Native Windows exact-head checks and provider review still precede merge."
+  "2026-10-03T03:13:30.662Z","harness:codex","Round 7 Cubic review requests a populated non-root directory negative control and item-local verifiability of shared full-suite measurements. Existing canonical coverage and exact totals are recorded under pm-r61juc, not fabricated. Renew the actual complete source proof after these review corrections and make the structured owner linkage explicit without duplicating test implementations."
+  "2026-10-03T03:52:16.322Z","harness:codex","Renewed item-local canonical source run test-local-murutkzl-pv12k5 passes 9632 tests in 763 suites; the two existing native-Windows-only cases are skipped on this POSIX host. Direct exact-count receipt test-local-muruuo0g-cxcqrl records 100/100/100/100: 66498 statements, 50861 branches, 13743 functions, 63411 lines, all covered across 762 sources. Coverage-summary SHA-256 7b30b0196b6493ca17d53d9e1d0ea2ae323004bf1ab4767022091b1855560ead. Existing relative and absolute populated-child directory refusals and child/** explicit recursion pass. The test setup correction supplied explicit scope to the positive glob entry; it was not a source regression. Required hosted Windows and merged-main/publication still retain their own evidence tier."
+  "2026-10-03T04:08:18.111Z","harness:codex","Renewed temporary Node/Bun CLI and public SDK matching and monorepo snapshot acceptance pass, preserving real independently installed root/nested versions and original source bytes. Packed npm/npx/bunx and SDK consumers pass for nine packages; the package-first journey passes 89 commands. Full and production dependency audits, secrets and docs-link checks pass. All static components, graph and tracker checks plus the unchanged bounded mutation gate pass; the initial tracker gate correctly refused missing active expectations after reopening, then passed after CLI restoration. Exact hosted Windows/review, merged-main scanning and immutable scheduled publication remain distinct landing evidence."
+learnings[2]{created_at,author,text}:
+  "2026-10-03T02:41:22.239Z","harness:codex",A clean lock upgrade cannot fix an unpatched recursive parser. Replace its sole dependency path and prove both the actual failing nested input and retained matching semantics. tinyglobby expands directories by default; explicitly disable that behavior and exclude the invocation directory before its normalization can create an empty pattern.
+  "2026-10-03T04:04:41.208Z","harness:codex",A full-suite claim should point to a structured execution and exact integer covered/total measurements accessible from its owner. Share one actual canonical execution through a typed verification relationship rather than duplicating tests or presenting another owner’s receipts as local executions. Populated non-root directory exclusion and explicit recursive matching test distinct observable glob behavior within one fixture.
+files[10]{path,scope}:
+  .github/workflows/ci.yml,project
+  package.json,project
+  pnpm-lock.yaml,project
+  scripts/release/docstring-quality-baseline.json,project
+  scripts/release/docstring-quality.mjs,project
+  scripts/release/package-sdk-contract-parity.mjs,project
+  src/sdk/linked-artifacts.ts,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+  tests/integration/refusal-reachability.integration.spec.ts,project
+  tests/unit/sdk/security/linked-artifact-glob.spec.ts,project
+tests[4]:
+  - command: "pnpm quality:dependencies"
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-03T01:38:03.589Z"
+      source_kind: local_mutation
+      source_ref: codex/codspeed-dependency-security-snapshot-resolution
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/commands/annotations/files-docs-command.spec.ts tests/unit/scripts/release/docstring-quality.spec.ts tests/unit/scripts/release/package-sdk-contract-parity.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/refusal-reachability.integration.spec.ts
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-03T01:39:32.854Z"
+      source_kind: local_mutation
+      source_ref: codex/codspeed-dependency-security-snapshot-resolution
+  - command: node scripts/run-tests.mjs coverage -- --maxWorkers=2 --coverage.reportOnFailure
+    scope: project
+    timeout_seconds: 2400
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-03T03:24:03.072Z"
+      source_kind: local_mutation
+      source_ref: codex/codspeed-dependency-security-snapshot-resolution
+    note: Canonical complete source suite after native Windows and populated-directory review corrections; one execution is shared with pm-r61juc via structured evidence.
+  - command: node scripts/release/coverage-threshold-gate.mjs
+    scope: project
+    timeout_seconds: 180
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-03T03:51:25.495Z"
+      source_kind: local_mutation
+      source_ref: codex/codspeed-dependency-security-snapshot-resolution
+    note: Exact report admission for complete passing source suite test-local-murutkzl-pv12k5; coverage-summary SHA-256 7b30b0196b6493ca17d53d9e1d0ea2ae323004bf1ab4767022091b1855560ead; all twelve measured percentages and covered/total counts are retained.
+test_runs[5]:
+  - run_id: test-local-murq3mi0-1tgeff
+    kind: test
+    status: failed
+    started_at: "2026-10-03T01:38:04.213Z"
+    finished_at: "2026-10-03T01:38:26.088Z"
+    recorded_at: "2026-10-03T01:38:26.088Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/linked-artifact-glob-security.spec.ts tests/unit/commands/annotations/files-docs-command.spec.ts tests/unit/scripts/release/docstring-quality.spec.ts tests/unit/scripts/release/package-sdk-contract-parity.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/refusal-reachability.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-murq5n1r-jq1v5n
+    kind: test
+    status: passed
+    started_at: "2026-10-03T01:39:33.577Z"
+    finished_at: "2026-10-03T01:40:00.111Z"
+    recorded_at: "2026-10-03T01:40:00.111Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:dependencies",schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/commands/annotations/files-docs-command.spec.ts tests/unit/scripts/release/docstring-quality.spec.ts tests/unit/scripts/release/package-sdk-contract-parity.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/refusal-reachability.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muru0nbz-08ia56
+    kind: test
+    status: passed
+    started_at: "2026-10-03T03:27:43.691Z"
+    finished_at: "2026-10-03T03:28:05.663Z"
+    recorded_at: "2026-10-03T03:28:05.663Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/commands/annotations/files-docs-command.spec.ts tests/unit/scripts/release/docstring-quality.spec.ts tests/unit/scripts/release/package-sdk-contract-parity.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/refusal-reachability.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-murutkzl-pv12k5
+    kind: test
+    status: passed
+    started_at: "2026-10-03T03:34:16.461Z"
+    finished_at: "2026-10-03T03:50:35.649Z"
+    recorded_at: "2026-10-03T03:50:35.649Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage -- --maxWorkers=2 --coverage.reportOnFailure,schema,schema,source,local_source_ref
+  - run_id: test-local-muruuo0g-cxcqrl
+    kind: test
+    status: passed
+    started_at: "2026-10-03T03:51:26.050Z"
+    finished_at: "2026-10-03T03:51:26.224Z"
+    recorded_at: "2026-10-03T03:51:26.224Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[12]:
+      - name: coverage_branches
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-03T03:51:26.224Z"
+      - name: coverage_branches_covered
+        value: 50861
+        unit: count
+        recorded_at: "2026-10-03T03:51:26.224Z"
+      - name: coverage_branches_total
+        value: 50861
+        unit: count
+        recorded_at: "2026-10-03T03:51:26.224Z"
+      - name: coverage_functions
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-03T03:51:26.224Z"
+      - name: coverage_functions_covered
+        value: 13743
+        unit: count
+        recorded_at: "2026-10-03T03:51:26.224Z"
+      - name: coverage_functions_total
+        value: 13743
+        unit: count
+        recorded_at: "2026-10-03T03:51:26.224Z"
+      - name: coverage_lines
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-03T03:51:26.224Z"
+      - name: coverage_lines_covered
+        value: 63411
+        unit: count
+        recorded_at: "2026-10-03T03:51:26.224Z"
+      - name: coverage_lines_total
+        value: 63411
+        unit: count
+        recorded_at: "2026-10-03T03:51:26.224Z"
+      - name: coverage_statements
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-03T03:51:26.224Z"
+      - name: coverage_statements_covered
+        value: 66498
+        unit: count
+        recorded_at: "2026-10-03T03:51:26.224Z"
+      - name: coverage_statements_total
+        value: 66498
+        unit: count
+        recorded_at: "2026-10-03T03:51:26.224Z"
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/coverage-threshold-gate.mjs,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
+close_reason: Replaced vulnerable recursive file matching and completed direct full-source verification and populated-directory review controls
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: development-dependency-security
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/security/linked-artifact-glob.spec.ts; pre-fix 9003-character brace pattern exhausts braces expansion stack
+  local_checks[2]: "pnpm quality:dependencies",node scripts/run-tests.mjs coverage
+  hosted_checks[4]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24),Security and Script Quality / Trivy
+  owner: pm-fnx3np
+body: ""

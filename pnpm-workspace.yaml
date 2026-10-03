@@ -16,6 +16,7 @@ minimumReleaseAgeExclude:
 
 overrides:
   '@opentelemetry/core': '>=2.8.0 <3.0.0'
+  axios: '>=1.20.0 <2.0.0'
   brace-expansion: '>=5.0.12 <6.0.0'
   esbuild: '>=0.28.2 <0.29.0'
   hono: '>=4.13.5 <5.0.0'
@@ -25,3 +26,6 @@ overrides:
   rollup: '>=4.59.0 <5.0.0'
   undici: '>=6.27.0 <7.0.0'
   vite: '>=7.3.5 <8.0.0'
+
+patchedDependencies:
+  '@codspeed/core@5.7.1': patches/@codspeed__core@5.7.1.patch

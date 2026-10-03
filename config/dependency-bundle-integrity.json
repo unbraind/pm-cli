@@ -1,0 +1,19 @@
+{
+  "owner": "pm-r61juc",
+  "name": "@codspeed/core",
+  "version": "5.7.1",
+  "sha256": {
+    "dist/index.cjs.js": "91da84dd7deb81cbdc25d0f4e772ff2c6e380ccb01429f8c03ea7b2b1e8f51ea",
+    "dist/index.cjs.js.map": "fce07e1edb4aa0c0435713c80b3d29843ac5871ee4461ef81a8c05b3b22c9121",
+    "dist/index.d.ts": "6f39cae6882794dadc42f474201138eef3fab49d539a1254a36edbcf380bc490",
+    "dist/index.d.ts.map": "cfb0347b806271f97316faef7e0dd47ed3bf877a4cfc2945117d2557d5e4c3a1",
+    "dist/index.es5.js": "8579eedd71a1ace91b917a727e3fac18b4441cd3ffe88d55bf4e5a7084d349cf",
+    "dist/index.es5.js.map": "92bce3d7ad4ac411467ae661810fd65b535bc12c4de21d7f253d8b5d8a4e4053",
+    "LICENSE": "97882764198c718e6bcccf6a776e8c4db5af31782d6f0b409803c737d5e92a46",
+    "package.json": "7851ab8ea4f1dbe11dc4861fe8c5129341dd59ef401cba7e9c48877dff95e9a6",
+    "prebuilds/darwin-arm64/node.napi.node": "e1cdd31964603f11b9324398917284155370577d76c38d1ace41de44a5cf1171",
+    "prebuilds/linux-arm64/node.napi.node": "3b4f6c49b131ea9d4cc21ec431796ad74e7de4847b38233da38d2e378a2305e5",
+    "prebuilds/linux-x64/node.napi.node": "9e520dbfa548fa8556b707c133f94e5dd9f305f224dbfd87ef7efef27a3837ed",
+    "README.md": "f9ef2c1cbf536cbf84a488fa6a27500738f4c71b353d9eb0fe3e43bb23bddab9"
+  }
+}

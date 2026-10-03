@@ -4,6 +4,7 @@
  * Implements the pm test command surface and its agent-facing runtime behavior.
  */
 import { readJsonPathValue, splitJsonPathSegments } from "./json-path.js";
+import { seedLinkedTestWorkspaceSnapshot } from "./workspace-snapshot.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { spawn, type ChildProcess } from "node:child_process";
 import {
@@ -2225,42 +2226,6 @@ function linkedTestsRequireWorkspaceSnapshot(
   );
 }
 
-async function seedLinkedTestWorkspaceSnapshot(
-  layout: LinkedTestSandboxLayout,
-  sourceWorkspaceRoot: string,
-): Promise<void> {
-  const excludedSegments = new Set([
-    ".agents",
-    ".git",
-    ".nyc_output",
-    ".turbo",
-    "coverage",
-    "node_modules",
-  ]);
-  await mkdir(path.dirname(layout.workspaceSnapshotRoot), { recursive: true });
-  await cp(sourceWorkspaceRoot, layout.workspaceSnapshotRoot, {
-    recursive: true,
-    force: true,
-    filter(source) {
-      const relative = path.relative(sourceWorkspaceRoot, source);
-      if (!relative) {
-        return true;
-      }
-      return !relative
-        .split(path.sep)
-        .some((segment) => excludedSegments.has(segment));
-    },
-  });
-  const sourceNodeModules = path.join(sourceWorkspaceRoot, "node_modules");
-  if (await pathExists(sourceNodeModules)) {
-    await symlink(
-      sourceNodeModules,
-      path.join(layout.workspaceSnapshotRoot, "node_modules"),
-      process.platform === "win32" ? "junction" : "dir",
-    );
-  }
-}
-
 async function bindSnapshotTracker(
   snapshotRoot: string,
   sandboxPmPath: string,
@@ -2949,7 +2914,7 @@ export async function runLinkedTests(
       includeTrackerData,
     );
     if (includeWorkspaceSnapshot) {
-      await seedLinkedTestWorkspaceSnapshot(layout, sourceWorkspaceRoot);
+      await seedLinkedTestWorkspaceSnapshot(sourceWorkspaceRoot, layout.workspaceSnapshotRoot);
     }
     const counts = await countLinkedTestSandboxItems(layout, sourceRoots);
 

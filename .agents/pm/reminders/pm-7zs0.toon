@@ -6,9 +6,9 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-09-28T15:32:23.009Z"
+updated_at: "2026-10-02T20:36:50.493Z"
 reminders[1]{at,text}:
-  "2026-08-30T06:00:00.000Z",Verify the next eligible daily cut contains main 57d4a074 or a descendant and advances tag GitHub Release npm npx bunx analyzers Sentry telemetry and queue evidence then rearm
+  "2026-10-03T06:00:00.000Z","Verify the first eligible daily publication after PR 1375 lands: native merged-main Scorecard retirement plus immutable GitHub tag and npm latest identity and real npm npx Bun bunx consumer acceptance. Cron is 02:35 UTC with possible scheduling delay. Rearm after verification."
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day.; Every daily check distinguishes scheduled or guarded dispatch attempts, failed original runs, same-version recovery, immutable publication identity and all supported consumer acceptance results"
@@ -16,7 +16,7 @@ parent: pm-u9d0
 risk: low
 confidence: high
 expected_result: "After each merge to main the next daily release tags a new date version and advances npm latest, and any discrepancy is triaged the same day."
-dependencies[12]:
+dependencies[13]:
   - id: pm-7n5a
     kind: related
     created_at: "2026-07-15T18:17:35.524Z"
@@ -77,7 +77,13 @@ dependencies[12]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[183]{created_at,author,text}:
+  - id: pm-r61juc
+    kind: verifies
+    created_at: "2026-10-02T19:07:24.259Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[186]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -261,6 +267,9 @@ comments[183]{created_at,author,text}:
   "2026-09-12T20:05:06.266Z","harness:claude-code","Root cause of the 2026-09-11 and 2026-09-12 scheduled failures, recorded after live verification: both Release runs published correctly and then failed attempt 1 at \"Verify published package on npm, npx, and bunx\" because the verifier polled npm view 20 times 15 seconds apart (about five minutes) while the registry made the version visible 8m14s and 6m10s after publish (npm time stamps 2026-09-11T08:21:16Z and 2026-09-12T08:11:04Z against publish steps ending 08:13:02Z and 08:04:54Z). Owner pm-wzmbvn: default raised to 60 polls (about fifteen minutes), verify step timeout 8 to 20 minutes, release job timeout 45 to 60 minutes with the auto-release budget still 30 minutes larger, contract spec and a default-attempts unit spec updated. Expectation for the next scheduled cut: attempt 1 passes unless the lag exceeds fifteen minutes; the stage series on pm-e70zh5 now spans twenty runs. Note that this session's changes land by direct push, so the next scheduled run may refuse at the analyzer-provenance stage (pm-2ksptv) until a pull-request-borne commit lands on top; that refusal is a different stage from the one fixed here.\n"
   "2026-09-28T06:36:27.775Z","harness:codex","PR 1333 review correction: the June reminder predates the September installer-diagnostics issue. Their link expresses coordination on release health, not the origin of this reminder. The replaced discovery assertion remains visible in immutable history."
   "2026-09-28T15:32:23.009Z","harness:claude-code","2026-09-28 release, verified live: v2026.9.28 is npm latest and GitHub Latest; npx --package @unbrained/pm-cli@2026.9.28 and bunx --bun --package @unbrained/pm-cli@2026.9.28 both print 2026.9.28. Path: dispatch 36371013489 (02:45 UTC) failed at the Sentry gate on PM-CLI-3D (owner pm-z329kd); dispatch 36375818142 cut the version commit and tag at 04:18; tag Release 36377133727 failed Windows npm-global registry acceptance after three installer attempts (owner pm-q7c36n); Release dispatch 36380136948 published at 05:33; scheduled Auto Release 36400233227 then succeeded as a same-day no-op. One release for the UTC day. Which dispatches were the timer and which were an operator is not recoverable from the run record (pm-prrlce)."
+  "2026-10-02T17:43:53.980Z","harness:codex","Live release-health verification on 2026-10-02: existing Auto Release run 37035399595 completed successfully; GitHub latest v2026.10.2 was published at 17:39:59 UTC and public npm latest is 2026.10.2. This publication predates the current CodSpeed dependency and linked-test snapshot delivery; it does not certify unmerged changes. Existing same-day/immutable-tag behavior is covered by the passing release automation and workflow contract regressions. Current Sentry recent unresolved query is clear and the required telemetry gate reports 1.28 percent finish error rate with zero missing error-code rows; direct read-only server queries show current command start/finish rows for CLI actions. These aggregate observations do not certify an exact task trace."
+  "2026-10-02T19:07:25.334Z","harness:codex","PR 1375 landing verification: local audits and exact-head PR gates establish reviewed dependency admission, not merged-main alert retirement. After merge, verify native Scorecard alert 29 against the merged SHA, retain any finding until the analyzer confirms retirement, and verify the next eligible UTC-day publication plus npm/Bun consumers. This standing item remains open; implementation closure must explicitly preserve this independent landing and publication boundary."
+  "2026-10-02T20:36:50.493Z","harness:codex","The standing reminder is now rearmed for 2026-10-03 06:00 UTC, after the nominal 02:35 UTC daily workflow window. The expired one-shot entry is replaced in the current schedule; immutable mutation history retains the earlier schedule. This does not dispatch a second automatic release. Keep the owner open and verify actual native alert retirement, immutable publication identity and npm/Bun consumer results before recording success and rearming."
 notes[10]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

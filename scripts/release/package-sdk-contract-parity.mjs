@@ -10,7 +10,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import fg from "fast-glob";
+import { globSync } from "tinyglobby";
 import ts from "typescript";
 
 const repoRoot = path.resolve(
@@ -82,10 +82,10 @@ export function findPackageSdkContractMirrors(
 
 /** Load shipped package sources and the current checked-in SDK surface. */
 export function loadPackageSdkContractSources(root = repoRoot) {
-  const packagePaths = fg.sync("packages/pm-*/extensions/**/*.ts", {
+  const packagePaths = globSync("packages/pm-*/extensions/**/*.ts", {
     cwd: root,
     onlyFiles: true,
-    unique: true,
+    expandDirectories: false,
   });
   const surface = JSON.parse(
     readFileSync(path.join(root, "sdk/public-surface.json"), "utf8"),

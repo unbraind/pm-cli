@@ -288,6 +288,8 @@ control and fails if `pm eval --fail-under` stops returning a non-zero exit.
 Refresh the baseline only with `pnpm quality:retrieval-eval:update` after
 reviewing query-level ranking changes.
 
+Development tools must also pass the [development dependency security gate](DEVELOPMENT_DEPENDENCY_SECURITY.md), including the full audit and installed bundle integrity policy.
+
 ## Context Quality Evaluation
 
 The required context relevance gate proves that `pm context` and `pm next`
@@ -545,11 +547,36 @@ pm test <item-id> --run --workspace-context snapshot --override-linked-workspace
   declaration. Use it only for commands that do not require checkout files.
 - `snapshot` copies the workspace into the linked-test sandbox, runs from that
   copy, and binds its `.agents/pm` path to the selected temporary tracker.
-  `.git`, `.agents`, `node_modules`, coverage output, and common cache
-  directories are excluded at every directory depth; an existing top-level
-  `node_modules` is linked read-only by convention. Built output remains
-  available so linked commands such as `node dist/cli.js` keep working. Writes
-  therefore land in the disposable snapshot rather than the source checkout.
+  `.git`, `.agents`, coverage output, and common cache directories are excluded
+  at every directory depth, with reserved names matched case-insensitively for
+  portable admission. Each existing root or nested `node_modules`
+  directory is linked at its original relative path, including installations
+  already represented by directory symlinks. This preserves independent
+  monorepo dependency versions without copying dependency trees. Dependency
+  aliases into excluded trees or included workspace source are refused. Internal
+  shared targets must remain within admitted `node_modules` subtrees; external
+  installations must be disjoint from the source workspace, rather than
+  containing it. They remain available even when an external ancestor shares an
+  excluded directory name.
+  Links are read-only **by convention**; they do not prevent a trusted command
+  from modifying the original installation. Use an independent installation
+  when testing package-manager operations or dependency writes. Built output
+  remains available so linked commands such as `node dist/cli.js` keep working.
+  The source workspace root is resolved before copying. Ordinary file and
+  directory symlinks into included workspace source are rebased into the copy,
+  including dangling file aliases; writes through those aliases stay in the
+  disposable snapshot. Targets are canonicalized through their nearest existing
+  ancestor, so absolute aliases through another workspace path spelling and
+  missing target suffixes retain the same isolation on supported platforms.
+  Source aliases into unadmitted external directories or excluded tracker/build
+  trees fail before the linked command runs. An alias into an admitted shared
+  dependency namespace retains the dependency-write convention above, including
+  packages linked within that installation. Source and snapshot destinations
+  must be physically disjoint; overlapping roots fail before copying with a
+  diagnostic directing the caller to a temporary root outside the checkout.
+
+  The real-filesystem regression for this contract is tracked by
+  [pm-5iwfkj](../.agents/pm/issues/pm-5iwfkj.toon).
 
 Every result reports the requested/effective workspace mode, working
 directory, exposed source root, and trust decision. Recorded `test_runs` retain
