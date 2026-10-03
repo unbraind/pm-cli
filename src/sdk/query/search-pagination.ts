@@ -8,6 +8,7 @@ import {
   paginateQueryRows,
   selectCursorSemanticOptions,
 } from "../pagination.js";
+import path from "node:path";
 import { SEARCH_FLAG_CONTRACTS } from "../cli-contracts/flag-contracts.js";
 import type { SearchHit, SearchOptions } from "./search.js";
 import type { SearchMode } from "./search-rendering.js";
@@ -17,11 +18,11 @@ export function createSearchCursorFingerprint(options: {
   query: string;
   mode: SearchMode;
   searchOptions: SearchOptions;
-  /** Resolved tracker scope when invoked by the query runtime. */
+  /** Tracker scope, resolved before hashing so callers share native path identity. */
   pmRoot?: string;
 }): string {
   return createQueryFingerprint("search", {
-    pmRoot: options.pmRoot,
+    pmRoot: options.pmRoot === undefined ? undefined : path.resolve(options.pmRoot),
     query: options.query.trim(),
     mode: options.mode,
     options: selectCursorSemanticOptions(

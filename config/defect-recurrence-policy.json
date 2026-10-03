@@ -3,6 +3,38 @@
   "evidence_epoch": "2026-08-17T00:00:00.000Z",
   "families": [
     {
+      "id": "transaction-preview-scope-and-path-consistency",
+      "version": 1,
+      "title": "Audited previews retain canonical source scopes, settings, and persistent filesystem diagnostics",
+      "owner_item_id": "pm-n912nt",
+      "escape_class": "production_defect",
+      "triggers": {
+        "file_patterns": [
+          "src/sdk/item-transaction.ts",
+          "src/sdk/extension-command-context.ts",
+          "src/sdk/query/search-pagination.ts",
+          "src/core/store/settings.ts",
+          "tests/unit/sdk/transactions/**",
+          "tests/unit/core/store/settings-store.spec.ts"
+        ],
+        "item_ids": ["pm-n912nt", "pm-gh1370"]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/settings-preview.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/core/store/settings-store.spec.ts tests/unit/commands/query/search-command.spec.ts tests/unit/sdk/pagination.spec.ts"
+        ],
+        "hosted": [
+          "CI / Gates (static)",
+          "CI / Gates (coverage)",
+          "CI / Windows regression (Node 24)",
+          "CI / Runtime smoke (macos-latest, Node 24)"
+        ]
+      },
+      "negative_control": { "files": ["src/sdk/item-transaction.ts"] },
+      "historical_item_ids": ["pm-gh1370"],
+      "budget": { "max_escape_rate": 0, "max_false_positive_rate": 0.05 }
+    },
+    {
       "id": "boundary-format-drift",
       "version": 3,
       "title": "Externally produced path, slug, payload, and invocation format drift",
@@ -15,14 +47,8 @@
           "src/core/extensions/**",
           "tests/fixtures/boundaries/**"
         ],
-        "item_ids": [
-          "pm-qtbc",
-          "pm-0pzgit"
-        ],
-        "tags": [
-          "boundary-contract",
-          "cross-platform"
-        ]
+        "item_ids": ["pm-qtbc", "pm-0pzgit"],
+        "tags": ["boundary-contract", "cross-platform"]
       },
       "checks": {
         "local": [
@@ -36,13 +62,9 @@
         ]
       },
       "negative_control": {
-        "files": [
-          "tests/fixtures/boundaries/missing.json"
-        ]
+        "files": ["tests/fixtures/boundaries/missing.json"]
       },
-      "historical_item_ids": [
-        "pm-qtbc"
-      ],
+      "historical_item_ids": ["pm-qtbc"],
       "budget": {
         "max_escape_rate": 0,
         "max_false_positive_rate": 0.05
@@ -62,21 +84,11 @@
           "tests/**/*windows*",
           "tests/**/*platform*"
         ],
-        "item_ids": [
-          "pm-xaib",
-          "pm-zno2iu",
-          "pm-wr8utz"
-        ],
-        "tags": [
-          "cross-platform",
-          "nightly",
-          "windows"
-        ]
+        "item_ids": ["pm-xaib", "pm-zno2iu", "pm-wr8utz"],
+        "tags": ["cross-platform", "nightly", "windows"]
       },
       "checks": {
-        "local": [
-          "node scripts/run-tests.mjs test -- tests/unit/scripts"
-        ],
+        "local": ["node scripts/run-tests.mjs test -- tests/unit/scripts"],
         "hosted": [
           "Nightly Validation / Nightly (windows-latest, Node 24, shard 1/2)",
           "Nightly Validation / Nightly (windows-latest, Node 24, shard 2/2)",
@@ -84,16 +96,9 @@
         ]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-xaib"
-        ]
+        "item_ids": ["pm-xaib"]
       },
-      "historical_item_ids": [
-        "pm-46hpx8",
-        "pm-wr8utz",
-        "pm-xaib",
-        "pm-zno2iu"
-      ],
+      "historical_item_ids": ["pm-46hpx8", "pm-wr8utz", "pm-xaib", "pm-zno2iu"],
       "budget": {
         "max_escape_rate": 0.02,
         "max_false_positive_rate": 0.1
@@ -114,22 +119,11 @@
           "scripts/check-secrets.mjs",
           ".github/workflows/security.yml"
         ],
-        "item_ids": [
-          "pm-qgvj",
-          "pm-4ris"
-        ],
-        "tags": [
-          "security",
-          "codeql",
-          "semgrep"
-        ]
+        "item_ids": ["pm-qgvj", "pm-4ris"],
+        "tags": ["security", "codeql", "semgrep"]
       },
       "checks": {
-        "local": [
-          "pnpm security:scan",
-          "pnpm audit",
-          "pnpm audit --prod"
-        ],
+        "local": ["pnpm security:scan", "pnpm audit", "pnpm audit --prod"],
         "hosted": [
           "CodeQL / Analyze (javascript-typescript)",
           "Security and Script Quality / TruffleHog",
@@ -137,15 +131,9 @@
         ]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-qgvj"
-        ]
+        "item_ids": ["pm-qgvj"]
       },
-      "historical_item_ids": [
-        "pm-qgvj",
-        "pm-4ris",
-        "pm-2cv2o1"
-      ],
+      "historical_item_ids": ["pm-qgvj", "pm-4ris", "pm-2cv2o1"],
       "budget": {
         "max_escape_rate": 0,
         "max_false_positive_rate": 0.02
@@ -165,29 +153,15 @@
           "src/core/init/**",
           "tests/integration/**"
         ],
-        "item_ids": [
-          "pm-at1j",
-          "pm-0bwe"
-        ],
-        "tags": [
-          "review-feedback",
-          "surface-parity"
-        ]
+        "item_ids": ["pm-at1j", "pm-0bwe"],
+        "tags": ["review-feedback", "surface-parity"]
       },
       "checks": {
-        "local": [
-          "pnpm contracts:check",
-          "pnpm quality:static"
-        ],
-        "hosted": [
-          "CI / Gates (coverage)",
-          "CI / Gates (static)"
-        ]
+        "local": ["pnpm contracts:check", "pnpm quality:static"],
+        "hosted": ["CI / Gates (coverage)", "CI / Gates (static)"]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-at1j"
-        ]
+        "item_ids": ["pm-at1j"]
       },
       "historical_item_ids": [
         "pm-0bwe",
@@ -217,10 +191,7 @@
           "src/sdk/context-packing.ts",
           "tests/**/*output*"
         ],
-        "tags": [
-          "output-budget",
-          "token-efficiency"
-        ]
+        "tags": ["output-budget", "token-efficiency"]
       },
       "checks": {
         "local": [
@@ -234,9 +205,7 @@
         ]
       },
       "negative_control": {
-        "files": [
-          "src/sdk/read-output-budget.ts"
-        ]
+        "files": ["src/sdk/read-output-budget.ts"]
       },
       "historical_item_ids": [
         "pm-57ir3b",
@@ -259,9 +228,7 @@
       "owner_item_id": "pm-gh1364",
       "escape_class": "production_defect",
       "triggers": {
-        "item_ids": [
-          "pm-gh1364"
-        ]
+        "item_ids": ["pm-gh1364"]
       },
       "checks": {
         "local": [
@@ -275,13 +242,9 @@
         ]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-gh1364"
-        ]
+        "item_ids": ["pm-gh1364"]
       },
-      "historical_item_ids": [
-        "pm-szn67i"
-      ],
+      "historical_item_ids": ["pm-szn67i"],
       "budget": {
         "max_escape_rate": 0,
         "max_false_positive_rate": 0.05
@@ -300,28 +263,18 @@
           "src/sdk/read-output**",
           "tests/**/*history*"
         ],
-        "tags": [
-          "history-integrity",
-          "projection-contract"
-        ],
-        "error_codes": [
-          "workspace_history_chain_invalid"
-        ]
+        "tags": ["history-integrity", "projection-contract"],
+        "error_codes": ["workspace_history_chain_invalid"]
       },
       "checks": {
         "local": [
           "node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded",
           "pnpm contracts:check"
         ],
-        "hosted": [
-          "CI / Gates (static)",
-          "CI / Gates (coverage)"
-        ]
+        "hosted": ["CI / Gates (static)", "CI / Gates (coverage)"]
       },
       "negative_control": {
-        "error_codes": [
-          "workspace_history_chain_invalid"
-        ]
+        "error_codes": ["workspace_history_chain_invalid"]
       },
       "historical_item_ids": [
         "pm-0wfdim",
@@ -369,11 +322,7 @@
           "pm-4957pz",
           "pm-2bqgs7"
         ],
-        "tags": [
-          "denominator",
-          "surface-parity",
-          "protocol"
-        ]
+        "tags": ["denominator", "surface-parity", "protocol"]
       },
       "checks": {
         "local": [
@@ -381,15 +330,10 @@
           "node scripts/smoke-codex-plugin-mcp.mjs",
           "node scripts/smoke-claude-plugin.mjs"
         ],
-        "hosted": [
-          "CI / Gates (static)",
-          "CI / Gates (smokes)"
-        ]
+        "hosted": ["CI / Gates (static)", "CI / Gates (smokes)"]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-suhxny"
-        ]
+        "item_ids": ["pm-suhxny"]
       },
       "historical_item_ids": [
         "pm-b84irw",
@@ -428,16 +372,8 @@
           "src/sdk/governance/health.ts",
           "tests/unit/commands/history/history-activity-command.spec.ts"
         ],
-        "item_ids": [
-          "pm-t7wn04",
-          "pm-4o7tlx",
-          "pm-xgah3a"
-        ],
-        "tags": [
-          "area:ci",
-          "denominator",
-          "recurrence"
-        ]
+        "item_ids": ["pm-t7wn04", "pm-4o7tlx", "pm-xgah3a"],
+        "tags": ["area:ci", "denominator", "recurrence"]
       },
       "checks": {
         "local": [
@@ -453,9 +389,7 @@
         ]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-t7wn04"
-        ]
+        "item_ids": ["pm-t7wn04"]
       },
       "historical_item_ids": [
         "pm-4o7tlx",
@@ -477,9 +411,7 @@
       "owner_item_id": "pm-6f66vu",
       "escape_class": "review_caught_late",
       "triggers": {
-        "item_ids": [
-          "pm-2a9n"
-        ]
+        "item_ids": ["pm-2a9n"]
       },
       "checks": {
         "local": [
@@ -487,15 +419,10 @@
           "pnpm security:scan",
           "node scripts/run-tests.mjs coverage"
         ],
-        "hosted": [
-          "CI / Gates (static)",
-          "CI / Gates (coverage)"
-        ]
+        "hosted": ["CI / Gates (static)", "CI / Gates (coverage)"]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-2a9n"
-        ]
+        "item_ids": ["pm-2a9n"]
       },
       "historical_item_ids": [
         "pm-2a9n",
@@ -518,26 +445,18 @@
       "owner_item_id": "pm-3lhth4",
       "escape_class": "production_defect",
       "triggers": {
-        "item_ids": [
-          "pm-3lhth4"
-        ]
+        "item_ids": ["pm-3lhth4"]
       },
       "checks": {
         "local": [
           "node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/sdk/workspace-snapshot.spec.ts tests/integration/extension-host-faults.integration.spec.ts"
         ],
-        "hosted": [
-          "CI / Gates (coverage)"
-        ]
+        "hosted": ["CI / Gates (coverage)"]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-3lhth4"
-        ]
+        "item_ids": ["pm-3lhth4"]
       },
-      "historical_item_ids": [
-        "pm-3lhth4"
-      ],
+      "historical_item_ids": ["pm-3lhth4"],
       "budget": {
         "max_escape_rate": 0,
         "max_false_positive_rate": 0.05
@@ -550,28 +469,18 @@
       "owner_item_id": "pm-q813",
       "escape_class": "production_defect",
       "triggers": {
-        "item_ids": [
-          "pm-5sm91o"
-        ]
+        "item_ids": ["pm-5sm91o"]
       },
       "checks": {
         "local": [
           "node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts tests/unit/sdk/linked-command-identity.spec.ts"
         ],
-        "hosted": [
-          "CI / Gates (coverage)"
-        ]
+        "hosted": ["CI / Gates (coverage)"]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-5sm91o"
-        ]
+        "item_ids": ["pm-5sm91o"]
       },
-      "historical_item_ids": [
-        "pm-5sm91o",
-        "pm-m0b7h8",
-        "pm-q813"
-      ],
+      "historical_item_ids": ["pm-5sm91o", "pm-m0b7h8", "pm-q813"],
       "budget": {
         "max_escape_rate": 0,
         "max_false_positive_rate": 0.05
@@ -584,25 +493,17 @@
       "owner_item_id": "pm-ikj8ve",
       "escape_class": "production_defect",
       "triggers": {
-        "item_ids": [
-          "pm-8eebb6",
-          "pm-vks66s",
-          "pm-aaxq4n"
-        ]
+        "item_ids": ["pm-8eebb6", "pm-vks66s", "pm-aaxq4n"]
       },
       "checks": {
         "local": [
           "node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts",
           "node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts"
         ],
-        "hosted": [
-          "CI / Gates (smokes)"
-        ]
+        "hosted": ["CI / Gates (smokes)"]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-8eebb6"
-        ]
+        "item_ids": ["pm-8eebb6"]
       },
       "historical_item_ids": [
         "pm-8eebb6",
@@ -622,27 +523,17 @@
       "owner_item_id": "pm-dm2vfz",
       "escape_class": "production_defect",
       "triggers": {
-        "item_ids": [
-          "pm-998juj",
-          "pm-u1baah",
-          "pm-xcrlkl",
-          "pm-2ksptv"
-        ]
+        "item_ids": ["pm-998juj", "pm-u1baah", "pm-xcrlkl", "pm-2ksptv"]
       },
       "checks": {
         "local": [
           "node scripts/run-tests.mjs test -- tests/unit/scripts/release",
           "pnpm quality:package-artifact"
         ],
-        "hosted": [
-          "CI / Gates (static)",
-          "CI / Gates (smokes)"
-        ]
+        "hosted": ["CI / Gates (static)", "CI / Gates (smokes)"]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-998juj"
-        ]
+        "item_ids": ["pm-998juj"]
       },
       "historical_item_ids": [
         "pm-998juj",
@@ -664,26 +555,18 @@
       "owner_item_id": "pm-8we38i",
       "escape_class": "review_caught_late",
       "triggers": {
-        "item_ids": [
-          "pm-8we38i"
-        ]
+        "item_ids": ["pm-8we38i"]
       },
       "checks": {
         "local": [
           "node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts"
         ],
-        "hosted": [
-          "CI / Gates (coverage)"
-        ]
+        "hosted": ["CI / Gates (coverage)"]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-8we38i"
-        ]
+        "item_ids": ["pm-8we38i"]
       },
-      "historical_item_ids": [
-        "pm-8we38i"
-      ],
+      "historical_item_ids": ["pm-8we38i"],
       "budget": {
         "max_escape_rate": 0,
         "max_false_positive_rate": 0.05
@@ -696,27 +579,18 @@
       "owner_item_id": "pm-fkohe8",
       "escape_class": "production_defect",
       "triggers": {
-        "item_ids": [
-          "pm-fkohe8"
-        ]
+        "item_ids": ["pm-fkohe8"]
       },
       "checks": {
         "local": [
           "node scripts/run-tests.mjs test -- tests/unit/sdk/health-verdict-authority.spec.ts tests/unit/sdk/health-finding-contract.spec.ts tests/unit/commands/governance/health-command.spec.ts"
         ],
-        "hosted": [
-          "CI / Gates (coverage)",
-          "CI / Gates (static)"
-        ]
+        "hosted": ["CI / Gates (coverage)", "CI / Gates (static)"]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-fkohe8"
-        ]
+        "item_ids": ["pm-fkohe8"]
       },
-      "historical_item_ids": [
-        "pm-fkohe8"
-      ],
+      "historical_item_ids": ["pm-fkohe8"],
       "budget": {
         "max_escape_rate": 0,
         "max_false_positive_rate": 0.05
@@ -729,26 +603,16 @@
       "owner_item_id": "pm-hcrmye",
       "escape_class": "nightly_regression",
       "triggers": {
-        "item_ids": [
-          "pm-hcrmye"
-        ]
+        "item_ids": ["pm-hcrmye"]
       },
       "checks": {
-        "local": [
-          "pnpm benchmark:scale:check"
-        ],
-        "hosted": [
-          "CI / Gates (static)"
-        ]
+        "local": ["pnpm benchmark:scale:check"],
+        "hosted": ["CI / Gates (static)"]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-hcrmye"
-        ]
+        "item_ids": ["pm-hcrmye"]
       },
-      "historical_item_ids": [
-        "pm-hcrmye"
-      ],
+      "historical_item_ids": ["pm-hcrmye"],
       "budget": {
         "max_escape_rate": 0,
         "max_false_positive_rate": 0.05
@@ -761,26 +625,18 @@
       "owner_item_id": "pm-i25f",
       "escape_class": "production_defect",
       "triggers": {
-        "item_ids": [
-          "pm-i25f"
-        ]
+        "item_ids": ["pm-i25f"]
       },
       "checks": {
         "local": [
           "node scripts/run-tests.mjs test -- tests/unit/commands/query/reindex-command.spec.ts tests/unit/core/search/semantic-defaults.spec.ts"
         ],
-        "hosted": [
-          "CI / Gates (coverage)"
-        ]
+        "hosted": ["CI / Gates (coverage)"]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-i25f"
-        ]
+        "item_ids": ["pm-i25f"]
       },
-      "historical_item_ids": [
-        "pm-i25f"
-      ],
+      "historical_item_ids": ["pm-i25f"],
       "budget": {
         "max_escape_rate": 0,
         "max_false_positive_rate": 0.05
@@ -793,26 +649,18 @@
       "owner_item_id": "pm-vhdc",
       "escape_class": "production_defect",
       "triggers": {
-        "item_ids": [
-          "pm-vhdc"
-        ]
+        "item_ids": ["pm-vhdc"]
       },
       "checks": {
         "local": [
           "node scripts/run-tests.mjs test -- tests/unit/core/telemetry tests/unit/commands/governance/telemetry-command.spec.ts"
         ],
-        "hosted": [
-          "CI / Gates (coverage)"
-        ]
+        "hosted": ["CI / Gates (coverage)"]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-vhdc"
-        ]
+        "item_ids": ["pm-vhdc"]
       },
-      "historical_item_ids": [
-        "pm-vhdc"
-      ],
+      "historical_item_ids": ["pm-vhdc"],
       "budget": {
         "max_escape_rate": 0,
         "max_false_positive_rate": 0.05
@@ -830,27 +678,18 @@
           "src/core/governance/issue-codes.ts",
           "tests/integration/duplicates-command.integration.spec.ts"
         ],
-        "item_ids": [
-          "pm-1ieq24"
-        ]
+        "item_ids": ["pm-1ieq24"]
       },
       "checks": {
         "local": [
           "node scripts/run-tests.mjs test -- tests/integration/duplicates-command.integration.spec.ts tests/unit/sdk/query/similarity-issue-code-evidence.spec.ts"
         ],
-        "hosted": [
-          "CI / Gates (coverage)"
-        ]
+        "hosted": ["CI / Gates (coverage)"]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-1ieq24"
-        ]
+        "item_ids": ["pm-1ieq24"]
       },
-      "historical_item_ids": [
-        "pm-blvfye",
-        "pm-sn3xor"
-      ],
+      "historical_item_ids": ["pm-blvfye", "pm-sn3xor"],
       "budget": {
         "max_escape_rate": 0,
         "max_false_positive_rate": 0.05
@@ -868,9 +707,7 @@
           "src/core/output/mutation-projection.ts",
           "src/sdk/lifecycle/mcp-actions.ts"
         ],
-        "item_ids": [
-          "pm-gh1369"
-        ]
+        "item_ids": ["pm-gh1369"]
       },
       "checks": {
         "local": [
@@ -884,13 +721,9 @@
         ]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-gh1369"
-        ]
+        "item_ids": ["pm-gh1369"]
       },
-      "historical_item_ids": [
-        "pm-eqdo85"
-      ],
+      "historical_item_ids": ["pm-eqdo85"],
       "budget": {
         "max_escape_rate": 0,
         "max_false_positive_rate": 0.05
@@ -910,35 +743,19 @@
           "src/core/config/nested-settings.ts",
           "src/core/store/settings-validator.ts"
         ],
-        "item_ids": [
-          "pm-67uh",
-          "pm-n8a6e7",
-          "pm-wn3r"
-        ],
-        "tags": [
-          "search",
-          "sdk-first",
-          "agent-ux"
-        ]
+        "item_ids": ["pm-67uh", "pm-n8a6e7", "pm-wn3r"],
+        "tags": ["search", "sdk-first", "agent-ux"]
       },
       "checks": {
         "local": [
           "node scripts/run-tests.mjs test -- tests/unit/sdk/query/search-default-mode.spec.ts tests/unit/commands/query/search-command.spec.ts tests/unit/commands/workspace/config-key-aliases-search.spec.ts"
         ],
-        "hosted": [
-          "CI / Gates (coverage)"
-        ]
+        "hosted": ["CI / Gates (coverage)"]
       },
       "negative_control": {
-        "item_ids": [
-          "pm-n8a6e7"
-        ]
+        "item_ids": ["pm-n8a6e7"]
       },
-      "historical_item_ids": [
-        "pm-67uh",
-        "pm-n8a6e7",
-        "pm-wn3r"
-      ],
+      "historical_item_ids": ["pm-67uh", "pm-n8a6e7", "pm-wn3r"],
       "budget": {
         "max_escape_rate": 0,
         "max_false_positive_rate": 0.05

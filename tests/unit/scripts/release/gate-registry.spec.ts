@@ -13,6 +13,7 @@ import {
   runGateRegistryEntrypoint,
   validateGateRegistry,
 } from "../../../../scripts/release/gate-registry.mjs";
+import type { DefectRecurrencePolicy } from "../../../../src/sdk/governance/defect-recurrence.js";
 import { GRAPH_SUBCOMMAND_VALUES } from "../../../../src/sdk/cli-contracts/enum-contracts.js";
 
 const roots: string[] = [];
@@ -163,8 +164,10 @@ describe("gate registry", () => {
 
   it("rejects stale recurrence hosted checks after a workflow matrix rename", async () => {
     const root = await fixtureRoot();
-    const policy = JSON.parse(await readFile(path.resolve("config/defect-recurrence-policy.json"), "utf8"));
-    policy.families = [{ ...policy.families[0], checks: { local: ["node verify.mjs"], hosted: ["CI / Test (linux, Node 24)"] } }];
+    const policy = JSON.parse(await readFile(path.resolve("config/defect-recurrence-policy.json"), "utf8")) as DefectRecurrencePolicy;
+    const family = policy.families.find(({ id }) => id === "boundary-format-drift");
+    expect(family).toBeDefined();
+    policy.families = [{ ...family!, checks: { local: ["node verify.mjs"], hosted: ["CI / Test (linux, Node 24)"] } }];
     const workflowPath = path.join(root, ".github", "workflows", "ci.yml");
     const workflow = 'name: CI\njobs:\n  test:\n    name: Test (${{ matrix.os }}, Node ${{ matrix.node }})\n    strategy:\n      matrix:\n        include:\n          - { os: linux, node: 24 }\n';
     await writeFile(workflowPath, workflow);

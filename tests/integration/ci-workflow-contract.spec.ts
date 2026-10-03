@@ -75,12 +75,17 @@ function expectContainsNone(content: string, blockedSnippets: string[]): void {
 
 /** Require both Codecov uploads to use a complete immutable action reference. */
 function expectPinnedCodecovUploads(content: string): void {
-  const workflow = parse(content) as { jobs: { coverage: { steps: Array<{ name?: string; uses?: string }> } } };
-  const uploads = workflow.jobs.coverage.steps.filter((step) =>
-    step.name === "Upload coverage to Codecov" || step.name === "Upload test results to Codecov",
+  const workflow = parse(content) as {
+    jobs: { coverage: { steps: Array<{ name?: string; uses?: string }> } };
+  };
+  const uploads = workflow.jobs.coverage.steps.filter(
+    (step) =>
+      step.name === "Upload coverage to Codecov" ||
+      step.name === "Upload test results to Codecov",
   );
   expect(uploads).toHaveLength(2);
-  for (const step of uploads) expect(step.uses).toMatch(/^codecov\/codecov-action@[0-9a-f]{40}$/);
+  for (const step of uploads)
+    expect(step.uses).toMatch(/^codecov\/codecov-action@[0-9a-f]{40}$/);
 }
 
 function extractWorkflowJob(content: string, jobName: string): string {
@@ -168,9 +173,7 @@ describe("GitHub workflow contract", () => {
     };
     const benchmarkJob = parsedWorkflow.jobs?.benchmarks;
     const steps = benchmarkJob?.steps ?? [];
-    const setupNodeStep = steps.find(
-      (step) => step.name === "Setup Node.js",
-    );
+    const setupNodeStep = steps.find((step) => step.name === "Setup Node.js");
     const codSpeedStep = steps.find(
       (step) =>
         typeof step.uses === "string" &&
@@ -226,16 +229,80 @@ describe("GitHub workflow contract", () => {
             timeout: 10_000,
           });
           expect((await readdir(sources)).sort()).toEqual(
-            [...retained, ...chromeFiles.map((name) => `${name}.disabled`)].sort(),
+            [
+              ...retained,
+              ...chromeFiles.map((name) => `${name}.disabled`),
+            ].sort(),
           );
           for (const name of [...retained, ...chromeFiles]) {
-            const actualName = chromeFiles.includes(name) ? `${name}.disabled` : name;
+            const actualName = chromeFiles.includes(name)
+              ? `${name}.disabled`
+              : name;
             expect(await readFile(path.join(sources, actualName), "utf8")).toBe(
               `source: ${name}\n`,
             );
           }
         }
       });
+    }
+  });
+
+  it("requires native preview regressions to consume the validated build", async () => {
+    const ciWorkflow = normalizeWorkflow(
+      await readFile(
+        path.resolve(repoRoot, ".github/workflows/ci.yml"),
+        "utf8",
+      ),
+    );
+    const runtimeJobs = (
+      parse(ciWorkflow) as {
+        jobs: Record<
+          string,
+          {
+            steps: Array<{
+              name?: string;
+              run?: string;
+              if?: string;
+              "continue-on-error"?: boolean;
+              env?: Record<string, string>;
+            }>;
+          }
+        >;
+      }
+    ).jobs;
+    for (const platform of [
+      {
+        job: "build-test",
+        name: "macOS",
+        condition: "matrix.os == 'macos-latest'",
+      },
+      { job: "windows-regression", name: "Windows", condition: undefined },
+    ]) {
+      const portability = runtimeJobs[platform.job].steps.find(
+        (step) =>
+          step.name ===
+          `Verify transactional settings and preview portability on ${platform.name}`,
+      );
+      expect(portability).toBeDefined();
+      expect(portability?.if).toBe(platform.condition);
+      expect(portability?.["continue-on-error"]).toBeUndefined();
+      expect(portability?.env).toMatchObject({ PM_RUN_TESTS_SKIP_BUILD: "1" });
+      for (const file of [
+        "tests/unit/core/store/settings-store.spec.ts",
+        "tests/unit/sdk/transactions/settings-preview.spec.ts",
+        "tests/unit/sdk/transactions/preview-snapshot.spec.ts",
+        "tests/unit/sdk/pagination.spec.ts",
+        "tests/unit/commands/query/search-command.spec.ts",
+      ])
+        expect(portability?.run).toContain(file);
+    }
+    for (const step of Object.values(runtimeJobs).flatMap((job) => job.steps)) {
+      if (!step.run?.includes("node scripts/run-tests.mjs")) continue;
+      expect(
+        step.env?.PM_RUN_TESTS_SKIP_BUILD === "1" ||
+          step.run.includes("PM_RUN_TESTS_SKIP_BUILD=1"),
+        `Artifact-consuming test step ${step.name} must reuse its validated build`,
+      ).toBe(true);
     }
   });
 
@@ -419,12 +486,31 @@ describe("GitHub workflow contract", () => {
       "pnpm test",
       "pnpm dogfood:package-first",
     ]);
-    const runtimeJobs = (parse(ciWorkflow) as {
-      jobs: Record<string, { name?: string; needs?: string; steps: Array<{ name?: string; uses?: string; run?: string; if?: string; "continue-on-error"?: boolean; env?: Record<string, string>; with?: Record<string, unknown> }> }>;
-    }).jobs;
+    const runtimeJobs = (
+      parse(ciWorkflow) as {
+        jobs: Record<
+          string,
+          {
+            name?: string;
+            needs?: string;
+            steps: Array<{
+              name?: string;
+              uses?: string;
+              run?: string;
+              if?: string;
+              "continue-on-error"?: boolean;
+              env?: Record<string, string>;
+              with?: Record<string, unknown>;
+            }>;
+          }
+        >;
+      }
+    ).jobs;
     const runtimeSteps = runtimeJobs["build-test"].steps;
     const nativeShellSteps = runtimeSteps.filter(
-      (step) => step.uses?.startsWith("pnpm/action-setup@") || step.run?.includes("pnpm install"),
+      (step) =>
+        step.uses?.startsWith("pnpm/action-setup@") ||
+        step.run?.includes("pnpm install"),
     );
     expect(nativeShellSteps).toHaveLength(2);
     for (const step of nativeShellSteps) {
@@ -436,10 +522,17 @@ describe("GitHub workflow contract", () => {
       "pnpm install --frozen-lockfile",
       "node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts",
     ]);
-    const completionStep = runtimeSteps.find((step) => step.run?.includes("tests/unit/sdk/security/completion-search-boundaries.spec.ts"));
+    const completionStep = runtimeSteps.find((step) =>
+      step.run?.includes(
+        "tests/unit/sdk/security/completion-search-boundaries.spec.ts",
+      ),
+    );
     expect(completionStep).toMatchObject({
       if: "matrix.os == 'macos-latest'",
-      env: { PM_RUN_TESTS_SKIP_BUILD: "1", PM_COMPLETION_TEST_BASH: "/bin/bash" },
+      env: {
+        PM_RUN_TESTS_SKIP_BUILD: "1",
+        PM_COMPLETION_TEST_BASH: "/bin/bash",
+      },
       run: "node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts",
     });
     expect(completionStep?.["continue-on-error"]).toBeUndefined();
@@ -467,7 +560,16 @@ describe("GitHub workflow contract", () => {
       "run: node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts",
     ]);
     const assuranceWorkflow = parse(ciWorkflow) as {
-      jobs: { gates: { steps: Array<{ name?: string; run?: string; if?: string; "continue-on-error"?: boolean }> } };
+      jobs: {
+        gates: {
+          steps: Array<{
+            name?: string;
+            run?: string;
+            if?: string;
+            "continue-on-error"?: boolean;
+          }>;
+        };
+      };
     };
     const assuranceStep = assuranceWorkflow.jobs.gates.steps.find(
       (step) => step.name === "Run tracker assurance gates",
@@ -476,23 +578,32 @@ describe("GitHub workflow contract", () => {
     expect(assuranceStep?.["continue-on-error"]).toBeUndefined();
     expect(assuranceStep?.run?.trim().split("\n")).toEqual(
       ["tracker-context-quality", "graph-composition", "record-integrity"].map(
-        (gate) => `node dist/cli.js assurance run ${gate} --trigger ci --dry-run --json --output-budget unbounded`,
+        (gate) =>
+          `node dist/cli.js assurance run ${gate} --trigger ci --dry-run --json --output-budget unbounded`,
       ),
     );
     expectExactValidationCacheSteps(ciWorkflow, 3);
-    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(11);
     const node22Job = runtimeJobs["node22-telemetry"];
     expect(node22Job).toMatchObject({
       name: "Telemetry regression (Node 22)",
       needs: "build-foundation",
     });
-    expect(node22Job.steps.find((step) => step.uses?.startsWith("actions/setup-node@"))?.with).toMatchObject({ "node-version": 22 });
-    const snapshotSteps = node22Job.steps.filter((step) => step.name === "Verify linked snapshot target handling on Node 22");
-    expect(snapshotSteps).toEqual([{
-      name: "Verify linked snapshot target handling on Node 22",
-      env: { PM_RUN_TESTS_SKIP_BUILD: "1" },
-      run: "node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts",
-    }]);
+    expect(
+      node22Job.steps.find((step) =>
+        step.uses?.startsWith("actions/setup-node@"),
+      )?.with,
+    ).toMatchObject({ "node-version": 22 });
+    const snapshotSteps = node22Job.steps.filter(
+      (step) =>
+        step.name === "Verify linked snapshot target handling on Node 22",
+    );
+    expect(snapshotSteps).toEqual([
+      {
+        name: "Verify linked snapshot target handling on Node 22",
+        env: { PM_RUN_TESTS_SKIP_BUILD: "1" },
+        run: "node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts",
+      },
+    ]);
     expect(ciWorkflow).not.toMatch(/^\s*run: pnpm test\s*$/m);
     expect(ciWorkflow).not.toContain("Sandboxed PM regression");
 
@@ -500,12 +611,20 @@ describe("GitHub workflow contract", () => {
   });
 
   it("rejects mutable and incomplete Codecov references in either upload", async () => {
-    const workflow = await readFile(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
-    const pins = [...workflow.matchAll(/codecov\/codecov-action@[0-9a-f]{40}/g)];
+    const workflow = await readFile(
+      path.join(repoRoot, ".github/workflows/ci.yml"),
+      "utf8",
+    );
+    const pins = [
+      ...workflow.matchAll(/codecov\/codecov-action@[0-9a-f]{40}/g),
+    ];
     expect(pins).toHaveLength(2);
     for (const pin of pins) {
       for (const reference of ["v7", "abc123", "a".repeat(41)]) {
-        const changed = workflow.slice(0, pin.index) + `codecov/codecov-action@${reference}` + workflow.slice(pin.index + pin[0].length);
+        const changed =
+          workflow.slice(0, pin.index) +
+          `codecov/codecov-action@${reference}` +
+          workflow.slice(pin.index + pin[0].length);
         expect(() => expectPinnedCodecovUploads(changed)).toThrow();
       }
     }
@@ -708,7 +827,9 @@ describe("GitHub workflow contract", () => {
         /node dist\/cli\.js merge install --no-extensions/g,
       ),
     ).toHaveLength(1);
-    expect(nightlyWorkflow.match(/name: Alert on scheduled nightly failure/g)).toHaveLength(2);
+    expect(
+      nightlyWorkflow.match(/name: Alert on scheduled nightly failure/g),
+    ).toHaveLength(2);
     expect(nightlyWorkflow).not.toContain("Sandboxed PM regression");
 
     expectContainsNone(nightlyWorkflow, PUBLISH_OR_RELEASE_PATTERNS);
@@ -853,7 +974,9 @@ describe("GitHub workflow contract", () => {
       "name: Select exact-tag recovery source",
     );
     expect(preserveReleaseControlsIndex).toBeGreaterThanOrEqual(0);
-    expect(preserveReleaseControlsIndex).toBeLessThan(selectRecoverySourceIndex);
+    expect(preserveReleaseControlsIndex).toBeLessThan(
+      selectRecoverySourceIndex,
+    );
     expect(releaseWorkflow).not.toContain(
       'cp "${RELEASE_CONTROLS}/package-artifact-gate.mjs" scripts/release/package-artifact-gate.mjs',
     );
@@ -875,8 +998,14 @@ describe("GitHub workflow contract", () => {
     expect(baseArtifactGateIndex).toBeLessThan(sentryInjectionIndex);
     expect(sentryInjectionIndex).toBeLessThan(injectedArtifactGateIndex);
     expect(injectedArtifactGateIndex).toBeLessThan(sentryUploadIndex);
-    expect(extractWorkflowJob(releaseWorkflow, "release").match(/name: Setup Bun/g)).toHaveLength(1);
-    expect(extractWorkflowJob(releaseWorkflow, "installed-acceptance").match(/name: Setup Bun/g)).toHaveLength(1);
+    expect(
+      extractWorkflowJob(releaseWorkflow, "release").match(/name: Setup Bun/g),
+    ).toHaveLength(1);
+    expect(
+      extractWorkflowJob(releaseWorkflow, "installed-acceptance").match(
+        /name: Setup Bun/g,
+      ),
+    ).toHaveLength(1);
     expect(releaseWorkflow.indexOf("pnpm changelog:pm:check")).toBeLessThan(
       releaseWorkflow.indexOf("run: pnpm quality:static"),
     );
@@ -942,8 +1071,10 @@ describe("GitHub workflow contract", () => {
       jobs?: { "auto-release"?: { "timeout-minutes"?: unknown } };
     };
     const releaseTimeout = releaseWorkflow.jobs.release["timeout-minutes"];
-    const acceptanceTimeout = releaseWorkflow.jobs["installed-acceptance"]["timeout-minutes"];
-    const advertisementTimeout = releaseWorkflow.jobs.advertise["timeout-minutes"];
+    const acceptanceTimeout =
+      releaseWorkflow.jobs["installed-acceptance"]["timeout-minutes"];
+    const advertisementTimeout =
+      releaseWorkflow.jobs.advertise["timeout-minutes"];
     const autoReleaseTimeout =
       autoReleaseWorkflow.jobs?.["auto-release"]?.["timeout-minutes"];
 
@@ -1211,10 +1342,16 @@ describe("GitHub workflow contract", () => {
       "sha256sum --check --strict",
       "./actionlint -color",
     ]);
-    const securityJobs = (parse(securityWorkflow) as {
-      jobs: Record<string, { steps: Array<{ name?: string; env?: Record<string, unknown> }> }>;
-    }).jobs;
-    const trivyStep = Object.values(securityJobs).flatMap(({ steps }) => steps)
+    const securityJobs = (
+      parse(securityWorkflow) as {
+        jobs: Record<
+          string,
+          { steps: Array<{ name?: string; env?: Record<string, unknown> }> }
+        >;
+      }
+    ).jobs;
+    const trivyStep = Object.values(securityJobs)
+      .flatMap(({ steps }) => steps)
       .find(({ name }) => name === "Trivy repository scan");
     expect(trivyStep?.env).toEqual({ TRIVY_INCLUDE_DEV_DEPS: "true" });
     expect(truffleHogExclusions).toEqual([

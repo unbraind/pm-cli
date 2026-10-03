@@ -117,7 +117,15 @@ interface SettingsPersistSourceSnapshot {
 }
 
 interface SerializeSettingsOptions {
+  /** Ordinary writer snapshot, including file-backed schema boundaries. */
   persist_source?: SettingsPersistSourceSnapshot;
+  /** Paired views of one locked inline source, without schema hydration. */
+  source?: {
+    /** Parsed original JSON whose sparse omissions and future fields survive known-value edits. */
+    raw: unknown;
+    /** Validated projection of the same original JSON, used for the canonical delta baseline. */
+    validated: ParsedSettings;
+  };
 }
 
 /** Documents the settings read metadata payload exchanged by command, SDK, and package integrations. */
@@ -1198,7 +1206,8 @@ export function normalizeItemTypeDefinitions(
   );
 }
 
-function mergeSettings(settings: ParsedSettings): PmSettings {
+/** Resolve validated inline settings using the shared defaults and preset rules, without filesystem reads or schema hydration. */
+export function mergeSettings(settings: ParsedSettings): PmSettings {
   const defaults = cloneDefaults();
   const governance = resolveGovernanceKnobs({
     governance: settings.governance ?? { preset: "default" },
@@ -1731,6 +1740,25 @@ function buildNormalizedSettingsForSerialization(
   };
 }
 
+/** Restore only present validated source values so deltas include normalization without materializing omitted defaults. */
+function overlayPresentSettingsSource(
+  target: Record<string, unknown>,
+  source: object,
+): void {
+  for (const key of Object.keys(source)) {
+    const value: unknown = Reflect.get(source, key);
+    const existing = target[key];
+    if (
+      typeof value === "object" && value !== null && !Array.isArray(value) &&
+      typeof existing === "object" && existing !== null && !Array.isArray(existing)
+    ) {
+      overlayPresentSettingsSource(existing as Record<string, unknown>, value);
+    } else {
+      target[key] = structuredClone(value);
+    }
+  }
+}
+
 function applySettingsDelta(
   target: Record<string, unknown>,
   baseline: Record<string, unknown>,
@@ -1829,38 +1857,39 @@ function buildOrderedSettingsForSerialization(
   return ordered;
 }
 
-/** Implements serialize settings for the public runtime surface of this module. */
+/** Canonicalize settings, optionally applying only known-value changes to a captured sparse source. */
 export function serializeSettings(
   settings: PmSettings,
   options: SerializeSettingsOptions = {},
 ): string {
-  const ordered = buildOrderedSettingsForSerialization(
-    settings,
-    options.persist_source,
-  );
-  if (options.persist_source) {
+  const persistSource = options.source === undefined
+    ? options.persist_source
+    : buildSettingsPersistSourceSnapshot(options.source.validated, mergeSettings(options.source.validated));
+  const ordered = buildOrderedSettingsForSerialization(settings, persistSource);
+  if (persistSource) {
     const baselineSettings = mergeSettings(
-      options.persist_source.source_settings,
+      persistSource.source_settings,
     );
     baselineSettings.item_types = {
       definitions: structuredClone(
-        options.persist_source.runtime_item_type_definitions,
+        persistSource.runtime_item_type_definitions,
       ),
     };
     baselineSettings.schema = {
       ...baselineSettings.schema,
-      statuses: structuredClone(options.persist_source.runtime_schema_statuses),
-      fields: structuredClone(options.persist_source.runtime_schema_fields),
+      statuses: structuredClone(persistSource.runtime_schema_statuses),
+      fields: structuredClone(persistSource.runtime_schema_fields),
       type_workflows: structuredClone(
-        options.persist_source.runtime_schema_type_workflows,
+        persistSource.runtime_schema_type_workflows,
       ),
     };
     const baseline = buildOrderedSettingsForSerialization(
       baselineSettings,
-      options.persist_source,
+      persistSource,
     );
+    if (options.source !== undefined) overlayPresentSettingsSource(baseline, options.source.validated);
     const sparse = structuredClone(
-      options.persist_source.source_settings,
+      options.source === undefined ? persistSource.source_settings : options.source.raw,
     ) as unknown as Record<string, unknown>;
     applySettingsDelta(sparse, baseline, ordered);
     return `${JSON.stringify(

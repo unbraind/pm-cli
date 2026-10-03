@@ -3,6 +3,7 @@
 The extension settings contract is tracked by
 [pm-wtqltn](../.agents/pm/issues/pm-wtqltn.toon). Full-item JSON annotation
 integrity is tracked by [pm-2589e6](../.agents/pm/issues/pm-2589e6.toon).
+Canonical previews are tracked by [pm-2sef82](../.agents/pm/features/pm-2sef82.toon).
 
 ## Extension settings
 
@@ -36,9 +37,43 @@ the same operation ID can then be used for the real mutation. A normal return
 also reports `changed` and `dry_run`. Invalid results fail before writing, and
 a history-append failure restores the previous settings bytes. The callback
 must derive its complete next settings object from the locked `current` value.
+The callback receives normalized inline settings with defaults and preset knobs
+even when the source file is sparse. Returning that tree unchanged retains the
+original source bytes, including unknown fields, without creating an audit event.
+Changed writes apply known-setting changes to the captured source through the
+standard serializer, preserving sparse omissions and unrecognized fields in
+unchanged containers for forward compatibility. Those fields remain outside the
+typed callback and canonical preview. Replacing an array replaces its complete
+contents, as in normal settings writes. Present legacy values are canonicalized
+on a changed write; an identity no-op still retains the original bytes.
+The host also validates the final serialized bytes before committing, so a
+proposal that changes while being serialized cannot persist invalid settings.
 The host applies the standard settings serializer, including legacy format
 coercion and collection-name sanitization, and runs active `onWrite` hooks
 after a changed write.
+
+Request `includePreview: true` to receive an optional `preview` settings tree
+alongside the receipt. The host resolves it from the exact serialized bytes
+inside the audit lock, using the same defaults and governance presets as normal
+settings reads. A named `minimal` preset therefore reports ownership `none`
+even if the callback proposed `strict`. Custom presets retain their configured
+knobs. Legacy formats and collection names reflect their canonical persisted
+values. This tree describes inline settings before optional file-backed schema
+overlays; it does not load or create those files.
+
+Use `dryRun: true, includePreview: true` to inspect the result before applying
+the same operation. A fresh no-op also includes its canonical tree. An idempotent
+replay omits `preview`: the original callback is not re-executed, and later
+settings changes cannot reconstruct its historical proposal. Receipts remain
+three booleans when the option is absent. Direct SDK dry runs read configuration
+without executing read hooks, scaffolding optional schemas, or populating the
+hydrated settings cache. Mutation callbacks should only derive settings and
+avoid external side effects.
+
+For an extension that requires previews, set its manifest `pm_min_version` to
+a published host release containing this option. Check for `preview` on a fresh
+dry-run operation before applying settings, while allowing replay receipts to
+omit it as described above.
 
 ## Full-item JSON updates
 

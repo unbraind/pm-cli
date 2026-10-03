@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import path from "node:path";
+import { createSearchCursorFingerprint } from "../../../src/sdk/query/search-pagination.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import {
   QUERY_CURSOR_CONTRACT,
@@ -18,6 +20,13 @@ import {
 } from "../../../src/sdk/cli-contracts/flag-contracts.js";
 
 describe("SDK query pagination", () => {
+  it("binds search cursors to the resolved tracker scope on every platform", () => {
+    const options = { query: " tracker ", mode: "keyword" as const, searchOptions: {} };
+    const root = path.join("scope", "tracker");
+    expect(createSearchCursorFingerprint({ ...options, pmRoot: root })).toBe(createSearchCursorFingerprint({ ...options, pmRoot: path.resolve(root) }));
+    expect(createSearchCursorFingerprint({ ...options, pmRoot: root })).not.toBe(createSearchCursorFingerprint({ ...options, pmRoot: path.resolve("other") }));
+    expect(createSearchCursorFingerprint(options)).not.toBe(createSearchCursorFingerprint({ ...options, pmRoot: root }));
+  });
   it("derives semantic cursor identity from compact presentation exceptions", () => {
     expect(
       [

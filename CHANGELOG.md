@@ -2,8 +2,13 @@
 
 ## Unreleased
 
+### Added
+
+- GH-1356: SDK: expose the canonical settings preview through host-bound audited mutation ([pm-2sef82](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2sef82.toon))
+
 ### Fixed
 
+- Transactional preview portability: canonical race fixtures and persistent invalid-path recovery ([pm-n912nt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-n912nt.toon))
 - GH-1366: Agent UX: --output-format json emits human errors while --json emits structured errors ([pm-gh1366](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1366.toon))
 - GH-1354: Linked-test snapshot mode drops nested package dependencies and breaks monorepo acceptance ([pm-5iwfkj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5iwfkj.toon))
 - GH-1365: Agent UX: typed update refusals blame valid flags instead of the field that failed validation ([pm-gh1365](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1365.toon))
