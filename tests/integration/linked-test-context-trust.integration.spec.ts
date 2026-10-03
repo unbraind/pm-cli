@@ -51,6 +51,7 @@ describe("linked-test workspace and trust contracts", () => {
       }
       await mkdir(packageRoot, { recursive: true });
       await symlink(dependencyRoot, path.join(packageRoot, "node_modules"), process.platform === "win32" ? "junction" : "dir");
+      await symlink("node_modules/snapshot-dependency/index.js", path.join(packageRoot, "dependency-alias.js"), "file");
       await writeFile(path.join(sourceRoot, "root.js"), "export { version } from 'snapshot-dependency';\n");
       const testPath = path.join(packageRoot, "dependency.test.mjs");
       await writeFile(testPath, [
@@ -59,9 +60,11 @@ describe("linked-test workspace and trust contracts", () => {
         "import { writeFileSync } from 'node:fs';",
         "import { version as rootVersion } from '../../root.js';",
         "import { version } from 'snapshot-dependency';",
+        "import { version as aliasVersion } from './dependency-alias.js';",
         "test('independent dependency identities', () => {",
         "  assert.equal(rootVersion, '1.0.0');",
         "  assert.equal(version, '2.0.0');",
+        "  assert.equal(aliasVersion, '2.0.0');",
         "  assert.ok(process.env.PM_GLOBAL_PATH);",
         "  assert.equal(process.env.PM_PATH, undefined);",
         "  writeFileSync('snapshot-only.txt', version);",

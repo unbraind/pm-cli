@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[1]: security
 created_at: "2026-10-02T06:33:46.098Z"
-updated_at: "2026-10-02T23:03:25.825Z"
+updated_at: "2026-10-03T00:12:19.199Z"
 closed_at: "2026-10-02T23:03:24.843Z"
 completed_at: "2026-10-02T23:03:24.843Z"
 author: "harness:codex"
@@ -25,7 +25,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-5iwfkj,related,"2026-10-02T17:24:53.523Z","harness:codex","cli:update:dep",detected
   pm-5iwfkj,verifies,"2026-10-02T19:08:09.966Z","harness:codex","cli:update:dep",detected
   pm-iktual,verifies,"2026-10-02T20:57:56.198Z","harness:codex","cli:update:dep",detected
-comments[29]:
+comments[30]:
   - created_at: "2026-10-02T06:33:46.098Z"
     author: "harness:codex"
     text: "Duplicate check: complete all-status corpus 2850/2850 with no unreadable records; live exact keyword Axios finds only the discovery comment on pm-gh1364, include-dev-deps and GHSA-c29m-xwm3-cm6r find no canonical work. All twelve GHSA identifiers were checked in the initial all-status intake. Full live pm-qwoy, pm-cbzvgn and pm-7wmq metadata were read; parent history verifies. Closed pm-cbzvgn fixed distinct brace-expansion advisories and is preserved as completed historical work. This new Axios/CodSpeed report is recorded before PR1372 merge to keep discovery evidence reviewed. Remediation is open and unclaimed; it is not included in PR1372 source-fix closure or represented as security clearance."
@@ -114,6 +114,9 @@ comments[29]:
   - created_at: "2026-10-02T23:02:54.506Z"
     author: "harness:codex"
     text: "Final source proof: canonical test-local-murk9e8z-r4gw2y passes 9628 tests across 762 suites with only the two existing Windows-only skips. Observed statements 66443/66443, branches 50848/50848, functions 13734/13734 and lines 63364/63364 are exact 100/100/100/100. Measured report test-local-murkhsbe-xcywcf records all twelve count/percentage values from coverage-summary SHA-256 f586fac52502b298f1401e44e92e9330eda233cdcd7bd05fd3f88e6de87d551c without repeating the suite. Shared parity receipt test-local-murkcofa-t7qfi3 passes 42 cases. Serial static/typecheck, real Trivy dev-negative/positive fixtures, final packed npm/npx/bunx SDK consumers and package-first dogfood pass. Native exact-head review, Windows and merged-main alert retirement remain separate required delivery boundaries."
+  - created_at: "2026-10-03T00:12:19.199Z"
+    author: "harness:codex"
+    text: "The shared primary-owner verification is renewed for the final snapshot correction: canonical test-local-murmvdoi-pilgng passes 9629 tests and all four coverage percentages are exactly 100. Measured report test-local-murmxdfi-0nvqus retains twelve actual values, with covered/total statements 66459, branches 50854, functions 13736 and lines 63377, bound to SHA-256 413ae1baf7cba0ef38d7fa780999fd33ae2a32c769f73079bf4adb43b891d69b. Existing security behavior, full audit and twelve-artifact bundle inventory remain verified. Source ownership of the new dependency-alias and destination fixes remains pm-5iwfkj; its current closure references this shared proof. The earlier immutable security closure remains valid historical evidence. Native merged-main Scorecard retirement and publication remain independent under pm-7zs0."
 notes[3]{created_at,author,text}:
   "2026-10-02T06:37:50.731Z","harness:codex","Scope and evidence boundary: this intake documents an unresolved development-tool dependency report before merging PR1372. It is not a regression introduced by the scoped recovery, continuation or semantic-preview fixes. Production-only audit is clean. Full audit and native Scorecard remain open; embedded Axios requires separate inspection beyond pnpm lock resolution. Do not dismiss the scanner alert or report security clearance until remediation and native merged-main scans are verified."
   "2026-10-02T19:24:09.415Z","harness:codex","Large-patch review rationale: GitHub treats a new patch artifact as 38,448 added lines although the upstream diff removes 38,404 lines and adds ten. Only two bundles and their two maps change; three native payloads remain byte-identical. Replacing the patch with an upstream supported fixed release is preferable once one is available and passes the same inventory, runtime, map and native gates. The exact-version pnpm patch remains reproducible across frozen installs and does not introduce an install-time transformation or weaken dependency admission."
@@ -173,11 +176,11 @@ tests[4]:
     timeout_seconds: 180
     provenance:
       author: "harness:codex"
-      created_at: "2026-10-02T22:57:23.250Z"
+      created_at: "2026-10-03T00:09:34.700Z"
       source_kind: local_mutation
       source_ref: codex/codspeed-dependency-security-snapshot-resolution
-    note: Exact report admission for canonical run test-local-murk9e8z-r4gw2y; coverage-summary SHA-256 f586fac52502b298f1401e44e92e9330eda233cdcd7bd05fd3f88e6de87d551c; twelve count and percentage measurements retain the complete unchanged source denominator
-test_runs[11]:
+    note: Exact report admission for canonical test-local-murmvdoi-pilgng; coverage-summary SHA-256 413ae1baf7cba0ef38d7fa780999fd33ae2a32c769f73079bf4adb43b891d69b; twelve percentages/counts retain the full unchanged source denominator policy
+test_runs[13]:
   - run_id: test-local-murayqth-r6rf24
     kind: test
     status: passed
@@ -461,6 +464,81 @@ test_runs[11]:
         value: 66443
         unit: count
         recorded_at: "2026-10-02T23:01:29.113Z"
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/coverage-threshold-gate.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-murmvdoi-pilgng
+    kind: test
+    status: passed
+    started_at: "2026-10-02T23:51:41.850Z"
+    finished_at: "2026-10-03T00:08:02.562Z"
+    recorded_at: "2026-10-03T00:08:02.562Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage -- --maxWorkers=2 --coverage.reportOnFailure,schema,schema,source,local_source_ref
+  - run_id: test-local-murmxdfi-0nvqus
+    kind: test
+    status: passed
+    started_at: "2026-10-03T00:09:35.360Z"
+    finished_at: "2026-10-03T00:09:35.550Z"
+    recorded_at: "2026-10-03T00:09:35.550Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[12]:
+      - name: coverage_branches
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-03T00:09:35.550Z"
+      - name: coverage_branches_covered
+        value: 50854
+        unit: count
+        recorded_at: "2026-10-03T00:09:35.550Z"
+      - name: coverage_branches_total
+        value: 50854
+        unit: count
+        recorded_at: "2026-10-03T00:09:35.550Z"
+      - name: coverage_functions
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-03T00:09:35.550Z"
+      - name: coverage_functions_covered
+        value: 13736
+        unit: count
+        recorded_at: "2026-10-03T00:09:35.550Z"
+      - name: coverage_functions_total
+        value: 13736
+        unit: count
+        recorded_at: "2026-10-03T00:09:35.550Z"
+      - name: coverage_lines
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-03T00:09:35.550Z"
+      - name: coverage_lines_covered
+        value: 63377
+        unit: count
+        recorded_at: "2026-10-03T00:09:35.550Z"
+      - name: coverage_lines_total
+        value: 63377
+        unit: count
+        recorded_at: "2026-10-03T00:09:35.550Z"
+      - name: coverage_statements
+        value: 100
+        unit: percent
+        threshold: 100
+        recorded_at: "2026-10-03T00:09:35.550Z"
+      - name: coverage_statements_covered
+        value: 66459
+        unit: count
+        recorded_at: "2026-10-03T00:09:35.550Z"
+      - name: coverage_statements_total
+        value: 66459
+        unit: count
+        recorded_at: "2026-10-03T00:09:35.550Z"
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/release/coverage-threshold-gate.mjs,schema,schema,source,local_source_ref
 docs[1]{path,scope}:

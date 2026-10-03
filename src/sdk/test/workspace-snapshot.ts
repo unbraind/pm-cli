@@ -41,25 +41,56 @@ async function resolveLinkTarget(target: string): Promise<string> {
 }
 
 /**
+ * Rebase physical source targets into the copy or retain an admitted dependency
+ * namespace. Walking lexical ancestors also preserves package links within a
+ * shared installation without relying on directory-copy traversal order.
+ */
+async function resolveSnapshotTarget(
+  target: string,
+  sourceRoot: string,
+  dependencyRoots: ReadonlyArray<readonly [relative: string, target: string]>,
+): Promise<string> {
+  const relative = path.relative(sourceRoot, await resolveLinkTarget(target));
+  if (!isOutsideWorkspace(relative)) return relative;
+  const suffix: string[] = [];
+  let ancestor = target;
+  while (path.dirname(ancestor) !== ancestor) {
+    const physicalAncestor = await resolveLinkTarget(ancestor);
+    const dependency = dependencyRoots.find(([, root]) => root === physicalAncestor);
+    if (dependency) return path.join(dependency[0], ...suffix);
+    suffix.unshift(path.basename(ancestor));
+    ancestor = path.dirname(ancestor);
+  }
+  return relative;
+}
+
+/**
  * Copy source files into a disposable workspace and link root and nested
  * dependency directories at their original relative paths. Dependency trees
  * are shared by convention, not protected against writes; callers must trust
  * the linked command and use an independent install for dependency mutations.
  * Source aliases are canonicalized through their existing ancestors and rebased
- * into the snapshot. External or excluded source targets and dependency aliases
- * into excluded workspace trees are refused before the command can run.
+ * into the snapshot; aliases into admitted dependency namespaces stay shared.
+ * Other external or excluded targets and overlapping physical source/destination
+ * trees are refused before the command can run.
  */
 export async function seedLinkedTestWorkspaceSnapshot(
   sourceRoot: string,
   snapshotRoot: string,
 ): Promise<void> {
-  const dependencyRoots: string[] = [];
+  const dependencyRoots: Array<[relative: string, target: string]> = [];
   const sourceLinks: Array<[relative: string, target: string, type: "junction" | "file"]> = [];
   const resolvedSourceRoot = await realpath(sourceRoot);
+  const resolvedSnapshotRoot = await resolveLinkTarget(path.resolve(snapshotRoot));
+  if (![path.relative(resolvedSourceRoot, resolvedSnapshotRoot), path.relative(resolvedSnapshotRoot, resolvedSourceRoot)]
+    .every(isOutsideWorkspace)) {
+    throw new Error("Snapshot destination must be disjoint from the source workspace; choose a temporary root outside the checkout.");
+  }
   await mkdir(path.dirname(snapshotRoot), { recursive: true });
   await cp(resolvedSourceRoot, snapshotRoot, {
     recursive: true,
     force: true,
+    /** Admit dependency roots and defer source aliases until the complete namespace is known. */
     async filter(source) {
       const relative = path.relative(resolvedSourceRoot, source);
       if (!relative) return true;
@@ -73,21 +104,16 @@ export async function seedLinkedTestWorkspaceSnapshot(
               || !targetRelative.split(path.sep).some((segment) => segment.toLowerCase() === "node_modules")))) {
             throw new Error(`Dependency symlink must target an included dependency directory or external installation: ${relative}`);
           }
-          dependencyRoots.push(relative);
+          dependencyRoots.push([relative, target]);
         }
         return false;
       }
       if (!(await lstat(source)).isSymbolicLink()) return true;
-      const target = await resolveLinkTarget(path.resolve(path.dirname(source), await readlink(source)));
-      const targetRelative = path.relative(resolvedSourceRoot, target);
-      if (isOutsideWorkspace(targetRelative) || hasExcludedSegment(targetRelative)) {
-        throw new Error(`Source symlink must target included workspace source: ${relative}`);
-      }
-      sourceLinks.push([relative, targetRelative, (await stat(source, { throwIfNoEntry: false }))?.isDirectory() ? "junction" : "file"]);
+      sourceLinks.push([relative, path.resolve(path.dirname(source), await readlink(source)), (await stat(source, { throwIfNoEntry: false }))?.isDirectory() ? "junction" : "file"]);
       return false;
     },
   });
-  for (const relative of dependencyRoots) {
+  for (const [relative] of dependencyRoots) {
     await symlink(
       path.resolve(resolvedSourceRoot, relative),
       path.join(snapshotRoot, relative),
@@ -95,6 +121,10 @@ export async function seedLinkedTestWorkspaceSnapshot(
     );
   }
   for (const [relative, target, type] of sourceLinks) {
-    await symlink(path.resolve(snapshotRoot, target), path.join(snapshotRoot, relative), type);
+    const targetRelative = await resolveSnapshotTarget(target, resolvedSourceRoot, dependencyRoots);
+    if (isOutsideWorkspace(targetRelative) || hasExcludedSegment(targetRelative)) {
+      throw new Error(`Source symlink must target included workspace source: ${relative}`);
+    }
+    await symlink(path.resolve(snapshotRoot, targetRelative), path.join(snapshotRoot, relative), type);
   }
 }

@@ -558,7 +558,7 @@ pm test <item-id> --run --workspace-context snapshot --override-linked-workspace
   installations must be disjoint from the source workspace, rather than
   containing it. They remain available even when an external ancestor shares an
   excluded directory name.
-  links are read-only **by convention**; they do not prevent a trusted command
+  Links are read-only **by convention**; they do not prevent a trusted command
   from modifying the original installation. Use an independent installation
   when testing package-manager operations or dependency writes. Built output
   remains available so linked commands such as `node dist/cli.js` keep working.
@@ -568,9 +568,12 @@ pm test <item-id> --run --workspace-context snapshot --override-linked-workspace
   disposable snapshot. Targets are canonicalized through their nearest existing
   ancestor, so absolute aliases through another workspace path spelling and
   missing target suffixes retain the same isolation on supported platforms.
-  Source aliases into external directories or excluded
-  tracker/build trees fail before the linked command runs. An alias into a
-  shared dependency directory retains the dependency-write convention above.
+  Source aliases into unadmitted external directories or excluded tracker/build
+  trees fail before the linked command runs. An alias into an admitted shared
+  dependency namespace retains the dependency-write convention above, including
+  packages linked within that installation. Source and snapshot destinations
+  must be physically disjoint; overlapping roots fail before copying with a
+  diagnostic directing the caller to a temporary root outside the checkout.
 
   The real-filesystem regression for this contract is tracked by
   [pm-5iwfkj](../.agents/pm/issues/pm-5iwfkj.toon).

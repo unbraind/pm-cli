@@ -55,11 +55,46 @@ describe("linked workspace snapshot filesystem policy", () => {
       await mkdir(path.join(source, "packages/dangling"), { recursive: true });
       await mkdir(dependencies, { recursive: true });
       await writeFile(path.join(dependencies, "identity"), "external installation");
+      const linkedPackage = path.join(root, "linked-package");
+      await mkdir(linkedPackage);
+      await writeFile(path.join(linkedPackage, "identity"), "linked package");
+      await symlink(linkedPackage, path.join(dependencies, "package"), "junction");
       await symlink(dependencies, path.join(source, "apps/site/node_modules"), process.platform === "win32" ? "junction" : "dir");
       await symlink(path.join(root, "missing"), path.join(source, "packages/dangling/node_modules"), process.platform === "win32" ? "junction" : "dir");
+      await symlink("apps/site/node_modules/identity", path.join(source, "dependency-file-alias"), "file");
+      await symlink(path.join(source, "apps/site/node_modules"), path.join(source, "dependency-directory-alias"), "junction");
+      await symlink(path.join(dependencies, "missing"), path.join(source, "dependency-dangling-alias"), "file");
+      await symlink("apps/site/node_modules/package/identity", path.join(source, "linked-package-alias"), "file");
       await seedLinkedTestWorkspaceSnapshot(source, snapshot);
       expect(await realpath(path.join(snapshot, "apps/site/node_modules"))).toBe(await realpath(dependencies));
+      expect(await readFile(path.join(snapshot, "dependency-file-alias"), "utf8")).toBe("external installation");
+      expect(await realpath(path.join(snapshot, "dependency-directory-alias"))).toBe(await realpath(dependencies));
+      expect(await readFile(path.join(snapshot, "linked-package-alias"), "utf8")).toBe("linked package");
+      await expect(access(path.join(snapshot, "dependency-dangling-alias"))).rejects.toThrow("ENOENT");
+      await writeFile(path.join(snapshot, "dependency-dangling-alias"), "dependency writes remain shared");
+      expect(await readFile(path.join(dependencies, "missing"), "utf8")).toBe("dependency writes remain shared");
       await expect(access(path.join(snapshot, "packages/dangling/node_modules"))).rejects.toThrow("ENOENT");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("refuses overlapping physical destinations before copying source bytes", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "pm-snapshot-destination-"));
+    const source = path.join(root, "source");
+    const sourceAlias = path.join(root, "source-alias");
+    try {
+      await mkdir(source);
+      await writeFile(path.join(source, "identity"), "original source");
+      await symlink(source, sourceAlias, "junction");
+      for (const destination of [source, path.join(source, "nested/snapshot"), root, path.join(sourceAlias, "missing/snapshot")]) {
+        await expect(seedLinkedTestWorkspaceSnapshot(source, destination))
+          .rejects.toThrow("Snapshot destination must be disjoint from the source workspace; choose a temporary root outside the checkout.");
+      }
+      expect(await readFile(path.join(source, "identity"), "utf8")).toBe("original source");
+      await expect(access(path.join(source, "nested"))).rejects.toThrow("ENOENT");
+      await expect(access(path.join(source, "missing"))).rejects.toThrow("ENOENT");
+      await expect(access(path.join(root, "identity"))).rejects.toThrow("ENOENT");
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -70,11 +105,15 @@ describe("linked workspace snapshot filesystem policy", () => {
     const source = path.join(root, "source");
     try {
       await mkdir(path.join(source, ".agents"), { recursive: true });
+      const dependencies = path.join(root, "installed");
+      await mkdir(path.join(dependencies, ".agents"), { recursive: true });
+      await writeFile(path.join(dependencies, ".agents/identity"), "excluded installed bytes");
+      await symlink(dependencies, path.join(source, "node_modules"), "junction");
       await mkdir(path.join(root, "source-sibling"));
       await writeFile(path.join(source, ".agents/identity"), "tracker remains private");
       await writeFile(path.join(root, "identity"), "parent remains private");
       await writeFile(path.join(root, "source-sibling/identity"), "sibling remains private");
-      for (const [index, target] of ["..", "../source-sibling", ".agents"].entries()) {
+      for (const [index, target] of ["..", "../source-sibling", ".agents", "node_modules/.agents"].entries()) {
         const alias = path.join(source, "alias");
         await symlink(path.resolve(source, target), alias, "junction");
         await expect(seedLinkedTestWorkspaceSnapshot(source, path.join(root, `snapshot-${index}`)))
@@ -84,6 +123,7 @@ describe("linked workspace snapshot filesystem policy", () => {
       expect(await readFile(path.join(source, ".agents/identity"), "utf8")).toBe("tracker remains private");
       expect(await readFile(path.join(root, "identity"), "utf8")).toBe("parent remains private");
       expect(await readFile(path.join(root, "source-sibling/identity"), "utf8")).toBe("sibling remains private");
+      expect(await readFile(path.join(dependencies, ".agents/identity"), "utf8")).toBe("excluded installed bytes");
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -110,7 +150,7 @@ describe("linked workspace snapshot filesystem policy", () => {
     }
   });
 
-  it("refuses missing external targets and propagates a cyclic source-link error", async () => {
+  it("refuses missing external targets and propagates cyclic source and destination errors", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "pm-snapshot-target-error-"));
     const source = path.join(root, "source");
     const alias = path.join(source, "alias");
@@ -122,6 +162,10 @@ describe("linked workspace snapshot filesystem policy", () => {
       await rm(alias);
       await symlink(alias, alias, "file");
       await expect(seedLinkedTestWorkspaceSnapshot(source, path.join(root, "cyclic-snapshot"))).rejects.toThrow();
+      await rm(alias);
+      const destination = path.join(root, "cyclic-destination");
+      await symlink(destination, destination, "file");
+      await expect(seedLinkedTestWorkspaceSnapshot(source, destination)).rejects.toMatchObject({ code: "ELOOP" });
     } finally {
       await rm(root, { recursive: true, force: true });
     }
