@@ -50,10 +50,11 @@ describe("extension host contracts", () => {
           "    }),",
           "  });",
           "  api.registerCommand({ name: 'host other', run: ({ sdk }) => sdk.mutateWorkspaceSettings({ operationId: 'apply-1', mutate: (current) => ({ ...current, ux: { ...current.ux, deprecation_hints: true } }) }) });",
+          "  api.registerCommand({ name: 'host preset', flags: [{ long: '--preview', value_type: 'boolean' }], run: ({ sdk, options }) => sdk.mutateWorkspaceSettings({ operationId: 'canonical-strict', dryRun: options.preview === true, includePreview: true, mutate: (current) => ({ ...current, governance: { ...current.governance, preset: 'strict', ownership_enforcement: 'none' } }) }) });",
           "} };",
         ].join("\n"),
         ["commands", "schema", "hooks"],
-        ["host settings", "host other"],
+        ["host settings", "host other", "host preset"],
       );
       const manifestPath = path.join(context.pmPath, "extensions", "host-contract-test", "manifest.json");
       const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as Record<string, unknown>;
@@ -96,6 +97,15 @@ describe("extension host contracts", () => {
       expect(other).toMatchObject({ code: 0, json: { changed: true, replayed: false } });
       expect(JSON.parse(await readFile(settingsPath, "utf8"))).toMatchObject({ ux: { deprecation_hints: true } });
       expect((await readFile(hookLogPath, "utf8")).split("extension:pm:settings")).toHaveLength(3);
+      const beforePreset = await readFile(settingsPath, "utf8");
+      const canonical = context.runCli(["host", "preset", "--preview", "--json"], { expectJson: true });
+      expect(canonical, canonical.stderr).toMatchObject({ code: 0, json: { changed: true, dry_run: true, preview: { governance: { preset: "strict", ownership_enforcement: "strict" }, validation: { metadata_profile: "strict" } } } });
+      expect(await readFile(settingsPath, "utf8")).toBe(beforePreset);
+      const appliedPreset = context.runCli(["host", "preset", "--json"], { expectJson: true });
+      expect(appliedPreset, appliedPreset.stderr).toMatchObject({ code: 0, json: { changed: true, dry_run: false } });
+      const previewSettings = (canonical.json as { preview: unknown }).preview;
+      expect((appliedPreset.json as { preview: unknown }).preview).toEqual(previewSettings);
+      expect(JSON.parse(await readFile(settingsPath, "utf8"))).toMatchObject({ governance: { preset: "strict" } });
       expect(context.runCli(["history", "_workspace", "--verify", "--json"], { expectJson: true }).code).toBe(0);
       const health = context.runCli(["health", "--strict-exit", "--json"], { expectJson: true });
       expect(health.code, JSON.stringify(health.json)).toBe(0);

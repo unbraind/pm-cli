@@ -15,6 +15,18 @@ const copying = vi.hoisted(() => ({ change: "none", configurationSource: "", tra
 vi.mock("node:fs/promises", async (importOriginal) => {
   const actual = await importOriginal<typeof fsPromises>();
   return { ...actual,
+    lstat: async (...args: Parameters<typeof actual.lstat>) => {
+      if (copying.change === "unavailable-root" && String(args[0]) === path.parse(path.resolve(String(args[0]))).root) throw Object.assign(new Error("Unavailable filesystem root"), { code: "ENOENT" });
+      if (copying.change === "denied-lookup" && String(args[0]).endsWith(`${path.sep}snapshot-probe.txt${path.sep}child`)) throw Object.assign(new Error("Ancestor lookup denied"), { code: "EACCES" });
+      try { return await actual.lstat(...args); }
+      catch (error) {
+        // Windows reports ENOENT below a regular file where POSIX reports ENOTDIR.
+        if (copying.change === "invalid-lookup" && (error as NodeJS.ErrnoException).code === "ENOTDIR") {
+          throw Object.assign(error as Error, { code: "ENOENT" });
+        }
+        throw error;
+      }
+    },
     open: async (...args: Parameters<typeof actual.open>) => {
       if ((copying.change === "opened-pipe" && String(args[0]).endsWith("snapshot-probe.txt")) || (copying.change === "opened-configuration-pipe" && String(args[0]).endsWith("settings.json"))) {
         await actual.rm(args[0]);
@@ -37,6 +49,10 @@ vi.mock("node:fs/promises", async (importOriginal) => {
       if (copying.change === "invalid-path") throw Object.assign(new Error("Invalid nested path"), { code: "ENOTDIR", path: path.join(String(args[0]), "snapshot-probe.txt", "child") });
       if (copying.change === "missing-no-path") throw Object.assign(new Error("Missing path without filesystem provenance"), { code: "ENOENT" });
       if (copying.change === "invalid-lookup") throw Object.assign(new Error("Missing invalid nested path"), { code: "ENOENT", path: path.join(String(args[0]), "snapshot-probe.txt", "child") });
+      if (copying.change === "existing-root") throw Object.assign(new Error("Missing path reported for an existing filesystem root"), { code: "ENOENT", path: path.parse(String(args[0])).root });
+      if (copying.change === "unavailable-root") throw Object.assign(new Error("Unavailable filesystem root"), { code: "ENOENT", path: path.parse(String(args[0])).root });
+      if (copying.change === "root-descendant") throw Object.assign(new Error("Vanished mounted ancestor"), { code: "ENOENT", path: path.join(path.parse(String(args[0])).root, `pm-preview-absent-${process.pid}`) });
+      if (copying.change === "denied-lookup") throw Object.assign(new Error("Missing path whose ancestor cannot be checked"), { code: "ENOENT", path: path.join(String(args[0]), "snapshot-probe.txt", "child") });
       if (copying.change === "disappearing") {
         const originalFilter = args[2]?.filter;
         await actual.cp(args[0], args[1], { ...args[2], filter: async (source, destination) => {
@@ -253,7 +269,7 @@ describe("semantic preview snapshot consistency", () => {
     });
   });
 
-  it.each(["source", "staged", "disappearing"])("rejects %s state changes during copying instead of validating a mixed snapshot", async (change) => {
+  it.each(["source", "staged", "disappearing", "root-descendant"])("rejects %s state changes during copying instead of validating a mixed snapshot", async (change) => {
     await withTempPmPath(async (context) => {
       await writeFile(path.join(context.pmPath, "snapshot-probe.txt"), "original");
       copying.change = change;
@@ -276,7 +292,7 @@ describe("semantic preview snapshot consistency", () => {
       await expect(previewItemMutations({ pmRoot: context.pmPath, transactionId: "permission-copy", author: "snapshot-agent", mutations: [{ op: "create", id: "pm-permission", options: { title: "Permission preview", type: "Task" } }] })).rejects.toMatchObject({ code: "EACCES" });
     });
   });
-  it.each(["invalid-path", "missing-no-path", "invalid-lookup"])("preserves persistent or unattributed path errors: %s", async (change) => {
+  it.each(["invalid-path", "missing-no-path", "invalid-lookup", "existing-root", "unavailable-root", "denied-lookup"])("preserves persistent or unattributed path errors: %s", async (change) => {
     await withTempPmPath(async (context) => {
       await writeFile(path.join(context.pmPath, "snapshot-probe.txt"), "file rather than directory");
       copying.change = change;

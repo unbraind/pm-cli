@@ -1,0 +1,36 @@
+id: pm-n912nt
+title: "Transactional preview portability: canonical race fixtures and persistent invalid-path recovery"
+description: "GH-1377/1378/1380 expose separate portable-boundary regressions in the semantic-preview acceptance added by pm-gh1370: race injection compares unresolved aliases to canonical paths, a search cursor fixture hashes an unresolved Windows root, and ENOENT below a regular file is incorrectly treated as disappearance on Windows. Repair concrete causes and make these contracts mandatory before merge without weakening assertions or platform coverage."
+type: Issue
+status: in_progress
+priority: 1
+tags: []
+created_at: "2026-10-03T20:11:29.225Z"
+updated_at: "2026-10-03T20:57:05.089Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#c34534ca90095a05f3a48f57"
+author: "harness:codex"
+acceptance_criteria: Canonical settings race injection executes on physical and aliased roots across macOS Windows and Linux;Persistent invalid intermediate path errors retain native diagnostics while vanished entries retain retryable conflicts;Search cursor continuation fixture hashes the actual resolved tracker;Required platform checks exercise settings search and snapshot cases with unchanged assertions;Full-source coverage remains 100/100/100/100
+parent: pm-o2kc
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2sef82,verifies,"2026-10-03T20:11:29.225Z","harness:codex","cli:create:dep",detected
+  pm-2zjs0g,incident_from,"2026-10-03T20:11:29.225Z","harness:codex","cli:create:dep",detected
+  pm-fgih,verifies,"2026-10-03T20:11:29.225Z","harness:codex","cli:create:dep",detected
+  pm-gh1370,recurs_from,"2026-10-03T20:11:29.225Z","harness:codex","cli:create:dep",detected
+  pm-j668gl,discovered_from,"2026-10-03T20:11:29.225Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-03T20:11:29.225Z","harness:codex","Duplicate check: strict all-status full-body corpus 2867/2867 with complete receipt and zero omissions/unreadables. Examined all matching settings/snapshot/cursor/platform titles and full shipped semantic-preview owner pm-gh1370; pm-2zjs0g is expressly rate measurement rather than individual repairs and stays open/unclaimed. No existing leaf owns these new persistent-path classification and canonical-injection causes. Original nightly run 37114037678 remains failing evidence; Ubuntu Node22 repair is already shipped separately under pm-5iwfkj."
+  "2026-10-03T20:12:46.090Z","harness:codex","Test-audit rationale: retain actual filesystem state transitions and propagation of structural/permission/link failures; normalize the chosen path spelling so injection executes rather than weakening expected results. Extend the existing snapshot fault table with Windows ENOENT-below-file and nested missing-ancestor cases; the production classifier must distinguish these without treating a persistent error as a retryable race. Search cursor fingerprint should bind its documented resolved scope consistently."
+  "2026-10-03T20:26:46.648Z","harness:codex","TDD negative controls on the unchanged production tree: 6 expected failures and 58 passes. The Windows ENOENT boundary now reproduces on Linux by translating only the actual lstat ENOTDIR syscall failure below a real regular file. Native assertions are retained. Search scopes now normalize through the shared SDK fingerprint. Canonical settings race injection targets fs.realpath output; native macOS and Windows regression checks cover these files before merge."
+  "2026-10-03T20:57:05.089Z","harness:codex","Platform classification now checks every ancestor including the filesystem root: retry only when the nearest existing ancestor is a directory; preserve the original native error for regular-file ancestors, dangling entries, denied lookup, missing provenance, and an unavailable root. Boundary tests perform real lstat checks and emulate only native error outcomes, retaining actual snapshot reads/writes. A deterministic source-scope test binds relative and absolute search paths to one cursor identity. The interrupted overloaded local validation was not counted as a pass; dedicated low-worker full coverage and hosted gates remain mandatory."
+files[6]{path,scope}:
+  .github/workflows/ci.yml,project
+  src/sdk/item-transaction.ts,project
+  src/sdk/query/search-pagination.ts,project
+  tests/unit/core/store/settings-store.spec.ts,project
+  tests/unit/sdk/pagination.spec.ts,project
+  tests/unit/sdk/transactions/preview-snapshot.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/commands/query/search-command.spec.ts,project,300,"harness:codex","2026-10-03T20:34:18.304Z",local_mutation,feat/canonical-sdk-settings-preview-platform-recovery
+escape_class: production_defect
+body: ""

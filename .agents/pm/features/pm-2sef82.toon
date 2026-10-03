@@ -2,11 +2,13 @@ id: pm-2sef82
 title: "GH-1356: SDK: expose the canonical settings preview through host-bound audited mutation"
 description: Expose an opt-in canonical settings preview through the injected audited extension command SDK.
 type: Feature
-status: open
+status: in_progress
 priority: 2
 tags[3]: agent-ux,context-management,github-intake
 created_at: "2026-09-30T06:48:43.202Z"
-updated_at: "2026-09-30T06:48:43.202Z"
+updated_at: "2026-10-03T20:57:03.173Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#c34534ca90095a05f3a48f57"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "An opt-in host-bound preview matches actual canonical persistence for named and custom presets; Ordinary mutation receipts remain bounded and backwards compatible; Preview is read-only for settings and immutable history; Invalid settings, locks, concurrency and replay retain existing guarantees; A copied packed extension without a local SDK import demonstrates preview parity"
@@ -15,8 +17,24 @@ risk: medium
 confidence: medium
 expected_result: A copied extension can obtain the exact validated effective settings preview through the host capability without duplicate normalization or a local SDK runtime import.
 actual_result: "Reporter independently observed a dry-run boolean receipt without canonical settings on published 2026.9.30. Named governance preset normalization is correct, but the callback proposal differs from the effective persisted result. No settings/history preview writes were reported. Current-tree design and implementation are pending."
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-wtqltn,discovered_from,"2026-09-30T06:48:43.202Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-9rgaal,implements,"2026-10-03T20:12:43.404Z","harness:codex","cli:update:dep",detected
+  pm-wtqltn,implements,"2026-10-03T20:12:43.404Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
   "2026-09-30T06:48:43.202Z","harness:codex","Duplicate check: complete strict all-status corpus contained 2843 records with no unreadable directories or items. Exact GitHub ID plus behavior/root-cause searches were complete. Closed prior lineage pm-wtqltn and its full history were read; this new report requests a distinct unimplemented contract. Relationship reconstructed during current intake rather than asserted as historical knowledge. Queued and unclaimed; source investigation remains pending."
+  "2026-10-03T20:11:01.244Z","harness:codex","Implementation plan: opt-in host-owned canonical persistence preview from the same audited lock-scoped serializer, preserving bounded default receipts, inert retries and read-only dry runs. Primary contracts are real SDK persistence/history plus copied extension transport and packed Node/Bun consumers. Related platform preview failures will be fixed in this reviewed bundle under their own canonical owner. Strict all-status intake: 2867/2867, complete, zero omissions, zero unreadable records, zero in_progress before claim."
+  "2026-10-03T20:26:48.048Z","harness:codex","Canonical preview design: includePreview opt-in returns the normalized inline tree derived from the exact locked serialized bytes, before optional file-backed schema overlays. Ordinary receipts remain three booleans. Replays omit preview because the callback is not executed and historical proposals must not be invented from current state. Direct dry runs use the existing configuration-only settings policy to avoid hooks and missing-schema scaffolding. TDD missing-preview failures reproduced before source edits for minimal, strict and custom presets."
+  "2026-10-03T20:54:28.664Z","harness:codex","Additional TDD findings: sparse valid settings supplied an undefined governance/ux tree despite the PmSettings callback type; unknown source fields leaked into the preview rather than matching validated reads; a getter-backed proposal could pass validation then serialize invalid version data. Regression controls failed on the previous implementation (3 failures, 56 passes including a vanished ancestor under the filesystem root). Callbacks now receive the shared normalized inline tree; identity no-ops retain original sparse bytes; final serialized bytes are validated before commit. No test-only production export, optional schema hydration, or dynamic imports were added."
+files[6]{path,scope}:
+  sdk/public-surface.json,project
+  src/core/extensions/extension-types.ts,project
+  src/core/store/settings.ts,project
+  src/sdk/extension-command-context.ts,project
+  tests/integration/extension-host-contracts.integration.spec.ts,project
+  tests/unit/sdk/settings-preview.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/settings-preview.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,project,300,"harness:codex","2026-10-03T20:34:15.667Z",local_mutation,feat/canonical-sdk-settings-preview-platform-recovery
+docs[1]{path,scope}:
+  docs/SDK_AUDITED_MUTATIONS.md,project
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/1356\n\nReporter independently observed a dry-run boolean receipt without canonical settings on published 2026.9.30. Named governance preset normalization is correct, but the callback proposal differs from the effective persisted result. No settings/history preview writes were reported. Current-tree design and implementation are pending.\n\nRequested contract: A copied extension can obtain the exact validated effective settings preview through the host capability without duplicate normalization or a local SDK runtime import.\n\nVerification plan: reproduce the public report in a temporary project outside this checkout with both PM roots isolated, demonstrate a relevant regression, then validate the SDK boundary, thin transport where applicable, complete coverage and packed consumers. No implementation is included in PR #1353."

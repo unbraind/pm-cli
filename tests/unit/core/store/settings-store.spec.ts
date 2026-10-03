@@ -187,12 +187,16 @@ describe("core/store/settings", () => {
   });
 
   for (const change of ["removed-file", "replaced-ancestor", "denied-file", "linked-file"] as const) {
-    it.skipIf((change === "denied-file" && (process.platform === "win32" || process.getuid?.() === 0)) || (change === "linked-file" && process.platform === "win32"))(`handles actual settings changes between configuration-only entry validation and open: ${change}`, async () => {
+    it.skipIf((change === "denied-file" && (process.platform === "win32" || process.getuid?.() === 0)) || (change === "linked-file" && process.platform === "win32")).each(["physical", "alias"])(`handles actual settings changes between configuration-only entry validation and open: ${change}, %s root`, async (spelling) => {
       await withTempPmRoot(async (pmRoot) => {
         await writeLegacySettings(pmRoot);
-        const settingsPath = getSettingsPath(pmRoot);
+        // Configuration-only reads resolve /tmp aliases and Windows casing first.
+        const canonicalRoot = await fs.realpath(pmRoot);
+        const settingsPath = getSettingsPath(canonicalRoot);
+        const selectedRoot = spelling === "alias" ? `${canonicalRoot}-selected` : pmRoot;
+        if (spelling === "alias") await fs.symlink(canonicalRoot, selectedRoot, process.platform === "win32" ? "junction" : "dir");
         const original = await fs.readFile(settingsPath, "utf8");
-        const movedRoot = `${pmRoot}-moved`;
+        const movedRoot = `${canonicalRoot}-moved`;
         const nativeLstat = fs.lstat;
         let changed = false;
         const entryRead = vi.spyOn(fs, "lstat").mockImplementation(async (file, options) => {
@@ -202,8 +206,8 @@ describe("core/store/settings", () => {
             changed = true;
             if (change === "removed-file") await fs.unlink(settingsPath);
             else if (change === "replaced-ancestor") {
-              await fs.rename(pmRoot, movedRoot);
-              await fs.writeFile(pmRoot, "Replaced tracker ancestor");
+              await fs.rename(canonicalRoot, movedRoot);
+              await fs.writeFile(canonicalRoot, "Replaced tracker ancestor");
             } else if (change === "denied-file") await fs.chmod(settingsPath, 0);
             else {
               await fs.rename(settingsPath, `${settingsPath}.retained`);
@@ -214,12 +218,13 @@ describe("core/store/settings", () => {
         });
         syncBuiltinESMExports();
         try {
-          const read = runWithConfigurationOnlySettings(pmRoot, () => readSettingsWithMetadata(pmRoot));
+          const read = runWithConfigurationOnlySettings(selectedRoot, () => readSettingsWithMetadata(selectedRoot));
           if (change === "removed-file" || change === "replaced-ancestor") {
             expect(await read).toEqual({ settings: SETTINGS_DEFAULTS, metadata: { has_explicit_item_format: false }, warnings: [] });
           } else await expect(read).rejects.toMatchObject({ code: change === "denied-file" ? "EACCES" : "ELOOP" });
           expect(changed).toBe(true);
           expect(getSettingsReadCacheEntry(pmRoot)).toBeUndefined();
+          expect(getSettingsReadCacheEntry(selectedRoot)).toBeUndefined();
         } finally {
           entryRead.mockRestore();
           syncBuiltinESMExports();

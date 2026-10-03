@@ -2159,6 +2159,14 @@
       ],
       "package_version": "2026.10.1",
       "reason": "pm-gh1370 adds an optional per-read enabled predicate to the new unmerged runWithConfigurationOnlySettings helper so actual Commander preAction parsing can release only its invocation-owned protection. Existing two-argument calls retain their behavior; no released SDK declaration changes."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ExtensionCommandSdk",
+        "signature ./sdk/authoring:ExtensionCommandSdk"
+      ],
+      "package_version": "2026.10.3",
+      "reason": "Additive optional includePreview request and optional preview receipt; existing callers, three-boolean receipts and replay behavior remain compatible. The signature hash classifies all interface edits conservatively."
     }
   ],
   "entrypoints": {
@@ -7353,7 +7361,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionCommandSdk",
-          "signature": "export interface ExtensionCommandSdk { client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; }>; }"
+          "signature": "export interface ExtensionCommandSdk { client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; includePreview?: boolean; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; preview?: PmSettings; }>; }"
         },
         {
           "classification": "supported",
@@ -21321,7 +21329,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionCommandSdk",
-          "signature": "export interface ExtensionCommandSdk { client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; }>; }"
+          "signature": "export interface ExtensionCommandSdk { client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; includePreview?: boolean; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; preview?: PmSettings; }>; }"
         },
         {
           "classification": "supported",

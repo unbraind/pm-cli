@@ -214,6 +214,13 @@ jobs:
           PM_COMPLETION_TEST_BASH: /bin/bash
         run: node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts
 
+      # pm-n912nt: entry/open races must execute against macOS's canonical /private/tmp root.
+      - name: Verify transactional settings and preview portability on macOS
+        if: matrix.os == 'macos-latest'
+        env:
+          PM_RUN_TESTS_SKIP_BUILD: "1"
+        run: node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/settings-preview.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/commands/query/search-command.spec.ts
+
   # pm-7msh7k: exercise Node 22 subprocess behavior before merge.
   node22-telemetry:
     name: Telemetry regression (Node 22)
@@ -664,6 +671,12 @@ jobs:
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts
+
+      # pm-n912nt: retain native invalid-ancestor errors and resolved cursor scope before merge.
+      - name: Verify transactional settings and preview portability on Windows
+        env:
+          PM_RUN_TESTS_SKIP_BUILD: "1"
+        run: node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/settings-preview.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/commands/query/search-command.spec.ts
 
       # The packed-npm-extension install path exercises the Windows `.cmd` npm
       # spawn + tar extraction + hosted-SDK junction class that only the Node 24

@@ -766,9 +766,20 @@ export interface ExtensionCommandSdk {
     operationId: string;
     /** Compute a preview without changing settings or workspace history. */
     dryRun?: boolean;
-    /** Derive the complete next settings tree from the locked current tree. */
+    /** Include the canonical inline settings tree; omit by default to bound receipts. */
+    includePreview?: boolean;
+    /** Derive the complete next settings tree from normalized inline settings at lock time. */
     mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>;
-  }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean }>;
+  }): Promise<{
+    /** Whether the locked settings bytes would change, or did change on apply. */
+    changed: boolean;
+    /** Whether persistence was suppressed for this invocation. */
+    dry_run: boolean;
+    /** Whether the operation was already committed and the callback was skipped. */
+    replayed: boolean;
+    /** Settings resolved from the exact persisted bytes, before optional file-backed schema overlays. Absent on replay. */
+    preview?: PmSettings;
+  }>;
 }
 
 /** Documents the parser override context payload exchanged by command, SDK, and package integrations. */

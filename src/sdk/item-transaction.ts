@@ -654,11 +654,20 @@ async function isDisappearingPreviewPath(error: unknown): Promise<boolean> {
   if (!isFileMissingError(error)) return false;
   const file = (error as NodeJS.ErrnoException).path;
   if (typeof file !== "string") return false;
-  try {
-    await lstat(file);
-    return false;
-  } catch (lookupError) {
-    return isFileMissingError(lookupError);
+  const original = path.resolve(file);
+  let candidate = original;
+  while (true) {
+    try {
+      const entry = await lstat(candidate);
+      // ENOENT below a regular file on Windows is a persistent invalid path.
+      // An existing directory ancestor proves that a descendant disappeared.
+      return candidate !== original && entry.isDirectory();
+    } catch (lookupError) {
+      if (!isFileMissingError(lookupError)) return false;
+      const parent = path.dirname(candidate);
+      if (parent === candidate) return false;
+      candidate = parent;
+    }
   }
 }
 

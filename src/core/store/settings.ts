@@ -1198,7 +1198,8 @@ export function normalizeItemTypeDefinitions(
   );
 }
 
-function mergeSettings(settings: ParsedSettings): PmSettings {
+/** Resolve validated inline settings using the shared defaults and preset rules, without filesystem reads or schema hydration. */
+export function mergeSettings(settings: ParsedSettings): PmSettings {
   const defaults = cloneDefaults();
   const governance = resolveGovernanceKnobs({
     governance: settings.governance ?? { preset: "default" },
