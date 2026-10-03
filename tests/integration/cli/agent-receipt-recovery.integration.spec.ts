@@ -32,6 +32,16 @@ describe("agent receipt and recovery contracts", () => {
       await expect(runGet("pm-attribution", { path: context.pmPath }, { depth: "nonsense" })).rejects.toMatchObject({
         exitCode: 2, context: { field: "depth", value: "nonsense", recovery: { allowed_values: ["brief", "standard", "deep", "full"] } },
       });
+      for (const controls of [["--full", "--fields", "id"], ["--fields", "id", "--full"], ["--depth", "deep", "--full"]]) {
+        const conflict = await runInProcessDistCli(["get", "pm-attribution", ...controls, "--json"], { env: context.env }, runPmCli);
+        expect(conflict.code).toBe(2);
+        const refusal = JSON.parse(conflict.stderr) as JsonErrorEnvelope;
+        expect(refusal.refusal).toMatchObject({ surface: "--full" });
+        expect(refusal.refusal).not.toHaveProperty("rejected_value");
+      }
+      const sdkConflict = await runGet("pm-attribution", { path: context.pmPath }, { full: true, fields: "id" }).catch((error: unknown) => error);
+      expect(sdkConflict).toMatchObject({ context: { flag: "--full" } });
+      expect(sdkConflict).not.toHaveProperty("context.value");
       const missing = await runInProcessDistCli(["update", "missing", "--title", "x", "--json"], { env: context.env }, runPmCli);
       expect(missing.code).toBe(3);
       expect(JSON.parse(missing.stderr)).toMatchObject({ refusal: { surface: "id", rejected_value: "missing" } });
@@ -116,6 +126,7 @@ describe("agent receipt and recovery contracts", () => {
       const repeated = await runAction(args);
       expect(repeated).toMatchObject({ id: "pm-composite", status: "in_progress", changed_field_count: 0 });
       expect(repeated).not.toHaveProperty("claim.item");
+      expect(repeated).not.toHaveProperty("update.item");
       const full = await new PmClient({ pmRoot: context.pmPath, noExtensions: true, author: "test-author" }).startTask("composite");
       expect(full).toMatchObject({ id: "pm-composite", claim: { item: { id: "pm-composite" } }, update: { item: { status: "in_progress" } } });
       const explicit = await runInProcessDistCli(["claim", "composite", "--start", "--full-changed-fields", "--json"], { env: context.env }, runPmCli);

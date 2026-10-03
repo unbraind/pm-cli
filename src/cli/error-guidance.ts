@@ -690,13 +690,14 @@ function resolveRefusalCandidateFlag(
   return mentionedFlag;
 }
 
-/** Preserve the producer scalar or read the matched flag operand without attributing another positional argument. */
+/** Preserve producer scalars and intentional unknown values; infer an operand only when the surface came from legacy text guidance. */
 function resolveRefusalRejectedValue(
   message: GuidanceMessage,
   normalizedArgs: readonly string[],
   candidateFlag: string | undefined,
 ): string | undefined {
   if (message.value !== undefined) return message.value;
+  if (message.flag !== undefined) return undefined;
   if (candidateFlag) {
     const candidateArgument = normalizedArgs.find(
       (argument) =>
@@ -706,7 +707,8 @@ function resolveRefusalRejectedValue(
       return candidateArgument.slice(candidateFlag.length + 1);
     }
     const candidateIndex = normalizedArgs.indexOf(candidateFlag);
-    return candidateIndex >= 0 ? normalizedArgs[candidateIndex + 1] : undefined;
+    // Legacy candidates have already been matched to supplied arguments; attached values returned above.
+    return normalizedArgs[candidateIndex + 1];
   }
   return undefined;
 }
@@ -914,7 +916,7 @@ function resolveErrorContextFlag(context: PmCliErrorContext, recovery: PmCliErro
   if (context.flag !== undefined) return context.flag;
   if (context.field === undefined) return undefined;
   const flag = context.field.startsWith("--") ? context.field : `--${context.field.replaceAll("_", "-")}`;
-  return recovery?.normalized_args?.some((argument) => argument === flag || argument.startsWith(`${flag}=`)) ? flag : undefined;
+  return recovery?.normalized_args?.some(/** Match only the supplied canonical spelling or its attached value; another valid flag cannot own this refusal. */ (argument) => argument === flag || argument.startsWith(`${flag}=`)) ? flag : undefined;
 }
 
 /** Merge SDK error evidence with CLI fallback guidance without discarding typed recovery or policy diagnostics. */

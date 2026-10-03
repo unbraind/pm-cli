@@ -114,12 +114,17 @@ describe("closed-domain recovery envelopes", () => {
         };
         expect(envelope.code).toBe(contract.error_code);
         expect(envelope.refusal.exit_code).toBe(2);
-        expect(
-          contract.rejected_value
-            .split("+")
-            .includes(envelope.refusal.rejected_value ?? ""),
-          contract.probe_id,
-        ).toBe(true);
+        if (contract.probe_id === "get-mutually-exclusive-projection") {
+          expect(envelope.refusal.surface).toBe("--full");
+          expect(envelope.refusal).not.toHaveProperty("rejected_value");
+        } else {
+          expect(
+            contract.rejected_value
+              .split("+")
+              .includes(envelope.refusal.rejected_value ?? ""),
+            contract.probe_id,
+          ).toBe(true);
+        }
         if (contract.allowed_values_required !== false) {
           expect(envelope.refusal.legal_domain).toEqual(
             contract.allowed_values,

@@ -6,23 +6,23 @@ status: closed
 priority: 1
 tags[3]: gh-1365,github-intake,sdk-first
 created_at: "2026-10-02T17:09:15.472Z"
-updated_at: "2026-10-03T10:54:45.080Z"
-closed_at: "2026-10-03T10:54:44.246Z"
-completed_at: "2026-10-03T10:54:44.246Z"
+updated_at: "2026-10-03T12:45:03.514Z"
+closed_at: "2026-10-03T12:45:02.903Z"
+completed_at: "2026-10-03T12:45:02.903Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Risk, deadline and missing-ID fixtures identify the actual failure; Permuting valid title/priority flags never changes attribution; Attached values, aliases, multiple invalid inputs and no flagged inputs are covered; Error paths do not mutate item state; Unknown attribution is omitted; legal-domain values correspond to the blamed field; Existing policy-specific missing-field and surface tests remain green"
 parent: pm-f05lsg
 risk: medium
 confidence: medium
-resolution: "SDK validators now own failed field, rejected value and enum-domain evidence; CLI guidance preserves producer attribution, canonical aliases, missing-ID operands and subcommand tokens without guessing from unrelated arguments. Review corrections add complete SDK get-depth metadata and grammar-aware registration without expanding ordinary option values."
+resolution: "SDK validators own failed field, rejected value and enum-domain evidence; CLI guidance preserves producer attribution, canonical aliases, missing-ID operands and subcommand tokens without guessing from unrelated arguments. Get depth discloses its complete SDK domain. Compound projection conflicts identify their option surface while omitting an unknown scalar, and legacy inference only reads an argument already admitted by the matched invocation."
 expected_result: "Risk and deadline refusals identify their own validator surface and rejected value; missing-item failures identify lookup or ID; valid unrelated title and priority flags never determine attribution, and unknown attribution is omitted."
-actual_result: "Final review correction proof for PR https://github.com/unbraind/pm-cli/pull/1376: 9638 tests passed, with exact source coverage 100/100/100/100 and zero uncovered counts: statements 66543/66543, branches 50900/50900, functions 13748/13748, lines 63446/63446. Strict static stages and type checking passed with no weakened policy; native linked commands passed with duplicate suppression. Packed manual Node/Bun acceptance passed 58 commands, preserving literal next tag values, canonical receipts, complete depth refusal evidence, rich full opt-in, and immutable history. All dependency severities and current GitHub security alert surfaces are zero; required Sentry/telemetry checks passed. First-head required CI passed and both actionable bot findings were implemented; the corrected-head hosted cycle remains required before merge. The prior v2026.10.3 publication predates this batch."
+actual_result: "Final corrected-source isolated suite: 9638 passed and two Windows-only cases skipped on Linux; exact coverage 100/100/100/100 with zero uncovered counts (66545/66545 statements, 50900/50900 branches, 13748/13748 functions, 63447/63447 lines). Full type checking, every static-quality stage including unchanged performance ceilings, graph/history and mutation controls (329 killed, seven reviewed equivalent, zero failures), native deduplicated linked tests, 58 clean packed Node/Bun manual commands with history verification, and nine npx/bunx packed package workflows plus typed SDK consumers passed. All 28 touched source functions have behavior-specific documentation. Required Sentry/telemetry gate passed with zero blocking issues, 1.40 percent finish error rate and zero missing error-code rows. Earlier failed test/coverage and performance observations remain recorded. Exact-head hosted checks/reviews and merge follow through PR1376; this batch is separate from the earlier v2026.10.3 publication and four pre-existing-main nightly alerts."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-o5s22y,discovered_from,"2026-10-02T17:09:15.472Z","harness:codex","cli:create:dep",detected
   pm-gh1363,implements,"2026-10-02T17:10:07.308Z","harness:codex","cli:update:dep",detected
   pm-o5s22y,verifies,"2026-10-03T08:35:47.992Z","harness:codex","cli:update:dep",detected
-comments[11]:
+comments[17]:
   - created_at: "2026-10-02T17:09:15.472Z"
     author: "harness:codex"
     text: "Duplicate check 2026-10-02: complete strict all-status corpus read returned 2851/2851 items with no omissions or unreadable files; exact GitHub issue/ID and contract-title searches found no canonical owner for this residual acceptance. Existing foundations are linked, including closed historical work; no closed fix is asserted outstanding. Imported report and acceptance are planning evidence, not current reproduction or implementation completion. This item remains open and unclaimed until selected for implementation."
@@ -57,11 +57,29 @@ comments[11]:
   - created_at: "2026-10-03T10:54:43.603Z"
     author: "harness:codex"
     text: "Final review correction proof for PR https://github.com/unbraind/pm-cli/pull/1376: 9638 tests passed, with exact source coverage 100/100/100/100 and zero uncovered counts: statements 66543/66543, branches 50900/50900, functions 13748/13748, lines 63446/63446. Strict static stages and type checking passed with no weakened policy; native linked commands passed with duplicate suppression. Packed manual Node/Bun acceptance passed 58 commands, preserving literal next tag values, canonical receipts, complete depth refusal evidence, rich full opt-in, and immutable history. All dependency severities and current GitHub security alert surfaces are zero; required Sentry/telemetry checks passed. First-head required CI passed and both actionable bot findings were implemented; the corrected-head hosted cycle remains required before merge. The prior v2026.10.3 publication predates this batch."
+  - created_at: "2026-10-03T11:14:34.934Z"
+    author: "harness:codex"
+    text: "Review round two: exact-head hosted checks passed and Greptile returned 5/5 with no new findings. Accept CodeRabbit corrections for unknown projection-conflict scalar omission and both repeated compact snapshot absence assertions. Preserve producer-owned unknown values and the 100-percent coverage gate. Only the two correction owners are active; expected outcomes were restored atomically while reopening."
+  - created_at: "2026-10-03T11:19:23.878Z"
+    author: "harness:codex"
+    text: "Round-three TDD evidence: the real projection-conflict negative control failed before the fix and now passes in both argument orders and with explicit depth. SDK conflict evidence declares --full without a scalar; CLI rendering preserves that intentional unknown instead of reading another option token. Repeated compact MCP receipts now assert both claim.item and update.item absent. Focused 56 tests passed. All 28 touched source function-like nodes have meaningful JSDoc, verified through the TypeScript AST including callback documentation; broader semantic documentation debt remains with its existing canonical owner. ESLint and type checking passed; strict static and final coverage verification are pending."
+  - created_at: "2026-10-03T11:29:59.923Z"
+    author: "harness:codex"
+    text: "Round-three static proof: the complete pnpm quality:static command finished successfully without resumed stages, with dependency audit zero vulnerabilities, source documentation ratchet, dead exports, ESLint, duplication, generated contracts, CLI refusal/grammar/token controls, tracker metadata, SDK/package boundaries, startup cost, graph/history assurance and mutation controls all passing. No thresholds, exclusions or assertions changed. Packed manual acceptance passed 58 distinct Node/Bun commands, including both projection-conflict shapes with no rejected scalar. Final coverage and native linked tests are running before closure."
+  - created_at: "2026-10-03T11:43:29.997Z"
+    author: "harness:codex"
+    text: "Final full-suite correction: the existing closed-domain integration test requires a fabricated --full scalar for the projection-conflict probe. Tighten that probe to require surface --full with no rejected_value while retaining complete-domain and executable-retry assertions for all 19 contracts. The unrelated packed continuation consumer timed out in npm pack at its existing 30-second bound; rerun unchanged with reduced suite concurrency. The first round-three coverage attempt is a failure, not coverage proof."
+  - created_at: "2026-10-03T12:05:38.450Z"
+    author: "harness:codex"
+    text: "The unchanged full suite now passes all 9638 tests at two workers, including the packed continuation consumer, but exact coverage correctly rejects one unreachable fallback branch. Producer flags with unknown scalar now exit before legacy inference; legacy candidates are guaranteed supplied by resolveRefusalCandidateFlag, and attached values return earlier. Remove the redundant candidateIndex >= 0 branch rather than fabricating an impossible input or relaxing coverage. Fresh complete coverage remains required."
+  - created_at: "2026-10-03T12:45:02.136Z"
+    author: "harness:codex"
+    text: "Final corrected-source isolated suite: 9638 passed and two Windows-only cases skipped on Linux; exact coverage 100/100/100/100 with zero uncovered counts (66545/66545 statements, 50900/50900 branches, 13748/13748 functions, 63447/63447 lines). Full type checking, every static-quality stage including unchanged performance ceilings, graph/history and mutation controls (329 killed, seven reviewed equivalent, zero failures), native deduplicated linked tests, 58 clean packed Node/Bun manual commands with history verification, and nine npx/bunx packed package workflows plus typed SDK consumers passed. All 28 touched source functions have behavior-specific documentation. Required Sentry/telemetry gate passed with zero blocking issues, 1.40 percent finish error rate and zero missing error-code rows. Earlier failed test/coverage and performance observations remain recorded. Exact-head hosted checks/reviews and merge follow through PR1376; this batch is separate from the earlier v2026.10.3 publication and four pre-existing-main nightly alerts."
 notes[1]{created_at,author,text}:
   "2026-10-03T08:53:39.591Z","harness:codex","Verification ownership: this batch keeps diagnostics and composed lifecycle behavior in shared SDK producers; CLI rendering consumes declared recovery rather than guessing from valid inputs. Real temporary tracker tests complement registration boundary tests. Root integration directory cap remains enforced; moved agent receipt suite into its CLI subdirectory. Full coverage and hosted checks are mandatory before delivery."
 learnings[1]{created_at,author,text}:
   "2026-10-03T08:32:15.885Z","harness:codex","Agent context controls must either change the declared public result or fail before host preparation. Refusal ownership follows producer evidence, restore instructions execute under the original intent, and composition identities come from persisted mutation results. Tests must observe the public boundary and unchanged tracker state rather than mirror internal forwarding."
-files[10]{path,scope}:
+files[11]{path,scope}:
   src/cli/error-guidance.ts,project
   src/core/shared/time.ts,project
   src/sdk/agent/subcommand-recovery.ts,project
@@ -70,11 +88,13 @@ files[10]{path,scope}:
   src/sdk/lifecycle/recurrence-parsers.ts,project
   src/sdk/query/get.ts,project
   tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project
+  tests/integration/closed-domain-recovery.integration.spec.ts,project
   tests/unit/cli/error-guidance.spec.ts,project
   tests/unit/sdk/subcommand-recovery.spec.ts,project
-tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project,"harness:codex","2026-10-03T08:53:38.196Z",local_mutation,codex/agent-refusals-context-recovery-claim-receipts
-test_runs[3]:
+  node scripts/run-tests.mjs test -- tests/integration/closed-domain-recovery.integration.spec.ts,project,"harness:codex","2026-10-03T11:43:31.194Z",local_mutation,codex/agent-refusals-context-recovery-claim-receipts
+test_runs[5]:
   - run_id: test-all-local-mus6wso8-m6rk3o
     kind: test-all
     status: passed
@@ -114,9 +134,36 @@ test_runs[3]:
     linked_tests: 1
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-musb6kmq-skrhty
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T11:28:35.495Z"
+    finished_at: "2026-10-03T11:41:28.098Z"
+    recorded_at: "2026-10-03T11:41:28.098Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-musd4j0h-nmz9c2
+    kind: test-all
+    status: passed
+    started_at: "2026-10-03T12:22:59.351Z"
+    finished_at: "2026-10-03T12:23:23.242Z"
+    recorded_at: "2026-10-03T12:23:23.242Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 2
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md,project
-close_reason: "Implemented, reviewed and locally verified the agent contract and review corrections."
+close_reason: "Implemented, reviewed and locally verified the shared agent contract and all review corrections."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

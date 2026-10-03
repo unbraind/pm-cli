@@ -56,7 +56,7 @@ export async function runStartTask(id: string, options: TaskCompositionOptions, 
   const status = resolveStartTaskInProgressStatus(resolveRuntimeStatusRegistry(settings.schema));
   const claim = await runClaim(id, options.force === true, global, options);
   const canonicalId = claim.item.id as string;
-  const update = await finishComposition(canonicalId, "claim", () => runUpdate(canonicalId, mutationOptionsWithOverrides(options, { status }, ["assignee", "start", "next", "ifAvailable", "maxAttempts"]) as UpdateCommandOptions, global));
+  const update = await finishComposition(canonicalId, "claim", /** Advance the persisted claim identity using the configured workflow while preserving constituent mutation policy. */ () => runUpdate(canonicalId, mutationOptionsWithOverrides(options, { status }, ["assignee", "start", "next", "ifAvailable", "maxAttempts"]) as UpdateCommandOptions, global));
   return { id: canonicalId, action: "start_task", claim, update };
 }
 
@@ -66,7 +66,7 @@ export async function runPauseTask(id: string, options: TaskCompositionOptions, 
   const status = resolveRuntimeStatusRegistry(settings.schema).open_status;
   const update = await runUpdate(id, mutationOptionsWithOverrides(options, { status }, ["assignee", "pause"]) as UpdateCommandOptions, global);
   const canonicalId = update.item.id as string;
-  const release = await finishComposition(canonicalId, "update", () => runRelease(canonicalId, options.force === true, global, options));
+  const release = await finishComposition(canonicalId, "update", /** Release the persisted update identity only after its open-status mutation succeeds. */ () => runRelease(canonicalId, options.force === true, global, options));
   return { id: canonicalId, action: "pause_task", update, release };
 }
 
@@ -74,6 +74,6 @@ export async function runPauseTask(id: string, options: TaskCompositionOptions, 
 export async function runCloseTask(id: string, reason: string | undefined, options: CloseCommandOptions, global: GlobalOptions): Promise<CloseTaskResult> {
   const close = await runClose(id, reason, options, global);
   const canonicalId = close.item.id as string;
-  const release = await finishComposition(canonicalId, "close", () => runRelease(canonicalId, options.force === true, global, options));
+  const release = await finishComposition(canonicalId, "close", /** Release the persisted close identity only after durable closure evidence is recorded. */ () => runRelease(canonicalId, options.force === true, global, options));
   return { id: canonicalId, action: "close_task", close, release };
 }

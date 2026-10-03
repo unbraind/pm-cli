@@ -80,7 +80,7 @@ function collectCommandInvocationOptions(command: Command): Record<string, unkno
     for (const option of parent.options) {
       const key = option.attributeName();
       const suppliedOnParent = parent.getOptionValueSource(key) === "cli";
-      if (suppliedOnParent && !command.options.some((candidate) => candidate.long === option.long)) {
+      if (suppliedOnParent && !command.options.some(/** Require the selected leaf to declare the exact ancestor flag before forwarding a supplied value. */ (candidate) => candidate.long === option.long)) {
         throw new PmCliError(`Unknown option '${option.long}' for ${commandPath}`, EXIT_CODE.USAGE, {
           code: "unknown_option",
           flag: option.long,

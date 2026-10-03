@@ -497,7 +497,6 @@ function resolveGetProjection(
       {
         code: "projection_options_mutually_exclusive",
         flag: "--full",
-        value: "--full",
         recovery: {
           suggested_retry: renderPmCommand(["get", id, "--full"]),
           suggested_retry_args: ["get", id, "--full"],
